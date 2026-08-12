@@ -1,5 +1,7 @@
 import type { Matrix } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { geometryPoolReleaseGuard } from './geometryPoolGuards';
 import { createMatrix, setMatrixIdentity } from './matrix';
 
 export function acquireIdentityMatrix(): Matrix {
@@ -8,6 +10,7 @@ export function acquireIdentityMatrix(): Matrix {
   return m;
 }
 
+// Acquires without initializing the components. Use acquireIdentityMatrix when a known value is required.
 export function acquireMatrix(): Matrix {
   let m: Matrix;
 
@@ -26,6 +29,8 @@ export function clearMatrixPool(): void {
 
 export function releaseMatrix(m: Matrix): void {
   if (!m) return;
+  if (geometryPoolReleaseGuard !== null && pool.includes(m)) geometryPoolReleaseGuard('releaseMatrix');
+  m[EntityRuntimeKey] = undefined;
   pool.push(m);
 }
 

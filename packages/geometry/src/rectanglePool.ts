@@ -1,5 +1,7 @@
 import type { Rectangle } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { geometryPoolReleaseGuard } from './geometryPoolGuards';
 import { createRectangle } from './rectangle';
 
 export function acquireEmptyRectangle(): Rectangle {
@@ -11,6 +13,7 @@ export function acquireEmptyRectangle(): Rectangle {
   return r;
 }
 
+// Acquires without initializing the fields. Use acquireEmptyRectangle when an empty value is required.
 export function acquireRectangle(): Rectangle {
   let r: Rectangle;
 
@@ -29,6 +32,8 @@ export function clearRectanglePool(): void {
 
 export function releaseRectangle(r: Rectangle): void {
   if (!r) return;
+  if (geometryPoolReleaseGuard !== null && pool.includes(r)) geometryPoolReleaseGuard('releaseRectangle');
+  r[EntityRuntimeKey] = undefined;
   pool.push(r);
 }
 

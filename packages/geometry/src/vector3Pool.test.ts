@@ -1,3 +1,4 @@
+import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
 import type { Vector3 } from '@flighthq/types/contract';
 
 import { acquireEmptyVector3, acquireVector3, clearVector3Pool, releaseVector3 } from './vector3Pool';
@@ -62,6 +63,16 @@ describe('clearVector3Pool', () => {
 });
 
 describe('releaseVector3', () => {
+  it('detaches the previous owner binding before the vector is reused', () => {
+    const v = acquireVector3();
+    attachEntityBinding(v, { owner: 'first' });
+    releaseVector3(v);
+
+    const reused = acquireVector3();
+    expect(reused).toBe(v);
+    expect(getEntityBinding(reused)).toBeNull();
+  });
+
   it('handles null safely', () => {
     expect(() => releaseVector3(null as unknown as Vector3)).not.toThrow();
   });

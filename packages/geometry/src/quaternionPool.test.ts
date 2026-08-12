@@ -1,3 +1,4 @@
+import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
 import {
   acquireIdentityQuaternion,
   acquireQuaternion,
@@ -55,6 +56,17 @@ describe('clearQuaternionPool', () => {
 });
 
 describe('releaseQuaternion', () => {
+  it('detaches the previous owner binding before the quaternion is reused', () => {
+    clearQuaternionPool();
+    const q = acquireQuaternion();
+    attachEntityBinding(q, { owner: 'first' });
+    releaseQuaternion(q);
+
+    const reused = acquireQuaternion();
+    expect(reused).toBe(q);
+    expect(getEntityBinding(reused)).toBeNull();
+  });
+
   it('ignores a falsy value', () => {
     clearQuaternionPool();
 

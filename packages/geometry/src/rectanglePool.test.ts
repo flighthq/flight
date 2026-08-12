@@ -1,3 +1,4 @@
+import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/types/contract';
 
 import { acquireEmptyRectangle, acquireRectangle, clearRectanglePool, releaseRectangle } from './rectanglePool';
@@ -65,6 +66,16 @@ describe('clearRectanglePool', () => {
 });
 
 describe('releaseRectangle', () => {
+  it('detaches the previous owner binding before the rectangle is reused', () => {
+    const r = acquireRectangle();
+    attachEntityBinding(r, { owner: 'first' });
+    releaseRectangle(r);
+
+    const reused = acquireRectangle();
+    expect(reused).toBe(r);
+    expect(getEntityBinding(reused)).toBeNull();
+  });
+
   it('handles null safely', () => {
     expect(() => releaseRectangle(null as unknown as Rectangle)).not.toThrow();
   });

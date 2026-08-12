@@ -1,3 +1,4 @@
+import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/types/contract';
 
 import { acquireIdentityMatrix, acquireMatrix, clearMatrixPool, releaseMatrix } from './matrixPool';
@@ -63,6 +64,16 @@ describe('clearMatrixPool', () => {
 });
 
 describe('releaseMatrix', () => {
+  it('detaches the previous owner binding before the matrix is reused', () => {
+    const m = acquireMatrix();
+    attachEntityBinding(m, { owner: 'first' });
+    releaseMatrix(m);
+
+    const reused = acquireMatrix();
+    expect(reused).toBe(m);
+    expect(getEntityBinding(reused)).toBeNull();
+  });
+
   it('handles null safely', () => {
     expect(() => releaseMatrix(null as unknown as Matrix)).not.toThrow();
   });

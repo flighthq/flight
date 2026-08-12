@@ -6,9 +6,7 @@ basedOn: ./review.md
 
 # geometry — Assessment
 
-Sorts the gaps from `review.md` (authoritative, 92/100, 2026-07-13). The prior assessment's Recommended list is fully landed except the Approved guard item: the Euler-extraction fix, closest-point suite, `expandAabbBySphere` typing, look-rotation convention (fixed to standard per Decision, beyond the documented-only ask), predicate renames, and the hardening tests all shipped across the 2026-07-01→07-10 commits. What remains is a small correctness/consistency tail plus additive breadth on existing types.
-
-**Outstanding Approved work:** the 2026-07-03 guarded-pool-mode item (ledger below) is blessed but **not yet built** — no `enableGeometryPoolGuards` module exists in the tree. It is the first thing a worker pass should execute.
+Sorts the gaps from `review.md` (authoritative, 92/100, 2026-07-13). The prior assessment's Recommended list and the Approved guard item are fully landed: the Euler-extraction fix, closest-point suite, `expandAabbBySphere` typing, look-rotation convention (fixed to standard per Decision, beyond the documented-only ask), predicate renames, hardening tests, and guarded pool mode all shipped. What remains is a small correctness/consistency tail plus additive breadth on existing types.
 
 ## Recommended
 
@@ -36,5 +34,6 @@ Parked — each names why it is not sweep-safe.
 ## Approved
 
 - [2026-07-03 · charter session] Guarded pool mode (`enableGeometryPoolGuards`) — charter Decision 2026-07-03 (diagnostics)
+- [2026-08-12 · completed] Supersedes the 2026-07-03 entry: guarded pool mode is implemented.
 - [2026-07-22 · completed] `setPerspectiveMatrix4` evaluates the infinite-far limit explicitly, so
   source formats with an omitted far plane do not produce `Infinity / Infinity` NaNs.

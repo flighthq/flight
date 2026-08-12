@@ -1,6 +1,7 @@
 export * from './aabb';
 export * from './boundingSphere';
 export * from './capsule';
+export * from './enableGeometryPoolGuards';
 export * from './frustum';
 export * from './matrix';
 export * from './matrix3';
