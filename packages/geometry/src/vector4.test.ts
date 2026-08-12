@@ -112,6 +112,15 @@ describe('clampVector4', () => {
     clampVector4(max, createVector4(5, -2, 1, 10), createVector4(0, 0, 0, 0), max);
     expect(max).toMatchObject({ x: 3, y: 0, z: 1, w: 3 });
   });
+
+  it('covers low, middle, and high outcomes on every component', () => {
+    const out = createVector4();
+    clampVector4(out, createVector4(-1, 2, 5, -1), createVector4(0, 0, 0, 0), createVector4(3, 3, 3, 3));
+    expect(out).toMatchObject({ x: 0, y: 2, z: 3, w: 0 });
+
+    clampVector4(out, createVector4(1, 5, -1, 2), createVector4(0, 0, 0, 0), createVector4(3, 3, 3, 3));
+    expect(out).toMatchObject({ x: 1, y: 3, z: 0, w: 2 });
+  });
 });
 
 describe('cloneVector4', () => {
@@ -205,9 +214,20 @@ describe('divideVector4', () => {
     expect(out.z).toBe(0);
     expect(out.w).toBe(2);
   });
+
+  it('produces 0 for zero y and w divisors', () => {
+    const out = createVector4();
+    divideVector4(out, createVector4(6, 8, 9, 12), createVector4(2, 0, 3, 0));
+    expect(out).toMatchObject({ x: 3, y: 0, z: 3, w: 0 });
+  });
 });
 
 describe('equalsVector4', () => {
+  it('returns false when either vector is absent', () => {
+    expect(equalsVector4(createVector4(), null)).toBe(false);
+    expect(equalsVector4(undefined, createVector4())).toBe(false);
+  });
+
   it('returns true if vectors are equal', () => {
     const a = createVector4(1, 2, 3, 4);
     const b = createVector4(1, 2, 3, 4);
@@ -351,6 +371,12 @@ describe('maxVector4', () => {
     maxVector4(b, createVector4(1, 5, 2, 9), b);
     expect(b).toMatchObject({ x: 3, y: 5, z: 7, w: 9 });
   });
+
+  it('selects the complementary component outcomes', () => {
+    const out = createVector4();
+    maxVector4(out, createVector4(5, 1, 7, 2), createVector4(2, 3, 4, 9));
+    expect(out).toMatchObject({ x: 5, y: 3, z: 7, w: 9 });
+  });
 });
 
 describe('minVector4', () => {
@@ -371,6 +397,12 @@ describe('minVector4', () => {
     const b = createVector4(3, 2, 7, 4);
     minVector4(b, createVector4(1, 5, 2, 9), b);
     expect(b).toMatchObject({ x: 1, y: 2, z: 2, w: 4 });
+  });
+
+  it('selects the complementary component outcomes', () => {
+    const out = createVector4();
+    minVector4(out, createVector4(5, 1, 7, 2), createVector4(2, 3, 4, 9));
+    expect(out).toMatchObject({ x: 2, y: 1, z: 4, w: 2 });
   });
 });
 
