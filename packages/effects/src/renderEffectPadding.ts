@@ -1,3 +1,4 @@
+import { createKeyedTable, withRegistryTableEntry, withoutRegistryTableEntry } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type {
   Kind,
@@ -7,7 +8,7 @@ import type {
   RenderEffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
-import { RenderRegistry } from '@flighthq/types/contract';
+import { RegistryEntryState, RenderRegistry } from '@flighthq/types/contract';
 
 // Computes the footprint of one effect or a sequential effect chain. Spatial effects add their
 // directional footprints per side; pointwise effects register the zero resolver. An unregistered kind
@@ -29,19 +30,19 @@ export function explainRenderEffectPadding(
   effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
 ): RenderEffectPaddingExplanation {
   const list = Array.isArray(effects) ? effects : [effects];
-  const registry = getRenderStateRuntime(state).renderEffectPaddingResolverRegistry;
+  const entries = getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries;
   let bottom = 0;
   let left = 0;
   let right = 0;
   let top = 0;
   const missingKinds: Kind[] = [];
   for (const effect of list) {
-    const resolver = registry?.get(effect.kind);
-    if (resolver === undefined) {
+    const entry = entries?.get(effect.kind);
+    if (entry?.state !== RegistryEntryState.Bound) {
       if (!missingKinds.includes(effect.kind)) missingKinds.push(effect.kind);
       continue;
     }
-    const padding = resolver(effect);
+    const padding = entry.value(effect);
     bottom += sanitizePadding(padding.bottom);
     left += sanitizePadding(padding.left);
     right += sanitizePadding(padding.right);
@@ -85,8 +86,16 @@ export function registerRenderEffectPaddingResolver(
   resolver: RenderEffectPaddingResolver | null,
 ): void {
   const runtime = getRenderStateRuntime(state);
-  if (resolver === null) runtime.renderEffectPaddingResolverRegistry?.delete(kind);
-  else (runtime.renderEffectPaddingResolverRegistry ??= new Map()).set(kind, resolver);
+  const table = runtime.registries.effectPaddingResolvers;
+  if (resolver === null) {
+    if (table !== undefined) runtime.registries.effectPaddingResolvers = withoutRegistryTableEntry(table, kind);
+    return;
+  }
+  runtime.registries.effectPaddingResolvers = withRegistryTableEntry(
+    table ?? createKeyedTable('RenderEffectPaddingResolver', 'Zero'),
+    kind,
+    resolver,
+  );
 }
 
 function sanitizePadding(value: number): number {

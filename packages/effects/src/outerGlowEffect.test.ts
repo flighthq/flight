@@ -35,7 +35,7 @@ describe('registerOuterGlowEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerOuterGlowEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('OuterGlowEffect')).toBe(true);
-    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('OuterGlowEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

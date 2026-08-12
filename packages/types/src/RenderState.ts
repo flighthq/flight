@@ -4,6 +4,7 @@ import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
+import type { KeyedTable } from './RegistryTable';
 import type { Renderable } from './Renderable';
 import type { RenderEffectPaddingResolver } from './RenderEffectPadding';
 import type { Renderer } from './Renderer';
@@ -38,6 +39,12 @@ export interface RenderState extends Entity {
   renderTransform2D: Matrix | null;
   sceneGraphSyncPolicy: Scene3DGraphSyncPolicy;
   roundPixels: boolean;
+}
+
+// Pure registration policy shared by every render backend. Members remain optional when importing the
+// corresponding registrar is optional, so an unwired base state carries no table metadata.
+export interface RenderRegistries {
+  effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
 }
 
 // Package-private machinery for a RenderState entity. Lives in the runtime tier (not on the entity)
@@ -81,9 +88,7 @@ export interface RenderStateRuntime extends EntityRuntime {
         readonly signals: RenderRegistrySignals;
       })
     | null;
-  // Directional effect footprint policy is state-scoped like every other kind-keyed handler
-  // registry. Absent until the first explicit registration.
-  renderEffectPaddingResolverRegistry?: Map<Kind, RenderEffectPaddingResolver> | null;
+  registries: RenderRegistries;
   // Optional backend guard reached before a root walk. Backends use this to diagnose pipeline-policy
   // mistakes without adding their warning dependency to the substrate-independent render path.
   renderRootGuard: ((state: RenderState, root: Renderable) => void) | null;

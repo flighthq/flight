@@ -35,7 +35,9 @@ describe('registerContactShadowsEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerContactShadowsEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('ContactShadowsEffect')).toBe(true);
-    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('ContactShadowsEffect')).toBe(
+      true,
+    );
+    expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

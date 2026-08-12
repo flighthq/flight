@@ -6,7 +6,7 @@ import type { Material } from './Material';
 import type { Matrix } from './Matrix';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderState, RenderStateRuntime } from './RenderState';
+import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
 import type { SamplerLike } from './Sampler';
 import type { ShapeRasterizer } from './ShapeRasterizer';
@@ -35,7 +35,7 @@ export interface WgpuRenderState extends RenderState {
 
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
-export interface WgpuRenderRegistries {
+export interface WgpuRenderRegistries extends RenderRegistries {
   customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;

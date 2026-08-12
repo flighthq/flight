@@ -35,7 +35,7 @@ describe('registerDropShadowEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerDropShadowEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('DropShadowEffect')).toBe(true);
-    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('DropShadowEffect')).toBe(true);
+    expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

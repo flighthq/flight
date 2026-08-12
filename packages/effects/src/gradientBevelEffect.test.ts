@@ -46,7 +46,9 @@ describe('registerGradientBevelEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerGradientBevelEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('GradientBevelEffect')).toBe(true);
-    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('GradientBevelEffect')).toBe(
+      true,
+    );
+    expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

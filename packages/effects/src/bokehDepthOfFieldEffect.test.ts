@@ -36,7 +36,9 @@ describe('registerBokehDepthOfFieldEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerBokehDepthOfFieldEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).renderEffectPaddingResolverRegistry?.has('BokehDepthOfFieldEffect')).toBe(true);
-    expect(getRenderStateRuntime(other).renderEffectPaddingResolverRegistry).toBeNull();
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('BokehDepthOfFieldEffect')).toBe(
+      true,
+    );
+    expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });
