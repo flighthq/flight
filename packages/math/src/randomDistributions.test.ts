@@ -60,6 +60,9 @@ describe('randomExponential', () => {
     for (let i = 0; i < n; i++) sum += randomExponential(random, 2);
     expect(sum / n).toBeCloseTo(0.5, 0);
   });
+  it('substitutes epsilon when the random source returns zero', () => {
+    expect(randomExponential(() => 0)).toBe(-Math.log(Number.EPSILON));
+  });
   it('throws for rate <= 0', () => {
     expect(() => randomExponential(rng(), 0)).toThrow(RangeError);
     expect(() => randomExponential(rng(), -1)).toThrow(RangeError);
@@ -82,6 +85,10 @@ describe('randomGaussian', () => {
     const n = 2000;
     for (let i = 0; i < n; i++) sum += randomGaussian(random, 5, 1);
     expect(sum / n).toBeCloseTo(5, 0);
+  });
+  it('substitutes epsilon when the first random sample is zero', () => {
+    const samples = [0, 0.25];
+    expect(randomGaussian(() => samples.shift()!)).toBeCloseTo(0, 10);
   });
   it('is deterministic for the same seed', () => {
     const a = rng();
@@ -106,6 +113,12 @@ describe('randomGaussianPair', () => {
       sum += z0 + z1;
     }
     expect(sum / (n * 2)).toBeCloseTo(10, 0);
+  });
+  it('substitutes epsilon when the first random sample is zero', () => {
+    const samples = [0, 0.25];
+    const [z0, z1] = randomGaussianPair(() => samples.shift()!);
+    expect(z0).toBeCloseTo(0, 10);
+    expect(z1).toBeCloseTo(Math.sqrt(-2 * Math.log(Number.EPSILON)), 10);
   });
 });
 
@@ -290,6 +303,9 @@ describe('randomWeighted', () => {
     for (let i = 0; i < 20; i++) {
       expect(randomWeighted(random, [0, 10, 0])).toBe(1);
     }
+  });
+  it('falls back to the final bucket for an out-of-range random source', () => {
+    expect(randomWeighted(() => 1.1, [1, 2, 7])).toBe(2);
   });
   it('is deterministic for the same seed', () => {
     const a = rng();
