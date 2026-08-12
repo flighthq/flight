@@ -178,6 +178,34 @@ describe('mergeBoundingSphere', () => {
     expect(out.radius).toBeCloseTo(2, 5);
   });
 
+  it('if b contains a, result equals b', () => {
+    // The mirror of the case above. Each containment direction is written out separately in the
+    // source, so getting one right says nothing about the other.
+    const a = createBoundingSphere(1, 0, 0, 1);
+    const b = createBoundingSphere(0, 0, 0, 10);
+    const out = createBoundingSphere();
+    mergeBoundingSphere(out, a, b);
+    expect(out.center.x).toBeCloseTo(0, 5);
+    expect(out.radius).toBeCloseTo(10, 5);
+  });
+
+  it('an empty second sphere returns the first', () => {
+    const a = createBoundingSphere(3, 0, 0, 2);
+    const b = createBoundingSphere();
+    const out = createBoundingSphere();
+    mergeBoundingSphere(out, a, b);
+    expect(out.center.x).toBeCloseTo(3, 5);
+    expect(out.radius).toBeCloseTo(2, 5);
+  });
+
+  it('supports out === b', () => {
+    const a = createBoundingSphere(-1, 0, 0, 1);
+    const b = createBoundingSphere(1, 0, 0, 1);
+    mergeBoundingSphere(b, a, b);
+    expect(containsBoundingSpherePoint(b, createVector3(-2, 0, 0))).toBe(true);
+    expect(containsBoundingSpherePoint(b, createVector3(2, 0, 0))).toBe(true);
+  });
+
   it('supports out === a', () => {
     const a = createBoundingSphere(-1, 0, 0, 1);
     const b = createBoundingSphere(1, 0, 0, 1);
@@ -243,5 +271,16 @@ describe('transformBoundingSphereByMatrix4', () => {
     expect(s.center.x).toBeCloseTo(1, 6);
     expect(s.center.y).toBeCloseTo(5, 6);
     expect(s.radius).toBeCloseTo(2, 6);
+  });
+
+  it('leaves an empty sphere empty instead of scaling its negative radius', () => {
+    // The negative radius is a marker, not a length: multiplying it by the matrix scale would
+    // move it further from zero and, under a scale below 1, could carry it up past zero into a
+    // real sphere that was never there.
+    const empty = createBoundingSphere(0, 0, 0, -1);
+    const m = createMatrix4(3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1);
+    const out = createBoundingSphere();
+    transformBoundingSphereByMatrix4(out, empty, m);
+    expect(out.radius).toBe(-1);
   });
 });
