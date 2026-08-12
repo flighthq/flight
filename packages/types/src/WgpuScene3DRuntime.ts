@@ -212,10 +212,15 @@ export interface WgpuScene3DRuntime {
 // buffer + its element format and count, and the geometry `version` the buffers were uploaded at (so a
 // bumped version forces a re-upload). Cached in the upload cache keyed by the geometry entity, the
 // per-state parallel of MeshGeometryRuntime.webgpuData.
+//
+// Non-indexed geometry is a first-class case, not an absence: `indexBuffer` and `indexFormat` are both
+// null and `indexCount` carries the VERTEX count, so a caller branches on `indexBuffer` and issues a
+// non-indexed draw over the same count. `indexFormat` is null rather than a default value because no
+// format applies — a stand-in would read as a fact about a buffer that does not exist.
 export interface WgpuMeshUpload {
   indexBuffer: GPUBuffer | null;
   indexCount: number;
-  indexFormat: GPUIndexFormat;
+  indexFormat: GPUIndexFormat | null;
   skinBindUploaded?: boolean;
   version: number;
   vertexBuffer: GPUBuffer;
