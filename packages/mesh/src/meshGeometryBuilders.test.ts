@@ -442,6 +442,38 @@ describe('spherical UV seam', () => {
     }
   });
 
+  // A pole vertex sits on the Y axis, where every meridian meets, so atan2 hands it an arbitrary
+  // longitude unrelated to the face it belongs to — u = 0.5 while its face-mates sit near 1.0 and 1.25,
+  // stretching the face across half the texture. Having no longitude of its own to preserve, it takes
+  // the average of its face-mates and therefore must lie BETWEEN them.
+  it.each([
+    ['octahedron', () => createOctahedronMeshGeometry()],
+    ['icosphere', () => createIcosphereMeshGeometry()],
+  ])('places a %s pole vertex between its face-mates in longitude', (_name, build) => {
+    const geometry = build();
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+    let polesSeen = 0;
+
+    for (let t = 0; t < getMeshGeometryTriangleCount(geometry); t++) {
+      if (!getMeshGeometryTriangleVertexIndices(corner, geometry, t)) continue;
+      const indices = [corner.i0, corner.i1, corner.i2];
+      const horizontalRadius = indices.map((i) =>
+        Math.hypot(geometry.vertices[i * floatsPerVertex], geometry.vertices[i * floatsPerVertex + 2]),
+      );
+      const poleSlot = horizontalRadius.findIndex((r) => r <= 1e-6);
+      if (poleSlot < 0) continue;
+      polesSeen++;
+      const us = indices.map((i) => geometry.vertices[i * floatsPerVertex + 10]);
+      const mates = us.filter((_, k) => k !== poleSlot);
+      expect(us[poleSlot]).toBeGreaterThanOrEqual(Math.min(...mates));
+      expect(us[poleSlot]).toBeLessThanOrEqual(Math.max(...mates));
+    }
+
+    // The fixture has to contain pole faces or the assertions above never run.
+    expect(polesSeen).toBeGreaterThan(0);
+  });
+
   // A corrected face legitimately carries u above 1: no parameterisation confined to 0..1 can express
   // a face crossing the seam continuously. Sampling wraps it, so this is the intended state, not drift.
   it('lifts a seam face past 1 rather than clamping it into range', () => {
