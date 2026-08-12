@@ -333,20 +333,24 @@ export function createIcosphereMeshGeometry(radius: number = 0.5, subdivisions: 
   const uvs: number[] = [];
   const faceIndices: number[] = [];
 
-  // Emit unique vertices with spherical UVs. Since the seam is complex for an icosphere,
-  // we emit independent vertices per face (non-indexed, then buildCanonicalMeshGeometry).
+  // Emit unique vertices with spherical UVs. Independent vertices per face (non-indexed, then
+  // buildCanonicalMeshGeometry) are what let a seam vertex carry a different u on each face it touches;
+  // correctSeamU then chooses those values, which is the half that makes the seam actually work.
   for (const [a, b, c] of faces) {
-    for (const vi of [a, b, c]) {
-      const v = verts[vi];
+    const corner: [number, number, number] = [a, b, c];
+    const seamU = correctSeamU([
+      sphericalU(verts[a][0], verts[a][2]),
+      sphericalU(verts[b][0], verts[b][2]),
+      sphericalU(verts[c][0], verts[c][2]),
+    ]);
+    for (let k = 0; k < 3; k++) {
+      const v = verts[corner[k]];
       const nx = v[0],
         ny = v[1],
         nz = v[2];
       positions.push(radius * nx, radius * ny, radius * nz);
       normals.push(nx, ny, nz);
-      // Spherical UV: u=longitude (0..1), v=latitude (0..1, 0=top).
-      const u = 0.5 + Math.atan2(nz, nx) / (Math.PI * 2);
-      const sv = 0.5 - Math.asin(Math.max(-1, Math.min(1, ny))) / Math.PI;
-      uvs.push(u, sv);
+      uvs.push(seamU[k], sphericalV(ny));
     }
   }
   for (let i = 0; i < positions.length / 3; i++) {
@@ -466,16 +470,20 @@ export function createPolyhedronMeshGeometry(
   const uvs: number[] = [];
   const flatIndices: number[] = [];
   for (const [a, b, c] of faces) {
-    for (const vi of [a, b, c]) {
-      const v = verts[vi];
+    const corner: [number, number, number] = [a, b, c];
+    const seamU = correctSeamU([
+      sphericalU(verts[a][0], verts[a][2]),
+      sphericalU(verts[b][0], verts[b][2]),
+      sphericalU(verts[c][0], verts[c][2]),
+    ]);
+    for (let k = 0; k < 3; k++) {
+      const v = verts[corner[k]];
       const nx = v[0],
         ny = v[1],
         nz = v[2];
       positions.push(radius * nx, radius * ny, radius * nz);
       normals.push(nx, ny, nz);
-      const u = 0.5 + Math.atan2(nz, nx) / (Math.PI * 2);
-      const sv = 0.5 - Math.asin(Math.max(-1, Math.min(1, ny))) / Math.PI;
-      uvs.push(u, sv);
+      uvs.push(seamU[k], sphericalV(ny));
     }
   }
   for (let i = 0; i < positions.length / 3; i++) flatIndices.push(i);
@@ -791,6 +799,32 @@ function normalizeMeshCount(value: number, min: number, max: number = Number.POS
 // Interleaves separate position/normal/uv0 arrays into the canonical 12-float record, allocates
 // the MeshGeometry (indices auto-promote past 65k), then fills tangents from the UV gradient and
 // the cached local bounds. The single finalize path every builder funnels through.
+// Spherical UV for one direction on the unit sphere: u is longitude in 0..1, v is latitude with 0 at
+// the top. Shared by every builder that projects onto a sphere so the two call sites cannot drift.
+function sphericalU(nx: number, nz: number): number {
+  return 0.5 + Math.atan2(nz, nx) / (Math.PI * 2);
+}
+
+function sphericalV(ny: number): number {
+  return 0.5 - Math.asin(Math.max(-1, Math.min(1, ny))) / Math.PI;
+}
+
+// Repairs a face that straddles the longitude seam. Longitude wraps at u = 0/1, so a face with corners
+// either side gets values like 0.99 and 0.01 and interpolates BACKWARDS across the whole texture — the
+// entire map crushed into one triangle. Lifting the low corners past 1 makes the face interpolate
+// forward through the seam instead.
+//
+// Emitting per-face vertices is what makes this possible (a shared vertex could only carry one u), but
+// it is not sufficient on its own: the values still have to be chosen, which is the half that was
+// missing. A seam face therefore carries u > 1 BY DESIGN — that is what a wrapped parameterisation
+// requires, and no representation confined to 0..1 can express a face crossing the seam continuously.
+function correctSeamU(u: readonly [number, number, number]): [number, number, number] {
+  const min = Math.min(u[0], u[1], u[2]);
+  const max = Math.max(u[0], u[1], u[2]);
+  if (max - min <= 0.5) return [u[0], u[1], u[2]];
+  return [u[0] < 0.5 ? u[0] + 1 : u[0], u[1] < 0.5 ? u[1] + 1 : u[1], u[2] < 0.5 ? u[2] + 1 : u[2]];
+}
+
 function buildCanonicalMeshGeometry(
   positions: readonly number[],
   normals: readonly number[],
