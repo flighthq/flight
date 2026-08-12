@@ -142,6 +142,28 @@ describe('registerSkeleton2DDrawOrderAnimationBinder', () => {
     expect(seen).toEqual([]);
   });
 
+  // The count is min(components, nodes.length) and only the nodes-are-fewer side was reachable from the
+  // tests above. This is the other side: a clip authored against a rig with fewer slots than the one it is
+  // played on. The extra nodes get no entry at all, which is the right answer rather than an oversight —
+  // an ordering that never mentions a node has no opinion about where it goes, and `applyNodeOrderList`
+  // leaves anything absent from the list where it already was.
+  it('orders only the slots the track states, leaving later nodes out of the list entirely', () => {
+    const { list, nodes, parent } = rig(3);
+
+    bind(nodes, list, [0], [1, 0], 2, 'Step', 0);
+
+    expect(list.entryCount).toBe(2);
+    expect(list.nodes[0]).toBe(nodes[0]);
+    expect(list.nodes[1]).toBe(nodes[1]);
+
+    applyNodeOrderList(parent, list);
+
+    // The two stated slots swapped; the third node was never named and kept its place at the end.
+    expect(getNodeChildAt(parent, 0)).toBe(nodes[1]);
+    expect(getNodeChildAt(parent, 1)).toBe(nodes[0]);
+    expect(getNodeChildAt(parent, 2)).toBe(nodes[2]);
+  });
+
   it('skips a slot that draws nothing rather than entering a placeholder', () => {
     const list = createNodeOrderList();
     const parent = createNode(TEST_NODE_KIND);
