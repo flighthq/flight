@@ -203,7 +203,6 @@ export function drawWgpuMeshSubset(
   if (subset.indexCount === 0) return;
 
   const upload = ensureWgpuMeshUpload(state, geometry, scene.activeMeshPipeline.skinned);
-  if (upload === null || upload.indexBuffer === null) return;
 
   const activePipeline = scene.activeMeshPipeline;
   const jointMatrices = proxy.jointMatrices ?? null;
@@ -227,8 +226,14 @@ export function drawWgpuMeshSubset(
 
   pass.setBindGroup(1, boundDrawGroup, _dynamicOffsets);
   pass.setVertexBuffer(0, upload.vertexBuffer);
-  pass.setIndexBuffer(upload.indexBuffer, upload.indexFormat);
-  pass.drawIndexed(subset.indexCount, 1, subset.indexOffset, 0, 0);
+  // Non-indexed geometry draws the vertex range directly, matching glMeshProgram's drawElements /
+  // drawArrays split. The subset's indexCount/indexOffset address vertices in that case.
+  if (upload.indexBuffer === null) {
+    pass.draw(subset.indexCount, 1, subset.indexOffset, 0);
+  } else {
+    pass.setIndexBuffer(upload.indexBuffer, upload.indexFormat!);
+    pass.drawIndexed(subset.indexCount, 1, subset.indexOffset, 0, 0);
+  }
 }
 
 // Resolves the shared Frame bind group, creating it from the shared Frame layout + Frame buffer on
