@@ -3,6 +3,7 @@ import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentUnsupportedGuard,
   Renderable,
+  RenderRootGuard,
   RenderState,
   RenderStateRuntime,
 } from '@flighthq/types/contract';
@@ -44,7 +45,6 @@ export function createRenderStateRuntime(): RenderStateRuntime {
     renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
     strokeTessellator: createSlotTable('StrokeTessellator', 'Rasterize'),
   };
-  runtime.renderRootGuard = null;
   runtime.rendererMapId = 0;
   runtime.tempStack = [];
   return runtime;
@@ -63,6 +63,11 @@ export function destroyRenderState(state: RenderState): void {
 
 export function getColorAdjustmentUnsupportedGuard(state: RenderState): ColorAdjustmentUnsupportedGuard | null {
   const entry = getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard?.entry;
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+}
+
+export function getRenderRootGuard(state: RenderState): RenderRootGuard | null {
+  const entry = getRenderStateRuntime(state).registries.renderRootGuard?.entry;
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 

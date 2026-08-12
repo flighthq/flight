@@ -24,7 +24,7 @@ import { BlendMode, RegistryEntryState, RenderRegistry } from '@flighthq/types/c
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyMaterial } from './renderMaterial';
-import { getRenderStateRuntime } from './renderState';
+import { getRenderRootGuard, getRenderStateRuntime } from './renderState';
 import { updateRenderProxy2DTransform } from './renderTransform2d';
 
 type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) => void;
@@ -229,7 +229,7 @@ function resolveRenderProxyRenderer(state: RenderState, kind: string) {
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
 export function walkNode(state: RenderState, root: Renderable, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
-  runtime.renderRootGuard?.(state, root);
+  getRenderRootGuard(state)?.(state, root);
   ++runtime.currentFrameId;
 
   const tempStack = runtime.tempStack;

@@ -10,6 +10,7 @@ import {
   enableColorAdjustmentGuards,
   enableColorAdjustments,
   getColorAdjustmentUnsupportedGuard,
+  getRenderRootGuard,
   getRenderStateRuntime,
   prepareScene2DRender,
   registerRenderer,
@@ -17,6 +18,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   RenderEffectPaddingResolver,
+  RenderRootGuard,
   RenderState,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
@@ -139,6 +141,7 @@ describe('createWgpuOffscreenRenderState', () => {
       resolveFlush: vi.fn(() => null),
     };
     const colorAdjustmentFeatureGuard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
+    const renderRootGuard: RenderRootGuard = vi.fn();
     registerRenderer(screen, 'acme.Node', renderer);
     registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
@@ -155,6 +158,12 @@ describe('createWgpuOffscreenRenderState', () => {
       entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeatureGuard },
       onMiss: 'Disabled',
       registry: 'WgpuColorAdjustmentFeatureGuard',
+      shape: 'slot',
+    };
+    getWgpuRenderStateRuntime(screen).registries.renderRootGuard = {
+      entry: { state: RegistryEntryState.Bound, value: renderRootGuard },
+      onMiss: 'Disabled',
+      registry: 'RenderRootGuard',
       shape: 'slot',
     };
     getWgpuRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
@@ -203,6 +212,13 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(getColorAdjustmentUnsupportedGuard(screen)).toBeNull();
     expect(offscreenRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
     expect(getColorAdjustmentUnsupportedGuard(offscreen)).not.toBeNull();
+    expect(offscreenRuntime.registries.renderRootGuard).toBe(screenRuntime.registries.renderRootGuard);
+    expect(getRenderRootGuard(offscreen)).toBe(renderRootGuard);
+    const sharedRenderRootGuard = offscreenRuntime.registries.renderRootGuard;
+    screenRuntime.registries.renderRootGuard = undefined;
+    expect(getRenderRootGuard(screen)).toBeNull();
+    expect(offscreenRuntime.registries.renderRootGuard).toBe(sharedRenderRootGuard);
+    expect(getRenderRootGuard(offscreen)).toBe(renderRootGuard);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
     );

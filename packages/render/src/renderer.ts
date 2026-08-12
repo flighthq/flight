@@ -44,6 +44,7 @@ export function copyRenderStateRegistrations(target: RenderState, source: Render
   targetRuntime.registries.colorAdjustments = sourceRuntime.registries.colorAdjustments;
   targetRuntime.registries.colorAdjustmentUnsupportedGuard = sourceRuntime.registries.colorAdjustmentUnsupportedGuard;
   targetRuntime.registries.effectPaddingResolvers = sourceRuntime.registries.effectPaddingResolvers;
+  targetRuntime.registries.renderRootGuard = sourceRuntime.registries.renderRootGuard;
   // The shape-command set is base policy every backend replays through, so a pipeline that inherits
   // the renderers must inherit the commands too. Without it an offscreen state resolves no handler for
   // any command in a shape's stream and bakes an empty target.
