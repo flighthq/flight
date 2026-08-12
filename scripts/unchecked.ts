@@ -270,12 +270,20 @@ async function report(packageName: string, selectors: readonly string[], asJson:
   }
 
   const harness: Harness = { packageName, pool: baseline.pool };
+  // One pool for the entire run, not one per file per tier. Cold start is the dominant remaining cost, and
+  // a worker is subject-agnostic, so every file after the first reuses servers that are already warm.
+  const widest = runnable.reduce((most, file) => Math.max(most, file.reachable.length), 0);
+  const pool = createMutantPool(join(repoRoot, 'packages', packageName), Math.min(workerCount(), widest));
   const files: UncheckedFile[] = [];
-  for (const file of runnable) {
-    const outcomes = await runFileMutants(harness, file.path, file.reachable, asJson);
-    const survivors = outcomes.filter((outcome) => outcome.verdict === 'survived');
-    const unreached = outcomes.filter((outcome) => outcome.verdict === 'unreached').length;
-    files.push({ path: file.path, survivors, total: file.mutants.length, unreached });
+  try {
+    for (const file of runnable) {
+      const outcomes = await runFileMutants(harness, pool, file.path, file.reachable, asJson);
+      const survivors = outcomes.filter((outcome) => outcome.verdict === 'survived');
+      const unreached = outcomes.filter((outcome) => outcome.verdict === 'unreached').length;
+      files.push({ path: file.path, survivors, total: file.mutants.length, unreached });
+    }
+  } finally {
+    pool.close();
   }
 
   if (asJson) {
@@ -332,6 +340,7 @@ function printReport(packageName: string, files: readonly UncheckedFile[], total
 // interesting set, while making sure nothing is reported as unkilled that another test in the package kills.
 async function runFileMutants(
   harness: Readonly<Harness>,
+  pool: MutantPool,
   sourcePath: string,
   mutants: readonly Mutant[],
   quiet: boolean,
@@ -339,7 +348,7 @@ async function runFileMutants(
   const siblingTest = join(repoRoot, getSiblingTestPath(sourcePath));
   if (!quiet) process.stdout.write(pc.dim(`  ${sourcePath} · ${mutants.length} mutants `));
 
-  const siblingOutcomes = await runTier(harness, sourcePath, mutants, [siblingTest], quiet, 'sibling');
+  const siblingOutcomes = await runTier(harness, pool, sourcePath, mutants, [siblingTest], quiet, 'sibling');
 
   const escalated = siblingOutcomes.filter((outcome) => outcome.verdict === 'survived').map((o) => o.mutant);
   if (escalated.length === 0) {
@@ -348,7 +357,7 @@ async function runFileMutants(
   }
   if (!quiet) process.stdout.write(pc.dim(` escalating ${escalated.length} `));
 
-  const packageOutcomes = await runTier(harness, sourcePath, escalated, [], quiet, 'package');
+  const packageOutcomes = await runTier(harness, pool, sourcePath, escalated, [], quiet, 'package');
   if (!quiet) console.log();
 
   const confirmed = new Map(packageOutcomes.map((outcome) => [outcome.mutant, outcome]));
@@ -363,6 +372,7 @@ async function runFileMutants(
 // verdict, so the failure mode of the optimization is latency, never a corrupted finding.
 async function runTier(
   harness: Readonly<Harness>,
+  pool: MutantPool,
   sourcePath: string,
   mutants: readonly Mutant[],
   targets: readonly string[],
@@ -371,11 +381,10 @@ async function runTier(
 ): Promise<MutantOutcome[]> {
   const packageRoot = join(repoRoot, 'packages', harness.packageName);
   const subject = join(repoRoot, sourcePath);
-  const pool = createMutantPool(packageRoot, subject, Math.min(workerCount(), mutants.length));
   const fallbacks: Mutant[] = [];
 
   const outcomes = await mapConcurrent(mutants, pool.size, async (mutant) => {
-    const run = await pool.run(mutant, targets);
+    const run = await pool.run(subject, mutant, targets);
     if (run === null) {
       fallbacks.push(mutant);
       return null;
@@ -383,7 +392,6 @@ async function runTier(
     if (!quiet) process.stdout.write(progressMark(run));
     return { mutant, scope, verdict: readMutantVerdict(run) };
   });
-  pool.close();
 
   const settled = outcomes.filter((outcome): outcome is MutantOutcome => outcome !== null);
   if (fallbacks.length === 0) return settled;
@@ -457,28 +465,21 @@ function runMutant(
  * pool that guessed `killed` for its own failures would report the exact false all-clear this tool is built
  * to avoid, and it would be indistinguishable from a real kill in the output.
  */
-function createMutantPool(packageRoot: string, subject: string, size: number) {
+function createMutantPool(packageRoot: string, size: number): MutantPool {
   const idle: MutantWorker[] = [];
-  let live = 0;
   let closed = false;
-
-  const acquire = (): MutantWorker => {
-    const existing = idle.pop();
-    if (existing !== undefined) return existing;
-    live += 1;
-    return startMutantWorker(packageRoot, subject);
-  };
 
   return {
     close(): void {
       closed = true;
       for (const worker of idle.splice(0)) worker.kill();
     },
-    async run(mutant: Readonly<Mutant>, targets: readonly string[]): Promise<MutantRun | null> {
+    async run(subject: string, mutant: Readonly<Mutant>, targets: readonly string[]): Promise<MutantRun | null> {
       if (closed) return null;
-      const worker = acquire();
+      const worker = idle.pop() ?? startMutantWorker(packageRoot);
       const run = await worker.request({
         end: mutant.end,
+        filePath: subject,
         id: worker.nextId(),
         replacement: mutant.replacement,
         start: mutant.start,
@@ -486,13 +487,11 @@ function createMutantPool(packageRoot: string, subject: string, size: number) {
       });
       // A worker that failed a request is not reused: whatever state took it down is still in it, and the
       // next mutant's verdict would be about that rather than about the tests.
-      if (run === null) {
+      if (run === null || closed) {
         worker.kill();
-        live -= 1;
-        return null;
+        return run;
       }
-      if (closed) worker.kill();
-      else idle.push(worker);
+      idle.push(worker);
       return run;
     },
     get size(): number {
@@ -501,14 +500,20 @@ function createMutantPool(packageRoot: string, subject: string, size: number) {
   };
 }
 
+interface MutantPool {
+  close(): void;
+  run(subject: string, mutant: Readonly<Mutant>, targets: readonly string[]): Promise<MutantRun | null>;
+  readonly size: number;
+}
+
 interface MutantWorker {
   kill(): void;
   nextId(): number;
   request(payload: MutantRequest): Promise<MutantRun | null>;
 }
 
-function startMutantWorker(packageRoot: string, subject: string): MutantWorker {
-  const child = spawn(process.execPath, [tsxBinary, mutantWorkerPath, packageRoot, subject], {
+function startMutantWorker(packageRoot: string): MutantWorker {
+  const child = spawn(process.execPath, [tsxBinary, mutantWorkerPath, packageRoot], {
     cwd: packageRoot,
     env: { ...process.env },
     stdio: ['pipe', 'pipe', 'pipe'],

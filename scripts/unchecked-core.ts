@@ -69,13 +69,16 @@ export interface UncheckedFile {
   unreached: number;
 }
 
-/** One mutant handed to a warm worker: the splice, and the test files to run it against. */
+/** One mutant handed to a warm worker: the splice, the file it applies to, and the tests to run it against. */
 export interface MutantRequest {
   end: number;
+  /** Absolute path of the source file being mutated. Per request, so one worker serves a whole package. */
+  filePath: string;
   /** Correlates the response, so a worker's replies cannot be misattributed after a restart. */
   id: number;
   replacement: string;
   start: number;
+  /** Absolute test file paths, or empty for the package's own include glob (the escalation tier). */
   targets: readonly string[];
 }
 
