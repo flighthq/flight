@@ -103,6 +103,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
     colorAdjustmentFeature: screenRuntime.registries.colorAdjustmentFeature,
     colorAdjustmentFeatureGuard: screenRuntime.registries.colorAdjustmentFeatureGuard,
     colorAdjustments: screenRuntime.registries.colorAdjustments,
+    colorAdjustmentUnsupportedGuard: screenRuntime.registries.colorAdjustmentUnsupportedGuard,
     compressedTextureDecoder: screenRuntime.registries.compressedTextureDecoder,
     compressedTextureUpload: screenRuntime.registries.compressedTextureUpload,
     customMaterialShaders: screenRuntime.registries.customMaterialShaders,

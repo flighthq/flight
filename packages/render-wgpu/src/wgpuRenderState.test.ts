@@ -7,7 +7,9 @@ import {
 } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
+  enableColorAdjustmentGuards,
   enableColorAdjustments,
+  getColorAdjustmentUnsupportedGuard,
   getRenderStateRuntime,
   prepareScene2DRender,
   registerRenderer,
@@ -141,6 +143,7 @@ describe('createWgpuOffscreenRenderState', () => {
     registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
     enableColorAdjustments(screen);
+    enableColorAdjustmentGuards(screen);
     registerPaddingResolver(screen, 'acme.Effect', paddingResolver);
     getWgpuRenderStateRuntime(screen).registries.colorAdjustmentFeature = {
       entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
@@ -191,6 +194,15 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(sharedColorFeature);
     expect(getWgpuColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
     expect(offscreenRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
+    expect(offscreenRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(
+      screenRuntime.registries.colorAdjustmentUnsupportedGuard,
+    );
+    expect(getColorAdjustmentUnsupportedGuard(offscreen)).not.toBeNull();
+    const sharedUnsupportedGuard = offscreenRuntime.registries.colorAdjustmentUnsupportedGuard;
+    screenRuntime.registries.colorAdjustmentUnsupportedGuard = undefined;
+    expect(getColorAdjustmentUnsupportedGuard(screen)).toBeNull();
+    expect(offscreenRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
+    expect(getColorAdjustmentUnsupportedGuard(offscreen)).not.toBeNull();
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
     );

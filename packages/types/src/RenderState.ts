@@ -48,6 +48,9 @@ export interface RenderRegistries {
   // Opt-in color-adjustment accumulation. The empty slot keeps adjustment/material math out of the
   // base walk; a bound pure function is safe to snapshot across derived pipelines.
   colorAdjustments?: SlotTable<(state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void>;
+  // Optional diagnostic policy for operations the inline color-adjustment resolver cannot represent.
+  // Binding this callback reports the omission but never enables accumulation or backend realization.
+  colorAdjustmentUnsupportedGuard?: SlotTable<ColorAdjustmentUnsupportedGuard>;
   effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
   renderers: KeyedTable<Renderer>;
   // Opt-in closed-ring/self-intersection stroke kernel. The empty slot means the compact mesh lane
@@ -57,16 +60,14 @@ export interface RenderRegistries {
   >;
 }
 
+export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: Renderable) => void;
+
 // Package-private machinery for a RenderState entity. Lives in the runtime tier (not on the entity)
 // so the public RenderState surface stays minimal; the render path resolves it via
 // getRenderStateRuntime. The four backend render-state runtimes extend this base, so the frame
 // counter, proxy maps, and renderer registry are shared across every backend. Defined in
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
-  // Shakeable diagnostics seam (default `null` → no cost): a non-matrix operation that neither the
-  // compact scale/bias path nor the full 4×5 matrix path can represent reaches this slot.
-  // `enableColorAdjustmentGuards` installs a handler that warns through @flighthq/log.
-  colorAdjustmentUnsupportedGuard: ((state: RenderState, source: Renderable) => void) | null;
   currentFrameId: number;
   renderAdaptHook: ((state: RenderState, source: Renderable, data: RenderProxy2D) => void) | null;
   renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;

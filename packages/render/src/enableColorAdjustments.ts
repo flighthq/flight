@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
-import { getRenderStateRuntime } from './renderState';
+import { getColorAdjustmentUnsupportedGuard, getRenderStateRuntime } from './renderState';
 
 // Returns whether color-adjustment accumulation is installed on `state`.
 export function areColorAdjustmentsEnabled(state: RenderState): boolean {
@@ -69,7 +69,7 @@ function updateRenderProxyColorScaleBias(state: RenderState, data: RenderProxy, 
     );
   }
   if (runtime.colorAdjustmentsUnsupported) {
-    getRenderStateRuntime(state).colorAdjustmentUnsupportedGuard?.(state, data.source as Renderable);
+    getColorAdjustmentUnsupportedGuard(state)?.(state, data.source as Renderable);
   }
 }
 

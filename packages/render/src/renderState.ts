@@ -1,7 +1,12 @@
 import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { Renderable, RenderState, RenderStateRuntime } from '@flighthq/types/contract';
-import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  ColorAdjustmentUnsupportedGuard,
+  Renderable,
+  RenderState,
+  RenderStateRuntime,
+} from '@flighthq/types/contract';
+import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   const state = createEntity({
@@ -29,7 +34,6 @@ export function createRenderState(obj?: Partial<RenderState>): RenderState {
 // intentionally mutable (not Readonly).
 export function createRenderStateRuntime(): RenderStateRuntime {
   const runtime = createEntityRuntime() as RenderStateRuntime;
-  runtime.colorAdjustmentUnsupportedGuard = null;
   runtime.currentFrameId = 0;
   runtime.renderAdaptHook = null;
   runtime.renderProxyAdapterMap = new WeakMap();
@@ -55,6 +59,11 @@ export function destroyRenderState(state: RenderState): void {
   runtime.registryMiss = null;
   runtime.registries.effectPaddingResolvers = undefined;
   runtime.tempStack.length = 0;
+}
+
+export function getColorAdjustmentUnsupportedGuard(state: RenderState): ColorAdjustmentUnsupportedGuard | null {
+  const entry = getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard?.entry;
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Resolves the package-private machinery runtime attached to a RenderState. Mutable by design: the
