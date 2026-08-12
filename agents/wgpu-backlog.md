@@ -114,6 +114,62 @@ exist there by construction. This is WGPU-only and structural, not a parity gap.
   render-texture resize after an earlier sample, invalidates recorded commands before submit.
   **Escape: mode E** — tests assert new data and version land, never that old resources survive to submit.
 
+### Wrong pixels reach the screen
+
+- **Retained 2D render cache is cleared and submitted transparent on the clean path.**
+  `refreshWgpuRenderCache` calls `beginWgpuRenderPass` **before** `prepareScene2DRender`, and the pass
+  defaults colour `loadOp` to clear. When `requiresInvalidation` reports clean and the target size is
+  unchanged, it skips `renderWgpuScene2D` and returns `false` — but the pass has already cleared, so a
+  **transparent target is submitted in place of the retained cached content**. Can produce a visible
+  flash. GL explicitly begins with `preserveColor`/`preserveDepth`, so retained pixels survive its clean
+  path. **Escape: modes B and F together** — the test asserts only `false`/no-rebake, never the pass
+  `loadOp` or the retained pixels.
+- **Empty clip rectangles leak the origin pixel.** `applyWgpuScissorRect` clamps degenerate width/height
+  to 1, and both `push`/`popWgpuClipRectangle` use `setScissorRect(0,0,1,1)` for an empty intersection,
+  because WGPU requires nonzero scissor dimensions. That draws one pixel where **all** fragments should be
+  clipped; GL preserves zero width/height and correctly draws none. Needs an explicit
+  empty-clip draw-suppression mechanism, not a fake nonzero rect.
+  **Escape: mode A** — `render-wgpu`'s own `wgpuScissor.test` *expects* `[0,0,1,1]` as correct, and
+  `scene2d-wgpu`'s clip tests never exercise an empty intersection at all.
+- **A full colour matrix is silently dropped on shape meshes.** `drawGlShapeMeshes` delegates tessellated
+  solid fills to the registered colour-adjustment fold for **either** `colorScaleBias` or `colorMatrix`;
+  `drawWgpuShapeMeshes` delegates only when `colorMatrix` is null and `colorScaleBias` is non-null, so a
+  full matrix falls through to the lean untinted pipeline. **WGPU quad batches do support matrix
+  adjustment**, so the same node intent changes behaviour by shape-rendering path, not merely by backend.
+  An internal comment calls it outside the bounded fold, but no sentinel or guard reaches callers.
+  **Escape: mode A** — the existing test pins zero colour-adjustment uniforms as correct.
+- **Detached rotated cache roots get oversized or misplaced targets.** `refreshGlRenderCache` uses
+  `computeNodeRootLocalBoundsRectangle`, whose contract explicitly differs from the generic
+  `computeNodeBoundsRectangle(out, root, root)` — for a detached rotated root the generic helper takes its
+  world-AABB branch and cannot recover tight root-local bounds once the root transform is cancelled.
+  `refreshWgpuRenderCache` still uses the generic call. Canvas shares the older call too; the isolated
+  WGPU gap is the one this sweep establishes. **Escape:** WGPU cache tests use only unrotated roots.
+
+### Registrar seams missing while the capability exists
+
+- **`ExtendedPbrMaterial` has no WGPU registrar or renderer.** GL exports
+  `registerGlExtendedPbrMaterial` plus a renderer and extension registry; WGPU exports neither and has no
+  renderer for `ExtendedPbrMaterialKind`, so **imported glTF materials promoted to that substrate-agnostic
+  kind resolve no WGPU renderer and are silently skipped.**
+  ★ **The shader-side capability already exists** — the WGPU PBR prelude and pipeline already contain the
+  clearcoat / sheen / anisotropy / iridescence / specular / subsurface / transmission flags and lobes, and
+  the standard renderer simply hardcodes them all false. Only the realization seam is absent.
+  Same shape as the `CustomShaderEffect` gap: **document-or-implement, silent absence is neither**, and the
+  same `reachability:check` blind spot means no automated gate sees it.
+
+### Diagnostics absent on one backend
+
+- **No deform guard.** GL's opt-in guard catches morphs drawn before `prepareScene3DMorph` and skins drawn
+  before `prepareScene3DSkinning`. WGPU has no equivalent — **and additionally treats a skinned mesh as
+  rigid when `registerWgpuGpuSkinning` was omitted**, silently uploading and drawing the undeformed layout
+  with no warning.
+- **No colour-space guard.** GL's guard catches linear scene radiance drawn straight to canvas without an
+  sRGB present. WGPU calls `declareWgpuRenderTargetColorSpace(state,'linear')` and **silently ignores a
+  false return** when there is no target.
+
+Both are the diagnostics-inversion rule implemented on one backend only, and no cross-backend gate sees an
+absent module.
+
 ### Correctness gaps against the GL sibling
 
 - **Pipelines always assume triangle-list topology.** Material pipelines are created before geometry is
