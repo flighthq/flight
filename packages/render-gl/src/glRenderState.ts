@@ -10,6 +10,7 @@ import {
 } from '@flighthq/render/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
+  GlColorAdjustmentMaterialFeatureGuard,
   GlRenderOptions,
   GlRenderState,
   GlRenderStateRuntime,
@@ -26,13 +27,13 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   const sourceRuntime = getGlRenderStateRuntime(source);
   target.applyBlendMode = source.applyBlendMode;
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
-  targetRuntime.glColorAdjustmentMaterialFeatureGuard = sourceRuntime.glColorAdjustmentMaterialFeatureGuard;
   targetRuntime.materialBitmapShaderMap =
     sourceRuntime.materialBitmapShaderMap === undefined ? undefined : new Map(sourceRuntime.materialBitmapShaderMap);
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
     blendRealizations: sourceRuntime.registries.blendRealizations,
     colorAdjustmentFeature: sourceRuntime.registries.colorAdjustmentFeature,
+    colorAdjustmentFeatureGuard: sourceRuntime.registries.colorAdjustmentFeatureGuard,
     compressedTextureDecoder: sourceRuntime.registries.compressedTextureDecoder,
     compressedTextureUpload: sourceRuntime.registries.compressedTextureUpload,
     customEffectShaders: sourceRuntime.registries.customEffectShaders,
@@ -271,6 +272,13 @@ export function getGlColorAdjustmentMaterialFeature(
   state: GlRenderState,
 ): Readonly<GlColorAdjustmentMaterialFeature> | null {
   const entry = getGlRenderStateRuntime(state).registries.colorAdjustmentFeature?.entry;
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+}
+
+export function getGlColorAdjustmentMaterialFeatureGuard(
+  state: GlRenderState,
+): GlColorAdjustmentMaterialFeatureGuard | null {
+  const entry = getGlRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard?.entry;
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 

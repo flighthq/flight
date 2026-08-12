@@ -101,6 +101,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   // snapshots through a distinct aggregate, so later replacements on either state diverge cleanly.
   cacheRuntime.registries = {
     colorAdjustmentFeature: screenRuntime.registries.colorAdjustmentFeature,
+    colorAdjustmentFeatureGuard: screenRuntime.registries.colorAdjustmentFeatureGuard,
     colorAdjustments: screenRuntime.registries.colorAdjustments,
     compressedTextureDecoder: screenRuntime.registries.compressedTextureDecoder,
     compressedTextureUpload: screenRuntime.registries.compressedTextureUpload,
@@ -137,10 +138,8 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.quadBatchWriterTexture = null;
   cacheRuntime.quadBatchWriterSampler = null;
   cacheRuntime.quadBatchWriterSmoothing = null;
-  // Propagate the opt-in color-adjustment fold + guard so tinted nodes inside a cached subtree fold the
-  // same way when baked offscreen. Accumulation uses its independent persistent base registry slot;
-  // per-batch CT data lives on cacheRuntime and grows lazily.
-  cacheRuntime.wgpuColorAdjustmentMaterialFeatureGuard = screenRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
+  // The opt-in fold and diagnostic guard already propagate through their independent persistent
+  // registry snapshots above; per-batch color-adjustment data lives on cacheRuntime and grows lazily.
   // The bake state owns its own buffer pool (its flushes record into the same frame, so they must
   // not share slots with the screen's batch either).
   cacheRuntime.quadBatchWriterBufferPool = [];
