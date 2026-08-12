@@ -18,6 +18,18 @@ describe('attachEntityBinding', () => {
     attachEntityBinding(entity, binding);
     expect(getEntityRuntime(entity).binding).toStrictEqual(binding);
   });
+
+  it('preserves an existing runtime while assigning its binding', () => {
+    const entity = createEntity();
+    const runtime = createEntityRuntime();
+    const binding = {};
+    entity[EntityRuntimeKey] = runtime;
+
+    attachEntityBinding(entity, binding);
+
+    expect(getEntityRuntime(entity)).toBe(runtime);
+    expect(runtime.binding).toBe(binding);
+  });
 });
 
 describe('getEntityBinding', () => {
