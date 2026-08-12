@@ -114,6 +114,11 @@ describe('connectSignal', () => {
 });
 
 describe('disconnectSignal', () => {
+  it('does nothing when no slots are connected', () => {
+    const signal = createSignal<() => void>();
+    expect(() => disconnectSignal(signal, () => {})).not.toThrow();
+  });
+
   it('removes a specific slot', () => {
     const signal = createSignal<() => void>();
     let count = 0;

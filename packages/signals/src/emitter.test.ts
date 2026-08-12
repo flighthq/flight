@@ -3,6 +3,11 @@ import { createSignal } from './signal';
 import { connectSignal } from './slot';
 
 describe('cancelSignal', () => {
+  it('does nothing when no slots are connected', () => {
+    const signal = createSignal<() => void>();
+    expect(() => cancelSignal(signal)).not.toThrow();
+  });
+
   it('stops emit after the canceling slot', () => {
     const signal = createSignal<() => void>();
     const order: number[] = [];

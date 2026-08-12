@@ -139,15 +139,35 @@ describe('connectSignalThrottled', () => {
     expect(count).toBe(1); // trailing was cancelled
   });
 
-  it('fires on the trailing edge after leading with no-leading option', () => {
+  it('fires the first emission on the trailing edge when leading is disabled', () => {
     const source = createSignal<(v: number) => void>();
     const fired: number[] = [];
     connectSignalThrottled(source, 100, (v) => fired.push(v), { leading: false, trailing: true });
-    source.emit(1); // no leading fire
-    expect(fired).toHaveLength(0);
+    source.emit(3);
+    expect(fired).toEqual([]);
+    vi.advanceTimersByTime(99);
+    expect(fired).toEqual([]);
+    vi.advanceTimersByTime(1);
+    expect(fired).toEqual([3]);
+  });
+
+  it('ignores cooldown emissions when trailing is disabled', () => {
+    const source = createSignal<(v: number) => void>();
+    const fired: number[] = [];
+    connectSignalThrottled(source, 100, (v) => fired.push(v), { trailing: false });
+    source.emit(3);
+    vi.advanceTimersByTime(50);
+    source.emit(7);
     vi.advanceTimersByTime(100);
-    source.emit(2);
+    expect(fired).toEqual([3]);
+  });
+
+  it('does not fire when both leading and trailing are disabled', () => {
+    const source = createSignal<(v: number) => void>();
+    const fired: number[] = [];
+    connectSignalThrottled(source, 100, (v) => fired.push(v), { leading: false, trailing: false });
+    source.emit(3);
     vi.advanceTimersByTime(100);
-    expect(fired.length).toBeGreaterThanOrEqual(0); // non-crashing
+    expect(fired).toEqual([]);
   });
 });
