@@ -1268,6 +1268,26 @@ describe('createScene3DFromAwd2', () => {
     const scene = createScene3DFromAwd2(awd);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    expect(getMeshGeometryIndexCount(geometry)).toBe(0);
+
+    // The whole vertex record, because a count alone cannot tell a drawable mesh from a degenerate
+    // one: this test asserted only the count and stayed green while this exact input imported inside
+    // out with zero normals. Positions carry through the Z negation (z is 0 here, so unchanged),
+    // normals are generated, and the tangent frame is legitimately left zero — there are no UVs, and
+    // fabricating a basis without them would be inventing data rather than deriving it.
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < 3; v++) {
+      const base = v * floatsPerVertex;
+      expect(Number.isFinite(geometry.vertices[base])).toBe(true);
+      expect(Number.isFinite(geometry.vertices[base + 1])).toBe(true);
+      expect(Number.isFinite(geometry.vertices[base + 2])).toBe(true);
+      expect(
+        Math.hypot(geometry.vertices[base + 3], geometry.vertices[base + 4], geometry.vertices[base + 5]),
+      ).toBeCloseTo(1, 5);
+      expect(geometry.vertices[base + 6]).toBe(0);
+      expect(geometry.vertices[base + 7]).toBe(0);
+      expect(geometry.vertices[base + 8]).toBe(0);
+    }
   });
 
   it('attaches a textured ShadedMaterial from a material + embedded texture block', () => {
