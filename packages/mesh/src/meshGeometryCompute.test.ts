@@ -1,5 +1,5 @@
 import { createAabb, createBoundingSphere } from '@flighthq/geometry/contract';
-import type { VertexAttributeLayout } from '@flighthq/types/contract';
+import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry, invalidateMeshGeometry } from './meshGeometry';
 import {
@@ -426,6 +426,34 @@ describe('computeMeshGeometryTangents', () => {
   });
 });
 
+describe('ensureMeshGeometryBounds', () => {
+  it('computes on first query, then reuses the cache until the version moves', () => {
+    const geometry = makeTriangle();
+    expect(geometry.bounds).toBeNull();
+
+    const bounds = ensureMeshGeometryBounds(geometry);
+    expect(bounds?.max.x).toBe(1);
+
+    // A vertex edit WITHOUT a version bump must not be picked up — the version is the dirty signal,
+    // and honouring the cache is what makes the steady-state query an integer compare.
+    geometry.vertices[12] = 4;
+    expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(1);
+
+    // The public direct-write escape hatch marks the cache stale.
+    invalidateMeshGeometry(geometry);
+    expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(4);
+  });
+
+  it('trusts bounds supplied at construction without re-sweeping them', () => {
+    const geometry = makeTriangle();
+    refreshMeshGeometryBounds(geometry);
+    const bounds = geometry.bounds;
+
+    // Same AABB instance back, no recompute: the cache is valid for the current version.
+    expect(ensureMeshGeometryBounds(geometry)).toBe(bounds);
+  });
+});
+
 function setCanonicalVertex(vertices: Float32Array, vertex: number, x: number, y: number, u: number, v: number): void {
   const base = vertex * 12;
   vertices[base] = x;
@@ -459,34 +487,6 @@ function setSkinnedVertex(
   vertices[base + 19] = 0.4;
 }
 
-describe('ensureMeshGeometryBounds', () => {
-  it('computes on first query, then reuses the cache until the version moves', () => {
-    const geometry = makeTriangle();
-    expect(geometry.bounds).toBeNull();
-
-    const bounds = ensureMeshGeometryBounds(geometry);
-    expect(bounds?.max.x).toBe(1);
-
-    // A vertex edit WITHOUT a version bump must not be picked up — the version is the dirty signal,
-    // and honouring the cache is what makes the steady-state query an integer compare.
-    geometry.vertices[12] = 4;
-    expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(1);
-
-    // The public direct-write escape hatch marks the cache stale.
-    invalidateMeshGeometry(geometry);
-    expect(ensureMeshGeometryBounds(geometry)?.max.x).toBe(4);
-  });
-
-  it('trusts bounds supplied at construction without re-sweeping them', () => {
-    const geometry = makeTriangle();
-    refreshMeshGeometryBounds(geometry);
-    const bounds = geometry.bounds;
-
-    // Same AABB instance back, no recompute: the cache is valid for the current version.
-    expect(ensureMeshGeometryBounds(geometry)).toBe(bounds);
-  });
-});
-
 describe('refreshMeshGeometryBounds', () => {
   it('allocates once, then refreshes the same cached bounds after vertex edits', () => {
     const geometry = makeTriangle();
@@ -499,5 +499,94 @@ describe('refreshMeshGeometryBounds', () => {
     refreshMeshGeometryBounds(geometry);
     expect(geometry.bounds).toBe(bounds);
     expect(bounds?.max.x).toBe(4);
+  });
+});
+
+describe('triangle-strip topology', () => {
+  // A four-vertex strip [0, 1, 2, 3] is two triangles; the same surface as a list is
+  // [0, 1, 2, 2, 1, 3], including the winding flip the odd strip triangle carries. Every compute
+  // pass must produce the same attributes from either spelling.
+  //
+  // The fixture is deliberately IRREGULAR — the fourth corner is lifted out of the plane and its
+  // UV is skewed. A flat quad with axis-aligned UVs makes both triangles agree by accident: every
+  // tangent comes out (1, 0, 0, 1) whichever topology is used, so the tangent pass looks correct
+  // while ignoring topology entirely. The irregular corner is what makes the two disagree when the
+  // second triangle is dropped.
+  function createStripQuad(topology: 'triangle-list' | 'triangle-strip'): MeshGeometry {
+    const vertices = new Float32Array(4 * 12);
+    setCanonicalVertex(vertices, 0, 0, 0, 0, 0);
+    setCanonicalVertex(vertices, 1, 1, 0, 1, 0);
+    setCanonicalVertex(vertices, 2, 0, 1, 0, 1);
+    setCanonicalVertex(vertices, 3, 1, 1, 0.3, 0.9);
+    vertices[3 * 12 + 2] = 1; // lift the fourth corner out of the plane
+    const indices = topology === 'triangle-strip' ? [0, 1, 2, 3] : [0, 1, 2, 2, 1, 3];
+    return createMeshGeometry({
+      indices: new Uint16Array(indices),
+      layout: CANONICAL_LAYOUT,
+      topology,
+      vertices,
+    });
+  }
+
+  function expectStripMatchesList(
+    compute: (out: MeshGeometry, geometry: Readonly<MeshGeometry>) => void,
+    offset: number,
+    componentCount: number,
+  ): void {
+    const strip = createStripQuad('triangle-strip');
+    const list = createStripQuad('triangle-list');
+    compute(strip, strip);
+    compute(list, list);
+    for (let vertex = 0; vertex < 4; vertex++) {
+      for (let component = 0; component < componentCount; component++) {
+        expect(strip.vertices[vertex * 12 + offset + component]).toBeCloseTo(
+          list.vertices[vertex * 12 + offset + component],
+          5,
+        );
+      }
+    }
+  }
+
+  it('computeMeshGeometryNormals reads a strip as two triangles, not one', () => {
+    // Dropping the second triangle leaves vertex 3 at exactly (0, 0, 0) and vertices 1 and 2
+    // carrying only the first triangle's contribution — three of the four wrong, not just the one
+    // no earlier triangle referenced.
+    expectStripMatchesList(computeMeshGeometryNormals, 3, 3);
+  });
+
+  it('computeMeshGeometryFlatNormals reads a strip as two triangles, not one', () => {
+    expectStripMatchesList(computeMeshGeometryFlatNormals, 3, 3);
+  });
+
+  it('computeMeshGeometryTangents reads a strip as two triangles, not one', () => {
+    // A vertex that accumulates nothing falls back to a unit perpendicular, so the dropped
+    // triangle shows up here as a plausible-looking tangent rather than a zero — harder to spot by
+    // eye than the zero normal, which is why it is asserted against the list rather than a literal.
+    const strip = createStripQuad('triangle-strip');
+    const list = createStripQuad('triangle-list');
+    computeMeshGeometryNormals(strip, strip);
+    computeMeshGeometryNormals(list, list);
+    computeMeshGeometryTangents(strip, strip);
+    computeMeshGeometryTangents(list, list);
+    for (let vertex = 0; vertex < 4; vertex++) {
+      for (let component = 0; component < 4; component++) {
+        expect(strip.vertices[vertex * 12 + 6 + component]).toBeCloseTo(list.vertices[vertex * 12 + 6 + component], 5);
+      }
+    }
+  });
+
+  it('leaves no vertex of a strip without a normal', () => {
+    // The symptom that reaches a renderer: an unreferenced vertex keeps the zero normal it was
+    // allocated with, and lights as a black seam.
+    const strip = createStripQuad('triangle-strip');
+    computeMeshGeometryNormals(strip, strip);
+    for (let vertex = 0; vertex < 4; vertex++) {
+      const length = Math.hypot(
+        strip.vertices[vertex * 12 + 3],
+        strip.vertices[vertex * 12 + 4],
+        strip.vertices[vertex * 12 + 5],
+      );
+      expect(length).toBeCloseTo(1, 5);
+    }
   });
 });

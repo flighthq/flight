@@ -1,6 +1,15 @@
 import { createAabb } from '@flighthq/geometry/contract';
-import type { Aabb, AabbLike, BoundingSphereLike, MeshGeometry, MeshGeometryRuntime } from '@flighthq/types/contract';
+import type {
+  Aabb,
+  AabbLike,
+  BoundingSphereLike,
+  MeshGeometry,
+  MeshGeometryRuntime,
+  MeshTriangleVertexIndices,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations';
 
 // Per-vertex compute over the canonical interleaved PBR record: position(3) + normal(3) +
 // tangent(4) + uv0(2) = 12 floats / 48 bytes, stride read from geometry.layout. These functions
@@ -114,14 +123,18 @@ export function computeMeshGeometryBounds(out: AabbLike, geometry: Readonly<Mesh
 export function computeMeshGeometryFlatNormals(out: MeshGeometry, geometry: Readonly<MeshGeometry>): void {
   const srcVerts = geometry.vertices;
   const floatsPerVertex = geometry.layout.stride / 4;
-  const indices = geometry.indices;
-  const indexCount = indices ? indices.length : floatsPerVertex > 0 ? Math.floor(srcVerts.length / floatsPerVertex) : 0;
   const dstVerts = out.vertices;
 
-  for (let t = 0; t + 2 < indexCount; t += 3) {
-    const i0 = indices ? indices[t] : t;
-    const i1 = indices ? indices[t + 1] : t + 1;
-    const i2 = indices ? indices[t + 2] : t + 2;
+  // Decode through the shared triangle walker so triangle-strip topology is honoured; hand-decoding
+  // index triples silently drops every strip triangle after the first.
+  const triangleCount = getMeshGeometryTriangleCount(geometry);
+  const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+
+  for (let triangle = 0; triangle < triangleCount; triangle++) {
+    if (!getMeshGeometryTriangleVertexIndices(corner, geometry, triangle)) continue;
+    const i0 = corner.i0;
+    const i1 = corner.i1;
+    const i2 = corner.i2;
 
     const p0 = i0 * floatsPerVertex + POSITION_OFFSET;
     const p1 = i1 * floatsPerVertex + POSITION_OFFSET;
@@ -188,15 +201,17 @@ export function computeMeshGeometryNormals(
   const vertices = geometry.vertices;
   const floatsPerVertex = geometry.layout.stride / 4;
   const vertexCount = floatsPerVertex > 0 ? Math.floor(vertices.length / floatsPerVertex) : 0;
-  const indices = geometry.indices;
-  const indexCount = indices ? indices.length : vertexCount;
-
   const accum = new Float64Array(vertexCount * 3);
 
-  for (let t = 0; t + 2 < indexCount; t += 3) {
-    const i0 = indices ? indices[t] : t;
-    const i1 = indices ? indices[t + 1] : t + 1;
-    const i2 = indices ? indices[t + 2] : t + 2;
+  // Same shared walker as the flat pass, for the same reason.
+  const triangleCount = getMeshGeometryTriangleCount(geometry);
+  const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+
+  for (let triangle = 0; triangle < triangleCount; triangle++) {
+    if (!getMeshGeometryTriangleVertexIndices(corner, geometry, triangle)) continue;
+    const i0 = corner.i0;
+    const i1 = corner.i1;
+    const i2 = corner.i2;
 
     const b0 = i0 * floatsPerVertex + POSITION_OFFSET;
     const b1 = i1 * floatsPerVertex + POSITION_OFFSET;
@@ -322,16 +337,31 @@ export function computeMeshGeometryTangents(
   // also needs the signs so each already-distinct corner can read the canonical group frame in its
   // own orientation. Store one byte per triangle and one per source vertex, not per corner. A state's
   // sign records the first orientation and magnitude 2 records that both occurred.
+  // Walk logical triangles through the shared decoder so triangle-strip topology is honoured, and
+  // resolve every corner UP FRONT: the mirrored-UV split below replaces `out.indices`, and with
+  // `out === geometry` that would change what the decoder reads part way through the pass.
+  const triangleCount = getMeshGeometryTriangleCount(geometry);
+  const cornerIndices = new Uint32Array(triangleCount * 3);
+  {
+    const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+    for (let triangle = 0; triangle < triangleCount; triangle++) {
+      if (!getMeshGeometryTriangleVertexIndices(corner, geometry, triangle)) continue;
+      cornerIndices[triangle * 3] = corner.i0;
+      cornerIndices[triangle * 3 + 1] = corner.i1;
+      cornerIndices[triangle * 3 + 2] = corner.i2;
+    }
+  }
+
   let triangleSigns: Int8Array | null = null;
   let orientationStates: Int8Array | null = null;
   let splitCount = 0;
   if (sourceIndices !== null || positionGroups !== null) {
-    triangleSigns = new Int8Array(Math.floor(elementCount / 3));
+    triangleSigns = new Int8Array(triangleCount);
     orientationStates = new Int8Array(sourceVertexCount);
-    for (let t = 0; t + 2 < elementCount; t += 3) {
-      const i0 = sourceIndices ? sourceIndices[t] : t;
-      const i1 = sourceIndices ? sourceIndices[t + 1] : t + 1;
-      const i2 = sourceIndices ? sourceIndices[t + 2] : t + 2;
+    for (let triangle = 0; triangle < triangleCount; triangle++) {
+      const i0 = cornerIndices[triangle * 3];
+      const i1 = cornerIndices[triangle * 3 + 1];
+      const i2 = cornerIndices[triangle * 3 + 2];
       const u0 = i0 * sourceFloatsPerVertex + UV0_OFFSET;
       const u1 = i1 * sourceFloatsPerVertex + UV0_OFFSET;
       const u2 = i2 * sourceFloatsPerVertex + UV0_OFFSET;
@@ -341,7 +371,7 @@ export function computeMeshGeometryTangents(
       const dv2 = sourceVertices[u2 + 1] - sourceVertices[u0 + 1];
       const determinant = du1 * dv2 - du2 * dv1;
       const sign = determinant < 0 ? -1 : determinant > 0 ? 1 : 0;
-      triangleSigns[t / 3] = sign;
+      triangleSigns[triangle] = sign;
       if (sign !== 0) {
         markTangentOrientation(orientationStates, i0, sign);
         markTangentOrientation(orientationStates, i1, sign);
@@ -360,7 +390,18 @@ export function computeMeshGeometryTangents(
   let remappedIndices: Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer> | null = null;
   const outputVertexCount = sourceVertexCount + splitCount;
 
-  if (splitCount > 0 && sourceIndices !== null && triangleSigns !== null && orientationStates !== null) {
+  // The mirrored-UV split remaps INDEX ELEMENTS, which is only well defined for a triangle list,
+  // where each element belongs to exactly one triangle. A strip element is shared by up to three
+  // triangles that may not agree on orientation, so there is no single vertex to remap it to;
+  // splitting a strip would mean converting it to a list, which would change the output topology.
+  const canSplitMirroredUVs = geometry.topology === 'triangle-list';
+  if (
+    canSplitMirroredUVs &&
+    splitCount > 0 &&
+    sourceIndices !== null &&
+    triangleSigns !== null &&
+    orientationStates !== null
+  ) {
     const splitVertices = new Uint32Array(sourceVertexCount);
     splitVertices.fill(UINT32_UNMAPPED);
     const expanded = new Float32Array(outputVertexCount * targetFloatsPerVertex);
@@ -390,13 +431,15 @@ export function computeMeshGeometryTangents(
 
   const tan = new Float64Array(outputVertexCount * 3);
   const bitan = new Float64Array(outputVertexCount * 3);
-  for (let t = 0; t + 2 < elementCount; t += 3) {
-    const i0 = sourceIndices ? sourceIndices[t] : t;
-    const i1 = sourceIndices ? sourceIndices[t + 1] : t + 1;
-    const i2 = sourceIndices ? sourceIndices[t + 2] : t + 2;
-    const o0 = remappedIndices ? remappedIndices[t] : i0;
-    const o1 = remappedIndices ? remappedIndices[t + 1] : i1;
-    const o2 = remappedIndices ? remappedIndices[t + 2] : i2;
+  for (let triangle = 0; triangle < triangleCount; triangle++) {
+    const i0 = cornerIndices[triangle * 3];
+    const i1 = cornerIndices[triangle * 3 + 1];
+    const i2 = cornerIndices[triangle * 3 + 2];
+    // `remappedIndices` is only built for a triangle list, where element == triangle * 3 + corner.
+    const element = triangle * 3;
+    const o0 = remappedIndices ? remappedIndices[element] : i0;
+    const o1 = remappedIndices ? remappedIndices[element + 1] : i1;
+    const o2 = remappedIndices ? remappedIndices[element + 2] : i2;
 
     const p0 = i0 * sourceFloatsPerVertex + POSITION_OFFSET;
     const p1 = i1 * sourceFloatsPerVertex + POSITION_OFFSET;
