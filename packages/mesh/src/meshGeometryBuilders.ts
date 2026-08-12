@@ -658,7 +658,9 @@ export function createTorusKnotMeshGeometry(
       const b = a + 1;
       const c = a + rowStride;
       const d = c + 1;
-      indices.push(a, c, b, b, c, d);
+      // Reversed for the same reason as the capsule: this builder sweeps its tube rings the
+      // opposite way round from the sphere, so the same index order faced inward.
+      indices.push(a, b, c, b, d, c);
     }
   }
 
