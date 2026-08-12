@@ -132,6 +132,17 @@ describe('appendRotationMatrix4', () => {
 
     expect(equalsMatrix4(a, b)).toBe(true);
   });
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const distinct = createMatrix4();
+    const aliased = cloneMatrix4(source);
+
+    appendRotationMatrix4(distinct, source, Math.PI / 3, Z_AXIS, { x: 1, y: 2, z: 3, w: 1 });
+    appendRotationMatrix4(aliased, aliased, Math.PI / 3, Z_AXIS, { x: 1, y: 2, z: 3, w: 1 });
+
+    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
+  });
 });
 
 describe('appendScaleMatrix4', () => {
@@ -154,6 +165,17 @@ describe('appendScaleMatrix4', () => {
     expect(m.m[0]).toBe(6);
     expect(m.m[5]).toBe(8);
     expect(m.m[10]).toBe(10);
+  });
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const distinct = createMatrix4();
+    const aliased = cloneMatrix4(source);
+
+    appendScaleMatrix4(distinct, source, 2, 3, 4);
+    appendScaleMatrix4(aliased, aliased, 2, 3, 4);
+
+    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
   });
 });
 
@@ -297,6 +319,14 @@ describe('copyMatrix4', () => {
 
     expect(source.m[0]).toBe(1);
     expect(out.m[0]).toBe(99);
+  });
+  it('is a no-op when out aliases source', () => {
+    const m = createMatrix4();
+    setMatrix4(m, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+
+    copyMatrix4(m, m);
+
+    expect(Array.from(m.m)).toEqual([0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1]);
   });
 });
 
@@ -1206,6 +1236,17 @@ describe('prependRotationMatrix4', () => {
     expect(out.y).toBeCloseTo(0, 6);
     expect(out.z).toBeCloseTo(0, 6);
   });
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const distinct = createMatrix4();
+    const aliased = cloneMatrix4(source);
+
+    prependRotationMatrix4(distinct, source, Math.PI / 3, Z_AXIS, { x: 1, y: 2, z: 3, w: 1 });
+    prependRotationMatrix4(aliased, aliased, Math.PI / 3, Z_AXIS, { x: 1, y: 2, z: 3, w: 1 });
+
+    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
+  });
 });
 
 describe('prependScaleMatrix4', () => {
@@ -1242,6 +1283,17 @@ describe('prependScaleMatrix4', () => {
     expect(equalsMatrix4(a, b)).toBe(true);
     expect(equalsMatrix4(b, c)).toBe(true);
   });
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const distinct = createMatrix4();
+    const aliased = cloneMatrix4(source);
+
+    prependScaleMatrix4(distinct, source, 2, 3, 4);
+    prependScaleMatrix4(aliased, aliased, 2, 3, 4);
+
+    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
+  });
 });
 
 describe('prependTranslationMatrix4', () => {
@@ -1276,6 +1328,17 @@ describe('prependTranslationMatrix4', () => {
 
     expect(equalsMatrix4(a, b)).toBe(true);
     expect(equalsMatrix4(b, c)).toBe(true);
+  });
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const distinct = createMatrix4();
+    const aliased = cloneMatrix4(source);
+
+    prependTranslationMatrix4(distinct, source, 1, 2, 3);
+    prependTranslationMatrix4(aliased, aliased, 1, 2, 3);
+
+    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
   });
 });
 
@@ -1318,6 +1381,17 @@ describe('rotateMatrix4', () => {
     expect(m.m[4]).toBeCloseTo(0);
     expect(m.m[5]).toBeCloseTo(1);
     expect(m.m[6]).toBeCloseTo(0);
+  });
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const distinct = createMatrix4();
+    const aliased = cloneMatrix4(source);
+
+    rotateMatrix4(distinct, source, createVector3(0, 0, 1), Math.PI / 3);
+    rotateMatrix4(aliased, aliased, createVector3(0, 0, 1), Math.PI / 3);
+
+    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
   });
 });
 
