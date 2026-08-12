@@ -103,6 +103,16 @@ describe('clampVector3', () => {
     expect(v.y).toBe(0);
     expect(v.z).toBe(3);
   });
+
+  it('supports out === min or max', () => {
+    const min = createVector3(0, 0, 0);
+    clampVector3(min, createVector3(5, -2, 1), min, createVector3(3, 3, 3));
+    expect(min).toMatchObject({ x: 3, y: 0, z: 1 });
+
+    const max = createVector3(3, 3, 3);
+    clampVector3(max, createVector3(5, -2, 1), createVector3(0, 0, 0), max);
+    expect(max).toMatchObject({ x: 3, y: 0, z: 1 });
+  });
 });
 
 describe('cloneVector3', () => {
@@ -234,6 +244,12 @@ describe('divideVector3', () => {
     expect(v.y).toBe(2);
     expect(v.z).toBe(3);
   });
+
+  it('supports out === divisor', () => {
+    const divisor = createVector3(2, 4, 3);
+    divideVector3(divisor, createVector3(6, 8, 9), divisor);
+    expect(divisor).toMatchObject({ x: 3, y: 2, z: 3 });
+  });
 });
 
 describe('equalsVector3', () => {
@@ -340,6 +356,14 @@ describe('getVector3Spherical', () => {
     expect(sph.y).toBe(0);
     expect(sph.z).toBe(0);
   });
+
+  it('supports out === source', () => {
+    const vector = createVector3(1, 0, 0);
+    getVector3Spherical(vector, vector);
+    expect(vector.x).toBeCloseTo(1, 6);
+    expect(vector.y).toBeCloseTo(Math.PI / 2, 6);
+    expect(vector.z).toBeCloseTo(0, 6);
+  });
 });
 
 describe('interpolateVector3', () => {
@@ -373,6 +397,13 @@ describe('interpolateVector3', () => {
     expect(a.y).toBe(2);
     expect(a.z).toBe(3);
   });
+
+  it('supports out === b', () => {
+    const a = createVector3(0, 0, 0);
+    const b = createVector3(2, 4, 6);
+    interpolateVector3(b, a, b, 0.5);
+    expect(b).toMatchObject({ x: 1, y: 2, z: 3 });
+  });
 });
 
 describe('maxVector3', () => {
@@ -383,6 +414,16 @@ describe('maxVector3', () => {
     expect(out.y).toBe(5);
     expect(out.z).toBe(7);
   });
+
+  it('supports out === a or b', () => {
+    const a = createVector3(1, 5, 2);
+    maxVector3(a, a, createVector3(3, 2, 7));
+    expect(a).toMatchObject({ x: 3, y: 5, z: 7 });
+
+    const b = createVector3(3, 2, 7);
+    maxVector3(b, createVector3(1, 5, 2), b);
+    expect(b).toMatchObject({ x: 3, y: 5, z: 7 });
+  });
 });
 
 describe('minVector3', () => {
@@ -392,6 +433,16 @@ describe('minVector3', () => {
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.z).toBe(2);
+  });
+
+  it('supports out === a or b', () => {
+    const a = createVector3(1, 5, 2);
+    minVector3(a, a, createVector3(3, 2, 7));
+    expect(a).toMatchObject({ x: 1, y: 2, z: 2 });
+
+    const b = createVector3(3, 2, 7);
+    minVector3(b, createVector3(1, 5, 2), b);
+    expect(b).toMatchObject({ x: 1, y: 2, z: 2 });
   });
 });
 
@@ -410,6 +461,12 @@ describe('multiplyVector3', () => {
     expect(a.x).toBe(10);
     expect(a.y).toBe(18);
     expect(a.z).toBe(28);
+  });
+
+  it('supports out === b', () => {
+    const b = createVector3(5, 6, 7);
+    multiplyVector3(b, createVector3(2, 3, 4), b);
+    expect(b).toMatchObject({ x: 10, y: 18, z: 28 });
   });
 });
 
@@ -566,6 +623,14 @@ describe('reflectVector3', () => {
     reflectVector3(v, v, createVector3(1, 0, 0));
     expect(v.x).toBeCloseTo(-1, 6);
     expect(v.y).toBeCloseTo(-1, 6);
+  });
+
+  it('supports out === normal', () => {
+    const normal = createVector3(1, 0, 0);
+    reflectVector3(normal, createVector3(1, -1, 0), normal);
+    expect(normal.x).toBeCloseTo(-1, 6);
+    expect(normal.y).toBeCloseTo(-1, 6);
+    expect(normal.z).toBeCloseTo(0, 6);
   });
 });
 
