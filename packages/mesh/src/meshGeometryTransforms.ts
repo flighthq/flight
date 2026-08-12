@@ -4,9 +4,12 @@ import type { Matrix4Like, MeshGeometry } from '@flighthq/types/contract';
 import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
 import { computeMeshGeometryBounds } from './meshGeometryCompute';
 
-// Geometry transform operations: apply a Matrix4 to positions and the inverse-transpose to
-// normals and tangent.xyz (tangent.w handedness sign is preserved). All in-place operations
-// bump geometry.version. Out-parameter variants are alias-safe (out === source is valid).
+// Geometry transform operations: apply a Matrix4 to positions, the inverse-transpose to normals,
+// and the plain upper 3x3 to tangent.xyz — a normal is a covector and a tangent is a true vector,
+// so they follow different matrices and only coincide under rotation and uniform scale. A transform
+// that mirrors (determinant < 0) also reverses triangle winding and negates tangent.w, because a
+// baked transform leaves no determinant for a renderer to detect. All in-place operations bump
+// geometry.version. Out-parameter variants are alias-safe (out === source is valid).
 
 // Centers the geometry so that the cached AABB's center moves to the origin. If bounds have
 // not been computed yet, they are computed first. Bumps geometry.version.
@@ -24,11 +27,13 @@ export function centerMeshGeometry(geometry: MeshGeometry): void {
   translateMeshGeometry(geometry, -cx, -cy, -cz);
 }
 
-// Scales all vertex positions in-place by (sx, sy, sz). Normals and tangents are transformed
-// via the inverse-transpose of the pure scale matrix (i.e. (1/sx, 1/sy, 1/sz)) and
-// re-normalized. Bumps geometry.version.
+// Scales all vertex positions in-place by (sx, sy, sz). Normals are transformed by the
+// inverse-transpose of the scale (1/sx, 1/sy, 1/sz) and tangents by the scale itself, both
+// re-normalized. A negative-determinant scale mirrors the mesh, so triangle winding is reversed and
+// tangent.w negated to keep front faces front-facing. Bumps geometry.version.
 export function scaleMeshGeometry(geometry: MeshGeometry, sx: number, sy: number, sz: number): void {
   transformMeshGeometryPositions(geometry, geometry, sx, sy, sz, 0, 0, 0);
+  restoreMirroredWindingAndHandedness(geometry, sx * sy * sz);
 }
 
 // Applies a Matrix4 to the geometry's vertices in place. Positions are transformed as points
@@ -100,10 +105,15 @@ export function transformMeshGeometryInto(
       const tx = srcVerts[tb],
         ty = srcVerts[tb + 1],
         tz = srcVerts[tb + 2];
-      const tw = srcVerts[tb + 3]; // preserve handedness sign
-      let ttx = invT[0] * tx + invT[3] * ty + invT[6] * tz;
-      let tty = invT[1] * tx + invT[4] * ty + invT[7] * tz;
-      let ttz = invT[2] * tx + invT[5] * ty + invT[8] * tz;
+      const tw = srcVerts[tb + 3]; // handedness, a sign rather than a direction
+      // A tangent lies ALONG the surface, so it is a true vector and follows the plain upper 3x3,
+      // the same matrix a position follows. Only the normal is a covector needing the
+      // inverse-transpose. The two coincide under rotation and uniform scale, which is why sharing
+      // one matrix looked right; under non-uniform scale it tilts the tangent off the surface and
+      // out of perpendicular with its own normal. `skinTangents` draws the same distinction.
+      let ttx = m[0] * tx + m[4] * ty + m[8] * tz;
+      let tty = m[1] * tx + m[5] * ty + m[9] * tz;
+      let ttz = m[2] * tx + m[6] * ty + m[10] * tz;
       const len = Math.sqrt(ttx * ttx + tty * tty + ttz * ttz);
       if (len > 0) {
         ttx /= len;
@@ -116,6 +126,11 @@ export function transformMeshGeometryInto(
       dstVerts[tb + 3] = tw;
     }
   }
+  restoreMirroredWindingAndHandedness(
+    out,
+    m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9]) + m[8] * (m[1] * m[6] - m[2] * m[5]),
+  );
+
   out.version++;
   // Recompute bounds if they were cached, since all positions have changed.
   if (out.bounds) {
@@ -194,6 +209,60 @@ function computeMatrix3x3InverseTranspose(matrix: Readonly<Matrix4Like>): Float3
 
 // Applies a pure-scale transform to positions. Normals/tangents are transformed by the
 // inverse scale and re-normalized. Internal helper used by scaleMeshGeometry.
+// Restores the counter-clockwise-front / outward-normal invariant after a transform that mirrors the
+// geometry (determinant < 0). A reflection turns every triangle inside out and flips the handedness
+// of every tangent frame, and a BAKED transform leaves no determinant behind for a renderer to notice
+// — the mesh simply uploads inside-out under an identity model matrix. So the correction has to
+// happen here, at the point the mirror is applied.
+//
+// Mirroring is a legitimate request, not an error, so this never rejects a negative determinant.
+//
+// `tangent.w` is handedness (B = w * cross(N, T)), so a reflection negates it. That part is
+// topology-independent and always applied. The winding reversal is not: swapping two corners of a
+// triple is only meaningful for a triangle list. A triangle STRIP shares each vertex between up to
+// three triangles, so per-triple swaps do not describe it, and this repository has no established
+// strip winding reversal to follow — the one in `scene3d-formats` (`reverseTriangleWinding`) steps by
+// three and is list-only. Rather than invent one, strips are left unreversed and the gap is reported.
+// A line or point stream has no winding to reverse at all.
+function restoreMirroredWindingAndHandedness(geometry: MeshGeometry, determinant: number): void {
+  if (determinant >= 0) return;
+
+  const tanFloatOffset = getVertexAttributeFloatOffset(geometry.layout, 'tangent');
+  const floatsPerVertex = geometry.layout.stride / 4;
+  const vertices = geometry.vertices;
+  if (tanFloatOffset >= 0 && floatsPerVertex > 0) {
+    const vertexCount = Math.floor(vertices.length / floatsPerVertex);
+    for (let i = 0; i < vertexCount; i++) {
+      const wIndex = i * floatsPerVertex + tanFloatOffset + 3;
+      vertices[wIndex] = -vertices[wIndex];
+    }
+  }
+
+  if (geometry.topology !== 'triangle-list') return;
+
+  const indices = geometry.indices;
+  if (indices !== null) {
+    for (let i = 0; i + 2 < indices.length; i += 3) {
+      const swap = indices[i + 1];
+      indices[i + 1] = indices[i + 2];
+      indices[i + 2] = swap;
+    }
+    return;
+  }
+
+  // Non-indexed: the records themselves carry the order, so the second and third of each triple swap.
+  if (floatsPerVertex <= 0) return;
+  const vertexCount = Math.floor(vertices.length / floatsPerVertex);
+  const scratch = new Float32Array(floatsPerVertex);
+  for (let triangle = 0; triangle + 2 < vertexCount; triangle += 3) {
+    const second = (triangle + 1) * floatsPerVertex;
+    const third = (triangle + 2) * floatsPerVertex;
+    scratch.set(vertices.subarray(second, second + floatsPerVertex));
+    vertices.copyWithin(second, third, third + floatsPerVertex);
+    vertices.set(scratch, third);
+  }
+}
+
 function transformMeshGeometryPositions(
   out: MeshGeometry,
   source: Readonly<MeshGeometry>,
@@ -253,9 +322,11 @@ function transformMeshGeometryPositions(
         tty = srcVerts[tb + 1],
         ttz = srcVerts[tb + 2];
       const tw = srcVerts[tb + 3];
-      let ntx = ttx * invSx,
-        nty = tty * invSy,
-        ntz = ttz * invSz;
+      // Plain scale, not the inverse: a tangent lies along the surface and follows the same
+      // transform a position does. See the note on `transformMeshGeometryInto`.
+      let ntx = ttx * sx,
+        nty = tty * sy,
+        ntz = ttz * sz;
       const len = Math.sqrt(ntx * ntx + nty * nty + ntz * ntz);
       if (len > 0) {
         ntx /= len;

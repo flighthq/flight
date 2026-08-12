@@ -25,6 +25,16 @@ export function offsetMeshGeometryUvs(geometry: MeshGeometry, du: number, dv: nu
 
 // Scales every uv0 coordinate by (su, sv) around the origin: u' = u * su, v' = v * sv. Useful
 // for tiling — e.g. scaleMeshGeometryUvs(geo, 2, 2) tiles the texture 2× in each direction.
+//
+// ★ A NEGATIVE SCALE MIRRORS THE SAMPLING BUT NOT THE STORED TANGENT FRAME. Tangents are derived
+// from the UV gradient, so mirroring u or v reverses the direction a tangent should point and the
+// handedness that goes with it, while the tangent records already in the vertex stream keep their
+// old values. Any normal-mapped material then reconstructs its bitangent from a frame that no
+// longer matches the coordinates it samples, which reads as lighting flipped across the mirrored
+// axis. The remedy is the caller's: run `computeMeshGeometryTangents` afterwards to re-derive the
+// frame from the new coordinates. This operation deliberately does NOT do that for you — a UV edit
+// that silently rewrote the tangent attribute would be exactly the hidden side effect this codebase
+// rules out, and callers that only ever scale positively should not pay for a recompute.
 export function scaleMeshGeometryUvs(geometry: MeshGeometry, su: number, sv: number): void {
   const floatOffset = getVertexAttributeFloatOffset(geometry.layout, 'uv0');
   if (floatOffset < 0) return;
