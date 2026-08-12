@@ -5,7 +5,6 @@ import {
   enableColorAdjustmentGuards,
   enableColorAdjustments,
   getColorAdjustmentUnsupportedGuard,
-  getRenderRootGuard,
   prepareScene2DRender,
   registerRenderer,
 } from '@flighthq/render/contract';
@@ -64,12 +63,22 @@ describe('copyCanvasRenderStateRegistrations', () => {
     expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedGuardSnapshot);
     expect(getColorAdjustmentUnsupportedGuard(target)).not.toBeNull();
     expect(targetRuntime.registries.renderRootGuard).toBe(sourceRuntime.registries.renderRootGuard);
-    expect(getRenderRootGuard(target)).toBe(renderRootGuard);
+    expect(
+      getRegistryTableEntry(
+        targetRuntime.registries.renderRootGuard!,
+        targetRuntime.registries.renderRootGuard!.registry,
+      ),
+    ).toBe(renderRootGuard);
     const sharedRootGuardSnapshot = targetRuntime.registries.renderRootGuard;
     sourceRuntime.registries.renderRootGuard = undefined;
-    expect(getRenderRootGuard(source)).toBeNull();
+    expect(sourceRuntime.registries.renderRootGuard).toBeUndefined();
     expect(targetRuntime.registries.renderRootGuard).toBe(sharedRootGuardSnapshot);
-    expect(getRenderRootGuard(target)).toBe(renderRootGuard);
+    expect(
+      getRegistryTableEntry(
+        targetRuntime.registries.renderRootGuard!,
+        targetRuntime.registries.renderRootGuard!.registry,
+      ),
+    ).toBe(renderRootGuard);
     expect(targetRuntime.registries.materialRenderers).toBe(sourceRuntime.registries.materialRenderers);
     expect(targetRuntime.registries.renderEffects).toBe(sourceRuntime.registries.renderEffects);
     expect(getRegistryTableEntry(targetRuntime.registries.materialRenderers!, 'acme.Material')).toBe(materialRenderer);

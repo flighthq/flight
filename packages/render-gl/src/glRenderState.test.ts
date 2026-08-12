@@ -10,7 +10,6 @@ import {
   enableColorAdjustmentGuards,
   enableColorAdjustments,
   getColorAdjustmentUnsupportedGuard,
-  getRenderRootGuard,
   getRenderStateRuntime,
   prepareScene2DRender,
   registerRenderer,
@@ -227,7 +226,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(areGlRenderStateGuardsEnabled(offscreen)).toBe(true);
     const sharedRenderRootGuard = offscreenRuntime.registries.renderRootGuard;
     screenRuntime.registries.renderRootGuard = undefined;
-    expect(getRenderRootGuard(screen)).toBeNull();
+    expect(screenRuntime.registries.renderRootGuard).toBeUndefined();
     expect(offscreenRuntime.registries.renderRootGuard).toBe(sharedRenderRootGuard);
     expect(areGlRenderStateGuardsEnabled(offscreen)).toBe(true);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
