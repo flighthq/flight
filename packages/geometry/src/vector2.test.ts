@@ -116,6 +116,12 @@ describe('clampVector2', () => {
     expect(out.y).toBe(2);
   });
 
+  it('clamps x low and y high', () => {
+    const out = createVector2();
+    clampVector2(out, createVector2(-2, 5), createVector2(0, 0), createVector2(3, 3));
+    expect(out).toMatchObject({ x: 0, y: 3 });
+  });
+
   it('supports out === value', () => {
     const v = createVector2(5, -1);
     clampVector2(v, v, createVector2(0, 0), createVector2(3, 3));
@@ -219,6 +225,12 @@ describe('divideVector2', () => {
     expect(out.y).toBe(2);
   });
 
+  it('produces 0 for a zero y divisor', () => {
+    const out = createVector2();
+    divideVector2(out, createVector2(6, 8), createVector2(2, 0));
+    expect(out).toMatchObject({ x: 3, y: 0 });
+  });
+
   it('supports out === source', () => {
     const v = createVector2(6, 8);
     divideVector2(v, v, createVector2(2, 4));
@@ -234,6 +246,11 @@ describe('divideVector2', () => {
 });
 
 describe('equalsVector2', () => {
+  it('returns false when either vector is absent', () => {
+    expect(equalsVector2(pt, null)).toBe(false);
+    expect(equalsVector2(undefined, pt)).toBe(false);
+  });
+
   it('returns true if vectors are identical, false otherwise', () => {
     expect(equalsVector2(pt, pt2)).toBe(true);
     pt.x = 1;
@@ -483,6 +500,12 @@ describe('maxVector2', () => {
     maxVector2(b, a, b);
     expect(b).toMatchObject({ x: 3, y: 5 });
   });
+
+  it('selects a for x and b for y', () => {
+    const out = createVector2();
+    maxVector2(out, createVector2(5, 1), createVector2(2, 3));
+    expect(out).toMatchObject({ x: 5, y: 3 });
+  });
 });
 
 describe('minVector2', () => {
@@ -506,6 +529,12 @@ describe('minVector2', () => {
     const b = createVector2(3, 2);
     minVector2(b, a, b);
     expect(b).toMatchObject({ x: 1, y: 2 });
+  });
+
+  it('selects b for x and a for y', () => {
+    const out = createVector2();
+    minVector2(out, createVector2(5, 1), createVector2(2, 3));
+    expect(out).toMatchObject({ x: 2, y: 1 });
   });
 });
 
