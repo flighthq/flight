@@ -1,5 +1,6 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
+import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderOptions } from '@flighthq/types/contract';
@@ -16,18 +17,32 @@ import {
 } from './canvasRenderState';
 
 describe('copyCanvasRenderStateRegistrations', () => {
-  it('clones Canvas policy registries without retaining a live map link', () => {
+  it('shares persistent snapshots through distinct aggregates and then diverges', () => {
     const source = createCanvasRenderState(document.createElement('canvas'));
     const target = createCanvasRenderState(document.createElement('canvas'));
     const runner = vi.fn();
-    getCanvasRenderStateRuntime(source).canvasRenderEffectRegistry = new Map([['acme.Effect', runner]]);
+    const replacement = vi.fn();
+    const sourceRuntime = getCanvasRenderStateRuntime(source);
+    sourceRuntime.registries.renderEffects = withRegistryTableEntry(
+      sourceRuntime.registries.renderEffects,
+      'acme.Effect',
+      runner as never,
+    );
 
     copyCanvasRenderStateRegistrations(target, source);
 
-    expect(getCanvasRenderStateRuntime(target).canvasRenderEffectRegistry).not.toBe(
-      getCanvasRenderStateRuntime(source).canvasRenderEffectRegistry,
+    const targetRuntime = getCanvasRenderStateRuntime(target);
+    expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
+    expect(targetRuntime.registries.renderEffects).toBe(sourceRuntime.registries.renderEffects);
+    expect(getRegistryTableEntry(targetRuntime.registries.renderEffects, 'acme.Effect')).toBe(runner);
+
+    sourceRuntime.registries.renderEffects = withRegistryTableEntry(
+      sourceRuntime.registries.renderEffects,
+      'acme.Effect',
+      replacement as never,
     );
-    expect(getCanvasRenderStateRuntime(target).canvasRenderEffectRegistry?.get('acme.Effect')).toBe(runner);
+    expect(getRegistryTableEntry(sourceRuntime.registries.renderEffects, 'acme.Effect')).toBe(replacement);
+    expect(getRegistryTableEntry(targetRuntime.registries.renderEffects, 'acme.Effect')).toBe(runner);
   });
 });
 
@@ -51,6 +66,11 @@ describe('createCanvasRenderStateRuntime', () => {
     const runtime = createCanvasRenderStateRuntime();
     expect(runtime).not.toBeNull();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.renderEffects).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'CanvasRenderEffect',
+      shape: 'keyed',
+    });
   });
 });
 

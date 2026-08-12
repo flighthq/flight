@@ -1,5 +1,7 @@
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Wgpu runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a
@@ -10,7 +12,8 @@ import type { WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types/co
 // literal kind and public default runner, and installs no padding, shader-source, or backdrop companions.
 
 export function getWgpuRenderEffectRunner(state: WgpuRenderState, kind: string): WgpuRenderEffectRunner | null {
-  return getWgpuRenderStateRuntime(state).wgpuRenderEffectRegistry?.get(kind) ?? null;
+  const entry = getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Symmetric with
@@ -18,10 +21,12 @@ export function getWgpuRenderEffectRunner(state: WgpuRenderState, kind: string):
 // silently skips unregistered kinds; check up front to apply your own policy (warn, filter)
 // rather than relying on silent no-ops.
 export function hasWgpuRenderEffectRunner(state: WgpuRenderState, kind: string): boolean {
-  return getWgpuRenderStateRuntime(state).wgpuRenderEffectRegistry?.has(kind) ?? false;
+  return (
+    getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(kind)?.state === RegistryEntryState.Bound
+  );
 }
 
 export function registerWgpuRenderEffect(state: WgpuRenderState, kind: string, runner: WgpuRenderEffectRunner): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  (runtime.wgpuRenderEffectRegistry ??= new Map()).set(kind, runner);
+  runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, runner);
 }

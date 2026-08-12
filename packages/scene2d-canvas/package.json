@@ -44,6 +44,7 @@
     "@flighthq/image": "*",
     "@flighthq/log": "*",
     "@flighthq/node": "*",
+    "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/signals": "*",
     "@flighthq/shape": "*",

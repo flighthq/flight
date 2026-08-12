@@ -13,6 +13,7 @@
     { "path": "../effects" },
     { "path": "../geometry" },
     { "path": "../render-wgpu" },
+    { "path": "../registry" },
     { "path": "../types" }
   ],
   "include": ["src"]

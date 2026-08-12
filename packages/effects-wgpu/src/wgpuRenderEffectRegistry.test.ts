@@ -1,4 +1,8 @@
-import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
+import {
+  createWgpuRenderStateForTest,
+  getWgpuRenderStateRuntime,
+  installWgpuMock,
+} from '@flighthq/render-wgpu/contract';
 
 import {
   getWgpuRenderEffectRunner,
@@ -34,7 +38,23 @@ describe('registerWgpuRenderEffect', () => {
   it('registers a runner retrievable by its kind', async () => {
     const state = await createWgpuRenderStateForTest();
     const runner = vi.fn();
+    const before = getWgpuRenderStateRuntime(state).registries.renderEffects;
     registerWgpuRenderEffect(state, 'VignetteEffect', runner);
     expect(getWgpuRenderEffectRunner(state, 'VignetteEffect')).toBe(runner);
+    expect(getWgpuRenderStateRuntime(state).registries.renderEffects).not.toBe(before);
+    expect(before.entries.size).toBe(0);
+  });
+
+  it('is last-write-wins without mutating the earlier snapshot', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runnerA = vi.fn();
+    const runnerB = vi.fn();
+    registerWgpuRenderEffect(state, 'TestEffect', runnerA);
+    const before = getWgpuRenderStateRuntime(state).registries.renderEffects;
+
+    registerWgpuRenderEffect(state, 'TestEffect', runnerB);
+
+    expect(getWgpuRenderEffectRunner(state, 'TestEffect')).toBe(runnerB);
+    expect(before.entries.get('TestEffect')).toEqual({ state: 'bound', value: runnerA });
   });
 });

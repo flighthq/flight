@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { createKeyedTable } from '@flighthq/registry/contract';
 import {
   copyRenderStateRegistrations,
   createRenderState as _createRenderState,
@@ -17,7 +18,8 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { createCanvasTextureResolvers } from './canvasTextureResolver';
 
 // Explicit snapshot re-copy for policy that is meaningful to a derived Canvas pipeline. Resource
-// caches remain state-local; registrations are cloned so later changes do not leak across states.
+// caches remain state-local. Mutable legacy maps are cloned; persistent tables may share immutable
+// snapshots through distinct aggregates, so later replacements still diverge between render states.
 export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, source: CanvasRenderState): void {
   const targetRuntime = getCanvasRenderStateRuntime(target);
   const sourceRuntime = getCanvasRenderStateRuntime(source);
@@ -25,7 +27,9 @@ export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, so
   target.canvasCssFilterResolver = source.canvasCssFilterResolver;
   targetRuntime.canvasTextureResolvers.registry = copyMap(sourceRuntime.canvasTextureResolvers.registry);
   targetRuntime.materialRendererMap = copyMap(sourceRuntime.materialRendererMap);
-  targetRuntime.canvasRenderEffectRegistry = copyMap(sourceRuntime.canvasRenderEffectRegistry);
+  targetRuntime.registries = {
+    renderEffects: sourceRuntime.registries.renderEffects,
+  };
   copyRenderStateRegistrations(target, source);
 }
 
@@ -73,7 +77,11 @@ export function createCanvasRenderState(
 // getCanvasRenderStateRuntime reads it back. The render path writes the returned object every frame,
 // so the return is intentionally mutable (not Readonly).
 export function createCanvasRenderStateRuntime(): CanvasRenderStateRuntime {
-  return createRenderStateRuntime() as CanvasRenderStateRuntime;
+  const runtime = createRenderStateRuntime() as CanvasRenderStateRuntime;
+  runtime.registries = {
+    renderEffects: createKeyedTable('CanvasRenderEffect', 'Unregistered'),
+  };
+  return runtime;
 }
 
 export function destroyCanvasRenderState(state: CanvasRenderState): void {

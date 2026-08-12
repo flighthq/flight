@@ -35,6 +35,7 @@ export interface WgpuRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries {
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
+  renderEffects: KeyedTable<WgpuRenderEffectRunner>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
 }
@@ -143,10 +144,6 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // Render Texture realizations are keyed by Texture because their GPU allocation is state-bound.
   wgpuRenderTextureCache?: WeakMap<RenderTexture, WgpuRenderTextureEntry>;
   wgpuRenderTextureGuard?: WgpuRenderTextureGuard | null;
-  // Effect dispatch is registration policy, not a device resource. Derived offscreen states receive
-  // a snapshot and may then override it independently.
-  wgpuRenderEffectRegistry?: Map<Kind, WgpuRenderEffectRunner> | null;
-
   // Custom shader (default bitmap shader; can be replaced via registerWgpuBitmapShader)
   defaultBitmapShader: WgpuBitmapShader | null;
 

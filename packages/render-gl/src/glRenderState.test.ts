@@ -1,5 +1,5 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import { getRegistryTableEntry, hasRegistryTableEntry } from '@flighthq/registry/contract';
+import { getRegistryTableEntry, hasRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   getRenderStateRuntime,
@@ -81,9 +81,15 @@ describe('createGlOffscreenRenderState', () => {
     const materialRenderer = { getBatchData: vi.fn(), getBatchFloats: vi.fn() } as never;
     const paddingResolver = vi.fn(() => ({ bottom: 1, left: 1, right: 1, top: 1 }));
     const textureResolver = vi.fn(() => null);
+    const effectRunner = vi.fn();
     registerRenderer(screen, 'acme.Node', renderer);
     registerGlMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerGlTextureResolver(screen, 'acme.Texture', textureResolver);
+    getGlRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
+      getGlRenderStateRuntime(screen).registries.renderEffects,
+      'acme.Effect',
+      { runner: effectRunner as never },
+    );
     getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', paddingResolver]]);
     getGlRenderStateRuntime(screen).glRenderTextureCache = new WeakMap();
 
@@ -102,6 +108,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
+    expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
@@ -112,6 +119,7 @@ describe('createGlOffscreenRenderState', () => {
       materialRenderer,
     );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')?.runner).toBe(effectRunner);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
 
     screenRuntime.currentProgram = {} as WebGLProgram;
@@ -274,6 +282,11 @@ describe('createGlRenderStateRuntime', () => {
       shape: 'keyed',
     });
     expect(runtime.registries.materialRenderers.entries.size).toBe(0);
+    expect(runtime.registries.renderEffects).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'GlRenderEffect',
+      shape: 'keyed',
+    });
     expect(runtime.registries.shapeRasterizer).toEqual({
       entry: null,
       onMiss: 'Unregistered',
