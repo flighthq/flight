@@ -90,6 +90,33 @@ describe('addVector4', () => {
 });
 
 describe('clampVector4', () => {
+  it('clamps each component to its own bounds, below, above, and not at all', () => {
+    // Every component gets a DIFFERENT min and max, so a component reading a neighbour's bound
+    // comes out as a wrong number instead of the right one by luck. Each component is then run
+    // through all three outcomes — under its floor, over its ceiling, and already in range.
+    const min = createVector4(-1, -2, -3, -4);
+    const max = createVector4(10, 20, 30, 40);
+    const out = createVector4();
+
+    clampVector4(out, createVector4(-5, -6, -7, -8), min, max);
+    expect(out.x).toBe(-1);
+    expect(out.y).toBe(-2);
+    expect(out.z).toBe(-3);
+    expect(out.w).toBe(-4);
+
+    clampVector4(out, createVector4(100, 200, 300, 400), min, max);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+    expect(out.z).toBe(30);
+    expect(out.w).toBe(40);
+
+    clampVector4(out, createVector4(0, 1, 2, 3), min, max);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(1);
+    expect(out.z).toBe(2);
+    expect(out.w).toBe(3);
+  });
+
   it('clamps each component independently', () => {
     const out = createVector4();
     clampVector4(out, createVector4(5, -2, 1, 10), createVector4(0, 0, 0, 0), createVector4(3, 3, 3, 3));
@@ -187,6 +214,37 @@ describe('createVector4', () => {
 });
 
 describe('divideVector4', () => {
+  it('gives 0 for a zero divisor on each component in turn', () => {
+    // A zero divisor is answered per component, not for the whole vector, so each component is
+    // zeroed on its own while the others still divide normally.
+    const source = createVector4(6, 8, 9, 10);
+    const out = createVector4();
+
+    divideVector4(out, source, createVector4(0, 4, 3, 5));
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(2);
+
+    divideVector4(out, source, createVector4(2, 0, 3, 5));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(2);
+
+    divideVector4(out, source, createVector4(2, 4, 0, 5));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(0);
+    expect(out.w).toBe(2);
+
+    divideVector4(out, source, createVector4(2, 4, 3, 0));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+    expect(out.w).toBe(0);
+  });
+
   it('divides component-wise', () => {
     const out = createVector4();
     divideVector4(out, createVector4(6, 8, 9, 12), createVector4(2, 4, 3, 6));
@@ -383,6 +441,27 @@ describe('interpolateVector4', () => {
 });
 
 describe('maxVector4', () => {
+  it('takes each component from whichever side wins, and gives the same answer either way round', () => {
+    // The winner alternates between the two arguments component by component, and all 8 numbers
+    // are distinct, so a line reading the wrong component or the wrong side cannot land on the
+    // right answer anyway. Running it again with the arguments swapped must not change it.
+    const a = createVector4(1, 5, 2, 9);
+    const b = createVector4(3, 0, 7, 4);
+    const out = createVector4();
+
+    maxVector4(out, a, b);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+    expect(out.z).toBe(7);
+    expect(out.w).toBe(9);
+
+    maxVector4(out, b, a);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+    expect(out.z).toBe(7);
+    expect(out.w).toBe(9);
+  });
+
   it('returns the component-wise maximum', () => {
     const out = createVector4();
     maxVector4(out, createVector4(1, 5, 2, 9), createVector4(3, 2, 7, 4));
@@ -410,6 +489,27 @@ describe('maxVector4', () => {
 });
 
 describe('minVector4', () => {
+  it('takes each component from whichever side wins, and gives the same answer either way round', () => {
+    // The winner alternates between the two arguments component by component, and all 8 numbers
+    // are distinct, so a line reading the wrong component or the wrong side cannot land on the
+    // right answer anyway. Running it again with the arguments swapped must not change it.
+    const a = createVector4(1, 5, 2, 9);
+    const b = createVector4(3, 0, 7, 4);
+    const out = createVector4();
+
+    minVector4(out, a, b);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(2);
+    expect(out.w).toBe(4);
+
+    minVector4(out, b, a);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(2);
+    expect(out.w).toBe(4);
+  });
+
   it('returns the component-wise minimum', () => {
     const out = createVector4();
     minVector4(out, createVector4(1, 5, 2, 9), createVector4(3, 2, 7, 4));

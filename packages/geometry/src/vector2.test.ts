@@ -96,6 +96,27 @@ describe('addVector2', () => {
 });
 
 describe('clampVector2', () => {
+  it('clamps each component to its own bounds, below, above, and not at all', () => {
+    // Every component gets a DIFFERENT min and max, so a component reading a neighbour's bound
+    // comes out as a wrong number instead of the right one by luck. Each component is then run
+    // through all three outcomes — under its floor, over its ceiling, and already in range.
+    const min = createVector2(-1, -2);
+    const max = createVector2(10, 20);
+    const out = createVector2();
+
+    clampVector2(out, createVector2(-5, -6), min, max);
+    expect(out.x).toBe(-1);
+    expect(out.y).toBe(-2);
+
+    clampVector2(out, createVector2(100, 200), min, max);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+
+    clampVector2(out, createVector2(0, 1), min, max);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(1);
+  });
+
   it('clamps each component independently', () => {
     const out = createVector2();
     const value = createVector2(5, -2);
@@ -211,6 +232,21 @@ describe('createVector2FromPolar', () => {
 });
 
 describe('divideVector2', () => {
+  it('gives 0 for a zero divisor on each component in turn', () => {
+    // A zero divisor is answered per component, not for the whole vector, so each component is
+    // zeroed on its own while the others still divide normally.
+    const source = createVector2(6, 8);
+    const out = createVector2();
+
+    divideVector2(out, source, createVector2(0, 4));
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(2);
+
+    divideVector2(out, source, createVector2(2, 0));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(0);
+  });
+
   it('divides component-wise', () => {
     const out = createVector2();
     divideVector2(out, createVector2(6, 8), createVector2(2, 4));
@@ -499,6 +535,23 @@ describe('interpolateVector2', () => {
 });
 
 describe('maxVector2', () => {
+  it('takes each component from whichever side wins, and gives the same answer either way round', () => {
+    // The winner alternates between the two arguments component by component, and all 4 numbers
+    // are distinct, so a line reading the wrong component or the wrong side cannot land on the
+    // right answer anyway. Running it again with the arguments swapped must not change it.
+    const a = createVector2(1, 5);
+    const b = createVector2(3, 0);
+    const out = createVector2();
+
+    maxVector2(out, a, b);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+
+    maxVector2(out, b, a);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+  });
+
   it('returns the component-wise maximum', () => {
     const out = createVector2();
     maxVector2(out, createVector2(1, 5), createVector2(3, 2));
@@ -529,6 +582,23 @@ describe('maxVector2', () => {
 });
 
 describe('minVector2', () => {
+  it('takes each component from whichever side wins, and gives the same answer either way round', () => {
+    // The winner alternates between the two arguments component by component, and all 4 numbers
+    // are distinct, so a line reading the wrong component or the wrong side cannot land on the
+    // right answer anyway. Running it again with the arguments swapped must not change it.
+    const a = createVector2(1, 5);
+    const b = createVector2(3, 0);
+    const out = createVector2();
+
+    minVector2(out, a, b);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(0);
+
+    minVector2(out, b, a);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(0);
+  });
+
   it('returns the component-wise minimum', () => {
     const out = createVector2();
     minVector2(out, createVector2(1, 5), createVector2(3, 2));

@@ -88,6 +88,30 @@ describe('addVector3', () => {
 });
 
 describe('clampVector3', () => {
+  it('clamps each component to its own bounds, below, above, and not at all', () => {
+    // Every component gets a DIFFERENT min and max, so a component reading a neighbour's bound
+    // comes out as a wrong number instead of the right one by luck. Each component is then run
+    // through all three outcomes — under its floor, over its ceiling, and already in range.
+    const min = createVector3(-1, -2, -3);
+    const max = createVector3(10, 20, 30);
+    const out = createVector3();
+
+    clampVector3(out, createVector3(-5, -6, -7), min, max);
+    expect(out.x).toBe(-1);
+    expect(out.y).toBe(-2);
+    expect(out.z).toBe(-3);
+
+    clampVector3(out, createVector3(100, 200, 300), min, max);
+    expect(out.x).toBe(10);
+    expect(out.y).toBe(20);
+    expect(out.z).toBe(30);
+
+    clampVector3(out, createVector3(0, 1, 2), min, max);
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(1);
+    expect(out.z).toBe(2);
+  });
+
   it('clamps each component independently', () => {
     const out = createVector3();
     clampVector3(out, createVector3(5, -2, 1), createVector3(0, 0, 0), createVector3(3, 3, 3));
@@ -230,6 +254,28 @@ describe('crossVector3', () => {
 });
 
 describe('divideVector3', () => {
+  it('gives 0 for a zero divisor on each component in turn', () => {
+    // A zero divisor is answered per component, not for the whole vector, so each component is
+    // zeroed on its own while the others still divide normally.
+    const source = createVector3(6, 8, 9);
+    const out = createVector3();
+
+    divideVector3(out, source, createVector3(0, 4, 3));
+    expect(out.x).toBe(0);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(3);
+
+    divideVector3(out, source, createVector3(2, 0, 3));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(3);
+
+    divideVector3(out, source, createVector3(2, 4, 0));
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(2);
+    expect(out.z).toBe(0);
+  });
+
   it('divides component-wise', () => {
     const out = createVector3();
     divideVector3(out, createVector3(6, 8, 9), createVector3(2, 4, 3));
@@ -456,6 +502,25 @@ describe('interpolateVector3', () => {
 });
 
 describe('maxVector3', () => {
+  it('takes each component from whichever side wins, and gives the same answer either way round', () => {
+    // The winner alternates between the two arguments component by component, and all 6 numbers
+    // are distinct, so a line reading the wrong component or the wrong side cannot land on the
+    // right answer anyway. Running it again with the arguments swapped must not change it.
+    const a = createVector3(1, 5, 2);
+    const b = createVector3(3, 0, 7);
+    const out = createVector3();
+
+    maxVector3(out, a, b);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+    expect(out.z).toBe(7);
+
+    maxVector3(out, b, a);
+    expect(out.x).toBe(3);
+    expect(out.y).toBe(5);
+    expect(out.z).toBe(7);
+  });
+
   it('returns the component-wise maximum', () => {
     const out = createVector3();
     maxVector3(out, createVector3(1, 5, 2), createVector3(3, 2, 7));
@@ -482,6 +547,25 @@ describe('maxVector3', () => {
 });
 
 describe('minVector3', () => {
+  it('takes each component from whichever side wins, and gives the same answer either way round', () => {
+    // The winner alternates between the two arguments component by component, and all 6 numbers
+    // are distinct, so a line reading the wrong component or the wrong side cannot land on the
+    // right answer anyway. Running it again with the arguments swapped must not change it.
+    const a = createVector3(1, 5, 2);
+    const b = createVector3(3, 0, 7);
+    const out = createVector3();
+
+    minVector3(out, a, b);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(2);
+
+    minVector3(out, b, a);
+    expect(out.x).toBe(1);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(2);
+  });
+
   it('returns the component-wise minimum', () => {
     const out = createVector3();
     minVector3(out, createVector3(1, 5, 2), createVector3(3, 2, 7));
