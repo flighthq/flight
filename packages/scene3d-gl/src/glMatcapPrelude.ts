@@ -2,7 +2,8 @@ import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlMatcapDefineKey, GlMatcapProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Uploads the resolved matcap surface uniforms: the linear tint (already sRgb-decoded on the CPU),
 // the optional matcap texture on texture unit 0, and the alpha-mask cutoff. The caller has already
 // selected the program (beginGlMeshDraw), set the view-projection, and uploaded u_view.
@@ -26,7 +27,7 @@ export function bindGlMatcapSurface(
 // A short, stable, order-independent string identity for a matcap define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlMatcapDefineKey(key: Readonly<GlMatcapDefineKey>): string {
-  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasMatcap ? 't' : '-'}`;
+  return `${key.alphaMaskEnabled ? 'm' : '-'}${key.hasMatcap ? 't' : '-'}${key.hasSkin ? 'k' : '-'}`;
 }
 
 // Compiles the matcap shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -35,6 +36,8 @@ export function compileGlMatcapProgram(gl: WebGL2RenderingContext, key: Readonly
   const program = compileGlProgram(gl, getGlMatcapVertexSourceForKey(key), getGlMatcapFragmentSourceForKey(key));
   return {
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
+    locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
+    locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locMatcap: gl.getUniformLocation(program, 'u_matcap'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNormalMatrix: gl.getUniformLocation(program, 'u_normalMatrix'),
@@ -48,8 +51,12 @@ export function compileGlMatcapProgram(gl: WebGL2RenderingContext, key: Readonly
 // Resolves the matcap program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `matcap:` family namespace.
 export function ensureGlMatcapProgram(state: GlRenderState, key: Readonly<GlMatcapDefineKey>): GlMatcapProgram {
-  return ensureGlScene3DProgram(state, `matcap:${buildGlMatcapDefineKey(key)}`, (gl) =>
-    compileGlMatcapProgram(gl, key),
+  const fullKey: GlMatcapDefineKey = {
+    ...key,
+    hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
+  };
+  return ensureGlScene3DProgram(state, `matcap:${buildGlMatcapDefineKey(fullKey)}`, (gl) =>
+    compileGlMatcapProgram(gl, fullKey),
   );
 }
 
@@ -60,13 +67,14 @@ export function getGlMatcapFragmentSourceForKey(key: Readonly<GlMatcapDefineKey>
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlMatcapVertexSourceForKey(key: Readonly<GlMatcapDefineKey>): string {
-  return buildDefineSource(key) + MATCAP_VERTEX_BODY;
+  return buildDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + MATCAP_VERTEX_BODY;
 }
 
 function buildDefineSource(key: Readonly<GlMatcapDefineKey>): string {
   let defines = '#version 300 es\n';
   if (key.alphaMaskEnabled) defines += '#define ALPHA_MASK\n';
   if (key.hasMatcap) defines += '#define HAS_MATCAP\n';
+  if (key.hasSkin) defines += '#define HAS_SKIN\n';
   return defines;
 }
 
@@ -82,10 +90,18 @@ uniform mat3 u_normalMatrix;
 out vec3 v_viewNormal;
 
 void main() {
+#ifdef HAS_SKIN
+  mat4 skin = skinMatrix();
+  vec4 localPosition = skin * vec4(a_position, 1.0);
+  vec3 localNormal = skinNormalMatrix() * a_normal;
+#else
+  vec4 localPosition = vec4(a_position, 1.0);
+  vec3 localNormal = a_normal;
+#endif
   // u_normalMatrix takes the object normal into world space (handles model rotation/scale);
   // mat3(u_view) rotates it into view space. Normalized in the fragment scene2d.
-  v_viewNormal = mat3(u_view) * (u_normalMatrix * a_normal);
-  gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);
+  v_viewNormal = mat3(u_view) * (u_normalMatrix * localNormal);
+  gl_Position = u_viewProjection * u_model * localPosition;
 }
 `;
 

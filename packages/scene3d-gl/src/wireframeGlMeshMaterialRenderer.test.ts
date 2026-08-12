@@ -6,6 +6,8 @@ import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerGlWireframeMaterial, wireframeGlMeshMaterialRenderer } from './wireframeGlMeshMaterialRenderer';
 
@@ -80,6 +82,21 @@ describe('wireframeGlMeshMaterialRenderer', () => {
     wireframeGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
 
     expect(gl.calls.some((c) => c.name === 'uniform1f' && c.args[1] === 0.5)).toBe(true);
+  });
+
+  it('draw binds the bone palette consumed by the skinned line variant', () => {
+    const { state, gl } = makeGlScene3DState();
+    const proxy = makeProxy();
+    proxy.jointMatrices = new Float32Array(16);
+    proxy.normalMatrices = new Float32Array(12);
+    getGlScene3DRuntime(state).activeSkinnedRun = true;
+    wireframeGlMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
+    wireframeGlMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
+
+    expect(
+      gl.calls.some((c) => c.name === 'activeTexture' && c.args[0] === gl.TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT),
+    ).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'uniform1i' && c.args[1] === SKIN_PALETTE_TEXTURE_UNIT)).toBe(true);
   });
 
   it('draw is a no-op when bind has not selected a program', () => {

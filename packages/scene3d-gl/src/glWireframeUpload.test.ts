@@ -1,4 +1,5 @@
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
+import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { destroyGlWireframeUpload, ensureGlWireframeUpload } from './glWireframeUpload';
@@ -46,5 +47,27 @@ describe('ensureGlWireframeUpload', () => {
     const second = ensureGlWireframeUpload(state, geometry);
     expect(second).toBe(first);
     expect(gl.calls.filter((c) => c.name === 'createVertexArray').length).toBe(builds);
+  });
+
+  it('binds the joint and weight attributes required by the skinned line pipeline', () => {
+    const { state, gl } = makeGlScene3DState();
+    const layout: VertexAttributeLayout = {
+      attributes: [
+        { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+        { byteOffset: 12, format: 'float32x4', semantic: 'joints0' },
+        { byteOffset: 28, format: 'float32x4', semantic: 'weights0' },
+      ],
+      stride: 44,
+    };
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2]),
+      layout,
+      vertices: new Float32Array(33),
+    });
+
+    ensureGlWireframeUpload(state, geometry, true);
+
+    const locations = gl.calls.filter((c) => c.name === 'vertexAttribPointer').map((c) => c.args[0]);
+    expect(locations).toEqual(expect.arrayContaining([0, 6, 7]));
   });
 });

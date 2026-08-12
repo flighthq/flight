@@ -41,6 +41,40 @@ export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshPr
   }
 }
 
+// Uploads and binds the pose + normal palettes consumed by a HAS_SKIN mesh program. Returns true only
+// when both the selected program and the draw proxy carry the pose data, which is also the signal that
+// upload consumers must source the static bind-pose vertices. Kept separate from drawGlMeshSubset so
+// the wireframe family can bind the same palette before issuing its derived line-index draw.
+export function bindGlMeshSkinPalette(
+  state: GlRenderState,
+  program: Readonly<GlMeshProgram>,
+  proxy: Readonly<Scene3DRenderProxy>,
+): boolean {
+  const jointMatrices = proxy.jointMatrices;
+  const gpuSkinned = program.locJointTexture != null && jointMatrices != null;
+  if (!gpuSkinned) return false;
+
+  const gl = state.gl;
+  const jointCount = (jointMatrices.length / 16) | 0;
+  const palette = ensureGlSkinPalette(state);
+  gl.activeTexture(gl.TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT);
+  uploadGlSkinPaletteTexture(gl, palette, jointMatrices, jointCount);
+  gl.uniform1i(program.locJointTexture!, SKIN_PALETTE_TEXTURE_UNIT);
+
+  // The normal palette rides its own unit and its own texture: three texels per joint, not four.
+  // ★ THE JOINT COUNT COMES FROM THE POSE PALETTE ON PURPOSE. The normal array is 12 floats per joint,
+  // not 16, so deriving a count from its own length with the pose divisor would silently under-count
+  // every skeleton and upload a truncated row — a quiet corruption rather than a failure.
+  const normalMatrices = proxy.normalMatrices;
+  if (program.locJointNormalTexture != null && normalMatrices != null) {
+    const normalPalette = ensureGlSkinNormalPalette(state);
+    gl.activeTexture(gl.TEXTURE0 + SKIN_NORMAL_PALETTE_TEXTURE_UNIT);
+    uploadGlSkinPaletteTexture(gl, normalPalette, normalMatrices, jointCount, 3);
+    gl.uniform1i(program.locJointNormalTexture, SKIN_NORMAL_PALETTE_TEXTURE_UNIT);
+  }
+  return true;
+}
+
 // Uploads a material's primary-texture uv transform to the HAS_UV_TRANSFORM vertex variant. Resolves
 // u_uvTransform lazily and caches it on the program (mirroring locObjectAlpha): a null location means
 // the compiled variant omits the uniform — the identity path — so this is a cheap no-op there, and a
@@ -155,31 +189,7 @@ export function drawGlMeshSubset(
     }
   }
 
-  // GPU skinning: upload the mesh's bone palette into the per-state RGBA32F data texture and bind it on
-  // the skin-palette texture unit for the HAS_SKIN variant. Only a skinned program has the location, and
-  // only a skinned mesh carries a palette; a mismatch (one without the other) simply skips the upload and
-  // the shader falls back to its rigid path. The joint count is the palette length / 16 (16 floats/mat4).
-  const jointMatrices = proxy.jointMatrices;
-  const gpuSkinned = program.locJointTexture != null && jointMatrices != null;
-  if (gpuSkinned) {
-    const jointCount = (jointMatrices.length / 16) | 0;
-    const palette = ensureGlSkinPalette(state);
-    gl.activeTexture(gl.TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT);
-    uploadGlSkinPaletteTexture(gl, palette, jointMatrices, jointCount);
-    gl.uniform1i(program.locJointTexture, SKIN_PALETTE_TEXTURE_UNIT);
-
-    // The normal palette rides its own unit and its own texture: three texels per joint, not four.
-    // ★ THE JOINT COUNT COMES FROM THE POSE PALETTE ON PURPOSE. The normal array is 12 floats per joint,
-    // not 16, so deriving a count from its own length with the pose divisor would silently under-count
-    // every skeleton and upload a truncated row — a quiet corruption rather than a failure.
-    const normalMatrices = proxy.normalMatrices;
-    if (program.locJointNormalTexture != null && normalMatrices != null) {
-      const normalPalette = ensureGlSkinNormalPalette(state);
-      gl.activeTexture(gl.TEXTURE0 + SKIN_NORMAL_PALETTE_TEXTURE_UNIT);
-      uploadGlSkinPaletteTexture(gl, normalPalette, normalMatrices, jointCount, 3);
-      gl.uniform1i(program.locJointNormalTexture, SKIN_NORMAL_PALETTE_TEXTURE_UNIT);
-    }
-  }
+  const gpuSkinned = bindGlMeshSkinPalette(state, program, proxy);
 
   // A GPU-skinned draw uploads the static bind pose (the shader deforms it via the palette), so the
   // per-frame CPU pose updateMeshSkin also writes to geometry.vertices is not re-applied on top.

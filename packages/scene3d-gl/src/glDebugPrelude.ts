@@ -2,7 +2,8 @@ import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
 // view-projection. A no-op when no map is bound; depth mode never calls this.
@@ -38,7 +39,7 @@ export function bindGlDebugRange(
 // A short, stable, order-independent string identity for a debug define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlDebugDefineKey(key: Readonly<GlDebugDefineKey>): string {
-  return `${key.mode === 'depth' ? 'd' : 'n'}${key.hasNormalMap ? 'm' : '-'}`;
+  return `${key.mode === 'depth' ? 'd' : 'n'}${key.hasNormalMap ? 'm' : '-'}${key.hasSkin ? 'k' : '-'}`;
 }
 
 // Compiles the debug shader for a define key, links it, and resolves its uniform locations. Pure GL
@@ -47,6 +48,8 @@ export function compileGlDebugProgram(gl: WebGL2RenderingContext, key: Readonly<
   const program = compileGlProgram(gl, getGlDebugVertexSourceForKey(key), getGlDebugFragmentSourceForKey(key));
   return {
     locFar: gl.getUniformLocation(program, 'u_far'),
+    locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
+    locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
     locModel: gl.getUniformLocation(program, 'u_model'),
     locNear: gl.getUniformLocation(program, 'u_near'),
     locNormalMap: gl.getUniformLocation(program, 'u_normalMap'),
@@ -60,7 +63,13 @@ export function compileGlDebugProgram(gl: WebGL2RenderingContext, key: Readonly<
 // Resolves the debug program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `debug:` family namespace.
 export function ensureGlDebugProgram(state: GlRenderState, key: Readonly<GlDebugDefineKey>): GlDebugProgram {
-  return ensureGlScene3DProgram(state, `debug:${buildGlDebugDefineKey(key)}`, (gl) => compileGlDebugProgram(gl, key));
+  const fullKey: GlDebugDefineKey = {
+    ...key,
+    hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
+  };
+  return ensureGlScene3DProgram(state, `debug:${buildGlDebugDefineKey(fullKey)}`, (gl) =>
+    compileGlDebugProgram(gl, fullKey),
+  );
 }
 
 // The full fragment source for a define key (define block + body), ready to hand to the GL compiler.
@@ -70,7 +79,7 @@ export function getGlDebugFragmentSourceForKey(key: Readonly<GlDebugDefineKey>):
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
 export function getGlDebugVertexSourceForKey(key: Readonly<GlDebugDefineKey>): string {
-  return buildDefineSource(key) + DEBUG_VERTEX_BODY;
+  return buildDefineSource(key) + (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') + DEBUG_VERTEX_BODY;
 }
 
 function buildDefineSource(key: Readonly<GlDebugDefineKey>): string {
@@ -78,6 +87,7 @@ function buildDefineSource(key: Readonly<GlDebugDefineKey>): string {
   if (key.mode === 'depth') defines += '#define DEPTH_MODE\n';
   else defines += '#define NORMAL_MODE\n';
   if (key.hasNormalMap) defines += '#define HAS_NORMAL_MAP\n';
+  if (key.hasSkin) defines += '#define HAS_SKIN\n';
   return defines;
 }
 
@@ -97,9 +107,19 @@ out vec4 v_tangent;
 out vec2 v_uv0;
 
 void main() {
-  vec4 worldPosition = u_model * vec4(a_position, 1.0);
+#ifdef HAS_SKIN
+  mat4 skin = skinMatrix();
+  vec4 localPosition = skin * vec4(a_position, 1.0);
+  vec3 localNormal = skinNormalMatrix() * a_normal;
+  vec3 localTangent = mat3(skin) * a_tangent.xyz;
+#else
+  vec4 localPosition = vec4(a_position, 1.0);
+  vec3 localNormal = a_normal;
+  vec3 localTangent = a_tangent.xyz;
+#endif
+  vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
-  v_normal = u_normalMatrix * a_normal;
+  v_normal = u_normalMatrix * localNormal;
   // A tangent is a TRUE SURFACE VECTOR and follows the model matrix, the same one a position
   // follows. Only the normal is a covector needing the inverse-transpose. The two agree under
   // rotation and uniform scale, which is why sharing u_normalMatrix looked correct, and diverge
@@ -110,7 +130,7 @@ void main() {
   // and a zero w collapses the bitangent entirely — a worse failure than keeping the original hand.
   mat3 modelRotation = mat3(u_model);
   float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
-  v_tangent = vec4(modelRotation * a_tangent.xyz, tangentHandedness);
+  v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
   v_uv0 = a_uv0;
   gl_Position = u_viewProjection * worldPosition;
 }

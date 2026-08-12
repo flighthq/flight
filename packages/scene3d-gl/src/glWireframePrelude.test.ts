@@ -28,6 +28,19 @@ describe('ensureGlWireframeProgram', () => {
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(links);
     expect([...getGlScene3DRuntime(state).programCache.keys()].some((k) => k.startsWith('wireframe:'))).toBe(true);
   });
+
+  it('caches rigid and skinned variants independently from the active draw run', () => {
+    const { state } = makeGlScene3DState();
+    const rigid = ensureGlWireframeProgram(state);
+    getGlScene3DRuntime(state).activeSkinnedRun = true;
+    const skinned = ensureGlWireframeProgram(state);
+
+    expect(skinned).not.toBe(rigid);
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toEqual([
+      'wireframe:base|rigid',
+      'wireframe:base|skin',
+    ]);
+  });
 });
 
 describe('getGlWireframeFragmentSource', () => {
@@ -49,5 +62,16 @@ describe('getGlWireframeVertexSource', () => {
     expect(source).toContain('a_position');
     expect(source).toContain('u_viewProjection');
     expect(source).toContain('u_model');
+  });
+
+  it('deforms position through the palette only in the skinned variant', () => {
+    const rigid = getGlWireframeVertexSource();
+    const skinned = getGlWireframeVertexSource(true);
+
+    expect(rigid).not.toContain('#define HAS_SKIN');
+    expect(rigid).not.toContain('uniform highp sampler2D u_jointTexture');
+    expect(skinned).toContain('#define HAS_SKIN');
+    expect(skinned).toContain('uniform highp sampler2D u_jointTexture');
+    expect(skinned).toContain('skinMatrix() * vec4(a_position, 1.0)');
   });
 });

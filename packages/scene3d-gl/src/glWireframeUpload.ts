@@ -1,6 +1,6 @@
 import type { GlWireframeUpload, GlRenderState, MeshGeometry } from '@flighthq/types/contract';
 
-import { ensureGlMeshUpload } from './glMeshUpload';
+import { bindGlVertexAttribute, ensureGlMeshUpload } from './glMeshUpload';
 // Lazily derives and uploads the wireframe line-index VAO for a geometry on this state, caching it
 // keyed by the geometry entity. Reuses the geometry's interleaved vertex buffer (ensuring the
 // triangle upload first), binds only the position attribute at location 0, and builds a line-list
@@ -18,9 +18,13 @@ export function destroyGlWireframeUpload(state: GlRenderState, upload: Readonly<
   gl.deleteBuffer(upload.lineIndexBuffer);
 }
 
-export function ensureGlWireframeUpload(state: GlRenderState, geometry: Readonly<MeshGeometry>): GlWireframeUpload {
+export function ensureGlWireframeUpload(
+  state: GlRenderState,
+  geometry: Readonly<MeshGeometry>,
+  gpuSkinned = false,
+): GlWireframeUpload {
   const gl = state.gl;
-  const meshUpload = ensureGlMeshUpload(state, geometry);
+  const meshUpload = ensureGlMeshUpload(state, geometry, gpuSkinned);
 
   let perState = wireframeUploads.get(state);
   if (perState === undefined) {
@@ -50,13 +54,17 @@ export function ensureGlWireframeUpload(state: GlRenderState, geometry: Readonly
 
   gl.bindVertexArray(upload.vao);
 
-  // Bind the shared interleaved vertex buffer and wire only the position attribute (location 0).
+  // Bind the shared interleaved vertex buffer and wire position plus the optional skin influence
+  // attributes. The rigid vertex variant ignores locations 6/7; the skinned variant consumes them.
   gl.bindBuffer(gl.ARRAY_BUFFER, meshUpload.vertexBuffer);
   const stride = geometry.layout.stride;
-  const position = geometry.layout.attributes.find((a) => a.semantic === 'position');
-  const byteOffset = position !== undefined ? position.byteOffset : 0;
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, stride, byteOffset);
+  const attributes = geometry.layout.attributes;
+  for (let i = 0; i < attributes.length; i++) {
+    const attribute = attributes[i];
+    if (attribute.semantic === 'position' || attribute.semantic === 'joints0' || attribute.semantic === 'weights0') {
+      bindGlVertexAttribute(gl, attribute, stride);
+    }
+  }
 
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, upload.lineIndexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, lineIndices, gl.STATIC_DRAW);
