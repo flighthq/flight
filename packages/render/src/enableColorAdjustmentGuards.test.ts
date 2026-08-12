@@ -16,6 +16,15 @@ describe('areColorAdjustmentGuardsEnabled', () => {
     expect(areColorAdjustmentGuardsEnabled(state)).toBe(false);
     enableColorAdjustmentGuards(state);
     expect(areColorAdjustmentGuardsEnabled(state)).toBe(true);
+    const table = getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard;
+    expect(table).toMatchObject({
+      entry: { state: RegistryEntryState.Bound },
+      onMiss: 'Disabled',
+      registry: 'ColorAdjustmentUnsupportedGuard',
+      shape: 'slot',
+    });
+    enableColorAdjustmentGuards(state);
+    expect(getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard).toBe(table);
   });
 });
 

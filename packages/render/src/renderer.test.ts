@@ -1,5 +1,10 @@
 import { createSlotTable, getRegistryTableEntry } from '@flighthq/registry/contract';
-import type { Renderer, RenderState, Scene2DClipHooks } from '@flighthq/types/contract';
+import type {
+  ColorAdjustmentUnsupportedGuard,
+  Renderer,
+  RenderState,
+  Scene2DClipHooks,
+} from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import {
@@ -112,10 +117,15 @@ describe('copyRenderStateRegistrations', () => {
     const target = createRenderState();
     const resolver = vi.fn();
     const colorAdjustmentResolver = vi.fn();
+    const colorAdjustmentUnsupportedGuard: ColorAdjustmentUnsupportedGuard = vi.fn();
     const strokeTessellator = vi.fn(() => null);
     getRenderStateRuntime(source).registries.colorAdjustments = {
       ...createSlotTable('ColorAdjustments', 'Disabled'),
       entry: { state: RegistryEntryState.Bound, value: colorAdjustmentResolver },
+    };
+    getRenderStateRuntime(source).registries.colorAdjustmentUnsupportedGuard = {
+      ...createSlotTable('ColorAdjustmentUnsupportedGuard', 'Disabled'),
+      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentUnsupportedGuard },
     };
     getRenderStateRuntime(source).registries.strokeTessellator = {
       ...getRenderStateRuntime(source).registries.strokeTessellator,
@@ -143,6 +153,17 @@ describe('copyRenderStateRegistrations', () => {
     expect(sourceRuntime.registries.colorAdjustments).not.toBe(sharedColorSnapshot);
     expect(targetRuntime.registries.colorAdjustments).toBe(sharedColorSnapshot);
     expect(targetRuntime.registries.colorAdjustments?.entry?.state).toBe(RegistryEntryState.Bound);
+    expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(
+      sourceRuntime.registries.colorAdjustmentUnsupportedGuard,
+    );
+    expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard?.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: colorAdjustmentUnsupportedGuard,
+    });
+    const sharedGuardSnapshot = targetRuntime.registries.colorAdjustmentUnsupportedGuard;
+    sourceRuntime.registries.colorAdjustmentUnsupportedGuard = undefined;
+    expect(sourceRuntime.registries.colorAdjustmentUnsupportedGuard).not.toBe(sharedGuardSnapshot);
+    expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedGuardSnapshot);
     expect(targetRuntime.registries.strokeTessellator).toBe(sourceRuntime.registries.strokeTessellator);
     expect(targetRuntime.registries.strokeTessellator.entry).toEqual({
       state: RegistryEntryState.Bound,

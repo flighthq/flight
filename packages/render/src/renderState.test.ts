@@ -1,9 +1,15 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { RenderState } from '@flighthq/types/contract';
-import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
+import type { ColorAdjustmentUnsupportedGuard, RenderState } from '@flighthq/types/contract';
+import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
-import { createRenderState, createRenderStateRuntime, destroyRenderState, getRenderStateRuntime } from './renderState';
+import {
+  createRenderState,
+  createRenderStateRuntime,
+  destroyRenderState,
+  getColorAdjustmentUnsupportedGuard,
+  getRenderStateRuntime,
+} from './renderState';
 
 describe('createRenderState', () => {
   let state: RenderState;
@@ -108,6 +114,28 @@ describe('destroyRenderState', () => {
 
     expect(runtime.tempStack).toHaveLength(0);
     expect(runtime.registries.effectPaddingResolvers).toBeUndefined();
+  });
+});
+
+describe('getColorAdjustmentUnsupportedGuard', () => {
+  it('resolves only a bound guard entry', () => {
+    const state = createRenderState();
+    const guard: ColorAdjustmentUnsupportedGuard = vi.fn();
+    const runtime = getRenderStateRuntime(state);
+
+    expect(getColorAdjustmentUnsupportedGuard(state)).toBeNull();
+    runtime.registries.colorAdjustmentUnsupportedGuard = {
+      entry: { state: RegistryEntryState.Bound, value: guard },
+      onMiss: 'Disabled',
+      registry: 'ColorAdjustmentUnsupportedGuard',
+      shape: 'slot',
+    };
+    expect(getColorAdjustmentUnsupportedGuard(state)).toBe(guard);
+    runtime.registries.colorAdjustmentUnsupportedGuard = {
+      ...runtime.registries.colorAdjustmentUnsupportedGuard,
+      entry: { state: RegistryEntryState.Tombstoned },
+    };
+    expect(getColorAdjustmentUnsupportedGuard(state)).toBeNull();
   });
 });
 

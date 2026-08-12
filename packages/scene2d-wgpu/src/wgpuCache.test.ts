@@ -1,6 +1,13 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
-import { createRenderCache, createRenderState, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
+import {
+  createRenderCache,
+  createRenderState,
+  enableColorAdjustmentGuards,
+  getColorAdjustmentUnsupportedGuard,
+  RenderCacheKind,
+  useRenderCache,
+} from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   WgpuColorAdjustmentMaterialFeature,
@@ -163,6 +170,7 @@ describe('createWgpuCacheState', () => {
       registry: 'WgpuColorAdjustmentFeatureGuard',
       shape: 'slot',
     };
+    enableColorAdjustmentGuards(screen);
     enableWgpuRenderCache(screen);
     const cacheState = createWgpuCacheState(screen);
     expect(getWgpuRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
@@ -186,6 +194,15 @@ describe('createWgpuCacheState', () => {
     const sharedColorFeatureGuard = cacheRuntime.registries.colorAdjustmentFeatureGuard;
     screenRuntime.registries.colorAdjustmentFeatureGuard = undefined;
     expect(cacheRuntime.registries.colorAdjustmentFeatureGuard).toBe(sharedColorFeatureGuard);
+    expect(cacheRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(
+      screenRuntime.registries.colorAdjustmentUnsupportedGuard,
+    );
+    expect(getColorAdjustmentUnsupportedGuard(cacheState)).not.toBeNull();
+    const sharedUnsupportedGuard = cacheRuntime.registries.colorAdjustmentUnsupportedGuard;
+    screenRuntime.registries.colorAdjustmentUnsupportedGuard = undefined;
+    expect(getColorAdjustmentUnsupportedGuard(screen)).toBeNull();
+    expect(cacheRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
+    expect(getColorAdjustmentUnsupportedGuard(cacheState)).not.toBeNull();
   });
 
   it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {

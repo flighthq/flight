@@ -1,7 +1,13 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
-import { enableColorAdjustments, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import {
+  enableColorAdjustmentGuards,
+  enableColorAdjustments,
+  getColorAdjustmentUnsupportedGuard,
+  prepareScene2DRender,
+  registerRenderer,
+} from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
@@ -32,6 +38,7 @@ describe('copyCanvasRenderStateRegistrations', () => {
     );
     registerCanvasMaterialRenderer(source, 'acme.Material', materialRenderer);
     enableColorAdjustments(source);
+    enableColorAdjustmentGuards(source);
 
     copyCanvasRenderStateRegistrations(target, source);
 
@@ -39,6 +46,15 @@ describe('copyCanvasRenderStateRegistrations', () => {
     expect(targetRuntime.registries).not.toBe(sourceRuntime.registries);
     expect(targetRuntime.registries.colorAdjustments).toBe(sourceRuntime.registries.colorAdjustments);
     expect(targetRuntime.registries.colorAdjustments?.entry?.state).toBe(RegistryEntryState.Bound);
+    expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(
+      sourceRuntime.registries.colorAdjustmentUnsupportedGuard,
+    );
+    expect(getColorAdjustmentUnsupportedGuard(target)).not.toBeNull();
+    const sharedGuardSnapshot = targetRuntime.registries.colorAdjustmentUnsupportedGuard;
+    sourceRuntime.registries.colorAdjustmentUnsupportedGuard = undefined;
+    expect(getColorAdjustmentUnsupportedGuard(source)).toBeNull();
+    expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedGuardSnapshot);
+    expect(getColorAdjustmentUnsupportedGuard(target)).not.toBeNull();
     expect(targetRuntime.registries.materialRenderers).toBe(sourceRuntime.registries.materialRenderers);
     expect(targetRuntime.registries.renderEffects).toBe(sourceRuntime.registries.renderEffects);
     expect(getRegistryTableEntry(targetRuntime.registries.materialRenderers!, 'acme.Material')).toBe(materialRenderer);
