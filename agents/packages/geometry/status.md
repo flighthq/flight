@@ -34,13 +34,6 @@ claim about this tree, not about a session.
   `expandAabbBySphere`.
 - **`enableGeometryPoolGuards()` is chartered (2026-07-03) but unbuilt** — no guard module exists
   anywhere in the tree.
-- **`appendRotationMatrix4`'s pivot composite has its sign inverted**; its sibling's does not. It
-  builds `T(-p)·R·T(p)` (`matrix4.ts:47-51`) where rotate-about-`p` is `T(p)·R·T(-p)`, which
-  `prependRotationMatrix4` builds correctly (`:786-790`). With `source = T(10,0,0)`, pivot `(5,0,0)`,
-  90° about Z it writes translation `(-5, 15, 0)` — exactly `T(-p)·R·T(p)·source`, not the correct
-  `(5, 5, 0)`. Predates and is independent of the operand inversion. Unrepaired: that correction was
-  authorized as inheritance-only and this needs a hand edit, so the append-side pivot assertion is
-  absent from `matrix4.test.ts`; the prepend-side one passes.
 - **`__getAxisRotation` never normalizes its axis**, so a non-unit axis silently yields a scaling
   matrix, not a rotation: `let ax = x, ay = y, az = z` (`matrix4.ts:1284-1286`) feeds the Rodrigues
   terms with no length division, and axis `(0,0,2)` at 90° gives `m[1]=2`, `m[4]=-2`, `m[10]=4`. It
@@ -72,7 +65,10 @@ claim about this tree, not about a session.
   `this = lhs · this`). Not a convention mismatch: OpenFL is column-major with column vectors, like
   Flight. The four scale/rotation aliases route through those wrappers and inherited the inversion —
   hand-ported `appendTranslationMatrix4` bypassed them and was the lone survivor. The 28 family tests
-  encoded the inversion, written against the implementation rather than the documented meaning.
+  encoded the inversion, written against the implementation rather than the documented meaning. A
+  second, older defect surfaced with it: `appendRotationMatrix4`'s pivot built `T(-p)·R·T(p)` where
+  its own comments and its sibling both say `T(p)·R·T(-p)` — the code contradicted the comment beside
+  it. Both fixed; the pivot now asserts the point-held-fixed property rather than captured numbers.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The headline 2026-08-05 claim checked out
   **false**: "2D translation still leaves a distinct output's linear terms stale" — `translateMatrix`

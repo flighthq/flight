@@ -47,8 +47,8 @@ export function appendRotationMatrix4(
     appendTranslationMatrix4(t1, t1, -p.x, -p.y, -p.z);
     appendTranslationMatrix4(t2, t2, p.x, p.y, p.z);
 
-    multiplyMatrix4(m, t1, m); // R · T(-p)
-    multiplyMatrix4(m, m, t2); // T(p) · (R · T(-p))
+    multiplyMatrix4(m, m, t1); // R · T(-p)
+    multiplyMatrix4(m, t2, m); // T(p) · (R · T(-p))
 
     releaseMatrix4(t1);
     releaseMatrix4(t2);
