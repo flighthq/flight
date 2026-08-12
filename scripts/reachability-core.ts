@@ -405,7 +405,12 @@ function registrarMechanismShape(declaration: Node): RegistrarMechanismShape | n
   let batch = false;
   let direct = false;
   visitWithAncestors(declaration, [], (node, ancestors) => {
-    if (node.type !== 'CallExpression' || !isRegistrationCall(node.callee)) return;
+    if (
+      node.type !== 'CallExpression' ||
+      (!isRegistrationCall(node.callee) && !isPersistentRegistryTableRegistrationCall(node.callee))
+    ) {
+      return;
+    }
     const parameterLoop = ancestors.find(
       (ancestor) =>
         (ancestor.type === 'ForOfStatement' || ancestor.type === 'ForInStatement') &&
@@ -413,6 +418,11 @@ function registrarMechanismShape(declaration: Node): RegistrarMechanismShape | n
     );
     if (parameterLoop !== undefined) {
       batch = true;
+      return;
+    }
+    if (isPersistentRegistryTableRegistrationCall(node.callee)) {
+      const kind = node.arguments[1];
+      if (kind !== undefined && expressionReferencesAny(kind, callerValues)) direct = true;
       return;
     }
     if (node.callee.type !== 'MemberExpression') return;
@@ -563,6 +573,10 @@ function isRegistrationCall(callee: Node): boolean {
   return (
     callee.property.name === 'register' || callee.property.name === 'set' || /^register[A-Z]/.test(callee.property.name)
   );
+}
+
+function isPersistentRegistryTableRegistrationCall(callee: Node): boolean {
+  return callee.type === 'Identifier' && callee.name === 'withRegistryTableEntry';
 }
 
 function registrationPairArguments(args: readonly Node[]): { kind: Node; implementation: Node } | null {
