@@ -87,6 +87,12 @@ describe('copyMatrix3', () => {
     expect(getMatrix3Element(m2, 2, 1)).toBe(9);
     expect(getMatrix3Element(m2, 2, 2)).toBe(10);
   });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    copyMatrix3(matrix, matrix);
+    expect(Array.from(matrix.m)).toEqual([2, 5, 8, 3, 6, 9, 4, 7, 10]);
+  });
 });
 
 describe('copyMatrix3ColumnFromVector3', () => {
@@ -117,10 +123,11 @@ describe('copyMatrix3ColumnFromVector3', () => {
     expect(getMatrix3Element(m, 2, 2)).toBe(7);
   });
 
-  it('should throw when column is greater than 2', () => {
+  it('throws when column is outside 0 through 2', () => {
     const m = createMatrix3();
     const v = createVector3();
-    expect(() => copyMatrix3ColumnFromVector3(m, 3, v)).toThrow();
+    expect(() => copyMatrix3ColumnFromVector3(m, -1, v)).toThrow(RangeError);
+    expect(() => copyMatrix3ColumnFromVector3(m, 3, v)).toThrow(RangeError);
   });
 });
 
@@ -152,10 +159,11 @@ describe('copyMatrix3ColumnToVector3', () => {
     expect(v.z).toBe(9);
   });
 
-  it('should throw when column is greater than 2', () => {
+  it('throws when column is outside 0 through 2', () => {
     const m = createMatrix3();
     const v = createVector3();
-    expect(() => copyMatrix3ColumnToVector3(v, 3, m)).toThrow();
+    expect(() => copyMatrix3ColumnToVector3(v, -1, m)).toThrow(RangeError);
+    expect(() => copyMatrix3ColumnToVector3(v, 3, m)).toThrow(RangeError);
   });
 
   it('should allow matrix-like and vector-like objects', () => {
@@ -188,10 +196,11 @@ describe('copyMatrix3RowFromVector3', () => {
     expect(getMatrix3Element(m, 1, 2)).toBe(6);
   });
 
-  it('should throw when row is greater than 2', () => {
+  it('throws when row is outside 0 through 2', () => {
     const m = createMatrix3();
     const v = createVector3();
-    expect(() => copyMatrix3RowFromVector3(m, 3, v)).toThrow();
+    expect(() => copyMatrix3RowFromVector3(m, -1, v)).toThrow(RangeError);
+    expect(() => copyMatrix3RowFromVector3(m, 3, v)).toThrow(RangeError);
   });
 
   it('should allow matrix-like and vector-like objects', () => {
@@ -230,6 +239,13 @@ describe('copyMatrix3RowToVector3', () => {
     expect(v.x).toBe(0);
     expect(v.y).toBe(0);
     expect(v.z).toBe(1);
+  });
+
+  it('throws when row is outside 0 through 2', () => {
+    const m = createMatrix3();
+    const v = createVector3();
+    expect(() => copyMatrix3RowToVector3(v, -1, m)).toThrow(RangeError);
+    expect(() => copyMatrix3RowToVector3(v, 3, m)).toThrow(RangeError);
   });
 
   it('should allow matrix-like and vector-like objects', () => {
@@ -458,6 +474,18 @@ describe('isAffineMatrix3', () => {
 });
 
 describe('multiplyMatrix3', () => {
+  it('multiplies a non-affine matrix into distinct and aliased outputs', () => {
+    const a = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 10);
+    const b = createMatrix3(2, 0, 1, 1, 3, 0, 0, 2, 4);
+    const expected = createMatrix3(4, 12, 13, 13, 27, 28, 22, 44, 47);
+    const out = createMatrix3();
+    multiplyMatrix3(out, a, b);
+    expect(equalsMatrix3(out, expected)).toBe(true);
+
+    multiplyMatrix3(a, a, b);
+    expect(equalsMatrix3(a, expected)).toBe(true);
+  });
+
   it('should support out === a', () => {
     const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
     const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
@@ -555,6 +583,12 @@ describe('scaleMatrix3', () => {
     scaleMatrix3(out, m, 2, 3);
     expect(out.m[0]).toBe(2); // (0,0)
     expect(out.m[4]).toBe(3); // (1,1)
+  });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    scaleMatrix3(matrix, matrix, 2, 3);
+    expect(Array.from(matrix.m)).toEqual([2, 8, 14, 6, 15, 24, 3, 6, 9]);
   });
 });
 
@@ -765,6 +799,12 @@ describe('translateMatrix3', () => {
     translateMatrix3(out, m, 2, 3);
     expect(out.m[6]).toBe(2); // (0,2) tx
     expect(out.m[7]).toBe(3); // (1,2) ty
+  });
+
+  it('supports out === source', () => {
+    const matrix = createMatrix3(1, 2, 3, 4, 5, 6, 0, 0, 1);
+    translateMatrix3(matrix, matrix, 2, 3);
+    expect(Array.from(matrix.m)).toEqual([1, 4, 0, 2, 5, 0, 11, 29, 1]);
   });
 });
 
