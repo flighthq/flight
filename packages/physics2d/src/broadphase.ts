@@ -17,6 +17,19 @@ export function synchronizePhysics2DSweptBroadphase(world: Physics2DWorld, dt: n
 }
 
 function synchronizePhysics2DBroadphaseBounds(world: Physics2DWorld, dt: number): void {
+  const scratch = acquirePhysics2DBroadphaseScratch();
+  try {
+    synchronizePhysics2DBroadphaseBoundsWithScratch(world, dt, scratch);
+  } finally {
+    releasePhysics2DBroadphaseScratch(scratch);
+  }
+}
+
+function synchronizePhysics2DBroadphaseBoundsWithScratch(
+  world: Physics2DWorld,
+  dt: number,
+  scratch: Physics2DBroadphaseScratch,
+): void {
   for (const body of world.bodies) {
     let minX = Infinity;
     let minY = Infinity;
@@ -25,13 +38,13 @@ function synchronizePhysics2DBroadphaseBounds(world: Physics2DWorld, dt: number)
     let rotationRadiusSquared = 0;
     for (const collider of body.colliders) {
       updatePhysics2DColliderWorldShape(collider, body);
-      writePhysics2DColliderBounds(collider, boundsScratch);
-      if (boundsScratch.minX < minX) minX = boundsScratch.minX;
-      if (boundsScratch.minY < minY) minY = boundsScratch.minY;
-      if (boundsScratch.maxX > maxX) maxX = boundsScratch.maxX;
-      if (boundsScratch.maxY > maxY) maxY = boundsScratch.maxY;
-      const radiusX = Math.max(Math.abs(boundsScratch.minX - body.x), Math.abs(boundsScratch.maxX - body.x));
-      const radiusY = Math.max(Math.abs(boundsScratch.minY - body.y), Math.abs(boundsScratch.maxY - body.y));
+      writePhysics2DColliderBounds(collider, scratch.bounds);
+      if (scratch.bounds.minX < minX) minX = scratch.bounds.minX;
+      if (scratch.bounds.minY < minY) minY = scratch.bounds.minY;
+      if (scratch.bounds.maxX > maxX) maxX = scratch.bounds.maxX;
+      if (scratch.bounds.maxY > maxY) maxY = scratch.bounds.maxY;
+      const radiusX = Math.max(Math.abs(scratch.bounds.minX - body.x), Math.abs(scratch.bounds.maxX - body.x));
+      const radiusY = Math.max(Math.abs(scratch.bounds.minY - body.y), Math.abs(scratch.bounds.maxY - body.y));
       const radiusSquared = radiusX * radiusX + radiusY * radiusY;
       if (radiusSquared > rotationRadiusSquared) rotationRadiusSquared = radiusSquared;
     }
@@ -74,15 +87,15 @@ function synchronizePhysics2DBroadphaseBounds(world: Physics2DWorld, dt: number)
       world.index.removeSpatialObject(body.index);
       continue;
     }
-    bodyBounds.minX = minX;
-    bodyBounds.minY = minY;
+    scratch.bodyBounds.minX = minX;
+    scratch.bodyBounds.minY = minY;
     // Spatial cells use half-open rectangle containment while collision point tests include a shape's
     // boundary. Publish a minimally conservative upper edge so an exact query at maxX/maxY remains a
     // broadphase candidate. This also gives a point or axis-aligned segment a non-empty indexed span;
     // collider-level refinement still reads its exact, zero-area bounds.
-    bodyBounds.maxX = paddedUpperBound(maxX);
-    bodyBounds.maxY = paddedUpperBound(maxY);
-    world.index.updateSpatialObject(body.index, bodyBounds);
+    scratch.bodyBounds.maxX = paddedUpperBound(maxX);
+    scratch.bodyBounds.maxY = paddedUpperBound(maxY);
+    world.index.updateSpatialObject(body.index, scratch.bodyBounds);
   }
 }
 
@@ -94,5 +107,25 @@ function paddedUpperBound(value: number): number {
 // The widest body this world still treats as simulating. Named for what it bounds — the simulation's
 // tolerance for divergence — not for the index, which bounds its own insert cost independently.
 const MAX_SIMULATED_EXTENT = 1e7;
-const boundsScratch: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-const bodyBounds: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+
+interface Physics2DBroadphaseScratch {
+  bounds: SpatialAabb;
+  bodyBounds: SpatialAabb;
+}
+
+function acquirePhysics2DBroadphaseScratch(): Physics2DBroadphaseScratch {
+  return physics2DBroadphaseScratchPool.pop() ?? createPhysics2DBroadphaseScratch();
+}
+
+function createPhysics2DBroadphaseScratch(): Physics2DBroadphaseScratch {
+  return {
+    bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
+    bodyBounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
+  };
+}
+
+function releasePhysics2DBroadphaseScratch(scratch: Physics2DBroadphaseScratch): void {
+  physics2DBroadphaseScratchPool.push(scratch);
+}
+
+const physics2DBroadphaseScratchPool: Physics2DBroadphaseScratch[] = [createPhysics2DBroadphaseScratch()];

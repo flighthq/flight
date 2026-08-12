@@ -315,6 +315,33 @@ describe('cell range across every transition that can strand it', () => {
 });
 
 describe('createUniformGridSpatialBackend', () => {
+  it('keeps region comparisons reentrant when a bounds getter starts a nested query', () => {
+    const grid = createUniformGridSpatialBackend(0);
+    grid.insertSpatialObject(1, { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    grid.insertSpatialObject(2, { minX: 100, minY: 100, maxX: 101, maxY: 101 });
+    let minXReads = 0;
+    let nestedCalls = 0;
+    const region: SpatialAabb = {
+      get minX() {
+        minXReads++;
+        if (minXReads === 2) {
+          nestedCalls++;
+          grid.querySpatialRegion({ minX: -1, minY: -1, maxX: 200, maxY: 200 }, []);
+        }
+        return -1;
+      },
+      minY: -1,
+      maxX: 2,
+      maxY: 2,
+    };
+    const out: SpatialObjectId[] = [];
+
+    grid.querySpatialRegion(region, out);
+
+    expect(nestedCalls).toBe(1);
+    expect(out).toEqual([1]);
+  });
+
   it('emits a pair spanning several shared cells exactly once', () => {
     const grid = createUniformGridSpatialBackend(10);
     // Both objects cover the same 3x3 block of cells (0..2, 0..2), so they co-occupy nine cells.

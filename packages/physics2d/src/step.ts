@@ -61,13 +61,13 @@ import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 // Neither substitutes for the other: the first fixes contact identity, the second fixes solve order.
 // A determinism harness that shuffles only insertion order would pass with the first one broken.
 function buildPhysics2DContacts(world: Physics2DWorld): void {
-  world.index.querySpatialPairs(pairScratch);
+  world.index.querySpatialPairs(getPhysics2DStepScratch().pairs);
 
   world.events.began.length = 0;
   world.events.ended.length = 0;
   for (const contact of world.contacts) contact.touching = false;
 
-  for (const pair of pairScratch) {
+  for (const pair of getPhysics2DStepScratch().pairs) {
     const first = findPhysics2DBody(world, pair.a);
     const second = findPhysics2DBody(world, pair.b);
     if (first === null || second === null) continue;
@@ -101,7 +101,7 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
         // nothing can ever resolve. Sensors are reported and never resolved, so a sensor pair is the
         // only pair worth keeping between two bodies that cannot move.
         if (bothImmovable && !sensorPair) continue;
-        const manifold = collideContactManifold(colliderA.world, colliderB.world, manifoldScratch);
+        const manifold = collideContactManifold(colliderA.world, colliderB.world, getPhysics2DStepScratch().manifold);
         if (!manifold && (!sensorPair || !testPhysics2DAreaLessSensorOverlap(colliderA.world, colliderB.world))) {
           continue;
         }
@@ -111,7 +111,7 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
           bodyB.index,
           i,
           j,
-          manifoldScratch,
+          getPhysics2DStepScratch().manifold,
           sensorPair,
           mixPhysics2DFriction(colliderA.material.friction, colliderB.material.friction),
           mixPhysics2DRestitution(colliderA.material.restitution, colliderB.material.restitution),
@@ -316,7 +316,7 @@ function preparePhysics2DConstraints(world: Physics2DWorld, indices: number[], s
 // poses directly and leaves velocity unchanged: penetration is a positional error, and injecting a
 // separating velocity to repair it makes a resting body bounce away from a deep overlap. Each contact
 // is regenerated immediately before it is solved because an earlier correction in the same pass may
-// have moved either body. Reusing the module manifold scratch keeps the pass allocation-free.
+// have moved either body. Reusing the current step's leased manifold keeps the pass allocation-free.
 function solvePhysics2DPositionsOnce(world: Physics2DWorld, indices: number[], start: number, count: number): void {
   const config = world.config;
   const end = start + count;
@@ -334,12 +334,12 @@ function solvePhysics2DPositionsOnce(world: Physics2DWorld, indices: number[], s
     if (colliderA === undefined || colliderB === undefined) continue;
     updatePhysics2DColliderWorldShape(colliderA, bodyA);
     updatePhysics2DColliderWorldShape(colliderB, bodyB);
-    if (!collideContactManifold(colliderA.world, colliderB.world, manifoldScratch)) continue;
+    if (!collideContactManifold(colliderA.world, colliderB.world, getPhysics2DStepScratch().manifold)) continue;
 
-    const normalX = manifoldScratch.normalX;
-    const normalY = manifoldScratch.normalY;
-    for (let i = 0; i < manifoldScratch.pointCount; i++) {
-      const point = manifoldScratch.points[i];
+    const normalX = getPhysics2DStepScratch().manifold.normalX;
+    const normalY = getPhysics2DStepScratch().manifold.normalY;
+    for (let i = 0; i < getPhysics2DStepScratch().manifold.pointCount; i++) {
+      const point = getPhysics2DStepScratch().manifold.points[i];
       const excess = point.depth - config.penetrationSlop;
       if (excess <= 0) continue;
 
@@ -403,9 +403,14 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
     throw new Error('Cannot step a physics world recursively');
   }
   steppingPhysics2DWorlds.add(world);
+  const previousScratch = activePhysics2DStepScratch;
+  const scratch = acquirePhysics2DStepScratch();
+  activePhysics2DStepScratch = scratch;
   try {
     stepPhysics2DOnce(world, dt);
   } finally {
+    activePhysics2DStepScratch = previousScratch;
+    releasePhysics2DStepScratch(scratch);
     steppingPhysics2DWorlds.delete(world);
   }
 }
@@ -654,12 +659,12 @@ function integratePhysics2DContinuous(world: Physics2DWorld, dt: number): void {
   let remaining = dt;
   for (let substep = 0; substep < world.config.maxCcdSubsteps && remaining > 0; substep++) {
     if (!findEarliestPhysics2DImpact(world, remaining)) break;
-    const advance = remaining * ccdImpactFraction;
+    const advance = remaining * getPhysics2DStepScratch().ccdImpactFraction;
     advanceAllAwakePhysics2DBodies(world, advance);
     remaining -= advance;
     synchronizePhysics2DBroadphase(world);
     resolveEarliestPhysics2DImpact(world);
-    if (ccdImpactFraction >= 1) return;
+    if (getPhysics2DStepScratch().ccdImpactFraction >= 1) return;
   }
   if (remaining > 0) advanceAllAwakePhysics2DBodies(world, remaining);
 }
@@ -672,15 +677,15 @@ function advanceAllAwakePhysics2DBodies(world: Physics2DWorld, dt: number): void
 }
 
 function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean {
-  ccdImpactFraction = Number.POSITIVE_INFINITY;
-  ccdImpactBodyA = -1;
-  ccdImpactBodyB = -1;
-  ccdImpactColliderA = -1;
-  ccdImpactColliderB = -1;
+  getPhysics2DStepScratch().ccdImpactFraction = Number.POSITIVE_INFINITY;
+  getPhysics2DStepScratch().ccdImpactBodyA = -1;
+  getPhysics2DStepScratch().ccdImpactBodyB = -1;
+  getPhysics2DStepScratch().ccdImpactColliderA = -1;
+  getPhysics2DStepScratch().ccdImpactColliderB = -1;
   synchronizePhysics2DSweptBroadphase(world, dt);
-  world.index.querySpatialPairs(ccdPairScratch);
+  world.index.querySpatialPairs(getPhysics2DStepScratch().ccdPairs);
   synchronizePhysics2DBroadphase(world);
-  for (const pair of ccdPairScratch) {
+  for (const pair of getPhysics2DStepScratch().ccdPairs) {
     const firstBody = findPhysics2DBody(world, pair.a);
     const secondBody = findPhysics2DBody(world, pair.b);
     if (firstBody === null || secondBody === null) continue;
@@ -716,11 +721,11 @@ function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean
             translationBY,
             dt,
           ) ||
-          ccdSweepScratch.fraction > ccdImpactFraction ||
+          getPhysics2DStepScratch().ccdSweep.fraction > getPhysics2DStepScratch().ccdImpactFraction ||
           !isPhysics2DImpactApproaching(
             bodyA,
             bodyB,
-            ccdSweepScratch,
+            getPhysics2DStepScratch().ccdSweep,
             translationAX,
             translationAY,
             translationBX,
@@ -731,19 +736,19 @@ function findEarliestPhysics2DImpact(world: Physics2DWorld, dt: number): boolean
         ) {
           continue;
         }
-        ccdImpactFraction = ccdSweepScratch.fraction;
-        ccdImpactBodyA = bodyA.index;
-        ccdImpactBodyB = bodyB.index;
-        ccdImpactColliderA = colliderA;
-        ccdImpactColliderB = colliderB;
-        ccdImpactX = ccdSweepScratch.x;
-        ccdImpactY = ccdSweepScratch.y;
-        ccdImpactNormalX = ccdSweepScratch.normalX;
-        ccdImpactNormalY = ccdSweepScratch.normalY;
+        getPhysics2DStepScratch().ccdImpactFraction = getPhysics2DStepScratch().ccdSweep.fraction;
+        getPhysics2DStepScratch().ccdImpactBodyA = bodyA.index;
+        getPhysics2DStepScratch().ccdImpactBodyB = bodyB.index;
+        getPhysics2DStepScratch().ccdImpactColliderA = colliderA;
+        getPhysics2DStepScratch().ccdImpactColliderB = colliderB;
+        getPhysics2DStepScratch().ccdImpactX = getPhysics2DStepScratch().ccdSweep.x;
+        getPhysics2DStepScratch().ccdImpactY = getPhysics2DStepScratch().ccdSweep.y;
+        getPhysics2DStepScratch().ccdImpactNormalX = getPhysics2DStepScratch().ccdSweep.normalX;
+        getPhysics2DStepScratch().ccdImpactNormalY = getPhysics2DStepScratch().ccdSweep.normalY;
       }
     }
   }
-  return ccdImpactBodyA >= 0;
+  return getPhysics2DStepScratch().ccdImpactBodyA >= 0;
 }
 
 function findPhysics2DColliderImpact(
@@ -782,7 +787,7 @@ function findPhysics2DColliderImpact(
     colliderB.world,
     translationBX,
     translationBY,
-    ccdSweepScratch,
+    getPhysics2DStepScratch().ccdSweep,
   );
 }
 
@@ -860,12 +865,12 @@ function findPhysics2DRotationalImpact(
       rotationB,
       upper,
     );
-    const point = ccdRotationalManifoldScratch.points[0];
-    ccdSweepScratch.fraction = upper;
-    ccdSweepScratch.x = point.x;
-    ccdSweepScratch.y = point.y;
-    ccdSweepScratch.normalX = ccdRotationalManifoldScratch.normalX;
-    ccdSweepScratch.normalY = ccdRotationalManifoldScratch.normalY;
+    const point = getPhysics2DStepScratch().ccdRotationalManifold.points[0];
+    getPhysics2DStepScratch().ccdSweep.fraction = upper;
+    getPhysics2DStepScratch().ccdSweep.x = point.x;
+    getPhysics2DStepScratch().ccdSweep.y = point.y;
+    getPhysics2DStepScratch().ccdSweep.normalX = getPhysics2DStepScratch().ccdRotationalManifold.normalX;
+    getPhysics2DStepScratch().ccdSweep.normalY = getPhysics2DStepScratch().ccdRotationalManifold.normalY;
     return true;
   }
   return false;
@@ -899,7 +904,7 @@ function testPhysics2DColliderOverlapAtFraction(
   try {
     updatePhysics2DColliderWorldShape(colliderA, bodyA);
     updatePhysics2DColliderWorldShape(colliderB, bodyB);
-    return collideContactManifold(colliderA.world, colliderB.world, ccdRotationalManifoldScratch);
+    return collideContactManifold(colliderA.world, colliderB.world, getPhysics2DStepScratch().ccdRotationalManifold);
   } finally {
     bodyA.x = xA;
     bodyA.y = yA;
@@ -935,28 +940,28 @@ function isPhysics2DImpactApproaching(
     translationAX * impact.fraction,
     translationAY * impact.fraction,
     rotationA * impact.fraction,
-    ccdCenterAScratch,
+    getPhysics2DStepScratch().ccdCenterA,
   );
   writePhysics2DBodyCenter(
     bodyB,
     translationBX * impact.fraction,
     translationBY * impact.fraction,
     rotationB * impact.fraction,
-    ccdCenterBScratch,
+    getPhysics2DStepScratch().ccdCenterB,
   );
-  const rAX = impact.x - ccdCenterAScratch.x;
-  const rAY = impact.y - ccdCenterAScratch.y;
-  const rBX = impact.x - ccdCenterBScratch.x;
-  const rBY = impact.y - ccdCenterBScratch.y;
+  const rAX = impact.x - getPhysics2DStepScratch().ccdCenterA.x;
+  const rAY = impact.y - getPhysics2DStepScratch().ccdCenterA.y;
+  const rBX = impact.x - getPhysics2DStepScratch().ccdCenterB.x;
+  const rBY = impact.y - getPhysics2DStepScratch().ccdCenterB.y;
   return relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, impact.normalX, impact.normalY) < -1e-9;
 }
 
 function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
-  const bodyA = findPhysics2DBody(world, ccdImpactBodyA);
-  const bodyB = findPhysics2DBody(world, ccdImpactBodyB);
+  const bodyA = findPhysics2DBody(world, getPhysics2DStepScratch().ccdImpactBodyA);
+  const bodyB = findPhysics2DBody(world, getPhysics2DStepScratch().ccdImpactBodyB);
   if (bodyA === null || bodyB === null) return;
-  const colliderA = bodyA.colliders[ccdImpactColliderA];
-  const colliderB = bodyB.colliders[ccdImpactColliderB];
+  const colliderA = bodyA.colliders[getPhysics2DStepScratch().ccdImpactColliderA];
+  const colliderB = bodyB.colliders[getPhysics2DStepScratch().ccdImpactColliderB];
   if (colliderA === undefined || colliderB === undefined) return;
   const contact = createPhysics2DImpactContact(world, bodyA, bodyB, colliderA, colliderB);
   if (!contact.enabled || contact.sensor) return;
@@ -968,15 +973,33 @@ function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
     bodyB.sleeping = false;
     bodyB.sleepTimer = 0;
   }
-  writePhysics2DBodyCenter(bodyA, 0, 0, 0, ccdCenterAScratch);
-  writePhysics2DBodyCenter(bodyB, 0, 0, 0, ccdCenterBScratch);
-  const rAX = ccdImpactX - ccdCenterAScratch.x;
-  const rAY = ccdImpactY - ccdCenterAScratch.y;
-  const rBX = ccdImpactX - ccdCenterBScratch.x;
-  const rBY = ccdImpactY - ccdCenterBScratch.y;
-  const normalMass = effectiveMass(bodyA, bodyB, rAX, rAY, rBX, rBY, ccdImpactNormalX, ccdImpactNormalY);
+  writePhysics2DBodyCenter(bodyA, 0, 0, 0, getPhysics2DStepScratch().ccdCenterA);
+  writePhysics2DBodyCenter(bodyB, 0, 0, 0, getPhysics2DStepScratch().ccdCenterB);
+  const rAX = getPhysics2DStepScratch().ccdImpactX - getPhysics2DStepScratch().ccdCenterA.x;
+  const rAY = getPhysics2DStepScratch().ccdImpactY - getPhysics2DStepScratch().ccdCenterA.y;
+  const rBX = getPhysics2DStepScratch().ccdImpactX - getPhysics2DStepScratch().ccdCenterB.x;
+  const rBY = getPhysics2DStepScratch().ccdImpactY - getPhysics2DStepScratch().ccdCenterB.y;
+  const normalMass = effectiveMass(
+    bodyA,
+    bodyB,
+    rAX,
+    rAY,
+    rBX,
+    rBY,
+    getPhysics2DStepScratch().ccdImpactNormalX,
+    getPhysics2DStepScratch().ccdImpactNormalY,
+  );
   if (!(normalMass > 0)) return;
-  const approach = relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, ccdImpactNormalX, ccdImpactNormalY);
+  const approach = relativePhysics2DPointVelocity(
+    bodyA,
+    bodyB,
+    rAX,
+    rAY,
+    rBX,
+    rBY,
+    getPhysics2DStepScratch().ccdImpactNormalX,
+    getPhysics2DStepScratch().ccdImpactNormalY,
+  );
   if (approach >= 0) return;
   const restitution = approach < -world.config.restitutionThreshold ? contact.restitution : 0;
   const normalImpulse = -(1 + restitution) * approach * normalMass;
@@ -987,13 +1010,13 @@ function resolveEarliestPhysics2DImpact(world: Physics2DWorld): void {
     rAY,
     rBX,
     rBY,
-    normalImpulse * ccdImpactNormalX,
-    normalImpulse * ccdImpactNormalY,
+    normalImpulse * getPhysics2DStepScratch().ccdImpactNormalX,
+    normalImpulse * getPhysics2DStepScratch().ccdImpactNormalY,
   );
   contact.points[0].normalImpulse = normalImpulse;
 
-  const tangentX = -ccdImpactNormalY;
-  const tangentY = ccdImpactNormalX;
+  const tangentX = -getPhysics2DStepScratch().ccdImpactNormalY;
+  const tangentY = getPhysics2DStepScratch().ccdImpactNormalX;
   const tangentMass = effectiveMass(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentX, tangentY);
   if (!(tangentMass > 0)) return;
   const tangentVelocity = relativePhysics2DPointVelocity(bodyA, bodyB, rAX, rAY, rBX, rBY, tangentX, tangentY);
@@ -1013,20 +1036,20 @@ function createPhysics2DImpactContact(
   colliderA: Readonly<RigidBody2D['colliders'][number]>,
   colliderB: Readonly<RigidBody2D['colliders'][number]>,
 ): Physics2DContact {
-  manifoldScratch.normalX = ccdImpactNormalX;
-  manifoldScratch.normalY = ccdImpactNormalY;
-  manifoldScratch.pointCount = 1;
-  manifoldScratch.points[0].x = ccdImpactX;
-  manifoldScratch.points[0].y = ccdImpactY;
-  manifoldScratch.points[0].depth = 0;
-  manifoldScratch.points[0].featureId = 0;
+  getPhysics2DStepScratch().manifold.normalX = getPhysics2DStepScratch().ccdImpactNormalX;
+  getPhysics2DStepScratch().manifold.normalY = getPhysics2DStepScratch().ccdImpactNormalY;
+  getPhysics2DStepScratch().manifold.pointCount = 1;
+  getPhysics2DStepScratch().manifold.points[0].x = getPhysics2DStepScratch().ccdImpactX;
+  getPhysics2DStepScratch().manifold.points[0].y = getPhysics2DStepScratch().ccdImpactY;
+  getPhysics2DStepScratch().manifold.points[0].depth = 0;
+  getPhysics2DStepScratch().manifold.points[0].featureId = 0;
   const contact = mergePhysics2DContact(
     world,
     bodyA.index,
     bodyB.index,
-    ccdImpactColliderA,
-    ccdImpactColliderB,
-    manifoldScratch,
+    getPhysics2DStepScratch().ccdImpactColliderA,
+    getPhysics2DStepScratch().ccdImpactColliderB,
+    getPhysics2DStepScratch().manifold,
     false,
     mixPhysics2DFriction(colliderA.material.friction, colliderB.material.friction),
     mixPhysics2DRestitution(colliderA.material.restitution, colliderB.material.restitution),
@@ -1172,22 +1195,62 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
   return left.colliderB - right.colliderB;
 }
 
-const pairScratch: SpatialPair[] = [];
-const ccdPairScratch: SpatialPair[] = [];
-const manifoldScratch: CollisionContactManifold = createCollisionContactManifold();
-const ccdSweepScratch: CollisionTimeOfImpact = createCollisionTimeOfImpact();
-const ccdRotationalManifoldScratch: CollisionContactManifold = createCollisionContactManifold();
-const ccdCenterAScratch = { x: 0, y: 0 };
-const ccdCenterBScratch = { x: 0, y: 0 };
-let ccdImpactFraction = 0;
-let ccdImpactBodyA = -1;
-let ccdImpactBodyB = -1;
-let ccdImpactColliderA = -1;
-let ccdImpactColliderB = -1;
-let ccdImpactX = 0;
-let ccdImpactY = 0;
-let ccdImpactNormalX = 0;
-let ccdImpactNormalY = 0;
+interface Physics2DStepScratch {
+  pairs: SpatialPair[];
+  ccdPairs: SpatialPair[];
+  manifold: CollisionContactManifold;
+  ccdSweep: CollisionTimeOfImpact;
+  ccdRotationalManifold: CollisionContactManifold;
+  ccdCenterA: { x: number; y: number };
+  ccdCenterB: { x: number; y: number };
+  ccdImpactFraction: number;
+  ccdImpactBodyA: number;
+  ccdImpactBodyB: number;
+  ccdImpactColliderA: number;
+  ccdImpactColliderB: number;
+  ccdImpactX: number;
+  ccdImpactY: number;
+  ccdImpactNormalX: number;
+  ccdImpactNormalY: number;
+}
+
+function acquirePhysics2DStepScratch(): Physics2DStepScratch {
+  return physics2DStepScratchPool.pop() ?? createPhysics2DStepScratch();
+}
+
+function createPhysics2DStepScratch(): Physics2DStepScratch {
+  return {
+    pairs: [],
+    ccdPairs: [],
+    manifold: createCollisionContactManifold(),
+    ccdSweep: createCollisionTimeOfImpact(),
+    ccdRotationalManifold: createCollisionContactManifold(),
+    ccdCenterA: { x: 0, y: 0 },
+    ccdCenterB: { x: 0, y: 0 },
+    ccdImpactFraction: 0,
+    ccdImpactBodyA: -1,
+    ccdImpactBodyB: -1,
+    ccdImpactColliderA: -1,
+    ccdImpactColliderB: -1,
+    ccdImpactX: 0,
+    ccdImpactY: 0,
+    ccdImpactNormalX: 0,
+    ccdImpactNormalY: 0,
+  };
+}
+
+function getPhysics2DStepScratch(): Physics2DStepScratch {
+  return activePhysics2DStepScratch!;
+}
+
+function releasePhysics2DStepScratch(scratch: Physics2DStepScratch): void {
+  scratch.pairs.length = 0;
+  scratch.ccdPairs.length = 0;
+  physics2DStepScratchPool.push(scratch);
+}
+
+let activePhysics2DStepScratch: Physics2DStepScratch | null = null;
+const physics2DStepScratchPool: Physics2DStepScratch[] = [createPhysics2DStepScratch()];
 const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
 const CCD_ROTATION_INCREMENT = Math.PI / 90;
 const CCD_ROTATION_BISECTION_ITERATIONS = 12;

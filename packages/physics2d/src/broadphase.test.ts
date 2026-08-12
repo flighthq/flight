@@ -6,6 +6,35 @@ import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, create
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 
 describe('synchronizePhysics2DBroadphase', () => {
+  it('keeps published bounds isolated when an index callback synchronizes another world', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 2, 3);
+    body.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE));
+    addPhysics2DBody(world, body);
+
+    const nestedWorld = createPhysics2DWorld(0, 0);
+    const nestedBody = createRigidBody2D('dynamic', 100, 200);
+    nestedBody.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 5, x: 0, y: 0 }, STONE));
+    addPhysics2DBody(nestedWorld, nestedBody);
+
+    let nestedCalls = 0;
+    let published = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    world.index.updateSpatialObject = (_id, bounds) => {
+      nestedCalls++;
+      synchronizePhysics2DBroadphase(nestedWorld);
+      published = { minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY };
+      return true;
+    };
+
+    synchronizePhysics2DBroadphase(world);
+
+    expect(nestedCalls).toBe(1);
+    expect(published.minX).toBe(1);
+    expect(published.minY).toBe(2);
+    expect(published.maxX).toBeCloseTo(3);
+    expect(published.maxY).toBeCloseTo(4);
+  });
+
   it('publishes a body at its current pose', () => {
     const world = createPhysics2DWorld(0, 0);
     const body = createRigidBody2D('dynamic', 2, 3);

@@ -1,6 +1,4 @@
-import { containsRectanglePointXY, intersectsRectangle } from '@flighthq/geometry/contract';
 import type {
-  RectangleLike,
   SpatialAabb,
   SpatialIndexBackend,
   SpatialDeclineReason,
@@ -148,16 +146,6 @@ function _cellKey(cx: number, cy: number): string {
   return `${cx},${cy}`;
 }
 
-// Fills a scratch RectangleLike (x/y/width/height) from a SpatialAabb (min/max corners) so the
-// geometry rectangle-overlap and point-containment helpers can be reused instead of re-deriving the
-// AABB math here. Stored AABBs are normalized because insert declines inverted bounds.
-function _fillRectFromAabb(out: RectangleLike, aabb: Readonly<SpatialAabb>): void {
-  out.x = aabb.minX;
-  out.y = aabb.minY;
-  out.width = aabb.maxX - aabb.minX;
-  out.height = aabb.maxY - aabb.minY;
-}
-
 // Reports how `id` is currently held. Pure: reads only, allocates only the returned record.
 function _explainGridIndexing(grid: UniformGrid, id: SpatialObjectId): SpatialIndexingExplanation {
   const declineReason = grid.declined.get(id);
@@ -298,18 +286,26 @@ function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Reado
   return inserted;
 }
 
-// Reports whether an AABB contains the point (`x`,`y`), reusing the geometry rectangle helper.
+// Reports whether an AABB contains the point (`x`,`y`).
 function _isSpatialAabbContainsPoint(aabb: Readonly<SpatialAabb>, x: number, y: number): boolean {
-  _fillRectFromAabb(_scratchRectA, aabb);
-  return containsRectanglePointXY(_scratchRectA, x, y);
+  const minX = aabb.minX;
+  const minY = aabb.minY;
+  const maxX = aabb.maxX;
+  const maxY = aabb.maxY;
+  return x >= minX && x < maxX && y >= minY && y < maxY;
 }
 
-// Reports whether two AABBs overlap, reusing the geometry rectangle-overlap helper (edge-touching
-// counts as disjoint, matching intersectsRectangle).
+// Reports whether two AABBs overlap; edge-touching counts as disjoint.
 function _isSpatialAabbOverlapping(a: Readonly<SpatialAabb>, b: Readonly<SpatialAabb>): boolean {
-  _fillRectFromAabb(_scratchRectA, a);
-  _fillRectFromAabb(_scratchRectB, b);
-  return intersectsRectangle(_scratchRectA, _scratchRectB);
+  const aMinX = a.minX;
+  const aMinY = a.minY;
+  const aMaxX = a.maxX;
+  const aMaxY = a.maxY;
+  const bMinX = b.minX;
+  const bMinY = b.minY;
+  const bMaxX = b.maxX;
+  const bMaxY = b.maxY;
+  return aMinX < bMaxX && aMaxX > bMinX && aMinY < bMaxY && aMaxY > bMinY;
 }
 
 // Slab test for a ray (origin `ox`,`oy`, direction `dx`,`dy`, `t >= 0`) against an axis-aligned box.
@@ -630,9 +626,3 @@ function _spannedCellCount(cellSize: number, aabb: Readonly<SpatialAabb>): numbe
 // Diagnostics seam filled by setSpatialIndexingGuard. Caller-facing text stays in the separate
 // formatSpatialIndexingNotice module, so production pays only the null checks at noteworthy sites.
 let _indexingGuard: SpatialIndexingGuard | null = null;
-
-// Reused scratch rectangles for the geometry overlap/containment helpers. Only ever read+written
-// within a single non-nested helper call, so sharing them across the module allocates nothing per
-// query without aliasing hazard.
-const _scratchRectA: RectangleLike = { x: 0, y: 0, width: 0, height: 0 };
-const _scratchRectB: RectangleLike = { x: 0, y: 0, width: 0, height: 0 };

@@ -94,6 +94,38 @@ describe('testAabbAabbCollision', () => {
 });
 
 describe('testAabbObbCollision', () => {
+  it('keeps SAT state isolated from a nested collision triggered by the output setter', () => {
+    const out = createCollisionManifold();
+    let normalX = 0;
+    let nested = false;
+    Object.defineProperty(out, 'normalX', {
+      configurable: true,
+      enumerable: true,
+      get: () => normalX,
+      set(value: number) {
+        normalX = value;
+        if (nested) return;
+        nested = true;
+        testAabbObbCollision(
+          { minX: -10, minY: -10, maxX: 10, maxY: 10 },
+          { x: 0, y: 0, halfW: 3, halfH: 3, rotation: 0 },
+          createCollisionManifold(),
+        );
+      },
+    });
+
+    expect(
+      testAabbObbCollision(
+        { minX: 0, minY: 0, maxX: 4, maxY: 10 },
+        { x: 6, y: 5, halfW: 3, halfH: 3, rotation: 0 },
+        out,
+      ),
+    ).toBe(true);
+    expect(nested).toBe(true);
+    expect(out.normalX).toBeCloseTo(-1);
+    expect(out.depth).toBeCloseTo(1);
+  });
+
   it('overlaps an axis-aligned OBB and pushes the box off it', () => {
     const out = createCollisionManifold();
     const a: CollisionAabb = { minX: 0, minY: 0, maxX: 4, maxY: 10 };

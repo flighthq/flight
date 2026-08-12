@@ -39,65 +39,71 @@ export function raycastCollisionShape(
   const directionLengthSquared = directionX * directionX + directionY * directionY;
   if (!(directionLengthSquared > 0)) return false;
 
-  switch (shape.kind) {
-    case 'circle':
-      return raycastCircle(
-        shape.x,
-        shape.y,
-        shape.radius,
-        originX,
-        originY,
-        directionX,
-        directionY,
-        directionLengthSquared,
-        maxFraction,
-        out,
-      );
-    case 'aabb':
-      return raycastBox(
-        shape.minX,
-        shape.minY,
-        shape.maxX,
-        shape.maxY,
-        originX,
-        originY,
-        directionX,
-        directionY,
-        maxFraction,
-        out,
-      );
-    case 'obb':
-      return raycastObb(shape, originX, originY, directionX, directionY, maxFraction, out);
-    case 'polygon':
-      return raycastPolygon(shape.points, originX, originY, directionX, directionY, maxFraction, out);
-    case 'segment':
-      return raycastSegment(
-        shape.x0,
-        shape.y0,
-        shape.x1,
-        shape.y1,
-        originX,
-        originY,
-        directionX,
-        directionY,
-        directionLengthSquared,
-        maxFraction,
-        out,
-      );
-    case 'point':
-      return raycastPoint(
-        shape.x,
-        shape.y,
-        originX,
-        originY,
-        directionX,
-        directionY,
-        directionLengthSquared,
-        maxFraction,
-        out,
-      );
-    default:
-      return false;
+  const scratch = acquireRaycastScratch();
+  try {
+    switch (shape.kind) {
+      case 'circle':
+        return raycastCircle(
+          shape.x,
+          shape.y,
+          shape.radius,
+          originX,
+          originY,
+          directionX,
+          directionY,
+          directionLengthSquared,
+          maxFraction,
+          out,
+        );
+      case 'aabb':
+        return raycastBox(
+          shape.minX,
+          shape.minY,
+          shape.maxX,
+          shape.maxY,
+          originX,
+          originY,
+          directionX,
+          directionY,
+          maxFraction,
+          out,
+        );
+      case 'obb':
+        return raycastObb(shape, originX, originY, directionX, directionY, maxFraction, out, scratch);
+      case 'polygon':
+        return raycastPolygon(shape.points, originX, originY, directionX, directionY, maxFraction, out, scratch);
+      case 'segment':
+        return raycastSegment(
+          shape.x0,
+          shape.y0,
+          shape.x1,
+          shape.y1,
+          originX,
+          originY,
+          directionX,
+          directionY,
+          directionLengthSquared,
+          maxFraction,
+          out,
+          scratch,
+        );
+      case 'point':
+        return raycastPoint(
+          shape.x,
+          shape.y,
+          originX,
+          originY,
+          directionX,
+          directionY,
+          directionLengthSquared,
+          maxFraction,
+          out,
+        );
+      default:
+        return false;
+    }
+  } finally {
+    releaseRaycastScratch(scratch);
   }
 }
 
@@ -216,6 +222,7 @@ function raycastObb(
   directionY: number,
   maxFraction: number,
   out: CollisionRaycastHit,
+  scratch: RaycastScratch,
 ): boolean {
   if (
     !Number.isFinite(shape.x) ||
@@ -247,14 +254,14 @@ function raycastObb(
       localDirectionX,
       localDirectionY,
       maxFraction,
-      localHitScratch,
+      scratch.localHit,
     )
   ) {
     return false;
   }
-  const normalX = localHitScratch.normalX * cos - localHitScratch.normalY * sin;
-  const normalY = localHitScratch.normalX * sin + localHitScratch.normalY * cos;
-  writeRaycastHit(out, originX, originY, directionX, directionY, localHitScratch.fraction, normalX, normalY);
+  const normalX = scratch.localHit.normalX * cos - scratch.localHit.normalY * sin;
+  const normalY = scratch.localHit.normalX * sin + scratch.localHit.normalY * cos;
+  writeRaycastHit(out, originX, originY, directionX, directionY, scratch.localHit.fraction, normalX, normalY);
   return true;
 }
 
@@ -266,6 +273,7 @@ function raycastPolygon(
   directionY: number,
   maxFraction: number,
   out: CollisionRaycastHit,
+  scratch: RaycastScratch,
 ): boolean {
   if (getCollisionPolygonValidationStatus(points) !== null) return false;
   let bestFraction = maxFraction;
@@ -273,7 +281,7 @@ function raycastPolygon(
   let bestNormalY = 0;
   let found = false;
   const count = points.length >> 1;
-  const center = polygonCenter(points, count);
+  polygonCenter(points, count, scratch.polygonCenter);
   for (let i = 0; i < count; i++) {
     const j = (i + 1) % count;
     const x0 = points[i << 1];
@@ -292,7 +300,7 @@ function raycastPolygon(
         directionY,
         directionX * directionX + directionY * directionY,
         bestFraction,
-        fractionScratch,
+        scratch.fraction,
       )
     ) {
       continue;
@@ -305,11 +313,11 @@ function raycastPolygon(
     let normalY = -edgeX / length;
     const middleX = (x0 + x1) * 0.5;
     const middleY = (y0 + y1) * 0.5;
-    if (normalX * (center.x - middleX) + normalY * (center.y - middleY) > 0) {
+    if (normalX * (scratch.polygonCenter.x - middleX) + normalY * (scratch.polygonCenter.y - middleY) > 0) {
       normalX = -normalX;
       normalY = -normalY;
     }
-    bestFraction = fractionScratch.value;
+    bestFraction = scratch.fraction.value;
     bestNormalX = normalX;
     bestNormalY = normalY;
     found = true;
@@ -319,16 +327,15 @@ function raycastPolygon(
   return true;
 }
 
-function polygonCenter(points: readonly number[], count: number): { x: number; y: number } {
+function polygonCenter(points: readonly number[], count: number, out: { x: number; y: number }): void {
   let x = 0;
   let y = 0;
   for (let i = 0; i < count; i++) {
     x += points[i << 1];
     y += points[(i << 1) + 1];
   }
-  polygonCenterScratch.x = x / count;
-  polygonCenterScratch.y = y / count;
-  return polygonCenterScratch;
+  out.x = x / count;
+  out.y = y / count;
 }
 
 function raycastSegment(
@@ -343,6 +350,7 @@ function raycastSegment(
   directionLengthSquared: number,
   maxFraction: number,
   out: CollisionRaycastHit,
+  scratch: RaycastScratch,
 ): boolean {
   if (!Number.isFinite(x0) || !Number.isFinite(y0) || !Number.isFinite(x1) || !Number.isFinite(y1)) return false;
   if (
@@ -357,7 +365,7 @@ function raycastSegment(
       directionY,
       directionLengthSquared,
       maxFraction,
-      fractionScratch,
+      scratch.fraction,
     )
   ) {
     return false;
@@ -371,7 +379,7 @@ function raycastSegment(
     normalX = -normalX;
     normalY = -normalY;
   }
-  writeRaycastHit(out, originX, originY, directionX, directionY, fractionScratch.value, normalX, normalY);
+  writeRaycastHit(out, originX, originY, directionX, directionY, scratch.fraction.value, normalX, normalY);
   return true;
 }
 
@@ -470,6 +478,26 @@ function clearRaycastHit(out: CollisionRaycastHit): void {
   out.normalY = 0;
 }
 
-const localHitScratch: CollisionRaycastHit = { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
-const fractionScratch = { value: 0 };
-const polygonCenterScratch = { x: 0, y: 0 };
+interface RaycastScratch {
+  localHit: CollisionRaycastHit;
+  fraction: { value: number };
+  polygonCenter: { x: number; y: number };
+}
+
+function acquireRaycastScratch(): RaycastScratch {
+  return raycastScratchPool.pop() ?? createRaycastScratch();
+}
+
+function createRaycastScratch(): RaycastScratch {
+  return {
+    localHit: { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 },
+    fraction: { value: 0 },
+    polygonCenter: { x: 0, y: 0 },
+  };
+}
+
+function releaseRaycastScratch(scratch: RaycastScratch): void {
+  raycastScratchPool.push(scratch);
+}
+
+const raycastScratchPool: RaycastScratch[] = [createRaycastScratch()];

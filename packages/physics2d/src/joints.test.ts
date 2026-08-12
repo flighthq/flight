@@ -419,6 +419,51 @@ describe('joints built without their impulse accumulators', () => {
 });
 
 describe('physics2DDistanceJointSolver', () => {
+  it('keeps prepared axis and mass local when a joint getter prepares another world', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const anchor = box(world, 'static', 0, 0);
+    const bob = box(world, 'dynamic', 2, 0);
+    const joint: Physics2DDistanceJoint = {
+      ...baseJoint(Physics2DDistanceJointKind, anchor.index, bob.index),
+      length: 1,
+      frequencyHz: 0,
+      dampingRatio: 0,
+    };
+
+    const nestedWorld = createPhysics2DWorld(0, 0);
+    const nestedAnchor = box(nestedWorld, 'static', 0, 0);
+    const nestedBob = box(nestedWorld, 'dynamic', 0, 4);
+    const nestedJoint: Physics2DDistanceJoint = {
+      ...baseJoint(Physics2DDistanceJointKind, nestedAnchor.index, nestedBob.index),
+      length: 3,
+      frequencyHz: 2,
+      dampingRatio: 0.5,
+    };
+    let impulse = 0;
+    let nestedCalls = 0;
+    Object.defineProperty(joint, 'impulse0', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        if (nestedCalls === 0) {
+          nestedCalls++;
+          physics2DDistanceJointSolver.prepare(nestedWorld, nestedJoint, 1 / 60);
+        }
+        return impulse;
+      },
+      set(value: number) {
+        impulse = value;
+      },
+    });
+
+    physics2DDistanceJointSolver.prepare(world, joint, 1 / 60);
+    physics2DDistanceJointSolver.solve(world, joint);
+
+    expect(nestedCalls).toBe(1);
+    expect(bob.velocityX).toBeLessThan(0);
+    expect(bob.velocityY).toBeCloseTo(0);
+  });
+
   it('holds a hanging body at the joint length instead of letting it fall', () => {
     const world = createPhysics2DWorld();
     registerPhysics2DJointSolver(world, Physics2DDistanceJointKind, physics2DDistanceJointSolver);

@@ -9,6 +9,49 @@ describe('createCollisionTimeOfImpact', () => {
 });
 
 describe('sweepCollisionShape', () => {
+  it('keeps continuous-SAT state isolated from a nested sweep triggered by the output setter', () => {
+    const out = createCollisionTimeOfImpact();
+    let fraction = 0;
+    let fractionWrites = 0;
+    let nestedCalls = 0;
+    Object.defineProperty(out, 'fraction', {
+      configurable: true,
+      enumerable: true,
+      get: () => fraction,
+      set(value: number) {
+        fraction = value;
+        fractionWrites++;
+        if (fractionWrites !== 2) return;
+        nestedCalls++;
+        sweepCollisionShape(
+          { kind: 'aabb', minX: -1, minY: 0, maxX: 1, maxY: 2 },
+          0,
+          10,
+          { kind: 'aabb', minX: -1, minY: 5, maxX: 1, maxY: 7 },
+          0,
+          0,
+          createCollisionTimeOfImpact(),
+        );
+      },
+    });
+
+    expect(
+      sweepCollisionShape(
+        { kind: 'obb', x: 0, y: 0, halfW: 1, halfH: 1, rotation: 0 },
+        10,
+        0,
+        { kind: 'aabb', minX: 5, minY: -1, maxX: 7, maxY: 1 },
+        0,
+        0,
+        out,
+      ),
+    ).toBe(true);
+    expect(nestedCalls).toBe(1);
+    expect(out.fraction).toBeCloseTo(0.4);
+    expect(out.normalX).toBe(-1);
+    expect(out.normalY).toBe(0);
+  });
+
   it('finds the exact circle-circle root under relative motion', () => {
     const out = createCollisionTimeOfImpact();
     expect(
