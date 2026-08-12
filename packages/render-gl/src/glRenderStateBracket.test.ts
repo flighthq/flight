@@ -23,6 +23,7 @@ type TestGlState = {
   blendSrcRgb: number;
   cullFace: boolean;
   cullFaceMode: number;
+  frontFace: number;
   currentRenderTarget: GlRenderTarget | null;
   depthFunc: number;
   depthMask: boolean;
@@ -58,6 +59,7 @@ const OUTER_STATE: TestGlState = {
   blendSrcRgb: 1,
   cullFace: false,
   cullFaceMode: 0x0405,
+  frontFace: 0x0900, // GL_CW — a host that does not use Flight's default
   currentRenderTarget: { name: 'outer-target' } as unknown as GlRenderTarget,
   depthFunc: 0x0203,
   depthMask: false,
@@ -86,6 +88,7 @@ const MIDDLE_STATE: TestGlState = {
   blendSrcRgb: 1,
   cullFace: true,
   cullFaceMode: 0x0404,
+  frontFace: 0x0901, // GL_CCW
   currentRenderTarget: { name: 'middle-target' } as unknown as GlRenderTarget,
   depthFunc: 0x0201,
   depthMask: true,
@@ -207,6 +210,7 @@ function applyTestGlState(fixture: StatefulGl, values: Readonly<TestGlState>): v
   gl.depthFunc(values.depthFunc);
   setCapability(gl, gl.CULL_FACE, values.cullFace);
   gl.cullFace(values.cullFaceMode);
+  gl.frontFace(values.frontFace);
   setCapability(gl, gl.BLEND, values.blend);
   gl.blendFuncSeparate(values.blendSrcRgb, values.blendDstRgb, values.blendSrcAlpha, values.blendDstAlpha);
   gl.blendEquationSeparate(values.blendEquationRgb, values.blendEquationAlpha);
@@ -244,6 +248,7 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
     DEPTH_FUNC: 0x0b74,
     DEPTH_WRITEMASK: 0x0b72,
     FRAMEBUFFER_BINDING: 0x8ca6,
+    FRONT_FACE: 0x0b46,
     SCISSOR_BOX: 0x0c10,
     TEXTURE_BINDING_2D: 0x8069,
     VERTEX_ARRAY_BINDING: 0x85b5,
@@ -270,6 +275,9 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
   );
   (gl.cullFace as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
     parameters.set(gl.CULL_FACE_MODE, value),
+  );
+  (gl.frontFace as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
+    parameters.set(gl.FRONT_FACE, value),
   );
   (gl.blendFuncSeparate as ReturnType<typeof vi.fn>).mockImplementation(
     (srcRgb: number, dstRgb: number, srcAlpha: number, dstAlpha: number) => {
@@ -315,6 +323,9 @@ function expectTestGlState(fixture: StatefulGl, expected: Readonly<TestGlState>)
   expect(parameters.get(gl.DEPTH_FUNC)).toBe(expected.depthFunc);
   expect(gl.isEnabled(gl.CULL_FACE)).toBe(expected.cullFace);
   expect(parameters.get(gl.CULL_FACE_MODE)).toBe(expected.cullFaceMode);
+  // The 3D mesh path picks a front face per draw from the model determinant, so this is state Flight
+  // mutates and must hand back untouched — a host set to CW must not get CCW returned.
+  expect(parameters.get(gl.FRONT_FACE)).toBe(expected.frontFace);
   expect(gl.isEnabled(gl.BLEND)).toBe(expected.blend);
   expect(parameters.get(gl.BLEND_SRC_RGB)).toBe(expected.blendSrcRgb);
   expect(parameters.get(gl.BLEND_DST_RGB)).toBe(expected.blendDstRgb);
