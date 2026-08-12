@@ -12,13 +12,12 @@ import type {
 import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool';
 
 /**
- * Appends a matrix in world space (post-multiply).
+ * Appends a matrix in world space: `other` applies AFTER everything already in `source`.
  *
- * out = source · other
+ * out = other · source
  */
 export function appendMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, other: Readonly<Matrix4Like>): void {
-  // world-space append
-  multiplyMatrix4(out, source, other);
+  multiplyMatrix4(out, other, source);
 }
 
 /**
@@ -754,12 +753,12 @@ export function multiplyMatrix4(out: Matrix4Like, a: Readonly<Matrix4Like>, b: R
 }
 
 /**
- * Prepends a matrix in world space (pre-multiply).
+ * Prepends a matrix in local space: `other` applies BEFORE everything already in `source`.
  *
- * out = other · source
+ * out = source · other
  */
 export function prependMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, other: Readonly<Matrix4Like>): void {
-  multiplyMatrix4(out, other, source);
+  multiplyMatrix4(out, source, other);
 }
 
 /**
@@ -822,10 +821,10 @@ export function prependScaleMatrix4(
 }
 
 /**
- * Prepends a translation before all local-space transforms.
+ * Prepends a translation before all local-space transforms: the offset applies BEFORE everything
+ * already in `source`, so `source`'s rotation and scale carry it.
  *
- * This method first applies the translation (tx, ty, tz) and then applies all the transformations
- * (e.g., rotation, scaling, etc.) from the source matrix.
+ * out = source · T(x, y, z)
  */
 export function prependTranslationMatrix4(
   out: Matrix4Like,
@@ -835,8 +834,8 @@ export function prependTranslationMatrix4(
   z: number,
 ): void {
   const m = acquireIdentityMatrix4();
-  translateMatrix4(m, m, x, y, z); // LOCAL translation matrix
-  multiplyMatrix4(out, m, source);
+  translateMatrix4(m, m, x, y, z);
+  prependMatrix4(out, source, m);
   releaseMatrix4(m);
 }
 
