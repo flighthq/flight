@@ -129,6 +129,67 @@ describe('solveSkeleton2DIkConstraint', () => {
     expect(skeleton.bones[1].rotation).toBeCloseTo(-90, 5);
   });
 
+  it('lengthens a single bone onto a target past its reach when stretch is on', () => {
+    const skeleton = createSkeleton2D([makeBone({ length: 10 }), makeBone({ x: 25, y: 0 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DIkConstraint(skeleton, ik({ stretch: true }));
+
+    expect(tipOf(skeleton, 0).x).toBeCloseTo(25, 4);
+    expect(skeleton.bones[0].scaleX).toBeCloseTo(2.5, 5);
+    // Uniform, not axial. Only scaleX changes how far the tip reaches, so scaling scaleY with it is a
+    // deliberate choice to keep the bone's proportions rather than draw it stretched thin — the same
+    // choice the two-bone path makes on its parent. Pinned because nothing else would notice it going.
+    expect(skeleton.bones[0].scaleY).toBeCloseTo(2.5, 5);
+  });
+
+  it('shortens a single bone onto a target inside its reach when compress is on', () => {
+    const skeleton = createSkeleton2D([makeBone({ length: 10 }), makeBone({ x: 4, y: 0 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DIkConstraint(skeleton, ik({ compress: true }));
+
+    expect(tipOf(skeleton, 0).x).toBeCloseTo(4, 4);
+    expect(skeleton.bones[0].scaleX).toBeCloseTo(0.4, 5);
+  });
+
+  // The two halves are separate permissions, not one "resize" switch, and nothing pinned that. Each case
+  // below is the OTHER flag's direction: a stretch-only bone asked to shorten, and a compress-only bone
+  // asked to lengthen. Both must sit at their authored length and overshoot or fall short, because a limb
+  // that may only extend has no business contracting.
+  it('leaves a stretch-only bone at its own length when the target is nearer than its tip', () => {
+    const skeleton = createSkeleton2D([makeBone({ length: 10 }), makeBone({ x: 4, y: 0 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DIkConstraint(skeleton, ik({ stretch: true }));
+
+    expect(skeleton.bones[0].scaleX).toBe(1);
+    expect(tipOf(skeleton, 0).x).toBeCloseTo(10, 4);
+  });
+
+  it('leaves a compress-only bone at its own length when the target is past its tip', () => {
+    const skeleton = createSkeleton2D([makeBone({ length: 10 }), makeBone({ x: 25, y: 0 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DIkConstraint(skeleton, ik({ compress: true }));
+
+    expect(skeleton.bones[0].scaleX).toBe(1);
+    expect(tipOf(skeleton, 0).x).toBeCloseTo(10, 4);
+  });
+
+  // Resizing blends by mix on its own terms rather than riding the rotation blend: the target is straight
+  // ahead, so there is no rotation to blend and the only thing mix can be scaling here is the stretch.
+  it('blends the stretch by mix, so a half-applied constraint reaches half the extra distance', () => {
+    const skeleton = createSkeleton2D([makeBone({ length: 10 }), makeBone({ x: 25, y: 0 })]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DIkConstraint(skeleton, ik({ mix: 0.5, stretch: true }));
+
+    // wanted = 2.5, so a half-applied scale is 1 + (2.5 - 1) * 0.5 = 1.75.
+    expect(skeleton.bones[0].scaleX).toBeCloseTo(1.75, 5);
+    expect(tipOf(skeleton, 0).x).toBeCloseTo(17.5, 4);
+  });
+
   it('lands a two-bone chain tip on a target inside its reach', () => {
     const skeleton = createSkeleton2D([
       makeBone({ length: 10 }),
