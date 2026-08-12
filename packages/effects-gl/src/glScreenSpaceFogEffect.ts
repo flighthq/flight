@@ -12,7 +12,7 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 // Screen-space fog: blends the scene toward an unpacked fog color by distance. When the scene supplied a
 // sampleable DEPTH texture (`depthTexture`), this is the real recipe — fog factor = 1 - exp(-density *
 // depth) over the [near, far] window, read per fragment. When depth is absent (a flat 2D scene that did
-// not write depth), it falls back to the screen-Y gradient as a depth proxy (bottom of frame reads as
+// not write depth), it falls back to the screen-Y gradient as a depth proxy (top of frame reads as
 // "far"). color is a packed RGBA int unpacked to 0..1 floats on the JS side. Demonstrates the
 // ctx.sceneDepthTexture seam: real depth path when present, sentinel proxy when null.
 export function applyScreenSpaceFogEffectToGl(

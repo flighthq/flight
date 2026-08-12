@@ -12,7 +12,7 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 // Screen-space fog: blends the scene toward an unpacked fog color by a depth proxy. The real recipe
 // reads a sampleable DEPTH texture per fragment — fog = 1 - exp(-density * remap(depth, near, far)) — but
 // Wgpu has no depth G-buffer yet, so this color-only fallback uses the screen-Y gradient as the proxy
-// (bottom of frame reads as "far"). near/far are reserved for the depth-driven recipe; density scales
+// (top of frame reads as "far"). near/far are reserved for the depth-driven recipe; density scales
 // the proxy. color is a packed RGBA int unpacked to 0..1 floats on the JS side.
 export function applyScreenSpaceFogEffectToWgpu(
   state: WgpuRenderState,
