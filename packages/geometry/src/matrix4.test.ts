@@ -62,32 +62,55 @@ const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };
 const Y_AXIS = { x: 0, y: 1, z: 0, w: 0 };
 const Z_AXIS = { x: 0, y: 0, z: 1, w: 0 };
 
+// Rotation AND non-uniform scale AND translation together. A diagonal matrix, a uniform scale, or a
+// zero translation each make two different compositions agree — that coincidence is what hid the
+// inverted operands from the previous suite, so every composition test below starts from this.
+function discriminatingMatrix4(): Matrix4 {
+  const m = createMatrix4();
+  setMatrix4(m, 0, 2, 0, 0, -3, 0, 0, 0, 0, 0, 4, 0, 7, 8, 9, 1);
+  return m;
+}
+
 describe('appendMatrix4', () => {
-  it('is equivalent to multiply(out, source, other)', () => {
-    const a = createMatrix4();
-    translateMatrix4(a, a, 5, 0, 0);
-    const b = createMatrix4();
-    scaleMatrix4(b, b, 2, 2, 2);
+  // OpenFL's Matrix3D.append composes `other` so it applies AFTER everything already in `source`,
+  // which under Flight's column-vector convention is the LEFT operand: out = other · source. Asserting
+  // against a hand-built product rather than a captured result is what keeps this readable as algebra.
+  it('composes other after source: out = other · source', () => {
+    const source = discriminatingMatrix4();
+    const other = createMatrix4();
+    setMatrix4(other, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 0, 0, 1);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, other, source);
 
-    const out1 = createMatrix4();
-    appendMatrix4(out1, a, b);
+    const out = createMatrix4();
+    appendMatrix4(out, source, other);
 
-    const out2 = createMatrix4();
-    multiplyMatrix4(out2, a, b);
+    expect(Array.from(out.m)).toEqual(Array.from(expected.m));
+  });
 
-    expect(equalsMatrix4(out1, out2)).toBe(true);
+  it('is not the other operand order', () => {
+    const source = discriminatingMatrix4();
+    const other = createMatrix4();
+    setMatrix4(other, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 0, 0, 1);
+    const transposedOrder = createMatrix4();
+    multiplyMatrix4(transposedOrder, source, other);
+
+    const out = createMatrix4();
+    appendMatrix4(out, source, other);
+
+    expect(Array.from(out.m)).not.toEqual(Array.from(transposedOrder.m));
   });
 
   it('supports out === source', () => {
-    const a = createMatrix4();
-    translateMatrix4(a, a, 5, 0, 0);
-    const b = createMatrix4();
-    scaleMatrix4(b, b, 2, 3, 4);
+    const source = discriminatingMatrix4();
+    const other = createMatrix4();
+    scaleMatrix4(other, other, 2, 3, 4);
     const expected = createMatrix4();
-    appendMatrix4(expected, a, b);
+    appendMatrix4(expected, source, other);
 
-    appendMatrix4(a, a, b);
-    expect(equalsMatrix4(a, expected)).toBe(true);
+    appendMatrix4(source, source, other);
+
+    expect(Array.from(source.m)).toEqual(Array.from(expected.m));
   });
 });
 
@@ -103,38 +126,45 @@ describe('appendRotationMatrix4', () => {
     expect(m.m[5]).toBeCloseTo(0);
   });
 
-  it('does not rotate existing translation when appending rotation', () => {
+  // A world-frame rotation turns the space the matrix sits in, so the existing translation sweeps
+  // around the origin with it. Before the operand fix this function left the translation in place,
+  // which is the local behavior and belonged to prependRotationMatrix4.
+  it('sweeps the existing translation around the origin', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 10, 0, 0);
 
     appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
-    expect(m.m[12]).toBe(10);
-    expect(m.m[13]).toBe(0);
+    expect(m.m[12]).toBeCloseTo(0, 6);
+    expect(m.m[13]).toBeCloseTo(10, 6);
   });
 
-  it('rotates around pivot point', () => {
-    const m = createMatrix4();
-    translateMatrix4(m, m, 10, 0, 0);
+  it('applies the rotation after source: out = R · source', () => {
+    const source = discriminatingMatrix4();
+    const rotation = createMatrix4();
+    appendRotationMatrix4(rotation, rotation, Math.PI / 3, Z_AXIS);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, rotation, source);
 
-    appendRotationMatrix4(m, m, Math.PI / 2, Z_AXIS, { x: 5, y: 0, z: 0, w: 1 });
+    const out = createMatrix4();
+    appendRotationMatrix4(out, source, Math.PI / 3, Z_AXIS);
 
-    expect(m.m[12]).toBeCloseTo(5);
-    expect(m.m[13]).toBeCloseTo(5);
+    for (let i = 0; i < 16; i++) expect(out.m[i]).toBeCloseTo(expected.m[i], 5);
   });
 
-  it('appendRotation and prependRotation match on identity', () => {
-    const a = createMatrix4();
-    const b = createMatrix4();
+  it('differs from the local prependRotationMatrix4 on a translated matrix', () => {
+    const source = discriminatingMatrix4();
+    const world = createMatrix4();
+    const local = createMatrix4();
 
-    appendRotationMatrix4(a, a, Math.PI / 4, Z_AXIS);
-    prependRotationMatrix4(b, b, Math.PI / 4, Z_AXIS);
+    appendRotationMatrix4(world, source, Math.PI / 3, Z_AXIS);
+    prependRotationMatrix4(local, source, Math.PI / 3, Z_AXIS);
 
-    expect(equalsMatrix4(a, b)).toBe(true);
+    expect(Array.from(world.m)).not.toEqual(Array.from(local.m));
   });
+
   it('writes the same values whether out aliases source or not', () => {
-    const source = createMatrix4();
-    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const source = discriminatingMatrix4();
     const distinct = createMatrix4();
     const aliased = cloneMatrix4(source);
 
@@ -146,80 +176,90 @@ describe('appendRotationMatrix4', () => {
 });
 
 describe('appendScaleMatrix4', () => {
-  it('scales an identity matrix', () => {
-    const m = createMatrix4();
+  // Inherits its composition from appendMatrix4 — it is not implemented separately, so this test also
+  // pins that the wrapper was corrected by inheritance rather than by hand.
+  it('applies the scale after source: out = S · source', () => {
+    const source = discriminatingMatrix4();
+    const scale = createMatrix4();
+    setMatrix4(scale, 2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 1);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, scale, source);
 
-    appendScaleMatrix4(m, m, 2, 3, 4);
+    const out = createMatrix4();
+    appendScaleMatrix4(out, source, 2, 3, 4);
 
-    expect(m.m[0]).toBe(2);
-    expect(m.m[5]).toBe(3);
-    expect(m.m[10]).toBe(4);
+    expect(Array.from(out.m)).toEqual(Array.from(expected.m));
   });
 
-  it('accumulates scale multiplicatively', () => {
-    const m = createMatrix4();
-    scaleMatrix4(m, m, 2, 2, 2);
+  // A world-frame scale reaches the translation; the local one does not. This is the pair that was
+  // indistinguishable before the operand fix, because both computed source · S.
+  it('scales the translation, unlike the local scaleMatrix4', () => {
+    const source = discriminatingMatrix4();
+    const world = createMatrix4();
+    const local = createMatrix4();
 
-    appendScaleMatrix4(m, m, 3, 4, 5);
+    appendScaleMatrix4(world, source, 2, 3, 4);
+    scaleMatrix4(local, source, 2, 3, 4);
 
-    expect(m.m[0]).toBe(6);
-    expect(m.m[5]).toBe(8);
-    expect(m.m[10]).toBe(10);
+    expect(world.m[12]).toBe(source.m[12] * 2);
+    expect(local.m[12]).toBe(source.m[12]);
+    expect(Array.from(world.m)).not.toEqual(Array.from(local.m));
   });
-  it('writes the same values whether out aliases source or not', () => {
-    const source = createMatrix4();
-    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
-    const distinct = createMatrix4();
-    const aliased = cloneMatrix4(source);
 
-    appendScaleMatrix4(distinct, source, 2, 3, 4);
-    appendScaleMatrix4(aliased, aliased, 2, 3, 4);
+  it('supports out === source', () => {
+    const source = discriminatingMatrix4();
+    const expected = createMatrix4();
+    appendScaleMatrix4(expected, source, 2, 3, 4);
 
-    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
+    appendScaleMatrix4(source, source, 2, 3, 4);
+
+    expect(Array.from(source.m)).toEqual(Array.from(expected.m));
   });
 });
 
 describe('appendTranslationMatrix4', () => {
-  it('adds translation to an identity matrix', () => {
-    const m = createMatrix4();
+  // The one member of the family that was hand-ported rather than routed through appendMatrix4, which
+  // is why it alone stayed correct while the wrapper was inverted. out = T · source, i.e. the offset is
+  // a bare sum on the translation and the basis is untouched.
+  it('adds the offset to the translation and leaves the basis alone', () => {
+    const source = discriminatingMatrix4();
+    const out = createMatrix4();
 
-    appendTranslationMatrix4(m, m, 1, 2, 3);
+    appendTranslationMatrix4(out, source, 1, 2, 3);
 
-    expect(m.m[12]).toBe(1);
-    expect(m.m[13]).toBe(2);
-    expect(m.m[14]).toBe(3);
+    expect(out.m[12]).toBe(source.m[12] + 1);
+    expect(out.m[13]).toBe(source.m[13] + 2);
+    expect(out.m[14]).toBe(source.m[14] + 3);
+    expect(Array.from(out.m).slice(0, 12)).toEqual(Array.from(source.m).slice(0, 12));
   });
 
-  it('adds to existing translation values', () => {
-    const m = createMatrix4();
-    m.m[12] = 10;
-    m.m[13] = 20;
-    m.m[14] = 30;
+  it('equals composing a translation matrix after source', () => {
+    const source = discriminatingMatrix4();
+    const translation = createMatrix4();
+    setMatrix4(translation, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 2, 3, 1);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, translation, source);
 
-    appendTranslationMatrix4(m, m, 1, 2, 3);
+    const out = createMatrix4();
+    appendTranslationMatrix4(out, source, 1, 2, 3);
 
-    expect(m.m[12]).toBe(11);
-    expect(m.m[13]).toBe(22);
-    expect(m.m[14]).toBe(33);
+    expect(Array.from(out.m)).toEqual(Array.from(expected.m));
   });
 
-  it('does not affect rotation or scale components', () => {
-    const m = createMatrix4();
-    m.m[0] = 2; // scale x
-    m.m[5] = 3; // scale y
-    m.m[10] = 4; // scale z
+  it('differs from the local prependTranslationMatrix4 on a rotated matrix', () => {
+    const source = discriminatingMatrix4();
+    const world = createMatrix4();
+    const local = createMatrix4();
 
-    appendTranslationMatrix4(m, m, 1, 2, 3);
+    appendTranslationMatrix4(world, source, 1, 2, 3);
+    prependTranslationMatrix4(local, source, 1, 2, 3);
 
-    expect(m.m[0]).toBe(2);
-    expect(m.m[5]).toBe(3);
-    expect(m.m[10]).toBe(4);
+    expect(Array.from(world.m)).not.toEqual(Array.from(local.m));
   });
 
-  // Every existing case aliased out onto source, leaving the copy path unproven.
   it('copies the whole source matrix when out is a distinct object', () => {
-    const source = createMatrix4();
-    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const source = discriminatingMatrix4();
+    const before = Array.from(source.m);
     const out = createMatrix4(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
     const aliased = cloneMatrix4(source);
 
@@ -227,7 +267,7 @@ describe('appendTranslationMatrix4', () => {
     appendTranslationMatrix4(aliased, aliased, 1, 2, 3);
 
     expect(Array.from(out.m)).toEqual(Array.from(aliased.m));
-    expect(Array.from(source.m)).toEqual([0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1]);
+    expect(Array.from(source.m)).toEqual(before);
   });
 });
 
@@ -1155,7 +1195,7 @@ describe('multiplyMatrix4', () => {
       expect(equalsMatrix4(m1, m2)).toBe(true);
     });
 
-    it('prependScale equals multiply scale × matrix', () => {
+    it('prependScale equals multiplying the scale on the right', () => {
       const m1 = createMatrix4();
       translateMatrix4(m1, m1, 10, 0, 0);
       const m2 = createMatrix4();
@@ -1165,7 +1205,7 @@ describe('multiplyMatrix4', () => {
       scaleMatrix4(s, s, 2, 2, 2);
 
       prependScaleMatrix4(m1, m1, 2, 2, 2);
-      multiplyMatrix4(m2, s, m2);
+      multiplyMatrix4(m2, m2, s);
 
       expect(equalsMatrix4(m1, m2)).toBe(true);
     });
@@ -1173,31 +1213,44 @@ describe('multiplyMatrix4', () => {
 });
 
 describe('prependMatrix4', () => {
-  it('is equivalent to multiply(out, other, source)', () => {
-    const a = createMatrix4();
-    translateMatrix4(a, a, 5, 0, 0);
-    const b = createMatrix4();
-    scaleMatrix4(b, b, 2, 2, 2);
+  // The mirror of append: `other` applies BEFORE everything already in `source`, so it is the RIGHT
+  // operand — out = source · other.
+  it('composes other before source: out = source · other', () => {
+    const source = discriminatingMatrix4();
+    const other = createMatrix4();
+    setMatrix4(other, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 0, 0, 1);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, source, other);
 
-    const out1 = createMatrix4();
-    prependMatrix4(out1, a, b);
+    const out = createMatrix4();
+    prependMatrix4(out, source, other);
 
-    const out2 = createMatrix4();
-    multiplyMatrix4(out2, b, a);
+    expect(Array.from(out.m)).toEqual(Array.from(expected.m));
+  });
 
-    expect(equalsMatrix4(out1, out2)).toBe(true);
+  it('is the opposite composition from appendMatrix4', () => {
+    const source = discriminatingMatrix4();
+    const other = createMatrix4();
+    setMatrix4(other, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 0, 0, 1);
+
+    const appended = createMatrix4();
+    appendMatrix4(appended, source, other);
+    const prepended = createMatrix4();
+    prependMatrix4(prepended, source, other);
+
+    expect(Array.from(appended.m)).not.toEqual(Array.from(prepended.m));
   });
 
   it('supports out === source', () => {
-    const a = createMatrix4();
-    translateMatrix4(a, a, 5, 0, 0);
-    const b = createMatrix4();
-    scaleMatrix4(b, b, 2, 3, 4);
+    const source = discriminatingMatrix4();
+    const other = createMatrix4();
+    scaleMatrix4(other, other, 2, 3, 4);
     const expected = createMatrix4();
-    prependMatrix4(expected, a, b);
+    prependMatrix4(expected, source, other);
 
-    prependMatrix4(a, a, b);
-    expect(equalsMatrix4(a, expected)).toBe(true);
+    prependMatrix4(source, source, other);
+
+    expect(Array.from(source.m)).toEqual(Array.from(expected.m));
   });
 });
 
@@ -1211,34 +1264,49 @@ describe('prependRotationMatrix4', () => {
     expect(m.m[1]).toBeCloseTo(1);
   });
 
-  it('rotates translation when prepending rotation', () => {
+  // A local rotation turns the object about its own axes, so its position in the outer space is
+  // unchanged. Before the operand fix this function swept the translation, which is append's job.
+  it('leaves the existing translation in place', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 10, 0, 0);
 
     prependRotationMatrix4(m, m, Math.PI / 2, Z_AXIS);
 
-    // (10, 0, 0) → (0, 10, 0)
-    expect(m.m[12]).toBeCloseTo(0);
-    expect(m.m[13]).toBeCloseTo(10);
+    expect(m.m[12]).toBeCloseTo(10, 6);
+    expect(m.m[13]).toBeCloseTo(0, 6);
   });
 
-  // A pivot names the point the rotation leaves fixed. Without one, rotating about Z sweeps the
-  // origin; with a pivot at the origin's own position the point must not move at all.
-  it('leaves the pivot point fixed', () => {
-    const pivot = { x: 4, y: 0, z: 0, w: 1 };
-    const m = createMatrix4();
+  it('applies the rotation before source: out = source · R', () => {
+    const source = discriminatingMatrix4();
+    const rotation = createMatrix4();
+    prependRotationMatrix4(rotation, rotation, Math.PI / 3, Z_AXIS);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, source, rotation);
 
-    prependRotationMatrix4(m, m, Math.PI / 2, Z_AXIS, pivot);
+    const out = createMatrix4();
+    prependRotationMatrix4(out, source, Math.PI / 3, Z_AXIS);
 
-    const out = createVector3();
-    matrix4TransformPoint(out, m, createVector3(pivot.x, pivot.y, pivot.z));
-    expect(out.x).toBeCloseTo(4, 6);
-    expect(out.y).toBeCloseTo(0, 6);
-    expect(out.z).toBeCloseTo(0, 6);
+    for (let i = 0; i < 16; i++) expect(out.m[i]).toBeCloseTo(expected.m[i], 5);
   });
+
+  it('holds the pivot point fixed', () => {
+    const source = discriminatingMatrix4();
+    const pivot = { x: 5, y: 0, z: 0, w: 1 };
+    const before = createVector3();
+    matrix4TransformPoint(before, source, createVector3(pivot.x, pivot.y, pivot.z));
+
+    const out = createMatrix4();
+    prependRotationMatrix4(out, source, Math.PI / 2, Z_AXIS, pivot);
+
+    const after = createVector3();
+    matrix4TransformPoint(after, out, createVector3(pivot.x, pivot.y, pivot.z));
+    expect(after.x).toBeCloseTo(before.x, 5);
+    expect(after.y).toBeCloseTo(before.y, 5);
+    expect(after.z).toBeCloseTo(before.z, 5);
+  });
+
   it('writes the same values whether out aliases source or not', () => {
-    const source = createMatrix4();
-    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const source = discriminatingMatrix4();
     const distinct = createMatrix4();
     const aliased = cloneMatrix4(source);
 
@@ -1250,95 +1318,76 @@ describe('prependRotationMatrix4', () => {
 });
 
 describe('prependScaleMatrix4', () => {
-  it('scales an identity matrix', () => {
-    const m = createMatrix4();
+  it('applies the scale before source: out = source · S', () => {
+    const source = discriminatingMatrix4();
+    const scale = createMatrix4();
+    setMatrix4(scale, 2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 1);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, source, scale);
 
-    prependScaleMatrix4(m, m, 2, 3, 4);
+    const out = createMatrix4();
+    prependScaleMatrix4(out, source, 2, 3, 4);
 
-    expect(m.m[0]).toBe(2);
-    expect(m.m[5]).toBe(3);
-    expect(m.m[10]).toBe(4);
+    expect(Array.from(out.m)).toEqual(Array.from(expected.m));
   });
 
-  it('scales translation when prepending scale', () => {
-    const m = createMatrix4();
-    translateMatrix4(m, m, 10, 20, 30);
+  it('leaves the translation alone, unlike the world-frame appendScaleMatrix4', () => {
+    const source = discriminatingMatrix4();
+    const out = createMatrix4();
 
-    prependScaleMatrix4(m, m, 2, 3, 4);
+    prependScaleMatrix4(out, source, 2, 3, 4);
 
-    expect(m.m[12]).toBe(20); // 10 * 2
-    expect(m.m[13]).toBe(60); // 20 * 3
-    expect(m.m[14]).toBe(120); // 30 * 4
+    expect(out.m[12]).toBe(source.m[12]);
+    expect(out.m[13]).toBe(source.m[13]);
+    expect(out.m[14]).toBe(source.m[14]);
   });
 
-  it('scale, appendScale, and prependScale behave the same on identity', () => {
-    const a = createMatrix4();
-    const b = createMatrix4();
-    const c = createMatrix4();
+  it('supports out === source', () => {
+    const source = discriminatingMatrix4();
+    const expected = createMatrix4();
+    prependScaleMatrix4(expected, source, 2, 3, 4);
 
-    scaleMatrix4(a, a, 2, 3, 4);
-    appendScaleMatrix4(b, b, 2, 3, 4);
-    prependScaleMatrix4(c, c, 2, 3, 4);
+    prependScaleMatrix4(source, source, 2, 3, 4);
 
-    expect(equalsMatrix4(a, b)).toBe(true);
-    expect(equalsMatrix4(b, c)).toBe(true);
-  });
-  it('writes the same values whether out aliases source or not', () => {
-    const source = createMatrix4();
-    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
-    const distinct = createMatrix4();
-    const aliased = cloneMatrix4(source);
-
-    prependScaleMatrix4(distinct, source, 2, 3, 4);
-    prependScaleMatrix4(aliased, aliased, 2, 3, 4);
-
-    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
+    expect(Array.from(source.m)).toEqual(Array.from(expected.m));
   });
 });
 
 describe('prependTranslationMatrix4', () => {
-  it('translates an identity matrix by (x, y, z)', () => {
-    const m = createMatrix4();
+  it('applies the offset before source: out = source · T', () => {
+    const source = discriminatingMatrix4();
+    const translation = createMatrix4();
+    setMatrix4(translation, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 2, 3, 1);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, source, translation);
 
-    prependTranslationMatrix4(m, m, 1, 2, 3);
+    const out = createMatrix4();
+    prependTranslationMatrix4(out, source, 1, 2, 3);
 
-    expect(m.m[12]).toBe(1);
-    expect(m.m[13]).toBe(2);
-    expect(m.m[14]).toBe(3);
+    expect(Array.from(out.m)).toEqual(Array.from(expected.m));
   });
 
-  it('prepends translation before existing transforms', () => {
-    const m = createMatrix4();
-    translateMatrix4(m, m, 10, 0, 0);
+  // The local frame carries the offset through source's own basis, so a rotated, scaled source turns
+  // and stretches it — a bare sum would be the world-frame answer.
+  it('carries the offset through the source basis', () => {
+    const source = discriminatingMatrix4();
+    const out = createMatrix4();
 
-    prependTranslationMatrix4(m, m, 5, 0, 0);
+    prependTranslationMatrix4(out, source, 1, 2, 3);
 
-    // world-space prepend: (5 + 10)
-    expect(m.m[12]).toBe(15);
+    expect(out.m[12]).toBe(source.m[0] * 1 + source.m[4] * 2 + source.m[8] * 3 + source.m[12]);
+    expect(out.m[13]).toBe(source.m[1] * 1 + source.m[5] * 2 + source.m[9] * 3 + source.m[13]);
+    expect(out.m[14]).toBe(source.m[2] * 1 + source.m[6] * 2 + source.m[10] * 3 + source.m[14]);
   });
 
-  it('translate, appendTranslation, and prependTranslation behave the same on identity', () => {
-    const a = createMatrix4();
-    const b = createMatrix4();
-    const c = createMatrix4();
+  it('supports out === source', () => {
+    const source = discriminatingMatrix4();
+    const expected = createMatrix4();
+    prependTranslationMatrix4(expected, source, 1, 2, 3);
 
-    translateMatrix4(a, a, 1, 2, 3);
-    appendTranslationMatrix4(b, b, 1, 2, 3);
-    prependTranslationMatrix4(c, c, 1, 2, 3);
+    prependTranslationMatrix4(source, source, 1, 2, 3);
 
-    expect(equalsMatrix4(a, b)).toBe(true);
-    expect(equalsMatrix4(b, c)).toBe(true);
-  });
-  it('writes the same values whether out aliases source or not', () => {
-    const source = createMatrix4();
-    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
-    const distinct = createMatrix4();
-    const aliased = cloneMatrix4(source);
-
-    prependTranslationMatrix4(distinct, source, 1, 2, 3);
-    prependTranslationMatrix4(aliased, aliased, 1, 2, 3);
-
-    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
+    expect(Array.from(source.m)).toEqual(Array.from(expected.m));
   });
 });
 
