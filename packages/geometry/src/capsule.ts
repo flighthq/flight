@@ -18,10 +18,10 @@ export function createCapsule(
 }
 
 /**
- * Writes the point on the capsule surface (or axis) closest to `point`. Projects `point` onto
- * the capsule axis segment, clamps the parameter to [0, 1], then offsets by `radius` toward
- * `point`. When `point` lies on the axis the stable fallback is the axis point itself offset
- * along +X.
+ * Writes the point on the capsule surface closest to `point`. Projects `point` onto the capsule
+ * axis segment, clamps the parameter to [0, 1], then offsets by `radius` toward `point`. A point
+ * on the axis is equidistant from a whole ring of surface points; the stable pick is the axis
+ * point offset by `radius` along a direction perpendicular to the axis.
  *
  * Safe when `out` aliases `point` (reads all inputs before writing).
  */
@@ -64,9 +64,13 @@ export function getClosestPointOnCapsule(
   const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
   if (dist < 1e-10) {
-    out.x = closestX + r;
-    out.y = closestY;
-    out.z = closestZ;
+    // Offsetting along a fixed world axis would land back on the capsule axis whenever the capsule
+    // happens to run along it, which is inside the capsule rather than on its surface. Crossing the
+    // axis with whichever world direction is least aligned with it is always perpendicular to it.
+    const [perpX, perpY, perpZ] = axisPerpendicular(abx, aby, abz, abLen2);
+    out.x = closestX + r * perpX;
+    out.y = closestY + r * perpY;
+    out.z = closestZ + r * perpZ;
   } else {
     const inv = r / dist;
     out.x = closestX + dx * inv;
@@ -238,6 +242,26 @@ export function setCapsule(
   out.endY = endY;
   out.endZ = endZ;
   out.radius = radius;
+}
+
+// A unit vector perpendicular to the capsule axis (abx, aby, abz), for the cases where the caller
+// asked about a point on the axis itself and any perpendicular direction is an equally good answer.
+// A capsule with no length is a sphere, whose surface has no preferred direction, so +X serves.
+function axisPerpendicular(abx: number, aby: number, abz: number, abLen2: number): [number, number, number] {
+  if (abLen2 < 1e-20) return [1, 0, 0];
+
+  const absX = Math.abs(abx),
+    absY = Math.abs(aby),
+    absZ = Math.abs(abz);
+  const leastAlignedX = absX <= absY && absX <= absZ ? 1 : 0;
+  const leastAlignedY = leastAlignedX === 0 && absY <= absZ ? 1 : 0;
+  const leastAlignedZ = leastAlignedX === 0 && leastAlignedY === 0 ? 1 : 0;
+
+  const px = aby * leastAlignedZ - abz * leastAlignedY;
+  const py = abz * leastAlignedX - abx * leastAlignedZ;
+  const pz = abx * leastAlignedY - aby * leastAlignedX;
+  const length = Math.sqrt(px * px + py * py + pz * pz);
+  return [px / length, py / length, pz / length];
 }
 
 // Squared distance from a point P to the line segment AB.
