@@ -285,6 +285,11 @@ export function multiplyMatrix3(out: Matrix3Like, a: Readonly<Matrix3Like>, b: R
   _out[8] = a20 * b02 + a21 * b12 + a22 * b22;
 }
 
+/**
+ * Applies a local-space rotation in the (0,1) plane. The translation column is preserved.
+ *
+ * `out = source · R`
+ */
 export function rotateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, theta: number): void {
   const c = Math.cos(theta);
   const s = Math.sin(theta);
@@ -316,6 +321,11 @@ export function rotateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, t
   o[8] = a8;
 }
 
+/**
+ * Applies a local-space scale in the (0,1) plane. The translation column is preserved.
+ *
+ * `out = source · S`
+ */
 export function scaleMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, sx: number, sy: number): void {
   const a = source.m;
   const o = out.m;
@@ -433,6 +443,11 @@ export function setMatrix3NormalFromMatrix4(out: Matrix3Like, source: Readonly<M
   releaseMatrix3(scratch);
 }
 
+/**
+ * Applies a local-space translation mapped through the source basis.
+ *
+ * `out = source · T`
+ */
 export function translateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, tx: number, ty: number): void {
   const a = source.m;
   const o = out.m;

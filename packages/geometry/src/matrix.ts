@@ -434,24 +434,11 @@ export function multiplyMatrix(out: MatrixLike, a: Readonly<MatrixLike>, b: Read
 }
 
 /**
- * Applies a rotation transformation to the given Matrix object
- * and writes the result to out.
+ * Applies a world-space rotation to the complete 2D affine transform, including its translation.
  *
- * Rotates the complete 2D affine transform, including its translation.
+ * `out = R · source`
  **/
 export function rotateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, theta: number): void {
-  /**
-    Rotate object "after" other transforms
-
-    [  a  b  tx ][  ma mb mtx ]
-    [  c  d  ty ][  mc md mty ]
-    [  0  0  1  ][  0  0  1   ]
-
-    ma = md = cos
-    mb = sin
-    mc = -sin
-    mtx = my = 0
-  **/
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);
   const { a, b, c, d, tx, ty } = source;
@@ -470,17 +457,12 @@ export function rotateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, thet
 }
 
 /**
- * Applies a scaling transformation to the matrix. The _x_ axis is
- * multiplied by `sx`, and the _y_ axis it is multiplied by `sy`.
+ * Applies a world-space scale to the complete 2D affine transform, including its translation.
+ * The _x_ axis is multiplied by `sx`, and the _y_ axis is multiplied by `sy`.
+ *
+ * `out = S · source`
  **/
 export function scaleMatrix(out: MatrixLike, source: Readonly<MatrixLike>, sx: number, sy: number): void {
-  /*
-    Scale object "after" other transforms
-
-    [  a  b   0 ][  sx  0   0 ]
-    [  c  d   0 ][  0   sy  0 ]
-    [  tx ty  1 ][  0   0   1 ]
-  **/
   const { a, b, c, d, tx, ty } = source;
   out.a = a * sx;
   out.b = b * sy;
@@ -608,8 +590,10 @@ export function setTransformMatrix(
 }
 
 /**
- * Translates the matrix along the _x_ and _y_ axes, as specified
- * by the `dx` and `dy` parameters.
+ * Applies a world-space translation along the _x_ and _y_ axes. The delta is added directly to
+ * the existing translation, independently of the source basis.
+ *
+ * `out = T · source`
  **/
 export function translateMatrix(out: MatrixLike, source: Readonly<MatrixLike>, dx: number, dy: number): void {
   const { a, b, c, d, tx, ty } = source;
