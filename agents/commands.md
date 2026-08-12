@@ -17,6 +17,74 @@ because each file scopes its own mocks. Two rules:
 Intentional escapes go in `ALLOW` in `scripts/mocks.ts` with a reason, the same shape as
 `portable:check`. Runs as part of `npm run check`.
 
+### `npm run untested` / `npm run unchecked` — the test-depth pair
+
+Two reading tools, per-package, answering the two halves of one question. Neither gates, neither is part
+of `npm run check`, and neither commits anything: they are lists you go and read, not scores.
+
+- **`npm run untested <package>`** lists the branch arms **no test ever took**.
+- **`npm run unchecked <package>`** takes the arms that _were_ taken and asks whether any test would
+  **notice them breaking** — by editing one token of the source and re-running the tests.
+
+The second exists because the first cannot answer it. `untested`'s own header records the measurement:
+a cube reaches every arm of an axis-by-axis slab test while an axis-swap mutant inside it goes unnoticed,
+and three diagonal-matrix tests covered `scaleMatrix4` at 100% while it scaled rows instead of columns —
+a diagonal matrix cannot tell the two apart. Coverage sees green in both cases. A mutant does not.
+
+Run `untested` first; it is seconds and it finds the cheaper problem. Reach for `unchecked` when a
+package's coverage is already good and you want to know whether that means anything.
+
+**What `unchecked` does.** It plans single-token edits — `<`→`<=`, `&&`→`||`, `===`→`!==`, `!x`→`x`,
+`true`→`false` — filters them to lines the tests actually execute, and runs the package's suite once per
+mutant. A mutant the tests still pass is a **survivor**: no test in that package distinguishes the real
+behavior from the broken one.
+
+    npm run unchecked geometry                    # the whole package
+    npm run unchecked geometry/src/matrix.ts      # one file — start here
+    npm run unchecked:json geometry               # the same findings as JSON
+
+Two tiers, cheapest first: each mutant runs against its file's **sibling** `*.test.ts`, and only the ones
+that survive that are re-run against the **whole package suite**. So a reported survivor has been missed
+by every test in the package, not just by its colocated one.
+
+**Cost.** One vitest process per mutant, eight at a time — minutes for a file, longer for a package.
+That is the price of the safety property: the mutated text is served by a `load` hook and **never written
+to disk**, so an interrupt at any moment — including `kill -9` — leaves the tree exactly as it was. The
+faster design (rewrite the file, run, restore) can leave corrupted source behind at exactly the wrong
+moment, which in a repo where an agent may be committing concurrently is not a risk worth the minutes.
+
+**Three things a survivor does not mean**, each of which has produced a wrong reading somewhere:
+
+1. It may be an **equivalent mutant** — an edit that changes the text without changing behavior, which no
+   test could ever kill. `a > b` versus `a >= b` inside a `max` differs only when `a === b`. Detecting
+   these is undecidable; judging them is the reader's job. This is why there is **no mutation-score
+   percentage** here and why nothing gates on the count: a ratio whose achievable maximum is unknown is
+   satisfied by deleting the mutants you cannot kill.
+2. The scope is the package's **own** suite. A downstream package's tests may catch it. That is not a
+   reprieve — a package whose own tests do not pin its behavior is the finding regardless, because the
+   downstream test will move.
+3. Conversely, a **kill** proves a test noticed, not that the test is good. A snapshot asserting the whole
+   output kills nearly everything while explaining nothing.
+
+**When it refuses.** A red suite fails on every mutant too, which reads as a perfect kill rate — so an
+unmutated control run must pass before anything is measured. Every mutant run must also print a marker
+proving the edit was actually applied; without it a passing suite tested unmutated source, which by exit
+code alone is indistinguishable from a kill. Those runs are reported as `unreached` and excluded from the
+list rather than counted either way.
+
+**Worked example.** The first real run, on `geometry/src/plane.ts`: 88 reachable mutants, 19 survivors,
+about five and a half minutes. The two ends of that list are what the tool is for, and they look identical
+in the report — only reading the code separates them:
+
+- `out.x = px - dist * plane.a` → `px + dist * plane.a`, in `getPlaneProjectedPoint`. A sign flip in a
+  point-onto-plane projection: it projects to the mirrored point. All 23 tests still pass. That is a real
+  hole, confirmed by hand.
+- `a ?? 0` → `a || 0` in `createPlane`, four times over. These differ only when an argument is `NaN` or
+  `-0`; for every other input, including the `undefined` the default exists for, the two are the same
+  program. Effectively equivalent, and writing a test to kill them would buy nothing.
+
+Same report, same shape, opposite worth. This is why the output is a list of addresses and not a score.
+
 ## Orientation commands
 
 - `npm run fix` runs all auto-fixers in sequence: `lint:fix`, `order:fix`, then `format`. Run this after any edit session before committing.
