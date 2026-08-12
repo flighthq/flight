@@ -145,6 +145,34 @@ describe('popGlRenderState', () => {
     expectTestGlState(fixture, OUTER_STATE);
   });
 
+  it('restores a two-sided stencil configuration without collapsing the back face onto the front', () => {
+    const fixture = createStatefulGl();
+    const gl = fixture.gl;
+    applyTestGlState(fixture, OUTER_STATE);
+    // A host driving two-sided stencil — the case stencilOpSeparate exists for. Every back-face value
+    // differs from its front counterpart, so a restore that writes both faces from the front's saved
+    // values cannot pass by coincidence: it would report the front correct and the back overwritten.
+    gl.stencilOpSeparate(gl.FRONT, 0x1e00, 0x1e00, 0x1e01); // KEEP, KEEP, REPLACE
+    gl.stencilOpSeparate(gl.BACK, 0x1e02, 0x1e03, 0x150a); // INCR, DECR, INVERT
+    gl.stencilFuncSeparate(gl.FRONT, 0x0201, 1, 0xf0); // LESS
+    gl.stencilFuncSeparate(gl.BACK, 0x0204, 2, 0x0f); // GREATER
+    gl.stencilMaskSeparate(gl.FRONT, 0xaa);
+    gl.stencilMaskSeparate(gl.BACK, 0x55);
+    const host = new Map(fixture.parameters);
+    pushGlRenderState(fixture.state);
+
+    // What Flight's own 2D clip pass writes: separate wrap ops per face, then a symmetric gate.
+    gl.stencilOpSeparate(gl.FRONT, 0x1e00, 0x1e00, 0x8507); // INCR_WRAP
+    gl.stencilOpSeparate(gl.BACK, 0x1e00, 0x1e00, 0x8508); // DECR_WRAP
+    gl.stencilFunc(0x0207, 0, 0xff); // ALWAYS, both faces
+    gl.stencilMask(0xff);
+    popGlRenderState(fixture.state);
+
+    for (const parameter of TWO_SIDED_STENCIL_PARAMETERS) {
+      expect([parameter, fixture.parameters.get(gl[parameter])]).toEqual([parameter, host.get(gl[parameter])]);
+    }
+  });
+
   it('restores a non-active texture unit binding', () => {
     const fixture = createStatefulGl();
     applyTestGlState(fixture, OUTER_STATE);
@@ -257,7 +285,22 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
     DEPTH_WRITEMASK: 0x0b72,
     FRAMEBUFFER_BINDING: 0x8ca6,
     FRONT_FACE: 0x0b46,
+    BACK: 0x0405,
+    FRONT: 0x0404,
+    STENCIL_BACK_FAIL: 0x8801,
+    STENCIL_BACK_FUNC: 0x8800,
+    STENCIL_BACK_PASS_DEPTH_FAIL: 0x8802,
+    STENCIL_BACK_PASS_DEPTH_PASS: 0x8803,
+    STENCIL_BACK_REF: 0x8ca3,
+    STENCIL_BACK_VALUE_MASK: 0x8ca4,
+    STENCIL_BACK_WRITEMASK: 0x8ca5,
+    STENCIL_FAIL: 0x0b94,
+    STENCIL_FUNC: 0x0b92,
+    STENCIL_PASS_DEPTH_FAIL: 0x0b95,
+    STENCIL_PASS_DEPTH_PASS: 0x0b96,
+    STENCIL_REF: 0x0b97,
     STENCIL_TEST: 0x0b90,
+    STENCIL_VALUE_MASK: 0x0b93,
     STENCIL_WRITEMASK: 0x0b98,
     SCISSOR_BOX: 0x0c10,
     TEXTURE_BINDING_2D: 0x8069,
@@ -289,8 +332,52 @@ function createStatefulGl(): StatefulGl & ReturnType<typeof createGlState> {
   (gl.frontFace as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
     parameters.set(gl.FRONT_FACE, value),
   );
-  (gl.stencilMask as ReturnType<typeof vi.fn>).mockImplementation((value: number) =>
-    parameters.set(gl.STENCIL_WRITEMASK, value),
+  // Stencil is two-faced state: the unsuffixed setters write FRONT_AND_BACK while the Separate ones
+  // write only the named face. That rule was measured against a real WebGL2 context rather than assumed
+  // here — a fake cannot be the oracle for the API it fakes. `null` is the unsuffixed, both-faces form.
+  const writeStencilMask = (face: number | null, value: number): void => {
+    if (face !== gl.BACK) parameters.set(gl.STENCIL_WRITEMASK, value);
+    if (face !== gl.FRONT) parameters.set(gl.STENCIL_BACK_WRITEMASK, value);
+  };
+  const writeStencilFunc = (face: number | null, func: number, ref: number, mask: number): void => {
+    if (face !== gl.BACK) {
+      parameters.set(gl.STENCIL_FUNC, func);
+      parameters.set(gl.STENCIL_REF, ref);
+      parameters.set(gl.STENCIL_VALUE_MASK, mask);
+    }
+    if (face !== gl.FRONT) {
+      parameters.set(gl.STENCIL_BACK_FUNC, func);
+      parameters.set(gl.STENCIL_BACK_REF, ref);
+      parameters.set(gl.STENCIL_BACK_VALUE_MASK, mask);
+    }
+  };
+  const writeStencilOp = (face: number | null, fail: number, depthFail: number, depthPass: number): void => {
+    if (face !== gl.BACK) {
+      parameters.set(gl.STENCIL_FAIL, fail);
+      parameters.set(gl.STENCIL_PASS_DEPTH_FAIL, depthFail);
+      parameters.set(gl.STENCIL_PASS_DEPTH_PASS, depthPass);
+    }
+    if (face !== gl.FRONT) {
+      parameters.set(gl.STENCIL_BACK_FAIL, fail);
+      parameters.set(gl.STENCIL_BACK_PASS_DEPTH_FAIL, depthFail);
+      parameters.set(gl.STENCIL_BACK_PASS_DEPTH_PASS, depthPass);
+    }
+  };
+  (gl.stencilMask as ReturnType<typeof vi.fn>).mockImplementation((value: number) => writeStencilMask(null, value));
+  (gl.stencilMaskSeparate as ReturnType<typeof vi.fn>).mockImplementation((face: number, value: number) =>
+    writeStencilMask(face, value),
+  );
+  (gl.stencilFunc as ReturnType<typeof vi.fn>).mockImplementation((func: number, ref: number, mask: number) =>
+    writeStencilFunc(null, func, ref, mask),
+  );
+  (gl.stencilFuncSeparate as ReturnType<typeof vi.fn>).mockImplementation(
+    (face: number, func: number, ref: number, mask: number) => writeStencilFunc(face, func, ref, mask),
+  );
+  (gl.stencilOp as ReturnType<typeof vi.fn>).mockImplementation((fail: number, dFail: number, dPass: number) =>
+    writeStencilOp(null, fail, dFail, dPass),
+  );
+  (gl.stencilOpSeparate as ReturnType<typeof vi.fn>).mockImplementation(
+    (face: number, fail: number, dFail: number, dPass: number) => writeStencilOp(face, fail, dFail, dPass),
   );
   (gl.blendFuncSeparate as ReturnType<typeof vi.fn>).mockImplementation(
     (srcRgb: number, dstRgb: number, srcAlpha: number, dstAlpha: number) => {
@@ -376,3 +463,22 @@ function setCapability(gl: WebGL2RenderingContext, capability: number, enabled: 
     gl.disable(capability);
   }
 }
+
+// Both faces of every stencil parameter the bracket saves. Naming them here rather than asserting a
+// handful keeps the list checkable against the saved-state fields by eye.
+const TWO_SIDED_STENCIL_PARAMETERS = [
+  'STENCIL_FAIL',
+  'STENCIL_BACK_FAIL',
+  'STENCIL_PASS_DEPTH_FAIL',
+  'STENCIL_BACK_PASS_DEPTH_FAIL',
+  'STENCIL_PASS_DEPTH_PASS',
+  'STENCIL_BACK_PASS_DEPTH_PASS',
+  'STENCIL_FUNC',
+  'STENCIL_BACK_FUNC',
+  'STENCIL_REF',
+  'STENCIL_BACK_REF',
+  'STENCIL_VALUE_MASK',
+  'STENCIL_BACK_VALUE_MASK',
+  'STENCIL_WRITEMASK',
+  'STENCIL_BACK_WRITEMASK',
+] as const;
