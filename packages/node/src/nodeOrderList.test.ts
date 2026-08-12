@@ -614,4 +614,13 @@ describe('swapNodeOrderListEntries', () => {
 
     expect(getNodeOrderListEntrySortKey(list, childA)).toBe(1);
   });
+
+  it('does nothing when the first node has no entry', () => {
+    const list = createNodeOrderList();
+    addNodeOrderListEntry(list, childB, 2);
+
+    swapNodeOrderListEntries(list, childA, childB);
+
+    expect(getNodeOrderListEntrySortKey(list, childB)).toBe(2);
+  });
 });
