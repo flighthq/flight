@@ -40,6 +40,9 @@
       "path": "../particleemitter"
     },
     {
+      "path": "../registry"
+    },
+    {
       "path": "../render"
     },
     {

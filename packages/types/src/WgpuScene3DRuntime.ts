@@ -1,11 +1,9 @@
 import type { BlendMode } from './BlendMode';
 import type { CustomShaderMaterial } from './CustomShaderMaterial';
-import type { Kind } from './Entity';
 import type { Matrix4 } from './Matrix4';
 import type { ModifierRegistry } from './ModifierRegistry';
 import type { Scene3DLightsLike } from './Scene3DLights';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
-import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
 import type { WgpuRenderState } from './WgpuRenderState';
 
@@ -69,16 +67,16 @@ export interface WgpuScene3DDrawEntry {
 }
 
 // scene-wgpu's per-WgpuRenderState private state — the WGSL mirror of GlScene3DRuntime. Holds the 3D
-// mesh-material registry, the shared mesh-material pipeline cache (keyed by family + define key +
-// color-attachment format), the per-state geometry GPU-upload cache, the shared group(0)/group(1)
+// shared mesh-material pipeline cache (keyed by family + define key + color-attachment format), the
+// per-state geometry GPU-upload cache, the shared group(0)/group(1)
 // Frame + Draw bind-group layouts (every family pipeline targets these), and the shared GPU resources
 // the draw path reuses every frame (the Frame uniform buffer + its bind group, the dynamic-offset Draw
 // bind group, the 1x1 placeholder map texture, and a per-material bind-group cache). `activeMeshPipeline`
 // is the bind()→draw() handoff. All scene-wgpu-owned and distinct from the 2D renderer's
-// material-renderer table/texture cache — a material kind is either 2D or 3D, never both. The registry and
-// upload cache are surfaced through the header's WgpuRenderStateRuntime.sceneMeshMaterialRegistry /
-// sceneMeshUploadCache slots (kept opaque there); everything else lives only here. One WgpuScene3DRuntime
-// is created lazily per state by getWgpuScene3DRuntime.
+// material-renderer table/texture cache — a material kind is either 2D or 3D, never both. Dispatch policy
+// lives in WgpuRenderStateRuntime.registries.meshMaterialRenderers; the upload cache is surfaced through
+// the header's sceneMeshUploadCache slot; everything else lives only here. One WgpuScene3DRuntime is
+// created lazily per state by getWgpuScene3DRuntime.
 export interface WgpuScene3DRuntime {
   // The material blend equation for the active transparent run. Null for opaque runs; faded opaque
   // materials use BlendMode.Normal. WebGPU bakes this into the pipeline, so it is part of the shared
@@ -137,7 +135,6 @@ export interface WgpuScene3DRuntime {
   pbrSampleIblCubeView: GPUTextureView | null;
   pbrSampleLayout: GPUBindGroupLayout | null;
   pbrSampleShadowView: GPUTextureView | null;
-  materialRegistry: Map<Kind, WgpuMeshMaterialRenderer>;
   modifierSnippetRegistry: ModifierRegistry | null;
   modifierSnippetRevision: number;
   opaqueDrawList: WgpuScene3DDrawEntry[];

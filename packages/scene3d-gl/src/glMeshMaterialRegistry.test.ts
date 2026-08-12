@@ -1,3 +1,5 @@
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import { copyGlRenderStateRegistrations, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer, Material } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
@@ -6,6 +8,7 @@ import {
   registerGlMeshMaterialRenderer,
   resolveGlMeshMaterialRenderer,
 } from './glMeshMaterialRegistry';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
 const TestKind = 'TestMeshMaterial';
@@ -27,6 +30,24 @@ describe('registerGlMeshMaterialRenderer', () => {
     const { state } = makeGlScene3DState();
     registerGlMeshMaterialRenderer(state, TestKind, renderer);
     expect(getGlMeshMaterialRenderer(state, TestKind)).toBe(renderer);
+  });
+
+  it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
+    const { state: screen } = makeGlScene3DState();
+    const { state: derived } = makeGlScene3DState();
+    const replacement: GlMeshMaterialRenderer = { bind() {}, draw() {} };
+    registerGlMeshMaterialRenderer(screen, TestKind, renderer);
+    const snapshot = getGlRenderStateRuntime(screen).registries.meshMaterialRenderers;
+
+    copyGlRenderStateRegistrations(derived, screen);
+    getGlScene3DRuntime(derived);
+    registerGlMeshMaterialRenderer(screen, TestKind, replacement);
+
+    expect(getGlRenderStateRuntime(derived).registries.meshMaterialRenderers).toBe(snapshot);
+    expect(getGlRenderStateRuntime(screen).registries.meshMaterialRenderers).not.toBe(snapshot);
+    expect(getRegistryTableEntry(snapshot, TestKind)).toBe(renderer);
+    expect(getGlMeshMaterialRenderer(derived, TestKind)).toBe(renderer);
+    expect(getGlMeshMaterialRenderer(screen, TestKind)).toBe(replacement);
   });
 });
 

@@ -1,6 +1,5 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
-import type { Kind } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { Image } from './Image';
 import type { Material } from './Material';
@@ -36,6 +35,7 @@ export interface WgpuRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries {
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
+  meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
   renderEffects: KeyedTable<WgpuRenderEffectRunner>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
@@ -210,13 +210,10 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // because a frame's writeBuffer is queued after the previous frame's submit completes.
   quadBatchWriterBufferPool: WgpuQuadBatchWriterBufferSlot[];
   quadBatchWriterBufferCursor: number;
-  // 3D scene mesh-material seam, owned by scene-wgpu (filled lazily by
-  // registerWgpuMeshMaterialRenderer). The per-material-kind 3D draw behavior registry, kept separate
-  // from registries.materialRenderers because a material kind is either 2D or 3D, never both.
-  // sceneMeshUploadCache is the per-state cache of lazily uploaded MeshGeometry GPU data, keyed by the
-  // geometry entity (parallel to MeshGeometryRuntime.webgpuData; scene-wgpu owns and casts the
-  // concrete value shape). Both stay null until the first 3D registration / mesh draw on this state.
-  sceneMeshMaterialRegistry?: Map<Kind, WgpuMeshMaterialRenderer> | null;
+  // The 3D material dispatch policy lives in registries.meshMaterialRenderers, separate from the 2D
+  // material table because a material kind is either 2D or 3D, never both. This cache is the device-tier
+  // realization of lazily uploaded MeshGeometry data, keyed by the geometry entity (parallel to
+  // MeshGeometryRuntime.webgpuData; scene-wgpu owns and casts the concrete value shape).
   sceneMeshUploadCache?: WeakMap<object, object> | null;
 
   // Frame state: command encoder and current render pass

@@ -57,11 +57,11 @@ function collectWgpuScene3DCoverageGaps(
   // drawScene3D resolves a subset's material by kind, then falls back to whatever is registered for
   // StandardMaterialKind, then skips the subset. So an unregistered kind may still draw — as the
   // standard material — which is a downgrade worth naming rather than a silence.
-  const materials = getWgpuScene3DRuntime(state).materialRegistry;
-  const hasStandard = materials.has(StandardMaterialKind);
+  const materials = getWgpuRenderStateRuntime(state).registries.meshMaterialRenderers.entries;
+  const hasStandard = materials.get(StandardMaterialKind)?.state === RegistryEntryState.Bound;
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
-    if (materials.has(kind)) {
+    if (materials.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,

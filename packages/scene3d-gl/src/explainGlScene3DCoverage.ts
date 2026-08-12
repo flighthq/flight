@@ -65,11 +65,11 @@ function collectGlScene3DCoverageGaps(
   // StandardMaterialKind, then skips the subset. So an unregistered kind may still draw — as the
   // standard material — which is a downgrade worth naming rather than a silence, and is NOT the same
   // as nothing being registered at all.
-  const materials = getGlScene3DRuntime(state).materialRegistry;
-  const hasStandard = materials.has(StandardMaterialKind);
+  const materials = getGlRenderStateRuntime(state).registries.meshMaterialRenderers.entries;
+  const hasStandard = materials.get(StandardMaterialKind)?.state === RegistryEntryState.Bound;
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
-    if (materials.has(kind)) {
+    if (materials.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,

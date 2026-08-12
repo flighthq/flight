@@ -1,5 +1,4 @@
 import type { Kind } from './Entity';
-import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlMeshProgram } from './GlMeshProgram';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
 import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor';
@@ -56,12 +55,12 @@ export interface GlScene3DDrawEntry {
   worldMatrix: object;
 }
 
-// scene-gl's per-GlRenderState private state: the 3D mesh-material registry, the shared mesh-material
-// program cache (keyed by family + define key), and the per-state geometry GPU-upload cache. These
+// scene-gl's per-GlRenderState private state: the shared mesh-material program cache (keyed by family +
+// define key) and the per-state geometry GPU-upload cache. These
 // are scene-gl-owned, distinct from the 2D renderer's material-renderer table/texture cache — a material
-// kind is either 2D or 3D, never both. The registry and upload cache are surfaced through the
-// header's GlRenderStateRuntime.sceneMeshMaterialRegistry / sceneMeshUploadCache slots (kept opaque
-// there), and the program cache lives only here (scene-gl never needs to name it in the header).
+// kind is either 2D or 3D, never both. Dispatch policy lives in
+// GlRenderStateRuntime.registries.meshMaterialRenderers; the upload cache is surfaced through the
+// header's sceneMeshUploadCache slot, and the program cache lives only here.
 // `activeMeshProgram` is the bind()→draw() handoff: bind selects a family's program and stores it
 // here; draw reads it back. The draw-entry pools (`blendedPool`/`opaquePool`) and the per-frame
 // draw lists (`blendedDrawList`/`opaqueDrawList`) live here so two independent render states never
@@ -104,7 +103,6 @@ export interface GlScene3DRuntime {
   environmentSourceCubeColorSpace: TextureColorSpace;
   ibl: GlScene3DIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
-  materialRegistry: Map<Kind, GlMeshMaterialRenderer>;
   modifierSnippetRegistry: ModifierRegistry | null;
   // Opt-in forward-light selection guard, null until enableGlScene3DForwardLightSelectionGuards installs
   // it. drawGlScene3D reaches it only when excess punctual lights would be silently input-truncated and

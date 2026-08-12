@@ -7,9 +7,8 @@ import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
 
 // Per-backend 3D draw behavior for a material kind on Gl, registered against the kind via
 // registerGlMeshMaterialRenderer. This is the scene (3D) analog of GlMaterialRenderer (the 2D
-// quad-batch material seam): a separate registry — scene-gl owns its own WeakMap<GlRenderState, …>
-// (sceneMeshMaterialRegistry) keyed by MaterialKind, distinct from the 2D material-renderer table,
-// because a material kind is either 2D or 3D, never both.
+// quad-batch material seam): registries.meshMaterialRenderers is distinct from the 2D
+// material-renderer table because a material kind is either 2D or 3D, never both.
 //
 // The renderer owns its program (the StandardPbr uber-shader variant for its define key) and is
 // driven per draw in two steps. drawScene3D binds shared per-frame state once per material run, then

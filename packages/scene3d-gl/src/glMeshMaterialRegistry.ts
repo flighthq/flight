@@ -1,13 +1,14 @@
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlMeshMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
-
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { RegistryEntryState, StandardMaterialKind } from '@flighthq/types/contract';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
-// analog of getGlMaterialRenderer; reads scene-gl's own per-state registry (sceneMeshMaterialRegistry),
+// analog of getGlMaterialRenderer; reads scene-gl's own per-state persistent registry table,
 // distinct from the 2D material-renderer table.
 export function getGlMeshMaterialRenderer(state: GlRenderState, kind: Kind): GlMeshMaterialRenderer | null {
-  return getGlScene3DRuntime(state).materialRegistry.get(kind) ?? null;
+  const entry = getGlRenderStateRuntime(state).registries.meshMaterialRenderers.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Registers a 3D mesh-material renderer against a material kind on this state. Opt-in: drawScene3D
@@ -19,7 +20,12 @@ export function registerGlMeshMaterialRenderer(
   kind: Kind,
   renderer: GlMeshMaterialRenderer,
 ): void {
-  getGlScene3DRuntime(state).materialRegistry.set(kind, renderer);
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.registries.meshMaterialRenderers = withRegistryTableEntry(
+    runtime.registries.meshMaterialRenderers,
+    kind,
+    renderer,
+  );
 }
 
 // Resolves a mesh subset's material to its registered 3D renderer: by the material's kind, else the
@@ -30,10 +36,11 @@ export function resolveGlMeshMaterialRenderer(
   state: GlRenderState,
   material: Readonly<Material> | null,
 ): GlMeshMaterialRenderer | null {
-  const registry = getGlScene3DRuntime(state).materialRegistry;
+  const entries = getGlRenderStateRuntime(state).registries.meshMaterialRenderers.entries;
   if (material !== null) {
-    const renderer = registry.get(material.kind);
-    if (renderer !== undefined) return renderer;
+    const entry = entries.get(material.kind);
+    if (entry?.state === RegistryEntryState.Bound) return entry.value;
   }
-  return registry.get(StandardMaterialKind) ?? null;
+  const fallback = entries.get(StandardMaterialKind);
+  return fallback?.state === RegistryEntryState.Bound ? fallback.value : null;
 }
