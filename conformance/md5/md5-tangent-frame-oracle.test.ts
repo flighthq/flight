@@ -173,7 +173,6 @@ describe('MD5 tangent handedness measurement', () => {
 
   it('matches each tangent sign against a source-precision UV winding interval', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    invertTangentHandedness(scene);
     expect(measureMd5TangentHandedness(scene, SINGLE_TRIANGLE)).toMatchObject({
       indeterminateTriangles: 0,
       invalidTriangles: 0,
@@ -200,17 +199,22 @@ describe('MD5 tangent handedness measurement', () => {
     const coarseSource = SINGLE_TRIANGLE.replaceAll('0.0', '0').replaceAll('1.0', '1');
     const scene = createScene3DFromMd5Mesh(coarseSource);
 
+    // The subject here is the WITHHOLDING — the source decimals admit both windings, so the oracle
+    // must decline to judge. The handedness counts below are incidental observations of whatever the
+    // importer emitted, and they follow the importer's convention: the sign now comes from the emitted
+    // UV polarity per triangle rather than from a format-wide flip, which is why this fixture reads
+    // negative where it once read positive. Neither value is the property under test.
     expect(measureMd5TangentHandedness(scene, coarseSource)).toMatchObject({
       indeterminateTriangles: 1,
       notRunReason: 'uv-winding-indeterminate',
       sections: [
         {
           indeterminateUvWindingTriangles: 1,
-          negativeTangentHandednessTriangles: 0,
+          negativeTangentHandednessTriangles: 1,
           negativeUvWindingTriangles: 0,
-          positiveTangentHandednessTriangles: 1,
+          positiveTangentHandednessTriangles: 0,
           positiveUvWindingTriangles: 0,
-          xCorrelation: 'uniform-positive',
+          xCorrelation: 'uniform-negative',
         },
       ],
       state: 'not-run',
@@ -347,7 +351,6 @@ describe('MD5 split tangent difference measurement', () => {
 describe('MD5 tangent code-path cross-check diagnostic', () => {
   it('records and executes its same-author procedure after the direct invariants', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    invertTangentHandedness(scene);
     const result = runMd5TangentFrameOracles(scene, SINGLE_TRIANGLE);
 
     expect(result.codePathCrossCheck).toEqual({
@@ -372,7 +375,6 @@ describe('MD5 tangent code-path cross-check diagnostic', () => {
 
   it('finds an emitted tangent that differs from the code-path-independent computation', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    invertTangentHandedness(scene);
     meshGeometry(scene).vertices[6] = 0.5;
 
     expect(measureMd5TangentCodePathCrossCheck(scene)).toMatchObject({
@@ -385,7 +387,6 @@ describe('MD5 tangent code-path cross-check diagnostic', () => {
 
   it('does not repeat the production assumption that an encoded normal is exactly unit length', () => {
     const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    invertTangentHandedness(scene);
     const geometry = meshGeometry(scene);
     const stride = geometry.layout.stride / 4;
     for (let vertex = 0; vertex < 3; vertex++) {
@@ -416,14 +417,6 @@ describe('MD5 tangent code-path cross-check diagnostic', () => {
 
 function meshGeometry(scene: Readonly<Scene3D>): Mesh['geometry'] {
   return (getNodeChildren(scene.root)[1] as Mesh).geometry;
-}
-
-function invertTangentHandedness(scene: Readonly<Scene3D>): void {
-  const geometry = meshGeometry(scene);
-  const stride = geometry.layout.stride / 4;
-  for (let vertex = 0; vertex < geometry.vertices.length / stride; vertex++) {
-    geometry.vertices[vertex * stride + 9] = -geometry.vertices[vertex * stride + 9];
-  }
 }
 
 function setHandednessByXSide(scene: Readonly<Scene3D>, negativeXSign: -1 | 1, positiveXSign: -1 | 1): void {
