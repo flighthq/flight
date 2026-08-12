@@ -152,6 +152,31 @@ describe('appendRotationMatrix4', () => {
     for (let i = 0; i < 16; i++) expect(out.m[i]).toBeCloseTo(expected.m[i], 5);
   });
 
+  // The pivot is the point the rotation holds still. Asserting that property rather than a captured
+  // translation is what distinguishes a correct composite from the transposed T(-p)·R·T(p) this
+  // function used to build — the old test asserted the inverted numbers and so could never fail.
+  it('holds the pivot point fixed', () => {
+    const source = createMatrix4();
+    translateMatrix4(source, source, 10, 0, 0);
+    const pivot = { x: 5, y: 0, z: 0, w: 1 };
+
+    const out = createMatrix4();
+    appendRotationMatrix4(out, source, Math.PI / 2, Z_AXIS, pivot);
+
+    // A world-frame rotation about `pivot` fixes the world point `pivot`, so the source point that
+    // already lands there must still land there.
+    const landsOnPivot = createVector3(-5, 0, 0);
+    const before = createVector3();
+    matrix4TransformPoint(before, source, landsOnPivot);
+    expect(before.x).toBeCloseTo(pivot.x, 6);
+
+    const after = createVector3();
+    matrix4TransformPoint(after, out, landsOnPivot);
+    expect(after.x).toBeCloseTo(pivot.x, 6);
+    expect(after.y).toBeCloseTo(pivot.y, 6);
+    expect(after.z).toBeCloseTo(pivot.z, 6);
+  });
+
   it('differs from the local prependRotationMatrix4 on a translated matrix', () => {
     const source = discriminatingMatrix4();
     const world = createMatrix4();
