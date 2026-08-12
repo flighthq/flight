@@ -160,7 +160,17 @@ void main() {
   vec4 worldPosition = u_model * localPosition;
   v_worldPosition = worldPosition.xyz;
   v_normal = u_normalMatrix * localNormal;
-  v_tangent = vec4(u_normalMatrix * localTangent, a_tangent.w);
+  // A tangent is a TRUE SURFACE VECTOR and follows the model matrix, the same one a position
+  // follows. Only the normal is a covector needing the inverse-transpose. The two agree under
+  // rotation and uniform scale, which is why sharing u_normalMatrix looked correct, and diverge
+  // under non-uniform scale, tilting the tangent off the surface it is supposed to lie in.
+  // tangent.w is HANDEDNESS, and a model transform that mirrors (negative determinant) reverses it:
+  // the bitangent is rebuilt as w * cross(N, T), so without this the whole frame is flipped on every
+  // mirrored instance. Guarded rather than sign(), because sign() returns 0 for a singular matrix
+  // and a zero w collapses the bitangent entirely — a worse failure than keeping the original hand.
+  mat3 modelRotation = mat3(u_model);
+  float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
+  v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
   v_uv0 = applyUvTransform(a_uv0);
   v_pbrExtensionUv0 = a_uv0;
   v_pbrExtensionUv1 = a_uv1;

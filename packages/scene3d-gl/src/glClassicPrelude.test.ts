@@ -242,3 +242,14 @@ describe('getGlClassicVertexSourceForKey', () => {
     expect(skinned).toContain('a_weights0');
   });
 });
+
+describe('tangent frame under a model transform', () => {
+  it('carries the tangent through the model matrix and the mirror through its handedness', () => {
+    const vertex = getGlClassicVertexSource();
+    expect(vertex).toContain('mat3 modelRotation = mat3(u_model);');
+    expect(vertex).toContain('determinant(modelRotation) < 0.0 ? -1.0 : 1.0');
+    expect(vertex).toContain('v_tangent = vec4(modelRotation * localTangent, tangentHandedness);');
+    expect(vertex).toContain('v_normal = u_normalMatrix * localNormal;');
+    expect(vertex).not.toContain('u_normalMatrix * localTangent');
+  });
+});
