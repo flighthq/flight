@@ -37,19 +37,25 @@ export function scaleMeshGeometry(geometry: MeshGeometry, sx: number, sy: number
 }
 
 // Applies a Matrix4 to the geometry's vertices in place. Positions are transformed as points
-// (w=1); normals and tangent.xyz are transformed by the inverse-transpose of the matrix's
-// upper-left 3×3 and re-normalized. Returns false when the matrix is singular. Bumps
-// geometry.version. Alias-safe (this function does not need an alias form because it is
-// always in-place, but positions are read before write in the core loop).
+// (w=1); normals by the INVERSE-TRANSPOSE of the upper-left 3×3 and tangent.xyz by the PLAIN
+// upper-left 3×3, both re-normalized — see transformMeshGeometryInto for why the two differ.
+// Returns false when the matrix is singular. Bumps geometry.version. Alias-safe (this function
+// does not need an alias form because it is always in-place, but positions are read before write
+// in the core loop).
 export function transformMeshGeometry(geometry: MeshGeometry, matrix: Readonly<Matrix4Like>): boolean {
   return transformMeshGeometryInto(geometry, geometry, matrix);
 }
 
 // Applies a Matrix4 to `source` geometry and writes the result into `out`. Positions are
-// transformed as points (w=1), normals and tangent.xyz are transformed by the inverse-transpose
-// of the matrix's upper-left 3×3 (ignoring translation) and re-normalized. tangent.w is
-// preserved. Returns false and leaves `out` unchanged when the matrix has no inverse (singular),
-// because the correct normal transform is undefined. Alias-safe: out === source is valid.
+// transformed as points (w=1). Normals follow the INVERSE-TRANSPOSE of the upper-left 3×3
+// (ignoring translation); tangent.xyz follows the PLAIN upper-left 3×3. Both are re-normalized and
+// tangent.w is preserved. The two matrices differ on purpose: a normal is a covector and a tangent
+// is a true vector lying along the surface, so under non-uniform scale one inverse-transpose for
+// both tilts the tangent out of perpendicular with its own normal. They coincide under rotation
+// and uniform scale, which is why sharing one matrix looked correct for as long as it did — the
+// body carries the same note at the tangent block, and a test pins the distinction.
+// Returns false and leaves `out` unchanged when the matrix has no inverse (singular), because the
+// correct normal transform is undefined. Alias-safe: out === source is valid.
 export function transformMeshGeometryInto(
   out: MeshGeometry,
   source: Readonly<MeshGeometry>,
