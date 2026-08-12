@@ -1053,6 +1053,9 @@ export function setMatrix4Identity(out: Matrix4Like): void {
  * `target`, with `up` defining the camera roll. The forward axis points from eye to target;
  * the resulting matrix transforms world-space points into view space.
  *
+ * Degenerate inputs still yield an orthonormal basis: a zero-length view direction (`eye` equals
+ * `target`) looks down +Z, and an `up` parallel to the view direction picks an arbitrary roll.
+ *
  * Reads all inputs into locals before writing, so it is safe when `out` is unrelated to the
  * vector inputs.
  */
@@ -1085,14 +1088,23 @@ export function setMatrix4LookAt(
   let xz = up.x * zy - up.y * zx;
   let xl = Math.sqrt(xx * xx + xy * xy + xz * xz);
   if (xl === 0) {
-    xx = 0;
-    xy = 0;
-    xz = 0;
-  } else {
-    xx /= xl;
-    xy /= xl;
-    xz /= xl;
+    // `up` is parallel to the view direction — an overhead camera with a +Y up lands here. Reseed
+    // from whichever world axis is least aligned with z; zeroing the axis instead would emit a
+    // singular view matrix that no caller can invert.
+    if (Math.abs(zz) < 0.9) {
+      xx = -zy;
+      xy = zx;
+      xz = 0;
+    } else {
+      xx = 0;
+      xy = -zz;
+      xz = zy;
+    }
+    xl = Math.sqrt(xx * xx + xy * xy + xz * xz);
   }
+  xx /= xl;
+  xy /= xl;
+  xz /= xl;
 
   // y axis = cross(z, x) (already orthonormal).
   const yx = zy * xz - zz * xy;

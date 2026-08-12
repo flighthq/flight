@@ -26,6 +26,8 @@ import {
   interpolateMatrix4,
   inverseMatrix4,
   isAffineMatrix4,
+  getVector3Dot,
+  getVector3Length,
   matrix4TransformPoint,
   matrix4TransformVector,
   matrix4TransformVectors,
@@ -49,6 +51,7 @@ import {
   setOrthographicMatrix4,
   setPerspectiveMatrix4,
   setQuaternionFromAxisAngle,
+  setVector3,
   translateMatrix4,
   transposeMatrix4,
   writeMatrix4ToFloat32Array,
@@ -315,6 +318,23 @@ describe('copyMatrix4ColumnFromVector4', () => {
     expect(() => copyMatrix4ColumnFromVector4(m, -1, v)).toThrow(RangeError);
     expect(() => copyMatrix4ColumnFromVector4(m, 4, v)).toThrow(RangeError);
   });
+
+  // Column c occupies elements 4c..4c+3 and nothing else moves. Asserting the whole matrix per
+  // column catches a row/column transposition or a stray write that a single-index check misses.
+  it('writes column c into elements 4c..4c+3 for every column', () => {
+    for (let column = 0; column < 4; column++) {
+      const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+      copyMatrix4ColumnFromVector4(m, column, { x: 1, y: 2, z: 3, w: 4 });
+
+      const expected = new Array<number>(16).fill(0);
+      expected[column * 4] = 1;
+      expected[column * 4 + 1] = 2;
+      expected[column * 4 + 2] = 3;
+      expected[column * 4 + 3] = 4;
+      expect(Array.from(m.m)).toEqual(expected);
+    }
+  });
 });
 
 describe('copyMatrix4ColumnToVector4', () => {
@@ -338,6 +358,23 @@ describe('copyMatrix4ColumnToVector4', () => {
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
     expect(() => copyMatrix4ColumnToVector4(out, 99, m)).toThrow(RangeError);
+  });
+
+  it('reads column c from elements 4c..4c+3 for every column', () => {
+    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+    for (let column = 0; column < 4; column++) {
+      const out = { x: 0, y: 0, z: 0, w: 0 };
+
+      copyMatrix4ColumnToVector4(out, column, m);
+
+      expect(out).toEqual({
+        x: column * 4 + 1,
+        y: column * 4 + 2,
+        z: column * 4 + 3,
+        w: column * 4 + 4,
+      });
+    }
   });
 });
 
@@ -373,6 +410,23 @@ describe('copyMatrix4RowFromVector4', () => {
     expect(() => copyMatrix4RowFromVector4(m, -1, v)).toThrow(RangeError);
     expect(() => copyMatrix4RowFromVector4(m, 4, v)).toThrow(RangeError);
   });
+
+  // Row r occupies elements r, r+4, r+8, r+12 — the stride that distinguishes a row write from a
+  // column write in column-major storage.
+  it('writes row r with a stride of four for every row', () => {
+    for (let row = 0; row < 4; row++) {
+      const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+      copyMatrix4RowFromVector4(m, row, { x: 1, y: 2, z: 3, w: 4 });
+
+      const expected = new Array<number>(16).fill(0);
+      expected[row] = 1;
+      expected[row + 4] = 2;
+      expected[row + 8] = 3;
+      expected[row + 12] = 4;
+      expect(Array.from(m.m)).toEqual(expected);
+    }
+  });
 });
 
 describe('copyMatrix4RowToVector4', () => {
@@ -396,6 +450,18 @@ describe('copyMatrix4RowToVector4', () => {
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
     expect(() => copyMatrix4RowToVector4(out, 42, m)).toThrow(RangeError);
+  });
+
+  it('reads row r with a stride of four for every row', () => {
+    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+    for (let row = 0; row < 4; row++) {
+      const out = { x: 0, y: 0, z: 0, w: 0 };
+
+      copyMatrix4RowToVector4(out, row, m);
+
+      expect(out).toEqual({ x: row + 1, y: row + 5, z: row + 9, w: row + 13 });
+    }
   });
 });
 
@@ -518,6 +584,71 @@ describe('decomposeMatrix4', () => {
     expect(s.y).toBeCloseTo(1, 6);
     expect(s.z).toBeCloseTo(1, 6);
     expect(r.w).toBeCloseTo(1, 6);
+  });
+
+  // Quaternion extraction picks one of four formulas by which diagonal term dominates. A half turn
+  // about each axis drives the trace negative and selects a different one, so recomposing from the
+  // result is the check that all four agree with composeMatrix4 rather than only the trace case.
+  it.each([
+    ['x', createVector3(1, 0, 0)],
+    ['y', createVector3(0, 1, 0)],
+    ['z', createVector3(0, 0, 1)],
+  ])('round-trips a half turn about %s', (_axis, axis) => {
+    const rotation = createQuaternion();
+    setQuaternionFromAxisAngle(rotation, axis, Math.PI);
+    const original = createMatrix4();
+    composeMatrix4(original, createVector3(5, 6, 7), rotation, createVector3(2, 3, 4));
+
+    const p = createVector3();
+    const r = createQuaternion();
+    const s = createVector3();
+    decomposeMatrix4(p, r, s, original);
+    const recomposed = createMatrix4();
+    composeMatrix4(recomposed, p, r, s);
+
+    for (let i = 0; i < 16; i++) {
+      expect(recomposed.m[i]).toBeCloseTo(original.m[i], 5);
+    }
+  });
+
+  it('folds a mirrored basis into a negative x scale', () => {
+    const original = createMatrix4();
+    composeMatrix4(original, createVector3(0, 0, 0), createQuaternion(), createVector3(-2, 3, 4));
+
+    const p = createVector3();
+    const r = createQuaternion();
+    const s = createVector3();
+    decomposeMatrix4(p, r, s, original);
+
+    expect(s.x).toBeCloseTo(-2, 5);
+    expect(s.y).toBeCloseTo(3, 5);
+    expect(s.z).toBeCloseTo(4, 5);
+    const recomposed = createMatrix4();
+    composeMatrix4(recomposed, p, r, s);
+    for (let i = 0; i < 16; i++) {
+      expect(recomposed.m[i]).toBeCloseTo(original.m[i], 5);
+    }
+  });
+
+  // A collapsed axis has no recoverable direction, so the guard substitutes zero rather than
+  // dividing by it. The contract is that the caller gets finite numbers and an honest zero scale.
+  it('reports a collapsed axis as zero scale without producing NaN', () => {
+    const original = createMatrix4();
+    composeMatrix4(original, createVector3(1, 2, 3), createQuaternion(), createVector3(0, 0, 0));
+
+    const p = createVector3();
+    const r = createQuaternion();
+    const s = createVector3();
+    decomposeMatrix4(p, r, s, original);
+
+    expect(s.x).toBe(0);
+    expect(s.y).toBe(0);
+    expect(s.z).toBe(0);
+    expect(Number.isFinite(r.x)).toBe(true);
+    expect(Number.isFinite(r.y)).toBe(true);
+    expect(Number.isFinite(r.z)).toBe(true);
+    expect(Number.isFinite(r.w)).toBe(true);
+    expect(p.x).toBe(1);
   });
 });
 
@@ -1481,6 +1612,37 @@ describe('setMatrix4LookAt', () => {
     matrix4TransformPoint(out, m, createVector3(0, 0, 0));
     // Target is 5 units in front of the eye => view-space z = -5 (RH).
     expect(out.z).toBeCloseTo(-5, 6);
+  });
+
+  // An overhead camera (up parallel to the view direction) and a camera sitting on its own target
+  // are both reachable from ordinary application code. Roll is arbitrary in those cases, but the
+  // basis must stay orthonormal — a singular view matrix cannot be inverted for picking or for
+  // deriving a camera world transform, and it collapses every rendered position onto a plane.
+  it.each([
+    ['up parallel to the view direction', createVector3(0, 5, 0), createVector3(0, 0, 0)],
+    ['eye at the target', createVector3(2, 2, 2), createVector3(2, 2, 2)],
+  ])('keeps the basis orthonormal when %s', (_case, eye, target) => {
+    const m = createMatrix4();
+
+    setMatrix4LookAt(m, eye, target, createVector3(0, 1, 0));
+
+    for (let i = 0; i < 16; i++) {
+      expect(Number.isFinite(m.m[i])).toBe(true);
+    }
+    const xAxis = createVector3();
+    const yAxis = createVector3();
+    const zAxis = createVector3();
+    setVector3(xAxis, m.m[0], m.m[4], m.m[8]);
+    setVector3(yAxis, m.m[1], m.m[5], m.m[9]);
+    setVector3(zAxis, m.m[2], m.m[6], m.m[10]);
+
+    expect(getVector3Length(xAxis)).toBeCloseTo(1, 6);
+    expect(getVector3Length(yAxis)).toBeCloseTo(1, 6);
+    expect(getVector3Length(zAxis)).toBeCloseTo(1, 6);
+    expect(getVector3Dot(xAxis, yAxis)).toBeCloseTo(0, 6);
+    expect(getVector3Dot(xAxis, zAxis)).toBeCloseTo(0, 6);
+    expect(getVector3Dot(yAxis, zAxis)).toBeCloseTo(0, 6);
+    expect(Math.abs(getMatrix4Determinant(m))).toBeCloseTo(1, 6);
   });
 });
 
