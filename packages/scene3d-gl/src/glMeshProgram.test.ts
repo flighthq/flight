@@ -16,6 +16,7 @@ import { ImageTextureSourceKind } from '@flighthq/types/contract';
 import {
   SKIN_PALETTE_TEXTURE_UNIT,
   beginGlMeshDraw,
+  bindGlMeshSkinPalette,
   bindGlUvTransform,
   compileGlProgram,
   uploadGlMeshDrawAlpha,
@@ -66,6 +67,26 @@ describe('beginGlMeshDraw', () => {
     const { state, gl } = makeGlScene3DState();
     beginGlMeshDraw(state, makeProgram(), true);
     expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+  });
+});
+
+describe('bindGlMeshSkinPalette', () => {
+  it('reports a GPU-skinned draw after binding its pose palette', () => {
+    const { state, gl } = makeGlScene3DState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram();
+    program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;
+
+    const gpuSkinned = bindGlMeshSkinPalette(state, program, {
+      jointMatrices: new Float32Array(16),
+      material: createStandardPbrMaterial(),
+      normalMatrix: createMatrix3(),
+      subset: geometry.subsets[0],
+      worldMatrix: createMatrix4(),
+    });
+
+    expect(gpuSkinned).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'uniform1i' && c.args[1] === SKIN_PALETTE_TEXTURE_UNIT)).toBe(true);
   });
 });
 

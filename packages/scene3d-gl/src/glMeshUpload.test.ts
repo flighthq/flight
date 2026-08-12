@@ -8,9 +8,21 @@ import {
 import { createMesh } from '@flighthq/scene3d/contract';
 import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types/contract';
 
-import { destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
+import { bindGlVertexAttribute, destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
+
+describe('bindGlVertexAttribute', () => {
+  it('binds normalized packed weights to the shader float input', () => {
+    const { gl } = makeGlScene3DState();
+
+    bindGlVertexAttribute(gl, { byteOffset: 16, format: 'unorm8x4', semantic: 'weights0' }, 20);
+
+    expect(gl.calls.some((call) => call.name === 'enableVertexAttribArray' && call.args[0] === 7)).toBe(true);
+    const pointer = gl.calls.find((call) => call.name === 'vertexAttribPointer');
+    expect(pointer?.args).toEqual([7, 4, gl.UNSIGNED_BYTE, true, 20, 16]);
+  });
+});
 
 describe('destroyGlMeshUpload', () => {
   it('deletes the VAO and the vertex + index buffers of an indexed upload', () => {
