@@ -55,10 +55,10 @@ function collectGlScene2DCoverageGaps(
   // GL composites through an explicit per-mode realization; an unregistered mode falls back to normal
   // compositing, so the node still draws but not as authored. Canvas and DOM express these natively and
   // report nothing here, which is why this half is GL's and not the shared check's.
-  const blendModes = runtime.glBlendModeRegistry;
+  const blendModes = runtime.registries.blendRealizations.entries;
   for (let i = 0; i < usage.blendModes.length; i++) {
     const kind = usage.blendModes[i];
-    if (blendModes?.has(kind) === true) {
+    if (blendModes.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneBlendMode,

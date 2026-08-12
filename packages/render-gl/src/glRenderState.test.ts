@@ -10,6 +10,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
+import { isBlendModeSupported, registerGlBlendMode } from './glDraw';
 import { registerGlMaterialRenderer } from './glMaterialRegistry';
 import {
   copyGlRenderStateRegistrations,
@@ -40,9 +41,11 @@ describe('copyGlRenderStateRegistrations', () => {
     const materialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const resolver = vi.fn(() => null);
+    registerGlBlendMode(screen, 'acme.LateBlend', { src: 'ONE', dst: 'ZERO' });
     registerGlMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
 
+    expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(false);
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
     ).toBe(false);
@@ -50,6 +53,7 @@ describe('copyGlRenderStateRegistrations', () => {
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
     copyGlRenderStateRegistrations(offscreen, screen);
+    expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(true);
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
     ).toBe(materialRenderer);
@@ -57,6 +61,7 @@ describe('copyGlRenderStateRegistrations', () => {
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(resolver);
     registerGlMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
+    registerGlBlendMode(offscreen, 'acme.LateBlend', { src: 'ZERO', dst: 'ONE' });
     registerGlTextureResolver(offscreen, 'acme.LateTexture', null);
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
@@ -64,6 +69,9 @@ describe('copyGlRenderStateRegistrations', () => {
     expect(
       getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.materialRenderers, 'acme.LateMaterial'),
     ).toBe(materialRenderer);
+    expect(
+      getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.blendRealizations, 'acme.LateBlend'),
+    ).toEqual({ src: 'ONE', dst: 'ZERO' });
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
@@ -107,6 +115,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.quadIndexBuffer).toBe(screenRuntime.quadIndexBuffer);
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
     expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
@@ -277,6 +286,12 @@ describe('createGlRenderStateRuntime', () => {
   it('returns a runtime with the base binding slot and empty named registration tables', () => {
     const runtime = createGlRenderStateRuntime();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.blendRealizations).toMatchObject({
+      onMiss: 'Normal',
+      registry: 'GlBlendRealization',
+      shape: 'keyed',
+    });
+    expect(runtime.registries.blendRealizations.entries.size).toBe(0);
     expect(runtime.registries.materialRenderers).toMatchObject({
       onMiss: 'StandardMaterial',
       registry: 'GlMaterialRenderer',

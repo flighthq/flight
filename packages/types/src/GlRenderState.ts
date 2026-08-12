@@ -33,6 +33,7 @@ export interface GlRenderState extends RenderState {
 // Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries {
+  blendRealizations: KeyedTable<GlBlendRealization>;
   materialRenderers: KeyedTable<GlMaterialRenderer>;
   renderEffects: KeyedTable<GlRenderEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
@@ -102,12 +103,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // foreign renderer. scene2d-gl installs its quad-batch writer flush lazily when a batch is first prepared;
   // render-gl reaches it only through this contract slot and therefore does not depend on scene2d-gl.
   flushPendingDraws?: ((state: GlRenderState) => void) | null;
-
-  // Open per-state registry mapping a BlendMode to its fixed-function realization. Null until the
-  // first registration (registerGlBlendMode / registerDefaultGlBlendModes), so a state that never
-  // enables blend support carries no map. Last-write-wins, so a caller can override a built-in mode
-  // or add a vendor-prefixed one.
-  glBlendModeRegistry?: Map<BlendMode, GlBlendRealization> | null;
 
   defaultBitmapShader: GlBitmapShader;
   particleShader?: GlParticleShader;

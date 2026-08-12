@@ -1,3 +1,4 @@
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
@@ -14,7 +15,7 @@ import type {
   TextureFilter,
   TextureWrap,
 } from '@flighthq/types/contract';
-import { BlendMode } from '@flighthq/types/contract';
+import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { setGlAttributes, setGlMatrixFromValues } from './glShader';
@@ -31,7 +32,8 @@ export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | nu
   if (blendMode === runtime.currentBlendMode) return;
   runtime.currentBlendMode = blendMode;
   const gl = state.gl;
-  const realization = (blendMode !== null ? runtime.glBlendModeRegistry?.get(blendMode) : null) ?? NORMAL_BLEND;
+  const entry = blendMode !== null ? runtime.registries.blendRealizations.entries.get(blendMode) : null;
+  const realization = entry?.state === RegistryEntryState.Bound ? entry.value : NORMAL_BLEND;
   gl.blendEquation(gl[realization.equation ?? 'FUNC_ADD']);
   gl.blendFunc(gl[realization.src], gl[realization.dst]);
 }
@@ -344,7 +346,10 @@ export function enableGlBlendModeSupport(state: GlRenderState): void {
 // result means applyGlBlendMode would fall back to normal compositing for it — either an unregistered
 // vendor mode or a built-in (Overlay, HardLight, Difference, Invert) that needs a shader pass.
 export function isBlendModeSupported(state: GlRenderState, blendMode: BlendMode): boolean {
-  return getGlRenderStateRuntime(state).glBlendModeRegistry?.has(blendMode) ?? false;
+  return (
+    getGlRenderStateRuntime(state).registries.blendRealizations.entries.get(blendMode)?.state ===
+    RegistryEntryState.Bound
+  );
 }
 
 // Registers the built-in fixed-function blend modes on the state. Overlay/HardLight/Difference/Invert
@@ -355,11 +360,15 @@ export function registerDefaultGlBlendModes(state: GlRenderState): void {
 }
 
 // Binds a fixed-function realization to a blend mode on this render state. Last-write-wins, so a
-// caller can override a built-in mode or add a vendor-prefixed one; the registry is created lazily on
-// first registration so a state that never enables blend support carries no map.
+// caller can override a built-in mode or add a vendor-prefixed one. Replacing the persistent table
+// leaves any already-derived render state on its prior snapshot.
 export function registerGlBlendMode(state: GlRenderState, blendMode: BlendMode, realization: GlBlendRealization): void {
   const runtime = getGlRenderStateRuntime(state);
-  (runtime.glBlendModeRegistry ??= new Map()).set(blendMode, realization);
+  runtime.registries.blendRealizations = withRegistryTableEntry(
+    runtime.registries.blendRealizations,
+    blendMode,
+    realization,
+  );
 }
 
 export function setGlQuadMatrixFromOffset(
