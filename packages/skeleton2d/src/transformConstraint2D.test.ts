@@ -116,6 +116,29 @@ describe('solveSkeleton2DTransformConstraint', () => {
     expect(skeleton.bones[0].rotation).toBeCloseTo(65, 5);
   });
 
+  // The constraint accepts SIX offsets and only offsetRotation above was pinned, which is the shape
+  // AGENTS.md calls out by name: a field a caller sets, that the solver could quietly stop honouring with
+  // nothing to notice. The rule is one rule — the constrained bone lands on the target's world value for
+  // that channel PLUS the offset — so it is asserted once per channel from the same posed target rather
+  // than as six unrelated numbers. The constrained bone is a root, so its local value is its world value
+  // and each expectation is readable straight off the target's setup.
+  it.each([
+    ['rotation', { mixRotate: 1, offsetRotation: 25 }, 'rotation', 65],
+    ['scaleX', { mixScaleX: 1, offsetScaleX: 0.5 }, 'scaleX', 2.5],
+    ['scaleY', { mixScaleY: 1, offsetScaleY: 0.5 }, 'scaleY', 2.5],
+    ['shearY', { mixShearY: 1, offsetShearY: 15 }, 'shearY', 25],
+    ['x', { mixX: 1, offsetX: 7 }, 'x', 37],
+    ['y', { mixY: 1, offsetY: 7 }, 'y', 19],
+  ] as const)('offsets the copied %s by its own offset field', (_channel, overrides, field, expected) => {
+    const target = makeBone({ rotation: 40, scaleX: 2, scaleY: 2, shearY: 10, x: 30, y: 12 });
+    const skeleton = createSkeleton2D([makeBone(), target]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DTransformConstraint(skeleton, transform(overrides));
+
+    expect(skeleton.bones[0][field]).toBeCloseTo(expected, 4);
+  });
+
   it('copies world position through the constrained bone PARENT basis, not field to field', () => {
     // The constrained bone hangs off a parent rotated 90°, so a world target of (0, 30) is local (30, 0)
     // to it. A field-to-field copy would have written (0, 30) and put the bone in the wrong place.
