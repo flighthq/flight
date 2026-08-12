@@ -69,6 +69,23 @@ export interface UncheckedFile {
   unreached: number;
 }
 
+/** One mutant handed to a warm worker: the splice, and the test files to run it against. */
+export interface MutantRequest {
+  end: number;
+  /** Correlates the response, so a worker's replies cannot be misattributed after a restart. */
+  id: number;
+  replacement: string;
+  start: number;
+  targets: readonly string[];
+}
+
+/** A warm worker's verdict inputs for one request. `applied` is the instrument check, not a status. */
+export interface MutantResponse {
+  applied: boolean;
+  id: number;
+  passed: boolean;
+}
+
 /**
  * The line the runner requires on a mutant run's stderr before it will believe any verdict.
  *
@@ -81,6 +98,15 @@ export const APPLIED_MARKER = 'flight-unchecked: mutant applied';
 
 /** The environment variable carrying the JSON mutant spec from the runner into the vitest config. */
 export const MUTANT_ENVIRONMENT = 'FLIGHT_UNCHECKED_MUTANT';
+
+/**
+ * Marks a warm worker's protocol lines on a stdout it does not own.
+ *
+ * Vitest writes its own watch-mode banners to the same stream, so a reply has to be recognizable rather than
+ * merely well-formed — scanning for "a line that parses as JSON" would eventually pick up something vitest
+ * printed and attribute a verdict to it.
+ */
+export const WORKER_PROTOCOL_PREFIX = '@@flight-unchecked@@';
 
 /** The source text with one mutant spliced in. Offsets are the mutant's, against this exact text. */
 export function applyMutantText(
