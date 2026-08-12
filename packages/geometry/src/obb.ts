@@ -48,7 +48,28 @@ export function getClosestPointOnObb(out: Vector3Like, obb: Readonly<ObbLike>, p
     py = point.y,
     pz = point.z;
 
-  const [ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2] = obbLocalAxes(obb);
+  const qx = obb.orientationX,
+    qy = obb.orientationY,
+    qz = obb.orientationZ,
+    qw = obb.orientationW;
+  const xx = qx * qx,
+    yy = qy * qy,
+    zz = qz * qz,
+    xy = qx * qy,
+    xz = qx * qz,
+    yz = qy * qz,
+    wx = qw * qx,
+    wy = qw * qy,
+    wz = qw * qz;
+  const ax0 = 1 - 2 * (yy + zz),
+    ay0 = 2 * (xy + wz),
+    az0 = 2 * (xz - wy),
+    ax1 = 2 * (xy - wz),
+    ay1 = 1 - 2 * (xx + zz),
+    az1 = 2 * (yz + wx),
+    ax2 = 2 * (xz + wy),
+    ay2 = 2 * (yz - wx),
+    az2 = 1 - 2 * (xx + yy);
 
   const dx = px - cx,
     dy = py - cy,
@@ -85,34 +106,85 @@ export function intersectRay3DObb(ray: Readonly<Ray3DLike>, obb: Readonly<ObbLik
     hy = obb.halfExtentY,
     hz = obb.halfExtentZ;
 
-  const [ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2] = obbLocalAxes(obb);
+  const qx = obb.orientationX,
+    qy = obb.orientationY,
+    qz = obb.orientationZ,
+    qw = obb.orientationW;
+  const xx = qx * qx,
+    yy = qy * qy,
+    zz = qz * qz,
+    xy = qx * qy,
+    xz = qx * qz,
+    yz = qy * qz,
+    wx = qw * qx,
+    wy = qw * qy,
+    wz = qw * qz;
+  const ax0 = 1 - 2 * (yy + zz),
+    ay0 = 2 * (xy + wz),
+    az0 = 2 * (xz - wy),
+    ax1 = 2 * (xy - wz),
+    ay1 = 1 - 2 * (xx + zz),
+    az1 = 2 * (yz + wx),
+    ax2 = 2 * (xz + wy),
+    ay2 = 2 * (yz - wx),
+    az2 = 1 - 2 * (xx + yy);
 
-  const origins = [ox * ax0 + oy * ay0 + oz * az0, ox * ax1 + oy * ay1 + oz * az1, ox * ax2 + oy * ay2 + oz * az2];
-  const dirs = [dx * ax0 + dy * ay0 + dz * az0, dx * ax1 + dy * ay1 + dz * az1, dx * ax2 + dy * ay2 + dz * az2];
-  const halfExts = [hx, hy, hz];
+  const origin0 = ox * ax0 + oy * ay0 + oz * az0,
+    origin1 = ox * ax1 + oy * ay1 + oz * az1,
+    origin2 = ox * ax2 + oy * ay2 + oz * az2;
+  const direction0 = dx * ax0 + dy * ay0 + dz * az0,
+    direction1 = dx * ax1 + dy * ay1 + dz * az1,
+    direction2 = dx * ax2 + dy * ay2 + dz * az2;
 
   let tMin = 0;
   let tMax = Number.POSITIVE_INFINITY;
 
-  for (let i = 0; i < 3; i++) {
-    const o = origins[i];
-    const d = dirs[i];
-    const h = halfExts[i];
-    if (d !== 0) {
-      const invD = 1 / d;
-      let t1 = (-h - o) * invD;
-      let t2 = (h - o) * invD;
-      if (t1 > t2) {
-        const tmp = t1;
-        t1 = t2;
-        t2 = tmp;
-      }
-      tMin = Math.max(tMin, t1);
-      tMax = Math.min(tMax, t2);
-      if (tMin > tMax) return -1;
-    } else if (o < -h || o > h) {
-      return -1;
+  if (direction0 !== 0) {
+    const invD = 1 / direction0;
+    let t1 = (-hx - origin0) * invD;
+    let t2 = (hx - origin0) * invD;
+    if (t1 > t2) {
+      const swap = t1;
+      t1 = t2;
+      t2 = swap;
     }
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if (tMin > tMax) return -1;
+  } else if (origin0 < -hx || origin0 > hx) {
+    return -1;
+  }
+
+  if (direction1 !== 0) {
+    const invD = 1 / direction1;
+    let t1 = (-hy - origin1) * invD;
+    let t2 = (hy - origin1) * invD;
+    if (t1 > t2) {
+      const swap = t1;
+      t1 = t2;
+      t2 = swap;
+    }
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if (tMin > tMax) return -1;
+  } else if (origin1 < -hy || origin1 > hy) {
+    return -1;
+  }
+
+  if (direction2 !== 0) {
+    const invD = 1 / direction2;
+    let t1 = (-hz - origin2) * invD;
+    let t2 = (hz - origin2) * invD;
+    if (t1 > t2) {
+      const swap = t1;
+      t1 = t2;
+      t2 = swap;
+    }
+    tMin = Math.max(tMin, t1);
+    tMax = Math.min(tMax, t2);
+    if (tMin > tMax) return -1;
+  } else if (origin2 < -hz || origin2 > hz) {
+    return -1;
   }
 
   return tMin;
@@ -133,7 +205,28 @@ export function isObbIntersectingAabb(obb: Readonly<ObbLike>, aabb: Readonly<Aab
     ahy = (aabb.max.y - aabb.min.y) * 0.5,
     ahz = (aabb.max.z - aabb.min.z) * 0.5;
 
-  const [ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2] = obbLocalAxes(obb);
+  const qx = obb.orientationX,
+    qy = obb.orientationY,
+    qz = obb.orientationZ,
+    qw = obb.orientationW;
+  const xx = qx * qx,
+    yy = qy * qy,
+    zz = qz * qz,
+    xy = qx * qy,
+    xz = qx * qz,
+    yz = qy * qz,
+    wx = qw * qx,
+    wy = qw * qy,
+    wz = qw * qz;
+  const ax0 = 1 - 2 * (yy + zz),
+    ay0 = 2 * (xy + wz),
+    az0 = 2 * (xz - wy),
+    ax1 = 2 * (xy - wz),
+    ay1 = 1 - 2 * (xx + zz),
+    az1 = 2 * (yz + wx),
+    ax2 = 2 * (xz + wy),
+    ay2 = 2 * (yz - wx),
+    az2 = 1 - 2 * (xx + yy);
 
   const tx = acx - obb.centerX,
     ty = acy - obb.centerY,
@@ -175,8 +268,51 @@ export function isObbIntersectingAabb(obb: Readonly<ObbLike>, aabb: Readonly<Aab
  * 15 candidate axes (3 face normals per box plus 9 edge cross-products).
  */
 export function isObbIntersectingObb(a: Readonly<ObbLike>, b: Readonly<ObbLike>): boolean {
-  const [ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2] = obbLocalAxes(a);
-  const [bx0, by0, bz0, bx1, by1, bz1, bx2, by2, bz2] = obbLocalAxes(b);
+  const aqx = a.orientationX,
+    aqy = a.orientationY,
+    aqz = a.orientationZ,
+    aqw = a.orientationW;
+  const axx = aqx * aqx,
+    ayy = aqy * aqy,
+    azz = aqz * aqz,
+    axy = aqx * aqy,
+    axz = aqx * aqz,
+    ayz = aqy * aqz,
+    awx = aqw * aqx,
+    awy = aqw * aqy,
+    awz = aqw * aqz;
+  const ax0 = 1 - 2 * (ayy + azz),
+    ay0 = 2 * (axy + awz),
+    az0 = 2 * (axz - awy),
+    ax1 = 2 * (axy - awz),
+    ay1 = 1 - 2 * (axx + azz),
+    az1 = 2 * (ayz + awx),
+    ax2 = 2 * (axz + awy),
+    ay2 = 2 * (ayz - awx),
+    az2 = 1 - 2 * (axx + ayy);
+
+  const bqx = b.orientationX,
+    bqy = b.orientationY,
+    bqz = b.orientationZ,
+    bqw = b.orientationW;
+  const bxx = bqx * bqx,
+    byy = bqy * bqy,
+    bzz = bqz * bqz,
+    bxy = bqx * bqy,
+    bxz = bqx * bqz,
+    byz = bqy * bqz,
+    bwx = bqw * bqx,
+    bwy = bqw * bqy,
+    bwz = bqw * bqz;
+  const bx0 = 1 - 2 * (byy + bzz),
+    by0 = 2 * (bxy + bwz),
+    bz0 = 2 * (bxz - bwy),
+    bx1 = 2 * (bxy - bwz),
+    by1 = 1 - 2 * (bxx + bzz),
+    bz1 = 2 * (byz + bwx),
+    bx2 = 2 * (bxz + bwy),
+    by2 = 2 * (byz - bwx),
+    bz2 = 1 - 2 * (bxx + byy);
 
   const tx = b.centerX - a.centerX,
     ty = b.centerY - a.centerY,
@@ -281,7 +417,7 @@ export function transformObbByMatrix4(out: ObbLike, obb: Readonly<ObbLike>, m: R
     r22 = sz > 0 ? _m[10] / sz : 1;
 
   // Quaternion from rotation matrix (Shepperd method). The antisymmetric pairs follow the same
-  // handedness as `obbLocalAxes`, which is the inverse map: x is (r21 - r12), not (r12 - r21).
+  // handedness as the local-axis rotation map, whose inverse uses x = (r21 - r12), not (r12 - r21).
   // Flipping either one silently yields the conjugate — a rotation by -angle about the same axis.
   let mqw: number, mqx: number, mqy: number, mqz: number;
   const trace = r00 + r11 + r22;
@@ -324,37 +460,6 @@ export function transformObbByMatrix4(out: ObbLike, obb: Readonly<ObbLike>, m: R
   out.orientationW = mqw * oqw - mqx * oqx - mqy * oqy - mqz * oqz;
 }
 
-// Returns [axisX.x, axisX.y, axisX.z, axisY.x, axisY.y, axisY.z, axisZ.x, axisZ.y, axisZ.z]
-// where each triple is an OBB local axis expressed in world space (column of the rotation matrix).
-function obbLocalAxes(
-  obb: Readonly<ObbLike>,
-): [number, number, number, number, number, number, number, number, number] {
-  const qx = obb.orientationX,
-    qy = obb.orientationY,
-    qz = obb.orientationZ,
-    qw = obb.orientationW;
-  const xx = qx * qx,
-    yy = qy * qy,
-    zz = qz * qz;
-  const xy = qx * qy,
-    xz = qx * qz,
-    yz = qy * qz;
-  const wx = qw * qx,
-    wy = qw * qy,
-    wz = qw * qz;
-  return [
-    1 - 2 * (yy + zz),
-    2 * (xy + wz),
-    2 * (xz - wy),
-    2 * (xy - wz),
-    1 - 2 * (xx + zz),
-    2 * (yz + wx),
-    2 * (xz + wy),
-    2 * (yz - wx),
-    1 - 2 * (xx + yy),
-  ];
-}
-
 // Returns true if the two OBBs (given by their center offset, local axes, and half-extents) are
 // separated on any of the 15 SAT candidate axes. True = separated = no intersection.
 function obbSatSeparated(
@@ -386,9 +491,88 @@ function obbSatSeparated(
   hby: number,
   hbz: number,
 ): boolean {
-  const onAxis = (lx: number, ly: number, lz: number): boolean => {
+  for (let axis = 0; axis < 15; axis++) {
+    let lx: number, ly: number, lz: number;
+    switch (axis) {
+      case 0:
+        lx = ax0;
+        ly = ay0;
+        lz = az0;
+        break;
+      case 1:
+        lx = ax1;
+        ly = ay1;
+        lz = az1;
+        break;
+      case 2:
+        lx = ax2;
+        ly = ay2;
+        lz = az2;
+        break;
+      case 3:
+        lx = bx0;
+        ly = by0;
+        lz = bz0;
+        break;
+      case 4:
+        lx = bx1;
+        ly = by1;
+        lz = bz1;
+        break;
+      case 5:
+        lx = bx2;
+        ly = by2;
+        lz = bz2;
+        break;
+      case 6:
+        lx = ay0 * bz0 - az0 * by0;
+        ly = az0 * bx0 - ax0 * bz0;
+        lz = ax0 * by0 - ay0 * bx0;
+        break;
+      case 7:
+        lx = ay0 * bz1 - az0 * by1;
+        ly = az0 * bx1 - ax0 * bz1;
+        lz = ax0 * by1 - ay0 * bx1;
+        break;
+      case 8:
+        lx = ay0 * bz2 - az0 * by2;
+        ly = az0 * bx2 - ax0 * bz2;
+        lz = ax0 * by2 - ay0 * bx2;
+        break;
+      case 9:
+        lx = ay1 * bz0 - az1 * by0;
+        ly = az1 * bx0 - ax1 * bz0;
+        lz = ax1 * by0 - ay1 * bx0;
+        break;
+      case 10:
+        lx = ay1 * bz1 - az1 * by1;
+        ly = az1 * bx1 - ax1 * bz1;
+        lz = ax1 * by1 - ay1 * bx1;
+        break;
+      case 11:
+        lx = ay1 * bz2 - az1 * by2;
+        ly = az1 * bx2 - ax1 * bz2;
+        lz = ax1 * by2 - ay1 * bx2;
+        break;
+      case 12:
+        lx = ay2 * bz0 - az2 * by0;
+        ly = az2 * bx0 - ax2 * bz0;
+        lz = ax2 * by0 - ay2 * bx0;
+        break;
+      case 13:
+        lx = ay2 * bz1 - az2 * by1;
+        ly = az2 * bx1 - ax2 * bz1;
+        lz = ax2 * by1 - ay2 * bx1;
+        break;
+      default:
+        lx = ay2 * bz2 - az2 * by2;
+        ly = az2 * bx2 - ax2 * bz2;
+        lz = ax2 * by2 - ay2 * bx2;
+        break;
+    }
+
     const lenSq = lx * lx + ly * ly + lz * lz;
-    if (lenSq < 1e-10) return false;
+    if (lenSq < 1e-10) continue;
     const d = Math.abs(tx * lx + ty * ly + tz * lz);
     const pA =
       Math.abs(ax0 * lx + ay0 * ly + az0 * lz) * hax +
@@ -398,23 +582,7 @@ function obbSatSeparated(
       Math.abs(bx0 * lx + by0 * ly + bz0 * lz) * hbx +
       Math.abs(bx1 * lx + by1 * ly + bz1 * lz) * hby +
       Math.abs(bx2 * lx + by2 * ly + bz2 * lz) * hbz;
-    return d > pA + pB;
-  };
-
-  if (onAxis(ax0, ay0, az0)) return true;
-  if (onAxis(ax1, ay1, az1)) return true;
-  if (onAxis(ax2, ay2, az2)) return true;
-  if (onAxis(bx0, by0, bz0)) return true;
-  if (onAxis(bx1, by1, bz1)) return true;
-  if (onAxis(bx2, by2, bz2)) return true;
-  if (onAxis(ay0 * bz0 - az0 * by0, az0 * bx0 - ax0 * bz0, ax0 * by0 - ay0 * bx0)) return true;
-  if (onAxis(ay0 * bz1 - az0 * by1, az0 * bx1 - ax0 * bz1, ax0 * by1 - ay0 * bx1)) return true;
-  if (onAxis(ay0 * bz2 - az0 * by2, az0 * bx2 - ax0 * bz2, ax0 * by2 - ay0 * bx2)) return true;
-  if (onAxis(ay1 * bz0 - az1 * by0, az1 * bx0 - ax1 * bz0, ax1 * by0 - ay1 * bx0)) return true;
-  if (onAxis(ay1 * bz1 - az1 * by1, az1 * bx1 - ax1 * bz1, ax1 * by1 - ay1 * bx1)) return true;
-  if (onAxis(ay1 * bz2 - az1 * by2, az1 * bx2 - ax1 * bz2, ax1 * by2 - ay1 * bx2)) return true;
-  if (onAxis(ay2 * bz0 - az2 * by0, az2 * bx0 - ax2 * bz0, ax2 * by0 - ay2 * bx0)) return true;
-  if (onAxis(ay2 * bz1 - az2 * by1, az2 * bx1 - ax2 * bz1, ax2 * by1 - ay2 * bx1)) return true;
-  if (onAxis(ay2 * bz2 - az2 * by2, az2 * bx2 - ax2 * bz2, ax2 * by2 - ay2 * bx2)) return true;
+    if (d > pA + pB) return true;
+  }
   return false;
 }

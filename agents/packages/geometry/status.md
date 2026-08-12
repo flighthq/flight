@@ -18,10 +18,6 @@ claim about this tree, not about a session.
   The body computes `top = fov * zNear` (`matrix4.ts:1181`) while the parameter is named `fov`
   (`:1172`). Both callers pre-multiply and carry a warning comment to say so —
   `camera/src/projection.ts:69-71` and `render/src/sceneRender.ts:374-375`. The name is the defect.
-- **OBB hot paths allocate per call**, in the package whose north star is allocation-free math:
-  `obbLocalAxes` returns a fresh 9-tuple (`obb.ts:320-322`, destructured at `:51`, `:84`, `:129`,
-  `:171-172`), `intersectRay3DObb` builds three temporary arrays (`obb.ts:86-88`), and
-  `obbSatSeparated` creates an `onAxis` closure per invocation (`obb.ts:380`).
 - **Four pair predicates are absent** over already-homed types: `isAabbIntersectingSphere` (Arvo),
   `isObbIntersectingSphere`, `isCapsuleIntersectingAabb`, `isFrustumIntersectingObb`. A repo-wide grep
   over `packages/` finds no definition of any of them.
@@ -57,6 +53,15 @@ claim about this tree, not about a session.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-12** — OBB closest-point, ray, AABB, and OBB queries now keep axes and SAT candidates in
+  stack-local scalars; ray slabs are scalar and SAT iterates its 15 axes without a closure. The hot
+  paths no longer allocate tuples, arrays, or functions per call and remain correct under reentrancy.
+
+- **2026-08-12** — Clearing `EntityRuntimeKey` on pool release also closes a retention leak: the stale
+  runtime otherwise keeps the prior owner's binding graph reachable for the entire time the value sits
+  pooled. Clearing at acquire would repair reuse correctness but retain that graph throughout the idle
+  interval, which is why all eight pools detach ownership before pushing.
 
 - **2026-08-12** — All eight pools preserve raw numeric payload by contract, normalize it through
   empty/identity acquires, detach stale `EntityRuntimeKey` ownership on release, and support opt-in
