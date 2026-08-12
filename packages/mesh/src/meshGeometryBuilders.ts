@@ -64,14 +64,15 @@ export function createBoxMeshGeometry(width: number = 1, height: number = 1, dep
 // (excluding the caps) centered at the origin, with `radialSegments` around the axis and
 // `capSegments` latitudinal divisions per hemisphere. Normals are smooth across the seam between
 // the caps and the side wall. UVs run v from 0 (top) to 1 (bottom) along the full length.
+// Segment counts must be finite; fractional values are floored after clamping to their minima.
 export function createCapsuleMeshGeometry(
   radius: number = 0.5,
   height: number = 1,
   radialSegments: number = 16,
   capSegments: number = 8,
 ): MeshGeometry {
-  const rSeg = Math.max(3, radialSegments);
-  const cSeg = Math.max(1, capSegments);
+  const rSeg = normalizeMeshCount(radialSegments, 3);
+  const cSeg = normalizeMeshCount(capSegments, 1);
   const halfH = height * 0.5;
   const positions: number[] = [];
   const normals: number[] = [];
@@ -138,8 +139,9 @@ export function createCapsuleMeshGeometry(
 // `radius` is the outer radius; `segments` is the number of rim vertices. A center vertex fans
 // out to `segments` rim vertices via a triangle fan, so the result is `segments` triangles.
 // UVs map from the disc plane onto 0..1 with (0.5, 0.5) at the center.
+// `segments` must be finite; a fractional value is floored after clamping to the minimum of 3.
 export function createCircleMeshGeometry(radius: number = 0.5, segments: number = 32): MeshGeometry {
-  const segs = Math.max(3, segments);
+  const segs = normalizeMeshCount(segments, 3);
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
@@ -151,6 +153,7 @@ export function createCircleMeshGeometry(radius: number = 0.5, segments: number 
 // Builds a right circular cone of `radius` and `height` centered at the origin, apex at +Y, base
 // at -Y, with `radialSegments` around the axis. A capped base disc is included when `capped` is
 // true (default). Side normals are smooth around the ring and slanted by the cone half-angle.
+// `radialSegments` must be finite; a fractional value is floored after clamping to 3.
 export function createConeMeshGeometry(
   radius: number = 0.5,
   height: number = 1,
@@ -164,6 +167,8 @@ export function createConeMeshGeometry(
 // top (`topRadius`) and bottom (`bottomRadius`) radii so it also serves as a truncated cone (a
 // zero top radius yields a cone). `radialSegments` rings around the axis; `capped` adds top and
 // bottom discs (skipping a zero-radius cap).
+// `radialSegments` must be finite; a fractional value is floored after clamping to 3. A zero
+// height is a valid collapsed cylinder and uses stable radial side normals.
 export function createCylinderMeshGeometry(
   topRadius: number = 0.5,
   bottomRadius: number = 0.5,
@@ -171,7 +176,7 @@ export function createCylinderMeshGeometry(
   radialSegments: number = 32,
   capped: boolean = true,
 ): MeshGeometry {
-  const segments = Math.max(3, radialSegments);
+  const segments = normalizeMeshCount(radialSegments, 3);
   const halfHeight = height * 0.5;
   const positions: number[] = [];
   const normals: number[] = [];
@@ -179,7 +184,7 @@ export function createCylinderMeshGeometry(
   const indices: number[] = [];
 
   // Side wall: slope of the silhouette feeds the radial normal tilt.
-  const slope = (bottomRadius - topRadius) / height;
+  const slope = height !== 0 ? (bottomRadius - topRadius) / height : 0;
   const sideStart = positions.length / 3;
   for (let y = 0; y <= 1; y++) {
     const radius = y === 0 ? bottomRadius : topRadius;
@@ -222,12 +227,14 @@ export function createCylinderMeshGeometry(
 }
 
 // Builds a regular dodecahedron (12 pentagonal faces, triangulated) inscribed in a sphere of `radius`.
+// `detail` must be finite; a fractional value is floored after clamping to 0..5.
 export function createDodecahedronMeshGeometry(radius: number = 0.5, detail: number = 0): MeshGeometry {
   return createPolyhedronMeshGeometry(DODECAHEDRON_VERTS, DODECAHEDRON_FACES, radius, detail);
 }
 
 // Builds a regular icosahedron (20 triangular faces) inscribed in a sphere of `radius`.
 // This is the base shape for createIcosphereMeshGeometry at detail=0.
+// `detail` must be finite; a fractional value is floored after clamping to 0..5.
 export function createIcosahedronMeshGeometry(radius: number = 0.5, detail: number = 0): MeshGeometry {
   return createPolyhedronMeshGeometry(ICOSAHEDRON_VERTS, ICOSAHEDRON_FACES, radius, detail);
 }
@@ -237,8 +244,9 @@ export function createIcosahedronMeshGeometry(radius: number = 0.5, detail: numb
 // from a regular icosahedron, each face is subdivided `subdivisions` times (0 = raw icosahedron,
 // 1 = 80 triangles, 2 = 320, etc.). Normals are the unit-sphere position direction; UVs are
 // spherical (longitude/latitude).
+// `subdivisions` must be finite; a fractional value is floored after clamping to 0..6.
 export function createIcosphereMeshGeometry(radius: number = 0.5, subdivisions: number = 2): MeshGeometry {
-  const subs = Math.max(0, Math.min(subdivisions, 6)); // cap at 6 to prevent > 262k triangles
+  const subs = normalizeMeshCount(subdivisions, 0, 6); // cap at 6 to prevent > 262k triangles
 
   // Icosahedron base vertices (unit sphere).
   const phi = (1 + Math.sqrt(5)) * 0.5;
@@ -347,6 +355,7 @@ export function createIcosphereMeshGeometry(radius: number = 0.5, subdivisions: 
 }
 
 // Builds a regular octahedron (8 triangular faces) inscribed in a sphere of `radius`.
+// `detail` must be finite; a fractional value is floored after clamping to 0..5.
 export function createOctahedronMeshGeometry(radius: number = 0.5, detail: number = 0): MeshGeometry {
   return createPolyhedronMeshGeometry(OCTAHEDRON_VERTS, OCTAHEDRON_FACES, radius, detail);
 }
@@ -354,14 +363,15 @@ export function createOctahedronMeshGeometry(radius: number = 0.5, detail: numbe
 // Builds a flat plane in the XZ plane (Y up, normal +Y) centered at the origin, subdivided into
 // `widthSegments` x `depthSegments` quads with a 0..1 UV grid. Suitable as a ground plane or a
 // textured "panel" mesh.
+// Segment counts must be finite; fractional values are floored after clamping to 1.
 export function createPlaneMeshGeometry(
   width: number = 1,
   depth: number = 1,
   widthSegments: number = 1,
   depthSegments: number = 1,
 ): MeshGeometry {
-  const wSeg = Math.max(1, widthSegments);
-  const dSeg = Math.max(1, depthSegments);
+  const wSeg = normalizeMeshCount(widthSegments, 1);
+  const dSeg = normalizeMeshCount(depthSegments, 1);
   const hw = width * 0.5,
     hd = depth * 0.5;
 
@@ -402,13 +412,14 @@ export function createPlaneMeshGeometry(
 // This is the shared backend for the Platonic solid builders and is also exported for custom
 // polyhedra. Vertices are projected onto the unit sphere before scaling so the output is a
 // geodesic sphere approximation.
+// `detail` must be finite; a fractional value is floored after clamping to 0..5.
 export function createPolyhedronMeshGeometry(
   vertexPositions: readonly (readonly [number, number, number])[],
   faceIndices: readonly (readonly [number, number, number])[],
   radius: number = 0.5,
   detail: number = 0,
 ): MeshGeometry {
-  const subs = Math.max(0, Math.min(detail, 5));
+  const subs = normalizeMeshCount(detail, 0, 5);
   const verts: Array<[number, number, number]> = vertexPositions.map(([x, y, z]) => {
     const len = Math.sqrt(x * x + y * y + z * z);
     return [x / len, y / len, z / len];
@@ -486,12 +497,13 @@ export function createQuadMeshGeometry(width: number = 1, height: number = 1): M
 // Builds a flat ring (annulus) in the XZ plane centered at the origin. `innerRadius` is the
 // hole radius and `outerRadius` is the ring's outer edge. Normal is +Y. `segments` is the
 // number of vertices around the ring. UVs map inner radius to u=0 and outer to u=1.
+// `segments` must be finite; a fractional value is floored after clamping to 3.
 export function createRingMeshGeometry(
   innerRadius: number = 0.25,
   outerRadius: number = 0.5,
   segments: number = 32,
 ): MeshGeometry {
-  const segs = Math.max(3, segments);
+  const segs = normalizeMeshCount(segments, 3);
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
@@ -526,13 +538,14 @@ export function createRingMeshGeometry(
 // Builds a UV sphere of `radius` centered at the origin, with `widthSegments` longitudinal and
 // `heightSegments` latitudinal divisions. Normals are the unit position direction; UVs map
 // longitude to u and latitude to v.
+// Segment counts must be finite; fractional values are floored after clamping to 3x2.
 export function createSphereMeshGeometry(
   radius: number = 0.5,
   widthSegments: number = 32,
   heightSegments: number = 16,
 ): MeshGeometry {
-  const wSeg = Math.max(3, widthSegments);
-  const hSeg = Math.max(2, heightSegments);
+  const wSeg = normalizeMeshCount(widthSegments, 3);
+  const hSeg = normalizeMeshCount(heightSegments, 2);
 
   const positions: number[] = [];
   const normals: number[] = [];
@@ -573,6 +586,7 @@ export function createSphereMeshGeometry(
 }
 
 // Builds a regular tetrahedron (4 triangular faces) inscribed in a sphere of `radius`.
+// `detail` must be finite; a fractional value is floored after clamping to 0..5.
 export function createTetrahedronMeshGeometry(radius: number = 0.5, detail: number = 0): MeshGeometry {
   return createPolyhedronMeshGeometry(TETRAHEDRON_VERTS, TETRAHEDRON_FACES, radius, detail);
 }
@@ -580,6 +594,7 @@ export function createTetrahedronMeshGeometry(radius: number = 0.5, detail: numb
 // Builds a torus knot: a torus-shaped curve wound `p` times around the Z axis and `q` times
 // around the tube axis. `radius` is the distance from the center to the tube center line;
 // `tube` is the tube radius. Normals and UVs are generated per the standard torus knot geometry.
+// Segment counts must be finite; fractional values are floored after clamping to 3.
 export function createTorusKnotMeshGeometry(
   radius: number = 0.5,
   tube: number = 0.15,
@@ -588,8 +603,8 @@ export function createTorusKnotMeshGeometry(
   p: number = 2,
   q: number = 3,
 ): MeshGeometry {
-  const tSeg = Math.max(3, tubularSegments);
-  const rSeg = Math.max(3, radialSegments);
+  const tSeg = normalizeMeshCount(tubularSegments, 3);
+  const rSeg = normalizeMeshCount(radialSegments, 3);
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
@@ -670,14 +685,15 @@ export function createTorusKnotMeshGeometry(
 // Builds a torus in the XY plane: a ring of `radius` (center to tube center) with a tube of
 // `tube` radius, divided into `radialSegments` around the ring and `tubularSegments` around the
 // tube. Normals point radially outward from the tube center.
+// Segment counts must be finite; fractional values are floored after clamping to 3.
 export function createTorusMeshGeometry(
   radius: number = 0.5,
   tube: number = 0.2,
   radialSegments: number = 24,
   tubularSegments: number = 48,
 ): MeshGeometry {
-  const rSeg = Math.max(3, radialSegments);
-  const tSeg = Math.max(3, tubularSegments);
+  const rSeg = normalizeMeshCount(radialSegments, 3);
+  const tSeg = normalizeMeshCount(tubularSegments, 3);
 
   const positions: number[] = [];
   const normals: number[] = [];
@@ -763,6 +779,11 @@ function addDisc(
       indices.push(center, a, b);
     }
   }
+}
+
+function normalizeMeshCount(value: number, min: number, max: number = Number.POSITIVE_INFINITY): number {
+  if (!Number.isFinite(value)) throw new RangeError('mesh segment and subdivision counts must be finite');
+  return Math.floor(Math.max(min, Math.min(value, max)));
 }
 
 // Interleaves separate position/normal/uv0 arrays into the canonical 12-float record, allocates
