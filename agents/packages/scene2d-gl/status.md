@@ -47,6 +47,16 @@ Every item below was re-checked against `packages/scene2d-gl/src/` (and `render-
   label; `@flighthq/glyphatlas` is referenced from no source file here, and the generated
   [support matrix](../../support-matrix.md) still lists MSDF as `not-implemented`.
 
+- **`renderGlVelocity` used to leak three context states, and the shape is worth remembering.** It
+  restored the framebuffer on exit and nothing else, so `BLEND`, `viewport`, and the clear colour were
+  left as the pass set them. The framebuffer restore is what makes this instructive: the function
+  clearly knew it had to put things back, and put back exactly one of the four things it changed.
+  `BLEND` was the severe one — the 2D path enables it once in `createGlRenderState` and never again, so
+  the leak was not frame-scoped but permanent for the context, and `functional/scenes/effect-motion-blur`
+  exercises it directly (velocity pass, then `renderGlScene2D`). It is only invisible in that baseline
+  because the scene draws solid shapes, where premultiplied blending on and off agree except at
+  antialiased edges. Fixed, with all three restores mutation-tested.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
