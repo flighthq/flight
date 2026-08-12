@@ -171,6 +171,17 @@ describe('computeNodeBoundsRectangle', () => {
     expect(equalsRectangle(out, getNodeWorldBoundsRectangle(child))).toBe(true);
   });
 
+  it('converts through world space for a nested unrelated target', () => {
+    const unrelatedRoot = createTestNode();
+    const unrelatedTarget = createTestNode();
+    addNodeChild(unrelatedRoot, unrelatedTarget);
+    const out = createRectangle();
+
+    computeNodeBoundsRectangle(out, grandChild, unrelatedTarget);
+
+    expect(equalsRectangle(out, getNodeWorldBoundsRectangle(grandChild))).toBe(true);
+  });
+
   it('should return world bounds if the target coordinate space is root', () => {
     const out = createRectangle();
     computeNodeBoundsRectangle(out, child, root);
