@@ -146,6 +146,42 @@ describe('solveSkeleton2DPathConstraint', () => {
     expect(skeleton.bones[2].x).toBeCloseTo(40, 4);
   });
 
+  // The third spacing mode, and the one with no test: Fixed and Length were both pinned, Percent was not.
+  // It is the mode that keeps a chain's proportions when the path is re-authored longer or shorter, which
+  // is exactly the case a hardcoded arc length gets wrong.
+  it('spaces a chain by a fraction of the whole path in Percent mode', () => {
+    const skeleton = rig(3);
+
+    solveSkeleton2DPathConstraint(
+      skeleton,
+      constraint({ boneIndices: [1, 2, 3], spacing: 0.2, spacingMode: Skeleton2DPathSpacingMode.Percent }),
+    );
+
+    // 0.2 of the path's 100 units is a 20-unit gap, independent of any bone's own length.
+    expect(skeleton.bones[1].x).toBeCloseTo(0, 4);
+    expect(skeleton.bones[2].x).toBeCloseTo(20, 4);
+    expect(skeleton.bones[3].x).toBeCloseTo(40, 4);
+  });
+
+  // The sibling of the run-off-the-end case, which was pinned while this one was not.
+  //
+  // This pins the CONSTRAINT'S contract, not the local clamp: @flighthq/path's sampler clamps a negative
+  // distance to the start of the first contour itself, so deleting `clampSkeleton2DPathDistance`'s negative
+  // arm leaves this green. The local clamp stays anyway — the sampler's clamping is an implementation
+  // choice inside another package rather than a documented promise, and a constraint that only works while
+  // that choice holds is coupled to something it cannot see. Which is also why this test is worth having:
+  // it fails if either layer ever starts extrapolating off the front.
+  it('clamps a negative position to the start rather than sampling off the front of the path', () => {
+    const skeleton = rig(2);
+
+    solveSkeleton2DPathConstraint(skeleton, constraint({ boneIndices: [1, 2], position: -30, spacing: 40 }));
+
+    expect(skeleton.bones[1].x).toBeCloseTo(0, 4);
+    // The second sample is −30 + 40 = 10, which is on the path and so is NOT clamped: this pins that the
+    // clamp is per sample rather than a shift of the whole chain onto the path.
+    expect(skeleton.bones[2].x).toBeCloseTo(10, 4);
+  });
+
   it('clamps a chain that runs off the end rather than wrapping it to the other end', () => {
     const skeleton = rig(2);
 
@@ -153,6 +189,34 @@ describe('solveSkeleton2DPathConstraint', () => {
 
     expect(skeleton.bones[1].x).toBeCloseTo(90, 4);
     expect(skeleton.bones[2].x).toBeCloseTo(100, 4);
+  });
+
+  // A rotate-only constraint is an ordinary rig setup — follow the path's heading, keep your own position.
+  // The bone is deliberately posed away from the path first, so leaving its position alone is something
+  // the assertion can actually see.
+  //
+  // The zero-mix guard this reaches is a PERFORMANCE skip, not a behavioural one, and the test says so
+  // rather than implying otherwise: running the translate block at mix 0 computes the bone's own current
+  // world position and writes it straight back, so forcing the branch on leaves this green. What it saves
+  // is an inverse-basis solve and a matrix rebuild per bone per frame for every rotate-only chain.
+  it('turns a bone to the path without moving it when both translate mixes are zero', () => {
+    const skeleton = rig(1, {
+      commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
+      kind: PathAttachment2DKind,
+      pointCount: 2,
+      skin: null,
+      vertices: new Float32Array([0, 0, 0, 100]),
+      winding: 'nonZero',
+    });
+    skeleton.bones[1].x = 40;
+    skeleton.bones[1].y = -7;
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DPathConstraint(skeleton, constraint({ mixRotate: 1, mixX: 0, mixY: 0, position: 10 }));
+
+    expect(skeleton.bones[1].rotation).toBeCloseTo(90, 4);
+    expect(skeleton.bones[1].x).toBe(40);
+    expect(skeleton.bones[1].y).toBe(-7);
   });
 
   it('aims a bone along the path tangent when rotateMode is Tangent', () => {
