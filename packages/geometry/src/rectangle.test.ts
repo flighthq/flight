@@ -291,6 +291,11 @@ describe('enclosesRectangle', () => {
 });
 
 describe('equalsRectangle', () => {
+  it('returns false when exactly one rectangle is absent', () => {
+    expect(equalsRectangle(r, null)).toBe(false);
+    expect(equalsRectangle(undefined, r)).toBe(false);
+  });
+
   it('returns true for identical rectangles', () => {
     expect(equalsRectangle(r, r)).toBe(true);
     expect(equalsRectangle(r, cloneRectangle(r))).toBe(true);
