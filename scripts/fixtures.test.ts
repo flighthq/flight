@@ -15,6 +15,7 @@ import {
   getFixturePackUrl,
   getFixtureTreePath,
   hashFixtureFile,
+  parseFixtureArguments,
   readFixtureTreeStamp,
   resolveFixtureCacheDirectory,
   verifyFixtureArchive,
@@ -208,6 +209,27 @@ describe('isFixturePackMetadataEntry', () => {
   it('normalizes the ./ prefix tar may or may not emit', () => {
     expect(isFixturePackMetadataEntry('./NOTICE.md')).toBe(true);
     expect(isFixturePackMetadataEntry('./LICENSES/x.txt')).toBe(true);
+  });
+});
+
+describe('parseFixtureArguments', () => {
+  it('selects every pack only when --all is explicit', () => {
+    expect(parseFixtureArguments(['--all'])).toEqual({ all: true, list: false, packs: [], variant: 'full' });
+  });
+
+  it('retains named-pack and variant selection', () => {
+    expect(parseFixtureArguments(['spine-fixtures', '--variant', 'demo'])).toEqual({
+      all: false,
+      list: false,
+      packs: ['spine-fixtures'],
+      variant: 'demo',
+    });
+  });
+
+  it('rejects ambiguous all/list combinations and empty variants', () => {
+    expect(() => parseFixtureArguments(['--all', 'spine-fixtures'])).toThrow('--all cannot be combined');
+    expect(() => parseFixtureArguments(['--list', '--all'])).toThrow('--list cannot be combined');
+    expect(() => parseFixtureArguments(['--variant='])).toThrow('--variant requires a non-empty value');
   });
 });
 
