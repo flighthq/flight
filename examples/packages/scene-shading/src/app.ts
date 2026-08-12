@@ -165,7 +165,6 @@ invalidateNodeLocalTransform(cube);
 addNodeChild(scene, cube);
 
 const torusMaterial = createMappedMaterial(weaveMaps, 96);
-torusMaterial.doubleSided = true;
 const torus = createMesh(createTorusMeshGeometry(1.05, 0.34, 32, 56), [torusMaterial]);
 torus.position.x = -2.55;
 torus.position.y = -0.25;

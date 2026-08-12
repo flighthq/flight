@@ -64,7 +64,6 @@ const cubeMaterial = createStandardPbrMaterial({
 });
 const torusMaterial = createStandardPbrMaterial({
   baseColor: 0x34c9b6ff,
-  doubleSided: true,
   metallic: 0.65,
   roughness: 0.24,
 });
