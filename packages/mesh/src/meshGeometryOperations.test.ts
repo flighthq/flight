@@ -139,6 +139,29 @@ describe('mergeMeshGeometries', () => {
     const b = createMeshGeometry({ layout: POSITION_ONLY_LAYOUT, vertices: new Float32Array(9) });
     expect(mergeMeshGeometries([a, b])).toBeNull();
   });
+  it('returns null on topology mismatch', () => {
+    // The merged result carries ONE topology, so concatenating a line-list into a triangle-list
+    // would reinterpret pairs of line endpoints as face corners — triangles nobody authored, from
+    // a call that reported success. There is no correct single topology for that merge, so it is
+    // refused, the same way a layout mismatch is.
+    const faces = createQuadMeshGeometry();
+    const lines = createMeshGeometry({
+      layout: faces.layout,
+      topology: 'line-list',
+      vertices: new Float32Array(faces.vertices.length),
+    });
+    expect(mergeMeshGeometries([faces, lines])).toBeNull();
+    expect(mergeMeshGeometries([lines, faces])).toBeNull();
+  });
+  it('merges geometries that share a non-default topology', () => {
+    // The check is mismatch, not triangle-list-only: two line meshes still merge.
+    const layout = createQuadMeshGeometry().layout;
+    const a = createMeshGeometry({ layout, topology: 'line-list', vertices: new Float32Array(24) });
+    const b = createMeshGeometry({ layout, topology: 'line-list', vertices: new Float32Array(24) });
+    const merged = mergeMeshGeometries([a, b]);
+    expect(merged).not.toBeNull();
+    expect(merged!.topology).toBe('line-list');
+  });
   it('concatenates vertices from two geometries', () => {
     const a = createQuadMeshGeometry();
     const b = createQuadMeshGeometry();

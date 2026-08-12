@@ -123,16 +123,22 @@ export function getMeshGeometryTriangleVertexIndices(
 }
 
 // Concatenates multiple geometries into a single MeshGeometry. All source geometries must share
-// the same layout (checked by matching stride and attribute count, semantic, and format) — returns
-// null on mismatch. Index buffers are offset so each source's indices remain valid within the
-// merged vertex stream. Subsets are re-based so each source's draw ranges are individually
-// addressable. Bounds are recomputed. An empty array returns null.
+// the same layout (checked by matching stride and attribute count, semantic, and format) AND the
+// same topology — returns null on either mismatch. Topology is not merely metadata here: the merged
+// result carries ONE topology, so concatenating a line-list into a triangle-list would reinterpret
+// the line mesh's elements as face corners, turning pairs of endpoints into triangles nobody
+// authored. There is no correct single topology for such a merge, which is why it is refused rather
+// than resolved. Index buffers are offset so each source's indices remain valid within the merged
+// vertex stream. Subsets are re-based so each source's draw ranges are individually addressable.
+// Bounds are recomputed. An empty array returns null.
 export function mergeMeshGeometries(geometries: readonly Readonly<MeshGeometry>[]): MeshGeometry | null {
   if (geometries.length === 0) return null;
   const reference = geometries[0];
   const layout = reference.layout;
+  const topology = reference.topology;
   for (let i = 1; i < geometries.length; i++) {
     if (!layoutsMatch(layout, geometries[i].layout)) return null;
+    if (geometries[i].topology !== topology) return null;
   }
 
   const floatsPerVertex = layout.stride / 4;
@@ -196,7 +202,7 @@ export function mergeMeshGeometries(geometries: readonly Readonly<MeshGeometry>[
     indices: mergedIndices ?? undefined,
     layout: layout,
     subsets: mergedSubsets,
-    topology: reference.topology,
+    topology,
     vertices: mergedVertices,
   });
   refreshMeshGeometryBounds(merged);
