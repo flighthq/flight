@@ -1191,6 +1191,49 @@ describe('scaleMatrix4', () => {
     expect(m.m[13]).toBe(20);
     expect(m.m[14]).toBe(30);
   });
+
+  // A diagonal matrix cannot tell a column scale from a row scale, so a rotated basis with a
+  // non-uniform scale is the only input that pins the multiplication side down.
+  it('post-multiplies by diag(sx, sy, sz, 1) on a rotated basis', () => {
+    const rotated = createMatrix4();
+    setMatrix4(rotated, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const scale = createMatrix4();
+    setMatrix4(scale, 2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 1);
+    const expected = createMatrix4();
+    multiplyMatrix4(expected, rotated, scale);
+
+    const result = createMatrix4();
+    scaleMatrix4(result, rotated, 2, 3, 4);
+
+    expect(Array.from(result.m)).toEqual(Array.from(expected.m));
+    // The discriminating elements: column 0 carries sx, not row 0.
+    expect(result.m[1]).toBe(2);
+    expect(result.m[4]).toBe(-3);
+  });
+
+  it('scales the fourth row of each basis column for a non-affine matrix', () => {
+    const projective = createMatrix4();
+    setMatrix4(projective, 1, 0, 0, 5, 0, 1, 0, 6, 0, 0, 1, 7, 0, 0, 0, 1);
+
+    scaleMatrix4(projective, projective, 2, 3, 4);
+
+    expect(projective.m[3]).toBe(10);
+    expect(projective.m[7]).toBe(18);
+    expect(projective.m[11]).toBe(28);
+    expect(projective.m[15]).toBe(1);
+  });
+
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createMatrix4();
+    setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
+    const distinct = createMatrix4();
+    const aliased = cloneMatrix4(source);
+
+    scaleMatrix4(distinct, source, 2, 3, 4);
+    scaleMatrix4(aliased, aliased, 2, 3, 4);
+
+    expect(Array.from(aliased.m)).toEqual(Array.from(distinct.m));
+  });
 });
 
 describe('setMatrix4', () => {

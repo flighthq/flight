@@ -871,25 +871,27 @@ export function scaleMatrix4(
   const a = source.m;
   const o = out.m;
 
-  if (out !== source) out.m.set(source.m);
+  // Post-multiply by diag(sx, sy, sz, 1): scale column 0 by sx, column 1 by sy, column 2 by sz,
+  // and leave the translation column. Every element reads its own index, so `out` may alias `source`.
+  o[0] = a[0] * sx;
+  o[1] = a[1] * sx;
+  o[2] = a[2] * sx;
+  o[3] = a[3] * sx;
 
-  if (sx !== 1) {
-    o[0] = a[0] * sx;
-    o[4] = a[4] * sx;
-    o[8] = a[8] * sx;
-  }
+  o[4] = a[4] * sy;
+  o[5] = a[5] * sy;
+  o[6] = a[6] * sy;
+  o[7] = a[7] * sy;
 
-  if (sy !== 1) {
-    o[1] = a[1] * sy;
-    o[5] = a[5] * sy;
-    o[9] = a[9] * sy;
-  }
+  o[8] = a[8] * sz;
+  o[9] = a[9] * sz;
+  o[10] = a[10] * sz;
+  o[11] = a[11] * sz;
 
-  if (sz !== 1) {
-    o[2] = a[2] * sz;
-    o[6] = a[6] * sz;
-    o[10] = a[10] * sz;
-  }
+  o[12] = a[12];
+  o[13] = a[13];
+  o[14] = a[14];
+  o[15] = a[15];
 }
 
 export function setMatrix4(
