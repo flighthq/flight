@@ -38,6 +38,10 @@ describe('lerpAngle', () => {
     const normalised = ((result % TAU) + TAU) % TAU;
     expect(normalised).toBeCloseTo(0, 5);
   });
+  it('takes the shortest arc clockwise across 0/2π', () => {
+    const result = lerpAngle(Math.PI * 0.1, Math.PI * 1.9, 0.5);
+    expect(result).toBeCloseTo(0, 10);
+  });
   it('returns a at t = 0', () => {
     expect(lerpAngle(1, 2, 0)).toBeCloseTo(1, 10);
   });
