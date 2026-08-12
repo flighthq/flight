@@ -98,6 +98,20 @@ describe('clampVector4', () => {
     expect(out.z).toBe(1);
     expect(out.w).toBe(3);
   });
+
+  it('supports out aliasing any input', () => {
+    const value = createVector4(5, -2, 1, 10);
+    clampVector4(value, value, createVector4(0, 0, 0, 0), createVector4(3, 3, 3, 3));
+    expect(value).toMatchObject({ x: 3, y: 0, z: 1, w: 3 });
+
+    const min = createVector4(0, 0, 0, 0);
+    clampVector4(min, createVector4(5, -2, 1, 10), min, createVector4(3, 3, 3, 3));
+    expect(min).toMatchObject({ x: 3, y: 0, z: 1, w: 3 });
+
+    const max = createVector4(3, 3, 3, 3);
+    clampVector4(max, createVector4(5, -2, 1, 10), createVector4(0, 0, 0, 0), max);
+    expect(max).toMatchObject({ x: 3, y: 0, z: 1, w: 3 });
+  });
 });
 
 describe('cloneVector4', () => {
@@ -171,6 +185,16 @@ describe('divideVector4', () => {
     expect(out.y).toBe(2);
     expect(out.z).toBe(3);
     expect(out.w).toBe(2);
+  });
+
+  it('supports out === source or divisor', () => {
+    const source = createVector4(6, 8, 9, 12);
+    divideVector4(source, source, createVector4(2, 4, 3, 6));
+    expect(source).toMatchObject({ x: 3, y: 2, z: 3, w: 2 });
+
+    const divisor = createVector4(2, 4, 3, 6);
+    divideVector4(divisor, createVector4(6, 8, 9, 12), divisor);
+    expect(divisor).toMatchObject({ x: 3, y: 2, z: 3, w: 2 });
   });
 
   it('produces 0 for zero divisor components', () => {
@@ -300,6 +324,12 @@ describe('interpolateVector4', () => {
     expect(a.z).toBe(3);
     expect(a.w).toBe(4);
   });
+
+  it('supports out === b', () => {
+    const b = createVector4(2, 4, 6, 8);
+    interpolateVector4(b, createVector4(0, 0, 0, 0), b, 0.5);
+    expect(b).toMatchObject({ x: 1, y: 2, z: 3, w: 4 });
+  });
 });
 
 describe('maxVector4', () => {
@@ -310,6 +340,16 @@ describe('maxVector4', () => {
     expect(out.y).toBe(5);
     expect(out.z).toBe(7);
     expect(out.w).toBe(9);
+  });
+
+  it('supports out === a or b', () => {
+    const a = createVector4(1, 5, 2, 9);
+    maxVector4(a, a, createVector4(3, 2, 7, 4));
+    expect(a).toMatchObject({ x: 3, y: 5, z: 7, w: 9 });
+
+    const b = createVector4(3, 2, 7, 4);
+    maxVector4(b, createVector4(1, 5, 2, 9), b);
+    expect(b).toMatchObject({ x: 3, y: 5, z: 7, w: 9 });
   });
 });
 
@@ -322,6 +362,16 @@ describe('minVector4', () => {
     expect(out.z).toBe(2);
     expect(out.w).toBe(4);
   });
+
+  it('supports out === a or b', () => {
+    const a = createVector4(1, 5, 2, 9);
+    minVector4(a, a, createVector4(3, 2, 7, 4));
+    expect(a).toMatchObject({ x: 1, y: 2, z: 2, w: 4 });
+
+    const b = createVector4(3, 2, 7, 4);
+    minVector4(b, createVector4(1, 5, 2, 9), b);
+    expect(b).toMatchObject({ x: 1, y: 2, z: 2, w: 4 });
+  });
 });
 
 describe('multiplyVector4', () => {
@@ -332,6 +382,16 @@ describe('multiplyVector4', () => {
     expect(out.y).toBe(21);
     expect(out.z).toBe(32);
     expect(out.w).toBe(45);
+  });
+
+  it('supports out === a or b', () => {
+    const a = createVector4(2, 3, 4, 5);
+    multiplyVector4(a, a, createVector4(6, 7, 8, 9));
+    expect(a).toMatchObject({ x: 12, y: 21, z: 32, w: 45 });
+
+    const b = createVector4(6, 7, 8, 9);
+    multiplyVector4(b, createVector4(2, 3, 4, 5), b);
+    expect(b).toMatchObject({ x: 12, y: 21, z: 32, w: 45 });
   });
 });
 
@@ -485,6 +545,15 @@ describe('reflectVector4', () => {
     const v = createVector4(1, 0, 0, 0);
     reflectVector4(v, v, createVector4(1, 0, 0, 0));
     expect(v.x).toBeCloseTo(-1, 6);
+  });
+
+  it('supports out === normal', () => {
+    const normal = createVector4(1, 0, 0, 0);
+    reflectVector4(normal, createVector4(1, 0, 0, 0), normal);
+    expect(normal.x).toBeCloseTo(-1, 6);
+    expect(normal.y).toBeCloseTo(0, 6);
+    expect(normal.z).toBeCloseTo(0, 6);
+    expect(normal.w).toBeCloseTo(0, 6);
   });
 });
 
