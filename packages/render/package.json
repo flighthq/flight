@@ -46,6 +46,7 @@
     "@flighthq/materials": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
+    "@flighthq/registry": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

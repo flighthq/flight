@@ -1,3 +1,4 @@
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type { Renderer, RenderState, Scene2DClipHooks } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
@@ -27,7 +28,7 @@ describe('copyAllRenderersFromRenderState', () => {
 
     copyAllRenderersFromRenderState(target, source);
 
-    expect(getRenderStateRuntime(target).rendererMap.get(kind)).toBe(renderer);
+    expect(getRegistryTableEntry(getRenderStateRuntime(target).registries.renderers, kind)).toBe(renderer);
     expect(target.displayObjectClipHooks).toBe(hooks);
   });
 
@@ -35,7 +36,7 @@ describe('copyAllRenderersFromRenderState', () => {
     const source = createRenderState();
     const target = createRenderState();
     copyAllRenderersFromRenderState(target, source);
-    expect(getRenderStateRuntime(target).rendererMap.size).toBe(0);
+    expect(getRenderStateRuntime(target).registries.renderers.entries.size).toBe(0);
     expect(target.displayObjectClipHooks).toBeNull();
   });
 });
@@ -48,14 +49,15 @@ describe('copyRenderersFromRenderState', () => {
     const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
     registerRenderer(source, kind, renderer);
     copyRenderersFromRenderState(target, source);
-    expect(getRenderStateRuntime(target).rendererMap.get(kind)).toBe(renderer);
+    expect(getRenderStateRuntime(target).registries.renderers).toBe(getRenderStateRuntime(source).registries.renderers);
+    expect(getRegistryTableEntry(getRenderStateRuntime(target).registries.renderers, kind)).toBe(renderer);
   });
 
   it('is a no-op when source has no renderer registrations', () => {
     const source = createRenderState();
     const target = createRenderState();
     copyRenderersFromRenderState(target, source);
-    expect(getRenderStateRuntime(target).rendererMap.size).toBe(0);
+    expect(getRenderStateRuntime(target).registries.renderers.entries.size).toBe(0);
   });
 
   it('does not affect source rendererMapId', () => {
@@ -67,6 +69,40 @@ describe('copyRenderersFromRenderState', () => {
     const sourceIdBeforeCopy = getRenderStateRuntime(source).rendererMapId;
     copyRenderersFromRenderState(target, source);
     expect(getRenderStateRuntime(source).rendererMapId).toBe(sourceIdBeforeCopy);
+  });
+
+  it('preserves target-only registrations while source registrations win collisions', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const sourceRenderer = { submit: vi.fn() } as unknown as Renderer;
+    const targetRenderer = { submit: vi.fn() } as unknown as Renderer;
+    const targetOnlyRenderer = { submit: vi.fn() } as unknown as Renderer;
+    registerRenderer(source, 'shared', sourceRenderer);
+    registerRenderer(target, 'shared', targetRenderer);
+    registerRenderer(target, 'target-only', targetOnlyRenderer);
+
+    copyRenderersFromRenderState(target, source);
+
+    const targetTable = getRenderStateRuntime(target).registries.renderers;
+    expect(getRegistryTableEntry(targetTable, 'shared')).toBe(sourceRenderer);
+    expect(getRegistryTableEntry(targetTable, 'target-only')).toBe(targetOnlyRenderer);
+  });
+
+  it('shares a fresh immutable snapshot and diverges on later registration', () => {
+    const source = createRenderState();
+    const target = createRenderState();
+    const renderer = { submit: vi.fn() } as unknown as Renderer;
+    const lateRenderer = { submit: vi.fn() } as unknown as Renderer;
+    registerRenderer(source, 'shared', renderer);
+
+    copyRenderersFromRenderState(target, source);
+
+    const sharedSnapshot = getRenderStateRuntime(target).registries.renderers;
+    expect(sharedSnapshot).toBe(getRenderStateRuntime(source).registries.renderers);
+    registerRenderer(source, 'late', lateRenderer);
+    expect(getRenderStateRuntime(target).registries.renderers).toBe(sharedSnapshot);
+    expect(getRenderStateRuntime(source).registries.renderers).not.toBe(sharedSnapshot);
+    expect(getRegistryTableEntry(sharedSnapshot, 'late')).toBeNull();
   });
 });
 
@@ -152,9 +188,11 @@ describe('registerRenderer', () => {
   });
 
   it('should register a new renderer', () => {
-    expect(getRenderStateRuntime(state).rendererMap.has(kindA)).toBe(false);
+    const before = getRenderStateRuntime(state).registries.renderers;
+    expect(getRegistryTableEntry(before, kindA)).toBeNull();
     registerRenderer(state, kindA, renderer1);
-    expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(renderer1);
+    expect(getRenderStateRuntime(state).registries.renderers).not.toBe(before);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(renderer1);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(1);
   });
 
@@ -162,7 +200,7 @@ describe('registerRenderer', () => {
     registerRenderer(state, kindA, renderer1);
     const idAfterFirst = getRenderStateRuntime(state).rendererMapId;
     registerRenderer(state, kindB, renderer2);
-    expect(getRenderStateRuntime(state).rendererMap.get(kindB)).toBe(renderer2);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindB)).toBe(renderer2);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(idAfterFirst + 1);
   });
 
@@ -170,7 +208,7 @@ describe('registerRenderer', () => {
     registerRenderer(state, kindA, renderer1);
     const idBefore = getRenderStateRuntime(state).rendererMapId;
     registerRenderer(state, kindA, renderer1);
-    expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(renderer1);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(renderer1);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore);
   });
 
@@ -178,7 +216,7 @@ describe('registerRenderer', () => {
     registerRenderer(state, kindA, renderer1);
     const idBefore = getRenderStateRuntime(state).rendererMapId;
     registerRenderer(state, kindA, renderer2);
-    expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(renderer2);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(renderer2);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore + 1);
   });
 
@@ -200,8 +238,8 @@ describe('registerRenderers', () => {
       [kindA, rendererA],
       [kindB, rendererB],
     ]);
-    expect(getRenderStateRuntime(state).rendererMap.get(kindA)).toBe(rendererA);
-    expect(getRenderStateRuntime(state).rendererMap.get(kindB)).toBe(rendererB);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(rendererA);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindB)).toBe(rendererB);
   });
 
   it('should register nothing for an empty set', () => {

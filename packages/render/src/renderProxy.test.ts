@@ -224,17 +224,23 @@ describe('getOrCreateRenderProxy2D', () => {
     expect(a).toBe(b);
   });
 
-  it('syncs renderer when rendererMapId has changed', () => {
+  it('invalidates and syncs an existing proxy when the renderer table is replaced', () => {
     const state = createRenderState();
     const source = createSprite();
     const node = getOrCreateRenderProxy2D(state, source);
     expect(node.renderer).toBeNull();
 
     const renderer = makeRenderer();
+    const runtime = getRenderStateRuntime(state);
+    const tableBeforeRegistration = runtime.registries.renderers;
+    const idBeforeRegistration = runtime.rendererMapId;
     registerRenderer(state, source.kind, renderer as any);
+    expect(runtime.registries.renderers).not.toBe(tableBeforeRegistration);
+    expect(runtime.rendererMapId).toBe(idBeforeRegistration + 1);
     getOrCreateRenderProxy2D(state, source);
 
     expect(node.renderer).toBe(renderer);
+    expect(node.rendererMapId).toBe(runtime.rendererMapId);
   });
 });
 

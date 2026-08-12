@@ -20,7 +20,7 @@ import type {
   RenderProxyVisitor,
   RenderState,
 } from '@flighthq/types/contract';
-import { BlendMode, RenderRegistry } from '@flighthq/types/contract';
+import { BlendMode, RegistryEntryState, RenderRegistry } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyMaterial } from './renderMaterial';
@@ -212,9 +212,12 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 
 function resolveRenderProxyRenderer(state: RenderState, kind: string) {
   const runtime = getRenderStateRuntime(state);
-  const renderer = runtime.rendererMap.get(kind);
-  if (renderer === undefined) runtime.registryMiss?.(RenderRegistry.NodeRenderer, kind);
-  return renderer ?? null;
+  const entry = runtime.registries.renderers.entries.get(kind);
+  if (entry?.state !== RegistryEntryState.Bound) {
+    runtime.registryMiss?.(RenderRegistry.NodeRenderer, kind);
+    return null;
+  }
+  return entry.value;
 }
 
 // One generic, dirty-checked pre-order walk over the 2D node graph. `visit` composes the trait

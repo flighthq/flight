@@ -117,7 +117,7 @@ describe('registerRenderCacheRenderer', () => {
     const state = createRenderState();
     const renderer = { createData: () => null, submit: vi.fn() };
     registerRenderCacheRenderer(state, renderer as any);
-    expect(getRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(renderer);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, RenderCacheKind)).toBe(renderer);
   });
 });
 
@@ -149,3 +149,4 @@ describe('useRenderCache', () => {
     expect(getRenderProxyAdapter(stateB, obj as any)).toBeNull();
   });
 });
+import { getRegistryTableEntry } from '@flighthq/registry/contract';

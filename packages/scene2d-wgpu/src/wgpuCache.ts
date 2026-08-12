@@ -58,8 +58,8 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
   }) as WgpuRenderState;
 
-  // Attach the cache runtime before copying renderers: copyAllRenderersFromRenderState registers
-  // into the runtime's rendererMap, so the backend runtime must already be installed.
+  // Attach the cache runtime before copying renderers: copyAllRenderersFromRenderState replaces the
+  // runtime's renderer-table snapshot, so the backend runtime must already be installed.
   const cacheRuntime = createWgpuRenderStateRuntime();
   cacheState[EntityRuntimeKey] = cacheRuntime;
 
@@ -106,6 +106,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
     modifierSnippets: screenRuntime.registries.modifierSnippets,
     modifierSnippetRevision: screenRuntime.registries.modifierSnippetRevision,
     renderEffects: screenRuntime.registries.renderEffects,
+    renderers: cacheRuntime.registries.renderers,
     shapeRasterizer: screenRuntime.registries.shapeRasterizer,
     textureResolvers: screenRuntime.registries.textureResolvers,
     velocityWriters: screenRuntime.registries.velocityWriters,

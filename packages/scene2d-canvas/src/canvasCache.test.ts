@@ -37,7 +37,7 @@ describe('createCanvasCacheState', () => {
     const screen = makeCanvasState();
     enableCanvasRenderCache(screen);
     const cacheState = createCanvasCacheState(screen);
-    expect(getCanvasRenderStateRuntime(cacheState).rendererMap.get(RenderCacheKind)).toBe(
+    expect(getRegistryTableEntry(getCanvasRenderStateRuntime(cacheState).registries.renderers, RenderCacheKind)).toBe(
       defaultCanvasRenderCacheRenderer,
     );
   });
@@ -134,7 +134,9 @@ describe('enableCanvasRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = makeCanvasState();
     enableCanvasRenderCache(state);
-    expect(getCanvasRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultCanvasRenderCacheRenderer);
+    expect(getRegistryTableEntry(getCanvasRenderStateRuntime(state).registries.renderers, RenderCacheKind)).toBe(
+      defaultCanvasRenderCacheRenderer,
+    );
   });
 });
 

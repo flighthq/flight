@@ -40,7 +40,10 @@ describe('enableDomRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = makeState();
     enableDomRenderCache(state);
-    expect(getDomRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultDomRenderCacheRenderer);
+    expect(getDomRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+      state: 'bound',
+      value: defaultDomRenderCacheRenderer,
+    });
   });
 });
 

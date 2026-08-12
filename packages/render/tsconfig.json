@@ -52,6 +52,9 @@
       "path": "../quadbatch"
     },
     {
+      "path": "../registry"
+    },
+    {
       "path": "../tilemap"
     },
     {

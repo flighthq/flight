@@ -128,7 +128,10 @@ describe('createGlCacheState', () => {
     const screen = fakeScreen();
     enableGlRenderCache(screen);
     const cacheState = createGlCacheState(screen);
-    expect(getGlRenderStateRuntime(cacheState).rendererMap.get(RenderCacheKind)).toBe(defaultGlRenderCacheRenderer);
+    expect(getGlRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+      state: 'bound',
+      value: defaultGlRenderCacheRenderer,
+    });
     expect((cacheState as any).gl).toBe((screen as any).gl);
     expect(getGlRenderStateRuntime(cacheState).renderProxyMap).not.toBe(getGlRenderStateRuntime(screen).renderProxyMap);
   });
@@ -171,7 +174,10 @@ describe('enableGlRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableGlRenderCache(state);
-    expect(getGlRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultGlRenderCacheRenderer);
+    expect(getGlRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+      state: 'bound',
+      value: defaultGlRenderCacheRenderer,
+    });
   });
 });
 

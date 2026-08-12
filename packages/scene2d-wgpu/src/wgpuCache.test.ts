@@ -134,7 +134,10 @@ describe('createWgpuCacheState', () => {
     getWgpuRenderStateRuntime(screen).colorAdjustmentResolver = resolver;
     enableWgpuRenderCache(screen);
     const cacheState = createWgpuCacheState(screen);
-    expect(getWgpuRenderStateRuntime(cacheState).rendererMap.get(RenderCacheKind)).toBe(defaultWgpuRenderCacheRenderer);
+    expect(getWgpuRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+      state: 'bound',
+      value: defaultWgpuRenderCacheRenderer,
+    });
     expect((cacheState as any).device).toBe((screen as any).device);
     expect(getWgpuRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
       getWgpuRenderStateRuntime(screen).renderProxyMap,
@@ -206,7 +209,10 @@ describe('enableWgpuRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableWgpuRenderCache(state);
-    expect(getWgpuRenderStateRuntime(state).rendererMap.get(RenderCacheKind)).toBe(defaultWgpuRenderCacheRenderer);
+    expect(getWgpuRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+      state: 'bound',
+      value: defaultWgpuRenderCacheRenderer,
+    });
   });
 });
 
