@@ -338,11 +338,7 @@ export function createIcosphereMeshGeometry(radius: number = 0.5, subdivisions: 
   // correctSeamU then chooses those values, which is the half that makes the seam actually work.
   for (const [a, b, c] of faces) {
     const corner: [number, number, number] = [a, b, c];
-    const seamU = correctSeamU([
-      sphericalU(verts[a][0], verts[a][2]),
-      sphericalU(verts[b][0], verts[b][2]),
-      sphericalU(verts[c][0], verts[c][2]),
-    ]);
+    const seamU = faceSphericalU(verts[a], verts[b], verts[c]);
     for (let k = 0; k < 3; k++) {
       const v = verts[corner[k]];
       const nx = v[0],
@@ -471,11 +467,7 @@ export function createPolyhedronMeshGeometry(
   const flatIndices: number[] = [];
   for (const [a, b, c] of faces) {
     const corner: [number, number, number] = [a, b, c];
-    const seamU = correctSeamU([
-      sphericalU(verts[a][0], verts[a][2]),
-      sphericalU(verts[b][0], verts[b][2]),
-      sphericalU(verts[c][0], verts[c][2]),
-    ]);
+    const seamU = faceSphericalU(verts[a], verts[b], verts[c]);
     for (let k = 0; k < 3; k++) {
       const v = verts[corner[k]];
       const nx = v[0],
@@ -809,21 +801,48 @@ function sphericalV(ny: number): number {
   return 0.5 - Math.asin(Math.max(-1, Math.min(1, ny))) / Math.PI;
 }
 
-// Repairs a face that straddles the longitude seam. Longitude wraps at u = 0/1, so a face with corners
-// either side gets values like 0.99 and 0.01 and interpolates BACKWARDS across the whole texture — the
-// entire map crushed into one triangle. Lifting the low corners past 1 makes the face interpolate
-// forward through the seam instead.
+// The three corner longitudes of one face, with both spherical-mapping degeneracies resolved.
 //
-// Emitting per-face vertices is what makes this possible (a shared vertex could only carry one u), but
-// it is not sufficient on its own: the values still have to be chosen, which is the half that was
-// missing. A seam face therefore carries u > 1 BY DESIGN — that is what a wrapped parameterisation
-// requires, and no representation confined to 0..1 can express a face crossing the seam continuously.
-function correctSeamU(u: readonly [number, number, number]): [number, number, number] {
-  const min = Math.min(u[0], u[1], u[2]);
-  const max = Math.max(u[0], u[1], u[2]);
-  if (max - min <= 0.5) return [u[0], u[1], u[2]];
-  return [u[0] < 0.5 ? u[0] + 1 : u[0], u[1] < 0.5 ? u[1] + 1 : u[1], u[2] < 0.5 ? u[2] + 1 : u[2]];
+// SEAM: longitude wraps at u = 0/1, so a face with corners either side gets values like 0.99 and 0.01
+// and interpolates BACKWARDS across the whole texture — the entire map crushed into one triangle.
+// Lifting the low corners past 1 makes the face interpolate forward through the seam instead. A seam
+// face therefore carries u > 1 BY DESIGN: no parameterisation confined to 0..1 can express a face
+// crossing the seam continuously, and sampling wraps it.
+//
+// POLE: a vertex on the Y axis has zero horizontal radius, so atan2 gives it an arbitrary longitude
+// (0, hence u = 0.5) unrelated to the face it belongs to. It has no longitude of its own to preserve —
+// every meridian meets there — so it takes the average of its face-mates and the face stays narrow.
+//
+// Order matters: the face-mates are seam-corrected FIRST, then the pole averages the corrected values.
+// Averaging raw 0.99 and 0.01 would put the pole at 0.5, on the far side of the sphere from both.
+//
+// Emitting per-face vertices is what makes any of this possible — a shared vertex could only carry one
+// u — but it is not sufficient on its own: the values still have to be chosen, which is the half that
+// was missing.
+function faceSphericalU(
+  a: readonly [number, number, number],
+  b: readonly [number, number, number],
+  c: readonly [number, number, number],
+): [number, number, number] {
+  const directions = [a, b, c];
+  const isPole = directions.map((d) => Math.hypot(d[0], d[2]) <= POLE_EPSILON);
+  const u: [number, number, number] = [sphericalU(a[0], a[2]), sphericalU(b[0], b[2]), sphericalU(c[0], c[2])];
+
+  const defined = [0, 1, 2].filter((i) => !isPole[i]);
+  if (defined.length > 0) {
+    const min = Math.min(...defined.map((i) => u[i]));
+    const max = Math.max(...defined.map((i) => u[i]));
+    if (max - min > 0.5) {
+      for (const i of defined) if (u[i] < 0.5) u[i] += 1;
+    }
+    const mean = defined.reduce((sum, i) => sum + u[i], 0) / defined.length;
+    for (let i = 0; i < 3; i++) if (isPole[i]) u[i] = mean;
+  }
+  return u;
 }
+
+// A direction within this of the Y axis has no meaningful longitude: every meridian meets at a pole.
+const POLE_EPSILON = 1e-6;
 
 function buildCanonicalMeshGeometry(
   positions: readonly number[],
