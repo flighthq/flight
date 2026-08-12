@@ -34,6 +34,30 @@ describe('parseSpineSkeletonBinary', () => {
   // rather than on elapsed time, because a count is deterministic where a clock is not — but note that a
   // regression here shows up as this file timing out rather than as this assertion failing, since the
   // unguarded parse never reaches a return.
+  // The same hazard one level deeper, and the one that actually bit. A weighted mesh declares an influence
+  // count PER VERTEX, inside a loop whose outer bound is already guarded — so the outer guard is consulted
+  // between vertices while this inner loop pushes four values a turn. Before the guard on it, this exact
+  // input threw `RangeError: Invalid array length` out of `Array.push` after ~4.2 SECONDS and several
+  // gigabytes, from 327 bytes. The parser is documented to treat third-party bytes as untrusted and to
+  // return sentinels rather than raise, so a throw here is a contract violation, not merely slow.
+  it('contains an influence count the file inflates, rather than pushing until push throws', () => {
+    const base = buildSpineBinary({ weightedMesh: true });
+    // Vertex 0 of the weighted block: varint(1) influence count, varint(1) bone index, then x, y, weight.
+    const marker = [0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0x80, 0x00, 0x00];
+    let at = -1;
+    for (let i = 0; at < 0 && i + marker.length <= base.length; i++) {
+      if (marker.every((byte, k) => base[i + k] === byte)) at = i;
+    }
+    // If the builder's weighted layout ever changes this goes looking for the wrong bytes, and a test that
+    // silently stops testing is worse than one that fails.
+    expect(at, 'influence-count byte not found in the built weighted mesh').toBeGreaterThanOrEqual(0);
+
+    // Replace the single-byte count with a 5-byte varint for 0x7fffffff.
+    const hostile = Uint8Array.from([...base.subarray(0, at), 0xff, 0xff, 0xff, 0xff, 0x07, ...base.subarray(at + 1)]);
+
+    expect(() => parseSpineSkeletonBinary(hostile)).not.toThrow();
+  });
+
   it('contains a count the file inflates, rather than allocating what it declares', () => {
     const out: number[] = [];
     for (let i = 0; i < 8; i++) out.push(0); // export hash

@@ -966,7 +966,11 @@ function readSpineBinaryVertices(
   for (let v = 0; v < vertexCount && !isSpineBinaryReaderOverrun(reader); v++) {
     const count = readSpineBinaryVarint(reader);
     influenceCounts[v] = count;
-    for (let i = 0; i < count; i++) {
+    // The inner bound is per-vertex file data, so it needs the same overrun check the outer loop has. The
+    // outer one cannot stand in for it: it is consulted between vertices, and this loop pushes four values
+    // a turn, so a single vertex declaring a count the bytes cannot supply grows `influences` until push
+    // throws — measured at a RangeError after four seconds on a 327-byte file before this guard existed.
+    for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
       influences.push(
         readSpineBinaryVarint(reader),
         readSpineBinaryFloat(reader),
