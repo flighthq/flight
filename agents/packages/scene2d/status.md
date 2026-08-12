@@ -17,7 +17,7 @@ mostly clean — the source is `displayContainer`, `displayObject`, `displayObje
 
 - **Two of the three `Scene2DSignals` are allocated but never emitted.** `createScene2DSignals` builds
   `onFullscreenChanged` and `onOrientationChanged` (`scene2d.ts:39-40`); no `emitSignal` for either
-  exists anywhere in `packages/`. Only `onResize` fires, from `setScene2DSize` (`scene2d.ts:74`). A
+  exists anywhere in `packages/`. Only `onResize` fires, from `setScene2DSize`. A
   caller who connects to the other two gets silence, not a sentinel. Both are also on
   `ApplicationWindow`, where `@flighthq/application` does emit them — so the open question is whether
   Scene2D should mirror them at all, or read the window's.

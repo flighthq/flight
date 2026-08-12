@@ -15,7 +15,7 @@ Every item was re-checked against `packages/storage/src/storage.ts` and `package
 on 2026-08-08. A file:line here is a claim about this tree, not about a session.
 
 - **Namespaced single-key writes silently skip `onChange`.** `_emitStorageChange` has exactly five
-  callers — `clearStorage` (`storage.ts:15`), `removeStorageItem` (`:383`), `setStorageItem` (`:430`),
+  callers — `clearStorage`, `removeStorageItem` (`:383`), `setStorageItem` (`:430`),
   and the two cross-tab re-wire paths (`:132`, `:414`). `setNamespacedStorageItem` (`:399`) and
   `removeNamespacedStorageItem` (`:374`) call the backend directly. These are **not** bulk ops, so the
   documented "bulk writes are deliberately not signal-aware" tradeoff does not cover them: a caller who

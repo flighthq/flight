@@ -29,8 +29,8 @@ tree, not about a session.
   `canvasBitmapText.ts:67`, and `canvasQuadBatch.ts:91` all set `imageSmoothingEnabled = true` on the
   way out, while `createCanvasRenderState` honors `options.imageSmoothingEnabled`
   (`canvasRenderState.ts:63`). A state created with smoothing off silently gets it back after the first
-  nearest-filter draw. `createBitmapPattern` (`canvasFillPattern.ts:26`) and
-  `resolveCanvasTextureWindowSource` (`canvasTextureWindowSource.ts:66`) set it with no restore at all.
+  nearest-filter draw. `createBitmapPattern` and
+  `resolveCanvasTextureWindowSource` set it with no restore at all.
 - **`renderCanvasShapeCommands` allocates a `CanvasShapeDrawState` per shape draw**
   (`canvasShape.ts:43`), including its `flush` closure, in the per-frame path.
 - **The writable-handles cast is still load-bearing.** `state as CanvasRenderStateHandles` reassigns

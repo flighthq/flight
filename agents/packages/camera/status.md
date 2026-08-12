@@ -16,7 +16,7 @@ A file:line here is a claim about this tree, not about a session. This cell owns
 the 3D projection/frustum surface and the absorbed 2D `Camera2D`; `camera-controls` is a neighbor.
 
 - **`PerspectiveProjection.aspect` is write-only inside this package.** `setCamera3DAspect`
-  (`camera.ts:64`) stores it, but `setProjectionMatrix4` (`projection.ts:60`) always uses its
+  (`camera.ts:64`) stores it, but `setProjectionMatrix4` always uses its
   `aspect` *parameter* and never reads `projection.aspect`, and every VP helper threads that
   parameter (`camera.ts:51`, `culling.ts:21`, `frustumCorners.ts:25`, `intersection.ts:22`,
   `picking.ts`). Two sources of truth for one value, with the caller's argument silently winning.

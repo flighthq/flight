@@ -34,7 +34,7 @@ claim about this tree, not about a session.
   the argument, always starting `'prevent-display-sleep'`
   (`packages/host-electron/src/electronPower.ts:70-71`).
 - **Idle polling runs on a timer that attach starts unconditionally.** `attachPower` opens a
-  `setInterval` at `_idlePollingIntervalMs` (`power.ts:56`) even when `onIdleStateChange` is never
+  `setInterval` at `_idlePollingIntervalMs` even when `onIdleStateChange` is never
   enabled; the tick is guarded by `hasSignalSlots` but the timer is not. Poll-versus-push is still
   unruled, and the web backend returns the `'Unknown'` sentinel for every poll (`power.ts:156`).
 - **Suspend/resume ownership overlaps `@flighthq/lifecycle`.** `power.onSuspend` / `onResume`

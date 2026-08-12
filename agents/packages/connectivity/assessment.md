@@ -10,7 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-None. Both previously-recommended fixes are verified implemented in source (2026-07-13): the reachability fallback caches its web backend in `_cachedWebBackend` (`connectivity.ts:147`), and `anyAbortSignal` removes both listeners inside `onAbort` (`connectivity.ts:232-236`). Everything remaining is parked for a design-decision, cross-package, or native-backend reason (see Backlog).
+None. Both previously-recommended fixes are verified implemented in source (2026-07-13): the reachability fallback caches its web backend in `_cachedWebBackend`, and `anyAbortSignal` removes both listeners inside `onAbort` (`connectivity.ts:232-236`). Everything remaining is parked for a design-decision, cross-package, or native-backend reason (see Backlog).
 
 ## Approved
 

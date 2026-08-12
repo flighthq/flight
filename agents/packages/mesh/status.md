@@ -37,7 +37,7 @@ A file:line here is a claim about this tree, not about a session.
   including normalized packed channels, so the layout half of the work is done.
 - **No signals group.** There is no `enableMeshGeometrySignals`; change notification is the version
   bump through `invalidateMeshGeometry` (`meshGeometry.ts:143`) only.
-- **`ensureMeshGeometryBounds` (`meshGeometryCompute.ts:471`) is contract-only** — it is in
+- **`ensureMeshGeometryBounds` is contract-only** — it is in
   `contract.ts` but not re-exported from `index.ts`, unlike its `refreshMeshGeometryBounds` sibling.
   Confirm the lane split is deliberate.
 

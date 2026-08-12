@@ -14,7 +14,7 @@ by: principal
 Every item was re-checked against `packages/textlayout/src/` on 2026-08-08. A file:line here is a
 claim about this tree, not about a session.
 
-- **Layout is per-codepoint advances, not shaped runs.** `charAdvances` (`textLayout.ts:89`) measures
+- **Layout is per-codepoint advances, not shaped runs.** `charAdvances` measures
   each codepoint and, when kerning is on, a second adjacent-pair call to recover the kern
   (`:121-126`) — two `measureText` calls per character on the hot path. Ligatures, mark attachment,
   and cluster boundaries cannot be represented, and `@flighthq/textshaper`'s `ShapedRun` tier is not

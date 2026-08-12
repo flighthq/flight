@@ -22,7 +22,7 @@ had already landed; this is what is genuinely still open.
   cannot land until the type does.
 - **The key vocabulary is split across two packages and two representations.** `ShortcutKeyName` is
   a string union (`packages/types/src/ShortcutKeyName.ts:10`); `@flighthq/input` addresses keys as a
-  numeric `KeyCode` (`packages/types/src/KeyCode.ts:239`) and never references `ShortcutKeyName`. One
+  numeric `KeyCode` and never references `ShortcutKeyName`. One
   SDK, two spellings for the same physical key — aligning them (or declaring them deliberately
   distinct layers) is a cross-package ruling, not a rename.
 - **`formatAcceleratorForDisplay` has no consumer.** `shortcut.ts:114` and

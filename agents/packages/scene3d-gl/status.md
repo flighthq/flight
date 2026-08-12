@@ -30,7 +30,7 @@ a claim about this tree, not about a session.
 - **The documented escape hatch for that does not exist.** The same doc comment tells the caller "a
   changed cube must drop the cache first via `destroyGlEnvironment`" (`glEnvironmentCube.ts:14`).
   There is no `destroyGlEnvironment` in this repo — the only near name is
-  `destroyGlEnvironmentIblBakePrograms` (`glEnvironmentIblBake.ts:57`), which frees bake programs, not
+  `destroyGlEnvironmentIblBakePrograms`, which frees bake programs, not
   the cube.
 - **Rebaking leaks the previous IBL textures.** `bakeGlEnvironmentIbl` builds fresh irradiance and
   prefiltered cubes and overwrites `runtime.ibl` (`glEnvironmentIblBake.ts:35-36,43`) without deleting

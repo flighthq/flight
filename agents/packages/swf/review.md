@@ -36,7 +36,7 @@ standing limit in the package's real-file evidence.
 Everything in this section is grounded in `packages/swf/src` and its colocated tests at
 `6aff889db`, and the corpus figures in [fixture-evidence.md](fixture-evidence.md).
 
-- **Container and error contract.** `createScene2DFromSwf` (`swfDocument.ts:101`) reads `FWS` directly and
+- **Container and error contract.** `createScene2DFromSwf` reads `FWS` directly and
   `CWS`/`ZWS` through the shared `@flighthq/compression` registry; the package vendors no codec and owns no
   registry of its own. The reader (`swfReader.ts`) is bounded by both the declared file length and each tag
   body. Truncation, overruns, unsupported compression, and invalid headers return the `null` sentinel
