@@ -304,6 +304,14 @@ describe('equalsVector2', () => {
     expect(equalsVector2(pt, pt2)).toBe(true);
   });
 
+  it('compares every component, not just the first', () => {
+    // Two hand-written comparisons in a row: one left reading the wrong field still agrees with
+    // the right answer on every pair that differs in more than one place, so each differs alone.
+    const a = createVector2(1, 2);
+    expect(equalsVector2(a, createVector2(9, 2))).toBe(false);
+    expect(equalsVector2(a, createVector2(1, 9))).toBe(false);
+  });
+
   it('returns false when either side is missing', () => {
     // The signature accepts null and undefined, so absence is an answerable input rather than
     // misuse: nothing is equal to a vector, including another absence.
