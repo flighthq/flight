@@ -1402,6 +1402,23 @@ describe('rotateMatrix4', () => {
     expect(equalsMatrix4(a, b)).toBe(true);
   });
 
+  it('matches the quaternion rotation path for an asymmetric unit axis', () => {
+    const inverseLength = 1 / Math.sqrt(14);
+    const axis = createVector3(2 * inverseLength, inverseLength, 3 * inverseLength);
+    const radians = Math.PI / 3;
+    const quaternion = createQuaternion();
+    setQuaternionFromAxisAngle(quaternion, axis, radians);
+    const expected = createMatrix4();
+    setMatrix4FromQuaternion(expected, quaternion);
+
+    const actual = createMatrix4();
+    rotateMatrix4(actual, actual, axis, radians);
+
+    for (let i = 0; i < 16; i++) {
+      expect(actual.m[i]).toBeCloseTo(expected.m[i], 6);
+    }
+  });
+
   it('preserves translation when rotating locally', () => {
     const m = createMatrix4();
     translateMatrix4(m, m, 5, 0, 0);
