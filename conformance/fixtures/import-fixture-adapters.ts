@@ -2,8 +2,13 @@ import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import { registerDeflateDecompressor } from '@flighthq/compression';
+import { createGlyphOutlineSourceFromOpenTypeFont } from '@flighthq/font-formats';
 import { parseParticleConfigDocument } from '@flighthq/particles-formats';
-import { createScene2DFromRiveDocument } from '@flighthq/scene2d-formats';
+import {
+  createScene2DFromLottieDocument,
+  createScene2DFromRiveDocument,
+  createScene2DFromSvgDocument,
+} from '@flighthq/scene2d-formats';
 import {
   createScene3DFrom3ds,
   createScene3DFromAwd2,
@@ -30,7 +35,14 @@ import {
 } from '@flighthq/scene3d-formats';
 import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
 import { createScene2DImportFromSwf } from '@flighthq/swf';
-import type { GltfDocument, GltfExtensionHandler, ImportDiagnostic } from '@flighthq/types/contract';
+import { parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
+import type {
+  GltfDocument,
+  GltfExtensionHandler,
+  ImportDiagnostic,
+  ObjMaterial,
+  ObjMaterialLibrary,
+} from '@flighthq/types/contract';
 
 import type {
   ConformanceFixtureAdapter,
@@ -42,57 +54,109 @@ import type {
 export function createImportFixtureAdapters(): ConformanceFixtureAdapter[] {
   // Fixture parsing is an explicit assembly. Both compressed SWF and compressed AWD2 go through the same
   // public decompressor registry production applications use; merely importing this module registers nothing.
+  // A family without a Flight importer still owns an individual unavailable slot. Wiring support is therefore
+  // local: import the public Flight method, add its runner below, and replace that family's unavailablePackAdapter
+  // call with packAdapter. Discovery, scoring, selection, and report structure do not change.
   registerDeflateDecompressor();
   return [
+    unavailablePackAdapter('alembic', ['3d', 'alembic', 'mesh', 'model'], ['.abc']),
+    adapter('atf', ['.atf'], runAtf),
     adapter('awd2', ['.awd'], runAwd2),
+    adapter('basis', ['.basis'], runBasis),
+    unavailableAdapter('blender', ['.blend']),
+    unavailableAdapter('bvh', ['.bvh']),
+    unavailableAdapter('collada', ['.dae']),
+    adapter('dds', ['.dds'], runDds),
+    unavailableAdapter('directx-x', ['.x']),
+    unavailableAdapter('fbx', ['.fbx']),
     adapter('gltf', ['.glb', '.gltf'], runGltf),
+    adapter('ktx2', ['.ktx2'], runKtx2),
+    unavailableAdapter('lightwave', ['.lwo']),
+    packAdapter('lottie', ['lottie', 'bodymovin'], ['.json'], runLottie),
     adapter('md2', ['.md2'], runMd2),
     adapter('md5-animation', ['.md5anim'], runMd5Animation),
     adapter('md5-mesh', ['.md5mesh'], runMd5Mesh),
     adapter('obj', ['.obj'], runObj),
     adapter('obj-material', ['.mtl'], runObjMaterial),
+    adapter('open-type-font', ['.otf', '.ttf', '.woff'], runOpenTypeFont),
     packAdapter('particle-config', ['particle'], ['.json', '.p', '.pex', '.plist'], runParticleConfig),
+    unavailableAdapter('ply', ['.ply']),
     adapter('rive', ['.riv'], runRive),
     packAdapter('skeleton2d-json', ['dragon-bones', 'dragonbones', 'spine'], ['.json'], runSkeleton2D, ['particle']),
-    adapter('spine-binary', ['.skel'], runSpineBinary),
+    adapter('spine-binary', ['.skel', '.skel.bytes'], runSpineBinary),
+    unavailableAdapter('stl', ['.stl']),
+    adapter('svg', ['.svg'], runSvg),
     adapter('swf', ['.swf'], runSwf),
     adapter('three-ds', ['.3ds'], runThreeDs),
-    packAdapter(
-      'unsupported-3d',
-      ['3d', 'mesh', 'model'],
-      ['.abc', '.blend', '.bvh', '.dae', '.fbx', '.lwo', '.max', '.ply', '.stl', '.usd', '.usda', '.usdc', '.x'],
-      runUnsupported3D,
-    ),
+    unavailableAdapter('three-ds-max', ['.max']),
+    unavailableAdapter('usd', ['.usd', '.usda', '.usdc']),
+    unavailableAdapter('woff2', ['.woff2']),
   ];
 }
 
 function adapter(
   id: string,
   extensions: readonly string[],
-  run: ConformanceFixtureAdapter['run'],
+  run: Extract<ConformanceFixtureAdapter['implementation'], { state: 'available' }>['run'],
 ): ConformanceFixtureAdapter {
-  return { id, run, selects: (_tree, reference) => hasExtension(reference, extensions) };
+  return {
+    id,
+    implementation: { run, state: 'available' },
+    selects: (_tree, reference) => hasExtension(reference, extensions),
+  };
 }
 
 function packAdapter(
   id: string,
   packTokens: readonly string[],
   extensions: readonly string[],
-  run: ConformanceFixtureAdapter['run'],
+  run: Extract<ConformanceFixtureAdapter['implementation'], { state: 'available' }>['run'],
   excludedPackTokens: readonly string[] = [],
 ): ConformanceFixtureAdapter {
   return {
     id,
-    run,
+    implementation: { run, state: 'available' },
     selects: (tree, reference) =>
       hasExtension(reference, extensions) && hasPackToken(tree, packTokens) && !hasPackToken(tree, excludedPackTokens),
   };
+}
+
+function unavailableAdapter(id: string, extensions: readonly string[]): ConformanceFixtureAdapter {
+  return {
+    id,
+    implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
+    selects: (_tree, reference) => hasExtension(reference, extensions),
+  };
+}
+
+function unavailablePackAdapter(
+  id: string,
+  packTokens: readonly string[],
+  extensions: readonly string[],
+): ConformanceFixtureAdapter {
+  return {
+    id,
+    implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
+    selects: (tree, reference) => hasExtension(reference, extensions) && hasPackToken(tree, packTokens),
+  };
+}
+
+async function runAtf(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
+  return { diagnostics: [], imported: parseAtf(new Uint8Array(await readFile(input.absolutePath))) !== null };
 }
 
 async function runAwd2(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
   const diagnostics: ImportDiagnostic[] = [];
   createScene3DFromAwd2(new Uint8Array(await readFile(input.absolutePath)), diagnostics);
   return observation(diagnostics);
+}
+
+async function runBasis(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
+  return { diagnostics: [], imported: parseBasis(new Uint8Array(await readFile(input.absolutePath))) !== null };
+}
+
+async function runDds(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
+  return { diagnostics: [], imported: parseDds(new Uint8Array(await readFile(input.absolutePath))) !== null };
 }
 
 async function runGltf(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
@@ -110,6 +174,16 @@ async function runGltf(input: Readonly<ConformanceFixtureInput>): Promise<Confor
       externalBuffers: await readGltfExternalBuffers(input, source),
     });
   }
+  return observation(diagnostics);
+}
+
+async function runKtx2(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
+  return { diagnostics: [], imported: parseKtx2(new Uint8Array(await readFile(input.absolutePath))) !== null };
+}
+
+async function runLottie(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
+  const diagnostics: ImportDiagnostic[] = [];
+  createScene2DFromLottieDocument(await readFile(input.absolutePath, 'utf8'), diagnostics);
   return observation(diagnostics);
 }
 
@@ -140,7 +214,8 @@ async function runMd5Mesh(input: Readonly<ConformanceFixtureInput>): Promise<Con
 
 async function runObj(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
   const diagnostics: ImportDiagnostic[] = [];
-  createScene3DFromObj(await readFile(input.absolutePath, 'utf8'), undefined, diagnostics);
+  const source = await readFile(input.absolutePath, 'utf8');
+  createScene3DFromObj(source, await readObjMaterialLibraries(input, source, diagnostics), diagnostics);
   return observation(diagnostics);
 }
 
@@ -148,6 +223,11 @@ async function runObjMaterial(input: Readonly<ConformanceFixtureInput>): Promise
   const diagnostics: ImportDiagnostic[] = [];
   parseObjMaterialLibrary(await readFile(input.absolutePath, 'utf8'), diagnostics);
   return observation(diagnostics);
+}
+
+async function runOpenTypeFont(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
+  const imported = createGlyphOutlineSourceFromOpenTypeFont(new Uint8Array(await readFile(input.absolutePath)));
+  return { diagnostics: [], imported: imported !== null };
 }
 
 async function runParticleConfig(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
@@ -173,6 +253,12 @@ async function runSpineBinary(input: Readonly<ConformanceFixtureInput>): Promise
   return { diagnostics, imported: imported !== null };
 }
 
+async function runSvg(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
+  const diagnostics: ImportDiagnostic[] = [];
+  createScene2DFromSvgDocument(await readFile(input.absolutePath, 'utf8'), diagnostics);
+  return observation(diagnostics);
+}
+
 async function runSwf(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
   const diagnostics: ImportDiagnostic[] = [];
   const imported = createScene2DImportFromSwf(new Uint8Array(await readFile(input.absolutePath)), diagnostics);
@@ -185,12 +271,37 @@ async function runThreeDs(input: Readonly<ConformanceFixtureInput>): Promise<Con
   return observation(diagnostics);
 }
 
-async function runUnsupported3D(): Promise<ConformanceFixtureObservation> {
-  return { diagnostics: [], imported: false, notRunReason: 'flight-importer-unavailable' };
-}
-
 function observation(diagnostics: readonly Readonly<ImportDiagnostic>[]): ConformanceFixtureObservation {
   return { diagnostics, imported: !diagnostics.some((diagnostic) => diagnostic.severity === 'Reject') };
+}
+
+async function readObjMaterialLibraries(
+  input: Readonly<ConformanceFixtureInput>,
+  source: string,
+  diagnostics: ImportDiagnostic[],
+): Promise<ObjMaterialLibrary | undefined> {
+  const materials = new Map<string, ObjMaterial>();
+  for (const uri of listObjMaterialLibraryUris(source)) {
+    const path = resolveCompanionFixtureUri(input, uri);
+    if (path === null) continue;
+    try {
+      const library = parseObjMaterialLibrary(await readFile(path, 'utf8'), diagnostics);
+      for (const [name, material] of library.materials) materials.set(name, material);
+    } catch {
+      // The OBJ importer accepts an already-acquired material library. Missing sidecars therefore remain
+      // absent at this harness seam, just as they do when an application's acquisition step cannot supply one.
+    }
+  }
+  return materials.size === 0 ? undefined : { materials };
+}
+
+function listObjMaterialLibraryUris(source: string): string[] {
+  const uris: string[] = [];
+  for (const line of source.split(/\r?\n/)) {
+    const match = /^\s*mtllib\s+(.+?)\s*(?:#.*)?$/.exec(line);
+    if (match !== null && match[1] !== '') uris.push(match[1]!);
+  }
+  return [...new Set(uris)];
 }
 
 function findMd5MeshReference(reference: string, references: readonly string[]): string | null {
@@ -239,6 +350,10 @@ async function readGltfExternalBuffers(
 }
 
 function resolveGltfFixtureUri(input: Readonly<ConformanceFixtureInput>, uri: string): string | null {
+  return resolveCompanionFixtureUri(input, uri);
+}
+
+function resolveCompanionFixtureUri(input: Readonly<ConformanceFixtureInput>, uri: string): string | null {
   let decoded: string;
   try {
     decoded = decodeURIComponent(uri.split(/[?#]/, 1)[0]!);

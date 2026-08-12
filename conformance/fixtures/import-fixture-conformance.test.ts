@@ -1,9 +1,10 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from '../../scripts/fixtures';
 import { parseImportFixtureConformanceArguments, runImportFixtureConformance } from './import-fixture-conformance';
 
 let fixtureCache = '';
@@ -62,4 +63,73 @@ describe('runImportFixtureConformance', () => {
       'Verified fixture pack unavailable: spine-fixtures',
     );
   });
+
+  it('records an unavailable Flight implementation as a zero implementation score rather than failing', async () => {
+    const directory = makeTree('model-fixtures', 1);
+    write(directory, 'source.fbx', 'fixture');
+    const args = parseImportFixtureConformanceArguments(['--pack', 'model-fixtures', '--adapter', 'fbx']);
+
+    const report = await runImportFixtureConformance(args);
+
+    expect(report.results).toMatchObject([
+      { adapter: 'fbx', notRunReason: 'flight-importer-unavailable', state: 'not-run' },
+    ]);
+    expect(report.score.implementationCoverage).toEqual({
+      denominator: 1,
+      numerator: 0,
+      state: 'measured',
+      value: 0,
+    });
+  });
+
+  it('records a verified tree with no matching family as a not-measured score', async () => {
+    const directory = makeTree('future-fixtures', 1);
+    write(directory, 'source.future', 'fixture');
+    const args = parseImportFixtureConformanceArguments(['--pack', 'future-fixtures']);
+
+    const report = await runImportFixtureConformance(args);
+
+    expect(report.results).toEqual([]);
+    expect(report.score.selectionCoverage).toEqual({
+      denominator: 0,
+      numerator: 0,
+      state: 'not-measured',
+      value: null,
+    });
+    expect(report.trees).toMatchObject([{ candidateRuns: 0, fixtureFiles: 1, matchedFixtureFiles: 0 }]);
+  });
+
+  it('rejects a tree whose live fixture count differs from its verified stamp', async () => {
+    const directory = makeTree('model-fixtures', 2);
+    write(directory, 'source.fbx', 'fixture');
+    const args = parseImportFixtureConformanceArguments(['--pack', 'model-fixtures']);
+
+    await expect(runImportFixtureConformance(args)).rejects.toThrow('no longer matches its verified stamp');
+  });
 });
+
+function makeTree(pack: string, verifiedFixtureFiles: number): string {
+  fixtureCache = mkdtempSync(join(tmpdir(), 'flight-fixture-conformance-present-'));
+  process.env['FLIGHT_FIXTURES_DIR'] = fixtureCache;
+  const directory = join(fixtureCache, 'extracted', 'full', pack);
+  writeFixtureTreeStamp(directory, {
+    packs: [
+      {
+        file: `${pack}-full-${FIXTURE_RELEASE_TAG}.tar.gz`,
+        metadataFiles: 0,
+        pack,
+        sha256: 'a'.repeat(64),
+        verifiedFixtureFiles,
+      },
+    ],
+    tag: FIXTURE_RELEASE_TAG,
+    variant: 'full',
+  });
+  return directory;
+}
+
+function write(root: string, reference: string, text: string): void {
+  const path = join(root, ...reference.split('/'));
+  mkdirSync(join(path, '..'), { recursive: true });
+  writeFileSync(path, text, 'utf8');
+}
