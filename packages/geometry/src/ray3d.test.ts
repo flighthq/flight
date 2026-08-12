@@ -299,6 +299,17 @@ describe('intersectRay3DPlane', () => {
     const ray = createRay3D(0, 0, 3, 0, 0, 1); // pointing away from z=0
     expect(intersectRay3DPlane(ray, plane)).toBe(-1);
   });
+
+  it.each([1, 1e-6, 1e-12])('is invariant when the plane equation is scaled by %s', (scale) => {
+    const plane = createPlane(0, 0, scale, 3 * scale);
+    const ray = createRay3D(0, 0, -6, 0, 0, 2);
+    expect(intersectRay3DPlane(ray, plane)).toBeCloseTo(1.5, 10);
+  });
+
+  it('returns -1 for a zero normal or zero direction', () => {
+    expect(intersectRay3DPlane(createRay3D(0, 0, -3, 0, 0, 1), createPlane())).toBe(-1);
+    expect(intersectRay3DPlane(createRay3D(0, 0, -3, 0, 0, 0), createPlane(0, 0, 1, 0))).toBe(-1);
+  });
 });
 
 describe('intersectRay3DSphere', () => {
@@ -372,6 +383,23 @@ describe('intersectRay3DTriangle', () => {
     const p = { x: 0, y: 0, z: 0 };
     const ray = createRay3D(0, 0, -1, 0, 0, 1);
     expect(intersectRay3DTriangle(ray, p, p, p)).toBe(-1);
+  });
+
+  it.each([1, 1e-6, 1e-12])('accepts a non-normalized direction scaled by %s', (scale) => {
+    const ray = createRay3D(0, 0.3, -3, 0, 0, scale);
+    expect(intersectRay3DTriangle(ray, a, b, c) * scale).toBeCloseTo(3, 10);
+  });
+
+  it.each([1, 1e-3, 1e-6])('does not treat a triangle scaled by %s as degenerate', (scale) => {
+    const scaledA = { x: -scale, y: 0, z: 0 };
+    const scaledB = { x: scale, y: 0, z: 0 };
+    const scaledC = { x: 0, y: scale, z: 0 };
+    const ray = createRay3D(0, 0.3 * scale, -3, 0, 0, 1);
+    expect(intersectRay3DTriangle(ray, scaledA, scaledB, scaledC)).toBeCloseTo(3, 10);
+  });
+
+  it('returns -1 for a zero direction', () => {
+    expect(intersectRay3DTriangle(createRay3D(0, 0.3, -3, 0, 0, 0), a, b, c)).toBe(-1);
   });
 
   it('returns -1 for points inside the triangle’s span but past its far edge', () => {

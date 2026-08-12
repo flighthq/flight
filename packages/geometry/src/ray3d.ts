@@ -219,8 +219,15 @@ export function intersectRay3DAabb(ray: Readonly<Ray3DLike>, aabb: Readonly<Aabb
  * Direction need not be normalized; `t` is in the same units as `direction`.
  */
 export function intersectRay3DPlane(ray: Readonly<Ray3DLike>, plane: Readonly<PlaneLike>): number {
-  const denom = plane.a * ray.direction.x + plane.b * ray.direction.y + plane.c * ray.direction.z;
-  if (Math.abs(denom) < 1e-10) return -1; // parallel
+  const dx = ray.direction.x,
+    dy = ray.direction.y,
+    dz = ray.direction.z;
+  const normalLengthSq = plane.a * plane.a + plane.b * plane.b + plane.c * plane.c;
+  const directionLengthSq = dx * dx + dy * dy + dz * dz;
+  if (normalLengthSq === 0 || directionLengthSq === 0) return -1;
+
+  const denom = plane.a * dx + plane.b * dy + plane.c * dz;
+  if (Math.abs(denom) <= 1e-10 * Math.sqrt(normalLengthSq) * Math.sqrt(directionLengthSq)) return -1; // parallel
   const t = -(plane.a * ray.origin.x + plane.b * ray.origin.y + plane.c * ray.origin.z + plane.d) / denom;
   return t >= 0 ? t : -1;
 }
@@ -265,7 +272,7 @@ export function intersectRay3DSphere(ray: Readonly<Ray3DLike>, sphere: Readonly<
  * `-1` on miss (back-face culling is off — both sides are tested). The direction need not be
  * normalized; `t` is in direction units.
  *
- * Also returns `-1` for degenerate triangles (area ≈ 0).
+ * Also returns `-1` for degenerate triangles (zero area).
  */
 export function intersectRay3DTriangle(
   ray: Readonly<Ray3DLike>,
@@ -285,13 +292,20 @@ export function intersectRay3DTriangle(
     dy = ray.direction.y,
     dz = ray.direction.z;
 
+  const nx = e1y * e2z - e1z * e2y,
+    ny = e1z * e2x - e1x * e2z,
+    nz = e1x * e2y - e1y * e2x;
+  const normalLengthSq = nx * nx + ny * ny + nz * nz;
+  const directionLengthSq = dx * dx + dy * dy + dz * dz;
+  if (normalLengthSq === 0 || directionLengthSq === 0) return -1;
+
   // h = direction × e2
   const hx = dy * e2z - dz * e2y;
   const hy = dz * e2x - dx * e2z;
   const hz = dx * e2y - dy * e2x;
 
   const det = e1x * hx + e1y * hy + e1z * hz;
-  if (Math.abs(det) < 1e-10) return -1; // parallel or degenerate
+  if (Math.abs(det) <= 1e-10 * Math.sqrt(normalLengthSq) * Math.sqrt(directionLengthSq)) return -1; // parallel
 
   const invDet = 1 / det;
 
