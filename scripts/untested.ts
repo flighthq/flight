@@ -20,6 +20,15 @@ import { getSelectors, selectPackages } from './select';
 // way out, in the spirit of agents/packages/todo.mjs: a derived view costing seconds to rebuild should
 // be rebuilt, not merged.
 //
+// WHAT THIS CANNOT TELL YOU. An arm missing from the list was TAKEN by some test; it was not necessarily
+// CHECKED by one. A test can execute a branch and still be unable to distinguish correct behavior from
+// broken — a symmetric fixture is the usual way it happens. Measured twice on this package in one day: a
+// cube reaches every arm of an axis-by-axis slab test while an axis-swap mutant inside it goes unnoticed,
+// and three diagonal-matrix tests covered `scaleMatrix4` at 100% while it scaled rows instead of columns,
+// because a diagonal matrix cannot tell the two apart. So an empty list means nobody has looked HERE, not
+// that the package is verified. The complement of this list is a set of locations, not a warrant; only a
+// human reading the assertion, or a mutation pass, can tell you an arm is genuinely pinned down.
+//
 // WHY THE `include` GLOB IS THE WHOLE TRICK. A plain `vitest run --coverage packages/geometry` prints a
 // global summary spanning every module the run LOADED, which for geometry means entity, log, signals and
 // types are pulled in as dependencies with none of their own tests. Measured on this tree: that global
@@ -58,6 +67,9 @@ export interface UntestedFile {
   branches: UntestedBranch[];
   path: string;
 }
+
+const TAKEN_IS_NOT_CHECKED =
+  'Absence from this list means a test TOOK the arm, not that a test would CATCH it breaking.';
 
 const scriptsDirectory = resolve(fileURLToPath(import.meta.url), '..');
 const repoRoot = resolve(scriptsDirectory, '..');
@@ -172,6 +184,7 @@ function report(packageName: string): boolean {
     console.log(pc.bold(`untested — @flighthq/${packageName}`));
     if (total === 0) {
       console.log(`Every branch in ${entries.length} source files was taken by a test.`);
+      console.log(pc.dim(TAKEN_IS_NOT_CHECKED));
       return true;
     }
     console.log(`${total} unexamined branch arms in ${files.length} of ${entries.length} source files.\n`);
@@ -185,6 +198,7 @@ function report(packageName: string): boolean {
       }
       console.log();
     }
+    console.log(pc.dim(TAKEN_IS_NOT_CHECKED));
     return true;
   } finally {
     rmSync(reportDirectory, { force: true, recursive: true });
