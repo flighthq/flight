@@ -18,6 +18,21 @@ on:
     - cron: '0 4 * * *'
   workflow_dispatch:
 
+# Electron's postinstall downloads a ~100MB prebuilt binary from GitHub releases on the critical path of
+# every `npm ci`. NOTHING IN CI LAUNCHES ELECTRON: the only scripts that do are electron:gallery*,
+# dev:examples:electron and the *-harness pair, none of which any job here runs. The build matrix targets
+# tools/functional and @flighthq/examples (the WEB runner) — both plain `vite build` — and every capture
+# leg drives Playwright chromium, not Electron.
+#
+# Skipping the download still installs the package and its TYPES, which the build does need:
+# tsconfig.build.json includes packages/host-electron, so typechecking resolves electron's declarations.
+# Only actually launching Electron needs the platform binary, and no job here does.
+#
+# Set here rather than in .npmrc on purpose: a repo-wide setting would leave a developer's
+# `npm run electron:gallery` without a binary to launch.
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
 concurrency:
   group: nightly
   cancel-in-progress: false
