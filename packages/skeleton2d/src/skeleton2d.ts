@@ -132,8 +132,11 @@ export function computeSkeleton2DBoneWorldTransform(skeleton: Readonly<Skeleton2
 // Propagates each bone's world transform from its local setup transform (x/y/rotation/scale/shear) and its
 // parent's world transform, honoring the bone's inherit mode. One linear pass over the parent-before-child
 // ordered array (`worldMatrices[i]` reads `worldMatrices[parentIndex]`, already written). Out-parameter,
-// allocation-free. Angles are converted degrees→radians at this seam. Position always inherits fully (the
-// local origin is placed by the parent); the inherit mode only changes the linear (rotation/scale) part.
+// allocation-free. Angles are converted degrees→radians at this seam. All four inherit axes are honored
+// here, translation included: a bone whose `transformMode.translation` is false takes its local (x, y) as
+// its world position outright rather than being placed by its parent. Every `TransformMode2D` preset
+// inherits translation, so reaching that branch means a hand-built `TransformInherit2D`, which `Bone2D`
+// admits by design.
 export function computeSkeleton2DWorldTransforms(skeleton: Readonly<Skeleton2D>): void {
   const count = skeleton.bones.length;
   for (let i = 0; i < count; i++) computeSkeleton2DBoneWorldTransform(skeleton, i);

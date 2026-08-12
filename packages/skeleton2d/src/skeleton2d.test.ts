@@ -301,6 +301,41 @@ describe('computeSkeleton2DWorldTransforms', () => {
     expect(out.d).toBeCloseTo(2, 5); // reflection stripped: +2, not −2
     expect(out.a * out.d - out.c * out.b).toBeCloseTo(4, 5); // det positive (scale kept, reflection dropped)
   });
+
+  // The fourth axis, and the one no preset reaches: every TransformMode2D inherits translation, so a bone
+  // that strips it has to be hand-built — which Bone2D admits on purpose. Both halves are asserted from one
+  // rig, because the stripped position alone would be satisfied by a bone that had simply come loose from
+  // its parent: the basis must still carry the parent's 90° turn while the origin ignores it entirely.
+  it('FORMULA parity: stripping translation takes the local (x, y) as the world position, basis still inherited', () => {
+    const bones = (translation: boolean) => [
+      makeBone({ rotation: 90, x: 10, y: 20 }),
+      makeBone({
+        parentIndex: 0,
+        transformMode: { reflection: true, rotation: true, scale: true, translation },
+        x: 3,
+        y: 4,
+      }),
+    ];
+
+    const stripped = createSkeleton2D(bones(false));
+    computeSkeleton2DWorldTransforms(stripped);
+    const inherited = createSkeleton2D(bones(true));
+    computeSkeleton2DWorldTransforms(inherited);
+
+    // Stripped: the local (3, 4) IS the world origin, and the parent's translation (10, 20) never applies.
+    expect(stripped.worldMatrices[1 * 6 + 4]).toBeCloseTo(3, 5);
+    expect(stripped.worldMatrices[1 * 6 + 5]).toBeCloseTo(4, 5);
+    // Inherited: (3, 4) turned a quarter turn to (−4, 3), then placed at the parent's (10, 20).
+    expect(inherited.worldMatrices[1 * 6 + 4]).toBeCloseTo(6, 5);
+    expect(inherited.worldMatrices[1 * 6 + 5]).toBeCloseTo(23, 5);
+    // The linear part is untouched by the translation axis — both still carry the parent's 90° turn.
+    const out = createMatrix();
+    getSkeleton2DBoneWorldMatrix(out, stripped, 1);
+    expect(out.a).toBeCloseTo(0, 5);
+    expect(out.b).toBeCloseTo(1, 5);
+    expect(out.c).toBeCloseTo(-1, 5);
+    expect(out.d).toBeCloseTo(0, 5);
+  });
 });
 
 describe('createSkeleton2D', () => {
