@@ -101,7 +101,7 @@ function solveSkeleton2DIkChain2(
   if (local === null) return;
   const dx = local.x - parent.x;
   const dy = local.y - parent.y;
-  let reach = Math.hypot(dx, dy);
+  const reach = Math.hypot(dx, dy);
   if (reach <= 0) return;
 
   const span = parentLength + childLength;
@@ -117,12 +117,15 @@ function solveSkeleton2DIkChain2(
       parent.scaleX *= scale;
       parent.scaleY *= scale;
     }
-  } else if (reach <= Math.abs(parentLength - childLength)) {
-    // Inside the dead zone the chain folds as far as it can and the tip still cannot reach.
-    bendAngle = Math.PI;
-    reach = Math.abs(parentLength - childLength);
   } else {
     // Law of cosines on the joint angle, measured as the deviation from straight.
+    //
+    // The clamps are load-bearing, not defensive. Unequal bone lengths leave a DEAD ZONE around the
+    // parent's origin — a target nearer than |parentLength − childLength|, which the chain cannot reach
+    // however far it folds — and inside it both cosines leave [−1, 1] by exactly the amount that clamps
+    // to the fully folded pose: cosJoint ≥ 1 gives a bend of π, and cosParent saturates at +1 or −1 to
+    // give the parent offset the longer bone requires. So the dead zone needs no case of its own, and
+    // dropping a clamp does not merely admit a NaN, it loses that pose.
     const cosJoint =
       (parentLength * parentLength + childLength * childLength - reach * reach) / (2 * parentLength * childLength);
     bendAngle = Math.PI - Math.acos(Math.min(1, Math.max(-1, cosJoint)));
