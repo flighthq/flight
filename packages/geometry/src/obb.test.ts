@@ -97,11 +97,11 @@ describe('intersectRay3DObb', () => {
     expect(intersectRay3DObb(ray, o)).toBe(-1);
   });
 
-  it('treats a zero-length direction as a containment test at the origin', () => {
-    // With no direction, every slab takes the parallel-ray path: the ray hits only if its origin
-    // already lies inside, and then the entry parameter is 0.
+  it('returns -1 for a ray with no direction, inside the box or out', () => {
+    // A zero-length direction is not a ray, so it never hits anything — the same answer the
+    // sphere, capsule, plane and triangle tests give, and not a containment test in disguise.
     const o = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
-    expect(intersectRay3DObb(createRay3D(0.5, 0.5, 0.5, 0, 0, 0), o)).toBe(0);
+    expect(intersectRay3DObb(createRay3D(0.5, 0.5, 0.5, 0, 0, 0), o)).toBe(-1);
     expect(intersectRay3DObb(createRay3D(5, 0, 0, 0, 0, 0), o)).toBe(-1);
   });
 
