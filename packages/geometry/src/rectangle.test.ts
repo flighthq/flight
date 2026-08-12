@@ -323,16 +323,26 @@ describe('equalsRectangle', () => {
     expect(equalsRectangle(base, createRectangle(1, 2, 3, 9))).toBe(false);
   });
 
-  it('returns false when only one side is missing', () => {
+  it('returns false when either side is missing', () => {
     // The signature accepts null and undefined, so absence is an answerable input rather than
-    // misuse. Note that two absences ARE reported equal here, by the identity check that runs
-    // first — the vector equivalents answer that case the other way.
+    // misuse: nothing is equal to a rectangle, including another absence. Two absences are two
+    // unknowns, not one shared value — the same answer the three equalsVector* functions give.
     const rect = createRectangle(1, 2, 3, 4);
     expect(equalsRectangle(rect, null)).toBe(false);
     expect(equalsRectangle(null, rect)).toBe(false);
     expect(equalsRectangle(rect, undefined)).toBe(false);
     expect(equalsRectangle(undefined, rect)).toBe(false);
+    expect(equalsRectangle(null, null)).toBe(false);
+    expect(equalsRectangle(undefined, undefined)).toBe(false);
     expect(equalsRectangle(null, undefined)).toBe(false);
+  });
+
+  it('holds a rectangle equal to itself even with a NaN field', () => {
+    // Comparing field by field would say a rectangle carrying NaN differs from itself, and a
+    // caller watching for changes would then see one every time it looked.
+    const notANumber = createRectangle(NaN, 2, 3, 4);
+    expect(equalsRectangle(notANumber, notANumber)).toBe(true);
+    expect(equalsRectangle(notANumber, createRectangle(NaN, 2, 3, 4))).toBe(false);
   });
 });
 

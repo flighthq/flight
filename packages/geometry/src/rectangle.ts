@@ -77,9 +77,10 @@ export function equalsRectangle(
   a: Readonly<RectangleLike> | null | undefined,
   b: Readonly<RectangleLike> | null | undefined,
 ): boolean {
-  if (a === b) return true;
   if (!a || !b) return false;
-  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+  // Identity after the absence check, as in `equalsVector2`: a rectangle is equal to itself even
+  // when a field is NaN, but two absences are two unknowns rather than one shared value.
+  return a === b || (a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height);
 }
 
 export function expandRectangleToPoint(
