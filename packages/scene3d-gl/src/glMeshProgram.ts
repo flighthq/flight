@@ -18,18 +18,20 @@ import { ensureGlSkinNormalPalette, ensureGlSkinPalette, getGlScene3DRuntime } f
 import { getGlScene3DViewportAspect } from './glViewportAspect';
 // The shared per-bind head for every mesh-material family: stores the family's program as the active
 // bind→draw handoff, selects it, and sets the depth + face-cull state a forward 3D draw needs (depth
-// test LESS + depth write on; back-face cull unless the material is double-sided). The render-effect
+// test LESS; depth write off for blended runs and on otherwise; back-face cull unless the material is
+// double-sided). The render-effect
 // pipeline owns binding the rgba16f scene target and enabling depth at the framebuffer level; this
 // fixes the per-material test/write/cull so a renderer invoked without the full pipeline still
 // occludes correctly. A family's bind() calls this, then sets its own camera/material uniforms.
 export function beginGlMeshDraw(state: GlRenderState, program: Readonly<GlMeshProgram>, doubleSided: boolean): void {
   const gl = state.gl;
-  getGlScene3DRuntime(state).activeMeshProgram = program;
+  const runtime = getGlScene3DRuntime(state);
+  runtime.activeMeshProgram = program;
   gl.useProgram(program.program);
 
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LESS);
-  gl.depthMask(true);
+  gl.depthMask(!runtime.activeBlendedRun);
 
   if (doubleSided) {
     gl.disable(gl.CULL_FACE);

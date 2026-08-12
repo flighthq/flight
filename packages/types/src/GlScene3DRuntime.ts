@@ -67,6 +67,9 @@ export interface GlScene3DDrawEntry {
 // `time` is the per-frame `time` uniform value animated modifiers scroll by (set by setGlScene3DTime).
 // One GlScene3DRuntime is created lazily per state by getGlScene3DRuntime.
 export interface GlScene3DRuntime {
+  // Whether the draw run currently being bound belongs to the blended pass. Every material-family
+  // bind reads this through beginGlMeshDraw so depth writes stay disabled across run changes.
+  activeBlendedRun: boolean;
   // Whether the draw run currently being bound carries resolved color-adjustment data and the
   // tree-shakable feature is registered. Material-family compilers fold this into their program key.
   activeColorAdjustmentRun: boolean;

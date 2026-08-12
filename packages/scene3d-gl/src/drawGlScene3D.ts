@@ -54,7 +54,8 @@ function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
 //     order. Depth writes are on. No blending.
 //   Pass 2 (blended): every subset whose material alphaMode is 'blend', sorted back-to-front by the
 //     mesh's world-space Z in view space (the mesh origin's projected depth). GL blending is enabled,
-//     each material's blendMode selects its fixed-function equation, and blending is disabled after.
+//     depth writes are disabled across every material rebind, each material's blendMode selects its
+//     fixed-function equation, and both states are restored after.
 //
 // Subsets sharing the same resolved renderer + material are drawn under a single bind (the seam's
 // "contiguous run" contract): bind uploads the shared camera + light + material state once, then draw
@@ -77,6 +78,7 @@ export function drawGlScene3D(
   const lightBlock = list.lights;
   const viewProjection = list.viewProjection;
   const runtime = getGlScene3DRuntime(state);
+  runtime.activeBlendedRun = false;
   const hasPreparedForwardLights = forwardLights !== undefined && forwardLights.meshCount === list.meshCount;
   if (!hasPreparedForwardLights && hasExcessForwardLights(lights)) runtime.forwardLightSelectionGuard?.(lights);
 
@@ -211,6 +213,7 @@ export function drawGlScene3D(
     blendedDrawList.sort(compareBlendedEntriesDescending);
 
     const gl = state.gl;
+    runtime.activeBlendedRun = true;
     gl.enable(gl.BLEND);
 
     boundMaterial = undefined;
@@ -264,6 +267,11 @@ export function drawGlScene3D(
 
     gl.disable(gl.BLEND);
   }
+
+  // Restore both the run flag consumed by future material binds and the actual GL state. This is
+  // unconditional so an empty/opaque-only scene also repairs a depth mask left by an earlier pass.
+  runtime.activeBlendedRun = false;
+  state.gl.depthMask(true);
 
   // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
   // visible meshes above. Draw them here as a final transparent instanced pass so the common

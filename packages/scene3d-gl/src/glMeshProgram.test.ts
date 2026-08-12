@@ -26,6 +26,7 @@ import {
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeCamera(): Camera3D {
@@ -42,12 +43,23 @@ function makeProgram(): GlMeshProgram {
 }
 
 describe('beginGlMeshDraw', () => {
+  it('disables depth writes for every bind in a blended run', () => {
+    const { state, gl } = makeGlScene3DState();
+    getGlScene3DRuntime(state).activeBlendedRun = true;
+
+    beginGlMeshDraw(state, makeProgram(), false);
+    beginGlMeshDraw(state, makeProgram(), false);
+
+    expect(gl.calls.filter((c) => c.name === 'depthMask').map((c) => c.args[0])).toEqual([false, false]);
+  });
+
   it('stores the active program, selects it, and sets depth + back-face cull', () => {
     const { state, gl } = makeGlScene3DState();
     beginGlMeshDraw(state, makeProgram(), false);
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'depthMask' && c.args[0] === true)).toBe(true);
   });
 
   it('disables culling for a double-sided material', () => {
