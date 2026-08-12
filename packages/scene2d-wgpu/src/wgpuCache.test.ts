@@ -162,6 +162,7 @@ describe('createWgpuCacheState', () => {
     expect(cacheRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);
     expect(cacheRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
     expect(cacheRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
+    expect(cacheRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
     expect(cacheRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(cacheRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
     expect(getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);

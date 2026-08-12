@@ -53,6 +53,7 @@ export function createDomRenderStateRuntime(): DomRenderStateRuntime {
       registry: 'DomShapeRasterizer',
       shape: 'slot',
     },
+    strokeTessellator: runtime.registries.strokeTessellator,
     textureResolvers: {
       entries: new Map(),
       onMiss: 'Unregistered',

@@ -177,6 +177,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.pbrExtensionRevision).toBe(screenRuntime.registries.pbrExtensionRevision);
     expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
+    expect(offscreenRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
     expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
@@ -407,6 +408,12 @@ describe('createGlRenderStateRuntime', () => {
       entry: null,
       onMiss: 'Unregistered',
       registry: 'GlShapeRasterizer',
+      shape: 'slot',
+    });
+    expect(runtime.registries.strokeTessellator).toEqual({
+      entry: null,
+      onMiss: 'Rasterize',
+      registry: 'StrokeTessellator',
       shape: 'slot',
     });
     expect(runtime.registries.velocityWriters).toMatchObject({

@@ -4,7 +4,7 @@ import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { Matrix } from './Matrix';
 import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
-import type { KeyedTable } from './RegistryTable';
+import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { Renderable } from './Renderable';
 import type { RenderEffectPaddingResolver } from './RenderEffectPadding';
 import type { Renderer } from './Renderer';
@@ -47,6 +47,11 @@ export interface RenderRegistries {
   canvasShapeCommands?: KeyedTable<CanvasShapeCommand>;
   effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
   renderers: KeyedTable<Renderer>;
+  // Opt-in closed-ring/self-intersection stroke kernel. The empty slot means the compact mesh lane
+  // rasterizes closed strokes; a bound pure function is safe to snapshot across derived pipelines.
+  strokeTessellator: SlotTable<
+    (path: Readonly<Path>, style: Readonly<StrokeStyle>, tolerance?: number) => PathMesh | null
+  >;
 }
 
 // Package-private machinery for a RenderState entity. Lives in the runtime tier (not on the entity)
@@ -83,11 +88,6 @@ export interface RenderStateRuntime extends EntityRuntime {
   // Optional backend guard reached before a root walk. Backends use this to diagnose pipeline-policy
   // mistakes without adding their warning dependency to the substrate-independent render path.
   renderRootGuard: ((state: RenderState, root: Renderable) => void) | null;
-  // The heavier closed-ring/self-intersection stroke kernel is explicitly enabled per state. The
-  // default shape lane keeps its compact open-outline tessellator and rasterizes closed strokes.
-  strokeTessellator:
-    | ((path: Readonly<Path>, style: Readonly<StrokeStyle>, tolerance?: number) => PathMesh | null)
-    | null;
   // Advances whenever the persistent renderer table is replaced so existing proxies re-resolve their
   // renderer before reuse. The table itself lives in registries.renderers with the rest of the policy.
   rendererMapId: number;
