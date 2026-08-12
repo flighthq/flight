@@ -61,6 +61,25 @@ A file:line here is a claim about this tree, not about a session.
   Reframing the camera alone does not fix this; the assertion has to be one only a correctly-facing
   surface can satisfy.
 
+- **Triangle strips are excluded from two mirror-related operations, deliberately and in two
+  places, and the exclusion is not yet resolved.** Both exclusions exist because a strip shares each
+  vertex between up to three triangles, so anything expressed as a per-triple edit does not describe
+  it. (1) `computeMeshGeometryTangents` splits vertices at a mirrored-UV seam by remapping index
+  ELEMENTS, which is well defined only for a triangle list, where each element belongs to exactly one
+  triangle. (2) `restoreMirroredWindingAndHandedness` in `meshGeometryTransforms.ts` reverses winding
+  for a negative-determinant transform by swapping two corners of each triple — list-only for the
+  same reason; strips still get the per-vertex `tangent.w` flip, which is topology-independent.
+  Neither invented a strip rule, because the repository has none to follow: the only winding reversal
+  that exists, `reverseTriangleWinding` in `scene3d-formats/src/shared.ts:155`, steps by three, and
+  `expandMeshGeometryIndices` (`meshGeometryIndex.ts:111`) preserves topology so it is not a
+  strip-to-list route either.
+  MEASURED FROM BOTH DIRECTIONS. An opposite-UV-handed strip stays at 4 vertices with corner
+  handedness `[[+,+,+],[+,+,-]]`, where the topology-equivalent LIST splits to 6 vertices and gives
+  `[[+,+,+],[-,-,-]]` — so the strip silently shares one handedness across a seam the list correctly
+  separates. Three ways out, none taken: convert the strip to a list (changes `out.topology`, a
+  contract decision), refuse the operation, or document the restriction as permanent. Parked with
+  manager as a topology-contract question, not a defect to patch locally.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
