@@ -16,6 +16,14 @@ type SavedGlRenderState = {
   cullFace: boolean;
   cullFaceMode: number;
   frontFace: number;
+  stencilFail: number;
+  stencilFunc: number;
+  stencilPassDepthFail: number;
+  stencilPassDepthPass: number;
+  stencilRef: number;
+  stencilTest: boolean;
+  stencilValueMask: number;
+  stencilWriteMask: number;
   currentFramebuffer: WebGLFramebuffer | null;
   currentBlendMode: GlRenderStateRuntime['currentBlendMode'];
   currentRenderTarget: GlRenderStateRuntime['currentRenderTarget'];
@@ -55,6 +63,16 @@ export function popGlRenderState(state: GlRenderState): void {
   // Flight mutates and must hand back exactly as the host left it — a host context set to CW would
   // otherwise get CCW returned.
   gl.frontFace(saved.frontFace);
+
+  // The 2D clip system rasterizes stencil masks, and its own capture/restore inside glRenderPass is
+  // scoped to FLIGHT's mask nesting — it captures only when Flight already has a clip active, and its
+  // null path disables the test outright. That is correct for Flight's own nesting and says nothing
+  // about the host: a caller that had STENCIL_TEST enabled would otherwise get it switched off by any
+  // Flight render. This is the host-facing half.
+  restoreGlCapability(gl, gl.STENCIL_TEST, saved.stencilTest);
+  gl.stencilMask(saved.stencilWriteMask);
+  gl.stencilFunc(saved.stencilFunc, saved.stencilRef, saved.stencilValueMask);
+  gl.stencilOp(saved.stencilFail, saved.stencilPassDepthFail, saved.stencilPassDepthPass);
 
   restoreGlCapability(gl, gl.BLEND, saved.blend);
   gl.blendFuncSeparate(saved.blendSrcRgb, saved.blendDstRgb, saved.blendSrcAlpha, saved.blendDstAlpha);
@@ -117,6 +135,14 @@ export function pushGlRenderState(state: GlRenderState): void {
     cullFace: gl.isEnabled(gl.CULL_FACE),
     cullFaceMode: gl.getParameter(gl.CULL_FACE_MODE) as number,
     frontFace: gl.getParameter(gl.FRONT_FACE) as number,
+    stencilFail: gl.getParameter(gl.STENCIL_FAIL) as number,
+    stencilFunc: gl.getParameter(gl.STENCIL_FUNC) as number,
+    stencilPassDepthFail: gl.getParameter(gl.STENCIL_PASS_DEPTH_FAIL) as number,
+    stencilPassDepthPass: gl.getParameter(gl.STENCIL_PASS_DEPTH_PASS) as number,
+    stencilRef: gl.getParameter(gl.STENCIL_REF) as number,
+    stencilTest: gl.isEnabled(gl.STENCIL_TEST),
+    stencilValueMask: gl.getParameter(gl.STENCIL_VALUE_MASK) as number,
+    stencilWriteMask: gl.getParameter(gl.STENCIL_WRITEMASK) as number,
     currentFramebuffer: runtime.currentFramebuffer,
     currentBlendMode: runtime.currentBlendMode,
     currentRenderTarget: runtime.currentRenderTarget,
