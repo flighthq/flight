@@ -1,5 +1,7 @@
 import { getMatrix4Position } from '@flighthq/geometry/contract';
 import {
+  CANONICAL_MESH_GEOMETRY_LAYOUT,
+  createMeshGeometry,
   getMeshGeometryIndexCount,
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexCount,
@@ -21,7 +23,7 @@ import type {
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse';
-import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
+import { canonicalizeMd5TangentHandedness, createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
 import { getTestTextureResource } from './scene3DFormatsTestHelper';
 import { findScene3DSkeletonJoints } from './sceneSkeleton';
 
@@ -326,6 +328,62 @@ const OVER_INFLUENCED_VERTEX = [
   '  weight 6 0 1.0 ( 0 5 0 )',
   '}',
 ].join('\n');
+
+describe('canonicalizeMd5TangentHandedness', () => {
+  // The contradiction branch is unreachable through a normal MD5 import: the mirrored-UV split runs
+  // first and separates any vertex whose triangles disagree, so every fixture that goes through
+  // createScene3DFromMd5Mesh arrives here already consistent. This builds the geometry directly,
+  // bypassing that split, which is the only way to exercise the branch.
+  //
+  // ★ IT ALSO PINS THE TWO-PASS STRUCTURE, which is the reason it is worth having. Census-then-apply
+  // keeps the FIRST sign seen and reports the disagreement; collapsing the two loops into one makes
+  // the last triangle win silently. Those two behaviours differ only when a vertex is reached by
+  // triangles of differing sign — exactly this case — so this test is what stops the structure being
+  // quietly optimised away.
+  function buildConflictingGeometry() {
+    const floatsPerVertex = CANONICAL_MESH_GEOMETRY_LAYOUT.stride / 4;
+    const vertices = new Float32Array(4 * floatsPerVertex);
+    const setVertex = (vertex: number, x: number, y: number, u: number, v: number) => {
+      const base = vertex * floatsPerVertex;
+      vertices[base] = x;
+      vertices[base + 1] = y;
+      vertices[base + 5] = 1; // normal +z
+      vertices[base + 9] = 1; // generated handedness, to be resolved
+      vertices[base + 10] = u;
+      vertices[base + 11] = v;
+    };
+    // Vertices 1 and 2 are shared. The second triangle's U runs the other way, so the two triangles
+    // have opposite UV determinants and the shared pair receives both signs.
+    setVertex(0, 0, 0, 0, 0);
+    setVertex(1, 1, 0, 1, 0);
+    setVertex(2, 0, 1, 0, 1);
+    setVertex(3, 1, 1, -1, 1);
+    return createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2, 3, 2, 1]),
+      layout: CANONICAL_MESH_GEOMETRY_LAYOUT,
+      vertices,
+    });
+  }
+
+  it('reports a vertex whose triangles disagree rather than letting the last one win', () => {
+    const geometry = buildConflictingGeometry();
+    const drops = new Map<string, { count: number }>();
+    canonicalizeMd5TangentHandedness(geometry, drops as never);
+    expect([...drops.keys()].some((key) => key.includes('tangent-handedness-contradiction'))).toBe(true);
+  });
+
+  it('keeps the first resolved sign for a contradicting vertex, not the last', () => {
+    // The census runs to completion before anything is written, so a contradicting vertex keeps the
+    // sign of the first triangle that claimed it. Applying during the census instead would leave the
+    // last triangle's sign, which is the silent wrong answer this structure exists to refuse.
+    const geometry = buildConflictingGeometry();
+    canonicalizeMd5TangentHandedness(geometry, null);
+    const floatsPerVertex = CANONICAL_MESH_GEOMETRY_LAYOUT.stride / 4;
+    // Triangle 0 (positive determinant) is visited first and claims vertices 1 and 2.
+    expect(geometry.vertices[1 * floatsPerVertex + 9]).toBe(1);
+    expect(geometry.vertices[2 * floatsPerVertex + 9]).toBe(1);
+  });
+});
 
 describe('createScene3DFromMd5Mesh', () => {
   it('parses a single triangle with one joint', () => {
@@ -1230,26 +1288,6 @@ describe('createScene3DFromMd5Mesh', () => {
   });
 });
 
-describe('createScene3DFromMd5Mesh animations', () => {
-  it('returns the mesh scene with an empty animations map (the .md5anim is a separate file)', () => {
-    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    expect(Object.keys(scene.animations)).toHaveLength(0);
-  });
-
-  it('composes a paired .md5anim into a named clip bound to the scene’s own skeleton joints', () => {
-    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    const joints = findScene3DSkeletonJoints(scene.root)!;
-    scene.animations.walk = parseMd5Anim(SINGLE_JOINT_ANIM, joints)!;
-    expect(Object.keys(scene.animations)).toEqual(['walk']);
-
-    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
-    const meshJoints = mesh.skin!.skeleton.joints;
-    const channel = scene.animations.walk.channels[0];
-    // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
-    expect((channel.targetRef as Scene3DAnimationTarget).node).toBe(meshJoints[0]);
-  });
-});
-
 // A degenerate MD5 mesh with no skeleton (numJoints 0, weightless verts): importMd5Mesh has no joints to
 // bind an animation to.
 const JOINTLESS_MESH = [
@@ -1276,6 +1314,26 @@ const JOINTLESS_MESH = [
   '  numweights 0',
   '}',
 ].join('\n');
+
+describe('createScene3DFromMd5Mesh animations', () => {
+  it('returns the mesh scene with an empty animations map (the .md5anim is a separate file)', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+  });
+
+  it('composes a paired .md5anim into a named clip bound to the scene’s own skeleton joints', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const joints = findScene3DSkeletonJoints(scene.root)!;
+    scene.animations.walk = parseMd5Anim(SINGLE_JOINT_ANIM, joints)!;
+    expect(Object.keys(scene.animations)).toEqual(['walk']);
+
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
+    const meshJoints = mesh.skin!.skeleton.joints;
+    const channel = scene.animations.walk.channels[0];
+    // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
+    expect((channel.targetRef as Scene3DAnimationTarget).node).toBe(meshJoints[0]);
+  });
+});
 
 describe('importMd5Mesh', () => {
   it('imports the mesh only when no animation source is given', () => {
