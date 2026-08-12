@@ -554,10 +554,21 @@ describe('setQuaternionIdentity', () => {
 });
 
 describe('setQuaternionLookRotation', () => {
-  it('forward parallel to up yields identity (degenerate case)', () => {
-    const q = createQuaternion(1, 2, 3, 4);
-    setQuaternionLookRotation(q, createVector3(0, 1, 0), createVector3(0, 1, 0));
-    expectQuaternionClose(q, 0, 0, 0, 1);
+  it.each([
+    ['non-z-aligned', createVector3(2, 3, 6)],
+    ['z-aligned', createVector3(1, 2, 20)],
+  ])('preserves an asymmetric %s forward direction when up is parallel', (_case, rawForward) => {
+    const length = Math.sqrt(rawForward.x * rawForward.x + rawForward.y * rawForward.y + rawForward.z * rawForward.z);
+    const forward = createVector3(rawForward.x / length, rawForward.y / length, rawForward.z / length);
+    const q = createQuaternion();
+
+    setQuaternionLookRotation(q, forward, forward);
+
+    const rotated = createVector3();
+    rotateVector3ByQuaternion(rotated, createVector3(0, 0, 1), q);
+    expect(rotated.x).toBeCloseTo(forward.x, 6);
+    expect(rotated.y).toBeCloseTo(forward.y, 6);
+    expect(rotated.z).toBeCloseTo(forward.z, 6);
   });
 
   it('zero forward yields identity (degenerate case)', () => {
@@ -578,6 +589,19 @@ describe('setQuaternionLookRotation', () => {
     const q = createQuaternion();
     setQuaternionLookRotation(q, createVector3(0, 0, 1), createVector3(0, 1, 0));
     expectQuaternionClose(q, 0, 0, 0, 1);
+  });
+
+  it('rotates +Z onto an asymmetric forward direction', () => {
+    const forward = createVector3(2 / 7, 3 / 7, 6 / 7);
+    const q = createQuaternion();
+
+    setQuaternionLookRotation(q, forward, createVector3(0, 1, 0));
+
+    const rotated = createVector3();
+    rotateVector3ByQuaternion(rotated, createVector3(0, 0, 1), q);
+    expect(rotated.x).toBeCloseTo(forward.x, 6);
+    expect(rotated.y).toBeCloseTo(forward.y, 6);
+    expect(rotated.z).toBeCloseTo(forward.z, 6);
   });
 
   // Looking backwards drives the basis trace negative, which selects one of the three
@@ -610,6 +634,10 @@ describe('setQuaternionLookRotation', () => {
     setQuaternionLookRotation(aliased, aliased, up);
 
     expectQuaternionClose(aliased, distinct.x, distinct.y, distinct.z, distinct.w);
+
+    const aliasedUp = createQuaternion(up.x, up.y, up.z, 0);
+    setQuaternionLookRotation(aliasedUp, forward, aliasedUp);
+    expectQuaternionClose(aliasedUp, distinct.x, distinct.y, distinct.z, distinct.w);
   });
 });
 
