@@ -4,7 +4,6 @@ import {
   createGlRenderStateRuntime,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
-import { createRenderState } from '@flighthq/render/contract';
 import type { GlRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -19,9 +18,7 @@ import {
 } from './glCustomShaderEffect';
 
 function makeState(): GlRenderState {
-  const state = createRenderState() as GlRenderState;
-  state[EntityRuntimeKey] = createGlRenderStateRuntime();
-  return state;
+  return { [EntityRuntimeKey]: createGlRenderStateRuntime() } as unknown as GlRenderState;
 }
 
 const FRAGMENT_SRC = `#version 300 es
