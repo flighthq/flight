@@ -143,6 +143,7 @@ import {
   negateVec3Z,
   packSkinInfluences,
   reverseTriangleWinding,
+  reverseVertexTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
 } from './shared';
 
@@ -1512,6 +1513,9 @@ function parseTriangleGeometryBlock(
     negateVec3Z(positions);
     if (normals !== null) negateVec3Z(normals);
     if (tangents !== null) negateVec3Z(tangents);
+    // The reflection above flips triangle winding whether or not the sub-mesh shipped indices. Indexed
+    // geometry is corrected here; a non-indexed sub-mesh is corrected on the assembled vertex records
+    // below, once they exist. Correcting only the indexed case left non-indexed geometry inside out.
     if (indices !== null) reverseTriangleWinding(indices);
 
     const vertexCount = positions.length / 3;
@@ -1591,6 +1595,8 @@ function parseTriangleGeometryBlock(
       }
     }
 
+    if (indices === null) reverseVertexTriangleWinding(vertices, floatsPerVertex);
+
     const indexArray = indices !== null ? Uint32Array.from(indices) : undefined;
     const geometry = createMeshGeometry({
       indices: indexArray,
@@ -1598,15 +1604,18 @@ function parseTriangleGeometryBlock(
       vertices,
     });
     // Regenerate normals only when the sub-mesh carried none, matching the shared emitter; authored
-    // AWD normals (present on skinned models like the shambler) are kept.
-    if (normals === null && indexArray !== undefined) computeMeshGeometryNormals(geometry, geometry);
+    // AWD normals (present on skinned models like the shambler) are kept. Not gated on indices:
+    // computeMeshGeometryNormals walks a non-indexed stream as sequential triangles, so gating it left
+    // non-indexed sub-meshes with the zero normals every lit material then normalizes to nothing.
+    if (normals === null) computeMeshGeometryNormals(geometry, geometry);
     // Away3D commonly ships meshes with UVs but NO tangent stream and derives tangents at load time. With
     // no stream the tangent frame above is left zero, so a normal-mapped material renders black (its
     // sampled normal has no basis to transform through). Synthesize a tangent basis (xyz + handedness W)
     // from positions/normals/UVs — the -1 W this yields for real AWD geometry is render-confirmed correct.
-    // Only when the stream is absent and there are UVs (and indices, for the per-triangle UV gradient);
-    // an authored tangent stream is kept untouched.
-    if (tangents === null && uvs !== null && indexArray !== undefined) {
+    // Only when the stream is absent and there are UVs; an authored tangent stream is kept untouched.
+    // The per-triangle UV gradient this needs comes from the shared triangle walker, which reads a
+    // non-indexed stream as sequential triangles, so indices are not a precondition.
+    if (tangents === null && uvs !== null) {
       computeMeshGeometryTangents(geometry, geometry);
     }
     geometries.push({ geometry, skinned });

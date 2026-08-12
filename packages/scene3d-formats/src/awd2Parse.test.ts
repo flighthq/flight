@@ -945,6 +945,81 @@ describe('createScene3DFromAwd2', () => {
     expect([p.x, p.y, p.z]).toEqual([0, 1, 0]);
   });
 
+  // AWD ships left-handed, so the importer negates position Z — a det = -1 reflection that flips every
+  // triangle's winding. Indexed sub-meshes had that compensated; non-indexed ones did not, so they came
+  // out inside out and were culled away. The winding correction has to follow the reflection whether or
+  // not the source shipped indices.
+  it('reverses the winding of a non-indexed sub-mesh', () => {
+    // A counter-clockwise triangle in AWD's space. After the Z flip alone it would read clockwise.
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const geomBody = buildTriangleGeometryBody('NoIndices', [{ streams: [posStream] }]);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const meshBody = buildMeshInstanceBody('NoIndicesMesh', 0, IDENTITY_TRANSFORM, 1);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
+    const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
+
+    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    expect(getMeshGeometryIndexCount(geometry)).toBe(0);
+    // Vertices 1 and 2 are swapped relative to the source order — the non-indexed winding reversal.
+    const p = { x: 0, y: 0, z: 0 };
+    getMeshGeometryVertexPosition(p, geometry, 1);
+    expect([p.x, p.y, p.z]).toEqual([0, 1, 0]);
+    getMeshGeometryVertexPosition(p, geometry, 2);
+    expect([p.x, p.y, p.z]).toEqual([1, 0, 0]);
+  });
+
+  // Normal generation was gated on indices existing, so a non-indexed sub-mesh with no NORMAL stream
+  // kept the zero-filled normals the vertex buffer starts at. Every lit material normalizes that zero
+  // vector, which is undefined — black or garbage shading rather than a flat-shaded surface.
+  it('generates normals for a non-indexed sub-mesh that carries none', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const geomBody = buildTriangleGeometryBody('NoNormals', [{ streams: [posStream] }]);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const meshBody = buildMeshInstanceBody('NoNormalsMesh', 0, IDENTITY_TRANSFORM, 1);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
+    const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
+
+    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex + 3;
+      const length = Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2]);
+      expect(length).toBeCloseTo(1, 5);
+    }
+  });
+
+  // Same gate on the tangent basis. A normal-mapped material reconstructs the bitangent as B = w·N×T,
+  // so a zero tangent collapses the whole TBN frame.
+  it('generates a tangent basis for a non-indexed sub-mesh with UVs and no tangent stream', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const uvs = new Float32Array([0, 0, 1, 0, 0, 1]);
+    const posStream = buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions);
+    const uvStream = buildStream(AWD2_STREAM_UVS, AWD2_DATA_FLOAT32, uvs);
+    const geomBody = buildTriangleGeometryBody('NoTangents', [{ streams: [posStream, uvStream] }]);
+    const geomBlockHeader = buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length);
+    const meshBody = buildMeshInstanceBody('NoTangentsMesh', 0, IDENTITY_TRANSFORM, 1);
+    const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
+    const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
+
+    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex + 6;
+      const length = Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2]);
+      expect(length).toBeCloseTo(1, 5);
+      // The handedness w must be a real sign, not the zero a collapsed basis leaves.
+      expect(Math.abs(geometry.vertices[base + 3])).toBe(1);
+    }
+  });
+
   it('parses geometry with UVs and normals', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const normals = new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1]);
