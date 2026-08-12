@@ -91,6 +91,16 @@ export function drawGlMeshSubset(
   gl.uniformMatrix4fv(program.locModel, false, proxy.worldMatrix.m);
   if (program.locNormalMatrix !== null) gl.uniformMatrix3fv(program.locNormalMatrix, false, proxy.normalMatrix.m);
 
+  // A world matrix that MIRRORS (negative determinant) turns every triangle inside out on the way to
+  // clip space: the exterior a mesh authored counter-clockwise arrives clockwise. With back-face
+  // culling on, that culls the surface the viewer is supposed to see and shows the interior instead.
+  // The winding itself is correct and must not be rewritten — what changes is which orientation
+  // counts as front, so the fix is the front-face convention, per draw, not the geometry.
+  // Restored to CCW immediately after the draw below: this is per-MESH state, and the render-effect
+  // pipeline's own full-screen present pass is wound CCW. Leaving CW set behind a mirrored mesh culls
+  // that pass and the whole frame comes back blank.
+  gl.frontFace(isMirroringWorldMatrix(proxy.worldMatrix.m) ? gl.CW : gl.CCW);
+
   uploadGlMeshDrawAlpha(gl, program, proxy.alpha ?? 1, proxy.material);
 
   // A resolved per-object transform promotes only this draw run to the registered material-feature
@@ -179,8 +189,10 @@ export function drawGlMeshSubset(
   if (upload.indexBuffer !== null) {
     const elementSize = upload.indexType === gl.UNSIGNED_INT ? 4 : 2;
     gl.drawElements(upload.primitiveMode, subset.indexCount, upload.indexType, subset.indexOffset * elementSize);
+    gl.frontFace(gl.CCW);
   } else {
     gl.drawArrays(upload.primitiveMode, subset.indexOffset, subset.indexCount);
+    gl.frontFace(gl.CCW);
   }
 }
 
@@ -362,3 +374,11 @@ const scratchCameraPosition = { x: 0, y: 0, z: 0 };
 // Column-major uv matrix composed per bind and uploaded directly; reused across every
 // bindGlUvTransform call (single-threaded GL draw path).
 const scratchUvMatrix = createMatrix3();
+
+// Whether a world matrix flips orientation — the determinant of its upper 3x3 is negative. Any odd
+// number of axis mirrors lands here, including the common uniform-negative scale.
+function isMirroringWorldMatrix(m: Readonly<Float32Array>): boolean {
+  return (
+    m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9]) + m[8] * (m[1] * m[6] - m[2] * m[5]) < 0
+  );
+}
