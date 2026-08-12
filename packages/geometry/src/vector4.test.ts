@@ -239,6 +239,36 @@ describe('equalsVector4', () => {
     const b = createVector4(4, 5, 6, 7);
     expect(equalsVector4(a, b)).toBe(false);
   });
+
+  it('compares every component, not just the first', () => {
+    // Four hand-written comparisons in a row: one left reading the wrong field agrees with the
+    // right answer on every pair that differs in more than one place, so each differs alone here.
+    const a = createVector4(1, 2, 3, 4);
+    expect(equalsVector4(a, createVector4(9, 2, 3, 4))).toBe(false);
+    expect(equalsVector4(a, createVector4(1, 9, 3, 4))).toBe(false);
+    expect(equalsVector4(a, createVector4(1, 2, 9, 4))).toBe(false);
+    expect(equalsVector4(a, createVector4(1, 2, 3, 9))).toBe(false);
+  });
+
+  it('returns false when either side is missing', () => {
+    // The signature accepts null and undefined, so absence is an answerable input rather than
+    // misuse: nothing is equal to a vector, including another absence.
+    const v = createVector4(1, 2, 3, 4);
+    expect(equalsVector4(v, null)).toBe(false);
+    expect(equalsVector4(null, v)).toBe(false);
+    expect(equalsVector4(v, undefined)).toBe(false);
+    expect(equalsVector4(undefined, v)).toBe(false);
+    expect(equalsVector4(null, null)).toBe(false);
+    expect(equalsVector4(undefined, undefined)).toBe(false);
+  });
+
+  it('holds a vector equal to itself even with a NaN component', () => {
+    // Comparing field by field would say a vector carrying NaN differs from itself, and a caller
+    // watching for changes would then see one every time it looked.
+    const notANumber = createVector4(NaN, 2, 3, 4);
+    expect(equalsVector4(notANumber, notANumber)).toBe(true);
+    expect(equalsVector4(notANumber, createVector4(NaN, 2, 3, 4))).toBe(false);
+  });
 });
 
 describe('getVector4AngleBetween', () => {

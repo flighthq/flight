@@ -267,6 +267,26 @@ describe('equalsVector2', () => {
     pt2.x = 1;
     expect(equalsVector2(pt, pt2)).toBe(true);
   });
+
+  it('returns false when either side is missing', () => {
+    // The signature accepts null and undefined, so absence is an answerable input rather than
+    // misuse: nothing is equal to a vector, including another absence.
+    const v = createVector2(1, 2);
+    expect(equalsVector2(v, null)).toBe(false);
+    expect(equalsVector2(null, v)).toBe(false);
+    expect(equalsVector2(v, undefined)).toBe(false);
+    expect(equalsVector2(undefined, v)).toBe(false);
+    expect(equalsVector2(null, null)).toBe(false);
+    expect(equalsVector2(undefined, undefined)).toBe(false);
+  });
+
+  it('holds a vector equal to itself even with a NaN component', () => {
+    // Comparing field by field would say a vector carrying NaN differs from itself, and a caller
+    // watching for changes would then see one every time it looked.
+    const notANumber = createVector2(NaN, 2);
+    expect(equalsVector2(notANumber, notANumber)).toBe(true);
+    expect(equalsVector2(notANumber, createVector2(NaN, 2))).toBe(false);
+  });
 });
 
 describe('getVector2AngleBetween', () => {
