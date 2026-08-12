@@ -15,7 +15,7 @@ Every item was re-checked against `packages/mesh/src/` (and `packages/types/src/
 A file:line here is a claim about this tree, not about a session.
 
 - **No angle-threshold smooth normals.** `computeMeshGeometryFlatNormals`
-  (`meshGeometryCompute.ts:114`) writes the face normal to all three vertex slots in place with
+  (`meshGeometryCompute.ts:123`) writes the face normal to all three vertex slots in place with
   last-write-wins; nothing named `*SmoothNormals` exists anywhere in `packages/`. The real version
   splits vertices along the crease and remaps indices — a behavioral contract, not a sweep.
 - **No projection UV generation.** `meshGeometryUvs.ts` carries only `offsetMeshGeometryUvs` (`:12`),
