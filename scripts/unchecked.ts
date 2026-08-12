@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 
 import { filterPaths, getSelectors, selectPackages } from './select';
-import type { Mutant, MutantOutcome, UncheckedFile } from './unchecked-core';
+import type { Mutant, MutantOutcome, MutantRequest, MutantResponse, UncheckedFile } from './unchecked-core';
 import {
   APPLIED_MARKER,
   collectExecutedLines,
@@ -15,6 +15,7 @@ import {
   planMutants,
   rankUncheckedFiles,
   selectReachableMutants,
+  WORKER_PROTOCOL_PREFIX,
 } from './unchecked-core';
 
 // Lists the single-token edits to one package's source that every one of its tests still passes with in
@@ -69,7 +70,9 @@ const MUTANT_TIMEOUT_MS = 120_000;
 const scriptsDirectory = resolve(fileURLToPath(import.meta.url), '..');
 const repoRoot = resolve(scriptsDirectory, '..');
 const mutantConfigPath = resolve(scriptsDirectory, 'mutantVitestConfig.ts');
+const mutantWorkerPath = resolve(scriptsDirectory, 'mutantWorker.ts');
 const vitestBinary = resolve(repoRoot, 'node_modules/vitest/vitest.mjs');
+const tsxBinary = resolve(repoRoot, 'node_modules/tsx/dist/cli.mjs');
 
 /**
  * The refusal for a selector that resolved to more than one package.
@@ -333,35 +336,69 @@ async function runFileMutants(
   mutants: readonly Mutant[],
   quiet: boolean,
 ): Promise<MutantOutcome[]> {
-  const siblingTest = relative(
-    join(repoRoot, 'packages', harness.packageName),
-    join(repoRoot, getSiblingTestPath(sourcePath)),
-  ).replaceAll('\\', '/');
+  const siblingTest = join(repoRoot, getSiblingTestPath(sourcePath));
   if (!quiet) process.stdout.write(pc.dim(`  ${sourcePath} · ${mutants.length} mutants `));
 
-  const siblingOutcomes = await mapConcurrent(mutants, workerCount(), async (mutant) => {
-    const run = await runMutant(harness, sourcePath, mutant, [siblingTest]);
-    if (!quiet) process.stdout.write(progressMark(run));
-    return { mutant, scope: 'sibling' as const, verdict: readMutantVerdict(run) };
-  });
+  const siblingOutcomes = await runTier(harness, sourcePath, mutants, [siblingTest], quiet, 'sibling');
 
-  const escalated = siblingOutcomes.filter((outcome) => outcome.verdict === 'survived');
+  const escalated = siblingOutcomes.filter((outcome) => outcome.verdict === 'survived').map((o) => o.mutant);
   if (escalated.length === 0) {
     if (!quiet) console.log();
     return siblingOutcomes;
   }
   if (!quiet) process.stdout.write(pc.dim(` escalating ${escalated.length} `));
 
-  const confirmed = new Map<Mutant, MutantOutcome>();
-  await mapConcurrent(escalated, workerCount(), async (outcome) => {
-    const run = await runMutant(harness, sourcePath, outcome.mutant, []);
-    if (!quiet) process.stdout.write(progressMark(run));
-    confirmed.set(outcome.mutant, { mutant: outcome.mutant, scope: 'package', verdict: readMutantVerdict(run) });
-    return null;
-  });
+  const packageOutcomes = await runTier(harness, sourcePath, escalated, [], quiet, 'package');
   if (!quiet) console.log();
 
+  const confirmed = new Map(packageOutcomes.map((outcome) => [outcome.mutant, outcome]));
   return siblingOutcomes.map((outcome) => confirmed.get(outcome.mutant) ?? outcome);
+}
+
+// One tier of one file, through a pool of warm workers.
+//
+// Every mutant that the pool could not settle — a worker that hung, crashed, or died mid-request — is re-run
+// afterwards through the original spawn-per-mutant path. That fallback is the whole reason batching is safe
+// to adopt: a mutant that takes down a shared server costs a slower second attempt instead of a wrong
+// verdict, so the failure mode of the optimization is latency, never a corrupted finding.
+async function runTier(
+  harness: Readonly<Harness>,
+  sourcePath: string,
+  mutants: readonly Mutant[],
+  targets: readonly string[],
+  quiet: boolean,
+  scope: MutantOutcome['scope'],
+): Promise<MutantOutcome[]> {
+  const packageRoot = join(repoRoot, 'packages', harness.packageName);
+  const subject = join(repoRoot, sourcePath);
+  const pool = createMutantPool(packageRoot, subject, Math.min(workerCount(), mutants.length));
+  const fallbacks: Mutant[] = [];
+
+  const outcomes = await mapConcurrent(mutants, pool.size, async (mutant) => {
+    const run = await pool.run(mutant, targets);
+    if (run === null) {
+      fallbacks.push(mutant);
+      return null;
+    }
+    if (!quiet) process.stdout.write(progressMark(run));
+    return { mutant, scope, verdict: readMutantVerdict(run) };
+  });
+  pool.close();
+
+  const settled = outcomes.filter((outcome): outcome is MutantOutcome => outcome !== null);
+  if (fallbacks.length === 0) return settled;
+
+  if (!quiet) process.stdout.write(pc.yellow(`↻${fallbacks.length}`));
+  const retried = await mapConcurrent(fallbacks, workerCount(), async (mutant) => {
+    const run = await runMutant(harness, sourcePath, mutant, targetsRelativeTo(packageRoot, targets));
+    if (!quiet) process.stdout.write(progressMark(run));
+    return { mutant, scope, verdict: readMutantVerdict(run) };
+  });
+  return [...settled, ...retried];
+}
+
+function targetsRelativeTo(packageRoot: string, targets: readonly string[]): string[] {
+  return targets.map((target) => relative(packageRoot, target).replaceAll('\\', '/'));
 }
 
 // One vitest process, one mutant, nothing written to the tree. `targets` empty means the package's whole
@@ -410,6 +447,128 @@ function runMutant(
       settle({ applied: output.includes(APPLIED_MARKER), output, passed: code === 0, timedOut });
     });
   });
+}
+
+/**
+ * A pool of warm mutant workers over one source file.
+ *
+ * `run` returns `null` rather than a verdict when the worker could not settle the mutant — a hang, a crash,
+ * a server that died. That is deliberately not a verdict: the caller re-runs those in a fresh process. A
+ * pool that guessed `killed` for its own failures would report the exact false all-clear this tool is built
+ * to avoid, and it would be indistinguishable from a real kill in the output.
+ */
+function createMutantPool(packageRoot: string, subject: string, size: number) {
+  const idle: MutantWorker[] = [];
+  let live = 0;
+  let closed = false;
+
+  const acquire = (): MutantWorker => {
+    const existing = idle.pop();
+    if (existing !== undefined) return existing;
+    live += 1;
+    return startMutantWorker(packageRoot, subject);
+  };
+
+  return {
+    close(): void {
+      closed = true;
+      for (const worker of idle.splice(0)) worker.kill();
+    },
+    async run(mutant: Readonly<Mutant>, targets: readonly string[]): Promise<MutantRun | null> {
+      if (closed) return null;
+      const worker = acquire();
+      const run = await worker.request({
+        end: mutant.end,
+        id: worker.nextId(),
+        replacement: mutant.replacement,
+        start: mutant.start,
+        targets,
+      });
+      // A worker that failed a request is not reused: whatever state took it down is still in it, and the
+      // next mutant's verdict would be about that rather than about the tests.
+      if (run === null) {
+        worker.kill();
+        live -= 1;
+        return null;
+      }
+      if (closed) worker.kill();
+      else idle.push(worker);
+      return run;
+    },
+    get size(): number {
+      return Math.max(1, size);
+    },
+  };
+}
+
+interface MutantWorker {
+  kill(): void;
+  nextId(): number;
+  request(payload: MutantRequest): Promise<MutantRun | null>;
+}
+
+function startMutantWorker(packageRoot: string, subject: string): MutantWorker {
+  const child = spawn(process.execPath, [tsxBinary, mutantWorkerPath, packageRoot, subject], {
+    cwd: packageRoot,
+    env: { ...process.env },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+
+  let buffered = '';
+  let counter = 0;
+  let dead = false;
+  let pending: ((response: MutantResponse | null) => void) | null = null;
+
+  const settle = (response: MutantResponse | null): void => {
+    const waiting = pending;
+    pending = null;
+    waiting?.(response);
+  };
+
+  child.stdout.on('data', (chunk: Buffer) => {
+    buffered += chunk.toString();
+    let newline = buffered.indexOf('\n');
+    while (newline >= 0) {
+      const line = buffered.slice(0, newline);
+      buffered = buffered.slice(newline + 1);
+      const marker = line.indexOf(WORKER_PROTOCOL_PREFIX);
+      if (marker >= 0) settle(JSON.parse(line.slice(marker + WORKER_PROTOCOL_PREFIX.length)) as MutantResponse);
+      newline = buffered.indexOf('\n');
+    }
+  });
+  // Drained and discarded. Vitest reports errors here, and a full stderr pipe would deadlock the worker.
+  child.stderr.on('data', () => {});
+  child.on('close', () => {
+    dead = true;
+    settle(null);
+  });
+  child.on('error', () => {
+    dead = true;
+    settle(null);
+  });
+
+  return {
+    kill(): void {
+      dead = true;
+      child.kill('SIGKILL');
+    },
+    nextId(): number {
+      counter += 1;
+      return counter;
+    },
+    request(payload: MutantRequest): Promise<MutantRun | null> {
+      if (dead) return Promise.resolve(null);
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => settle(null), MUTANT_TIMEOUT_MS);
+        pending = (response) => {
+          clearTimeout(timer);
+          if (response === null || response.id !== payload.id) resolve(null);
+          else resolve({ applied: response.applied, output: '', passed: response.passed, timedOut: false });
+        };
+        child.stdin.write(`${JSON.stringify(payload)}\n`);
+      });
+    },
+  };
 }
 
 async function mapConcurrent<T, R>(items: readonly T[], limit: number, run: (item: T) => Promise<R>): Promise<R[]> {
