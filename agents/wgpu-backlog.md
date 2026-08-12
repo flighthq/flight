@@ -145,6 +145,31 @@ exist there by construction. This is WGPU-only and structural, not a parity gap.
   `refreshWgpuRenderCache` still uses the generic call. Canvas shares the older call too; the isolated
   WGPU gap is the one this sweep establishes. **Escape:** WGPU cache tests use only unrotated roots.
 
+### Skinned meshes render undeformed under four built-ins
+
+- **Debug, Matcap and Wireframe ensure-callbacks ignore `skinned`**, their modules embed the rigid
+  `WGPU_MESH_PRELUDE_WGSL`, and the resulting pipelines keep `skinned=false` against GPU-only bind-pose
+  vertices. The GL mirror of this is a confirmed defect being fixed on its own slice (Depth, Normal,
+  Matcap, Wireframe all ignoring `activeSkinnedRun`).
+  **What makes it a defect rather than a design choice is the denominator:** Unlit, the Lambert / Phong /
+  Blinn / Emissive classic family, Toon, Shaded, Standard and SpecGloss PBR, Custom, and shadow **all**
+  correctly select skin variants. Nine-plus agreeing siblings against four dissenters.
+  *Diagnosis only — no WGPU code was written; builder3 confirmed the stop explicitly.*
+
+### Broken under orthographic projection
+
+- **`DepthMaterial` promises linearized view-space depth and silently produces a constant.** Both the GL
+  and WGPU preludes compute depth as `1/fragment-position.w`, camera-agnostic. Under perspective that is
+  the standard trick, since `w` carries view-space −z. **Under orthographic, clip `w` is a constant 1 for
+  every vertex, so every surface maps to depth 1** regardless of actual view-space z — a GL probe rendered
+  uniformly black at near=3/far=7 with an eye distance of ~5, where a visible gradient was expected.
+  ★ **The fix path already exists in-repo as a lead:** `getCamera3DLinearDepth` (CPU side) already has a
+  distinct orthographic affine path separate from the perspective `1/w` path. **The GL and WGPU preludes
+  never branch on projection kind at all.**
+  This is the **second** orthographic-assumption defect found today — the first was transparency sorting
+  by clip-space `w`, also constant under orthographic, fixed on GL. Same root shape: *code that treats `w`
+  as carrying depth information, which is true only under perspective.*
+
 ### Registrar seams missing while the capability exists
 
 - **`ExtendedPbrMaterial` has no WGPU registrar or renderer.** GL exports
