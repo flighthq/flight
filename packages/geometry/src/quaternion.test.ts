@@ -221,6 +221,21 @@ describe('getQuaternionEuler', () => {
       expect(Math.abs(getQuaternionDot(q, back))).toBeCloseTo(1, 6);
     },
   );
+  // A Quaternion structurally satisfies Vector3Like, so a caller can pass one object as both the
+  // euler output and the rotation source. All four components must be read before the first write.
+  it('writes the same values whether out aliases source or not', () => {
+    const source = createQuaternion();
+    setQuaternionFromEuler(source, 0.3, 0.4, 0.5);
+    const distinct = createVector3();
+    const aliased = cloneQuaternion(source);
+
+    getQuaternionEuler(distinct, source);
+    getQuaternionEuler(aliased, aliased);
+
+    expect(aliased.x).toBeCloseTo(distinct.x, 12);
+    expect(aliased.y).toBeCloseTo(distinct.y, 12);
+    expect(aliased.z).toBeCloseTo(distinct.z, 12);
+  });
 });
 
 describe('inverseQuaternion', () => {
@@ -458,6 +473,19 @@ describe('setQuaternionFromMatrix4', () => {
       expect(roundTripped.m[i]).toBeCloseTo(m.m[i], 6);
     }
   });
+  it('writes the same values whether out is fresh or already holds a rotation', () => {
+    const m = createMatrix4();
+    const q = createQuaternion();
+    setQuaternionFromAxisAngle(q, createVector3(0, 1, 0), Math.PI / 3);
+    setMatrix4FromQuaternion(m, q);
+
+    const fresh = createQuaternion();
+    const reused = createQuaternion(9, 9, 9, 9);
+    setQuaternionFromMatrix4(fresh, m);
+    setQuaternionFromMatrix4(reused, m);
+
+    expectQuaternionClose(reused, fresh.x, fresh.y, fresh.z, fresh.w);
+  });
 });
 
 describe('setQuaternionFromUnitVectors', () => {
@@ -500,6 +528,20 @@ describe('setQuaternionFromUnitVectors', () => {
     expect(out.x).toBeCloseTo(0, 5);
     expect(out.y).toBeCloseTo(-1, 5);
     expect(out.z).toBeCloseTo(0, 5);
+  });
+  it('writes the same values whether out aliases an input or not', () => {
+    const from = createVector3(1, 0, 0);
+    const to = createVector3(0, 1, 0);
+    const distinct = createQuaternion();
+    setQuaternionFromUnitVectors(distinct, from, to);
+
+    const aliasedFrom = createQuaternion(from.x, from.y, from.z, 0);
+    setQuaternionFromUnitVectors(aliasedFrom, aliasedFrom, to);
+    expectQuaternionClose(aliasedFrom, distinct.x, distinct.y, distinct.z, distinct.w);
+
+    const aliasedTo = createQuaternion(to.x, to.y, to.z, 0);
+    setQuaternionFromUnitVectors(aliasedTo, from, aliasedTo);
+    expectQuaternionClose(aliasedTo, distinct.x, distinct.y, distinct.z, distinct.w);
   });
 });
 
@@ -557,6 +599,17 @@ describe('setQuaternionLookRotation', () => {
     expect(rotated.x).toBeCloseTo(forward.x, 6);
     expect(rotated.y).toBeCloseTo(forward.y, 6);
     expect(rotated.z).toBeCloseTo(forward.z, 6);
+  });
+  it('writes the same values whether out aliases an input or not', () => {
+    const forward = createVector3(0, 0, -1);
+    const up = createVector3(0, 1, 0);
+    const distinct = createQuaternion();
+    setQuaternionLookRotation(distinct, forward, up);
+
+    const aliased = createQuaternion(forward.x, forward.y, forward.z, 0);
+    setQuaternionLookRotation(aliased, aliased, up);
+
+    expectQuaternionClose(aliased, distinct.x, distinct.y, distinct.z, distinct.w);
   });
 });
 
