@@ -27,12 +27,18 @@ export function containsAabbPoint(aabb: Readonly<AabbLike>, point: Readonly<Vect
  * Safe when `out` aliases `source`.
  */
 export function copyAabb(out: AabbLike, source: Readonly<AabbLike>): void {
-  out.min.x = source.min.x;
-  out.min.y = source.min.y;
-  out.min.z = source.min.z;
-  out.max.x = source.max.x;
-  out.max.y = source.max.y;
-  out.max.z = source.max.z;
+  const minX = source.min.x,
+    minY = source.min.y,
+    minZ = source.min.z;
+  const maxX = source.max.x,
+    maxY = source.max.y,
+    maxZ = source.max.z;
+  out.min.x = minX;
+  out.min.y = minY;
+  out.min.z = minZ;
+  out.max.x = maxX;
+  out.max.y = maxY;
+  out.max.z = maxZ;
 }
 
 /**
@@ -68,15 +74,21 @@ export function createAabb(
  * Safe when `out` aliases `aabb`.
  */
 export function expandAabbByPoint(out: AabbLike, aabb: Readonly<AabbLike>, point: Readonly<Vector3Like>): void {
+  const minX = aabb.min.x,
+    minY = aabb.min.y,
+    minZ = aabb.min.z;
+  const maxX = aabb.max.x,
+    maxY = aabb.max.y,
+    maxZ = aabb.max.z;
   const px = point.x,
     py = point.y,
     pz = point.z;
-  out.min.x = Math.min(aabb.min.x, px);
-  out.min.y = Math.min(aabb.min.y, py);
-  out.min.z = Math.min(aabb.min.z, pz);
-  out.max.x = Math.max(aabb.max.x, px);
-  out.max.y = Math.max(aabb.max.y, py);
-  out.max.z = Math.max(aabb.max.z, pz);
+  out.min.x = Math.min(minX, px);
+  out.min.y = Math.min(minY, py);
+  out.min.z = Math.min(minZ, pz);
+  out.max.x = Math.max(maxX, px);
+  out.max.y = Math.max(maxY, py);
+  out.max.z = Math.max(maxZ, pz);
 }
 
 /**
@@ -90,53 +102,68 @@ export function expandAabbBySphere(
   aabb: Readonly<AabbLike>,
   sphere: Readonly<BoundingSphereLike>,
 ): void {
-  if (sphere.radius < 0) {
-    // empty sphere — no expansion
-    out.min.x = aabb.min.x;
-    out.min.y = aabb.min.y;
-    out.min.z = aabb.min.z;
-    out.max.x = aabb.max.x;
-    out.max.y = aabb.max.y;
-    out.max.z = aabb.max.z;
-    return;
-  }
+  const minX = aabb.min.x,
+    minY = aabb.min.y,
+    minZ = aabb.min.z;
+  const maxX = aabb.max.x,
+    maxY = aabb.max.y,
+    maxZ = aabb.max.z;
   const cx = sphere.center.x,
     cy = sphere.center.y,
     cz = sphere.center.z,
-    r = sphere.radius;
-  out.min.x = Math.min(aabb.min.x, cx - r);
-  out.min.y = Math.min(aabb.min.y, cy - r);
-  out.min.z = Math.min(aabb.min.z, cz - r);
-  out.max.x = Math.max(aabb.max.x, cx + r);
-  out.max.y = Math.max(aabb.max.y, cy + r);
-  out.max.z = Math.max(aabb.max.z, cz + r);
+    radius = sphere.radius;
+  if (radius < 0) {
+    // empty sphere — no expansion
+    out.min.x = minX;
+    out.min.y = minY;
+    out.min.z = minZ;
+    out.max.x = maxX;
+    out.max.y = maxY;
+    out.max.z = maxZ;
+    return;
+  }
+  out.min.x = Math.min(minX, cx - radius);
+  out.min.y = Math.min(minY, cy - radius);
+  out.min.z = Math.min(minZ, cz - radius);
+  out.max.x = Math.max(maxX, cx + radius);
+  out.max.y = Math.max(maxY, cy + radius);
+  out.max.z = Math.max(maxZ, cz + radius);
 }
 
 /**
  * Writes the center point of an axis-aligned bounding box (the midpoint of its corners).
  */
 export function getAabbCenter(out: Vector3Like, aabb: Readonly<AabbLike>): void {
-  out.x = (aabb.min.x + aabb.max.x) * 0.5;
-  out.y = (aabb.min.y + aabb.max.y) * 0.5;
-  out.z = (aabb.min.z + aabb.max.z) * 0.5;
+  const x = (aabb.min.x + aabb.max.x) * 0.5,
+    y = (aabb.min.y + aabb.max.y) * 0.5,
+    z = (aabb.min.z + aabb.max.z) * 0.5;
+  out.x = x;
+  out.y = y;
+  out.z = z;
 }
 
 /**
  * Writes the half-extents (half the size along each axis) of an axis-aligned bounding box.
  */
 export function getAabbExtents(out: Vector3Like, aabb: Readonly<AabbLike>): void {
-  out.x = (aabb.max.x - aabb.min.x) * 0.5;
-  out.y = (aabb.max.y - aabb.min.y) * 0.5;
-  out.z = (aabb.max.z - aabb.min.z) * 0.5;
+  const x = (aabb.max.x - aabb.min.x) * 0.5,
+    y = (aabb.max.y - aabb.min.y) * 0.5,
+    z = (aabb.max.z - aabb.min.z) * 0.5;
+  out.x = x;
+  out.y = y;
+  out.z = z;
 }
 
 /**
  * Writes the full size (extent along each axis) of an axis-aligned bounding box.
  */
 export function getAabbSize(out: Vector3Like, aabb: Readonly<AabbLike>): void {
-  out.x = aabb.max.x - aabb.min.x;
-  out.y = aabb.max.y - aabb.min.y;
-  out.z = aabb.max.z - aabb.min.z;
+  const x = aabb.max.x - aabb.min.x,
+    y = aabb.max.y - aabb.min.y,
+    z = aabb.max.z - aabb.min.z;
+  out.x = x;
+  out.y = y;
+  out.z = z;
 }
 
 /**
@@ -151,9 +178,15 @@ export function getClosestPointOnAabb(out: Vector3Like, aabb: Readonly<AabbLike>
   const px = point.x,
     py = point.y,
     pz = point.z;
-  out.x = Math.min(Math.max(px, aabb.min.x), aabb.max.x);
-  out.y = Math.min(Math.max(py, aabb.min.y), aabb.max.y);
-  out.z = Math.min(Math.max(pz, aabb.min.z), aabb.max.z);
+  const minX = aabb.min.x,
+    minY = aabb.min.y,
+    minZ = aabb.min.z;
+  const maxX = aabb.max.x,
+    maxY = aabb.max.y,
+    maxZ = aabb.max.z;
+  out.x = Math.min(Math.max(px, minX), maxX);
+  out.y = Math.min(Math.max(py, minY), maxY);
+  out.z = Math.min(Math.max(pz, minZ), maxZ);
 }
 
 /**

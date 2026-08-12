@@ -225,6 +225,14 @@ describe('intersectAabb', () => {
     expect(a.min.x).toBe(2);
     expect(a.max.x).toBe(4);
   });
+
+  it('supports out === b', () => {
+    const a = createAabb(0, 0, 0, 4, 4, 4);
+    const b = createAabb(2, 2, 2, 6, 6, 6);
+    intersectAabb(b, a, b);
+    expect(b.min).toMatchObject({ x: 2, y: 2, z: 2 });
+    expect(b.max).toMatchObject({ x: 4, y: 4, z: 4 });
+  });
 });
 
 describe('isAabbIntersectingAabb', () => {
