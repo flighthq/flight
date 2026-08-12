@@ -93,6 +93,54 @@ re-introduced by the next person.
   Holding finished work costs more than landing it — it rots against every rebase and conflicts with the
   next person in that file — so the merge call, not the work, is what remains.
 
+### Resource lifetime — recorded 2026-08-12, structural
+
+The retire-until-submit contract exists and is documented in `wgpuBackground`; these paths do not honour
+it. **GL twins are not evidence against any of these**: GL executes immediately, so the problem cannot
+exist there by construction. This is WGPU-only and structural, not a parity gap.
+
+- **Video texture destroyed immediately on resolution change** — `bindWgpuVideoTexture`
+  (`wgpuDraw.ts:240`) destroys the outgoing texture at once, against `retireWgpuTexture`'s explicit
+  contract that anything replaced during recording is retired until post-submit. If the old entry was
+  bound earlier in the same frame, its recorded bind group references a destroyed texture and **can fail
+  the whole submit**. *The same file retires ordinary `TextureSource` version replacements correctly* —
+  an inconsistency within one file, not a missing capability.
+  **Escape: mode A.** The existing test spies on `destroy` and asserts it happens *immediately* — it pins
+  the defect as correct and will fight whoever fixes it.
+- **Three draw-time replacement paths bypass retirement** — `ensureWgpuMeshUpload` destroys old
+  vertex/index buffers on a version miss; `ensureWgpuWireframeUpload` destroys the old line-index buffer;
+  `resizeWgpuRenderTarget` destroys colour/depth textures even though the target may already have been
+  sampled or rendered earlier in the **same command encoder**. A mutation between two draws, or a
+  render-texture resize after an earlier sample, invalidates recorded commands before submit.
+  **Escape: mode E** — tests assert new data and version land, never that old resources survive to submit.
+
+### Correctness gaps against the GL sibling
+
+- **Pipelines always assume triangle-list topology.** Material pipelines are created before geometry is
+  known and `createWgpuMeshPipeline` defaults topology unconditionally. Indexed **non**-triangle-list
+  geometry (strip/line/point) has no documented precondition against it — `ensureWgpuMeshUpload` accepts
+  it — and is then uploaded and `drawIndexed` under the wrong primitive topology. GL is fine:
+  `getGlPrimitiveMode` supports all five `PrimitiveTopology` values per geometry.
+  *Distinct from the already-fixed non-indexed case*, which had an explicit documented null-sentinel
+  precondition and was correctly retired as already-handled.
+- **Mip-chain realization is draw-order dependent** in both texture caches. `bindWgpuTexture` returns a
+  `runtime.textureCache` hit without considering a later `generateMips=true`; `bindWgpuTextureSourceTexture`
+  returns a same-version hit before considering it. Entry types store no mip-capability metadata, so there
+  is no upgrade path once cached — a source first sampled by a no-mip 2D path stays at `mipLevelCount=1`
+  even when later used by a mipmapped material. **The GL sibling generates the chain on the first later
+  mip-sampling bind, so this is a real divergence, not a WGPU-only gap.**
+  **Escape: mode E** — first-call-false and first-call-true are each covered; their composition is not.
+
+### Observability, not correctness
+
+- **No diagnostic trail on effect failure.** `glRenderTextureEffect` reports six distinct failure
+  conditions (source-unavailable, stale-destination, unregistered, partial-registration, unresolved,
+  partial-resolution) through an exported explanation function plus a guard. `wgpuRenderTextureEffect`
+  silently returns `false` for a missing source or zero registered operations and silently drops
+  unregistered stages, with no WGPU explanation type, guard, or resolution probe anywhere. Behavioural
+  application otherwise matches. **WGPU fails the same way GL does and says nothing while doing it** —
+  which is the diagnostics-inversion rule unimplemented on one backend.
+
 ### Unexplained, recorded not chased
 
 - **`particle-emitter-3d/webgpu` baseline moves with no attributable cause** (2026-08-12). Surfaced when
