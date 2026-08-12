@@ -1143,8 +1143,9 @@ describe('createScene3DFromGltf', () => {
     }
   });
 
-  // No normal map means nothing samples tangent space, so a tangent would be derived data nobody reads.
-  it('leaves the tangent slot alone when no normal map is bound', () => {
+  // Nothing reads tangent space here — no normal map, no material extensions — so a tangent would be
+  // derived data with no reader.
+  it('leaves the tangent slot alone when nothing reads tangent space', () => {
     const scene = createScene3DFromGltf(makeUvTriangleGltf());
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
@@ -1152,6 +1153,28 @@ describe('createScene3DFromGltf', () => {
     expect(geometry.vertices[7]).toBe(0);
     expect(geometry.vertices[8]).toBe(0);
     expect(geometry.vertices[9]).toBe(0);
+  });
+
+  // A material extension reads tangent space too: glPbrPrelude builds its basis under
+  // HAS_NORMAL_MAP *or* HAS_PBR_EXTENSIONS, and the anisotropy path derives its own tangent from that
+  // same varying. Gating generation on the normal texture alone left an anisotropy material with no
+  // normal map evaluating normalize(zero) — undefined, the exact collapse this repairs.
+  it('calculates a tangent basis for a material extension with no normal map', () => {
+    const doc = makeUvTriangleGltf();
+    doc.materials = [{ extensions: { KHR_materials_anisotropy: { anisotropyStrength: 0.5 } } }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const scene = createScene3DFromGltf(doc);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex + 6;
+      expect(geometry.vertices[base]).toBeCloseTo(1, 5);
+      expect(geometry.vertices[base + 1]).toBeCloseTo(0, 5);
+      expect(geometry.vertices[base + 2]).toBeCloseTo(0, 5);
+      expect(Math.abs(geometry.vertices[base + 3])).toBeCloseTo(1, 5);
+    }
   });
 
   // A morph target's deltas are addressed by the ORIGINAL vertex indices, so un-welding a morphed
