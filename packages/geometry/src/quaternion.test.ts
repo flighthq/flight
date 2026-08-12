@@ -13,6 +13,7 @@ import {
   matrix4TransformPoint,
   multiplyQuaternion,
   normalizeQuaternion,
+  normalizeVector3,
   rotateVector3ByQuaternion,
   setMatrix4FromQuaternion,
   setQuaternion,
@@ -652,6 +653,26 @@ describe('slerpQuaternion', () => {
     expectQuaternionClose(out, a.x, a.y, a.z, a.w);
     slerpQuaternion(out, a, b, 1);
     expectQuaternionClose(out, b.x, b.y, b.z, b.w);
+  });
+
+  it('halfway interpolates about a tilted axis, exercising every component', () => {
+    // Every other slerp case rotates about (0,1,0), which leaves x and z zero in BOTH inputs — so the
+    // x and z arms of the shortest-path negation and of the final blend cannot be observed at all, and
+    // a sign error in either would pass. A tilted, normalized axis gives all four components distinct
+    // non-zero magnitudes. The oracle is independent of slerp: halfway between identity and R(axis, θ)
+    // is R(axis, θ/2) by definition of the axis-angle form.
+    const axis = createVector3(1, 2, 3);
+    normalizeVector3(axis, axis);
+    const a = createQuaternion();
+    const b = createQuaternion();
+    setQuaternionFromAxisAngle(b, axis, Math.PI / 2);
+
+    const out = createQuaternion();
+    slerpQuaternion(out, a, b, 0.5);
+
+    const expected = createQuaternion();
+    setQuaternionFromAxisAngle(expected, axis, Math.PI / 4);
+    expectQuaternionClose(out, expected.x, expected.y, expected.z, expected.w);
   });
 
   it('halfway interpolates the angle', () => {
