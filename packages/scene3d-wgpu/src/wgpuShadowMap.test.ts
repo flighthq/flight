@@ -214,6 +214,36 @@ describe('drawWgpuScene3DShadowMap', () => {
     expect(fake.calls.filter((call) => call.name === 'beginRenderPass')).toHaveLength(passCount);
   });
 
+  // The sibling of the forward-pass defect: the shadow pass also bound an index buffer and issued
+  // drawIndexed unconditionally, so a non-indexed caster rendered (once the forward path was fixed)
+  // but cast no shadow. glShadowMap has always branched to drawArrays for this case.
+  it('issues a non-indexed draw for a caster without indices', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const scene = createNode3D(Node3DKind);
+    addNodeChild(
+      scene,
+      createMesh(
+        createMeshGeometry({
+          indices: null,
+          layout: {
+            attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+            stride: 12,
+          },
+          vertices: new Float32Array(9),
+        }),
+        [],
+      ),
+    );
+
+    drawWgpuScene3DShadowMap(state, scene, makeShadowCamera(), SHADOW_LIGHT);
+
+    const draw = fake.calls.find((c) => c.name === 'draw');
+    expect(draw).toBeDefined();
+    expect(draw!.args[0]).toBe(3);
+    expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
+    expect(fake.calls.some((c) => c.name === 'setIndexBuffer')).toBe(false);
+  });
+
   it('opens a depth-only pass and renders each caster mesh depth', () => {
     const { fake, state } = makeWgpuScene3DState();
     drawWgpuScene3DShadowMap(state, makeShadowScene3D(), makeShadowCamera(), SHADOW_LIGHT);

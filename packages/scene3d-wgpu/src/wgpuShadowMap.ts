@@ -134,7 +134,6 @@ export function drawWgpuScene3DShadowMap(
     const skinned = skinning?.isGpuSkinned(mesh) ?? false;
     const pipeline = skinned ? ensureWgpuShadowDepthPipeline(state, true) : rigidPipeline;
     const upload = ensureWgpuMeshUpload(state, mesh.geometry, skinned);
-    if (upload === null || upload.indexBuffer === null) return;
     if (pipeline !== boundPipeline) {
       pass.setPipeline(pipeline);
       boundPipeline = pipeline;
@@ -156,8 +155,14 @@ export function drawWgpuScene3DShadowMap(
 
     pass.setBindGroup(0, drawBindGroup, _dynamicOffsets);
     pass.setVertexBuffer(0, upload.vertexBuffer);
-    pass.setIndexBuffer(upload.indexBuffer, upload.indexFormat);
-    pass.drawIndexed(upload.indexCount, 1, 0, 0, 0);
+    // Same indexed/non-indexed split as the forward pass and as glShadowMap: a non-indexed caster
+    // still has to cast, or it renders but drops its shadow.
+    if (upload.indexBuffer === null) {
+      pass.draw(upload.indexCount, 1, 0, 0);
+    } else {
+      pass.setIndexBuffer(upload.indexBuffer, upload.indexFormat!);
+      pass.drawIndexed(upload.indexCount, 1, 0, 0, 0);
+    }
   });
 
   pass.end();

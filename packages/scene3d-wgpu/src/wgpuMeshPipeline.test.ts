@@ -1,7 +1,7 @@
 import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {
@@ -275,6 +275,39 @@ describe('drawWgpuMeshSubset', () => {
     const draw = fake.calls.find((c) => c.name === 'drawIndexed');
     expect(draw).toBeDefined();
     expect(draw!.args[0]).toBe(proxy.subset.indexCount);
+  });
+
+  // The defect this covers: non-indexed geometry issued NO draw call at all, so a valid imported mesh
+  // rendered nothing and reported nothing. A backend that silently drops geometry is worse than one
+  // that draws it wrong, because nothing announces the loss.
+  it('issues a non-indexed draw for geometry without indices', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    ensureWgpuFrameBindGroup(state);
+    beginWgpuMeshDraw(state, makePipeline(state));
+    const geometry = createMeshGeometry({
+      indices: null,
+      layout: {
+        attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+        stride: 12,
+      },
+      vertices: new Float32Array(9),
+    });
+    const proxy: Scene3DRenderProxy = {
+      material: createStandardPbrMaterial(),
+      normalMatrix: createMatrix3(),
+      subset: geometry.subsets[0],
+      worldMatrix: createMatrix4(),
+    };
+
+    drawWgpuMeshSubset(state, proxy, geometry);
+
+    const draw = fake.calls.find((c) => c.name === 'draw');
+    expect(draw).toBeDefined();
+    expect(draw!.args[0]).toBe(proxy.subset.indexCount);
+    expect(draw!.args[2]).toBe(proxy.subset.indexOffset);
+    // It must not try to bind an index buffer it does not have.
+    expect(fake.calls.some((c) => c.name === 'setIndexBuffer')).toBe(false);
+    expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(false);
   });
 
   it('is a no-op when no pipeline is active', () => {
