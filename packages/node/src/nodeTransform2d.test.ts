@@ -166,6 +166,28 @@ describe('ensureNodeLocalMatrix', () => {
     ensureNodeLocalMatrix(node);
     expect(equalsMatrix(runtime.localMatrix, cache)).toBe(true);
   });
+
+  it('normalizes rotations above 180 degrees', () => {
+    const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
+    node.rotation = 270;
+    invalidateNodeLocalTransform(node);
+
+    ensureNodeLocalMatrix(node);
+
+    expect(runtime.rotationAngle).toBe(-90);
+    expect(runtime.localMatrix?.b).toBeCloseTo(-1);
+  });
+
+  it('normalizes rotations below -180 degrees', () => {
+    const runtime = getEntityRuntime(node) as HasTransform2DRuntime;
+    node.rotation = -270;
+    invalidateNodeLocalTransform(node);
+
+    ensureNodeLocalMatrix(node);
+
+    expect(runtime.rotationAngle).toBe(90);
+    expect(runtime.localMatrix?.b).toBeCloseTo(1);
+  });
 });
 
 describe('ensureNodeWorldMatrix', () => {
