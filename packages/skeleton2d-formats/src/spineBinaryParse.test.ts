@@ -8,6 +8,76 @@ import { describe, expect, it } from 'vitest';
 import { parseSpineSkeletonBinary } from './spineBinaryParse';
 
 describe('parseSpineSkeletonBinary', () => {
+  // EVERY PREFIX OF A VALID FILE, not a handful of chosen cut points. Truncation is the one malformation
+  // a corpus can never supply — no exporter emits a half-written file — and it is the one the parser has
+  // the most machinery for: `isSpineBinaryReaderOverrun` is a sticky mark, and 38 of this file's loops are
+  // written `for (i = 0; i < n && !isSpineBinaryReaderOverrun(reader); i++)` specifically to bail out on it.
+  // None of that containment had a test.
+  //
+  // The property is CONTAINMENT, not correctness: a prefix has no right answer, so there is nothing to
+  // assert about what comes back except that it came back. What this catches, verified by removing the
+  // guard from `readSpineBinaryFloat` and watching it go red, is a read that stops guarding the buffer end
+  // — a DataView RangeError thrown from deep inside a record on somebody's truncated download.
+  //
+  // What it does NOT catch, also verified: the per-loop overrun checks. Truncation is contained by the
+  // READER alone, since every read past the end returns a neutral value, so those loops finish quickly
+  // whether or not they test for overrun. Deleting one leaves this test green. The input that discriminates
+  // them is an inflated count, which is the test above — the two malformations look alike and are not.
+  // THE OTHER MALFORMATION, and the one the loop guards actually exist for. Truncation is contained by the
+  // READER alone — once overrun, every read returns a neutral value — so the per-loop overrun checks are
+  // invisible to it. What they contain is an INFLATED COUNT: a declared count is a varint the file supplies,
+  // and a corrupt or hostile one declares two billion bones in thirty bytes. The reader keeps returning
+  // neutral values forever while the loop keeps allocating a bone per iteration.
+  //
+  // MEASURED, so the margin is not a guess: with the guard this parse returns in ~1ms; with the guard
+  // removed the same thirty bytes did not finish in 60 SECONDS. The assertion below is on the bone count
+  // rather than on elapsed time, because a count is deterministic where a clock is not — but note that a
+  // regression here shows up as this file timing out rather than as this assertion failing, since the
+  // unguarded parse never reaches a return.
+  it('contains a count the file inflates, rather than allocating what it declares', () => {
+    const out: number[] = [];
+    for (let i = 0; i < 8; i++) out.push(0); // export hash
+    writeString(out, '4.1.17');
+    for (let i = 0; i < 4; i++) writeFloat(out, 0); // authoring bounds
+    out.push(0); // nonessential
+    writeVarint(out, 0); // string table, empty
+    writeVarint(out, 0x7fffffff); // BONE COUNT — two billion, in a file with no bones after it
+
+    const result = parseSpineSkeletonBinary(Uint8Array.from(out));
+
+    // It must stop when the bytes run out, not when the count says to.
+    expect(result).not.toBeNull();
+    expect(result!.skeleton.bones.length).toBeLessThan(4);
+  });
+
+  it('survives every truncation of a valid file, returning rather than throwing or spinning', () => {
+    const complete = buildSpineBinary({
+      animations: true,
+      bezier: true,
+      ikConstraints: 2,
+      nonessential: true,
+      weightedMesh: true,
+    });
+
+    for (let length = 0; length <= complete.length; length++) {
+      const truncated = complete.subarray(0, length);
+      let result: ReturnType<typeof parseSpineSkeletonBinary> | undefined;
+      expect(() => {
+        result = parseSpineSkeletonBinary(truncated);
+      }, `truncated to ${length} of ${complete.length} bytes`).not.toThrow();
+
+      // Whatever survives must still be internally coherent: a bone may not name a parent outside the
+      // array, which is the shape a half-read count corrupts first and which nothing downstream re-checks.
+      if (result != null) {
+        const bones = result.skeleton.bones;
+        for (const bone of bones) {
+          expect(bone.parentIndex, `parentIndex at ${length} bytes`).toBeLessThan(bones.length);
+          expect(bone.parentIndex, `parentIndex at ${length} bytes`).toBeGreaterThanOrEqual(-1);
+        }
+      }
+    }
+  });
+
   it('parses the header, bones, and slots of a 4.x file', () => {
     const result = parseSpineSkeletonBinary(buildSpineBinary())!;
     expect(result).not.toBeNull();
