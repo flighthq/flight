@@ -14,43 +14,78 @@ export function copyMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>): vo
 }
 
 export function copyMatrix3ColumnFromVector3(out: Matrix3Like, column: number, source: Readonly<Vector3Like>): void {
-  if (column > 2) {
-    throw new RangeError('Column ' + column + ' out of bounds (2)');
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  switch (column) {
+    case 0:
+    case 1:
+    case 2: {
+      // Column-major: a column's three elements are contiguous at 3*column + row.
+      const base = column * 3;
+      out.m[base] = x;
+      out.m[base + 1] = y;
+      out.m[base + 2] = z;
+      return;
+    }
+    default:
+      throw new RangeError('Column ' + column + ' out of bounds (2)');
   }
-  // Column-major: a column's three elements are contiguous at 3*column + row.
-  const base = column * 3;
-  out.m[base] = source.x;
-  out.m[base + 1] = source.y;
-  out.m[base + 2] = source.z;
 }
 
 export function copyMatrix3ColumnToVector3(out: Vector3Like, column: number, source: Readonly<Matrix3Like>): void {
-  if (column > 2) {
-    throw new RangeError('Column ' + column + ' out of bounds (2)');
+  switch (column) {
+    case 0:
+    case 1:
+    case 2: {
+      const base = column * 3;
+      const x = source.m[base],
+        y = source.m[base + 1],
+        z = source.m[base + 2];
+      out.x = x;
+      out.y = y;
+      out.z = z;
+      return;
+    }
+    default:
+      throw new RangeError('Column ' + column + ' out of bounds (2)');
   }
-  const base = column * 3;
-  out.x = source.m[base];
-  out.y = source.m[base + 1];
-  out.z = source.m[base + 2];
 }
 
 export function copyMatrix3RowFromVector3(out: Matrix3Like, row: number, source: Readonly<Vector3Like>): void {
-  if (row > 2) {
-    throw new RangeError('Row ' + row + ' out of bounds (2)');
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  switch (row) {
+    case 0:
+    case 1:
+    case 2:
+      // Column-major: a row's three elements are strided by 3 at 3*column + row.
+      out.m[row] = x;
+      out.m[row + 3] = y;
+      out.m[row + 6] = z;
+      return;
+    default:
+      throw new RangeError('Row ' + row + ' out of bounds (2)');
   }
-  // Column-major: a row's three elements are strided by 3 at 3*column + row.
-  out.m[row] = source.x;
-  out.m[row + 3] = source.y;
-  out.m[row + 6] = source.z;
 }
 
 export function copyMatrix3RowToVector3(out: Vector3Like, row: number, source: Readonly<Matrix3Like>): void {
-  if (row > 2) {
-    throw new RangeError('Row ' + row + ' out of bounds (2)');
+  switch (row) {
+    case 0:
+    case 1:
+    case 2: {
+      const x = source.m[row],
+        y = source.m[row + 3],
+        z = source.m[row + 6];
+      out.x = x;
+      out.y = y;
+      out.z = z;
+      return;
+    }
+    default:
+      throw new RangeError('Row ' + row + ' out of bounds (2)');
   }
-  out.x = source.m[row];
-  out.y = source.m[row + 3];
-  out.z = source.m[row + 6];
 }
 
 /**
@@ -284,19 +319,28 @@ export function rotateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, t
 export function scaleMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, sx: number, sy: number): void {
   const a = source.m;
   const o = out.m;
+  const a0 = a[0],
+    a1 = a[1],
+    a2 = a[2],
+    a3 = a[3],
+    a4 = a[4],
+    a5 = a[5],
+    a6 = a[6],
+    a7 = a[7],
+    a8 = a[8];
 
   // Post-multiply by diag(sx, sy, 1): scale column 0 by sx, column 1 by sy, leave the translation column.
-  o[0] = a[0] * sx;
-  o[1] = a[1] * sx;
-  o[2] = a[2] * sx;
+  o[0] = a0 * sx;
+  o[1] = a1 * sx;
+  o[2] = a2 * sx;
 
-  o[3] = a[3] * sy;
-  o[4] = a[4] * sy;
-  o[5] = a[5] * sy;
+  o[3] = a3 * sy;
+  o[4] = a4 * sy;
+  o[5] = a5 * sy;
 
-  o[6] = a[6];
-  o[7] = a[7];
-  o[8] = a[8];
+  o[6] = a6;
+  o[7] = a7;
+  o[8] = a8;
 }
 
 export function setMatrix3(
@@ -392,20 +436,29 @@ export function setMatrix3NormalFromMatrix4(out: Matrix3Like, source: Readonly<M
 export function translateMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>, tx: number, ty: number): void {
   const a = source.m;
   const o = out.m;
+  const a0 = a[0],
+    a1 = a[1],
+    a2 = a[2],
+    a3 = a[3],
+    a4 = a[4],
+    a5 = a[5],
+    a6 = a[6],
+    a7 = a[7],
+    a8 = a[8];
 
   // Post-multiply by translate(tx, ty): columns 0 and 1 pass through; the translation column becomes
   // col0·tx + col1·ty + col2.
-  o[0] = a[0];
-  o[1] = a[1];
-  o[2] = a[2];
+  o[0] = a0;
+  o[1] = a1;
+  o[2] = a2;
 
-  o[3] = a[3];
-  o[4] = a[4];
-  o[5] = a[5];
+  o[3] = a3;
+  o[4] = a4;
+  o[5] = a5;
 
-  o[6] = a[0] * tx + a[3] * ty + a[6];
-  o[7] = a[1] * tx + a[4] * ty + a[7];
-  o[8] = a[2] * tx + a[5] * ty + a[8];
+  o[6] = a0 * tx + a3 * ty + a6;
+  o[7] = a1 * tx + a4 * ty + a7;
+  o[8] = a2 * tx + a5 * ty + a8;
 }
 
 /**
