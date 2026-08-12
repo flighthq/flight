@@ -44,7 +44,22 @@ export function createDomRenderState(element: HTMLElement, options: Partial<DomR
 // The render path writes the returned object every frame, so the return is intentionally mutable (not
 // Readonly).
 export function createDomRenderStateRuntime(): DomRenderStateRuntime {
-  return createRenderStateRuntime() as DomRenderStateRuntime;
+  const runtime = createRenderStateRuntime() as DomRenderStateRuntime;
+  runtime.registries = {
+    shapeRasterizer: {
+      entry: null,
+      onMiss: 'Unregistered',
+      registry: 'DomShapeRasterizer',
+      shape: 'slot',
+    },
+    textureResolvers: {
+      entries: new Map(),
+      onMiss: 'Unregistered',
+      registry: 'DomTextureResolver',
+      shape: 'keyed',
+    },
+  };
+  return runtime;
 }
 
 // Resolves the package-private DOM runtime attached to a DomRenderState. Mutable by design: the render

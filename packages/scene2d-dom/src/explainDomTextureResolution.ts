@@ -1,5 +1,6 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { DomRenderState, Texture, TextureResolutionExplanation } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getDomRenderStateRuntime } from './domRenderState';
 
@@ -12,7 +13,7 @@ export function explainDomTextureResolution(
   return {
     kind,
     status:
-      getDomRenderStateRuntime(state).domTextureResolverRegistry?.has(kind) === true
+      getDomRenderStateRuntime(state).registries.textureResolvers.entries.get(kind)?.state === RegistryEntryState.Bound
         ? 'registered'
         : 'missing-resolver',
   };

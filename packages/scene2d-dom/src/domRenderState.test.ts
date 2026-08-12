@@ -75,6 +75,18 @@ describe('createDomRenderStateRuntime', () => {
   it('allocates an entity runtime with a null binding', () => {
     const runtime = createDomRenderStateRuntime();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.shapeRasterizer).toMatchObject({
+      entry: null,
+      onMiss: 'Unregistered',
+      registry: 'DomShapeRasterizer',
+      shape: 'slot',
+    });
+    expect(runtime.registries.textureResolvers).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'DomTextureResolver',
+      shape: 'keyed',
+    });
+    expect(runtime.registries.textureResolvers.entries.size).toBe(0);
   });
 });
 
