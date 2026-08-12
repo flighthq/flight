@@ -42,11 +42,14 @@ import {
 //   3. A KILL proves a test noticed, not that the test is good. A snapshot asserting the whole output kills
 //      almost everything while explaining nothing.
 //
-// WHY EVERY MUTANT GETS ITS OWN PROCESS. It is the slow choice and the safe one. The mutated text is served
-// by a `load` hook and never written to disk (see `mutantVitestConfig.ts`), so an interrupt at any moment
-// leaves the tree exactly as it was — which matters in a repo where an agent may be committing concurrently.
-// The alternative, a persistent runner that rewrites files between runs, is several times faster and can
-// leave corrupted source behind on a hard kill. Wall-clock is bought back with parallelism instead.
+// WHY THE WORKING TREE IS NEVER EDITED. Mutated text is served by a `load` hook and never written to disk, so
+// an interrupt at any moment leaves the tree exactly as it was — which matters in a repo where an agent may be
+// committing concurrently. That property is what makes the fast path safe to take: mutants run through a pool
+// of warm vitest servers (`mutantWorker.ts`) that swap the spliced module between runs. The one optimization
+// that would be faster still — rewriting the file on disk between runs — is the one this tool will not do,
+// because a hard kill leaves corrupted source behind. A process per mutant survives as the fallback for a
+// worker that hangs or dies (`runMutant`, through `mutantVitestConfig.ts`), so a mutant that takes down a
+// shared server costs a slower second attempt, never a wrong verdict.
 
 /** What every mutant run for one package shares: the package, and the vitest pool its suite passes under. */
 interface Harness {
