@@ -210,15 +210,78 @@ describe('createPlaneMeshGeometry', () => {
 });
 
 describe('createPolyhedronMeshGeometry', () => {
-  it('accepts custom vertex/face data', () => {
-    const verts: ReadonlyArray<readonly [number, number, number]> = [
-      [0, 1, 0],
-      [-1, -1, 0],
-      [1, -1, 0],
-    ];
-    const faces: ReadonlyArray<readonly [number, number, number]> = [[0, 1, 2]];
-    const geometry = createPolyhedronMeshGeometry(verts, faces, 1, 0);
+  const TRIANGLE_VERTS: ReadonlyArray<readonly [number, number, number]> = [
+    [0, 1, 0],
+    [-1, -1, 0],
+    [1, -1, 0],
+  ];
+  const ONE_FACE: ReadonlyArray<readonly [number, number, number]> = [[0, 1, 2]];
+
+  // The name promises the custom data is USED. A vertex count alone cannot tell that from a builder
+  // that ignored both arguments and emitted any three vertices, so the seed positions are asserted
+  // through to the output — projected onto the radius sphere, which is what this builder does with them.
+  it('projects the supplied vertices onto the radius sphere', () => {
+    const geometry = createPolyhedronMeshGeometry(TRIANGLE_VERTS, ONE_FACE, 2, 0);
+
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
+    const floatsPerVertex = geometry.layout.stride / 4;
+    // The first seed is already unit length on +Y, so it lands on the sphere pole at the given radius.
+    expect(geometry.vertices[0]).toBeCloseTo(0, 6);
+    expect(geometry.vertices[1]).toBeCloseTo(2, 6);
+    expect(geometry.vertices[2]).toBeCloseTo(0, 6);
+    for (let v = 0; v < 3; v++) {
+      const base = v * floatsPerVertex;
+      expect(Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2])).toBeCloseTo(
+        2,
+        6,
+      );
+      // Normals are the unit direction, independent of radius.
+      expect(
+        Math.hypot(geometry.vertices[base + 3], geometry.vertices[base + 4], geometry.vertices[base + 5]),
+      ).toBeCloseTo(1, 6);
+    }
+  });
+
+  // Different seed data must produce different geometry — the assertion the count-only version could
+  // not make, and the one that fails if the arguments are ever ignored.
+  it('produces different geometry for different seed vertices', () => {
+    const a = createPolyhedronMeshGeometry(TRIANGLE_VERTS, ONE_FACE, 1, 0);
+    const b = createPolyhedronMeshGeometry(
+      [
+        [0, 0, 1],
+        [0, 1, 0],
+        [1, 0, 0],
+      ],
+      ONE_FACE,
+      1,
+      0,
+    );
+
+    expect(Array.from(a.vertices)).not.toEqual(Array.from(b.vertices));
+  });
+
+  // Each subdivision splits every face into four, so the triangle count multiplies by four per level.
+  it.each([
+    [0, 3],
+    [1, 12],
+    [2, 48],
+  ])('subdivides to %i levels giving %i vertices', (detail, expected) => {
+    expect(getMeshGeometryVertexCount(createPolyhedronMeshGeometry(TRIANGLE_VERTS, ONE_FACE, 1, detail))).toBe(
+      expected,
+    );
+  });
+
+  it('keeps every subdivided vertex on the sphere', () => {
+    const geometry = createPolyhedronMeshGeometry(TRIANGLE_VERTS, ONE_FACE, 3, 2);
+
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex;
+      expect(Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2])).toBeCloseTo(
+        3,
+        5,
+      );
+    }
   });
 });
 
