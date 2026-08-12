@@ -16,9 +16,6 @@
       "path": "../geometry"
     },
     {
-      "path": "../log"
-    },
-    {
       "path": "../types"
     }
   ],

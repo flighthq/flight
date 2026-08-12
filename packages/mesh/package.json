@@ -40,7 +40,6 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
-    "@flighthq/log": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

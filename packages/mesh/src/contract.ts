@@ -1,7 +1,4 @@
 export * from './meshGeometry';
-export * from './meshGeometryGuards';
-export * from './explainMeshGeometryUvWrap';
-export * from './enableMeshGeometryGuards';
 export * from './meshGeometryAttributes';
 export * from './meshGeometryBuilders';
 export * from './meshGeometryCompute';

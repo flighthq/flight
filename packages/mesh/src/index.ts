@@ -16,7 +16,6 @@ export {
   computeMeshGeometryTangents,
   computeMeshGeometryWireframeIndices,
   convertMeshGeometryLayout,
-  areMeshGeometryGuardsEnabled,
   createBoxMeshGeometry,
   createCapsuleMeshGeometry,
   createCircleMeshGeometry,
@@ -37,9 +36,6 @@ export {
   createTorusKnotMeshGeometry,
   createTorusMeshGeometry,
   destroyMeshGeometryGlData,
-  disableMeshGeometryGuards,
-  enableMeshGeometryGuards,
-  explainMeshGeometryUvWrap,
   destroyMeshGeometryWgpuData,
   expandMeshGeometryIndices,
   getMeshGeometryIndexCount,
@@ -85,5 +81,4 @@ export {
   updateMeshMorph,
   validateMeshGeometry,
   weldMeshGeometryVertices,
-  wrapMeshGeometryUvs,
 } from './contract';

@@ -1,7 +1,7 @@
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { createMeshGeometry } from './meshGeometry';
-import { offsetMeshGeometryUvs, scaleMeshGeometryUvs, wrapMeshGeometryUvs } from './meshGeometryUvs';
+import { offsetMeshGeometryUvs, scaleMeshGeometryUvs } from './meshGeometryUvs';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [
@@ -84,45 +84,6 @@ describe('scaleMeshGeometryUvs', () => {
     });
     const prev = geo.version;
     scaleMeshGeometryUvs(geo, 2, 2);
-    expect(geo.version).toBe(prev);
-  });
-});
-
-describe('wrapMeshGeometryUvs', () => {
-  it('wraps coordinates in [0, 1)', () => {
-    const geo = makeUvGeometry();
-    // Scale first so UVs go out of range.
-    scaleMeshGeometryUvs(geo, 3, 3);
-    wrapMeshGeometryUvs(geo);
-    // vertex 0: u = 0.25*3 = 0.75 → 0.75, v = 0.75*3 = 2.25 → 0.25
-    expect(geo.vertices[0 * 12 + 10]).toBeCloseTo(0.75);
-    expect(geo.vertices[0 * 12 + 11]).toBeCloseTo(0.25);
-    // vertex 1: u = 0.5*3 = 1.5 → 0.5, v = 0.5*3 = 1.5 → 0.5
-    expect(geo.vertices[1 * 12 + 10]).toBeCloseTo(0.5);
-    expect(geo.vertices[1 * 12 + 11]).toBeCloseTo(0.5);
-  });
-  it('maps exactly 1.0 to 0.0', () => {
-    const vertices = new Float32Array(12);
-    vertices[10] = 1.0;
-    vertices[11] = 1.0;
-    const geo = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: vertices });
-    wrapMeshGeometryUvs(geo);
-    expect(geo.vertices[10]).toBeCloseTo(0);
-    expect(geo.vertices[11]).toBeCloseTo(0);
-  });
-  it('bumps version', () => {
-    const geo = makeUvGeometry();
-    const prev = geo.version;
-    wrapMeshGeometryUvs(geo);
-    expect(geo.version).toBe(prev + 1);
-  });
-  it('does nothing when uv0 is absent from the layout', () => {
-    const geo = createMeshGeometry({
-      layout: NO_UV_LAYOUT,
-      vertices: new Float32Array([1, 2, 3]),
-    });
-    const prev = geo.version;
-    wrapMeshGeometryUvs(geo);
     expect(geo.version).toBe(prev);
   });
 });
