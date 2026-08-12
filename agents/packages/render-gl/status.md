@@ -102,6 +102,28 @@ A file:line here is a claim about this tree, not about a session.
   (3D re-establishes cull per draw, so this one self-heals), and `glBackground`/`glFullscreenPass`/
   `glCache` set clear colour and viewport with no read-back.
 
+- **(a) is the same defect as (b) seen from the other end, and stating it as a SHAPE is what showed
+  that.** Instance: the 2D draw path depends on `CULL_FACE` being disabled and never disables it.
+  Shape: A DRAW PATH THAT DEPENDS ON CONTEXT STATE IT NEVER ESTABLISHES, trusting a value some other
+  subsystem is free to change. Pointed at the 2D path, that shape names three states, not one —
+  `CULL_FACE` off, `DEPTH_TEST` off, `BLEND` on — and all three were taken on trust from
+  `createGlRenderState`, which runs ONCE per state. (b) had already proved every one of them gets
+  flipped one-way by another pass. Neither half is a bug alone; together they are, which is why looking
+  from one end only found leaks that seemed survivable.
+  CULLING IS THE DESTRUCTIVE ONE AND IT IS NOT A DEGRADATION. Flight's 2D quad is wound
+  `(x0,y0) (x1,y0) (x1,y1)` in a y-down space, and `setGlMatrixFromTransform` flips y, so in clip space
+  it is CLOCKWISE — a back face under the CCW default. Measured in real WebGL2 rather than argued from a
+  cross product: 2304 lit pixels with culling off, 0 with it on. So a frame that draws a single-sided 3D
+  mesh and then any 2D content loses the 2D content ENTIRELY.
+  Why nothing caught it: exactly one functional scene mixes the two (`render-pass-viewport.webgl.ts`)
+  and it draws 2D at line 104 before 3D at line 155 — the safe order. A scene in the other order would
+  have shown a blank half-frame on the first capture.
+  Fixed at `renderGlScene2D` by declaring the state the pass draws under, which fixes all three at once
+  and stays correct no matter what a future pass leaves behind — the per-call-site alternative reproduces
+  the failure at the next pass someone writes. `BLEND` is deliberately NOT forced there: who owns that
+  enable bit is an open design question in this file already (see `drawGlFullscreenPass`), and one sweep
+  should not quietly settle it.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
