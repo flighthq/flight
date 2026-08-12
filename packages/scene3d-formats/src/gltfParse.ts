@@ -13,8 +13,12 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
+  computeMeshGeometryFlatNormals,
+  computeMeshGeometryTangents,
   createMeshGeometry,
+  expandMeshGeometryIndices,
   getMeshGeometryVertexCount,
+  indexMeshGeometryVertices,
 } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument, createScene3DsFromDocument } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
@@ -1298,12 +1302,66 @@ function primitiveToGeometry(
   }
   const primitiveElements = buildGltfPrimitiveElements(primitive.mode ?? 4, sourceIndices, vertexCount, gltfDrops);
   if (primitiveElements === null) return null; // unsupported primitive mode → drop (no drawable topology)
-  return createMeshGeometry({
+  const geometry = createMeshGeometry({
     indices: primitiveElements.indices,
     layout: skinned ? CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT : CANONICAL_LAYOUT,
     topology: primitiveElements.topology,
     vertices,
   });
+
+  return completeGltfShadingAttributes(doc, primitive, geometry, normal !== null, tangent !== null, uv !== null);
+}
+
+// glTF requires a client to CALCULATE flat normals when a primitive omits NORMAL, and says it SHOULD
+// calculate tangents when a normal texture is bound without TANGENT. Emitting the zero-filled slots
+// instead leaves every lit material normalizing a zero vector — undefined shading, not a dim surface —
+// and collapses the TBN basis a normal map is sampled through. Every other importer in this package
+// already generates what its source omits (OBJ, AWD2, MD5, 3DS); glTF alone shipped the zeros.
+function completeGltfShadingAttributes(
+  doc: Readonly<GltfDocument>,
+  primitive: Readonly<GltfPrimitive>,
+  geometry: MeshGeometry,
+  hasNormals: boolean,
+  hasTangents: boolean,
+  hasUvs: boolean,
+): MeshGeometry {
+  // Only a surface has a normal. A point or line primitive has no facing to compute and no material
+  // that samples one, so fabricating a value there would be inventing data rather than deriving it.
+  const topology = geometry.topology;
+  if (topology !== 'triangle-list' && topology !== 'triangle-strip') return geometry;
+
+  let out = geometry;
+  if (!hasNormals) {
+    // Flat shading needs each face to own its corners, so shared vertices are un-welded first —
+    // otherwise the last triangle touching a vertex overwrites its neighbours' contributions and the
+    // result is neither flat nor smooth. Re-indexed straight after: the expansion is what makes the
+    // normals exact, but shipping the geometry non-indexed would change how every backend draws it,
+    // and a de-indexed mesh does not draw at all on a WebGPU build without the non-indexed draw fix.
+    // Sequential re-indexing keeps the drawn shape identical to what the expansion produced.
+    //
+    // A morph target's deltas are addressed by the ORIGINAL vertex indices, so expanding a morphed
+    // primitive would silently misalign every blend shape. Those keep their vertex identity and take
+    // the in-place result, where a vertex shared between faces carries the last face's normal — a real
+    // facing rather than the zero vector, which is the defect being repaired.
+    const morphed = (primitive.targets?.length ?? 0) > 0;
+    if (!morphed) out = indexMeshGeometryVertices(expandMeshGeometryIndices(out));
+    computeMeshGeometryFlatNormals(out, out);
+  }
+
+  // The tangent basis is only meaningful with a UV parameterization to derive it from, and only needed
+  // when something samples tangent space. Both conditions are the spec's own.
+  if (!hasTangents && hasUvs && hasGltfNormalTexture(doc, primitive)) {
+    computeMeshGeometryTangents(out, out);
+  }
+  return out;
+}
+
+// True when the primitive's material binds a tangent-space normal map, which is what makes a missing
+// TANGENT attribute a defect rather than an absent optional.
+function hasGltfNormalTexture(doc: Readonly<GltfDocument>, primitive: Readonly<GltfPrimitive>): boolean {
+  const materialIndex = primitive.material;
+  if (materialIndex === undefined) return false;
+  return doc.materials?.[materialIndex]?.normalTexture !== undefined;
 }
 
 // Maps a glTF primitive mode to its index buffer + topology, or null when the mode is unsupported — an

@@ -168,6 +168,33 @@ function makeTriangleGltf(): GltfDocument {
   };
 }
 
+// makeTriangleGltf plus a TEXCOORD_0 stream — the minimum a tangent basis can be derived from.
+function makeUvTriangleGltf(): GltfDocument {
+  const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+  const uvs = new Float32Array([0, 0, 1, 0, 0, 1]);
+  const indices = new Uint16Array([0, 1, 2]);
+  const uri = toDataUri(bytesOf(positions), bytesOf(uvs), bytesOf(indices));
+
+  return {
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 3, type: 'VEC3' },
+      { bufferView: 1, componentType: 5126, count: 3, type: 'VEC2' },
+      { bufferView: 2, componentType: 5123, count: 3, type: 'SCALAR' },
+    ],
+    asset: { version: '2.0' },
+    bufferViews: [
+      { buffer: 0, byteLength: positions.byteLength, byteOffset: 0 },
+      { buffer: 0, byteLength: uvs.byteLength, byteOffset: positions.byteLength },
+      { buffer: 0, byteLength: indices.byteLength, byteOffset: positions.byteLength + uvs.byteLength },
+    ],
+    buffers: [{ byteLength: positions.byteLength + uvs.byteLength + indices.byteLength, uri }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0, TEXCOORD_0: 1 }, indices: 2 }] }],
+    nodes: [{ mesh: 0 }],
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+  };
+}
+
 // A two-node parent-child scene: node 0 is a plain container (children:[1]), node 1 is a mesh node
 // with positions-only geometry (no indices).
 function makeParentChildGltf(): GltfDocument {
@@ -957,8 +984,11 @@ describe('createScene3DFromGltf', () => {
   });
 
   it('keeps a drawable, finite mesh when an optional NORMAL accessor fails', () => {
-    // POSITION survives, so the primitive is a usable survivor. The failed optional NORMAL is substituted with
-    // a zeroed (finite, never NaN) attribute rather than poisoning the vertices — a Recover, not a corrupt keep.
+    // POSITION survives, so the primitive is a usable survivor and the failed optional NORMAL is a Recover.
+    // "Drawable" is the claim this test is named for, and a zero normal is not drawable: every lit material
+    // normalizes it, and normalizing the zero vector is undefined. The recovery is the flat normal glTF
+    // requires a client to calculate when NORMAL is absent, which is also what this test used to assert
+    // against — it pinned the zeros as correct and so could never fail while the defect existed.
     const doc = makeTriangleGltf();
     doc.meshes![0].primitives[0].attributes.NORMAL = 99; // missing accessor
     const diagnostics: ImportDiagnostic[] = [];
@@ -968,11 +998,175 @@ describe('createScene3DFromGltf', () => {
     expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Recover);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
-    // The normal slots (interleaved floats 3..5 of each canonical vertex) are the finite zero default.
     for (const value of geometry.vertices) expect(Number.isFinite(value)).toBe(true);
+
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex + 3;
+      expect(Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2])).toBeCloseTo(
+        1,
+        5,
+      );
+    }
+  });
+
+  // glTF: "When normals are not specified, client implementations MUST calculate flat normals." The
+  // importer emitted the zero-filled slot instead, so every lit material normalized a zero vector.
+  // makeTriangleGltf is positions+indices only, which is why most parser tests ran straight through
+  // the invalid path without noticing.
+  it('calculates flat normals for a primitive with no NORMAL attribute', () => {
+    const scene = createScene3DFromGltf(makeTriangleGltf());
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex + 3;
+      // The triangle lies in the XY plane wound counter-clockwise, so its face normal is +Z.
+      expect(geometry.vertices[base]).toBeCloseTo(0, 5);
+      expect(geometry.vertices[base + 1]).toBeCloseTo(0, 5);
+      expect(geometry.vertices[base + 2]).toBeCloseTo(1, 5);
+    }
+  });
+
+  // Flat shading needs each face to own its corners. Without un-welding, a vertex shared by two faces
+  // takes whichever normal was written last, which is neither face's answer.
+  it('un-welds shared vertices so each face gets its own normal', () => {
+    // Two triangles sharing an edge, folded 90 degrees apart: a shared vertex cannot carry both faces.
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+    const uri = toDataUri(bytesOf(positions), bytesOf(indices));
+    const doc: GltfDocument = {
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 4, type: 'VEC3' },
+        { bufferView: 1, componentType: 5123, count: 6, type: 'SCALAR' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: positions.byteLength, byteOffset: 0 },
+        { buffer: 0, byteLength: indices.byteLength, byteOffset: positions.byteLength },
+      ],
+      buffers: [{ byteLength: positions.byteLength + indices.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1 }] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+
+    const scene = createScene3DFromGltf(doc);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    // Six corners after un-welding, not the four welded vertices.
+    expect(getMeshGeometryVertexCount(geometry)).toBe(6);
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const normalAt = (v: number) => {
+      const base = v * floatsPerVertex + 3;
+      return [geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2]];
+    };
+    // First face lies in the XY plane (+Z normal); the second lies in the YZ plane (+X normal). A
+    // welded vertex 0 belongs to both and could only carry one of them.
+    expect(normalAt(0)[2]).toBeCloseTo(1, 5);
+    expect(normalAt(3)[0]).toBeCloseTo(1, 5);
+  });
+
+  // Un-welding is what makes the normals exact, but shipping the result non-indexed would change how
+  // every backend draws it. The geometry stays indexed.
+  it('leaves the un-welded geometry indexed', () => {
+    const scene = createScene3DFromGltf(makeTriangleGltf());
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    expect(geometry.indices).not.toBeNull();
+    expect(getMeshGeometryIndexCount(geometry)).toBe(3);
+  });
+
+  // A point or line primitive has no facing. Fabricating one would be inventing data, and nothing
+  // samples it.
+  it('leaves normals alone for a non-triangle primitive', () => {
+    const doc = makeTriangleGltf();
+    doc.meshes![0].primitives[0].mode = 0; // point-list
+    const scene = createScene3DFromGltf(doc);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
     expect(geometry.vertices[3]).toBe(0);
     expect(geometry.vertices[4]).toBe(0);
     expect(geometry.vertices[5]).toBe(0);
+  });
+
+  // glTF: a client SHOULD calculate tangents when a normal texture is bound and TANGENT is absent.
+  // Shaders reconstruct the bitangent as B = w·cross(N, T), so a zero T with w = 0 collapses the whole
+  // TBN basis and the sampled normal has no frame to transform through. The escape here was a seam:
+  // parser tests pinned the zero tangent, material tests separately pinned normal-map binding, and no
+  // test composed the two — each half looked correct alone.
+  it('calculates a tangent basis when a normal map is bound without TANGENT', () => {
+    const doc = makeUvTriangleGltf();
+    doc.materials = [{ normalTexture: { index: 0 } }];
+    doc.meshes![0].primitives[0].material = 0;
+
+    const scene = createScene3DFromGltf(doc);
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    const floatsPerVertex = geometry.layout.stride / 4;
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex + 6;
+      expect(Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2])).toBeCloseTo(
+        1,
+        5,
+      );
+      // The handedness w must be a real sign; zero is the collapsed basis this repairs.
+      expect(Math.abs(geometry.vertices[base + 3])).toBeCloseTo(1, 5);
+    }
+  });
+
+  // No normal map means nothing samples tangent space, so a tangent would be derived data nobody reads.
+  it('leaves the tangent slot alone when no normal map is bound', () => {
+    const scene = createScene3DFromGltf(makeUvTriangleGltf());
+    const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
+
+    expect(geometry.vertices[6]).toBe(0);
+    expect(geometry.vertices[7]).toBe(0);
+    expect(geometry.vertices[8]).toBe(0);
+    expect(geometry.vertices[9]).toBe(0);
+  });
+
+  // A morph target's deltas are addressed by the ORIGINAL vertex indices, so un-welding a morphed
+  // primitive would silently misalign every blend shape — the deltas would land on the wrong corners
+  // with nothing reporting it. Those keep their vertex identity and take the in-place normals instead.
+  //
+  // The fixture must be INDEXED and share a vertex, or un-welding is a no-op and the test cannot tell
+  // the guard from its absence. Two triangles over four vertices expand to six; staying at four is the
+  // assertion.
+  it('does not un-weld a morphed primitive, so its blend-shape deltas stay aligned', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0]);
+    const posDeltas = new Float32Array([0, 10, 0, 0, 10, 0, 0, 10, 0, 0, 10, 0]);
+    const indices = new Uint16Array([0, 1, 2, 1, 3, 2]);
+    const uri = toDataUri(bytesOf(positions), bytesOf(posDeltas), bytesOf(indices));
+    const doc: GltfDocument = {
+      accessors: [
+        { bufferView: 0, componentType: 5126, count: 4, type: 'VEC3' },
+        { bufferView: 1, componentType: 5126, count: 4, type: 'VEC3' },
+        { bufferView: 2, componentType: 5123, count: 6, type: 'SCALAR' },
+      ],
+      asset: { version: '2.0' },
+      bufferViews: [
+        { buffer: 0, byteLength: positions.byteLength, byteOffset: 0 },
+        { buffer: 0, byteLength: posDeltas.byteLength, byteOffset: positions.byteLength },
+        { buffer: 0, byteLength: indices.byteLength, byteOffset: positions.byteLength + posDeltas.byteLength },
+      ],
+      buffers: [{ byteLength: positions.byteLength + posDeltas.byteLength + indices.byteLength, uri }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 2, targets: [{ POSITION: 1 }] }], weights: [0] }],
+      nodes: [{ mesh: 0 }],
+      scene: 0,
+      scenes: [{ nodes: [0] }],
+    };
+
+    const scene = createScene3DFromGltf(doc);
+    const mesh = getNodeChildren(scene.root)[0] as Mesh;
+    const geometry = mesh.geometry;
+
+    // Four vertices, not the six an un-weld would produce — so the deltas still address their vertices.
+    expect(getMeshGeometryVertexCount(geometry)).toBe(4);
+    expect(mesh.morph!.targets[0].positionDeltas).toHaveLength(4 * 3);
+    // Still repaired: a real facing rather than the zero vector, even without the un-weld.
+    expect(Math.hypot(geometry.vertices[3], geometry.vertices[4], geometry.vertices[5])).toBeCloseTo(1, 5);
   });
 
   it('drops the primitive when the indices accessor is unreadable', () => {
