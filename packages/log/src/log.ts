@@ -91,15 +91,14 @@ export function createBufferedLogSink(
   const intervalMs = options.intervalMs ?? 1000;
 
   const flush = (): void => {
-    const state = _bufferedSinkStates.get(handle);
-    if (!state || state.buf.length === 0) return;
+    const state = _bufferedSinkStates.get(handle)!;
+    if (state.buf.length === 0) return;
     const batch = state.buf.splice(0);
     for (const entry of batch) target(entry);
   };
 
   const sink: LogSink = (entry: Readonly<LogEntry>) => {
-    const state = _bufferedSinkStates.get(handle);
-    if (!state) return;
+    const state = _bufferedSinkStates.get(handle)!;
     state.buf.push({ level: entry.level, channel: entry.channel, data: entry.data });
     if (state.buf.length >= size) flush();
   };
@@ -692,7 +691,6 @@ function _applySerializers(data: Record<string, unknown>): Record<string, unknow
 
 // Applies dot-notation redaction paths to a record, replacing matching values with '[REDACTED]'.
 function _applyRedaction(data: Record<string, unknown>): Record<string, unknown> {
-  if (_redactionPaths.length === 0) return data;
   // Shallow copy at root; only deep-copy when traversal requires it.
   const result = { ...data };
   for (const path of _redactionPaths) {
@@ -703,7 +701,6 @@ function _applyRedaction(data: Record<string, unknown>): Record<string, unknown>
 }
 
 function _redactPath(obj: Record<string, unknown>, parts: string[], idx: number): void {
-  if (idx >= parts.length) return;
   const key = parts[idx];
   if (!(key in obj)) return;
   if (idx === parts.length - 1) {
