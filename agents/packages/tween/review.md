@@ -23,7 +23,7 @@ Evidence: the live worktree `packages/tween/src/` (8 source files, 7 colocated t
 
 All four landed:
 
-1. **`onYoyo` signal** — `Tween.onYoyo: Signal<() => void>` in `types/src/Tween.ts`, created in `makeTween` (`tween.ts:129`), emitted at the `reflect` flip in `updateTween` (`updateTweens.ts:51`), three tests in `updateTweens.test.ts` (flip emits, no-reflect does not, emits each cycle).
+1. **`onYoyo` signal** — `Tween.onYoyo: Signal<() => void>` in `types/src/Tween.ts`, created in `makeTween`, emitted at the `reflect` flip in `updateTween`, three tests in `updateTweens.test.ts` (flip emits, no-reflect does not, emits each cycle).
 2. **Unit-agnostic time docs** — durable comments atop the public `createTween` overload (`tween.ts:33-36`) and atop `updateTweens` (`updateTweens.ts:60-64`).
 3. **`seekTween`-to-end pin** — comments on `seekTween`/`setTweenProgress` (`tweenProgress.ts:40-41,78`) plus tests: fires `onComplete` at exact `delay + duration`, does not fire just before the end, fires at `setTweenProgress(tween, 1)` (`tweenProgress.test.ts:121-186`).
 4. **`onComplete` doc fix** — `types/src/Tween.ts` now reads "Fires once when the tween finishes its final cycle (after all repeats)."

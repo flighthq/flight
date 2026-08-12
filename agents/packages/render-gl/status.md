@@ -16,7 +16,7 @@ A file:line here is a claim about this tree, not about a session.
 
 - **`drawGlFullscreenPass` never owns the `BLEND` enable bit.** It sets the equation and factors twice —
   before the draw (`glFullscreenPass.ts:94-95`) and again after (`:101-102`) — but relies on the one
-  `gl.enable(gl.BLEND)` in `createGlRenderState` (`glRenderState.ts:153`). A caller that disables blending
+  `gl.enable(gl.BLEND)` in `createGlRenderState`. A caller that disables blending
   gets silently unblended output. Changing the ownership touches every caller of a shared primitive.
 - **The `internal.ts`-style entity cast is still in `createGlRenderState`** —
   `(state as { canvas })` / `(state as { gl })` at `glRenderState.ts:61-62` and `:108-109`. AGENTS.md calls

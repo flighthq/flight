@@ -24,7 +24,7 @@ the one native backend on 2026-08-08. Most of the old log checked out closed; wh
   (`electronClipboard.ts:183-188`) recognizes `text/html`, `text/rtf`, and the bare string
   `'bookmark'`, and falls through to `'text'` for everything else — including
   `ClipboardFormatBookmark` (`'text/x-moz-url'`) and `ClipboardFormatImage` (`'image/png'`), the exact
-  strings `hasClipboardBookmark` (`clipboard.ts:246`) and the format constants hand callers. A
+  strings `hasClipboardBookmark` and the format constants hand callers. A
   bookmark or image item in a `writeClipboard` batch lands as plain text with no sentinel.
 - **`has*` is missing the files flavor.** `readClipboardFiles` / `writeClipboardFiles` exist
   (`clipboard.ts:285`, `:330`) with no `hasClipboardFiles`, breaking the otherwise complete

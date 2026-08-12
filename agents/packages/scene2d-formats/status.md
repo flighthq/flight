@@ -35,7 +35,7 @@ a day — both times by the same author's later commits, silently, with nothing 
   cannot be lowered by picking an operator.
 - **Lottie shape-style `bm` and radial highlight `a`/`h` are typed and unread** —
   `LottieDocument.ts:150`, `:169`, `:193` and `:198-199`.
-- **Lottie's render stack is not implemented.** `renderLottieShapeState` (`lottieDocument.ts:1308`)
+- **Lottie's render stack is not implemented.** `renderLottieShapeState`
   restates every local path for every local paint in file order; styles should scope over *preceding*
   shapes (including nested groups) and repeated styles render in reverse. Needs a scoped stack, not
   another field — the constraint is stated at `lottieDocument.ts:1304`.

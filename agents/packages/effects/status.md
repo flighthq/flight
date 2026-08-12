@@ -36,7 +36,7 @@ claim about this tree, not about a session.
   its matrix builder already sits in the other tier (`adjustments/src/colorMatrixMath.ts:356`);
   `toneMapEffect.ts` is continuous pointwise and LUT-bakeable. Both are candidates to re-sort into
   `@flighthq/adjustments`. Posterize/dither correctly stay here — they are discontinuous.
-- **`lerpRenderEffect` (`renderEffectInterpolation.ts:22`) has no consumer.** Only `effects` itself
+- **`lerpRenderEffect` has no consumer.** Only `effects` itself
   imports it; `tween` and `timeline` — the packages it was built for — never do. Readonly array
   fields snap rather than interpolate.
 - **No `serializeRenderEffect` / `deserializeRenderEffect`**, and no `EyeAdaptationEffect` (only

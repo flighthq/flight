@@ -54,7 +54,7 @@ is a claim about this tree, not about a session. Gaps stated against GL were re-
   `:48`), so an asset whose gloss varies per texel renders uniformly rough. Same defect as GL.
 - **Teardown is piecemeal.** `destroyWgpuScene3DShadow` (`wgpuShadowMap.ts:28`),
   `destroyWgpuScene3DIbl` (`wgpuEnvironmentIblBake.ts:58`), and
-  `destroyWgpuParticleEmitter3DResources` (`wgpuParticleEmitter3D.ts:413`) each free their own slice.
+  `destroyWgpuParticleEmitter3DResources` each free their own slice.
   There is no `destroyWgpuScene3DRuntime` aggregate — GL's `destroyGlScene3DRuntime` is the one call
   that folds every subsystem, so a wgpu caller must know the full list.
 - **Two guard modules have no wgpu twin.** GL carries `enableGlScene3DColorSpaceGuards` and

@@ -72,7 +72,7 @@ Yet `tray.ts` builds a backend implementing `displayBalloon`, `getBounds`, `getC
    - **Types-first violated at the integration level** — see the blocker. The header is the design surface and it is the half that did not land.
    - Rust mirror: out of this package's edit scope, but the prior status notes `crates/flighthq-tray` is stranded at the pre-session surface — relevant to the authoritative bar, not to this merge gate.
 
-7. **Tests & honesty — mixed.** Source exports (23) are alphabetized and the 23 `describe` blocks mirror them in order (`tray.test.ts`). But the `setTrayIgnoreDoubleClickEvents` block (`b2824e3d8:packages/tray/src/tray.test.ts:571-584`) exercises `backend.setIgnoreDoubleClickEvents` / `getTrayBackend().setIgnoreDoubleClickEvents` rather than the exported free function — so the free function `setTrayIgnoreDoubleClickEvents` (`tray.ts:211`) has a name-matching describe block but is never directly invoked by its own test. `exports:check` is satisfied by name; coverage is not. And the whole test file is moot until the header compiles.
+7. **Tests & honesty — mixed.** Source exports (23) are alphabetized and the 23 `describe` blocks mirror them in order (`tray.test.ts`). But the `setTrayIgnoreDoubleClickEvents` block (`b2824e3d8:packages/tray/src/tray.test.ts:571-584`) exercises `backend.setIgnoreDoubleClickEvents` / `getTrayBackend().setIgnoreDoubleClickEvents` rather than the exported free function — so the free function `setTrayIgnoreDoubleClickEvents` has a name-matching describe block but is never directly invoked by its own test. `exports:check` is satisfied by name; coverage is not. And the whole test file is moot until the header compiles.
 
 ## What the charter still owes
 

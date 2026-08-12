@@ -14,7 +14,7 @@ by: principal
 Every item below was re-checked against `packages/scene3d/src/` on 2026-08-08. A file:line here is a
 claim about this tree, not about a session.
 
-- **Morph is a CPU vertex pass; skin is not.** `prepareScene3DMorph` (`prepareScene3DMorph.ts:27`)
+- **Morph is a CPU vertex pass; skin is not.** `prepareScene3DMorph`
   calls `updateMeshMorph`, which blends base + Σ wᵢ·targetᵢ into `geometry.vertices` and bumps the
   version so every backend re-uploads (`packages/mesh/src/updateMeshMorph.ts:11`). It is dirty-gated,
   so a settled morph costs one weight compare. There is no GPU morph path — deltas are never resolved

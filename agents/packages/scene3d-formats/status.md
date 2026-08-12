@@ -41,7 +41,7 @@ the parser against itself.
 - **3DS read integrity:** a UV array shorter than the vertex list silently zero-fills
   (`threeDsParse.ts:817`); duplicate chunks last-win by bare assignment (`:448`), so a bad second VERTICES
   destroys a good first; the chunk walk has no depth cap.
-- **AWD2 read integrity:** `readAwdString` (`awd2Parse.ts:1240`) bounds-checks nothing and its `subarray`
+- **AWD2 read integrity:** `readAwdString` bounds-checks nothing and its `subarray`
   clamps against the whole buffer; no Adler-32 verification; header flags and version-minor are never read;
   material properties 5, 6, 8, 11, 13 and 22 have no reader and drop silently (`awd2Schema.ts:52` names
   only 1/2/3/10/18–21).

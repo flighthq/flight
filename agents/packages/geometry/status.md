@@ -32,7 +32,7 @@ claim about this tree, not about a session.
   matrix, not a rotation: `let ax = x, ay = y, az = z` (`matrix4.ts:1284-1286`) feeds the Rodrigues
   terms with no length division, and axis `(0,0,2)` at 90° gives `m[1]=2`, `m[4]=-2`, `m[10]=4`. It
   reaches callers through all three rotation entry points (`:33`, `:775`, `:852`), whose docs now
-  state the precondition — matching `setQuaternionFromAxisAngle` (`quaternion.ts:309`), which carries
+  state the precondition — matching `setQuaternionFromAxisAngle`, which carries
   the identical one. A package-wide convention with a doc gap, not a matrix4 defect; the pool-bracket
   guard does not cover this separate axis-input contract.
 - **Doc/style hygiene:** the Float32Array bridges say "byte offset" where the offset is in elements
