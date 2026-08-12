@@ -51,7 +51,8 @@ export interface MeshSubset {
 // (read through `layout`); `indices` is null for non-indexed geometry. `bounds` is the cached
 // local-space AABB (null until computed by computeMeshGeometryBounds). `version` is bumped
 // whenever `vertices`/`indices` change so backends know to re-upload (see
-// destroyMeshGeometryGPUData). GPU handles live on the paired runtime, never here.
+// destroyMeshGeometryGlData / destroyMeshGeometryWgpuData). GPU handles live on the paired runtime,
+// never here.
 export interface MeshGeometry extends Entity {
   bounds: Aabb | null;
   indices: Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer> | null;
@@ -77,8 +78,9 @@ export interface MeshGeometryWgpuData {
 }
 
 // Package-private companion to a MeshGeometry. Each backend stores its named GPU upload slot
-// here, initialized to null and filled lazily on first draw; destroyMeshGeometryGPUData frees
-// them. `skinBindPose` is the CPU-skinning subsystem's slot: null until a skinned mesh is first
+// here, initialized to null and filled lazily on first draw; destroyMeshGeometryGlData and
+// destroyMeshGeometryWgpuData free them, one per backend — there is no combined teardown.
+// `skinBindPose` is the CPU-skinning subsystem's slot: null until a skinned mesh is first
 // deformed, then the de-interleaved bind pose + scratch captureMeshSkinBindPose builds, reused
 // every frame by skinMeshGeometry. `morphBindPose` is the sibling morph slot: null until a morphed
 // mesh is first blended, then the de-interleaved base pose + scratch captureMeshMorphBindPose builds,
