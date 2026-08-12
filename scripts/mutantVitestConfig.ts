@@ -7,11 +7,14 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 
 import { applyMutantText, APPLIED_MARKER, MUTANT_ENVIRONMENT } from './unchecked-core.js';
 
-// The vitest config `npm run unchecked` runs every mutant under. One process per mutant, and the mutated
-// source NEVER reaches the disk: a pre-enforced `load` hook serves the spliced text in place of the file's
-// real contents, so an interrupted run — even `kill -9` — cannot leave a corrupted source file behind in a
-// tree an agent is about to commit. That safety is the whole reason this file exists rather than a
-// write-test-restore loop, which is both simpler and unrecoverable at exactly the wrong moment.
+// The vitest config for the runs `npm run unchecked` gives a process of their own: the unmutated baseline,
+// and any mutant a warm worker could not settle. The mutated source NEVER
+// reaches the disk — a pre-enforced `load` hook serves the spliced text in place of the file's real contents,
+// so an interrupted run — even `kill -9` — cannot leave a corrupted source file behind in a tree an agent is
+// about to commit. That safety is the whole reason this file exists rather than a write-test-restore loop,
+// which is both simpler and unrecoverable at exactly the wrong moment. `mutantWorker.ts` carries the same
+// guarantee down the fast path with its own copy of the hook, because a warm server cannot reload a config
+// between mutants.
 //
 // It layers over the target package's OWN vitest config so a mutant runs under the same environment
 // (`node` vs `jsdom`), setup files, and includes as `npm run test --workspace=packages/<name>`. Running a
