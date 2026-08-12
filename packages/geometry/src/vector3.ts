@@ -6,9 +6,15 @@ import type { Vector2Like, Vector3, Vector3Like, Vector4Like } from '@flighthq/t
  * and writes to out.
  */
 export function addVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
-  out.x = a.x + b.x;
-  out.y = a.y + b.y;
-  out.z = a.z + b.z;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z;
+  out.x = ax + bx;
+  out.y = ay + by;
+  out.z = az + bz;
 }
 
 /**
@@ -44,9 +50,12 @@ export function cloneVector3(source: Readonly<Vector3Like>): Vector3 {
  * Copies the x, y and z components of a vector.
  */
 export function copyVector3(out: Vector3Like, source: Readonly<Vector3Like>): void {
-  out.x = source.x;
-  out.y = source.y;
-  out.z = source.z;
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  out.x = x;
+  out.y = y;
+  out.z = z;
 }
 
 /**
@@ -237,9 +246,12 @@ export function interpolateVector3(
   const ax = a.x,
     ay = a.y,
     az = a.z;
-  out.x = ax + t * (b.x - ax);
-  out.y = ay + t * (b.y - ay);
-  out.z = az + t * (b.z - az);
+  const bx = b.x,
+    by = b.y,
+    bz = b.z;
+  out.x = ax + t * (bx - ax);
+  out.y = ay + t * (by - ay);
+  out.z = az + t * (bz - az);
 }
 
 /**
@@ -248,9 +260,15 @@ export function interpolateVector3(
  * Safe when `out` aliases `a` or `b`.
  */
 export function maxVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
-  out.x = a.x > b.x ? a.x : b.x;
-  out.y = a.y > b.y ? a.y : b.y;
-  out.z = a.z > b.z ? a.z : b.z;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z;
+  out.x = ax > bx ? ax : bx;
+  out.y = ay > by ? ay : by;
+  out.z = az > bz ? az : bz;
 }
 
 /**
@@ -259,9 +277,15 @@ export function maxVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readon
  * Safe when `out` aliases `a` or `b`.
  */
 export function minVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
-  out.x = a.x < b.x ? a.x : b.x;
-  out.y = a.y < b.y ? a.y : b.y;
-  out.z = a.z < b.z ? a.z : b.z;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z;
+  out.x = ax < bx ? ax : bx;
+  out.y = ay < by ? ay : by;
+  out.z = az < bz ? az : bz;
 }
 
 /**
@@ -270,9 +294,15 @@ export function minVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readon
  * Safe when `out` aliases `a` or `b`.
  */
 export function multiplyVector3(out: Vector3Like, a: Readonly<Vector3Like>, b: Readonly<Vector3Like>): void {
-  out.x = a.x * b.x;
-  out.y = a.y * b.y;
-  out.z = a.z * b.z;
+  const ax = a.x,
+    ay = a.y,
+    az = a.z;
+  const bx = b.x,
+    by = b.y,
+    bz = b.z;
+  out.x = ax * bx;
+  out.y = ay * by;
+  out.z = az * bz;
 }
 
 /**
@@ -296,9 +326,12 @@ export function nearEqualsVector3(
  * properties of the current Vector3Like object is changed to -x, -y, and -z.
  **/
 export function negateVector3(out: Vector3Like, source: Readonly<Vector3Like>): void {
-  out.x = source.x * -1;
-  out.y = source.y * -1;
-  out.z = source.z * -1;
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  out.x = x * -1;
+  out.y = y * -1;
+  out.z = z * -1;
 }
 
 /**
@@ -308,12 +341,15 @@ export function negateVector3(out: Vector3Like, source: Readonly<Vector3Like>): 
  * Returns the original length.
  **/
 export function normalizeVector3(out: Vector3Like, source: Readonly<Vector3Like>): number {
-  const l = getVector3Length(source);
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  const l = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
 
   if (l !== 0) {
-    out.x = source.x / l;
-    out.y = source.y / l;
-    out.z = source.z / l;
+    out.x = x / l;
+    out.y = y / l;
+    out.z = z / l;
   } else {
     out.x = 0;
     out.y = 0;
@@ -333,9 +369,12 @@ export function offsetVector3(
   dy: number,
   dz: number,
 ): void {
-  out.x = source.x + dx;
-  out.y = source.y + dy;
-  out.z = source.z + dz;
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  out.x = x + dx;
+  out.y = y + dy;
+  out.z = z + dz;
 }
 
 /**
@@ -373,9 +412,12 @@ export function reflectVector3(out: Vector3Like, incident: Readonly<Vector3Like>
  * x, y, and z elements are multiplied by the provided scalar number.
  **/
 export function scaleVector3(out: Vector3Like, source: Readonly<Vector3Like>, scalar: number): void {
-  out.x = source.x * scalar;
-  out.y = source.y * scalar;
-  out.z = source.z * scalar;
+  const x = source.x,
+    y = source.y,
+    z = source.z;
+  out.x = x * scalar;
+  out.y = y * scalar;
+  out.z = z * scalar;
 }
 
 /**
@@ -428,9 +470,15 @@ export function setVector3FromVector4(out: Vector3Like, source: Readonly<Vector4
  * from the values of the x, y, and z elements of another Vector3Like object.
  **/
 export function subtractVector3(out: Vector3Like, source: Readonly<Vector3Like>, other: Readonly<Vector3Like>): void {
-  out.x = source.x - other.x;
-  out.y = source.y - other.y;
-  out.z = source.z - other.z;
+  const sx = source.x,
+    sy = source.y,
+    sz = source.z;
+  const ox = other.x,
+    oy = other.y,
+    oz = other.z;
+  out.x = sx - ox;
+  out.y = sy - oy;
+  out.z = sz - oz;
 }
 
 /**
