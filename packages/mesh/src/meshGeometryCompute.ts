@@ -181,7 +181,6 @@ export function computeMeshGeometryFlatNormals(out: MeshGeometry, geometry: Read
     dstVerts[n2 + 1] = ny;
     dstVerts[n2 + 2] = nz;
   }
-
   out.version++;
 }
 
@@ -251,6 +250,7 @@ export function computeMeshGeometryNormals(
     target[base + 1] = ny;
     target[base + 2] = nz;
   }
+  out.version++;
 }
 
 // Returns one canonical representative index per vertex, grouping only vertices whose three stored
