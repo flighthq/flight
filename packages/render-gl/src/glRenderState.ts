@@ -28,6 +28,7 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
     blendRealizations: sourceRuntime.registries.blendRealizations,
+    customEffectShaders: sourceRuntime.registries.customEffectShaders,
     customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
     materialRenderers: sourceRuntime.registries.materialRenderers,
     meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
@@ -190,6 +191,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
   runtime.currentRenderTarget = null;
   runtime.registries = {
     blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
+    customEffectShaders: createKeyedTable('GlCustomEffectShader', 'Unregistered'),
     customMaterialShaders: createKeyedTable('GlCustomMaterialShader', 'Unregistered'),
     materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
     meshMaterialRenderers: createKeyedTable('GlMeshMaterialRenderer', 'StandardMaterial'),

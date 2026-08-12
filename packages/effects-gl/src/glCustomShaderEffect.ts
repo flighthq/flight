@@ -1,4 +1,5 @@
-import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { drawGlFullscreenPass, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
   CustomShaderEffect,
   GlCustomShaderSourceGuard,
@@ -7,6 +8,7 @@ import type {
   GlRenderTarget,
   RenderEffect,
 } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
 import { registerGlRenderEffect } from './glRenderEffectRegistry';
@@ -74,7 +76,8 @@ export const defaultGlCustomShaderEffectRunner: GlRenderEffectRunner = (ctx, eff
 // registered. Doubles as the introspection query for the identity-passthrough fallback in
 // applyCustomShaderEffectToGl.
 export function getGlCustomShaderSource(state: GlRenderState, shaderKey: string): string | null {
-  return _customShaders.get(state)?.get(shaderKey) ?? null;
+  const entry = getGlRenderStateRuntime(state).registries.customEffectShaders.entries.get(shaderKey);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Whether this CustomShaderEffect names a shaderKey that has source registered for the state. An
@@ -102,20 +105,20 @@ export function registerGlCustomShaderEffect(state: GlRenderState): void {
 // Last write wins for the source lookup, while the compiled program is cached by the shaderKey — so
 // the two disagree after a re-registration. enableGlRenderEffectGuards reports that divergence.
 export function registerGlCustomShaderSource(state: GlRenderState, shaderKey: string, fragmentSource: string): void {
-  let registry = _customShaders.get(state);
-  if (registry === undefined) {
-    registry = new Map();
-    _customShaders.set(state, registry);
-  }
+  const runtime = getGlRenderStateRuntime(state);
   // The seam, not a message: core carries no warning strings, and an unguarded state pays one map
   // read. Fires only when the key already holds DIFFERENT source, since re-registering identical
   // source is a no-op the caller cannot be harmed by and warning on it would train readers to ignore
   // the crumb.
-  const previousSource = registry.get(shaderKey);
-  if (previousSource !== undefined && previousSource !== fragmentSource) {
+  const previousSource = getGlCustomShaderSource(state, shaderKey);
+  if (previousSource !== null && previousSource !== fragmentSource) {
     _sourceGuards.get(state)?.(state, shaderKey, previousSource, fragmentSource);
   }
-  registry.set(shaderKey, fragmentSource);
+  runtime.registries.customEffectShaders = withRegistryTableEntry(
+    runtime.registries.customEffectShaders,
+    shaderKey,
+    fragmentSource,
+  );
 }
 
 // Installs (or clears) the re-registration guard for this state. Separate from registration itself so
@@ -137,5 +140,3 @@ out vec4 o_color;
 void main() {
   o_color = texture(u_texture0, v_texCoord);
 }`;
-
-const _customShaders = new WeakMap<GlRenderState, Map<string, string>>();
