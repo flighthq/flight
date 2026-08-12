@@ -11,7 +11,6 @@ export function ensureWgpuWireframeUpload(
   geometry: Readonly<MeshGeometry>,
 ): WgpuWireframeUpload | null {
   const meshUpload = ensureWgpuMeshUpload(state, geometry);
-  if (meshUpload === null) return null;
 
   let perState = wireframeUploads.get(state);
   if (perState === undefined) {
@@ -46,18 +45,27 @@ export function ensureWgpuWireframeUpload(
 
 // Builds the line-list index array (two indices per triangle edge, three edges per triangle) from a
 // geometry's triangle indices. Promotes to Uint32 when any line index exceeds the Uint16 range.
+// Builds the line-list index array (two indices per triangle edge, three edges per triangle) from a
+// geometry's triangle indices, or from a sequential range when the geometry is non-indexed — the same
+// split glWireframeUpload makes. Non-indexed geometry reaches here now that the mesh upload accepts it.
 function buildLineIndices(geometry: Readonly<MeshGeometry>): Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer> {
-  const triangleIndices = geometry.indices!;
-  const triangleCount = Math.floor(triangleIndices.length / 3);
+  const triangleIndices = geometry.indices;
+  const stride = geometry.layout.stride;
+  const triangleCount =
+    triangleIndices !== null
+      ? Math.floor(triangleIndices.length / 3)
+      : stride > 0
+        ? Math.floor(geometry.vertices.byteLength / stride / 3)
+        : 0;
   const lineCount = triangleCount * 6;
   const useUint32 = triangleIndices instanceof Uint32Array || lineCount > 65535;
   const lines = useUint32 ? new Uint32Array(lineCount) : new Uint16Array(lineCount);
 
   for (let t = 0; t < triangleCount; t++) {
     const base = t * 3;
-    const i0 = triangleIndices[base];
-    const i1 = triangleIndices[base + 1];
-    const i2 = triangleIndices[base + 2];
+    const i0 = triangleIndices !== null ? triangleIndices[base] : base;
+    const i1 = triangleIndices !== null ? triangleIndices[base + 1] : base + 1;
+    const i2 = triangleIndices !== null ? triangleIndices[base + 2] : base + 2;
     const out = t * 6;
     lines[out] = i0;
     lines[out + 1] = i1;
