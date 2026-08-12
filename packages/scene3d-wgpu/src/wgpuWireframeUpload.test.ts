@@ -1,4 +1,4 @@
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
 
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
@@ -20,6 +20,34 @@ describe('ensureWgpuWireframeUpload', () => {
         c.name === 'createBuffer' &&
         ((c.args[0] as { usage: number; size: number }).usage & GPUBufferUsage.INDEX) !== 0 &&
         (c.args[0] as { size: number }).size === triangleCount * 6 * bytesPerIndex,
+    );
+    expect(lineBufferCreate).toBeDefined();
+  });
+
+  // Non-indexed geometry only became reachable here once the mesh upload stopped refusing it; before
+  // that this function bailed early, and buildLineIndices would have dereferenced a null index array.
+  // The edges come from a sequential vertex range instead, matching glWireframeUpload.
+  it('derives line indices from a sequential range for non-indexed geometry', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    // Two triangles' worth of positions: 6 vertices x 3 floats.
+    const geometry = createMeshGeometry({
+      indices: null,
+      layout: {
+        attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],
+        stride: 12,
+      },
+      vertices: new Float32Array(18),
+    });
+
+    const upload = ensureWgpuWireframeUpload(state, geometry);
+
+    expect(upload).not.toBeNull();
+    // 2 triangles x 6 line indices x 2 bytes.
+    const lineBufferCreate = fake.calls.find(
+      (c) =>
+        c.name === 'createBuffer' &&
+        ((c.args[0] as { usage: number }).usage & GPUBufferUsage.INDEX) !== 0 &&
+        (c.args[0] as { size: number }).size === 2 * 6 * 2,
     );
     expect(lineBufferCreate).toBeDefined();
   });
