@@ -387,6 +387,42 @@ describe('ensureGlScene3DProgram', () => {
   });
 });
 
+describe('front-face selection under a mirroring world matrix', () => {
+  // A world matrix with a negative determinant turns every triangle inside out on the way to clip
+  // space, so the exterior a mesh authored counter-clockwise arrives clockwise. With back-face
+  // culling on that culls the very surface the viewer should see, and the interior shows instead.
+  // The winding is correct and must not be rewritten — what changes is which orientation counts as
+  // front, so this is a per-draw front-face decision.
+  function frontFaceArgsForScaleX(scaleX: number): unknown[] {
+    const { state, gl } = makeGlScene3DState();
+    const geometry = createBoxMeshGeometry();
+    const worldMatrix = createMatrix4();
+    worldMatrix.m[0] = scaleX;
+    drawGlMeshSubset(
+      state,
+      makeProgram(),
+      {
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0],
+        worldMatrix,
+      },
+      geometry,
+    );
+    return gl.calls.filter((c) => c.name === 'frontFace').map((c) => c.args[0]);
+  }
+
+  it('keeps counter-clockwise front for an ordinary transform', () => {
+    // Set before the draw and restored after it, so an ordinary mesh sets CCW twice.
+    expect(frontFaceArgsForScaleX(1)).toEqual([0x0901, 0x0901]); // GL_CCW
+  });
+
+  it('switches to clockwise front for a mirrored transform', () => {
+    // CW for the mirrored draw, then restored to CCW so it cannot leak into the present pass.
+    expect(frontFaceArgsForScaleX(-1)).toEqual([0x0900, 0x0901]); // GL_CW then GL_CCW
+  });
+});
+
 describe('hasGlUvTransform', () => {
   it('is false for a null texture', () => {
     expect(hasGlUvTransform(null)).toBe(false);

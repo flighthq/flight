@@ -1,0 +1,12 @@
+{
+  "webgl": {
+    "sha256": "799aa201b45713229595b754782cae9db208a0778b6388417b6518b6b1dbaca6",
+    "sha256Provenance": {
+      "frames": 0,
+      "sourceHash": "317023b49ce680a0299b7c3ad987e561e9f2d93c8da8f0825616e0515fcf3b61",
+      "targetKind": null,
+      "verifyPublished": true,
+      "warmupFrames": 0
+    }
+  }
+}
