@@ -227,6 +227,32 @@ describe('solveSkeleton2DIkConstraint', () => {
     expect(up.worldMatrices[1 * 6 + 5]).not.toBeCloseTo(down.worldMatrices[1 * 6 + 5], 2);
   });
 
+  // The other unreachable case, and the one with no test: a target too CLOSE rather than too far. Unequal
+  // bone lengths leave a dead zone around the parent's origin — a 10 and a 6 fold down to 4 and no further
+  // — so the tip overshoots a target inside it however hard the joint bends. Asserted as a position rather
+  // than as the joint angle, because the position is the thing a rig author sees go wrong.
+  //
+  // This pins the BEHAVIOR, not the branch that produces it: the solver's explicit dead-zone case and its
+  // general law-of-cosines case agree here, because the general case clamps its acos arguments into range
+  // and that clamping lands on the same fold. Deleting the dead-zone branch leaves this test green.
+  it('folds as far as it can and overshoots a target inside the dead zone', () => {
+    const skeleton = createSkeleton2D([
+      makeBone({ length: 10 }),
+      makeBone({ length: 6, parentIndex: 0, x: 10 }),
+      makeBone({ x: 2, y: 0 }),
+    ]);
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    solveSkeleton2DIkConstraint(skeleton, ik({ boneIndices: [0, 1], targetBoneIndex: 2 }));
+    computeSkeleton2DWorldTransforms(skeleton);
+
+    // Folded flat: the joint sits at the parent's full 10, and the child doubles back its whole 6 to 4 —
+    // still 2 past the target at 2, which is the closest this chain can physically come.
+    expect(skeleton.worldMatrices[1 * 6 + 4]).toBeCloseTo(10, 4);
+    expect(tipOf(skeleton, 1).x).toBeCloseTo(4, 4);
+    expect(tipOf(skeleton, 1).y).toBeCloseTo(0, 4);
+  });
+
   it('straightens and falls short of an unreachable target when stretch is off', () => {
     const skeleton = createSkeleton2D([
       makeBone({ length: 10 }),
