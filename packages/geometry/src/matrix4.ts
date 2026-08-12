@@ -28,6 +28,7 @@ export function appendMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, o
  *
  * @param radians rotation angle in radians (the @flighthq/geometry convention — convert a
  * designer-facing degree value with `DEG_TO_RAD` from `@flighthq/math`).
+ * @param axis assumed unit length; a longer axis scales the basis instead of rotating it.
  **/
 export function appendRotationMatrix4(
   out: Matrix4Like,
@@ -555,7 +556,10 @@ export function interpolateMatrix4(
 }
 
 /**
- * Attempts to invert the current matrix, so long as the determinant is greater than zero
+ * Writes the inverse of `source` and returns whether it existed. A matrix whose determinant is
+ * within 1e-6 of zero is treated as singular: `out` is filled with NaN and the return is `false`,
+ * so an ignored result cannot masquerade as a valid transform. A negative determinant is a mirror,
+ * not a failure, and inverts normally.
  **/
 export function inverseMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): boolean {
   const _out = out.m;
@@ -569,8 +573,7 @@ export function inverseMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>):
   const invertable = Math.abs(d) > EPS;
 
   if (!invertable) {
-    // If the matrix is singular, set output to NaN or Identity
-    _out.fill(NaN); // Set all elements to NaN (or you could set to the identity matrix, depending on your preference)
+    _out.fill(NaN);
     return false;
   }
 
@@ -767,6 +770,7 @@ export function prependMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>, 
  *
  * @param radians rotation angle in radians (the @flighthq/geometry convention — convert a
  * designer-facing degree value with `DEG_TO_RAD` from `@flighthq/math`).
+ * @param axis assumed unit length; a longer axis scales the basis instead of rotating it.
  **/
 export function prependRotationMatrix4(
   out: Matrix4Like,
@@ -841,6 +845,7 @@ export function prependTranslationMatrix4(
  *
  * Translation is preserved.
  *
+ * @param axis assumed unit length; a longer axis scales the basis instead of rotating it.
  * @param radians rotation angle in radians (the @flighthq/geometry convention — convert a
  * designer-facing degree value with `DEG_TO_RAD` from `@flighthq/math`).
  */
@@ -1244,16 +1249,6 @@ export function translateMatrix4(
   o[14] = a[2] * tx + a[6] * ty + a[10] * tz + a[14];
 }
 
-export function transposeMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
-  if (out !== source) out.m.set(source.m);
-  __swap(out, source, 1, 4);
-  __swap(out, source, 2, 8);
-  __swap(out, source, 3, 12);
-  __swap(out, source, 6, 9);
-  __swap(out, source, 7, 13);
-  __swap(out, source, 11, 14);
-}
-
 /**
  * Transposes the matrix (swaps rows and columns).
  *
@@ -1265,6 +1260,16 @@ export function transposeMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>
  * - Computing inverse-transpose for normals
  * - Switching between row- and column-vector math conventions
  */
+export function transposeMatrix4(out: Matrix4Like, source: Readonly<Matrix4Like>): void {
+  if (out !== source) out.m.set(source.m);
+  __swap(out, source, 1, 4);
+  __swap(out, source, 2, 8);
+  __swap(out, source, 3, 12);
+  __swap(out, source, 6, 9);
+  __swap(out, source, 7, 13);
+  __swap(out, source, 11, 14);
+}
+
 /**
  * Writes 16 column-major elements of a Matrix4Like into a Float32Array at `offset`.
  *
