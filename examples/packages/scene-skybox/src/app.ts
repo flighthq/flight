@@ -71,7 +71,6 @@ const reflectiveMaterial = createStandardPbrMaterial({
   metallic: 1,
   roughness: 0.08,
 });
-reflectiveMaterial.doubleSided = true;
 const torus = createMesh(createTorusMeshGeometry(1.25, 0.42, 40, 72), [reflectiveMaterial]);
 setQuaternionFromEuler(torus.rotation, Math.PI * 0.24, 0, 0);
 invalidateNodeLocalTransform(torus);
