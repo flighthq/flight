@@ -192,6 +192,23 @@ describe('getGlPbrVertexSourceForKey', () => {
     expect(skinned).toContain('a_joints0');
   });
 
+  // The no-influence fallback, which packSkinInfluences documents as a legal state: with every weight
+  // zero the weighted sum is the ZERO matrix, so without this guard the vertex lands on the origin with
+  // w = 0 and its normal is zero. Both matrices need it — position/tangent take skinMatrix, the normal
+  // takes skinNormalMatrix — and the CPU skinVertices path falls back the same way.
+  //
+  // This is a TEXT assertion, not a behavioral one: nothing here executes GLSL. It pins that the guard
+  // is present and in both functions; that it computes the right thing is the functional render
+  // matrix's job, on real hardware.
+  it('gives both skin matrices a bind-pose fallback for an uninfluenced vertex', () => {
+    const skinned = getGlPbrVertexSourceForKey(makeKey({ hasSkin: true }));
+
+    const skinBody = skinned.slice(skinned.indexOf('mat4 skinMatrix()'));
+    expect(skinBody).toContain('return mat4(1.0);');
+    const normalBody = skinned.slice(skinned.indexOf('mat3 skinNormalMatrix()'));
+    expect(normalBody).toContain('return mat3(1.0);');
+  });
+
   it('prepends the define block to the vertex body', () => {
     const src = getGlPbrVertexSourceForKey(NONE);
     expect(src.startsWith('#version 300 es')).toBe(true);

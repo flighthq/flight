@@ -349,7 +349,13 @@ mat4 fetchJointMatrix(int joint) {
   );
 }
 
+// A vertex with NO influence stays at its bind pose, which the weighted sum cannot express: with every
+// weight zero the sum is the ZERO matrix, so the vertex would land on the origin with w = 0. Identity is
+// the bind pose. packSkinInfluences documents this case as legal — it zero-fills unused slots and says
+// such a vertex "stays at its bind position" — and the CPU skinVertices path falls back the same way.
 mat4 skinMatrix() {
+  float totalWeight = a_weights0.x + a_weights0.y + a_weights0.z + a_weights0.w;
+  if (totalWeight == 0.0) return mat4(1.0);
   return a_weights0.x * fetchJointMatrix(int(a_joints0.x))
        + a_weights0.y * fetchJointMatrix(int(a_joints0.y))
        + a_weights0.z * fetchJointMatrix(int(a_joints0.z))
@@ -371,6 +377,10 @@ mat3 fetchJointNormalMatrix(int joint) {
 // — the inverse-transpose of the blend is a different matrix — and it is the affordable one, since the
 // exact answer needs a 3x3 inverse per vertex. The CPU path blends the same way, so the two agree.
 mat3 skinNormalMatrix() {
+  // Same no-influence fallback as skinMatrix: a zero blend would hand the shader a zero normal, which
+  // every lighting term then normalizes into an undefined direction.
+  float totalWeight = a_weights0.x + a_weights0.y + a_weights0.z + a_weights0.w;
+  if (totalWeight == 0.0) return mat3(1.0);
   return a_weights0.x * fetchJointNormalMatrix(int(a_joints0.x))
        + a_weights0.y * fetchJointNormalMatrix(int(a_joints0.y))
        + a_weights0.z * fetchJointNormalMatrix(int(a_joints0.z))
