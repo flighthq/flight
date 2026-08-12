@@ -122,6 +122,16 @@ describe('clampVector2', () => {
     expect(v.x).toBe(3);
     expect(v.y).toBe(0);
   });
+
+  it('supports out === min or max', () => {
+    const min = createVector2(0, 0);
+    clampVector2(min, createVector2(5, -2), min, createVector2(3, 3));
+    expect(min).toMatchObject({ x: 3, y: 0 });
+
+    const max = createVector2(3, 3);
+    clampVector2(max, createVector2(5, -2), createVector2(0, 0), max);
+    expect(max).toMatchObject({ x: 3, y: 0 });
+  });
 });
 
 describe('cloneVector2', () => {
@@ -214,6 +224,12 @@ describe('divideVector2', () => {
     divideVector2(v, v, createVector2(2, 4));
     expect(v.x).toBe(3);
     expect(v.y).toBe(2);
+  });
+
+  it('supports out === divisor', () => {
+    const divisor = createVector2(2, 4);
+    divideVector2(divisor, createVector2(6, 8), divisor);
+    expect(divisor).toMatchObject({ x: 3, y: 2 });
   });
 });
 
@@ -460,6 +476,13 @@ describe('maxVector2', () => {
     expect(a.x).toBe(3);
     expect(a.y).toBe(5);
   });
+
+  it('supports out === b', () => {
+    const a = createVector2(1, 5);
+    const b = createVector2(3, 2);
+    maxVector2(b, a, b);
+    expect(b).toMatchObject({ x: 3, y: 5 });
+  });
 });
 
 describe('minVector2', () => {
@@ -477,6 +500,13 @@ describe('minVector2', () => {
     expect(a.x).toBe(1);
     expect(a.y).toBe(2);
   });
+
+  it('supports out === b', () => {
+    const a = createVector2(1, 5);
+    const b = createVector2(3, 2);
+    minVector2(b, a, b);
+    expect(b).toMatchObject({ x: 1, y: 2 });
+  });
 });
 
 describe('multiplyVector2', () => {
@@ -492,6 +522,12 @@ describe('multiplyVector2', () => {
     multiplyVector2(a, a, createVector2(4, 5));
     expect(a.x).toBe(8);
     expect(a.y).toBe(15);
+  });
+
+  it('supports out === b', () => {
+    const b = createVector2(4, 5);
+    multiplyVector2(b, createVector2(2, 3), b);
+    expect(b).toMatchObject({ x: 8, y: 15 });
   });
 });
 
@@ -645,6 +681,13 @@ describe('reflectVector2', () => {
     reflectVector2(v, v, createVector2(1, 0));
     expect(v.x).toBeCloseTo(-1, 6);
     expect(v.y).toBeCloseTo(-1, 6);
+  });
+
+  it('supports out === normal', () => {
+    const normal = createVector2(1, 0);
+    reflectVector2(normal, createVector2(1, -1), normal);
+    expect(normal.x).toBeCloseTo(-1, 6);
+    expect(normal.y).toBeCloseTo(-1, 6);
   });
 });
 

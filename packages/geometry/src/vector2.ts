@@ -2,8 +2,12 @@ import { createEntity } from '@flighthq/entity/contract';
 import type { Vector2, Vector2Like, Vector3Like } from '@flighthq/types/contract';
 
 export function addVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
-  out.x = a.x + b.x;
-  out.y = a.y + b.y;
+  const ax = a.x,
+    ay = a.y;
+  const bx = b.x,
+    by = b.y;
+  out.x = ax + bx;
+  out.y = ay + by;
 }
 
 /**
@@ -32,8 +36,10 @@ export function cloneVector2(source: Readonly<Vector2Like>): Vector2 {
 }
 
 export function copyVector2(out: Vector2Like, source: Readonly<Vector2Like>): void {
-  out.x = source.x;
-  out.y = source.y;
+  const x = source.x,
+    y = source.y;
+  out.x = x;
+  out.y = y;
 }
 
 /**
@@ -144,8 +150,12 @@ export function interpolateVector2(
   b: Readonly<Vector2Like>,
   t: number,
 ): void {
-  out.x = a.x + t * (b.x - a.x);
-  out.y = a.y + t * (b.y - a.y);
+  const ax = a.x,
+    ay = a.y;
+  const bx = b.x,
+    by = b.y;
+  out.x = ax + t * (bx - ax);
+  out.y = ay + t * (by - ay);
 }
 
 /**
@@ -154,8 +164,12 @@ export function interpolateVector2(
  * Safe when `out` aliases `a` or `b`.
  */
 export function maxVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
-  out.x = a.x > b.x ? a.x : b.x;
-  out.y = a.y > b.y ? a.y : b.y;
+  const ax = a.x,
+    ay = a.y;
+  const bx = b.x,
+    by = b.y;
+  out.x = ax > bx ? ax : bx;
+  out.y = ay > by ? ay : by;
 }
 
 /**
@@ -164,8 +178,12 @@ export function maxVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readon
  * Safe when `out` aliases `a` or `b`.
  */
 export function minVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
-  out.x = a.x < b.x ? a.x : b.x;
-  out.y = a.y < b.y ? a.y : b.y;
+  const ax = a.x,
+    ay = a.y;
+  const bx = b.x,
+    by = b.y;
+  out.x = ax < bx ? ax : bx;
+  out.y = ay < by ? ay : by;
 }
 
 /**
@@ -174,8 +192,12 @@ export function minVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readon
  * Safe when `out` aliases `a` or `b`.
  */
 export function multiplyVector2(out: Vector2Like, a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): void {
-  out.x = a.x * b.x;
-  out.y = a.y * b.y;
+  const ax = a.x,
+    ay = a.y;
+  const bx = b.x,
+    by = b.y;
+  out.x = ax * bx;
+  out.y = ay * by;
 }
 
 /**
@@ -199,8 +221,10 @@ export function nearEqualsVector2(
  * properties of the current Vector2Like object is changed to -x and -y.
  **/
 export function negateVector2(out: Vector2Like, source: Readonly<Vector2Like>): void {
-  out.x = source.x * -1;
-  out.y = source.y * -1;
+  const x = source.x,
+    y = source.y;
+  out.x = x * -1;
+  out.y = y * -1;
 }
 
 /**
@@ -210,11 +234,13 @@ export function negateVector2(out: Vector2Like, source: Readonly<Vector2Like>): 
  * Returns the original length.
  **/
 export function normalizeVector2(out: Vector2Like, source: Readonly<Vector2Like>): number {
-  const l = getVector2Length(source);
+  const x = source.x,
+    y = source.y;
+  const l = Math.sqrt(x ** 2 + y ** 2);
 
   if (l !== 0) {
-    out.x = source.x / l;
-    out.y = source.y / l;
+    out.x = x / l;
+    out.y = y / l;
   } else {
     out.x = 0;
     out.y = 0;
@@ -224,8 +250,10 @@ export function normalizeVector2(out: Vector2Like, source: Readonly<Vector2Like>
 }
 
 export function offsetVector2(out: Vector2Like, source: Readonly<Vector2Like>, dx: number, dy: number): void {
-  out.x = source.x + dx;
-  out.y = source.y + dy;
+  const x = source.x,
+    y = source.y;
+  out.x = x + dx;
+  out.y = y + dy;
 }
 
 /**
@@ -251,19 +279,23 @@ export function reflectVector2(out: Vector2Like, incident: Readonly<Vector2Like>
  * x and y elements are multiplied by the provided scalar number.
  **/
 export function scaleVector2(out: Vector2Like, source: Readonly<Vector2Like>, scalar: number): void {
-  out.x = source.x * scalar;
-  out.y = source.y * scalar;
+  const x = source.x,
+    y = source.y;
+  out.x = x * scalar;
+  out.y = y * scalar;
 }
 
 export function scaleVector2ToLength(out: Vector2Like, source: Readonly<Vector2Like>, length: number): void {
-  const currentLength = getVector2Length(source);
+  const x = source.x,
+    y = source.y;
+  const currentLength = Math.sqrt(x ** 2 + y ** 2);
   if (currentLength === 0) {
     out.x = 0;
     out.y = 0;
   } else {
     const scale = length / currentLength;
-    out.x = source.x * scale;
-    out.y = source.y * scale;
+    out.x = x * scale;
+    out.y = y * scale;
   }
 }
 
@@ -293,8 +325,12 @@ export function setVector2FromVector3(out: Vector2Like, source: Readonly<Vector3
 }
 
 export function subtractVector2(out: Vector2Like, source: Readonly<Vector2Like>, other: Readonly<Vector2Like>): void {
-  out.x = source.x - other.x;
-  out.y = source.y - other.y;
+  const sx = source.x,
+    sy = source.y;
+  const ox = other.x,
+    oy = other.y;
+  out.x = sx - ox;
+  out.y = sy - oy;
 }
 
 export function writeVector2ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Vector2Like>): void {
