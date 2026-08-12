@@ -132,6 +132,16 @@ describe('isFrustumIntersectingAabb', () => {
     setFrustumFromMatrix4(f, createTestViewProjection());
     expect(isFrustumIntersectingAabb(f, createAabb(50, 50, -1, 60, 60, 1))).toBe(false);
   });
+
+  it.each([
+    ['x', createAabb(0.5, -0.5, -0.5, -0.5, 0.5, 0.5)],
+    ['y', createAabb(-0.5, 0.5, -0.5, 0.5, -0.5, 0.5)],
+    ['z', createAabb(-0.5, -0.5, 0.5, 0.5, 0.5, -0.5)],
+  ])('rejects an AABB empty on %s', (_axis, empty) => {
+    const f = createFrustum();
+    setFrustumFromMatrix4(f, createMatrix4());
+    expect(isFrustumIntersectingAabb(f, empty)).toBe(false);
+  });
 });
 
 describe('isFrustumIntersectingSphere', () => {

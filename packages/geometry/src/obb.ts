@@ -119,9 +119,12 @@ export function intersectRay3DObb(ray: Readonly<Ray3DLike>, obb: Readonly<ObbLik
 
 /**
  * Returns whether an oriented bounding box overlaps an axis-aligned bounding box using the
- * Separating Axis Theorem with 15 candidate axes.
+ * Separating Axis Theorem with 15 candidate axes. An empty AABB (min > max on any axis) does
+ * not intersect the OBB.
  */
 export function isObbIntersectingAabb(obb: Readonly<ObbLike>, aabb: Readonly<AabbLike>): boolean {
+  if (aabb.min.x > aabb.max.x || aabb.min.y > aabb.max.y || aabb.min.z > aabb.max.z) return false;
+
   const acx = (aabb.min.x + aabb.max.x) * 0.5,
     acy = (aabb.min.y + aabb.max.y) * 0.5,
     acz = (aabb.min.z + aabb.max.z) * 0.5;

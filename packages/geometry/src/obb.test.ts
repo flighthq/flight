@@ -131,6 +131,15 @@ describe('isObbIntersectingAabb', () => {
     const a = createAabb(-1, -1, -1, 1, 1, 1);
     expect(isObbIntersectingAabb(o, a)).toBe(false);
   });
+
+  it.each([
+    ['x', createAabb(1, 0, 0, 0, 1, 1)],
+    ['y', createAabb(0, 1, 0, 1, 0, 1)],
+    ['z', createAabb(0, 0, 1, 1, 1, 0)],
+  ])('returns false for an AABB empty on %s', (_axis, empty) => {
+    const o = createObb(0, 0, 0, 10, 10, 10, 0, 0, 0, 1);
+    expect(isObbIntersectingAabb(o, empty)).toBe(false);
+  });
 });
 
 describe('isObbIntersectingObb', () => {

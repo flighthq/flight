@@ -137,9 +137,12 @@ export function getRay3DPointAt(out: Vector3Like, ray: Readonly<Ray3DLike>, t: n
  * Returns the entry parameter `t` (>= 0) on hit, or `-1` on miss. A ray that starts inside the
  * box returns `t = 0`. Direction components need not be normalized. A single zero direction
  * component is fine — the ray is parallel to that slab, and misses only if it starts outside it —
- * but a direction of zero length is not a ray at all and always returns `-1`.
+ * but a direction of zero length is not a ray at all and always returns `-1`. An empty box
+ * (min > max on any axis) also always returns `-1`.
  */
 export function intersectRay3DAabb(ray: Readonly<Ray3DLike>, aabb: Readonly<AabbLike>): number {
+  if (aabb.min.x > aabb.max.x || aabb.min.y > aabb.max.y || aabb.min.z > aabb.max.z) return -1;
+
   const ox = ray.origin.x,
     oy = ray.origin.y,
     oz = ray.origin.z;

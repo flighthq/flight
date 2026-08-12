@@ -233,6 +233,14 @@ describe('intersectRay3DAabb', () => {
     expect(t).toBeCloseTo(4);
   });
 
+  it.each([
+    ['x', createRay3D(5, 1.5, 1.5, -1, 0, 0), createAabb(2, 1, 1, 1, 2, 2)],
+    ['y', createRay3D(1.5, 5, 1.5, 0, -1, 0), createAabb(1, 2, 1, 2, 1, 2)],
+    ['z', createRay3D(1.5, 1.5, 5, 0, 0, -1), createAabb(1, 1, 2, 2, 2, 1)],
+  ])('returns -1 for an AABB empty on %s', (_axis, ray, empty) => {
+    expect(intersectRay3DAabb(ray, empty)).toBe(-1);
+  });
+
   it('returns -1 for a ray with no direction, inside the box or out', () => {
     // A zero-length direction is not a ray, so it never hits anything — the same answer the
     // sphere, capsule, plane and triangle tests give, and not a containment test in disguise.
