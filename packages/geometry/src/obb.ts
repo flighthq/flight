@@ -273,30 +273,32 @@ export function transformObbByMatrix4(out: ObbLike, obb: Readonly<ObbLike>, m: R
     r12 = sz > 0 ? _m[9] / sz : 0,
     r22 = sz > 0 ? _m[10] / sz : 1;
 
-  // Quaternion from rotation matrix (Shepperd method).
+  // Quaternion from rotation matrix (Shepperd method). The antisymmetric pairs follow the same
+  // handedness as `obbLocalAxes`, which is the inverse map: x is (r21 - r12), not (r12 - r21).
+  // Flipping either one silently yields the conjugate — a rotation by -angle about the same axis.
   let mqw: number, mqx: number, mqy: number, mqz: number;
   const trace = r00 + r11 + r22;
   if (trace > 0) {
     const s = 0.5 / Math.sqrt(trace + 1);
     mqw = 0.25 / s;
-    mqx = (r12 - r21) * s;
-    mqy = (r20 - r02) * s;
-    mqz = (r01 - r10) * s;
+    mqx = (r21 - r12) * s;
+    mqy = (r02 - r20) * s;
+    mqz = (r10 - r01) * s;
   } else if (r00 > r11 && r00 > r22) {
     const s = 2 * Math.sqrt(1 + r00 - r11 - r22);
-    mqw = (r12 - r21) / s;
+    mqw = (r21 - r12) / s;
     mqx = 0.25 * s;
     mqy = (r10 + r01) / s;
     mqz = (r20 + r02) / s;
   } else if (r11 > r22) {
     const s = 2 * Math.sqrt(1 + r11 - r00 - r22);
-    mqw = (r20 - r02) / s;
+    mqw = (r02 - r20) / s;
     mqx = (r10 + r01) / s;
     mqy = 0.25 * s;
     mqz = (r21 + r12) / s;
   } else {
     const s = 2 * Math.sqrt(1 + r22 - r00 - r11);
-    mqw = (r01 - r10) / s;
+    mqw = (r10 - r01) / s;
     mqx = (r20 + r02) / s;
     mqy = (r21 + r12) / s;
     mqz = 0.25 * s;
