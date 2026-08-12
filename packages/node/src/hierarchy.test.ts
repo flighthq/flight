@@ -67,6 +67,13 @@ describe('addNodeChild', () => {
     expect(() => addNodeChild(container, container)).toThrow(TypeError);
   });
 
+  it('rejects a child disallowed by the parent runtime', () => {
+    getEntityRuntime(container).canAddChild = () => false;
+
+    expect(() => addNodeChild(container, childA)).toThrow('The specified parent object cannot add this child');
+    expect(getNodeParent(childA)).toBeNull();
+  });
+
   it('removes child from previous parent before adding', () => {
     const other = createNode(NodeKind);
 
@@ -220,6 +227,15 @@ describe('addNodeChildAt', () => {
 
     expect(getNodeChildrenRevision(container)).toBe(childrenId);
     expect(getNodeParentReferenceRevision(childA)).toBe(parentReferenceId);
+  });
+
+  it('repairs a stale parent reference whose child-list entry is absent', () => {
+    getEntityRuntime(childA).parent = container;
+
+    addNodeChildAt(container, childA, 0);
+
+    expect(getNodeChildAt(container, 0)).toBe(childA);
+    expect(getNodeParent(childA)).toBe(container);
   });
 
   it('calls onParentChanged on the child', () => {
@@ -531,6 +547,16 @@ describe('removeNodeChild', () => {
     expect(getNodeParent(childA)).toBeNull();
   });
 
+  it('clears a stale parent reference when the child-list entry is absent', () => {
+    getEntityRuntime(container).children = [];
+    getEntityRuntime(childA).parent = container;
+
+    removeNodeChild(container, childA);
+
+    expect(getNodeParent(childA)).toBeNull();
+    expect(getNodeChildCount(container)).toBe(0);
+  });
+
   it('calls onParentChanged on the child', () => {
     addNodeChild(container, childA);
     let called = false;
@@ -605,6 +631,11 @@ describe('removeNodeChildAt', () => {
 });
 
 describe('removeNodeChildren', () => {
+  it('does nothing when the node has never had children', () => {
+    expect(() => removeNodeChildren(container)).not.toThrow();
+    expect(getNodeChildCount(container)).toBe(0);
+  });
+
   it('removeChildren removes all children by default', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
@@ -908,6 +939,11 @@ describe('replaceNodeChild', () => {
 });
 
 describe('setNodeChildIndex', () => {
+  it('does nothing when the node has never had children', () => {
+    expect(() => setNodeChildIndex(container, childA, 0)).not.toThrow();
+    expect(getNodeChildCount(container)).toBe(0);
+  });
+
   it('advances the child-list revision when order changes', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
@@ -948,6 +984,25 @@ describe('setNodeChildIndex', () => {
     expect(getChildren(container)[0]).toBe(childA);
   });
 
+  it('does not advance the revision when the child is already at the destination', () => {
+    addNodeChild(container, childA);
+    const childrenId = getNodeChildrenRevision(container);
+
+    setNodeChildIndex(container, childA, 0);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId);
+    expect(getNodeChildAt(container, 0)).toBe(childA);
+  });
+
+  it('ignores a stale parent reference whose child-list entry is absent', () => {
+    addNodeChild(container, childB);
+    getEntityRuntime(childA).parent = container;
+
+    setNodeChildIndex(container, childA, 0);
+
+    expect(getChildren(container)).toEqual([childB]);
+  });
+
   it('calls onChildrenOrderChanged on the parent', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
@@ -962,6 +1017,16 @@ describe('setNodeChildIndex', () => {
 });
 
 describe('swapNodeChildren', () => {
+  it('does not advance the revision when both arguments are the same child', () => {
+    addNodeChild(container, childA);
+    const childrenId = getNodeChildrenRevision(container);
+
+    swapNodeChildren(container, childA, childA);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId);
+    expect(getNodeChildAt(container, 0)).toBe(childA);
+  });
+
   it('advances the child-list revision when order changes', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
@@ -1007,6 +1072,21 @@ describe('swapNodeChildren', () => {
 });
 
 describe('swapNodeChildrenAt', () => {
+  it('does nothing when the node has never had children', () => {
+    expect(() => swapNodeChildrenAt(container, 0, 1)).not.toThrow();
+    expect(getNodeChildCount(container)).toBe(0);
+  });
+
+  it('does not advance the revision when both indices are equal', () => {
+    addNodeChild(container, childA);
+    const childrenId = getNodeChildrenRevision(container);
+
+    swapNodeChildrenAt(container, 0, 0);
+
+    expect(getNodeChildrenRevision(container)).toBe(childrenId);
+    expect(getNodeChildAt(container, 0)).toBe(childA);
+  });
+
   it('advances the child-list revision when order changes', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
