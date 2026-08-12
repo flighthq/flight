@@ -510,10 +510,10 @@ export function setQuaternionIdentity(out: QuaternionLike): void {
  * Internally computes `right = up × forward`, `correctedUp = forward × right`, and builds the
  * rotation matrix from `[right, correctedUp, forward]` as column vectors.
  *
- * If `forward` and `up` are parallel or `forward` has zero length, the result is the
- * identity quaternion.
+ * If `up` is parallel to `forward`, an arbitrary perpendicular up direction is chosen so the
+ * requested forward direction is preserved. A zero-length `forward` writes the identity.
  *
- * Safe when `out` has no aliasing concerns.
+ * Safe when `out` aliases `forward` or `up`.
  */
 export function setQuaternionLookRotation(
   out: QuaternionLike,
@@ -527,14 +527,29 @@ export function setQuaternionLookRotation(
     uy = up.y,
     uz = up.z;
 
+  if (fx === 0 && fy === 0 && fz === 0) {
+    setQuaternionIdentity(out);
+    return;
+  }
+
   // right = up × forward
   let rx = uy * fz - uz * fy;
   let ry = uz * fx - ux * fz;
   let rz = ux * fy - uy * fx;
-  const rLen = Math.sqrt(rx * rx + ry * ry + rz * rz);
+  let rLen = Math.sqrt(rx * rx + ry * ry + rz * rz);
   if (rLen === 0) {
-    setQuaternionIdentity(out);
-    return;
+    // Roll is underdetermined when up is parallel to forward. Choose the world axis least aligned
+    // with forward, matching the fallback principle used by setMatrix4LookAt.
+    if (Math.abs(fz) < 0.9) {
+      rx = -fy;
+      ry = fx;
+      rz = 0;
+    } else {
+      rx = 0;
+      ry = -fz;
+      rz = fy;
+    }
+    rLen = Math.sqrt(rx * rx + ry * ry + rz * rz);
   }
   const rInv = 1 / rLen;
   rx *= rInv;
@@ -546,15 +561,16 @@ export function setQuaternionLookRotation(
   const cuy = fz * rx - fx * rz;
   const cuz = fx * ry - fy * rx;
 
-  // Rotation matrix columns: col0 = right, col1 = correctedUp, col2 = forward
+  // Rotation matrix columns: col0 = right, col1 = correctedUp, col2 = forward. Match the
+  // column-major element naming used by setQuaternionFromMatrix4.
   const m00 = rx,
-    m01 = cux,
-    m02 = fx;
-  const m10 = ry,
+    m10 = cux,
+    m20 = fx;
+  const m01 = ry,
     m11 = cuy,
-    m12 = fy;
-  const m20 = rz,
-    m21 = cuz,
+    m21 = fy;
+  const m02 = rz,
+    m12 = cuz,
     m22 = fz;
 
   const trace = m00 + m11 + m22;
