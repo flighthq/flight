@@ -2,6 +2,7 @@ import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contra
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
+type GlBooleanQuad = [boolean, boolean, boolean, boolean];
 type GlBox = [number, number, number, number];
 
 type SavedGlRenderState = {
@@ -13,6 +14,8 @@ type SavedGlRenderState = {
   blendEquationRgb: number;
   blendSrcAlpha: number;
   blendSrcRgb: number;
+  clearColor: GlBox;
+  colorMask: GlBooleanQuad;
   cullFace: boolean;
   cullFaceMode: number;
   frontFace: number;
@@ -47,6 +50,7 @@ type SavedGlRenderState = {
   scissorBox: GlBox;
   scissorTest: boolean;
   texture2DByUnit: (WebGLTexture | null)[];
+  unpackPremultiplyAlpha: boolean;
   vertexArray: WebGLVertexArrayObject | null;
   viewport: GlBox;
 };
@@ -101,6 +105,14 @@ export function popGlRenderState(state: GlRenderState): void {
   }
   gl.activeTexture(saved.activeTexture);
 
+  // Pixel-write and upload state Flight sets and never puts back on its own: the 2D clip pass masks
+  // colour while it rasterizes coverage, the background/velocity passes set a clear colour, and every
+  // texture upload sets the premultiply flag. Each is context-wide, so a host that never called them
+  // would otherwise inherit Flight's last value.
+  gl.colorMask(saved.colorMask[0], saved.colorMask[1], saved.colorMask[2], saved.colorMask[3]);
+  gl.clearColor(saved.clearColor[0], saved.clearColor[1], saved.clearColor[2], saved.clearColor[3]);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, saved.unpackPremultiplyAlpha);
+
   restoreGlCapability(gl, gl.SCISSOR_TEST, saved.scissorTest);
   gl.scissor(saved.scissorBox[0], saved.scissorBox[1], saved.scissorBox[2], saved.scissorBox[3]);
   gl.viewport(saved.viewport[0], saved.viewport[1], saved.viewport[2], saved.viewport[3]);
@@ -146,6 +158,8 @@ export function pushGlRenderState(state: GlRenderState): void {
     blendEquationRgb: gl.getParameter(gl.BLEND_EQUATION_RGB) as number,
     blendSrcAlpha: gl.getParameter(gl.BLEND_SRC_ALPHA) as number,
     blendSrcRgb: gl.getParameter(gl.BLEND_SRC_RGB) as number,
+    clearColor: readGlBox(gl, gl.COLOR_CLEAR_VALUE),
+    colorMask: readGlBooleanQuad(gl, gl.COLOR_WRITEMASK),
     cullFace: gl.isEnabled(gl.CULL_FACE),
     cullFaceMode: gl.getParameter(gl.CULL_FACE_MODE) as number,
     frontFace: gl.getParameter(gl.FRONT_FACE) as number,
@@ -180,6 +194,7 @@ export function pushGlRenderState(state: GlRenderState): void {
     scissorBox: readGlBox(gl, gl.SCISSOR_BOX),
     scissorTest: gl.isEnabled(gl.SCISSOR_TEST),
     texture2DByUnit,
+    unpackPremultiplyAlpha: gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL) as boolean,
     vertexArray: gl.getParameter(gl.VERTEX_ARRAY_BINDING) as WebGLVertexArrayObject | null,
     viewport: readGlBox(gl, gl.VIEWPORT),
   });
@@ -195,6 +210,14 @@ export function withGlRenderState<T>(state: GlRenderState, callback: () => T): T
   } finally {
     popGlRenderState(state);
   }
+}
+
+function readGlBooleanQuad(gl: WebGL2RenderingContext, parameter: GLenum): GlBooleanQuad {
+  const value = gl.getParameter(parameter) as ArrayLike<boolean> | null | undefined;
+  // As readGlBox: browsers always return four values for COLOR_WRITEMASK. All-enabled is the GL
+  // default and the conservative sentinel for a partial mock — it can never mask a host's writes off.
+  if (value === null || value === undefined) return [true, true, true, true];
+  return [value[0], value[1], value[2], value[3]];
 }
 
 function readGlBox(gl: WebGL2RenderingContext, parameter: GLenum): GlBox {
