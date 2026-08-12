@@ -98,6 +98,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
     expect(offscreenRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);
     expect(offscreenRuntime.registries.modifierSnippets).toBe(screenRuntime.registries.modifierSnippets);
@@ -211,6 +212,12 @@ describe('createWgpuRenderStateRuntime', () => {
   it('returns a runtime with the base binding slot and empty named registration tables', () => {
     const runtime = createWgpuRenderStateRuntime();
     expect(runtime.binding).toBeNull();
+    expect(runtime.registries.customMaterialShaders).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'WgpuCustomMaterialShader',
+      shape: 'keyed',
+    });
+    expect(runtime.registries.customMaterialShaders.entries.size).toBe(0);
     expect(runtime.registries.materialRenderers).toMatchObject({
       onMiss: 'StandardMaterial',
       registry: 'WgpuMaterialRenderer',

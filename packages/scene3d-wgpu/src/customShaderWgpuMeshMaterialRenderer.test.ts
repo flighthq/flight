@@ -2,7 +2,12 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
-import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import {
+  copyWgpuRenderStateRegistrations,
+  getWgpuRenderStateRuntime,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Camera3D, Image, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind, ImageTextureSourceKind } from '@flighthq/types/contract';
@@ -14,6 +19,7 @@ import {
   registerWgpuCustomMaterialShader,
 } from './customShaderWgpuMeshMaterialRenderer';
 import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 const SOURCE = `
@@ -199,6 +205,24 @@ describe('registerWgpuCustomMaterialShader', () => {
     registerWgpuCustomMaterialShader(state, 'ripple', `${SOURCE}\n// edited`);
     expect(getWgpuCustomMaterialShaderSource(state, 'ripple')).toContain('edited');
     expect(getWgpuCustomMaterialShaderSource(state, 'missing')).toBeNull();
+  });
+
+  it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
+    const { state: screen } = makeWgpuScene3DState();
+    const { state: derived } = makeWgpuScene3DState();
+    const replacement = `${SOURCE}\n// replacement`;
+    registerWgpuCustomMaterialShader(screen, 'ripple', SOURCE);
+    const snapshot = getWgpuRenderStateRuntime(screen).registries.customMaterialShaders;
+
+    copyWgpuRenderStateRegistrations(derived, screen);
+    getWgpuScene3DRuntime(derived);
+    registerWgpuCustomMaterialShader(screen, 'ripple', replacement);
+
+    expect(getWgpuRenderStateRuntime(derived).registries.customMaterialShaders).toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(screen).registries.customMaterialShaders).not.toBe(snapshot);
+    expect(getRegistryTableEntry(snapshot, 'ripple')).toBe(SOURCE);
+    expect(getWgpuCustomMaterialShaderSource(derived, 'ripple')).toBe(SOURCE);
+    expect(getWgpuCustomMaterialShaderSource(screen, 'ripple')).toBe(replacement);
   });
 });
 

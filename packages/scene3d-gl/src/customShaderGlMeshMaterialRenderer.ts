@@ -1,4 +1,5 @@
-import { resolveGlTexture } from '@flighthq/render-gl/contract';
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
   GlCustomMaterialShaderSource,
   Camera3D,
@@ -12,7 +13,7 @@ import type {
   Texture,
   GlMeshProgram,
 } from '@flighthq/types/contract';
-import { CustomShaderMaterialKind } from '@flighthq/types/contract';
+import { CustomShaderMaterialKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import {
@@ -80,7 +81,8 @@ export function getGlCustomMaterialShaderSource(
   state: GlRenderState,
   shaderKey: string,
 ): Readonly<GlCustomMaterialShaderSource> | null {
-  return _customMaterialShaders.get(state)?.get(shaderKey) ?? null;
+  const entry = getGlRenderStateRuntime(state).registries.customMaterialShaders.entries.get(shaderKey);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Registers a vertex + fragment shader source pair under `shaderKey` for this state, so a
@@ -106,12 +108,12 @@ export function registerGlCustomMaterialShader(
   shaderKey: string,
   source: Readonly<GlCustomMaterialShaderSource>,
 ): void {
-  let registry = _customMaterialShaders.get(state);
-  if (registry === undefined) {
-    registry = new Map();
-    _customMaterialShaders.set(state, registry);
-  }
-  registry.set(shaderKey, source);
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.registries.customMaterialShaders = withRegistryTableEntry(
+    runtime.registries.customMaterialShaders,
+    shaderKey,
+    source,
+  );
 }
 
 // Registers the built-in CustomShaderMaterial renderer for CustomShaderMaterialKind on this
@@ -196,5 +198,3 @@ function uploadCustomShaderMaterialTextures(
     unit++;
   }
 }
-
-const _customMaterialShaders = new WeakMap<GlRenderState, Map<string, GlCustomMaterialShaderSource>>();
