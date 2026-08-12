@@ -138,8 +138,8 @@ export function createGradientTransformMatrix(
  * It is a 2x3 matrix, with a, b, c, d for a two-dimensional transform,
  * and tx, ty for translation.
  *
- * [ a b tx ]
- * [ c d ty ]
+ * [ a c tx ]
+ * [ b d ty ]
  *
  * @see Vector2
  * @see Vector3
