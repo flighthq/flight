@@ -224,6 +224,16 @@ describe('computeMeshGeometryNormals', () => {
     expect(out.vertices[5]).toBeCloseTo(1);
   });
 
+  it('bumps the output version after rewriting normals', () => {
+    const source = makeTriangle();
+    const out = makeTriangle();
+    const previousVersion = out.version;
+
+    computeMeshGeometryNormals(out, source);
+
+    expect(out.version).toBe(previousVersion + 1);
+  });
+
   it('keeps duplicated positions independent when position groups are omitted', () => {
     const geometry = makeUvSeamFold();
 
