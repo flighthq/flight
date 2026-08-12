@@ -135,9 +135,9 @@ export function getRay3DPointAt(out: Vector3Like, ray: Readonly<Ray3DLike>, t: n
  * Tests whether a ray intersects an axis-aligned bounding box (slab method).
  *
  * Returns the entry parameter `t` (>= 0) on hit, or `-1` on miss. A ray that starts inside the
- * box returns `t = 0`. Direction components need not be normalized; the test works for any
- * non-zero direction. A zero-component direction is handled (the ray is parallel to that slab
- * and outside returns -1, inside continues).
+ * box returns `t = 0`. Direction components need not be normalized. A single zero direction
+ * component is fine — the ray is parallel to that slab, and misses only if it starts outside it —
+ * but a direction of zero length is not a ray at all and always returns `-1`.
  */
 export function intersectRay3DAabb(ray: Readonly<Ray3DLike>, aabb: Readonly<AabbLike>): number {
   const ox = ray.origin.x,
@@ -146,6 +146,8 @@ export function intersectRay3DAabb(ray: Readonly<Ray3DLike>, aabb: Readonly<Aabb
   const dx = ray.direction.x,
     dy = ray.direction.y,
     dz = ray.direction.z;
+
+  if (dx * dx + dy * dy + dz * dz === 0) return -1; // zero-length direction
 
   let tMin = 0;
   let tMax = Number.POSITIVE_INFINITY;
