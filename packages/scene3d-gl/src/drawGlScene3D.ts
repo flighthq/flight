@@ -106,16 +106,18 @@ export function drawGlScene3D(
     const subsets = mesh.geometry.subsets;
     const worldMatrix = getNodeWorldMatrix4(mesh) as Matrix4;
 
-    // Compute the mesh origin's clip-space W (a proxy for view-depth). The world origin is
-    // (worldMatrix.m[12], worldMatrix.m[13], worldMatrix.m[14]). We only need the W component of
-    // clip = VP * worldOrigin, which is the dot of VP row-3 with the homogeneous world position:
+    // Compute the mesh origin's projected depth. The world origin is
+    // (worldMatrix.m[12], worldMatrix.m[13], worldMatrix.m[14]). We need the Z and W components of
+    // clip = VP * worldOrigin to project clip-space Z into normalized device coordinates:
     //   w_clip = vp[3]*wx + vp[7]*wy + vp[11]*wz + vp[15]
-    // Larger W = farther from camera (in standard OpenGL NDC). Read world translation from column 3.
+    //   z_clip = vp[2]*wx + vp[6]*wy + vp[10]*wz + vp[14]
+    // Larger Z/W = farther from camera in OpenGL NDC. Read world translation from column 3.
     const wx = worldMatrix.m[12];
     const wy = worldMatrix.m[13];
     const wz = worldMatrix.m[14];
     const vp = viewProjection.m;
     const clipW = vp[3] * wx + vp[7] * wy + vp[11] * wz + vp[15];
+    const clipZ = vp[2] * wx + vp[6] * wy + vp[10] * wz + vp[14];
 
     // Resolved per-object opacity (parent×self), constant across a mesh's subsets. A fading object
     // (alpha < 1) must route through the blended pass so it composites over what is behind it.
@@ -133,9 +135,9 @@ export function drawGlScene3D(
       const isBlended = isBlendedMaterial(resolvedMaterial) || objectAlpha < 1;
       const entry = acquireDrawEntry(isBlended ? runtime.blendedPool : runtime.opaquePool);
       entry.alpha = objectAlpha;
-      entry.clipW = clipW;
       entry.colorMatrix = colorMatrix;
       entry.colorScaleBias = colorScaleBias;
+      entry.depth = clipZ / clipW;
       entry.lightBlock = hasPreparedForwardLights ? forwardLights.meshLightBlocks[m] : lightBlock;
       entry.mesh = mesh;
       entry.material = resolvedMaterial;
@@ -203,7 +205,7 @@ export function drawGlScene3D(
     entry.renderer.draw(state, proxy, entry.mesh.geometry);
   }
 
-  // Pass 2: blended subsets sorted back-to-front (descending clipW = farthest drawn first so nearer
+  // Pass 2: blended subsets sorted back-to-front (descending projected depth = farthest drawn first so nearer
   // layers composite correctly). Enable alpha blending for this pass; disable after.
   if (blendedDrawList.length > 0) {
     blendedDrawList.sort(compareBlendedEntriesDescending);
@@ -312,18 +314,18 @@ function resolveSubsetMaterial(mesh: Readonly<Mesh>, subsetIndex: number): Reado
   return subsetIndex < materials.length ? materials[subsetIndex] : null;
 }
 
-// Sort comparator for blended entries: descending clipW so farthest (largest W) is drawn first.
+// Sort comparator for blended entries: descending projected depth so the farthest subset is drawn first.
 function compareBlendedEntriesDescending(a: GlScene3DDrawEntry, b: GlScene3DDrawEntry): number {
-  return b.clipW - a.clipW;
+  return b.depth - a.depth;
 }
 
 // Typed alias for cast-free access inside drawGlScene3D; GlScene3DDrawEntry uses `object` fields for
 // the header to remain free of scene-gl-internal types.
 interface DrawEntry {
   alpha: number;
-  clipW: number;
   colorMatrix: readonly number[] | null;
   colorScaleBias: Readonly<ColorScaleBias> | null;
+  depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;
   material: Readonly<Material>;
   mesh: Mesh;
@@ -348,9 +350,9 @@ function recycleDrawEntries(entries: GlScene3DDrawEntry[], pool: GlScene3DDrawEn
 function createDrawEntry(): GlScene3DDrawEntry {
   return {
     alpha: 1,
-    clipW: 0,
     colorMatrix: null,
     colorScaleBias: null,
+    depth: 0,
     lightBlock: null!,
     material: DEFAULT_MATERIAL,
     mesh: null!,
