@@ -312,6 +312,28 @@ describe('equalsRectangle', () => {
     expect(equalsRectangle(r, r)).toBe(true);
     expect(equalsRectangle(r, r2)).toBe(true);
   });
+
+  it('compares every field, not just the position', () => {
+    // Four hand-written comparisons in a row: one left reading the wrong field agrees with the
+    // right answer on every pair that differs in more than one place, so each differs alone here.
+    const base = createRectangle(1, 2, 3, 4);
+    expect(equalsRectangle(base, createRectangle(9, 2, 3, 4))).toBe(false);
+    expect(equalsRectangle(base, createRectangle(1, 9, 3, 4))).toBe(false);
+    expect(equalsRectangle(base, createRectangle(1, 2, 9, 4))).toBe(false);
+    expect(equalsRectangle(base, createRectangle(1, 2, 3, 9))).toBe(false);
+  });
+
+  it('returns false when only one side is missing', () => {
+    // The signature accepts null and undefined, so absence is an answerable input rather than
+    // misuse. Note that two absences ARE reported equal here, by the identity check that runs
+    // first — the vector equivalents answer that case the other way.
+    const rect = createRectangle(1, 2, 3, 4);
+    expect(equalsRectangle(rect, null)).toBe(false);
+    expect(equalsRectangle(null, rect)).toBe(false);
+    expect(equalsRectangle(rect, undefined)).toBe(false);
+    expect(equalsRectangle(undefined, rect)).toBe(false);
+    expect(equalsRectangle(null, undefined)).toBe(false);
+  });
 });
 
 describe('expandRectangleToPoint', () => {

@@ -134,7 +134,9 @@ export function equalsVector3(
   b: Readonly<Vector3Like> | null | undefined,
 ): boolean {
   if (!a || !b) return false;
-  return a.x === b.x && a.y === b.y && a.z === b.z;
+  // Identity first, as in `equalsVector2`: a vector is equal to itself even when a component is NaN,
+  // which a field-by-field comparison would deny.
+  return a === b || (a.x === b.x && a.y === b.y && a.z === b.z);
 }
 
 /**
