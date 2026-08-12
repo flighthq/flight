@@ -53,6 +53,12 @@ describe('compileGlDebugProgram', () => {
     expect(program.locViewProjection).not.toBeNull();
     expect(gl.calls.some((c) => c.name === 'linkProgram')).toBe(true);
   });
+
+  it('resolves the view matrix used by the depth variant', () => {
+    const gl = makeFakeGl2();
+    const program = compileGlDebugProgram(gl, DEPTH);
+    expect(program.locView).not.toBeNull();
+  });
 });
 
 describe('ensureGlDebugProgram', () => {
@@ -92,6 +98,12 @@ describe('getGlDebugFragmentSourceForKey', () => {
     expect(getGlDebugFragmentSourceForKey(NORMAL)).not.toContain('#define HAS_NORMAL_MAP');
     expect(getGlDebugFragmentSourceForKey(NORMAL_MAP)).toContain('#define HAS_NORMAL_MAP');
   });
+
+  it('reads projection-independent view depth instead of reciprocal clip w', () => {
+    const source = getGlDebugFragmentSourceForKey(DEPTH);
+    expect(source).toContain('v_viewDepth - u_near');
+    expect(source).not.toContain('gl_FragCoord.w');
+  });
 });
 
 describe('getGlDebugVertexSourceForKey', () => {
@@ -101,6 +113,12 @@ describe('getGlDebugVertexSourceForKey', () => {
     expect(source).toContain('u_normalMatrix');
     expect(source).toContain('u_viewProjection');
     expect(getGlDebugVertexSourceForKey(DEPTH)).toContain('a_position');
+  });
+
+  it('computes positive view-axis depth before projection', () => {
+    const source = getGlDebugVertexSourceForKey(DEPTH);
+    expect(source).toContain('uniform mat4 u_view');
+    expect(source).toContain('v_viewDepth = -(u_view * worldPosition).z');
   });
 
   it('deforms position, normal, and tangent only in the skinned variant', () => {

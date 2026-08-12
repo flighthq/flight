@@ -55,6 +55,7 @@ export function compileGlDebugProgram(gl: WebGL2RenderingContext, key: Readonly<
     locNormalMap: gl.getUniformLocation(program, 'u_normalMap'),
     locNormalMatrix: gl.getUniformLocation(program, 'u_normalMatrix'),
     locNormalScale: gl.getUniformLocation(program, 'u_normalScale'),
+    locView: gl.getUniformLocation(program, 'u_view'),
     locViewProjection: gl.getUniformLocation(program, 'u_viewProjection'),
     program,
   };
@@ -100,11 +101,17 @@ layout(location = 3) in vec2 a_uv0;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
 uniform mat3 u_normalMatrix;
+#ifdef DEPTH_MODE
+uniform mat4 u_view;
+#endif
 
 out vec3 v_worldPosition;
 out vec3 v_normal;
 out vec4 v_tangent;
 out vec2 v_uv0;
+#ifdef DEPTH_MODE
+out float v_viewDepth;
+#endif
 
 void main() {
 #ifdef HAS_SKIN
@@ -132,6 +139,9 @@ void main() {
   float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
   v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
   v_uv0 = a_uv0;
+#ifdef DEPTH_MODE
+  v_viewDepth = -(u_view * worldPosition).z;
+#endif
   gl_Position = u_viewProjection * worldPosition;
 }
 `;
@@ -145,6 +155,7 @@ in vec4 v_tangent;
 in vec2 v_uv0;
 
 #ifdef DEPTH_MODE
+in float v_viewDepth;
 uniform float u_near;
 uniform float u_far;
 #endif
@@ -161,11 +172,9 @@ out vec4 fragColor;
 
 void main() {
 #ifdef DEPTH_MODE
-  // Linear view-space distance is the perspective w: 1.0 / gl_FragCoord.w == w_clip == eye distance.
-  // This is camera-agnostic (no camera near/far needed); map it across the material's [u_near, u_far]
-  // visualization window to grayscale [0, 1].
-  float eyeDepth = 1.0 / gl_FragCoord.w;
-  float d = clamp((eyeDepth - u_near) / max(u_far - u_near, 1e-6), 0.0, 1.0);
+  // Positive distance along the camera's view axis, computed before projection so perspective and
+  // orthographic cameras agree. Map it across the material's visualization window to grayscale.
+  float d = clamp((v_viewDepth - u_near) / max(u_far - u_near, 1e-6), 0.0, 1.0);
   fragColor = vec4(vec3(d), 1.0);
 #endif
 #ifdef NORMAL_MODE

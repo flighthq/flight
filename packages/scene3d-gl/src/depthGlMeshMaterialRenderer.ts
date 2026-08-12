@@ -17,9 +17,10 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The built-in Depth forward renderer (GlMeshMaterialRenderer for DepthMaterialKind). A lighting-
 // independent debug/utility pass material: bind selects the debug program in depth mode, uploads the
-// camera view-projection, and sets the material's [near, far] linearization range; draw issues the
-// indexed draw. The fragment scene2d linearizes window-space depth into eye space and writes it as
-// grayscale LINEAR color. Lights are ignored. See registerGlDepthMaterial to install it.
+// camera view-projection + view matrices, and sets the material's [near, far] linearization range;
+// draw issues the indexed draw. The vertex stage carries positive view-axis depth so perspective and
+// orthographic cameras produce the same grayscale LINEAR meaning. Lights are ignored. See
+// registerGlDepthMaterial to install it.
 export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
   bind(
     state: GlRenderState,
@@ -31,6 +32,7 @@ export const depthGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     const program = ensureGlDebugProgram(state, { hasNormalMap: false, mode: 'depth' });
     beginGlMeshDraw(state, program, depth !== null && depth.doubleSided);
     setGlMeshViewProjection(state, program.locViewProjection, camera);
+    state.gl.uniformMatrix4fv(program.locView, false, camera.view.m);
 
     if (depth === null) {
       bindGlDebugRange(state, program, 0, 1);
