@@ -6,10 +6,12 @@ import type { Skeleton2DSlotDeform, Slot2D } from '@flighthq/types/contract';
 // This one comparison is the whole reason `Skeleton2DSlotDeform` pairs offsets with an attachment. A slot
 // that swaps attachments keeps whatever deform was last written to it — the attachment-swap binder writes
 // `slot.attachment` and nothing else, by design — so without this check the old art's offsets would deform
-// the new art. A length check cannot stand in for it: of the three ways a swap changes size, only swapping
-// to a LARGER attachment is detectable that way, while EQUAL and SMALLER both satisfy the deformers' `>=`
-// and pass silently. Equal is also the common case, because matching point counts are what make a swap
-// look continuous.
+// the new art. A length check cannot stand in for it. The deformers match their stream length EXACTLY, so
+// a swap to a differently sized attachment does also trip that check — but a swap to an EQUALLY sized one
+// satisfies it perfectly and applies the wrong art's offsets in silence, and equal is the COMMON case,
+// because matching point counts are what make a swap look continuous in the first place. The other two
+// sizes are no argument for a length check either: it rejects them while naming the wrong cause, reporting
+// a malformed offset stream when what actually happened is that the slot is wearing something else.
 //
 // Identity comparison, not equality: the record names the attachment object it was authored against, and
 // re-reading it here is the invalidation doctrine's compare-identities rule at a pull seam.
