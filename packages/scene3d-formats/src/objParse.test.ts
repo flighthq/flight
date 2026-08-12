@@ -389,7 +389,7 @@ describe('createScene3DFromObj', () => {
       'd 0.5',
       'map_Kd wood.png',
       'map_Ks spec.png',
-      'bump normal.png',
+      'norm normal.png',
     ].join('\n');
     const lib = parseObjMaterialLibrary(mtl);
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'usemtl Shiny', 'f 1 2 3'].join('\n');
@@ -888,6 +888,54 @@ describe('parseObj material model selection', () => {
 
     expect(material.kind).toBe(StandardPbrMaterialKind);
     expect(findDiagnostic(diagnostics, 'mtl.pbr-extension-unbound')).toBeUndefined();
+  });
+
+  it('generates a usable tangent frame when the file has UVs', () => {
+    // OBJ has no tangent directive, so every tangent slot arrives zeroed — and a zero tangent
+    // collapses the basis a normal-mapped material rebuilds as B = w * cross(N, T). Since `norm`
+    // binds a tangent-space normal map, emitting no tangent makes that map unusable. AWD and MD5
+    // already derive one when their own files omit the stream; this asserts OBJ does too.
+    // The quad is deliberately NOT axis-aligned in UV space — a tangent that came out (0,0,0,0)
+    // and one that came out correct would both look "fine" against a trivially aligned fixture.
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'vt 0 0', 'vt 0.9 0.2', 'vt 0.2 0.9', 'f 1/1 2/2 3/3'].join('\n');
+    const document = parseObj(obj);
+    const geometry = document.meshes[0].geometry;
+    const stride = geometry.layout.stride / 4;
+    const vertexCount = geometry.vertices.length / stride;
+    expect(vertexCount).toBeGreaterThan(0);
+    for (let v = 0; v < vertexCount; v++) {
+      const base = v * stride + 6;
+      const length = Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2]);
+      expect(length).toBeCloseTo(1, 4);
+      expect(Math.abs(geometry.vertices[base + 3])).toBe(1); // handedness is a sign, never 0
+    }
+  });
+
+  it('leaves tangents alone for a file with no UVs, having nothing to derive them from', () => {
+    const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
+    const document = parseObj(obj);
+    const geometry = document.meshes[0].geometry;
+    const stride = geometry.layout.stride / 4;
+    const vertexCount = geometry.vertices.length / stride;
+    // The WHOLE tangent record, not just x: the degenerate-UV fallback writes a unit perpendicular,
+    // and a fallback pointing along y or z would slip past a test that only looked at x.
+    for (let v = 0; v < vertexCount; v++) {
+      const base = v * stride + 6;
+      expect(Math.hypot(geometry.vertices[base], geometry.vertices[base + 1], geometry.vertices[base + 2])).toBe(0);
+      expect(geometry.vertices[base + 3]).toBe(0);
+    }
+  });
+
+  it('does not bind the legacy bump (height) map to normalMap', () => {
+    // map_Bump/bump is a grayscale HEIGHT field, not a tangent-space normal map: a shader decoding
+    // its RGB as 2*c-1 vectors reads elevation as orientation. It stays unbound until a height-map
+    // feature exists to consume it — the same call threeDsParse already makes for MAT_BUMPMAP. The
+    // filename is deliberately misleading here, because a file called normal.png declared via `bump`
+    // is exactly how this went unnoticed: the directive decides, not the name.
+    const diagnostics: ImportDiagnostic[] = [];
+    const material = materialFor('newmtl M\nbump normal.png\n', diagnostics) as BlinnPhongMaterial;
+    expect(material.normalMap).toBeNull();
+    expect(findDiagnostic(diagnostics, 'mtl.bump-height-map-unbound')).toBeDefined();
   });
 
   it('prefers the dedicated norm map over map_Bump for the normal map', () => {
