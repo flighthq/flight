@@ -34,10 +34,18 @@ claim about this tree, not about a session.
   `expandAabbBySphere`.
 - **`enableGeometryPoolGuards()` is chartered (2026-07-03) but unbuilt** — no guard module exists
   anywhere in the tree.
+- **`__getAxisRotation` never normalizes its axis**, so a non-unit axis silently produces a scaling
+  matrix rather than a rotation: `let ax = x, ay = y, az = z` (`matrix4.ts:1284-1286`) feeds the
+  Rodrigues terms with no length division, and axis `(0, 0, 2)` at 90 degrees yields `m[1] = 2`,
+  `m[4] = -2`, `m[10] = 4`. It reaches callers through all three public rotation entry points —
+  `appendRotationMatrix4` (`matrix4.ts:33`), `prependRotationMatrix4` (`:775`), and `rotateMatrix4`
+  (`:852`). The unit-axis precondition is now stated on each of those three doc comments, matching
+  `setQuaternionFromAxisAngle` (`quaternion.ts:309`), which carries and documents the identical
+  precondition — so this is a package-wide convention with a documentation gap, not a matrix4 defect.
+  Turning it into a runtime warning belongs to the unbuilt `enableGeometryPoolGuards()` route above.
 - **Doc/style hygiene:** the Float32Array bridges say "byte offset" where the offset is in elements
-  (`matrix3.ts:331`, `:437`; `vector3.ts:390`, `:456`; `vector4.ts:369`, `:405`); an orphaned transpose
-  JSDoc block sits detached between `transposeMatrix4` and `writeMatrix4ToFloat32Array`
-  (`matrix4.ts:1243-1252`); `var` relics survive in `rotateMatrix` (`matrix.ts:433`, `:437`, `:441`).
+  (`matrix3.ts:331`, `:437`; `vector3.ts:390`, `:456`; `vector4.ts:369`, `:405`); `var` relics survive
+  in `rotateMatrix` (`matrix.ts:433`, `:437`, `:441`).
 - **There is no `crates/` directory in this repo.** The `crate: flighthq-geometry` stamp and every
   crate-conformance note point at the separate flight-rs repo, not at work reachable from this tree.
 
