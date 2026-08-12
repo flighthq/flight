@@ -3,7 +3,6 @@ import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
 import type { CanvasRenderEffectRunner } from './CanvasRenderEffectPipeline';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
-import type { Kind } from './Entity';
 import type { KeyedTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState, RenderStateRuntime } from './RenderState';
@@ -21,6 +20,9 @@ export interface CanvasRenderState extends RenderState {
 // Pure registration policy owned by one Canvas render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface CanvasRenderRegistries {
+  // Absent until the first material registration so a Canvas-only application that uses no material
+  // policy retains neither the table metadata nor the declarative renderer module.
+  materialRenderers?: KeyedTable<CanvasMaterialRenderer>;
   renderEffects: KeyedTable<CanvasRenderEffectRunner>;
 }
 
@@ -39,9 +41,6 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   canvasTextureResolvers: CanvasTextureResolvers;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
-  // Per-material-kind canvas renderer registry. Absent (and tree-shaken) until a material renderer
-  // is registered.
-  materialRendererMap?: Map<Kind, CanvasMaterialRenderer>;
   // Backdrop targets a BlendEffect can name through its `backdropKey`, so the advanced-blend recipe can
   // read a layer it did not produce. The registry holds the target only and never owns or frees it.
   // Absent until a backdrop is registered, so a scene using no advanced blend carries no map.

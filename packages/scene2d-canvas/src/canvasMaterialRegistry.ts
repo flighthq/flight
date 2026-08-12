@@ -1,5 +1,6 @@
+import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import type { CanvasMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
+import { RegistryEntryState, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
@@ -19,7 +20,8 @@ export function applyCanvasMaterial(state: CanvasRenderState, material: Material
 }
 
 export function getCanvasMaterialRenderer(state: CanvasRenderState, kind: Kind): CanvasMaterialRenderer | null {
-  return getCanvasRenderStateRuntime(state).materialRendererMap?.get(kind) ?? null;
+  const entry = getCanvasRenderStateRuntime(state).registries.materialRenderers?.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 export function registerCanvasMaterialRenderer(
@@ -28,7 +30,8 @@ export function registerCanvasMaterialRenderer(
   renderer: CanvasMaterialRenderer,
 ): void {
   const runtime = getCanvasRenderStateRuntime(state);
-  (runtime.materialRendererMap ??= new Map()).set(kind, renderer);
+  const table = runtime.registries.materialRenderers ?? createKeyedTable('CanvasMaterialRenderer', 'StandardMaterial');
+  runtime.registries.materialRenderers = withRegistryTableEntry(table, kind, renderer);
 }
 
 // Resolves a node's material to its Canvas renderer, else the registered default, else null.
@@ -38,11 +41,12 @@ export function resolveCanvasMaterialRenderer(
   state: CanvasRenderState,
   material: Material | null,
 ): CanvasMaterialRenderer | null {
-  const map = getCanvasRenderStateRuntime(state).materialRendererMap;
-  if (map === undefined) return null;
+  const entries = getCanvasRenderStateRuntime(state).registries.materialRenderers?.entries;
+  if (entries === undefined) return null;
   if (material !== null) {
-    const renderer = map.get(material.kind);
-    if (renderer !== undefined) return renderer;
+    const entry = entries.get(material.kind);
+    if (entry?.state === RegistryEntryState.Bound) return entry.value;
   }
-  return map.get(StandardMaterialKind) ?? null;
+  const fallback = entries.get(StandardMaterialKind);
+  return fallback?.state === RegistryEntryState.Bound ? fallback.value : null;
 }
