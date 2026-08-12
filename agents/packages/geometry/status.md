@@ -34,15 +34,20 @@ claim about this tree, not about a session.
   `expandAabbBySphere`.
 - **`enableGeometryPoolGuards()` is chartered (2026-07-03) but unbuilt** — no guard module exists
   anywhere in the tree.
-- **`__getAxisRotation` never normalizes its axis**, so a non-unit axis silently produces a scaling
-  matrix rather than a rotation: `let ax = x, ay = y, az = z` (`matrix4.ts:1284-1286`) feeds the
-  Rodrigues terms with no length division, and axis `(0, 0, 2)` at 90 degrees yields `m[1] = 2`,
-  `m[4] = -2`, `m[10] = 4`. It reaches callers through all three public rotation entry points —
-  `appendRotationMatrix4` (`matrix4.ts:33`), `prependRotationMatrix4` (`:775`), and `rotateMatrix4`
-  (`:852`). The unit-axis precondition is now stated on each of those three doc comments, matching
-  `setQuaternionFromAxisAngle` (`quaternion.ts:309`), which carries and documents the identical
-  precondition — so this is a package-wide convention with a documentation gap, not a matrix4 defect.
-  Turning it into a runtime warning belongs to the unbuilt `enableGeometryPoolGuards()` route above.
+- **`appendRotationMatrix4`'s pivot composite has its sign inverted**; its sibling's does not. It
+  builds `T(-p)·R·T(p)` (`matrix4.ts:47-51`) where rotate-about-`p` is `T(p)·R·T(-p)`, which
+  `prependRotationMatrix4` builds correctly (`:786-790`). With `source = T(10,0,0)`, pivot `(5,0,0)`,
+  90° about Z it writes translation `(-5, 15, 0)` — exactly `T(-p)·R·T(p)·source`, not the correct
+  `(5, 5, 0)`. Predates and is independent of the operand inversion. Unrepaired: that correction was
+  authorized as inheritance-only and this needs a hand edit, so the append-side pivot assertion is
+  absent from `matrix4.test.ts`; the prepend-side one passes.
+- **`__getAxisRotation` never normalizes its axis**, so a non-unit axis silently yields a scaling
+  matrix, not a rotation: `let ax = x, ay = y, az = z` (`matrix4.ts:1284-1286`) feeds the Rodrigues
+  terms with no length division, and axis `(0,0,2)` at 90° gives `m[1]=2`, `m[4]=-2`, `m[10]=4`. It
+  reaches callers through all three rotation entry points (`:33`, `:775`, `:852`), whose docs now
+  state the precondition — matching `setQuaternionFromAxisAngle` (`quaternion.ts:309`), which carries
+  the identical one. A package-wide convention with a doc gap, not a matrix4 defect; a runtime warning
+  belongs to the unbuilt `enableGeometryPoolGuards()` route above.
 - **Doc/style hygiene:** the Float32Array bridges say "byte offset" where the offset is in elements
   (`matrix3.ts:331`, `:437`; `vector3.ts:390`, `:456`; `vector4.ts:369`, `:405`); `var` relics survive
   in `rotateMatrix` (`matrix.ts:433`, `:437`, `:441`).
@@ -61,6 +66,13 @@ claim about this tree, not about a session.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-12** — matrix4's append/prepend family is a port of OpenFL's `Matrix3D` whose
+  `appendMatrix4`/`prependMatrix4` had their **operands transposed** against it (OpenFL's `append` is
+  `this = lhs · this`). Not a convention mismatch: OpenFL is column-major with column vectors, like
+  Flight. The four scale/rotation aliases route through those wrappers and inherited the inversion —
+  hand-ported `appendTranslationMatrix4` bypassed them and was the lone survivor. The 28 family tests
+  encoded the inversion, written against the implementation rather than the documented meaning.
 
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The headline 2026-08-05 claim checked out
   **false**: "2D translation still leaves a distinct output's linear terms stale" — `translateMatrix`
