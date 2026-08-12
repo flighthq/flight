@@ -7,9 +7,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { writeFixtureTreeStamp } from '../../scripts/fixtures';
 import type { ConformanceFixtureAdapter, ConformanceFixtureTree } from './fixture-conformance';
 import {
+  createConformanceFixturePlan,
   discoverConformanceFixtureTrees,
   listConformanceFixtureReferences,
   runConformanceFixtureAdapters,
+  runConformanceFixturePlan,
+  scoreConformanceFixturePlan,
 } from './fixture-conformance';
 
 let workspace = '';
@@ -56,33 +59,46 @@ describe('listConformanceFixtureReferences', () => {
 describe('runConformanceFixtureAdapters', () => {
   it('runs matching adapters and records outcomes without turning fixture failures into runner failures', async () => {
     const directory = makeTree('full', 'tree', 'fixture-release');
-    for (const name of ['accepted.asset', 'rejected.asset', 'unsupported.asset', 'threw.asset', 'not-run.asset']) {
+    for (const name of [
+      'accepted.asset',
+      'degraded.asset',
+      'rejected.asset',
+      'unsupported.asset',
+      'threw.asset',
+      'not-run.asset',
+    ]) {
       write(directory, name, name);
     }
-    const tree = fixtureTree(directory);
+    const tree = fixtureTree(directory, 6);
     const adapter: ConformanceFixtureAdapter = {
       id: 'sample',
-      run: async ({ reference }) => {
-        if (reference === 'threw.asset') throw new TypeError('fixture-derived message is deliberately not retained');
-        if (reference === 'not-run.asset') {
-          return { diagnostics: [], imported: false, notRunReason: 'companion-unavailable' };
-        }
-        if (reference === 'unsupported.asset') {
-          return {
-            diagnostics: [{ kind: 'sample.unsupported-version', origin: 'sample', severity: 'Reject' }],
-            imported: false,
-          };
-        }
-        if (reference === 'rejected.asset') {
-          return {
-            diagnostics: [{ kind: 'sample.invalid', origin: 'sample', severity: 'Reject' }],
-            imported: false,
-          };
-        }
-        return {
-          diagnostics: [{ kind: 'sample.partial', origin: 'sample', severity: 'Skip' }],
-          imported: true,
-        };
+      implementation: {
+        run: async ({ reference }) => {
+          if (reference === 'threw.asset') throw new TypeError('fixture-derived message is deliberately not retained');
+          if (reference === 'not-run.asset') {
+            return { diagnostics: [], imported: false, notRunReason: 'companion-unavailable' };
+          }
+          if (reference === 'degraded.asset') {
+            return {
+              diagnostics: [{ kind: 'sample.value-dropped', origin: 'sample', severity: 'Drop' }],
+              imported: true,
+            };
+          }
+          if (reference === 'unsupported.asset') {
+            return {
+              diagnostics: [{ kind: 'sample.unsupported-version', origin: 'sample', severity: 'Reject' }],
+              imported: false,
+            };
+          }
+          if (reference === 'rejected.asset') {
+            return {
+              diagnostics: [{ kind: 'sample.invalid', origin: 'sample', severity: 'Reject' }],
+              imported: false,
+            };
+          }
+          return { diagnostics: [], imported: true };
+        },
+        state: 'available',
       },
       selects: (_tree, reference) => reference.endsWith('.asset'),
     };
@@ -90,6 +106,7 @@ describe('runConformanceFixtureAdapters', () => {
     const results = await runConformanceFixtureAdapters([tree], [adapter], { concurrency: 3 });
     expect(Object.fromEntries(results.map((result) => [result.reference, result.state]))).toEqual({
       'accepted.asset': 'imported',
+      'degraded.asset': 'degraded',
       'not-run.asset': 'not-run',
       'rejected.asset': 'rejected',
       'threw.asset': 'threw',
@@ -105,19 +122,88 @@ describe('runConformanceFixtureAdapters', () => {
     write(directory, 'a.asset', 'a');
     const adapter: ConformanceFixtureAdapter = {
       id: 'sample',
-      run: async () => ({ diagnostics: [], imported: true }),
+      implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
       selects: () => true,
     };
 
-    const results = await runConformanceFixtureAdapters([fixtureTree(directory)], [adapter], { limit: 1 });
+    const results = await runConformanceFixtureAdapters([fixtureTree(directory, 2)], [adapter], { limit: 1 });
     expect(results.map((result) => result.reference)).toEqual(['a.asset']);
+  });
+
+  it('fails when the current tree no longer has its stamped fixture population', async () => {
+    const directory = makeTree('full', 'tree', 'fixture-release');
+    write(directory, 'only-one.asset', 'one');
+    const adapter: ConformanceFixtureAdapter = {
+      id: 'sample',
+      implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
+      selects: () => true,
+    };
+
+    await expect(runConformanceFixtureAdapters([fixtureTree(directory, 2)], [adapter])).rejects.toThrow(
+      'no longer matches its verified stamp',
+    );
   });
 });
 
-function fixtureTree(directory: string): ConformanceFixtureTree {
+describe('scoreConformanceFixturePlan', () => {
+  it('scores selection, implementation availability, and accepted imports as separate populations', async () => {
+    const directory = makeTree('full', 'tree', 'fixture-release');
+    write(directory, 'one.asset', 'one');
+    write(directory, 'two.txt', 'two');
+    const available: ConformanceFixtureAdapter = {
+      id: 'available',
+      implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
+      selects: (_tree, reference) => reference.endsWith('.asset'),
+    };
+    const unavailable: ConformanceFixtureAdapter = {
+      id: 'unavailable',
+      implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
+      selects: (_tree, reference) => reference.endsWith('.asset'),
+    };
+    const plan = createConformanceFixturePlan([fixtureTree(directory, 2)], [available, unavailable]);
+    const results = await runConformanceFixturePlan(plan, 2);
+
+    expect(scoreConformanceFixturePlan(plan, results)).toMatchObject({
+      acceptedImport: { denominator: 1, numerator: 1, state: 'measured', value: 1 },
+      assurance: { fixtureContent: 'not-retained', semanticCorrectness: 'not-measured' },
+      implementationCoverage: { denominator: 2, numerator: 1, state: 'measured', value: 0.5 },
+      outcomes: { imported: 1, 'not-run': 1 },
+      selectionCoverage: { denominator: 2, numerator: 2, state: 'measured', value: 1 },
+    });
+  });
+
+  it('retains zero-candidate families as not-measured score rows', async () => {
+    const directory = makeTree('full', 'tree', 'fixture-release');
+    write(directory, 'one.txt', 'one');
+    write(directory, 'two.txt', 'two');
+    const adapter: ConformanceFixtureAdapter = {
+      id: 'future',
+      implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
+      selects: (_tree, reference) => reference.endsWith('.future'),
+    };
+    const plan = createConformanceFixturePlan([fixtureTree(directory, 2)], [adapter]);
+    const results = await runConformanceFixturePlan(plan);
+    const score = scoreConformanceFixturePlan(plan, results);
+
+    expect(score.families).toEqual([
+      {
+        acceptedImport: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
+        adapter: 'future',
+        eligibleCandidateRuns: 0,
+        implementation: 'unavailable',
+        implementationCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
+        outcomes: { degraded: 0, imported: 0, 'not-run': 0, rejected: 0, threw: 0, unsupported: 0 },
+        selectedCandidateRuns: 0,
+        selectionCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
+      },
+    ]);
+  });
+});
+
+function fixtureTree(directory: string, verifiedFixtureFiles: number): ConformanceFixtureTree {
   return {
     directory,
-    packs: [{ id: 'sample-fixtures', verifiedFixtureFiles: 2 }],
+    packs: [{ id: 'sample-fixtures', verifiedFixtureFiles }],
     release: 'fixture-release',
     tree: 'tree',
     variant: 'full',

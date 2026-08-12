@@ -4,11 +4,17 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { FIXTURE_RELEASE_TAG, resolveFixtureCacheDirectory } from '../../scripts/fixtures';
-import type { ConformanceFixtureResult, ConformanceFixtureState } from '../core/fixture-conformance';
+import type {
+  ConformanceFixtureFractionScore,
+  ConformanceFixtureResult,
+  ConformanceFixtureScore,
+} from '../core/fixture-conformance';
 import {
+  createConformanceFixturePlan,
   discoverConformanceFixtureTrees,
   getConformanceFixtureTreeLabel,
-  runConformanceFixtureAdapters,
+  runConformanceFixturePlan,
+  scoreConformanceFixturePlan,
 } from '../core/fixture-conformance';
 import { createImportFixtureAdapters } from './import-fixture-adapters';
 
@@ -98,49 +104,60 @@ export async function runImportFixtureConformance(
   const adapters =
     args.adapters.length === 0 ? allAdapters : allAdapters.filter((adapter) => args.adapters.includes(adapter.id));
 
-  const results = await runConformanceFixtureAdapters(trees, adapters, {
-    concurrency: args.concurrency,
+  const plan = createConformanceFixturePlan(trees, adapters, {
     ...(args.limit === undefined ? {} : { limit: args.limit }),
   });
-  if (results.length === 0) {
-    throw new Error(
-      `No fixture inputs matched adapters ${adapters.map((adapter) => adapter.id).join(', ')} in the selected verified trees`,
-    );
-  }
+  const results = await runConformanceFixturePlan(plan, args.concurrency);
+  const score = scoreConformanceFixturePlan(plan, results);
   return {
     fixtureRelease: FIXTURE_RELEASE_TAG,
     results,
-    schemaVersion: 1,
+    schemaVersion: 2,
+    score,
     selection: {
       adapters: adapters.map((adapter) => adapter.id),
       ...(args.limit === undefined ? {} : { limit: args.limit }),
       packs: args.packs,
       ...(args.variant === undefined ? {} : { variant: args.variant }),
     },
-    summary: summarizeResults(results),
-    trees: trees.map((tree) => ({
-      packs: tree.packs,
-      path: relative(REPOSITORY_ROOT, tree.directory).replaceAll('\\', '/'),
-      tree: tree.tree,
-      variant: tree.variant,
-    })),
+    trees: trees.map((tree) => {
+      const census = plan.trees.find((candidate) => candidate.tree === tree.tree && candidate.variant === tree.variant);
+      if (census === undefined)
+        throw new Error(`Fixture conformance plan has no tree census for ${tree.variant}/${tree.tree}`);
+      return {
+        candidateRuns: census.eligibleCandidateRuns,
+        fixtureFiles: census.fixtureFiles,
+        matchedFixtureFiles: census.matchedFixtureFiles,
+        packs: tree.packs,
+        path: relative(REPOSITORY_ROOT, tree.directory).replaceAll('\\', '/'),
+        selectedCandidateRuns: census.selectedCandidateRuns,
+        stampedFixtureFiles: census.stampedFixtureFiles,
+        tree: tree.tree,
+        variant: tree.variant,
+      };
+    }),
   };
 }
 
-interface FixtureImportConformanceReport {
+export interface FixtureImportConformanceReport {
   fixtureRelease: string;
   results: readonly Readonly<ConformanceFixtureResult>[];
-  schemaVersion: 1;
+  schemaVersion: 2;
+  score: Readonly<ConformanceFixtureScore>;
   selection: {
     adapters: readonly string[];
     limit?: number;
     packs: readonly string[];
     variant?: string;
   };
-  summary: Readonly<Record<ConformanceFixtureState | 'total', number>>;
   trees: readonly {
+    candidateRuns: number;
+    fixtureFiles: number;
+    matchedFixtureFiles: number;
     packs: readonly { id: string; verifiedFixtureFiles: number }[];
     path: string;
+    selectedCandidateRuns: number;
+    stampedFixtureFiles: number;
     tree: string;
     variant: string;
   }[];
@@ -158,7 +175,7 @@ async function main(): Promise<void> {
       return;
     }
     const output = resolve(args.output);
-    // A failed or corpus-less run must not leave a prior green artifact available for a caller to mistake
+    // A failed acquisition/configuration run must not leave a prior score available for a caller to mistake
     // for current evidence. The report is generated and gitignored, so clearing it is the preparation step.
     rmSync(output, { force: true });
     const report = await runImportFixtureConformance(args);
@@ -175,7 +192,7 @@ function listInfrastructure(): void {
   const adapters = createImportFixtureAdapters();
   const trees = discoverConformanceFixtureTrees(resolveFixtureCacheDirectory());
   process.stdout.write(`Import fixture adapters (${adapters.length}):\n`);
-  for (const adapter of adapters) process.stdout.write(`  ${adapter.id}\n`);
+  for (const adapter of adapters) process.stdout.write(`  ${adapter.id} — ${adapter.implementation.state}\n`);
   process.stdout.write(`Verified fixture trees (${trees.length}):\n`);
   for (const tree of trees) {
     process.stdout.write(
@@ -187,11 +204,19 @@ function listInfrastructure(): void {
 }
 
 function formatReport(report: Readonly<FixtureImportConformanceReport>, output: string): string {
+  const score = report.score;
   const lines = [
-    `Fixture import conformance — release ${report.fixtureRelease}`,
-    `Verified trees: ${report.trees.length}; importer runs: ${report.summary.total}`,
-    `Outcomes: imported ${report.summary.imported}, unsupported ${report.summary.unsupported}, rejected ${report.summary.rejected}, threw ${report.summary.threw}, not-run ${report.summary['not-run']}`,
+    `Fixture import conformance score — release ${report.fixtureRelease}`,
+    `Selection coverage: ${formatFractionScore(score.selectionCoverage)}`,
+    `Implementation coverage: ${formatFractionScore(score.implementationCoverage)}`,
+    `Accepted-import evidence: ${formatFractionScore(score.acceptedImport)} (semantic correctness not measured)`,
+    `Outcome populations: imported ${score.outcomes.imported}, degraded ${score.outcomes.degraded}, unsupported ${score.outcomes.unsupported}, rejected ${score.outcomes.rejected}, threw ${score.outcomes.threw}, not-run ${score.outcomes['not-run']}`,
   ];
+  for (const family of score.families.filter((candidate) => candidate.eligibleCandidateRuns > 0)) {
+    lines.push(
+      `  ${family.adapter} [${family.implementation}]: selected ${formatFractionScore(family.selectionCoverage)}, implementation ${formatFractionScore(family.implementationCoverage)}, accepted-import ${formatFractionScore(family.acceptedImport)}`,
+    );
+  }
   const findings = report.results.filter((result) => result.state !== 'imported');
   for (const result of findings.slice(0, 20)) {
     lines.push(`  ${result.state} ${result.adapter} ${result.variant}/${result.tree}/${result.reference}`);
@@ -201,12 +226,10 @@ function formatReport(report: Readonly<FixtureImportConformanceReport>, output: 
   return `${lines.join('\n')}\n`;
 }
 
-function summarizeResults(
-  results: readonly Readonly<ConformanceFixtureResult>[],
-): Record<ConformanceFixtureState | 'total', number> {
-  const summary = { imported: 0, 'not-run': 0, rejected: 0, threw: 0, total: results.length, unsupported: 0 };
-  for (const result of results) summary[result.state] += 1;
-  return summary;
+function formatFractionScore(score: Readonly<ConformanceFixtureFractionScore>): string {
+  return score.state === 'not-measured'
+    ? `not measured (${score.numerator}/${score.denominator})`
+    : `${(score.value! * 100).toFixed(1)}% (${score.numerator}/${score.denominator})`;
 }
 
 function parsePositiveInteger(value: string, option: string): number {
@@ -232,10 +255,10 @@ const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..'
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const USAGE = `usage: npm run conformance:fixtures -- [options]
 
-Runs real Flight importers over every matching file in locally verified flight-oracles trees.
-Fixture outcomes are evidence, not a gate: rejected, unsupported, and thrown inputs are recorded and the
-command still succeeds. Missing corpora, zero matching inputs, and other harness/configuration errors exit
-nonzero and leave no stale report.
+Scores real Flight importer execution over matching files in locally verified flight-oracles trees.
+Fixture outcomes and adapter families without Flight implementations are evidence, not a gate: rejected,
+unsupported, thrown, not-run, and zero-candidate families are recorded and the command still succeeds.
+Missing or changed corpora and invalid configuration exit nonzero and leave no stale report.
 
   --adapter <id>       run one adapter (repeatable)
   --concurrency <n>    importer runs in flight (default: up to 8)

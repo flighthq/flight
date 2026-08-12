@@ -36,13 +36,23 @@ export interface ConformanceFixtureObservation {
   notRunReason?: string;
 }
 
+export type ConformanceFixtureAdapterImplementation =
+  | {
+      run(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation>;
+      state: 'available';
+    }
+  | {
+      reason: string;
+      state: 'unavailable';
+    };
+
 export interface ConformanceFixtureAdapter {
   id: string;
-  run(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation>;
+  implementation: ConformanceFixtureAdapterImplementation;
   selects(tree: Readonly<ConformanceFixtureTree>, reference: string): boolean;
 }
 
-export type ConformanceFixtureState = 'imported' | 'not-run' | 'rejected' | 'threw' | 'unsupported';
+export type ConformanceFixtureState = 'degraded' | 'imported' | 'not-run' | 'rejected' | 'threw' | 'unsupported';
 
 export interface ConformanceFixtureResult {
   adapter: string;
@@ -60,6 +70,69 @@ export interface ConformanceFixtureResult {
 export interface RunConformanceFixtureOptions {
   concurrency?: number;
   limit?: number;
+}
+
+export interface ConformanceFixtureCandidate {
+  adapter: Readonly<ConformanceFixtureAdapter>;
+  input: ConformanceFixtureInput;
+}
+
+export interface ConformanceFixtureTreeCensus {
+  eligibleCandidateRuns: number;
+  fixtureFiles: number;
+  matchedFixtureFiles: number;
+  selectedCandidateRuns: number;
+  stampedFixtureFiles: number;
+  tree: string;
+  variant: string;
+}
+
+export interface ConformanceFixturePlan {
+  adapters: readonly Readonly<ConformanceFixtureAdapter>[];
+  candidates: readonly Readonly<ConformanceFixtureCandidate>[];
+  eligibleCandidateRuns: number;
+  families: readonly {
+    adapter: string;
+    eligibleCandidateRuns: number;
+    selectedCandidateRuns: number;
+  }[];
+  trees: readonly Readonly<ConformanceFixtureTreeCensus>[];
+}
+
+export interface ConformanceFixtureFractionScore {
+  denominator: number;
+  numerator: number;
+  state: 'measured' | 'not-measured';
+  value: number | null;
+}
+
+export interface ConformanceFixtureFamilyScore {
+  acceptedImport: ConformanceFixtureFractionScore;
+  adapter: string;
+  eligibleCandidateRuns: number;
+  implementation: 'available' | 'unavailable';
+  implementationCoverage: ConformanceFixtureFractionScore;
+  outcomes: Readonly<Record<ConformanceFixtureState, number>>;
+  selectedCandidateRuns: number;
+  selectionCoverage: ConformanceFixtureFractionScore;
+}
+
+export interface ConformanceFixtureScore {
+  acceptedImport: ConformanceFixtureFractionScore;
+  assurance: {
+    fixtureContent: 'not-retained';
+    semanticCorrectness: 'not-measured';
+  };
+  definitions: {
+    acceptedImport: string;
+    implementationCoverage: string;
+    outcomeStates: Readonly<Record<ConformanceFixtureState, string>>;
+    selectionCoverage: string;
+  };
+  families: readonly Readonly<ConformanceFixtureFamilyScore>[];
+  implementationCoverage: ConformanceFixtureFractionScore;
+  outcomes: Readonly<Record<ConformanceFixtureState, number>>;
+  selectionCoverage: ConformanceFixtureFractionScore;
 }
 
 export function discoverConformanceFixtureTrees(
@@ -117,40 +190,146 @@ export function listConformanceFixtureReferences(treeDirectory: string): string[
   return references.sort();
 }
 
-export async function runConformanceFixtureAdapters(
+export function createConformanceFixturePlan(
   trees: readonly Readonly<ConformanceFixtureTree>[],
   adapters: readonly Readonly<ConformanceFixtureAdapter>[],
-  options: Readonly<RunConformanceFixtureOptions> = {},
-): Promise<ConformanceFixtureResult[]> {
-  const inputs: Array<{ adapter: Readonly<ConformanceFixtureAdapter>; input: ConformanceFixtureInput }> = [];
+  options: Readonly<Pick<RunConformanceFixtureOptions, 'limit'>> = {},
+): ConformanceFixturePlan {
+  if (options.limit !== undefined && (!Number.isSafeInteger(options.limit) || options.limit < 1)) {
+    throw new Error('Fixture conformance limit must be a positive safe integer');
+  }
+  const adapterIds = new Set<string>();
+  for (const adapter of adapters) {
+    if (adapter.id.trim() === '') throw new Error('Fixture conformance adapter id must be non-empty');
+    if (adapterIds.has(adapter.id)) throw new Error(`Duplicate fixture conformance adapter id ${adapter.id}`);
+    if (adapter.implementation.state === 'unavailable' && adapter.implementation.reason.trim() === '') {
+      throw new Error(`Unavailable fixture conformance adapter ${adapter.id} must name its reason`);
+    }
+    adapterIds.add(adapter.id);
+  }
+
+  const eligible: ConformanceFixtureCandidate[] = [];
+  const treeReferences = new Map<Readonly<ConformanceFixtureTree>, readonly string[]>();
+  const matchedReferences = new Map<Readonly<ConformanceFixtureTree>, Set<string>>();
   for (const tree of trees) {
     const references = listConformanceFixtureReferences(tree.directory);
+    const stampedFixtureFiles = tree.packs.reduce((total, pack) => total + pack.verifiedFixtureFiles, 0);
+    if (references.length !== stampedFixtureFiles) {
+      throw new Error(
+        `Fixture tree ${getConformanceFixtureTreeLabel(tree)} no longer matches its verified stamp: expected ${stampedFixtureFiles} fixture files, found ${references.length}. Reacquire with npm run fixtures -- ${tree.packs.map((pack) => pack.id).join(' ')} --variant ${tree.variant}`,
+      );
+    }
+    treeReferences.set(tree, references);
+    const matched = new Set<string>();
+    matchedReferences.set(tree, matched);
     for (const reference of references) {
       for (const adapter of adapters) {
         if (!adapter.selects(tree, reference)) continue;
-        inputs.push({
+        matched.add(reference);
+        eligible.push({
           adapter,
           input: { absolutePath: join(tree.directory, ...reference.split('/')), reference, references, tree },
         });
       }
     }
   }
-  inputs.sort(compareFixtureInput);
-  const selected = options.limit === undefined ? inputs : inputs.slice(0, options.limit);
-  const results = new Array<ConformanceFixtureResult>(selected.length);
+  eligible.sort(compareFixtureInput);
+  const candidates = options.limit === undefined ? eligible : eligible.slice(0, options.limit);
+  return {
+    adapters: [...adapters],
+    candidates,
+    eligibleCandidateRuns: eligible.length,
+    families: adapters.map((adapter) => ({
+      adapter: adapter.id,
+      eligibleCandidateRuns: eligible.filter((candidate) => candidate.adapter.id === adapter.id).length,
+      selectedCandidateRuns: candidates.filter((candidate) => candidate.adapter.id === adapter.id).length,
+    })),
+    trees: trees.map((tree) => ({
+      eligibleCandidateRuns: eligible.filter((candidate) => candidate.input.tree === tree).length,
+      fixtureFiles: treeReferences.get(tree)!.length,
+      matchedFixtureFiles: matchedReferences.get(tree)!.size,
+      selectedCandidateRuns: candidates.filter((candidate) => candidate.input.tree === tree).length,
+      stampedFixtureFiles: tree.packs.reduce((total, pack) => total + pack.verifiedFixtureFiles, 0),
+      tree: tree.tree,
+      variant: tree.variant,
+    })),
+  };
+}
+
+export async function runConformanceFixtureAdapters(
+  trees: readonly Readonly<ConformanceFixtureTree>[],
+  adapters: readonly Readonly<ConformanceFixtureAdapter>[],
+  options: Readonly<RunConformanceFixtureOptions> = {},
+): Promise<ConformanceFixtureResult[]> {
+  const plan = createConformanceFixturePlan(trees, adapters, options);
+  return runConformanceFixturePlan(plan, options.concurrency);
+}
+
+export async function runConformanceFixturePlan(
+  plan: Readonly<ConformanceFixturePlan>,
+  concurrency = 1,
+): Promise<ConformanceFixtureResult[]> {
+  if (!Number.isSafeInteger(concurrency) || concurrency < 1) {
+    throw new Error('Fixture conformance concurrency must be a positive safe integer');
+  }
+  const results = new Array<ConformanceFixtureResult>(plan.candidates.length);
   let next = 0;
-  const concurrency = Math.max(1, Math.min(options.concurrency ?? 1, selected.length));
   await Promise.all(
-    Array.from({ length: concurrency }, async () => {
+    Array.from({ length: Math.min(concurrency, plan.candidates.length) }, async () => {
       for (;;) {
         const index = next++;
-        const candidate = selected[index];
+        const candidate = plan.candidates[index];
         if (candidate === undefined) return;
         results[index] = await runConformanceFixtureAdapter(candidate.adapter, candidate.input);
       }
     }),
   );
   return results;
+}
+
+export function scoreConformanceFixturePlan(
+  plan: Readonly<ConformanceFixturePlan>,
+  results: readonly Readonly<ConformanceFixtureResult>[],
+): ConformanceFixtureScore {
+  if (results.length !== plan.candidates.length) {
+    throw new Error(
+      `Fixture conformance result count ${results.length} does not match selected candidate count ${plan.candidates.length}`,
+    );
+  }
+  const families = [...plan.adapters]
+    .sort((left, right) => left.id.localeCompare(right.id))
+    .map((adapter): ConformanceFixtureFamilyScore => {
+      const census = plan.families.find((family) => family.adapter === adapter.id);
+      if (census === undefined) throw new Error(`Fixture conformance plan has no census for ${adapter.id}`);
+      const { eligibleCandidateRuns, selectedCandidateRuns } = census;
+      const familyResults = results.filter((result) => result.adapter === adapter.id);
+      if (familyResults.length !== selectedCandidateRuns) {
+        throw new Error(
+          `Fixture conformance result count ${familyResults.length} for ${adapter.id} does not match its selected candidate count ${selectedCandidateRuns}`,
+        );
+      }
+      const executed = familyResults.filter((result) => result.state !== 'not-run').length;
+      return {
+        acceptedImport: fractionScore(familyResults.filter((result) => result.state === 'imported').length, executed),
+        adapter: adapter.id,
+        eligibleCandidateRuns,
+        implementation: adapter.implementation.state,
+        implementationCoverage: fractionScore(executed, selectedCandidateRuns),
+        outcomes: summarizeOutcomes(familyResults),
+        selectedCandidateRuns,
+        selectionCoverage: fractionScore(selectedCandidateRuns, eligibleCandidateRuns),
+      };
+    });
+  const executed = results.filter((result) => result.state !== 'not-run').length;
+  return {
+    acceptedImport: fractionScore(results.filter((result) => result.state === 'imported').length, executed),
+    assurance: { fixtureContent: 'not-retained', semanticCorrectness: 'not-measured' },
+    definitions: CONFORMANCE_FIXTURE_SCORE_DEFINITIONS,
+    families,
+    implementationCoverage: fractionScore(executed, plan.candidates.length),
+    outcomes: summarizeOutcomes(results),
+    selectionCoverage: fractionScore(plan.candidates.length, plan.eligibleCandidateRuns),
+  };
 }
 
 async function runConformanceFixtureAdapter(
@@ -164,20 +343,39 @@ async function runConformanceFixtureAdapter(
     tree: input.tree.tree,
     variant: input.tree.variant,
   };
+  if (adapter.implementation.state === 'unavailable') {
+    return {
+      ...identity,
+      diagnosticKinds: [],
+      diagnostics: { Drop: 0, Recover: 0, Reject: 0, Skip: 0 },
+      notRunReason: adapter.implementation.reason,
+      state: 'not-run',
+    };
+  }
   try {
-    const observation = await adapter.run(input);
+    const observation = await adapter.implementation.run(input);
     const diagnostics = summarizeDiagnostics(observation.diagnostics);
     if (observation.notRunReason !== undefined) {
       return { ...identity, ...diagnostics, notRunReason: observation.notRunReason, state: 'not-run' };
     }
     const rejected = observation.diagnostics.some((diagnostic) => diagnostic.severity === 'Reject');
-    const unsupported = observation.diagnostics.some(
-      (diagnostic) => diagnostic.severity === 'Reject' && diagnostic.kind.includes('unsupported'),
+    const degraded = observation.diagnostics.some(
+      (diagnostic) => diagnostic.severity === 'Drop' || diagnostic.severity === 'Recover',
     );
+    const unsupported = observation.diagnostics.some((diagnostic) => diagnostic.kind.includes('unsupported'));
+    const skipped = observation.diagnostics.some((diagnostic) => diagnostic.severity === 'Skip');
     return {
       ...identity,
       ...diagnostics,
-      state: unsupported ? 'unsupported' : !observation.imported || rejected ? 'rejected' : 'imported',
+      state: unsupported
+        ? 'unsupported'
+        : !observation.imported || rejected
+          ? 'rejected'
+          : degraded
+            ? 'degraded'
+            : skipped
+              ? 'unsupported'
+              : 'imported',
     };
   } catch (error) {
     return {
@@ -203,8 +401,8 @@ function summarizeDiagnostics(
 }
 
 function compareFixtureInput(
-  left: Readonly<{ adapter: Readonly<ConformanceFixtureAdapter>; input: ConformanceFixtureInput }>,
-  right: Readonly<{ adapter: Readonly<ConformanceFixtureAdapter>; input: ConformanceFixtureInput }>,
+  left: Readonly<ConformanceFixtureCandidate>,
+  right: Readonly<ConformanceFixtureCandidate>,
 ): number {
   return (
     compareFixtureTree(left.input.tree, right.input.tree) ||
@@ -213,6 +411,38 @@ function compareFixtureInput(
   );
 }
 
+function fractionScore(numerator: number, denominator: number): ConformanceFixtureFractionScore {
+  return denominator === 0
+    ? { denominator, numerator, state: 'not-measured', value: null }
+    : { denominator, numerator, state: 'measured', value: numerator / denominator };
+}
+
+function summarizeOutcomes(
+  results: readonly Readonly<ConformanceFixtureResult>[],
+): Record<ConformanceFixtureState, number> {
+  const outcomes = { degraded: 0, imported: 0, 'not-run': 0, rejected: 0, threw: 0, unsupported: 0 };
+  for (const result of results) outcomes[result.state] += 1;
+  return outcomes;
+}
+
 function compareFixtureTree(left: Readonly<ConformanceFixtureTree>, right: Readonly<ConformanceFixtureTree>): number {
   return left.variant.localeCompare(right.variant) || left.tree.localeCompare(right.tree);
 }
+
+const CONFORMANCE_FIXTURE_SCORE_DEFINITIONS = {
+  acceptedImport:
+    'Selected candidate runs classified imported divided by selected candidate runs that invoked an available Flight implementation. This is execution evidence, not semantic-correctness evidence.',
+  implementationCoverage:
+    'Selected candidate runs that invoked an available Flight implementation divided by all selected candidate runs, including declared fixture families whose Flight implementation is unavailable.',
+  outcomeStates: {
+    degraded:
+      'The Flight method returned an import but reported at least one Drop or Recover diagnostic without an unsupported diagnostic taking precedence.',
+    imported: 'The Flight method returned an import with no Drop, Recover, Reject, or Skip diagnostic.',
+    'not-run': 'No Flight method ran for this candidate, including a declared family with no implementation.',
+    rejected: 'The Flight method returned no import or reported a Reject diagnostic not classified as unsupported.',
+    threw: 'The Flight adapter threw; only its error name is retained.',
+    unsupported: 'A diagnostic named unsupported input, or a Skip diagnostic remained after earlier branches.',
+  },
+  selectionCoverage:
+    'Candidate runs selected after the optional deterministic limit divided by all adapter-matched candidate runs in the verified corpus.',
+} as const;
