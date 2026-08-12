@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/mesh'
 status: solid
-score: 90
+score: 88
 updated: 2026-08-12
 ---
 
@@ -16,10 +16,10 @@ extracted tests from every `*.test.ts`; no prior review list was used as the pop
 
 ## Verdict
 
-**solid — 90/100.** The package now supplies a broad, tested CPU mesh layer: construction and cloning,
+**solid — 88/100.** The package now supplies a broad, tested CPU mesh layer: construction and cloning,
 17 primitive builders, layout conversion, typed accessors including reserved UV1/color0/joints0/weights0
 channels, normals/tangents/bounds/sphere computation, index expansion/indexing/welding/wireframe
-generation, subset range editing, UV transforms, morph bind/blend/update support, transforms, merge,
+generation, subset range editing, UV offset/scale transforms, morph bind/blend/update support, transforms, merge,
 validation, and deformation cloning. The score remains below authoritative because projection UVs,
 angle-threshold smoothing, explicit edge/non-manifold analysis, simplification/LOD, quantization, and
 signals are still open design or implementation work. The current review no longer carries the former
@@ -48,7 +48,10 @@ false claim that Silver items are complete; the remaining gaps are named below.
 - `meshGeometryIndex.ts` provides compact/de-index/index/weld operations and wireframe index output.
   `meshGeometrySubset.ts` provides add/set subset lists, triangle counts, and triangle-to-subset lookup.
 - `meshGeometryLayout.ts` provides canonical ordinary and skinned layouts plus semantic conversion;
-  `meshGeometryUvs.ts` provides UV0 offset, scale, and wrap transforms.
+  `meshGeometryUvs.ts` provides working UV0 offset and scale transforms. Its exported `wrapMeshGeometryUvs`
+  is present but non-functional by construction: wrapping is face-parameterized while this operation
+  folds per-vertex values, so shared corners collapse mappings. It is commissioned for removal pending a
+  face-aware replacement and is not counted as capability.
 - `morphMeshGeometry.ts` captures bind poses and blends targets; `updateMeshMorph.ts` applies the
   package's mesh runtime deformation path, with tests covering weight changes and restoration.
 - `meshGeometryTransforms.ts` covers matrix transforms, inverse-transpose normals/tangents, scale,
@@ -60,8 +63,9 @@ false claim that Silver items are complete; the remaining gaps are named below.
 ## Remaining gaps
 
 - No angle-threshold/smoothing-group normal operation that splits vertices at creases.
-- No planar, spherical, or box projection UV generation, nor UV-bounds computation; shipped UV helpers
-  are transforms of existing UV0 data.
+- No planar, spherical, or box projection UV generation, nor UV-bounds computation. UV offset and scale
+  work on existing UV0 data; `wrapMeshGeometryUvs` is non-functional and commissioned for removal,
+  with a face-aware tile-offset operation wanted instead.
 - No dedicated non-manifold/edge analysis API beyond wireframe index generation.
 - No simplification/LOD operation, vertex-cache optimization, or quantize/dequantize pipeline despite
   packed formats being modeled in the type layer.
