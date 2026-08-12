@@ -1,5 +1,7 @@
 import { createAabb } from './aabb';
 import { createBoundingSphere } from './boundingSphere';
+import { createCapsule, intersectRay3DCapsule } from './capsule';
+import { createObb, intersectRay3DObb } from './obb';
 import { createPlane } from './plane';
 import {
   createRay3D,
@@ -422,6 +424,22 @@ describe('intersectRay3DTriangle', () => {
     // edge as though it were nearby.
     expect(intersectRay3DTriangle(createRay3D(3, 0, -3, 0, 0, 1), a, b, c)).toBe(-1);
     expect(intersectRay3DTriangle(createRay3D(0, 3, -3, 0, 0, 1), a, b, c)).toBe(-1);
+  });
+});
+
+describe('ray-shape direction scale parity', () => {
+  it.each([1, 1e-6, 1e-12])('preserves the hit point across all six shapes at scale %s', (scale) => {
+    const ray = createRay3D(5, 0, 0, -scale, 0, 0);
+    const hits = [
+      intersectRay3DAabb(ray, createAabb(-1, -1, -1, 1, 1, 1)),
+      intersectRay3DSphere(ray, createBoundingSphere(0, 0, 0, 1)),
+      intersectRay3DCapsule(ray, createCapsule(0, -1, 0, 0, 1, 0, 1)),
+      intersectRay3DObb(ray, createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1)),
+      intersectRay3DPlane(ray, createPlane(1, 0, 0, -1)),
+      intersectRay3DTriangle(ray, { x: 1, y: -1, z: -1 }, { x: 1, y: 1, z: -1 }, { x: 1, y: 0, z: 1 }),
+    ];
+
+    for (const t of hits) expect(t * scale).toBeCloseTo(4, 10);
   });
 });
 

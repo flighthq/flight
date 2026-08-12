@@ -68,7 +68,8 @@ export function getClosestPointOnObb(out: Vector3Like, obb: Readonly<ObbLike>, p
  * space, then applies the slab method against the axis-aligned half-extent box.
  *
  * Returns the entry parameter `t` (>= 0) on hit, or `-1` on miss. A ray starting inside the
- * OBB returns `t = 0`. A direction of zero length is not a ray and always returns `-1`.
+ * OBB returns `t = 0`. Direction need not be normalized. A direction of zero length is not a
+ * ray and always returns `-1`.
  */
 export function intersectRay3DObb(ray: Readonly<Ray3DLike>, obb: Readonly<ObbLike>): number {
   const ox = ray.origin.x - obb.centerX,
@@ -97,7 +98,7 @@ export function intersectRay3DObb(ray: Readonly<Ray3DLike>, obb: Readonly<ObbLik
     const o = origins[i];
     const d = dirs[i];
     const h = halfExts[i];
-    if (Math.abs(d) > 1e-10) {
+    if (d !== 0) {
       const invD = 1 / d;
       let t1 = (-h - o) * invD;
       let t2 = (h - o) * invD;

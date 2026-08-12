@@ -84,7 +84,8 @@ export function getClosestPointOnCapsule(
  * the capsule axis segment) with hemispherical cap tests at start and end.
  *
  * Returns the entry parameter `t` (>= 0) on hit, or `-1` on miss. A ray starting inside the
- * capsule returns `t = 0`. An empty capsule (negative radius) always returns `-1`.
+ * capsule returns `t = 0`. Direction need not be normalized. An empty capsule (negative radius)
+ * always returns `-1`.
  */
 export function intersectRay3DCapsule(ray: Readonly<Ray3DLike>, capsule: Readonly<CapsuleLike>): number {
   const ox = ray.origin.x,
@@ -101,6 +102,8 @@ export function intersectRay3DCapsule(ray: Readonly<Ray3DLike>, capsule: Readonl
     bz = capsule.endZ;
   const r = capsule.radius;
   if (r < 0) return -1;
+  const directionLengthSq = dx * dx + dy * dy + dz * dz;
+  if (directionLengthSq === 0) return -1;
 
   const abx = bx - ax,
     aby = by - ay,
@@ -112,16 +115,14 @@ export function intersectRay3DCapsule(ray: Readonly<Ray3DLike>, capsule: Readonl
     const mx = ox - cx,
       my = oy - cy,
       mz = oz - cz;
-    const lenD2 = dx * dx + dy * dy + dz * dz;
-    if (lenD2 === 0) return -1;
     const b = mx * dx + my * dy + mz * dz;
     const c = mx * mx + my * my + mz * mz - r * r;
-    const disc = b * b - lenD2 * c;
+    const disc = b * b - directionLengthSq * c;
     if (disc < 0) return -1;
     const sqrtD = Math.sqrt(disc);
-    const t1 = (-b - sqrtD) / lenD2;
+    const t1 = (-b - sqrtD) / directionLengthSq;
     if (t1 >= 0) return t1;
-    const t2 = (-b + sqrtD) / lenD2;
+    const t2 = (-b + sqrtD) / directionLengthSq;
     return t2 >= 0 ? 0 : -1;
   };
 
@@ -148,7 +149,7 @@ export function intersectRay3DCapsule(ray: Readonly<Ray3DLike>, capsule: Readonl
   const qb = apx * dpx + apy * dpy + apz * dpz;
   const qc = apx * apx + apy * apy + apz * apz - r * r;
 
-  if (qa > 1e-20) {
+  if (Math.sqrt(qa) > 1e-10 * Math.sqrt(directionLengthSq)) {
     const disc = qb * qb - qa * qc;
     if (disc >= 0) {
       const sqrtD = Math.sqrt(disc);
