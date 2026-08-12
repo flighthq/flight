@@ -842,6 +842,8 @@ export function prependTranslationMatrix4(
 /**
  * Applies a local-space rotation relative to the matrix's existing orientation.
  *
+ * `out = source · R`
+ *
  * Translation is preserved.
  *
  * @param axis assumed unit length; a longer axis scales the basis instead of rotating it.
@@ -862,6 +864,8 @@ export function rotateMatrix4(
 
 /**
  * Applies a local-space scale relative to the matrix's existing orientation.
+ *
+ * `out = source · S`
  *
  * Translation is preserved.
  */
@@ -1231,7 +1235,7 @@ export function setPerspectiveMatrix4(
 /**
  * Applies a local-space translation to the matrix, taking into account the source matrix's rotation and scale.
  *
- * Translation is applied respecting using all other transformations of source.
+ * `out = source · T`
  */
 export function translateMatrix4(
   out: Matrix4Like,
