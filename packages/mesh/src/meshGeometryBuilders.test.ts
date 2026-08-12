@@ -96,9 +96,23 @@ describe('createBoxMeshGeometry', () => {
 describe('createCapsuleMeshGeometry', () => {
   it('builds a capsule that spans -(height/2+radius)..(height/2+radius) on Y', () => {
     const geometry = createCapsuleMeshGeometry(0.5, 1, 8, 4);
-    expect(getMeshGeometryVertexCount(geometry)).toBeGreaterThan(0);
+    expect(getMeshGeometryVertexCount(geometry)).toBe(90);
+    expect(getMeshGeometryIndexCount(geometry)).toBe(432);
     expect(geometry.bounds!.min.y).toBeCloseTo(-1, 1);
     expect(geometry.bounds!.max.y).toBeCloseTo(1, 1);
+
+    const stride = 12;
+    const ringVertexCount = 9;
+    const topEquator = 4 * ringVertexCount * stride;
+    const bottomEquator = 5 * ringVertexCount * stride;
+    expect(geometry.vertices[topEquator]).toBeCloseTo(0.5);
+    expect(geometry.vertices[topEquator + 1]).toBeCloseTo(0.5);
+    expect(geometry.vertices[topEquator + 4]).toBeCloseTo(0);
+    expect(geometry.vertices[topEquator + 11]).toBeCloseTo(4 / 9);
+    expect(geometry.vertices[bottomEquator]).toBeCloseTo(0.5);
+    expect(geometry.vertices[bottomEquator + 1]).toBeCloseTo(-0.5);
+    expect(geometry.vertices[bottomEquator + 4]).toBeCloseTo(0);
+    expect(geometry.vertices[bottomEquator + 11]).toBeCloseTo(5 / 9);
     expectUnitNormals(geometry);
   });
 });
