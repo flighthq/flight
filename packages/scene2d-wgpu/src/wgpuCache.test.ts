@@ -1,11 +1,11 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type * as WgpuRenderWgpuModule from '@flighthq/render-wgpu/contract';
 import {
   createRenderCache,
   createRenderState,
   enableColorAdjustmentGuards,
   getColorAdjustmentUnsupportedGuard,
-  getRenderRootGuard,
   RenderCacheKind,
   useRenderCache,
 } from '@flighthq/render/contract';
@@ -213,12 +213,22 @@ describe('createWgpuCacheState', () => {
     expect(cacheRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
     expect(getColorAdjustmentUnsupportedGuard(cacheState)).not.toBeNull();
     expect(cacheRuntime.registries.renderRootGuard).toBe(screenRuntime.registries.renderRootGuard);
-    expect(getRenderRootGuard(cacheState)).toBe(renderRootGuard);
+    expect(
+      getRegistryTableEntry(
+        cacheRuntime.registries.renderRootGuard!,
+        cacheRuntime.registries.renderRootGuard!.registry,
+      ),
+    ).toBe(renderRootGuard);
     const sharedRootGuard = cacheRuntime.registries.renderRootGuard;
     screenRuntime.registries.renderRootGuard = undefined;
-    expect(getRenderRootGuard(screen)).toBeNull();
+    expect(screenRuntime.registries.renderRootGuard).toBeUndefined();
     expect(cacheRuntime.registries.renderRootGuard).toBe(sharedRootGuard);
-    expect(getRenderRootGuard(cacheState)).toBe(renderRootGuard);
+    expect(
+      getRegistryTableEntry(
+        cacheRuntime.registries.renderRootGuard!,
+        cacheRuntime.registries.renderRootGuard!.registry,
+      ),
+    ).toBe(renderRootGuard);
   });
 
   it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {

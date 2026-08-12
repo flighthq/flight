@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
-import type { ColorAdjustmentUnsupportedGuard, RenderRootGuard, RenderState } from '@flighthq/types/contract';
+import type { ColorAdjustmentUnsupportedGuard, RenderState } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import {
@@ -8,7 +8,6 @@ import {
   createRenderStateRuntime,
   destroyRenderState,
   getColorAdjustmentUnsupportedGuard,
-  getRenderRootGuard,
   getRenderStateRuntime,
 } from './renderState';
 
@@ -137,28 +136,6 @@ describe('getColorAdjustmentUnsupportedGuard', () => {
       entry: { state: RegistryEntryState.Tombstoned },
     };
     expect(getColorAdjustmentUnsupportedGuard(state)).toBeNull();
-  });
-});
-
-describe('getRenderRootGuard', () => {
-  it('resolves only a bound guard entry', () => {
-    const state = createRenderState();
-    const guard: RenderRootGuard = vi.fn();
-    const runtime = getRenderStateRuntime(state);
-
-    expect(getRenderRootGuard(state)).toBeNull();
-    runtime.registries.renderRootGuard = {
-      entry: { state: RegistryEntryState.Bound, value: guard },
-      onMiss: 'Disabled',
-      registry: 'RenderRootGuard',
-      shape: 'slot',
-    };
-    expect(getRenderRootGuard(state)).toBe(guard);
-    runtime.registries.renderRootGuard = {
-      ...runtime.registries.renderRootGuard,
-      entry: { state: RegistryEntryState.Tombstoned },
-    };
-    expect(getRenderRootGuard(state)).toBeNull();
   });
 });
 

@@ -9,6 +9,7 @@ import {
   getNodeParent,
   getNodeRuntime,
 } from '@flighthq/node/contract';
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   Node2D,
   HasBoundsRectangle,
@@ -24,7 +25,7 @@ import { BlendMode, RegistryEntryState, RenderRegistry } from '@flighthq/types/c
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyMaterial } from './renderMaterial';
-import { getRenderRootGuard, getRenderStateRuntime } from './renderState';
+import { getRenderStateRuntime } from './renderState';
 import { updateRenderProxy2DTransform } from './renderTransform2d';
 
 type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) => void;
@@ -229,7 +230,8 @@ function resolveRenderProxyRenderer(state: RenderState, kind: string) {
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
 export function walkNode(state: RenderState, root: Renderable, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
-  getRenderRootGuard(state)?.(state, root);
+  const rootGuardTable = runtime.registries.renderRootGuard;
+  if (rootGuardTable) getRegistryTableEntry(rootGuardTable, rootGuardTable.registry)?.(state, root);
   ++runtime.currentFrameId;
 
   const tempStack = runtime.tempStack;
@@ -237,7 +239,7 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
   tempStack[0] = root;
 
   let parentData: RenderProxy2D | undefined = undefined;
-  let lastParent: Node | null = null;
+  let lastParent: Node | undefined;
   let treeDirty = false;
 
   while (stackLength > 0) {
@@ -248,7 +250,7 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
       const parent = getNodeParent(current as Node);
       if (parent === null) {
         parentData = undefined;
-        lastParent = null;
+        lastParent = undefined;
       } else if (parent !== lastParent) {
         parentData = getOrCreateRenderProxy2D(state, parent as unknown as Renderable);
         lastParent = parent;

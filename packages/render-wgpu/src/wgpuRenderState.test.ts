@@ -10,7 +10,6 @@ import {
   enableColorAdjustmentGuards,
   enableColorAdjustments,
   getColorAdjustmentUnsupportedGuard,
-  getRenderRootGuard,
   getRenderStateRuntime,
   prepareScene2DRender,
   registerRenderer,
@@ -213,12 +212,20 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
     expect(getColorAdjustmentUnsupportedGuard(offscreen)).not.toBeNull();
     expect(offscreenRuntime.registries.renderRootGuard).toBe(screenRuntime.registries.renderRootGuard);
-    expect(getRenderRootGuard(offscreen)).toBe(renderRootGuard);
+    expect(offscreenRuntime.registries.renderRootGuard?.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: renderRootGuard,
+    });
     const sharedRenderRootGuard = offscreenRuntime.registries.renderRootGuard;
     screenRuntime.registries.renderRootGuard = undefined;
-    expect(getRenderRootGuard(screen)).toBeNull();
+    expect(screenRuntime.registries.renderRootGuard).toBeUndefined();
     expect(offscreenRuntime.registries.renderRootGuard).toBe(sharedRenderRootGuard);
-    expect(getRenderRootGuard(offscreen)).toBe(renderRootGuard);
+    expect(
+      getRegistryTableEntry(
+        offscreenRuntime.registries.renderRootGuard!,
+        offscreenRuntime.registries.renderRootGuard!.registry,
+      ),
+    ).toBe(renderRootGuard);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
     );
