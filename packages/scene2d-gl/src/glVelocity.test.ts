@@ -150,6 +150,39 @@ describe('registerGlVelocityWriter', () => {
 });
 
 describe('renderGlVelocity', () => {
+  it('leaves the blend enable bit, viewport, and clear colour as it found them', () => {
+    const { state, gl } = createGlState();
+    // The shared mock's isEnabled returns undefined, so a capability leak is invisible to a test that
+    // does not model the bit. Modelling it is the whole point here: this pass runs mid-frame, and the
+    // 2D path enables BLEND once at state creation, so a leak is permanent rather than frame-scoped.
+    const enabled = new Set<number>([gl.BLEND]);
+    (gl.isEnabled as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.has(cap));
+    (gl.enable as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.add(cap));
+    (gl.disable as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.delete(cap));
+    let viewport: readonly number[] = [7, 8, 320, 240];
+    let clearColor: readonly number[] = [0.25, 0.5, 0.75, 1];
+    (gl.getParameter as ReturnType<typeof vi.fn>).mockImplementation((parameter: number) => {
+      if (parameter === gl.VIEWPORT) return Int32Array.from(viewport);
+      if (parameter === gl.COLOR_CLEAR_VALUE) return Float32Array.from(clearColor);
+      return undefined;
+    });
+    (gl.viewport as ReturnType<typeof vi.fn>).mockImplementation((...v: number[]) => (viewport = v));
+    (gl.clearColor as ReturnType<typeof vi.fn>).mockImplementation((...v: number[]) => (clearColor = v));
+
+    const target = createGlVelocityTarget(state, 128, 64);
+    const root = createDisplayObject();
+    registerGlVelocityWriter(state, root.kind, defaultGlNode2DVelocityWriter);
+    const field = createVelocityField();
+    beginVelocityFrame(field);
+    contributeVelocity(field, root, 3, -2);
+
+    renderGlVelocity(state, root, field, target);
+
+    expect(enabled.has(gl.BLEND)).toBe(true);
+    expect(Array.from(viewport)).toEqual([7, 8, 320, 240]);
+    expect(Array.from(clearColor)).toEqual([0.25, 0.5, 0.75, 1]);
+  });
+
   it('dispatches the registered writer for a moving node without throwing', () => {
     const { state } = createGlState();
     const target = createGlVelocityTarget(state, 128, 64);

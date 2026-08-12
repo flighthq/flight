@@ -66,6 +66,10 @@ const GL_CONSTANTS: Record<string, number> = {
   BLEND: 0x0be2,
   DEPTH_TEST: 0x0b71,
   STENCIL_TEST: 0x0b90,
+  COLOR_CLEAR_VALUE: 0x0c22,
+  COLOR_WRITEMASK: 0x0c23,
+  SCISSOR_BOX: 0x0c10,
+  VIEWPORT: 0x0ba2,
   CULL_FACE: 0x0b44,
   SCISSOR_TEST: 0x0c11,
   ZERO: 0,
@@ -326,6 +330,17 @@ function makeGl2Context(): WebGL2RenderingContext {
   (ctx.createTransformFeedback as ReturnType<typeof vi.fn>).mockImplementation(() => ({}));
   (ctx.createVertexArray as ReturnType<typeof vi.fn>).mockImplementation(() => ({}));
   (ctx.checkFramebufferStatus as ReturnType<typeof vi.fn>).mockImplementation(() => GL_CONSTANTS.FRAMEBUFFER_COMPLETE);
+  // The vector-valued queries return a fixed-length sequence from any real context, so callers index
+  // them directly. Returning undefined here would make a faithful caller throw in tests only, which
+  // pushes test-shaped defensiveness into production code.
+  (ctx.getParameter as ReturnType<typeof vi.fn>).mockImplementation((parameter: number) => {
+    if (parameter === GL_CONSTANTS.VIEWPORT || parameter === GL_CONSTANTS.SCISSOR_BOX) {
+      return new Int32Array([0, 0, 0, 0]);
+    }
+    if (parameter === GL_CONSTANTS.COLOR_CLEAR_VALUE) return new Float32Array([0, 0, 0, 0]);
+    if (parameter === GL_CONSTANTS.COLOR_WRITEMASK) return [true, true, true, true];
+    return undefined;
+  });
   (ctx.getAttribLocation as ReturnType<typeof vi.fn>).mockImplementation(() => 0);
   (ctx.getError as ReturnType<typeof vi.fn>).mockImplementation(() => GL_CONSTANTS.NO_ERROR);
   (ctx.getProgramInfoLog as ReturnType<typeof vi.fn>).mockImplementation(() => '');

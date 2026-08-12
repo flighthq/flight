@@ -24,6 +24,8 @@ export function makeFakeGl2(options?: {
   const linkOk = options?.linkOk ?? true;
   const activeUniforms = options?.activeUniforms ?? [];
   const calls: { name: string; args: unknown[] }[] = [];
+  // GL starts with every capability disabled except DITHER; tests seed what they need via gl.enable.
+  const enabledCapabilities = new Set<number>();
 
   const record =
     (name: string, result?: unknown) =>
@@ -148,8 +150,17 @@ export function makeFakeGl2(options?: {
     depthMask: record('depthMask'),
     flush: record('flush'),
     viewport: record('viewport'),
-    disable: record('disable'),
-    enable: record('enable'),
+    disable: (capability: number): void => {
+      calls.push({ name: 'disable', args: [capability] });
+      enabledCapabilities.delete(capability);
+    },
+    enable: (capability: number): void => {
+      calls.push({ name: 'enable', args: [capability] });
+      enabledCapabilities.add(capability);
+    },
+    // Tracked rather than recorded, because code that saves a capability bit and restores it reads the
+    // bit back: a stub returning undefined makes every restore look like a no-op and hides the leak.
+    isEnabled: (capability: number): boolean => enabledCapabilities.has(capability),
     drawElements: record('drawElements'),
     drawElementsInstanced: record('drawElementsInstanced'),
     drawArrays: record('drawArrays'),

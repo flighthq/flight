@@ -68,6 +68,17 @@ a claim about this tree, not about a session.
   depth-write-off pass afterwards (`drawGlScene3D.ts:265`, `glParticleEmitter3D.ts:410`). A particle
   behind a blended mesh still composites over it.
 
+- **`bakeGlEnvironmentIbl`'s state handling is fixed but NOT unit-covered, deliberately.** It disabled
+  `DEPTH_TEST`, `CULL_FACE`, and `BLEND` and restored none of them, while saving and restoring the
+  framebuffer and viewport right beside them — the same partial-restoration shape as `renderGlVelocity`
+  and the stencil bracket. The restores are in. A test is not: the bake needs `createFramebuffer` and a
+  float-cube path this package's `FakeGl2` does not implement, which is the same limit the file's own
+  header comment already records. Completing the mock far enough to drive a GPU bake is a mock-fitting
+  project, not a test. The functional `env-ibl` capture is where a regression would surface.
+  `makeGlScene3DState` now TRACKS capability bits (`enable`/`disable`/`isEnabled` against a set) rather
+  than recording them, because a stub returning `undefined` makes every save-and-restore look like a
+  no-op and hides exactly this class of leak.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->

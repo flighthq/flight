@@ -283,6 +283,14 @@ export function renderGlVelocity<Traits extends object>(
   const gl = state.gl;
   const program = ensureGlVelocityProgram(state);
 
+  // Saved alongside the framebuffer because all four are context-wide and this pass is called mid-frame,
+  // between a caller's own draws. BLEND especially: the 2D path enables it once in createGlRenderState
+  // and never again, so leaking it off here would disable alpha compositing for every later draw on this
+  // context, not just for the rest of this frame.
+  const prevBlend = gl.isEnabled(gl.BLEND);
+  const prevViewport = gl.getParameter(gl.VIEWPORT) as Int32Array;
+  const prevClearColor = gl.getParameter(gl.COLOR_CLEAR_VALUE) as Float32Array;
+
   gl.bindFramebuffer(gl.FRAMEBUFFER, target.framebuffer);
   gl.viewport(0, 0, target.width, target.height);
   gl.disable(gl.BLEND);
@@ -305,6 +313,9 @@ export function renderGlVelocity<Traits extends object>(
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, runtime.currentFramebuffer);
   gl.disableVertexAttribArray(program.locCorner);
+  if (prevBlend) gl.enable(gl.BLEND);
+  gl.viewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
+  gl.clearColor(prevClearColor[0], prevClearColor[1], prevClearColor[2], prevClearColor[3]);
 }
 
 function ensureGlVelocityProgram(state: GlRenderState): GlVelocityProgram {

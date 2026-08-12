@@ -28,6 +28,13 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
 
   const prevFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING) as WebGLFramebuffer | null;
   const prevViewport = gl.getParameter(gl.VIEWPORT) as Int32Array;
+  // The three capabilities are saved for the same reason the framebuffer and viewport above already are:
+  // a bake runs between a caller's own draws. The 3D draw path re-establishes depth and cull per draw and
+  // would recover on its own, but the 2D path enables BLEND once at state creation and never again, so a
+  // leak here disables alpha compositing for every later 2D draw on this context.
+  const prevDepthTest = gl.isEnabled(gl.DEPTH_TEST);
+  const prevCullFace = gl.isEnabled(gl.CULL_FACE);
+  const prevBlend = gl.isEnabled(gl.BLEND);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.CULL_FACE);
   gl.disable(gl.BLEND);
@@ -39,6 +46,9 @@ export function bakeGlEnvironmentIbl(state: GlRenderState, environment: Readonly
   gl.bindFramebuffer(gl.FRAMEBUFFER, prevFramebuffer);
   gl.viewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
   gl.bindVertexArray(null);
+  if (prevDepthTest) gl.enable(gl.DEPTH_TEST);
+  if (prevCullFace) gl.enable(gl.CULL_FACE);
+  if (prevBlend) gl.enable(gl.BLEND);
 
   runtime.ibl = {
     brdfLut,
