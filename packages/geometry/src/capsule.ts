@@ -84,7 +84,7 @@ export function getClosestPointOnCapsule(
  * the capsule axis segment) with hemispherical cap tests at start and end.
  *
  * Returns the entry parameter `t` (>= 0) on hit, or `-1` on miss. A ray starting inside the
- * capsule returns `t = 0`.
+ * capsule returns `t = 0`. An empty capsule (negative radius) always returns `-1`.
  */
 export function intersectRay3DCapsule(ray: Readonly<Ray3DLike>, capsule: Readonly<CapsuleLike>): number {
   const ox = ray.origin.x,
@@ -100,6 +100,7 @@ export function intersectRay3DCapsule(ray: Readonly<Ray3DLike>, capsule: Readonl
     by = capsule.endY,
     bz = capsule.endZ;
   const r = capsule.radius;
+  if (r < 0) return -1;
 
   const abx = bx - ax,
     aby = by - ay,

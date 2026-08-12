@@ -145,6 +145,11 @@ describe('intersectRay3DCapsule', () => {
     expect(intersectRay3DCapsule(createRay3D(9, 9, 9, 0, 0, 0), c)).toBe(-1);
   });
 
+  it('returns -1 for an empty capsule with a negative radius', () => {
+    const empty = createCapsule(0, -1, 0, 0, 1, 0, -1);
+    expect(intersectRay3DCapsule(createRay3D(5, 0, 0, -1, 0, 0), empty)).toBe(-1);
+  });
+
   it('returns -1 for a ray that passes wide of the capsule', () => {
     // Parallel to nothing and outside the cylinder radius, so neither the body nor either cap has
     // a real intersection at all — a different miss from a ray aimed away from a capsule in reach.

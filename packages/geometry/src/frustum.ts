@@ -86,9 +86,12 @@ export function isFrustumContainingPoint(frustum: Readonly<FrustumLike>, point: 
  * Returns whether an axis-aligned bounding box intersects (or is contained by) the frustum.
  * Uses the conservative positive-vertex test: the box is rejected only when it lies entirely
  * on the outside (negative) side of any single plane. This may report a false positive for
- * boxes straddling a frustum corner but never a false negative.
+ * boxes straddling a frustum corner but never a false negative. An empty box (min > max on any
+ * axis) always returns false.
  */
 export function isFrustumIntersectingAabb(frustum: Readonly<FrustumLike>, aabb: Readonly<AabbLike>): boolean {
+  if (aabb.min.x > aabb.max.x || aabb.min.y > aabb.max.y || aabb.min.z > aabb.max.z) return false;
+
   return (
     __planeIntersectsAabb(frustum.left, aabb) &&
     __planeIntersectsAabb(frustum.right, aabb) &&

@@ -218,8 +218,19 @@ export function intersectAabb(out: AabbLike, a: Readonly<AabbLike>, b: Readonly<
 
 /**
  * Returns whether two axis-aligned bounding boxes overlap (share any interior or surface point).
+ * An empty box (min > max on any axis) does not intersect anything.
  */
 export function isAabbIntersectingAabb(a: Readonly<AabbLike>, b: Readonly<AabbLike>): boolean {
+  if (
+    a.min.x > a.max.x ||
+    a.min.z > a.max.z ||
+    a.min.y > a.max.y ||
+    b.min.x > b.max.x ||
+    b.min.y > b.max.y ||
+    b.min.z > b.max.z
+  ) {
+    return false;
+  }
   return (
     a.min.x <= b.max.x &&
     a.max.x >= b.min.x &&

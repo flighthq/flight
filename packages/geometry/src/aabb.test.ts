@@ -253,6 +253,16 @@ describe('isAabbIntersectingAabb', () => {
     const b = createAabb(5, 5, 5, 6, 6, 6);
     expect(isAabbIntersectingAabb(a, b)).toBe(false);
   });
+
+  it.each([
+    ['x', createAabb(1, 0, 0, 0, 1, 1)],
+    ['y', createAabb(0, 1, 0, 1, 0, 1)],
+    ['z', createAabb(0, 0, 1, 1, 1, 0)],
+  ])('returns false when either box is empty on %s', (_axis, empty) => {
+    const full = createAabb(-10, -10, -10, 10, 10, 10);
+    expect(isAabbIntersectingAabb(empty, full)).toBe(false);
+    expect(isAabbIntersectingAabb(full, empty)).toBe(false);
+  });
 });
 
 describe('setAabb', () => {
