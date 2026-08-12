@@ -1,24 +1,22 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
-import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import { orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
+import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { orderModifierStack } from '@flighthq/shading/contract';
 import type {
-  ModifierRegistry,
-  LinearColor,
   Camera3D,
+  GlModifierBindContext,
   GlMeshMaterialRenderer,
   GlRenderState,
+  GlShadedDefineKey,
+  GlShadedProgram,
+  LinearColor,
   Material,
   MeshGeometry,
   Modifier,
   Scene3DLightBlock,
   Scene3DRenderProxy,
   ShadedMaterial,
-  GlModifierBindContext,
-  GlModifierSnippet,
-  GlShadedDefineKey,
-  GlShadedProgram,
 } from '@flighthq/types/contract';
-import { ShadedMaterialKind } from '@flighthq/types/contract';
+import { RegistryEntryState, ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -88,8 +86,7 @@ function bindGlShadedModifiers(
   program: Readonly<GlShadedProgram>,
   modifiers: readonly Modifier[],
 ): void {
-  const registry: Readonly<ModifierRegistry> | null = getGlScene3DRuntime(state).modifierSnippetRegistry;
-  if (registry === null) return;
+  const entries = getGlRenderStateRuntime(state).registries.modifierSnippets.entries;
   const ordered = orderModifierStack(modifiers);
   let nextTextureUnit = MODIFIER_TEXTURE_UNIT_BASE;
   const context: GlModifierBindContext = {
@@ -103,10 +100,10 @@ function bindGlShadedModifiers(
   };
   for (let index = 0; index < ordered.length; index++) {
     const modifier = ordered[index];
-    const snippet = resolveModifier(registry, modifier.kind) as GlModifierSnippet | null;
-    if (snippet === null || snippet.bind === undefined) continue;
+    const entry = entries.get(modifier.kind);
+    if (entry?.state !== RegistryEntryState.Bound || entry.value.bind === undefined) continue;
     context.index = index;
-    snippet.bind(modifier, context);
+    entry.value.bind(modifier, context);
   }
 }
 

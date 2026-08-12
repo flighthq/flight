@@ -1,24 +1,21 @@
-import { createModifierRegistry, registerModifier, resolveModifier } from '@flighthq/shading/contract';
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlModifierSnippet, GlRenderState, ModifierKind } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-// Registers (or replaces) the GL snippet for a modifier kind on this state's scene runtime. Opt-in
+// Registers (or replaces) the GL snippet for a modifier kind on this state's render policy. Opt-in
 // and last-write-wins (a vendor-prefixed kind, or an override of a built-in, wins). Unregistered
 // kinds contribute no GLSL, so a ShadedMaterial whose modifier has no snippet renders as if that
-// modifier were absent. Register the three built-ins with registerBuiltInGlModifierSnippets. Lazily
-// allocates the modifier registry on first use so a PBR/classic-only scene-gl consumer that never
-// registers a snippet pays nothing for the shading tier.
+// modifier were absent. Register the built-ins with registerBuiltInGlModifierSnippets.
 export function registerGlModifierSnippet(state: GlRenderState, snippet: Readonly<GlModifierSnippet>): void {
-  const runtime = getGlScene3DRuntime(state);
-  if (runtime.modifierSnippetRegistry === null) runtime.modifierSnippetRegistry = createModifierRegistry();
-  registerModifier(runtime.modifierSnippetRegistry, snippet);
+  const registries = getGlRenderStateRuntime(state).registries;
+  registries.modifierSnippets = withRegistryTableEntry(registries.modifierSnippets, snippet.kind, snippet);
+  registries.modifierSnippetRevision++;
 }
 
-// Returns the GL snippet registered for a modifier kind on this state, or null when none is (including
-// when no snippet has ever been registered, so the registry is still unallocated) — the expected-miss
-// sentinel the compile path checks before injecting an unknown kind.
+// Returns the GL snippet registered for a modifier kind on this state, or null when none is — the
+// expected-miss sentinel the compile path checks before injecting an unknown kind.
 export function resolveGlModifierSnippet(state: GlRenderState, kind: ModifierKind): GlModifierSnippet | null {
-  const registry = getGlScene3DRuntime(state).modifierSnippetRegistry;
-  if (registry === null) return null;
-  return resolveModifier(registry, kind) as GlModifierSnippet | null;
+  const entry = getGlRenderStateRuntime(state).registries.modifierSnippets.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }

@@ -15,13 +15,25 @@ function makeSnippet(overrides?: Partial<WgpuModifierSnippet>): WgpuModifierSnip
 }
 
 describe('registerWgpuModifierSnippet', () => {
-  it('lazily allocates a state-scoped registry and is last-write-wins', () => {
-    const { state } = makeWgpuScene3DState();
-    expect(getWgpuScene3DRuntime(state).modifierSnippetRegistry).toBeNull();
-    registerWgpuModifierSnippet(state, makeSnippet());
+  it('replaces the table while an explicitly copied state retains its snapshot through lazy scene init', () => {
+    const { state: screen } = makeWgpuScene3DState();
+    const { state: derived } = makeWgpuScene3DState();
+    const initial = makeSnippet();
     const override = makeSnippet({ contribution: () => ({ source: '// override' }) });
-    registerWgpuModifierSnippet(state, override);
-    expect(resolveWgpuModifierSnippet(state, 'acme.Test')).toBe(override);
+    registerWgpuModifierSnippet(screen, initial);
+    const snapshot = getWgpuRenderStateRuntime(screen).registries.modifierSnippets;
+
+    copyWgpuRenderStateRegistrations(derived, screen);
+    getWgpuScene3DRuntime(derived);
+    registerWgpuModifierSnippet(screen, override);
+
+    expect(getWgpuRenderStateRuntime(derived).registries.modifierSnippets).toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(derived).registries.modifierSnippetRevision).toBe(1);
+    expect(getWgpuRenderStateRuntime(screen).registries.modifierSnippets).not.toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(screen).registries.modifierSnippetRevision).toBe(2);
+    expect(getRegistryTableEntry(snapshot, 'acme.Test')).toBe(initial);
+    expect(resolveWgpuModifierSnippet(derived, 'acme.Test')).toBe(initial);
+    expect(resolveWgpuModifierSnippet(screen, 'acme.Test')).toBe(override);
   });
 });
 
@@ -31,3 +43,5 @@ describe('resolveWgpuModifierSnippet', () => {
     expect(resolveWgpuModifierSnippet(state, 'acme.Missing')).toBeNull();
   });
 });
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import { copyWgpuRenderStateRegistrations, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';

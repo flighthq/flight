@@ -1,20 +1,17 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import {
-  createModifierRegistry,
-  getModifierDefineKey,
-  orderModifierStack,
-  resolveModifier,
-} from '@flighthq/shading/contract';
+import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
+  GlModifierSnippet,
+  GlRenderState,
   GlShadedDefineKey,
   GlShadedProgram,
-  ModifierRegistry,
-  GlRenderState,
+  KeyedTable,
   Modifier,
-  GlModifierSnippet,
+  ModifierKind,
+  ModifierRegistry,
 } from '@flighthq/types/contract';
-import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types/contract';
+import { MAX_FORWARD_LIGHTS, ModifierSlot, RegistryEntryState } from '@flighthq/types/contract';
 
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
@@ -25,6 +22,8 @@ import {
   ensureGlScene3DProgram,
 } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
+
+type GlModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<KeyedTable<GlModifierSnippet>>;
 // The stable program-cache key for a ShadedMaterial variant: the base feature flags joined with the
 // modifier stack's define-key. Two materials sharing both the same base flags AND the same modifier
 // feature-set produce the same key and share one compiled program (and batch together); a different
@@ -48,7 +47,7 @@ export function compileGlShadedProgram(
   gl: WebGL2RenderingContext,
   key: Readonly<GlShadedDefineKey>,
   orderedModifiers: readonly Modifier[],
-  registry: Readonly<ModifierRegistry>,
+  registry: GlModifierSnippetSource,
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
 ): GlShadedProgram {
   const defineSource = buildGlShadedDefineSource(key);
@@ -102,10 +101,8 @@ export function ensureGlShadedProgram(
   key: Readonly<GlShadedDefineKey>,
   modifiers: readonly Modifier[],
 ): GlShadedProgram {
-  // A null registry means no modifier snippet was ever registered (the lazy-allocation default); the
-  // shared empty registry then yields the coarse bare-kind define-key and no modifier GLSL — the same
-  // result an allocated-but-empty registry gives — without allocating on this per-bind path.
-  const registry = getGlScene3DRuntime(state).modifierSnippetRegistry ?? EMPTY_MODIFIER_REGISTRY;
+  const registries = getGlRenderStateRuntime(state).registries;
+  const registry = registries.modifierSnippets;
   const ordered = orderModifierStack(modifiers);
   // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
@@ -115,7 +112,9 @@ export function ensureGlShadedProgram(
     hasColorMatrix: getGlScene3DRuntime(state).activeColorMatrixRun,
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
-  const cacheKey = buildGlShadedCacheKey(fullKey, getModifierDefineKey(modifiers, registry));
+  const cacheKey = `${buildGlShadedCacheKey(fullKey, getGlModifierDefineKey(modifiers, registry))}|registry:${
+    registries.modifierSnippetRevision
+  }`;
   return ensureGlScene3DProgram(state, cacheKey, (gl) =>
     compileGlShadedProgram(
       gl,
@@ -136,7 +135,7 @@ export function ensureGlShadedProgram(
 // yielding the lean plain-ShadedMaterial variant that pays nothing for modifiers it does not carry.
 function assembleGlShadedFragmentBody(
   orderedModifiers: readonly Modifier[],
-  registry: Readonly<ModifierRegistry>,
+  registry: GlModifierSnippetSource,
 ): string {
   let declarations = '';
   let normal = '';
@@ -146,7 +145,7 @@ function assembleGlShadedFragmentBody(
   let effect = '';
   for (let index = 0; index < orderedModifiers.length; index++) {
     const modifier = orderedModifiers[index];
-    const snippet = resolveModifier(registry, modifier.kind) as GlModifierSnippet | null;
+    const snippet = resolveGlModifierSnippetSource(registry, modifier.kind);
     if (snippet === null || snippet.slot === ModifierSlot.Vertex) continue;
     if (snippet.declarations !== undefined) declarations += `${snippet.declarations(modifier, index)}\n`;
     const contribution = `${snippet.contribution(modifier, index)}\n`;
@@ -170,15 +169,12 @@ function assembleGlShadedFragmentBody(
 // localNormal are computed (post-skin) but before the model transform, so displacement composes with
 // skinning. Non-vertex slots are skipped (they inject into the fragment body). An empty vertex set
 // leaves both hooks empty, yielding the plain vertex program.
-function assembleGlShadedVertexBody(
-  orderedModifiers: readonly Modifier[],
-  registry: Readonly<ModifierRegistry>,
-): string {
+function assembleGlShadedVertexBody(orderedModifiers: readonly Modifier[], registry: GlModifierSnippetSource): string {
   let declarations = '';
   let vertex = '';
   for (let index = 0; index < orderedModifiers.length; index++) {
     const modifier = orderedModifiers[index];
-    const snippet = resolveModifier(registry, modifier.kind) as GlModifierSnippet | null;
+    const snippet = resolveGlModifierSnippetSource(registry, modifier.kind);
     if (snippet === null || snippet.slot !== ModifierSlot.Vertex) continue;
     if (snippet.declarations !== undefined) declarations += `${snippet.declarations(modifier, index)}\n`;
     vertex += `${snippet.contribution(modifier, index)}\n`;
@@ -460,6 +456,30 @@ ${GL_MESH_FRAGMENT_TAIL}
 }
 `;
 
-// A shared frozen empty registry used as the no-snippets fallback when a state has never had a
-// modifier snippet registered, so ensureGlShadedProgram allocates nothing per bind.
-const EMPTY_MODIFIER_REGISTRY: Readonly<ModifierRegistry> = createModifierRegistry();
+function getGlModifierDefineKey(stack: readonly Modifier[], registry: GlModifierSnippetSource): string {
+  if (!isGlModifierSnippetTable(registry)) return getModifierDefineKey(stack, registry);
+  const ordered = orderModifierStack(stack);
+  let key = '';
+  for (const modifier of ordered) {
+    const snippet = resolveGlModifierSnippetSource(registry, modifier.kind);
+    const signature = snippet?.getDefineSignature?.(modifier) ?? '';
+    const token = signature.length > 0 ? `${modifier.kind}:${signature}` : modifier.kind;
+    key = key.length > 0 ? `${key}+${token}` : token;
+  }
+  return key;
+}
+
+function resolveGlModifierSnippetSource(
+  registry: GlModifierSnippetSource,
+  kind: ModifierKind,
+): GlModifierSnippet | null {
+  if (!isGlModifierSnippetTable(registry)) return resolveModifier(registry, kind) as GlModifierSnippet | null;
+  const entry = registry.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+}
+
+function isGlModifierSnippetTable(
+  registry: GlModifierSnippetSource,
+): registry is Readonly<KeyedTable<GlModifierSnippet>> {
+  return 'shape' in registry;
+}

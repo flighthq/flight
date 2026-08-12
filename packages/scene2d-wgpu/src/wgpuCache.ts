@@ -102,6 +102,8 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   cacheRuntime.registries = {
     materialRenderers: screenRuntime.registries.materialRenderers,
     meshMaterialRenderers: screenRuntime.registries.meshMaterialRenderers,
+    modifierSnippets: screenRuntime.registries.modifierSnippets,
+    modifierSnippetRevision: screenRuntime.registries.modifierSnippetRevision,
     renderEffects: screenRuntime.registries.renderEffects,
     shapeRasterizer: screenRuntime.registries.shapeRasterizer,
     textureResolvers: screenRuntime.registries.textureResolvers,

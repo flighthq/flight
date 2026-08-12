@@ -1,5 +1,4 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { resolveModifier } from '@flighthq/shading/contract';
 import type {
   CatalogRegistration,
   GlRenderState,
@@ -15,8 +14,6 @@ import {
   SceneCoverage,
   StandardMaterialKind,
 } from '@flighthq/types/contract';
-
-import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // Clears `out`, then reports EVERY kind in `usage` with how well this state is wired for it — satisfied
 // ones included, so one call is a complete manifest rather than only a list of complaints. The answering half
@@ -121,10 +118,10 @@ function collectGlScene3DCoverageGaps(
   // The shaded compiler assembles base + ordered modifiers into ONE program, so an unregistered
   // snippet does not fail a single lookup — it fails the whole material. A modifier kind is therefore
   // always a total absence, never a fallback.
-  const snippets = getGlScene3DRuntime(state).modifierSnippetRegistry;
+  const snippets = getGlRenderStateRuntime(state).registries.modifierSnippets.entries;
   for (let i = 0; i < usage.modifierKinds.length; i++) {
     const kind = usage.modifierKinds[i];
-    if (snippets !== null && resolveModifier(snippets, kind) !== null) {
+    if (snippets.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneModifierKind,

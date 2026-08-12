@@ -16,6 +16,7 @@ import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecode
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
+import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
 import type { WgpuRenderEffectRunner } from './WgpuRenderEffectPipeline';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
@@ -36,6 +37,10 @@ export interface WgpuRenderState extends RenderState {
 export interface WgpuRenderRegistries {
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
+  modifierSnippets: KeyedTable<WgpuModifierSnippet>;
+  // Shader cache identity advances with every snippet-table replacement, including same-kind
+  // replacements whose define signature is unchanged but whose emitted source differs.
+  modifierSnippetRevision: number;
   renderEffects: KeyedTable<WgpuRenderEffectRunner>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
