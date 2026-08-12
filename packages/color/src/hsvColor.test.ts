@@ -29,10 +29,10 @@ describe('hsvToRgb', () => {
     expect(out[2]).toBeCloseTo(0, 5);
   });
   it.each([
-    [60, [1, 1, 0]],
-    [180, [0, 1, 1]],
-    [240, [0, 0, 1]],
-    [300, [1, 0, 1]],
+    [90, [0.5, 1, 0]],
+    [210, [0, 0.5, 1]],
+    [270, [0.5, 0, 1]],
+    [330, [1, 0, 0.5]],
   ] as const)('converts hue %d through its color-wheel sector', (hue, expected) => {
     const out: [number, number, number, number] = [0, 0, 0, 0.75];
 
