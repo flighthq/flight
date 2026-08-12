@@ -47,6 +47,7 @@
     "@flighthq/materials": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
+    "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/scene3d": "*",

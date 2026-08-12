@@ -114,7 +114,6 @@ describe('getGlScene3DRuntime', () => {
     expect(first.activeMeshProgram).toBeNull();
     expect(first.blendedDrawList).toBeInstanceOf(Array);
     expect(first.blendedPool).toBeInstanceOf(Array);
-    expect(first.materialRegistry).toBeInstanceOf(Map);
     expect(first.opaqueDrawList).toBeInstanceOf(Array);
     expect(first.opaquePool).toBeInstanceOf(Array);
     expect(first.programCache).toBeInstanceOf(Map);
@@ -132,11 +131,12 @@ describe('getGlScene3DRuntime', () => {
     expect(rtA.blendedDrawList).not.toBe(rtB.blendedDrawList);
   });
 
-  it('surfaces its registry and upload cache through the header runtime slots', () => {
+  it('surfaces its upload cache without replacing persistent material dispatch policy', () => {
     const { state } = makeGlScene3DState();
-    const scene = getGlScene3DRuntime(state);
     const stateRuntime = state[EntityRuntimeKey] as GlRenderStateRuntime;
-    expect(stateRuntime.sceneMeshMaterialRegistry).toBe(scene.materialRegistry);
+    const materials = stateRuntime.registries.meshMaterialRenderers;
+    const scene = getGlScene3DRuntime(state);
+    expect(stateRuntime.registries.meshMaterialRenderers).toBe(materials);
     expect(stateRuntime.sceneMeshUploadCache).toBe(scene.uploadCache);
   });
 });

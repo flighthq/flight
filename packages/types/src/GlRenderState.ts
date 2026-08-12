@@ -35,6 +35,7 @@ export interface GlRenderState extends RenderState {
 export interface GlRenderRegistries {
   blendRealizations: KeyedTable<GlBlendRealization>;
   materialRenderers: KeyedTable<GlMaterialRenderer>;
+  meshMaterialRenderers: KeyedTable<GlMeshMaterialRenderer>;
   renderEffects: KeyedTable<GlRenderEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<GlTextureResolver>;
@@ -126,13 +127,10 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   glColorAdjustmentMaterialFeatureGuard?:
     | ((state: GlRenderState, colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>) => void)
     | null;
-  // 3D scene mesh-material seam, owned by scene-gl (filled lazily by registerGlMeshMaterialRenderer).
-  // The per-material-kind 3D draw behavior registry, kept separate from registries.materialRenderers
-  // because a material kind is either 2D or 3D, never both. sceneMeshUploadCache is the per-state
-  // cache of lazily uploaded MeshGeometry GPU data, keyed by the geometry entity (parallel to
-  // MeshGeometryRuntime.webglData; scene-gl owns and casts the concrete value shape). Both stay null
-  // until the first 3D registration / mesh draw on this render state.
-  sceneMeshMaterialRegistry?: Map<Kind, GlMeshMaterialRenderer> | null;
+  // The 3D material dispatch policy lives in registries.meshMaterialRenderers, separate from the 2D
+  // material table because a material kind is either 2D or 3D, never both. This cache is the context-tier
+  // realization of lazily uploaded MeshGeometry data, keyed by the geometry entity (parallel to
+  // MeshGeometryRuntime.webglData; scene-gl owns and casts the concrete value shape).
   sceneMeshUploadCache?: WeakMap<object, object> | null;
   // Per-material-kind bitmap shader for the immediate (display-object) path. resolveGlShader
   // looks a node's shader up here by its material kind — the render path has no color-adjustment (or

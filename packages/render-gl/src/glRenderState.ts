@@ -25,11 +25,11 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   targetRuntime.glColorAdjustmentMaterialFeatureGuard = sourceRuntime.glColorAdjustmentMaterialFeatureGuard;
   targetRuntime.materialBitmapShaderMap =
     sourceRuntime.materialBitmapShaderMap === undefined ? undefined : new Map(sourceRuntime.materialBitmapShaderMap);
-  targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
     blendRealizations: sourceRuntime.registries.blendRealizations,
     materialRenderers: sourceRuntime.registries.materialRenderers,
+    meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
     renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
@@ -186,6 +186,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
   runtime.registries = {
     blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
     materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
+    meshMaterialRenderers: createKeyedTable('GlMeshMaterialRenderer', 'StandardMaterial'),
     renderEffects: createKeyedTable('GlRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
@@ -297,12 +298,6 @@ function initializeOffscreenGlRuntime(runtime: GlRenderStateRuntime, screenRunti
   runtime.matrixArray = new Float32Array(9);
   runtime.scissorStack = [];
   runtime.clipForms = [];
-}
-
-function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> | null | undefined {
-  if (source === undefined) return undefined;
-  if (source === null) return null;
-  return new Map(source);
 }
 
 type GlContextRuntimeKey = (typeof GL_CONTEXT_RUNTIME_KEYS)[number];

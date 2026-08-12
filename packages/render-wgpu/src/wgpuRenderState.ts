@@ -17,8 +17,8 @@ import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
 const RING_SLOT_COUNT = 4096;
 
-// Explicit snapshot re-copy. Device resources remain shared. Mutable legacy maps are cloned;
-// persistent tables share immutable snapshots through distinct aggregates, so either pipeline can
+// Explicit snapshot re-copy. Device resources remain shared. Persistent tables share immutable
+// snapshots through distinct aggregates, so either pipeline can
 // still replace registration policy independently after derivation.
 export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source: WgpuRenderState): void {
   const targetRuntime = getWgpuRenderStateRuntime(target);
@@ -27,10 +27,10 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
   targetRuntime.wgpuColorAdjustmentMaterialFeature = sourceRuntime.wgpuColorAdjustmentMaterialFeature;
   targetRuntime.wgpuColorAdjustmentMaterialFeatureGuard = sourceRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
-  targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
     materialRenderers: sourceRuntime.registries.materialRenderers,
+    meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
     renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
@@ -252,6 +252,7 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.registries = {
     materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
+    meshMaterialRenderers: createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial'),
     renderEffects: createKeyedTable('WgpuRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
@@ -423,12 +424,6 @@ function initializeOffscreenWgpuRuntime(
   runtime.currentScissorRect = null;
   runtime.renderTargetViewport = null;
   runtime.renderTargetStack = [];
-}
-
-function copyMap<K, V>(source: ReadonlyMap<K, V> | null | undefined): Map<K, V> | null | undefined {
-  if (source === undefined) return undefined;
-  if (source === null) return null;
-  return new Map(source);
 }
 
 type WgpuDeviceRuntimeKey = (typeof WGPU_DEVICE_RUNTIME_KEYS)[number];

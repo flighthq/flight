@@ -1,13 +1,14 @@
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Kind, Material, WgpuMeshMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
-import { StandardMaterialKind } from '@flighthq/types/contract';
-
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { RegistryEntryState, StandardMaterialKind } from '@flighthq/types/contract';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
-// analog of getWgpuMaterialRenderer; reads scene-wgpu's own per-state registry
-// (sceneMeshMaterialRegistry), distinct from the 2D material-renderer table.
+// analog of getWgpuMaterialRenderer; reads scene-wgpu's own per-state persistent registry table,
+// distinct from the 2D material-renderer table.
 export function getWgpuMeshMaterialRenderer(state: WgpuRenderState, kind: Kind): WgpuMeshMaterialRenderer | null {
-  return getWgpuScene3DRuntime(state).materialRegistry.get(kind) ?? null;
+  const entry = getWgpuRenderStateRuntime(state).registries.meshMaterialRenderers.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Registers a 3D mesh-material renderer against a material kind on this state. Opt-in: drawScene3D only
@@ -19,7 +20,12 @@ export function registerWgpuMeshMaterialRenderer(
   kind: Kind,
   renderer: WgpuMeshMaterialRenderer,
 ): void {
-  getWgpuScene3DRuntime(state).materialRegistry.set(kind, renderer);
+  const runtime = getWgpuRenderStateRuntime(state);
+  runtime.registries.meshMaterialRenderers = withRegistryTableEntry(
+    runtime.registries.meshMaterialRenderers,
+    kind,
+    renderer,
+  );
 }
 
 // Resolves a mesh subset's material to its registered 3D renderer: by the material's kind, else the
@@ -30,10 +36,11 @@ export function resolveWgpuMeshMaterialRenderer(
   state: WgpuRenderState,
   material: Readonly<Material> | null,
 ): WgpuMeshMaterialRenderer | null {
-  const registry = getWgpuScene3DRuntime(state).materialRegistry;
+  const entries = getWgpuRenderStateRuntime(state).registries.meshMaterialRenderers.entries;
   if (material !== null) {
-    const renderer = registry.get(material.kind);
-    if (renderer !== undefined) return renderer;
+    const entry = entries.get(material.kind);
+    if (entry?.state === RegistryEntryState.Bound) return entry.value;
   }
-  return registry.get(StandardMaterialKind) ?? null;
+  const fallback = entries.get(StandardMaterialKind);
+  return fallback?.state === RegistryEntryState.Bound ? fallback.value : null;
 }

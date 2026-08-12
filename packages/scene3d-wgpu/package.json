@@ -46,6 +46,7 @@
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/node": "*",
+    "@flighthq/registry": "*",
     "@flighthq/render": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/scene3d": "*",

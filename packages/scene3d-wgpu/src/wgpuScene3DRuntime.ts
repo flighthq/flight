@@ -2,9 +2,9 @@ import type { WgpuScene3DRuntime, WgpuRenderState, WgpuRenderStateRuntime } from
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-// Resolves scene-wgpu's private runtime for a WgpuRenderState, allocating it (and wiring the header
-// runtime slots to its registry and upload cache) on first use. Mutable by design: the draw path
-// writes the caches and shared bindings every frame.
+// Resolves scene-wgpu's private runtime for a WgpuRenderState, allocating it and wiring its device-tier
+// upload cache on first use. Mutable by design: the draw path writes the caches and shared bindings every
+// frame. Material dispatch policy lives on the render state's persistent registry aggregate.
 export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntime {
   const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
   let scene = sceneRuntimes.get(state);
@@ -43,7 +43,6 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       pbrSampleIblCubeView: null,
       pbrSampleLayout: null,
       pbrSampleShadowView: null,
-      materialRegistry: new Map(),
       modifierSnippetRegistry: null,
       modifierSnippetRevision: 0,
       opaqueDrawList: [],
@@ -86,9 +85,8 @@ export function getWgpuScene3DRuntime(state: WgpuRenderState): WgpuScene3DRuntim
       uploadCache: new WeakMap(),
     };
     sceneRuntimes.set(state, scene);
-    // Bitmap the registry + upload cache through the header's opaque runtime slots so other code (and
-    // a future destroy path) can find them by name without importing scene-wgpu internals.
-    stateRuntime.sceneMeshMaterialRegistry = scene.materialRegistry;
+    // Surface the upload cache through the header's opaque runtime slot so other code (and a future
+    // destroy path) can find it by name without importing scene-wgpu internals.
     stateRuntime.sceneMeshUploadCache = scene.uploadCache;
   }
   return scene;

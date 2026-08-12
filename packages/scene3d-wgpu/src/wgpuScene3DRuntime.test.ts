@@ -11,17 +11,17 @@ describe('getWgpuScene3DRuntime', () => {
     const a = getWgpuScene3DRuntime(state);
     const b = getWgpuScene3DRuntime(state);
     expect(a).toBe(b);
-    expect(a.materialRegistry).toBeInstanceOf(Map);
     expect(a.pipelineCache).toBeInstanceOf(Map);
     expect(a.activeBlendMode).toBeNull();
     expect(a.activeMeshPipeline).toBeNull();
   });
 
-  it('surfaces the registry and upload cache through the header runtime slots', () => {
+  it('surfaces its upload cache without replacing persistent material dispatch policy', () => {
     const { state } = makeWgpuScene3DState();
-    const scene = getWgpuScene3DRuntime(state);
     const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
-    expect(stateRuntime.sceneMeshMaterialRegistry).toBe(scene.materialRegistry);
+    const materials = stateRuntime.registries.meshMaterialRenderers;
+    const scene = getWgpuScene3DRuntime(state);
+    expect(stateRuntime.registries.meshMaterialRenderers).toBe(materials);
     expect(stateRuntime.sceneMeshUploadCache).toBe(scene.uploadCache);
   });
 });
