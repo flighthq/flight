@@ -4,17 +4,19 @@ import {
   createObb,
   createRay3D,
   createVector3,
+  crossVector3,
   getClosestPointOnObb,
   intersectRay3DObb,
   isObbIntersectingAabb,
   isObbIntersectingObb,
   matrix4TransformPoint,
+  normalizeVector3,
   rotateMatrix4,
   setMatrix4Position,
   setObb,
   transformObbByMatrix4,
 } from '@flighthq/geometry/contract';
-import type { Matrix4, Obb } from '@flighthq/types/contract';
+import type { Matrix4, Obb, Vector3 } from '@flighthq/types/contract';
 
 describe('createObb', () => {
   it('stores center, half-extents, and orientation', () => {
@@ -94,6 +96,21 @@ describe('intersectRay3DObb', () => {
     const ray = createRay3D(0, 0, 0, 1, 0, 0);
     expect(intersectRay3DObb(ray, o)).toBe(-1);
   });
+
+  it('treats a zero-length direction as a containment test at the origin', () => {
+    // With no direction, every slab takes the parallel-ray path: the ray hits only if its origin
+    // already lies inside, and then the entry parameter is 0.
+    const o = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    expect(intersectRay3DObb(createRay3D(0.5, 0.5, 0.5, 0, 0, 0), o)).toBe(0);
+    expect(intersectRay3DObb(createRay3D(5, 0, 0, 0, 0, 0), o)).toBe(-1);
+  });
+
+  it('hits a flat OBB whose half-extent along one axis is zero', () => {
+    // A collapsed axis is a plane, not an empty volume: the slab still has a finite entry point.
+    const o = createObb(0, 0, 0, 0, 1, 1, 0, 0, 0, 1);
+    expect(intersectRay3DObb(createRay3D(5, 0, 0, -1, 0, 0), o)).toBeCloseTo(5, 6);
+    expect(intersectRay3DObb(createRay3D(5, 3, 0, -1, 0, 0), o)).toBe(-1);
+  });
 });
 
 describe('isObbIntersectingAabb', () => {
@@ -133,6 +150,66 @@ describe('isObbIntersectingObb', () => {
     const a = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
     const b = createObb(10, 0, 0, 1, 1, 1, 0, 0, 0, 1);
     expect(isObbIntersectingObb(a, b)).toBe(false);
+  });
+
+  it('separates along each face axis of either box', () => {
+    // Six of the fifteen candidate axes are the two boxes' own faces. Pushing a cube out along one
+    // face direction at a time reaches each in turn: the world axes for the first box, and — since
+    // the second box is turned off the world axes — its own three local directions for the second.
+    const cube = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    for (let axis = 0; axis < 3; axis++) {
+      const away = createUnitVector3(axis);
+      const separated = createObb(away.x * 10, away.y * 10, away.z * 10, 1, 1, 1, 0, 0, 0, 1);
+      expect(isObbIntersectingObb(cube, separated)).toBe(false);
+    }
+
+    const tilt = orientationFromAxisAngle(1, 2, 3, 0.9);
+    const tiltAsMatrix = rotationMatrix4(1, 2, 3, 0.9);
+    const localAxis = createVector3();
+    for (let axis = 0; axis < 3; axis++) {
+      matrix4TransformPoint(localAxis, tiltAsMatrix, createUnitVector3(axis));
+      // Far enough that the turned cube clears the other one along this face direction, but not so
+      // far that a world axis clears first — the second box's own face has to be what decides it.
+      const clear = 2.8;
+      const separated = createObb(localAxis.x * clear, localAxis.y * clear, localAxis.z * clear, 1, 1, 1, ...tilt);
+      expect(isObbIntersectingObb(cube, separated)).toBe(false);
+      expect(isObbIntersectingObb(cube, createObb(0, 0, 0, 1, 1, 1, ...tilt))).toBe(true);
+    }
+  });
+
+  it('separates on every one of the nine edge-cross axes', () => {
+    // The nine edge axes are nine hand-written index permutations of one cross-product, so a
+    // transposed subscript in any single one is invisible until that exact edge pair decides a
+    // case. Each pair below is a rod along one local axis of each box, thin enough and offset
+    // along their common perpendicular by little enough that its own cross axis is the only
+    // separating axis in the whole set: a wrong expression there reads as a hit.
+    const tilt = orientationFromAxisAngle(1, 2, 3, 0.9);
+    const tiltAsMatrix = rotationMatrix4(1, 2, 3, 0.9);
+    const rodLongDirection = createVector3();
+
+    for (let firstLongAxis = 0; firstLongAxis < 3; firstLongAxis++) {
+      for (let secondLongAxis = 0; secondLongAxis < 3; secondLongAxis++) {
+        const first = createRodObb(0, 0, 0, firstLongAxis, 0, 0, 0, 1);
+        matrix4TransformPoint(rodLongDirection, tiltAsMatrix, createUnitVector3(secondLongAxis));
+
+        const perpendicular = createVector3();
+        crossVector3(perpendicular, createUnitVector3(firstLongAxis), rodLongDirection);
+        normalizeVector3(perpendicular, perpendicular);
+
+        const clear = 0.3;
+        const separated = createRodObb(
+          perpendicular.x * clear,
+          perpendicular.y * clear,
+          perpendicular.z * clear,
+          secondLongAxis,
+          ...tilt,
+        );
+        expect(isObbIntersectingObb(first, separated)).toBe(false);
+
+        const concentric = createRodObb(0, 0, 0, secondLongAxis, ...tilt);
+        expect(isObbIntersectingObb(first, concentric)).toBe(true);
+      }
+    }
   });
 });
 
@@ -202,9 +279,9 @@ describe('transformObbByMatrix4', () => {
     expectTransformedObbMatchesRotatedPoints(rotationMatrix4(0, 0, 1, nearHalfTurn), createTiltedObb());
   });
 
-  it('leaves half-extents and orientation untouched for a zero-scale matrix column', () => {
-    // A collapsed column has no direction to read, so the rotation falls back to that identity
-    // axis rather than dividing by zero; the half-extent along it collapses to zero.
+  it('flattens the box along a collapsed matrix column and keeps the other extents', () => {
+    // A zero-length column has no direction to read, so that axis falls back to its identity
+    // direction rather than dividing by zero, and the half-extent along it goes to zero.
     const o = createObb(0, 0, 0, 2, 3, 4, 0, 0, 0, 1);
     const m = createMatrix4(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
@@ -214,25 +291,76 @@ describe('transformObbByMatrix4', () => {
     expect(out.halfExtentZ).toBeCloseTo(4, 6);
     expect(out.orientationW).toBeCloseTo(1, 6);
   });
+
+  it('collapses the box to a point at the matrix position when every column is zero', () => {
+    // All three columns collapse, so the fallback rotation is the identity and the box keeps the
+    // orientation it came in with — the transform contributes nothing but the translation.
+    const tilt = orientationFromAxisAngle(1, 1, 1, 0.6);
+    const o = createObb(1, 2, 3, 2, 3, 4, ...tilt);
+    const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 7, 1);
+    const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
+    transformObbByMatrix4(out, o, m);
+    expect(out.centerX).toBeCloseTo(5, 6);
+    expect(out.centerY).toBeCloseTo(6, 6);
+    expect(out.centerZ).toBeCloseTo(7, 6);
+    expect(out.halfExtentX).toBe(0);
+    expect(out.halfExtentY).toBe(0);
+    expect(out.halfExtentZ).toBe(0);
+    expect(out.orientationX).toBeCloseTo(tilt[0], 6);
+    expect(out.orientationY).toBeCloseTo(tilt[1], 6);
+    expect(out.orientationZ).toBeCloseTo(tilt[2], 6);
+    expect(out.orientationW).toBeCloseTo(tilt[3], 6);
+  });
 });
+
+// A thin rod: long along one of its own local axes, barely thick along the other two, so the
+// dominant feature of the box is a single edge direction.
+function createRodObb(
+  centerX: number,
+  centerY: number,
+  centerZ: number,
+  longAxis: number,
+  orientationX: number,
+  orientationY: number,
+  orientationZ: number,
+  orientationW: number,
+): Obb {
+  const thickness = 0.1;
+  return createObb(
+    centerX,
+    centerY,
+    centerZ,
+    longAxis === 0 ? 3 : thickness,
+    longAxis === 1 ? 3 : thickness,
+    longAxis === 2 ? 3 : thickness,
+    orientationX,
+    orientationY,
+    orientationZ,
+    orientationW,
+  );
+}
 
 // An OBB with three distinct half-extents at an orientation that shares no axis with the world,
 // so no box symmetry can mask a wrong rotation. Axis (1, 2, 3) normalized, turned by 0.8 radians.
 function createTiltedObb(): Obb {
-  const axisLength = Math.sqrt(14);
-  const half = Math.sin(0.4);
-  return createObb(
-    0,
-    0,
-    0,
-    3,
-    2,
-    1,
-    (1 / axisLength) * half,
-    (2 / axisLength) * half,
-    (3 / axisLength) * half,
-    Math.cos(0.4),
-  );
+  return createObb(0, 0, 0, 3, 2, 1, ...orientationFromAxisAngle(1, 2, 3, 0.8));
+}
+
+function createUnitVector3(axis: number): Vector3 {
+  return createVector3(axis === 0 ? 1 : 0, axis === 1 ? 1 : 0, axis === 2 ? 1 : 0);
+}
+
+// The `orientationX, orientationY, orientationZ, orientationW` arguments `createObb` and `setObb`
+// take, spelled as a turn about an axis so the test states the rotation rather than four decimals.
+function orientationFromAxisAngle(
+  axisX: number,
+  axisY: number,
+  axisZ: number,
+  radians: number,
+): [number, number, number, number] {
+  const length = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+  const half = Math.sin(radians / 2);
+  return [(axisX / length) * half, (axisY / length) * half, (axisZ / length) * half, Math.cos(radians / 2)];
 }
 
 // Asserts the transformed OBB sits where the matrix puts the original: for probe points all around
