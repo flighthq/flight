@@ -113,6 +113,15 @@ describe('clampVector3', () => {
     clampVector3(max, createVector3(5, -2, 1), createVector3(0, 0, 0), max);
     expect(max).toMatchObject({ x: 3, y: 0, z: 1 });
   });
+
+  it('covers every clamp outcome on every component', () => {
+    const out = createVector3();
+    clampVector3(out, createVector3(-1, 2, 5), createVector3(0, 0, 0), createVector3(3, 3, 3));
+    expect(out).toMatchObject({ x: 0, y: 2, z: 3 });
+
+    clampVector3(out, createVector3(2, 5, -1), createVector3(0, 0, 0), createVector3(3, 3, 3));
+    expect(out).toMatchObject({ x: 2, y: 3, z: 0 });
+  });
 });
 
 describe('cloneVector3', () => {
@@ -250,9 +259,20 @@ describe('divideVector3', () => {
     divideVector3(divisor, createVector3(6, 8, 9), divisor);
     expect(divisor).toMatchObject({ x: 3, y: 2, z: 3 });
   });
+
+  it('produces 0 for a zero y divisor', () => {
+    const out = createVector3();
+    divideVector3(out, createVector3(6, 8, 9), createVector3(2, 0, 3));
+    expect(out).toMatchObject({ x: 3, y: 0, z: 3 });
+  });
 });
 
 describe('equalsVector3', () => {
+  it('returns false when either vector is absent', () => {
+    expect(equalsVector3(createVector3(), null)).toBe(false);
+    expect(equalsVector3(undefined, createVector3())).toBe(false);
+  });
+
   it('returns true if vectors are equal', () => {
     const a = createVector3(1, 2, 3);
     const b = createVector3(1, 2, 3);
@@ -424,6 +444,12 @@ describe('maxVector3', () => {
     maxVector3(b, createVector3(1, 5, 2), b);
     expect(b).toMatchObject({ x: 3, y: 5, z: 7 });
   });
+
+  it('selects the complementary component outcomes', () => {
+    const out = createVector3();
+    maxVector3(out, createVector3(5, 1, 7), createVector3(2, 3, 4));
+    expect(out).toMatchObject({ x: 5, y: 3, z: 7 });
+  });
 });
 
 describe('minVector3', () => {
@@ -443,6 +469,12 @@ describe('minVector3', () => {
     const b = createVector3(3, 2, 7);
     minVector3(b, createVector3(1, 5, 2), b);
     expect(b).toMatchObject({ x: 1, y: 2, z: 2 });
+  });
+
+  it('selects the complementary component outcomes', () => {
+    const out = createVector3();
+    minVector3(out, createVector3(5, 1, 7), createVector3(2, 3, 4));
+    expect(out).toMatchObject({ x: 2, y: 1, z: 4 });
   });
 });
 
