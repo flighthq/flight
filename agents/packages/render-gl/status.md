@@ -118,11 +118,14 @@ A file:line here is a claim about this tree, not about a session.
   Why nothing caught it: exactly one functional scene mixes the two (`render-pass-viewport.webgl.ts`)
   and it draws 2D at line 104 before 3D at line 155 — the safe order. A scene in the other order would
   have shown a blank half-frame on the first capture.
-  Fixed at `renderGlScene2D` by declaring the state the pass draws under, which fixes all three at once
-  and stays correct no matter what a future pass leaves behind — the per-call-site alternative reproduces
-  the failure at the next pass someone writes. `BLEND` is deliberately NOT forced there: who owns that
-  enable bit is an open design question in this file already (see `drawGlFullscreenPass`), and one sweep
-  should not quietly settle it.
+  RULED AND FIXED: THE CONSUMER ESTABLISHES ITS OWN PRECONDITIONS. `renderGlScene2D` now sets all three
+  at pass entry. The inversion is the point — "every writer must leave `BLEND` on and `DEPTH_TEST` off"
+  is unenforceable and unbounded in time, silently violated by the next pass anyone adds without reading
+  the whole package; "the reader sets what it needs" is local, bounded, and self-heals within one frame.
+  The 3D path was already doing this correctly by setting depth and cull per draw, which is why it never
+  paid for the leaks it was itself creating. Cost is three capability calls per 2D pass, none per draw.
+  Who owns the `BLEND` enable bit for `drawGlFullscreenPass` is a SEPARATE open question this does not
+  settle: that pass sets equation and factors twice and owns the enable bit at neither point.
 
 ## Log
 

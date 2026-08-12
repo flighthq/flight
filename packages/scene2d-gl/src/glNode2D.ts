@@ -11,14 +11,17 @@ export function drawGlScene2D(_state: GlRenderState, _renderProxy: RenderProxy2D
 
 export function renderGlScene2D(state: GlRenderState, source: Node2D): void {
   const gl = state.gl;
-  // The 2D pass declares the state it draws under instead of inheriting it. Both of these were
-  // previously taken on trust from createGlRenderState, which runs once per state, so any pass that
-  // flipped one — the 3D mesh path enables both per draw — silently changed how 2D content rasterized
-  // from that point on. Culling is the destructive one: the 2D quad is wound (x0,y0)(x1,y0)(x1,y1) in
-  // a y-down space that the projection flips, making it a BACK face under the CCW default, so leaving
-  // CULL_FACE enabled erases 2D content completely rather than degrading it.
+  // The 2D pass establishes the state it draws under rather than depending on a context-lifetime
+  // invariant. These were previously taken on trust from createGlRenderState, which runs once per state,
+  // so correctness rested on every pass that exists — or is ever added — leaving them alone. That is not
+  // a bug count, it is an unenforceable precondition: the 3D path already does this correctly by setting
+  // depth and cull per draw, and the 2D path was the only one paying for the difference.
+  // Culling is the destructive one and it does not degrade, it erases: the 2D quad is wound
+  // (x0,y0)(x1,y0)(x1,y1) in a y-down space that the projection flips, making it a BACK face under the
+  // CCW default, so a single-sided 3D draw earlier in the frame removes all 2D content.
   gl.disable(gl.CULL_FACE);
   gl.disable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
 
   const tempStack = getGlRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;

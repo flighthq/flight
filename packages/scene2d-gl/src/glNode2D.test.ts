@@ -36,13 +36,15 @@ describe('drawGlScene2D', () => {
 });
 
 describe('renderGlScene2D', () => {
-  it('establishes cull and depth state rather than inheriting it from a previous 3D pass', () => {
+  it('establishes its own cull, depth, and blend state rather than inheriting it from a previous 3D pass', () => {
     const state = makeState();
     const gl = state.gl;
     // Real WebGL2 confirms the consequence this guards: Flight's 2D quad is wound (x0,y0)(x1,y0)(x1,y1)
     // in a y-down space that the projection flips, so it is a BACK face under the CCW default. Drawing
     // it with CULL_FACE left enabled by the 3D mesh path erases 2D content entirely — 2304 lit pixels
     // become 0. Depth testing is the same class: a stale 3D depth buffer rejects 2D fragments.
+    // Seeded to the exact hostile state a prior 3D pass leaves: cull and depth on, blend off. Starting
+    // from the API default would make "sets what it needs" indistinguishable from "changed nothing".
     const enabled = new Set<number>([gl.CULL_FACE, gl.DEPTH_TEST]);
     (gl.isEnabled as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.has(cap));
     (gl.enable as ReturnType<typeof vi.fn>).mockImplementation((cap: number) => enabled.add(cap));
@@ -52,6 +54,7 @@ describe('renderGlScene2D', () => {
 
     expect(enabled.has(gl.CULL_FACE)).toBe(false);
     expect(enabled.has(gl.DEPTH_TEST)).toBe(false);
+    expect(enabled.has(gl.BLEND)).toBe(true);
   });
 
   it('does not throw for an empty display object', () => {
