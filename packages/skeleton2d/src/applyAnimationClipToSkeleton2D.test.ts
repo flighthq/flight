@@ -74,6 +74,40 @@ describe('applyAnimationClipToSkeleton2D', () => {
     expect(pose.bones[0].shearY).toBeCloseTo(10, 5); // 4 + 6
   });
 
+  // The six per-axis paths are one-line siblings of each other, which is the shape where a copy-paste to
+  // the wrong field survives review — and four of the six were exercised somewhere while ScaleX and ShearY
+  // appeared in no test at all. Walking the whole family from one table is what makes that impossible to
+  // drift back into: every setup value below is distinct, so writing any other field is visible.
+  //
+  // The second assertion is the one the source comment earns: a per-axis channel reads a ONE-component
+  // track and touches a single field, leaving the other axis at whatever the clone of setup gave it. That
+  // is what lets two independently-timed axis channels share a bone instead of resetting each other, and a
+  // path that wrote both axes would still satisfy the first assertion alone.
+  it.each([
+    ['TranslationX', Skeleton2DAnimationPath.TranslationX, 10, 'x', 13, 'y', 5],
+    ['TranslationY', Skeleton2DAnimationPath.TranslationY, 10, 'y', 15, 'x', 3],
+    ['ScaleX', Skeleton2DAnimationPath.ScaleX, 3, 'scaleX', 6, 'scaleY', 4],
+    ['ScaleY', Skeleton2DAnimationPath.ScaleY, 3, 'scaleY', 12, 'scaleX', 2],
+    ['ShearX', Skeleton2DAnimationPath.ShearX, 10, 'shearX', 17, 'shearY', 9],
+    ['ShearY', Skeleton2DAnimationPath.ShearY, 10, 'shearY', 19, 'shearX', 7],
+  ] as const)(
+    'poses %s from a one-component track, touching only its own axis',
+    (_name, path, sample, field, expected, sibling, siblingValue) => {
+      const setup = createSkeleton2D([makeBone({ scaleX: 2, scaleY: 4, shearX: 7, shearY: 9, x: 3, y: 5 })]);
+      const pose = cloneSkeleton2D(setup);
+      const clip = createAnimationClip([
+        createAnimationChannel(scalarTrack([0, 1], [sample, sample], 1), createSkeleton2DBoneAnimationTarget(0, path)),
+      ]);
+
+      applyAnimationClipToSkeleton2D(clip, setup, pose, 1);
+
+      // Scale composes multiplicatively where translation and shear compose additively — the table carries
+      // both rules rather than assuming one.
+      expect(pose.bones[0][field]).toBeCloseTo(expected, 5);
+      expect(pose.bones[0][sibling]).toBeCloseTo(siblingValue, 5);
+    },
+  );
+
   it('re-applies from setup each frame — no accumulation across repeated calls', () => {
     const setup = createSkeleton2D([makeBone({ rotation: 10 })]);
     const pose = cloneSkeleton2D(setup);
