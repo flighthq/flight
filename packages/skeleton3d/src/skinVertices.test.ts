@@ -42,6 +42,21 @@ function translation(tx: number, ty: number, tz: number): number[] {
 }
 
 describe('skinTangents', () => {
+  // Same contract as the position path: no influence means bind pose. A zero tangent collapses the
+  // TBN basis the shader reconstructs the bitangent from.
+  it('leaves an uninfluenced tangent at its bind pose rather than zero', () => {
+    const tangents = new Float32Array([1, 0, 0, -1]);
+    const joints = new Uint16Array([0, 0, 0, 0]);
+    const weights = new Float32Array([0, 0, 0, 0]);
+    const palette = new Float32Array(identity());
+    palette[0] = 9;
+    const out = new Float32Array(4);
+
+    skinTangents(out, tangents, joints, weights, palette);
+
+    expect(Array.from(out)).toEqual([1, 0, 0, -1]);
+  });
+
   // A 90-degree rotation about Z, column-major. A pure rotation is used deliberately: N·T = 0 survives
   // skinning exactly only under a rigid transform, where transforming the tangent as a vector by M and
   // the normal as a covector by M⁻ᵀ coincide. Under non-uniform scale they diverge and orthogonality is
@@ -155,6 +170,36 @@ describe('skinTangents', () => {
 });
 
 describe('skinVertices', () => {
+  // packSkinInfluences documents that a vertex with no influence "keeps all weights zero (it stays at
+  // its bind position)". Accumulating the weighted sum from zero instead collapsed such a vertex onto
+  // the ORIGIN with a zero normal — it teleported and dragged its triangle with it, and the skin bounds
+  // computed from these positions inherited the collapse. The palette here is a translation, so a
+  // bind-pose pass-through and a "moved by the joint" answer cannot be confused.
+  it('leaves an uninfluenced vertex at its bind pose rather than the origin', () => {
+    const positions = new Float32Array([5, 6, 7]);
+    const normals = new Float32Array([0, 1, 0]);
+    const joints = new Uint16Array([0, 0, 0, 0]);
+    const weights = new Float32Array([0, 0, 0, 0]);
+    const palette = new Float32Array(identity());
+    palette[12] = 100;
+    const outPositions = new Float32Array(3);
+    const outNormals = new Float32Array(3);
+
+    skinVertices(
+      outPositions,
+      outNormals,
+      positions,
+      normals,
+      joints,
+      weights,
+      palette,
+      normalPaletteFor([...palette]),
+    );
+
+    expect(Array.from(outPositions)).toEqual([5, 6, 7]);
+    expect(Array.from(outNormals)).toEqual([0, 1, 0]);
+  });
+
   it('passes vertices through unchanged when the only weighted joint is identity', () => {
     const positions = new Float32Array([2, 3, 4]);
     const normals = new Float32Array([0, 1, 0]);

@@ -34,10 +34,12 @@ export function skinTangents(
     let otx = 0;
     let oty = 0;
     let otz = 0;
+    let influenced = false;
 
     for (let k = 0; k < 4; k++) {
       const weight = weights[t + k];
       if (weight === 0) continue;
+      influenced = true;
       const m = joints[t + k] * 16;
 
       const m0 = jointMatrices[m];
@@ -55,9 +57,10 @@ export function skinTangents(
       otz += weight * (m2 * tx + m6 * ty + m10 * tz);
     }
 
-    outTangents[t] = otx;
-    outTangents[t + 1] = oty;
-    outTangents[t + 2] = otz;
+    // No influence means bind pose, not the origin — see the position path for the contract.
+    outTangents[t] = influenced ? otx : tx;
+    outTangents[t + 1] = influenced ? oty : ty;
+    outTangents[t + 2] = influenced ? otz : tz;
     outTangents[t + 3] = handedness;
   }
 }
@@ -103,11 +106,13 @@ export function skinVertices(
     let onx = 0;
     let ony = 0;
     let onz = 0;
+    let influenced = false;
 
     const w = v * 4;
     for (let k = 0; k < 4; k++) {
       const weight = weights[w + k];
       if (weight === 0) continue;
+      influenced = true;
       const m = joints[w + k] * 16;
 
       const m0 = jointMatrices[m];
@@ -134,11 +139,16 @@ export function skinVertices(
       onz += weight * (normalMatrices[n + 2] * nx + normalMatrices[n + 6] * ny + normalMatrices[n + 10] * nz);
     }
 
-    outPositions[p] = opx;
-    outPositions[p + 1] = opy;
-    outPositions[p + 2] = opz;
-    outNormals[p] = onx;
-    outNormals[p + 1] = ony;
-    outNormals[p + 2] = onz;
+    // A vertex with no influence stays at its BIND POSE. That is the packer's documented contract —
+    // packSkinInfluences says a vertex with no influence "keeps all weights zero (it stays at its bind
+    // position)" — and accumulating from zero instead collapsed it onto the origin with a zero normal.
+    // Not a rounding error: an unweighted vertex teleported to (0,0,0) and dragged its triangle with it,
+    // and the skin bounds computed from these positions inherited the collapse.
+    outPositions[p] = influenced ? opx : px;
+    outPositions[p + 1] = influenced ? opy : py;
+    outPositions[p + 2] = influenced ? opz : pz;
+    outNormals[p] = influenced ? onx : nx;
+    outNormals[p + 1] = influenced ? ony : ny;
+    outNormals[p + 2] = influenced ? onz : nz;
   }
 }
