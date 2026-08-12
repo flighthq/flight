@@ -751,10 +751,12 @@ function addDisc(
   for (let s = 0; s < segments; s++) {
     const a = ringStart + s;
     const b = ringStart + s + 1;
+    // Right-hand rule over the winding: for an up-facing disc the ring must be walked b-then-a to
+    // put (p1 - p0) x (p2 - p0) along +Y, which is the direction the authored normals already point.
     if (direction > 0) {
-      indices.push(center, a, b);
-    } else {
       indices.push(center, b, a);
+    } else {
+      indices.push(center, a, b);
     }
   }
 }
