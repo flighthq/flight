@@ -115,8 +115,6 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
       opaqueDrawList: [],
       opaquePool: [],
       pbrExtensionGuard: null,
-      pbrExtensionRegistry: new Map(),
-      pbrExtensionRegistryVersion: 0,
       pbrTransmissionSceneColor: null,
       programCache: new Map(),
       shadow: null,

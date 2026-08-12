@@ -1,4 +1,6 @@
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import { copyGlRenderStateRegistrations, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlPbrExtensionRegistration } from '@flighthq/types/contract';
 
 import {
@@ -8,6 +10,7 @@ import {
   registerGlPbrExtension,
   resolveGlPbrExtensionContributions,
 } from './glPbrExtensionRegistry';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
 const registration: GlPbrExtensionRegistration = {
@@ -57,11 +60,24 @@ describe('getGlPbrExtensionRegistration', () => {
 });
 
 describe('registerGlPbrExtension', () => {
-  it('uses last-write-wins and advances the registry version', () => {
-    const { state } = makeGlScene3DState();
-    registerGlPbrExtension(state, 'VendorExtension', registration);
-    registerGlPbrExtension(state, 'VendorExtension', registration);
-    expect(getGlPbrExtensionRegistration(state, 'VendorExtension')).toBe(registration);
+  it('replaces the persistent table and revision while an explicitly copied state retains its snapshot', () => {
+    const { state: screen } = makeGlScene3DState();
+    const { state: derived } = makeGlScene3DState();
+    const replacement: GlPbrExtensionRegistration = { ...registration, bind(): void {} };
+    registerGlPbrExtension(screen, 'VendorExtension', registration);
+    const snapshot = getGlRenderStateRuntime(screen).registries.pbrExtensions;
+
+    copyGlRenderStateRegistrations(derived, screen);
+    getGlScene3DRuntime(derived);
+    registerGlPbrExtension(screen, 'VendorExtension', replacement);
+
+    expect(getGlRenderStateRuntime(derived).registries.pbrExtensions).toBe(snapshot);
+    expect(getGlRenderStateRuntime(derived).registries.pbrExtensionRevision).toBe(1);
+    expect(getGlRenderStateRuntime(screen).registries.pbrExtensions).not.toBe(snapshot);
+    expect(getGlRenderStateRuntime(screen).registries.pbrExtensionRevision).toBe(2);
+    expect(getRegistryTableEntry(snapshot, 'VendorExtension')).toBe(registration);
+    expect(getGlPbrExtensionRegistration(derived, 'VendorExtension')).toBe(registration);
+    expect(getGlPbrExtensionRegistration(screen, 'VendorExtension')).toBe(replacement);
   });
 });
 
