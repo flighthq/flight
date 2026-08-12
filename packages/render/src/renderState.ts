@@ -1,4 +1,5 @@
 import { createEntity, createEntityRuntime } from '@flighthq/entity/contract';
+import { createKeyedTable } from '@flighthq/registry/contract';
 import type { Renderable, RenderState, RenderStateRuntime } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -36,10 +37,9 @@ export function createRenderStateRuntime(): RenderStateRuntime {
   runtime.renderProxyMap = new WeakMap();
   runtime.renderProxySources = new Set();
   runtime.registryMiss = null;
-  runtime.registries = {};
+  runtime.registries = { renderers: createKeyedTable('NodeRenderer', 'Unregistered') };
   runtime.renderRootGuard = null;
   runtime.strokeTessellator = null;
-  runtime.rendererMap = new Map();
   runtime.rendererMapId = 0;
   runtime.tempStack = [];
   return runtime;

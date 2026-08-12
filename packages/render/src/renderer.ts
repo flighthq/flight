@@ -1,4 +1,6 @@
+import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import type { Kind, Renderable, Renderer, RendererData, RenderState } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -10,9 +12,27 @@ export function copyAllRenderersFromRenderState(target: RenderState, source: Ren
 }
 
 export function copyRenderersFromRenderState(target: RenderState, source: RenderState): void {
-  getRenderStateRuntime(source).rendererMap.forEach((renderer, kind) => {
-    registerRenderer(target, kind, renderer);
-  });
+  const targetRuntime = getRenderStateRuntime(target);
+  const sourceTable = getRenderStateRuntime(source).registries.renderers;
+  const targetTable = targetRuntime.registries.renderers;
+
+  // A fresh derived pipeline can share the immutable source snapshot directly. A target that already
+  // has policy keeps its target-only registrations, matching the additive copy contract, while source
+  // bindings remain last-write-wins through registerRenderer.
+  if (targetTable.entries.size === 0) {
+    let registrationCount = 0;
+    for (const entry of sourceTable.entries.values()) {
+      if (entry.state === RegistryEntryState.Bound) registrationCount++;
+    }
+    if (registrationCount === 0) return;
+    targetRuntime.registries.renderers = sourceTable;
+    targetRuntime.rendererMapId = (targetRuntime.rendererMapId + registrationCount) >>> 0;
+    return;
+  }
+
+  for (const [kind, entry] of sourceTable.entries) {
+    if (entry.state === RegistryEntryState.Bound) registerRenderer(target, kind, entry.value);
+  }
 }
 
 // Copies the backend-agnostic policy registries that participate in pipeline derivation. Persistent
@@ -35,9 +55,10 @@ export function noopRendererData(_state: RenderState, _source: Renderable): Rend
 
 export function registerRenderer(state: RenderState, kind: Kind, renderer: Renderer): void {
   const runtime = getRenderStateRuntime(state);
-  if (runtime.rendererMap.get(kind) === renderer) return;
+  const table = runtime.registries.renderers;
+  if (getRegistryTableEntry(table, kind) === renderer) return;
+  runtime.registries.renderers = withRegistryTableEntry(table, kind, renderer);
   runtime.rendererMapId = (runtime.rendererMapId + 1) >>> 0;
-  runtime.rendererMap.set(kind, renderer);
 }
 
 // Batch form of registerRenderer over a caller-supplied set of [kind, renderer] pairs. The registry

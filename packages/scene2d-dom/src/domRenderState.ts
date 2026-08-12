@@ -46,6 +46,7 @@ export function createDomRenderState(element: HTMLElement, options: Partial<DomR
 export function createDomRenderStateRuntime(): DomRenderStateRuntime {
   const runtime = createRenderStateRuntime() as DomRenderStateRuntime;
   runtime.registries = {
+    renderers: runtime.registries.renderers,
     shapeRasterizer: {
       entry: null,
       onMiss: 'Unregistered',

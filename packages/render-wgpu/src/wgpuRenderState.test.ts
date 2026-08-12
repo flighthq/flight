@@ -117,7 +117,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.wgpuRenderTextureCache).toBe(screenRuntime.wgpuRenderTextureCache);
     expect(offscreenRuntime.uniformBindGroupLayout).toBe(screenRuntime.uniformBindGroupLayout);
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
-    expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
+    expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
@@ -129,7 +129,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
     expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
-    expect(offscreenRuntime.rendererMap.get('acme.Node')).toBe(renderer);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.renderers, 'acme.Node')).toBe(renderer);
     expect(getRegistryTableEntry(offscreenRuntime.registries.materialRenderers, 'acme.Material')).toBe(
       materialRenderer,
     );
@@ -182,12 +182,14 @@ describe('createWgpuOffscreenRenderState', () => {
     registerRenderer(screen, 'acme.LateNode', renderer);
     registerPaddingResolver(screen, 'acme.LateEffect', paddingResolver);
 
-    expect(getRenderStateRuntime(offscreen).rendererMap.has('acme.LateNode')).toBe(false);
+    expect(hasRegistryTableEntry(getRenderStateRuntime(offscreen).registries.renderers, 'acme.LateNode')).toBe(false);
     expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBeNull();
 
     copyAllRenderersFromRenderState(offscreen, screen);
     copyWgpuRenderStateRegistrations(offscreen, screen);
-    expect(getRenderStateRuntime(offscreen).rendererMap.get('acme.LateNode')).toBe(renderer);
+    expect(getRegistryTableEntry(getRenderStateRuntime(offscreen).registries.renderers, 'acme.LateNode')).toBe(
+      renderer,
+    );
     expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBe(paddingResolver);
   });
 });

@@ -29,6 +29,7 @@ export function copyCanvasRenderStateRegistrations(target: CanvasRenderState, so
   targetRuntime.registries = {
     materialRenderers: sourceRuntime.registries.materialRenderers,
     renderEffects: sourceRuntime.registries.renderEffects,
+    renderers: targetRuntime.registries.renderers,
   };
   copyRenderStateRegistrations(target, source);
 }
@@ -80,6 +81,7 @@ export function createCanvasRenderStateRuntime(): CanvasRenderStateRuntime {
   const runtime = createRenderStateRuntime() as CanvasRenderStateRuntime;
   runtime.registries = {
     renderEffects: createKeyedTable('CanvasRenderEffect', 'Unregistered'),
+    renderers: runtime.registries.renderers,
   };
   return runtime;
 }

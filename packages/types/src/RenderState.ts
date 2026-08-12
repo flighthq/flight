@@ -46,6 +46,7 @@ export interface RenderState extends Entity {
 export interface RenderRegistries {
   canvasShapeCommands?: KeyedTable<CanvasShapeCommand>;
   effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
+  renderers: KeyedTable<Renderer>;
 }
 
 // Package-private machinery for a RenderState entity. Lives in the runtime tier (not on the entity)
@@ -87,7 +88,8 @@ export interface RenderStateRuntime extends EntityRuntime {
   strokeTessellator:
     | ((path: Readonly<Path>, style: Readonly<StrokeStyle>, tolerance?: number) => PathMesh | null)
     | null;
-  rendererMap: Map<Kind, Renderer>;
+  // Advances whenever the persistent renderer table is replaced so existing proxies re-resolve their
+  // renderer before reuse. The table itself lives in registries.renderers with the rest of the policy.
   rendererMapId: number;
   tempStack: Renderable[];
 }

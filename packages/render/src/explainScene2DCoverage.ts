@@ -6,7 +6,7 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { RegistryEntryState, RenderRegistry, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -14,7 +14,7 @@ import { getRenderStateRuntime } from './renderState';
 // with how well this state is wired for it — satisfied entries included, so one call is a manifest.
 //
 // This covers the two registries that live on the BASE render-state runtime and so mean the same thing
-// on Canvas, DOM, GL and WebGPU: the node-renderer map every backend dispatches through, and the shape
+// on Canvas, DOM, GL and WebGPU: the node-renderer table every backend dispatches through, and the shape
 // command set every backend replays through when it rasterizes. A backend adds its own specifics — GL
 // blend realizations, per-backend material renderers — on top of this, rather than restating it.
 //
@@ -54,7 +54,7 @@ function collectScene2DCoverageGaps(
   // absent from the frame — the loudest failure in this seam and the one worth asking about first.
   for (let i = 0; i < usage.nodeKinds.length; i++) {
     const kind = usage.nodeKinds[i];
-    if (runtime.rendererMap.has(kind)) {
+    if (runtime.registries.renderers.entries.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneNodeKind,
