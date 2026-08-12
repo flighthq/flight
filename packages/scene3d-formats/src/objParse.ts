@@ -1,7 +1,7 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { computeMeshGeometryNormals, createMeshGeometry } from '@flighthq/mesh/contract';
+import { computeMeshGeometryNormals, computeMeshGeometryTangents, createMeshGeometry } from '@flighthq/mesh/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { Scene3D } from '@flighthq/types/contract';
 import type {
@@ -152,6 +152,7 @@ export function parseObj(
           materials,
           resolvedMaterials,
           normals.length > 0,
+          uvs.length > 0,
           diagnostics,
         );
         materialBuckets = new Map<string, MaterialBucket>();
@@ -291,6 +292,7 @@ export function parseObj(
           materials,
           resolvedMaterials,
           normals.length > 0,
+          uvs.length > 0,
           diagnostics,
         );
         materialBuckets = new Map<string, MaterialBucket>();
@@ -342,6 +344,7 @@ export function parseObj(
     materials,
     resolvedMaterials,
     normals.length > 0,
+    uvs.length > 0,
     diagnostics,
   );
 
@@ -500,6 +503,7 @@ function flushGroup(
   library: Readonly<ObjMaterialLibrary> | undefined,
   resolvedMaterials: Map<string, number>,
   sourceHasNormals: boolean,
+  sourceHasUvs: boolean,
   diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   const vertices: number[] = [];
@@ -540,6 +544,14 @@ function flushGroup(
   // than flat: it is the same choice the 3DS path makes for a mesh with no smoothing chunk, and OBJ's
   // own smoothing-group directive is not modeled, so there is no authored hard edge to honor.
   if (!sourceHasNormals) computeMeshGeometryNormals(geometry, geometry);
+  // OBJ carries no tangent directive at all, so every tangent slot is left zeroed — and a zero
+  // tangent collapses the TBN basis a normal-mapped material reconstructs (B = w * cross(N, T)),
+  // which is precisely the frame the `norm` map above needs. Derive one from the UV gradient, the
+  // same obligation AWD and MD5 already meet when their own files omit the stream. Only when the
+  // file has UVs: the gradient is what the tangent is derived FROM, and without it there is nothing
+  // to derive. Normals must already be present or generated above, since the basis is built
+  // relative to them.
+  if (sourceHasUvs) computeMeshGeometryTangents(geometry, geometry);
   const meshIndex = document.meshes.length;
   const mesh: Scene3DDocumentMesh = { geometry, materials };
   document.meshes.push(mesh);
@@ -643,9 +655,11 @@ function objMaterialToBlinnPhong(
     alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
     diffuse: packObjColor(material.diffuse, material.dissolve),
     diffuseMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
-    // `norm` is a real tangent-space normal map and outranks `map_Bump`, which is a grayscale height
-    // field the shaders would sample as RGB*2-1 vectors. A file carrying both meant the dedicated one.
-    normalMap: externalObjTexture(material.mapNormal ?? material.mapBump, document, 'linear'),
+    // ONLY `norm` binds. `map_Bump`/`bump` is a grayscale HEIGHT field, not a tangent-space normal
+    // map: a shader decoding its RGB as 2*c-1 direction vectors reads elevation as orientation and
+    // lights the surface from nonsense normals. It is parsed and reported, never bound, until a real
+    // height-map feature exists to consume it — the same call 3DS already makes for MAT_BUMPMAP.
+    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
     shininess: material.specularExponent,
     specular: packObjColor(material.specular, 1),
     specularMap: externalObjTexture(material.mapSpecular, document, 'srgb'),
@@ -663,6 +677,19 @@ function objMaterialToBlinnPhong(
       name: material.name,
     });
   }
+  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
+  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
+  // map was understood and deliberately not used, rather than silently ignored.
+  if (material.mapBump !== null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'mtl.bump-height-map-unbound',
+      'objMaterialToBlinnPhong',
+      { name: material.name },
+    );
+  }
+
   return result;
 }
 
@@ -681,7 +708,8 @@ function objMaterialToStandardPbr(
     baseColor: packObjColor(material.diffuse, material.dissolve),
     baseColorMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
     emissiveMap: externalObjTexture(material.mapEmissive, document, 'srgb'),
-    normalMap: externalObjTexture(material.mapNormal ?? material.mapBump, document, 'linear'),
+    // Only `norm` binds; `map_Bump` is a height field, not a normal map. See objMaterialToBlinnPhong.
+    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
     ...(material.emissive !== null ? { emissive: packObjColor(material.emissive, 1) } : {}),
     ...(material.metallic !== null ? { metallic: material.metallic } : {}),
     ...(material.roughness !== null ? { roughness: material.roughness } : {}),
@@ -708,6 +736,19 @@ function objMaterialToStandardPbr(
   // recorded in agents/scene3d-format-coverage.md rather than crumbed — a diagnostic whose cause is our
   // own unfinished wiring tells a consumer nothing they can act on. See the import-diagnostics rule in
   // agents/conventions/diagnostics.md.
+  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
+  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
+  // map was understood and deliberately not used, rather than silently ignored.
+  if (material.mapBump !== null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'mtl.bump-height-map-unbound',
+      'objMaterialToStandardPbr',
+      { name: material.name },
+    );
+  }
+
   return result;
 }
 
