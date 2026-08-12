@@ -62,6 +62,24 @@ A file:line here is a claim about this tree, not about a session.
   bracket fixtures deliberately start at CW for this reason. And a Flight-only render cannot see a host
   leak at all: intra-frame and cross-bracket leaks are different failures and only the first is visible
   from inside.
+  A DELIBERATE (c) PASS FOUND FOUR MORE, and the method matters more than the count: enumerate the
+  state setters BY EXTRACTION (`rg -o '\bgl\.[a-zA-Z]+\(' | sort -u`), never by listing the ones you
+  remember. Listing from memory is what hid `colorMask`, `pixelStorei`, and `stencilOpSeparate` — all
+  three are called here and none appeared in a hand-written inventory. The four: `COLOR_WRITEMASK`
+  (the 2D clip pass masks colour off, `glClipContours.ts:84`), `COLOR_CLEAR_VALUE` (five sites across
+  background/velocity/cache), `UNPACK_PREMULTIPLY_ALPHA_WEBGL` (every texture upload, `glDraw.ts`), and
+  the stencil back face.
+  THE STENCIL ONE IS THE INSTRUCTIVE FAILURE. The bracket saved the seven front-face stencil parameters
+  and restored them with `stencilOp`/`stencilFunc`/`stencilMask` — which write FRONT_AND_BACK. So a host
+  using two-sided stencil got its back face silently overwritten with the front's values, while the
+  front verified as correctly restored. The tell was already in the file: blend was saved per channel
+  and restored with `blendFuncSeparate`, stencil was not. An asymmetric API needs an asymmetric fixture,
+  and the front half passing is exactly what makes the back half easy to miss.
+  Establishing that required an oracle the code does not own: the unit mocks are hand-written, so a test
+  asserting `stencilOp` writes both faces would only be asserting the mock. Real WebGL2 in headless
+  Chromium (`playwright` is already a dependency) answered it — 7 of 14 parameters destroyed, 0 after the
+  fix. Where a mock models an API rule, measure the rule first and say in the test where the number came
+  from.
 
 ## Log
 
