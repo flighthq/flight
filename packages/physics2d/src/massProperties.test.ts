@@ -108,6 +108,37 @@ describe('computePhysics2DColliderMassData', () => {
 });
 
 describe('updateRigidBody2DMassData', () => {
+  it('keeps collider mass scratch isolated when a body getter updates another body', () => {
+    const target = body([collider({ kind: 'aabb', minX: -1, minY: -1, maxX: 1, maxY: 1 })]);
+    const nested = body([collider({ kind: 'circle', x: 10, y: 20, radius: 5 })]);
+    let centerX = 0;
+    let centerXReads = 0;
+    let nestedCalls = 0;
+    Object.defineProperty(target, 'centerX', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        centerXReads++;
+        if (centerXReads === 1) {
+          nestedCalls++;
+          updateRigidBody2DMassData(nested);
+        }
+        return centerX;
+      },
+      set(value: number) {
+        centerX = value;
+      },
+    });
+
+    updateRigidBody2DMassData(target);
+
+    expect(nestedCalls).toBe(1);
+    expect(target.mass).toBeCloseTo(4);
+    expect(target.centerX).toBeCloseTo(0);
+    expect(target.centerY).toBeCloseTo(0);
+    expect(target.inertia).toBeCloseTo(8 / 3);
+  });
+
   it('combines two colliders into one centre of mass and shifts their inertia onto it', () => {
     const left = collider({ kind: 'aabb', minX: -3, minY: -1, maxX: -1, maxY: 1 });
     const right = collider({ kind: 'aabb', minX: 1, minY: -1, maxX: 3, maxY: 1 });

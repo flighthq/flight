@@ -14,6 +14,37 @@ describe('createCollisionRaycastHit', () => {
 });
 
 describe('raycastCollisionShape', () => {
+  it('keeps polygon center state isolated from a nested raycast triggered by a point getter', () => {
+    const points = [2, -1, 4, -1, 4, 1, 2, 1];
+    let armed = false;
+    let nestedCalls = 0;
+    Object.defineProperty(points, 0, {
+      configurable: true,
+      get() {
+        if (armed) {
+          armed = false;
+          nestedCalls++;
+          raycastCollisionShape({ kind: 'polygon', points: [-102, -1, -100, -1, -100, 1, -102, 1] }, 0, 0, 1, 0, hit());
+        }
+        return 2;
+      },
+    });
+    Object.defineProperty(points, 7, {
+      configurable: true,
+      get() {
+        armed = true;
+        return 1;
+      },
+    });
+
+    const out = hit();
+    expect(raycastCollisionShape({ kind: 'polygon', points }, 0, 0, 1, 0, out)).toBe(true);
+    expect(nestedCalls).toBeGreaterThan(0);
+    expect(out.fraction).toBeCloseTo(2);
+    expect(out.normalX).toBeCloseTo(-1);
+    expect(out.normalY).toBeCloseTo(0);
+  });
+
   it.each([
     ['circle', { kind: 'circle', x: 3, y: 0, radius: 1 }, 2, -1, 0],
     ['aabb', { kind: 'aabb', minX: 2, minY: -1, maxX: 4, maxY: 1 }, 2, -1, 0],

@@ -718,6 +718,29 @@ describe('sensor reporting between immovable bodies', () => {
 });
 
 describe('stepPhysics2D', () => {
+  it('keeps step scratch isolated when a broadphase callback steps another world', () => {
+    const world = createPhysics2DWorld(0, 0);
+    world.config.continuousCollision = false;
+    const fixed = ground(world);
+    const dynamic = box(world, 0, 0.4);
+    const nestedWorld = createPhysics2DWorld(0, 0);
+    nestedWorld.config.continuousCollision = false;
+    let nestedCalls = 0;
+    world.index.querySpatialPairs = (out) => {
+      out.length = 0;
+      out.push({ a: fixed.index, b: dynamic.index });
+      if (nestedCalls === 0) {
+        nestedCalls++;
+        stepPhysics2D(nestedWorld, 1 / 60);
+      }
+    };
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(nestedCalls).toBe(1);
+    expect(world.contacts).toHaveLength(1);
+  });
+
   it('rejects invalid solver state before mutating the world', () => {
     const world = createPhysics2DWorld();
     const crate = box(world, 0, 2);

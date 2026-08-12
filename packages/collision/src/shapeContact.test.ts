@@ -221,6 +221,34 @@ describe('collideCircleAabbContactManifold', () => {
 });
 
 describe('collideCircleCircleContactManifold', () => {
+  it('keeps the lean manifold isolated from a nested contact triggered after the lean test', () => {
+    let xReads = 0;
+    let nestedCalls = 0;
+    const a: CollisionCircle = {
+      get x() {
+        xReads++;
+        if (xReads === 3) {
+          nestedCalls++;
+          collideCircleCircleContactManifold(
+            { x: 0, y: 0, radius: 1 },
+            { x: 0.5, y: 0, radius: 1 },
+            createCollisionContactManifold(),
+          );
+        }
+        return 0;
+      },
+      y: 0,
+      radius: 1,
+    };
+    const out = createCollisionContactManifold();
+
+    expect(collideCircleCircleContactManifold(a, { x: 1.5, y: 0, radius: 1 }, out)).toBe(true);
+    expect(nestedCalls).toBe(1);
+    expect(out.depth).toBeCloseTo(0.5);
+    expect(out.points[0].depth).toBeCloseTo(0.5);
+    expect(out.points[0].x).toBeCloseTo(1);
+  });
+
   it('places the point on A surface along the contact normal', () => {
     const out = createCollisionContactManifold();
     const a: CollisionCircle = { x: 0, y: 0, radius: 1 };

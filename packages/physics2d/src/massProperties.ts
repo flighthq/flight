@@ -66,6 +66,15 @@ export function computePhysics2DColliderMassData(collider: Readonly<Physics2DCol
 // treatment, since dividing by its zero mass is what would otherwise produce NaN velocities that
 // spread to everything it touches.
 export function updateRigidBody2DMassData(body: RigidBody2D): void {
+  const scratch = acquirePhysics2DMassScratch();
+  try {
+    updateRigidBody2DMassDataWithScratch(body, scratch);
+  } finally {
+    releasePhysics2DMassScratch(scratch);
+  }
+}
+
+function updateRigidBody2DMassDataWithScratch(body: RigidBody2D, scratch: Physics2DMassData): void {
   let mass = 0;
   let weightedX = 0;
   let weightedY = 0;
@@ -153,4 +162,12 @@ function writePolygonMassData(points: readonly number[], density: number, out: P
   out.inertia = originMoment - out.mass * offsetSquared;
 }
 
-const scratch: Physics2DMassData = { mass: 0, inertia: 0, centerX: 0, centerY: 0 };
+function acquirePhysics2DMassScratch(): Physics2DMassData {
+  return physics2DMassScratchPool.pop() ?? { mass: 0, inertia: 0, centerX: 0, centerY: 0 };
+}
+
+function releasePhysics2DMassScratch(scratch: Physics2DMassData): void {
+  physics2DMassScratchPool.push(scratch);
+}
+
+const physics2DMassScratchPool: Physics2DMassData[] = [{ mass: 0, inertia: 0, centerX: 0, centerY: 0 }];

@@ -35,7 +35,7 @@ export const Physics2DWeldJointKind = 'Weld';
 // what the integrator can follow.
 export const physics2DDistanceJointSolver = {
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -66,43 +66,48 @@ export const physics2DDistanceJointSolver = {
     const axisX = bodyB.x + joint.rBX - (bodyA.x + joint.rAX);
     const axisY = bodyB.y + joint.rBY - (bodyA.y + joint.rAY);
     const length = Math.sqrt(axisX * axisX + axisY * axisY);
+    let normalizedAxisX: number;
+    let normalizedAxisY: number;
     if (length > EPSILON) {
-      axisScratch[0] = axisX / length;
-      axisScratch[1] = axisY / length;
+      normalizedAxisX = axisX / length;
+      normalizedAxisY = axisY / length;
     } else {
       // Coincident anchors leave the axis undefined. Any unit vector is as correct as another and none is
       // wrong for one step, where dividing by the length would seed NaN into both bodies permanently.
-      axisScratch[0] = 1;
-      axisScratch[1] = 0;
+      normalizedAxisX = 1;
+      normalizedAxisY = 0;
     }
 
-    const mass = axisEffectiveMass(bodyA, bodyB, joint, axisScratch[0], axisScratch[1]);
+    const mass = axisEffectiveMass(bodyA, bodyB, joint, normalizedAxisX, normalizedAxisY);
     const separation = length - distance.length;
+    let effectiveMass: number;
+    let bias: number;
+    let gamma: number;
     if (distance.frequencyHz > 0) {
       const angular = 2 * Math.PI * distance.frequencyHz;
       const damp = 2 * mass * distance.dampingRatio * angular;
       const spring = mass * angular * angular;
-      const gamma = dt * (damp + dt * spring);
-      jointScratch[2] = gamma > 0 ? 1 / gamma : 0;
-      jointScratch[1] = separation * dt * spring * jointScratch[2];
-      const softMass = mass + jointScratch[2];
-      jointScratch[0] = softMass > 0 ? 1 / softMass : 0;
+      const gammaDenominator = dt * (damp + dt * spring);
+      gamma = gammaDenominator > 0 ? 1 / gammaDenominator : 0;
+      bias = separation * dt * spring * gamma;
+      const softMass = mass + gamma;
+      effectiveMass = softMass > 0 ? 1 / softMass : 0;
     } else {
-      jointScratch[0] = mass > 0 ? 1 / mass : 0;
-      jointScratch[1] = separation * (BAUMGARTE / dt);
-      jointScratch[2] = 0;
+      effectiveMass = mass > 0 ? 1 / mass : 0;
+      bias = separation * (BAUMGARTE / dt);
+      gamma = 0;
     }
     distance.rAX = joint.rAX;
     const distanceState = beginJointSolve(distance, 5);
-    distanceState[0] = jointScratch[0]!;
-    distanceState[1] = jointScratch[1]!;
-    distanceState[2] = jointScratch[2]!;
-    distanceState[3] = axisScratch[0]!;
-    distanceState[4] = axisScratch[1]!;
+    distanceState[0] = effectiveMass;
+    distanceState[1] = bias;
+    distanceState[2] = gamma;
+    distanceState[3] = normalizedAxisX;
+    distanceState[4] = normalizedAxisY;
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -123,7 +128,7 @@ export const physics2DDistanceJointSolver = {
 // rack-and-pinion pair.
 export const physics2DGearJointSolver = {
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -177,7 +182,7 @@ export const physics2DGearJointSolver = {
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -254,7 +259,7 @@ export const physics2DMouseJointSolver = {
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
     const mouse = joint as Physics2DMouseJoint;
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyB = findPhysics2DBody(world, joint.bodyB);
     if (bodyB === null) return;
@@ -303,7 +308,7 @@ export const physics2DPrismaticJointSolver = {
 
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
     const prismatic = joint as Physics2DPrismaticJoint;
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -418,7 +423,7 @@ export const physics2DPrismaticJointSolver = {
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
     const prismatic = joint as Physics2DPrismaticJoint;
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -541,7 +546,7 @@ export const physics2DPrismaticJointSolver = {
 // point rather than as an equal-and-opposite pair between the bodies.
 export const physics2DPulleyJointSolver = {
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -608,7 +613,7 @@ export const physics2DPulleyJointSolver = {
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -720,7 +725,7 @@ export const physics2DRevoluteJointSolver = {
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
     const revolute = joint as Physics2DRevoluteJoint;
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -795,7 +800,7 @@ export const physics2DRevoluteJointSolver = {
 // rope may pull the bodies together and may never push them apart.
 export const physics2DRopeJointSolver = {
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -843,7 +848,7 @@ export const physics2DRopeJointSolver = {
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined || state[0] === 0) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -869,7 +874,7 @@ export const physics2DWheelJointSolver = {
 
   warmStart(world: Physics2DWorld, joint: Physics2DJoint): void {
     const wheel = joint as Physics2DWheelJoint;
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -981,7 +986,7 @@ export const physics2DWheelJointSolver = {
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
     const wheel = joint as Physics2DWheelJoint;
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -1092,7 +1097,7 @@ export const physics2DWeldJointSolver = {
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
-    const state = jointStateScratch.get(joint);
+    const state = jointSolveStates.get(joint);
     if (state === undefined) return;
     const bodyA = findPhysics2DBody(world, joint.bodyA);
     const bodyB = findPhysics2DBody(world, joint.bodyB);
@@ -1331,10 +1336,10 @@ function beginJointSolve(joint: Physics2DJoint, length: number): number[] {
   joint.impulse0 ??= 0;
   joint.impulse1 ??= 0;
   joint.impulse2 ??= 0;
-  let state = jointStateScratch.get(joint);
+  let state = jointSolveStates.get(joint);
   if (state === undefined) {
     state = [];
-    jointStateScratch.set(joint, state);
+    jointSolveStates.set(joint, state);
   }
   state.length = length;
   return state;
@@ -1354,9 +1359,7 @@ function beginJointSolve(joint: Physics2DJoint, length: number): number[] {
 // deletion hook to forget either, because a joint can leave a world without this module being told.
 // Keying weakly makes the retention question disappear rather than answering it — the entry goes when
 // the joint does, at every exit path, including ones nobody has written yet.
-const jointStateScratch = new WeakMap<Physics2DJoint, number[]>();
-const axisScratch = [0, 0];
-const jointScratch = [0, 0, 0];
+const jointSolveStates = new WeakMap<Physics2DJoint, number[]>();
 const EPSILON = 1e-9;
 // The fraction of a joint's positional error corrected per step. Matches the contact solver's rationale:
 // correcting all of it at once turns a deep error into an explosion.

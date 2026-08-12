@@ -39,6 +39,36 @@ describe('createPhysics2DRayResult', () => {
 });
 
 describe('queryPhysics2DPoint', () => {
+  it('keeps broadphase candidates isolated when a filter getter starts a nested query', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const first = createRigidBody2D('dynamic', 0, 0);
+    const second = createRigidBody2D('dynamic', 0, 0);
+    first.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE));
+    second.colliders.push(createPhysics2DCollider({ kind: 'circle', radius: 1, x: 0, y: 0 }, STONE));
+    addPhysics2DBody(world, first);
+    addPhysics2DBody(world, second);
+    const nestedWorld = createPhysics2DWorld(0, 0);
+    const filter = createPhysics2DQueryFilter();
+    let nestedCalls = 0;
+    Object.defineProperty(filter, 'includeDynamic', {
+      configurable: true,
+      enumerable: true,
+      get() {
+        if (nestedCalls === 0) {
+          nestedCalls++;
+          queryPhysics2DPoint(nestedWorld, 0, 0, createPhysics2DQueryResult());
+        }
+        return true;
+      },
+    });
+    const out = createPhysics2DQueryResult();
+
+    queryPhysics2DPoint(world, 0, 0, out, filter);
+
+    expect(nestedCalls).toBe(1);
+    expect(out.hits.slice(0, out.hitCount).map((hit) => hit.body)).toEqual([first, second]);
+  });
+
   it('returns exact collider hits rather than broadphase-only body hits', () => {
     const world = createPhysics2DWorld(0, 0);
     const body = createRigidBody2D('dynamic', 0, 0, Math.PI / 4);

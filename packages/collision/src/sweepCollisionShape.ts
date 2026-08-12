@@ -37,10 +37,39 @@ export function sweepCollisionShape(
     return false;
   }
 
-  if (collideContactManifold(shapeA, shapeB, manifoldScratch)) {
-    out.normalX = canonicalZero(manifoldScratch.normalX);
-    out.normalY = canonicalZero(manifoldScratch.normalY);
-    writeShapeASupport(shapeA, 0, 0, out);
+  const scratch = acquireCollisionSweepScratch();
+  try {
+    return sweepCollisionShapeWithScratch(
+      shapeA,
+      translationAX,
+      translationAY,
+      shapeB,
+      translationBX,
+      translationBY,
+      out,
+      maxFraction,
+      scratch,
+    );
+  } finally {
+    releaseCollisionSweepScratch(scratch);
+  }
+}
+
+function sweepCollisionShapeWithScratch(
+  shapeA: Readonly<CollisionShape>,
+  translationAX: number,
+  translationAY: number,
+  shapeB: Readonly<CollisionShape>,
+  translationBX: number,
+  translationBY: number,
+  out: CollisionTimeOfImpact,
+  maxFraction: number,
+  scratch: CollisionSweepScratch,
+): boolean {
+  if (collideContactManifold(shapeA, shapeB, scratch.manifold)) {
+    out.normalX = canonicalZero(scratch.manifold.normalX);
+    out.normalY = canonicalZero(scratch.manifold.normalY);
+    writeShapeASupport(shapeA, 0, 0, out, scratch);
     return true;
   }
 
@@ -61,13 +90,13 @@ export function sweepCollisionShape(
         out,
       );
     } else {
-      const verticesB = writeShapeVertices(shapeB, verticesBScratch);
+      const verticesB = writeShapeVertices(shapeB, scratch.verticesB);
       if (verticesB !== null) {
         hit = sweepCirclePolygon(shapeA.x, shapeA.y, shapeA.radius, verticesB, relativeX, relativeY, out);
       }
     }
   } else if (shapeB.kind === 'circle') {
-    const verticesA = writeShapeVertices(shapeA, verticesAScratch);
+    const verticesA = writeShapeVertices(shapeA, scratch.verticesA);
     if (verticesA !== null) {
       hit = sweepCirclePolygon(shapeB.x, shapeB.y, shapeB.radius, verticesA, -relativeX, -relativeY, out);
       if (hit) {
@@ -76,10 +105,10 @@ export function sweepCollisionShape(
       }
     }
   } else {
-    const verticesA = writeShapeVertices(shapeA, verticesAScratch);
-    const verticesB = writeShapeVertices(shapeB, verticesBScratch);
+    const verticesA = writeShapeVertices(shapeA, scratch.verticesA);
+    const verticesB = writeShapeVertices(shapeB, scratch.verticesB);
     if (verticesA !== null && verticesB !== null) {
-      hit = sweepPolygonPolygon(verticesA, verticesB, relativeX, relativeY, maxFraction, out);
+      hit = sweepPolygonPolygon(verticesA, verticesB, relativeX, relativeY, maxFraction, out, scratch);
     }
   }
 
@@ -89,7 +118,7 @@ export function sweepCollisionShape(
   }
   out.normalX = canonicalZero(out.normalX);
   out.normalY = canonicalZero(out.normalY);
-  writeShapeASupport(shapeA, translationAX * out.fraction, translationAY * out.fraction, out);
+  writeShapeASupport(shapeA, translationAX * out.fraction, translationAY * out.fraction, out, scratch);
   return true;
 }
 
@@ -193,17 +222,18 @@ function sweepPolygonPolygon(
   velocityY: number,
   maxFraction: number,
   out: CollisionTimeOfImpact,
+  scratch: CollisionSweepScratch,
 ): boolean {
-  sweepEntry = Number.NEGATIVE_INFINITY;
-  sweepExit = maxFraction;
-  sweepNormalX = 0;
-  sweepNormalY = 0;
-  if (!sweepPolygonAxes(verticesA, verticesA, verticesB, velocityX, velocityY)) return false;
-  if (!sweepPolygonAxes(verticesB, verticesA, verticesB, velocityX, velocityY)) return false;
-  if (sweepEntry < 0 || sweepEntry > sweepExit || sweepEntry > maxFraction) return false;
-  out.fraction = sweepEntry;
-  out.normalX = sweepNormalX;
-  out.normalY = sweepNormalY;
+  scratch.entry = Number.NEGATIVE_INFINITY;
+  scratch.exit = maxFraction;
+  scratch.normalX = 0;
+  scratch.normalY = 0;
+  if (!sweepPolygonAxes(verticesA, verticesA, verticesB, velocityX, velocityY, scratch)) return false;
+  if (!sweepPolygonAxes(verticesB, verticesA, verticesB, velocityX, velocityY, scratch)) return false;
+  if (scratch.entry < 0 || scratch.entry > scratch.exit || scratch.entry > maxFraction) return false;
+  out.fraction = scratch.entry;
+  out.normalX = scratch.normalX;
+  out.normalY = scratch.normalY;
   return true;
 }
 
@@ -213,6 +243,7 @@ function sweepPolygonAxes(
   verticesB: ArrayLike<number>,
   velocityX: number,
   velocityY: number,
+  scratch: CollisionSweepScratch,
 ): boolean {
   const count = axes.length >> 1;
   for (let i = 0; i < count; i++) {
@@ -223,12 +254,12 @@ function sweepPolygonAxes(
     if (!(length > 0)) continue;
     const axisX = -edgeY / length;
     const axisY = edgeX / length;
-    projectVertices(verticesA, axisX, axisY);
-    const minA = projectionMin;
-    const maxA = projectionMax;
-    projectVertices(verticesB, axisX, axisY);
-    const minB = projectionMin;
-    const maxB = projectionMax;
+    projectVertices(verticesA, axisX, axisY, scratch);
+    const minA = scratch.projectionMin;
+    const maxA = scratch.projectionMax;
+    projectVertices(verticesB, axisX, axisY, scratch);
+    const minB = scratch.projectionMin;
+    const maxB = scratch.projectionMax;
     const speed = velocityX * axisX + velocityY * axisY;
     if (speed === 0) {
       if (maxA < minB || maxB < minA) return false;
@@ -245,13 +276,13 @@ function sweepPolygonAxes(
       normalX = axisX;
       normalY = axisY;
     }
-    if (entry > sweepEntry) {
-      sweepEntry = entry;
-      sweepNormalX = normalX;
-      sweepNormalY = normalY;
+    if (entry > scratch.entry) {
+      scratch.entry = entry;
+      scratch.normalX = normalX;
+      scratch.normalY = normalY;
     }
-    if (exit < sweepExit) sweepExit = exit;
-    if (sweepEntry > sweepExit) return false;
+    if (exit < scratch.exit) scratch.exit = exit;
+    if (scratch.entry > scratch.exit) return false;
   }
   return true;
 }
@@ -296,13 +327,14 @@ function writeShapeASupport(
   translationX: number,
   translationY: number,
   out: CollisionTimeOfImpact,
+  scratch: CollisionSweepScratch,
 ): void {
   if (shape.kind === 'circle') {
     out.x = shape.x + translationX - out.normalX * shape.radius;
     out.y = shape.y + translationY - out.normalY * shape.radius;
     return;
   }
-  const vertices = writeShapeVertices(shape, verticesAScratch);
+  const vertices = writeShapeVertices(shape, scratch.verticesA);
   if (vertices === null) return;
   let best = Number.NEGATIVE_INFINITY;
   for (let i = 0; i < vertices.length; i += 2) {
@@ -329,13 +361,18 @@ function writeShapeASupport(
   }
 }
 
-function projectVertices(vertices: ArrayLike<number>, axisX: number, axisY: number): void {
-  projectionMin = Number.POSITIVE_INFINITY;
-  projectionMax = Number.NEGATIVE_INFINITY;
+function projectVertices(
+  vertices: ArrayLike<number>,
+  axisX: number,
+  axisY: number,
+  scratch: CollisionSweepScratch,
+): void {
+  scratch.projectionMin = Number.POSITIVE_INFINITY;
+  scratch.projectionMax = Number.NEGATIVE_INFINITY;
   for (let i = 0; i < vertices.length; i += 2) {
     const projection = vertices[i] * axisX + vertices[i + 1] * axisY;
-    if (projection < projectionMin) projectionMin = projection;
-    if (projection > projectionMax) projectionMax = projection;
+    if (projection < scratch.projectionMin) scratch.projectionMin = projection;
+    if (projection > scratch.projectionMax) scratch.projectionMax = projection;
   }
 }
 
@@ -361,12 +398,38 @@ function canonicalZero(value: number): number {
   return value === 0 ? 0 : value;
 }
 
-const manifoldScratch = createCollisionContactManifold();
-const verticesAScratch = new Float64Array(8);
-const verticesBScratch = new Float64Array(8);
-let projectionMin = 0;
-let projectionMax = 0;
-let sweepEntry = 0;
-let sweepExit = 0;
-let sweepNormalX = 0;
-let sweepNormalY = 0;
+interface CollisionSweepScratch {
+  manifold: ReturnType<typeof createCollisionContactManifold>;
+  verticesA: Float64Array;
+  verticesB: Float64Array;
+  projectionMin: number;
+  projectionMax: number;
+  entry: number;
+  exit: number;
+  normalX: number;
+  normalY: number;
+}
+
+function acquireCollisionSweepScratch(): CollisionSweepScratch {
+  return collisionSweepScratchPool.pop() ?? createCollisionSweepScratch();
+}
+
+function createCollisionSweepScratch(): CollisionSweepScratch {
+  return {
+    manifold: createCollisionContactManifold(),
+    verticesA: new Float64Array(8),
+    verticesB: new Float64Array(8),
+    projectionMin: 0,
+    projectionMax: 0,
+    entry: 0,
+    exit: 0,
+    normalX: 0,
+    normalY: 0,
+  };
+}
+
+function releaseCollisionSweepScratch(scratch: CollisionSweepScratch): void {
+  collisionSweepScratchPool.push(scratch);
+}
+
+const collisionSweepScratchPool: CollisionSweepScratch[] = [createCollisionSweepScratch()];

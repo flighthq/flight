@@ -40,9 +40,14 @@ export function collideAabbAabbContactManifold(
   b: Readonly<CollisionAabb>,
   out: CollisionContactManifold,
 ): boolean {
-  writeAabbVertices(a, contactScratchA);
-  writeAabbVertices(b, contactScratchB);
-  return convexContact(contactScratchA, 4, contactScratchB, 4, out);
+  const scratch = acquireShapeContactScratch();
+  try {
+    writeAabbVertices(a, scratch.verticesA);
+    writeAabbVertices(b, scratch.verticesB);
+    return convexContact(scratch.verticesA, 4, scratch.verticesB, 4, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
+  }
 }
 
 // Axis-aligned box vs oriented box.
@@ -51,9 +56,14 @@ export function collideAabbObbContactManifold(
   b: Readonly<CollisionObb>,
   out: CollisionContactManifold,
 ): boolean {
-  writeAabbVertices(a, contactScratchA);
-  writeObbVertices(b, contactScratchB);
-  return convexContact(contactScratchA, 4, contactScratchB, 4, out);
+  const scratch = acquireShapeContactScratch();
+  try {
+    writeAabbVertices(a, scratch.verticesA);
+    writeObbVertices(b, scratch.verticesB);
+    return convexContact(scratch.verticesA, 4, scratch.verticesB, 4, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
+  }
 }
 
 // Axis-aligned box vs convex polygon.
@@ -62,9 +72,14 @@ export function collideAabbPolygonContactManifold(
   b: Readonly<CollisionPolygon>,
   out: CollisionContactManifold,
 ): boolean {
-  writeAabbVertices(a, contactScratchA);
   const bPoints = b.points;
-  return convexContact(contactScratchA, 4, bPoints, bPoints.length >> 1, out);
+  const scratch = acquireShapeContactScratch();
+  try {
+    writeAabbVertices(a, scratch.verticesA);
+    return convexContact(scratch.verticesA, 4, bPoints, bPoints.length >> 1, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
+  }
 }
 
 // Circle vs axis-aligned box. One contact point, on the circle's surface.
@@ -73,11 +88,16 @@ export function collideCircleAabbContactManifold(
   b: Readonly<CollisionAabb>,
   out: CollisionContactManifold,
 ): boolean {
-  if (!testCircleAabbCollision(a, b, leanScratch)) {
-    clearCollisionContactManifold(out);
-    return false;
+  const scratch = acquireShapeContactScratch();
+  try {
+    if (!testCircleAabbCollision(a, b, scratch.leanManifold)) {
+      clearCollisionContactManifold(out);
+      return false;
+    }
+    return writeCircleContact(a.x, a.y, a.radius, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
   }
-  return writeCircleContact(a.x, a.y, a.radius, out);
 }
 
 // Circle vs circle. One contact point, on A's surface.
@@ -86,11 +106,16 @@ export function collideCircleCircleContactManifold(
   b: Readonly<CollisionCircle>,
   out: CollisionContactManifold,
 ): boolean {
-  if (!testCircleCircleCollision(a, b, leanScratch)) {
-    clearCollisionContactManifold(out);
-    return false;
+  const scratch = acquireShapeContactScratch();
+  try {
+    if (!testCircleCircleCollision(a, b, scratch.leanManifold)) {
+      clearCollisionContactManifold(out);
+      return false;
+    }
+    return writeCircleContact(a.x, a.y, a.radius, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
   }
-  return writeCircleContact(a.x, a.y, a.radius, out);
 }
 
 // Circle vs oriented box. One contact point, on the circle's surface.
@@ -99,11 +124,16 @@ export function collideCircleObbContactManifold(
   b: Readonly<CollisionObb>,
   out: CollisionContactManifold,
 ): boolean {
-  if (!testCircleObbCollision(a, b, leanScratch)) {
-    clearCollisionContactManifold(out);
-    return false;
+  const scratch = acquireShapeContactScratch();
+  try {
+    if (!testCircleObbCollision(a, b, scratch.leanManifold)) {
+      clearCollisionContactManifold(out);
+      return false;
+    }
+    return writeCircleContact(a.x, a.y, a.radius, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
   }
-  return writeCircleContact(a.x, a.y, a.radius, out);
 }
 
 // Circle vs convex polygon. One contact point, on the circle's surface.
@@ -112,11 +142,16 @@ export function collideCirclePolygonContactManifold(
   b: Readonly<CollisionPolygon>,
   out: CollisionContactManifold,
 ): boolean {
-  if (!testCirclePolygonCollision(a, b, leanScratch)) {
-    clearCollisionContactManifold(out);
-    return false;
+  const scratch = acquireShapeContactScratch();
+  try {
+    if (!testCirclePolygonCollision(a, b, scratch.leanManifold)) {
+      clearCollisionContactManifold(out);
+      return false;
+    }
+    return writeCircleContact(a.x, a.y, a.radius, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
   }
-  return writeCircleContact(a.x, a.y, a.radius, out);
 }
 
 // Oriented box vs oriented box.
@@ -125,9 +160,14 @@ export function collideObbObbContactManifold(
   b: Readonly<CollisionObb>,
   out: CollisionContactManifold,
 ): boolean {
-  writeObbVertices(a, contactScratchA);
-  writeObbVertices(b, contactScratchB);
-  return convexContact(contactScratchA, 4, contactScratchB, 4, out);
+  const scratch = acquireShapeContactScratch();
+  try {
+    writeObbVertices(a, scratch.verticesA);
+    writeObbVertices(b, scratch.verticesB);
+    return convexContact(scratch.verticesA, 4, scratch.verticesB, 4, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
+  }
 }
 
 // Oriented box vs convex polygon.
@@ -136,9 +176,14 @@ export function collideObbPolygonContactManifold(
   b: Readonly<CollisionPolygon>,
   out: CollisionContactManifold,
 ): boolean {
-  writeObbVertices(a, contactScratchA);
   const bPoints = b.points;
-  return convexContact(contactScratchA, 4, bPoints, bPoints.length >> 1, out);
+  const scratch = acquireShapeContactScratch();
+  try {
+    writeObbVertices(a, scratch.verticesA);
+    return convexContact(scratch.verticesA, 4, bPoints, bPoints.length >> 1, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
+  }
 }
 
 // Convex polygon vs convex polygon — the general convex contact core.
@@ -149,7 +194,12 @@ export function collidePolygonPolygonContactManifold(
 ): boolean {
   const aPoints = a.points;
   const bPoints = b.points;
-  return convexContact(aPoints, aPoints.length >> 1, bPoints, bPoints.length >> 1, out);
+  const scratch = acquireShapeContactScratch();
+  try {
+    return convexContact(aPoints, aPoints.length >> 1, bPoints, bPoints.length >> 1, out, scratch);
+  } finally {
+    releaseShapeContactScratch(scratch);
+  }
 }
 
 // Convex-vs-convex contact resolution over two flat `[x0,y0,...]` vertex lists, writing the
@@ -168,6 +218,7 @@ function convexContact(
   bx: ArrayLike<number>,
   bn: number,
   out: CollisionContactManifold,
+  scratch: ShapeContactScratch,
 ): boolean {
   // Fewer than three vertices has no interior and no face to clip against. Degenerate input would
   // otherwise leave the separation search with no candidate axis and poison the manifold with NaN,
@@ -179,21 +230,21 @@ function convexContact(
     return false;
   }
 
-  const separationA = maxFaceSeparation(ax, an, bx, bn);
-  if (separationA >= 0 || separationEdge < 0) {
+  const separationA = maxFaceSeparation(ax, an, bx, bn, scratch);
+  if (separationA >= 0 || scratch.separationEdge < 0) {
     clearCollisionContactManifold(out);
     return false;
   }
-  const edgeA = separationEdge;
-  const normalAX = separationNormalX;
-  const normalAY = separationNormalY;
+  const edgeA = scratch.separationEdge;
+  const normalAX = scratch.separationNormalX;
+  const normalAY = scratch.separationNormalY;
 
-  const separationB = maxFaceSeparation(bx, bn, ax, an);
-  if (separationB >= 0 || separationEdge < 0) {
+  const separationB = maxFaceSeparation(bx, bn, ax, an, scratch);
+  if (separationB >= 0 || scratch.separationEdge < 0) {
     clearCollisionContactManifold(out);
     return false;
   }
-  const edgeB = separationEdge;
+  const edgeB = scratch.separationEdge;
 
   // Near-ties get a magnitude-relative nudge toward A so the reference shape does not flip between
   // frames on floating-point noise. A flip renumbers every feature id, which would silently discard
@@ -206,8 +257,8 @@ function convexContact(
   const incidentX = referenceIsA ? bx : ax;
   const incidentCount = referenceIsA ? bn : an;
   const referenceEdge = referenceIsA ? edgeA : edgeB;
-  const normalX = referenceIsA ? normalAX : separationNormalX;
-  const normalY = referenceIsA ? normalAY : separationNormalY;
+  const normalX = referenceIsA ? normalAX : scratch.separationNormalX;
+  const normalY = referenceIsA ? normalAY : scratch.separationNormalY;
 
   const referenceNext = referenceEdge + 1 === referenceCount ? 0 : referenceEdge + 1;
   const v1X = referenceX[referenceEdge << 1];
@@ -305,11 +356,17 @@ function appendClippedContact(
 }
 
 // Returns the greatest separation of shape O from any face of shape S, writing the winning face's
-// index and unit outward normal into the module scratch. A positive result means a separating axis
+// index and unit outward normal into the call's leased scratch. A positive result means a separating axis
 // exists and the pair is disjoint; the least-negative result is the minimum-translation face.
 // Outward orientation is derived from S's centroid, so winding does not matter — matching the
 // winding-agnostic contract the lean tests already document.
-function maxFaceSeparation(sx: ArrayLike<number>, sn: number, ox: ArrayLike<number>, on: number): number {
+function maxFaceSeparation(
+  sx: ArrayLike<number>,
+  sn: number,
+  ox: ArrayLike<number>,
+  on: number,
+  scratch: ShapeContactScratch,
+): number {
   let centroidX = 0;
   let centroidY = 0;
   for (let i = 0; i < sn; i++) {
@@ -351,9 +408,9 @@ function maxFaceSeparation(sx: ArrayLike<number>, sn: number, ox: ArrayLike<numb
     }
   }
 
-  separationEdge = bestEdge;
-  separationNormalX = bestNormalX;
-  separationNormalY = bestNormalY;
+  scratch.separationEdge = bestEdge;
+  scratch.separationNormalX = bestNormalX;
+  scratch.separationNormalY = bestNormalY;
   return best;
 }
 
@@ -395,13 +452,19 @@ function mostAntiParallelEdge(px: ArrayLike<number>, pn: number, normalX: number
   return bestEdge;
 }
 
-// Promotes the lean manifold left in `leanScratch` by a circle test into a single-point contact.
+// Promotes the lean manifold left in the call's leased scratch by a circle test into a single-point contact.
 // The circle's deepest point lies one radius along the inward normal from its center; a circle has
 // no face, so there is one feature pair and one constant id.
-function writeCircleContact(cx: number, cy: number, radius: number, out: CollisionContactManifold): boolean {
-  const normalX = leanScratch.normalX;
-  const normalY = leanScratch.normalY;
-  const depth = leanScratch.depth;
+function writeCircleContact(
+  cx: number,
+  cy: number,
+  radius: number,
+  out: CollisionContactManifold,
+  scratch: ShapeContactScratch,
+): boolean {
+  const normalX = scratch.leanManifold.normalX;
+  const normalY = scratch.leanManifold.normalY;
+  const depth = scratch.leanManifold.depth;
   out.normalX = normalX;
   out.normalY = normalY;
   out.depth = depth;
@@ -422,9 +485,32 @@ const EPS = 1e-9;
 const REFERENCE_BIAS = 1e-6;
 // Feature ids pack (reference shape, reference edge, incident edge, clip slot) into one integer.
 // Ten bits per edge index covers any polygon the SAT core can handle in useful time.
-const contactScratchA = new Float64Array(8);
-const contactScratchB = new Float64Array(8);
-const leanScratch: CollisionManifold = createCollisionManifold();
-let separationEdge = -1;
-let separationNormalX = 0;
-let separationNormalY = 0;
+interface ShapeContactScratch {
+  verticesA: Float64Array;
+  verticesB: Float64Array;
+  leanManifold: CollisionManifold;
+  separationEdge: number;
+  separationNormalX: number;
+  separationNormalY: number;
+}
+
+function acquireShapeContactScratch(): ShapeContactScratch {
+  return shapeContactScratchPool.pop() ?? createShapeContactScratch();
+}
+
+function createShapeContactScratch(): ShapeContactScratch {
+  return {
+    verticesA: new Float64Array(8),
+    verticesB: new Float64Array(8),
+    leanManifold: createCollisionManifold(),
+    separationEdge: -1,
+    separationNormalX: 0,
+    separationNormalY: 0,
+  };
+}
+
+function releaseShapeContactScratch(scratch: ShapeContactScratch): void {
+  shapeContactScratchPool.push(scratch);
+}
+
+const shapeContactScratchPool: ShapeContactScratch[] = [createShapeContactScratch()];

@@ -53,19 +53,24 @@ export function queryPhysics2DPoint(
 ): void {
   out.hitCount = 0;
   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-  synchronizePhysics2DBroadphase(world);
-  world.index.querySpatialPoint(x, y, candidateBodyScratch);
-  candidateBodyScratch.sort(compareNumbers);
+  const scratch = acquirePhysics2DQueryScratch();
+  try {
+    synchronizePhysics2DBroadphase(world);
+    world.index.querySpatialPoint(x, y, scratch.candidateBodies);
+    scratch.candidateBodies.sort(compareNumbers);
 
-  for (const bodyIndex of candidateBodyScratch) {
-    const body = findPhysics2DBody(world, bodyIndex);
-    if (body === null || !passesBodyFilter(body, filter)) continue;
-    for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
-      const collider = body.colliders[colliderIndex];
-      if (!passesColliderFilter(collider, filter)) continue;
-      if (!getCollisionShapeContainsPoint(collider.world, x, y)) continue;
-      writeQueryHit(out, body, collider, colliderIndex);
+    for (const bodyIndex of scratch.candidateBodies) {
+      const body = findPhysics2DBody(world, bodyIndex);
+      if (body === null || !passesBodyFilter(body, filter)) continue;
+      for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
+        const collider = body.colliders[colliderIndex];
+        if (!passesColliderFilter(collider, filter)) continue;
+        if (!getCollisionShapeContainsPoint(collider.world, x, y)) continue;
+        writeQueryHit(out, body, collider, colliderIndex);
+      }
     }
+  } finally {
+    releasePhysics2DQueryScratch(scratch);
   }
 }
 
@@ -122,26 +127,39 @@ function queryPhysics2DRayInternal(
   ) {
     return;
   }
-  synchronizePhysics2DBroadphase(world);
-  world.index.querySpatialRay(originX, originY, directionX, directionY, candidateBodyScratch);
-  candidateBodyScratch.sort(compareNumbers);
+  const scratch = acquirePhysics2DQueryScratch();
+  try {
+    synchronizePhysics2DBroadphase(world);
+    world.index.querySpatialRay(originX, originY, directionX, directionY, scratch.candidateBodies);
+    scratch.candidateBodies.sort(compareNumbers);
 
-  for (const bodyIndex of candidateBodyScratch) {
-    const body = findPhysics2DBody(world, bodyIndex);
-    if (body === null || !passesBodyFilter(body, filter)) continue;
-    for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
-      const collider = body.colliders[colliderIndex];
-      if (!passesColliderFilter(collider, filter)) continue;
-      if (
-        !raycastCollisionShape(collider.world, originX, originY, directionX, directionY, raycastHitScratch, maxFraction)
-      ) {
-        continue;
+    for (const bodyIndex of scratch.candidateBodies) {
+      const body = findPhysics2DBody(world, bodyIndex);
+      if (body === null || !passesBodyFilter(body, filter)) continue;
+      for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
+        const collider = body.colliders[colliderIndex];
+        if (!passesColliderFilter(collider, filter)) continue;
+        if (
+          !raycastCollisionShape(
+            collider.world,
+            originX,
+            originY,
+            directionX,
+            directionY,
+            scratch.raycastHit,
+            maxFraction,
+          )
+        ) {
+          continue;
+        }
+        if (closestOnly) writeClosestRayHit(out, body, collider, colliderIndex, scratch.raycastHit);
+        else writeRayHit(out, body, collider, colliderIndex, scratch.raycastHit);
       }
-      if (closestOnly) writeClosestRayHit(out, body, collider, colliderIndex, raycastHitScratch);
-      else writeRayHit(out, body, collider, colliderIndex, raycastHitScratch);
     }
+    if (!closestOnly) sortLiveRayHits(out);
+  } finally {
+    releasePhysics2DQueryScratch(scratch);
   }
-  if (!closestOnly) sortLiveRayHits(out);
 }
 
 // Writes every collider whose current world-space AABB overlaps `region`. The spatial index is over
@@ -155,20 +173,25 @@ export function queryPhysics2DRegion(
 ): void {
   out.hitCount = 0;
   if (!isValidRegion(region)) return;
-  synchronizePhysics2DBroadphase(world);
-  world.index.querySpatialRegion(region, candidateBodyScratch);
-  candidateBodyScratch.sort(compareNumbers);
+  const scratch = acquirePhysics2DQueryScratch();
+  try {
+    synchronizePhysics2DBroadphase(world);
+    world.index.querySpatialRegion(region, scratch.candidateBodies);
+    scratch.candidateBodies.sort(compareNumbers);
 
-  for (const bodyIndex of candidateBodyScratch) {
-    const body = findPhysics2DBody(world, bodyIndex);
-    if (body === null || !passesBodyFilter(body, filter)) continue;
-    for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
-      const collider = body.colliders[colliderIndex];
-      if (!passesColliderFilter(collider, filter)) continue;
-      writePhysics2DColliderBounds(collider, colliderBoundsScratch);
-      if (!boundsOverlap(colliderBoundsScratch, region)) continue;
-      writeQueryHit(out, body, collider, colliderIndex);
+    for (const bodyIndex of scratch.candidateBodies) {
+      const body = findPhysics2DBody(world, bodyIndex);
+      if (body === null || !passesBodyFilter(body, filter)) continue;
+      for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
+        const collider = body.colliders[colliderIndex];
+        if (!passesColliderFilter(collider, filter)) continue;
+        writePhysics2DColliderBounds(collider, scratch.colliderBounds);
+        if (!boundsOverlap(scratch.colliderBounds, region)) continue;
+        writeQueryHit(out, body, collider, colliderIndex);
+      }
     }
+  } finally {
+    releasePhysics2DQueryScratch(scratch);
   }
 }
 
@@ -307,6 +330,29 @@ function compareNumbers(a: number, b: number): number {
   return a - b;
 }
 
-const candidateBodyScratch: number[] = [];
-const colliderBoundsScratch: SpatialAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-const raycastHitScratch = createCollisionRaycastHit();
+interface Physics2DQueryScratch {
+  candidateBodies: number[];
+  colliderBounds: SpatialAabb;
+  raycastHit: CollisionRaycastHit;
+}
+
+function acquirePhysics2DQueryScratch(): Physics2DQueryScratch {
+  const scratch = physics2DQueryScratchPool.pop() ?? createPhysics2DQueryScratch();
+  scratch.candidateBodies.length = 0;
+  return scratch;
+}
+
+function createPhysics2DQueryScratch(): Physics2DQueryScratch {
+  return {
+    candidateBodies: [],
+    colliderBounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
+    raycastHit: createCollisionRaycastHit(),
+  };
+}
+
+function releasePhysics2DQueryScratch(scratch: Physics2DQueryScratch): void {
+  scratch.candidateBodies.length = 0;
+  physics2DQueryScratchPool.push(scratch);
+}
+
+const physics2DQueryScratchPool: Physics2DQueryScratch[] = [createPhysics2DQueryScratch()];
