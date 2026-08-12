@@ -1,5 +1,5 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type { LogEntry, LogSignals } from '@flighthq/types/contract';
+import type { BufferedLogSink, LogEntry, LogSignals, MemoryLogSink } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import {
@@ -125,6 +125,16 @@ describe('beginLogGroup', () => {
     beginLogGroup('inner');
     expect(entries[1].data).toMatchObject({ depth: 2 });
   });
+
+  it('tracks depth without emitting when Debug is suppressed', () => {
+    const { entries } = recordingSink();
+    setLogLevel(LogLevel.Error);
+
+    beginLogGroup('suppressed');
+
+    expect(entries).toHaveLength(0);
+    clearLogGroups();
+  });
 });
 
 describe('clearLogChannelLevels', () => {
@@ -191,9 +201,57 @@ describe('clearMemoryLogSink', () => {
     clearMemoryLogSink(handle);
     expect(getMemoryLogSinkEntries(handle)).toHaveLength(0);
   });
+
+  it('does nothing for an unknown handle', () => {
+    const unknown = { sink: () => {} } as MemoryLogSink;
+
+    expect(() => clearMemoryLogSink(unknown)).not.toThrow();
+  });
 });
 
 describe('createBufferedLogSink', () => {
+  it('uses the default size and interval options', () => {
+    vi.useFakeTimers();
+    try {
+      const forwarded: LogEntry[] = [];
+      const handle = createBufferedLogSink((entry) => forwarded.push({ ...entry }));
+      handle.sink({ channel: null, data: 'queued', level: LogLevel.Info });
+
+      expect(forwarded).toHaveLength(0);
+      flushLogSink(handle);
+      expect(forwarded).toHaveLength(1);
+      disposeLogSink(handle);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('works without an interval implementation', () => {
+    const originalSetInterval = globalThis.setInterval;
+    let handle: BufferedLogSink;
+    Object.defineProperty(globalThis, 'setInterval', { configurable: true, value: undefined, writable: true });
+    try {
+      handle = createBufferedLogSink(() => {}, { intervalMs: 1, size: 1 });
+    } finally {
+      Object.defineProperty(globalThis, 'setInterval', {
+        configurable: true,
+        value: originalSetInterval,
+        writable: true,
+      });
+    }
+
+    expect(() => disposeLogSink(handle!)).not.toThrow();
+  });
+
+  it('does nothing when an empty buffer is flushed', () => {
+    const forwarded: LogEntry[] = [];
+    const handle = createBufferedLogSink((entry) => forwarded.push({ ...entry }), { intervalMs: 0 });
+
+    flushLogSink(handle);
+
+    expect(forwarded).toHaveLength(0);
+  });
+
   it('does not forward entries until flushed', () => {
     const forwarded: LogEntry[] = [];
     const handle = createBufferedLogSink((e) => forwarded.push({ ...e }), { size: 100, intervalMs: 0 });
@@ -281,6 +339,39 @@ describe('createConsoleCaptureSink', () => {
     expect(customFormatter).toHaveBeenCalledTimes(1);
     expect(debug).toHaveBeenCalledWith('custom-line');
   });
+
+  it('prints a channel prefix with structured human-readable data', () => {
+    vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    setLogConsoleLevel(LogLevel.Info);
+    setLogSink(createConsoleCaptureSink());
+
+    log(LogLevel.Info, { frame: 7 }, 'render');
+
+    expect(info).toHaveBeenCalledWith('[render]', { frame: 7 });
+  });
+
+  it('does nothing when the console is unavailable', () => {
+    const captureSink = createConsoleCaptureSink();
+    const textSink = createConsoleLogSink();
+    const originalConsole = globalThis.console;
+    let threw = false;
+    Object.defineProperty(globalThis, 'console', { configurable: true, value: undefined, writable: true });
+    try {
+      captureSink({ channel: null, data: 'capture', level: LogLevel.Info });
+      textSink({ channel: null, data: 'text', level: LogLevel.Info });
+    } catch {
+      threw = true;
+    } finally {
+      Object.defineProperty(globalThis, 'console', {
+        configurable: true,
+        value: originalConsole,
+        writable: true,
+      });
+    }
+
+    expect(threw).toBe(false);
+  });
 });
 
 describe('createConsoleLogSink', () => {
@@ -289,6 +380,15 @@ describe('createConsoleLogSink', () => {
     const sink = createConsoleLogSink({ formatter: () => 'formatted warning' });
     sink({ channel: 'render', data: 'ignored', level: LogLevel.Warn });
     expect(warn).toHaveBeenCalledWith('formatted warning');
+  });
+
+  it('uses a level-prefixed text formatter by default', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sink = createConsoleLogSink();
+
+    sink({ channel: null, data: 'failed', level: LogLevel.Error });
+
+    expect(error).toHaveBeenCalledWith('error [flight] failed');
   });
 });
 
@@ -471,6 +571,27 @@ describe('createRateLimitedLogSink', () => {
     expect(forwarded[0].channel).toBe('ch1');
     expect(forwarded[1].channel).toBe('ch2');
   });
+
+  it('resets its budget after the interval elapses', () => {
+    vi.useFakeTimers();
+    try {
+      const forwarded: LogEntry[] = [];
+      const handle = createRateLimitedLogSink((entry) => forwarded.push({ ...entry }), {
+        intervalMs: 100,
+        maxPerInterval: 1,
+      });
+      addLogSink(handle.sink);
+      log(LogLevel.Info, 'first');
+      log(LogLevel.Info, 'suppressed');
+      vi.advanceTimersByTime(100);
+
+      log(LogLevel.Info, 'next-window');
+
+      expect(forwarded.map((entry) => entry.data)).toEqual(['first', 'next-window']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('createSampledLogSink', () => {
@@ -510,6 +631,29 @@ describe('createTextLogFormatter', () => {
     const entry: LogEntry = { level: LogLevel.Error, channel: 'ch', data: 'boom' };
     expect(fmt(entry)).toBe('error [ch] boom');
   });
+
+  it('labels an unknown numeric level', () => {
+    const fmt = createTextLogFormatter({ levelPrefix: true });
+    const entry: LogEntry = { level: 99 as LogLevel, channel: null, data: 'message' };
+
+    expect(fmt(entry)).toBe('unknown [flight] message');
+  });
+
+  it('serializes record data', () => {
+    const fmt = createTextLogFormatter();
+
+    expect(fmt({ level: LogLevel.Info, channel: null, data: { value: 3 } })).toBe('[flight] {"value":3}');
+  });
+
+  it('indents entries while a group is open', () => {
+    beginLogGroup('outer');
+    const fmt = createTextLogFormatter({ indentGroups: true });
+
+    const formatted = fmt({ level: LogLevel.Info, channel: null, data: 'inside' });
+
+    expect(formatted).toBe('[flight]    inside');
+    clearLogGroups();
+  });
 });
 
 describe('createWebLogTransportBackend', () => {
@@ -539,12 +683,19 @@ describe('disposeFileLogSink', () => {
     const handle = createFileLogSink();
     expect(() => disposeFileLogSink(handle)).not.toThrow();
   });
+
+  it('accepts a backend without optional flush and dispose hooks', () => {
+    setLogTransportBackend({ write: () => {} });
+
+    expect(() => disposeFileLogSink(createFileLogSink())).not.toThrow();
+  });
 });
 
 describe('disposeLogSink', () => {
-  it('is covered by createBufferedLogSink tests', () => {
-    // Verified above in createBufferedLogSink describe.
-    expect(true).toBe(true);
+  it('does nothing for an unknown handle', () => {
+    const unknown = { sink: () => {} } as BufferedLogSink;
+
+    expect(() => disposeLogSink(unknown)).not.toThrow();
   });
 });
 
@@ -603,6 +754,17 @@ describe('endLogGroup', () => {
     endLogGroup();
     expect(entries).toHaveLength(0);
   });
+
+  it('closes the group without emitting when Debug is suppressed', () => {
+    const { entries } = recordingSink();
+    beginLogGroup('visible');
+    entries.length = 0;
+    setLogLevel(LogLevel.Error);
+
+    endLogGroup();
+
+    expect(entries).toHaveLength(0);
+  });
 });
 
 describe('endLogTimer', () => {
@@ -656,6 +818,28 @@ describe('enterLogSpan', () => {
     expect((entries[0].data as Record<string, unknown>).x).toBe(2);
     expect((entries[0].data as Record<string, unknown>).y).toBe(10);
   });
+
+  it('leaves data unchanged when active spans have no fields', () => {
+    const { entries } = recordingSink();
+    const span = createLogSpan('empty');
+    enterLogSpan(span);
+
+    log(LogLevel.Info, 'unchanged');
+    exitLogSpan(span);
+
+    expect(entries[0].data).toBe('unchanged');
+  });
+
+  it('merges active span fields into record data with direct fields winning', () => {
+    const { entries } = recordingSink();
+    const span = createLogSpan('record', { inherited: 1, winner: 'span' });
+    enterLogSpan(span);
+
+    log(LogLevel.Info, { direct: 2, winner: 'data' });
+    exitLogSpan(span);
+
+    expect(entries[0].data).toEqual({ direct: 2, inherited: 1, winner: 'data' });
+  });
 });
 
 describe('exitLogSpan', () => {
@@ -683,8 +867,10 @@ describe('exitLogSpan', () => {
 });
 
 describe('flushLogSink', () => {
-  it('is covered by createBufferedLogSink tests', () => {
-    expect(true).toBe(true);
+  it('does nothing for an unknown handle', () => {
+    const unknown = { sink: () => {} } as BufferedLogSink;
+
+    expect(() => flushLogSink(unknown)).not.toThrow();
   });
 });
 
@@ -722,6 +908,10 @@ describe('getLogLevelName', () => {
     expect(getLogLevelName(LogLevel.Debug)).toBe('debug');
     expect(getLogLevelName(LogLevel.Verbose)).toBe('verbose');
   });
+
+  it('returns unknown for an unrecognized numeric level', () => {
+    expect(getLogLevelName(99 as LogLevel)).toBe('unknown');
+  });
 });
 
 describe('getLogTransportBackend', () => {
@@ -740,6 +930,12 @@ describe('getMemoryLogSinkEntries', () => {
   it('returns empty array before any entries', () => {
     const handle = createMemoryLogSink(5);
     expect(getMemoryLogSinkEntries(handle)).toHaveLength(0);
+  });
+
+  it('returns an empty array for an unknown handle', () => {
+    const unknown = { sink: () => {} } as MemoryLogSink;
+
+    expect(getMemoryLogSinkEntries(unknown)).toEqual([]);
   });
 });
 
@@ -978,6 +1174,22 @@ describe('registerLogSerializer', () => {
     const result = JSON.parse(fmt(entry));
     expect(result.data.pt).toEqual({ serialized: '(3,4)' });
   });
+
+  it('preserves values that do not match a registered serializer', () => {
+    registerLogSerializer('acme.Known', () => ({ serialized: true }));
+    const fmt = createJsonLogFormatter();
+    const data = {
+      missingKind: { value: 1 },
+      nullValue: null,
+      numericKind: { __kind: 7, value: 2 },
+      primitive: 3,
+      unknownKind: { __kind: 'acme.Unknown', value: 4 },
+    };
+
+    const result = JSON.parse(fmt({ channel: null, data, level: LogLevel.Info }));
+
+    expect(result.data).toEqual(data);
+  });
 });
 
 describe('removeLogSink', () => {
@@ -1018,6 +1230,13 @@ describe('serializeLogError', () => {
   it('wraps a non-Error value in { value }', () => {
     expect(serializeLogError('oops')).toEqual({ value: 'oops' });
     expect(serializeLogError(42)).toEqual({ value: '42' });
+  });
+
+  it('omits the stack when an Error has no stack value', () => {
+    const error = new Error('without stack');
+    error.stack = undefined;
+
+    expect(serializeLogError(error)).toEqual({ message: 'without stack', name: 'Error' });
   });
 });
 
@@ -1096,6 +1315,16 @@ describe('setLogRedactionPaths', () => {
     // The original object should not be mutated
     expect(original.key).toBe('value');
   });
+
+  it('leaves absent and non-record path segments unchanged', () => {
+    setLogRedactionPaths(['missing.secret', 'nullValue.secret', 'primitive.secret', 'items.secret']);
+    const data = { items: ['secret'], nullValue: null, primitive: 7 };
+    const fmt = createJsonLogFormatter();
+
+    const result = JSON.parse(fmt({ channel: null, data, level: LogLevel.Info }));
+
+    expect(result.data).toEqual(data);
+  });
 });
 
 describe('setLogSink', () => {
@@ -1131,11 +1360,76 @@ describe('setLogTransportBackend', () => {
   });
 });
 
+describe('severity wrapper providers and gates', () => {
+  it('does not evaluate any provider when its level is suppressed', () => {
+    const { entries } = recordingSink();
+    const context = createLogContext('channel');
+    const providers = Array.from({ length: 12 }, (_, index) => vi.fn(() => `value-${index}`));
+    setLogLevel(LogLevel.None);
+
+    logAssert(false, providers[0]);
+    logDebug(providers[1]);
+    logDebugWith(context, providers[2]);
+    logError(providers[3]);
+    logErrorWith(context, providers[4]);
+    logInfo(providers[5]);
+    logInfoWith(context, providers[6]);
+    logVerbose(providers[7]);
+    logVerboseWith(context, providers[8]);
+    logWarn(providers[9]);
+    logWarnWith(context, providers[10]);
+    logWith(context, LogLevel.Info, providers[11]);
+
+    for (const provider of providers) expect(provider).not.toHaveBeenCalled();
+    expect(entries).toHaveLength(0);
+  });
+
+  it('evaluates providers after their level gates pass', () => {
+    const { entries } = recordingSink();
+    const context = createLogContext('channel');
+    const providers = Array.from({ length: 10 }, (_, index) => vi.fn(() => `value-${index}`));
+
+    logAssert(false, providers[0]);
+    logDebugWith(context, providers[1]);
+    logError(providers[2]);
+    logErrorWith(context, providers[3]);
+    logInfo(providers[4]);
+    logInfoWith(context, providers[5]);
+    logVerbose(providers[6]);
+    logVerboseWith(context, providers[7]);
+    logWarn(providers[8]);
+    logWarnWith(context, providers[9]);
+
+    for (const provider of providers) expect(provider).toHaveBeenCalledTimes(1);
+    expect(entries.map((entry) => (typeof entry.data === 'string' ? entry.data : entry.data.msg))).toEqual(
+      providers.map((_, index) => `value-${index}`),
+    );
+  });
+});
+
 describe('startLogTimer', () => {
   it('returns a LogTimer with the given label and channel', () => {
     const timer = startLogTimer('render', 'perf');
     expect(timer.label).toBe('render');
     expect(timer.channel).toBe('perf');
     expect(timer.startedAt).toBeGreaterThanOrEqual(0);
+  });
+
+  it('falls back to Date.now when performance is unavailable', () => {
+    const originalPerformance = globalThis.performance;
+    vi.spyOn(Date, 'now').mockReturnValue(1234);
+    let startedAt: number;
+    Object.defineProperty(globalThis, 'performance', { configurable: true, value: undefined, writable: true });
+    try {
+      startedAt = startLogTimer('fallback').startedAt;
+    } finally {
+      Object.defineProperty(globalThis, 'performance', {
+        configurable: true,
+        value: originalPerformance,
+        writable: true,
+      });
+    }
+
+    expect(startedAt!).toBe(1234);
   });
 });
