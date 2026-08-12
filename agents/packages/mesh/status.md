@@ -14,10 +14,6 @@ by: principal
 Every item was re-checked against `packages/mesh/src/` (and `packages/types/src/`) on 2026-08-08.
 A file:line here is a claim about this tree, not about a session.
 
-- **Stale header comment naming a function that does not exist.**
-  `packages/types/src/MeshGeometry.ts:54` and `:80` both say `destroyMeshGeometryGPUData`; the package
-  exports `destroyMeshGeometryGlData` (`meshGeometry.ts:88`) and `destroyMeshGeometryWgpuData`
-  (`meshGeometry.ts:97`). Fixing it edits `packages/types`, outside the `mesh/` gate.
 - **No angle-threshold smooth normals.** `computeMeshGeometryFlatNormals`
   (`meshGeometryCompute.ts:114`) writes the face normal to all three vertex slots in place with
   last-write-wins; nothing named `*SmoothNormals` exists anywhere in `packages/`. The real version
@@ -99,6 +95,9 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-12** — the `destroyMeshGeometryGPUData` header references in
+  `packages/types/src/MeshGeometry.ts` now name the two functions that exist,
+  `destroyMeshGeometryGlData` and `destroyMeshGeometryWgpuData`. Closes the `Open` item.
 - **2026-08-12** — `wrapMeshGeometryUvs` removed, with the guard tier built for it the same day. The
   guard measured the fold destroying an ordinary 0..1 plane, which made the operation unfixable at its
   own granularity rather than mis-documented; see the `Open` item for the face-aware form that replaces
