@@ -48,6 +48,15 @@ claim about this tree, not about a session.
   in `rotateMatrix` (`matrix.ts:433`, `:437`, `:441`).
 - **There is no `crates/` directory in this repo.** The `crate: flighthq-geometry` stamp and every
   crate-conformance note point at the separate flight-rs repo, not at work reachable from this tree.
+- **The zero-length-direction contract is decided for the scalar ray functions and undecided for the
+  out-param ones.** `intersectRay3D{Aabb,Obb,Sphere,Capsule,Plane,Triangle}` all return `-1` for a
+  direction of zero length: not a ray, never a hit. `getClosestPointBetweenRay3Ds` has no `-1` to
+  return, and for a zero-length direction on ray `b` it writes ray `a`'s **origin** rather than the
+  projection of `b`'s origin onto `a` — for `a` = origin along +X and `b` = `(5, 1, 0)` with no
+  direction, it answers `(0, 0, 0)` where the nearest point is `(5, 0, 0)` (`ray3d.ts:64-78`). Its
+  guards (`bb !== 0` at `:73`, `aa !== 0` at `:76`) exist to keep the output finite rather than NaN,
+  and that is all `ray3d.test.ts` pins. Whether the "not a ray" rule extends to out-param functions,
+  and what they should write when it applies, is undecided.
 
 ## Log
 
