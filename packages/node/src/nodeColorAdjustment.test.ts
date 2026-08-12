@@ -19,6 +19,17 @@ describe('addNodeColorAdjustment', () => {
     expect(getNodeColorAdjustments(node)).toEqual([adjustment]);
     expect(getNodeRuntime(node).resolvedColorScaleBias?.redScale).toBeCloseTo(0x7f / 255);
   });
+
+  it('appends to an existing stack without replacing earlier adjustments', () => {
+    const node = createNode(NodeKind);
+    const first = createTintAdjustment(0xff0000ff);
+    const second = createTintAdjustment(0x00ff00ff);
+
+    addNodeColorAdjustment(node, first);
+    addNodeColorAdjustment(node, second);
+
+    expect(getNodeColorAdjustments(node)).toEqual([first, second]);
+  });
 });
 
 describe('getNodeColorAdjustments', () => {

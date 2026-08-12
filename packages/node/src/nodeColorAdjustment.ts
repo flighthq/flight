@@ -1,6 +1,5 @@
 import {
   COLOR_ADJUSTMENT_CHANNEL_MIXING,
-  COLOR_ADJUSTMENT_NONE,
   createTintAdjustment,
   resolveColorAdjustmentsColorMatrix,
   resolveColorAdjustmentsColorScaleBias,
@@ -63,12 +62,6 @@ function resolveNodeColorAdjustments(runtime: ColorAdjustmentRuntime): void {
   }
   const out = runtime.resolvedColorScaleBias ?? createColorScaleBias();
   const status = resolveColorAdjustmentsColorScaleBias(adjustments, out);
-  if (status === COLOR_ADJUSTMENT_NONE) {
-    runtime.resolvedColorScaleBias = null;
-    runtime.resolvedColorMatrix = null;
-    runtime.colorAdjustmentsUnsupported = false;
-    return;
-  }
   runtime.resolvedColorScaleBias = out;
   runtime.resolvedColorMatrix =
     status === COLOR_ADJUSTMENT_CHANNEL_MIXING ? resolveColorAdjustmentsColorMatrix(adjustments) : null;
