@@ -22,7 +22,7 @@ import type {
   WgpuVelocityContext,
   WgpuVelocityWriter,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 import { getVelocity } from '@flighthq/velocity/contract';
 
 // Wgpu velocity-buffer production, the mirror of scene2d-gl's webglVelocity. Velocity is tied to the
@@ -259,16 +259,16 @@ export function drawWgpuVelocityQuad(
 }
 
 export function getWgpuVelocityWriter(state: WgpuRenderState, kind: Kind): WgpuVelocityWriter | null {
-  return _velocityWriters.get(state)?.get(kind) ?? null;
+  const entry = getWgpuRenderStateRuntime(state).registries.velocityWriters.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 export function registerWgpuVelocityWriter(state: WgpuRenderState, kind: Kind, writer: WgpuVelocityWriter): void {
-  let writers = _velocityWriters.get(state);
-  if (writers === undefined) {
-    writers = new Map();
-    _velocityWriters.set(state, writers);
-  }
-  writers.set(kind, writer);
+  const runtime = getWgpuRenderStateRuntime(state);
+  const table = runtime.registries.velocityWriters;
+  const entries = new Map(table.entries);
+  entries.set(kind, { state: RegistryEntryState.Bound, value: writer });
+  runtime.registries.velocityWriters = { ...table, entries };
 }
 
 /**
@@ -418,11 +418,10 @@ const UNIFORM_SLOTS = 1024;
 
 const _scratchVelocity: Velocity2D = { x: 0, y: 0 };
 
-// Lazily compiled velocity pipeline per render state, the per-kind writer registry, and the currently open
-// velocity pass (set for the duration of renderWgpuVelocity so drawWgpuVelocityQuad can reach it from
-// just the public context). WeakMaps so all release when the state is GC'd.
+// Lazily compiled velocity pipeline per render state, and the currently open velocity pass (set for the
+// duration of renderWgpuVelocity so drawWgpuVelocityQuad can reach it from just the public context).
+// Per-kind writer policy lives in the render state's persistent registry aggregate.
 const _velocityPipelines = new WeakMap<WgpuRenderState, WgpuVelocityPipeline>();
-const _velocityWriters = new WeakMap<WgpuRenderState, Map<Kind, WgpuVelocityWriter>>();
 const _activeVelocityPasses = new WeakMap<
   WgpuRenderState,
   { pass: GPURenderPassEncoder; pipeline: WgpuVelocityPipeline }

@@ -104,6 +104,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
     renderEffects: screenRuntime.registries.renderEffects,
     shapeRasterizer: screenRuntime.registries.shapeRasterizer,
     textureResolvers: screenRuntime.registries.textureResolvers,
+    velocityWriters: screenRuntime.registries.velocityWriters,
   };
 
   cacheRuntime.uniformOffset = 0;

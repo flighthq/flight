@@ -12,6 +12,7 @@ import type { GlRenderTextureEntry, GlRenderTextureGuard } from './GlRenderTextu
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
+import type { GlVelocityWriter } from './GlVelocityWriter';
 import type { Image } from './Image';
 import type { Material } from './Material';
 import type { KeyedTable, SlotTable } from './RegistryTable';
@@ -36,6 +37,7 @@ export interface GlRenderRegistries {
   renderEffects: KeyedTable<GlRenderEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<GlTextureResolver>;
+  velocityWriters: KeyedTable<GlVelocityWriter>;
 }
 
 // A WebGL fixed-function realization of a blend-mode intent, registered per render state against a

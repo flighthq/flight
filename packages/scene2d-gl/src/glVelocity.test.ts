@@ -1,5 +1,6 @@
 import { createParticleEmitter2D, reserveParticleEmitter2D } from '@flighthq/particleemitter/contract';
 import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contract';
+import { createGlOffscreenRenderState, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { QuadBatchKind } from '@flighthq/types/contract';
@@ -127,6 +128,24 @@ describe('registerGlVelocityWriter', () => {
     const root = createDisplayObject();
     registerGlVelocityWriter(state, root.kind, defaultGlNode2DVelocityWriter);
     expect(getGlVelocityWriter(state, root.kind)).toBe(defaultGlNode2DVelocityWriter);
+  });
+
+  it('replaces persistent snapshots and preserves a derived pipeline snapshot', () => {
+    const { state } = createGlState();
+    const kind = 'acme.Velocity';
+    const replacement = vi.fn();
+    const before = getGlRenderStateRuntime(state).registries.velocityWriters;
+
+    registerGlVelocityWriter(state, kind, defaultGlNode2DVelocityWriter);
+    const registered = getGlRenderStateRuntime(state).registries.velocityWriters;
+    const offscreen = createGlOffscreenRenderState(state);
+    registerGlVelocityWriter(state, kind, replacement);
+
+    expect(registered).not.toBe(before);
+    expect(before.entries.has(kind)).toBe(false);
+    expect(registered.entries.get(kind)).toEqual({ state: 'bound', value: defaultGlNode2DVelocityWriter });
+    expect(getGlVelocityWriter(state, kind)).toBe(replacement);
+    expect(getGlVelocityWriter(offscreen, kind)).toBe(defaultGlNode2DVelocityWriter);
   });
 });
 
