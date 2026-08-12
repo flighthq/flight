@@ -37,6 +37,7 @@ export interface GlRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries {
   blendRealizations: KeyedTable<GlBlendRealization>;
+  customEffectShaders: KeyedTable<string>;
   customMaterialShaders: KeyedTable<GlCustomMaterialShaderSource>;
   materialRenderers: KeyedTable<GlMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<GlMeshMaterialRenderer>;

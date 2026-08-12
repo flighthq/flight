@@ -1,4 +1,12 @@
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import {
+  copyGlRenderStateRegistrations,
+  createGlRenderStateRuntime,
+  getGlRenderStateRuntime,
+} from '@flighthq/render-gl/contract';
+import { createRenderState } from '@flighthq/render/contract';
 import type { GlRenderState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   applyCustomShaderEffectToGl,
@@ -10,10 +18,10 @@ import {
   setGlCustomShaderSourceGuard,
 } from './glCustomShaderEffect';
 
-// The source registry is a plain WeakMap keyed by the render state, with no GL calls, so a bare
-// object stands in for a state. The compile/draw path is exercised by the functional render suite.
 function makeState(): GlRenderState {
-  return {} as GlRenderState;
+  const state = createRenderState() as GlRenderState;
+  state[EntityRuntimeKey] = createGlRenderStateRuntime();
+  return state;
 }
 
 const FRAGMENT_SRC = `#version 300 es
@@ -99,6 +107,23 @@ describe('registerGlCustomShaderSource', () => {
     registerGlCustomShaderSource(state, 'ripple', FRAGMENT_SRC);
     registerGlCustomShaderSource(state, 'ripple', replacement);
     expect(getGlCustomShaderSource(state, 'ripple')).toBe(replacement);
+  });
+
+  it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
+    const screen = makeState();
+    const derived = makeState();
+    const replacement = FRAGMENT_SRC.replace('texture(u_texture0, v_texCoord)', 'vec4(1.0)');
+    registerGlCustomShaderSource(screen, 'ripple', FRAGMENT_SRC);
+    const snapshot = getGlRenderStateRuntime(screen).registries.customEffectShaders;
+
+    copyGlRenderStateRegistrations(derived, screen);
+    registerGlCustomShaderSource(screen, 'ripple', replacement);
+
+    expect(getGlRenderStateRuntime(derived).registries.customEffectShaders).toBe(snapshot);
+    expect(getGlRenderStateRuntime(screen).registries.customEffectShaders).not.toBe(snapshot);
+    expect(getRegistryTableEntry(snapshot, 'ripple')).toBe(FRAGMENT_SRC);
+    expect(getGlCustomShaderSource(derived, 'ripple')).toBe(FRAGMENT_SRC);
+    expect(getGlCustomShaderSource(screen, 'ripple')).toBe(replacement);
   });
 });
 
