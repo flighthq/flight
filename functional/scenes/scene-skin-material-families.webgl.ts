@@ -128,10 +128,9 @@ invalidateNodeLocalTransform(bend);
 const scene = createScene3D().root;
 addNodeChild(scene, root);
 const materials: readonly Material[] = [
-  // Orthographic fragment w is 1 in the current Depth implementation; bracket that value so this
-  // skinning regression observes the silhouette while the separate orthographic-depth defect remains
-  // tracked independently.
-  createDepthMaterial({ far: 2, near: 0 }),
+  // The camera sits five view units away; bracket the bar around that real view-axis depth so the
+  // orthographic Depth output remains mid-gray and this scene can keep measuring its posed silhouette.
+  createDepthMaterial({ far: 6, near: 4 }),
   createNormalMaterial(),
   createMatcapMaterial({ tint: 0x40a0e0ff }),
   createWireframeMaterial({ color: 0xffffffff }),

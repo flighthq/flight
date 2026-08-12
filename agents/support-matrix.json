@@ -2095,6 +2095,31 @@
           }
         },
         {
+          "scene": "material-depth-orthographic",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            }
+          }
+        },
+        {
           "scene": "material-emissive",
           "backends": {
             "canvas": {

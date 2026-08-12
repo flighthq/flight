@@ -179,6 +179,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | `material-clearcoat` | · | · | ✓ | · |
 | `material-custom-shader` | · | · | ✓ | ✓ |
 | `material-depth` | · | · | ✓ | ✓ |
+| `material-depth-orthographic` | · | · | ✓ | · |
 | `material-emissive` | · | · | ✓ | ✓ |
 | `material-iridescence` | · | · | ✓ | · |
 | `material-lambert` | · | · | ✓ | ✓ |

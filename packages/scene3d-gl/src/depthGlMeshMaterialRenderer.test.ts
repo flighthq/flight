@@ -34,12 +34,15 @@ function makeProxy(): Scene3DRenderProxy {
 }
 
 describe('depthGlMeshMaterialRenderer', () => {
-  it('bind selects a program, sets depth/cull, view-projection, and the near/far range', () => {
+  it('bind selects a program and uploads depth state, view matrices, and the near/far range', () => {
     const { state, gl } = makeGlScene3DState();
-    depthGlMeshMaterialRenderer.bind(state, createDepthMaterial(), NO_LIGHTS, makeCamera());
+    const camera = makeCamera();
+    depthGlMeshMaterialRenderer.bind(state, createDepthMaterial(), NO_LIGHTS, camera);
     expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
     expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
-    expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
+    const matrixUploads = gl.calls.filter((c) => c.name === 'uniformMatrix4fv');
+    expect(matrixUploads.length).toBe(2);
+    expect(matrixUploads.some((c) => c.args[2] === camera.view.m)).toBe(true);
     expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(2);
   });
 
