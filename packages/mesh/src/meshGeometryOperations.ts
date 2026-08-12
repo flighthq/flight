@@ -3,6 +3,7 @@ import type {
   MeshGeometryFromAttributesOptions,
   MeshSubset,
   MeshTriangleVertexIndices,
+  PrimitiveTopology,
   VertexAttributeLayout,
 } from '@flighthq/types/contract';
 
@@ -210,8 +211,20 @@ export function mergeMeshGeometries(geometries: readonly Readonly<MeshGeometry>[
 }
 
 // Validates a geometry for common structural errors. Returns true when the geometry is valid.
-// Returns false (does not throw) for: index values out of vertex range, vertex stream length
-// not divisible by the layout stride, and NaN or Infinity in position attributes.
+// Returns false (does not throw) for: a vertex stream length not divisible by the layout stride, index
+// values out of vertex range, NaN or Infinity in ANY float32 attribute channel, a subset whose draw
+// range falls outside the element stream, and an element count that cannot form whole primitives for
+// the declared topology.
+//
+// The finite check covers every float channel, not only position, because a degenerate NORMAL, TANGENT
+// or UV reaches a shader just as a degenerate position does and is harder to see: normalize() of a zero
+// or NaN vector is undefined rather than merely misplaced. This validator sits between every importer
+// and the GPU, so it is the one seam where a whole class of upstream attribute defects can be caught
+// once instead of per-format.
+//
+// The draw-range check exists because a subset is a GPU draw call's offset and count. A range past the
+// end of the element stream is rejected by the driver, so passing it here means the validator approved
+// something no backend can execute.
 export function validateMeshGeometry(geometry: Readonly<MeshGeometry>): boolean {
   const floatsPerVertex = geometry.layout.stride / 4;
   if (floatsPerVertex <= 0) return false;
@@ -243,8 +256,73 @@ export function validateMeshGeometry(geometry: Readonly<MeshGeometry>): boolean 
       if (!isFinite(x) || !isFinite(y) || !isFinite(z)) return false;
     }
   }
+  if (!hasFiniteVertexChannels(geometry, floatsPerVertex, vertexCount)) return false;
+  if (!hasValidDrawRanges(geometry, vertexCount)) return false;
   return true;
 }
+
+// Every float32 channel of every vertex must be finite. Integer-formatted channels (joint indices,
+// packed colors) are exempt: their bit patterns are not floats and cannot be NaN.
+function hasFiniteVertexChannels(
+  geometry: Readonly<MeshGeometry>,
+  floatsPerVertex: number,
+  vertexCount: number,
+): boolean {
+  const verts = geometry.vertices;
+  for (const attribute of geometry.layout.attributes) {
+    if (!attribute.format.startsWith('float32')) continue;
+    const offset = attribute.byteOffset / 4;
+    const components = FLOAT32_COMPONENTS[attribute.format] ?? 0;
+    if (components === 0) continue;
+    for (let v = 0; v < vertexCount; v++) {
+      const base = v * floatsPerVertex + offset;
+      for (let c = 0; c < components; c++) {
+        if (!isFinite(verts[base + c])) return false;
+      }
+    }
+  }
+  return true;
+}
+
+// A subset is a draw call's [offset, offset + count) over the element stream — the index buffer when
+// indexed, the vertex sequence when not. The range must lie inside that stream, and the element count
+// must form whole primitives for the topology: a triangle list ending mid-triangle has no drawable
+// interpretation of its remainder, and a strip or fan shorter than three elements draws nothing.
+function hasValidDrawRanges(geometry: Readonly<MeshGeometry>, vertexCount: number): boolean {
+  const elementCount = geometry.indices !== null ? geometry.indices.length : vertexCount;
+  for (const subset of geometry.subsets) {
+    if (!Number.isInteger(subset.indexOffset) || !Number.isInteger(subset.indexCount)) return false;
+    if (subset.indexOffset < 0 || subset.indexCount < 0) return false;
+    if (subset.indexOffset + subset.indexCount > elementCount) return false;
+    if (!formsWholePrimitives(subset.indexCount, geometry.topology)) return false;
+  }
+  return formsWholePrimitives(elementCount, geometry.topology);
+}
+
+// Whether `count` elements form whole primitives under `topology`. Zero is always valid — an empty
+// range draws nothing, which is a legal state rather than a malformed one.
+function formsWholePrimitives(count: number, topology: PrimitiveTopology): boolean {
+  if (count === 0) return true;
+  switch (topology) {
+    case 'triangle-list':
+      return count % 3 === 0;
+    case 'triangle-strip':
+      return count >= 3;
+    case 'line-list':
+      return count % 2 === 0;
+    case 'line-strip':
+      return count >= 2;
+    case 'point-list':
+      return true;
+  }
+}
+
+const FLOAT32_COMPONENTS: Readonly<Record<string, number>> = {
+  float32: 1,
+  float32x2: 2,
+  float32x3: 3,
+  float32x4: 4,
+};
 
 // Checks whether two VertexAttributeLayouts are compatible for merging: same stride and the
 // same attributes in the same order (same semantic, format, and byteOffset).

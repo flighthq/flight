@@ -230,4 +230,79 @@ describe('validateMeshGeometry', () => {
     const geo = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: verts });
     expect(validateMeshGeometry(geo)).toBe(false);
   });
+
+  // Position was the only channel checked, so a degenerate normal, tangent or UV passed straight
+  // through. This validator sits between every importer and the GPU, and a NaN normal reaches a shader
+  // exactly as a NaN position does — normalize() of it is undefined rather than merely misplaced.
+  // Canonical layout float offsets: position 0..2, normal 3..5, tangent 6..9, uv0 10..11.
+  it.each([
+    ['a normal', 3],
+    ['a tangent', 6],
+    ['a uv', 10],
+  ])('returns false for NaN in %s', (_channel, offset) => {
+    const verts = new Float32Array(12);
+    verts[offset] = NaN;
+
+    expect(validateMeshGeometry(createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: verts }))).toBe(false);
+  });
+
+  it('returns false for Infinity in a tangent', () => {
+    const verts = new Float32Array(12);
+    verts[7] = Infinity;
+
+    expect(validateMeshGeometry(createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: verts }))).toBe(false);
+  });
+
+  // A subset is a draw call's offset and count. A range past the end of the element stream is one the
+  // driver rejects, so approving it here means the validator passed something no backend can execute.
+  it('returns false for a subset whose draw range runs past the index buffer', () => {
+    const geo = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2]),
+      layout: CANONICAL_LAYOUT,
+      vertices: new Float32Array(3 * 12),
+    });
+    geo.subsets = [{ indexCount: 99, indexOffset: 2 }];
+
+    expect(validateMeshGeometry(geo)).toBe(false);
+  });
+
+  // A triangle list ending mid-triangle has no drawable interpretation of its remainder.
+  it('returns false for an element count that cannot form whole triangles', () => {
+    const geo = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2, 0]),
+      layout: CANONICAL_LAYOUT,
+      vertices: new Float32Array(3 * 12),
+    });
+
+    expect(validateMeshGeometry(geo)).toBe(false);
+  });
+
+  it('accepts a line list with an even element count and rejects an odd one', () => {
+    const evenGeo = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 1, 2]),
+      layout: CANONICAL_LAYOUT,
+      topology: 'line-list',
+      vertices: new Float32Array(3 * 12),
+    });
+    const oddGeo = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2]),
+      layout: CANONICAL_LAYOUT,
+      topology: 'line-list',
+      vertices: new Float32Array(3 * 12),
+    });
+
+    expect(validateMeshGeometry(evenGeo)).toBe(true);
+    expect(validateMeshGeometry(oddGeo)).toBe(false);
+  });
+
+  // An empty range draws nothing, which is a legal state rather than a malformed one.
+  it('accepts an empty element stream', () => {
+    const geo = createMeshGeometry({
+      indices: new Uint16Array(0),
+      layout: CANONICAL_LAYOUT,
+      vertices: new Float32Array(3 * 12),
+    });
+
+    expect(validateMeshGeometry(geo)).toBe(true);
+  });
 });
