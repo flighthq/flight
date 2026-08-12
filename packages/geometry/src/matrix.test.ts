@@ -527,6 +527,18 @@ describe('matrixTransformBounds', () => {
     expect(out.height).toBeCloseTo(10);
   });
 
+  it('tracks the fourth corner as a new minimum after positive skew', () => {
+    const out = createRectangle();
+    matrixTransformBounds(out, createMatrix(1, 1, 1, 1), 0, 1, 1, 0);
+    expect(out).toMatchObject({ x: 0, y: 0, width: 2, height: 2 });
+  });
+
+  it('tracks the second and fourth corners after a reflected skew', () => {
+    const out = createRectangle();
+    matrixTransformBounds(out, createMatrix(-1, -1, 1, 1), 0, 0, 1, 1);
+    expect(out).toMatchObject({ x: -1, y: -1, width: 2, height: 2 });
+  });
+
   it('should handle flipped input coordinates', () => {
     const rect = createRectangle(10, 20, -10, -20);
     const mat = createMatrix();
@@ -1107,6 +1119,12 @@ describe('setMatrixIdentity', () => {
 });
 
 describe('setTransformMatrix', () => {
+  it('builds scale and translation without rotation', () => {
+    const out = createMatrix(9, 9, 9, 9, 9, 9);
+    setTransformMatrix(out, 2, 4, 0, 10, 100);
+    expect(out).toMatchObject({ a: 2, b: 0, c: 0, d: 4, tx: 10, ty: 100 });
+  });
+
   it('should apply rotate, scale and translation', () => {
     const m1 = createMatrix();
     rotateMatrix(m1, m1, 45);
