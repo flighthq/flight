@@ -22,6 +22,17 @@ describe('destroyGlScene3DRuntime', () => {
     expect(gl.calls.some((c) => c.name.startsWith('delete'))).toBe(false);
   });
 
+  it('clears an allocated runtime with no optional GPU resources', () => {
+    const { state, gl } = makeGlScene3DState();
+    const scene = getGlScene3DRuntime(state);
+
+    destroyGlScene3DRuntime(state);
+
+    expect(gl.calls.some((c) => c.name.startsWith('delete'))).toBe(false);
+    expect(scene.blendedDrawList).toHaveLength(0);
+    expect(scene.opaqueDrawList).toHaveLength(0);
+  });
+
   it('frees the cached programs, the IBL set, the environment cube, and the shadow target, then clears the slots', () => {
     const { state, gl } = makeGlScene3DState();
     const scene = getGlScene3DRuntime(state);
@@ -111,6 +122,7 @@ describe('getGlScene3DRuntime', () => {
   it('lazily allocates one runtime per state and returns the same instance', () => {
     const { state } = makeGlScene3DState();
     const first = getGlScene3DRuntime(state);
+    expect(first.activeBlendedRun).toBe(false);
     expect(first.activeMeshProgram).toBeNull();
     expect(first.blendedDrawList).toBeInstanceOf(Array);
     expect(first.blendedPool).toBeInstanceOf(Array);

@@ -131,6 +131,23 @@ describe('drawGlScene3D', () => {
     expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(true);
   });
 
+  it('keeps depth writes disabled across blended material rebinds and restores them after', () => {
+    const { state, gl } = makeGlScene3DState();
+    registerGlStandardPbrMaterial(state);
+
+    const scene = createNode3D(Node3DKind);
+    const firstMaterial = createStandardPbrMaterial({ alphaMode: 'blend' });
+    const secondMaterial = createStandardPbrMaterial({ alphaMode: 'blend' });
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [firstMaterial]));
+    addNodeChild(scene, createMesh(createBoxMeshGeometry(), [secondMaterial]));
+
+    drawGlScene3D(state, scene, makeCamera(), LIGHTS);
+
+    expect(gl.calls.filter((c) => c.name === 'useProgram')).toHaveLength(2);
+    expect(gl.calls.filter((c) => c.name === 'depthMask').map((c) => c.args[0])).toEqual([false, false, true]);
+    expect(getGlScene3DRuntime(state).activeBlendedRun).toBe(false);
+  });
+
   it('applies the surface material blendMode for a blended subset', () => {
     const { state, gl } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
