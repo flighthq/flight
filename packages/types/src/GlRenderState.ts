@@ -4,6 +4,7 @@ import type { Kind } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
+import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlModifierSnippet } from './GlModifierSnippet';
@@ -36,6 +37,7 @@ export interface GlRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries {
   blendRealizations: KeyedTable<GlBlendRealization>;
+  customMaterialShaders: KeyedTable<GlCustomMaterialShaderSource>;
   materialRenderers: KeyedTable<GlMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<GlMeshMaterialRenderer>;
   modifierSnippets: KeyedTable<GlModifierSnippet>;

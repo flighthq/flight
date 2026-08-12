@@ -2,6 +2,8 @@ import { createCamera3D } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
+import { copyGlRenderStateRegistrations, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
@@ -12,6 +14,7 @@ import {
   registerGlCustomMaterialShader,
 } from './customShaderGlMeshMaterialRenderer';
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
 function makeCamera(): Camera3D {
@@ -143,6 +146,25 @@ describe('getGlCustomMaterialShaderSource', () => {
 });
 
 describe('registerGlCustomMaterialShader', () => {
+  it('replaces the persistent table while an explicitly copied state retains its snapshot', () => {
+    const { state: screen } = makeGlScene3DState();
+    const { state: derived } = makeGlScene3DState();
+    const source = { fragment: 'first', vertex: 'first' };
+    const replacement = { fragment: 'replacement', vertex: 'replacement' };
+    registerGlCustomMaterialShader(screen, 'ripple', source);
+    const snapshot = getGlRenderStateRuntime(screen).registries.customMaterialShaders;
+
+    copyGlRenderStateRegistrations(derived, screen);
+    getGlScene3DRuntime(derived);
+    registerGlCustomMaterialShader(screen, 'ripple', replacement);
+
+    expect(getGlRenderStateRuntime(derived).registries.customMaterialShaders).toBe(snapshot);
+    expect(getGlRenderStateRuntime(screen).registries.customMaterialShaders).not.toBe(snapshot);
+    expect(getRegistryTableEntry(snapshot, 'ripple')).toBe(source);
+    expect(getGlCustomMaterialShaderSource(derived, 'ripple')).toBe(source);
+    expect(getGlCustomMaterialShaderSource(screen, 'ripple')).toBe(replacement);
+  });
+
   it('stores shader source retrievable by key', () => {
     const { state } = makeGlScene3DState();
     const source = { fragment: FRAGMENT_SRC, vertex: VERTEX_SRC };

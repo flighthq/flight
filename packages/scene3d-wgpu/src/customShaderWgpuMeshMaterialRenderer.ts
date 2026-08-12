@@ -1,3 +1,4 @@
+import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuBitmapTextureResolver,
@@ -15,7 +16,7 @@ import type {
   WgpuMeshPipeline,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { CustomShaderMaterialKind } from '@flighthq/types/contract';
+import { CustomShaderMaterialKind, RegistryEntryState } from '@flighthq/types/contract';
 
 import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -114,7 +115,8 @@ export function getWgpuCustomMaterialShaderSource(
   state: WgpuRenderState,
   shaderKey: string,
 ): WgpuCustomMaterialShaderSource | null {
-  return _customMaterialShaders.get(state)?.get(shaderKey) ?? null;
+  const entry = getWgpuRenderStateRuntime(state).registries.customMaterialShaders.entries.get(shaderKey);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 // Registers a complete WGSL module for a CustomShaderMaterial shaderKey.
@@ -141,12 +143,12 @@ export function registerWgpuCustomMaterialShader(
   shaderKey: string,
   wgslSource: WgpuCustomMaterialShaderSource,
 ): void {
-  let registry = _customMaterialShaders.get(state);
-  if (registry === undefined) {
-    registry = new Map();
-    _customMaterialShaders.set(state, registry);
-  }
-  registry.set(shaderKey, wgslSource);
+  const runtime = getWgpuRenderStateRuntime(state);
+  runtime.registries.customMaterialShaders = withRegistryTableEntry(
+    runtime.registries.customMaterialShaders,
+    shaderKey,
+    wgslSource,
+  );
 }
 
 // Installs CustomShaderMaterialKind in this state's WGPU mesh-material registry.
@@ -320,7 +322,6 @@ function overwriteCache<T>(cache: T[], source: readonly T[]): void {
   for (let i = 0; i < source.length; i++) cache[i] = source[i];
 }
 
-const _customMaterialShaders = new WeakMap<WgpuRenderState, Map<string, WgpuCustomMaterialShaderSource>>();
 const _customMaterialLayouts = new WeakMap<WgpuRenderState, CustomMaterialLayouts>();
 const _customMaterialBindings = new WeakMap<WgpuRenderState, WeakMap<object, CustomMaterialBinding>>();
 const _uniformScratch = new Float32Array(WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY * 4);

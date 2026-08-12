@@ -29,6 +29,7 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   targetRuntime.wgpuColorAdjustmentMaterialFeatureGuard = sourceRuntime.wgpuColorAdjustmentMaterialFeatureGuard;
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
+    customMaterialShaders: sourceRuntime.registries.customMaterialShaders,
     materialRenderers: sourceRuntime.registries.materialRenderers,
     meshMaterialRenderers: sourceRuntime.registries.meshMaterialRenderers,
     modifierSnippets: sourceRuntime.registries.modifierSnippets,
@@ -253,6 +254,7 @@ export async function createWgpuRenderState(
 export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.registries = {
+    customMaterialShaders: createKeyedTable('WgpuCustomMaterialShader', 'Unregistered'),
     materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
     meshMaterialRenderers: createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial'),
     modifierSnippets: createKeyedTable('WgpuModifierSnippet', 'Unregistered'),

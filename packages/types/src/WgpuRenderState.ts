@@ -14,6 +14,7 @@ import type { TextureSource } from './TextureSource';
 import type { TintMaterialData } from './TintMaterialData';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
+import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
@@ -35,6 +36,7 @@ export interface WgpuRenderState extends RenderState {
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries {
+  customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
   materialRenderers: KeyedTable<WgpuMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
   modifierSnippets: KeyedTable<WgpuModifierSnippet>;
