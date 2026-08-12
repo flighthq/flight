@@ -10,6 +10,16 @@ export function drawGlScene2D(_state: GlRenderState, _renderProxy: RenderProxy2D
 }
 
 export function renderGlScene2D(state: GlRenderState, source: Node2D): void {
+  const gl = state.gl;
+  // The 2D pass declares the state it draws under instead of inheriting it. Both of these were
+  // previously taken on trust from createGlRenderState, which runs once per state, so any pass that
+  // flipped one — the 3D mesh path enables both per draw — silently changed how 2D content rasterized
+  // from that point on. Culling is the destructive one: the 2D quad is wound (x0,y0)(x1,y0)(x1,y1) in
+  // a y-down space that the projection flips, making it a BACK face under the CCW default, so leaving
+  // CULL_FACE enabled erases 2D content completely rather than degrading it.
+  gl.disable(gl.CULL_FACE);
+  gl.disable(gl.DEPTH_TEST);
+
   const tempStack = getGlRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
 
