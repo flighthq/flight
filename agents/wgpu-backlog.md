@@ -12,6 +12,22 @@ by: manager
 > Deferral is a scheduling choice. Nothing here is closed, dismissed, or downgraded. When WGPU work is
 > scheduled, this is the queue, weakest-first is not the ordering — severity is, and it is stated per
 > entry.
+>
+> **Why deferred (2026-08-12, standing):** WebGPU support is **aspirational**, and it **does not run on
+> the maintainer's host machine at present**. Two consequences that should shape any WGPU work, not just
+> its priority:
+>
+> 1. **A WGPU fix cannot be verified by the maintainer.** Agents *can* exercise WebGPU in-sandbox
+>    (headless Chromium with the software adapter, on a secure-context origin), so agent-side capture
+>    evidence is real — but it is **unverifiable at the boundary it has to cross**. Treat any WGPU
+>    capture claim as trust-only from the maintainer's side and say so when reporting one.
+> 2. **GL and WGPU are expected to diverge while this holds.** A backend split is a recorded state, not
+>    an anomaly. Scope functional scenes to the backends actually being fixed and record the WGPU gap
+>    here, rather than leaving a permanently red gate that everyone learns to ignore.
+>
+> When a scene is deliberately scoped to exclude WebGPU because of an entry below, **that entry must say
+> which scene to widen** once the fix lands. The backlog is the only memory that the narrowing was
+> temporary.
 
 Cross-package by design: it spans `render-wgpu`, `scene3d-wgpu`, `scene2d-wgpu`, and `effects-wgpu`,
 so it does not live in any one package cell. Each affected cell's `status.md` `## Open` carries a
