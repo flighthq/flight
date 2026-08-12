@@ -6,6 +6,9 @@ import type { GlMeshProgram } from './GlMeshProgram';
 export interface GlMatcapDefineKey {
   alphaMaskEnabled: boolean;
   hasMatcap: boolean;
+  // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlMatcapProgram
+  // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
+  hasSkin?: boolean;
 }
 
 // A compiled matcap variant plus its resolved uniform locations. Extends GlMeshProgram with the

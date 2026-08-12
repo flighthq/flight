@@ -10,6 +10,22 @@ import type {
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
+export function bindGlVertexAttribute(
+  gl: WebGL2RenderingContext,
+  attribute: Readonly<VertexAttribute>,
+  stride: number,
+): void {
+  const location = ATTRIBUTE_LOCATION[attribute.semantic];
+  if (location === undefined) return;
+  const [size, type, normalized] = resolveGlVertexFormat(gl, attribute.format);
+  gl.enableVertexAttribArray(location);
+  // Every built-in mesh shader declares these locations as float/vec inputs. WebGL therefore needs
+  // vertexAttribPointer even when storage is integer: it converts uint joints to float values and
+  // normalizes unorm weights/colors. vertexAttribIPointer is only valid for ivec/uvec shader inputs
+  // and creates a link/input-type mismatch here.
+  gl.vertexAttribPointer(location, size, type, normalized, stride, attribute.byteOffset);
+}
+
 // Frees the GL objects owned by a mesh upload — the VAO and the vertex/index buffers. The upload
 // must not be used after this call. The upload cache is a WeakMap keyed by the geometry entity, so
 // its entry falls away on its own once the geometry is GC'd; this frees the GPU resources now rather
@@ -20,6 +36,76 @@ export function destroyGlMeshUpload(state: GlRenderState, upload: Readonly<GlMes
   gl.deleteBuffer(upload.vertexBuffer);
   if (upload.indexBuffer !== null) gl.deleteBuffer(upload.indexBuffer);
 }
+
+function getGlPrimitiveMode(gl: WebGL2RenderingContext, topology: PrimitiveTopology): number {
+  switch (topology) {
+    case 'line-list':
+      return gl.LINES;
+    case 'line-strip':
+      return gl.LINE_STRIP;
+    case 'point-list':
+      return gl.POINTS;
+    case 'triangle-strip':
+      return gl.TRIANGLE_STRIP;
+    default:
+      return gl.TRIANGLES;
+  }
+}
+
+// Builds the STATIC bind-pose vertex buffer a GPU-skinned mesh uploads: a copy of the interleaved
+// buffer with position and normal restored from the captured skin bind pose. tangent/uv0/joints0/
+// weights0 are already static (updateMeshSkin rewrites only position/normal), so copying them straight
+// from geometry.vertices is correct. The GPU deforms this fixed buffer through the joint palette.
+function buildSkinBindVertices(geometry: Readonly<MeshGeometry>, bindPose: Readonly<MeshSkinBindPose>): Float32Array {
+  const out = geometry.vertices.slice();
+  const floatsPerVertex = geometry.layout.stride / 4;
+  const positionOffset = floatOffsetForSemantic(geometry, 'position');
+  const normalOffset = floatOffsetForSemantic(geometry, 'normal');
+  const { normals, positions } = bindPose;
+  const vertexCount = (positions.length / 3) | 0;
+  for (let v = 0; v < vertexCount; v++) {
+    const base = v * floatsPerVertex;
+    const s = v * 3;
+    if (positionOffset >= 0) {
+      out[base + positionOffset] = positions[s]!;
+      out[base + positionOffset + 1] = positions[s + 1]!;
+      out[base + positionOffset + 2] = positions[s + 2]!;
+    }
+    if (normalOffset >= 0) {
+      out[base + normalOffset] = normals[s]!;
+      out[base + normalOffset + 1] = normals[s + 1]!;
+      out[base + normalOffset + 2] = normals[s + 2]!;
+    }
+  }
+  return out;
+}
+
+// The float offset (byteOffset / 4) of a semantic within an interleaved vertex record, or -1 when the
+// layout does not carry it.
+function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: string): number {
+  const attributes = geometry.layout.attributes;
+  for (let i = 0; i < attributes.length; i++) {
+    if (attributes[i].semantic === semantic) return attributes[i].byteOffset / 4;
+  }
+  return -1;
+}
+
+// Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's
+// VAO wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
+// (position/normal/tangent/uv0); `color0` (location 4) is bound only when a geometry's layout carries
+// it (the VertexColor path); `uv1` (location 5) is the second UV set (occlusion/lightmap channel per
+// glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the skinning channels the HAS_SKIN vertex
+// scene2d reads (see GL_SKIN_VERTEX_DECLARATIONS_GLSL). Semantics absent from a layout are left unbound.
+const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
+  color0: 4,
+  joints0: 6,
+  normal: 1,
+  position: 0,
+  tangent: 2,
+  uv0: 3,
+  uv1: 5,
+  weights0: 7,
+};
 
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into a VAO for this
 // GlRenderState, caching the result keyed by the geometry entity (the per-state parallel of
@@ -112,88 +198,6 @@ export function ensureGlMeshUpload(
   upload.primitiveMode = primitiveMode;
   upload.version = geometry.version;
   return upload;
-}
-
-function getGlPrimitiveMode(gl: WebGL2RenderingContext, topology: PrimitiveTopology): number {
-  switch (topology) {
-    case 'line-list':
-      return gl.LINES;
-    case 'line-strip':
-      return gl.LINE_STRIP;
-    case 'point-list':
-      return gl.POINTS;
-    case 'triangle-strip':
-      return gl.TRIANGLE_STRIP;
-    default:
-      return gl.TRIANGLES;
-  }
-}
-
-// Builds the STATIC bind-pose vertex buffer a GPU-skinned mesh uploads: a copy of the interleaved
-// buffer with position and normal restored from the captured skin bind pose. tangent/uv0/joints0/
-// weights0 are already static (updateMeshSkin rewrites only position/normal), so copying them straight
-// from geometry.vertices is correct. The GPU deforms this fixed buffer through the joint palette.
-function buildSkinBindVertices(geometry: Readonly<MeshGeometry>, bindPose: Readonly<MeshSkinBindPose>): Float32Array {
-  const out = geometry.vertices.slice();
-  const floatsPerVertex = geometry.layout.stride / 4;
-  const positionOffset = floatOffsetForSemantic(geometry, 'position');
-  const normalOffset = floatOffsetForSemantic(geometry, 'normal');
-  const { normals, positions } = bindPose;
-  const vertexCount = (positions.length / 3) | 0;
-  for (let v = 0; v < vertexCount; v++) {
-    const base = v * floatsPerVertex;
-    const s = v * 3;
-    if (positionOffset >= 0) {
-      out[base + positionOffset] = positions[s]!;
-      out[base + positionOffset + 1] = positions[s + 1]!;
-      out[base + positionOffset + 2] = positions[s + 2]!;
-    }
-    if (normalOffset >= 0) {
-      out[base + normalOffset] = normals[s]!;
-      out[base + normalOffset + 1] = normals[s + 1]!;
-      out[base + normalOffset + 2] = normals[s + 2]!;
-    }
-  }
-  return out;
-}
-
-// The float offset (byteOffset / 4) of a semantic within an interleaved vertex record, or -1 when the
-// layout does not carry it.
-function floatOffsetForSemantic(geometry: Readonly<MeshGeometry>, semantic: string): number {
-  const attributes = geometry.layout.attributes;
-  for (let i = 0; i < attributes.length; i++) {
-    if (attributes[i].semantic === semantic) return attributes[i].byteOffset / 4;
-  }
-  return -1;
-}
-
-// Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's
-// VAO wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
-// (position/normal/tangent/uv0); `color0` (location 4) is bound only when a geometry's layout carries
-// it (the VertexColor path); `uv1` (location 5) is the second UV set (occlusion/lightmap channel per
-// glTF TEXCOORD_1); `joints0`/`weights0` (locations 6–7) are the skinning channels the HAS_SKIN vertex
-// scene2d reads (see GL_SKIN_VERTEX_DECLARATIONS_GLSL). Semantics absent from a layout are left unbound.
-const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
-  color0: 4,
-  joints0: 6,
-  normal: 1,
-  position: 0,
-  tangent: 2,
-  uv0: 3,
-  uv1: 5,
-  weights0: 7,
-};
-
-function bindGlVertexAttribute(gl: WebGL2RenderingContext, attribute: Readonly<VertexAttribute>, stride: number): void {
-  const location = ATTRIBUTE_LOCATION[attribute.semantic];
-  if (location === undefined) return;
-  const [size, type, normalized] = resolveGlVertexFormat(gl, attribute.format);
-  gl.enableVertexAttribArray(location);
-  // Every built-in mesh shader declares these locations as float/vec inputs. WebGL therefore needs
-  // vertexAttribPointer even when storage is integer: it converts uint joints to float values and
-  // normalizes unorm weights/colors. vertexAttribIPointer is only valid for ivec/uvec shader inputs
-  // and creates a link/input-type mismatch here.
-  gl.vertexAttribPointer(location, size, type, normalized, stride, attribute.byteOffset);
 }
 
 // Maps a VertexFormat to its [componentCount, glType, normalized] tuple. The canonical PBR record

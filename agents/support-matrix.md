@@ -276,6 +276,7 @@ Hand-authored (from the maturity audit): capabilities with **no functional scene
 | Scene | Canvas | DOM | WebGL | WebGPU |
 | --- | :-: | :-: | :-: | :-: |
 | `scene-morph` | · | · | ✓ | ✓ |
+| `scene-skin-material-families` | · | · | ✓ | · |
 | `scene-skin-morph-compose` | · | · | ✓ | ✓ |
 | `scene-skin-nonuniform-normals` | · | · | ✓ | ✓ |
 | `scene-skin-two-skeletons` | · | · | ✓ | ✓ |

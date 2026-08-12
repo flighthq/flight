@@ -37,9 +37,10 @@ describe('bindGlDebugRange', () => {
 
 describe('buildGlDebugDefineKey', () => {
   it('produces distinct stable strings per mode and normal-map flag', () => {
-    expect(buildGlDebugDefineKey(DEPTH)).toBe('d-');
-    expect(buildGlDebugDefineKey(NORMAL)).toBe('n-');
-    expect(buildGlDebugDefineKey(NORMAL_MAP)).toBe('nm');
+    expect(buildGlDebugDefineKey(DEPTH)).toBe('d--');
+    expect(buildGlDebugDefineKey(NORMAL)).toBe('n--');
+    expect(buildGlDebugDefineKey(NORMAL_MAP)).toBe('nm-');
+    expect(buildGlDebugDefineKey({ ...DEPTH, hasSkin: true })).toBe('d-k');
   });
 });
 
@@ -66,10 +67,20 @@ describe('ensureGlDebugProgram', () => {
 
     const keys = [...getGlScene3DRuntime(state).programCache.keys()];
     expect(keys.some((k) => k.startsWith('debug:'))).toBe(true);
-    expect(keys).toContain('debug:d-');
-    expect(keys).toContain('debug:n-');
+    expect(keys).toContain('debug:d--');
+    expect(keys).toContain('debug:n--');
     // The two distinct variants compiled exactly once each.
     expect(gl.calls.filter((c) => c.name === 'linkProgram').length).toBe(2);
+  });
+
+  it('caches rigid and skinned variants independently from the active draw run', () => {
+    const { state } = makeGlScene3DState();
+    const rigid = ensureGlDebugProgram(state, DEPTH);
+    getGlScene3DRuntime(state).activeSkinnedRun = true;
+    const skinned = ensureGlDebugProgram(state, DEPTH);
+
+    expect(skinned).not.toBe(rigid);
+    expect([...getGlScene3DRuntime(state).programCache.keys()]).toEqual(['debug:d--', 'debug:d-k']);
   });
 });
 
@@ -91,6 +102,19 @@ describe('getGlDebugVertexSourceForKey', () => {
     expect(source).toContain('u_viewProjection');
     expect(getGlDebugVertexSourceForKey(DEPTH)).toContain('a_position');
   });
+
+  it('deforms position, normal, and tangent only in the skinned variant', () => {
+    const rigid = getGlDebugVertexSourceForKey(NORMAL);
+    const skinned = getGlDebugVertexSourceForKey({ ...NORMAL, hasSkin: true });
+
+    expect(rigid).not.toContain('#define HAS_SKIN');
+    expect(rigid).not.toContain('skinMatrix() *');
+    expect(skinned).toContain('#define HAS_SKIN');
+    expect(skinned).toContain('uniform highp sampler2D u_jointTexture');
+    expect(skinned).toContain('mat4 skin = skinMatrix()');
+    expect(skinned).toContain('skinNormalMatrix() * a_normal');
+    expect(skinned).toContain('mat3(skin) * a_tangent.xyz');
+  });
 });
 
 describe('tangent frame under a model transform', () => {
@@ -98,7 +122,8 @@ describe('tangent frame under a model transform', () => {
     const vertex = getGlDebugVertexSourceForKey(NORMAL);
     expect(vertex).toContain('mat3 modelRotation = mat3(u_model);');
     expect(vertex).toContain('determinant(modelRotation) < 0.0 ? -1.0 : 1.0');
-    expect(vertex).toContain('v_tangent = vec4(modelRotation * a_tangent.xyz, tangentHandedness);');
+    expect(vertex).toContain('v_tangent = vec4(modelRotation * localTangent, tangentHandedness);');
     expect(vertex).not.toContain('u_normalMatrix * a_tangent');
+    expect(vertex).not.toContain('u_normalMatrix * localTangent');
   });
 });

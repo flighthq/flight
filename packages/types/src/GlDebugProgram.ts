@@ -17,5 +17,8 @@ export interface GlDebugProgram extends GlMeshProgram {
 // ignores it). Distinct keys compile and cache as distinct programs.
 export interface GlDebugDefineKey {
   hasNormalMap: boolean;
+  // Whether this variant deforms the vertex by a bone palette (HAS_SKIN). Set by ensureGlDebugProgram
+  // from the render-state skinned-run flag, not the material renderer — skinning keys off geometry.
+  hasSkin?: boolean;
   mode: 'depth' | 'normal';
 }

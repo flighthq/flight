@@ -13,7 +13,12 @@ import type {
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, setGlMeshViewProjection, uploadGlMeshDrawAlpha } from './glMeshProgram';
+import {
+  beginGlMeshDraw,
+  bindGlMeshSkinPalette,
+  setGlMeshViewProjection,
+  uploadGlMeshDrawAlpha,
+} from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { ensureGlWireframeProgram } from './glWireframePrelude';
 import { ensureGlWireframeUpload } from './glWireframeUpload';
@@ -57,7 +62,8 @@ export const wireframeGlMeshMaterialRenderer: GlMeshMaterialRenderer = {
     // This family bypasses drawGlMeshSubset, so it uploads the per-draw object alpha itself.
     uploadGlMeshDrawAlpha(gl, program, proxy.alpha ?? 1, proxy.material);
 
-    const upload = ensureGlWireframeUpload(state, geometry);
+    const gpuSkinned = bindGlMeshSkinPalette(state, program, proxy);
+    const upload = ensureGlWireframeUpload(state, geometry, gpuSkinned);
     const subset = proxy.subset;
     // Each triangle index contributes two line indices, so the subset's line range is its triangle
     // range scaled by 2.

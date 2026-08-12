@@ -3449,6 +3449,31 @@
           }
         },
         {
+          "scene": "scene-skin-material-families",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            }
+          }
+        },
+        {
           "scene": "scene-skin-morph-compose",
           "backends": {
             "canvas": {
