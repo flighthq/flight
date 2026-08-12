@@ -20,6 +20,7 @@ import {
   createTorusKnotMeshGeometry,
   createTorusMeshGeometry,
 } from './meshGeometryBuilders';
+import { validateMeshGeometry } from './meshGeometryOperations';
 
 function expectUnitNormals(geometry: Readonly<MeshGeometry>): void {
   const count = getMeshGeometryVertexCount(geometry);
@@ -40,6 +41,10 @@ function expectUnitTangents(geometry: Readonly<MeshGeometry>): void {
     expect(len).toBeCloseTo(1, 4);
     expect(Math.abs(geometry.vertices[b + 3])).toBe(1);
   }
+}
+
+function expectFiniteCanonicalRecord(geometry: Readonly<MeshGeometry>): void {
+  for (const value of geometry.vertices) expect(Number.isFinite(value)).toBe(true);
 }
 
 // Asserts a triangle's geometric face normal agrees with its vertices' averaged shading normal, so
@@ -125,6 +130,15 @@ describe('createCylinderMeshGeometry', () => {
     expect(geometry.bounds!.max.x).toBeCloseTo(0.5, 2);
     expectUnitNormals(geometry);
     expectUnitTangents(geometry);
+  });
+
+  it('keeps cylinder and cone records finite when height is zero', () => {
+    const cylinder = createCylinderMeshGeometry(0.5, 0.5, 0, 8);
+    const cone = createConeMeshGeometry(0.5, 0, 8);
+    expectFiniteCanonicalRecord(cylinder);
+    expectFiniteCanonicalRecord(cone);
+    expect(validateMeshGeometry(cylinder)).toBe(true);
+    expect(validateMeshGeometry(cone)).toBe(true);
   });
 });
 
@@ -251,5 +265,74 @@ describe('createTorusMeshGeometry', () => {
     expect(geometry.bounds!.max.z).toBeCloseTo(0.2, 2);
     expectUnitNormals(geometry);
     expectWindingMatchesNormals(geometry);
+  });
+});
+
+describe('mesh builder count inputs', () => {
+  const polyhedronVertices: ReadonlyArray<readonly [number, number, number]> = [
+    [0, 1, 0],
+    [-1, -1, 0],
+    [1, -1, 0],
+  ];
+  const polyhedronFaces: ReadonlyArray<readonly [number, number, number]> = [[0, 1, 2]];
+
+  it.each([
+    ['capsule', () => createCapsuleMeshGeometry(0.5, 1, 3.5, 1.5), () => createCapsuleMeshGeometry(0.5, 1, 3, 1)],
+    ['circle', () => createCircleMeshGeometry(0.5, 3.5), () => createCircleMeshGeometry(0.5, 3)],
+    ['cone', () => createConeMeshGeometry(0.5, 1, 3.5), () => createConeMeshGeometry(0.5, 1, 3)],
+    ['cylinder', () => createCylinderMeshGeometry(0.5, 0.5, 1, 3.5), () => createCylinderMeshGeometry(0.5, 0.5, 1, 3)],
+    ['dodecahedron', () => createDodecahedronMeshGeometry(0.5, 1.5), () => createDodecahedronMeshGeometry(0.5, 1)],
+    ['icosahedron', () => createIcosahedronMeshGeometry(0.5, 1.5), () => createIcosahedronMeshGeometry(0.5, 1)],
+    ['icosphere', () => createIcosphereMeshGeometry(0.5, 1.5), () => createIcosphereMeshGeometry(0.5, 1)],
+    ['octahedron', () => createOctahedronMeshGeometry(0.5, 1.5), () => createOctahedronMeshGeometry(0.5, 1)],
+    ['plane', () => createPlaneMeshGeometry(1, 1, 1.5, 1.5), () => createPlaneMeshGeometry(1, 1, 1, 1)],
+    [
+      'polyhedron',
+      () => createPolyhedronMeshGeometry(polyhedronVertices, polyhedronFaces, 0.5, 1.5),
+      () => createPolyhedronMeshGeometry(polyhedronVertices, polyhedronFaces, 0.5, 1),
+    ],
+    ['ring', () => createRingMeshGeometry(0.25, 0.5, 3.5), () => createRingMeshGeometry(0.25, 0.5, 3)],
+    ['sphere', () => createSphereMeshGeometry(0.5, 3.5, 2.5), () => createSphereMeshGeometry(0.5, 3, 2)],
+    [
+      'torus knot',
+      () => createTorusKnotMeshGeometry(0.5, 0.15, 3.5, 3.5),
+      () => createTorusKnotMeshGeometry(0.5, 0.15, 3, 3),
+    ],
+    ['torus', () => createTorusMeshGeometry(0.5, 0.2, 3.5, 3.5), () => createTorusMeshGeometry(0.5, 0.2, 3, 3)],
+  ])('floors every fractional %s count and produces a valid mesh', (_name, fractional, floored) => {
+    const actual = fractional();
+    const expected = floored();
+    expect(validateMeshGeometry(actual)).toBe(true);
+    expect(getMeshGeometryVertexCount(actual)).toBe(getMeshGeometryVertexCount(expected));
+    expect(getMeshGeometryIndexCount(actual)).toBe(getMeshGeometryIndexCount(expected));
+  });
+
+  it.each([
+    ['capsule radialSegments', (value: number) => createCapsuleMeshGeometry(0.5, 1, value, 1)],
+    ['capsule capSegments', (value: number) => createCapsuleMeshGeometry(0.5, 1, 3, value)],
+    ['circle segments', (value: number) => createCircleMeshGeometry(0.5, value)],
+    ['cone radialSegments', (value: number) => createConeMeshGeometry(0.5, 1, value)],
+    ['cylinder radialSegments', (value: number) => createCylinderMeshGeometry(0.5, 0.5, 1, value)],
+    ['dodecahedron detail', (value: number) => createDodecahedronMeshGeometry(0.5, value)],
+    ['icosahedron detail', (value: number) => createIcosahedronMeshGeometry(0.5, value)],
+    ['icosphere subdivisions', (value: number) => createIcosphereMeshGeometry(0.5, value)],
+    ['octahedron detail', (value: number) => createOctahedronMeshGeometry(0.5, value)],
+    ['plane widthSegments', (value: number) => createPlaneMeshGeometry(1, 1, value, 1)],
+    ['plane depthSegments', (value: number) => createPlaneMeshGeometry(1, 1, 1, value)],
+    [
+      'polyhedron detail',
+      (value: number) => createPolyhedronMeshGeometry(polyhedronVertices, polyhedronFaces, 0.5, value),
+    ],
+    ['ring segments', (value: number) => createRingMeshGeometry(0.25, 0.5, value)],
+    ['sphere widthSegments', (value: number) => createSphereMeshGeometry(0.5, value, 2)],
+    ['sphere heightSegments', (value: number) => createSphereMeshGeometry(0.5, 3, value)],
+    ['tetrahedron detail', (value: number) => createTetrahedronMeshGeometry(0.5, value)],
+    ['torus knot tubularSegments', (value: number) => createTorusKnotMeshGeometry(0.5, 0.15, value, 3)],
+    ['torus knot radialSegments', (value: number) => createTorusKnotMeshGeometry(0.5, 0.15, 3, value)],
+    ['torus radialSegments', (value: number) => createTorusMeshGeometry(0.5, 0.2, value, 3)],
+    ['torus tubularSegments', (value: number) => createTorusMeshGeometry(0.5, 0.2, 3, value)],
+  ])('rejects non-finite %s', (_name, build) => {
+    expect(() => build(Number.NaN)).toThrow(RangeError);
+    expect(() => build(Number.POSITIVE_INFINITY)).toThrow(RangeError);
   });
 });
