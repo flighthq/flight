@@ -42,8 +42,10 @@ import { initBoundsRectangleRuntimeTrait, initBoundsRectangleTrait } from './has
 
 function getEntityRuntime(
   source: TestNode,
-): NodeRuntime<HasBoundsRectangle & HasTransform2D> & HasBoundsRectangleRuntime {
-  return _getRuntime(source) as NodeRuntime<HasBoundsRectangle & HasTransform2D> & HasBoundsRectangleRuntime;
+): NodeRuntime<HasBoundsRectangle & HasTransform2D> & HasBoundsRectangleRuntime & HasTransform2DRuntime {
+  return _getRuntime(source) as NodeRuntime<HasBoundsRectangle & HasTransform2D> &
+    HasBoundsRectangleRuntime &
+    HasTransform2DRuntime;
 }
 
 function createTestNode(): TestNode {
@@ -90,6 +92,14 @@ describe('computeNodeBoundsRectangle', () => {
     expect(equalsRectangle(out, { x: 5, y: 5, width: 100, height: 100 })).toBe(true);
   });
 
+  it('defaults a null target coordinate space to the source', () => {
+    const out = createRectangle();
+
+    computeNodeBoundsRectangle(out, child, null);
+
+    expect(equalsRectangle(out, { x: 5, y: 5, width: 100, height: 100 })).toBe(true);
+  });
+
   it('should compute bounds relative to parent', () => {
     const out = createRectangle();
     computeNodeBoundsRectangle(out, child, root);
@@ -97,6 +107,14 @@ describe('computeNodeBoundsRectangle', () => {
     expect(out.y).toBeCloseTo(105);
     expect(out.width).toBeCloseTo(100);
     expect(out.height).toBeCloseTo(100);
+  });
+
+  it('uses parent-space bounds directly when the parent is nested', () => {
+    const out = createRectangle();
+
+    computeNodeBoundsRectangle(out, grandChild, child);
+
+    expect(equalsRectangle(out, getNodeParentBoundsRectangle(grandChild))).toBe(true);
   });
 
   it('should compute bounds relative to nested child', () => {
@@ -196,6 +214,39 @@ describe('computeNodeRootLocalBoundsRectangle', () => {
     expect(out.y).toBeCloseTo(-3);
     expect(out.width).toBeCloseTo(18);
     expect(out.height).toBeCloseTo(24);
+  });
+
+  it('composes transforms at every descendant depth', () => {
+    const root = createTestNode();
+    const child = createTestNode();
+    const grandchild = createTestNode();
+    setRectangle(getNodeLocalBoundsRectangle(root), 0, 0, 1, 1);
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 1, 1);
+    setRectangle(getNodeLocalBoundsRectangle(grandchild), 0, 0, 2, 2);
+    child.x = 10;
+    grandchild.x = 20;
+    addNodeChild(root, child);
+    addNodeChild(child, grandchild);
+
+    const out = createRectangle();
+    computeNodeRootLocalBoundsRectangle(out, root);
+
+    expect(out).toMatchObject({ x: 0, y: 0, width: 32, height: 2 });
+  });
+
+  it('excludes disabled descendants', () => {
+    const root = createTestNode();
+    const child = createTestNode();
+    setRectangle(getNodeLocalBoundsRectangle(root), 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(child), 0, 0, 20, 20);
+    child.x = 100;
+    child.enabled = false;
+    addNodeChild(root, child);
+
+    const out = createRectangle();
+    computeNodeRootLocalBoundsRectangle(out, root);
+
+    expect(out).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 });
 
@@ -314,6 +365,20 @@ describe('ensureNodeWorldBoundsRectangle', () => {
     expect(runtime.worldBoundsRectangle).toBeNull();
     ensureNodeWorldBoundsRectangle(object);
     expect(runtime.worldBoundsRectangle).not.toBeNull();
+  });
+
+  it('recomputes when bounds are cached before the world matrix exists', () => {
+    const object = createTestNode();
+    const runtime = getEntityRuntime(object);
+    getNodeLocalBoundsRectangle(object);
+    runtime.worldBoundsRectangle = createRectangle(5, 5, 10, 10);
+    runtime.worldBoundsUsingLocalBoundsId = runtime.localBoundsId;
+    expect(runtime.worldMatrix).toBeNull();
+
+    ensureNodeWorldBoundsRectangle(object);
+
+    expect(runtime.worldMatrix).not.toBeNull();
+    expect(runtime.worldBoundsRectangle).toMatchObject({ x: 0, y: 0, width: 0, height: 0 });
   });
 
   it('should not recalculate if localBoundsId and worldTransformId are unchanged', () => {
@@ -499,6 +564,20 @@ describe('getNodeWorldBoundsRectangle', () => {
     const bounds = getNodeWorldBoundsRectangle(parent);
     expect(bounds.width).toBeGreaterThan(10);
     expect(bounds.height).toBeGreaterThan(10);
+  });
+
+  it('ignores an enabled child with zero-area world bounds', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setRectangle(getNodeLocalBoundsRectangle(parent) as Rectangle, 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(child) as Rectangle, 0, 0, 0, 5);
+    child.x = 100;
+    invalidateNodeLocalTransform(child);
+
+    const bounds = getNodeWorldBoundsRectangle(parent);
+
+    expect(bounds).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 });
 
