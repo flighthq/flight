@@ -234,6 +234,9 @@ describe('source-derived capability reachability', () => {
         const normalized = name.toLowerCase();
         registry.set(normalized, implementation);
       }
+      export function registerPersistent(state: object, kind: string, implementation: object): void {
+        state.registries.renderers = withRegistryTableEntry(state.registries.renderers, kind, implementation);
+      }
       export function registerBatch(entries: ReadonlyArray<readonly [string, object]>): void {
         for (const [kind, implementation] of entries) registry.set(kind, implementation);
       }
@@ -265,6 +268,12 @@ describe('source-derived capability reachability', () => {
       },
       {
         registrar: 'registerNormalized',
+        status: 'mechanism',
+        mechanismShape: 'caller-supplied-kind',
+        uncataloguedBucket: null,
+      },
+      {
+        registrar: 'registerPersistent',
         status: 'mechanism',
         mechanismShape: 'caller-supplied-kind',
         uncataloguedBucket: null,
