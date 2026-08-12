@@ -346,6 +346,61 @@ describe('createTorusMeshGeometry', () => {
   });
 });
 
+// A cone is this cylinder with a zero top radius, so its top ring collapses to the apex and one triangle
+// of every side quad had two coincident corners — a third of the mesh rasterising nothing. Removing them
+// is invisible on screen by construction, which is why the assertion below is about ZERO AREA rather
+// than about a triangle count: the count is an implementation detail, the absence of dead geometry is
+// the property.
+describe('degenerate side triangles', () => {
+  it.each([
+    ['cone', () => createConeMeshGeometry(0.7, 1.4)],
+    ['cone with a zero height', () => createConeMeshGeometry(0.5, 0, 8)],
+    ['cylinder with a zero bottom radius', () => createCylinderMeshGeometry(0.5, 0, 1, 12)],
+  ])('emits no zero-area triangle for a %s', (_name, build) => {
+    const geometry = build();
+    const floatsPerVertex = geometry.layout.stride / 4;
+    const corner: MeshTriangleVertexIndices = { i0: 0, i1: 0, i2: 0 };
+    let triangles = 0;
+
+    for (let t = 0; t < getMeshGeometryTriangleCount(geometry); t++) {
+      if (!getMeshGeometryTriangleVertexIndices(corner, geometry, t)) continue;
+      triangles++;
+      const p = [corner.i0, corner.i1, corner.i2].map((i) => [
+        geometry.vertices[i * floatsPerVertex],
+        geometry.vertices[i * floatsPerVertex + 1],
+        geometry.vertices[i * floatsPerVertex + 2],
+      ]);
+      const e1 = [p[1][0] - p[0][0], p[1][1] - p[0][1], p[1][2] - p[0][2]];
+      const e2 = [p[2][0] - p[0][0], p[2][1] - p[0][1], p[2][2] - p[0][2]];
+      const area = Math.hypot(
+        e1[1] * e2[2] - e1[2] * e2[1],
+        e1[2] * e2[0] - e1[0] * e2[2],
+        e1[0] * e2[1] - e1[1] * e2[0],
+      );
+      expect(area).toBeGreaterThan(1e-12);
+    }
+
+    // Without this the loop could pass by finding no triangles at all.
+    expect(triangles).toBeGreaterThan(0);
+  });
+
+  // The apex keeps one vertex per segment even though they share a position: each carries its own u,
+  // which is what lets a texture vary around the cone. Only the dead INDICES were removed.
+  it('keeps the per-segment apex vertices that carry distinct uvs', () => {
+    const geometry = createConeMeshGeometry(0.7, 1.4, 8);
+    const floatsPerVertex = geometry.layout.stride / 4;
+
+    const apexUvs = new Set<number>();
+    for (let v = 0; v < getMeshGeometryVertexCount(geometry); v++) {
+      const base = v * floatsPerVertex;
+      const isApex = Math.hypot(geometry.vertices[base], geometry.vertices[base + 2]) <= 1e-9;
+      if (isApex && geometry.vertices[base + 1] > 0) apexUvs.add(geometry.vertices[base + 10]);
+    }
+
+    expect(apexUvs.size).toBeGreaterThan(1);
+  });
+});
+
 describe('mesh builder count inputs', () => {
   const polyhedronVertices: ReadonlyArray<readonly [number, number, number]> = [
     [0, 1, 0],

@@ -208,12 +208,22 @@ export function createCylinderMeshGeometry(
       uvs.push(s / segments, y);
     }
   }
+  // Each segment is a quad split into (a, c, b) and (b, c, d). When one radius is zero that ring
+  // collapses to a single point, so one of the two triangles has two coincident corners and encloses no
+  // area: it consumes index bandwidth and a vertex-shader invocation to rasterise nothing. A cone is
+  // exactly that case — it is this cylinder with a zero top radius — so a third of its triangles were
+  // dead. Dropping the collapsed triangle leaves the surviving fan untouched, vertices included: the
+  // apex ring keeps one vertex per segment because each carries its own u, which is what lets the
+  // texture vary around the cone.
+  const topCollapsed = topRadius === 0;
+  const bottomCollapsed = bottomRadius === 0;
   for (let s = 0; s < segments; s++) {
     const a = sideStart + s;
     const b = sideStart + s + 1;
     const c = sideStart + (segments + 1) + s;
     const d = sideStart + (segments + 1) + s + 1;
-    indices.push(a, c, b, b, c, d);
+    if (!bottomCollapsed) indices.push(a, c, b);
+    if (!topCollapsed) indices.push(b, c, d);
   }
 
   if (capped) {
@@ -801,6 +811,15 @@ function sphericalV(ny: number): number {
   return 0.5 - Math.asin(Math.max(-1, Math.min(1, ny))) / Math.PI;
 }
 
+// ★ THE SPHERICAL-UV BUILDERS EXPECT A REPEATING ADDRESSING MODE. Every builder that routes through
+// faceSphericalU — icosphere, and the polyhedra (dodecahedron, icosahedron, octahedron, tetrahedron)
+// via createPolyhedronMeshGeometry — emits u > 1 on the faces that cross the longitude seam. That is a
+// property of a wrapped parameterisation, not an accident: no assignment confined to 0..1 can describe
+// a face crossing the seam continuously. Sampled with a REPEAT wrap those values land where they should;
+// sampled with clamp-to-edge, the part past 1 collapses onto the edge texel. Flight's default sampler is
+// clamp-to-edge (texture/src/sampler.ts) and createTilingSampler is the repeating one, so a texture
+// applied to these solids wants the latter.
+//
 // The three corner longitudes of one face, with both spherical-mapping degeneracies resolved.
 //
 // SEAM: longitude wraps at u = 0/1, so a face with corners either side gets values like 0.99 and 0.01
