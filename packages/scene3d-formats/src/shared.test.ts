@@ -17,6 +17,7 @@ import {
   negateVec3Z,
   packSkinInfluences,
   reverseTriangleWinding,
+  reverseVertexTriangleWinding,
 } from './shared';
 
 describe('convertPositionsZUpToYUp', () => {
@@ -196,5 +197,42 @@ describe('reverseTriangleWinding', () => {
     const indices = [10, 20, 30];
     reverseTriangleWinding(indices);
     expect(indices).toEqual([10, 30, 20]);
+  });
+});
+
+describe('reverseVertexTriangleWinding', () => {
+  it('swaps the second and third vertex records of each triangle', () => {
+    // Two triangles, one float per vertex, so the record values name themselves.
+    const vertices = new Float32Array([0, 1, 2, 3, 4, 5]);
+
+    reverseVertexTriangleWinding(vertices, 1);
+
+    expect(Array.from(vertices)).toEqual([0, 2, 1, 3, 5, 4]);
+  });
+
+  // The point of swapping whole records rather than positions: every attribute travels with its
+  // vertex, so a stream this function knows nothing about still lands on the right corner.
+  it('carries every attribute of a record, not just the leading floats', () => {
+    const vertices = new Float32Array([0, 0, 0, 10, 1, 0, 0, 11, 0, 1, 0, 12]);
+
+    reverseVertexTriangleWinding(vertices, 4);
+
+    expect(Array.from(vertices)).toEqual([0, 0, 0, 10, 0, 1, 0, 12, 1, 0, 0, 11]);
+  });
+
+  it('leaves a trailing partial triangle alone, matching the indexed form', () => {
+    const vertices = new Float32Array([0, 1, 2, 3, 4]);
+
+    reverseVertexTriangleWinding(vertices, 1);
+
+    expect(Array.from(vertices)).toEqual([0, 2, 1, 3, 4]);
+  });
+
+  it('is a no-op for a zero stride rather than dividing by it', () => {
+    const vertices = new Float32Array([0, 1, 2]);
+
+    reverseVertexTriangleWinding(vertices, 0);
+
+    expect(Array.from(vertices)).toEqual([0, 1, 2]);
   });
 });

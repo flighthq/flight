@@ -159,3 +159,22 @@ export function reverseTriangleWinding(indices: number[]): void {
     indices[i + 2] = tmp;
   }
 }
+
+// The non-indexed counterpart of reverseTriangleWinding: swaps the second and third VERTEX RECORDS of
+// each sequential triangle in an interleaved vertex array. A source that needs its winding reversed
+// needs it whether or not it shipped indices, and reversing indices it does not have is a no-op that
+// silently leaves the geometry inside out. Swapping whole records carries every attribute — normals,
+// tangents, uvs, skin influences — with the vertex, so no attribute has to be enumerated here. A
+// trailing partial triangle is left alone, matching the indexed form.
+export function reverseVertexTriangleWinding(vertices: Float32Array, floatsPerVertex: number): void {
+  if (floatsPerVertex <= 0) return;
+  const vertexCount = Math.floor(vertices.length / floatsPerVertex);
+  const scratch = new Float32Array(floatsPerVertex);
+  for (let v = 0; v + 2 < vertexCount; v += 3) {
+    const b1 = (v + 1) * floatsPerVertex;
+    const b2 = (v + 2) * floatsPerVertex;
+    scratch.set(vertices.subarray(b1, b1 + floatsPerVertex));
+    vertices.copyWithin(b1, b2, b2 + floatsPerVertex);
+    vertices.set(scratch, b2);
+  }
+}
