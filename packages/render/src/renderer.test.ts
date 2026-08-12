@@ -1,6 +1,7 @@
 import { createSlotTable, getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentUnsupportedGuard,
+  RenderRootGuard,
   Renderer,
   RenderState,
   Scene2DClipHooks,
@@ -118,6 +119,7 @@ describe('copyRenderStateRegistrations', () => {
     const resolver = vi.fn();
     const colorAdjustmentResolver = vi.fn();
     const colorAdjustmentUnsupportedGuard: ColorAdjustmentUnsupportedGuard = vi.fn();
+    const renderRootGuard: RenderRootGuard = vi.fn();
     const strokeTessellator = vi.fn(() => null);
     getRenderStateRuntime(source).registries.colorAdjustments = {
       ...createSlotTable('ColorAdjustments', 'Disabled'),
@@ -130,6 +132,10 @@ describe('copyRenderStateRegistrations', () => {
     getRenderStateRuntime(source).registries.strokeTessellator = {
       ...getRenderStateRuntime(source).registries.strokeTessellator,
       entry: { state: RegistryEntryState.Bound, value: strokeTessellator },
+    };
+    getRenderStateRuntime(source).registries.renderRootGuard = {
+      ...createSlotTable('RenderRootGuard', 'Disabled'),
+      entry: { state: RegistryEntryState.Bound, value: renderRootGuard },
     };
     getRenderStateRuntime(source).registries.effectPaddingResolvers = {
       entries: new Map([['acme.Effect', { state: RegistryEntryState.Bound, value: resolver }]]),
@@ -179,6 +185,15 @@ describe('copyRenderStateRegistrations', () => {
       state: RegistryEntryState.Bound,
       value: resolver,
     });
+    expect(targetRuntime.registries.renderRootGuard).toBe(sourceRuntime.registries.renderRootGuard);
+    expect(targetRuntime.registries.renderRootGuard?.entry).toEqual({
+      state: RegistryEntryState.Bound,
+      value: renderRootGuard,
+    });
+    const sharedRootGuardSnapshot = targetRuntime.registries.renderRootGuard;
+    sourceRuntime.registries.renderRootGuard = undefined;
+    expect(sourceRuntime.registries.renderRootGuard).not.toBe(sharedRootGuardSnapshot);
+    expect(targetRuntime.registries.renderRootGuard).toBe(sharedRootGuardSnapshot);
   });
 
   it('snapshot-copies the shape-command registry without aliasing the map', () => {

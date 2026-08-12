@@ -53,6 +53,9 @@ export interface RenderRegistries {
   colorAdjustmentUnsupportedGuard?: SlotTable<ColorAdjustmentUnsupportedGuard>;
   effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
   renderers: KeyedTable<Renderer>;
+  // Optional diagnostic policy reached before a root walk. Backends bind this to diagnose pipeline-
+  // policy mistakes without adding their warning dependency to the substrate-independent render path.
+  renderRootGuard?: SlotTable<RenderRootGuard>;
   // Opt-in closed-ring/self-intersection stroke kernel. The empty slot means the compact mesh lane
   // rasterizes closed strokes; a bound pure function is safe to snapshot across derived pipelines.
   strokeTessellator: SlotTable<
@@ -61,6 +64,7 @@ export interface RenderRegistries {
 }
 
 export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: Renderable) => void;
+export type RenderRootGuard = (state: RenderState, root: Renderable) => void;
 
 // Package-private machinery for a RenderState entity. Lives in the runtime tier (not on the entity)
 // so the public RenderState surface stays minimal; the render path resolves it via
@@ -84,9 +88,6 @@ export interface RenderStateRuntime extends EntityRuntime {
       })
     | null;
   registries: RenderRegistries;
-  // Optional backend guard reached before a root walk. Backends use this to diagnose pipeline-policy
-  // mistakes without adding their warning dependency to the substrate-independent render path.
-  renderRootGuard: ((state: RenderState, root: Renderable) => void) | null;
   // Advances whenever the persistent renderer table is replaced so existing proxies re-resolve their
   // renderer before reuse. The table itself lives in registries.renderers with the rest of the policy.
   rendererMapId: number;

@@ -5,11 +5,12 @@ import {
   enableColorAdjustmentGuards,
   enableColorAdjustments,
   getColorAdjustmentUnsupportedGuard,
+  getRenderRootGuard,
   prepareScene2DRender,
   registerRenderer,
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { CanvasRenderOptions } from '@flighthq/types/contract';
+import type { CanvasRenderOptions, RenderRootGuard } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
@@ -30,6 +31,7 @@ describe('copyCanvasRenderStateRegistrations', () => {
     const runner = vi.fn();
     const replacement = vi.fn();
     const materialRenderer = { getState: vi.fn(() => ({})) };
+    const renderRootGuard: RenderRootGuard = vi.fn();
     const sourceRuntime = getCanvasRenderStateRuntime(source);
     sourceRuntime.registries.renderEffects = withRegistryTableEntry(
       sourceRuntime.registries.renderEffects,
@@ -39,6 +41,12 @@ describe('copyCanvasRenderStateRegistrations', () => {
     registerCanvasMaterialRenderer(source, 'acme.Material', materialRenderer);
     enableColorAdjustments(source);
     enableColorAdjustmentGuards(source);
+    sourceRuntime.registries.renderRootGuard = {
+      entry: { state: RegistryEntryState.Bound, value: renderRootGuard },
+      onMiss: 'Disabled',
+      registry: 'RenderRootGuard',
+      shape: 'slot',
+    };
 
     copyCanvasRenderStateRegistrations(target, source);
 
@@ -55,6 +63,13 @@ describe('copyCanvasRenderStateRegistrations', () => {
     expect(getColorAdjustmentUnsupportedGuard(source)).toBeNull();
     expect(targetRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedGuardSnapshot);
     expect(getColorAdjustmentUnsupportedGuard(target)).not.toBeNull();
+    expect(targetRuntime.registries.renderRootGuard).toBe(sourceRuntime.registries.renderRootGuard);
+    expect(getRenderRootGuard(target)).toBe(renderRootGuard);
+    const sharedRootGuardSnapshot = targetRuntime.registries.renderRootGuard;
+    sourceRuntime.registries.renderRootGuard = undefined;
+    expect(getRenderRootGuard(source)).toBeNull();
+    expect(targetRuntime.registries.renderRootGuard).toBe(sharedRootGuardSnapshot);
+    expect(getRenderRootGuard(target)).toBe(renderRootGuard);
     expect(targetRuntime.registries.materialRenderers).toBe(sourceRuntime.registries.materialRenderers);
     expect(targetRuntime.registries.renderEffects).toBe(sourceRuntime.registries.renderEffects);
     expect(getRegistryTableEntry(targetRuntime.registries.materialRenderers!, 'acme.Material')).toBe(materialRenderer);

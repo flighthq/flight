@@ -5,6 +5,7 @@ import {
   createRenderState,
   enableColorAdjustmentGuards,
   getColorAdjustmentUnsupportedGuard,
+  getRenderRootGuard,
   RenderCacheKind,
   useRenderCache,
 } from '@flighthq/render/contract';
@@ -14,6 +15,7 @@ import type {
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuMaterialRenderer,
   WgpuRenderState,
+  RenderRootGuard,
   WgpuRenderTarget,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
@@ -151,6 +153,7 @@ describe('createWgpuCacheState', () => {
       resolveFlush: vi.fn(() => null),
     };
     const colorAdjustmentFeatureGuard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
+    const renderRootGuard: RenderRootGuard = vi.fn();
     const screenRuntime = getWgpuRenderStateRuntime(screen);
     screenRuntime.registries.colorAdjustments = {
       entry: { state: RegistryEntryState.Bound, value: resolver },
@@ -168,6 +171,12 @@ describe('createWgpuCacheState', () => {
       entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeatureGuard },
       onMiss: 'Disabled',
       registry: 'WgpuColorAdjustmentFeatureGuard',
+      shape: 'slot',
+    };
+    screenRuntime.registries.renderRootGuard = {
+      entry: { state: RegistryEntryState.Bound, value: renderRootGuard },
+      onMiss: 'Disabled',
+      registry: 'RenderRootGuard',
       shape: 'slot',
     };
     enableColorAdjustmentGuards(screen);
@@ -203,6 +212,13 @@ describe('createWgpuCacheState', () => {
     expect(getColorAdjustmentUnsupportedGuard(screen)).toBeNull();
     expect(cacheRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
     expect(getColorAdjustmentUnsupportedGuard(cacheState)).not.toBeNull();
+    expect(cacheRuntime.registries.renderRootGuard).toBe(screenRuntime.registries.renderRootGuard);
+    expect(getRenderRootGuard(cacheState)).toBe(renderRootGuard);
+    const sharedRootGuard = cacheRuntime.registries.renderRootGuard;
+    screenRuntime.registries.renderRootGuard = undefined;
+    expect(getRenderRootGuard(screen)).toBeNull();
+    expect(cacheRuntime.registries.renderRootGuard).toBe(sharedRootGuard);
+    expect(getRenderRootGuard(cacheState)).toBe(renderRootGuard);
   });
 
   it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {

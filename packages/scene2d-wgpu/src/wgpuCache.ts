@@ -113,6 +113,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
     modifierSnippetRevision: screenRuntime.registries.modifierSnippetRevision,
     renderEffects: screenRuntime.registries.renderEffects,
     renderers: cacheRuntime.registries.renderers,
+    renderRootGuard: screenRuntime.registries.renderRootGuard,
     shapeRasterizer: screenRuntime.registries.shapeRasterizer,
     strokeTessellator: screenRuntime.registries.strokeTessellator,
     textureResolvers: screenRuntime.registries.textureResolvers,

@@ -1,5 +1,7 @@
 import { setLogSink } from '@flighthq/log/contract';
+import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { LogEntry } from '@flighthq/types/contract';
+import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { useGlProgram } from './glDraw';
@@ -25,8 +27,16 @@ describe('enableGlRenderStateGuards', () => {
   it('installs the state-local multiple-root guard idempotently', () => {
     const state = createState();
     enableGlRenderStateGuards(state);
+    const table = getRenderStateRuntime(state).registries.renderRootGuard;
+    expect(table).toMatchObject({
+      entry: { state: RegistryEntryState.Bound },
+      onMiss: 'Disabled',
+      registry: 'RenderRootGuard',
+      shape: 'slot',
+    });
     enableGlRenderStateGuards(state);
     expect(areGlRenderStateGuardsEnabled(state)).toBe(true);
+    expect(getRenderStateRuntime(state).registries.renderRootGuard).toBe(table);
   });
 });
 

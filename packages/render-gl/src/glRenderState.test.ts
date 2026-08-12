@@ -10,6 +10,7 @@ import {
   enableColorAdjustmentGuards,
   enableColorAdjustments,
   getColorAdjustmentUnsupportedGuard,
+  getRenderRootGuard,
   getRenderStateRuntime,
   prepareScene2DRender,
   registerRenderer,
@@ -23,7 +24,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
-import { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
+import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import { isBlendModeSupported, registerGlBlendMode } from './glDraw';
 import { registerGlMaterialRenderer } from './glMaterialRegistry';
@@ -160,6 +161,7 @@ describe('createGlOffscreenRenderState', () => {
     registerGlTextureResolver(screen, 'acme.Texture', textureResolver);
     enableColorAdjustments(screen);
     enableColorAdjustmentGuards(screen);
+    enableGlRenderStateGuards(screen);
     getGlRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
       getGlRenderStateRuntime(screen).registries.renderEffects,
       'acme.Effect',
@@ -221,6 +223,13 @@ describe('createGlOffscreenRenderState', () => {
     expect(getColorAdjustmentUnsupportedGuard(screen)).toBeNull();
     expect(offscreenRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
     expect(getColorAdjustmentUnsupportedGuard(offscreen)).not.toBeNull();
+    expect(offscreenRuntime.registries.renderRootGuard).toBe(screenRuntime.registries.renderRootGuard);
+    expect(areGlRenderStateGuardsEnabled(offscreen)).toBe(true);
+    const sharedRenderRootGuard = offscreenRuntime.registries.renderRootGuard;
+    screenRuntime.registries.renderRootGuard = undefined;
+    expect(getRenderRootGuard(screen)).toBeNull();
+    expect(offscreenRuntime.registries.renderRootGuard).toBe(sharedRenderRootGuard);
+    expect(areGlRenderStateGuardsEnabled(offscreen)).toBe(true);
     expect(offscreenRuntime.registries.compressedTextureDecoder).toBe(
       screenRuntime.registries.compressedTextureDecoder,
     );
