@@ -432,7 +432,7 @@ export function setVector3(out: Vector3Like, x: number, y: number, z: number): v
 }
 
 /**
- * Reads a Vector3Like from a Float32Array at a byte offset.
+ * Reads a Vector3Like from a Float32Array at an element offset.
  */
 export function setVector3FromFloat32Array(out: Vector3Like, offset: number, source: Readonly<Float32Array>): void {
   out.x = source[offset];
@@ -504,7 +504,7 @@ export function transformVector3ByMatrix3(
 }
 
 /**
- * Writes a Vector3Like into a Float32Array at a byte offset.
+ * Writes a Vector3Like into a Float32Array at an element offset.
  */
 export function writeVector3ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Vector3Like>): void {
   out[offset] = source.x;

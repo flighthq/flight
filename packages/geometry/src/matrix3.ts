@@ -383,7 +383,7 @@ export function setMatrix3Element(out: Matrix3Like, row: number, column: number,
 }
 
 /**
- * Reads a Matrix3 from a Float32Array at a byte offset (column-major, 9 floats).
+ * Reads a Matrix3 from a Float32Array at an element offset (column-major, 9 floats).
  */
 export function setMatrix3FromFloat32Array(out: Matrix3Like, offset: number, source: Readonly<Float32Array>): void {
   const m = out.m;
@@ -503,7 +503,7 @@ export function transposeMatrix3(out: Matrix3Like, source: Readonly<Matrix3Like>
 }
 
 /**
- * Writes a Matrix3 into a Float32Array at a byte offset (column-major, 9 floats).
+ * Writes a Matrix3 into a Float32Array at an element offset (column-major, 9 floats).
  */
 export function writeMatrix3ToFloat32Array(out: Float32Array, offset: number, source: Readonly<Matrix3Like>): void {
   const m = source.m;
