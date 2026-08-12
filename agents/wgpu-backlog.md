@@ -131,6 +131,21 @@ exist there by construction. This is WGPU-only and structural, not a parity gap.
   mip-sampling bind, so this is a real divergence, not a WGPU-only gap.**
   **Escape: mode E** — first-call-false and first-call-true are each covered; their composition is not.
 
+### Contract silently unhonoured
+
+- **`CustomShaderEffect` has no WGPU runner, no source registry, and no explicit unsupported sentinel or
+  documentation** — it is simply absent, with no signal in either direction. `RenderEffect`'s own contract
+  says one intent list drives every backend and the type is backend-agnostic, so a caller has no way to
+  learn this short of nothing happening.
+  **Context that makes this the sharp one:** an inventory pass over all named effect runners found **45 of
+  47 pair exactly** between GL and WGPU. The other exception, `BokehDepthOfFieldEffect`, is already
+  causally explained by the same documented no-scene-depth-G-buffer limitation as `ScreenSpaceFog`. So
+  this is the single unexplained hole in an otherwise complete correspondence — a null result across 45
+  pairs is what makes the one outlier meaningful.
+  **Resolution is document-or-implement**, and either is acceptable; what is not acceptable is silent
+  absence. Note that `reachability:check` gates the runner↔registrar inverse *within* a backend and so
+  cannot see a cross-backend hole of this shape.
+
 ### Observability, not correctness
 
 - **No diagnostic trail on effect failure.** `glRenderTextureEffect` reports six distinct failure
