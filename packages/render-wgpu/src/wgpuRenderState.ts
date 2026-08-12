@@ -31,13 +31,13 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
     materialRenderers: sourceRuntime.registries.materialRenderers,
+    renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
   };
   targetRuntime.wgpuRenderTextureGuard = sourceRuntime.wgpuRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
   targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
-  targetRuntime.wgpuRenderEffectRegistry = copyMap(sourceRuntime.wgpuRenderEffectRegistry);
   copyRenderStateRegistrations(target, source);
 }
 
@@ -251,6 +251,7 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.registries = {
     materialRenderers: createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial'),
+    renderEffects: createKeyedTable('WgpuRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('WgpuShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('WgpuTextureResolver', 'Unregistered'),
   };

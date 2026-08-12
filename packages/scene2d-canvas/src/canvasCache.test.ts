@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { getRegistryTableEntry, hasRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
@@ -56,18 +57,27 @@ describe('createCanvasCacheState', () => {
     const screenRuntime = getCanvasRenderStateRuntime(screen);
     const firstRunner = vi.fn();
     const laterRunner = vi.fn();
-    screenRuntime.canvasRenderEffectRegistry = new Map([['acme.First', firstRunner]]);
+    screenRuntime.registries.renderEffects = withRegistryTableEntry(
+      screenRuntime.registries.renderEffects,
+      'acme.First',
+      firstRunner as never,
+    );
     const cacheState = createCanvasCacheState(screen);
     const cacheRuntime = getCanvasRenderStateRuntime(cacheState);
 
-    expect(cacheRuntime.canvasRenderEffectRegistry).not.toBe(screenRuntime.canvasRenderEffectRegistry);
-    expect(cacheRuntime.canvasRenderEffectRegistry?.get('acme.First')).toBe(firstRunner);
+    expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
+    expect(cacheRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
+    expect(getRegistryTableEntry(cacheRuntime.registries.renderEffects, 'acme.First')).toBe(firstRunner);
 
-    screenRuntime.canvasRenderEffectRegistry.set('acme.Later', laterRunner);
-    expect(cacheRuntime.canvasRenderEffectRegistry?.has('acme.Later')).toBe(false);
+    screenRuntime.registries.renderEffects = withRegistryTableEntry(
+      screenRuntime.registries.renderEffects,
+      'acme.Later',
+      laterRunner as never,
+    );
+    expect(hasRegistryTableEntry(cacheRuntime.registries.renderEffects, 'acme.Later')).toBe(false);
 
     copyCanvasRenderStateRegistrations(cacheState, screen);
-    expect(getCanvasRenderStateRuntime(cacheState).canvasRenderEffectRegistry?.get('acme.Later')).toBe(laterRunner);
+    expect(getRegistryTableEntry(cacheRuntime.registries.renderEffects, 'acme.Later')).toBe(laterRunner);
   });
 });
 

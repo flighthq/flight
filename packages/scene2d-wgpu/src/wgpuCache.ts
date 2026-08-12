@@ -101,6 +101,7 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   // snapshots through a distinct aggregate, so later replacements on either state diverge cleanly.
   cacheRuntime.registries = {
     materialRenderers: screenRuntime.registries.materialRenderers,
+    renderEffects: screenRuntime.registries.renderEffects,
     shapeRasterizer: screenRuntime.registries.shapeRasterizer,
     textureResolvers: screenRuntime.registries.textureResolvers,
   };

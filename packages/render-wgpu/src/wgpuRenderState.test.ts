@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import { getRegistryTableEntry, hasRegistryTableEntry } from '@flighthq/registry/contract';
+import { getRegistryTableEntry, hasRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   copyAllRenderersFromRenderState,
   getRenderStateRuntime,
@@ -78,7 +78,11 @@ describe('createWgpuOffscreenRenderState', () => {
     registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
     getRenderStateRuntime(screen).renderEffectPaddingResolverRegistry = new Map([['acme.Effect', paddingResolver]]);
-    getWgpuRenderStateRuntime(screen).wgpuRenderEffectRegistry = new Map([['acme.Effect', effectRunner]]);
+    getWgpuRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
+      getWgpuRenderStateRuntime(screen).registries.renderEffects,
+      'acme.Effect',
+      effectRunner as never,
+    );
     getWgpuRenderStateRuntime(screen).wgpuRenderTextureCache = new WeakMap();
 
     const offscreen = createWgpuOffscreenRenderState(screen);
@@ -95,9 +99,9 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.rendererMap).not.toBe(screenRuntime.rendererMap);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
+    expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
-    expect(offscreenRuntime.wgpuRenderEffectRegistry).not.toBe(screenRuntime.wgpuRenderEffectRegistry);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry).not.toBe(
       screenRuntime.renderEffectPaddingResolverRegistry,
     );
@@ -106,7 +110,7 @@ describe('createWgpuOffscreenRenderState', () => {
       materialRenderer,
     );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
-    expect(offscreenRuntime.wgpuRenderEffectRegistry?.get('acme.Effect')).toBe(effectRunner);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')).toBe(effectRunner);
     expect(offscreenRuntime.renderEffectPaddingResolverRegistry?.get('acme.Effect')).toBe(paddingResolver);
   });
 
@@ -209,6 +213,11 @@ describe('createWgpuRenderStateRuntime', () => {
       shape: 'keyed',
     });
     expect(runtime.registries.materialRenderers.entries.size).toBe(0);
+    expect(runtime.registries.renderEffects).toMatchObject({
+      onMiss: 'Unregistered',
+      registry: 'WgpuRenderEffect',
+      shape: 'keyed',
+    });
     expect(runtime.registries.shapeRasterizer).toEqual({
       entry: null,
       onMiss: 'Unregistered',

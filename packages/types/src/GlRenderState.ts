@@ -33,6 +33,7 @@ export interface GlRenderState extends RenderState {
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries {
   materialRenderers: KeyedTable<GlMaterialRenderer>;
+  renderEffects: KeyedTable<GlRenderEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer>;
   textureResolvers: KeyedTable<GlTextureResolver>;
 }
@@ -218,9 +219,6 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   glExternalTextureCache?: WeakMap<ExternalTexture, WebGLTexture>;
   glRenderTextureCache?: WeakMap<RenderTexture, GlRenderTextureEntry>;
   glRenderTextureGuard?: GlRenderTextureGuard | null;
-  // Effect dispatch is registration policy, not a context resource. Derived offscreen states receive
-  // a snapshot and may then override it independently.
-  glRenderEffectRegistry?: Map<Kind, GlRenderEffectRegistration> | null;
   // Optional RGBA fallback decoder for block-compressed textures the device cannot upload natively.
   // Installed per-state by registerGlCompressedTextureDecoder (opt-in), so a state that never draws a
   // compressed texture — or only draws formats the device supports — carries no decoder. Undefined

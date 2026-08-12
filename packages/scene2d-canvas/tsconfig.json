@@ -40,6 +40,9 @@
       "path": "../render"
     },
     {
+      "path": "../registry"
+    },
+    {
       "path": "../path"
     },
     {

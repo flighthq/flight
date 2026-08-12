@@ -1,4 +1,5 @@
 import { createGlRenderState } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, RenderEffect } from '@flighthq/types/contract';
 
 import {
@@ -65,8 +66,11 @@ describe('registerGlRenderEffect', () => {
   it('registers and retrieves a runner', () => {
     const state = createState();
     const runner = vi.fn();
+    const before = getGlRenderStateRuntime(state).registries.renderEffects;
     registerGlRenderEffect(state, 'TestEffect', runner);
     expect(getGlRenderEffectRunner(state, 'TestEffect')).toBe(runner);
+    expect(getGlRenderStateRuntime(state).registries.renderEffects).not.toBe(before);
+    expect(before.entries.size).toBe(0);
   });
 
   it('overwrites an existing runner under the same kind', () => {
@@ -74,8 +78,13 @@ describe('registerGlRenderEffect', () => {
     const runnerA = vi.fn();
     const runnerB = vi.fn();
     registerGlRenderEffect(state, 'TestEffect2', runnerA);
+    const before = getGlRenderStateRuntime(state).registries.renderEffects;
     registerGlRenderEffect(state, 'TestEffect2', runnerB);
     expect(getGlRenderEffectRunner(state, 'TestEffect2')).toBe(runnerB);
+    expect(before.entries.get('TestEffect2')).toEqual({
+      state: 'bound',
+      value: { isResolvable: undefined, runner: runnerA },
+    });
   });
 });
 

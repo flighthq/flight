@@ -14,6 +14,7 @@
     { "path": "../geometry" },
     { "path": "../log" },
     { "path": "../render-gl" },
+    { "path": "../registry" },
     { "path": "../types" }
   ],
   "include": ["src"]

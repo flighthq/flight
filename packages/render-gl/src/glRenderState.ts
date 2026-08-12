@@ -30,13 +30,13 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
     materialRenderers: sourceRuntime.registries.materialRenderers,
+    renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     textureResolvers: sourceRuntime.registries.textureResolvers,
   };
   targetRuntime.glRenderTextureGuard = sourceRuntime.glRenderTextureGuard;
   targetRuntime.compressedTextureDecoder = sourceRuntime.compressedTextureDecoder;
   targetRuntime.compressedTextureUpload = sourceRuntime.compressedTextureUpload;
-  targetRuntime.glRenderEffectRegistry = copyMap(sourceRuntime.glRenderEffectRegistry);
   copyRenderStateRegistrations(target, source);
 }
 
@@ -184,6 +184,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
   runtime.currentRenderTarget = null;
   runtime.registries = {
     materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
+    renderEffects: createKeyedTable('GlRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),
     textureResolvers: createKeyedTable('GlTextureResolver', 'Unregistered'),
   };
