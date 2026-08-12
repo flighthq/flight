@@ -57,7 +57,11 @@ the parser against itself.
   (`awd2loading`) and glTF (`formatloading`); the rest are reachable only via
   `@flighthq/scene3d-resources`. No 3DS fixture carries a light or camera, so that wire layout is
   unit-tested but never round-tripped an authored file, and AWD tangent handedness plus skinned animated
-  deformation still need a host visual gate.
+  deformation still need a host visual gate. The non-indexed repairs sit in the same blind spot:
+  AWD2 winding/normals/tangents (`awd2Parse.ts:1515`, `:1607`) and glTF flat-normal/tangent generation
+  (`gltfParse.ts:1301`) are confirmed at PARSE level only. No functional baseline covers a non-indexed
+  asset in either format — likely none exists, since neither path had coverage before — so facing and
+  shading are INFERRED from vertex order, never observed.
 - **No USD importer exists,** though the package map and this `package.json` name it.
 
 ## Log
