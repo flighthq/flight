@@ -21,7 +21,6 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   const sourceRuntime = getGlRenderStateRuntime(source);
   target.applyBlendMode = source.applyBlendMode;
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
-  targetRuntime.glBlendModeRegistry = copyMap(sourceRuntime.glBlendModeRegistry);
   targetRuntime.glColorAdjustmentMaterialFeature = sourceRuntime.glColorAdjustmentMaterialFeature;
   targetRuntime.glColorAdjustmentMaterialFeatureGuard = sourceRuntime.glColorAdjustmentMaterialFeatureGuard;
   targetRuntime.materialBitmapShaderMap =
@@ -29,6 +28,7 @@ export function copyGlRenderStateRegistrations(target: GlRenderState, source: Gl
   targetRuntime.sceneMeshMaterialRegistry = copyMap(sourceRuntime.sceneMeshMaterialRegistry);
   targetRuntime.webglShaderBindingResolver = sourceRuntime.webglShaderBindingResolver;
   targetRuntime.registries = {
+    blendRealizations: sourceRuntime.registries.blendRealizations,
     materialRenderers: sourceRuntime.registries.materialRenderers,
     renderEffects: sourceRuntime.registries.renderEffects,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
@@ -184,6 +184,7 @@ export function createGlRenderStateRuntime(sharedRuntime?: GlRenderStateRuntime)
   }
   runtime.currentRenderTarget = null;
   runtime.registries = {
+    blendRealizations: createKeyedTable('GlBlendRealization', 'Normal'),
     materialRenderers: createKeyedTable('GlMaterialRenderer', 'StandardMaterial'),
     renderEffects: createKeyedTable('GlRenderEffect', 'Unregistered'),
     shapeRasterizer: createSlotTable('GlShapeRasterizer', 'Unregistered'),

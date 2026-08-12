@@ -1,3 +1,4 @@
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Bitmap, CompressedImage, Image, SamplerLike, Texture } from '@flighthq/types/contract';
 import {
@@ -27,7 +28,7 @@ import {
   updateGlTexture,
   useGlProgram,
 } from './glDraw';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { createGlOffscreenRenderState, getGlRenderStateRuntime } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState } from './glTestHelper';
 
@@ -832,6 +833,24 @@ describe('registerGlBlendMode', () => {
     applyGlBlendMode(state, BlendMode.Add);
     const g = gl as unknown as { ONE: number; ZERO: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ZERO, g.ONE);
+  });
+
+  it("replaces the table without changing an offscreen state's retained snapshot", () => {
+    const { state: screen } = createGlState();
+    const initial = { src: 'DST_COLOR', dst: 'ZERO' } as const;
+    const replacement = { src: 'ZERO', dst: 'ONE' } as const;
+    registerGlBlendMode(screen, 'acme.Foo', initial);
+    const snapshot = getGlRenderStateRuntime(screen).registries.blendRealizations;
+    const offscreen = createGlOffscreenRenderState(screen);
+
+    registerGlBlendMode(screen, 'acme.Foo', replacement);
+
+    expect(getGlRenderStateRuntime(screen).registries.blendRealizations).not.toBe(snapshot);
+    expect(getGlRenderStateRuntime(offscreen).registries.blendRealizations).toBe(snapshot);
+    expect(getRegistryTableEntry(snapshot, 'acme.Foo')).toBe(initial);
+    expect(getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.blendRealizations, 'acme.Foo')).toBe(
+      replacement,
+    );
   });
 });
 
