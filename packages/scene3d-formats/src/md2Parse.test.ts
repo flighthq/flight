@@ -1007,6 +1007,34 @@ describe('MD2_ANORMS', () => {
 });
 
 describe('parseMd2', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a walk that desynchronised and
+  // still left the asserted fields looking plausible. Matched by pattern, not by an enumerated list, so a
+  // truncation kind added later is covered without anyone remembering this test exists.
+  it('raises no truncation or unreadable diagnostic for a well-formed file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parseMd2(
+      buildMd2({
+        compressedVertices: [
+          { normalIndex: 0, x: 0, y: 0, z: 0 },
+          { normalIndex: 0, x: 10, y: 0, z: 0 },
+          { normalIndex: 0, x: 0, y: 10, z: 0 },
+        ],
+        scale: [1, 1, 1],
+        texCoords: [{ s: 0, t: 0 }],
+        translate: [0, 0, 0],
+        triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+      }),
+      diagnostics,
+    );
+
+    const complaints = diagnostics
+      .map((diagnostic) => diagnostic.kind)
+      .filter((kind) => /truncated|unreadable|malformed|unparsed|overrun|corrupt/.test(kind));
+    expect(complaints, `a good md2 file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('decomposes a model into a single mesh node document with inline geometry', () => {
     const md2 = buildMd2({
       compressedVertices: [
