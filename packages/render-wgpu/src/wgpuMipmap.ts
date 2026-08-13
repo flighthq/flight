@@ -49,6 +49,10 @@ export function getWgpuMipLevelCount(width: number, height: number): number {
   return 1 + Math.floor(Math.log2(Math.max(1, width, height)));
 }
 
+export function registerWgpuMipmapGeneration(state: WgpuRenderState): void {
+  getWgpuRenderStateRuntime(state).mipmapGenerator = generateWgpuMipmaps;
+}
+
 // Lazily builds and caches the downsample pipeline (fullscreen triangle → sample the source level →
 // write the destination level) and its texture+sampler bind-group layout on the runtime, reused across
 // every mip generation on this state. Pipelines are keyed by target format because linear and sRGB

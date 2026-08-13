@@ -30,6 +30,7 @@ export {
   registerWgpuTextureResolver,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
+  registerWgpuMipmapGeneration,
   releaseWgpuRenderTexture,
   renderIntoWgpuRenderTexture,
   renderWgpuBackground,

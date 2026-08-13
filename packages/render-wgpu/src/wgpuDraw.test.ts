@@ -30,6 +30,7 @@ import {
   updateWgpuTextureEntry,
   warmWgpuPipelines,
 } from './wgpuDraw';
+import { registerWgpuMipmapGeneration } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -228,6 +229,7 @@ describe('bindWgpuTexture', () => {
 
   it('allocates a full mip chain and generates it when generateMips is true', async () => {
     const state = await createWgpuRenderStateForTest();
+    registerWgpuMipmapGeneration(state);
     const createTexture = vi.spyOn(state.device, 'createTexture');
     const submit = vi.spyOn(state.device.queue, 'submit');
     const canvas = document.createElement('canvas');

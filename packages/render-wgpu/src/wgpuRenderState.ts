@@ -35,6 +35,7 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   target.applyBlendMode = null;
   targetRuntime.applyBlendModeParent = source;
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
+  targetRuntime.mipmapGenerator = sourceRuntime.mipmapGenerator;
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
     colorAdjustmentFeature: sourceRuntime.registries.colorAdjustmentFeature,
@@ -205,6 +206,7 @@ export async function createWgpuRenderState(
   runtime.linearSampler = linearSampler;
   runtime.nearestSampler = nearestSampler;
   runtime.samplerCache = new Map();
+  runtime.mipmapGenerator = null;
   runtime.mipmapPipelineCache = new Map();
   runtime.textureCache = new WeakMap();
   runtime.textureSourcePremultipliedTextureCache = new WeakMap();

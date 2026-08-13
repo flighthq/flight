@@ -20,7 +20,6 @@ import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
 import { retireWgpuTexture } from './wgpuBackground';
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
-import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
 import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
 
@@ -111,16 +110,12 @@ function bindWgpuTextureSourceTexture(
 
 // Uploads (and caches per image source) the GPU texture for an image, returning its texture, full view,
 // and a 2D bind group. With generateMips the texture is allocated with a full mip chain and its lower
-// levels are rendered via generateWgpuMipmaps; left false it is a single-level texture. Because WebGPU
-// fixes mipLevelCount at creation and the cache is keyed by source, the first caller decides whether a
-// shared image gets a chain; a mip sampler on a chainless texture simply samples the base level.
+// levels are rendered via runtime.mipmapGenerator (installed by registerWgpuMipmapGeneration); left false
+// it is a single-level texture. Passing true without registering allocates the levels but leaves them
+// uninitialized — the sampler reads zeros/garbage below level 0. Because WebGPU fixes mipLevelCount at
+// creation and the cache is keyed by source, the first caller decides whether a shared image gets a chain.
 //
-// NO IN-TREE CALLER PASSES `generateMips` TODAY. This previously read as though the material path opted
-// in; it does not, and neither does any other — the paths that resolve textures go through
-// `resolveWgpuTexture`, which does not expose the parameter at all (its third argument is `premultiply`).
-// The capability is reachable only by an external caller invoking this export directly. Stated because
-// the previous wording sent a reader looking for a consumer that is not there, and because the static
-// import of `generateWgpuMipmaps` above retains that module for every image upload regardless.
+// No in-tree caller passes generateMips today; resolveWgpuTexture does not expose the parameter.
 export function bindWgpuTexture(
   state: WgpuRenderState,
   imageSource: CanvasImageSource,
@@ -155,7 +150,7 @@ export function bindWgpuTexture(
 
   if (!isWgpuExternalImageSourceReady(imageSource as GPUCopyExternalImageSource, width, height)) return null;
 
-  const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
+  const mipLevelCount = generateMips ? wgpuMipLevelCount(width, height) : 1;
   const texture = device.createTexture({
     size: [width, height, 1],
     format: 'rgba8unorm',
@@ -189,7 +184,7 @@ export function bindWgpuTexture(
 
   // The copy fills level 0 only; render the remaining levels by downsampling (WebGPU has no
   // generateMipmap). Skipped for a single-level texture (mipLevelCount === 1).
-  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, 'rgba8unorm');
+  if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, 'rgba8unorm');
 
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
@@ -544,7 +539,7 @@ function uploadWgpuBitmapEntry(
   const { device } = state;
   const width = bitmap.width || 1;
   const height = bitmap.height || 1;
-  const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
+  const mipLevelCount = generateMips ? wgpuMipLevelCount(width, height) : 1;
   const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
@@ -563,7 +558,7 @@ function uploadWgpuBitmapEntry(
         ? convertRgba8AlphaEncoding(bitmap.data, false)
         : bitmap.data;
   device.queue.writeTexture({ texture }, data, { bytesPerRow: width * 4, rowsPerImage: height }, [width, height, 1]);
-  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, format);
+  if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
   const bindGroup = device.createBindGroup({
@@ -608,7 +603,7 @@ function uploadWgpuImageResourceEntry(
   const width = resource.width || 1;
   const height = resource.height || 1;
   if (!isWgpuExternalImageSourceReady(resource.source as GPUCopyExternalImageSource, width, height)) return null;
-  const mipLevelCount = generateMips ? getWgpuMipLevelCount(width, height) : 1;
+  const mipLevelCount = generateMips ? wgpuMipLevelCount(width, height) : 1;
   const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
@@ -627,7 +622,7 @@ function uploadWgpuImageResourceEntry(
     texture.destroy();
     return null;
   }
-  if (mipLevelCount > 1) generateWgpuMipmaps(state, texture, width, height, format);
+  if (mipLevelCount > 1) runtime.mipmapGenerator?.(state, texture, width, height, format);
   const view = texture.createView();
   const sampler = state.allowSmoothing ? runtime.linearSampler : runtime.nearestSampler;
   const bindGroup = device.createBindGroup({
@@ -647,3 +642,7 @@ type WgpuTextureSourceUpload = (
   premultiply: boolean,
   colorSpace: TextureColorSpace,
 ) => WgpuTextureEntry | null;
+
+function wgpuMipLevelCount(width: number, height: number): number {
+  return 1 + Math.floor(Math.log2(Math.max(1, width, height)));
+}
