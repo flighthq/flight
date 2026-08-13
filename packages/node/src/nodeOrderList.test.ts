@@ -38,6 +38,12 @@ function getChildren(source: Node) {
   return getNodeRuntime(source).children as Node[];
 }
 
+function expectChildren(source: Node, expected: readonly Node[]): void {
+  const actual = getChildren(source);
+  expect(actual).toHaveLength(expected.length);
+  for (let i = 0; i < expected.length; i++) expect(actual[i]).toBe(expected[i]);
+}
+
 function attachAll() {
   addNodeChild(container, childA);
   addNodeChild(container, childB);
@@ -91,7 +97,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childC, childB, childA]);
+    expectChildren(container, [childC, childB, childA]);
   });
 
   it('never moves a child the list does not name', () => {
@@ -107,7 +113,7 @@ describe('applyNodeOrderList', () => {
 
     // The members swap across the slots they held (0 and 2); the foreign child keeps slot 1, so it
     // still sits between them rather than being compacted to one side.
-    expect(getChildren(container)).toEqual([childB, foreign, childA]);
+    expectChildren(container, [childB, foreign, childA]);
   });
 
   it('ignores entries that are not children of the target', () => {
@@ -121,7 +127,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childB, childA]);
+    expectChildren(container, [childB, childA]);
   });
 
   it('ignores entries attached to a different parent', () => {
@@ -136,8 +142,8 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childB, childA]);
-    expect(getChildren(other)).toEqual([childC]);
+    expectChildren(container, [childB, childA]);
+    expectChildren(other, [childC]);
   });
 
   it('is a no-op once every member has been removed', () => {
@@ -152,7 +158,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([foreign]);
+    expectChildren(container, [foreign]);
     expect(getNodeChildrenRevision(container)).toBe(revision);
   });
 
@@ -166,7 +172,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childC, childA]);
+    expectChildren(container, [childC, childA]);
   });
 
   it('breaks equal sort keys by the order the entries were added', () => {
@@ -180,7 +186,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childA, childB, childC]);
+    expectChildren(container, [childA, childB, childC]);
   });
 
   it('resolves a node entered twice to its last entry', () => {
@@ -193,7 +199,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childB, childA]);
+    expectChildren(container, [childB, childA]);
   });
 
   it('is idempotent', () => {
@@ -207,7 +213,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childB, childA]);
+    expectChildren(container, [childB, childA]);
     expect(getNodeChildrenRevision(container)).toBe(revision);
   });
 
@@ -263,7 +269,7 @@ describe('applyNodeOrderList', () => {
 
     applyNodeOrderList(container, createNodeOrderList());
 
-    expect(getChildren(container)).toEqual([childA, childB]);
+    expectChildren(container, [childA, childB]);
     expect(getNodeChildrenRevision(container)).toBe(revision);
   });
 });
@@ -433,7 +439,7 @@ describe('removeNodeOrderListEntry', () => {
 
     // A keeps slot 0 — only its entry was removed, not the child. C was entered before B and stays
     // before it; a swap-with-last removal would have put B first and left the children untouched.
-    expect(getChildren(container)).toEqual([childA, childC, childB]);
+    expectChildren(container, [childA, childC, childB]);
   });
 });
 
@@ -467,7 +473,7 @@ describe('setNodeOrderListEntryAbove', () => {
     setNodeOrderListEntryAbove(list, childA, childC);
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childB, childC, childA]);
+    expectChildren(container, [childB, childC, childA]);
   });
 
   it('places between neighbours whose keys leave no gap', () => {
@@ -481,7 +487,7 @@ describe('setNodeOrderListEntryAbove', () => {
 
     // No midpoint exists between 5 and 6, so bisection could not express this; the equal-key plus
     // entry-position rule can.
-    expect(getChildren(container)).toEqual([childB, childA, childC]);
+    expectChildren(container, [childB, childA, childC]);
   });
 
   it('moves a node that is already entered rather than duplicating it', () => {
@@ -533,7 +539,7 @@ describe('setNodeOrderListEntryBelow', () => {
     setNodeOrderListEntryBelow(list, childA, childC);
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childB, childA, childC]);
+    expectChildren(container, [childB, childA, childC]);
   });
 
   it('places between neighbours whose keys leave no gap', () => {
@@ -545,7 +551,7 @@ describe('setNodeOrderListEntryBelow', () => {
     setNodeOrderListEntryBelow(list, childA, childC);
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childB, childA, childC]);
+    expectChildren(container, [childB, childA, childC]);
   });
 
   it('does nothing when the target has no entry', () => {
@@ -588,7 +594,7 @@ describe('setNodeOrderListFromNodeChildren', () => {
 
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childA, childB, childC]);
+    expectChildren(container, [childA, childB, childC]);
     expect(getNodeChildrenRevision(container)).toBe(revision);
   });
 
@@ -623,7 +629,7 @@ describe('swapNodeOrderListEntries', () => {
     swapNodeOrderListEntries(list, childA, childC);
     applyNodeOrderList(container, list);
 
-    expect(getChildren(container)).toEqual([childC, childB, childA]);
+    expectChildren(container, [childC, childB, childA]);
   });
 
   it('does nothing unless both nodes are entered', () => {
