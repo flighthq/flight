@@ -24,7 +24,8 @@
 //
 // Same allowlist-with-a-reason shape as scripts/portable.ts and scripts/mocks.ts.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
@@ -57,8 +58,10 @@ const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'w
 // DEVIATION.
 const ALLOW: { name: string; why: string }[] = [];
 
-const args = process.argv.slice(2);
-const checkMode = args.includes('--check');
+// ★ IMPORTING THIS MODULE MUST NOT RUN THE SCAN. The negative controls in backendPrefix.test.ts import
+// `findWedgedBackendSegment`, and a top-level scan would exit the test process before a single case ran —
+// which is exactly how it failed the first time. Same side-effect-free-import rule the SDK packages obey,
+// applied to a script: the work happens when this file is invoked, not when it is read.
 const root = process.cwd();
 
 interface Violation {
@@ -67,54 +70,69 @@ interface Violation {
   segment: string;
 }
 
-const exportedTypes = collectExportedTypes(join(root, 'packages', 'types', 'src'));
-const sourceFiles: string[] = [];
-walk(join(root, 'packages'), sourceFiles);
-const registrarsByPackage = collectRegistrarsByPackage(sourceFiles);
+function main(): void {
+  const args = process.argv.slice(2);
+  const checkMode = args.includes('--check');
 
-const violations: Violation[] = [];
-let allowed = 0;
-let scanned = 0;
+  const exportedTypes = collectExportedTypes(join(root, 'packages', 'types', 'src'));
+  const sourceFiles: string[] = [];
+  walk(join(root, 'packages'), sourceFiles);
+  const registrarsByPackage = collectRegistrarsByPackage(sourceFiles);
 
-for (const path of sourceFiles) {
-  const text = readFileSync(path, 'utf8');
-  for (const match of text.matchAll(/export function (register[A-Za-z0-9]+)/g)) {
-    const name = match[1];
-    scanned++;
-    const segment = findWedgedBackendSegment(name, registrarsByPackage.get(packageOf(path)) ?? new Set());
-    if (segment === null) continue;
-    if (ALLOW.some((a) => a.name === name)) {
-      allowed++;
-      continue;
+  const violations: Violation[] = [];
+  let allowed = 0;
+  let scanned = 0;
+
+  for (const path of sourceFiles) {
+    const text = readFileSync(path, 'utf8');
+    for (const match of text.matchAll(/export function (register[A-Za-z0-9]+)/g)) {
+      const name = match[1];
+      scanned++;
+      const segment = findWedgedBackendSegment(
+        name,
+        registrarsByPackage.get(packageOf(path)) ?? new Set(),
+        exportedTypes,
+      );
+      if (segment === null) continue;
+      if (ALLOW.some((a) => a.name === name)) {
+        allowed++;
+        continue;
+      }
+      violations.push({ path: relative(root, path), name, segment });
     }
-    violations.push({ path: relative(root, path), name, segment });
   }
+
+  if (violations.length === 0) {
+    console.log(
+      `${pc.green('OK')} ${pc.bold('Registrar names prefix the backend to the type')} ${pc.dim(`(${scanned} registrars, ${allowed} named escape${allowed === 1 ? '' : 's'} allow-listed)`)}`,
+    );
+    process.exit(0);
+  }
+
+  console.log(
+    `${pc.yellow('!')} ${pc.bold(`${violations.length} registrar name${violations.length === 1 ? '' : 's'} split a type around a backend token`)}\n`,
+  );
+  for (const v of violations) {
+    console.log(
+      `  ${pc.yellow('!')} ${pc.white(`${v.path}`)} ${pc.bold(v.name)} ${pc.dim(`— "${v.segment}" is not a type in @flighthq/types; move the backend token to the front of the type name`)}`,
+    );
+  }
+  console.log(
+    `\n${pc.dim('The backend token prefixes the type: register + Backend + TypeName. If the leading words are an adjective on the set rather than part of the type, the backend is already correct where it is and the trailing segment will name a real type. If the name genuinely has no type to test against, add it to ALLOW in scripts/backendPrefix.ts with a reason.')}`,
+  );
+  process.exit(checkMode ? 1 : 0);
 }
 
-if (violations.length === 0) {
-  console.log(
-    `${pc.green('OK')} ${pc.bold('Registrar names prefix the backend to the type')} ${pc.dim(`(${scanned} registrars, ${allowed} named escape${allowed === 1 ? '' : 's'} allow-listed)`)}`,
-  );
-  process.exit(0);
-}
-
-console.log(
-  `${pc.yellow('!')} ${pc.bold(`${violations.length} registrar name${violations.length === 1 ? '' : 's'} split a type around a backend token`)}\n`,
-);
-for (const v of violations) {
-  console.log(
-    `  ${pc.yellow('!')} ${pc.white(`${v.path}`)} ${pc.bold(v.name)} ${pc.dim(`— "${v.segment}" is not a type in @flighthq/types; move the backend token to the front of the type name`)}`,
-  );
-}
-console.log(
-  `\n${pc.dim('The backend token prefixes the type: register + Backend + TypeName. If the leading words are an adjective on the set rather than part of the type, the backend is already correct where it is and the trailing segment will name a real type. If the name genuinely has no type to test against, add it to ALLOW in scripts/backendPrefix.ts with a reason.')}`,
-);
-process.exit(checkMode ? 1 : 0);
+if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) main();
 
 // The segment from a wedged backend token to the end of the name, or null when the name is compliant.
 // A token is wedged when it is non-initial, is followed by a further word, and the segment it opens does
 // not name a type — which is exactly the shape a split type name has.
-function findWedgedBackendSegment(name: string, packageRegistrars: ReadonlySet<string>): string | null {
+export function findWedgedBackendSegment(
+  name: string,
+  packageRegistrars: ReadonlySet<string>,
+  types: ReadonlySet<string>,
+): string | null {
   const rest = name.slice('register'.length);
   for (const backend of BACKENDS) {
     let from = 0;
@@ -128,7 +146,7 @@ function findWedgedBackendSegment(name: string, packageRegistrars: ReadonlySet<s
       // Mid-word, e.g. the "Gl" inside "Glossiness" — not a token at all.
       if (!isUpperCase(rest[after])) continue;
       const segment = rest.slice(at);
-      if (namesType(segment)) continue;
+      if (namesType(segment, types)) continue;
       if (namesSingularRegistrar(segment, packageRegistrars)) continue;
       return segment;
     }
@@ -138,9 +156,9 @@ function findWedgedBackendSegment(name: string, packageRegistrars: ReadonlySet<s
 
 // Whether `segment` names an exported type, allowing the plural a set-registrar uses
 // (GlTextureResolvers -> GlTextureResolver).
-function namesType(segment: string): boolean {
-  if (exportedTypes.has(segment)) return true;
-  return segment.endsWith('s') && exportedTypes.has(segment.slice(0, -1));
+function namesType(segment: string, types: ReadonlySet<string>): boolean {
+  if (types.has(segment)) return true;
+  return segment.endsWith('s') && types.has(segment.slice(0, -1));
 }
 
 // The second proof path: a mid-name PLURAL AGGREGATE is compliant when singularizing the segment names
