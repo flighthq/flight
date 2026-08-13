@@ -286,7 +286,13 @@ describe('packRectangles properties', () => {
       const count = 1 + Math.floor(random() * 25);
       const rects: PackableRectangle[] = [];
       for (let i = 0; i < count; i++) {
-        rects.push({ id: i, width: 1 + Math.floor(random() * 60), height: 1 + Math.floor(random() * 60) });
+        // Every fifth seed draws ids from a pool smaller than the rectangle count, so DUPLICATE IDS are
+        // exercised rather than left exotic — the packer treats same-id rectangles as distinct pieces,
+        // and duplicates are exactly where an identity check and a count check stop agreeing. Same-id
+        // pieces are given the same size so a size assertion keyed by id still names one shape.
+        const id = seed % 5 === 0 ? i % 3 : i;
+        const size = makeRandom(seed * 1000 + (id as number));
+        rects.push({ id, width: 1 + Math.floor(size() * 60), height: 1 + Math.floor(size() * 60) });
       }
       const padding = Math.floor(random() * 4);
       const border = Math.floor(random() * 4);
