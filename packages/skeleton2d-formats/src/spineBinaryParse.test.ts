@@ -315,6 +315,26 @@ describe('parseSpineSkeletonBinary', () => {
     expect(kinds).toContain('spine.ik-constraint-unsupported');
   });
 
+  // ★ THE VERSION THAT ACTUALLY EXISTS IN THE WILD, and the case a prefix gate got wrong. Every one of the
+  // 23 real exports in the spine-fixtures corpus is 4.2.22, and the old `startsWith('4.')` admitted them
+  // into a reader built for 4.1 — each produced a Skeleton2DImport with zero bones from a 64 KB file, a
+  // silent empty success rather than a refusal. Refusing is strictly better: the caller can tell.
+  it.each(['4.2.22', '4.3.0', '5.0.0'])('REJECTS %s rather than reading it with a layout built for 4.1', (version) => {
+    const crumbs = collectImportDiagnostics((sink) =>
+      expect(parseSpineSkeletonBinary(buildSpineBinary({ version }), sink)).toBeNull(),
+    );
+
+    const crumb = crumbs.find((c) => c.kind === 'spine.binary-version-unsupported')!;
+    expect(crumb, `no unsupported crumb for ${version}`).toBeDefined();
+    expect(crumb.detail).toMatchObject({ version });
+  });
+
+  // The layouts that ARE implemented still parse — a gate that rejects everything would pass the test
+  // above and be useless.
+  it.each(['4.1.17', '4.1.0'])('still reads %s, the layout it was verified against', (version) => {
+    expect(parseSpineSkeletonBinary(buildSpineBinary({ version }))).not.toBeNull();
+  });
+
   it('REJECTS a version whose record layout this importer does not describe', () => {
     const crumbs = collectImportDiagnostics((sink) =>
       expect(parseSpineSkeletonBinary(buildSpineBinary({ version: '3.8.99' }), sink)).toBeNull(),
