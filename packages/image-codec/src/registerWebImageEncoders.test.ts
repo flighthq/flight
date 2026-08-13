@@ -16,7 +16,8 @@ class MockOffscreenCanvas {
     readonly height: number,
   ) {}
 
-  getContext(): unknown {
+  getContext(contextId: string): unknown {
+    if (contextId !== '2d') return null;
     return { putImageData: vi.fn() };
   }
 
