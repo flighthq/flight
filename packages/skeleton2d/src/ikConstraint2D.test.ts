@@ -284,6 +284,64 @@ describe('solveSkeleton2DIkConstraint', () => {
     expect(skeleton.bones[0].scaleX).toBeCloseTo(2, 5);
   });
 
+  // ★ THE PARAMETER SPACE, AS A STANDING PROPERTY RATHER THAN A NUMBER IN A REPORT.
+  //
+  // When the dead-zone branch was removed as redundant, the evidence was a sweep of 1,536 parameter
+  // combinations showing byte-identical output with and without it. That sweep lived in a scratch probe
+  // and was deleted with it, which left the removal resting on a figure in a message — integration
+  // flagged that it was the ONLY evidence, since no committed test enumerated the space. This is that
+  // evidence, made durable and turned the right way round: it does not assert what the old branch did,
+  // it asserts what the SOLVER MUST DO, so it constrains every future edit rather than one past one.
+  //
+  // The property is the definition of a two-bone solve, and it has exactly three cases with no gaps
+  // between them. For a target at distance d from the parent's origin, with the chain fully mixed:
+  //   d  >  pL + cL          out of reach   — the chain straightens, the tip sits at pL + cL along the aim
+  //   d  <  |pL - cL|        dead zone      — the chain folds, the tip sits at |pL - cL| along the aim
+  //   otherwise              reachable      — the tip lands ON the target
+  // Anything that breaks a clamp, an angle, or the branch structure lands outside one of the three.
+  it('places the tip correctly across the whole reachable/unreachable/dead-zone space', () => {
+    const lengths = [10, 6, 3, 12.5];
+    const targets = [-8, -2, -0.5, 0.5, 2, 5, 9, 30];
+    let checked = 0;
+
+    for (const parentLength of lengths) {
+      for (const childLength of lengths) {
+        for (const tx of targets) {
+          for (const ty of [0, -3, 4.5]) {
+            for (const bendPositive of [true, false]) {
+              const skeleton = createSkeleton2D([
+                makeBone({ length: parentLength }),
+                makeBone({ length: childLength, parentIndex: 0, x: parentLength }),
+                makeBone({ x: tx, y: ty }),
+              ]);
+              computeSkeleton2DWorldTransforms(skeleton);
+
+              solveSkeleton2DIkConstraint(skeleton, ik({ bendPositive, boneIndices: [0, 1], targetBoneIndex: 2 }));
+              computeSkeleton2DWorldTransforms(skeleton);
+
+              const reach = Math.hypot(tx, ty);
+              if (reach === 0) continue; // no aim direction exists; the solver documents this as skipped
+              const span = parentLength + childLength;
+              const fold = Math.abs(parentLength - childLength);
+              const wanted = reach > span ? span : reach < fold ? fold : reach;
+              // Whatever the case, the tip lies at `wanted` along the direction of the target. Compared as
+              // a POSITION rather than a length plus an angle: atan2 reports -pi and +pi for the same
+              // direction, so an angle comparison fails on a target along -x for a reason that is about
+              // the assertion rather than the solver.
+              const tip = tipOf(skeleton, 1);
+              const where = `p=${parentLength} c=${childLength} t=(${tx},${ty}) bend=${bendPositive}`;
+              expect(tip.x, `${where} tip.x`).toBeCloseTo((wanted * tx) / reach, 4);
+              expect(tip.y, `${where} tip.y`).toBeCloseTo((wanted * ty) / reach, 4);
+              checked++;
+            }
+          }
+        }
+      }
+    }
+    // A sweep that silently stopped enumerating would pass every assertion above.
+    expect(checked).toBeGreaterThan(700);
+  });
+
   it('skips a chain length it does not solve rather than posing something wrong', () => {
     const skeleton = createSkeleton2D([
       makeBone({ length: 10 }),
