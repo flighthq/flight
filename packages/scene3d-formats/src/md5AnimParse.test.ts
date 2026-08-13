@@ -114,6 +114,27 @@ function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string):
 }
 
 describe('parseMd5Anim', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a frame walk that desynchronised
+  // and still produced channels whose asserted values happen to look right. This importer has eight ways to
+  // say it lost its place in the frame data and, until this test, no assertion that a good file trips none
+  // of them.
+  it('raises no diagnostic at all for a well-formed animation', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parseMd5Anim(TWO_JOINT_TWO_FRAME, makeJoints(2), diagnostics);
+
+    // The list is pinned EXACTLY rather than filtered, so anything new is a failure. `bounds-discarded` is
+    // the one expected entry: a well-formed .md5anim carries a bounds block and this importer recognizes it,
+    // does not model it, and skips it — a capability gap on correct input. It is currently reported at Drop
+    // severity, which is why this cannot use the `severity !== Skip` form; whether that classification is
+    // right is a separate caller-visible question and is not settled here.
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
+    expect(complaints, `a good md5anim file made the parser complain: ${complaints.join(', ')}`).toEqual([
+      'md5anim.bounds-discarded',
+    ]);
+  });
+
   it('parses a single static joint from baseframe values', () => {
     const joints = makeJoints(1);
     const clip = parseMd5Anim(SINGLE_JOINT_STATIC, joints);
