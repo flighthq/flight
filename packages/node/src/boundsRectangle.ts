@@ -165,17 +165,33 @@ export function getNodeWorldBoundsRectangle<Traits extends object>(target: Spati
 
 export function setNodeHeight<Traits extends object>(target: Spatial2DNode<Traits>, value: number): void {
   if (target.scaleY === 0) return;
-  const height = getNodeHeight(target);
-  if (height === 0) return;
-  target.scaleY = (value * target.scaleY) / height;
+  const bounds = getNodeLocalBoundsRectangle(target);
+  const matrix = getNodeLocalMatrix(target);
+  const scaleYFactor = Math.abs(matrix.d / target.scaleY);
+  const localHeight = Math.abs(bounds.height);
+  // This setter is the inverse of getNodeHeight's parent-space AABB measurement. The perpendicular
+  // scale contributes a fixed term, so width/height setters intentionally do not commute.
+  if (scaleYFactor <= SINGULAR_AXIS_EPSILON || localHeight === 0) return;
+  const fixedXTerm = Math.abs(matrix.b) * Math.abs(bounds.width);
+  const adjustableHeight = value - fixedXTerm;
+  if (adjustableHeight < 0) return;
+  target.scaleY = Math.sign(target.scaleY) * (adjustableHeight / (scaleYFactor * localHeight));
   invalidateNodeLocalTransform(target);
 }
 
 export function setNodeWidth<Traits extends object>(target: Spatial2DNode<Traits>, value: number): void {
   if (target.scaleX === 0) return;
-  const width = getNodeWidth(target);
-  if (width === 0) return;
-  target.scaleX = (value * target.scaleX) / width;
+  const bounds = getNodeLocalBoundsRectangle(target);
+  const matrix = getNodeLocalMatrix(target);
+  const scaleXFactor = Math.abs(matrix.a / target.scaleX);
+  const localWidth = Math.abs(bounds.width);
+  // This setter is the inverse of getNodeWidth's parent-space AABB measurement. The perpendicular
+  // scale contributes a fixed term, so width/height setters intentionally do not commute.
+  if (scaleXFactor <= SINGULAR_AXIS_EPSILON || localWidth === 0) return;
+  const fixedYTerm = Math.abs(matrix.c) * Math.abs(bounds.height);
+  const adjustableWidth = value - fixedYTerm;
+  if (adjustableWidth < 0) return;
+  target.scaleX = Math.sign(target.scaleX) * (adjustableWidth / (scaleXFactor * localWidth));
   invalidateNodeLocalTransform(target);
 }
 
@@ -309,3 +325,4 @@ function tryFastRecomputeWorldBoundsRectangle<Traits extends object>(
 
 const _tempBoundsRectangle = createRectangle();
 const _rootLocalNodeBounds = createRectangle();
+const SINGULAR_AXIS_EPSILON = 1e-12;

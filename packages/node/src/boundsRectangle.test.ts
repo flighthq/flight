@@ -699,6 +699,64 @@ describe('setNodeHeight', () => {
     expect(node.scaleY).toBe(1);
     expect(Number.isFinite(node.scaleY)).toBe(true);
   });
+
+  for (const [name, transform] of sizeRoundTripTransforms) {
+    it(`round-trips parent-space height through ${name}`, () => {
+      const parent = createTestNode();
+      const node = createTestNode();
+      addNodeChild(parent, node);
+      setRectangle(getNodeLocalBoundsRectangle(node) as Rectangle, 0, 0, 10, 20);
+      Object.assign(node, transform);
+      invalidateNodeLocalTransform(node);
+      const sign = Math.sign(node.scaleY);
+
+      setNodeHeight(node, 100);
+
+      expect(getNodeHeight(node)).toBeCloseTo(100, 10);
+      expect(Math.sign(node.scaleY)).toBe(sign);
+    });
+  }
+
+  it('declines an unsatisfiable height below the fixed x-axis contribution', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addNodeChild(parent, node);
+    setRectangle(getNodeLocalBoundsRectangle(node) as Rectangle, 0, 0, 10, 20);
+    node.rotation = 30;
+    invalidateNodeLocalTransform(node);
+    const scaleY = node.scaleY;
+
+    setNodeHeight(node, 4);
+
+    expect(node.scaleY).toBe(scaleY);
+  });
+
+  it('does not mutate at a singular rotation and still solves near it', () => {
+    const singularParent = createTestNode();
+    const singular = createTestNode();
+    addNodeChild(singularParent, singular);
+    setRectangle(getNodeLocalBoundsRectangle(singular) as Rectangle, 0, 0, 10, 20);
+    singular.rotation = 90;
+    singular.scaleY = 2;
+    invalidateNodeLocalTransform(singular);
+
+    setNodeHeight(singular, 50);
+
+    expect(singular.scaleY).toBe(2);
+    expect(Number.isFinite(singular.scaleY)).toBe(true);
+
+    const nearParent = createTestNode();
+    const near = createTestNode();
+    addNodeChild(nearParent, near);
+    setRectangle(getNodeLocalBoundsRectangle(near) as Rectangle, 0, 0, 10, 20);
+    near.rotation = 89.999;
+    invalidateNodeLocalTransform(near);
+
+    setNodeHeight(near, 50);
+
+    expect(Number.isFinite(near.scaleY)).toBe(true);
+    expect(getNodeHeight(near)).toBeCloseTo(50, 8);
+  });
 });
 
 describe('setNodeWidth', () => {
@@ -728,6 +786,64 @@ describe('setNodeWidth', () => {
     expect(node.scaleX).toBe(1);
     expect(Number.isFinite(node.scaleX)).toBe(true);
   });
+
+  for (const [name, transform] of sizeRoundTripTransforms) {
+    it(`round-trips parent-space width through ${name}`, () => {
+      const parent = createTestNode();
+      const node = createTestNode();
+      addNodeChild(parent, node);
+      setRectangle(getNodeLocalBoundsRectangle(node) as Rectangle, 0, 0, 10, 20);
+      Object.assign(node, transform);
+      invalidateNodeLocalTransform(node);
+      const sign = Math.sign(node.scaleX);
+
+      setNodeWidth(node, 100);
+
+      expect(getNodeWidth(node)).toBeCloseTo(100, 10);
+      expect(Math.sign(node.scaleX)).toBe(sign);
+    });
+  }
+
+  it('declines an unsatisfiable width below the fixed y-axis contribution', () => {
+    const parent = createTestNode();
+    const node = createTestNode();
+    addNodeChild(parent, node);
+    setRectangle(getNodeLocalBoundsRectangle(node) as Rectangle, 0, 0, 10, 20);
+    node.rotation = 30;
+    invalidateNodeLocalTransform(node);
+    const scaleX = node.scaleX;
+
+    setNodeWidth(node, 5);
+
+    expect(node.scaleX).toBe(scaleX);
+  });
+
+  it('does not mutate at a singular rotation and still solves near it', () => {
+    const singularParent = createTestNode();
+    const singular = createTestNode();
+    addNodeChild(singularParent, singular);
+    setRectangle(getNodeLocalBoundsRectangle(singular) as Rectangle, 0, 0, 10, 20);
+    singular.rotation = 90;
+    singular.scaleX = 2;
+    invalidateNodeLocalTransform(singular);
+
+    setNodeWidth(singular, 50);
+
+    expect(singular.scaleX).toBe(2);
+    expect(Number.isFinite(singular.scaleX)).toBe(true);
+
+    const nearParent = createTestNode();
+    const near = createTestNode();
+    addNodeChild(nearParent, near);
+    setRectangle(getNodeLocalBoundsRectangle(near) as Rectangle, 0, 0, 10, 20);
+    near.rotation = 89.999;
+    invalidateNodeLocalTransform(near);
+
+    setNodeWidth(near, 50);
+
+    expect(Number.isFinite(near.scaleX)).toBe(true);
+    expect(getNodeWidth(near)).toBeCloseTo(50, 8);
+  });
 });
 
 function cloneAndInvalidateRect(rect: Rectangle): Rectangle {
@@ -741,5 +857,12 @@ function invalidateRect(rect: Rectangle | null): void {
 }
 
 type TestNode = Node<HasTransform2D & HasBoundsRectangle> & HasTransform2D & HasBoundsRectangle;
+
+const sizeRoundTripTransforms = [
+  ['rotation', { rotation: 30, scaleX: 1, scaleY: 1, skewX: 0, skewY: 0 }],
+  ['skew and non-uniform scale', { rotation: 10, scaleX: 0.7, scaleY: 2.3, skewX: 25, skewY: -15 }],
+  ['mirrored x scale', { rotation: -25, scaleX: -1.4, scaleY: 0.6, skewX: -10, skewY: 20 }],
+  ['mirrored y scale', { rotation: 40, scaleX: 1.8, scaleY: -1.2, skewX: 12, skewY: -18 }],
+] as const;
 
 const TestKind = 'Test';
