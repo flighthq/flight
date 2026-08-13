@@ -3830,6 +3830,31 @@
           }
         },
         {
+          "scene": "node-transform-mirror",
+          "backends": {
+            "canvas": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
           "scene": "node-visibility",
           "backends": {
             "canvas": {
