@@ -726,9 +726,17 @@ function writeVarint(out: number[], value: number): void {
 //
 // ★ WHAT THIS CAN AND CANNOT PROVE. The widths below are the ones the importer skips, so this cannot
 // confirm them against the real format — for that the layout was read against a purchased 4.1 export (see
-// the package status). What it does prove is that the two paths through each record, with and without
-// nonessential data, stay in step with each other and with the reader, which is exactly what drifts when
-// someone edits one skip and not its sibling.
+// the package status).
+//
+// ★ AND IT IS A WHOLE-STREAM ORACLE, NOT A PER-RECORD ONE. This fixture used to claim it proved each
+// record stays in step with the reader. It cannot: the only thing checked is the region attachment at the
+// far end, so a record walked wrong is caught only if its desync SURVIVES every following record to reach
+// that oracle — which depends on the downstream bytes, not on the code under test. Measured: with all five
+// present, deleting the boundingbox skip was caught and deleting the point-colour skip was not.
+//
+// The per-record claim belongs to the isolation test above ('walks an unmodeled %s record byte-exactly'),
+// which makes the reader's own end offset the oracle. What THIS fixture still earns is coverage of the
+// five records INTERACTING — consecutive records in one stream, which the isolated files never exercise.
 // ★ THE COLOUR VALUE IS LOAD-BEARING AND 0xffffffff WOULD MAKE THIS TEST UNABLE TO FAIL. Every byte of
 // 0xffffffff has the varint continuation bit set, so when a reader is four bytes behind, the next varint
 // SWALLOWS the stray colour and resynchronises by accident — measured: dropping the boundingbox skip
