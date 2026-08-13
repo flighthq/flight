@@ -1,192 +1,185 @@
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import type { SizeResult } from './size-runner';
-import { collectSizeCases, didSizeChecksPass, getFlightDiagnosticsSizeDelta, runSizeChecks } from './size-runner';
+import type { FastSizeDelta } from './size-fast-runner';
+import {
+  compareFastSizes,
+  getChangedFastSizes,
+  hashFastSizeTree,
+  measureFastSizes,
+  readFastSizeBaseline,
+  readFastSizeCache,
+  selectFastSizeUnit,
+  writeFastSizeBaseline,
+  writeFastSizeCache,
+} from './size-fast-runner';
+import { collectSizeCases, getSizeCaseKey, parseFilter } from './size-runner';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const root = resolve(__dirname, '..');
+const cacheDir = resolve(root, '.cache', 'size-fast');
+const baselineFile = resolve(root, 'tools', 'size', 'size.unminified.baseline.json');
 
-interface ParsedArgs {
-  exampleFilters: string[];
-  renderFilters: string[];
-  report: string | null;
-  outputPath: string | null;
-  help: boolean;
-}
+// Files that record a measurement rather than feed one. They are excluded from
+// the tree id because including them makes every `size:baseline` invalidate the
+// cache entry it just wrote — an output cannot be one of its own inputs. Declared
+// here rather than at the file's tail because getCurrentTreeId runs at module
+// scope, where a `const` below it is still in the temporal dead zone.
+const MEASUREMENT_OUTPUTS = ['tools/size/size.unminified.baseline.json', 'tools/size/size.baseline.json'];
 
-const rawArgs = process.argv.slice(2);
-const options = parseArgs(rawArgs);
-
-if (options.help) {
+const args = process.argv.slice(2);
+if (args.includes('--help') || args.includes('-h')) {
   printUsage();
   process.exit(0);
 }
 
-const root = resolve(__dirname, '..');
-const examplesDir = resolve(root, 'examples', 'packages');
-const baselineFile = resolve(root, 'tools', 'size', 'size.baseline.json');
+const asJson = args.includes('report=json') || args.includes('--json');
 const updateBaseline = process.env.UPDATE_BASELINE === '1';
-const report = options.report ?? (options.outputPath ? 'json' : null);
-const outputPath = options.outputPath;
-const standardOutput = !outputPath && report !== 'json';
-const sizeCases = standardOutput ? collectSizeCases(examplesDir, options.exampleFilters, options.renderFilters) : [];
-const printProgress = standardOutput ? createProgressivePrinter(sizeCases) : null;
+const refArg = args.find((arg) => arg.startsWith('--ref='))?.slice('--ref='.length) ?? null;
+const filters = args.filter((arg) => !arg.startsWith('-') && !arg.includes('='));
+const renderFilters = args
+  .filter((arg) => arg.startsWith('render='))
+  .flatMap((arg) => parseFilter(arg.slice('render='.length)));
 
-if (standardOutput && sizeCases.length === 0) {
-  console.log(pc.yellow('No matching size tests were found.'));
+const examplesDir = resolve(root, 'examples', 'packages');
+
+// Always measure and cache every case. Filters select what to *report*, never what
+// to measure: a partial map written under a whole-tree id would silently answer
+// later unfiltered runs with missing cases, and a partial baseline write would
+// drop every key the filter excluded.
+const allCases = collectSizeCases(examplesDir, [], []);
+const selectedKeys = new Set(collectSizeCases(examplesDir, filters, renderFilters).map(getSizeCaseKey));
+if (selectedKeys.size === 0) {
+  console.log(pc.yellow('No matching size cases were found.'));
+  process.exit(0);
 }
 
-const { results, pendingBaseline } = await runSizeChecks({
-  root,
-  examplesDir,
-  baselineFile,
-  updateBaseline,
-  exampleFilters: options.exampleFilters,
-  onResult: (result) => printProgress?.(result),
-  renderFilters: options.renderFilters,
-});
-const passed = didSizeChecksPass(results);
-const flightDiagnosticsDelta = getFlightDiagnosticsSizeDelta(results);
+const treeId = getCurrentTreeId();
+const measured = readFastSizeCache(cacheDir, treeId) ?? (await measureFastSizes(allCases));
+writeFastSizeCache(cacheDir, { sizes: measured, treeId });
+
+const sizes = selectFastSizeUnit(measured, 'gzip');
 
 if (updateBaseline) {
-  const { writeBaseline } = await import('./size-runner');
-  writeBaseline(baselineFile, pendingBaseline);
+  writeFastSizeBaseline(baselineFile, sizes);
+  console.log(pc.green(`Wrote ${Object.keys(sizes).length} unminified sizes to size.unminified.baseline.json.`));
+  process.exit(0);
 }
 
-if (outputPath) {
-  const path = resolve(process.cwd(), outputPath);
-  const json = JSON.stringify({ passed, cases: results, flightDiagnosticsDelta }, null, 2);
-  await import('fs').then(({ writeFileSync }) => writeFileSync(path, json + '\n'));
-  console.log(`SIZE_REPORT_PATH:${path}`);
-  process.exit(passed ? 0 : 1);
+const reference = refArg !== null ? readReferenceTree(refArg) : readFastSizeBaseline(baselineFile);
+const referenceLabel = refArg ?? 'baseline';
+
+const deltas = compareFastSizes(reference, sizes).filter((delta) => selectedKeys.has(delta.key));
+const changed = getChangedFastSizes(deltas);
+
+if (asJson) {
+  console.log(JSON.stringify({ treeId, reference: referenceLabel, changed, sizes: measured }));
+  process.exit(0);
 }
 
-if (report === 'json') {
-  console.log(JSON.stringify({ passed, cases: results, flightDiagnosticsDelta }));
-  process.exit(passed ? 0 : 1);
-}
+printReport(changed, referenceLabel);
 
-if (flightDiagnosticsDelta !== null) {
-  console.log(`Flight diagnostics delta: +${(flightDiagnosticsDelta / 1024).toFixed(2)} KB gzip\n`);
-}
+// Advisory by construction. A red gate here would push an agent to rewrite the
+// baseline to clear it, which launders the regression the report exists to show —
+// so this reports and always exits 0. `size:minified` owns the gate.
+process.exit(0);
 
-process.exit(passed ? 0 : 1);
-
-function parseArgs(args: string[]): ParsedArgs {
-  const parsed: ParsedArgs = {
-    exampleFilters: [],
-    renderFilters: [],
-    report: null,
-    outputPath: null,
-    help: false,
-  };
-
-  for (const arg of args) {
-    if (arg === '--help' || arg === '-h') {
-      parsed.help = true;
-      continue;
-    }
-
-    if (arg.startsWith('render=')) {
-      parsed.renderFilters.push(arg.slice('render='.length));
-      continue;
-    }
-
-    if (arg.startsWith('render:')) {
-      parsed.renderFilters.push(arg.slice('render:'.length));
-      continue;
-    }
-
-    if (arg.startsWith('report=')) {
-      parsed.report = arg.slice('report='.length).toLowerCase();
-      continue;
-    }
-
-    if (arg.startsWith('report:')) {
-      parsed.report = arg.slice('report:'.length).toLowerCase();
-      continue;
-    }
-
-    if (arg.startsWith('output=')) {
-      parsed.outputPath = arg.slice('output='.length);
-      continue;
-    }
-
-    if (arg.startsWith('output:')) {
-      parsed.outputPath = arg.slice('output:'.length);
-      continue;
-    }
-
-    if (arg.startsWith('out=')) {
-      parsed.outputPath = arg.slice('out='.length);
-      continue;
-    }
-
-    if (arg.startsWith('out:')) {
-      parsed.outputPath = arg.slice('out:'.length);
-      continue;
-    }
-
-    parsed.exampleFilters.push(arg);
+function printReport(changed: readonly Readonly<FastSizeDelta>[], referenceLabel: string): void {
+  if (Object.keys(reference).length === 0) {
+    console.log(pc.yellow('No unminified baseline yet.'));
+    console.log(pc.dim('Run `npm run size:baseline` to record one from this tree.'));
+    return;
   }
 
-  return parsed;
+  console.log(`${pc.dim('vs')} ${referenceLabel}  ${pc.dim('· tree')} ${treeId}\n`);
+
+  if (changed.length === 0) {
+    console.log(pc.green(`No case moved beyond the noise band. ${selectedKeys.size} cases compared.`));
+    printFooter();
+    return;
+  }
+
+  const width = Math.max(...changed.map((delta) => delta.key.length));
+  for (const delta of [...changed].sort((a, b) => Math.abs(b.deltaBytes) - Math.abs(a.deltaBytes))) {
+    const percent = delta.deltaPercent;
+    const color = percent === null ? pc.cyan : percent > 2 ? pc.red : percent > 0 ? pc.yellow : pc.green;
+    const sign = delta.deltaBytes >= 0 ? '+' : '';
+    const percentText =
+      percent === null ? pc.dim(delta.before === null ? '(new)' : '(gone)') : color(`${sign}${percent.toFixed(2)}%`);
+    console.log(`${delta.key.padEnd(width)}  ${color(`${sign}${delta.deltaBytes} B`).padStart(12)}  ${percentText}`);
+  }
+
+  console.log(`\n${changed.length} of ${selectedKeys.size} cases moved.`);
+  printFooter();
 }
 
-function createProgressivePrinter(cases: ReturnType<typeof collectSizeCases>): (result: Readonly<SizeResult>) => void {
-  const exampleNames = [...new Set(cases.map((tc) => tc.name))];
-  const exampleBgColors = [pc.bgBlue, pc.bgMagenta, pc.bgCyan, pc.bgGreen];
-  const maxNameLen = Math.max(0, ...exampleNames.map((n) => n.length));
-  const maxRenderLen = Math.max(
-    8,
-    ...cases.map((sizeCase) => `${sizeCase.render}${sizeCase.variant === null ? '' : `:${sizeCase.variant}`}`.length),
+function printFooter(): void {
+  console.log(
+    pc.dim(
+      '\nUNMINIFIED tree-shaken gzip bytes — a tree-shaking signal, not a shipping size.\nDo not quote them as bundle cost; `npm run size:minified` owns that claim.',
+    ),
   );
-  const w = { name: maxNameLen + 5, render: maxRenderLen, size: 10, base: 34 };
-  const expectedByExample = new Map<string, number>();
-  const resultsByExample = new Map<string, Readonly<SizeResult>[]>();
+}
 
-  for (const { name } of cases) {
-    expectedByExample.set(name, (expectedByExample.get(name) ?? 0) + 1);
-  }
+/**
+ * Identifies the tree being measured, so an unchanged tree answers from cache.
+ * A dirty tree hashes its own diff rather than reusing HEAD's id, because those
+ * edits are exactly what the caller wants measured.
+ */
+function getCurrentTreeId(): string {
+  const head = git(['rev-parse', 'HEAD']);
+  const status = git(['status', '--porcelain']);
+  if (head === null) return hashFastSizeTree(['no-git', String(process.pid)]);
+  if (status === null || status.length === 0) return head.slice(0, 16);
 
-  return (result) => {
-    const group = resultsByExample.get(result.name) ?? [];
-    group.push(result);
-    resultsByExample.set(result.name, group);
-
-    if (group.length !== expectedByExample.get(result.name)) return;
-
-    const bgColor = exampleBgColors[exampleNames.indexOf(result.name) % exampleBgColors.length];
-
-    const lines = group.map((r, i) => {
-      const nameCell =
-        i === 0 ? bgColor(' ' + r.name + ' ') + ''.padEnd(w.name - r.name.length - 2) : ''.padEnd(w.name);
-      const deltaNum = r.delta != null ? parseFloat(r.delta) : null;
-      const color = deltaNum == null ? pc.dim : deltaNum > 2 ? pc.red : deltaNum > 0 ? pc.yellow : pc.green;
-      const deltaStr =
-        r.delta == null ? pc.dim('—') : color(r.delta[0]) + color(r.delta.slice(1, -1)) + pc.dim(color('%'));
-      const baselineOrigin = r.baselineCommit
-        ? ` @${r.baselineCommit.slice(0, 10)}${r.baselineCommitDate ? ` (${r.baselineCommitDate})` : ''}`
-        : ' @unknown';
-      const baselineStr = pc.dim(
-        (r.baselineKBStr ? `~${r.baselineKBStr} KB${baselineOrigin}` : 'no baseline').padEnd(w.base),
-      );
-      const flag = r.passed ? '' : '  ' + pc.red('✗');
-
-      const renderLabel = `${r.render}${r.variant === null ? '' : `:${r.variant}`}`;
-      return `${nameCell}  ${pc.dim(renderLabel.padEnd(w.render))}  ${(r.gzipKB + ' KB').padEnd(w.size)}  ${baselineStr}  ${deltaStr}${flag}`;
+  const diff = git(['diff', 'HEAD', '--', '.', ...MEASUREMENT_OUTPUTS.map((path) => `:(exclude)${path}`)]) ?? '';
+  const untracked = (git(['ls-files', '--others', '--exclude-standard']) ?? '')
+    .split('\n')
+    .filter(Boolean)
+    .filter((path) => !MEASUREMENT_OUTPUTS.includes(path))
+    .map((path) => {
+      const full = resolve(root, path);
+      return existsSync(full) ? `${path}:${readFileSync(full, 'utf-8')}` : path;
     });
+  return `dirty-${hashFastSizeTree([head, diff, ...untracked])}`;
+}
 
-    console.log(lines.join('\n') + '\n');
-  };
+/**
+ * Reads a previously measured tree from the cache. This is the parent-versus-commit
+ * mode: comparing against the commit you branched from attributes the delta to your
+ * own change, where comparing against a pin of unknown age attributes everyone's
+ * accumulated drift to you.
+ */
+function readReferenceTree(ref: string): Record<string, number> {
+  const resolved = git(['rev-parse', ref]);
+  const id = resolved === null ? ref : resolved.slice(0, 16);
+  const cached = readFastSizeCache(cacheDir, id);
+  if (cached !== null) return selectFastSizeUnit(cached, 'gzip');
+
+  console.error(pc.red(`No cached measurement for ${ref} (${id}).`));
+  console.error(pc.dim('Check that tree out and run `npm run size` there first, or omit --ref to use the baseline.'));
+  process.exit(1);
+}
+
+function git(gitArgs: readonly string[]): string | null {
+  const result = spawnSync('git', [...gitArgs], { cwd: root, encoding: 'utf8' });
+  if (result.error || result.status !== 0) return null;
+  return result.stdout.trim();
 }
 
 function printUsage(): void {
-  console.log('Usage: npm run size [filters...] [report=json] [output=path]');
-  console.log('Examples:');
-  console.log('  npm run size piratepig');
-  console.log('  npm run size report=json piratepig');
-  console.log('  npm run size output=size-report.json piratepig');
+  console.log('Usage: npm run size [filters...] [render=<name>] [--ref=<commit>] [report=json]');
+  console.log('');
+  console.log('Measures tree-shaken UNMINIFIED gzip size for every example and reports what moved');
+  console.log('against the committed baseline. Advisory, never gates. For the shipping number see');
+  console.log('`npm run size:minified` — which takes ~10 minutes and is the nightly job.');
+  console.log('');
+  console.log('  npm run size                    compare this tree against the committed baseline');
+  console.log('  npm run size shapes             only cases matching a filter');
+  console.log('  npm run size -- --ref=HEAD~1    compare against a commit you measured earlier');
+  console.log('  npm run size:baseline           rewrite the baseline from this tree');
 }
