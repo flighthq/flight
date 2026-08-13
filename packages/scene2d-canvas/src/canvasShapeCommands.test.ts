@@ -37,9 +37,6 @@ function makeShapeTarget(): { context: CanvasRenderingContext2D; state: RenderSt
   canvas.width = 200;
   canvas.height = 200;
   const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-  if (typeof context.roundRect !== 'function') {
-    context.roundRect = vi.fn();
-  }
   const state = createRenderState();
   registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
   return { context, state };
@@ -312,6 +309,24 @@ describe('defaultCanvasDrawRoundRectangle', () => {
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
     expect(spy).toHaveBeenCalledWith(0, 0, 100, 50, 5);
+  });
+
+  it('keeps the corner radius nonnegative when rectangle dimensions are negative', () => {
+    const { context, state } = makeShapeTarget();
+    const spy = vi.spyOn(context, 'roundRect');
+    const shape = createShape();
+    appendShapeBeginFill(shape, 0xffffff);
+    appendShapeRoundRectangle(shape, 0, 0, -100, -50, 200, 200);
+    appendShapeEndFill(shape);
+
+    expect(() => renderCanvasShapeCommands(context, state, shape.data.commands, resolvers)).not.toThrow();
+    expect(spy).toHaveBeenCalledWith(0, 0, -100, -50, 25);
+  });
+
+  it('uses a fake roundRect that rejects a negative radius like the browser', () => {
+    const { context } = makeShapeTarget();
+
+    expect(() => context.roundRect(0, 0, 100, 50, -1)).toThrowError(RangeError);
   });
 });
 

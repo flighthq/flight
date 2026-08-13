@@ -40,6 +40,7 @@ if (typeof window !== 'undefined' && 'document' in window) {
   await import('@testing-library/jest-dom');
   await import('vitest-webgl-canvas-mock');
   installCanvas2dPixelReadbackValidation();
+  installCanvas2dRoundRectValidation();
 
   // jsdom has no webgl2 context, and vitest-webgl-canvas-mock only covers webgl /
   // experimental-webgl, so patch getContext('webgl2') to return a vi.fn()-stubbed mock.
@@ -96,6 +97,44 @@ function enforceCanvasImageDataLong(value: unknown): number {
     throw new TypeError("Failed to execute 'getImageData' on 'CanvasRenderingContext2D': value is outside long range.");
   }
   return integer;
+}
+
+// The canvas mock predates roundRect, which led individual tests to install an unrestricted vi.fn.
+// Supply only the platform validation current Flight calls rely on; pixel/path realization remains the
+// dependency's concern, and the fake must not grow into a second Canvas implementation.
+function installCanvas2dRoundRectValidation(): void {
+  if (typeof CanvasRenderingContext2D.prototype.roundRect === 'function') return;
+  CanvasRenderingContext2D.prototype.roundRect = function (
+    _x: number,
+    _y: number,
+    _width: number,
+    _height: number,
+    radii: number | DOMPointInit | Iterable<number | DOMPointInit> = 0,
+  ): void {
+    if (arguments.length < 4) {
+      throw new TypeError(
+        `Failed to execute 'roundRect' on 'CanvasRenderingContext2D': 4 arguments required, but only ${arguments.length} present.`,
+      );
+    }
+    const coordinates = Array.from(arguments).slice(0, 4).map(Number);
+    if (coordinates.some((value) => !Number.isFinite(value))) return;
+
+    const values = Array.isArray(radii) ? radii : [radii];
+    if (values.length < 1 || values.length > 4) {
+      throw new RangeError(
+        "Failed to execute 'roundRect' on 'CanvasRenderingContext2D': radii must have 1 to 4 values.",
+      );
+    }
+    for (const value of values) {
+      const point = typeof value === 'object' && value !== null;
+      const radiusX = Number(point ? (value.x ?? 0) : value);
+      const radiusY = Number(point ? (value.y ?? 0) : value);
+      if (!Number.isFinite(radiusX) || !Number.isFinite(radiusY)) return;
+      if (radiusX < 0 || radiusY < 0) {
+        throw new RangeError("Failed to execute 'roundRect' on 'CanvasRenderingContext2D': radius cannot be negative.");
+      }
+    }
+  } as typeof CanvasRenderingContext2D.prototype.roundRect;
 }
 
 const GL_CONSTANTS: Record<string, number> = {
