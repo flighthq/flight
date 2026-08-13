@@ -50,8 +50,8 @@ false claim that Silver items are complete; the remaining gaps are named below.
 - `meshGeometryLayout.ts` provides canonical ordinary and skinned layouts plus semantic conversion;
   `meshGeometryUvs.ts` provides working UV0 offset and scale transforms. Its exported `wrapMeshGeometryUvs`
   is present but non-functional by construction: wrapping is face-parameterized while this operation
-  folds per-vertex values, so shared corners collapse mappings. It is commissioned for removal pending a
-  face-aware replacement and is not counted as capability.
+  folds per-vertex values, so shared corners collapse mappings. It has been removed; a face-aware
+  replacement remains open and is not counted as capability.
 - `morphMeshGeometry.ts` captures bind poses and blends targets; `updateMeshMorph.ts` applies the
   package's mesh runtime deformation path, with tests covering weight changes and restoration.
 - `meshGeometryTransforms.ts` covers matrix transforms, inverse-transpose normals/tangents, scale,
@@ -64,8 +64,8 @@ false claim that Silver items are complete; the remaining gaps are named below.
 
 - No angle-threshold/smoothing-group normal operation that splits vertices at creases.
 - No planar, spherical, or box projection UV generation, nor UV-bounds computation. UV offset and scale
-  work on existing UV0 data; `wrapMeshGeometryUvs` is non-functional and commissioned for removal,
-  with a face-aware tile-offset operation wanted instead.
+  work on existing UV0 data; the removed `wrapMeshGeometryUvs` still needs a face-aware tile-offset
+  replacement.
 - No dedicated non-manifold/edge analysis API beyond wireframe index generation.
 - No simplification/LOD operation, vertex-cache optimization, or quantize/dequantize pipeline despite
   packed formats being modeled in the type layer.
