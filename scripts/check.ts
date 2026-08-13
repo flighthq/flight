@@ -3,6 +3,8 @@ import { availableParallelism } from 'node:os';
 
 import pc from 'picocolors';
 
+import type { Gate } from './gateRegistry';
+import { createGateRegistry } from './gateRegistry';
 import {
   explainEmptyCheckSelection,
   getSelectors,
@@ -40,21 +42,14 @@ if (isCheckSelectionEmpty(selectors, projects, paths)) {
   process.exit(1);
 }
 
-interface Gate {
-  args: readonly string[];
-  command: string;
-  label: string;
-}
-
 interface GateResult extends Gate {
   output: string;
   passed: boolean;
 }
 
-const gates: Gate[] = [];
-const add = (label: string, command: string, args: readonly string[]): void => {
-  gates.push({ args, command, label });
-};
+// Registration rejects a repeated stage name — see scripts/gateRegistry.ts for why that guard exists
+// and why it lives at registration rather than in a scan of this file.
+const { add, gates } = createGateRegistry();
 
 if (!scoped) {
   add('packages:check', 'tsx', ['scripts/packages.ts']);
