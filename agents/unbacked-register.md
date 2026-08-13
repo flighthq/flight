@@ -242,9 +242,13 @@ into `quimby/base` by the time this row first named it as done. The row original
 and a new test file; neither resolves anywhere in the landed history (`git log --all` finds no such
 commit; the test file does not exist on any ref). Worse, the row's line-number citation for the fix site
 pointed at real, current, plausible-looking code — `captureEntry.ts:585` and `:644` do read
-`oracle: verification?.oracle ?? null` — but `git blame` shows both belong to `0f93278033`, a different,
-unrelated commit that landed this morning and happens to touch that shape of line elsewhere in the same
-file; it left the catch-path assignment two lines below `:644`, at `:693`, exactly as broken as before.
+`oracle: verification?.oracle ?? null` — but `git blame` shows all three lines, including the still-broken
+one, belong to the **same commit**: `:585`, `:644`, and the catch-path `:693` (49 lines away, not two) are
+all `0f93278033`. That commit's own diff introduced the two correct success-path writes and the hardcoded
+error-path `null` together, in one change — it is not an unrelated lookalike the citation stumbled onto,
+it is the literal sibling of the bug, written in the same commit, in the same style, doing the right thing
+two call sites over. Anyone grepping for the fixed shape finds it, because the fixed shape genuinely
+exists in that commit; it just never reached the catch path.
 **A citation that resolves to nothing makes a reader stop and check it; a citation that resolves to real
 code at the wrong site looks satisfied and gets trusted** — this is the row-7/L7 distinction again
 (committed-and-attested-in-a-clone is not landed), this time caught inside the register's own entry
