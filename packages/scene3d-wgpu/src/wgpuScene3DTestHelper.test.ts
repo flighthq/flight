@@ -64,4 +64,21 @@ describe('makeWgpuScene3DState', () => {
     pass.setVertexBuffer(0, buffer, 4, 4);
     expect(fake.calls.filter((call) => call.name === 'setVertexBuffer')).toHaveLength(1);
   });
+
+  it('rejects writeTexture data smaller than an rgba8 copy requires', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const texture = state.device.createTexture({
+      size: [2, 2, 1],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.COPY_DST,
+    });
+
+    expect(() =>
+      state.device.queue.writeTexture({ texture }, new Uint8Array(15), { bytesPerRow: 8, rowsPerImage: 2 }, [2, 2, 1]),
+    ).toThrow(expect.objectContaining({ name: 'OperationError' }));
+    expect(fake.calls.some((call) => call.name === 'writeTexture')).toBe(false);
+
+    state.device.queue.writeTexture({ texture }, new Uint8Array(16), { bytesPerRow: 8, rowsPerImage: 2 }, [2, 2, 1]);
+    expect(fake.calls.filter((call) => call.name === 'writeTexture')).toHaveLength(1);
+  });
 });
