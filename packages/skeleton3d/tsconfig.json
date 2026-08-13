@@ -11,6 +11,7 @@
   "references": [
     { "path": "../entity" },
     { "path": "../geometry" },
+    { "path": "../log" },
     { "path": "../mesh" },
     { "path": "../node" },
     { "path": "../scene3d" },
