@@ -124,6 +124,7 @@
     "reachability:baseline": "tsx ./scripts/reachability.ts --update",
     "reachability:check": "tsx ./scripts/reachability.ts --check",
     "reachability:json": "tsx ./scripts/reachability.ts --json",
+    "reachability:registrars:baseline": "tsx ./scripts/reachability.ts --update-registrars",
     "reachability:runtime": "tsx ./scripts/registrar-runtime.ts",
     "reachability:runtime:check": "tsx ./scripts/registrar-runtime.ts --check",
     "reachability:runtime:json": "tsx ./scripts/registrar-runtime.ts --json",

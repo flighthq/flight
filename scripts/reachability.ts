@@ -18,6 +18,16 @@ import type {
   RegistrarOwnershipEntry,
   UncataloguedRegistrarBucket,
 } from './reachability-core';
+import {
+  collectRegistrarIdentities,
+  diffRegistrarIdentityManifest,
+  hasRegistrarIdentityManifestDrift,
+} from './reachability-registrar-manifest';
+import type {
+  RegistrarIdentity,
+  RegistrarIdentityManifest,
+  RegistrarIdentityManifestDiff,
+} from './reachability-registrar-manifest';
 import { getSelectors, selectPackages } from './select';
 
 interface ReachabilityBaseline {
@@ -48,11 +58,17 @@ const UNCATALOGUED_BUCKETS: readonly {
 
 const root = process.cwd();
 const baselinePath = join(root, 'scripts', 'reachability-baseline.json');
+const registrarManifestPath = join(root, 'scripts', 'reachability-registrars.json');
 const checkMode = process.argv.includes('--check');
 const jsonMode = process.argv.includes('--json');
 const updateMode = process.argv.includes('--update');
+const updateRegistrarManifestMode = process.argv.includes('--update-registrars');
 const selectors = getSelectors();
 if (updateMode && selectors.length > 0) throw new Error('Reachability baseline updates must be whole-repo');
+if (updateRegistrarManifestMode && selectors.length > 0)
+  throw new Error('Reachability registrar manifest updates must be whole-repo');
+if (updateMode && updateRegistrarManifestMode)
+  throw new Error('Reachability lane and registrar manifests have separate acceptance paths');
 
 const selected = selectPackages(selectors);
 const sourceFilesByPackage = new Map(selectPackages([]).map((name) => [name, packageSourceFiles(name)]));
@@ -82,11 +98,21 @@ for (const name of selected) {
 violations.sort(compareNamed);
 lanes.sort(compareNamed);
 registrarOwnership.sort(compareRegistrarOwnership);
+const registrarIdentities = collectRegistrarIdentities(registrarOwnership);
 
 if (updateMode) {
   const baseline: ReachabilityBaseline = { schemaVersion: 1, entries: lanes };
   writeFileSync(baselinePath, `${JSON.stringify(baseline, null, 2)}\n`);
   console.log(`${pc.green('OK')} ${pc.bold(`Updated reachability lane baseline (${lanes.length} symbols)`)}`);
+  process.exit(0);
+}
+
+if (updateRegistrarManifestMode) {
+  const manifest: RegistrarIdentityManifest = { schemaVersion: 1, registrars: registrarIdentities };
+  writeFileSync(registrarManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log(
+    `${pc.green('OK')} ${pc.bold(`Updated reachability registrar manifest (${registrarIdentities.length} identities)`)}`,
+  );
   process.exit(0);
 }
 
@@ -96,13 +122,29 @@ const laneDrift = diffLanes(
   baseline.entries.filter((entry) => selected.includes(entry.packageName)),
   lanes,
 );
-const hardPassed = violations.length === 0;
+const registrarManifest = JSON.parse(readFileSync(registrarManifestPath, 'utf8')) as RegistrarIdentityManifest;
+if (registrarManifest.schemaVersion !== 1)
+  throw new Error(`Unsupported reachability registrar manifest schema ${registrarManifest.schemaVersion}`);
+const registrarManifestDiff = diffRegistrarIdentityManifest(
+  registrarManifest.registrars.filter((identity) => selected.includes(identity.packageName)),
+  registrarIdentities,
+);
+const effectsPassed = violations.length === 0;
+const registrarManifestPassed = !hasRegistrarIdentityManifestDrift(registrarManifestDiff);
+const hardPassed = effectsPassed && registrarManifestPassed;
 const registrarOwnershipSummary = summarizeRegistrarOwnership(registrarOwnership);
 
 if (jsonMode) {
   console.log(
     JSON.stringify(
-      { passed: hardPassed, violations, laneDrift, registrarOwnershipSummary, registrarOwnership },
+      {
+        passed: hardPassed,
+        violations,
+        registrarManifestDiff,
+        laneDrift,
+        registrarOwnershipSummary,
+        registrarOwnership,
+      },
       null,
       2,
     ),
@@ -111,7 +153,7 @@ if (jsonMode) {
 }
 
 if (!jsonMode) {
-  if (hardPassed) {
+  if (effectsPassed) {
     console.log(`${pc.green('OK')} ${pc.bold('Built-in runners and per-kind registrars are exact inverses')}`);
   } else {
     console.log(
@@ -130,6 +172,7 @@ if (!jsonMode) {
   console.log(
     `${pc.green('OK')} ${pc.bold(`${registrarOwnershipSummary.registrars} exported registrars inventoried`)} ${pc.dim(`(${registrarOwnershipSummary.readableRegistrars} readable registrars / ${registrarOwnershipSummary.mappings} mappings, ${mechanisms.length} mechanisms, ${uncatalogued.length} UNCATALOGUED)`)}`,
   );
+  printRegistrarManifestDiff(registrarManifestDiff, registrarIdentities.length);
   console.log(pc.dim('  Caller-supplied kinds belong to the registrar mechanism, not the ownership denominator.'));
   for (const shape of ['caller-supplied-kind', 'caller-supplied-batch'] as const) {
     const entries = mechanisms.filter((entry) => entry.mechanismShape === shape);
@@ -184,6 +227,33 @@ if (!jsonMode) {
   }
 
   process.exitCode = !hardPassed && checkMode ? 1 : 0;
+}
+
+function printRegistrarManifestDiff(diff: Readonly<RegistrarIdentityManifestDiff>, currentCount: number): void {
+  if (diff.added.length === 0 && diff.lost.length === 0) {
+    console.log(
+      `${pc.green('OK')} ${pc.bold('Registrar census matches committed identity manifest')} ${pc.dim(`(${currentCount} identities)`)}`,
+    );
+    return;
+  }
+  console.log(
+    `\n${pc.red('✗')} ${pc.bold('Registrar identity manifest drift')} ${pc.dim(`(${diff.added.length} added / ${diff.lost.length} lost)`)}`,
+  );
+  for (const identity of diff.lost) {
+    console.log(`  ${pc.red('-')} ${formatRegistrarIdentity(identity)} ${pc.red('[LOST]')}`);
+  }
+  for (const identity of diff.added) {
+    console.log(`  ${pc.yellow('+')} ${formatRegistrarIdentity(identity)} ${pc.yellow('[ADDED]')}`);
+  }
+  console.log(
+    pc.dim(
+      '  Review every identity change, then run npm run reachability:registrars:baseline to accept the whole-repo census.',
+    ),
+  );
+}
+
+function formatRegistrarIdentity(identity: Readonly<RegistrarIdentity>): string {
+  return `${pc.white(identity.packageName)} ${pc.bold(identity.registrar)}`;
 }
 
 function summarizeRegistrarOwnership(entries: readonly RegistrarOwnershipEntry[]) {
