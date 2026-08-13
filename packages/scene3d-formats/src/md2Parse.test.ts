@@ -1009,9 +1009,14 @@ describe('MD2_ANORMS', () => {
 describe('parseMd2', () => {
   // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
   // here checks the first. This checks the second — the one that catches a walk that desynchronised and
-  // still left the asserted fields looking plausible. Matched by pattern, not by an enumerated list, so a
-  // truncation kind added later is covered without anyone remembering this test exists.
-  it('raises no truncation or unreadable diagnostic for a well-formed file', () => {
+  // still left the asserted fields looking plausible.
+  //
+  // It asserts the diagnostic list is EMPTY rather than filtering for truncation-shaped kind names. The
+  // filter was the first version and it was wrong: `awd2.block-length-past-end` is a parse failure whose
+  // name contains none of the words you would think to grep for, so a pattern built from expected
+  // vocabulary silently exempted it. A good file should produce no crumbs at all, which needs no
+  // vocabulary to state and cannot be defeated by a kind name nobody anticipated.
+  it('raises no diagnostic at all for a well-formed file', () => {
     const diagnostics: ImportDiagnostic[] = [];
 
     parseMd2(
@@ -1029,9 +1034,7 @@ describe('parseMd2', () => {
       diagnostics,
     );
 
-    const complaints = diagnostics
-      .map((diagnostic) => diagnostic.kind)
-      .filter((kind) => /truncated|unreadable|malformed|unparsed|overrun|corrupt/.test(kind));
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
     expect(complaints, `a good md2 file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
   });
 
