@@ -93,7 +93,9 @@ Named failure shapes worth checking for directly, distinct from each other:
 ## Assertions that cannot fail
 
 Five shapes where the test and the code are each fine but the test still proves nothing. All are
-invisible on a green run, and the last one is invisible under mutation too.
+invisible on a green run, and one of them — a fixture built from the same understanding as the code — is
+invisible under mutation too. Each is named by its opening sentence; refer to them by name, never by
+position, since an inserted shape silently rewrites what "the last one" means.
 
 **A once-per-process observation is single-use — order the assertions inside ONE test.** `logOnce`
 suppresses a key for the lifetime of the process, not the test. So the *second* test to touch a key
@@ -119,7 +121,7 @@ never calls the public function the guard or default exists to protect — or th
 is free to reimplement the same condition inline. A default that call sites can bypass is not a default.
 
 **In a variable-length encoding, a fixture VALUE can absorb the error the test exists to catch.** The
-other three shapes here are about the shape of a fixture or an assertion; this one is about a number.
+others here are about the shape of a fixture or an assertion; this one is about a number.
 In a fixed-width format a desync propagates and any downstream assertion catches it. In a varint or
 LEB128-style encoding, a value whose bytes all set the continuation bit is **self-synchronising**: injected
 bytes are swallowed by the next length-prefixed read and the stream recovers on its own. That is worse than
@@ -152,8 +154,8 @@ one stays in step, assert the reader offset after each record rather than checki
 end. Reach for prompt-terminating values *and* a per-record assertion: the first stops the fixture from
 absorbing the error, the second stops the oracle from absorbing it.
 
-**A fixture built from the same understanding as the code cannot falsify that understanding.** The other
-four shapes are defects in a test. This one is a defect in the *input*, and it is the only one mutation
+**A fixture built from the same understanding as the code cannot falsify that understanding.** The others
+here are defects in a test. This one is a defect in the *input*, and it is the only one mutation
 cannot find: mutation asks whether the test notices the code changing, and here the test and the code agree
 with each other while both disagree with reality. Exhaustiveness does not help either — more inputs derived
 from the same belief are more of the same belief.
