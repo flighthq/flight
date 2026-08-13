@@ -143,6 +143,32 @@ in the report — only reading the code separates them:
 
 Same report, same shape, opposite worth. This is why the output is a list of addresses and not a score.
 
+### `npm run contrast` — how much the regression gate has to grip
+
+The third reading tool, and the render-side counterpart to the pair above: `untested` asks which arms no
+test took, `unchecked` asks whether taking them would notice a break, and `contrast` asks the same second
+question of the **fingerprint gate**. It does not gate, is not part of `npm run check`, and commits
+nothing.
+
+The regression gate scores a change as the mean absolute per-channel difference over the 16×16 fingerprint
+grid, and fails past 5. `contrast` applies that same comparison between a target's committed fingerprint
+and a uniform frame of its own corner cell — so the number is the target's whole picture measured in the
+gate's units. A target reading 0.55 has a picture worth a ninth of the pass mark.
+
+    npm run contrast                 # every fingerprinted target, lowest contrast first
+    npm run contrast -- --limit=80   # widen the printed head
+    npm run contrast:json            # the same rows as JSON
+
+**Low contrast bounds STRUCTURAL change, not TONE** — measured, not assumed. Content moving, disappearing,
+or losing its color on a sparse frame is bounded by it; a global tonal shift is not. Bypassing the sketch
+pass on a target reading 3.86 scored 225.86, because the fills got their color back, while bypassing the
+outline pass on a target reading 4.64 scored 3.35 and passed. Read a low number as *structural defects hide
+here*, never as *this gate cannot fail*.
+
+Two retrodictions, on cases recorded before the measure existed: `text-native/dom` reads 6.04 and a real
+injected defect there measured 5.09 — over the pass mark by 0.09; `text-strikethrough/dom` reads 2.05, and
+its gate reported 0.00 green while its own oracle threw on a real defect.
+
 ## Orientation commands
 
 - `npm run fix` runs all auto-fixers in sequence: `lint:fix`, `order:fix`, then `format`. Run this after any edit session before committing.

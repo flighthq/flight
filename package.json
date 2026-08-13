@@ -88,6 +88,8 @@
     "evidence:baseline": "tsx ./scripts/capture-evidence.ts --update",
     "evidence:check": "tsx ./scripts/capture-evidence.ts --check",
     "evidence:json": "tsx ./scripts/capture-evidence.ts --json",
+    "contrast": "tsx ./scripts/capture-contrast.ts",
+    "contrast:json": "tsx ./scripts/capture-contrast.ts --json",
     "exports:check": "tsx ./scripts/completeness.ts",
     "exports:check:json": "tsx ./scripts/completeness.ts --json",
     "fix": "tsx ./scripts/fix.ts",
