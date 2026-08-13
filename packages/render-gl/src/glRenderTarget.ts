@@ -133,9 +133,9 @@ export function drawGlRenderTargetResult(
 
   const quadTransform = acquireMatrix();
   multiplyMatrix(quadTransform, renderProxy.transform2D, transform);
-  setGlAttributes(gl, shaderLoc);
-  setGlMatrixFromTransform(gl, shaderLoc, matrixArray, quadTransform, runtime.renderTargetViewport ?? state.canvas);
-  setGlBaseUniforms(gl, shaderLoc, renderProxy);
+  setGlAttributes(gl, shaderLoc!);
+  setGlMatrixFromTransform(gl, shaderLoc!, matrixArray, quadTransform, runtime.renderTargetViewport ?? state.canvas);
+  setGlBaseUniforms(gl, shaderLoc!, renderProxy);
   releaseMatrix(quadTransform);
 
   drawGlQuad(state, 0, 0, target.width, target.height, 0, 1, 1, 0);

@@ -2,6 +2,7 @@ import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flight
 
 import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';
+import { ensureDefaultGlBitmapShader } from './glShader';
 
 // The substrate-level fullscreen-pass primitive: draw a clip-space quad through a fragment shader,
 // reading N input textures and writing to a target (or the canvas). Filter and effect recipes draw
@@ -162,7 +163,7 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
   // inherit the quad's attribute state, and so nothing observes our dedicated VAO as "current".
   gl.bindVertexArray(null);
 
-  runtime.shaderLoc = runtime.defaultBitmapShader.locations;
+  runtime.shaderLoc = ensureDefaultGlBitmapShader(state).locations;
 }
 
 // Per-context dedicated VAO for the fullscreen quad. Isolates the quad's buffer/attribute bindings so a fullscreen pass never mutates a

@@ -17,8 +17,6 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
-import { compileDefaultGlProgram, createDefaultGlBitmapShader } from './glShader';
-
 // Explicit snapshot re-copy. Mutable legacy maps are cloned; persistent tables may share immutable
 // snapshots through distinct aggregates. Either way, later replacements diverge between render states,
 // and a cache/effect state may intentionally omit screen policy.
@@ -101,9 +99,7 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   const gl = canvas.getContext('webgl2', contextAttribs) as WebGL2RenderingContext | null;
   if (!gl) throw new Error('Failed to get WebGL2 context.');
 
-  const shaderLoc = compileDefaultGlProgram(gl);
   const matrixArray = new Float32Array(9);
-  const defaultBitmapShader = createDefaultGlBitmapShader(shaderLoc, matrixArray);
 
   // Static index buffer [0, 1, 2, 0, 2, 3]
   const quadIndexBuffer = gl.createBuffer()!;
@@ -140,8 +136,8 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   runtime.currentTextureStraightAlpha = false;
   runtime.flushPendingDraws = null;
   runtime.renderTargetViewport = null;
-  runtime.defaultBitmapShader = defaultBitmapShader;
-  runtime.shaderLoc = shaderLoc;
+  runtime.defaultBitmapShader = null;
+  runtime.shaderLoc = null;
   runtime.quadBatchWriterBlendMode = null;
   runtime.quadBatchWriterMaterial = null;
   runtime.quadBatchWriterMaterialRenderer = null;

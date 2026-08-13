@@ -131,7 +131,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // render-gl reaches it only through this contract slot and therefore does not depend on scene2d-gl.
   flushPendingDraws?: ((state: GlRenderState) => void) | null;
 
-  defaultBitmapShader: GlBitmapShader;
+  defaultBitmapShader: GlBitmapShader | null;
   particleShader?: GlParticleShader;
   particleCornerBuffer?: WebGLBuffer;
   particleInstanceBuffer?: WebGLBuffer;
@@ -217,7 +217,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
    * its origin. Null means the full canvas.
    */
   renderTargetViewport: GlViewportRect | null;
-  shaderLoc: GlShaderLocations;
+  shaderLoc: GlShaderLocations | null;
   // Raw-element texture cache: a canvas/video/image element uploaded directly (video frames, canvas-backed
   // shapes and text). Keyed by the element; the caller owns re-upload timing (video re-uploads every frame).
   textureCache: WeakMap<CanvasImageSource, WebGLTexture>;
