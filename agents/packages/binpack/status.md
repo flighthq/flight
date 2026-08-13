@@ -48,4 +48,4 @@ by: builder2
   against the function's own stated contract. Fixed by consuming a count; which duplicate an entry
   describes is positional, because the packer sorts by area and reports bare ids. Coverage added for
   identity-by-multiset, rotation metadata fidelity, and occupancy consistency, and the seeded run now
-  draws colliding ids (7 of 40 seeds, deepest repeat 8).
+  draws colliding ids (8 of 40 seeds, every seed in the arm, counts 6-7 against a 3-id pool).
