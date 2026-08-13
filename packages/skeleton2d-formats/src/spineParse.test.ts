@@ -43,6 +43,66 @@ const SPINE_TWO_BONES = JSON.stringify({
 // A draw-order keyframe states only the slots that MOVE; everything else keeps its relative order and
 // closes the gaps. Each keyframe resolves to a WHOLE ordering, because a track has to answer what is in
 // effect at time t from one keyframe alone.
+// A document reaching every structure the importer's type guards protect: bones, slots, skins with
+// attachments, constraints, events, and an animation carrying bone, slot, deform and draw-order
+// timelines. Rich on purpose — a type sweep is only as wide as the document it walks.
+const SPINE_RICH = {
+  animations: {
+    walk: {
+      bones: {
+        arm: {
+          rotate: [
+            { time: 0, value: 0 },
+            { curve: 'stepped', time: 1, value: 90 },
+          ],
+        },
+      },
+      deform: { default: { body: { mesh: [{ offset: 1, time: 0, vertices: [1, 2] }] } } },
+      drawOrder: [{ offsets: [{ offset: 1, slot: 'body' }], time: 0 }],
+      events: [{ name: 'step', time: 0.5 }],
+      slots: { body: { attachment: [{ name: 'mesh', time: 0 }], color: [{ color: 'ffffffff', time: 0 }] } },
+    },
+  },
+  bones: [{ name: 'root' }, { length: 50, name: 'arm', parent: 'root', rotation: 45, x: 10 }],
+  events: { step: { float: 1, int: 2, string: 'x' } },
+  ik: [{ bones: ['arm'], name: 'aim', target: 'root' }],
+  path: [{ bones: ['arm'], name: 'follow', target: 'body' }],
+  skeleton: { hash: 'x', spine: '4.1' },
+  skins: [
+    {
+      attachments: {
+        body: { mesh: { triangles: [0, 1, 2], type: 'mesh', uvs: [0, 0, 1, 0, 1, 1], vertices: [0, 0, 1, 0, 1, 1] } },
+      },
+      name: 'default',
+    },
+  ],
+  slots: [{ attachment: 'mesh', bone: 'root', color: 'ffffffff', name: 'body' }],
+  transform: [{ bones: ['arm'], name: 'aim2', target: 'root' }],
+};
+
+// Every path to a value in `doc`, leaves and containers alike.
+function everyJsonPath(node: unknown, prefix: readonly (string | number)[] = []): (string | number)[][] {
+  const here: (string | number)[][] = prefix.length > 0 ? [[...prefix]] : [];
+  if (Array.isArray(node)) {
+    node.forEach((child, i) => here.push(...everyJsonPath(child, [...prefix, i])));
+  } else if (node !== null && typeof node === 'object') {
+    for (const [key, child] of Object.entries(node)) here.push(...everyJsonPath(child, [...prefix, key]));
+  }
+  return here;
+}
+
+function withValueAt(doc: unknown, path: readonly (string | number)[], value: unknown): unknown {
+  const copy: any = Array.isArray(doc) ? [...doc] : { ...(doc as object) };
+  let node = copy;
+  for (let i = 0; i < path.length - 1; i++) {
+    const key = path[i];
+    node[key] = Array.isArray(node[key]) ? [...node[key]] : { ...node[key] };
+    node = node[key];
+  }
+  node[path[path.length - 1]] = value;
+  return copy;
+}
+
 describe('parseSpineDrawOrderTimeline', () => {
   const SLOTS = [slot('a'), slot('b'), slot('c')];
 
@@ -108,11 +168,6 @@ describe('parseSpineDrawOrderTimeline', () => {
     expect(diagnostics).toHaveLength(1);
   });
 });
-
-// A one-bone document whose single animation carries `keys` as bone `b`'s timeline of the given kind.
-function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Record<string, unknown> {
-  return { bones: [{ name: 'b' }], animations: { a: { bones: { b: { [kind]: keys } } } } };
-}
 
 describe('parseSpineSkeleton', () => {
   it('keeps BOTH axes when a bone carries the per-axis translatex and translatey timelines', () => {
@@ -814,6 +869,45 @@ describe('parseSpineSkeleton', () => {
     expect(kinds).toContain('spine.ik-timeline-unsupported');
     expect(kinds).toContain('spine.transform-timeline-unsupported');
     expect(kinds).toContain('spine.event-timeline-unsupported');
+  });
+});
+
+// A one-bone document whose single animation carries `keys` as bone `b`'s timeline of the given kind.
+function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Record<string, unknown> {
+  return { bones: [{ name: 'b' }], animations: { a: { bones: { b: { [kind]: keys } } } } };
+}
+
+// ONE test for a family of ~23 guards, not one test each. The idea behind them is a single policy — THE
+// IMPORTER NEVER TRUSTS A FIELD'S TYPE — and a document is untrusted input arriving over a network or out
+// of a user's project folder, so every field of it can be anything. Writing a case per guard would pin the
+// same policy twenty-three times and still miss the field nobody thought of; walking the document reaches
+// the ones nobody thought of by construction.
+//
+// The assertion is deliberately weak on CONTENT and strict on SURVIVAL. A wrongly-typed field has no
+// correct interpretation, so there is nothing to assert about what comes back — only that something did,
+// and that what came back is internally coherent rather than half-built.
+describe('parseSpineSkeleton type resilience', () => {
+  it('never trusts a field type: any value replaced by a wrong-typed one still imports coherently', () => {
+    const paths = everyJsonPath(SPINE_RICH);
+    expect(paths.length, 'the rich document walked no paths').toBeGreaterThan(40);
+
+    for (const path of paths) {
+      for (const wrong of [42, 'wrong', [], {}, null, true]) {
+        const label = `${path.join('.')} = ${JSON.stringify(wrong)}`;
+        const json = JSON.stringify(withValueAt(SPINE_RICH, path, wrong));
+        let result: ReturnType<typeof parseSpineSkeleton> | undefined;
+        expect(() => {
+          result = parseSpineSkeleton(json);
+        }, label).not.toThrow();
+
+        const bones = result?.skeleton.bones;
+        if (bones === undefined) continue;
+        for (const bone of bones) {
+          expect(bone.parentIndex, `parentIndex after ${label}`).toBeLessThan(bones.length);
+          expect(bone.parentIndex, `parentIndex after ${label}`).toBeGreaterThanOrEqual(-1);
+        }
+      }
+    }
   });
 });
 
