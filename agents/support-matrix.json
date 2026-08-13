@@ -4587,6 +4587,37 @@
       ]
     },
     {
+      "key": "svg",
+      "label": "Svg",
+      "scenes": [
+        {
+          "scene": "svg-import",
+          "backends": {
+            "canvas": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        }
+      ]
+    },
+    {
       "key": "swf",
       "label": "Swf",
       "scenes": [
