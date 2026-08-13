@@ -103,6 +103,7 @@ const CAPTURE_CLI_OPTIONS: ReadonlySet<string> = new Set([
   'tool',
   'update-baseline',
   'update-benchmarks',
+  'update-coverage',
   'update-fingerprints',
   'url',
   'verify',
