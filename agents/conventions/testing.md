@@ -92,7 +92,7 @@ Named failure shapes worth checking for directly, distinct from each other:
 
 ## Assertions that cannot fail
 
-Three shapes where the test and the code are each fine but the test still proves nothing. All are
+Four shapes where the test and the code are each fine but the test still proves nothing. All are
 invisible on a green run and only show up under mutation.
 
 **A once-per-process observation is single-use — order the assertions inside ONE test.** `logOnce`
@@ -117,6 +117,26 @@ it was supposed to gate verified nothing. Drive at least one test through the re
 in the state that should trigger it, so the wiring is asserted and not assumed. The tell is that a test
 never calls the public function the guard or default exists to protect — or that more than one call site
 is free to reimplement the same condition inline. A default that call sites can bypass is not a default.
+
+**In a variable-length encoding, a fixture VALUE can absorb the error the test exists to catch.** The
+other three shapes here are about the shape of a fixture or an assertion; this one is about a number.
+In a fixed-width format a desync propagates and any downstream assertion catches it. In a varint or
+LEB128-style encoding, a value whose bytes all set the continuation bit is **self-synchronising**: injected
+bytes are swallowed by the next length-prefixed read and the stream recovers on its own. That is worse than
+a symmetric fixture — a diagonal matrix at least looks degenerate, whereas nothing about `0xffffffff` looks
+suspicious, and it is the obvious value to reach for as padding or a placeholder colour.
+
+Measured: a Spine `.skel` test wrote an editor colour of `0xffffffff` in five unmodeled attachment records
+and asserted a known attachment on the far side, so a wrong skip width would show as garbage. Deleting one
+record's four-byte skip **left the test green** — the reader, now four bytes behind, read the next varint,
+whose continuation bits consumed all four stray `0xff` bytes before terminating on the byte after them. The
+stream resynchronised by luck; every attachment still parsed. Changing the constant to `0x01020304` — bytes
+below `0x80`, so a varint terminates immediately — made the same deletion fail, along with two sibling
+skips that had also been passing.
+
+So: **binary fixtures use values whose encoding terminates promptly**, and the reason is recorded beside the
+constant, because the next person to touch it will otherwise read it as arbitrary. `0x01020304` over
+`0xffffffff`, `0x7f`-and-below over `0xff` fills.
 
 **A captured or golden fixture keeps every field verbatim — except one whose meaning is POSITIONAL.** A
 numeric enum ordinal, an array index into a reorderable list, a bitfield position: name those, and keep
