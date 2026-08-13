@@ -37,6 +37,7 @@ export const ISOLATED_MOCK_TEST_FILES: readonly string[] = [
   'packages/scene2d-gl/src/glRasterShapeRenderer.test.ts',
   'packages/scene2d-gl/src/glShape.test.ts',
   'packages/scene2d-gl/src/glTextLabel.test.ts',
+  'packages/scene2d-formats/src/svgDocumentIncompleteBounds.test.ts',
   'packages/scene2d-wgpu/src/wgpuCache.test.ts',
   'packages/scene2d-wgpu/src/wgpuMeshShapeRenderer.test.ts',
   'packages/scene2d-wgpu/src/wgpuRasterShapeRenderer.test.ts',

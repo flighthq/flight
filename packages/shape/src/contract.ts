@@ -13,6 +13,7 @@ export * from './scale9Shape';
 export * from './shape';
 export * from './shapeBounds';
 export * from './shapeBoundsRegistry';
+export * from './registerDefaultShapeBoundsCommands';
 export * from './shapeCommands';
 export * from './shapeFill';
 export * from './shapeStroke';

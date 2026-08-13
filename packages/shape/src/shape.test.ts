@@ -10,6 +10,7 @@ import { ShapeKind } from '@flighthq/types/contract';
 
 import { createMorphShape, setMorphShapeProgress } from './morphShape';
 import { appendMorphShapeBeginFill } from './morphShapePaint';
+import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
 import {
   clearShapeCommands,
   computeShapeLocalBoundsRectangle,
@@ -23,17 +24,6 @@ import {
   isShapeEmpty,
 } from './shape';
 import {
-  defaultShapeBoundsCubicCurveTo,
-  defaultShapeBoundsCurveTo,
-  defaultShapeBoundsDrawCircle,
-  defaultShapeBoundsDrawEllipse,
-  defaultShapeBoundsDrawRectangle,
-  defaultShapeBoundsLineStyle,
-  defaultShapeBoundsLineTo,
-  defaultShapeBoundsMoveTo,
-} from './shapeBounds';
-import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
-import {
   appendShapeCircle,
   appendShapeCubicCurveTo,
   appendShapeCurveTo,
@@ -45,46 +35,7 @@ import {
 } from './shapeCommands';
 
 beforeAll(() => {
-  registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsDrawRectangle,
-    key: 'drawRectangle',
-    strokeBounds: defaultShapeBoundsDrawRectangle,
-  });
-  registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsDrawCircle,
-    key: 'drawCircle',
-    strokeBounds: defaultShapeBoundsDrawCircle,
-  });
-  registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsDrawEllipse,
-    key: 'drawEllipse',
-    strokeBounds: defaultShapeBoundsDrawEllipse,
-  });
-  registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsMoveTo,
-    key: 'moveTo',
-    strokeBounds: defaultShapeBoundsMoveTo,
-  });
-  registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsLineTo,
-    key: 'lineTo',
-    strokeBounds: defaultShapeBoundsLineTo,
-  });
-  registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsCurveTo,
-    key: 'curveTo',
-    strokeBounds: defaultShapeBoundsCurveTo,
-  });
-  registerShapeBoundsCommand({
-    fillBounds: defaultShapeBoundsCubicCurveTo,
-    key: 'cubicCurveTo',
-    strokeBounds: defaultShapeBoundsCubicCurveTo,
-  });
-  registerShapeBoundsCommand({
-    fillBounds: null,
-    key: 'lineStyle',
-    strokeBounds: defaultShapeBoundsLineStyle,
-  });
+  registerDefaultShapeBoundsCommands();
 });
 
 describe('clearShapeCommands', () => {
@@ -366,6 +317,16 @@ describe('getShapeBounds', () => {
     expect(out.y).toBe(0);
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
+  });
+
+  it('rejects a partial result when any command has no bounds contribution', () => {
+    const shape = createShape({
+      data: { commands: ['drawRectangle', 4, 5, 10, 200, 80, '__test.incomplete-public-bounds__', 0] },
+    });
+    const out = createRectangle(1, 2, 3, 4);
+
+    expect(getShapeBounds(out, shape)).toBe(false);
+    expect(out).toMatchObject({ height: 0, width: 0, x: 0, y: 0 });
   });
 });
 

@@ -1127,6 +1127,10 @@
     },
     {
       "packageName": "shape",
+      "registrar": "registerDefaultShapeBoundsCommands"
+    },
+    {
+      "packageName": "shape",
       "registrar": "registerShapeBoundsCommand"
     },
     {
