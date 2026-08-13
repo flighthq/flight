@@ -70,10 +70,19 @@ interface Violation {
   segment: string;
 }
 
-function main(): void {
-  const args = process.argv.slice(2);
-  const checkMode = args.includes('--check');
+export interface BackendPrefixScan {
+  scanned: number;
+  allowed: number;
+  violations: Violation[];
+}
 
+// ★ THE SCAN RETURNS ITS RESULT; ONLY THE CLI EXITS. Splitting these is what lets a test call the ENTRY
+// POINT rather than only the predicate — and the entry point is where the wiring lives. A suite that
+// exercises only the pure rule covers the RULE while silently claiming to cover the GATE: a refactor can
+// strand a module-scope reference and leave every predicate case green with the gate dead. That happened
+// here (a ReferenceError in packageOf, five tests passing, backend-prefix:check broken), which is why
+// this seam exists rather than main() doing the work and calling process.exit itself.
+export function runBackendPrefixScan(): BackendPrefixScan {
   const exportedTypes = collectExportedTypes(join(root, 'packages', 'types', 'src'));
   const sourceFiles: string[] = [];
   walk(join(root, 'packages'), sourceFiles);
@@ -101,6 +110,13 @@ function main(): void {
       violations.push({ path: relative(root, path), name, segment });
     }
   }
+
+  return { allowed, scanned, violations };
+}
+
+function main(): void {
+  const checkMode = process.argv.slice(2).includes('--check');
+  const { allowed, scanned, violations } = runBackendPrefixScan();
 
   if (violations.length === 0) {
     console.log(

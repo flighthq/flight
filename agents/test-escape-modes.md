@@ -5,7 +5,7 @@ by: manager
 
 # Test escape modes — how a defect gets past a green suite
 
-Seven ways a real defect survives a test suite that passes. Every one below was **measured**, not
+Eight ways a real defect survives a test suite that passes. Every one below was **measured**, not
 theorised: each cites a defect found on this codebase, with the escape identified afterwards.
 
 **None of them is visible to coverage.** In every case the lines involved already execute. That is the
@@ -126,6 +126,31 @@ One component of a multi-component result.
 > unit perpendicular free to point along Y or Z; the test asserted only X.
 
 **Detection:** for each assertion, ask which *wrong* answers would still satisfy it.
+
+### H — the suite tests the rule; CI runs the gate
+
+The suite is present, green, and pointed at a different subject than the one CI executes. Not an absent
+test — a test whose subject is one seam away from the thing that ships.
+
+> `backendPrefix.test.ts` pinned the naming rule through its pure predicate: five cases, all passing.
+> A refactor then moved the scan behind a main-guard and left `root` local while `packageOf` still
+> referenced it at module scope. `npm run backend-prefix:check` died with a `ReferenceError` **while all
+> five tests stayed green** — the ReferenceError was in the wiring, and the wiring is exactly what a
+> predicate test skips. For several minutes "the tests pass" and "the gate works" were both being
+> quoted, and only one was true.
+
+**Detection:** does any case in this suite execute the thing CI executes, or do they all execute a
+function CI never calls directly?
+
+The remedy is one case, not a philosophy: **a gate's suite must contain at least one case that calls the
+entry point in-process** and asserts it completes with the expected summary. Cheap enough for the shared
+pool, and it fails instantly on stranded wiring. Without it a suite covers the rule and *silently claims*
+to cover the gate — which is worse than having no suite, because the green is read as coverage of the
+executable.
+
+★ This mode is created by the act of adding a test, not found by it. That is what makes it the sharpest
+one here: the other seven are defects a suite failed to catch, and this is a defect the suite's own shape
+introduced.
 
 ## Adjacent failures that are not test modes
 
