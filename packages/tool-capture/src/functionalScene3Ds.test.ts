@@ -28,6 +28,12 @@ describe('discoverFunctionalScene3Ds', () => {
     expect(discoverFunctionalScene3Ds(dir)).toEqual([{ name: 'foo', renderers: ['dom', 'canvas', 'webgl', 'webgpu'] }]);
   });
 
+  it('keeps every default backend when one has a specific-file override', () => {
+    touch('foo.ts');
+    touch('foo.dom.ts');
+    expect(discoverFunctionalScene3Ds(dir)).toEqual([{ name: 'foo', renderers: ['dom', 'canvas', 'webgl', 'webgpu'] }]);
+  });
+
   it('collects backend-specific files into one entry in default-backend order', () => {
     touch('bar.webgl.ts');
     touch('bar.canvas.ts');
@@ -44,6 +50,7 @@ describe('discoverFunctionalScene3Ds', () => {
 
 describe('functionalScene3DFile', () => {
   it('prefers the backend-specific file when it exists', () => {
+    touch('bar.ts');
     touch('bar.webgl.ts');
     expect(functionalScene3DFile(dir, 'bar', 'webgl')).toBe(join(dir, 'bar.webgl.ts'));
   });

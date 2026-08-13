@@ -5,14 +5,14 @@
 //
 // All four backends draw strikethrough: canvas/dom natively, and gl/wgpu through their canvas-raster
 // RichText path (glRichText/wgpuRichText draw the strike at baseline - ascent*0.35, mirroring
-// scene2d-canvas). So this backend-agnostic test runs across canvas/dom/webgl/webgpu — the sibling
-// of the all-backend text-underline test.
+// scene2d-canvas). Canvas/WebGL/WebGPU share this tight oracle. DOM uses the otherwise-identical
+// text-strikethrough.dom.ts variant because native CSS font metrics put its strike below this band.
 //
 // Oracle (coverage-based, lenient): the strike sits at baseline - ascent*0.35, i.e. through the
 // upper-middle of the glyph bodies. A scanline through that mid-height carries BOTH glyph ink and the
 // continuous strike, so a struck word shows a much wider continuous ink run across the mid-band than the
-// glyphs alone would (the strike bridges the inter-glyph gaps). We require a wide continuous run through
-// a deliberately broad mid-height band because exact native CSS and raster font metrics differ.
+// glyphs alone would (the strike bridges the inter-glyph gaps). The narrow mid-height band deliberately
+// stays clear of the estimated baseline, so an underline misplaced at the baseline cannot satisfy it.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -69,8 +69,8 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   // The strike crosses the glyphs near their upper-middle. With FONT_SIZE 72 and the baseline ~0.8 * size
   // below the line top, baseline - ascent*0.35 lands around 0.5 * size below the line top. Search a band
   // around that mid-height for a wide continuous ink run (glyphs + strike bridging their gaps).
-  const bandTop = FIELD_Y + Math.round(FONT_SIZE * 0.35);
-  const bandBottom = FIELD_Y + Math.round(FONT_SIZE * 0.8);
+  const bandTop = FIELD_Y + Math.round(FONT_SIZE * 0.4);
+  const bandBottom = FIELD_Y + Math.round(FONT_SIZE * 0.65);
 
   const widestRun = findWidestInkRunInBand(at, FIELD_X, FIELD_X + FIELD_W, bandTop, bandBottom);
   // For a 6-char word at size 72 the struck run is well over 120px and, crucially, continuous across the
