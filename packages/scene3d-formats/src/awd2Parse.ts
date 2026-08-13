@@ -9,6 +9,7 @@ import {
   inverseMatrix4,
   multiplyMatrix4,
   normalizeVector3,
+  setMatrix4Identity,
   setQuaternionFromUnitVectors,
 } from '@flighthq/geometry/contract';
 import { detectImageMimeType } from '@flighthq/image-codec/contract';
@@ -359,7 +360,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
   let skinIndex: number | undefined;
   let skeletonJointNodeIndices: number[] = [];
   if (skeletonBlocks.size > 0) {
-    const built = buildAwdSkeletonDocument(skeletonBlocks.values().next().value!, document);
+    const built = buildAwdSkeletonDocument(skeletonBlocks.values().next().value!, document, diagnostics);
     skeletonJointNodeIndices = built.jointNodeIndices;
     skinIndex = document.skins.length;
     document.skins.push(built.skin);
@@ -1072,6 +1073,7 @@ function emptyAwdDocument(): Scene3DDocument {
 function buildAwdSkeletonDocument(
   parsedSkeleton: Readonly<ParsedSkeleton>,
   document: Scene3DDocument,
+  diagnostics: ImportDiagnostic[] | undefined,
 ): {
   jointNodeIndices: number[];
   skeletonRootIndex: number;
@@ -1121,7 +1123,25 @@ function buildAwdSkeletonDocument(
     awdTransformToMatrix4(invBind, parsedSkeleton.joints[j].transform);
     inverseBind.push(invBind);
     const bw = createMatrix4();
-    inverseMatrix4(bw, invBind);
+    // The joint matrix is raw file data, so it can be singular — a collapsed bind pose, a zero-scale
+    // joint, or a corrupt block. `inverseMatrix4` then fills `bw` with NaN and says so; taking the
+    // substitute keeps that NaN out of `bindWorld`, which the parent chain below reads and every
+    // descendant would otherwise inherit.
+    //
+    // IDENTITY, not a dropped joint. What is computed here is only the joint's BIND-LOCAL transform,
+    // whose stated job is to render the rig undeformed until the animation poses it; identity gives a
+    // finite, neutral pose that keeps the joint (and its children) present and animatable. Dropping the
+    // joint's influence instead would mean editing the skin — but the palette entry is `inverseBind`,
+    // pushed straight from the file above and never derived from this inverse, so influence is not this
+    // site's to drop. Recovering here and leaving the palette alone keeps the two independent, which is
+    // what lets one bad joint cost its own bind pose rather than the whole model.
+    if (!inverseMatrix4(bw, invBind)) {
+      setMatrix4Identity(bw);
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'awd2.joint-matrix-singular', 'parseAwd2', {
+        joint: parsedSkeleton.joints[j].name || String(j),
+        jointIndex: j,
+      });
+    }
     bindWorld.push(bw);
   }
 
@@ -1130,7 +1150,11 @@ function buildAwdSkeletonDocument(
   for (let j = 0; j < jointCount; j++) {
     const parentIndex1 = parsedSkeleton.joints[j].parentIndex;
     if (parentIndex1 > 0 && parentIndex1 - 1 < jointCount) {
-      inverseMatrix4(invParent, bindWorld[parentIndex1 - 1]);
+      // Every `bindWorld` entry is now either a genuine inverse (hence invertible) or the identity
+      // substituted above, so this cannot currently fail. It is still checked rather than trusted: the
+      // invariant lives in a different loop, and a later edit that pushes an unvalidated matrix would
+      // otherwise reintroduce silent NaN here with nothing to catch it.
+      if (!inverseMatrix4(invParent, bindWorld[parentIndex1 - 1])) setMatrix4Identity(invParent);
       multiplyMatrix4(local, invParent, bindWorld[j]);
     } else {
       copyMatrix4(local, bindWorld[j]);

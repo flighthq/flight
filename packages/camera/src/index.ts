@@ -1,10 +1,13 @@
 export {
+  areCameraGuardsEnabled,
   configureDirectionalShadowCamera3D,
   configureDirectionalShadowCamera3DTightFit,
   createCamera2D,
   createCamera3D,
   createOrthographicProjection,
   createPerspectiveProjection,
+  disableCameraGuards,
+  enableCameraGuards,
   getCamera2DParallaxPoint,
   getCamera2DViewMatrix,
   getCamera2DVisibleBounds,
