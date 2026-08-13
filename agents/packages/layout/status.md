@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/layout'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-13
+by: builder3
 ---
 
 # layout — Status
@@ -41,6 +41,21 @@ Bundle isolation still holds: the size baseline records `layout:canvas` at 647 b
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-13** — Fundamental-tier hardening began from a derived population of 8 source files / 825
+  lines (6 implementation modules / 809 lines plus 2 barrels / 16 lines) and 7 test files / 458 lines /
+  28 cases. The symmetry/axis-transposition review exposed `wrap-reverse` stacking lines in ordinary
+  cross order; the weighted-overflow boundary pattern exposed shrink clamping without redistributing
+  the remaining deficit; and the grid span-composition invariant exposed auto tracks counting fixed
+  tracks and gaps twice. Temporary old-behavior runs made the named guards red with `[45, 60]` instead
+  of `[70, 45]`, `86.3636` instead of `50`, and `140 x 95` instead of `100 x 70`, respectively; the
+  restored fixes are green. Survivor-directed asymmetric, nested, enum, zero, non-finite, and exact-fit
+  controls bring the suite to 104 cases. `untested` now lists only 4 structurally unreachable defensive
+  arms. Final own-file `unchecked` runs leave 23/232 flex, 18/167 grid, 1/52 resolver, 0/100 anchor,
+  and 0/3 state survivors; each survivor is equivalent on validated inputs or a redundant defensive
+  bound, not an inferred defect. **OBSERVED:** an item spanning auto and fraction tracks still assigns
+  intrinsic demand to auto before fraction allocation. **HYPOTHESIS-UNTESTED:** a richer CSS-like grid
+  might apportion that demand differently; the charter's deliberately smaller grid and absent consumer
+  evidence do not justify changing it here.
 - **2026-08-08** — Added the missing front matter (the file had none) and converted to the Open + Log
   contract. Every 2026-08-04 claim re-verified against source and still holds — flat-tree and
   numeric-buffer contracts, the open last-write-wins resolver registry (`layoutState.ts:20`),

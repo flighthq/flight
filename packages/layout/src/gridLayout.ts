@@ -126,7 +126,14 @@ function getGridAutoTrackSize(
       if (tracks[j].kind === 'auto') autoTracksInSpan++;
     }
     if (autoTracksInSpan > 0) {
-      size = Math.max(size, finiteSize(intrinsicSizes[i * 2 + (columns ? 0 : 1)]) / autoTracksInSpan);
+      let remainingIntrinsic = finiteSize(intrinsicSizes[i * 2 + (columns ? 0 : 1)]);
+      const gap = columns ? (container.columnGap ?? 0) : (container.rowGap ?? 0);
+      remainingIntrinsic -= gap * Math.max(0, span - 1);
+      for (let j = start; j < start + span && j < tracks.length; j++) {
+        const candidate = tracks[j];
+        if (candidate.kind === 'fixed') remainingIntrinsic -= candidate.size;
+      }
+      size = Math.max(size, Math.max(0, remainingIntrinsic) / autoTracksInSpan);
     }
   }
   return size;

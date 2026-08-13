@@ -89,12 +89,20 @@ const flexLayoutResolver: LayoutResolver = (out, tree, intrinsicSizes, parentInd
 
   if (!containsTarget) return LayoutResolutionFailureKind.InvalidItemStyle;
   if (wrap === 'nowrap') lineCross = crossSize;
-  if (wrap === 'wrap-reverse') {
-    const totalCross = getFlexLinesCrossSize(tree, intrinsicSizes, parentIndex, row, mainSize, gap);
-    crossOffset = crossSize - totalCross + crossOffset;
-  }
+  const crossReverse = wrap === 'wrap-reverse';
+  if (crossReverse) crossOffset = crossSize - crossOffset - lineCross;
 
   const distributable = mainSize - lineBaseSum - gap * Math.max(0, lineCount - 1);
+  const shrinkScale = getFlexShrinkScale(
+    tree,
+    intrinsicSizes,
+    parentIndex,
+    row,
+    lineStartIndex,
+    lineLastIndex,
+    Math.max(0, -distributable),
+    lineShrinkWeight,
+  );
   let usedMain = gap * Math.max(0, lineCount - 1);
   let targetMainSize = 0;
   let beforeTarget = 0;
@@ -109,7 +117,7 @@ const flexLayoutResolver: LayoutResolver = (out, tree, intrinsicSizes, parentInd
       item?.shrink ?? 1,
       distributable,
       lineGrowSum,
-      lineShrinkWeight,
+      shrinkScale,
     );
     if (i === childIndex) targetMainSize = itemMainSize;
     else if (i < childIndex) beforeTarget += itemMainSize + gap;
@@ -131,7 +139,7 @@ const flexLayoutResolver: LayoutResolver = (out, tree, intrinsicSizes, parentInd
     item?.alignSelf === undefined || item.alignSelf === 'auto' ? (container?.align ?? 'stretch') : item.alignSelf;
   let targetCrossSize = getFlexCross(intrinsicSizes, childIndex, row);
   if (align === 'stretch') targetCrossSize = lineCross;
-  const targetCross = crossStart + crossOffset + getFlexAlignOffset(align, lineCross, targetCrossSize);
+  const targetCross = crossStart + crossOffset + getFlexAlignOffset(align, lineCross, targetCrossSize, crossReverse);
   const childOffset = childIndex * 4;
   out[childOffset] = row ? targetMain : targetCross;
   out[childOffset + 1] = row ? targetCross : targetMain;
@@ -140,34 +148,43 @@ const flexLayoutResolver: LayoutResolver = (out, tree, intrinsicSizes, parentInd
   return null;
 };
 
-function getFlexLinesCrossSize(
+// Repeatedly freezes items whose weighted reduction reaches zero, then rescales the remaining deficit.
+// This is the flex shrink freeze loop without a temporary item array.
+function getFlexShrinkScale(
   tree: Readonly<LayoutTree>,
   intrinsicSizes: ArrayLike<number>,
   parentIndex: number,
   row: boolean,
-  mainSize: number,
-  gap: number,
+  lineStartIndex: number,
+  lineLastIndex: number,
+  deficit: number,
+  initialWeight: number,
 ): number {
-  let lineCount = 0;
-  let lineUsed = 0;
-  let lineCross = 0;
-  let total = 0;
-  for (let i = 0; i < tree.nodes.length; i++) {
-    const node = tree.nodes[i];
-    if (node.parentIndex !== parentIndex) continue;
-    const base = getFlexBase(node, intrinsicSizes, i, row);
-    if (lineCount > 0 && lineUsed + gap + base > mainSize) {
-      total += lineCross + (total === 0 ? 0 : gap);
-      lineCount = 0;
-      lineUsed = 0;
-      lineCross = 0;
+  if (deficit === 0 || initialWeight === 0) return 0;
+  let scale = deficit / initialWeight;
+  let frozenCount = -1;
+  for (;;) {
+    let nextFrozenCount = 0;
+    let frozenBase = 0;
+    let activeWeight = 0;
+    for (let i = lineStartIndex; i <= lineLastIndex; i++) {
+      const node = tree.nodes[i];
+      if (node.parentIndex !== parentIndex) continue;
+      const item = node.itemStyle as Readonly<FlexLayoutItemStyle> | null;
+      const base = getFlexBase(node, intrinsicSizes, i, row);
+      const weight = (item?.shrink ?? 1) * base;
+      if (weight === 0) continue;
+      if (scale * weight >= base) {
+        frozenBase += base;
+        nextFrozenCount++;
+      } else {
+        activeWeight += weight;
+      }
     }
-    lineUsed += (lineCount === 0 ? 0 : gap) + base;
-    lineCross = Math.max(lineCross, getFlexCross(intrinsicSizes, i, row));
-    lineCount++;
+    if (nextFrozenCount === frozenCount || activeWeight === 0) return scale;
+    frozenCount = nextFrozenCount;
+    scale = Math.max(0, deficit - frozenBase) / activeWeight;
   }
-  if (lineCount > 0) total += lineCross + (total === 0 ? 0 : gap);
-  return total;
 }
 
 function getFlexBase(
@@ -191,12 +208,10 @@ function getFlexItemMainSize(
   shrink: number,
   distributable: number,
   growSum: number,
-  shrinkWeight: number,
+  shrinkScale: number,
 ): number {
   if (distributable > 0 && growSum > 0) return base + (distributable * grow) / growSum;
-  if (distributable < 0 && shrinkWeight > 0) {
-    return Math.max(0, base + (distributable * shrink * base) / shrinkWeight);
-  }
+  if (distributable < 0) return Math.max(0, base - shrinkScale * shrink * base);
   return base;
 }
 
@@ -226,9 +241,9 @@ function getFlexJustifyOffset(justify: FlexLayoutJustify, free: number, distribu
   return 0;
 }
 
-function getFlexAlignOffset(align: FlexLayoutAlign, available: number, size: number): number {
-  if (align === 'end') return available - size;
+function getFlexAlignOffset(align: FlexLayoutAlign, available: number, size: number, reverse: boolean): number {
   if (align === 'center') return (available - size) / 2;
+  if (align === (reverse ? 'start' : 'end')) return available - size;
   return 0;
 }
 

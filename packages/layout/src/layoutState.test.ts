@@ -9,6 +9,8 @@ describe('createLayoutState', () => {
     const state = createLayoutState();
     expect(state.resolvers.size).toBe(0);
     expect(state.lastFailureKind).toBeNull();
+    expect(state.lastFailureNodeIndex).toBe(-1);
+    expect(state.lastFailureParentIndex).toBe(-1);
     expect(state.guard).toBeNull();
   });
 });
