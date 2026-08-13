@@ -2365,8 +2365,11 @@ function readSwfShapeBody(body: Readonly<SwfReader>, state: SwfParseState, chara
   if (!reader.valid) return;
   // The fill's character is not this shape's, hence the distinct name: a bitmap fill names whatever
   // character carries its pixels, which may be defined later in the tag stream.
-  const shape = createSwfShape(reader, version, (fillCharacterId, repeat, smoothed) =>
-    acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
+  const shape = createSwfShape(
+    reader,
+    version,
+    (fillCharacterId, repeat, smoothed) => acquireSwfImageTexture(state, fillCharacterId, repeat, smoothed),
+    state.diagnostics,
   );
   if (shape === null) {
     // Recover rather than Drop: the character survives as the bounded placeholder it was before any

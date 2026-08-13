@@ -1,4 +1,5 @@
-import { createMatrix } from '@flighthq/geometry/contract';
+import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { appendPathCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import {
   appendShapeBeginFill,
@@ -11,6 +12,7 @@ import {
   appendShapeMoveTo,
   createShape,
 } from '@flighthq/shape/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type {
   CapsStyle,
   GradientType,
@@ -21,7 +23,7 @@ import type {
   SpreadMethod,
   Texture2D,
 } from '@flighthq/types/contract';
-import type { SwfMorphShapePaths } from '@flighthq/types/contract';
+import type { ImportDiagnostic, SwfMorphShapePaths } from '@flighthq/types/contract';
 
 import type { SwfReader } from './swfReader';
 
@@ -54,8 +56,9 @@ export function createSwfShape(
   reader: SwfReader,
   version: number,
   resolveBitmapFill: SwfBitmapFillResolver | null = null,
+  diagnostics?: ImportDiagnostic[],
 ): Shape | null {
-  const styles = readSwfShapeStyles(reader, version, version >= 3, resolveBitmapFill);
+  const styles = readSwfShapeStyles(reader, version, version >= 3, resolveBitmapFill, diagnostics);
   return styles === null ? null : decodeSwfShapeBody(reader, version, styles, resolveBitmapFill);
 }
 
@@ -609,6 +612,7 @@ function readSwfShapeFillStyle(
   version: number,
   hasAlpha: boolean,
   resolveBitmapFill: SwfBitmapFillResolver | null,
+  diagnostics?: ImportDiagnostic[],
 ): SwfShapeFill | null {
   const type = reader.readUint8();
   if (type === FILL_SOLID) {
@@ -669,7 +673,7 @@ function readSwfShapeFillStyle(
     // A bitmap fill's matrix maps the image's PIXEL space into shape space, but SWF writes shape space in
     // twips, so an unscaled 1:1 fill arrives as a scale of 20. readSwfShapeMatrix already converted the
     // translation; the linear part converts here, leaving a pixel-to-pixel matrix.
-    fill.textureMatrix = createMatrix(
+    const textureMatrix = createMatrix(
       matrix.a / TWIPS_PER_PIXEL,
       matrix.b / TWIPS_PER_PIXEL,
       matrix.c / TWIPS_PER_PIXEL,
@@ -677,6 +681,18 @@ function readSwfShapeFillStyle(
       matrix.tx,
       matrix.ty,
     );
+    // A bitmap fill's matrix comes from the file, so it can be singular — a zero scale is what an
+    // authoring tool writes for a collapsed fill. Validated HERE, where it enters, because the renderer
+    // that eventually inverts it gets a defined-but-wrong matrix rather than NaN (a/b/c/d zeroed,
+    // tx/ty negated) and paints wrong pixels with no error raised. Dropping it to `null` is the same
+    // untransformed path a fill with no matrix already takes, rather than a new state.
+    if (inverseMatrix(_textureMatrixScratch, textureMatrix)) {
+      fill.textureMatrix = textureMatrix;
+    } else {
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'swf.fill-matrix-singular', 'parseSwf', {
+        character: characterId,
+      });
+    }
     return fill;
   }
   return null;
@@ -734,6 +750,9 @@ function readSwfShapeLineStyle(
   // A fill-backed stroke carries a whole FILLSTYLE where its color would be. The style is consumed so the
   // record stays aligned, and the stroke falls back to opaque black rather than being dropped.
   if (hasFill) {
+    // No diagnostics sink threaded here on purpose: a fill-backed stroke keeps only the fill's colour and
+    // opacity and discards its texture matrix, so a singular one has nothing to affect and reporting it
+    // would name a defect the reader cannot observe.
     const fill = readSwfShapeFillStyle(reader, version, hasAlpha, resolveBitmapFill);
     if (fill === null) return null;
     return {
@@ -803,12 +822,13 @@ function readSwfShapeStyles(
   version: number,
   hasAlpha: boolean,
   resolveBitmapFill: SwfBitmapFillResolver | null,
+  diagnostics?: ImportDiagnostic[],
 ): SwfShapeStyles | null {
   const fillCount = readSwfShapeStyleCount(reader, version);
   if (!reader.valid || fillCount > MAX_SHAPE_STYLES) return null;
   const fills: SwfShapeFill[] = [];
   for (let i = 0; i < fillCount; i++) {
-    const fill = readSwfShapeFillStyle(reader, version, hasAlpha, resolveBitmapFill);
+    const fill = readSwfShapeFillStyle(reader, version, hasAlpha, resolveBitmapFill, diagnostics);
     if (fill === null) return null;
     fills.push(fill);
   }
@@ -940,3 +960,5 @@ const TWIPS_PER_PIXEL = 20;
 // sampled smoothly. Those two axes are the sampler's, not the image's, so one character can back both a
 // tiled non-smoothed fill and a clamped smooth one over the same pixels.
 type SwfBitmapFillResolver = (characterId: number, repeat: boolean, smoothed: boolean) => Texture2D | null;
+
+const _textureMatrixScratch = createMatrix();

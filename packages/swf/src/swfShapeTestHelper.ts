@@ -90,6 +90,21 @@ export class ShapeWriter {
     this.align();
   }
 
+  // A MATRIX whose scale field is present and ZERO — what an authoring tool writes for a collapsed fill.
+  // `writeIdentityMatrix` cannot express this: it clears the has-scale bit, which MEANS scale 1.
+  writeZeroScaleMatrix(): void {
+    this.align();
+    this.writeUnsigned(1, 1);
+    this.writeUnsigned(1, 5);
+    this.writeSigned(0, 1);
+    this.writeSigned(0, 1);
+    this.writeUnsigned(0, 1);
+    this.writeUnsigned(1, 5);
+    this.writeSigned(0, 1);
+    this.writeSigned(0, 1);
+    this.align();
+  }
+
   writeLineStyleCount(count: number): void {
     this.writeByte(count);
   }
