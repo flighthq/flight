@@ -10,6 +10,7 @@ import {
 import type { ImportDiagnostic, MeshAttachment2D, RegionAttachment2D, Slot2D } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
+  ImportDiagnosticSeverity,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
   TransformMode2D,
@@ -150,6 +151,9 @@ describe('parseSpineDrawOrderTimeline', () => {
 
     expect(timeline).toBeNull();
     expect(diagnostics.map((entry) => entry.kind)).toEqual(['spine.draworder-keyframe-unresolved']);
+    // Drop, not Skip: the feature is supported and the DATA failed, so this is lost data rather than a
+    // capability gap. Pinned because a Skip here would exempt itself from every severity-based check.
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Drop);
   });
 
   it('skips a keyframe where two slots claim one position', () => {

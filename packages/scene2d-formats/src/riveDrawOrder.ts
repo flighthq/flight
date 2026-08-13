@@ -48,9 +48,11 @@ export function applyRiveDrawOrder(
     const governed = resolveRiveDrawNode(nodes, artboard.parentIndices[index]);
     const target = resolveRiveDrawTarget(nodes, artboard, readRiveDrawId(object, RIVE_DRAW_TARGET_ID));
     if (governed === null || target === null) {
+      // Drop, not Skip: draw rules are supported. A reference in the file points at nothing, so the
+      // rule is discarded — their data failed, not our capability.
       reportImportDiagnostic(
         diagnostics,
-        ImportDiagnosticSeverity.Skip,
+        ImportDiagnosticSeverity.Drop,
         'rive.draw-rule-unresolved',
         'applyRiveDrawOrder',
       );

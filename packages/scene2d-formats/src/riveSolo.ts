@@ -23,9 +23,11 @@ export function applyRiveSolo(
 
     const active = readRiveSoloActiveIndex(artboard.objects[index]);
     if (active === null || artboard.parentIndices[active] !== index) {
+      // Drop, not Skip: solo nodes are supported. The named active child is absent or is not actually
+      // a child of this node, so the solo is discarded — their data failed, not our capability.
       reportImportDiagnostic(
         diagnostics,
-        ImportDiagnosticSeverity.Skip,
+        ImportDiagnosticSeverity.Drop,
         'rive.solo-unresolved-active',
         'applyRiveSolo',
       );

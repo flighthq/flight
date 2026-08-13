@@ -1033,9 +1033,13 @@ function parseDragonBonesBones(
     }
   }
   if (pending.length > 0) {
+    // Drop, not Skip. Skip means a RECOGNIZED-but-unsupported feature was ignored; bone parenting is
+    // fully supported, and what failed is the DATA — a parent reference that never resolved, from a
+    // dangling name or a cycle. These bones are lost, which is Drop by definition. The distinction is
+    // load-bearing: a Skip exempts itself from every "did the importer complain" check.
     reportImportDiagnostic(
       diagnostics,
-      ImportDiagnosticSeverity.Skip,
+      ImportDiagnosticSeverity.Drop,
       'dragonbones.unresolved-bone-parent',
       'parseDragonBonesSkeleton',
       { count: pending.length },
