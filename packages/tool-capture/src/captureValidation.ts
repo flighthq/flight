@@ -45,6 +45,7 @@ import type { CaptureBrowserSession } from './captureBrowser.js';
 import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
+import { selectCaptureEntriesByName } from './captureEntryFilter.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
@@ -63,6 +64,8 @@ export interface CaptureValidationOptions {
   server: Server;
   root?: string;
   filter?: string;
+  /** Exact entry name. Unlike `filter`, selects nothing beyond the name given — use it when writing. */
+  filterExact?: string;
   rendererFilter?: Readonly<string[]>;
   captureFrames?: number;
   report?: boolean;
@@ -956,13 +959,11 @@ export async function runCaptureValidation(
   input: Readonly<CaptureValidationOptions>,
 ): Promise<CaptureValidationResult> {
   const startedAt = performance.now();
-  const entries = input.filter
-    ? input.entries.filter((entry) => entry.name.includes(input.filter!))
-    : [...input.entries];
+  const entries = selectCaptureEntriesByName(input.entries, input.filter, input.filterExact);
   if (entries.length === 0) throw new Error(`No validation entries found subject=${input.subject}`);
   // A filtered run cannot tell "this pinned target vanished" from "I excluded it", so it must not claim
   // an absence. It can still report a LOSS, because that is about a target it actually ran.
-  const entryFiltered = input.filter !== undefined && input.filter !== '';
+  const entryFiltered = (input.filter !== undefined && input.filter !== '') || input.filterExact !== undefined;
   const options: ResolvedCaptureValidationOptions = {
     subject: input.subject,
     root: resolve(input.root ?? process.cwd()),
