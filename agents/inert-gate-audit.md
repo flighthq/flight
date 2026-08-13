@@ -100,6 +100,26 @@ a count was constructed directly — a same-count swap (two functional targets l
 two different ones gain real ones, total unchanged at 21 for the `node-` filter) is reported clean by
 every count-shaped check and is named in all four parts by the manifest.
 
+**HOW TO READ A FAILING REGRESSION TARGET — the freshness oracle hashes SCENE SOURCE ONLY, never SDK
+source.** `getCaptureSceneSourceHash` sha256s the scene file and nothing else, so the `changed` /
+`unchanged` classification answers *did the author touch this scene*, never *did rendering change*. That
+is correct scoping for an authorship oracle, but it fixes how the output must be read: **a pure rendering
+regression can never appear as `changed`.** It can only ever appear as a target with ZERO source change
+and a bad distance. So `unchanged` is not the reassuring branch — it is the one that has no authorship
+explanation, and every clean-but-failing target is a candidate rendering regression. Such targets must
+never be batch-recaptured; recapture would bless the regression as the new reference and destroy the
+evidence.
+
+**CONFIRMED, DO NOT RECAPTURE: `material-wireframe/webgl`.** Zero scene-source change since its baseline
+(recorded hash matches the current file exactly), yet a regression distance of 18.04 against a tolerance
+of 5. The baseline is the honest party here; the output is the suspect. It is the only one of the 52
+failing functional targets that owes neither of the two candidate causes.
+
+**A CONFIRMED-CORRECT CAUSE CLEARS ONLY A TARGET THAT OWES NOTHING ELSE.** Of the 52 failing targets, 30
+owe both candidate causes, 21 owe `e2b99fc68` alone, **0 owe `b467652e8` alone** — its set is a strict
+subset. Shares of a failing set overlap and are not disjoint groups, so "this commit accounts for 58% of
+failures" never licenses "confirming it clears 58% of targets."
+
 **PARITY TIER: STILL OPEN.** The 43/324 parity units that form no comparison are not covered by this
 mechanism; the manifest pins regression evidence only. A parity-side equivalent is unbuilt.
 
@@ -119,6 +139,28 @@ silently absorb:
 | 4 | Tier 5 regression / `test:*:regression` and `capture:*:check` | Current output matches committed baselines | Missing baselines become skips or `changed=null`, and no minimum coverage is enforced. Fingerprints cover examples `0/108` current targets and functional `310/416`; screenshot hashes cover examples `117/132` and functional `401/416`. An all-missing suite succeeds. | **P1 — CLOSED for the regression tier, OPEN for parity** — the EXAMPLES numbers are CLOSED (see above); the coverage floor above zero is now gated for regression by the capture baseline coverage manifest, and remains ungated for parity | **LANDED:** an exact-set manifest of `entry/renderer` identities with a named +/- diff and a separate `--update-coverage` acceptance path. Parity has no equivalent yet. |
 | 5 | Nightly `api` | API quality/generation contributes to promotion | `npm run api` and `npm run api:json` only print parsed output; neither invokes rules nor persists/diffs an artifact. An `isEven(...): number` mutation made both commands exit 0 while `api:check` exited 1 for an accessor violation. | **P1 — parser smoke does not enforce API policy** | **RECOMMENDATION:** Add `api:check`, or narrow the job's documented trust claim to parser smoke. |
 | 6 | `edge-publish` dependencies | Published snapshots passed CI | By explicit policy it needs only `build` and `test-fast`. A snapshot can publish despite failures in isolated/tool-capture tests, quality, size, harness builds, or any render leg. This is documented reduced fidelity, not accidental control flow, but the artifact must not be described as fully CI-gated. | **P1 — snapshot evidence intentionally omits six families** | **RECOMMENDATION:** Either add the omitted dependencies or label snapshots as build-plus-fast-test gated. |
+
+**NEW — Tier 4 per-scene oracle / `functionalVerify.ts`: a misnamed oracle is silently no oracle.**
+`await testModule.assertRender?.(bitmap)` optional-chains the per-scene pixel oracle, so an export that is
+absent and an export that is MISSPELLED are the same thing to the verifier, and nothing downstream records
+whether an oracle ran — the result carries `stage`, `coverage`, and `fingerprint`, never "an oracle
+executed." 233 of 352 functional scenes export `assertRender`, so this is the majority of the suite.
+
+Proved with a two-arm experiment on `node-alpha`, whose oracle asserts a region is blue:
+
+| Arm | Scene | Oracle export | Result |
+| --- | --- | --- | --- |
+| A | fill changed blue → green | `assertRender` | **exit 1**, `[node-alpha] bottom-only region not blue — got #00ff00` on canvas, webgl, webgpu |
+| B | same broken fill | renamed to `asserRender` | **exit 0** — no verifier failure on any backend |
+
+The only trace in arm B is `± changed (hash differs from baseline)`, which the screenshot-hash tier reports
+without gating under `--fail-on-error`. So a one-character typo disables a scene's entire pixel oracle
+while the scene renders visibly wrong and the smoke gate reports success.
+
+**RECOMMENDATION:** make the oracle population observable rather than inferred — record per target whether
+an oracle ran, and pin the set of scenes that have one, so losing an oracle is a named diff rather than
+silence. This is the same shape as the capture baseline coverage manifest above, one tier down: the gate
+cannot distinguish "nothing to check" from "the check went missing."
 
 Two lower-ranked findings remain:
 
