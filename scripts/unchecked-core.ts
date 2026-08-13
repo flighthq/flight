@@ -90,6 +90,24 @@ export interface MutantResponse {
 }
 
 /**
+ * What each of a package's test files executes when it runs on its own: test path → source path → lines.
+ *
+ * Paths are repo-relative and forward-slashed, matching every other path this tool reports.
+ */
+export type TestCoverageProfile = ReadonlyMap<string, ReadonlyMap<string, ReadonlySet<number>>>;
+
+/** How the escalation tier spends its runs once a coverage profile says which tests could matter at all. */
+export interface EscalationPlan {
+  /**
+   * Mutants no test outside the sibling executes, which need no run: the sibling's `survived` already holds
+   * package-wide. This is the entire saving, and on `geometry/src/plane.ts` it is 18 of 19.
+   */
+  settled: Mutant[];
+  /** The rest, each with the tests that do execute its line — a handful of files instead of the suite. */
+  targeted: { mutant: Mutant; targets: string[] }[];
+}
+
+/**
  * The line the runner requires on a mutant run's stderr before it will believe any verdict.
  *
  * This is the instrument check. A `load` hook that never fires leaves the tests running against UNMUTATED
@@ -152,6 +170,66 @@ export function getPositionAtOffset(source: string, offset: number): { column: n
     column += 1;
   }
   return { column, line };
+}
+
+/**
+ * Whether a coverage profile accounts for everything the whole-suite baseline saw in one source file.
+ *
+ * The profile is only usable as an argument about what CANNOT kill a mutant, and that argument collapses the
+ * moment attribution is incomplete. A line the full suite executed but no test file executed on its own means
+ * some path is unaccounted for — cross-test state is the usual cause — and skipping escalation on that basis
+ * would hide a real killer. The check is cheap and the fallback is the whole-suite tier this replaces, so an
+ * incomplete profile costs time rather than correctness.
+ */
+export function isTestCoverageProfileComplete(
+  profile: TestCoverageProfile,
+  sourcePath: string,
+  executedLines: ReadonlySet<number>,
+): boolean {
+  const attributed = new Set<number>();
+  for (const executed of profile.values()) {
+    for (const line of executed.get(sourcePath) ?? []) attributed.add(line);
+  }
+  for (const line of executedLines) {
+    if (!attributed.has(line)) return false;
+  }
+  return true;
+}
+
+/**
+ * Which tests each escalated mutant actually has to run against.
+ *
+ * The escalation tier asks one question — does any test OTHER than this file's own kill it? — and used to
+ * answer it by running the package's entire suite once per mutant. A coverage profile answers most of it
+ * without running anything: a test that never executes the mutated line executes an identical program whether
+ * that line is mutated or not, because the edit is one token at one location and a trace that never reaches
+ * that location is the same trace either way. It cannot fail because of the mutation, so it cannot kill it.
+ *
+ * The argument is exact rather than heuristic, but it rests on the profile being complete — the caller must
+ * check `isTestCoverageProfileComplete` first. Line attribution errs toward marking MORE lines executed than
+ * a statement really touches, which points the wrong way for cost and the right way for safety: an
+ * over-marked line adds a run, it never removes one.
+ *
+ * The sibling test is excluded because it has already returned its verdict, and re-running it can only
+ * confirm the survival it just reported.
+ */
+export function planEscalation(
+  profile: TestCoverageProfile,
+  sourcePath: string,
+  siblingTestPath: string,
+  mutants: readonly Mutant[],
+): EscalationPlan {
+  const plan: EscalationPlan = { settled: [], targeted: [] };
+  for (const mutant of mutants) {
+    const targets: string[] = [];
+    for (const [testPath, executed] of profile) {
+      if (testPath === siblingTestPath) continue;
+      if (executed.get(sourcePath)?.has(mutant.line) === true) targets.push(testPath);
+    }
+    if (targets.length === 0) plan.settled.push(mutant);
+    else plan.targeted.push({ mutant, targets: targets.sort() });
+  }
+  return plan;
 }
 
 /**

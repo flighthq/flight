@@ -3,11 +3,13 @@ import { resolve } from 'node:path';
 
 import { parseSync } from 'oxc-parser';
 
-import type { Mutant, UncheckedFile } from './unchecked-core';
+import type { Mutant, TestCoverageProfile, UncheckedFile } from './unchecked-core';
 import {
   applyMutantText,
   collectExecutedLines,
   getPositionAtOffset,
+  isTestCoverageProfileComplete,
+  planEscalation,
   planMutants,
   rankUncheckedFiles,
   readMutantRunResult,
@@ -76,6 +78,58 @@ describe('getPositionAtOffset', () => {
     expect(getPositionAtOffset(source, 2)).toEqual({ column: 1, line: 2 });
     expect(getPositionAtOffset(source, 3)).toEqual({ column: 2, line: 2 });
     expect(getPositionAtOffset(source, 5)).toEqual({ column: 1, line: 3 });
+  });
+});
+
+describe('isTestCoverageProfileComplete', () => {
+  it('accepts a profile whose tests between them account for every line the whole suite executed', () => {
+    expect(
+      isTestCoverageProfileComplete(profileOf({ 'a.test.ts': [1, 2], 'b.test.ts': [3] }), SOURCE, lines(1, 2, 3)),
+    ).toBe(true);
+  });
+
+  it('rejects a profile missing a line the whole suite executed', () => {
+    // The line the full suite reached and no single test did is the one that makes the whole profile
+    // unusable: it is evidence that some execution is unattributed, and an unattributed execution is
+    // exactly the test that would kill a mutant this profile would otherwise say nothing can reach.
+    expect(isTestCoverageProfileComplete(profileOf({ 'a.test.ts': [1, 2] }), SOURCE, lines(1, 2, 3))).toBe(false);
+  });
+
+  it('ignores what the profile knows about other source files', () => {
+    const profile: TestCoverageProfile = new Map([
+      ['a.test.ts', new Map([['packages/x/src/other.ts', new Set([1, 2, 3])]])],
+    ]);
+    expect(isTestCoverageProfileComplete(profile, SOURCE, lines(1))).toBe(false);
+  });
+});
+
+describe('planEscalation', () => {
+  it('settles a mutant no test outside the sibling executes, with no run at all', () => {
+    const plan = planEscalation(profileOf({ 'other.test.ts': [50] }), SOURCE, SIBLING, [mutantOn(10)]);
+    expect(plan.settled.map((mutant) => mutant.line)).toEqual([10]);
+    expect(plan.targeted).toEqual([]);
+  });
+
+  it('targets only the tests that execute the mutant’s line', () => {
+    const profile = profileOf({ 'far.test.ts': [99], 'near.test.ts': [10, 11], 'other.test.ts': [10] });
+    const plan = planEscalation(profile, SOURCE, SIBLING, [mutantOn(10)]);
+    expect(plan.settled).toEqual([]);
+    expect(plan.targeted).toEqual([{ mutant: mutantOn(10), targets: ['near.test.ts', 'other.test.ts'] }]);
+  });
+
+  it('never targets the sibling test, whose verdict is the one being escalated', () => {
+    // Re-running it could only reconfirm the survival that put the mutant in this tier, and a mutant whose
+    // ONLY reader is its sibling would otherwise be escalated to a run against the test it already passed.
+    const plan = planEscalation(profileOf({ [SIBLING]: [10] }), SOURCE, SIBLING, [mutantOn(10)]);
+    expect(plan.settled.map((mutant) => mutant.line)).toEqual([10]);
+    expect(plan.targeted).toEqual([]);
+  });
+
+  it('plans each mutant independently, so one line’s readers do not widen another’s', () => {
+    const profile = profileOf({ 'other.test.ts': [10] });
+    const plan = planEscalation(profile, SOURCE, SIBLING, [mutantOn(10), mutantOn(20)]);
+    expect(plan.targeted.map((entry) => entry.mutant.line)).toEqual([10]);
+    expect(plan.settled.map((mutant) => mutant.line)).toEqual([20]);
   });
 });
 
@@ -203,9 +257,10 @@ describe('readMutantRunResult', () => {
   });
 
   it('ignores a failure in a file this run did not name', () => {
-    // The regression this function exists for. A warm server keeps every earlier run's result, so a run
-    // would otherwise inherit the failure that KILLED an unrelated mutant against a different test file —
-    // and report a survivor as dead, which is the one way a finding leaves the list unnoticed.
+    // The regression this function exists for. A warm server keeps every earlier run's result, so the
+    // escalation run for one mutant would otherwise inherit the failure that KILLED an unrelated mutant
+    // against a different test file — and report a survivor as dead, which is the one way a finding can
+    // leave the list without anyone noticing.
     const files = [pass('a.test.ts'), fail('stale.test.ts')];
     expect(readMutantRunResult(['a.test.ts'], files)).toEqual({ measured: true, passed: true });
   });
@@ -245,6 +300,25 @@ function fail(filepath: string): { filepath: string; result: { state: string } }
   return { filepath, result: { state: 'fail' } };
 }
 
+function lines(...values: readonly number[]): Set<number> {
+  return new Set(values);
+}
+
+/** A mutant that carries only what the escalation planner reads: which line it sits on. */
+function mutantOn(line: number): Mutant {
+  return { column: 1, end: 1, line, operator: 'arithmetic', original: '+', replacement: '-', start: 0 };
+}
+
 function pass(filepath: string): { filepath: string; result: { state: string } } {
   return { filepath, result: { state: 'pass' } };
 }
+
+/** A profile over one source file: test path → the lines of `SOURCE` that test executes on its own. */
+function profileOf(executed: Readonly<Record<string, readonly number[]>>): TestCoverageProfile {
+  return new Map(
+    Object.entries(executed).map(([testPath, covered]) => [testPath, new Map([[SOURCE, new Set(covered)]])]),
+  );
+}
+
+const SIBLING = 'packages/x/src/subject.test.ts';
+const SOURCE = 'packages/x/src/subject.ts';

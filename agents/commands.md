@@ -35,9 +35,9 @@ Run `untested` first; it is seconds and it finds the cheaper problem. Reach for 
 package's coverage is already good and you want to know whether that means anything.
 
 **What `unchecked` does.** It plans single-token edits — `<`→`<=`, `&&`→`||`, `===`→`!==`, `!x`→`x`,
-`true`→`false` — filters them to lines the tests actually execute, and runs the package's suite once per
-mutant. A mutant the tests still pass is a **survivor**: no test in that package distinguishes the real
-behavior from the broken one.
+`true`→`false` — filters them to lines the tests actually execute, and runs the tests once per mutant. A
+mutant the tests still pass is a **survivor**: no test in that package distinguishes the real behavior
+from the broken one.
 
     npm run unchecked geometry/src/matrix.ts            # one file — start here
     npm run unchecked -- geometry/src/matrix.ts --quick # sibling test only, several times faster
@@ -51,8 +51,9 @@ it is an unannounced hour, so a selector resolving to more than one package is r
 named. Narrow to a file whenever you can: a file is the unit this tool was built for.
 
 Two tiers, cheapest first: each mutant runs against its file's **sibling** `*.test.ts`, and only the ones
-that survive that are re-run against the **whole package suite**. So a reported survivor has been missed
-by every test in the package, not just by its colocated one.
+that survive that are escalated to the **rest of the package**. So a reported survivor has been missed by
+every test in the package, not just by its colocated one. What the second tier actually has to execute is
+narrowed by coverage — see **The escalation tier** below — but the claim it makes is unchanged.
 
 **`--quick` stops after the first tier.** It is several times faster and makes a **smaller claim**: a
 survivor is one *that file's own test* misses, which some other test in the package may well kill. That is
@@ -80,16 +81,35 @@ which in a repo where an agent may be committing concurrently is not a risk wort
 that hangs or crashes a shared server is re-run in a process of its own, so batching's failure mode is
 latency, never a wrong verdict.
 
-**The escalation tier dominates.** On `plane.ts`: baseline 7s, 88 sibling runs 21–23s, and **19 escalated
-mutants 74–96s** — because each of those runs the package's entire 1186-test suite. Two consequences worth
-knowing before optimizing: adding workers to that tier can make it *slower* (each new worker pays its own
-full-suite first run, and concurrent whole-suite servers contend), and run-to-run variance is around 20%,
-so a change worth less than that cannot be told apart from noise by a single run.
+**The escalation tier**, which used to dominate, is now bounded by a coverage profile. Escalating a mutant
+once meant running the package's entire suite, so on `plane.ts` its 19 escalated mutants cost **532
+test-file executions** against the sibling tier's 88 — and changed nothing about the answer.
 
-On `plane.ts` that tier changed **nothing** — the same 19 survivors before and after, for 74–96s of the
-102s run. That is one file and does not generalize (a mutant in a module the rest of the package leans on
-is exactly what escalation catches), but it is the concrete case for reaching for `--quick` first and
-paying for the full claim once, at the end.
+What removes almost all of that is one exact argument: *a test that never executes the mutated line cannot
+be killed by mutating it.* The edit is a single token at a single location, so a run that never reaches
+that location executes an identical program either way. To use it the tool needs to know which test
+reaches which line, which whole-suite coverage cannot say — it is a union. So the first escalation in a
+run measures a **per-test coverage profile**: every test file run on its own, once, reusable for every
+file and mutant afterwards. On `plane.ts` that is 28 runs, and it reports that only `frustum.test.ts` and
+`ray3d.test.ts` execute any of `plane.ts` at all. 15 of the 19 escalations then need **no run**, and the
+other 4 run two small test files instead of 28. The tier's 532 executions become 36.
+
+Two guards, because the profile is load-bearing for a claim about what *cannot* happen:
+
+- If any test file **fails on its own**, the whole profile is discarded — its coverage is the record of a
+  run that stopped early, so a line it did not reach is indistinguishable from one it does not use.
+- If the profile does not account for **every line the whole-suite baseline executed** in that file, it is
+  not used for that file. An unattributed execution is exactly the test that would kill a mutant the
+  profile would otherwise call unreachable.
+
+Either way the fallback is the unnarrowed tier, so an unusable profile costs time and never a verdict. The
+profile is skipped entirely below four escalated mutants in a file, where it would cost more than it saves.
+
+**Read the wall-clock numbers here as machine-dependent** and the execution counts as not. Measured in one
+window on a loaded 16-core box: `plane.ts` 4m38s → 1m31s, and a whole `spring` package 4m26s → 2m18s, both
+with **byte-identical survivor lists**. Run-to-run variance on an idle machine was already around 20%, so a
+change worth less than that cannot be told apart from noise by a single run; the same measurement under
+contention moves by a factor of three. Count what has to execute.
 
 **Three things a survivor does not mean**, each of which has produced a wrong reading somewhere:
 

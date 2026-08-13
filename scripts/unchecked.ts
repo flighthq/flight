@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
@@ -7,11 +7,20 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 
 import { filterPaths, getSelectors, selectPackages } from './select';
-import type { Mutant, MutantOutcome, MutantRequest, MutantResponse, UncheckedFile } from './unchecked-core';
+import type {
+  Mutant,
+  MutantOutcome,
+  MutantRequest,
+  MutantResponse,
+  TestCoverageProfile,
+  UncheckedFile,
+} from './unchecked-core';
 import {
   APPLIED_MARKER,
   collectExecutedLines,
+  isTestCoverageProfileComplete,
   MUTANT_ENVIRONMENT,
+  planEscalation,
   planMutants,
   rankUncheckedFiles,
   selectReachableMutants,
@@ -51,10 +60,24 @@ import {
 // worker that hangs or dies (`runMutant`, through `mutantVitestConfig.ts`), so a mutant that takes down a
 // shared server costs a slower second attempt, never a wrong verdict.
 
-/** What every mutant run for one package shares: the package, and the vitest pool its suite passes under. */
+interface CoverageMeasurement {
+  /** Repo-relative source path → the lines this run executed. */
+  executed: Map<string, Set<number>>;
+  green: boolean;
+}
+
+interface CoverageProfiler {
+  /** Measures on the first call that `justified` allows, then returns that same result — `null` included. */
+  profile(justified: boolean): Promise<TestCoverageProfile | null>;
+}
+
+/** What every mutant run for one package shares. One of these exists per invocation, and outlives every file. */
 interface Harness {
   packageName: string;
+  /** The vitest pool the unmutated control passed under, which every mutant then runs under too. */
   pool: string;
+  profiler: CoverageProfiler;
+  workers: MutantPool;
 }
 
 export interface MutantRun {
@@ -73,6 +96,12 @@ const MUTANT_TIMEOUT_MS = 120_000;
 // How many escalated mutants one worker must carry before a second worker is worth its own full-suite
 // first run. Four is where the measured curve flattened on `geometry`; see `getEscalationWidth`.
 const MUTANTS_PER_ESCALATION_WORKER = 4;
+
+// Below this many escalated mutants, measuring the per-test coverage profile costs more than the escalation
+// runs it removes. The profile is one cold run per test file; an unnarrowed escalation is one warm run of
+// EVERY test file, per mutant. So the profile is a loss at one escalated mutant and has paid for itself by
+// about four — after which every remaining file in the same invocation reuses it for nothing.
+const MUTANTS_TO_JUSTIFY_PROFILING = 4;
 
 const scriptsDirectory = resolve(fileURLToPath(import.meta.url), '..');
 const repoRoot = resolve(scriptsDirectory, '..');
@@ -161,7 +190,7 @@ export function readMutantVerdict(run: Readonly<MutantRun>): MutantOutcome['verd
   return run.passed ? 'survived' : 'killed';
 }
 
-function collectSourceFiles(packageName: string): string[] {
+function collectPackageFiles(packageName: string, accept: (name: string) => boolean): string[] {
   const sourceRoot = join(repoRoot, 'packages', packageName, 'src');
   if (!existsSync(sourceRoot)) return [];
   const files: string[] = [];
@@ -172,29 +201,57 @@ function collectSourceFiles(packageName: string): string[] {
         walk(entryPath);
         continue;
       }
-      if (!entry.name.endsWith('.ts') && !entry.name.endsWith('.tsx')) continue;
-      if (entry.name.endsWith('.test.ts') || entry.name.endsWith('.test.tsx') || entry.name.endsWith('.d.ts')) continue;
-      files.push(relative(repoRoot, entryPath).replaceAll('\\', '/'));
+      if (accept(entry.name)) files.push(relative(repoRoot, entryPath).replaceAll('\\', '/'));
     }
   };
   walk(sourceRoot);
   return files.sort();
 }
 
+function collectSourceFiles(packageName: string): string[] {
+  return collectPackageFiles(packageName, (name) => {
+    if (!name.endsWith('.ts') && !name.endsWith('.tsx')) return false;
+    return !name.endsWith('.test.ts') && !name.endsWith('.test.tsx') && !name.endsWith('.d.ts');
+  });
+}
+
 // Threads first, forks as the fallback, chosen by which one the unmutated suite passes under. Threads is
 // roughly twice as fast per run and the cost is paid once per mutant, so it is worth trying — but a package
 // that needs real process isolation exists, and the way to find out is to run its suite rather than to guess
 // from its config. Whichever pool the control passed under is the one every mutant runs under.
-function chooseBaseline(packageName: string): ReturnType<typeof measureBaseline> & { pool: string } {
+async function chooseBaseline(packageName: string): Promise<CoverageMeasurement & { pool: string }> {
   let last = { executed: new Map<string, Set<number>>(), green: false, pool: MUTANT_POOLS[0] as string };
   for (const pool of MUTANT_POOLS) {
-    last = { ...measureBaseline(packageName, pool), pool };
+    last = { ...(await measureCoverage(packageName, pool, [])), pool };
     if (last.green) return last;
   }
   return last;
 }
 
-// The control run: the mutant harness with no edit in it, under one candidate pool.
+function collectTestFiles(packageName: string): string[] {
+  return collectPackageFiles(packageName, (name) => name.endsWith('.test.ts') || name.endsWith('.test.tsx'));
+}
+
+/**
+ * The lazily measured per-test coverage profile for one package, shared by every file in the run.
+ *
+ * Measured at most once, and only when the caller says the escalation it would replace costs more than it
+ * does. A failed measurement is cached as `null` too: a profile that could not be trusted the first time
+ * cannot be trusted by re-measuring it, and retrying per file would pay the cost repeatedly for nothing.
+ */
+function createCoverageProfiler(packageName: string, pool: string, quiet: boolean): CoverageProfiler {
+  let measured: Promise<TestCoverageProfile | null> | null = null;
+  return {
+    profile(justified: boolean): Promise<TestCoverageProfile | null> {
+      if (measured === null && !justified) return Promise.resolve(null);
+      measured ??= measureTestCoverageProfile(packageName, pool, quiet);
+      return measured;
+    },
+  };
+}
+
+// A control run — the mutant harness with no edit in it — under one candidate pool, scoped to `targets` or
+// to the package's whole include glob when they are empty.
 //
 // It goes through the SAME config, the same coverage settings, and the same pool as every mutant run, so
 // control and treatment differ in exactly one thing — the spliced token. Measuring the baseline through the
@@ -203,10 +260,11 @@ function chooseBaseline(packageName: string): ReturnType<typeof measureBaseline>
 //
 // Green is a precondition, not a result. A red suite fails on every mutant too, which reads as a perfect
 // kill rate — the exact shape of a false all-clear.
-function measureBaseline(packageName: string, pool: string): { executed: Map<string, Set<number>>; green: boolean } {
+function measureCoverage(packageName: string, pool: string, targets: readonly string[]): Promise<CoverageMeasurement> {
   const reportDirectory = mkdtempSync(join(tmpdir(), `unchecked-${packageName}-`));
-  try {
-    const result = spawnSync(
+  const packageRoot = join(repoRoot, 'packages', packageName);
+  return new Promise((settle) => {
+    const child = spawn(
       process.execPath,
       [
         vitestBinary,
@@ -214,6 +272,7 @@ function measureBaseline(packageName: string, pool: string): { executed: Map<str
         '--config',
         mutantConfigPath,
         `--pool=${pool}`,
+        '--maxWorkers=1',
         '--coverage',
         '--coverage.provider=v8',
         '--coverage.include=src/**/*.ts',
@@ -227,30 +286,70 @@ function measureBaseline(packageName: string, pool: string): { executed: Map<str
         '--coverage.thresholds.functions=0',
         '--coverage.thresholds.lines=0',
         '--coverage.thresholds.statements=0',
+        ...targetsRelativeTo(packageRoot, targets),
       ],
       {
-        cwd: join(repoRoot, 'packages', packageName),
-        encoding: 'utf8',
+        cwd: packageRoot,
         env: { ...process.env, [MUTANT_ENVIRONMENT]: JSON.stringify(nullMutantSpecification(packageName)) },
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ['ignore', 'ignore', 'ignore'],
       },
     );
 
-    const executed = new Map<string, Set<number>>();
-    const coverageFile = join(reportDirectory, 'coverage-final.json');
-    if (existsSync(coverageFile)) {
-      const coverage = JSON.parse(readFileSync(coverageFile, 'utf8')) as Record<
-        string,
-        Parameters<typeof collectExecutedLines>[0]
-      >;
-      for (const [absolute, fileCoverage] of Object.entries(coverage)) {
-        executed.set(relative(repoRoot, absolute).replaceAll('\\', '/'), collectExecutedLines(fileCoverage));
+    child.on('close', (code) => {
+      const executed = new Map<string, Set<number>>();
+      const coverageFile = join(reportDirectory, 'coverage-final.json');
+      if (existsSync(coverageFile)) {
+        const coverage = JSON.parse(readFileSync(coverageFile, 'utf8')) as Record<
+          string,
+          Parameters<typeof collectExecutedLines>[0]
+        >;
+        for (const [absolute, fileCoverage] of Object.entries(coverage)) {
+          executed.set(relative(repoRoot, absolute).replaceAll('\\', '/'), collectExecutedLines(fileCoverage));
+        }
       }
-    }
-    return { executed, green: result.status === 0 };
-  } finally {
-    rmSync(reportDirectory, { force: true, recursive: true });
+      rmSync(reportDirectory, { force: true, recursive: true });
+      settle({ executed, green: code === 0 });
+    });
+  });
+}
+
+/**
+ * What every test file in the package executes when run on its own.
+ *
+ * One cold run per test file, which is the price of attribution: coverage from the whole suite is a union
+ * and cannot say WHICH test reached a line, and that is the only thing the escalation tier needs to know.
+ * Measured on `geometry` it is 28 runs, against the 532 test-file executions the whole-suite tier spent on a
+ * single source file — so this is not a tradeoff between speed and completeness, it is a cheaper way to
+ * obtain the same claim.
+ *
+ * A test file that fails on its own returns the whole profile as unusable rather than as a partial one. Its
+ * coverage is the record of a run that stopped early, so the lines it did not reach are indistinguishable
+ * from lines it does not use, and a mutant on one of those would be reported as unkillable by a test that in
+ * fact kills it.
+ */
+async function measureTestCoverageProfile(
+  packageName: string,
+  pool: string,
+  quiet: boolean,
+): Promise<TestCoverageProfile | null> {
+  const tests = collectTestFiles(packageName);
+  if (tests.length === 0) return null;
+  if (!quiet) process.stdout.write(pc.dim(`· profiling ${tests.length} test files `));
+
+  const started = Date.now();
+  const profile = new Map<string, ReadonlyMap<string, ReadonlySet<number>>>();
+  let red = 0;
+  await mapConcurrent(tests, workerCount(), async (testPath) => {
+    const measured = await measureCoverage(packageName, pool, [join(repoRoot, testPath)]);
+    if (measured.green) profile.set(testPath, measured.executed);
+    else red += 1;
+  });
+
+  if (!quiet) {
+    process.stdout.write(pc.dim(`${describeElapsed(Date.now() - started)} `));
+    if (red > 0) process.stdout.write(pc.yellow(`(${red} fail alone — profile unused) `));
   }
+  return red > 0 ? null : profile;
 }
 
 async function report(
@@ -267,7 +366,7 @@ async function report(
 
   if (!asJson) console.log(pc.dim(`unchecked: measuring the unmutated baseline for @flighthq/${packageName}…`));
   const baselineStarted = Date.now();
-  const baseline = chooseBaseline(packageName);
+  const baseline = await chooseBaseline(packageName);
   const baselineElapsed = Date.now() - baselineStarted;
   if (!baseline.green) {
     console.error(
@@ -316,21 +415,26 @@ async function report(
     console.log();
   }
 
-  const harness: Harness = { packageName, pool: baseline.pool };
   // One pool for the entire run, not one per file per tier. Cold start is the dominant remaining cost, and
   // a worker is subject-agnostic, so every file after the first reuses servers that are already warm.
   const widest = runnable.reduce((most, file) => Math.max(most, file.reachable.length), 0);
-  const pool = createMutantPool(join(repoRoot, 'packages', packageName), Math.min(workerCount(), widest));
+  const harness: Harness = {
+    packageName,
+    pool: baseline.pool,
+    profiler: createCoverageProfiler(packageName, baseline.pool, asJson),
+    workers: createMutantPool(join(repoRoot, 'packages', packageName), Math.min(workerCount(), widest)),
+  };
   const files: UncheckedFile[] = [];
   try {
     for (const file of runnable) {
-      const outcomes = await runFileMutants(harness, pool, file.path, file.reachable, asJson, quick);
+      const executed = baseline.executed.get(file.path) ?? new Set<number>();
+      const outcomes = await runFileMutants(harness, file.path, file.reachable, executed, asJson, quick);
       const survivors = outcomes.filter((outcome) => outcome.verdict === 'survived');
       const unreached = outcomes.filter((outcome) => outcome.verdict === 'unreached').length;
       files.push({ path: file.path, survivors, total: file.mutants.length, unreached });
     }
   } finally {
-    pool.close();
+    harness.workers.close();
   }
 
   if (asJson) {
@@ -396,17 +500,18 @@ function printReport(packageName: string, files: readonly UncheckedFile[], total
 // interesting set, while making sure nothing is reported as unkilled that another test in the package kills.
 async function runFileMutants(
   harness: Readonly<Harness>,
-  pool: MutantPool,
   sourcePath: string,
   mutants: readonly Mutant[],
+  executedLines: ReadonlySet<number>,
   quiet: boolean,
   quick: boolean,
 ): Promise<MutantOutcome[]> {
-  const siblingTest = join(repoRoot, getSiblingTestPath(sourcePath));
+  const siblingPath = getSiblingTestPath(sourcePath);
+  const siblingTest = join(repoRoot, siblingPath);
   if (!quiet) process.stdout.write(pc.dim(`  ${sourcePath} · ${mutants.length} mutants `));
 
   const siblingStarted = Date.now();
-  const siblingOutcomes = await runTier(harness, pool, sourcePath, mutants, [siblingTest], quiet, 'sibling');
+  const siblingOutcomes = await runTier(harness, sourcePath, mutants, () => [siblingTest], quiet, 'sibling');
   const siblingElapsed = Date.now() - siblingStarted;
 
   const escalated = quick
@@ -419,11 +524,63 @@ async function runFileMutants(
   if (!quiet) process.stdout.write(pc.dim(` ${describeElapsed(siblingElapsed)} · escalating ${escalated.length} `));
 
   const escalationStarted = Date.now();
-  const packageOutcomes = await runTier(harness, pool, sourcePath, escalated, [], quiet, 'package', getEscalationWidth);
+  const packageOutcomes = await escalate(harness, sourcePath, siblingPath, escalated, executedLines, quiet);
   if (!quiet) console.log(pc.dim(` ${describeElapsed(Date.now() - escalationStarted)}`));
 
   const confirmed = new Map(packageOutcomes.map((outcome) => [outcome.mutant, outcome]));
   return siblingOutcomes.map((outcome) => confirmed.get(outcome.mutant) ?? outcome);
+}
+
+// The escalation tier, narrowed by a coverage profile when one can be trusted.
+//
+// The profile turns "run the whole suite once per mutant" into "run the few tests that execute this line,
+// and nothing at all for the ones no other test executes". On `geometry/src/plane.ts` that is 19 whole-suite
+// runs — 532 test-file executions — replaced by 28 profiling runs and a single run of two test files.
+//
+// The fallback is the tier exactly as it was, taken whenever the profile is missing or incomplete, so the
+// claim a survivor carries never changes: no test in this package kills it. What changes is what had to be
+// executed to establish that.
+async function escalate(
+  harness: Readonly<Harness>,
+  sourcePath: string,
+  siblingPath: string,
+  mutants: readonly Mutant[],
+  executedLines: ReadonlySet<number>,
+  quiet: boolean,
+): Promise<MutantOutcome[]> {
+  const profile = await harness.profiler.profile(mutants.length >= MUTANTS_TO_JUSTIFY_PROFILING);
+  const plan =
+    profile !== null && isTestCoverageProfileComplete(profile, sourcePath, executedLines)
+      ? planEscalation(profile, sourcePath, siblingPath, mutants)
+      : null;
+  if (plan === null) {
+    return runTier(harness, sourcePath, mutants, () => [], quiet, 'package', getEscalationWidth);
+  }
+
+  if (!quiet && plan.settled.length > 0) {
+    process.stdout.write(pc.dim(`· ${plan.settled.length} execute in no other test `));
+  }
+  const targets = new Map(
+    plan.targeted.map((entry) => [entry.mutant, entry.targets.map((path) => join(repoRoot, path))] as const),
+  );
+  // Full width here, unlike the whole-suite tier: these runs are a couple of test files each, so a worker
+  // joining no longer has to amortize a first run of the entire package before it helps.
+  const ran = await runTier(
+    harness,
+    sourcePath,
+    plan.targeted.map((entry) => entry.mutant),
+    (mutant) => targets.get(mutant) ?? [],
+    quiet,
+    'package',
+  );
+  // A settled mutant keeps the verdict the sibling tier measured, promoted to the package claim by the
+  // argument in `planEscalation` rather than by a run. It is the only verdict here nothing executed for, and
+  // it is sound in the one direction that matters: escalation can only ever turn a survivor into a kill, and
+  // a test that never reaches the line cannot be the one to do it.
+  return [
+    ...plan.settled.map((mutant) => ({ mutant, scope: 'package' as const, verdict: 'survived' as const })),
+    ...ran,
+  ];
 }
 
 // One tier of one file, through a pool of warm workers.
@@ -434,20 +591,20 @@ async function runFileMutants(
 // verdict, so the failure mode of the optimization is latency, never a corrupted finding.
 async function runTier(
   harness: Readonly<Harness>,
-  pool: MutantPool,
   sourcePath: string,
   mutants: readonly Mutant[],
-  targets: readonly string[],
+  targetsFor: (mutant: Readonly<Mutant>) => readonly string[],
   quiet: boolean,
   scope: MutantOutcome['scope'],
   width: (count: number, ceiling: number) => number = (_, ceiling) => ceiling,
 ): Promise<MutantOutcome[]> {
   const packageRoot = join(repoRoot, 'packages', harness.packageName);
   const subject = join(repoRoot, sourcePath);
+  const pool = harness.workers;
   const fallbacks: Mutant[] = [];
 
   const outcomes = await mapConcurrent(mutants, width(mutants.length, pool.size), async (mutant) => {
-    const run = await pool.run(subject, mutant, targets);
+    const run = await pool.run(subject, mutant, targetsFor(mutant));
     if (run === null) {
       fallbacks.push(mutant);
       return null;
@@ -461,7 +618,7 @@ async function runTier(
 
   if (!quiet) process.stdout.write(pc.yellow(`↻${fallbacks.length}`));
   const retried = await mapConcurrent(fallbacks, workerCount(), async (mutant) => {
-    const run = await runMutant(harness, sourcePath, mutant, targetsRelativeTo(packageRoot, targets));
+    const run = await runMutant(harness, sourcePath, mutant, targetsRelativeTo(packageRoot, targetsFor(mutant)));
     if (!quiet) process.stdout.write(progressMark(run));
     return { mutant, scope, verdict: readMutantVerdict(run) };
   });
