@@ -1,9 +1,16 @@
 import {
   createCamera3D,
+  setCamera3DViewMatrix4FromMatrix4,
   createPerspectiveProjection,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
-import { copyQuaternion, createQuaternion, setQuaternionFromAxisAngle, setVector3 } from '@flighthq/geometry/contract';
+import {
+  copyQuaternion,
+  createMatrix4,
+  createQuaternion,
+  setQuaternionFromAxisAngle,
+  setVector3,
+} from '@flighthq/geometry/contract';
 import { createPlaneMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type { Camera3D } from '@flighthq/types/contract';
@@ -26,6 +33,32 @@ function cameraLookingFrom(ex: number, ey: number, ez: number): Camera3D {
 }
 
 describe('orientBillboardToCamera', () => {
+  // The setter split matters here and is worth keeping visible: a lookAt camera CANNOT reach this branch
+  // (setMatrix4LookAt reseeds both degenerate bases), so the only way in is an arbitrary view matrix
+  // copied through setCamera3DViewMatrix4FromMatrix4, which validates nothing.
+  it('declines and leaves the billboard untouched when the view matrix has no inverse', () => {
+    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    setVector3(billboard.position, 1, 2, 3);
+    invalidateNodeLocalTransform(billboard);
+    const before = Array.from(getNodeWorldMatrix4(billboard).m);
+
+    const camera = createCamera3D({
+      far: 100,
+      near: 0.1,
+      projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+    });
+    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+
+    expect(orientBillboardToCamera(billboard, camera)).toBe(false);
+    expect(Array.from(getNodeWorldMatrix4(billboard).m)).toEqual(before);
+    for (const value of getNodeWorldMatrix4(billboard).m) expect(Number.isFinite(value)).toBe(true);
+  });
+
+  it('reports true for an invertible view', () => {
+    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    expect(orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10))).toBe(true);
+  });
+
   it('full mode at the origin faces a +Z camera with an identity basis', () => {
     const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));

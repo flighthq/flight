@@ -241,10 +241,16 @@ export function setGlMeshCameraPosition(
   gl: WebGL2RenderingContext,
   locCameraPosition: WebGLUniformLocation | null,
   camera: Readonly<Camera3D>,
-): void {
-  inverseMatrix4(scratchInverseView, camera.view);
+): boolean {
+  // Reports a view with no inverse and uploads NOTHING, matching `updateCamera3DInverseViewProjection`,
+  // which already treats that as a real state and leaves its cache intact. The uniform keeps whatever
+  // was last uploaded, which is a stale camera position rather than a NaN one — and NaN here does not
+  // stay local: it reaches the fragment stage as the view vector and takes the whole lit family's
+  // shading with it, with nothing raised.
+  if (!inverseMatrix4(scratchInverseView, camera.view)) return false;
   getMatrix4Position(scratchCameraPosition, scratchInverseView);
   gl.uniform3f(locCameraPosition, scratchCameraPosition.x, scratchCameraPosition.y, scratchCameraPosition.z);
+  return true;
 }
 
 // Uploads the camera view-projection matrix to a program's u_viewProjection. Every family's vertex

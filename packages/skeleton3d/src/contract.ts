@@ -1,3 +1,4 @@
+export * from './enableSkeleton3DGuards';
 export * from './getMeshSkinBounds';
 export * from './prepareScene3DSkinning';
 export * from './skeleton3d';

@@ -14,6 +14,7 @@ import {
   getSkeleton3DJointWorldMatrix,
   getSkeleton3DJointWorldMatrixByName,
   setSkeleton3DBindPose,
+  setSkeleton3DBindPoseGuard,
   validateSkeleton3D,
 } from './skeleton3d';
 
@@ -284,6 +285,29 @@ describe('getSkeleton3DJointWorldMatrixByName', () => {
 });
 
 describe('setSkeleton3DBindPose', () => {
+  // A zero-scale joint makes its world matrix singular. Writing the failed inverse puts NaN in the
+  // palette, which reaches the skinned vertices silently; identity costs that one joint its bind pose
+  // and leaves every other joint working — the AWD2 recovery, applied per joint.
+  it('substitutes identity for a joint with no invertible world matrix, leaving the rest of the rig', () => {
+    const collapsed = createNode3D();
+    const healthy = createNode3D();
+    const skeleton = createSkeleton3D([collapsed, healthy]);
+    setVector3(collapsed.scale, 0, 0, 0);
+    setVector3(healthy.position, 3, 0, 0);
+    invalidateNodeLocalTransform(collapsed);
+    invalidateNodeLocalTransform(healthy);
+
+    setSkeleton3DBindPose(skeleton);
+
+    for (const value of skeleton.inverseBindMatrices) expect(Number.isFinite(value)).toBe(true);
+    // The collapsed joint got identity...
+    expect(Array.from(skeleton.inverseBindMatrices.slice(0, 16))).toEqual([
+      1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+    ]);
+    // ...and the healthy joint still got its real inverse bind.
+    expect(skeleton.inverseBindMatrices[28]).toBeCloseTo(-3);
+  });
+
   it('rebinds so the current pose becomes the rest pose', () => {
     const joint = createNode3D();
     const skeleton = createSkeleton3D([joint]);
@@ -294,6 +318,25 @@ describe('setSkeleton3DBindPose', () => {
     computeSkeleton3DJointMatrices(skeleton);
 
     expect(skeleton.jointMatrices[12]).toBeCloseTo(0);
+  });
+});
+
+describe('setSkeleton3DBindPoseGuard', () => {
+  it('is notified for the degenerate joint only', () => {
+    const seen: number[] = [];
+    setSkeleton3DBindPoseGuard((_skeleton, jointIndex) => seen.push(jointIndex));
+    try {
+      const collapsed = createNode3D();
+      const healthy = createNode3D();
+      const skeleton = createSkeleton3D([healthy, collapsed]);
+      setVector3(collapsed.scale, 0, 0, 0);
+      invalidateNodeLocalTransform(collapsed);
+      invalidateNodeLocalTransform(healthy);
+      setSkeleton3DBindPose(skeleton);
+      expect(seen).toEqual([1]);
+    } finally {
+      setSkeleton3DBindPoseGuard(null);
+    }
   });
 });
 

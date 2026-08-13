@@ -1046,7 +1046,7 @@ export function writeWgpuFrameUniform(
   state: WgpuRenderState,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightBlock>,
-): void {
+): boolean {
   const scene = getWgpuScene3DRuntime(state);
   let binding = scene.frameBindings.get(lights);
   if (binding === undefined) {
@@ -1083,7 +1083,12 @@ export function writeWgpuFrameUniform(
   const vp = webGpuVp;
   for (let i = 0; i < 16; i++) f[i] = vp[i];
 
-  inverseMatrix4(scratchInverseView, camera.view);
+  // A view with no inverse leaves the camera-position slots UNWRITTEN and reports it, matching
+  // `updateCamera3DInverseViewProjection`, which already treats that as a real state and keeps its prior
+  // cache. Writing them anyway would put NaN in a uniform buffer the shader reads as the view vector,
+  // and NaN in a GPU buffer is the worst version of this failure: it does not throw, it does not log,
+  // and it surfaces only as shading that has gone wrong somewhere with nothing to attribute it to.
+  if (!inverseMatrix4(scratchInverseView, camera.view)) return false;
   getMatrix4Position(scratchCameraPosition, scratchInverseView);
   f[16] = scratchCameraPosition.x;
   f[17] = scratchCameraPosition.y;
@@ -1127,6 +1132,7 @@ export function writeWgpuFrameUniform(
   f[FRAME_COUNTS_OFFSET + 3] = 0;
 
   state.device.queue.writeBuffer(binding.buffer, 0, f.buffer, 0, FRAME_UNIFORM_BYTES);
+  return true;
 }
 
 // Frame uniform float offsets for the punctual light arrays — the byte offset within the Frame buffer
