@@ -44,6 +44,28 @@ describe('ensureWgpuMeshUpload', () => {
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBeGreaterThanOrEqual(2);
   });
 
+  it('pads an odd-length Uint16 index upload to four-byte alignment without changing the index count', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const geometry = createMeshGeometry({
+      indices: new Uint16Array([0, 1, 2]),
+      layout: POSITION_LAYOUT,
+      vertices: new Float32Array(9),
+    });
+
+    const upload = ensureWgpuMeshUpload(state, geometry);
+    const writes = fake.calls.filter((call) => call.name === 'writeBuffer');
+    const indexWrite = writes[writes.length - 1]!;
+    const uploadedIndices = new Uint16Array(
+      indexWrite.args[2] as ArrayBuffer,
+      indexWrite.args[3] as number,
+      (indexWrite.args[4] as number) / Uint16Array.BYTES_PER_ELEMENT,
+    );
+
+    expect(indexWrite.args[4]).toBe(8);
+    expect(Array.from(uploadedIndices.subarray(0, 3))).toEqual([0, 1, 2]);
+    expect(upload.indexCount).toBe(3);
+  });
+
   it('returns the cached upload without re-uploading when version is unchanged', () => {
     const { fake, state } = makeWgpuScene3DState();
     const geometry = createBoxMeshGeometry();

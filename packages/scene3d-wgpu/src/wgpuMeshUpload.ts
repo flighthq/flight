@@ -56,7 +56,7 @@ export function ensureWgpuMeshUpload(
       size: Math.max(4, alignTo4(indices.byteLength)),
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     });
-    device.queue.writeBuffer(indexBuffer, 0, indices.buffer, indices.byteOffset, indices.byteLength);
+    writeMeshIndices(device.queue, indexBuffer, indices);
   }
 
   const stride = geometry.layout.stride;
@@ -81,3 +81,27 @@ export function ensureWgpuMeshUpload(
 function alignTo4(byteLength: number): number {
   return (byteLength + 3) & ~3;
 }
+
+// A Uint16 index array with an odd element count occupies 2 mod 4 bytes, which writeBuffer rejects.
+// Pad only that upload through a reusable scratch; indexCount remains the source length, so the trailing
+// word is buffer padding rather than a drawn index. Uint32 and even-length Uint16 arrays upload directly.
+function writeMeshIndices(
+  queue: GPUQueue,
+  indexBuffer: GPUBuffer,
+  indices: Readonly<Uint16Array<ArrayBuffer> | Uint32Array<ArrayBuffer>>,
+): void {
+  const byteLength = indices.byteLength;
+  if ((byteLength & 3) === 0) {
+    queue.writeBuffer(indexBuffer, 0, indices.buffer, indices.byteOffset, byteLength);
+    return;
+  }
+
+  const paddedByteLength = alignTo4(byteLength);
+  const wordCount = paddedByteLength / Uint16Array.BYTES_PER_ELEMENT;
+  if (_meshIndexScratch.length < wordCount) _meshIndexScratch = new Uint16Array(wordCount);
+  _meshIndexScratch.set(indices as Readonly<Uint16Array<ArrayBuffer>>);
+  queue.writeBuffer(indexBuffer, 0, _meshIndexScratch.buffer, 0, paddedByteLength);
+}
+
+// Grown on demand and shared by odd-length Uint16 uploads; writeBuffer snapshots it before returning.
+let _meshIndexScratch = new Uint16Array(0);
