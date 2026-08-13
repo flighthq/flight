@@ -1,4 +1,5 @@
 export * from './boundsRectangle';
+export * from './enableNodeGuards';
 export * from './hasAppearance';
 export * from './hasBlendMode';
 export * from './hasBoundsRectangle';

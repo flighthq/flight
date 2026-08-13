@@ -24,6 +24,7 @@ import {
   removeNodeChildAt,
   removeNodeChildren,
   reparentNode,
+  setReparentNodeGuard,
   replaceNodeChild,
   setNodeChildIndex,
   swapNodeChildren,
@@ -721,6 +722,50 @@ describe('reparentNode', () => {
     return node;
   }
 
+  // The ruled contract: under a singular new parent, NO local transform exists that would preserve the
+  // child's world transform, so the function declines whole rather than inventing one. These assert
+  // BOTH halves stay unchanged — a partial success is the state the ruling exists to prevent.
+  it('declines whole when the new parent has no invertible world matrix', () => {
+    const parentA = createTransformNode();
+    const child = createTransformNode();
+    child.x = 20;
+    child.y = 10;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    const collapsed = createTransformNode();
+    collapsed.scaleX = 0;
+    invalidateNodeLocalTransform(collapsed);
+
+    expect(reparentNode(child, collapsed)).toBe(false);
+    // Neither half happened: the attachment is untouched...
+    expect(getNodeParent(child)).toBe(parentA);
+    expect(getNodeChildCount(collapsed)).toBe(0);
+    // ...and so is the transform, with no NaN written into it.
+    expect(child.x).toBe(20);
+    expect(child.y).toBe(10);
+  });
+
+  it('reports true and still preserves world position for an invertible parent', () => {
+    const parentA = createTransformNode();
+    const child = createTransformNode();
+    child.x = 20;
+    child.y = 10;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+    const before = cloneMatrix(getNodeWorldMatrix(child));
+
+    const parentB = createTransformNode();
+    parentB.x = 200;
+    invalidateNodeLocalTransform(parentB);
+
+    expect(reparentNode(child, parentB)).toBe(true);
+    expect(getNodeParent(child)).toBe(parentB);
+    const after = getNodeWorldMatrix(child);
+    expect(after.tx).toBeCloseTo(before.tx, 6);
+    expect(after.ty).toBeCloseTo(before.ty, 6);
+  });
+
   it('preserves world position after reparenting', () => {
     const parentA = createTransformNode();
     parentA.x = 100;
@@ -1077,6 +1122,37 @@ describe('setNodeChildIndex', () => {
     });
     setNodeChildIndex(container, childA, 1);
     expect(called).toBe(true);
+  });
+});
+
+describe('setReparentNodeGuard', () => {
+  type TransformNode = Node<HasTransform2D> & HasTransform2D;
+  function createTransformNode(): TransformNode {
+    const node = createNode('TransformTest') as TransformNode;
+    initTransform2DTrait(node);
+    initTransform2DRuntimeTrait(getRawEntityRuntime(node) as HasTransform2DRuntime);
+    return node;
+  }
+
+  it('is notified on the decline and never on success', () => {
+    const seen: string[] = [];
+    setReparentNodeGuard((_child, newParent) => seen.push(newParent.name ?? '<unnamed>'));
+    try {
+      const child = createTransformNode();
+      const collapsed = createTransformNode();
+      collapsed.name = 'collapsed';
+      collapsed.scaleX = 0;
+      invalidateNodeLocalTransform(collapsed);
+      const healthy = createTransformNode();
+      healthy.name = 'healthy';
+      invalidateNodeLocalTransform(healthy);
+
+      reparentNode(child, collapsed);
+      reparentNode(child, healthy);
+      expect(seen).toEqual(['collapsed']);
+    } finally {
+      setReparentNodeGuard(null);
+    }
   });
 });
 
