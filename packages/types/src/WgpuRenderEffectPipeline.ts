@@ -43,3 +43,35 @@ export interface WgpuRenderEffectPipeline {
   // Depth, by contrast, comes from the scene target directly.
   velocityTexture: GPUTexture | null;
 }
+
+// Why an application of a WGPU effect chain to a render texture did not do what the caller asked. The
+// WGPU sibling of GlRenderEffectApplicationExplanation, and deliberately NARROWER than it: GL carries
+// `unresolvedIndexes` for per-instance resolvability — a registered runner that still cannot resolve
+// what it names, such as a shaderKey with no registered source — and WGPU has no resolvability notion at
+// all: no resolver half to registration, and no custom-shader effect on this backend. A field that can
+// never be non-empty would be a status the explanation cannot observe, so it is absent rather than
+// always-empty, and this comment is here so the asymmetry reads as deliberate.
+export type WgpuRenderEffectApplicationStatus =
+  | 'complete'
+  | 'no-effects'
+  | 'partial-registration'
+  | 'source-unavailable'
+  | 'stale-destination'
+  | 'unregistered-effects';
+
+export interface WgpuRenderEffectApplicationExplanation {
+  readonly registeredCount: number;
+  readonly requestedCount: number;
+  readonly status: WgpuRenderEffectApplicationStatus;
+  readonly unregisteredKinds: readonly string[];
+}
+
+// Observed when a pipeline pass drops an effect because its kind has no registered runner. The kind is
+// the whole observation: the effect is skipped silently, produces no draw and no error, and nothing
+// downstream can tell a skipped effect from one that ran and had no visible result.
+export type WgpuRenderEffectPipelineSkipGuard = (state: WgpuRenderState, kind: string) => void;
+
+export type WgpuRenderEffectApplicationGuard = (
+  state: WgpuRenderState,
+  explanation: Readonly<WgpuRenderEffectApplicationExplanation>,
+) => void;

@@ -1,5 +1,13 @@
 import { getWgpuRenderTextureTarget, writeWgpuRenderTextureTarget } from '@flighthq/render-wgpu/contract';
-import type { RenderEffect, RenderTexture, WgpuRenderState, WgpuRenderTexturePool } from '@flighthq/types/contract';
+import type {
+  RenderEffect,
+  RenderTexture,
+  WgpuRenderEffectApplicationExplanation,
+  WgpuRenderEffectApplicationGuard,
+  WgpuRenderEffectApplicationStatus,
+  WgpuRenderState,
+  WgpuRenderTexturePool,
+} from '@flighthq/types/contract';
 
 import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
@@ -18,11 +26,30 @@ export function applyWgpuRenderEffectsToRenderTexture(
     throw new Error('applyWgpuRenderEffectsToRenderTexture: source, destination, and scratch must be distinct');
   }
   const sourceTarget = getWgpuRenderTextureTarget(state, source);
-  if (sourceTarget === null) return false;
+  const unregisteredKinds: string[] = [];
   const operations = effects.flatMap((effect) => {
     const runner = getWgpuRenderEffectRunner(state, effect.kind);
-    return runner === null ? [] : [{ effect, runner }];
+    if (runner === null) {
+      unregisteredKinds.push(effect.kind);
+      return [];
+    }
+    return [{ effect, runner }];
   });
+  // Reported BEFORE either early return, because both of them are the silent cases: a false return that
+  // never wrote `dest` leaves whatever a consumer last sampled in place, which reads as a stale frame
+  // rather than as a failed call.
+  reportWgpuRenderEffectApplication(state, {
+    registeredCount: operations.length,
+    requestedCount: effects.length,
+    status: getWgpuRenderEffectApplicationStatus(
+      effects.length,
+      operations.length,
+      sourceTarget !== null,
+      getWgpuRenderTextureTarget(state, dest) !== null,
+    ),
+    unregisteredKinds,
+  });
+  if (sourceTarget === null) return false;
   if (operations.length === 0) return false;
 
   let current = sourceTarget;
@@ -47,3 +74,64 @@ export function applyWgpuRenderEffectsToRenderTexture(
   }
   return true;
 }
+
+/** Explains why an application did not do what the caller asked, as plain data. */
+export function explainWgpuRenderEffectApplication(
+  state: WgpuRenderState,
+  source: Readonly<RenderTexture>,
+  dest: Readonly<RenderTexture>,
+  effects: ReadonlyArray<Readonly<RenderEffect>>,
+): WgpuRenderEffectApplicationExplanation {
+  const unregisteredKinds = effects
+    .filter((effect) => getWgpuRenderEffectRunner(state, effect.kind) === null)
+    .map((effect) => effect.kind);
+  const registeredCount = effects.length - unregisteredKinds.length;
+  return {
+    registeredCount,
+    requestedCount: effects.length,
+    status: getWgpuRenderEffectApplicationStatus(
+      effects.length,
+      registeredCount,
+      getWgpuRenderTextureTarget(state, source) !== null,
+      getWgpuRenderTextureTarget(state, dest) !== null,
+    ),
+    unregisteredKinds,
+  };
+}
+
+// The diagnostics seam. Core stays message-free; enableWgpuRenderEffectGuards installs the reporter that
+// turns these observations into caller-facing warnings.
+export function setWgpuRenderEffectApplicationGuard(
+  state: WgpuRenderState,
+  guard: WgpuRenderEffectApplicationGuard | null,
+): void {
+  if (guard === null) _guards.delete(state);
+  else _guards.set(state, guard);
+}
+
+function getWgpuRenderEffectApplicationStatus(
+  requestedCount: number,
+  registeredCount: number,
+  sourceAvailable: boolean,
+  destinationAvailable: boolean,
+): WgpuRenderEffectApplicationStatus {
+  // An empty chain is a no-op the caller asked for, NOT a miss — reporting it would train readers to
+  // ignore the crumb. A ready destination is the highest-cost failed-call outcome, because consumers
+  // keep sampling plausible pixels from an older application instead of an empty texture.
+  if (requestedCount === 0) return 'no-effects';
+  if (destinationAvailable && (!sourceAvailable || registeredCount === 0)) return 'stale-destination';
+  if (!sourceAvailable) return 'source-unavailable';
+  if (registeredCount === 0) return 'unregistered-effects';
+  if (registeredCount < requestedCount) return 'partial-registration';
+  return 'complete';
+}
+
+function reportWgpuRenderEffectApplication(
+  state: WgpuRenderState,
+  explanation: Readonly<WgpuRenderEffectApplicationExplanation>,
+): void {
+  if (explanation.status === 'complete' || explanation.status === 'no-effects') return;
+  _guards.get(state)?.(state, explanation);
+}
+
+const _guards = new WeakMap<WgpuRenderState, WgpuRenderEffectApplicationGuard>();

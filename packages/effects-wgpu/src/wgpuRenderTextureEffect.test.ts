@@ -11,11 +11,15 @@ import {
   isWgpuRenderTextureReady,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { WgpuRenderEffectRunner } from '@flighthq/types/contract';
+import type { RenderEffect, WgpuRenderEffectRunner } from '@flighthq/types/contract';
 
 import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
 import { getWgpuRenderEffectRunner, registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
-import { applyWgpuRenderEffectsToRenderTexture } from './wgpuRenderTextureEffect';
+import {
+  applyWgpuRenderEffectsToRenderTexture,
+  explainWgpuRenderEffectApplication,
+  setWgpuRenderEffectApplicationGuard,
+} from './wgpuRenderTextureEffect';
 
 beforeAll(() => installWgpuMock());
 
@@ -81,6 +85,32 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
   });
 });
 
+describe('explainWgpuRenderEffectApplication', () => {
+  it('names the unregistered kinds and the status, as plain data with no message text', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pool = createWgpuRenderTexturePool();
+    const source = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
+    const dest = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
+    writeWgpuRenderTextureTarget(state, source, () => {});
+    registerWgpuRenderEffect(state, 'test.explain-registered', (() => {}) as WgpuRenderEffectRunner);
+
+    const explanation = explainWgpuRenderEffectApplication(state, source, dest, [
+      { kind: 'test.explain-registered' },
+      { kind: 'test.explain-missing' },
+    ] as unknown as Readonly<RenderEffect>[]);
+
+    expect(explanation).toMatchObject({
+      registeredCount: 1,
+      requestedCount: 2,
+      status: 'partial-registration',
+      unregisteredKinds: ['test.explain-missing'],
+    });
+    // No resolvability field: WGPU has no resolver half to registration, so a field mirroring GL's
+    // unresolvedIndexes could never be non-empty. Its absence is the contract, not an omission.
+    expect('unresolvedIndexes' in explanation).toBe(false);
+  });
+});
+
 describe('offscreen effect registration snapshots', () => {
   it('copies runners at derivation and requires explicit re-copy for later runners', async () => {
     const screen = await createWgpuRenderStateForTest();
@@ -95,5 +125,30 @@ describe('offscreen effect registration snapshots', () => {
 
     copyWgpuRenderStateRegistrations(offscreen, screen);
     expect(getWgpuRenderEffectRunner(offscreen, 'acme.Later')).toBe(later);
+  });
+});
+
+describe('setWgpuRenderEffectApplicationGuard', () => {
+  it('reports each failed application to the installed guard, and goes silent again when cleared', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pool = createWgpuRenderTexturePool();
+    const source = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
+    const dest = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
+    const scratch = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
+    writeWgpuRenderTextureTarget(state, source, () => {});
+    const seen: string[] = [];
+    const chain = [{ kind: 'test.seam-missing' }] as unknown as Readonly<RenderEffect>[];
+
+    setWgpuRenderEffectApplicationGuard(state, (_state, explanation) => seen.push(explanation.status));
+    applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, chain);
+
+    expect(seen).toEqual(['unregistered-effects']);
+
+    // Clearing must restore the original silence exactly: the seam is the only path by which a dropped
+    // chain is observable, so a stale guard is the difference between a diagnostic and a leak.
+    setWgpuRenderEffectApplicationGuard(state, null);
+    applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, chain);
+
+    expect(seen).toEqual(['unregistered-effects']);
   });
 });
