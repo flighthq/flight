@@ -23,7 +23,7 @@
         "scope"
       ],
       "fires": [
-        "reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread"
+        "reports a discarded JPEG alpha stream as a Skip, since alpha compositing is not implemented yet"
       ],
       "id": "swf.bitmap.define-bits-jpeg-3",
       "lossFamily": null,

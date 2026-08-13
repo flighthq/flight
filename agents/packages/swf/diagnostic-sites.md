@@ -10,7 +10,7 @@ generated: true
 Every place `packages/swf` reports an import diagnostic, as of the commit this file was committed in.
 Regenerate rather than trust the line column: **kind and severity survive edits, line numbers do not.**
 
-**41 sites across 5 files.** By severity: Drop 18 · Recover 2 · Reject 12 · Skip 9. By file: `swfDocument.ts` 36 · `swfFilter.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfText.ts` 1.
+**41 sites across 5 files.** By severity: Drop 17 · Recover 2 · Reject 12 · Skip 10. By file: `swfDocument.ts` 36 · `swfFilter.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfText.ts` 1.
 
 **A site count is not a coverage number, and the two must never be divided.** These sites and the loss
 families in `loss-path-audit.md` are different populations that only partly intersect: most of these
@@ -54,7 +54,7 @@ stated per family in that document and derived by checking each family, never by
 | `swfDocument.ts` | 2418 | Drop | `swf.morph-shape-undecodable` |
 | `swfDocument.ts` | 2454 | Drop | `swf.jpeg-tables-missing` |
 | `swfDocument.ts` | 2479 | Drop | `swf.jpeg-tables-unsplittable` |
-| `swfDocument.ts` | 2542 | Drop | `swf.jpeg-alpha-stream` |
+| `swfDocument.ts` | 2542 | Skip | `swf.jpeg-alpha-stream` |
 | `swfFilter.ts` | 82 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFilter.ts` | 169 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFrameAction.ts` | 180 | Drop | `swf.abc-frame-script-declined` |
