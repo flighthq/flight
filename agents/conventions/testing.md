@@ -138,6 +138,20 @@ So: **binary fixtures use values whose encoding terminates promptly**, and the r
 constant, because the next person to touch it will otherwise read it as arbitrary. `0x01020304` over
 `0xffffffff`, `0x7f`-and-below over `0xff` fills.
 
+**And that fix is necessary, not sufficient — re-measured afterwards, it catches 3 of the 5 records.** With
+the terminating constant in place, deleting the colour skip for `boundingbox`, `clipping` or `path` each
+turns a test red; deleting it for `point` or `linkedmesh` leaves the file green, though the fixture writes
+those records too. **The reason is one level up from the value: the only assertion is a known attachment on
+the far side, so a per-record claim is resting on a whole-stream oracle.** Such an oracle sees a record's
+desync only when the error propagates all the way to the end, and whether it propagates is a property of
+the bytes that happen to follow, not of the code under test — so detection is luck that varies per record.
+Fixing the value made the luck better; it could not make it unnecessary.
+
+⇒ **A per-item claim needs a per-item oracle.** Where a fixture walks N records and the comment says each
+one stays in step, assert the reader offset after each record rather than checking a single value at the
+end. Reach for prompt-terminating values *and* a per-record assertion: the first stops the fixture from
+absorbing the error, the second stops the oracle from absorbing it.
+
 **A fixture built from the same understanding as the code cannot falsify that understanding.** The other
 four shapes are defects in a test. This one is a defect in the *input*, and it is the only one mutation
 cannot find: mutation asks whether the test notices the code changing, and here the test and the code agree
