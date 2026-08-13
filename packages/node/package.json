@@ -42,6 +42,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/materials": "*",
+    "@flighthq/math": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },
