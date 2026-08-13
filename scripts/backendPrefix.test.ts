@@ -59,6 +59,18 @@ describe('findWedgedBackendSegment', () => {
 // Detection question for any gate suite: DOES ANY CASE EXECUTE THE THING CI EXECUTES, or do they all
 // execute a function CI never calls directly?
 describe('runBackendPrefixScan', () => {
+  // ★ THE EXPLICIT TIMEOUT IS LOAD-BEARING, NOT DECORATION. This case reads every source file under
+  // `packages/` — work that GROWS WITH THE REPOSITORY — while vitest's default deadline is a fixed
+  // 5000ms. It takes ~2.8s on an idle machine, so it shipped with well under a 2x margin, and a
+  // whole-repo run that was 2.6x slower than the previous one duly timed it out at 5000ms while every
+  // assertion in it would have passed: measured 3387ms in one run and dead in the next, same tree.
+  //
+  // That is the repository's own documented flake shape (see agents/conventions/testing.md) —
+  // UNBOUNDED WORK UNDER A FIXED DEADLINE, wrong on any machine slow enough — landing in a test body
+  // rather than in a `beforeAll`. A timeout failure is indistinguishable from a real violation in the
+  // summary line, so an under-budgeted deadline on a whole-tree walk manufactures red that teaches
+  // nothing. The generous budget still fails a genuine hang; it just stops reporting contention as a
+  // backend-prefix violation.
   it('runs end to end over the real tree and finds no violations', () => {
     const { allowed, scanned, violations } = runBackendPrefixScan();
 
@@ -68,5 +80,5 @@ describe('runBackendPrefixScan', () => {
     // unrelated work, turning a wiring check into a maintenance tax. The floor still proves the walk
     // reached the packages tree rather than scanning nothing and reporting clean.
     expect(scanned).toBeGreaterThan(250);
-  });
+  }, 60_000);
 });
