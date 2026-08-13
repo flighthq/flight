@@ -13,6 +13,9 @@
       "path": "../adjustments"
     },
     {
+      "path": "../color"
+    },
+    {
       "path": "../scene2d-canvas"
     },
     {

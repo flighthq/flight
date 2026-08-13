@@ -1,3 +1,4 @@
+import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import type {
   BevelEffect,
   CanvasRenderEffectRunner,
@@ -114,14 +115,28 @@ function applyBevelEffectToCanvasWithPool(
   clearCanvasTarget(side);
   compositeCanvasImage(side, lit);
   compositeCanvasImage(side, shade, 0, 0, 'destination-out');
-  drawCanvasTintedAlphaMask(tinted, side, effect.highlightColor ?? 0xffffff, effect.highlightAlpha ?? 1, strength);
+  const highlightPacked = effect.highlightColor ?? 0xffffffff;
+  drawCanvasTintedAlphaMask(
+    tinted,
+    side,
+    getColorRgb(highlightPacked),
+    (effect.highlightAlpha ?? 1) * getColorAlpha(highlightPacked),
+    strength,
+  );
   compositeCanvasImage(band, tinted);
 
   // Shadow side: the same difference the other way round.
   clearCanvasTarget(side);
   compositeCanvasImage(side, shade);
   compositeCanvasImage(side, lit, 0, 0, 'destination-out');
-  drawCanvasTintedAlphaMask(tinted, side, effect.shadowColor ?? 0x000000, effect.shadowAlpha ?? 1, strength);
+  const shadowPacked = effect.shadowColor ?? 0x000000ff;
+  drawCanvasTintedAlphaMask(
+    tinted,
+    side,
+    getColorRgb(shadowPacked),
+    (effect.shadowAlpha ?? 1) * getColorAlpha(shadowPacked),
+    strength,
+  );
   compositeCanvasImage(band, tinted);
 
   clipCanvasBevelBand(band, source, effect.bevelType);

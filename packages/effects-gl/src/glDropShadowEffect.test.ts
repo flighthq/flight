@@ -35,6 +35,7 @@ import {
   registerGlDropShadowEffect,
 } from './glDropShadowEffect';
 import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
+import { applyGlEffectTintPass } from './glEffectTintShader';
 
 describe('applyDropShadowEffectToGl', () => {
   it('is a function', () => {
@@ -49,6 +50,24 @@ describe('applyDropShadowEffectToGl', () => {
 
     expect(applyGlEffectBlitPass).toHaveBeenCalledWith(expect.anything(), source, dest);
     expect(applyGlEffectErasePass).not.toHaveBeenCalled();
+  });
+
+  // The tint pass takes RGB plus one alpha, so the migration's whole visible effect is the split done at
+  // this call site: packed RGBA in, 24-bit RGB out, and the color's alpha multiplied into the field's.
+  it('splits a packed RGBA color into the tint pass RGB and a multiplied alpha', () => {
+    vi.mocked(applyGlEffectTintPass).mockClear();
+
+    applyDropShadowEffectToGl(createState(), createTarget('source'), createTarget('dest'), createPool(), {
+      alpha: 0.5,
+      color: 0x9d55ff80,
+      kind: 'DropShadowEffect',
+    });
+
+    // 0x9d55ff is the RGB; 0x80/255 * 0.5 is the alpha. Under the 24-bit reading the same value would
+    // have tinted 0x55ffff at a full 0.5 — a different color at twice the opacity.
+    const call = vi.mocked(applyGlEffectTintPass).mock.calls[0]!;
+    expect(call[3]).toBe(0x9d55ff);
+    expect(call[4]).toBeCloseTo((0x80 / 255) * 0.5, 5);
   });
 
   it('hides the source when sourceMode is hide', () => {

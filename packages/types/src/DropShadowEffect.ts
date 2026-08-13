@@ -2,17 +2,17 @@ import type { EffectSourceMode } from './EffectSourceMode';
 import type { RenderEffect } from './RenderEffect';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
-// Full-frame composite effect over the scene's alpha silhouette; colors are packed RGB integers with a
-// separate alpha field (mirrors the Tier-1 filter recipe this realizes), angles are degrees.
+// Full-frame composite effect over the scene's alpha silhouette; the color is a packed RGBA integer
+// whose alpha multiplies the separate alpha field, and angles are degrees.
 export interface DropShadowEffect extends RenderEffect {
   kind: 'DropShadowEffect';
   alpha?: number;
   angle?: number;
   blurX?: number;
   blurY?: number;
-  // 24-bit RGB (`0xRRGGBB`) — opacity is the separate `alpha`. Every backend tints through the
-  // shared RGB tint pass.
-  // ★ NOT the packed RGBA BitmapDropShadowOptions.color carries for the same operation offscreen.
+  // Packed sRGB RGBA (`0xRRGGBBAA`), matching BitmapDropShadowOptions.color for the same operation
+  // offscreen. Its alpha MULTIPLIES the separate `alpha` field, exactly as the bitmap tier multiplies
+  // the color alpha by intensity. Default 0x000000ff.
   color?: number;
   distance?: number;
   quality?: number;

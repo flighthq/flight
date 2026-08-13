@@ -1,3 +1,4 @@
+import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import type { DropShadowEffect, OuterGlowEffect } from '@flighthq/types/contract';
 
 // Drop-shadow composite effect as a CSS `drop-shadow()` string (the same string the DOM backend emits).
@@ -13,7 +14,10 @@ export function computeDropShadowEffectCss(effect: Readonly<DropShadowEffect>): 
   const radians = (angle * Math.PI) / 180;
   const dx = Math.round(Math.cos(radians) * distance);
   const dy = Math.round(Math.sin(radians) * distance);
-  return `drop-shadow(${dx}px ${dy}px ${blurX}px ${cssRgbaFromColor(effect.color ?? 0, effect.alpha ?? 1)})`;
+  // Packed RGBA whose alpha multiplies the separate alpha field. The helper below still takes RGB
+  // because computeOuterGlowEffectCss shares it and OuterGlowEffect.color has not migrated.
+  const packed = effect.color ?? 0x000000ff;
+  return `drop-shadow(${dx}px ${dy}px ${blurX}px ${cssRgbaFromColor(getColorRgb(packed), (effect.alpha ?? 1) * getColorAlpha(packed))})`;
 }
 
 // Outer-glow composite effect as a centered (no offset) CSS `drop-shadow()` string.
@@ -26,7 +30,8 @@ export function computeOuterGlowEffectCss(effect: Readonly<OuterGlowEffect>): st
   return `drop-shadow(0px 0px ${blurX}px ${cssRgbaFromColor(effect.color ?? 0xff0000, effect.alpha ?? 1)})`;
 }
 
-// Packed 0xRRGGBB integer + separate alpha to a CSS `rgba()` string (alpha fixed to 3 decimals).
+// A 24-bit RGB integer plus a separate alpha to a CSS `rgba()` string (alpha fixed to 3 decimals).
+// Callers holding a packed RGBA color split it with getColorRgb/getColorAlpha before calling.
 function cssRgbaFromColor(color: number, alpha: number): string {
   const r = (color >> 16) & 0xff;
   const g = (color >> 8) & 0xff;
