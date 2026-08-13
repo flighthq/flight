@@ -48,10 +48,10 @@ false claim that Silver items are complete; the remaining gaps are named below.
 - `meshGeometryIndex.ts` provides compact/de-index/index/weld operations and wireframe index output.
   `meshGeometrySubset.ts` provides add/set subset lists, triangle counts, and triangle-to-subset lookup.
 - `meshGeometryLayout.ts` provides canonical ordinary and skinned layouts plus semantic conversion;
-  `meshGeometryUvs.ts` provides working UV0 offset and scale transforms. Its exported `wrapMeshGeometryUvs`
-  is present but non-functional by construction: wrapping is face-parameterized while this operation
-  folds per-vertex values, so shared corners collapse mappings. It has been removed; a face-aware
-  replacement remains open and is not counted as capability.
+  `meshGeometryUvs.ts` provides working UV0 offset and scale transforms. The former
+  `wrapMeshGeometryUvs` was non-functional by construction: wrapping is face-parameterized while
+  that operation folded per-vertex values, so shared corners collapsed mappings. It has been removed;
+  a face-aware replacement remains open and is not counted as capability.
 - `morphMeshGeometry.ts` captures bind poses and blends targets; `updateMeshMorph.ts` applies the
   package's mesh runtime deformation path, with tests covering weight changes and restoration.
 - `meshGeometryTransforms.ts` covers matrix transforms, inverse-transpose normals/tangents, scale,
