@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/scene2d-canvas'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-13
+by: builder4
 ---
 
 # scene2d-canvas — Status
@@ -45,6 +45,9 @@ tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-13** — Canvas Shape command registration now structurally pairs draw and bounds contributions,
+  forwarding backend-neutral geometry into `@flighthq/shape`. Invalid/nonfinite line widths and miter limits
+  normalize at replay to deterministic Canvas defaults, eliminating prior-Shape context leakage.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The 2026-06-24 headline — "`LineScaleMode
   'none'` implemented; `strokeScaleMode` added to `CanvasShapeDrawState`" — is **false**: `strokeScaleMode`
   has zero occurrences anywhere in `packages/`, and `defaultCanvasLineStyle` never reads `buf[i+4]`. Also

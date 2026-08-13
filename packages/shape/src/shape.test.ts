@@ -23,6 +23,17 @@ import {
   isShapeEmpty,
 } from './shape';
 import {
+  defaultShapeBoundsCubicCurveTo,
+  defaultShapeBoundsCurveTo,
+  defaultShapeBoundsDrawCircle,
+  defaultShapeBoundsDrawEllipse,
+  defaultShapeBoundsDrawRectangle,
+  defaultShapeBoundsLineStyle,
+  defaultShapeBoundsLineTo,
+  defaultShapeBoundsMoveTo,
+} from './shapeBounds';
+import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
+import {
   appendShapeCircle,
   appendShapeCubicCurveTo,
   appendShapeCurveTo,
@@ -32,6 +43,49 @@ import {
   appendShapeMoveTo,
   appendShapeRectangle,
 } from './shapeCommands';
+
+beforeAll(() => {
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsDrawRectangle,
+    key: 'drawRectangle',
+    strokeBounds: defaultShapeBoundsDrawRectangle,
+  });
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsDrawCircle,
+    key: 'drawCircle',
+    strokeBounds: defaultShapeBoundsDrawCircle,
+  });
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsDrawEllipse,
+    key: 'drawEllipse',
+    strokeBounds: defaultShapeBoundsDrawEllipse,
+  });
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsMoveTo,
+    key: 'moveTo',
+    strokeBounds: defaultShapeBoundsMoveTo,
+  });
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsLineTo,
+    key: 'lineTo',
+    strokeBounds: defaultShapeBoundsLineTo,
+  });
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsCurveTo,
+    key: 'curveTo',
+    strokeBounds: defaultShapeBoundsCurveTo,
+  });
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsCubicCurveTo,
+    key: 'cubicCurveTo',
+    strokeBounds: defaultShapeBoundsCubicCurveTo,
+  });
+  registerShapeBoundsCommand({
+    fillBounds: null,
+    key: 'lineStyle',
+    strokeBounds: defaultShapeBoundsLineStyle,
+  });
+});
 
 describe('clearShapeCommands', () => {
   it('empties the commands array and bumps the content revision', () => {
@@ -150,7 +204,7 @@ describe('computeShapeLocalBoundsRectangle', () => {
     expect(out.y + out.height).toBeGreaterThan(18);
   });
 
-  it('uses the authored miter-limit envelope when an exact stroke outline is unavailable', () => {
+  it('bounds a closed rectangle stroke without applying the miter limit to every axis', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 30, 0xffffff, 1, false, 'normal', 'none', 'miter', 6);
     appendShapeRectangle(shape, 0, 0, 100, 100);
@@ -158,7 +212,7 @@ describe('computeShapeLocalBoundsRectangle', () => {
 
     computeShapeLocalBoundsRectangle(out, shape as any);
 
-    expect(out).toMatchObject({ height: 280, width: 280, x: -90, y: -90 });
+    expect(out).toMatchObject({ height: 130, width: 130, x: -15, y: -15 });
   });
 
   it('computes bounds from a quadratic bezier with an interior extremum', () => {

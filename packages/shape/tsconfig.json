@@ -11,6 +11,7 @@
   "references": [
     { "path": "../animation" },
     { "path": "../geometry" },
+    { "path": "../log" },
     { "path": "../math" },
     { "path": "../node" },
     { "path": "../path" },

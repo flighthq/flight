@@ -11,9 +11,12 @@ export {
 } from './morphShapePaint';
 export * from './scale9Shape';
 export * from './shape';
+export * from './shapeBounds';
+export * from './shapeBoundsRegistry';
 export * from './shapeCommands';
 export * from './shapeFill';
 export * from './shapeStroke';
 export * from './shapeStrokeOutline';
 export * from './scale9ShapeCommands';
 export * from './explainShapeTessellation';
+export * from './enableShapeBoundsGuards';

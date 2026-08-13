@@ -4,6 +4,7 @@ export * from './CffTable';
 export * from './OpenTypeFontExplanation';
 export * from './RegistryTable';
 export * from './Scene3DPickOptions';
+export * from './ShapeBounds';
 export * from './SfntTableDirectory';
 export * from './TextShaperCache';
 export * from './WebcamStreamRuntime';

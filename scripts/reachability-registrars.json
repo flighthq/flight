@@ -1126,6 +1126,10 @@
       "registrar": "registerModifier"
     },
     {
+      "packageName": "shape",
+      "registrar": "registerShapeBoundsCommand"
+    },
+    {
       "packageName": "shortcut",
       "registrar": "registerGlobalShortcut"
     },

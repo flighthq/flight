@@ -1,4 +1,18 @@
 import { createMatrix, inverseMatrix } from '@flighthq/geometry/contract';
+import {
+  defaultShapeBoundsCubicCurveTo,
+  defaultShapeBoundsCurveTo,
+  defaultShapeBoundsDrawCircle,
+  defaultShapeBoundsDrawEllipse,
+  defaultShapeBoundsDrawPath,
+  defaultShapeBoundsDrawRectangle,
+  defaultShapeBoundsFlush,
+  defaultShapeBoundsLineStyle,
+  defaultShapeBoundsLineTo,
+  defaultShapeBoundsMoveTo,
+  normalizeShapeStrokeMiterLimit,
+  normalizeShapeStrokeWidth,
+} from '@flighthq/shape/contract';
 import { getTextureHeight, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasShapeCommand, Matrix, Texture } from '@flighthq/types/contract';
 
@@ -8,7 +22,9 @@ import { createBitmapPattern, createGradientPattern } from './canvasFillPattern'
 import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
 
 export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill'> = {
+  fillBounds: defaultShapeBoundsFlush,
   key: 'beginTextureFill',
+  strokeBounds: defaultShapeBoundsFlush,
   draw(context, state, buf, i) {
     const texture = buf[i] as Texture;
     const matrix = buf[i + 1] as Matrix | null;
@@ -30,7 +46,9 @@ export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill
 };
 
 export const defaultCanvasBeginFill: CanvasShapeCommand<'beginFill'> = {
+  fillBounds: defaultShapeBoundsFlush,
   key: 'beginFill',
+  strokeBounds: defaultShapeBoundsFlush,
   draw(_ctx, state, buf, i) {
     const color = buf[i] as number;
     const alpha = buf[i + 1] as number;
@@ -44,7 +62,9 @@ export const defaultCanvasBeginFill: CanvasShapeCommand<'beginFill'> = {
 };
 
 export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFill'> = {
+  fillBounds: defaultShapeBoundsFlush,
   key: 'beginGradientFill',
+  strokeBounds: defaultShapeBoundsFlush,
   draw(context, state, buf, i) {
     const gradientType = buf[i] as never;
     const colors = buf[i + 1] as number[];
@@ -75,7 +95,9 @@ export const defaultCanvasBeginGradientFill: CanvasShapeCommand<'beginGradientFi
 };
 
 export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
+  fillBounds: defaultShapeBoundsCubicCurveTo,
   key: 'cubicCurveTo',
+  strokeBounds: defaultShapeBoundsCubicCurveTo,
   draw(context, state, buf, i) {
     const controlX1 = buf[i] as number;
     const controlY1 = buf[i + 1] as number;
@@ -93,7 +115,9 @@ export const defaultCanvasCubicCurveTo: CanvasShapeCommand<'cubicCurveTo'> = {
 };
 
 export const defaultCanvasCurveTo: CanvasShapeCommand<'curveTo'> = {
+  fillBounds: defaultShapeBoundsCurveTo,
   key: 'curveTo',
+  strokeBounds: defaultShapeBoundsCurveTo,
   draw(context, state, buf, i) {
     const controlX = buf[i] as number;
     const controlY = buf[i + 1] as number;
@@ -109,7 +133,9 @@ export const defaultCanvasCurveTo: CanvasShapeCommand<'curveTo'> = {
 };
 
 export const defaultCanvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
+  fillBounds: defaultShapeBoundsDrawCircle,
   key: 'drawCircle',
+  strokeBounds: defaultShapeBoundsDrawCircle,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
@@ -122,7 +148,9 @@ export const defaultCanvasDrawCircle: CanvasShapeCommand<'drawCircle'> = {
 };
 
 export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
+  fillBounds: defaultShapeBoundsDrawEllipse,
   key: 'drawEllipse',
+  strokeBounds: defaultShapeBoundsDrawEllipse,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
@@ -138,7 +166,9 @@ export const defaultCanvasDrawEllipse: CanvasShapeCommand<'drawEllipse'> = {
 };
 
 export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
+  fillBounds: defaultShapeBoundsDrawPath,
   key: 'drawPath',
+  strokeBounds: defaultShapeBoundsDrawPath,
   draw(context, state, buf, i) {
     const commands = buf[i] as number[];
     const data = buf[i + 1] as number[];
@@ -210,7 +240,9 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
 };
 
 export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
+  fillBounds: defaultShapeBoundsDrawRectangle,
   key: 'drawRectangle',
+  strokeBounds: defaultShapeBoundsDrawRectangle,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
@@ -246,7 +278,9 @@ export const defaultCanvasDrawRectangle: CanvasShapeCommand<'drawRectangle'> = {
 };
 
 export const defaultCanvasDrawRoundRectangle: CanvasShapeCommand<'drawRoundRectangle'> = {
+  fillBounds: defaultShapeBoundsDrawRectangle,
   key: 'drawRoundRectangle',
+  strokeBounds: defaultShapeBoundsDrawRectangle,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
@@ -272,7 +306,9 @@ export const defaultCanvasDrawRoundRectangle: CanvasShapeCommand<'drawRoundRecta
 };
 
 export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
+  fillBounds: defaultShapeBoundsFlush,
   key: 'endFill',
+  strokeBounds: defaultShapeBoundsFlush,
   draw(_ctx, state) {
     if (state.hasPendingPath) state.flush();
     state.hasFill = false;
@@ -283,7 +319,9 @@ export const defaultCanvasEndFill: CanvasShapeCommand<'endFill'> = {
 };
 
 export const defaultCanvasLineTextureStyle: CanvasShapeCommand<'lineTextureStyle'> = {
+  fillBounds: null,
   key: 'lineTextureStyle',
+  strokeBounds: null,
   draw(context, state, buf, i) {
     const texture = buf[i] as Texture;
     const pattern = createBitmapPattern(context, texture, state.canvasTextureResolvers, state.allowSmoothing);
@@ -295,7 +333,9 @@ export const defaultCanvasLineTextureStyle: CanvasShapeCommand<'lineTextureStyle
 };
 
 export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientStyle'> = {
+  fillBounds: null,
   key: 'lineGradientStyle',
+  strokeBounds: null,
   draw(context, state, buf, i) {
     const gradientType = buf[i] as never;
     const colors = buf[i + 1] as number[];
@@ -324,14 +364,20 @@ export const defaultCanvasLineGradientStyle: CanvasShapeCommand<'lineGradientSty
 };
 
 export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
+  fillBounds: defaultShapeBoundsFlush,
   key: 'lineStyle',
+  strokeBounds: defaultShapeBoundsLineStyle,
   draw(context, state, buf, i) {
-    const thickness = buf[i] as number;
+    // Canvas ignores nonpositive/nonfinite assignments and retains whichever prior Shape wrote the
+    // context. Zero remains Shape's explicit stroke-off sentinel; other invalid widths become 1 and
+    // invalid miter limits become Canvas's default 10 so one Shape never inherits another's style.
+    const thickness = normalizeShapeStrokeWidth(buf[i] as number);
     const color = buf[i + 1] as number;
     const alpha = buf[i + 2] as number;
     const caps = buf[i + 5] as string;
     const joints = buf[i + 6] as string;
-    const miterLimit = buf[i + 7] as number;
+    const miterLimit = normalizeShapeStrokeMiterLimit(buf[i + 7] as number);
+    if (state.hasPendingPath && (state.hasFill || state.hasStroke)) state.flush();
     state.hasStroke = thickness > 0;
     if (state.hasStroke) {
       state.strokeWidth = thickness;
@@ -344,7 +390,9 @@ export const defaultCanvasLineStyle: CanvasShapeCommand<'lineStyle'> = {
 };
 
 export const defaultCanvasLineTo: CanvasShapeCommand<'lineTo'> = {
+  fillBounds: defaultShapeBoundsLineTo,
   key: 'lineTo',
+  strokeBounds: defaultShapeBoundsLineTo,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;
@@ -358,7 +406,9 @@ export const defaultCanvasLineTo: CanvasShapeCommand<'lineTo'> = {
 };
 
 export const defaultCanvasMoveTo: CanvasShapeCommand<'moveTo'> = {
+  fillBounds: defaultShapeBoundsMoveTo,
   key: 'moveTo',
+  strokeBounds: defaultShapeBoundsMoveTo,
   draw(context, state, buf, i) {
     const x = buf[i] as number;
     const y = buf[i + 1] as number;

@@ -1,4 +1,5 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
+import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
@@ -34,6 +35,10 @@ describe('defaultDomScale9ShapeRenderer', () => {
 });
 
 describe('drawDomScale9Shape', () => {
+  beforeAll(() => {
+    registerCanvasShapeCommands(createDomRenderState(document.createElement('div')), defaultCanvasShapeCommands);
+  });
+
   it('returns early when commands are empty', () => {
     const state = createDomRenderState(document.createElement('div'));
     registerDomShapeRasterizer(state, noopRasterizer);

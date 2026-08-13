@@ -390,6 +390,22 @@ describe('defaultCanvasLineGradientStyle', () => {
 });
 
 describe('defaultCanvasLineStyle', () => {
+  it('normalizes invalid retained Canvas style values to deterministic defaults', () => {
+    const { context, state } = makeShapeTarget();
+    context.lineWidth = 37;
+    context.miterLimit = 23;
+    const shape = createShape();
+    appendShapeLineStyle(shape, -2, 0x000000, 1, false, 'normal', 'none', 'miter', Number.NaN);
+    appendShapeMoveTo(shape, 0, 0);
+    appendShapeLineTo(shape, 100, 0);
+    appendShapeEndFill(shape);
+
+    renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
+
+    expect(context.lineWidth).toBe(1);
+    expect(context.miterLimit).toBe(10);
+  });
+
   it('sets lineCap to butt when caps is none', () => {
     const { context, state } = makeShapeTarget();
     const shape = createShape();

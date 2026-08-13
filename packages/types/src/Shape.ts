@@ -5,7 +5,9 @@ export interface ShapeData extends Node2DData {
   commands: ShapeCommandToken[];
 }
 
-export interface ShapeRuntime extends Node2DRuntime {}
+export interface ShapeRuntime extends Node2DRuntime {
+  shapeBoundsCommandRegistryRevision: number;
+}
 
 export interface Shape extends Node2D {
   data: ShapeData;

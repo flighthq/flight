@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/shape'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-13
+by: builder4
 ---
 
 # shape — Status
@@ -36,9 +36,6 @@ Every item below was re-checked against `packages/shape/src/` on 2026-08-08.
 - **`appendShapePolygon` silently drops the trailing element of an odd-length array**
   (`shapeCommands.ts:304`: `k < points.length - 1` stepping by 2). Degenerate-input policy — odd-length
   arrays, zero/negative radius, NaN — is still unblessed.
-- **Miter joints can exceed the bounds expansion.** `computeShapeLocalBoundsRectangle` applies
-  `strokeHalf` per point with no miterLimit term, so a sharp mitered corner extends past the returned
-  rectangle.
 - **There is no `crates/` directory in this repo.** The `crate: flighthq-shape` stamp points at the
   separate flight-rs repo, not at work reachable from this tree.
 
@@ -46,6 +43,11 @@ Every item below was re-checked against `packages/shape/src/` on 2026-08-08.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-13** — Shape bounds moved from the closed command switch to explicit process-wide command
+  contributions paired with Canvas draw registration; fill-only and ink traversals share the registry,
+  adjacent segment summaries resolve miter/CLOSE geometry, registry revision invalidates cached bounds,
+  and missing keys have a sentinel/explanation/opt-in guard instead of an invented rectangle. Cubic extrema
+  now preserve axes rather than pinning the old swap in the fixture.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The standing charter contradiction checked
   out **false**: "Decision #4 (Shape should depend on `@flighthq/path`) is not implemented —
   `package.json` has no path dependency" is dead, `@flighthq/path` is a declared dependency and the

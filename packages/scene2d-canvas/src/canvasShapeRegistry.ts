@@ -1,5 +1,6 @@
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
+import { registerShapeBoundsCommand } from '@flighthq/shape/contract';
 import type { CanvasShapeCommand, RenderState, ShapeCommandKey } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
@@ -19,6 +20,7 @@ export function registerCanvasShapeCommand<K extends ShapeCommandKey>(
   state: RenderState,
   command: CanvasShapeCommand<K>,
 ): void {
+  registerShapeBoundsCommand(command);
   const runtime = getRenderStateRuntime(state);
   const table = runtime.registries.canvasShapeCommands ?? createKeyedTable('CanvasShapeCommand', 'Unregistered');
   runtime.registries.canvasShapeCommands = withRegistryTableEntry(table, command.key, command);
