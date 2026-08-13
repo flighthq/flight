@@ -13,6 +13,8 @@ import {
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
   invalidateNodeLocalTransform,
+  removeNodeChild,
+  setNodeEnabled,
 } from '@flighthq/node/contract';
 import type {
   HasBoundsRectangle,
@@ -120,9 +122,10 @@ describe('computeNodeBoundsRectangle', () => {
   it('should compute bounds relative to nested child', () => {
     const out = createRectangle();
     computeNodeBoundsRectangle(out, root, grandChild);
-    expect(out.width).toBeGreaterThan(0);
-    expect(out.height).toBeGreaterThan(0);
-    // exact numbers depend on transforms
+    expect(out.x).toBeCloseTo(-100);
+    expect(out.y).toBeCloseTo(-100);
+    expect(out.width).toBeCloseTo(205);
+    expect(out.height).toBeCloseTo(205);
   });
 
   it('should account for scaling in parent transforms', () => {
@@ -186,6 +189,20 @@ describe('computeNodeBoundsRectangle', () => {
     const out = createRectangle();
     computeNodeBoundsRectangle(out, child, root);
     expect(equalsRectangle(out, getNodeWorldBoundsRectangle(child))).toBe(true);
+  });
+
+  it('removes a detached target transform from target-relative bounds', () => {
+    root.x = 40;
+    root.y = -25;
+    invalidateNodeLocalTransform(root);
+    const out = createRectangle();
+
+    computeNodeBoundsRectangle(out, child, root);
+
+    expect(out.x).toBeCloseTo(105);
+    expect(out.y).toBeCloseTo(105);
+    expect(out.width).toBeCloseTo(100);
+    expect(out.height).toBeCloseTo(100);
   });
 });
 
@@ -573,8 +590,71 @@ describe('getNodeWorldBoundsRectangle', () => {
     invalidateNodeLocalTransform(child);
 
     const bounds = getNodeWorldBoundsRectangle(parent);
-    expect(bounds.width).toBeGreaterThan(10);
-    expect(bounds.height).toBeGreaterThan(10);
+    expect(bounds).toMatchObject({ x: 0, y: 0, width: 300, height: 200 });
+  });
+
+  it('refreshes cached aggregate bounds when a child moves', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setRectangle(getNodeLocalBoundsRectangle(parent) as Rectangle, 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(child) as Rectangle, 0, 0, 20, 20);
+    child.x = 30;
+    invalidateNodeLocalTransform(child);
+    expect(getNodeWorldBoundsRectangle(parent)).toMatchObject({ x: 0, y: 0, width: 50, height: 20 });
+
+    child.x = 80;
+    invalidateNodeLocalTransform(child);
+
+    expect(getNodeWorldBoundsRectangle(parent)).toMatchObject({ x: 0, y: 0, width: 100, height: 20 });
+  });
+
+  it('consults a descendant kind-owned bounds validity hook after the aggregate is cached', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    const runtime = getEntityRuntime(child);
+    let input = { width: 20 };
+    let stampedInput = input;
+    runtime.computeLocalBoundsRectangle = (out: Rectangle) => {
+      setRectangle(out, 100, 0, input.width, 10);
+      stampedInput = input;
+    };
+    runtime.isLocalBoundsRectangleValid = () => stampedInput === input;
+    addNodeChild(parent, child);
+    setRectangle(getNodeLocalBoundsRectangle(parent) as Rectangle, 0, 0, 10, 10);
+    expect(getNodeWorldBoundsRectangle(parent).width).toBe(120);
+
+    input = { width: 50 };
+
+    expect(getNodeWorldBoundsRectangle(parent).width).toBe(150);
+  });
+
+  it('refreshes cached aggregate bounds when a child is removed', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setRectangle(getNodeLocalBoundsRectangle(parent) as Rectangle, 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(child) as Rectangle, 100, 0, 200, 200);
+    expect(getNodeWorldBoundsRectangle(parent).width).toBe(300);
+
+    removeNodeChild(parent, child);
+
+    expect(getNodeWorldBoundsRectangle(parent)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
+  });
+
+  it('refreshes cached aggregate bounds when a child is disabled or re-enabled', () => {
+    const parent = createTestNode();
+    const child = createTestNode();
+    addNodeChild(parent, child);
+    setRectangle(getNodeLocalBoundsRectangle(parent) as Rectangle, 0, 0, 10, 10);
+    setRectangle(getNodeLocalBoundsRectangle(child) as Rectangle, 100, 0, 200, 200);
+    expect(getNodeWorldBoundsRectangle(parent).width).toBe(300);
+
+    setNodeEnabled(child, false);
+    expect(getNodeWorldBoundsRectangle(parent).width).toBe(10);
+
+    setNodeEnabled(child, true);
+    expect(getNodeWorldBoundsRectangle(parent).width).toBe(300);
   });
 
   it('ignores an enabled child with zero-area world bounds', () => {

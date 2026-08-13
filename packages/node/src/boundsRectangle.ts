@@ -38,10 +38,7 @@ export function computeNodeBoundsRectangle<Traits extends object>(
 ): void {
   if (!targetCoordinateSpace) targetCoordinateSpace = source;
   let bounds;
-  if (getNodeParent(targetCoordinateSpace) === null) {
-    // if target has no parent, use world bounds
-    bounds = getNodeWorldBoundsRectangle(source);
-  } else if (getNodeChildCount(source) === 0) {
+  if (getNodeChildCount(source) === 0) {
     // only world bounds considers children
     if (targetCoordinateSpace === source) {
       // fast path, return local bounds for self
@@ -68,9 +65,9 @@ export function computeNodeBoundsRectangle<Traits extends object>(
  * root's own local transform is identity. A child's transform is still relative to the root and
  * nested transforms compose normally.
  *
- * This differs intentionally from computeNodeBoundsRectangle(out, root, root): a detached root takes
- * that helper's world-bounds branch, whose axis-aligned world box cannot be inverted tightly after a
- * root rotation. Offscreen subtree capture uses this contract together with
+ * This differs intentionally from computeNodeBoundsRectangle(out, root, root): that helper transforms
+ * an axis-aligned world box back into root space, which cannot recover tight bounds after a root
+ * rotation. Offscreen subtree capture uses this contract together with
  * computeScene2DRenderTargetTransform so the root transform cancels exactly.
  */
 export function computeNodeRootLocalBoundsRectangle<Traits extends object>(
@@ -111,7 +108,13 @@ export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Sp
     forceRecompute = true;
   }
   ensureNodeWorldMatrix(target);
-  if (forceRecompute || localBoundsInvalid || runtime.worldBoundsUsingWorldTransformId !== runtime.worldTransformId) {
+  const childBoundsChanged = hasChildren && ensureNodeChildWorldBoundsRectangles(target);
+  if (
+    forceRecompute ||
+    localBoundsInvalid ||
+    childBoundsChanged ||
+    runtime.worldBoundsUsingWorldTransformId !== runtime.worldTransformId
+  ) {
     recomputeWorldBoundsRectangle(target, runtime);
   }
 }
@@ -190,6 +193,34 @@ function isNodeLocalBoundsRectangleValid<Traits extends object>(
     runtime.localBoundsUsingLocalBoundsId === runtime.localBoundsId &&
     (runtime.isLocalBoundsRectangleValid?.(target) ?? true)
   );
+}
+
+function ensureNodeChildWorldBoundsRectangles<Traits extends object>(target: Spatial2DNode<Traits>): boolean {
+  const children = getNodeRuntime(target).children;
+  if (children === null) return false;
+  let changed = false;
+  for (const child of children) {
+    if (!child.enabled) continue;
+    const childNode = child as Spatial2DNode<Traits>;
+    const runtime = getNodeRuntime(childNode) as NodeRuntime<Traits> & HasBoundsRectangleRuntime;
+    const previous = runtime.worldBoundsRectangle;
+    const previousX = previous?.x;
+    const previousY = previous?.y;
+    const previousWidth = previous?.width;
+    const previousHeight = previous?.height;
+    ensureNodeWorldBoundsRectangle(childNode);
+    const current = runtime.worldBoundsRectangle!;
+    if (
+      previous === null ||
+      current.x !== previousX ||
+      current.y !== previousY ||
+      current.width !== previousWidth ||
+      current.height !== previousHeight
+    ) {
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 function mergeRootLocalBounds<Traits extends object>(

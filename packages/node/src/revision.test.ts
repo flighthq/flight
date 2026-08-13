@@ -1,6 +1,7 @@
 import { createNode, getNodeRuntime } from '@flighthq/node/contract';
 import type { Node, NodeRuntime } from '@flighthq/types/contract';
 
+import { addNodeChild } from './hierarchy';
 import {
   computeNodeWorldTransformRevision,
   getNodeAppearanceRevision,
@@ -41,6 +42,7 @@ describe('computeNodeWorldTransformRevision', () => {
     computeNodeWorldTransformRevision(runtime);
     expect(runtime.worldTransformUsingLocalTransformId).toBe(3);
     expect(runtime.worldTransformUsingParentTransformId).toBe(0);
+    expect(runtime.worldTransformId).not.toBe(0);
   });
 
   it('incorporates parent worldTransformId when provided', () => {
@@ -50,6 +52,16 @@ describe('computeNodeWorldTransformRevision', () => {
     const runtime = getEntityRuntime(node);
     computeNodeWorldTransformRevision(runtime, parentRuntime);
     expect(runtime.worldTransformUsingParentTransformId).toBe(7);
+  });
+
+  it('assigns a fresh world revision on every recompute', () => {
+    const runtime = getEntityRuntime(node);
+    computeNodeWorldTransformRevision(runtime);
+    const first = runtime.worldTransformId;
+
+    computeNodeWorldTransformRevision(runtime);
+
+    expect(runtime.worldTransformId).not.toBe(first);
   });
 });
 
@@ -245,6 +257,19 @@ describe('invalidateNodeWorldBounds', () => {
     invalidateNodeWorldBounds(node);
     expect(runtime.worldBoundsUsingWorldTransformId).toBe(-1);
     expect(runtime.worldBoundsUsingLocalBoundsId).toBe(-1);
+  });
+
+  it('invalidates every ancestor whose aggregate includes the target', () => {
+    const parent = createTestNode();
+    addNodeChild(parent, node);
+    const parentRuntime = getEntityRuntime(parent);
+    parentRuntime.worldBoundsUsingWorldTransformId = 1;
+    parentRuntime.worldBoundsUsingLocalBoundsId = 1;
+
+    invalidateNodeWorldBounds(node);
+
+    expect(parentRuntime.worldBoundsUsingWorldTransformId).toBe(-1);
+    expect(parentRuntime.worldBoundsUsingLocalBoundsId).toBe(-1);
   });
 });
 

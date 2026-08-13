@@ -503,6 +503,16 @@ describe('setNodeOrderListEntryAbove', () => {
     expect(list.entryCount).toBe(0);
   });
 
+  it('keeps an existing node entry when the target has no entry', () => {
+    const list = createNodeOrderList();
+    addNodeOrderListEntry(list, childA, 4);
+
+    setNodeOrderListEntryAbove(list, childA, childC);
+
+    expect(list.entryCount).toBe(1);
+    expect(getNodeOrderListEntrySortKey(list, childA)).toBe(4);
+  });
+
   it('does nothing when the node is its own target', () => {
     const list = createNodeOrderList();
     addNodeOrderListEntry(list, childA, 4);
@@ -544,6 +554,16 @@ describe('setNodeOrderListEntryBelow', () => {
     setNodeOrderListEntryBelow(list, childA, childC);
 
     expect(list.entryCount).toBe(0);
+  });
+
+  it('keeps an existing node entry when the target has no entry', () => {
+    const list = createNodeOrderList();
+    addNodeOrderListEntry(list, childA, 4);
+
+    setNodeOrderListEntryBelow(list, childA, childC);
+
+    expect(list.entryCount).toBe(1);
+    expect(getNodeOrderListEntrySortKey(list, childA)).toBe(4);
   });
 });
 

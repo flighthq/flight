@@ -4,7 +4,7 @@ import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types
 
 import { getNodeRuntime } from './node';
 import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './nodeTransform2d';
-import { invalidateNodeLocalTransform, invalidateNodeParentReference } from './revision';
+import { invalidateNodeLocalTransform, invalidateNodeParentReference, invalidateNodeWorldBounds } from './revision';
 
 /**
  * Adds a child Node instance to this Node
@@ -33,6 +33,8 @@ export function addNodeChildAt<Traits extends object>(
     throw new TypeError('Parameter child must be non-null');
   } else if (child === target) {
     throw new TypeError('An object cannot be added as a child of itself');
+  } else if (isNodeAncestorOf(child, target)) {
+    throw new TypeError('An ancestor cannot be added as a child of its descendant');
   } else if (index < 0 || (children !== null && index > children.length) || (children === null && index > 0)) {
     throwOutOfBoundsError();
   }
@@ -47,10 +49,12 @@ export function addNodeChildAt<Traits extends object>(
 
   const childRuntime = getNodeRuntime(child) as NodeRuntime<Traits>;
   const parent = childRuntime.parent as Node<Traits>;
+  let wasChild = false;
 
   if (parent === target) {
     const i = children!.indexOf(child);
     if (i !== -1) {
+      wasChild = true;
       // `index === children.length` means append. An already-last child is therefore unchanged.
       if (i === Math.min(index, children.length - 1)) return child as NodeOf<Traits>;
       children!.splice(i, 1);
@@ -63,6 +67,7 @@ export function addNodeChildAt<Traits extends object>(
 
   children!.splice(index, 0, child);
   invalidateNodeChildren(targetRuntime);
+  if (!wasChild) invalidateNodeWorldBounds(target);
   const targetSignals = targetRuntime.nodeSignals;
   if (targetSignals !== null) emitSignal(targetSignals.onChildrenChanged);
 
@@ -265,6 +270,7 @@ export function removeNodeChild<Traits extends object>(target: Node<Traits>, chi
     if (i !== -1) {
       children.splice(i, 1);
       invalidateNodeChildren(targetRuntime as NodeRuntime<Traits>);
+      invalidateNodeWorldBounds(target);
     }
     const targetSignals = targetRuntime.nodeSignals;
     if (targetSignals !== null) {
@@ -322,9 +328,9 @@ export function removeNodeChildren<Traits extends object>(
 
 /**
  * Moves a child to a new parent while preserving its world-space position.
- * The child's local TRS fields (x, y, rotation, scaleX, scaleY) are recomputed
- * so its visual position, rotation, and scale remain unchanged. Existing skewX/skewY
- * values are preserved (skew is not decomposable from a general affine matrix).
+ * The child's local transform fields are recomputed so its effective world transform remains
+ * unchanged. Its pivot is preserved; rotation and skew may be reparameterized because a general
+ * affine matrix has multiple equivalent decompositions.
  *
  * To reparent without preserving world position (keeping local TRS unchanged),
  * use addNodeChild instead.
@@ -342,23 +348,19 @@ export function reparentNode<Traits extends object>(
     inverseMatrix(localM, getNodeWorldMatrix(newParent));
     multiplyMatrix(localM, localM, oldWorld);
 
-    const a = localM.a;
-    const b = localM.b;
-    const c = localM.c;
-    const d = localM.d;
-
-    child.scaleX = Math.sqrt(a * a + b * b);
-    child.scaleY = Math.sqrt(c * c + d * d);
-
-    if (a * d - b * c < 0) {
-      child.scaleY = -child.scaleY;
-    }
-
-    const skewYRad = child.skewY * DEG_TO_RAD;
-    child.rotation = (Math.atan2(b, a) - skewYRad) * RAD_TO_DEG;
-
-    child.x = localM.tx + (a * child.pivotX + c * child.pivotY);
-    child.y = localM.ty + (b * child.pivotX + d * child.pivotY);
+    const pivotX = child.pivotX;
+    const pivotY = child.pivotY;
+    // Use positive axis magnitudes and carry any reflection in the angle between the axes. This
+    // represents every affine linear transform exactly, including reflected and skewed matrices.
+    child.rotation = 0;
+    child.scaleX = Math.sqrt(localM.a * localM.a + localM.b * localM.b);
+    child.scaleY = Math.sqrt(localM.c * localM.c + localM.d * localM.d);
+    child.skewX = Math.atan2(-localM.c, localM.d) * RAD_TO_DEG;
+    child.skewY = Math.atan2(localM.b, localM.a) * RAD_TO_DEG;
+    child.pivotX = pivotX;
+    child.pivotY = pivotY;
+    child.x = localM.tx + (localM.a * pivotX + localM.c * pivotY);
+    child.y = localM.ty + (localM.b * pivotX + localM.d * pivotY);
 
     invalidateNodeLocalTransform(child);
   } finally {
@@ -471,5 +473,4 @@ function throwOutOfBoundsError(): void {
   throw new RangeError('The supplied index is out of bounds.');
 }
 
-const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
