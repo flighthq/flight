@@ -247,9 +247,13 @@ export const defaultCanvasDrawRoundRectangle: CanvasShapeCommand<'drawRoundRecta
     const height = buf[i + 3] as number;
     const ellipseWidth = buf[i + 4] as number;
     const ellipseHeight = buf[i + 5] as number;
-    const rx = Math.min(ellipseWidth / 2, width / 2);
-    const ry = Math.min(ellipseHeight / 2, height / 2);
-    const radius = Math.min(rx, ry);
+    // Canvas accepts signed rectangle dimensions and flips the path, but radii are magnitudes and a
+    // negative one throws. Clamp the authored ellipse size against the absolute edge lengths so a
+    // backwards rectangle follows the same geometry instead of reaching roundRect with a bad radius.
+    const radius = Math.max(
+      0,
+      Math.min(ellipseWidth / 2, ellipseHeight / 2, Math.abs(width) / 2, Math.abs(height) / 2),
+    );
     if (typeof context.roundRect === 'function') {
       context.roundRect(x, y, width, height, radius);
     } else {
