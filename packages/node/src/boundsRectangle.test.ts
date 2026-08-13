@@ -689,6 +689,16 @@ describe('setNodeHeight', () => {
     setNodeHeight(node, 100);
     expect(node.scaleY).toBe(0);
   });
+
+  it('keeps a finite scale when the current height is zero', () => {
+    const node = createTestNode();
+    setRectangle(getNodeLocalBoundsRectangle(node) as Rectangle, 0, 0, 10, 0);
+
+    setNodeHeight(node, 100);
+
+    expect(node.scaleY).toBe(1);
+    expect(Number.isFinite(node.scaleY)).toBe(true);
+  });
 });
 
 describe('setNodeWidth', () => {
@@ -707,6 +717,16 @@ describe('setNodeWidth', () => {
     invalidateNodeLocalTransform(node);
     setNodeWidth(node, 100);
     expect(node.scaleX).toBe(0);
+  });
+
+  it('keeps a finite scale when the current width is zero', () => {
+    const node = createTestNode();
+    setRectangle(getNodeLocalBoundsRectangle(node) as Rectangle, 0, 0, 0, 10);
+
+    setNodeWidth(node, 100);
+
+    expect(node.scaleX).toBe(1);
+    expect(Number.isFinite(node.scaleX)).toBe(true);
   });
 });
 
