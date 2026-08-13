@@ -39,7 +39,7 @@ export function applyGradientGlowEffectToWgpu(
   const { device } = state;
   const fs = getWgpuEffectPassState(state);
 
-  applyWgpuEffectTintPass(state, src, s0, 0xffffff, 1, Math.min(1, strength));
+  applyWgpuEffectTintPass(state, src, s0, 0xffffffff, 1, Math.min(1, strength));
   applyWgpuEffectBoxBlur(state, s0, s1, s2, {
     blurX: effect.blurX ?? 6,
     blurY: effect.blurY ?? 6,

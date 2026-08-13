@@ -75,7 +75,7 @@ function applyOuterGlowEffectToCanvasWithPool(
   const blur = Math.max(0, ((effect.blurX ?? 6) + (effect.blurY ?? 6)) / 2);
   const sourceMode = effect.sourceMode ?? 'draw';
 
-  drawCanvasTintedAlphaMask(mask, source, effect.color ?? 0xff0000, effect.alpha ?? 1, tintStrength);
+  drawCanvasTintedAlphaMask(mask, source, effect.color ?? 0xff0000ff, effect.alpha ?? 1, tintStrength);
   drawCanvasEffectPass(blurred, mask, blur > 0 ? `blur(${blur}px)` : 'none');
 
   clearCanvasTarget(dest);

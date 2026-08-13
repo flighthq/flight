@@ -1,4 +1,3 @@
-import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import { acquireGlRenderTarget, clearGlRenderTarget, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
 import type {
   DropShadowEffect,
@@ -38,11 +37,10 @@ export function applyDropShadowEffectToGl(
   const distance = effect.distance ?? 4;
   const dx = Math.cos(angle) * distance;
   const dy = Math.sin(angle) * distance;
-  // Packed RGBA, matching BitmapDropShadowOptions.color offscreen. The shared tint pass takes RGB plus
-  // one alpha and is used by effects that have not migrated, so the split happens here, not in the pass.
-  const packed = effect.color ?? 0x000000ff;
-  const color = getColorRgb(packed);
-  const alpha = (effect.alpha ?? 1) * getColorAlpha(packed);
+  // Packed RGBA, matching BitmapDropShadowOptions.color offscreen. The tint pass folds this color's own
+  // alpha into the effect-level one, so nothing splits the value here.
+  const color = effect.color ?? 0x000000ff;
+  const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
   const sourceMode = effect.sourceMode ?? 'draw';

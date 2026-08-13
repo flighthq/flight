@@ -92,7 +92,7 @@ export function applyGradientBevelEffectToGl(
   const gl = state.gl;
 
   // Build blur basis → s1
-  applyGlEffectTintPass(state, src, s0, 0xffffff, 1, Math.min(1, strength));
+  applyGlEffectTintPass(state, src, s0, 0xffffffff, 1, Math.min(1, strength));
   applyGlEffectBoxBlur(state, s0, s1, s2, { blurX: effect.blurX ?? 4, blurY: effect.blurY ?? 4, passes: quality });
 
   // Encode bevel value from blurred alpha offset samples → s0.

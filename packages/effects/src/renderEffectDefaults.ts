@@ -98,7 +98,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   GradientGlowEffect: { blurX: 6, blurY: 6, quality: 1, sourceMode: 'draw', strength: 1 },
   HalftoneEffect: { angle: 0.785, scale: 8 }, // 0.785 ≈ π/4 = 45°
-  InnerGlowEffect: { alpha: 1, blurX: 6, blurY: 6, color: 0xff0000, quality: 1, sourceMode: 'draw', strength: 1 },
+  InnerGlowEffect: { alpha: 1, blurX: 6, blurY: 6, color: 0xff0000ff, quality: 1, sourceMode: 'draw', strength: 1 },
   InnerShadowEffect: {
     alpha: 1,
     angle: 45,
@@ -115,7 +115,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   LensFlareEffect: { ghosts: 4, halo: 0.5, intensity: 1, threshold: 0.9 },
   MedianEffect: { radius: 1 },
   MotionBlurEffect: { intensity: 1, samples: 8, shutterAngle: 180, target: 'both' },
-  OuterGlowEffect: { alpha: 1, blurX: 6, blurY: 6, color: 0xff0000, quality: 1, sourceMode: 'draw', strength: 1 },
+  OuterGlowEffect: { alpha: 1, blurX: 6, blurY: 6, color: 0xff0000ff, quality: 1, sourceMode: 'draw', strength: 1 },
   OutlineEffect: { color: 0x000000ff, thickness: 1, threshold: 0.1 },
   PanniniProjectionEffect: { compression: 0.5, crop: 0 },
   PixelateEffect: { size: 8 },

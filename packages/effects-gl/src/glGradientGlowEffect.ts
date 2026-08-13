@@ -67,7 +67,7 @@ export function applyGradientGlowEffectToGl(
   const gl = state.gl;
 
   // Extract alpha as a neutral (white) mask, then blur → s1
-  applyGlEffectTintPass(state, src, s0, 0xffffff, 1, Math.min(1, strength));
+  applyGlEffectTintPass(state, src, s0, 0xffffffff, 1, Math.min(1, strength));
   applyGlEffectBoxBlur(state, s0, s1, s2, { blurX: effect.blurX ?? 6, blurY: effect.blurY ?? 6, passes: quality });
 
   // Build gradient ramp texture and look up the blurred alpha → s0

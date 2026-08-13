@@ -1,3 +1,4 @@
+import { unpackColorRgba } from '@flighthq/color/contract';
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline, WgpuEffectPipeline } from '@flighthq/types/contract';
 
@@ -62,13 +63,13 @@ export function applyWgpuEffectInvertTintPass(
   alpha: number,
   strength: number,
 ): void {
-  const [r, g, b] = packColor(color);
+  unpackColorRgba(scratchTint, color);
   const pipeline = getWgpuInvertTintShader(state);
   drawWgpuEffectPass(state, source, dest, pipeline, (f32) => {
-    f32[0] = r;
-    f32[1] = g;
-    f32[2] = b;
-    f32[3] = alpha;
+    f32[0] = scratchTint[0];
+    f32[1] = scratchTint[1];
+    f32[2] = scratchTint[2];
+    f32[3] = alpha * scratchTint[3];
     f32[4] = strength;
   });
 }
@@ -82,13 +83,13 @@ export function applyWgpuEffectTintPass(
   alpha: number,
   strength: number,
 ): void {
-  const [r, g, b] = packColor(color);
+  unpackColorRgba(scratchTint, color);
   const pipeline = getWgpuTintShader(state);
   drawWgpuEffectPass(state, source, dest, pipeline, (f32) => {
-    f32[0] = r;
-    f32[1] = g;
-    f32[2] = b;
-    f32[3] = alpha;
+    f32[0] = scratchTint[0];
+    f32[1] = scratchTint[1];
+    f32[2] = scratchTint[2];
+    f32[3] = alpha * scratchTint[3];
     f32[4] = strength;
   });
 }
@@ -120,10 +121,6 @@ function getWgpuTintShader(state: WgpuRenderState): WgpuEffectPipeline {
   return p;
 }
 
-function packColor(color: number): [number, number, number] {
-  return [((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255];
-}
-
 const tintPipelines = new WeakMap<WgpuRenderState, WgpuEffectPipeline>();
 const invertTintPipelines = new WeakMap<WgpuRenderState, WgpuEffectPipeline>();
 
@@ -145,3 +142,6 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
 }`;
 
 const innerClipPipelines = new WeakMap<WgpuRenderState, WgpuDualSourceEffectPipeline>();
+
+// Reused across passes: the unpack writes into it on every draw, so it never escapes this module.
+const scratchTint: [number, number, number, number] = [0, 0, 0, 0];

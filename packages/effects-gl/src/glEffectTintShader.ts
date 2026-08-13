@@ -1,3 +1,4 @@
+import { unpackColorRgba } from '@flighthq/color/contract';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderTarget } from '@flighthq/types/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
@@ -52,8 +53,9 @@ export function applyGlEffectInvertTintPass(
 ): void {
   const loc = getGlInvertTintShader(state);
   drawGlFullscreenPass(state, loc, [source.texture], dest, (gl) => {
-    gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
-    gl.uniform1f(loc.locAlpha, alpha);
+    unpackColorRgba(scratchTint, color);
+    gl.uniform3f(loc.locColor, scratchTint[0], scratchTint[1], scratchTint[2]);
+    gl.uniform1f(loc.locAlpha, alpha * scratchTint[3]);
     gl.uniform1f(loc.locStrength, strength);
     gl.blendFunc(gl.ONE, gl.ZERO);
   });
@@ -70,8 +72,9 @@ export function applyGlEffectTintPass(
 ): void {
   const loc = getGlTintShader(state);
   drawGlFullscreenPass(state, loc, [source.texture], dest, (gl) => {
-    gl.uniform3f(loc.locColor, ((color >> 16) & 0xff) / 255, ((color >> 8) & 0xff) / 255, (color & 0xff) / 255);
-    gl.uniform1f(loc.locAlpha, alpha);
+    unpackColorRgba(scratchTint, color);
+    gl.uniform3f(loc.locColor, scratchTint[0], scratchTint[1], scratchTint[2]);
+    gl.uniform1f(loc.locAlpha, alpha * scratchTint[3]);
     gl.uniform1f(loc.locStrength, strength);
     gl.blendFunc(gl.ONE, gl.ZERO);
   });
@@ -108,3 +111,6 @@ function getGlTintShader(state: GlRenderState): TintShaderLocations {
   }
   return loc;
 }
+
+// Reused across passes: the unpack writes into it on every draw, so it never escapes this module.
+const scratchTint: [number, number, number, number] = [0, 0, 0, 0];

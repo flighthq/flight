@@ -1,3 +1,4 @@
+import { unpackColorRgba } from '@flighthq/color/contract';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   InnerShadowEffect,
@@ -34,7 +35,7 @@ export function applyInnerShadowEffectToWgpu(
   const distance = effect.distance ?? 4;
   const dx = Math.cos(angle) * distance;
   const dy = Math.sin(angle) * distance;
-  const color = effect.color ?? 0;
+  const color = effect.color ?? 0x000000ff;
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
@@ -74,11 +75,11 @@ function getInvertTintEdgeColor(
   alpha: number,
   strength: number,
 ): readonly [number, number, number, number] {
-  const edgeAlpha = Math.min(1, alpha * strength);
-  return [
-    (((color >> 16) & 0xff) / 255) * edgeAlpha,
-    (((color >> 8) & 0xff) / 255) * edgeAlpha,
-    ((color & 0xff) / 255) * edgeAlpha,
-    edgeAlpha,
-  ];
+  // The color is packed RGBA, so its own alpha multiplies the effect-level one before the premultiply.
+  unpackColorRgba(scratchEdge, color);
+  const edgeAlpha = Math.min(1, alpha * scratchEdge[3] * strength);
+  return [scratchEdge[0] * edgeAlpha, scratchEdge[1] * edgeAlpha, scratchEdge[2] * edgeAlpha, edgeAlpha];
 }
+
+// Reused per draw by the edge-color computation above; never escapes this module.
+const scratchEdge: [number, number, number, number] = [0, 0, 0, 0];

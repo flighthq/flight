@@ -2,14 +2,15 @@ import type { InnerEffectSourceMode } from './EffectSourceMode';
 import type { RenderEffect } from './RenderEffect';
 
 // Inner-glow composite effect: tint the inverted silhouette, blur inward, clip to the source alpha, then draw or hide the source.
-// Full-frame composite effect over the scene's alpha silhouette; colors are packed RGB integers with a
-// separate alpha field (mirrors the Tier-1 filter recipe this realizes), angles are degrees.
+// Full-frame composite effect over the scene's alpha silhouette; the color is a packed RGBA integer
+// whose alpha multiplies the separate alpha field, and angles are degrees.
 export interface InnerGlowEffect extends RenderEffect {
   kind: 'InnerGlowEffect';
   alpha?: number;
   blurX?: number;
   blurY?: number;
-  // 24-bit RGB (`0xRRGGBB`) — opacity is the separate `alpha`, applied by the runner as edgeAlpha.
+  // Packed sRGB RGBA (`0xRRGGBBAA`), matching BitmapInnerGlowOptions.color offscreen. Its alpha
+  // multiplies the separate `alpha` field before the edge premultiply. Default 0xff0000ff.
   color?: number;
   quality?: number;
   sourceMode?: InnerEffectSourceMode;

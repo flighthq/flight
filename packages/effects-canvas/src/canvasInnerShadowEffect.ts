@@ -76,7 +76,7 @@ function applyInnerShadowEffectToCanvasWithPool(
   const offsetX = Math.cos(angle) * distance;
   const offsetY = Math.sin(angle) * distance;
 
-  drawCanvasInvertedTintedAlphaMask(mask, source, effect.color ?? 0x000000, effect.alpha ?? 1, Math.min(1, strength));
+  drawCanvasInvertedTintedAlphaMask(mask, source, effect.color ?? 0x000000ff, effect.alpha ?? 1, Math.min(1, strength));
   drawCanvasEffectPass(blurred, mask, blur > 0 ? `blur(${blur}px)` : 'none');
 
   // The offset is its own pass into a cleared target rather than a shifted draw into `blurred`, because

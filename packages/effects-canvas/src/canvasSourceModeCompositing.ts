@@ -91,10 +91,12 @@ export function drawCanvasTintedAlphaMask(
   ctx.restore();
 }
 
+// Takes Flight's packed sRGB `0xRRGGBBAA`; the color's own alpha multiplies the caller's alpha, which is
+// the effect-level opacity. One decode point for every canvas tint, so no call site repeats the split.
 function cssRgbaFromColor(color: number, alpha: number): string {
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
-  const a = Math.max(0, Math.min(1, alpha));
+  const r = (color >>> 24) & 0xff;
+  const g = (color >>> 16) & 0xff;
+  const b = (color >>> 8) & 0xff;
+  const a = Math.max(0, Math.min(1, alpha * ((color & 0xff) / 255)));
   return `rgba(${r},${g},${b},${a.toFixed(3)})`;
 }

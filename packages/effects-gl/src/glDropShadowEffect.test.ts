@@ -52,9 +52,11 @@ describe('applyDropShadowEffectToGl', () => {
     expect(applyGlEffectErasePass).not.toHaveBeenCalled();
   });
 
-  // The tint pass takes RGB plus one alpha, so the migration's whole visible effect is the split done at
-  // this call site: packed RGBA in, 24-bit RGB out, and the color's alpha multiplied into the field's.
-  it('splits a packed RGBA color into the tint pass RGB and a multiplied alpha', () => {
+  // Piece 3 landed this as a split at the call site, because the tint pass still spoke 24-bit RGB and was
+  // shared with effects that had not migrated. Now that every one of them carries packed RGBA, the pass
+  // itself folds the color's alpha and the call site hands the value over untouched — one decode point
+  // instead of five, and this assertion is what pins which of the two contracts is live.
+  it('hands the packed color and the effect alpha to the tint pass without splitting either', () => {
     vi.mocked(applyGlEffectTintPass).mockClear();
 
     applyDropShadowEffectToGl(createState(), createTarget('source'), createTarget('dest'), createPool(), {
@@ -63,11 +65,9 @@ describe('applyDropShadowEffectToGl', () => {
       kind: 'DropShadowEffect',
     });
 
-    // 0x9d55ff is the RGB; 0x80/255 * 0.5 is the alpha. Under the 24-bit reading the same value would
-    // have tinted 0x55ffff at a full 0.5 — a different color at twice the opacity.
     const call = vi.mocked(applyGlEffectTintPass).mock.calls[0]!;
-    expect(call[3]).toBe(0x9d55ff);
-    expect(call[4]).toBeCloseTo((0x80 / 255) * 0.5, 5);
+    expect(call[3]).toBe(0x9d55ff80);
+    expect(call[4]).toBeCloseTo(0.5, 5);
   });
 
   it('hides the source when sourceMode is hide', () => {
