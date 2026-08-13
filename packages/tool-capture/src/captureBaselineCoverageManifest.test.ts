@@ -108,6 +108,25 @@ describe('diffCaptureBaselineCoverage', () => {
     expect(diff.lost).toEqual([]);
   });
 
+  // A page that never loaded settles nothing. Reporting it as vanished would blame the manifest for a
+  // load failure the run already reported on its own.
+  it('does not report an UNDETERMINED identity as absent', () => {
+    const diff = diffCaptureBaselineCoverage(
+      manifest,
+      'functional',
+      ['svg-image/canvas', 'node-alpha/canvas'],
+      ['svg-image/canvas', 'node-alpha/canvas'],
+      {
+        entryFiltered: false,
+        activeRenderers: null,
+        undetermined: ['svg-image/webgl'],
+      },
+    );
+    expect(diff.absent).toEqual([]);
+    expect(diff.lost).toEqual([]);
+    expect(isCaptureBaselineCoverageFailure(diff)).toBe(false);
+  });
+
   it('treats an unknown subject as an empty pin rather than throwing', () => {
     const diff = diffCaptureBaselineCoverage(manifest, 'reference', ['a/canvas'], ['a/canvas'], WHOLE);
     expect(diff).toEqual({ gained: ['a/canvas'], lost: [], absent: [] });
@@ -161,6 +180,29 @@ describe('writeCaptureBaselineCoverageManifest', () => {
     writeCaptureBaselineCoverageManifest(root, 'functional', ['a/dom', 'a/canvas']);
     const manifest = writeCaptureBaselineCoverageManifest(root, 'functional', ['a/canvas'], ['canvas', 'webgl']);
     expect(manifest.subjects.functional).toEqual(['a/canvas', 'a/dom']);
+  });
+
+  // One flaky target must not retire its own pin: the run never determined it, so the pin stands.
+  it('carries forward a pin the run did not determine', () => {
+    const root = mkdtempSync(join(tmpdir(), 'flight-coverage-'));
+    mkdirSync(join(root, 'scripts'));
+    writeCaptureBaselineCoverageManifest(root, 'examples', ['collision/webgpu', 'collision/canvas']);
+    const manifestAfter = writeCaptureBaselineCoverageManifest(root, 'examples', ['collision/canvas'], null, [
+      'collision/canvas',
+    ]);
+    expect(manifestAfter.subjects.examples).toEqual(['collision/canvas', 'collision/webgpu']);
+  });
+
+  // Determined AND uncovered is a real retirement, and must still go through.
+  it('retires a pin the run determined to be uncovered', () => {
+    const root = mkdtempSync(join(tmpdir(), 'flight-coverage-'));
+    mkdirSync(join(root, 'scripts'));
+    writeCaptureBaselineCoverageManifest(root, 'examples', ['collision/webgpu', 'collision/canvas']);
+    const manifestAfter = writeCaptureBaselineCoverageManifest(root, 'examples', ['collision/canvas'], null, [
+      'collision/canvas',
+      'collision/webgpu',
+    ]);
+    expect(manifestAfter.subjects.examples).toEqual(['collision/canvas']);
   });
 
   // With no renderer scope the run speaks for the whole subject, so a dropped target really is retired.

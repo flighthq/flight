@@ -83,10 +83,25 @@ separately-invoked `test:*:regression` legs, which `AGENTS.md` scopes to the env
 baselines were captured. That is narrow-by-design, not inert — but a gate that is narrower in
 practice than it reads is its own hazard, so state the scope wherever the examples gate is described.
 
-**Still open, and not specific to examples:** no coverage floor is enforced above zero. Deleting one
-renderer column keeps a run green (exit 0) while deleting every column correctly fails. This holds in
-the regression tier (79/441 functional, 24/132 examples targets currently uncompared) and again in the
-parity tier (43/324 parity units form no comparison, run exits green).
+**No coverage floor is enforced above zero.** Deleting one renderer column kept a run green (exit 0)
+while deleting every column correctly failed. This held in the regression tier (79/441 functional,
+24/132 examples targets uncompared) and again in the parity tier (43/324 parity units form no
+comparison, run exits green).
+
+**REGRESSION TIER: CLOSED** by the capture baseline coverage manifest
+(`scripts/capture-baseline-coverage-manifest.json`, mechanism in
+`packages/tool-capture/src/captureBaselineCoverageManifest.ts`). The tier now pins the exact SET of
+`entry/renderer` identities that have comparable baseline evidence — 362 functional, 107 examples —
+and names every gain and loss individually; both directions hard-fail, and acceptance is a separate
+`--update-coverage` path that refuses an entry-filtered run. Falsified on both subjects against the
+pre-fix commit: with a target's fingerprint deleted, pre-fix reports `✓ ok` exit 0 while other
+comparisons still pass, post-fix exits 1 naming the identity. The case that justifies identities over
+a count was constructed directly — a same-count swap (two functional targets lose their fingerprints,
+two different ones gain real ones, total unchanged at 21 for the `node-` filter) is reported clean by
+every count-shaped check and is named in all four parts by the manifest.
+
+**PARITY TIER: STILL OPEN.** The 43/324 parity units that form no comparison are not covered by this
+mechanism; the manifest pins regression evidence only. A parity-side equivalent is unbuilt.
 
 ## Severity-ranked findings
 
@@ -101,7 +116,7 @@ silently absorb:
 | 1 | Nightly `promote` | `main` advances only to a known-good commit | It needs only `resolve`, `coverage`, and API-printing jobs. It neither waits for nor queries the exact SHA's `tests.yml` result, so it can promote after build, isolated-test, quality, size, or render failure. The push triggers CI on `main` only after promotion. | **P0 — known-good predicate is incomplete** | **RECOMMENDATION:** Require the exact pinned SHA's complete per-commit gate conclusion before promotion. |
 | 2 | Examples Tier 3 / `Render · examples · parity` | Current Canvas/WebGL/WebGPU output agrees | All 108 current validation targets lack a matching fingerprint baseline. Legacy parity admits only baselined targets, so it forms zero pairs. A clean scoped run exited 0 with `0 parity passed`, `6 skipped`; all 41 entries have zero eligible pairs. The 41 example fingerprint columns that do exist belong to 14 retired entry names. | **P0 — parity tier forms zero comparisons** — CLOSED, see the re-measurement above: 65 parity pairs now form | **RECOMMENDATION:** Use explicit same-run parity groups or fail when required fingerprints/pairs are absent. |
 | 3 | Examples Tier 4 / `Render · examples · smoke` | Every example renders non-blank | Direct examples smoke defaults `verify=false`. Replacing `bitmap` Canvas rendering with a no-op produced changed screenshots, `0 failed`, and exit 0. The examples parity leg did reject the same blank build as a verifier load failure, so aggregate CI has a second-line catch, but the smoke/not-blank gate itself is false-green. | **P1 — smoke does not prove non-blank output** | **RECOMMENDATION:** Enable verifier/readback and require every selected example target to publish a non-blank result. |
-| 4 | Tier 5 regression / `test:*:regression` and `capture:*:check` | Current output matches committed baselines | Missing baselines become skips or `changed=null`, and no minimum coverage is enforced. Fingerprints cover examples `0/108` current targets and functional `310/416`; screenshot hashes cover examples `117/132` and functional `401/416`. An all-missing suite succeeds. | **P1 — regression evidence is partial and can be empty** — the EXAMPLES numbers are CLOSED (see above); the underlying gap is live and is now stated precisely: no coverage floor above zero, in the regression AND parity tiers | **RECOMMENDATION:** Gate an explicit baseline-coverage manifest; allow missing targets only through named exceptions. |
+| 4 | Tier 5 regression / `test:*:regression` and `capture:*:check` | Current output matches committed baselines | Missing baselines become skips or `changed=null`, and no minimum coverage is enforced. Fingerprints cover examples `0/108` current targets and functional `310/416`; screenshot hashes cover examples `117/132` and functional `401/416`. An all-missing suite succeeds. | **P1 — CLOSED for the regression tier, OPEN for parity** — the EXAMPLES numbers are CLOSED (see above); the coverage floor above zero is now gated for regression by the capture baseline coverage manifest, and remains ungated for parity | **LANDED:** an exact-set manifest of `entry/renderer` identities with a named +/- diff and a separate `--update-coverage` acceptance path. Parity has no equivalent yet. |
 | 5 | Nightly `api` | API quality/generation contributes to promotion | `npm run api` and `npm run api:json` only print parsed output; neither invokes rules nor persists/diffs an artifact. An `isEven(...): number` mutation made both commands exit 0 while `api:check` exited 1 for an accessor violation. | **P1 — parser smoke does not enforce API policy** | **RECOMMENDATION:** Add `api:check`, or narrow the job's documented trust claim to parser smoke. |
 | 6 | `edge-publish` dependencies | Published snapshots passed CI | By explicit policy it needs only `build` and `test-fast`. A snapshot can publish despite failures in isolated/tool-capture tests, quality, size, harness builds, or any render leg. This is documented reduced fidelity, not accidental control flow, but the artifact must not be described as fully CI-gated. | **P1 — snapshot evidence intentionally omits six families** | **RECOMMENDATION:** Either add the omitted dependencies or label snapshots as build-plus-fast-test gated. |
 

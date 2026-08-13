@@ -507,8 +507,10 @@ export function isCaptureRegressionCoverageFailure(run: Readonly<CaptureRegressi
 }
 
 interface EntryResult {
-  /** `entry/renderer` identities this run reached the baseline lookup for. */
+  /** `entry/renderer` identities whose coverage this run DETERMINED (it reached the baseline lookup). */
   visited: string[];
+  /** Identities the run could not determine — it never got a fingerprint, so coverage is unknown. */
+  undetermined: string[];
   /** Of those, the ones that HAD a comparable committed baseline. */
   covered: string[];
   regressionFailures: number;
@@ -534,6 +536,7 @@ async function processEntry(
 ): Promise<EntryResult> {
   const result: EntryResult = {
     visited: [],
+    undetermined: [],
     covered: [],
     regressionFailures: 0,
     regressionUncovered: 0,
@@ -575,6 +578,9 @@ async function processEntry(
     formatDetailLine(glyph, label, labelWidth, message, paint);
 
   if (options.fingerprintSkip.has(entry.name)) {
+    result.undetermined.push(
+      ...renderers.map((renderer) => formatCaptureBaselineCoverageIdentity(entry.name, renderer)),
+    );
     result.skipped += renderers.length;
     result.checks.push({
       entry: entry.name,
@@ -585,10 +591,6 @@ async function processEntry(
     });
     return result;
   }
-
-  // Every identity below this point reached the baseline lookup, so an absent one really was excluded
-  // by scope rather than silently dropped.
-  result.visited.push(...renderers.map((renderer) => formatCaptureBaselineCoverageIdentity(entry.name, renderer)));
 
   const eligible = new Map<string, string>();
 
@@ -622,9 +624,16 @@ async function processEntry(
           message: first.reason,
         });
       }
+      // A renderer that never produced a fingerprint tells us NOTHING about its coverage. Recording it as
+      // visited-but-uncovered would report a load failure a second time as a coverage loss; recording it
+      // as never-visited would report it as vanished. It is neither — it is unknown, and an unknown is
+      // carried forward on acceptance rather than retired.
+      result.undetermined.push(formatCaptureBaselineCoverageIdentity(entry.name, renderer));
       continue;
     }
     const fingerprint = first.fingerprint;
+    // Coverage for this identity is now DETERMINABLE: the baseline lookup below settles it either way.
+    result.visited.push(formatCaptureBaselineCoverageIdentity(entry.name, renderer));
 
     // Explicit groups are same-run comparisons and do not require a committed regression baseline.
     // Legacy all-pairs parity retains its prior proven-stable/baselined eligibility policy.
@@ -996,6 +1005,7 @@ export async function runCaptureValidation(
   const checks: CaptureValidationCheck[] = [];
   const coveredIdentities: string[] = [];
   const visitedIdentities: string[] = [];
+  const undeterminedIdentities: string[] = [];
 
   try {
     // Balance pages, not entries: a four-renderer entry must not monopolize one worker while another
@@ -1053,6 +1063,8 @@ export async function runCaptureValidation(
           checks.push(...result.checks);
           coveredIdentities.push(...result.covered);
           visitedIdentities.push(...result.visited);
+          undeterminedIdentities.push(...result.undetermined);
+          undeterminedIdentities.push(...result.undetermined);
           coveredIdentities.push(...result.covered);
           visitedIdentities.push(...result.visited);
           if (!options.quiet) for (const line of result.output) console.log(line);
@@ -1083,31 +1095,6 @@ export async function runCaptureValidation(
 
   const interrupted = isAborted();
   const note = interrupted ? pc.yellow('   — interrupted (partial run)') : '';
-
-  if (options.updateCoverage) {
-    // A partial or load-failed run does not know what it did not reach. Accepting one would silently
-    // retire every target it never got to — the exact erosion the manifest exists to catch.
-    if (interrupted || loadFailures > 0) {
-      console.error(
-        pc.red(
-          `\nRefusing to update the capture baseline coverage manifest from an incomplete run (${interrupted ? 'interrupted' : `${loadFailures} load failure(s)`}).`,
-        ),
-      );
-      return createResult(true);
-    }
-    const identities = [...new Set(coveredIdentities)];
-    writeCaptureBaselineCoverageManifest(
-      options.root,
-      options.subject,
-      identities,
-      options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
-    );
-    if (!options.quiet)
-      console.log(
-        `\ncapture baseline coverage manifest updated — ${identities.length} identit${identities.length === 1 ? 'y' : 'ies'} pinned for ${options.subject}`,
-      );
-    return createResult(false);
-  }
 
   if (options.updateFingerprints) {
     if (!options.quiet)
@@ -1157,19 +1144,47 @@ export async function runCaptureValidation(
   // The zero-floor above asks only whether ANY comparison ran. This asks WHICH ones did: a pinned
   // identity that ran and no longer has a baseline is named individually, instead of being absorbed into
   // an "uncovered" count that still satisfies the floor as long as one other target compared.
-  const coverageDiff = options.gateRegression
-    ? diffCaptureBaselineCoverage(
-        readCaptureBaselineCoverageManifest(options.root),
-        options.subject,
-        [...new Set(coveredIdentities)],
-        [...new Set(visitedIdentities)],
-        {
-          entryFiltered,
-          activeRenderers: options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
-        },
-      )
-    : { gained: [], lost: [], absent: [] };
+  const coverageDiff =
+    options.gateRegression && !options.updateCoverage
+      ? diffCaptureBaselineCoverage(
+          readCaptureBaselineCoverageManifest(options.root),
+          options.subject,
+          [...new Set(coveredIdentities)],
+          [...new Set(visitedIdentities)],
+          {
+            entryFiltered,
+            activeRenderers: options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
+            undetermined: [...new Set(undeterminedIdentities)],
+          },
+        )
+      : { gained: [], lost: [], absent: [] };
   const coverageFailed = isCaptureBaselineCoverageFailure(coverageDiff);
+  // ★ Accepting new coverage does NOT excuse the run's own verdict. Writing the manifest from a branch
+  // that returned early would report exit 0 over a leg with real regression failures — an acceptance path
+  // that reports green is the same defect class this manifest exists to close, one level up. So the write
+  // happens here, after the verdict is computed, and only the COVERAGE component of that verdict is
+  // suppressed: a target with a failing comparison still has baseline evidence, so it is still covered.
+  if (options.updateCoverage) {
+    // An interrupted run's own summary is not trustworthy, so it never writes. A run with load failures
+    // does write: the write retires only identities this run positively determined to be uncovered, so a
+    // target that never loaded keeps its pin instead of being silently retired by its own flakiness.
+    if (interrupted) {
+      console.error(pc.red('\nRefusing to update the capture baseline coverage manifest from an interrupted run.'));
+      return createResult(true);
+    }
+    const identities = [...new Set(coveredIdentities)];
+    writeCaptureBaselineCoverageManifest(
+      options.root,
+      options.subject,
+      identities,
+      options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
+      [...new Set(visitedIdentities)],
+    );
+    if (!options.quiet)
+      console.log(
+        `\ncapture baseline coverage manifest updated — ${identities.length} identit${identities.length === 1 ? 'y' : 'ies'} pinned for ${options.subject}`,
+      );
+  }
   const failed =
     coverageFailed ||
     regressionFailures > 0 ||
