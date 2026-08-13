@@ -33,6 +33,20 @@ function expectOneCrumb(diagnostics: readonly ImportDiagnostic[], kind: string):
 }
 
 describe('createScene3DFromObj', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a walk that desynchronised and
+  // still left the asserted fields looking plausible. Asserted as an EMPTY list rather than a filter over
+  // truncation-shaped kind names: a pattern built from expected vocabulary silently exempts every kind
+  // whose name nobody guessed, and this importer has kinds like that.
+  it('raises no diagnostic at all for a well-formed file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    createScene3DFromObj(['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n'), undefined, diagnostics);
+
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
+    expect(complaints, `a good obj file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('parses a single triangle with positions only', () => {
     const obj = ['v 0 0 0', 'v 1 0 0', 'v 0 1 0', 'f 1 2 3'].join('\n');
 
