@@ -15,6 +15,7 @@ export {
   createRenderTexture,
   createSampler,
   createTexture,
+  createTexture2D,
   createTilingSampler,
   createVideoTexture,
   equalsCubeTexture,
