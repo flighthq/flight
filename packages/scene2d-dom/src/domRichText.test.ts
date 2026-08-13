@@ -1,7 +1,8 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { createRichText } from '@flighthq/text/contract';
+import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
+import { getTextLayoutResult } from '@flighthq/textlayout/contract';
 import { RichTextKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
@@ -142,6 +143,37 @@ describe('drawDomRichText', () => {
 
     expect(div.innerHTML).toContain('text-decoration:underline');
     expect(div.innerHTML).toContain('text-decoration-skip-ink:none');
+  });
+
+  it('positions a text run from the CSS baseline measured for its emitted font', () => {
+    const state = makeState();
+    const fontSize = 37;
+    const cssAscentRatio = 0.75;
+    const node = createRichText({
+      data: {
+        defaultTextFormat: { font: 'flight-baseline-probe', size: fontSize },
+        text: 'baseline',
+      },
+    });
+    const measure = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement): DOMRect {
+        const parentFont = this.parentElement?.style.font ?? '';
+        const measuredFontSize = Number.parseFloat(/([\d.]+)px/.exec(parentFont)?.[1] ?? '0');
+        const top = this.style.verticalAlign === 'baseline' ? measuredFontSize * cssAscentRatio : 0;
+        return new DOMRect(0, top, 0, 0);
+      });
+
+    try {
+      const div = drawGetEl(state, () => drawDomRichText(state, getOrCreateRenderProxy2D(state, node)))!;
+      const run = div.firstElementChild as HTMLElement;
+      const group = getTextLayoutResult(getRichTextRuntime(node)).groups[0];
+      const expectedTop = group.offsetY + group.ascent - fontSize * cssAscentRatio;
+
+      expect(Number.parseFloat(run.style.top)).toBeCloseTo(expectedTop);
+    } finally {
+      measure.mockRestore();
+    }
   });
 
   it('sets backgroundColor when background is enabled', () => {
