@@ -18,10 +18,12 @@ import {
 
 const TestNodeKind = 'TestNode';
 
-function makeNodeWithBounds(width: number, height: number) {
+function makeNodeWithBounds(width: number, height: number, x = 0, y = 0) {
   const node = createNode(TestNodeKind);
   const runtime = getNodeRuntime(node) as unknown as HasBoundsRectangleRuntime;
   runtime.computeLocalBoundsRectangle = (out) => {
+    out.x = x;
+    out.y = y;
     out.width = width;
     out.height = height;
   };
@@ -225,5 +227,20 @@ describe('computeScene2DFitTransform', () => {
     );
     expect(m.b).toBe(0);
     expect(m.c).toBe(0);
+  });
+
+  it('maps a nonzero content-bounds origin to the selected alignment', () => {
+    const m = createMatrix();
+    computeScene2DFitTransform(
+      m,
+      fit({ align: 'topleft', root: makeNodeWithBounds(100, 50, 10, -20), scaleMode: 'exactfit' }),
+      200,
+      100,
+    );
+
+    expect(m.a).toBe(2);
+    expect(m.d).toBe(2);
+    expect(m.tx).toBe(-20);
+    expect(m.ty).toBe(40);
   });
 });

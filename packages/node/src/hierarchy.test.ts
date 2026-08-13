@@ -67,6 +67,15 @@ describe('addNodeChild', () => {
     expect(() => addNodeChild(container, container)).toThrow(TypeError);
   });
 
+  it('throws rather than creating a cycle', () => {
+    addNodeChild(container, childA);
+    addNodeChild(childA, childB);
+
+    expect(() => addNodeChild(childB, container)).toThrow(TypeError);
+    expect(getNodeParent(container)).toBeNull();
+    expect(getNodeRoot(childB)).toBe(container);
+  });
+
   it('rejects a child disallowed by the parent runtime', () => {
     getEntityRuntime(container).canAddChild = () => false;
 
@@ -771,27 +780,44 @@ describe('reparentNode', () => {
     expect(after.ty).toBeCloseTo(before.ty, 10);
   });
 
-  it('preserves skewX and skewY values', () => {
+  it('preserves a skewed world transform across asymmetric parents', () => {
     const parentA = createTransformNode();
     parentA.x = 50;
     parentA.rotation = 45;
+    parentA.scaleX = 2;
+    parentA.scaleY = 3;
     invalidateNodeLocalTransform(parentA);
 
     const child = createTransformNode();
     child.x = 10;
+    child.y = 5;
+    child.rotation = 12;
+    child.scaleX = 1.4;
+    child.scaleY = 0.8;
     child.skewX = 15;
     child.skewY = 20;
     invalidateNodeLocalTransform(child);
     addNodeChild(parentA, child);
 
+    const before = cloneMatrix(getNodeWorldMatrix(child));
+
     const parentB = createTransformNode();
     parentB.x = 100;
+    parentB.y = -20;
+    parentB.rotation = -10;
+    parentB.scaleX = 0.7;
+    parentB.scaleY = 1.6;
     invalidateNodeLocalTransform(parentB);
 
     reparentNode(child, parentB);
+    const after = getNodeWorldMatrix(child);
 
-    expect(child.skewX).toBe(15);
-    expect(child.skewY).toBe(20);
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
   });
 
   it('preserves world position with pivot', () => {

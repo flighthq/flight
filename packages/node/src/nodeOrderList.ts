@@ -282,10 +282,10 @@ function insertNodeOrderListEntryBeside<Traits extends object>(
   offset: number,
 ): void {
   if (node === target) return;
+  if (findNodeOrderListEntryIndex(list, target) === -1) return;
   const existing = findNodeOrderListEntryIndex(list, node);
   if (existing !== -1) removeNodeOrderListEntryAtIndex(list, existing);
   const targetIndex = findNodeOrderListEntryIndex(list, target);
-  if (targetIndex === -1) return;
   const sortKey = list.sortKeys[targetIndex];
   const at = targetIndex + offset;
   addNodeOrderListEntry(list, node, sortKey);

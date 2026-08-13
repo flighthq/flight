@@ -122,12 +122,17 @@ export function invalidateNodeRender<Traits extends object>(target: Node<Traits>
 }
 
 /**
- * Target object's child bounds have changed.
+ * Target object's child bounds have changed. Invalidates the target and every ancestor whose
+ * aggregate world bounds include it.
  */
 export function invalidateNodeWorldBounds<Traits extends object>(target: Node<Traits>): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
-  runtime.worldBoundsUsingWorldTransformId = -1;
-  runtime.worldBoundsUsingLocalBoundsId = -1;
+  let current: Node<Traits> | null = target;
+  while (current !== null) {
+    const runtime = getNodeRuntime(current) as NodeRuntime<Traits>;
+    runtime.worldBoundsUsingWorldTransformId = -1;
+    runtime.worldBoundsUsingLocalBoundsId = -1;
+    current = runtime.parent;
+  }
 }
 
 // Monotonic source of world-transform revisions, shared across all nodes so a parent recompute always

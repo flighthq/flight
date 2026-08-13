@@ -58,15 +58,21 @@ export function computeScene2DFitTransform<Traits extends object = NodeTraits>(
   viewWidth: number,
   viewHeight: number,
 ): void {
+  let contentX = 0;
+  let contentY = 0;
   let contentWidth = 0;
   let contentHeight = 0;
 
   if (scene2d.root !== null) {
     const runtime = getNodeRuntime(scene2d.root) as Partial<HasBoundsRectangleRuntime>;
     if (runtime?.computeLocalBoundsRectangle !== undefined) {
+      _tempRectangle.x = 0;
+      _tempRectangle.y = 0;
       _tempRectangle.width = 0;
       _tempRectangle.height = 0;
       runtime.computeLocalBoundsRectangle(_tempRectangle, scene2d.root as BoundsNodeAny);
+      contentX = _tempRectangle.x;
+      contentY = _tempRectangle.y;
       contentWidth = _tempRectangle.width;
       contentHeight = _tempRectangle.height;
     }
@@ -100,8 +106,8 @@ export function computeScene2DFitTransform<Traits extends object = NodeTraits>(
   out.b = 0;
   out.c = 0;
   out.d = sy;
-  out.tx = computeScene2DFitAlignX(contentWidth * sx, viewWidth, scene2d.align);
-  out.ty = computeScene2DFitAlignY(contentHeight * sy, viewHeight, scene2d.align);
+  out.tx = computeScene2DFitAlignX(contentWidth * sx, viewWidth, scene2d.align) - contentX * sx;
+  out.ty = computeScene2DFitAlignY(contentHeight * sy, viewHeight, scene2d.align) - contentY * sy;
 }
 
 const _tempRectangle: Rectangle = createRectangle();
