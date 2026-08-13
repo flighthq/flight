@@ -151,6 +151,46 @@ Guards warn at the *moment* of misuse; `explain*` answers "why is my frame blank
 - An `explain<Type>*` function is a **pure query over existing seams returning plain data** (so agents and tests can assert on it), with an optional `format*` companion for humans. It recomputes the cause on demand by re-walking the failure conditions the silent path checks, retains nothing, mutates nothing, and never throws. Example: `explainDisplayObjectRender(state, source)` — the first `explain*` in the SDK, the worked exemplar every later one copies — recomputes why a display object would render blank: whether a renderer is registered for its kind, whether it was prepared, and its effective visibility/alpha, returning a `reason` classification. (`explainRenderState(state, root)` would generalize this to the whole tree — kinds with no renderer, nodes without proxies, the prepare/draw frame-id relation, feature data present while its hook slot is null.)
 - **The high-value, confusing sentinels get a shakeable explainer** — it is a targeted tool, not a blanket obligation on every sentinel. A sentinel earns an `explain*` when its silent failure genuinely confuses (a blank frame with many possible causes is the archetype); a self-evident lookup miss does not. The reason it is targeted rather than universal is maintenance cost: each `explain*` duplicates the silent path's failure conditions and must be kept in step with them, so spend that upkeep only where the confusion warrants it. Where present, the sentinel return stays the zero-cost baseline and the diagnostic twin turns silent state into words; production sheds the explainer while agents always import it.
 
+## Import diagnostics: choosing a severity, and naming the kind to match
+
+**Severity is a fact about the OUTPUT, not about the cause.** Decide it in this order:
+
+1. Is a **substitute present** in the output — something standing in for the thing that failed?
+   → `Recover`. Decided **first**, and regardless of what caused the failure. "Degraded but usable" is
+   the *consequence*; a substitute actually written is the *criterion*.
+2. Else, is a **feature absent** because we do not implement it? → `Skip`.
+3. Else, is **data absent**? → `Drop`.
+4. Else, is there **no output** at all? → `Reject`.
+
+Cause — our capability versus their data — enters exactly once, at step 2/3, and only after substitution
+is ruled out. Two earlier forms of this rule were refuted by the sites they were meant to classify, and
+both counterexamples are worth keeping: "`Skip` when the condition tests our capability" dies on
+`unity.shape-unsupported` and three siblings, which test our capability and correctly carry `Recover`
+because a point is substituted for an unsupported shape; "substitution decides only *within* capability"
+dies on `swf.mask-without-geometry` and `swf.shape-body-unreadable`, which test *their* data and also
+correctly carry `Recover`.
+
+**`Skip` additionally claims RECOGNITION** — you can only skip something you identified. An unparsed
+remainder is by definition unidentified (we cannot tell an unimplemented section from unexpected trailing
+bytes), so it can never honestly be `Skip` no matter what else is true. It is `Drop`: data unaccounted
+for, cause unknown.
+
+### The name must not contradict the severity
+
+A kind name may describe the **cause** freely — `unresolved`, `missing`, `past-end`, `without-bounds`,
+`unreadable`, `truncated`. Cause words never contradict anything, because severity is not a cause.
+
+A kind name that describes the **outcome** must AGREE with its severity, because severity *is* the
+outcome: `dropped`/`discarded` ⇒ `Drop`, `unsupported`/`ignored` ⇒ `Skip`,
+`substituted`/`approximated`/`clamped`/`mapped-to` ⇒ `Recover`.
+
+That gives a mechanical maintenance check, and it is the one to run after **any** severity change: grep
+kind names for outcome words and compare each to its severity. Run against a name-word list that includes
+cause words it mostly rediscovers that severity is not a cause; run against outcome words only, it finds
+real contradictions and little else. Three kinds were renamed by exactly this check after a severity
+audit — each had been *consistent* with its previous wrong severity and became inconsistent with its new
+correct one, which is the failure mode this rule exists to catch: fixing a severity silently breaks a name.
+
 ## Import diagnostics: asset facts, not project facts
 
 Everything above concerns **guards** — warnings about how a caller used the API. Import diagnostics

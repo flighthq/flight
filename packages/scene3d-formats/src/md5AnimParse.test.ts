@@ -282,7 +282,7 @@ describe('parseMd5Anim', () => {
     expect(parseMd5Anim(SINGLE_JOINT_STATIC, makeJoints(1), diagnostics)).not.toBeNull();
     expect(diagnostics).toEqual([
       {
-        kind: 'md5anim.bounds-discarded',
+        kind: 'md5anim.bounds-unsupported',
         origin: 'parseMd5Anim',
         // Skip: a recognized-but-unmodelled block on a well-formed file is a capability gap, not lost data.
         severity: ImportDiagnosticSeverity.Skip,

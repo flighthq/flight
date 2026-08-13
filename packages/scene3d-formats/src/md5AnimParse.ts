@@ -134,7 +134,7 @@ export function parseMd5Anim(
       // Skip, not Drop. The bounds block is RECOGNIZED and deliberately not modelled — a capability gap on
       // a well-formed file, which is what Skip means. Drop would claim the file lost data through a failure,
       // and would exclude a correct parse from every severity-based "did the importer complain" check.
-      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'md5anim.bounds-discarded', 'parseMd5Anim');
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'md5anim.bounds-unsupported', 'parseMd5Anim');
       continue;
     }
 
