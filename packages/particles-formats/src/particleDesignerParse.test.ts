@@ -196,6 +196,24 @@ describe('parseParticleDesignerPlist', () => {
 });
 
 describe('parseParticleDesignerPlistDocument', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second, on the seam that actually carries it — for this package
+  // diagnostics come back in the RETURN VALUE rather than through an out-parameter, which is why a search
+  // for a `diagnostics` parameter finds nothing and wrongly suggests there is no seam at all.
+  //
+  // Skip is excluded rather than the list asserted empty: ParticleDesigner carries fields Flight models no
+  // equivalent for, and reporting those on a valid file is correct. What must not appear is a higher
+  // severity — the importer may say "I do not model this", never "I could not read this".
+  it('raises no data-integrity diagnostic for a well-formed plist', () => {
+    const { diagnostics } = parseParticleDesignerPlistDocument(FIRE_PLIST, { textureSize: 32 });
+
+    const integrity = diagnostics.filter((diagnostic) => diagnostic.severity !== ImportDiagnosticSeverity.Skip);
+    expect(
+      integrity.map((diagnostic) => diagnostic.kind),
+      `a good ParticleDesigner plist made the parser complain: ${integrity.map((d) => d.kind).join(', ')}`,
+    ).toEqual([]);
+  });
+
   describe('full round-trip, returns { config, document }', () => {
     it('returns the same config values as parseParticleDesignerPlist', () => {
       const config = parseParticleDesignerPlist(FIRE_PLIST, { textureSize: 32 });
