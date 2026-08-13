@@ -10,6 +10,7 @@
   },
   "references": [
     { "path": "../adjustments" },
+    { "path": "../color" },
     { "path": "../effects" },
     { "path": "../geometry" },
     { "path": "../render-wgpu" },

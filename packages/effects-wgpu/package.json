@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/adjustments": "*",
+    "@flighthq/color": "*",
     "@flighthq/effects": "*",
     "@flighthq/geometry": "*",
     "@flighthq/render-wgpu": "*",
