@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
@@ -92,6 +93,10 @@ export interface MutantRun {
 const MUTANT_POOLS = ['threads', 'forks'];
 
 const MUTANT_TIMEOUT_MS = 120_000;
+
+// Long enough for tsx to relay SIGTERM and the worker to close its inherited pipes; measured at 57ms on a
+// warm node worker. A worker that traps or cannot service the graceful signal must not stall the report.
+const MUTANT_WORKER_SHUTDOWN_GRACE_MS = 1_000;
 
 // How many escalated mutants one worker must carry before a second worker is worth its own full-suite
 // first run. Four is where the measured curve flattened on `geometry`; see `getEscalationWidth`.
@@ -188,6 +193,27 @@ export function readMutantVerdict(run: Readonly<MutantRun>): MutantOutcome['verd
   if (!run.applied) return 'unreached';
   if (run.timedOut) return 'killed';
   return run.passed ? 'survived' : 'killed';
+}
+
+/** Gracefully stops a warm worker, then forcibly stops its process group if its pipes remain open. */
+export function terminateMutantWorker(
+  child: Readonly<ChildProcess>,
+  forceAfterMs = MUTANT_WORKER_SHUTDOWN_GRACE_MS,
+  signal: (target: Readonly<ChildProcess>, value: NodeJS.Signals) => boolean = signalMutantWorker,
+): void {
+  let closed = false;
+  let forceKill: ReturnType<typeof setTimeout> | null = null;
+  child.once('close', () => {
+    closed = true;
+    if (forceKill !== null) clearTimeout(forceKill);
+  });
+
+  signal(child, 'SIGTERM');
+  if (closed) return;
+  forceKill = setTimeout(() => {
+    if (!closed) signal(child, 'SIGKILL');
+  }, forceAfterMs);
+  forceKill.unref();
 }
 
 function collectPackageFiles(packageName: string, accept: (name: string) => boolean): string[] {
@@ -735,6 +761,9 @@ interface MutantWorker {
 function startMutantWorker(packageRoot: string): MutantWorker {
   const child = spawn(process.execPath, [tsxBinary, mutantWorkerPath, packageRoot], {
     cwd: packageRoot,
+    // The tsx CLI is a wrapper around the real worker. A POSIX process group lets the escalation below
+    // reach both processes, including the real worker if the wrapper exits while its inherited pipes remain.
+    detached: process.platform !== 'win32',
     env: { ...process.env },
     stdio: ['pipe', 'pipe', 'pipe'],
   });
@@ -774,8 +803,9 @@ function startMutantWorker(packageRoot: string): MutantWorker {
 
   return {
     kill(): void {
+      if (dead) return;
       dead = true;
-      child.kill('SIGKILL');
+      terminateMutantWorker(child);
     },
     nextId(): number {
       counter += 1;
@@ -794,6 +824,18 @@ function startMutantWorker(packageRoot: string): MutantWorker {
       });
     },
   };
+}
+
+function signalMutantWorker(child: Readonly<ChildProcess>, signal: NodeJS.Signals): boolean {
+  if (process.platform !== 'win32' && child.pid !== undefined) {
+    try {
+      return process.kill(-child.pid, signal);
+    } catch {
+      // The group may already have closed between the close check and the signal. Fall through to Node's
+      // child handle, which returns false for a process that is already gone.
+    }
+  }
+  return child.kill(signal);
 }
 
 async function mapConcurrent<T, R>(items: readonly T[], limit: number, run: (item: T) => Promise<R>): Promise<R[]> {

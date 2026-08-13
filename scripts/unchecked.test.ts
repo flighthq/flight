@@ -1,3 +1,6 @@
+import type { ChildProcess } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+
 import { selectPackages } from './select';
 import {
   describeElapsed,
@@ -5,6 +8,7 @@ import {
   getEscalationWidth,
   getSiblingTestPath,
   readMutantVerdict,
+  terminateMutantWorker,
 } from './unchecked';
 
 describe('getEscalationWidth', () => {
@@ -114,5 +118,41 @@ describe('readMutantVerdict', () => {
     // with no marker is the harness hanging short of the subject and is evidence about nothing.
     expect(readMutantVerdict({ applied: true, output: '', passed: false, timedOut: true })).toBe('killed');
     expect(readMutantVerdict({ applied: false, output: '', passed: false, timedOut: true })).toBe('unreached');
+  });
+});
+
+describe('terminateMutantWorker', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('does not force a worker whose pipes close after SIGTERM', () => {
+    vi.useFakeTimers();
+    const child = new EventEmitter() as ChildProcess;
+    const signals: NodeJS.Signals[] = [];
+
+    terminateMutantWorker(child, 25, (_target, signal) => {
+      signals.push(signal);
+      return true;
+    });
+    expect(signals).toEqual(['SIGTERM']);
+
+    child.emit('close', 0, null);
+    vi.advanceTimersByTime(25);
+    expect(signals).toEqual(['SIGTERM']);
+  });
+
+  it('forces a worker that does not honor SIGTERM', () => {
+    vi.useFakeTimers();
+    const child = new EventEmitter() as ChildProcess;
+    const signals: NodeJS.Signals[] = [];
+
+    terminateMutantWorker(child, 25, (_target, signal) => {
+      signals.push(signal);
+      return true;
+    });
+    vi.advanceTimersByTime(24);
+    expect(signals).toEqual(['SIGTERM']);
+
+    vi.advanceTimersByTime(1);
+    expect(signals).toEqual(['SIGTERM', 'SIGKILL']);
   });
 });
