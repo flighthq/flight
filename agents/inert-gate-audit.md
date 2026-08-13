@@ -59,9 +59,14 @@ empty selection. These are real negative controls, not inferences from a clean r
   does not consume them in its failure predicate; the existing baseline failures mask that gap. Treat it
   as a report-shaped `:check` whose intended blocking contract is undecided, not as evidence of safety.
 
-## Re-measured at `092a14194` — the examples findings below are CLOSED
+## Re-measured at `092a14194` — the examples findings in the `2026-08-12` severity-ranked table are CLOSED
 
-Every examples-side finding in this document has since been fixed. The findings were real when
+Scope: this closes the EXAMPLES-side rows of the severity-ranked table dated `2026-08-12` (ranks 2 and 4),
+and nothing else. It does not speak for findings added to this document later or above — name the table
+and the date when re-scoping, never a position like "below", which silently re-points when someone
+inserts a section.
+
+Every examples-side finding in that table has since been fixed. The findings were real when
 recorded; the tree moved. Re-measured numbers, derived by running the tool's own accounting rather
 than by counting inputs:
 
