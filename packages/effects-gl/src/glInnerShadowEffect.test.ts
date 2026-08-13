@@ -77,7 +77,7 @@ describe('applyInnerShadowEffectToGl', () => {
 
     applyInnerShadowEffectToGl(createState(), source, dest, createPool(), {
       kind: 'InnerShadowEffect',
-      color: 0,
+      color: 0x000000ff,
       sourceMode: 'hide',
     });
 

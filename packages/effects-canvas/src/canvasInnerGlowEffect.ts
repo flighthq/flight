@@ -75,7 +75,7 @@ function applyInnerGlowEffectToCanvasWithPool(
   const glowPasses = Math.max(1, Math.floor(strength));
   const blur = Math.max(0, ((effect.blurX ?? 6) + (effect.blurY ?? 6)) / 2);
 
-  drawCanvasInvertedTintedAlphaMask(mask, source, effect.color ?? 0xffffff, effect.alpha ?? 1, Math.min(1, strength));
+  drawCanvasInvertedTintedAlphaMask(mask, source, effect.color ?? 0xffffffff, effect.alpha ?? 1, Math.min(1, strength));
   drawCanvasEffectPass(glow, mask, blur > 0 ? `blur(${blur}px)` : 'none');
   // Clip to the source alpha. Without this the blurred inversion still covers the whole exterior, which
   // would paint the glow outside the shape as well as inside it.

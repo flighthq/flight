@@ -73,7 +73,7 @@ export function applyBevelEffectToGl(
 
   // Blurred alpha field (neutral white tint, strength 1 — strength is the gradient
   // intensity applied per-pixel in the composite, not baked into the field).
-  applyGlEffectTintPass(state, src, tinted, 0xffffff, 1, 1);
+  applyGlEffectTintPass(state, src, tinted, 0xffffffff, 1, 1);
   applyGlEffectBoxBlur(state, tinted, blurred, blurTemp, {
     blurX: effect.blurX ?? 4,
     blurY: effect.blurY ?? 4,

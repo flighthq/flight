@@ -1,4 +1,3 @@
-import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import type { DropShadowEffect, OuterGlowEffect } from '@flighthq/types/contract';
 
 // Drop-shadow composite effect as a CSS `drop-shadow()` string (the same string the DOM backend emits).
@@ -14,10 +13,7 @@ export function computeDropShadowEffectCss(effect: Readonly<DropShadowEffect>): 
   const radians = (angle * Math.PI) / 180;
   const dx = Math.round(Math.cos(radians) * distance);
   const dy = Math.round(Math.sin(radians) * distance);
-  // Packed RGBA whose alpha multiplies the separate alpha field. The helper below still takes RGB
-  // because computeOuterGlowEffectCss shares it and OuterGlowEffect.color has not migrated.
-  const packed = effect.color ?? 0x000000ff;
-  return `drop-shadow(${dx}px ${dy}px ${blurX}px ${cssRgbaFromColor(getColorRgb(packed), (effect.alpha ?? 1) * getColorAlpha(packed))})`;
+  return `drop-shadow(${dx}px ${dy}px ${blurX}px ${cssRgbaFromColor(effect.color ?? 0x000000ff, effect.alpha ?? 1)})`;
 }
 
 // Outer-glow composite effect as a centered (no offset) CSS `drop-shadow()` string.
@@ -27,14 +23,14 @@ export function computeOuterGlowEffectCss(effect: Readonly<OuterGlowEffect>): st
   const blurX = effect.blurX ?? 6;
   const blurY = effect.blurY ?? 6;
   if (blurX !== blurY) return null;
-  return `drop-shadow(0px 0px ${blurX}px ${cssRgbaFromColor(effect.color ?? 0xff0000, effect.alpha ?? 1)})`;
+  return `drop-shadow(0px 0px ${blurX}px ${cssRgbaFromColor(effect.color ?? 0xff0000ff, effect.alpha ?? 1)})`;
 }
 
-// A 24-bit RGB integer plus a separate alpha to a CSS `rgba()` string (alpha fixed to 3 decimals).
-// Callers holding a packed RGBA color split it with getColorRgb/getColorAlpha before calling.
+// Flight's packed sRGB `0xRRGGBBAA` plus the effect-level alpha, to a CSS `rgba()` string (alpha fixed to
+// 3 decimals). The color's own alpha multiplies the effect's, so a caller never splits the value itself.
 function cssRgbaFromColor(color: number, alpha: number): string {
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
-  return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+  const r = (color >>> 24) & 0xff;
+  const g = (color >>> 16) & 0xff;
+  const b = (color >>> 8) & 0xff;
+  return `rgba(${r},${g},${b},${(alpha * ((color & 0xff) / 255)).toFixed(3)})`;
 }

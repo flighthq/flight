@@ -30,7 +30,7 @@ export function applyOuterGlowEffectToWgpu(
   const blurred = acquireWgpuRenderTarget(state, pool, descriptor);
   const blurTemp = acquireWgpuRenderTarget(state, pool, descriptor);
 
-  const color = effect.color ?? 0xff0000;
+  const color = effect.color ?? 0xff0000ff;
   const alpha = effect.alpha ?? 1;
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));

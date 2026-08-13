@@ -77,7 +77,7 @@ describe('applyInnerGlowEffectToWgpu', () => {
 
     applyInnerGlowEffectToWgpu(createState(), source, dest, createPool(), {
       kind: 'InnerGlowEffect',
-      color: 0xff0000,
+      color: 0xff0000ff,
       sourceMode: 'hide',
       strength: 2,
     });

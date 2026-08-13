@@ -58,7 +58,7 @@ registerGlDropShadowEffect(offscreenState);
 registerOuterGlowEffectPaddingResolver(offscreenState);
 registerDropShadowEffectPaddingResolver(offscreenState);
 
-const glow = createOuterGlowEffect({ alpha: 1, blurX: 8, blurY: 8, color: 0xff315f, strength: 1 });
+const glow = createOuterGlowEffect({ alpha: 1, blurX: 8, blurY: 8, color: 0xff315fff, strength: 1 });
 const shadow = createDropShadowEffect({
   alpha: 1,
   angle: 0,

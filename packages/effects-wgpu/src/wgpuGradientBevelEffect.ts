@@ -42,7 +42,7 @@ export function applyGradientBevelEffectToWgpu(
   const fs = getWgpuEffectPassState(state);
 
   // Build blur basis → s1
-  applyWgpuEffectTintPass(state, src, s0, 0xffffff, 1, Math.min(1, strength));
+  applyWgpuEffectTintPass(state, src, s0, 0xffffffff, 1, Math.min(1, strength));
   applyWgpuEffectBoxBlur(state, s0, s1, s2, {
     blurX: effect.blurX ?? 4,
     blurY: effect.blurY ?? 4,
