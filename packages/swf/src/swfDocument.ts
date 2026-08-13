@@ -2539,7 +2539,9 @@ function readSwfEmbeddedImageDefinition(body: SwfReader, state: SwfParseState, c
     if (compressedAlphaBytes.length > 0) {
       reportImportDiagnostic(
         state.diagnostics,
-        ImportDiagnosticSeverity.Drop,
+        // Skip: the alpha stream is recognized and deliberately not applied until the composition stage
+        // exists. A capability gap on a well-formed file, with no substitute written.
+        ImportDiagnosticSeverity.Skip,
         'swf.jpeg-alpha-stream',
         'readSwfEmbeddedImageDefinition',
         {

@@ -817,7 +817,7 @@ describe('awd2 diagnostic crumb coverage', () => {
     expect(crumb.detail?.firstPoseBlock).toBe(99);
   });
 
-  it('records block-length-past-end (Recover, parseAwd2SkeletonAnimations) when a block overruns the body', () => {
+  it('records block-length-past-end (Drop, parseAwd2SkeletonAnimations) when a block overruns the body', () => {
     const blockHeader = buildBlockHeader(1, AWD2_BLOCK_SKELETON, 9999);
     const diagnostics: ImportDiagnostic[] = [];
     parseAwd2SkeletonAnimations(concatBytes(buildAwdHeader(blockHeader.length), blockHeader), [], diagnostics);
@@ -826,7 +826,8 @@ describe('awd2 diagnostic crumb coverage', () => {
     expect(diagnostics.map((d) => d.kind)).toEqual(['awd2.block-length-past-end', 'awd2.no-skeleton-blocks']);
     const crumb = expectOneCrumb(diagnostics, 'awd2.block-length-past-end');
     expect(crumb.detail).toBeUndefined();
-    expect(crumb.severity).toBe('Recover');
+    // Drop: the parse abandons every remaining block and nothing stands in for them.
+    expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseAwd2SkeletonAnimations');
   });
 });
@@ -1231,7 +1232,7 @@ describe('createScene3DFromAwd2', () => {
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.block-length-past-end');
     expect(crumb.detail).toBeUndefined();
-    expect(crumb.severity).toBe('Recover');
+    expect(crumb.severity).toBe('Drop');
     expect(crumb.origin).toBe('parseAwd2');
   });
 
@@ -1458,7 +1459,7 @@ describe('createScene3DFromAwd2', () => {
     ).materials[0] as ShadedMaterial;
     expect(material.specular).toBe(0x808080ff);
     const crumb = expectOneCrumb(diagnostics, 'awd2.material-specular-strength-clamped');
-    expect(crumb.severity).toBe('Skip');
+    expect(crumb.severity).toBe('Recover');
     expect(crumb.origin).toBe('resolveAwdMaterial');
     expect(crumb.detail?.strength).toBe(2);
   });

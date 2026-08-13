@@ -244,7 +244,9 @@ function collectUnityDiagnostics(raw: Record<string, unknown>): ImportDiagnostic
   if (bursts.length > 1) {
     reportImportDiagnostic(
       diagnostics,
-      ImportDiagnosticSeverity.Drop,
+      // Skip: the count is a limit of OUR model, not a fault in the file. The extras are recognized,
+      // unsupported, and ignored with nothing standing in — a capability gap, not lost data.
+      ImportDiagnosticSeverity.Skip,
       'unity.extra-bursts-dropped',
       'collectUnityDiagnostics',
       {
