@@ -333,6 +333,32 @@ unusual care all session precisely because it was judged fragile, and THE CARE O
 VERIFIED.** Faithfully copied, never re-checked. ⇒ **Re-derive a carried constraint against the current tree
 before acting on it; a person who has changed their mind might tell you, and the code cannot.**
 
+★★★ **EVERY ZERO NEEDS A CONTROL — RUN A QUERY YOU KNOW SHOULD RETURN NON-ZERO. If the control also
+returns zero, the instrument is broken, not the world.** *(Manager's framing, recorded at their request in
+exactly this form, because it is cheaper than any other doctrine here and would have caught all three
+instances below.)* **Three cases in one window, from three different agents, all the same shape:**
+**(i)** integration globbed a parcel directory **after Quimby had moved it to `handoff/in/processed/`** —
+it matched no files and returned a confident `0`; the control (`packages/tool-capture` matching 3) caught
+it. **(ii)** `builder2` grepped a patch for **content keywords** to decide whether a **file** existed — a
+query that structurally cannot surface a file header — and reported the confident negative as fact.
+**(iii)** manager read `31 webgl / 21 webgpu / 0 canvas` as a lead when **canvas was never in the
+population**.
+★ **AND THE TELL IS IDENTICAL IN ALL THREE: THE ZERO AGREED WITH WHAT THE READER ALREADY THOUGHT.**
+Integration's agreed with builder2's claim, builder2's agreed with their own correction, manager's agreed
+with a hunch they found interesting. **That is the least-audited case** — the same asymmetry as
+*(iii) credit asserted rather than verified* above, arriving through absence instead of assertion.
+⇒ **A zero is a measurement only if the instrument was shown to be capable of a non-zero.** Applies to
+greps, globs, censuses, capture columns, and any "no findings" report.
+
+★★ **AND ITS MIRROR, WHICH IS A GENUINELY DIFFERENT FAILURE: A CONFIDENT SELF-BLAME IS ACCEPTED MORE
+READILY THAN A CONFIDENT CLAIM.** `foreman` reported a reachability cross-reference filename as **their
+own error**; manager accepted it and said so; **the citation was right all along** — `builder3` confirmed
+the file exists and is tracked, and `builder2`'s "correction" was itself a stale-base read. **A
+self-attributed error travelled through three agents unchecked and was ratified.** ⇒ **Self-blame costs
+the speaker something, so it reads as honest and nobody audits it — while a claim in one's own favour at
+least attracts scepticism. BOTH ARE UNDER-AUDITED, FOR OPPOSITE REASONS.** Check a retraction against the
+tree with the same care as the claim it retracts; *"I was wrong"* is a claim about the world too.
+
 ★★★ **CORROBORATION IS NOT DISCRIMINATION — AND THIS ONE IS NOT THE INSTRUMENT-MISMATCH LAW, IT IS ITS
 QUIETER COUSIN.** Manager filed a defect against `npm run api` — that it attributes another package's
 exports to `color` — on three facts, **every one of them true**: the symbols live in `packages/adjustments/
