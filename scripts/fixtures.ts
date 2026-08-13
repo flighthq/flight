@@ -38,7 +38,18 @@
 // 17 against 14 — in both the difference is exactly that pack's metadata entries. THE COUNT VARIES PER
 // PACK (11 and 3 here, since only some packs carry a `LICENSES/` directory), so a completeness check
 // built on `files` versus a recursive count of the tree cannot subtract a constant; it has to exclude
-// the metadata by name or it reports a phantom shortfall on every pack.
+// the metadata by name or it reports a phantom shortfall on every pack. (Superseded for the fetch itself
+// on 2026-08-12 — extraction is verified against the manifest's path set, where the question does not
+// arise. The naming rule still governs the conformance tree walk.)
+//
+// ★ WHAT A CORPUS IS AUTHORITY ON, since a large one invites the wrong conclusion. These packs answer
+// whether Flight reads REAL FILES correctly. They do not answer whether Flight handles the FORMAT: a
+// corpus contains what its authors happened to author, so its coverage of any particular branch is an
+// accident of what artists made, not a statement about the input space. A branch no fixture reaches is
+// untested, not tested-and-fine — and the converse holds too, which is why this repository keeps
+// hand-built inputs alongside: truncation, malformed shape and impossible counts are exactly what no
+// exporter emits and therefore what no corpus can supply. The two instruments are complementary, and
+// neither one's silence is evidence.
 //
 // ★ AND EXCLUDING THEM BY NAME IS THE ONLY THING ANY LATER PHASE EVER DOES WITH THOSE FILES. The two
 // facts belong together because the count delta is what sends a reader looking at them in the first
