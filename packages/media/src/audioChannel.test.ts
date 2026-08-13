@@ -21,19 +21,30 @@ class MockAudioBufferSourceNode {
   buffer: AudioBuffer | null = null;
   onended: (() => void) | null = null;
   playbackRate = { value: 1 };
+  starts: Array<{ duration?: number; offset: number; when: number }> = [];
 
   connect(): void {}
-  start(): void {}
+  start(when = 0, offset = 0, duration?: number): void {
+    if (this.starts.length > 0)
+      throw new DOMException('AudioBufferSourceNode cannot be started more than once', 'InvalidStateError');
+    if (when < 0 || offset < 0 || (duration !== undefined && duration < 0)) {
+      throw new RangeError('AudioBufferSourceNode start times must be non-negative');
+    }
+    this.starts.push({ duration, offset, when });
+  }
   stop(): void {}
 }
 
 class MockAudioContext {
   currentTime = 0;
   destination = {};
+  sources: MockAudioBufferSourceNode[] = [];
   state = 'running';
 
   createBufferSource(): AudioBufferSourceNode {
-    return new MockAudioBufferSourceNode() as unknown as AudioBufferSourceNode;
+    const source = new MockAudioBufferSourceNode();
+    this.sources.push(source);
+    return source as unknown as AudioBufferSourceNode;
   }
 
   createGain(): GainNode {
@@ -49,7 +60,8 @@ class MockAudioContext {
   }
 }
 
-const ctx = new MockAudioContext() as unknown as AudioContext;
+const mockContext = new MockAudioContext();
+const ctx = mockContext as unknown as AudioContext;
 
 function createMockAudioBuffer(): AudioBuffer {
   return { duration: 1 } as AudioBuffer;
@@ -147,6 +159,15 @@ describe('pauseAudioChannel', () => {
 });
 
 describe('playAudioResource', () => {
+  it('converts the millisecond current time to the source offset in seconds', () => {
+    const sourceIndex = mockContext.sources.length;
+
+    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()), { currentTime: 250 });
+
+    expect(channel).not.toBeNull();
+    expect(mockContext.sources[sourceIndex].starts).toEqual([{ duration: undefined, offset: 0.25, when: 0 }]);
+  });
+
   it('returns null when buffer is null', () => {
     const source = createAudioResource();
     expect(playAudioResource(ctx, source)).toBeNull();
