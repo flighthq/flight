@@ -126,6 +126,29 @@ describe('testAabbObbCollision', () => {
     expect(out.depth).toBeCloseTo(1);
   });
 
+  it.each([
+    ['a zero half-width', { x: 2, y: 5, halfW: 0, halfH: 3, rotation: 0 }],
+    ['a zero half-height', { x: 6, y: 5, halfW: 3, halfH: 0, rotation: 0 }],
+    ['a negative half-width', { x: 6, y: 5, halfW: -3, halfH: 3, rotation: 0 }],
+    ['a non-finite half-width', { x: 6, y: 5, halfW: Number.NaN, halfH: 3, rotation: 0 }],
+    ['a non-finite half-height', { x: 6, y: 5, halfW: 3, halfH: Number.POSITIVE_INFINITY, rotation: 0 }],
+    ['a non-finite rotation', { x: 6, y: 5, halfW: 3, halfH: 3, rotation: Number.NaN }],
+    ['a non-finite center', { x: Number.NaN, y: 5, halfW: 3, halfH: 3, rotation: 0 }],
+  ])('rejects an OBB with %s', (_case, b) => {
+    // The AABB path has had a zero-extent rejection test since it was written; the OBB path never got
+    // the matching one, so every field check in isValidObb was unpinned — including the two `> 0`
+    // extent tests, which a `>= 0` would have satisfied just as well. Walking the SHAPE's fields rather
+    // than the guards that happen to exist is what reaches the ones nobody thought to cover.
+    // Each degenerate box is placed where it WOULD overlap the AABB if validation wrongly accepted it:
+    // a zero-extent box parked outside the AABB returns false either way and pins nothing.
+    const out = createCollisionManifold();
+    out.overlapping = true;
+    out.normalX = 1;
+    out.depth = 4;
+    expect(testAabbObbCollision({ minX: 0, minY: 0, maxX: 4, maxY: 10 }, b as CollisionObb, out)).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+  });
+
   it('overlaps an axis-aligned OBB and pushes the box off it', () => {
     const out = createCollisionManifold();
     const a: CollisionAabb = { minX: 0, minY: 0, maxX: 4, maxY: 10 };
