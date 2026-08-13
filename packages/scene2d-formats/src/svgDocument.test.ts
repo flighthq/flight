@@ -16,23 +16,21 @@ import { createScene2DFromSvgDocument } from './svgDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
 describe('createScene2DFromSvgDocument', () => {
-  // objectBoundingBox has TWO consumers in this importer and they used to disagree about an empty box: the
-  // clip path refused it loudly, the gradient applied a degenerate matrix in silence. Whether the correct
-  // rendering is "ignore the effect" or "render nothing" is a spec question that is still open — this pins
-  // only that the situation is REPORTED, which commits to neither answer, where silence committed to one.
-  it('reports an objectBoundingBox gradient on a zero-area shape instead of scaling by it silently', () => {
-    const zeroArea: ImportDiagnostic[] = [];
+  // objectBoundingBox units on geometry with no width or height mean the effect is IGNORED — the same rule
+  // the clip path already follows, defined once for every consumer of these units. So a zero-area shape
+  // paints no gradient and says NOTHING: this is correct rendering of a correct file, not a failure.
+  //
+  // The second assertion is the one worth having. "Ignored" and "unresolved" both end with no gradient
+  // painted, and the natural implementation — dropping the resolved gradient — routes conformant input into
+  // `svg.unresolved-fill-gradient`, a Drop that blames the file for something the format prescribes. That is
+  // the mistake this test exists to catch, and it caught it while this was being written.
+  it('ignores an objectBoundingBox gradient on a zero-area shape without calling it unresolved', () => {
     const gradient = `<defs><linearGradient id="g"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>`;
+    const diagnostics: ImportDiagnostic[] = [];
 
-    createScene2DFromSvgDocument(`<svg>${gradient}<rect width="0" height="10" fill="url(#g)"/></svg>`, zeroArea);
-    expect(zeroArea.map((diagnostic) => diagnostic.kind)).toContain('svg.object-bounding-box-gradient-without-bounds');
+    createScene2DFromSvgDocument(`<svg>${gradient}<rect width="0" height="10" fill="url(#g)"/></svg>`, diagnostics);
 
-    // ...and stays quiet when the box is real, so the crumb carries information rather than firing always.
-    const measurable: ImportDiagnostic[] = [];
-    createScene2DFromSvgDocument(`<svg>${gradient}<rect width="10" height="10" fill="url(#g)"/></svg>`, measurable);
-    expect(measurable.map((diagnostic) => diagnostic.kind)).not.toContain(
-      'svg.object-bounding-box-gradient-without-bounds',
-    );
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual([]);
   });
 
   // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
@@ -117,12 +115,12 @@ describe('createScene2DFromSvgDocument', () => {
     expect(getNodeChildAt(root, 1)?.clip?.rect).toMatchObject({ height: 100, width: 100, x: 0, y: 0 });
     expect(getNodeChildAt(root, 2)?.clip?.rect).toMatchObject({ height: 100, width: 100, x: 0, y: 0 });
     expect(getNodeChildAt(root, 3)?.clip).toBeNull();
-    // `reason` separates OUR unimplemented measurement from THEIR empty geometry. Here it is ours: this
-    // importer performs no text layout, so the <text> element's bounding box is unknown rather than empty,
-    // and a caller reading only "your clip was dropped" cannot tell which of the two happened.
+    // Reported because the bounds are UNMEASURABLE — this importer performs no text layout, so the format
+    // defines a box here that we cannot compute. A zero-area target reaches the same code path and is
+    // deliberately silent instead, because there the dropped clip is the correct rendering.
     expect(diagnostics).toContainEqual({
-      detail: { id: 'half', reason: 'unmeasurable-text' },
-      kind: 'svg.object-bounding-box-clip-without-bounds',
+      detail: { id: 'half' },
+      kind: 'svg.object-bounding-box-clip-unmeasurable-bounds',
       origin: 'applySvgElementClip',
       severity: 'Skip',
     });
