@@ -15,10 +15,13 @@ export function factorial(n: number): number {
 /** Return the greatest common divisor of `a` and `b` (Euclidean algorithm).
  *
  *  Operates on the absolute values of the inputs, so negative arguments are
- *  accepted. Throws when both `a` and `b` are `0` (programmer error — the GCD
- *  of zero and zero is undefined).
+ *  accepted. Throws for non-finite inputs or when both `a` and `b` are `0`
+ *  (programmer errors — the GCD of zero and zero is undefined).
  */
 export function gcd(a: number, b: number): number {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    throw new RangeError('gcd: arguments must be finite');
+  }
   a = Math.abs(Math.trunc(a));
   b = Math.abs(Math.trunc(b));
   if (a === 0 && b === 0) throw new RangeError('gcd: both arguments must not be 0');

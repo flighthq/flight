@@ -2,7 +2,7 @@ import type { RandomSource } from '@flighthq/types/contract';
 
 /** Return a random boolean with the given `probability` of being `true`.
  *
- *  `probability` is clamped to `[0, 1]`; `0.5` is a fair coin flip.
+ *  Values outside `[0, 1]` behave like the nearest endpoint; `0.5` is a fair coin flip.
  */
 export function randomBool(random: RandomSource, probability: number = 0.5): boolean {
   return random() < probability;
@@ -10,9 +10,8 @@ export function randomBool(random: RandomSource, probability: number = 0.5): boo
 
 /** Return a random integer in the inclusive range `[min, max]`.
  *
- *  Both bounds must be integers; the function passes them through `Math.floor`
- *  so non-integer bounds are truncated toward zero rather than throwing. Throws
- *  if `min > max`.
+ *  Bounds are passed through `Math.floor`, so fractional bounds are rounded down
+ *  rather than rejected. Throws if the resulting `min` is greater than `max`.
  */
 export function randomInt(random: RandomSource, min: number, max: number): number {
   const lo = Math.floor(min);

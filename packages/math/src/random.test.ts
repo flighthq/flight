@@ -24,6 +24,13 @@ describe('createRandomSource', () => {
     expect(differs).toBe(true);
   });
 
+  it('pins the mulberry32 transform with a known-answer sequence', () => {
+    const rng = createRandomSource(0xc0ffee);
+    expect([rng(), rng(), rng(), rng()]).toEqual([
+      0.021141508361324668, 0.6661099966149777, 0.7799714196007699, 0.7395844468846917,
+    ]);
+  });
+
   it('tolerates non-finite seeds without producing NaN', () => {
     const rng = createRandomSource(NaN);
     const v = rng();

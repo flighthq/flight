@@ -14,7 +14,7 @@
  */
 export const CIRCLE_KAPPA = 0.5522847498307936;
 
-/** Smallest positive number distinguishable from zero in floating-point comparisons. */
+/** Default absolute tolerance for approximate floating-point comparisons. */
 export const EPSILON = 1e-6;
 
 /** Full circle in radians (2π). Prefer `TAU` over `2 * Math.PI` for clarity. */

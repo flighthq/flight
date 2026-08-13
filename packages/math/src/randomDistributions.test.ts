@@ -16,6 +16,14 @@ import {
 
 const rng = () => createRandomSource(0xabcdef);
 
+function sequenceRandom(...values: number[]): () => number {
+  let index = 0;
+  return () => {
+    if (index >= values.length) throw new Error('sequenceRandom exhausted');
+    return values[index++];
+  };
+}
+
 describe('pick', () => {
   it('returns an element from the array', () => {
     const items = [1, 2, 3, 4, 5];
@@ -30,6 +38,9 @@ describe('pick', () => {
   it('always returns the only element in a single-item array', () => {
     const random = rng();
     for (let i = 0; i < 20; i++) expect(pick(random, [42])).toBe(42);
+  });
+  it('selects the bucket named by an exact deterministic sample', () => {
+    expect(pick(() => 0.75, ['a', 'b', 'c', 'd'])).toBe('d');
   });
   it('is deterministic for the same seed', () => {
     const items = ['a', 'b', 'c', 'd'];
@@ -67,6 +78,10 @@ describe('randomExponential', () => {
     expect(() => randomExponential(rng(), 0)).toThrow(RangeError);
     expect(() => randomExponential(rng(), -1)).toThrow(RangeError);
   });
+  it('rejects non-finite rates', () => {
+    expect(() => randomExponential(rng(), NaN)).toThrow(RangeError);
+    expect(() => randomExponential(rng(), Infinity)).toThrow(RangeError);
+  });
   it('is deterministic for the same seed', () => {
     const a = rng();
     const b = rng();
@@ -89,6 +104,10 @@ describe('randomGaussian', () => {
   it('substitutes epsilon when the first random sample is zero', () => {
     const samples = [0, 0.25];
     expect(randomGaussian(() => samples.shift()!)).toBeCloseTo(0, 10);
+  });
+  it('matches a deterministic Box–Muller vector with mean and scale', () => {
+    const standard = Math.sqrt(-2 * Math.log(0.5));
+    expect(randomGaussian(sequenceRandom(0.5, 0), 10, 2)).toBeCloseTo(10 + standard * 2, 12);
   });
   it('is deterministic for the same seed', () => {
     const a = rng();
@@ -120,6 +139,10 @@ describe('randomGaussianPair', () => {
     expect(z0).toBeCloseTo(0, 10);
     expect(z1).toBeCloseTo(Math.sqrt(-2 * Math.log(Number.EPSILON)), 10);
   });
+  it('matches both values of a deterministic Box–Muller pair', () => {
+    const component = Math.sqrt(-2 * Math.log(0.5)) * Math.SQRT1_2;
+    expect(randomGaussianPair(sequenceRandom(0.5, 0.125), 3, 2)).toEqual([3 + component * 2, 3 + component * 2]);
+  });
 });
 
 describe('randomInsideUnitDisc', () => {
@@ -150,6 +173,11 @@ describe('randomInsideUnitDisc', () => {
       expect(outA.x).toBe(outB.x);
       expect(outA.y).toBe(outB.y);
     }
+  });
+  it('accepts and preserves a deterministic boundary point', () => {
+    const out = { x: 0, y: 0 };
+    randomInsideUnitDisc(sequenceRandom(1, 0.5, 0.5, 0.5), out);
+    expect(out).toEqual({ x: 1, y: 0 });
   });
 });
 
@@ -183,6 +211,11 @@ describe('randomInsideUnitSphere', () => {
       expect(outA.z).toBe(outB.z);
     }
   });
+  it('accepts and preserves a deterministic boundary point', () => {
+    const out = { x: 0, y: 0, z: 0 };
+    randomInsideUnitSphere(sequenceRandom(1, 0.5, 0.5, 0.5, 0.5, 0.5), out);
+    expect(out).toEqual({ x: 1, y: 0, z: 0 });
+  });
 });
 
 describe('randomOnUnitCircle', () => {
@@ -212,6 +245,12 @@ describe('randomOnUnitCircle', () => {
       expect(outA.x).toBe(outB.x);
       expect(outA.y).toBe(outB.y);
     }
+  });
+  it('maps a quarter-turn sample to the top of the circle', () => {
+    const out = { x: 0, y: 0 };
+    randomOnUnitCircle(() => 0.25, out);
+    expect(out.x).toBeCloseTo(0, 12);
+    expect(out.y).toBeCloseTo(1, 12);
   });
 });
 
@@ -246,6 +285,18 @@ describe('randomOnUnitSphere', () => {
       expect(outA.z).toBe(outB.z);
     }
   });
+  it('projects a deterministic disc sample onto the sphere', () => {
+    const out = { x: 0, y: 0, z: 0 };
+    randomOnUnitSphere(sequenceRandom(0.75, 0.5), out);
+    expect(out.x).toBeCloseTo(Math.sqrt(3) / 2, 12);
+    expect(out.y).toBe(0);
+    expect(out.z).toBe(0.5);
+  });
+  it('rejects a disc-boundary sample before projecting', () => {
+    const out = { x: 0, y: 0, z: 0 };
+    randomOnUnitSphere(sequenceRandom(1, 0.5, 0.5, 0.5), out);
+    expect(out).toEqual({ x: 0, y: 0, z: 1 });
+  });
 });
 
 describe('randomPoisson', () => {
@@ -274,6 +325,13 @@ describe('randomPoisson', () => {
   it('throws for lambda <= 0', () => {
     expect(() => randomPoisson(rng(), 0)).toThrow(RangeError);
     expect(() => randomPoisson(rng(), -1)).toThrow(RangeError);
+  });
+  it('rejects non-finite means', () => {
+    expect(() => randomPoisson(rng(), NaN)).toThrow(RangeError);
+    expect(() => randomPoisson(rng(), Infinity)).toThrow(RangeError);
+  });
+  it('stops when the product exactly reaches the limit', () => {
+    expect(randomPoisson(sequenceRandom(0.5, 0.5), Math.log(2))).toBe(0);
   });
   it('is deterministic for the same seed', () => {
     const a = rng();
@@ -306,6 +364,9 @@ describe('randomWeighted', () => {
   });
   it('falls back to the final bucket for an out-of-range random source', () => {
     expect(randomWeighted(() => 1.1, [1, 2, 7])).toBe(2);
+  });
+  it('selects the earlier bucket when the sample lands exactly on its boundary', () => {
+    expect(randomWeighted(() => 1 / 3, [1, 2])).toBe(0);
   });
   it('is deterministic for the same seed', () => {
     const a = rng();
@@ -360,5 +421,16 @@ describe('shuffleInPlace', () => {
     shuffleInPlace(rng(), a);
     shuffleInPlace(rng(), b);
     expect(a).toEqual(b);
+  });
+  it('pins the swaps and consumes exactly one sample per Fisher–Yates step', () => {
+    const values = [0.75, 0.5, 0.25];
+    let calls = 0;
+    const items = ['a', 'b', 'c', 'd'];
+    shuffleInPlace(() => {
+      calls++;
+      return values[calls - 1];
+    }, items);
+    expect(items).toEqual(['c', 'a', 'b', 'd']);
+    expect(calls).toBe(3);
   });
 });
