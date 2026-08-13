@@ -1370,6 +1370,21 @@ describe('importMd5Mesh', () => {
 });
 
 describe('parseMd5Mesh', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a walk that desynchronised and
+  // still left the asserted fields looking plausible. Matched by pattern, not by an enumerated list, so a
+  // truncation kind added later is covered without anyone remembering this test exists.
+  it('raises no truncation or unreadable diagnostic for a well-formed file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parseMd5Mesh(SINGLE_TRIANGLE, diagnostics);
+
+    const complaints = diagnostics
+      .map((diagnostic) => diagnostic.kind)
+      .filter((kind) => /truncated|unreadable|malformed|unparsed|overrun|corrupt/.test(kind));
+    expect(complaints, `a good md5 file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('returns a format-neutral document: a skeleton group + joint nodes, a skinned mesh node, scene roots', () => {
     const doc = parseMd5Mesh(SINGLE_TRIANGLE);
 
