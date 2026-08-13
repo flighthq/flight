@@ -1,6 +1,6 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import { ISOLATED_MOCK_TEST_FILES } from './scripts/mockTiers.js';
+import { REGISTRY_ISOLATED_TEST_FILES } from './scripts/registryIsolatedTests.js';
 import baseConfig from './vitest.config.base.js';
 
 // One master config for the fast run: unit tests share a single jsdom environment per
@@ -20,7 +20,8 @@ import baseConfig from './vitest.config.base.js';
 // The fast tier is every file that does NOT mock a module: they share the registry, and nothing they
 // do can leak, so they get the ~15x speedup for free.
 //
-// The isolated tier is the files that DO mock modules (`vitest.tiers.ts`). Under a shared registry a
+// The isolated tier is the files that CANNOT SHARE A MODULE REGISTRY (`scripts/registryIsolatedTests.ts`),
+// each carrying the reason it needs its own. Under a shared registry a
 // top-level `vi.mock` registers for the whole worker, so those files previously hand-rolled per-file
 // hermeticity with `vi.resetModules()` plus a dynamic re-import inside `beforeAll` — which rebuilds the
 // subject's whole transitive graph on every run. That is unbounded work inside a fixed hook deadline:
@@ -39,11 +40,6 @@ const TEST_RUN_COVERAGE_FILE = 'scripts/testRunCoverage.test.ts';
 // package decides whether a capture drew anything, so a defect here is the one defect nothing else
 // catches. It is listed here so the other projects can exclude it by name in one place.
 const TOOL_CAPTURE_TEST_FILES = ['packages/tool-capture/src/**/*.test.ts'];
-
-// This file asserts the empty pre-state of a process-global registry. Route it through the existing
-// isolate:true project so that assertion owns its module registry; the shared pool would make it a
-// statement about whether another shape test happened to register commands first.
-const ISOLATED_STATEFUL_TEST_FILES = ['packages/shape/src/registerDefaultShapeBoundsCommands.test.ts'];
 
 // The browser contracts, split out because this list has two OPPOSITE jobs and only one of them may
 // narrow. `TOOL_CAPTURE_TEST_FILES` is the EXCLUDE for the three parallel projects and must stay the
@@ -102,8 +98,7 @@ export default mergeConfig(
             exclude: [
               ...COMMON_EXCLUDE,
               ...TOOL_CAPTURE_TEST_FILES,
-              ...ISOLATED_MOCK_TEST_FILES,
-              ...ISOLATED_STATEFUL_TEST_FILES,
+              ...REGISTRY_ISOLATED_TEST_FILES,
               TEST_RUN_COVERAGE_FILE,
             ],
             sequence: { groupOrder: 0 },
@@ -114,7 +109,7 @@ export default mergeConfig(
           test: {
             name: 'isolated',
             isolate: true,
-            include: [...ISOLATED_MOCK_TEST_FILES, ...ISOLATED_STATEFUL_TEST_FILES],
+            include: [...REGISTRY_ISOLATED_TEST_FILES],
             exclude: [...COMMON_EXCLUDE, ...TOOL_CAPTURE_TEST_FILES],
             sequence: { groupOrder: 0 },
           },
