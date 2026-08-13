@@ -40,6 +40,49 @@ describe('parseSpineSkeletonBinary', () => {
   // input threw `RangeError: Invalid array length` out of `Array.push` after ~4.2 SECONDS and several
   // gigabytes, from 327 bytes. The parser is documented to treat third-party bytes as untrusted and to
   // return sentinels rather than raise, so a throw here is a contract violation, not merely slow.
+  // THE WHOLE COUNT-GUARD FAMILY IN ONE SWEEP, and it is only affordable because the guards exist. Every
+  // count in this format is a varint the file supplies and a loop bound the parser obeys, and there are 36
+  // such loops; a case per loop would pin the loops that EXIST and miss the next one added. So instead:
+  // splice an inflated five-byte varint over each byte position in turn and require the parse to come back.
+  // A position that lands on a count inflates it; a position that lands elsewhere is garbage the parser must
+  // survive anyway. Neither needs to know where the counts are, which is the point.
+  //
+  // MEASURED BOTH WAYS, and the difference is the reason this test can exist at all: before the bounds
+  // checks landed, this sweep did not finish — one position allocated until it threw and another never
+  // returned. With them, all 359 positions complete in ~47ms, worst case 3ms. So it is simultaneously a
+  // regression net for the denial-of-service class and cheap enough to keep. If a guard is ever removed,
+  // this file stops finishing rather than reporting a failed assertion.
+  it('survives an inflated count spliced at every byte position of a valid file', () => {
+    const base = buildSpineBinary({ animations: true, bezier: true, ikConstraints: 1, weightedMesh: true });
+
+    for (let at = 0; at < base.length; at++) {
+      const spliced = Uint8Array.from([
+        ...base.subarray(0, at),
+        0xff,
+        0xff,
+        0xff,
+        0xff,
+        0x07, // varint 0x7fffffff, in place of whatever byte was here
+        ...base.subarray(at + 1),
+      ]);
+      expect(() => {
+        parseSpineSkeletonBinary(spliced);
+      }, `inflated varint spliced at byte ${at} of ${base.length}`).not.toThrow();
+    }
+  });
+
+  // ★ THE COHERENCE HALF OF THE SWEEP ABOVE IS DELIBERATELY ABSENT, AND THIS NAMES WHY RATHER THAN
+  // QUIETLY DROPPING IT. Asserting that a returned skeleton's bone parentIndex is in range FAILS TODAY:
+  // 7 of the 348 splice positions that parse successfully return a skeleton `validateSkeleton2D` rejects,
+  // every one of them for `bone N parentIndex N is not < its own index`. The importer reads a bone's
+  // parent as a raw varint (`spineBinaryParse.ts` in readSpineBinaryBones) and never checks it against
+  // the bones read so far, so a corrupt file yields a structurally invalid skeleton — and posing one
+  // produces NaN world matrices, silently, for any caller who does not run the validator.
+  //
+  // That is a reported defect awaiting a convention ruling, not a weak spot in this test. The assertion
+  // returns here when the importer bounds the index; leaving it in now would mean landing a red test, and
+  // deleting it without saying so would hide a measured defect behind a green one.
+
   // The two ALLOCATION-shaped counts, which the per-loop overrun guards cannot help with because the array
   // is sized from the file's number before the first read. Measured before the bounds check existed, on a
   // 304-byte valid file with one varint rewritten: the triangle count RETURNED AFTER 59 SECONDS and the
