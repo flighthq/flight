@@ -139,6 +139,18 @@ describe('computeScene2DFitTransform', () => {
     expect(m.d).toBe(1);
   });
 
+  it('sets identity when only the content width is zero', () => {
+    const m = createMatrix(2, 3, 4, 5, 6, 7);
+    computeScene2DFitTransform(m, fit({ root: makeNodeWithBounds(0, 50), scaleMode: 'exactfit' }), 800, 600);
+    expect(m).toMatchObject({ a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 });
+  });
+
+  it('sets identity when only the content height is zero', () => {
+    const m = createMatrix(2, 3, 4, 5, 6, 7);
+    computeScene2DFitTransform(m, fit({ root: makeNodeWithBounds(100, 0), scaleMode: 'exactfit' }), 800, 600);
+    expect(m).toMatchObject({ a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 });
+  });
+
   it('noscale with topleft: identity scale at origin', () => {
     const m = createMatrix();
     computeScene2DFitTransform(
@@ -240,6 +252,32 @@ describe('computeScene2DFitTransform', () => {
 
     expect(m.a).toBe(2);
     expect(m.d).toBe(2);
+    expect(m.tx).toBe(-20);
+    expect(m.ty).toBe(40);
+  });
+
+  it('uses scaled width before subtracting a nonzero origin on a centered horizontal axis', () => {
+    const m = createMatrix();
+    computeScene2DFitTransform(
+      m,
+      fit({ align: 'top', root: makeNodeWithBounds(100, 50, 10, -20), scaleMode: 'exactfit' }),
+      200,
+      100,
+    );
+
+    expect(m.tx).toBe(-20);
+    expect(m.ty).toBe(40);
+  });
+
+  it('uses scaled height before subtracting a nonzero origin on a centered vertical axis', () => {
+    const m = createMatrix();
+    computeScene2DFitTransform(
+      m,
+      fit({ align: 'left', root: makeNodeWithBounds(100, 50, 10, -20), scaleMode: 'exactfit' }),
+      200,
+      100,
+    );
+
     expect(m.tx).toBe(-20);
     expect(m.ty).toBe(40);
   });
