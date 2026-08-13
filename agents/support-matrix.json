@@ -4689,6 +4689,31 @@
               "realization": true
             }
           }
+        },
+        {
+          "scene": "svg-use-symbol",
+          "backends": {
+            "canvas": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
         }
       ]
     },
