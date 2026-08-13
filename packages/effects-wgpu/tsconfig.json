@@ -13,6 +13,9 @@
     { "path": "../color" },
     { "path": "../effects" },
     { "path": "../geometry" },
+    {
+      "path": "../log"
+    },
     { "path": "../render-wgpu" },
     { "path": "../registry" },
     { "path": "../types" }

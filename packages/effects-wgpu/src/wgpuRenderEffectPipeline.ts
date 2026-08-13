@@ -23,6 +23,7 @@ import type {
   RenderEffectPipelineOptions,
   RenderTargetColorSpace,
   WgpuRenderEffectPipeline,
+  WgpuRenderEffectPipelineSkipGuard,
   WgpuRenderState,
   WgpuRenderTarget,
 } from '@flighthq/types/contract';
@@ -149,7 +150,10 @@ export function endWgpuRenderEffectPipeline(
       continue;
     }
     const runner = getWgpuRenderEffectRunner(state, operation.kind);
-    if (runner === null) continue;
+    if (runner === null) {
+      reportWgpuRenderEffectPipelineSkip(state, operation.kind);
+      continue;
+    }
     flushAdjustments();
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
@@ -179,6 +183,17 @@ export function endWgpuRenderEffectPipeline(
 
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame, or null to
 // clear it. The Wgpu mirror of setGlRenderEffectVelocityTexture.
+// The diagnostics seam. Core stays message-free; enableWgpuRenderEffectGuards installs the reporter that
+// turns a dropped effect into a caller-facing warning. Mirrors setWgpuRenderEffectApplicationGuard, which
+// covers the render-texture path — this one covers the pipeline path, where the drop is a bare `continue`.
+export function setWgpuRenderEffectPipelineSkipGuard(
+  state: WgpuRenderState,
+  guard: WgpuRenderEffectPipelineSkipGuard | null,
+): void {
+  if (guard === null) _skipGuards.delete(state);
+  else _skipGuards.set(state, guard);
+}
+
 export function setWgpuRenderEffectVelocityTexture(
   pipeline: WgpuRenderEffectPipeline,
   texture: GPUTexture | null,
@@ -239,3 +254,9 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   let linear = textureSampleLevel(tex, smp, uv, 0.0);
   return vec4f(linearToSrgb(linear.rgb), linear.a);
 }`;
+
+function reportWgpuRenderEffectPipelineSkip(state: WgpuRenderState, kind: string): void {
+  _skipGuards.get(state)?.(state, kind);
+}
+
+const _skipGuards = new WeakMap<WgpuRenderState, WgpuRenderEffectPipelineSkipGuard>();
