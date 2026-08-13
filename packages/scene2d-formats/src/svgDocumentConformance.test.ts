@@ -549,9 +549,14 @@ function getShapeFillColor(shape: Shape): number | null {
   return index === -1 ? null : (shape.data.commands[index + 2] as number);
 }
 
+// Asserts the sentinel rather than reading `bounds.x` regardless. `getShapeBounds` returns false when it
+// could not compute a complete box, and a freshly created rectangle is already x=0 — so discarding the
+// return makes "bounds were never registered" and "bounds start at x=0" the SAME observation. That is
+// what once disguised a missing bounds registration as an ordinary arithmetic mismatch (expected 13, got
+// 10), sending the reader after the wrong quantity entirely.
 function getShapeLocalX(shape: Shape): number {
   const bounds = createRectangle();
-  getShapeBounds(bounds, shape);
+  expect(getShapeBounds(bounds, shape), 'shape bounds could not be computed').toBe(true);
   return bounds.x;
 }
 
