@@ -6,7 +6,8 @@
 // individually, and a separate `--update` acceptance path guarded so a scoped run can never accept away
 // a whole-repo pin. The two are separate mechanisms over separate subjects — do not merge them — but the
 // shape is the same on purpose, so that reading one teaches you the other. The sibling mechanism is the
-// registrar manifest — `scripts/reachability.ts --update-registrars` over `scripts/reachability-registrars.json`
+// registrar manifest — `scripts/reachability-registrar-manifest.ts` (with its own colocated test) over
+// `scripts/reachability-registrars.json`, accepted through `scripts/reachability.ts --update-registrars`
 // — built to the same four rules over `packageName/registrar` identities, and it cites this one by name.
 //
 // WHY A MANIFEST AND NOT A COUNT. `isCaptureRegressionCoverageFailure` fails only when a run compared
