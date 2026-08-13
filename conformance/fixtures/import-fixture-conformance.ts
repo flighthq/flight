@@ -112,7 +112,7 @@ export async function runImportFixtureConformance(
   return {
     fixtureRelease: FIXTURE_RELEASE_TAG,
     results,
-    schemaVersion: 3,
+    schemaVersion: 4,
     score,
     selection: {
       adapters: adapters.map((adapter) => adapter.id),
@@ -142,7 +142,7 @@ export async function runImportFixtureConformance(
 export interface FixtureImportConformanceReport {
   fixtureRelease: string;
   results: readonly Readonly<ConformanceFixtureResult>[];
-  schemaVersion: 3;
+  schemaVersion: 4;
   score: Readonly<ConformanceFixtureScore>;
   selection: {
     adapters: readonly string[];
@@ -192,7 +192,11 @@ function listInfrastructure(): void {
   const adapters = createImportFixtureAdapters();
   const trees = discoverConformanceFixtureTrees(resolveFixtureCacheDirectory());
   process.stdout.write(`Import fixture adapters (${adapters.length}):\n`);
-  for (const adapter of adapters) process.stdout.write(`  ${adapter.id} — ${adapter.implementation.state}\n`);
+  for (const adapter of adapters) {
+    process.stdout.write(
+      `  ${adapter.id} — ${adapter.implementation.state}; ${adapter.features.length} declared feature expectation(s)\n`,
+    );
+  }
   process.stdout.write(`Verified fixture trees (${trees.length}):\n`);
   for (const tree of trees) {
     process.stdout.write(
@@ -206,13 +210,20 @@ function listInfrastructure(): void {
 function formatReport(report: Readonly<FixtureImportConformanceReport>, output: string): string {
   const score = report.score;
   const lines = [
-    `Fixture import conformance score — release ${report.fixtureRelease}`,
-    `Selection coverage: ${formatFractionScore(score.selectionCoverage)}`,
-    `Implementation coverage: ${formatFractionScore(score.implementationCoverage)}`,
-    `Execution coverage: ${formatFractionScore(score.executionCoverage)}`,
-    `Accepted-import evidence: ${formatFractionScore(score.acceptedImport)} (semantic correctness not measured)`,
+    `Fixture coverage score — release ${report.fixtureRelease}`,
+    `Files running cleanly: ${formatFractionScore(score.files.acceptedCoverage)}`,
+    `Files attempted: ${formatFractionScore(score.files.selectionCoverage)}; ${score.files.matchedFiles} matched; completed without throw/not-run ${formatFractionScore(score.files.executionCoverage)}`,
+    `Features working as expected: ${formatFractionScore(score.features.workingAsExpected)}`,
+    `Features tested: ${score.features.testedFeatures}; observed ${score.features.observedFeatures}; declared ${score.features.declaredFeatures}`,
+    `Feature checks: passed ${score.features.checks.passed}, failed ${score.features.checks.failed}, not-run ${score.features.checks['not-run']}`,
+    `Supporting importer evidence: accepted among attempted files ${formatFractionScore(score.files.acceptedOfAttempted)}, selected runs ${formatFractionScore(score.selectionCoverage)}, implementation ${formatFractionScore(score.implementationCoverage)}, execution ${formatFractionScore(score.executionCoverage)}, diagnostic-clean import ${formatFractionScore(score.acceptedImport)}`,
     `Outcome populations: imported ${score.outcomes.imported}, degraded ${score.outcomes.degraded}, unsupported ${score.outcomes.unsupported}, rejected ${score.outcomes.rejected}, threw ${score.outcomes.threw}, not-run ${score.outcomes['not-run']}`,
   ];
+  for (const feature of score.features.rows.filter((candidate) => candidate.state !== 'conforming').slice(0, 20)) {
+    lines.push(
+      `  feature ${feature.state} ${feature.id}: passed ${feature.checks.passed}, failed ${feature.checks.failed}, not-run ${feature.checks['not-run']}`,
+    );
+  }
   for (const family of score.families.filter((candidate) => candidate.eligibleCandidateRuns > 0)) {
     lines.push(
       `  ${family.adapter} [${family.implementation}]: selected ${formatFractionScore(family.selectionCoverage)}, implementation ${formatFractionScore(family.implementationCoverage)}, execution ${formatFractionScore(family.executionCoverage)}, accepted-import ${formatFractionScore(family.acceptedImport)}`,
@@ -256,9 +267,9 @@ const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..'
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const USAGE = `usage: npm run conformance:fixtures -- [options]
 
-Scores real Flight importer execution over matching files in locally verified flight-oracles trees.
-Fixture outcomes and adapter families without Flight implementations are evidence, not a gate: rejected,
-unsupported, thrown, not-run, and zero-candidate families are recorded and the command still succeeds.
+Scores exhaustive per-file execution and adapter-declared feature expectations over matching files in locally
+verified flight-oracles trees. Every selected file is attempted even when earlier files reject or throw.
+Fixture outcomes and unavailable implementations are evidence, not a gate: they are recorded and the command succeeds.
 Missing or stale corpora, fixture-file population changes, and invalid configuration exit nonzero and leave no stale report.
 
   --adapter <id>       run one adapter (repeatable)
