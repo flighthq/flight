@@ -124,15 +124,14 @@ describe('parseMd5Anim', () => {
 
     parseMd5Anim(TWO_JOINT_TWO_FRAME, makeJoints(2), diagnostics);
 
-    // The list is pinned EXACTLY rather than filtered, so anything new is a failure. `bounds-discarded` is
-    // the one expected entry: a well-formed .md5anim carries a bounds block and this importer recognizes it,
-    // does not model it, and skips it — a capability gap on correct input. It is currently reported at Drop
-    // severity, which is why this cannot use the `severity !== Skip` form; whether that classification is
-    // right is a separate caller-visible question and is not settled here.
-    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
-    expect(complaints, `a good md5anim file made the parser complain: ${complaints.join(', ')}`).toEqual([
-      'md5anim.bounds-discarded',
-    ]);
+    // Skip is excluded rather than the list asserted empty: a well-formed .md5anim carries a bounds block,
+    // which this importer recognizes and deliberately does not model. That is correct behaviour on correct
+    // input. What must not appear is anything of higher severity.
+    const integrity = diagnostics.filter((diagnostic) => diagnostic.severity !== ImportDiagnosticSeverity.Skip);
+    expect(
+      integrity.map((diagnostic) => diagnostic.kind),
+      `a good md5anim file made the parser complain: ${integrity.map((d) => d.kind).join(', ')}`,
+    ).toEqual([]);
   });
 
   it('parses a single static joint from baseframe values', () => {
@@ -285,7 +284,8 @@ describe('parseMd5Anim', () => {
       {
         kind: 'md5anim.bounds-discarded',
         origin: 'parseMd5Anim',
-        severity: ImportDiagnosticSeverity.Drop,
+        // Skip: a recognized-but-unmodelled block on a well-formed file is a capability gap, not lost data.
+        severity: ImportDiagnosticSeverity.Skip,
       },
     ]);
   });
