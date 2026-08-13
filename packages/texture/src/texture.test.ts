@@ -8,11 +8,12 @@ import {
   cloneTexture,
   copyTexture,
   createTexture,
+  createTexture2D,
   equalsTexture,
-  getTextureSource,
-  getTextureSourceKind,
   getTextureHeight,
   getTextureInverseUvMatrix,
+  getTextureSource,
+  getTextureSourceKind,
   getTextureUvMatrix,
   getTextureWidth,
   hasTextureSource,
@@ -21,8 +22,8 @@ import {
   resetTextureUvTransform,
   setTextureFlip,
   setTextureSource,
-  setTextureUvOffset,
   setTextureUvFromPixelRect,
+  setTextureUvOffset,
   setTextureUvRotation,
   setTextureUvScale,
   transformTextureUv,
@@ -161,6 +162,58 @@ describe('createTexture', () => {
 
     expect(texture.sampler).not.toBe(sampler);
     expect(texture.sampler.anisotropy).toStrictEqual(8);
+  });
+});
+
+describe('createTexture2D', () => {
+  it('builds the same 2D texture the general constructor does, without going through its switch', () => {
+    const source = null;
+    const leaf = createTexture2D({ colorSpace: 'linear', source, uvRotation: 0.25, version: 3 });
+    const general = createTexture({ colorSpace: 'linear', source, uvRotation: 0.25, version: 3 });
+
+    expectTypeOf(leaf).toEqualTypeOf<Texture2D>();
+    // Compared field by field rather than by identity: these are two entities, and the claim is that
+    // the leaf and the switch agree about what a 2D texture IS, which is what lets one compose the other.
+    expect(leaf.dimension).toStrictEqual(general.dimension);
+    expect(leaf.colorSpace).toStrictEqual(general.colorSpace);
+    expect(leaf.source).toStrictEqual(general.source);
+    expect(leaf.uvRotation).toStrictEqual(general.uvRotation);
+    expect(leaf.version).toStrictEqual(general.version);
+    expect(equalsSampler(leaf.sampler, general.sampler)).toBe(true);
+  });
+
+  it('defaults to the same unbound, srgb, identity-transform state', () => {
+    const texture = createTexture2D();
+
+    expect(texture.dimension).toStrictEqual('2d');
+    expect(texture.source).toBeNull();
+    expect(texture.colorSpace).toStrictEqual('srgb');
+    expect(texture.uvScale.x).toStrictEqual(1);
+    expect(texture.uvScale.y).toStrictEqual(1);
+    expect(equalsSampler(texture.sampler, createSampler())).toBe(true);
+  });
+
+  it('clones supplied sampler and uv vectors rather than aliasing them', () => {
+    const sampler = createSampler({ anisotropy: 8 });
+    const uvOffset = createVector2(2, 3);
+    const texture = createTexture2D({ sampler, uvOffset });
+
+    expect(texture.sampler).not.toBe(sampler);
+    expect(texture.uvOffset).not.toBe(uvOffset);
+    expect(equalsSampler(texture.sampler, sampler)).toBe(true);
+    expect(texture.uvOffset.x).toStrictEqual(2);
+  });
+
+  it('joins the resource it was built against EXACTLY ONCE', () => {
+    // The general constructor delegates its 2D case here, and both used to attach. Once is the whole
+    // assertion: a texture listed twice is realized twice by the loader.
+    const resource = { textures: [] } as unknown as Parameters<typeof createTexture2D>[0] extends undefined
+      ? never
+      : NonNullable<NonNullable<Parameters<typeof createTexture2D>[0]>['resource']>;
+    const leaf = createTexture2D({ resource });
+    const viaGeneral = createTexture({ resource });
+
+    expect(resource.textures).toStrictEqual([leaf, viaGeneral]);
   });
 });
 

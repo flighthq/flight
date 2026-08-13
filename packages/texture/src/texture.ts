@@ -1,14 +1,16 @@
 import { createEntity } from '@flighthq/entity/contract';
 import { cloneVector2, copyVector2, createVector2, inverseMatrix3 } from '@flighthq/geometry/contract';
 import type {
+  CreateTexture2DOptions,
   CreateTextureOptions,
-  TextureSource,
+  ImageResourceReference,
   Matrix3Like,
   Texture,
   Texture2D,
-  TextureSourceKind,
-  TextureSourceCubeFaces,
   TextureLike,
+  TextureSource,
+  TextureSourceCubeFaces,
+  TextureSourceKind,
   TextureUvTransform,
   Vector2Like,
 } from '@flighthq/types/contract';
@@ -99,7 +101,6 @@ export function copyTexture(out: TextureLike, source: Readonly<TextureLike>): vo
   out.version = version;
 }
 
-type CreateTexture2DOptions = Extract<CreateTextureOptions, { dimension?: '2d' }>;
 type CreateTexture2DArrayOptions = Extract<CreateTextureOptions, { dimension: '2d-array' }>;
 type CreateTexture3DOptions = Extract<CreateTextureOptions, { dimension: '3d' }>;
 type CreateTextureCubeOptions = Extract<CreateTextureOptions, { dimension: 'cube' }>;
@@ -111,16 +112,7 @@ export function createTexture(opts: Readonly<CreateTextureCubeOptions>): Extract
 // Builds a flat Texture union. Two-dimensional content is the default and retains a null source
 // sentinel during the loader migration; non-2D variants are selected by their required dimension.
 export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
-  const common = {
-    colorSpace: opts?.colorSpace ?? 'srgb',
-    flipX: opts?.flipX ?? false,
-    flipY: opts?.flipY ?? false,
-    sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
-    uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
-    uvRotation: opts?.uvRotation ?? 0,
-    uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
-    version: (opts?.version ?? 0) >>> 0,
-  };
+  const common = createCommonTextureFields(opts);
   let texture: Texture;
   switch (opts?.dimension) {
     case '2d-array':
@@ -144,20 +136,26 @@ export function createTexture(opts?: Readonly<CreateTextureOptions>): Texture {
         sources: (opts.sources?.slice() ?? [null, null, null, null, null, null]) as unknown as TextureSourceCubeFaces,
       }) as Extract<Texture, { dimension: 'cube' }>;
       break;
-    default: {
-      const options = opts as Readonly<CreateTexture2DOptions> | undefined;
-      texture = createEntity({
-        ...common,
-        dimension: '2d' as const,
-        source: options?.source ?? null,
-      }) as Texture2D;
-      break;
-    }
+    // The 2D case returns straight from the leaf, which attaches the resource itself — falling through
+    // to the shared attach below would push the same texture onto the resource twice.
+    default:
+      return createTexture2D(opts as Readonly<CreateTexture2DOptions> | undefined);
   }
-  const resource = opts?.resource;
-  if (resource != null) {
-    (resource.textures ??= []).push(texture);
-  }
+  attachTextureToResource(texture, opts?.resource);
+  return texture;
+}
+
+// The two-dimensional leaf. 2D is the dimension a caller reaches for by default, and naming it gets a
+// constructor whose body is exactly the shape it builds rather than the four-way switch `createTexture`
+// runs to serve every variant. `createTexture` composes this one for its own 2D case, so there is a
+// single place that decides what a 2D texture is.
+export function createTexture2D(opts?: Readonly<CreateTexture2DOptions>): Texture2D {
+  const texture = createEntity({
+    ...createCommonTextureFields(opts),
+    dimension: '2d' as const,
+    source: opts?.source ?? null,
+  }) as Texture2D;
+  attachTextureToResource(texture, opts?.resource);
   return texture;
 }
 
@@ -381,4 +379,24 @@ export function transformTextureUv(out: Vector2Like, texture: Readonly<TextureLi
   const sinR = Math.sin(r);
   out.x = sx * cosR * fu - sy * sinR * fv + tx;
   out.y = sx * sinR * fu + sy * cosR * fv + ty;
+}
+
+// Every dimension shares these, so the leaf and the switching constructor cannot drift on a default.
+function createCommonTextureFields(opts?: Readonly<CreateTextureOptions>) {
+  return {
+    colorSpace: opts?.colorSpace ?? 'srgb',
+    flipX: opts?.flipX ?? false,
+    flipY: opts?.flipY ?? false,
+    sampler: opts?.sampler ? cloneSampler(opts.sampler) : createSampler(),
+    uvOffset: opts?.uvOffset ? cloneVector2(opts.uvOffset) : createVector2(0, 0),
+    uvRotation: opts?.uvRotation ?? 0,
+    uvScale: opts?.uvScale ? cloneVector2(opts.uvScale) : createVector2(1, 1),
+    version: (opts?.version ?? 0) >>> 0,
+  };
+}
+
+// A texture built against a resource joins that resource's list, which is what lets the loader find
+// every texture it has to realize.
+function attachTextureToResource(texture: Texture, resource: ImageResourceReference | null | undefined): void {
+  if (resource != null) (resource.textures ??= []).push(texture);
 }
