@@ -2,7 +2,7 @@ import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Sprite, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types/contract';
+import type { Sprite, ImportDiagnostic, Matrix, RichText, Shape, TextLabel } from '@flighthq/types/contract';
 import {
   SpriteKind,
   DisplayObjectKind,
@@ -16,6 +16,31 @@ import { createScene2DFromSvgDocument } from './svgDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
 describe('createScene2DFromSvgDocument', () => {
+  // ★ THE GRADIENT BOX IS PLACED BY ITS ORIGIN, NOT ITS CENTRE. `createGradientTransformMatrix` ends with
+  // `tx + width / 2` — it centres the box itself — so a caller that passes the midpoint gets the offset
+  // applied twice and every gradient slides by half its own extent. That shipped: a 320-wide rect at x=60
+  // ramped from 220 instead of 60, measured on canvas, webgl and webgpu alike.
+  //
+  // Asserted on the recorded matrix rather than on pixels, so it fails in this package rather than in a
+  // render baseline three layers away. The numbers are derived from the format, not read off the output:
+  // an objectBoundingBox ramp x1=0→x2=1 over a rect at x=60 width=320 must span 60→380, so the box is 320
+  // wide and its CENTRE — which is what the matrix carries after the helper's own offset — is 220.
+  it('places a linear gradient box by its origin, spanning the shape rather than starting at its middle', () => {
+    const root = createScene2DFromSvgDocument(
+      `<svg>
+        <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>
+        <rect x="60" y="0" width="320" height="200" fill="url(#g)"/>
+      </svg>`,
+    );
+
+    const shape = getNodeChildAt(root, 0) as Shape;
+    const commands = shape.data.commands;
+    const matrix = commands[commands.indexOf('beginGradientFill') + 6] as Matrix;
+
+    expect(matrix.a * 1638.4).toBeCloseTo(320, 4);
+    expect(matrix.tx).toBeCloseTo(220, 4);
+  });
+
   // objectBoundingBox units on geometry with no width or height mean the effect is IGNORED — the same rule
   // the clip path already follows, defined once for every consumer of these units. So a zero-area shape
   // paints no gradient and says NOTHING: this is correct rendering of a correct file, not a failure.

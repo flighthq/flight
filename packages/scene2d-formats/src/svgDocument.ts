@@ -1112,16 +1112,29 @@ function createSvgGradientMatrix(gradient: Readonly<SvgGradient>, path: Readonly
     const dx = x2 - x1;
     const dy = y2 - y1;
     const length = Math.max(Math.hypot(dx, dy), 1);
-    matrix = createGradientTransformMatrix(length, length, Math.atan2(dy, dx), (x1 + x2) / 2, (y1 + y2) / 2);
+    // createGradientTransformMatrix takes the gradient box's ORIGIN, not its centre — it ends with
+    // `tx + width / 2`, doing the centring itself. Passing the midpoint here made that offset apply twice
+    // and shifted every SVG gradient by half its own extent. SWF never hit this because it carries a matrix
+    // straight from the file and does not call this helper.
+    matrix = createGradientTransformMatrix(
+      length,
+      length,
+      Math.atan2(dy, dx),
+      (x1 + x2) / 2 - length / 2,
+      (y1 + y2) / 2 - length / 2,
+    );
   } else {
     const radiusX = gradient.units === 'objectBoundingBox' ? gradient.radius * bounds.width : gradient.radius;
     const radiusY = gradient.units === 'objectBoundingBox' ? gradient.radius * bounds.height : gradient.radius;
+    // Same origin-not-centre rule: the box is 2r across, so its origin is the centre minus one radius.
+    const boxWidth = Math.max(radiusX * 2, 1);
+    const boxHeight = Math.max(radiusY * 2, 1);
     matrix = createGradientTransformMatrix(
-      Math.max(radiusX * 2, 1),
-      Math.max(radiusY * 2, 1),
+      boxWidth,
+      boxHeight,
       0,
-      mapX(gradient.cx),
-      mapY(gradient.cy),
+      mapX(gradient.cx) - boxWidth / 2,
+      mapY(gradient.cy) - boxHeight / 2,
     );
   }
   if (gradient.transform !== null) matrix = multiplySvgMatrices(gradient.transform, matrix);
