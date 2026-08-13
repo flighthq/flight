@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -21,6 +21,7 @@ import {
   renderWgpuBackground,
   renderWgpuScene2D,
   submitWgpuRenderPass,
+  getBitmapPixelRgb,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
@@ -76,3 +77,38 @@ for (let i = 0; i < 18; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Halftone replaces flat fills with a dot screen, and a dot screen is high-frequency structure — exactly
+// what the regression fingerprint averages away into the flat tone underneath (this target's whole
+// committed grid scores 1.17 against a uniform frame of its own background, against a gate threshold of
+// 5). Adjacent-pixel energy is the complement of what the fingerprint keeps. Measured with the effect
+// applied vs the same scene with the pipeline bypassed: 7.13 vs 0.66 on webgl, 5.93 with the effect on
+// webgpu. The floor sits between the two arms.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const highFrequency = measureHighFrequency(frame);
+  if (highFrequency < 3) {
+    throw new Error(
+      `[effect-halftone] adjacent-pixel energy is ${highFrequency.toFixed(2)} (expected >= 3) — the fills are ` +
+        `smooth, so no dot screen was applied`,
+    );
+  }
+}
+
+function measureHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    let previous = -1;
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}

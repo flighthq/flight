@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -19,6 +19,7 @@ import {
   registerRenderer,
   renderGlBackground,
   renderGlScene2D,
+  getBitmapPixelRgb,
 } from '@flighthq/sdk';
 
 // Full-frame liftGammaGain color grade: applies a warm lift and cool gain for a cinematic split-tone. One config applied to the whole scene through an
@@ -79,3 +80,37 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// The grade's whole job is to move the frame's color balance, so the frame's mean channels are the direct
+// evidence. The cool gain pulls blue DOWN off its ungraded ceiling: measured with the grade applied vs the
+// same scene with the pipeline bypassed, mean blue is 160.0 vs 255.0 while red barely moves (124.5 vs
+// 133.4). The band below sits between those two arms. The fingerprint cannot arbitrate this: its committed
+// grid scores 4.60 against a uniform frame of its own background, under the gate's threshold of 5.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const meanBlue = measureMeanBlue(frame);
+  if (meanBlue > 200) {
+    throw new Error(
+      `[effect-lift-gamma-gain] mean blue is ${meanBlue.toFixed(1)} (expected <= 200) — the frame still sits ` +
+        `at its ungraded ceiling, so the grade did not reach it`,
+    );
+  }
+  if (meanBlue < 120) {
+    throw new Error(
+      `[effect-lift-gamma-gain] mean blue is ${meanBlue.toFixed(1)} (expected >= 120) — the cool gain crushed ` +
+        `the channel rather than grading it`,
+    );
+  }
+}
+
+function measureMeanBlue(frame: Readonly<Bitmap>): number {
+  let blue = 0;
+  let samples = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    for (let x = 0; x < frame.width; x += 1) {
+      blue += getBitmapPixelRgb(frame, x, y) & 255;
+      samples += 1;
+    }
+  }
+  return samples === 0 ? 0 : blue / samples;
+}
