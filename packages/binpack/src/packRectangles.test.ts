@@ -1,4 +1,4 @@
-import type { PackableRectangle, PackedRectangle } from '@flighthq/types/contract';
+import type { PackableRectangle, PackedRectangle, RectangleId } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { BIN_PACK_DEFAULT_MAX_EXTENT, getPackResultOccupancy, packRectangles } from './packRectangles';
@@ -296,8 +296,34 @@ describe('packRectangles properties', () => {
       const result = packRectangles(rects, options);
       const label = `seed ${seed} (${heuristic})`;
 
-      // Every input is accounted for exactly once.
+      // Every input is accounted for exactly once — BY IDENTITY, not by count. A count is satisfied by
+      // placing one piece twice and losing another, which is the corruption this package can actually
+      // produce and the one that reaches an atlas as two sprites sharing pixels.
       expect(result.placements.length + result.unpacked.length, label).toBe(rects.length);
+      expect(countIds([...result.placements.map((placement) => placement.id), ...result.unpacked]), label).toEqual(
+        countIds(rects.map((rect) => rect.id)),
+      );
+
+      // Every placement carries ITS OWN size, swapped exactly when it says it was turned. A packer that
+      // reports `rotated` without swapping places correctly and describes the placement wrongly, and the
+      // overlap and bounds assertions below both pass for it.
+      const sizes = new Map<number, { height: number; width: number }>();
+      for (const rect of rects) sizes.set(rect.id as number, { height: rect.height, width: rect.width });
+      for (const placement of result.placements) {
+        const source = sizes.get(placement.id as number)!;
+        const expected = placement.rotated
+          ? { height: source.width, width: source.height }
+          : { height: source.height, width: source.width };
+        expect({ height: placement.height, width: placement.width }, `${label}: ${String(placement.id)}`).toEqual(
+          expected,
+        );
+      }
+
+      // The occupancy helper must describe the placements it is derived from, not a stale or parallel
+      // accounting of them.
+      const placedArea = result.placements.reduce((total, placement) => total + placement.width * placement.height, 0);
+      const reportedArea = result.width * result.height;
+      expect(getPackResultOccupancy(result), label).toBeCloseTo(reportedArea > 0 ? placedArea / reportedArea : 0, 12);
 
       for (const placement of result.placements) {
         // Inside the bin, honouring the border on every side.
@@ -326,3 +352,9 @@ describe('packRectangles properties', () => {
     }
   });
 });
+
+function countIds(ids: readonly RectangleId[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const id of ids) counts[String(id)] = (counts[String(id)] ?? 0) + 1;
+  return counts;
+}
