@@ -286,19 +286,46 @@ not only in a mirror they may not re-read.**
 their instruction). A "3-of-5 sweep" existed twice — integration's and builder's — with different methods
 and different verdicts, and a defect belonging to one (*a deletion that silently never ran*) was written
 into a parcel about the other. **Integration declined to record it, having printed a diff for every run**,
-and manager traced the provenance rather than defending it. ⇒ **Before attributing a result, name the run:
-whose, which tree, which method.**
+and manager traced the provenance rather than defending it. **★ IT HAPPENED TWICE IN TWENTY MINUTES —
+(iii) below is the same error — and manager named the mechanism: *"I relay from the parcel IN FRONT OF ME
+rather than from the parcel that REPORTED the measurement, and the agent I am currently writing to becomes
+the agent I credit."*** ⇒ **Before attributing a result, name the run: whose, which tree, which method** —
+manager's own countermeasure, recorded so it can be held to: *name the agent from the parcel the
+measurement came in on, or say "someone measured" and let the reader attach the name.* **A misattribution
+costs the receiving agent a refusal, and a refusal is expensive because it has to be argued against
+authority.**
+**★ AND THE DISAGREEMENT UNDERNEATH (ii) DISSOLVED RATHER THAN RESOLVING: NEITHER SWEEP WAS DEFECTIVE.**
+Two runs of "one skip per record type" picked different statements inside the same record and got
+different verdicts — `point`'s 12-byte skip is killed where `point`'s colour skip is not — so both were
+correct measurements of different things sharing a name. ⇒ **A chosen denominator is not just weaker than
+a structural one, it is NON-DETERMINISTIC**: run it twice, pick differently, get different numbers, with no
+error anywhere. **When a count is disputed, suspect the unit before suspecting the counters.**
 **(iii) CREDIT ASSERTED RATHER THAN VERIFIED, WHICH IS THE SAME SHAPE POINTING THE PLEASANT WAY.** Manager
 credited integration with a set-versus-diff verification of the reachability baseline that **integration
-had not run**. It was then actually run — 251→263 entries, **+12, 0 removed** — so the conclusion was
-sound and the provenance was not. **A claim in your own favour is the one you are least likely to check**,
+had not run** — `builder` had. Integration declined the credit and then ran the check independently before
+recording anything — 251→263 entries, **+12, 0 removed** — so the conclusion was sound and the provenance
+was not. **A claim in your own favour is the one you are least likely to check**,
 which is exactly why this one is written down.
+
+★ **THE CHOSEN-SCOPE ERROR, CAUGHT IN FLIGHT FOR ONCE — THE THIRD INSTANCE TODAY AND THE ONLY CHEAP ONE.**
+Checking `builder4`'s README claim of a *20-material* shader library, integration's first count came back
+**17**, from a grep scoped to `packages/types/src/*.ts`; three constants live outside that directory.
+Widened before anything was reported, and the claim is **exactly right**. ⇒ **Same shape as the "49
+diagnostic kinds" floor from a six-word grep and as the lane-grep above — a scope chosen for convenience
+read as the population — but stopped one step earlier, at a cost of one command instead of a correction.
+The failure and the catch are now on the same day, which is the useful pairing: the catch is not a
+different skill, it is the same suspicion applied before publishing rather than after.** The tell is
+generic: **a count that comes back below what a careful author claimed is more often a narrow instrument
+than a wrong author.**
 
 ★ **AND THE INSTRUMENT LESSON UNDERNEATH (iii), WHICH IS THE CLEANEST EXAMPLE WE HAVE BECAUSE IT FAILS
 LOUD RATHER THAN SILENT: THE DIFF IS A REPRESENTATION, THE SET IS THE CONTENT.** `git show` on the
 baseline reports **29 deleted lines** — the file is re-serialised and reordered on write — while comparing
 entry *sets* shows **zero removals**. A reviewer asking *"did this pin drop anything?"* against the line
-diff gets a **false alarm**, not a miss. Every other instance today answered a content question with a
+diff gets a **false alarm**, not a miss. **`builder` and integration reached for the entry-set comparison
+independently on the same artifact, neither knowing the other had** — when two people separately refuse the
+obvious instrument on one file, that is the file telling you its representation is misleading, and it is
+worth a guard rather than two lucky reviewers. Every other instance today answered a content question with a
 representation and lost information; this one manufactures it. ⇒ **Ask a content question of the content.**
 
 ⇒ **The counter-practice, adopted standing:** cite what you ran. **A mutation that does not print what
