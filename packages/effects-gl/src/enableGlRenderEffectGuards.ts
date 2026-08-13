@@ -3,6 +3,7 @@ import type { GlRenderEffectApplicationExplanation, GlRenderState } from '@fligh
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setGlCustomShaderSourceGuard } from './glCustomShaderEffect';
+import { setGlRenderEffectPipelineSkipGuard } from './glRenderEffectPipeline';
 import { setGlRenderEffectApplicationGuard } from './glRenderTextureEffect';
 
 export function areGlRenderEffectGuardsEnabled(state: GlRenderState): boolean {
@@ -12,6 +13,7 @@ export function areGlRenderEffectGuardsEnabled(state: GlRenderState): boolean {
 export function disableGlRenderEffectGuards(state: GlRenderState): void {
   setGlRenderEffectApplicationGuard(state, null);
   setGlCustomShaderSourceGuard(state, null);
+  setGlRenderEffectPipelineSkipGuard(state, null);
   _guardedStates.delete(state);
 }
 
@@ -22,6 +24,7 @@ export function disableGlRenderEffectGuards(state: GlRenderState): void {
 export function enableGlRenderEffectGuards(state: GlRenderState): void {
   setGlRenderEffectApplicationGuard(state, warnGlRenderEffectApplication);
   setGlCustomShaderSourceGuard(state, warnGlCustomShaderSourceReregistered);
+  setGlRenderEffectPipelineSkipGuard(state, warnGlRenderEffectPipelineSkip);
   _guardedStates.add(state);
 }
 
@@ -80,6 +83,24 @@ function warnGlRenderEffectApplication(
       requestedCount: explanation.requestedCount,
       status: explanation.status,
       unregisteredKinds: explanation.unregisteredKinds,
+    },
+    'effects-gl',
+  );
+}
+
+// A pipeline pass drops an effect whose kind has no runner with a bare `continue`: no draw, no error,
+// no artifact. Seven effect kinds ship a descriptor and a constructor with no runner on ANY backend
+// (AutoExposure, BarrelDistortion, FilmEmulation, PanniniProjection, Ssr, Taa, VolumetricLight), so a
+// caller can build one into a chain and watch nothing happen with nothing to grep for.
+function warnGlRenderEffectPipelineSkip(_state: GlRenderState, kind: string): void {
+  // Keyed by kind, not by frame: the same missing kind every frame is one observation, and a second
+  // kind going missing is a new one worth reporting.
+  logOnce(
+    `effects-gl:pipeline-effect-skipped:${kind}`,
+    LogLevel.Warn,
+    {
+      kind,
+      message: `endGlRenderEffectPipeline: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerGlRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
     },
     'effects-gl',
   );

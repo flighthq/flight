@@ -101,6 +101,11 @@ export type GlCustomShaderSourceGuard = (
   nextSource: string,
 ) => void;
 
+// Observed when a pipeline pass drops an effect because its kind has no registered runner. The kind is
+// the whole observation: the effect is skipped silently, produces no draw and no error, and nothing
+// downstream can tell a skipped effect from one that ran and had no visible result.
+export type GlRenderEffectPipelineSkipGuard = (state: GlRenderState, kind: string) => void;
+
 export type GlRenderEffectApplicationGuard = (
   state: GlRenderState,
   explanation: Readonly<GlRenderEffectApplicationExplanation>,

@@ -22,6 +22,7 @@ import {
 import type {
   Adjustment,
   GlRenderEffectPipeline,
+  GlRenderEffectPipelineSkipGuard,
   GlRenderState,
   GlRenderTarget,
   RenderEffect,
@@ -154,7 +155,10 @@ export function endGlRenderEffectPipeline(
       continue;
     }
     const runner = getGlRenderEffectRunner(state, operation.kind);
-    if (runner === null) continue;
+    if (runner === null) {
+      reportGlRenderEffectPipelineSkip(state, operation.kind);
+      continue;
+    }
     flushAdjustments();
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
@@ -183,6 +187,17 @@ export function endGlRenderEffectPipeline(
 
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame. Pass the texture
 // produced by renderGlVelocity (e.g. `velocityTarget.texture`), or null to clear it.
+// The diagnostics seam. Core stays message-free; enableGlRenderEffectGuards installs the reporter that
+// turns a dropped effect into a caller-facing warning. Mirrors setGlRenderEffectApplicationGuard, which
+// covers the render-texture path — this one covers the pipeline path, where the drop is a bare `continue`.
+export function setGlRenderEffectPipelineSkipGuard(
+  state: GlRenderState,
+  guard: GlRenderEffectPipelineSkipGuard | null,
+): void {
+  if (guard === null) _skipGuards.delete(state);
+  else _skipGuards.set(state, guard);
+}
+
 export function setGlRenderEffectVelocityTexture(pipeline: GlRenderEffectPipeline, texture: WebGLTexture | null): void {
   pipeline.velocityTexture = texture;
 }
@@ -210,3 +225,9 @@ out vec4 o_color;
 void main() {
   o_color = texture(u_texture0, v_texCoord);
 }`;
+
+function reportGlRenderEffectPipelineSkip(state: GlRenderState, kind: string): void {
+  _skipGuards.get(state)?.(state, kind);
+}
+
+const _skipGuards = new WeakMap<GlRenderState, GlRenderEffectPipelineSkipGuard>();
