@@ -33,6 +33,8 @@ describe('registerDefaultShapeBoundsCommands', () => {
       ['lineTo', defaultShapeBoundsLineTo, defaultShapeBoundsLineTo],
       ['moveTo', defaultShapeBoundsMoveTo, defaultShapeBoundsMoveTo],
     ] as const;
+    // Importing the module must be side-effect-free: the explicit installer is the only door through
+    // which standard bounds commands enter the registry.
     for (const [key] of bindings) expect(getShapeBoundsCommand(key)).toBeNull();
 
     registerDefaultShapeBoundsCommands();
