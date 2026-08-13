@@ -1,6 +1,6 @@
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
-import { generateWgpuMipmaps, getWgpuMipLevelCount } from './wgpuMipmap';
+import { generateWgpuMipmaps, getWgpuMipLevelCount, registerWgpuMipmapGeneration } from './wgpuMipmap';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -77,5 +77,15 @@ describe('getWgpuMipLevelCount', () => {
     expect(getWgpuMipLevelCount(8, 8)).toBe(4);
     expect(getWgpuMipLevelCount(256, 1)).toBe(9);
     expect(getWgpuMipLevelCount(5, 3)).toBe(3);
+  });
+});
+
+describe('registerWgpuMipmapGeneration', () => {
+  it('installs generateWgpuMipmaps on the runtime slot', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    expect(runtime.mipmapGenerator).toBeNull();
+    registerWgpuMipmapGeneration(state);
+    expect(runtime.mipmapGenerator).toBe(generateWgpuMipmaps);
   });
 });

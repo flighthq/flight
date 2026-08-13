@@ -755,6 +755,10 @@
     },
     {
       "packageName": "render-wgpu",
+      "registrar": "registerWgpuMipmapGeneration"
+    },
+    {
+      "packageName": "render-wgpu",
       "registrar": "registerWgpuRenderTextureResolver"
     },
     {

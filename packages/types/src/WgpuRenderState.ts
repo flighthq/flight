@@ -140,6 +140,12 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   nearestSampler: GPUSampler;
   samplerCache: Map<number, GPUSampler>;
 
+  // Registered mip-chain generator. Null until registerWgpuMipmapGeneration installs one; the
+  // upload paths read this slot rather than statically importing the generator module, so a bundle
+  // that never registers mip generation tree-shakes the pipeline, shader, and cache entirely.
+  mipmapGenerator:
+    | ((state: WgpuRenderState, texture: GPUTexture, width: number, height: number, format: GPUTextureFormat) => void)
+    | null;
   // Lazily-built downsample render pipelines and bind-group layouts for GPU mip-chain generation.
   // WebGPU has no generateMipmap, so a mipmapped material texture's lower levels are rendered by
   // repeatedly downsampling the level above. The format-keyed cache keeps linear and sRGB target
