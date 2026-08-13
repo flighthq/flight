@@ -161,7 +161,20 @@ the denominator — a record type is not a mutation.** A record holds several re
 different verdicts: on the pre-isolation tree, deleting `point`'s 12-byte rotation/x/y skip was killed while
 deleting `point`'s colour skip was not. So *"one skip per type"* names no definite mutant, and two per-type
 sweeps that happen to pick different lines disagree without either being wrong. **Per line, the question has
-one answer; per type, it has no determinate one.**
+one answer; per type, it has no determinate one.** The same split appears in a second record, measured
+independently: `linkedmesh` holds **seven** reader-advancing lines, and deleting the path varint, the
+skin-name varint, the parent-mesh varint, the inherit-timelines boolean, the sequence skip or the
+nonessential width/height skip is killed, while deleting its unconditional colour skip is not — **six and
+one, inside a single record.** Two records showing it is what makes it a property of the method rather than
+a quirk of one fixture.
+
+⇒ **So a chosen denominator is not merely weaker evidence than a structural one — it can be
+NON-DETERMINISTIC.** Run the same described sweep twice, pick a different statement inside the same item
+each time, and get different numbers with no error anywhere: no mutation misfired, nobody misread a result,
+and the two runs are both correct measurements of different things that share a name. A structural
+denominator — *every* reader-advancing statement, *every* branch, *every* exported symbol — cannot do that,
+because it leaves nothing to pick. **When a count is disputed, suspect the unit before suspecting the
+counters.**
 
 **When two explanations of one behaviour are refuted inside an hour, stop explaining and start recording.**
 Both accounts offered for the 18th site failed — the second by its own prediction, which said `0x01000000`
