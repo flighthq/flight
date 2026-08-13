@@ -1,3 +1,4 @@
+import { unpackColorRgba } from '@flighthq/color/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { ConvolutionEffect, GlRenderEffectRunner, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
@@ -41,12 +42,13 @@ export function applyConvolutionEffectToGl(
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_bias'), bias);
     gl.uniform1i(gl.getUniformLocation(p.program, 'u_clamp'), clampEdge ? 1 : 0);
     gl.uniform1i(gl.getUniformLocation(p.program, 'u_preserveAlpha'), preserveAlpha ? 1 : 0);
+    unpackColorRgba(scratchEdgeColor, edgeColor);
     gl.uniform4f(
       gl.getUniformLocation(p.program, 'u_edgeColor'),
-      ((edgeColor >> 16) & 0xff) / 255,
-      ((edgeColor >> 8) & 0xff) / 255,
-      (edgeColor & 0xff) / 255,
-      ((edgeColor >>> 24) & 0xff) / 255,
+      scratchEdgeColor[0],
+      scratchEdgeColor[1],
+      scratchEdgeColor[2],
+      scratchEdgeColor[3],
     );
   });
 }
@@ -113,3 +115,6 @@ void main() {
   }
   fragColor = sum;
 }`;
+
+// Reused across passes: the unpack writes into it on every draw, so it never escapes this module.
+const scratchEdgeColor: [number, number, number, number] = [0, 0, 0, 0];

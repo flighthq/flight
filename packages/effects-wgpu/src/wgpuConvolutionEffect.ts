@@ -1,3 +1,4 @@
+import { unpackColorRgba } from '@flighthq/color/contract';
 import type {
   ConvolutionEffect,
   WgpuRenderEffectRunner,
@@ -48,10 +49,11 @@ export function applyConvolutionEffectToWgpu(
     i32[6] = clampEdge ? 1 : 0;
     i32[7] = preserveAlpha ? 1 : 0;
     // edgeColor at offset 32 (f32[8..11])
-    f32[8] = ((edgeColor >> 16) & 0xff) / 255;
-    f32[9] = ((edgeColor >> 8) & 0xff) / 255;
-    f32[10] = (edgeColor & 0xff) / 255;
-    f32[11] = ((edgeColor >>> 24) & 0xff) / 255;
+    unpackColorRgba(scratchEdgeColor, edgeColor);
+    f32[8] = scratchEdgeColor[0];
+    f32[9] = scratchEdgeColor[1];
+    f32[10] = scratchEdgeColor[2];
+    f32[11] = scratchEdgeColor[3];
     // matrix at offset 48 (f32[12..60])
     for (let i = 0; i < matrixX * matrixY; i++) f32[12 + i] = matrix[i];
   });
@@ -125,3 +127,6 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   }
   return sum;
 }`;
+
+// Reused across passes: the unpack writes into it on every draw, so it never escapes this module.
+const scratchEdgeColor: [number, number, number, number] = [0, 0, 0, 0];
