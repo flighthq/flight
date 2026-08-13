@@ -144,9 +144,15 @@ constant, because the next person to touch it will otherwise read it as arbitrar
 attachment asserted on the far side, **a per-record claim was resting on a whole-stream oracle**, and such an
 oracle sees a record's desync only when the error propagates all the way to the end — which is a property of
 the bytes that happen to follow, not of the code under test. Fixing the value made the luck better; it could
-not make it unnecessary. Measured per line against the per-record isolation test that replaced it: of the
-**18 reader-advancing statements** in the unmodeled-attachment block, deleting any one is **killed in 17
-cases**. The 18th — the `linkedmesh` unconditional colour skip — is **UNRESOLVED**: four payloads
+not make it unnecessary — but **it also did not make the whole-stream fixture obsolete, which is the part
+that took three attempts to state correctly.** Measured per line, and per *failing test name* rather than by
+counting failures: of the **18 reader-advancing statements** in the unmodeled-attachment block, deleting any
+one is **killed in 17 cases — 16 by the per-record isolation test and 16 by the whole-stream fixture, with
+15 in common.** Each oracle uniquely kills one the other misses: isolation alone catches `point`'s
+nonessential colour skip, and the whole-stream fixture alone catches `linkedmesh`'s nonessential
+width/height skip. **So the per-record oracle is not a strict improvement on the whole-stream one but a
+different oracle with a different blind spot, and the suite needs both** — delete the older fixture as
+legacy and you lose a kill. The 18th — the `linkedmesh` unconditional colour skip — is **UNRESOLVED**: four payloads
 (`0x01020304`, `0xffffffff`, `0x80808080`, `0x01000000` — all-low, all-high, all-continuation, and
 low-then-zero) show no observable difference, no structural reason for that independence has been found, and
 **equivalence is neither established nor refuted.** Failing to find the structure that would *prove*
@@ -175,6 +181,13 @@ and the two runs are both correct measurements of different things that share a 
 denominator — *every* reader-advancing statement, *every* branch, *every* exported symbol — cannot do that,
 because it leaves nothing to pick. **When a count is disputed, suspect the unit before suspecting the
 counters.**
+
+⇒ **And the error that hid the complementarity is worth more than the number it corrupted: the sweep counted
+FAILURES, not failing TEST NAMES.** `grep -c AssertionError` over the whole file cannot tell you *which*
+oracle killed a mutant, so every kill was credited to the newest test — the one the author had just written
+and was measuring. That reads as a strict improvement and quietly argues for deleting the older test. **When
+two checks cover one behaviour, a count of failures cannot attribute them; only the failing test's name
+can.** The cost of asking is one flag on the runner.
 
 **When two explanations of one behaviour are refuted inside an hour, stop explaining and start recording.**
 Both accounts offered for the 18th site failed — the second by its own prediction, which said `0x01000000`
