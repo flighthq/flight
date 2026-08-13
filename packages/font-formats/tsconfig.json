@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../compression" }, { "path": "../font" }, { "path": "../types" }],
+  "references": [
+    { "path": "../compression" },
+    { "path": "../font" },
+    { "path": "../importdiagnostics" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }
