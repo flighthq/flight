@@ -1,14 +1,16 @@
 # Flight
 
-Flight is a graphics and application SDK whose API is cellular — every function is self-contained, legible in isolation, and free of hidden state. Explicit inputs, explicit outputs, no globals to trace, no implicit runtime behavior. A developer reading one function understands and applies it without context from anywhere else in the codebase.
+[![CI](https://github.com/flighthq/flight/actions/workflows/tests.yml/badge.svg?branch=develop)](https://github.com/flighthq/flight/actions/workflows/tests.yml?query=branch%3Adevelop) [![npm](https://img.shields.io/npm/v/@flighthq/sdk?logo=npm)](https://www.npmjs.com/package/@flighthq/sdk)
 
-The same design properties that make Flight easy to reason over also make bundles small. Nothing runs at import time: renderers, update loops, and event listeners are all opt-in. A minimal bitmap display gzips to 3.9 KB. A full match-3 game with tweens, audio, text, and input gzips to 14.9 KB.
+Flight is a modular TypeScript SDK for building interactive applications — designed to be read and written by AI coding agents as well as people. Its 149 tree-shakable packages span 2D and 3D graphics, physics, animation, media, input, asset formats, application lifecycle, and desktop/mobile platform APIs.
 
-It provides a scene graph, four interchangeable renderers (Canvas 2D, DOM, WebGL 2, and WebGPU), a 3D scene stack with a 20-material shader library, offscreen image processing, and everything needed for a complete interactive application — animation, input, audio, video, text, effects, game primitives, and platform integration. Build a scene once; choose a backend by registering it.
+The API is cellular: explicit passes over plain data, self-identifying names, clear ownership, and no work at import time. A function can be understood in isolation; an application can import one capability without inheriting an engine. Those same properties keep the codebase grepable for agents, portable to compiled targets, and small in production builds.
+
+Build a scene once and choose a renderer — Canvas 2D, DOM, WebGL 2, or WebGPU — by registering only the implementations it uses. Compose the same small primitives into a game, visualization, media experience, desktop tool, or mobile application.
 
 ## Try It
 
-Browse the live examples gallery at [flighthq.ai](https://flighthq.ai), or run it locally:
+See Flight render its own [live introduction](https://flighthq.ai), browse the [examples gallery](https://flighthq.ai/examples/), compare [ports from established frameworks](https://ports.flighthq.ai), or run the gallery locally:
 
 ```sh
 npm install
@@ -17,22 +19,29 @@ npm run examples
 
 ## Getting Started
 
+```sh
+npm install @flighthq/sdk
+```
+
 Create a display-object scene, register the renderer kinds you use, update the render graph, then draw:
 
 ```ts
 import {
   addNodeChild,
-  BitmapKind,
-  createBitmap,
   createCanvasElement,
   createCanvasRenderState,
   createDisplayObject,
-  defaultCanvasBitmapRenderer,
+  createSprite,
+  createTexture,
+  defaultCanvasSpriteRenderer,
+  getCanvasRenderStateTextureResolvers,
   loadImageResourceFromUrl,
   prepareScene2DRender,
+  registerCanvasImageTextureResolver,
   registerRenderer,
   renderCanvasBackground,
-  renderCanvasDisplayObject,
+  renderCanvasScene2D,
+  SpriteKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -44,20 +53,22 @@ const state = createCanvasRenderState(canvas, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 
-registerRenderer(state, BitmapKind, defaultCanvasBitmapRenderer);
+registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
+registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
 
 const root = createDisplayObject();
 root.scaleX = pixelRatio;
 root.scaleY = pixelRatio;
 
-const bitmap = createBitmap();
-bitmap.data.image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
-addNodeChild(root, bitmap);
+const sprite = createSprite();
+const image = await loadImageResourceFromUrl('assets/wabbit_alpha.png');
+sprite.data.texture = createTexture({ dimension: '2d', source: image });
+addNodeChild(root, sprite);
 
 function enterFrame(): void {
   if (prepareScene2DRender(state, root)) {
     renderCanvasBackground(state);
-    renderCanvasDisplayObject(state, root);
+    renderCanvasScene2D(state, root);
   }
 
   requestAnimationFrame(enterFrame);
@@ -94,7 +105,7 @@ connectSignal(app.onUpdate, (delta) => updateTweens(manager, delta));
 connectSignal(app.onRender, () => {
   if (prepareScene2DRender(state, root)) {
     renderCanvasBackground(state);
-    renderCanvasDisplayObject(state, root);
+    renderCanvasScene2D(state, root);
   }
 });
 
@@ -112,26 +123,26 @@ import {
   connectInteractionSignal,
   createInputManager,
   createInteractionManager,
-  DisplayObjectKind,
-  hitTestGraphLocalBounds,
   invalidateNodeRender,
-  registerHitTestPoint,
+  registerDefaultHitTests,
+  setNodeHitTestEnabled,
 } from '@flighthq/sdk';
 
-registerHitTestPoint(DisplayObjectKind, hitTestGraphLocalBounds);
+registerDefaultHitTests();
+setNodeHitTestEnabled(sprite, true);
 
 const interaction = createInteractionManager(root);
 const input = createInputManager();
 attachPointerInput(input, canvas);
 connectInputToInteraction(input, interaction, pixelRatio);
 
-connectInteractionSignal(interaction, bitmap, 'onPointerDown', () => {
-  bitmap.alpha = 0.5;
-  invalidateNodeRender(bitmap);
+connectInteractionSignal(interaction, sprite, 'onPointerDown', () => {
+  sprite.alpha = 0.5;
+  invalidateNodeRender(sprite);
 });
-connectInteractionSignal(interaction, bitmap, 'onPointerUp', () => {
-  bitmap.alpha = 1;
-  invalidateNodeRender(bitmap);
+connectInteractionSignal(interaction, sprite, 'onPointerUp', () => {
+  sprite.alpha = 1;
+  invalidateNodeRender(sprite);
 });
 ```
 
@@ -145,7 +156,7 @@ import { loadAudioResourceFromUrls, playAudioResource } from '@flighthq/sdk';
 const audioContext = new AudioContext();
 const sound = await loadAudioResourceFromUrls(audioContext, [{ url: 'assets/click.ogg' }, { url: 'assets/click.mp3' }]);
 
-connectInteractionSignal(interaction, bitmap, 'onPointerDown', () => {
+connectInteractionSignal(interaction, sprite, 'onPointerDown', () => {
   playAudioResource(audioContext, sound);
 });
 ```
@@ -162,9 +173,9 @@ Flight separates authored data from backend work:
 
 Canvas and DOM are lightweight host-web paths. WebGL2 and WebGPU add GPU render targets, cached pipelines, shader/material registries, post-processing, clipping, masking, velocity, render caches, 2D batching, and 3D forward renderers with a 20-material Cook-Torrance PBR + classic/NPR/debug shader library.
 
-## Breadth
+## Platform Scope
 
-Flight currently spans 128 workspace packages. The public API can be inspected with:
+Flight currently spans 149 independently importable, publishable packages. The public API can be inspected with:
 
 ```sh
 npm run api
@@ -175,23 +186,19 @@ Major areas:
 
 | Area | Packages |
 | --- | --- |
-| Core | `types`, `entity`, `node`, `signals` |
-| Math and geometry | `math`, `geometry`, `path`, `path-boolean`, `clip`, `binpack` |
-| 2D scene graph | `scene2d`, `shape`, `sprite`, `text` |
-| 3D scene graph | `scene`, `mesh`, `materials`, `lighting`, `texture`, `camera`, `skeleton`, `picking` |
-| Rendering | `render`, `scene2d-canvas`, `scene2d-dom`, `render-gl`, `scene2d-gl`, `render-wgpu`, `scene2d-wgpu`, `scene-gl`, `scene-wgpu` |
-| Effects and adjustments | `adjustments`, `effects`, `effects-canvas`, `effects-gl`, `effects-wgpu` |
-| Text | `textlayout`, `textshaper`, `textshaper-canvas`, `textsegment`, `textbidi`, `textinput`, `glyphatlas`, `bitmapfont`, `bitmaptext`, `text-markup` |
-| Animation and simulation | `easing`, `tween`, `spring`, `animation`, `timeline`, `movieclip`, `spritesheet`, `motionpath`, `clock`, `particles`, `particleemitter` |
-| Input and interaction | `input`, `interaction` |
-| Game | `camera2d`, `collision`, `spatial`, `flow`, `snapshot` |
-| Resources | `image`, `image-codec`, `surface`, `audio`, `video`, `font`, `textureatlas`, `tileset`, `loader`, `assets` |
-| Format codecs | Atlas, sprite, tilemap, bitmap-font, texture, path, shape, particle, scene, XML, and text-markup `-formats` packages |
-| Application and media | `application`, `app`, `media`, `intl`, `useragent` |
-| Diagnostics | `log`, `debug` |
-| Platform | Clipboard, dialog, filesystem, notifications, share, shell, menu, tray, shortcut, screen, power, storage, lifecycle, connectivity, device, sensors, keyboard, geolocation, webcam, permissions, mediasession, net, socket, IPC, protocol, updater, and host adapters for Electron, Tauri, and Capacitor |
-| Tooling | `tool-capture`, `capture`, functional/example baselines, renderer parity checks, API/export/package/order/size validation scripts |
-| Convenience barrel | `@flighthq/sdk` re-exports the packages above for application code and examples |
+| Core and data | `types`, `entity`, `node`, `signals`, `math`, `geometry`, `color`, `layout`, `compression` |
+| 2D graphics | `scene2d`, `bitmap`, `shape`, `path`, `clip`, `text`, `tilemap`, `quadbatch` |
+| 3D graphics | `scene3d`, `mesh`, `materials`, `shading`, `lighting`, `texture`, `camera`, `skeleton3d`, `picking` |
+| Rendering | `render`, Canvas/DOM scene renderers, WebGL 2 and WebGPU cores, and 2D/3D GPU renderers |
+| Effects and imaging | `adjustments`, `effects`, Canvas/WebGL/WebGPU effect executors, `image`, `image-codec`, `capture` |
+| Text | `textlayout`, `textshaper`, `textsegment`, `textbidi`, `textinput`, `glyphatlas`, `bitmapfont`, `bitmaptext`, `text-markup` |
+| Animation and simulation | `easing`, `tween`, `spring`, `animation`, `timeline`, `movieclip`, `spritesheet`, `motionpath`, `clock`, `particles` |
+| Games and interaction | `input`, `interaction`, `collision`, `physics2d`, `spatial`, `flow`, `statechart`, `snapshot` |
+| Resources and formats | Loaders and structured importers for images, fonts, atlases, tilemaps, particles, SVG, SWF, glTF, OBJ/MTL, 3DS, MD2/MD5, AWD2, and more |
+| Application and media | `application`, `audio`, `video`, `media`, `mediasession`, `intl`, `log`, `debug` |
+| Platform integration | Web-first APIs for storage, networking, filesystem, clipboard, dialogs, notifications, sensors, windows, lifecycle, and other OS/device capabilities |
+| Native hosts | Replaceable adapters for Electron, Tauri, and Capacitor |
+| Tooling | Capture and baseline tooling, cross-renderer smoke/parity checks, conformance fixtures, API/export/package/order/portability gates, and bundle-size budgets |
 
 All packages are published under `@flighthq/`. Applications and examples usually import from `@flighthq/sdk`:
 
@@ -205,46 +212,33 @@ Library code should prefer the smallest package root that provides the needed AP
 import { createTween, updateTweens } from '@flighthq/tween';
 ```
 
+Web implementations are available by default for the platform layer. Native hosts replace them through explicit backends, keeping application code stable across browser, desktop, and mobile targets.
+
+## Engineering Confidence
+
+Flight is pre-release software, so confidence comes from the engineering path behind each change. Code changes are exercised by two unit-test lanes, a full TypeScript build, package and public-API validation, bundle-size budgets, and browser-render smoke and parity checks across DOM, Canvas, WebGL, and WebGPU. Nightly runs add coverage thresholds and generated API-surface checks.
+
+`main` is a machine-managed known-good pointer: it advances only to commits whose CI run succeeded. Version releases verify that exact tagged commit passed CI before publishing the complete package graph to npm with provenance.
+
+The repository also keeps reliability concerns visible in the design: imports are side-effect-free, feature families use explicit registries, resource ownership and allocation are named, format importers report structured diagnostics, source stays inside a checked compiled-target-portable subset, and render output is tested across interchangeable backends.
+
 ## Examples
 
-| Example       | Description                                              |
-| ------------- | -------------------------------------------------------- |
-| `adjustments` | Color matrix composition with interactive sliders        |
-| `benchmark`   | QuadBatch bouncing benchmark with procedural textures    |
-| `bitmap`      | Procedural bitmap display with transforms                |
-| `camera2d`    | 2D game camera with follow, zoom, and parallax           |
-| `clock`       | Hierarchical clocks with pause and time scaling          |
-| `collision`   | 2D collision detection with manifold visualization       |
-| `flowstates`  | Application mode/screen flow-state stack                 |
-| `interaction` | Pointer hit testing with drag and hover                  |
-| `motionpath`  | Path-following animation along bezier curves             |
-| `movieclip`   | Timeline-driven frame animation with labels and scripts  |
-| `particles`   | Dual particle emitters with forces and color curves      |
-| `pathboolean` | Path boolean operations (union/intersect/difference)     |
-| `shapes`      | Shape primitives, fills, strokes, curves, and polygons   |
-| `snapshot`    | State snapshot capture, restore, and interpolation       |
-| `sound`       | Procedural audio, mixer buses, gain and pan controls     |
-| `spritesheet` | Procedural sprite strip with grid slicing and playback   |
-| `spatial`     | Broadphase spatial query with uniform grid               |
-| `spring`      | Spring-physics animation with frequency/damping controls |
-| `text`        | TextLabel, RichText, alignment, wrapping, and styles     |
-| `textinput`   | Editable text field with caret, selection, and undo      |
-| `tilemap`     | Procedural tileset and tilemap landscape rendering       |
-| `tween`       | Easing function grid with 15 curve families              |
+The gallery includes focused examples for shapes, bitmaps, text, interaction, animation, tilemaps, particles, collision, application flow, audio/video, file-format loading, and a growing set of 3D scenes covering primitives, shading, skyboxes, skeletal animation, picking, fire, explosions, and a globe. Where a capability is shared, the gallery lets you switch the same scene among supported renderers.
 
 Build a specific example:
 
 ```sh
-npm run build --workspace=examples/shapes
+npm run build --workspace=examples/packages/shapes
 ```
 
 Run a renderer-specific example dev server:
 
 ```sh
-npm run dev:canvas --workspace=examples/textmetrics
-npm run dev:dom --workspace=examples/textmetrics
-npm run dev:webgl --workspace=examples/textmetrics
-npm run dev:webgpu --workspace=examples/textmetrics
+npm run dev:canvas --workspace=examples/packages/shapes
+npm run dev:dom --workspace=examples/packages/shapes
+npm run dev:webgl --workspace=examples/packages/shapes
+npm run dev:webgpu --workspace=examples/packages/scene-primitives
 ```
 
 ## Repository
@@ -258,16 +252,18 @@ npm install
 ```text
 packages/      Workspace packages published as @flighthq/*
 examples/      Standalone Vite example apps
-functional/    Renderer-focused functional scenes and baselines
-tools/         Gallery, functional harness, capture tooling, and repo utilities
+conformance/   Import fixtures and structured conformance checks
+tools/         Gallery, functional scenes, capture harness, and repo utilities
 scripts/       Validation, API, coverage, ordering, size, and build scripts
 ```
 
 Useful checks:
 
 ```sh
-npm run check        # packages:check + typecheck + lint + format + order + exports
-npm run test         # unit tests across all packages
-npm run size         # gzip output size against baselines
-npm run test:functional  # headless render smoke, parity, and regression
+npm run check              # package, type, API, export, portability, docs, and style gates
+npm run test               # unit tests across all packages
+npm run size               # gzip output size against committed budgets
+npm run test:smoke         # fail on browser/runtime/render errors
+npm run test:parity        # compare output across render backends
+npm run test:regression    # compare output against committed fingerprints
 ```
