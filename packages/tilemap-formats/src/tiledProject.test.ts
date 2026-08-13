@@ -25,6 +25,18 @@ const resolve: TiledTilesetResolver = (ref) => {
 };
 
 describe('buildTilemapLayersFromTiled', () => {
+  // A clean parse is two claims: the values are right AND THE PROJECTION IS NOT COMPLAINING. Every other
+  // test here checks the first. This checks the second — the one that catches a layer that projected into
+  // plausible-looking tile arrays while quietly reporting that it could not place some of them.
+  it('raises no diagnostic at all for a well-formed layer', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    buildTilemapLayersFromTiled(mapWithLayerData('1,2,1,2')!, 0, resolve, diagnostics);
+
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
+    expect(complaints, `a good Tiled layer made the projection complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('splits a two-tileset layer into one TilemapData per tileset with local ids', () => {
     const map = mapWithLayerData('1,5,2147483649,6')!;
     const result = buildTilemapLayersFromTiled(map, 0, resolve)!;
