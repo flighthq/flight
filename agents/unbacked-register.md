@@ -333,6 +333,24 @@ unusual care all session precisely because it was judged fragile, and THE CARE O
 VERIFIED.** Faithfully copied, never re-checked. ⇒ **Re-derive a carried constraint against the current tree
 before acting on it; a person who has changed their mind might tell you, and the code cannot.**
 
+★★★ **A GATE WHOSE COMPLAINT *CHANGES* IS TELLING YOU ABOUT ITS SUBJECT, NOT ABOUT ITSELF — read the
+wording, not just the exit code.** *(`builder2` asked for this one to be written down, as the converse of
+the rule that a gate cannot distinguish nothing-to-check from check-went-missing.)* On the first merged
+tree, `instrumentation:check` failed with *"…reports a discarded JPEG alpha stream as a **Drop**, since the
+bytes are present and go unread"*; `builder3`'s fix cleared it; then a peer commit was applied and it went
+red again with **different wording** — *"…as a **Skip**, since alpha compositing is not implemented yet"*.
+**A flaky-gate reading would have retried and moved on.** Reading the changed message as *the input moved*
+led straight to the diff, where the commit — named for a coverage manifest — was removing
+`CompressionFraming.Rfc1950` from `swfBitmap.ts` and reverting three other agents' just-merged work across
+37 files. It was reset out before any attestation, and its author independently reached the same finding
+minutes later and **voided their own attestation**.
+⇒ **The same failure twice is a defect; the same gate failing DIFFERENTLY is a changed subject.** Most gate
+output is read for its exit code alone, which throws away the one field that distinguishes those two.
+⇒ **Cause, worth naming because it is a standing hazard rather than one agent's slip: `git add -A` after a
+base move.** A whole-tree delta computed against a stale base *looks deliberate to git*, so nothing
+downstream catches it. **The cheap counter, from the author: `git show --stat` your own commit before
+sending and count the files against the paths you meant to touch — six paths, six files.**
+
 ★★★ **EVERY ZERO NEEDS A CONTROL — RUN A QUERY YOU KNOW SHOULD RETURN NON-ZERO. If the control also
 returns zero, the instrument is broken, not the world.** *(Manager's framing, recorded at their request in
 exactly this form, because it is cheaper than any other doctrine here and would have caught all three
