@@ -1,6 +1,6 @@
 ---
-updated: 2026-08-12
-by: manager
+updated: 2026-08-13
+by: manager, integration
 ---
 
 # WebGPU backlog — accumulated, deliberately deferred
@@ -278,6 +278,25 @@ absent module.
   **"WebGPU matches baseline" is untested repo-wide** — 118 of 119 columns were never checked. That is
   a statement about where nobody looked, not a defect claim.
 
+### API surface — a lane decision the boundary cannot verify
+
+- **`bindWgpuTexture` and `bindWgpuVideoTexture` stay on `render-wgpu`'s `./contract` lane.** Ruled by
+  manager 2026-08-12 and recorded here rather than dispatched — **the recording is the ruling, not a
+  deferral of one.** Both are exported on `./contract` (via `export * from './wgpuDraw'`), absent from
+  the public `.` lane, and have **zero callers outside their own colocated test** (re-measured at
+  `4b6815e59`). Removing them is defensible under the pre-release rename/restructure/remove rule, and
+  that is exactly why it is not incidental cleanup: **it is an intra-SDK API-surface decision, and WGPU
+  does not run on the maintainer's host, so no one can verify at the boundary that the removal breaks
+  no consumer.** A lane change nobody can verify is what this file is for.
+  **What reaches them:** no production path; any `@flighthq` package reaches them with one import and no
+  export change — they are dormant, not unreachable.
+  **Escape:** `npm run reachability:check` does **not** cover this — its lane population is effect
+  runners/registrars plus `default*Renderer|Runner` symbols, so an arbitrary export never enters it.
+  The instrument that answers a lane question is `npm run api <package>` / `npm run api:json`.
+  **Widen when:** WGPU runs on the maintainer's host, or a consumer appears. See
+  `unbacked-register.md` L11 (lane fact and its correction) and L8 (the mid-frame-destroy shape both
+  functions still carry, unfixed because nothing calls them).
+
 ### Coverage surface, for whoever schedules a pass
 
 - `scene3d-wgpu` carries **273 unexamined branch arms across 36 of 49 source files** (`untested
@@ -289,3 +308,6 @@ absent module.
 - **2026-08-12** — Created. WGPU work deferred behind other work by standing decision; the non-indexed
   draw defect was ruled priority-one on severity and then deferred under that decision, with the
   consequence stated rather than absorbed.
+- **2026-08-13** — Added the `bindWgpuTexture` / `bindWgpuVideoTexture` lane decision, recorded by
+  integration on manager's 2026-08-12 ruling. Written here by integration because the file lives in the
+  integrated tree; if manager wrote their own copy, keep one.
