@@ -45,8 +45,12 @@ function makeBindGroupLayout(): GPUBindGroupLayout {
   return {} as GPUBindGroupLayout;
 }
 
-function makeBuffer(): GPUBuffer {
-  return { destroy: () => {} } as unknown as GPUBuffer;
+function makeBuffer(descriptor: GPUBufferDescriptor): GPUBuffer {
+  return {
+    destroy: () => {},
+    size: descriptor.size,
+    usage: descriptor.usage,
+  } as unknown as GPUBuffer;
 }
 
 function makeTexture(): GPUTexture {
@@ -94,12 +98,22 @@ function makePipelineLayout(): GPUPipelineLayout {
 }
 
 function makeDevice(): GPUDevice {
+  const writeBuffer = (
+    buffer: GPUBuffer,
+    bufferOffset: number,
+    data: unknown,
+    dataOffset?: number,
+    size?: number,
+  ): void => {
+    validateWriteBufferDestination(buffer, bufferOffset, data, dataOffset, size);
+  };
+
   return {
     features: new Set(),
     limits: { maxTextureDimension2D: 8192, minUniformBufferOffsetAlignment: 256 },
     createBindGroup: () => makeBindGroup(),
     createBindGroupLayout: () => makeBindGroupLayout(),
-    createBuffer: () => makeBuffer(),
+    createBuffer: (descriptor: GPUBufferDescriptor) => makeBuffer(descriptor),
     createCommandEncoder: () => makeCommandEncoder(),
     createPipelineLayout: () => makePipelineLayout(),
     createRenderPipeline: (descriptor: GPURenderPipelineDescriptor) => makePipeline(descriptor),
@@ -109,10 +123,60 @@ function makeDevice(): GPUDevice {
     queue: {
       copyExternalImageToTexture: () => {},
       submit: () => {},
-      writeBuffer: () => {},
+      writeBuffer,
       writeTexture: () => {},
     },
   } as unknown as GPUDevice;
+}
+
+// Mirror writeBuffer's synchronous BufferSource checks and the destination constraints that a real
+// device reports through GPU validation. This mock backs unit paths in three WGPU packages, so the
+// validation belongs at their shared fake-device boundary rather than in individual interaction tests.
+function validateWriteBufferDestination(
+  buffer: GPUBuffer,
+  bufferOffset: number,
+  data: unknown,
+  dataOffset = 0,
+  size?: number,
+): void {
+  const isArrayBuffer = data instanceof ArrayBuffer;
+  const isSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer;
+  const isView = ArrayBuffer.isView(data);
+  if (!isArrayBuffer && !isSharedArrayBuffer && !isView) {
+    throw new TypeError('GPUQueue.writeBuffer: data must be a BufferSource');
+  }
+  if (!Number.isSafeInteger(bufferOffset) || bufferOffset < 0 || bufferOffset % 4 !== 0) {
+    throw new DOMException('GPUQueue.writeBuffer: bufferOffset must be a non-negative multiple of 4', 'OperationError');
+  }
+  if (
+    !Number.isSafeInteger(dataOffset) ||
+    dataOffset < 0 ||
+    (size !== undefined && (!Number.isSafeInteger(size) || size < 0))
+  ) {
+    throw new DOMException('GPUQueue.writeBuffer: data range is invalid', 'OperationError');
+  }
+
+  const elementByteLength = isView && !(data instanceof DataView) ? getTypedArrayElementByteLength(data) : 1;
+  const dataElementLength = data.byteLength / elementByteLength;
+  const contentElementLength = size ?? dataElementLength - dataOffset;
+  if (contentElementLength < 0 || dataOffset + contentElementLength > dataElementLength) {
+    throw new DOMException('GPUQueue.writeBuffer: data range is out of bounds', 'OperationError');
+  }
+
+  const contentByteLength = contentElementLength * elementByteLength;
+  if (contentByteLength % 4 !== 0) {
+    throw new DOMException('GPUQueue.writeBuffer: content byte length must be a multiple of 4', 'OperationError');
+  }
+  if ((buffer.usage & GPUBufferUsage.COPY_DST) === 0) {
+    throw new Error('Fake GPU validation: GPUQueue.writeBuffer destination buffer must have COPY_DST usage');
+  }
+  if (bufferOffset + contentByteLength > buffer.size) {
+    throw new Error('Fake GPU validation: GPUQueue.writeBuffer destination range exceeds the buffer size');
+  }
+}
+
+function getTypedArrayElementByteLength(data: ArrayBufferView): number {
+  return (data as ArrayBufferView & { readonly BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT;
 }
 
 function makeAdapter(): GPUAdapter {

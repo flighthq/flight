@@ -25,22 +25,25 @@ class MockOffscreenCanvas {
   }
 }
 
+class MockImageData {
+  constructor(
+    readonly data: Uint8ClampedArray,
+    readonly width: number,
+    readonly height: number,
+  ) {
+    if (data.length !== width * height * 4) {
+      throw new DOMException('ImageData data length must equal width * height * 4', 'IndexSizeError');
+    }
+  }
+}
+
 function fakeImage(): DecodedImage {
   return { data: new Uint8ClampedArray([10, 20, 30, 255]), width: 1, height: 1 };
 }
 
 beforeEach(() => {
   vi.stubGlobal('OffscreenCanvas', MockOffscreenCanvas);
-  vi.stubGlobal(
-    'ImageData',
-    class {
-      constructor(
-        readonly data: Uint8ClampedArray,
-        readonly width: number,
-        readonly height: number,
-      ) {}
-    },
-  );
+  vi.stubGlobal('ImageData', MockImageData);
 });
 
 afterEach(() => {
