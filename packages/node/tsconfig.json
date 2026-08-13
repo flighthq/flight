@@ -13,6 +13,7 @@
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../materials" },
+    { "path": "../math" },
     { "path": "../signals" },
     { "path": "../types" }
   ],

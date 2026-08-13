@@ -7,6 +7,7 @@ import {
   matrixTransformPointXY,
   multiplyMatrix,
 } from '@flighthq/geometry/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type {
   HasTransform2DRuntime,
   Matrix,
@@ -177,5 +178,3 @@ function recomputeWorldTransform2D<Traits extends object>(
   }
   computeNodeWorldTransformRevision(runtime, parentRuntime);
 }
-
-const DEG_TO_RAD = Math.PI / 180;
