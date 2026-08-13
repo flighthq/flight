@@ -24,7 +24,7 @@
 //
 // Same allowlist-with-a-reason shape as scripts/portable.ts and scripts/mocks.ts.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 
 import pc from 'picocolors';
 
@@ -49,12 +49,13 @@ const BACKENDS = ['Canvas', 'Dom', 'Gl', 'Wgpu'] as const;
 const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'worktrees', 'incoming']);
 
 // Genuinely-intentional escapes, named with a reason, never silently.
-const ALLOW: { name: string; why: string }[] = [
-  {
-    name: 'registerDefaultGlBlendModes',
-    why: 'There is no GlBlendMode type to prefix. This registers a GlBlendRealization keyed by the backend-free BlendMode node enum, so the rule has no type to test against and the name is neither right nor wrong under it. Naming it truthfully (registerGlDefaultBlendRealizations?) is a ruling nobody has made; recorded here rather than left to look compliant.',
-  },
-];
+//
+// Empty, and that is its correct resting state — it exists for genuine one-off deviations, so a permanent
+// resident would quietly become a second, unchecked tier. `registerDefaultGlBlendModes` sat here until the
+// singular-registrar proof path below was added: it was never an escape, it was a name the checker had
+// only one way to prove. AN ESCAPE THAT DISSOLVES UNDER A CORRECT WIDENING WAS A MISCLASSIFICATION, NOT A
+// DEVIATION.
+const ALLOW: { name: string; why: string }[] = [];
 
 const args = process.argv.slice(2);
 const checkMode = args.includes('--check');
@@ -69,6 +70,7 @@ interface Violation {
 const exportedTypes = collectExportedTypes(join(root, 'packages', 'types', 'src'));
 const sourceFiles: string[] = [];
 walk(join(root, 'packages'), sourceFiles);
+const registrarsByPackage = collectRegistrarsByPackage(sourceFiles);
 
 const violations: Violation[] = [];
 let allowed = 0;
@@ -79,7 +81,7 @@ for (const path of sourceFiles) {
   for (const match of text.matchAll(/export function (register[A-Za-z0-9]+)/g)) {
     const name = match[1];
     scanned++;
-    const segment = findWedgedBackendSegment(name);
+    const segment = findWedgedBackendSegment(name, registrarsByPackage.get(packageOf(path)) ?? new Set());
     if (segment === null) continue;
     if (ALLOW.some((a) => a.name === name)) {
       allowed++;
@@ -112,7 +114,7 @@ process.exit(checkMode ? 1 : 0);
 // The segment from a wedged backend token to the end of the name, or null when the name is compliant.
 // A token is wedged when it is non-initial, is followed by a further word, and the segment it opens does
 // not name a type — which is exactly the shape a split type name has.
-function findWedgedBackendSegment(name: string): string | null {
+function findWedgedBackendSegment(name: string, packageRegistrars: ReadonlySet<string>): string | null {
   const rest = name.slice('register'.length);
   for (const backend of BACKENDS) {
     let from = 0;
@@ -127,6 +129,7 @@ function findWedgedBackendSegment(name: string): string | null {
       if (!isUpperCase(rest[after])) continue;
       const segment = rest.slice(at);
       if (namesType(segment)) continue;
+      if (namesSingularRegistrar(segment, packageRegistrars)) continue;
       return segment;
     }
   }
@@ -138,6 +141,45 @@ function findWedgedBackendSegment(name: string): string | null {
 function namesType(segment: string): boolean {
   if (exportedTypes.has(segment)) return true;
   return segment.endsWith('s') && exportedTypes.has(segment.slice(0, -1));
+}
+
+// The second proof path: a mid-name PLURAL AGGREGATE is compliant when singularizing the segment names
+// an exported singular registrar IN THE SAME PACKAGE. `registerDefaultGlBlendModes` is proved by
+// `registerGlBlendMode`, whose own compliance came the hard way through the type `BlendMode`.
+//
+// ★ THIS IS A SECOND SPELLING OF THE SAME PROOF, NOT A SOFTENING, and someone will eventually read it as
+// one. The proof is TRANSITIVE: the aggregate is proved by the singular registrar, and that registrar was
+// proved against a real exported type. THE CHAIN STILL BOTTOMS OUT IN @flighthq/types — a rule that
+// learns a second route to the same ground has not weakened. What it stops requiring is that every
+// aggregate invent a plural TYPE nobody needs purely to satisfy the checker.
+//
+// Locality is deliberate and is the tightening over the general form: the singular registrar must be
+// exported from the SAME PACKAGE. A proof that has to travel is a proof that can drift, and a
+// coincidental cross-package name-match would prove nothing about this name. If a legitimate
+// cross-package case appears, it should FAIL here and be ruled on, not be pre-permitted.
+function namesSingularRegistrar(segment: string, packageRegistrars: ReadonlySet<string>): boolean {
+  if (!segment.endsWith('s')) return false;
+  return packageRegistrars.has(`register${segment.slice(0, -1)}`);
+}
+
+function packageOf(path: string): string {
+  return relative(root, path).split(sep)[1] ?? '';
+}
+
+function collectRegistrarsByPackage(paths: readonly string[]): Map<string, Set<string>> {
+  const byPackage = new Map<string, Set<string>>();
+  for (const path of paths) {
+    const owner = packageOf(path);
+    let names = byPackage.get(owner);
+    if (names === undefined) {
+      names = new Set();
+      byPackage.set(owner, names);
+    }
+    for (const match of readFileSync(path, 'utf8').matchAll(/export function (register[A-Za-z0-9]+)/g)) {
+      names.add(match[1]);
+    }
+  }
+  return byPackage;
 }
 
 function isUpperCase(char: string): boolean {
