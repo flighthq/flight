@@ -5,6 +5,7 @@ import {
   getBitmapFontPage,
 } from '@flighthq/bitmapfont/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type { BitmapFont } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -46,6 +47,20 @@ const FNT_XML = [
 ].join('\n');
 
 describe('parseBitmapFontJson', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a walk that desynchronised and
+  // still left the asserted fields looking plausible. Asserted as an EMPTY list rather than a filter over
+  // truncation-shaped kind names: a pattern built from expected vocabulary silently exempts every kind
+  // whose name nobody guessed, and this importer has kinds like that.
+  it('raises no diagnostic at all for a well-formed file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parseBitmapFontJson(FNT_JSON, { resolvePage: () => createTextureAtlas() }, diagnostics);
+
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
+    expect(complaints, `a good fnt-json file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('parses glyphs, kerning, and line metrics with the resolved atlas', () => {
     const atlas = createTextureAtlas();
     const font = parseBitmapFontJson(FNT_JSON, { resolvePage: () => atlas });

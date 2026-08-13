@@ -19,6 +19,20 @@ import { parseRiveDocument } from './riveDocument';
 // the model rather than by the table these cases mean to exercise.
 
 describe('parseRiveDocument', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a walk that desynchronised and
+  // still left the asserted fields looking plausible. Asserted as an EMPTY list rather than a filter over
+  // truncation-shaped kind names: a pattern built from expected vocabulary silently exempts every kind
+  // whose name nobody guessed, and this importer has kinds like that.
+  it('raises no diagnostic at all for a well-formed file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parseRiveDocument(buildRiveFile({ fileId: 1234567, major: 7, minor: 3 }, [], []), diagnostics);
+
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
+    expect(complaints, `a good rive file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('rejects a file whose fingerprint is not RIVE', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const bytes = new Uint8Array([0x52, 0x49, 0x56, 0x58, 0x01]);
