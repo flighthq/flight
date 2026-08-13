@@ -1,4 +1,5 @@
 export * from './Aabb';
+export * from './Camera3DViewExplanation';
 export * from './CanvasTextShaperBackend';
 export * from './CffTable';
 export * from './OpenTypeFontExplanation';

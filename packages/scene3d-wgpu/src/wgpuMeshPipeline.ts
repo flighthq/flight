@@ -1,5 +1,5 @@
-import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
-import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry/contract';
+import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import {
   getWgpuBlendState,
   getWgpuRenderStateRuntime,
@@ -1046,7 +1046,7 @@ export function writeWgpuFrameUniform(
   state: WgpuRenderState,
   camera: Readonly<Camera3D>,
   lights: Readonly<Scene3DLightBlock>,
-): boolean {
+): void {
   const scene = getWgpuScene3DRuntime(state);
   let binding = scene.frameBindings.get(lights);
   if (binding === undefined) {
@@ -1083,13 +1083,11 @@ export function writeWgpuFrameUniform(
   const vp = webGpuVp;
   for (let i = 0; i < 16; i++) f[i] = vp[i];
 
-  // A view with no inverse leaves the camera-position slots UNWRITTEN and reports it, matching
-  // `updateCamera3DInverseViewProjection`, which already treats that as a real state and keeps its prior
-  // cache. Writing them anyway would put NaN in a uniform buffer the shader reads as the view vector,
-  // and NaN in a GPU buffer is the worst version of this failure: it does not throw, it does not log,
-  // and it surfaces only as shading that has gone wrong somewhere with nothing to attribute it to.
-  if (!inverseMatrix4(scratchInverseView, camera.view)) return false;
-  getMatrix4Position(scratchCameraPosition, scratchInverseView);
+  // Delegates to the canonical eye-position primitive instead of inverting the view here. A view matrix
+  // is orthonormal by contract, so the eye is -(Rᵀ·t) — a transpose, with no determinant and no
+  // division, which cannot fail. Inverting a 4x4 to read three numbers out of it was both the slower
+  // way and the only reason this write had a failure mode to report.
+  getCamera3DPosition(scratchCameraPosition, camera);
   f[16] = scratchCameraPosition.x;
   f[17] = scratchCameraPosition.y;
   f[18] = scratchCameraPosition.z;
@@ -1132,7 +1130,6 @@ export function writeWgpuFrameUniform(
   f[FRAME_COUNTS_OFFSET + 3] = 0;
 
   state.device.queue.writeBuffer(binding.buffer, 0, f.buffer, 0, FRAME_UNIFORM_BYTES);
-  return true;
 }
 
 // Frame uniform float offsets for the punctual light arrays — the byte offset within the Frame buffer
@@ -1271,7 +1268,6 @@ const VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
 
 const scratchViewProjection = createMatrix4();
 const scratchWebGpuViewProjection = createMatrix4();
-const scratchInverseView = createMatrix4();
 const scratchCameraPosition = { x: 0, y: 0, z: 0 };
 const _frameScratch = new Float32Array(FRAME_UNIFORM_BYTES / 4);
 const _dynamicOffsets = new Uint32Array(1);

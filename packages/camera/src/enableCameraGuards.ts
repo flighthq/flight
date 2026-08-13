@@ -1,7 +1,9 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { Camera2D } from '@flighthq/types/contract';
+import type { Camera2D, Camera3D } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import { setCamera3DViewGuard } from './camera';
+import { explainCamera3DView } from './explainCamera3DView';
 import { setCamera2DVisibleBoundsGuard } from './visibleBounds';
 
 export function areCameraGuardsEnabled(): boolean {
@@ -9,6 +11,7 @@ export function areCameraGuardsEnabled(): boolean {
 }
 
 export function disableCameraGuards(): void {
+  setCamera3DViewGuard(null);
   setCamera2DVisibleBoundsGuard(null);
   cameraGuardsEnabled = false;
 }
@@ -17,6 +20,7 @@ export function disableCameraGuards(): void {
 // modules stay message-free, so an application that omits this one sheds both the text and
 // @flighthq/log.
 export function enableCameraGuards(): void {
+  setCamera3DViewGuard(warnOnNonOrthonormalCamera3DView);
   setCamera2DVisibleBoundsGuard(warnOnDegenerateCamera2DVisibleBounds);
   cameraGuardsEnabled = true;
 }
@@ -29,6 +33,20 @@ function warnOnDegenerateCamera2DVisibleBounds(camera: Readonly<Camera2D>): void
     message:
       'getCamera2DVisibleBounds: the view matrix has no inverse, so the visible rectangle is unbounded and nothing is culled — a zoom of 0 is the usual cause; set a non-zero zoom.',
     zoom: camera.zoom,
+  });
+}
+
+// Names the CAUSE, not any one consequence: several consumers rely on the orthonormality precondition
+// and warning once per consumer would be noise. A caller that wants to connect this to a specific wrong
+// answer has `explainCamera3DView` for the numbers.
+function warnOnNonOrthonormalCamera3DView(camera: Readonly<Camera3D>): void {
+  const explanation = explainCamera3DView(camera);
+  if (explanation.isOrthonormal) return;
+  logOnce('camera:non-orthonormal-view', LogLevel.Warn, {
+    message:
+      'setCamera3DViewMatrix4FromMatrix4: the view matrix is not orthonormal, which its consumers rely on — a scaled matrix is the usual cause. Reflections are fine; scale is not. Call explainCamera3DView(camera) for the measured deviations.',
+    scaleDeviation: explanation.scaleDeviation,
+    shearDeviation: explanation.shearDeviation,
   });
 }
 
