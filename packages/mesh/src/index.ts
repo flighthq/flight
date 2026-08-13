@@ -6,6 +6,7 @@ export {
   captureMeshMorphBindPose,
   centerMeshGeometry,
   cloneMeshGeometry,
+  cloneMeshGeometryMetadata,
   cloneMeshGeometryForDeformation,
   compactMeshGeometryVertices,
   computeMeshGeometryBoundingSphere,

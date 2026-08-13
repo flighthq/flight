@@ -8,6 +8,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   cloneMeshGeometry,
+  cloneMeshGeometryMetadata,
   createMeshGeometry,
   destroyMeshGeometryGlData,
   destroyMeshGeometryWgpuData,
@@ -20,20 +21,6 @@ import {
   setMeshGeometryMorphBindPose,
   setMeshGeometrySkinBindPose,
 } from './meshGeometry';
-
-const CANONICAL_LAYOUT: VertexAttributeLayout = {
-  attributes: [
-    { byteOffset: 0, format: 'float32x3', semantic: 'position' },
-    { byteOffset: 12, format: 'float32x3', semantic: 'normal' },
-    { byteOffset: 24, format: 'float32x4', semantic: 'tangent' },
-    { byteOffset: 40, format: 'float32x2', semantic: 'uv0' },
-  ],
-  stride: 48,
-};
-
-function makeVertices(count: number): Float32Array<ArrayBuffer> {
-  return new Float32Array(count * 12);
-}
 
 describe('cloneMeshGeometry', () => {
   it('deep-copies vertices and indices independently', () => {
@@ -67,6 +54,30 @@ describe('cloneMeshGeometry', () => {
     expect(clone.bounds).not.toBe(source.bounds);
     expect(clone.bounds!.min.x).toBe(-1);
     expect(clone.bounds!.max.z).toBe(1);
+  });
+});
+
+const CANONICAL_LAYOUT: VertexAttributeLayout = {
+  attributes: [
+    { byteOffset: 0, format: 'float32x3', semantic: 'position' },
+    { byteOffset: 12, format: 'float32x3', semantic: 'normal' },
+    { byteOffset: 24, format: 'float32x4', semantic: 'tangent' },
+    { byteOffset: 40, format: 'float32x2', semantic: 'uv0' },
+  ],
+  stride: 48,
+};
+
+function makeVertices(count: number): Float32Array<ArrayBuffer> {
+  return new Float32Array(count * 12);
+}
+
+describe('cloneMeshGeometryMetadata', () => {
+  it('copies descriptors without copying the vertex stream', () => {
+    const source = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: new Float32Array(12) });
+    const copy = cloneMeshGeometryMetadata(source);
+    expect(copy.vertices.length).toBe(0);
+    expect(copy.layout).toBe(source.layout);
+    expect(copy[EntityRuntimeKey]).not.toBe(source[EntityRuntimeKey]);
   });
 });
 

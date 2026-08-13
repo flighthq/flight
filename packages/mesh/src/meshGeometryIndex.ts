@@ -1,6 +1,6 @@
 import type { MeshGeometry } from '@flighthq/types/contract';
 
-import { cloneMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
+import { cloneMeshGeometry, cloneMeshGeometryMetadata, getMeshGeometryVertexCount } from './meshGeometry';
 
 // Index-buffer pipeline over a MeshGeometry: de-index a welded stream to a flat non-indexed one,
 // and derive a wireframe line-list from a triangle index buffer. These read the existing
@@ -50,7 +50,7 @@ export function compactMeshGeometryVertices(geometry: Readonly<MeshGeometry>): M
     indices[element] = sourceToCompact[sourceIndices[element]];
   }
 
-  const out = cloneMeshGeometry(geometry);
+  const out = cloneMeshGeometryMetadata(geometry);
   out.vertices = new Float32Array(compactBuffer);
   out.indices = indices;
   return out;
@@ -124,7 +124,7 @@ export function expandMeshGeometryIndices(geometry: Readonly<MeshGeometry>): Mes
     }
   }
 
-  const out = cloneMeshGeometry(geometry);
+  const out = cloneMeshGeometryMetadata(geometry);
   out.indices = null;
   out.vertices = vertices;
   return out;
@@ -197,7 +197,7 @@ export function weldMeshGeometryVertices(geometry: Readonly<MeshGeometry>): Mesh
   }
 
   const weldedBuffer = uniqueBytes.buffer.slice(0, uniqueCount * stride);
-  const out = cloneMeshGeometry(geometry);
+  const out = cloneMeshGeometryMetadata(geometry);
   out.vertices = new Float32Array(weldedBuffer);
   out.indices = indices;
   return out;

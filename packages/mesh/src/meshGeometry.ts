@@ -50,6 +50,29 @@ export function cloneMeshGeometry(source: Readonly<MeshGeometry>): MeshGeometry 
   });
 }
 
+export function cloneMeshGeometryMetadata(source: Readonly<MeshGeometry>): MeshGeometry {
+  const bounds = source.bounds
+    ? createAabb(
+        source.bounds.min.x,
+        source.bounds.min.y,
+        source.bounds.min.z,
+        source.bounds.max.x,
+        source.bounds.max.y,
+        source.bounds.max.z,
+      )
+    : null;
+  const subsets: MeshSubset[] = source.subsets.map((subset) => ({ ...subset }));
+  return createMeshGeometryRuntime({
+    bounds,
+    indices: source.indices,
+    layout: source.layout,
+    subsets,
+    topology: source.topology,
+    version: 0,
+    vertices: new Float32Array(0),
+  });
+}
+
 // Allocates a MeshGeometry from CPU vertex/index data plus a layout. The vertices are taken by
 // reference (the caller hands off ownership of the interleaved record stream). Indices, when
 // present, are promoted to Uint32 automatically if any vertex index could exceed 65535 — that
@@ -176,6 +199,7 @@ function createMeshGeometryRuntime(fields: Readonly<Omit<MeshGeometry, typeof En
     vertices: fields.vertices,
   }) as MeshGeometry;
   const runtime: MeshGeometryRuntime = {
+    attributeDataView: null,
     binding: null,
     // -1 unless the caller supplied bounds up front: authored bounds are trusted at the version they
     // were computed for, so ensureMeshGeometryBounds does not re-sweep a geometry that arrived with a
