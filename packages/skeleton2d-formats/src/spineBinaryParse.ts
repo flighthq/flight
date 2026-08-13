@@ -650,11 +650,26 @@ function tally(counts: Map<string, number>, kind: string): void {
   counts.set(kind, (counts.get(kind) ?? 0) + 1);
 }
 
-// Whether this importer's record layout describes `version`. Only the 4.x line is claimed: it is what the
-// layout was verified against. Anything else (3.8 and earlier, or a future major) is rejected rather than
-// guessed, because a mismatched layout desynchronizes the stream and yields plausible-looking garbage.
+// The record layouts this importer actually describes, as an ENUMERATION rather than a prefix.
+//
+// ★ A PREFIX GATE IS A PROMISE ABOUT THE FUTURE MADE BY SOMEONE WHO CANNOT KEEP IT. The previous test was
+// `version.startsWith('4.')`, which claimed every 4.x layout — including ones that did not exist when it
+// was written. Spine 4.2 then shipped a changed layout, and the gate admitted it into a reader built for
+// 4.1: measured on 23 real 4.2.22 exports, every one desynchronized at once and produced a Skeleton2DImport
+// with ZERO bones from a 64 KB file. Not a crash and not a refusal — a valid-looking success containing
+// nothing, which a caller cannot tell from a skeleton that genuinely has no bones.
+//
+// So the list names what has been READ AGAINST A REAL EXPORT, and anything else is refused through the
+// `spine.binary-version-unsupported` path with its version in the crumb. A refusal is recoverable; a
+// fabricated empty success is not. Adding a layout here means implementing it, not widening a pattern.
+const SPINE_BINARY_SUPPORTED_LAYOUTS: readonly string[] = ['4.1'];
+
+// Whether this importer's record layout describes `version`. Matched on the major.minor pair, since Spine
+// revises the layout across minors and patch releases within one minor share it.
 function isSupportedSpineBinaryVersion(version: string): boolean {
-  return version.startsWith('4.');
+  const parts = version.split('.');
+  if (parts.length < 2) return false;
+  return SPINE_BINARY_SUPPORTED_LAYOUTS.includes(`${parts[0]}.${parts[1]}`);
 }
 
 // Spine's bone records, in file order — the order weighted-mesh influences and slot bone references index
