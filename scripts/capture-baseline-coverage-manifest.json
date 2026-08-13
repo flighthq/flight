@@ -467,7 +467,7 @@
       "text-multiformat/dom": ["fingerprint", "oracle", "screenshot"],
       "text-multiformat/webgl": ["fingerprint", "oracle", "screenshot"],
       "text-multiformat/webgpu": ["fingerprint", "oracle", "screenshot"],
-      "text-native/dom": ["fingerprint", "screenshot"],
+      "text-native/dom": ["fingerprint", "oracle", "screenshot"],
       "text-strikethrough/canvas": ["fingerprint", "oracle", "screenshot"],
       "text-strikethrough/dom": ["fingerprint", "oracle", "screenshot"],
       "text-strikethrough/webgl": ["fingerprint", "oracle"],
