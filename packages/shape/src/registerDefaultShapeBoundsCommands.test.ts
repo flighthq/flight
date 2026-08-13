@@ -13,6 +13,19 @@ import {
 } from './shapeBounds';
 import { getShapeBoundsCommand, getShapeBoundsCommandRegistryRevision } from './shapeBoundsRegistry';
 
+// ★ THIS FILE RUNS ISOLATED VIA ISOLATED_STATEFUL_TEST_FILES IN vitest.config.ts, AND THAT ROUTING IS
+// LOAD-BEARING — do not demote it to the shared tier.
+// What it guards: importing @flighthq/shape registers NOTHING. That side-effect-free-import property is
+// the entire reason `registerDefaultShapeBoundsCommands` exists as an explicit entry point instead of a
+// module-scope call, so the pre-install assertion below is the only thing holding that guarantee.
+// Why isolation rather than a beforeEach that clears the registry: the registry is process-global, so
+// "nothing is registered" is a claim about a PROCESS and can only be asserted in one nobody else has
+// touched. Clearing first would change the claim to "nothing is registered after I cleared it" — which
+// passes identically in a world where importing this package registered forty commands, and so retires
+// the guarantee while turning the suite green. Five sibling files register deliberately and assert
+// nothing about emptiness; they are correct in the shared tier and only this file needs its own process.
+// It is deliberately NOT in ISOLATED_MOCK_TEST_FILES: that list means "mocks modules" and is checked both
+// ways, so a non-mocking entry there would need an escape to silence a rule that is right.
 describe('registerDefaultShapeBoundsCommands', () => {
   it('does nothing on import, then explicitly installs every standard command idempotently', () => {
     const bindings = [
