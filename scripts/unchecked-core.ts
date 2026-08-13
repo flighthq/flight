@@ -185,6 +185,28 @@ export function rankUncheckedFiles(files: readonly UncheckedFile[]): UncheckedFi
   return [...files].sort((a, b) => b.survivors.length - a.survivors.length || a.path.localeCompare(b.path));
 }
 
+/**
+ * What one warm-worker run measured, read only from the test files that run was asked to execute.
+ *
+ * A warm server's state ACCUMULATES: it still holds the result of every earlier run, and filtering by the
+ * paths this run named is the only thing keeping those out of the verdict. A worker that killed a mutant
+ * against one test file and is then asked about a different scope carries that failure forward, and reading
+ * its state unfiltered turns it into a kill for a mutant no failing test ever ran against. A false kill is
+ * the one error this tool cannot absorb: a survivor wrongly reported dead vanishes from the list, leaving
+ * nothing behind to notice it by — the clean bill of health the instrument checks exist to prevent.
+ *
+ * `measured` is false when a file the run named produced no result at all. That is neither a pass nor a
+ * failure but the absence of evidence, and the caller reports it as `unreached` rather than guessing.
+ */
+export function readMutantRunResult(
+  paths: readonly string[],
+  files: readonly Readonly<{ filepath: string; result?: Readonly<{ state?: string }> }>[],
+): { measured: boolean; passed: boolean } {
+  const named = files.filter((file) => paths.includes(file.filepath));
+  const measured = paths.length > 0 && paths.every((path) => named.some((file) => file.filepath === path));
+  return { measured, passed: measured && !named.some((file) => file.result?.state === 'fail') };
+}
+
 /** The mutants worth spending a process on: those on a line some test actually executed. */
 export function selectReachableMutants(mutants: readonly Mutant[], executedLines: ReadonlySet<number>): Mutant[] {
   return mutants.filter((mutant) => executedLines.has(mutant.line));

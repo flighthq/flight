@@ -10,6 +10,7 @@ import {
   getPositionAtOffset,
   planMutants,
   rankUncheckedFiles,
+  readMutantRunResult,
   selectReachableMutants,
 } from './unchecked-core';
 
@@ -191,6 +192,36 @@ describe('rankUncheckedFiles', () => {
   });
 });
 
+describe('readMutantRunResult', () => {
+  it('passes when every named file ran and none failed', () => {
+    const files = [pass('a.test.ts'), pass('b.test.ts')];
+    expect(readMutantRunResult(['a.test.ts', 'b.test.ts'], files)).toEqual({ measured: true, passed: true });
+  });
+
+  it('fails when a named file failed', () => {
+    expect(readMutantRunResult(['a.test.ts'], [fail('a.test.ts')])).toEqual({ measured: true, passed: false });
+  });
+
+  it('ignores a failure in a file this run did not name', () => {
+    // The regression this function exists for. A warm server keeps every earlier run's result, so a run
+    // would otherwise inherit the failure that KILLED an unrelated mutant against a different test file —
+    // and report a survivor as dead, which is the one way a finding leaves the list unnoticed.
+    const files = [pass('a.test.ts'), fail('stale.test.ts')];
+    expect(readMutantRunResult(['a.test.ts'], files)).toEqual({ measured: true, passed: true });
+  });
+
+  it('measures nothing when a named file produced no result', () => {
+    expect(readMutantRunResult(['a.test.ts', 'b.test.ts'], [pass('a.test.ts')])).toEqual({
+      measured: false,
+      passed: false,
+    });
+  });
+
+  it('measures nothing when the run named no files at all, rather than passing vacuously', () => {
+    expect(readMutantRunResult([], [pass('a.test.ts')])).toEqual({ measured: false, passed: false });
+  });
+});
+
 describe('selectReachableMutants', () => {
   it('keeps only the mutants sitting on a line some test executed', () => {
     const source = 'const a = 1 + 2;\nconst b = 3 * 4;\n';
@@ -208,4 +239,12 @@ describe('selectReachableMutants', () => {
 
 function edits(source: string): [string, string, string][] {
   return planMutants('x.ts', source).map((mutant) => [mutant.operator, mutant.original, mutant.replacement]);
+}
+
+function fail(filepath: string): { filepath: string; result: { state: string } } {
+  return { filepath, result: { state: 'fail' } };
+}
+
+function pass(filepath: string): { filepath: string; result: { state: string } } {
+  return { filepath, result: { state: 'pass' } };
 }
