@@ -304,6 +304,29 @@ describe('setNodeLocalMatrix', () => {
     expect(m.ty).toBeCloseTo(20);
   });
 
+  // Pins the losslessness this function's contract promises for a reflected (negative determinant)
+  // matrix. Positive-determinant cases round-tripped even while reflected ones silently lost the
+  // reflection, so a fixture that is not reflected cannot speak to this.
+  it('round-trips a reflected matrix, keeping the mirror', () => {
+    setNodeLocalMatrix(node, createMatrix(1, 0, 0, -1, 0, 0));
+    const m = getNodeLocalMatrix(node);
+    expect(m.a).toBeCloseTo(1);
+    expect(m.b).toBeCloseTo(0);
+    expect(m.c).toBeCloseTo(0);
+    expect(m.d).toBeCloseTo(-1);
+  });
+
+  it('round-trips a rotated reflection through all four matrix cells', () => {
+    setNodeLocalMatrix(node, createMatrix(0.5, 0.8, 0.8, -0.5, 3, 4));
+    const m = getNodeLocalMatrix(node);
+    expect(m.a).toBeCloseTo(0.5);
+    expect(m.b).toBeCloseTo(0.8);
+    expect(m.c).toBeCloseTo(0.8);
+    expect(m.d).toBeCloseTo(-0.5);
+    expect(m.tx).toBeCloseTo(3);
+    expect(m.ty).toBeCloseTo(4);
+  });
+
   it('resets pivot and absorbs its offset into translation', () => {
     node.pivotX = 5;
     node.pivotY = 5;
