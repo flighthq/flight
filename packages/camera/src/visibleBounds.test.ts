@@ -1,9 +1,9 @@
-import { createRectangle, createVector2 } from '@flighthq/geometry/contract';
-import { describe, expect, it } from 'vitest';
+import { createRectangle, createVector2, intersectsRectangle } from '@flighthq/geometry/contract';
+import { describe, expect, it, test } from 'vitest';
 
 import { createCamera2D } from './camera2d';
 import { unprojectCamera2DPoint } from './projection2d';
-import { getCamera2DVisibleBounds } from './visibleBounds';
+import { getCamera2DVisibleBounds, setCamera2DVisibleBoundsGuard } from './visibleBounds';
 
 describe('getCamera2DVisibleBounds', () => {
   it('covers the full viewport in world units at zoom 1', () => {
@@ -50,5 +50,37 @@ describe('getCamera2DVisibleBounds', () => {
       expect(corner.y).toBeGreaterThanOrEqual(out.y - 1e-6);
       expect(corner.y).toBeLessThanOrEqual(out.y + out.height + 1e-6);
     }
+  });
+});
+
+describe('setCamera2DVisibleBoundsGuard', () => {
+  test('fails toward drawing: an unbounded rectangle that still intersects distant content', () => {
+    const out = createRectangle();
+    getCamera2DVisibleBounds(createCamera2D(64, 64, { zoom: 0 }), out);
+    // Finite on purpose — the max edge must survive ordinary arithmetic, not rely on NaN comparisons.
+    expect(Number.isFinite(out.x + out.width)).toBe(true);
+    expect(Number.isFinite(out.y + out.height)).toBe(true);
+    // The property that matters is behavioural, not the constant: nothing gets culled.
+    expect(intersectsRectangle(out, createRectangle(1e12, -4e11, 10, 10))).toBe(true);
+    expect(intersectsRectangle(out, createRectangle(-9e15, 8e14, 1, 1))).toBe(true);
+  });
+
+  test('notifies the installed guard exactly once per degenerate call, and never for an invertible camera', () => {
+    const seen: number[] = [];
+    setCamera2DVisibleBoundsGuard((camera) => seen.push(camera.zoom));
+    try {
+      getCamera2DVisibleBounds(createCamera2D(64, 64, { zoom: 0 }), createRectangle());
+      getCamera2DVisibleBounds(createCamera2D(64, 64), createRectangle());
+      expect(seen).toEqual([0]);
+    } finally {
+      setCamera2DVisibleBoundsGuard(null);
+    }
+  });
+
+  test('leaves an invertible camera computing the same bounds as before', () => {
+    const out = createRectangle();
+    getCamera2DVisibleBounds(createCamera2D(64, 32), out);
+    expect(out.width).toBeCloseTo(64, 6);
+    expect(out.height).toBeCloseTo(32, 6);
   });
 });

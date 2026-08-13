@@ -27,6 +27,7 @@ import type {
   Mesh,
   PointLight,
   Scene3DAnimationTarget,
+  Scene3DDocument,
   Scene3DDocumentLight,
   Node3D,
   ShadedMaterial,
@@ -2144,6 +2145,76 @@ describe('parseAwd2 cameras', () => {
 
     const unhandled = diagnostics.filter((d) => d.kind === 'awd2.block-unhandled');
     expect(unhandled).toHaveLength(0);
+  });
+});
+
+describe('parseAwd2 joint matrix recovery', () => {
+  // A joint matrix is raw file data, so it can be singular. Before this was handled, inverting it
+  // produced NaN that was pushed into bindWorld unconditionally, inherited by every descendant through
+  // the parent chain, and decomposed into the document node's transform — a silent NaN rig.
+  const SINGULAR_TRANSFORM = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+  function parseRigWithJointTransforms(transforms: number[][]): {
+    diagnostics: ImportDiagnostic[];
+    document: Scene3DDocument;
+  } {
+    const skel = buildSkeletonBody(
+      'Rig',
+      transforms.map((transform, index) => ({
+        name: `J${index}`,
+        parentIndex: index === 0 ? 0 : index,
+        transform,
+      })),
+    );
+    const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length), skel);
+    const diagnostics: ImportDiagnostic[] = [];
+    const document = parseAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    return { diagnostics, document };
+  }
+
+  it('reports the singular joint by name and recovers rather than rejecting the model', () => {
+    const { diagnostics } = parseRigWithJointTransforms([SINGULAR_TRANSFORM]);
+    const crumb = expectOneCrumb(diagnostics, 'awd2.joint-matrix-singular');
+    expect(crumb.severity).toBe('Recover');
+    expect(crumb.origin).toBe('parseAwd2');
+    expect(crumb.detail).toMatchObject({ joint: 'J0', jointIndex: 0 });
+  });
+
+  it('leaves every node transform finite when a joint matrix is singular', () => {
+    const { document } = parseRigWithJointTransforms([SINGULAR_TRANSFORM]);
+    for (const node of document.nodes) {
+      const t = node.transform;
+      for (const value of [
+        t.position.x,
+        t.position.y,
+        t.position.z,
+        t.scale.x,
+        t.scale.y,
+        t.scale.z,
+        t.rotation.x,
+        t.rotation.y,
+        t.rotation.z,
+        t.rotation.w,
+      ]) {
+        expect(Number.isFinite(value)).toBe(true);
+      }
+    }
+  });
+
+  // The parent chain is what turned one bad joint into a whole-rig NaN, so a healthy CHILD of a
+  // singular parent is the case that actually distinguishes the fix from a local patch.
+  it('keeps a healthy child of a singular joint finite', () => {
+    const { document } = parseRigWithJointTransforms([SINGULAR_TRANSFORM, IDENTITY_TRANSFORM]);
+    for (const node of document.nodes) {
+      expect(Number.isFinite(node.transform.position.x)).toBe(true);
+      expect(Number.isFinite(node.transform.scale.x)).toBe(true);
+    }
+  });
+
+  it('reports nothing and stays finite for an invertible rig', () => {
+    const { diagnostics, document } = parseRigWithJointTransforms([IDENTITY_TRANSFORM, IDENTITY_TRANSFORM]);
+    expect(diagnostics.filter((d) => d.kind === 'awd2.joint-matrix-singular')).toHaveLength(0);
+    for (const node of document.nodes) expect(Number.isFinite(node.transform.position.x)).toBe(true);
   });
 });
 
