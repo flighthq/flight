@@ -34,6 +34,8 @@ describe('initTransform2DTrait', () => {
   it('initializes default values', () => {
     initTransform2DTrait(node);
 
+    expect(node.pivotX).toStrictEqual(0);
+    expect(node.pivotY).toStrictEqual(0);
     expect(node.rotation).toStrictEqual(0);
     expect(node.scaleX).toStrictEqual(1);
     expect(node.scaleY).toStrictEqual(1);
@@ -45,6 +47,8 @@ describe('initTransform2DTrait', () => {
 
   it('allows pre-defined values', () => {
     const base = {
+      pivotX: 4,
+      pivotY: 8,
       scaleX: 2,
       scaleY: 3,
       skewX: 15,
@@ -54,6 +58,8 @@ describe('initTransform2DTrait', () => {
       y: 200,
     };
     initTransform2DTrait(node, base);
+    expect(node.pivotX).toStrictEqual(base.pivotX);
+    expect(node.pivotY).toStrictEqual(base.pivotY);
     expect(node.scaleX).toStrictEqual(base.scaleX);
     expect(node.scaleY).toStrictEqual(base.scaleY);
     expect(node.skewX).toStrictEqual(base.skewX);
