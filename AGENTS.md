@@ -103,7 +103,7 @@ Run these at the points listed; skipping them causes cascading failures slower t
 - **After any edit session, before committing** — `npm run fix` (runs `lint:fix`, `order:fix`, `format`).
 - **After package-level changes** (manifests, workspace references, exports, build targets, side-effect behavior) — `npm run packages:check`. Fix everything it reports before moving on.
 - **After adding, removing, or renaming an exported function** — `npm run exports:check` (every export needs a colocated test), `npm run order` (`order:fix` rewrites), and `npm run api:check` (signatures and naming symmetry — plain `npm run api` only prints and enforces nothing).
-- **After adding an effect runner/registrar or a backend leaf renderer** — run `npm run reachability:check`; it hard-gates the exact runner↔registrar inverse and reports non-blocking `.`/`./contract` lane drift. Review intentional drift, then accept it with `npm run reachability:baseline`.
+- **After an effect runner/registrar or backend renderer changes** — run `npm run reachability:check`; it gates the effects inverse and registrar identities, and reports lane drift. Accept census changes with `npm run reachability:registrars:baseline`; accept lane drift with `npm run reachability:baseline`.
 - **After changing imports or test `describe` blocks** — `npm run order`.
 - **After adding or renaming an exported `register*` function** — `npm run backend-prefix:check`. The backend token prefixes the type; see [file naming](agents/conventions/file-naming.md).
 - **After adding source** — `npm run portable:check`; see the lowerable subset and escape process in [commands](agents/commands.md#checkpoints-in-detail) and [portability](agents/portability.md).

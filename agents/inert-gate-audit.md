@@ -29,6 +29,12 @@ rate is inferred from this deliberately adversarial sample.
 | 5 | `tool-capture` CLI gate invocations | An unknown option, especially a misspelled strictness option, is usage error | **No.** `flag`/`hasFlag` recognize options opportunistically, but no command validates the remaining `argv`; an option such as `--fail-on-chagned` is ignored and leaves `failOnChanged=false`. | **P2 — a typo can turn an intended gate into an ordinary capture.** The fixed root npm scripts spell their flags correctly, so this does not invalidate those exact aliases; it invalidates ad hoc/documented CLI gating as fail-closed. **RECOMMENDATION:** declare allowed value/boolean options per command and reject unknowns before starting a server or browser. |
 | 6 | `check:append-only-ledgers` | A working-tree edit to a guarded historical line is red | **Only when a baseline revision resolves.** With a baseline, editing a `Decisions` line failed by cell, section, and original text. When every candidate contains `HEAD` (or no candidate resolves), the process prints that it verified nothing and returns 0; its tests pin this outcome. | **P2 — loud skip still satisfies an exit-status gate.** On a fully integrated checkout, an uncommitted ledger edit is never read even though the implementation says the working tree is the subject. CI's fetched branch comparison normally supplies a baseline for work in flight; local/pre-commit use can be false-green. **RECOMMENDATION:** when guarded working-tree files differ from `HEAD`, use `HEAD` as the baseline; otherwise distinguish “not applicable” from a successful verification in callers. |
 
+Finding 2 is now closed by the separate committed identity set in
+`scripts/reachability-registrars.json`. `reachability:check` diffs exact `(package, registrar)` pairs and
+names every addition and loss; `reachability:registrars:baseline` is the explicit whole-repository-only
+acceptance path. The decisive replay renamed one registrar to a replacement, keeping the census at 301:
+the gate exited 1 and named both `registerWgpuUnlitMaterial` as `LOST` and its replacement as `ADDED`.
+
 ### Confirmed live negatives
 
 The findings above do not make every nearby gate suspect. The older mutation table below remains the

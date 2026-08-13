@@ -1,0 +1,1209 @@
+{
+  "schemaVersion": 1,
+  "registrars": [
+    {
+      "packageName": "application",
+      "registrar": "registerApplicationWindow"
+    },
+    {
+      "packageName": "assets",
+      "registrar": "registerAssetDescriptor"
+    },
+    {
+      "packageName": "assets",
+      "registrar": "registerAssetLoader"
+    },
+    {
+      "packageName": "assets",
+      "registrar": "registerAssetManifest"
+    },
+    {
+      "packageName": "audio",
+      "registrar": "registerAudioDecoder"
+    },
+    {
+      "packageName": "compression",
+      "registrar": "registerDecompressor"
+    },
+    {
+      "packageName": "compression",
+      "registrar": "registerDeflateDecompressor"
+    },
+    {
+      "packageName": "debug",
+      "registrar": "registerDebugSubsystem"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerBevelEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerBloomEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerBlurEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerBokehDepthOfFieldEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerContactShadowsEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerConvolutionEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerDirectionalBlurEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerDisplacementEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerDropShadowEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerGlitchEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerGradientBevelEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerGradientGlowEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerInnerGlowEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerInnerShadowEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerMedianEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerOuterGlowEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerOutlineEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerRenderEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
+      "registrar": "registerTiltShiftEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasBevelEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasBlendEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasBlendEffectBackdrop"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasBloomEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasBlurEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasCompositeEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasDropShadowEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasFilmGrainEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasGradientBevelEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasGradientGlowEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasInnerGlowEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasInnerShadowEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasOuterGlowEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasPixelateEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasRenderEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasScanlinesEffect"
+    },
+    {
+      "packageName": "effects-canvas",
+      "registrar": "registerCanvasVignetteEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlBevelEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlBlendEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlBlendEffectBackdrop"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlBloomEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlBlurEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlBokehDepthOfFieldEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlCameraMotionBlurEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlChromaticAberrationEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlCompositeEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlContactShadowsEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlConvolutionEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlCrtEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlCustomShaderEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlCustomShaderSource"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlDirectionalBlurEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlDisplacementEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlDitherEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlDropShadowEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlFilmGrainEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlFxaaEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlGlitchEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlGodRaysEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlGradientBevelEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlGradientGlowEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlHalftoneEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlInnerGlowEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlInnerShadowEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlKuwaharaEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlLensDirtEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlLensDistortionEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlLensFlareEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlMedianEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlMotionBlurEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlOuterGlowEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlOutlineEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlPixelateEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlPosterizeEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlRadialBlurEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlRenderEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlScanlinesEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlScreenSpaceFogEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlSharpenEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlSketchEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlSmaaEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlSsaoEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlTiltShiftEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlToneMapEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlVignetteEffect"
+    },
+    {
+      "packageName": "effects-gl",
+      "registrar": "registerGlWhiteBalanceEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuBevelEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuBlendEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuBlendEffectBackdrop"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuBloomEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuBlurEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuCameraMotionBlurEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuChromaticAberrationEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuCompositeEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuContactShadowsEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuConvolutionEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuCrtEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuDirectionalBlurEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuDisplacementEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuDitherEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuDropShadowEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuFilmGrainEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuFxaaEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuGlitchEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuGodRaysEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuGradientBevelEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuGradientGlowEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuHalftoneEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuInnerGlowEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuInnerShadowEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuKuwaharaEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuLensDirtEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuLensDistortionEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuLensFlareEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuMedianEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuMotionBlurEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuOuterGlowEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuOutlineEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuPixelateEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuPosterizeEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuRadialBlurEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuRenderEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuScanlinesEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuScreenSpaceFogEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuSharpenEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuSketchEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuSmaaEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuSsaoEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuTiltShiftEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuToneMapEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuVignetteEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
+      "registrar": "registerWgpuWhiteBalanceEffect"
+    },
+    {
+      "packageName": "host-capacitor",
+      "registrar": "registerCapacitorBackends"
+    },
+    {
+      "packageName": "host-electron",
+      "registrar": "registerElectronBackends"
+    },
+    {
+      "packageName": "host-tauri",
+      "registrar": "registerTauriBackends"
+    },
+    {
+      "packageName": "image-codec",
+      "registrar": "registerImageBitmapComposer"
+    },
+    {
+      "packageName": "image-codec",
+      "registrar": "registerImageDecoder"
+    },
+    {
+      "packageName": "image-codec",
+      "registrar": "registerImageEncoder"
+    },
+    {
+      "packageName": "image-codec",
+      "registrar": "registerWebImageDecoders"
+    },
+    {
+      "packageName": "image-codec",
+      "registrar": "registerWebImageEncoders"
+    },
+    {
+      "packageName": "interaction",
+      "registrar": "registerDefaultHitTests"
+    },
+    {
+      "packageName": "interaction",
+      "registrar": "registerHitTest"
+    },
+    {
+      "packageName": "interaction",
+      "registrar": "registerHitTestPrecise"
+    },
+    {
+      "packageName": "interaction",
+      "registrar": "registerShapeHitTest"
+    },
+    {
+      "packageName": "interaction",
+      "registrar": "registerSpriteHitTest"
+    },
+    {
+      "packageName": "interaction",
+      "registrar": "registerTextHitTest"
+    },
+    {
+      "packageName": "layout",
+      "registrar": "registerAnchorLayoutResolver"
+    },
+    {
+      "packageName": "layout",
+      "registrar": "registerFlexLayoutResolver"
+    },
+    {
+      "packageName": "layout",
+      "registrar": "registerGridLayoutResolver"
+    },
+    {
+      "packageName": "layout",
+      "registrar": "registerLayoutResolver"
+    },
+    {
+      "packageName": "log",
+      "registrar": "registerLogSerializer"
+    },
+    {
+      "packageName": "particles-formats",
+      "registrar": "registerParticleFormat"
+    },
+    {
+      "packageName": "physics2d",
+      "registrar": "registerBuiltInPhysics2DJointSolvers"
+    },
+    {
+      "packageName": "physics2d",
+      "registrar": "registerPhysics2DJointSolver"
+    },
+    {
+      "packageName": "protocol",
+      "registrar": "registerProtocolScheme"
+    },
+    {
+      "packageName": "protocol",
+      "registrar": "registerProtocolSchemes"
+    },
+    {
+      "packageName": "registry-catalog",
+      "registrar": "registerRegistryCatalogEntry"
+    },
+    {
+      "packageName": "render",
+      "registrar": "registerRenderCacheRenderer"
+    },
+    {
+      "packageName": "render",
+      "registrar": "registerRenderer"
+    },
+    {
+      "packageName": "render",
+      "registrar": "registerRenderers"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerDefaultGlBlendModes"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlBitmapShader"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlBitmapTextureResolver"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlBlendMode"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlCompressedImageTextureResolver"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlCompressedTextureDecoder"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlCompressedTextureUpload"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlImageTextureResolver"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlMaterialRenderer"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlMaterialShader"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlRenderTextureResolver"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerGlTextureResolver"
+    },
+    {
+      "packageName": "render-gl",
+      "registrar": "registerStandardGlTextureResolvers"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerStandardWgpuTextureResolvers"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuBitmapShader"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuBitmapTextureResolver"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuCompressedImageTextureResolver"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuCompressedTextureDecoder"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuCompressedTextureUpload"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuImageTextureResolver"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuMaterialRenderer"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuRenderTextureResolver"
+    },
+    {
+      "packageName": "render-wgpu",
+      "registrar": "registerWgpuTextureResolver"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasBitmapTextureResolver"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasImageTextureResolver"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasMaterialRenderer"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasRenderTextureResolver"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasShapeCommand"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasShapeCommands"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasTextInputOverlay"
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasTextureResolver"
+    },
+    {
+      "packageName": "scene2d-dom",
+      "registrar": "registerDomBitmapTextureResolver"
+    },
+    {
+      "packageName": "scene2d-dom",
+      "registrar": "registerDomImageTextureResolver"
+    },
+    {
+      "packageName": "scene2d-dom",
+      "registrar": "registerDomShapeRasterizer"
+    },
+    {
+      "packageName": "scene2d-dom",
+      "registrar": "registerDomTextInputOverlay"
+    },
+    {
+      "packageName": "scene2d-dom",
+      "registrar": "registerDomTextureResolver"
+    },
+    {
+      "packageName": "scene2d-gl",
+      "registrar": "registerGlColorAdjustmentMaterialFeature"
+    },
+    {
+      "packageName": "scene2d-gl",
+      "registrar": "registerGlShapeRasterizer"
+    },
+    {
+      "packageName": "scene2d-gl",
+      "registrar": "registerGlStandardMaterial"
+    },
+    {
+      "packageName": "scene2d-gl",
+      "registrar": "registerGlTextInputOverlay"
+    },
+    {
+      "packageName": "scene2d-gl",
+      "registrar": "registerGlVelocityWriter"
+    },
+    {
+      "packageName": "scene2d-resources",
+      "registrar": "registerLottieScene2DDocumentImporter"
+    },
+    {
+      "packageName": "scene2d-resources",
+      "registrar": "registerRiveScene2DDocumentImporter"
+    },
+    {
+      "packageName": "scene2d-resources",
+      "registrar": "registerScene2DDocumentImporter"
+    },
+    {
+      "packageName": "scene2d-resources",
+      "registrar": "registerSvgScene2DDocumentImporter"
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "registrar": "registerWgpuColorAdjustmentMaterialFeature"
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "registrar": "registerWgpuShapeRasterizer"
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "registrar": "registerWgpuStandardMaterial"
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "registrar": "registerWgpuTextInputOverlay"
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "registrar": "registerWgpuVelocityWriter"
+    },
+    {
+      "packageName": "scene3d-formats",
+      "registrar": "registerGltfDracoDecoder"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerBuiltInGlModifierSnippets"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlAnisotropyPbrExtension"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlBlinnPhongMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlClearcoatPbrExtension"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlCustomMaterialShader"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlCustomShaderMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlDepthMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlEmissiveMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlExtendedPbrMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlIridescencePbrExtension"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlLambertMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlMatcapMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlMeshMaterialRenderer"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlModifierSnippet"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlNormalMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlPbrExtension"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlPhongMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlShadedMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlSheenPbrExtension"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlSpecularGlossinessPbrMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlSpecularPbrExtension"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlStandardPbrMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlToonMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlTransmissionVolumePbrExtension"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlUnlitMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlVertexColorMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlWireframeMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlWrappedDiffusePbrExtension"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerAnisotropyPbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerClearcoatPbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerExtendedPbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerIridescencePbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerScene3DPbrExtensionTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerShadedScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerSheenPbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerSpecularPbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerStandardPbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerTransmissionVolumePbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerUnlitScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-resources",
+      "registrar": "registerWrappedDiffusePbrScene3DMaterialTextures"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerBuiltInWgpuModifierSnippets"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuBlinnPhongMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuCustomMaterialShader"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuCustomShaderMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuDepthMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuEmissiveMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuGpuSkinning"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuLambertMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuMatcapMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuMeshMaterialRenderer"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuModifierSnippet"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuNormalMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuPhongMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuShadedMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuSpecularGlossinessPbrMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuStandardPbrMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuToonMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuUnlitMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuVertexColorMaterial"
+    },
+    {
+      "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuWireframeMaterial"
+    },
+    {
+      "packageName": "shading",
+      "registrar": "registerBuiltInModifiers"
+    },
+    {
+      "packageName": "shading",
+      "registrar": "registerModifier"
+    },
+    {
+      "packageName": "shortcut",
+      "registrar": "registerGlobalShortcut"
+    },
+    {
+      "packageName": "skeleton2d",
+      "registrar": "registerSkeleton2DAnimationTargetBinder"
+    },
+    {
+      "packageName": "skeleton2d",
+      "registrar": "registerSkeleton2DConstraintSolver"
+    },
+    {
+      "packageName": "skeleton2d",
+      "registrar": "registerSkeleton2DDeformAnimationTarget"
+    },
+    {
+      "packageName": "skeleton2d",
+      "registrar": "registerSkeleton2DDrawOrderAnimationBinder"
+    },
+    {
+      "packageName": "skeleton2d",
+      "registrar": "registerSkeleton2DIkConstraintSolver"
+    },
+    {
+      "packageName": "skeleton2d",
+      "registrar": "registerSkeleton2DPathConstraintSolver"
+    },
+    {
+      "packageName": "skeleton2d",
+      "registrar": "registerSkeleton2DTransformConstraintSolver"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSkeleton2DFormat"
+    },
+    {
+      "packageName": "spritesheet-formats",
+      "registrar": "registerSpritesheetFormat"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfImageDecoders"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfScene2DDocumentImporter"
+    },
+    {
+      "packageName": "text-markup",
+      "registrar": "registerMarkupClassStyles"
+    },
+    {
+      "packageName": "text-markup",
+      "registrar": "registerMarkupNamedColors"
+    },
+    {
+      "packageName": "text-markup",
+      "registrar": "registerMarkupTag"
+    },
+    {
+      "packageName": "text-markup",
+      "registrar": "registerStandardMarkupTags"
+    },
+    {
+      "packageName": "textureatlas-formats",
+      "registrar": "registerTextureAtlasFormat"
+    },
+    {
+      "packageName": "tool-capture",
+      "registrar": "registerCaptureBenchmarkTarget"
+    },
+    {
+      "packageName": "tool-capture",
+      "registrar": "registerFunctionalTarget"
+    },
+    {
+      "packageName": "tool-capture",
+      "registrar": "registerWgpuFunctionalTarget"
+    }
+  ]
+}
