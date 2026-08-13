@@ -153,10 +153,14 @@ export function importMd5Mesh(
 
   const joints = findScene3DSkeletonJoints(scene.root);
   if (joints === null) {
-    // The mesh carried no skeleton, so a recognized-but-unbindable animation is skipped (the mesh is fine).
+    // Drop, not Skip. Skip means a RECOGNIZED-but-unsupported feature was ignored — a gap in what this
+    // importer implements. Skeletal animation IS implemented; what failed is the DATA, a caller pairing an
+    // .md5anim with a mesh that carries no skeleton to bind it to. The animation is lost, which is Drop by
+    // definition, and the distinction is load-bearing: a Skip here exempts itself from every severity-based
+    // "did the importer complain" check.
     reportImportDiagnostic(
       diagnostics,
-      ImportDiagnosticSeverity.Skip,
+      ImportDiagnosticSeverity.Drop,
       'md5mesh.animation-no-skeleton',
       'importMd5Mesh',
     );
