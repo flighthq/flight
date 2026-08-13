@@ -396,6 +396,27 @@ describe('createScene3DFromGltf', () => {
   // still left the asserted fields looking plausible. Asserted as an EMPTY list rather than a filter over
   // truncation-shaped kind names: a pattern built from expected vocabulary silently exempts every kind
   // whose name nobody guessed, and this importer has kinds like that.
+  // THE SECOND SHAPE, and the reason the empty-list assertion above is not the universal answer. A good
+  // glTF file may legitimately REQUIRE an extension this parser does not implement, and reporting that is
+  // correct behavior on correct input — so `toEqual([])` would be a FALSE assertion here, not a stronger
+  // one. What still has to hold is that nothing of higher severity fires: the parser may say "I do not
+  // implement this", never "I could not read this".
+  //
+  // `severity !== Skip` is the discriminator, and it is trustworthy precisely because Skip is checked
+  // against OUR capability (`isSupportedGltfExtension`) rather than against the file's data.
+  it('reports an unsupported required extension as a capability gap, with no data-integrity complaint', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    createScene3DFromGltf({ ...makeTriangleGltf(), extensionsRequired: ['EXT_flight_not_implemented'] }, diagnostics);
+
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('gltf.unsupported-required-extension');
+    const integrity = diagnostics.filter((diagnostic) => diagnostic.severity !== ImportDiagnosticSeverity.Skip);
+    expect(
+      integrity.map((diagnostic) => diagnostic.kind),
+      `a good glTF file raised a data-integrity complaint: ${integrity.map((d) => d.kind).join(', ')}`,
+    ).toEqual([]);
+  });
+
   it('raises no diagnostic at all for a well-formed file', () => {
     const diagnostics: ImportDiagnostic[] = [];
 
