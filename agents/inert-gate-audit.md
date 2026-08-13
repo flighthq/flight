@@ -6,6 +6,53 @@ was not present in this clone or reachable history, so capture tier names below 
 documented in `captureValidation.ts`: smoke is Tiers 1/2/4, parity is Tier 3, and committed-fingerprint
 regression is Tier 5.
 
+## 2026-08-13 follow-up: repository check processes
+
+Audited at `e6f845bbb`. This pass derived the population from process-level verdicts, not from the
+`*:check` suffix: a gate is a process whose exit status is consumed by `scripts/check.ts`, a hook, CI,
+or a documented checkpoint. An alias is not another gate, and a report/generator is not a gate unless a
+caller treats its exit as a verdict. That makes the bare `npm run check` runner's 24 unique leaf stages
+the primary population. The seed list contributes 17 of those leaves; `build:check` and `capture:check`
+are composites, while the two capture leaves and `reachability:runtime:check` are independent processes
+outside the bare runner. The findings below are ranked; this is not a suffix inventory.
+
+For every finding the question was: _what exact bad state must make this process fail, and has it ever
+failed on that state?_ Cheap mutations were restored immediately. No frequency or repository-wide defect
+rate is inferred from this deliberately adversarial sample.
+
+| Rank | Gate | State that must be red | Has this gate failed on that state? | Finding |
+| ---: | --- | --- | --- | --- |
+| 1 | `capture:{examples,functional}:check` | Every selected target has a screenshot hash, and any mismatch is red | **No for missing evidence.** A missing `sha256` becomes `baselineHash=null`, `changed=null`; the final predicate only consumes render failures and `changed > 0`. Existing hashes can and do reject mismatches. | **P1 — strict capture evidence is partial.** Current discovery finds 7 target columns without screenshot hashes. Validation separately fails a wholly zero-comparison regression run, but becomes green after one comparison; 79 current target columns lack fingerprints. These include the WebGPU columns for `effect-blend-advanced`, `material-blend-modes`, `node-blend-modes`, and `node-blend-modes-fixed`. Other covered columns let the processes return green. **RECOMMENDATION:** require coverage for every selected target, with named exceptions rather than `null` evidence. |
+| 2 | `reachability:check` | Removing an exported registrar from the claimed inverse/ownership population is red | **No outside three effects backends.** Renaming `registerWgpuUnlitMaterial` to `installWgpuUnlitMaterial` reduced the reported inventory from 301 to 300, yet the command exited 0 with `Built-in runners and per-kind registrars are exact inverses` and an unchanged lane baseline. | **P1 — the headline is broader than the hard population.** Only `effects-canvas`, `effects-gl`, and `effects-wgpu` feed `violations`; the repository-wide registrar census, `UNCATALOGUED` rows, and lane drift are non-blocking inventory. The command guide describes that distinction, but the command name and green headline do not. **RECOMMENDATION:** qualify the verdict as effects-only, or promote the intended repository-wide ownership/inverse conditions into the failure predicate. |
+| 3 | `portable:check` | A shipped use of a runtime-dynamic mechanism outside the claimed C++-lowerable subset is red | **No for `Object.defineProperty`.** The token screen and `violationOf` cover seven named mechanisms only; neither recognizes it. Shipped non-test source currently uses it in both `render-gl` and `render-wgpu` while the gate is green. The seven implemented rules are live. | **P2 — the verdict claims a semantic subset while enforcing a syntax list.** **RECOMMENDATION:** either add and calibrate a `defineProperty` rule or narrow the success line and contract to the seven enumerated escapes. |
+| 4 | Direct selector-aware leaf checks | A selector matching no files is configuration failure, not proof that the named subject is clean | **No in five direct leaves.** `exports:check`, `order:check`, `portable:check`, `reachability:check`, and `type-home:check` each exited 0 for `__inert_gate_no_match__`; exports explicitly reported `0 files`. | **P2 — the shared zero-selection guard stops at the aggregate runner.** `npm run check -- __inert_gate_no_match__` exits 1 by name, as do the corresponding `test` and `size` controls, but the leaf processes consume the shared selector without consuming its guard. **RECOMMENDATION:** make selector resolution return a required nonempty selection to every selector-aware leaf. |
+| 5 | `tool-capture` CLI gate invocations | An unknown option, especially a misspelled strictness option, is usage error | **No.** `flag`/`hasFlag` recognize options opportunistically, but no command validates the remaining `argv`; an option such as `--fail-on-chagned` is ignored and leaves `failOnChanged=false`. | **P2 — a typo can turn an intended gate into an ordinary capture.** The fixed root npm scripts spell their flags correctly, so this does not invalidate those exact aliases; it invalidates ad hoc/documented CLI gating as fail-closed. **RECOMMENDATION:** declare allowed value/boolean options per command and reject unknowns before starting a server or browser. |
+| 6 | `check:append-only-ledgers` | A working-tree edit to a guarded historical line is red | **Only when a baseline revision resolves.** With a baseline, editing a `Decisions` line failed by cell, section, and original text. When every candidate contains `HEAD` (or no candidate resolves), the process prints that it verified nothing and returns 0; its tests pin this outcome. | **P2 — loud skip still satisfies an exit-status gate.** On a fully integrated checkout, an uncommitted ledger edit is never read even though the implementation says the working tree is the subject. CI's fetched branch comparison normally supplies a baseline for work in flight; local/pre-commit use can be false-green. **RECOMMENDATION:** when guarded working-tree files differ from `HEAD`, use `HEAD` as the baseline; otherwise distinguish “not applicable” from a successful verification in callers. |
+
+### Confirmed live negatives
+
+The findings above do not make every nearby gate suspect. The older mutation table below remains the
+evidence for its eleven original stages. This follow-up independently broke and restored six newer
+subjects: `backend-prefix:check` rejected the wrong exported registrar prefix and named its actual bad
+segment; `catalog:check`, `facets:check`, `capabilities:check`, `capabilities:sites:check`, and
+`instrumentation:check` each rejected a deliberately stale generated artifact by path. Their restored
+forms all passed. The append-only check rejected an edited ledger line when a baseline was present.
+
+The aggregate runner also fails closed on an empty selector and continues through independent leaves
+before returning its aggregate verdict. The `test` and `size` selector controls likewise rejected an
+empty selection. These are real negative controls, not inferences from a clean run.
+
+### Borderline, explicitly undecided
+
+- `catalog:check` currently verifies a declared empty Stage 4 catalog. It is mutation-proved live against
+  stale output and says `0 entries`; whether the catalog must already be populated is a product decision,
+  not an inert-gate verdict.
+- `reachability:runtime:check` is not currently false-green: a clean run exits red with 52 unprobed
+  assemblies, 8 probed-empty assemblies, and 8 collision keys. It is also absent from the aggregate and
+  CI. The process computes `stateAdapter.canFail` and `orderedComparator.canFail` negative controls but
+  does not consume them in its failure predicate; the existing baseline failures mask that gap. Treat it
+  as a report-shaped `:check` whose intended blocking contract is undecided, not as evidence of safety.
+
 ## Severity-ranked findings
 
 The eleven `scripts/check.ts` stages are live. Every one was mutation-proved red, and a compound mutation
