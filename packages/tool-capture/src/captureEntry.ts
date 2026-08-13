@@ -368,6 +368,12 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       });
     });
 
+    // Declared outside the try because the verifier's record of whether the scene's oracle RAN must
+    // survive the throw. A failing oracle is exactly the case where that fact matters — an oracle that
+    // threw both ran and failed — and a binding scoped to the try would leave the error path with
+    // nothing to write but null, which reads as "never invoked".
+    let verification: RenderVerification | null = null;
+
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: getCaptureTimeoutMs() });
       let earlyObserveIntercept: { coverage: number; dataUrl: string } | null = null;
@@ -427,7 +433,6 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // The verification wait is the longest single step (up to 15s) and prints nothing while it
       // polls, so a run can look hung right after "Ready at". A muted heartbeat marks that the entry
       // is verifying, so the pause reads as progress rather than a stall.
-      let verification: RenderVerification | null = null;
       let verifiedFingerprint: string | null = null;
       if (waitsForVerification) {
         console.log(statusLine('muted', renderer, 'verifying render…'));
@@ -690,7 +695,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         hash: null,
         baselineHash: null,
         changed: null,
-        oracle: null,
+        oracle: verification?.oracle ?? null,
       };
       writeFileSync(statusPath, JSON.stringify(errorStatus, null, 2));
 
