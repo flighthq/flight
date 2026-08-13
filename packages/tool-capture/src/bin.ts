@@ -41,7 +41,7 @@ const USAGE = `usage:
   tool-capture batch [--config <file>] [--only <subject>] [--subjects-parallel <n>] [options]
 
 capture options:
-  --filter <name> --renderer <ids> --out <dir> --wait <ms> --frames <n>
+  --filter <substring> --filter-exact <name> --renderer <ids> --out <dir> --wait <ms> --frames <n>
   --parallel <n> --sequential --dev --build --update-baseline --fail-on-changed
   --fail-on-error --verify --no-verify --observe --retries <n> --capture-timeout <ms>
 
@@ -76,6 +76,7 @@ const CAPTURE_CLI_OPTIONS: ReadonlySet<string> = new Set([
   'fail-on-changed',
   'fail-on-error',
   'filter',
+  'filter-exact',
   'frames',
   'iterations',
   'manifest',
@@ -221,6 +222,7 @@ function captureOptions(argv: readonly string[]): CaptureWorkflowCaptureOptions 
   return {
     outBase: flag(argv, 'out') ?? '.artifacts',
     filter: flag(argv, 'filter'),
+    filterExact: flag(argv, 'filter-exact'),
     rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
     extraWait: parseNonNegativeInteger(flag(argv, 'wait'), 0),
     captureFrames: parseNonNegativeInteger(frames?.split(',')[0], 0),
@@ -243,17 +245,19 @@ function validationOptions(
   const preset = getFlightCaptureValidationPreset(subject);
   const updateCoverage = hasFlag(argv, 'update-coverage');
   const filter = flag(argv, 'filter');
+  const filterExact = flag(argv, 'filter-exact');
   const rendererFilter = (flag(argv, 'renderer') ?? '').split(',').filter(Boolean);
   // ★ The same guard scripts/reachability.ts puts on its baseline: an entry-filtered run has seen only
   // part of the subject, so accepting its coverage as the pin would silently retire every entry outside
   // the filter — the erosion this manifest exists to catch, performed by the tool itself.
   // `--renderer` needs no such refusal: the regression tier is renderer-scoped by definition, and a
   // renderer-scoped update carries the pins it did not run forward instead of dropping them.
-  if (updateCoverage && filter !== undefined) {
+  if (updateCoverage && (filter !== undefined || filterExact !== undefined)) {
     throw new Error('Capture baseline coverage manifest updates must be whole-subject — drop --filter');
   }
   return {
     filter,
+    filterExact,
     rendererFilter,
     captureFrames: Math.max(1, parseNonNegativeInteger(flag(argv, 'frames'), 1)),
     report: hasFlag(argv, 'report'),

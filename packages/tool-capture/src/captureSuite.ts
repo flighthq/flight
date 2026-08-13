@@ -12,6 +12,7 @@ import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { captureParallel, isVerifiedCaptureTool } from './captureEntry.js';
 import type { CaptureTargetReport } from './captureEntry.js';
+import { selectCaptureEntriesByName } from './captureEntryFilter.js';
 import { formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler } from './captureInterrupt.js';
 import { writeCaptureReport } from './captureReport.js';
@@ -28,6 +29,8 @@ export interface CaptureSuiteOptions {
   outBase?: string;
   rendererFilter?: Readonly<string[]>;
   filter?: string;
+  /** Exact entry name. Unlike `filter`, selects nothing beyond the name given — use it when writing. */
+  filterExact?: string;
   captureFrames?: number;
   extraWait?: number;
   updateBaseline?: boolean;
@@ -73,9 +76,7 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
   const root = resolve(options.root ?? process.cwd());
   const outBase = resolve(root, options.outBase ?? '.artifacts');
   const rendererFilter = [...(options.rendererFilter ?? [])];
-  const entries = options.filter
-    ? options.entries.filter((entry) => entry.name.includes(options.filter!))
-    : [...options.entries];
+  const entries = selectCaptureEntriesByName(options.entries, options.filter, options.filterExact);
   if (entries.length === 0) throw new Error(`No capture entries found  subject=${options.subject}`);
 
   const captureFrames = options.captureFrames ?? 0;
