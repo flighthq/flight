@@ -41,6 +41,7 @@
     "@flighthq/adjustments": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/materials": "*",
     "@flighthq/math": "*",
     "@flighthq/signals": "*",

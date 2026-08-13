@@ -8,6 +8,19 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../entity" }, { "path": "../geometry" }, { "path": "../types" }],
+  "references": [
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../types"
+    }
+  ],
   "include": ["src"]
 }

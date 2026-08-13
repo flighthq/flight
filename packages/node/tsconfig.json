@@ -9,13 +9,30 @@
     "sourceMap": true
   },
   "references": [
-    { "path": "../adjustments" },
-    { "path": "../entity" },
-    { "path": "../geometry" },
-    { "path": "../materials" },
-    { "path": "../math" },
-    { "path": "../signals" },
-    { "path": "../types" }
+    {
+      "path": "../adjustments"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../signals"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }
