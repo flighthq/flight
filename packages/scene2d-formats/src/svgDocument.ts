@@ -307,7 +307,7 @@ function applySvgElementClip(
       ImportDiagnosticSeverity.Skip,
       'svg.object-bounding-box-clip-without-bounds',
       'applySvgElementClip',
-      { id: clipId },
+      { id: clipId, reason: hasUnmeasurableSvgText(target) ? 'unmeasurable-text' : 'empty-geometry' },
     );
     return;
   }
@@ -363,6 +363,24 @@ function collectCssRules(root: Readonly<XmlElement>): SvgCssRule[] {
     }
   });
   return rules;
+}
+
+// Why `createSvgNode2DBounds` could not measure a subtree. The clip path reports this alongside the drop so
+// a caller can tell OUR unimplemented measurement from THEIR empty geometry — today both surface as "your
+// clip was dropped", which is the same sentence for a file that is wrong and a file we cannot yet handle.
+//
+// Text is genuinely UNMEASURABLE here, not merely unmeasured: this importer performs no text layout, so a
+// subtree containing text has an UNKNOWN bounding box rather than a known one missing a piece. That is why
+// the null propagates instead of unioning the measurable children — a box computed from the rest would be
+// confidently too small, and a clip placed from it would be silently wrong rather than loudly absent.
+function hasUnmeasurableSvgText(target: Node2D): boolean {
+  if (target.kind === TextLabelKind || target.kind === RichTextKind) return true;
+  const childCount = getNodeChildCount(target);
+  for (let index = 0; index < childCount; index++) {
+    const child = getNodeChildAt(target, index) as Node2D | null;
+    if (child !== null && hasUnmeasurableSvgText(child)) return true;
+  }
+  return false;
 }
 
 function createSvgNode2DBounds(target: Node2D): Rectangle | null {
@@ -940,7 +958,7 @@ function appendSvgShapePaint(
       fillGradient.stops.map((stop) => stop.color.rgb),
       fillGradient.stops.map((stop) => stop.color.alpha * style.fillOpacity),
       fillGradient.stops.map((stop) => Math.round(stop.offset * 255)),
-      createSvgGradientMatrix(fillGradient, path),
+      createSvgGradientMatrix(fillGradient, path, context),
       fillGradient.spreadMethod,
     );
   } else if (fillColor !== null) {
@@ -992,7 +1010,7 @@ function appendSvgShapePaint(
       strokeGradient.stops.map((stop) => stop.color.rgb),
       strokeGradient.stops.map((stop) => stop.color.alpha * style.strokeOpacity),
       strokeGradient.stops.map((stop) => Math.round(stop.offset * 255)),
-      createSvgGradientMatrix(strokeGradient, path),
+      createSvgGradientMatrix(strokeGradient, path, context),
       strokeGradient.spreadMethod,
     );
   }
@@ -1051,9 +1069,27 @@ function appendSvgTextRun(out: SvgTextRun[], style: Readonly<SvgStyle>, source: 
   if (text !== '') out.push({ opacity, style, text });
 }
 
-function createSvgGradientMatrix(gradient: Readonly<SvgGradient>, path: Readonly<Path>): Matrix {
+function createSvgGradientMatrix(
+  gradient: Readonly<SvgGradient>,
+  path: Readonly<Path>,
+  context: SvgImportContext,
+): Matrix {
   const bounds = createRectangle();
   getPathBounds(path, bounds);
+  // objectBoundingBox scales by the box, so a zero-width or zero-height box collapses the gradient onto a
+  // line or a point. The result is still a matrix and still renders, which is why this needed saying: the
+  // clip path refuses the same situation loudly while this one used to proceed in silence, and one of the
+  // two had to be wrong. Reported, not refused — what the correct rendering IS depends on a spec question
+  // that is still open, and a diagnostic commits to nothing while silence commits to the current answer.
+  if (gradient.units === 'objectBoundingBox' && (bounds.width === 0 || bounds.height === 0)) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'svg.object-bounding-box-gradient-without-bounds',
+      'createSvgGradientMatrix',
+      { height: bounds.height, kind: gradient.kind, width: bounds.width },
+    );
+  }
   const mapX = (value: number): number =>
     gradient.units === 'objectBoundingBox' ? bounds.x + value * bounds.width : value;
   const mapY = (value: number): number =>
