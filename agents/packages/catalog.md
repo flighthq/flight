@@ -2,7 +2,10 @@
 
 One paragraph per package, grouped by domain — what each package owns and where its boundary sits. This is the tier between the name-only grouping in [`AGENTS.md`](../../AGENTS.md#package-map) and the long-form per-package detail in [map.md](map.md).
 
-Run `npm run api <name>` to query a package's exported function signatures directly.
+Run `npm run api package=<name>` to list one package's exported function signatures. A bare
+`npm run api <name>` is a SEARCH, not a selector: it matches package names and function names across
+every package, so `npm run api color` returns 25 packages — each result sits under its owning package
+heading, which is the only thing that says who exports it.
 
 State machines: `@flighthq/statechart` is the concurrent data-only guarded graph shared by gameplay and Rive composition: immutable charts, mutable per-actor typed-array instances, typed inputs/triggers, open state-kind keys, exit/blend reporting, sentinels/explanations, and opt-in instance signals. It performs no animation and is distinct from `flow`'s closure-bearing covering screen stack.
 

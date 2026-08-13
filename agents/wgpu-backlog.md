@@ -292,7 +292,9 @@ absent module.
   export change — they are dormant, not unreachable.
   **Escape:** `npm run reachability:check` does **not** cover this — its lane population is effect
   runners/registrars plus `default*Renderer|Runner` symbols, so an arbitrary export never enters it.
-  The instrument that answers a lane question is `npm run api <package>` / `npm run api:json`.
+  The instrument that answers a lane question is `npm run api package=<name>` / `npm run api:json`.
+  Use the explicit `package=` form: a bare `npm run api <name>` searches function names too and returns
+  matches from every package, grouped under their own headings.
   **Widen when:** WGPU runs on the maintainer's host, or a consumer appears. See
   `unbacked-register.md` L11 (lane fact and its correction) and L8 (the mid-frame-destroy shape both
   functions still carry, unfixed because nothing calls them).
