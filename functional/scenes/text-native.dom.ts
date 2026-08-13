@@ -42,7 +42,7 @@ const root = createDisplayObject();
 const heading = createNativeText({
   data: {
     autoSize: 'left',
-    style: { bold: true, color: 0x1a1a1a, font: 'sans-serif', size: 32 },
+    style: { bold: true, color: 0x1a1a1aff, font: 'sans-serif', size: 32 },
     text: 'NativeText — platform/DOM text',
   },
 });
@@ -55,7 +55,7 @@ const paragraph = createNativeText({
   data: {
     autoSize: 'none',
     height: 180,
-    style: { color: 0x333333, font: 'serif', leading: 6, size: 20 },
+    style: { color: 0x333333ff, font: 'serif', leading: 6, size: 20 },
     text:
       'The platform text engine owns layout, measurement, and rendering. On web that is a DOM ' +
       'element; on a native port it would be CoreText or DirectWrite. NativeText opts out of the ' +
@@ -70,7 +70,7 @@ addNodeChild(root, paragraph);
 const styled = createNativeText({
   data: {
     autoSize: 'left',
-    style: { align: 'right', color: 0xc0392b, italic: true, size: 24 },
+    style: { align: 'right', color: 0xc0392bff, italic: true, size: 24 },
     text: 'italic, colored, right-aligned style',
   },
 });

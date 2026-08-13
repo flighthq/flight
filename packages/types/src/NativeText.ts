@@ -14,6 +14,9 @@ import type { TextVerticalAlign } from './TextVerticalAlign';
 export interface NativeTextStyle {
   align?: TextFormatAlign;
   bold?: boolean;
+  // Run color as Flight's packed sRGB RGBA integer (`0xRRGGBBAA`), matching TextFormat.color; alpha is
+  // linear coverage. Scene state carries the SDK convention even though the platform engine consuming it
+  // wants a CSS color — the renderer converts at that boundary.
   color?: number;
   font?: string;
   italic?: boolean;

@@ -9,8 +9,12 @@ import type { TextLabel, TextLabelData, TextLabelRuntime } from './TextLabel';
 export interface RichTextData extends TextLabelData {
   autoSize: TextAutoSize;
   background: boolean;
+  // Box fill as a 24-bit RGB integer (`0xRRGGBB`), which is NOT the encoding `textColor` below carries:
+  // the two colors on this one interface are read differently, and every backend converts this pair with
+  // the RGB helper and that one with the RGBA helper. Default 0xffffff — white as RGB, cyan as RGBA.
   backgroundColor: number;
   border: boolean;
+  // Box outline as a 24-bit RGB integer (`0xRRGGBB`), same encoding as backgroundColor above.
   borderColor: number;
   condenseWhite: boolean;
   defaultTextFormat: TextFormat;

@@ -18,9 +18,10 @@ export function computeRgbaCssString(color: number): string {
   return `rgba(${red},${green},${blue},${alpha})`;
 }
 
-// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a shape authoring color) and returns a
-// CSS `#RRGGBB` string. Any high-byte bits are masked off, so a 32-bit RGBA
-// value would keep `GGBBAA` — pass RGB, not RGBA.
+// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a shape authoring color) and returns a CSS `#RRGGBB`
+// string. Any high-byte bits are masked off, so a 32-bit RGBA value would keep `GGBBAA` — every channel
+// shifted, and still a valid-looking color. For a packed `0xRRGGBBAA` value use `computeRgbaCssString`,
+// which carries the alpha, or `getColorRgb` to drop it first.
 export function computeRgbHexString(color: number): string {
   return `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;
 }
