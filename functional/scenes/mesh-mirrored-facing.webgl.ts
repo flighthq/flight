@@ -197,4 +197,6 @@ function createBitangentTiltedNormalMap(): HTMLCanvasElement {
 // quads MATCH, and "these two are equal" is a weak positive: it also holds when nothing renders.
 // Covering that half wants a scene whose assertion stays positive under a Y-dominant light — most
 // likely a third quad mirrored in Y, so correct handedness produces a specific three-way pattern
-// rather than an equality. Left undone deliberately rather than asserted weakly.
+// rather than an equality. That scene now exists: mesh-tangent-mirror-handedness.webgl.ts, built to
+// this shape. This scene still does not cover that half — it covers the front face — and the split
+// stands.
