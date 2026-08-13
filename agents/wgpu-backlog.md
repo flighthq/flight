@@ -209,23 +209,15 @@ is the argument for running it on every remaining bracket.
   sRGB present. WGPU calls `declareWgpuRenderTargetColorSpace(state,'linear')` and **silently ignores a
   false return** when there is no target.
 
-- **No effect-pipeline skip report — recorded 2026-08-13.** `wgpuRenderEffectPipeline.ts` drops an effect
-  whose kind has no registered runner with a bare `continue`: no draw, no error, no artifact. GL now
-  reports the dropped kind once per kind through `setGlRenderEffectPipelineSkipGuard`, installed by
-  `enableGlRenderEffectGuards`; **WGPU has no guard module at all**, so `effects-wgpu` has nowhere to
-  install a reporter and adding the seam alone would ship dead code. **Reaching path:** any chain
-  containing one of the seven kinds with no runner on any backend (`AutoExposureEffect`,
-  `BarrelDistortionEffect`, `FilmEmulationEffect`, `PanniniProjectionEffect`, `SsrEffect`, `TaaEffect`,
-  `VolumetricLightEffect`), each of which ships a constructor and defaults a user can reach today.
-  **Render-visible:** no — the frame is written without the effect, which is the problem: it is
-  indistinguishable from an effect that ran and did nothing. **How it escaped:** `reachability:check`
-  compares runners against registrars, and a kind with neither is outside that population by
-  construction. **Sibling:** GL, at `c55df8c8d` — the fix is written, and the gap is that
-  `effects-wgpu` needs the guard module `effects-gl` already has (application explanation, custom-shader
-  source, and this skip), which is why it is a module-sized item rather than a one-line port.
+Both are the diagnostics-inversion rule implemented on one backend only, and no cross-backend gate sees an
+absent module.
 
-Both of the above are the diagnostics-inversion rule implemented on one backend only, and no cross-backend
-gate sees an absent module.
+**Closed 2026-08-13: the effect-pipeline skip report.** Recorded here the same day and fixed the same day,
+so the entry is a log line rather than an open item. `effects-wgpu` had no guard module at all, which is
+why the seam could not simply be ported; it now has `enableWgpuRenderEffectGuards`, covering both the
+render-texture application sentinels and the pipeline skip, at `57a958551`. It is narrower than the GL
+sibling on purpose: GL additionally guards per-instance resolvability and re-registered custom-shader
+source, and WGPU has neither, so guarding them would be a warning that can never fire.
 
 ### Correctness gaps against the GL sibling
 
