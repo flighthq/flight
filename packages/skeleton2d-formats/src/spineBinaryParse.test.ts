@@ -8,6 +8,34 @@ import { describe, expect, it } from 'vitest';
 import { parseSpineSkeletonBinary } from './spineBinaryParse';
 
 describe('parseSpineSkeletonBinary', () => {
+  // ★ PER-RECORD, AND THAT IS THE WHOLE POINT. The all-five fixture below backs a PER-RECORD claim with a
+  // WHOLE-STREAM oracle: the region attachment on the far side reading back intact. A record whose width is
+  // walked wrong is only caught if its desync survives every following record to reach that oracle, and
+  // whether it survives depends on the downstream bytes rather than on the code under test. Measured: with
+  // all five present, deleting the boundingbox skip is caught and deleting the point-colour skip is NOT.
+  // Detection was luck, per record — the self-synchronising trap one level up, where last time the fixture
+  // VALUE absorbed the error and here the ORACLE POSITION does.
+  //
+  // Isolating one record per file makes the reader's END POSITION the oracle instead, which is structural
+  // and type-independent: a skip that is too short leaves bytes unread (spine.binary-tail-unparsed), one
+  // that is too long runs past the end (spine.binary-truncated). Neither can be absorbed by a sibling
+  // record, because there is no sibling. An empty list of DATA-INTEGRITY crumbs is the offset assertion.
+  //
+  // Skip is excluded rather than ignored: walking a record we do not model raises one aggregated Skip by
+  // design, which is a correct report of a capability gap on correct input. `toEqual([])` would be a false
+  // assertion here, not a stronger one.
+  it.each(UNMODELED_ATTACHMENT_TYPES)('walks an unmodeled %s record byte-exactly, in isolation', (type) => {
+    for (const nonessential of [false, true]) {
+      const baseline = unreadByteCount(buildSpineBinary({ nonessential }));
+      const withRecord = unreadByteCount(buildSpineBinary({ nonessential, unmodeledAttachmentTypes: [type] }));
+
+      expect(
+        withRecord,
+        `unmodeled ${type} (nonessential=${nonessential}) left the reader ${withRecord - baseline} bytes off`,
+      ).toBe(baseline);
+    }
+  });
+
   // EVERY PREFIX OF A VALID FILE, not a handful of chosen cut points. Truncation is the one malformation
   // a corpus can never supply — no exporter emits a half-written file — and it is the one the parser has
   // the most machinery for: `isSpineBinaryReaderOverrun` is a sticky mark, and 38 of this file's loops are
@@ -458,6 +486,7 @@ function buildSpineBinary(
     version?: string;
     nonessential?: boolean;
     unmodeledAttachments?: boolean;
+    unmodeledAttachmentTypes?: readonly UnmodeledAttachmentType[];
     transformMode?: number;
     darkColor?: number;
     ikConstraints?: number;
@@ -519,8 +548,10 @@ function buildSpineBinary(
   // Default skin: one slot entry carrying a region and a mesh.
   writeVarint(out, 1); // slot entries
   writeVarint(out, 0); // slot index
-  writeVarint(out, options.unmodeledAttachments === true ? 7 : 2); // attachments on it
-  if (options.unmodeledAttachments === true) writeUnmodeledAttachments(out, nonessential);
+  const unmodeled =
+    options.unmodeledAttachmentTypes ?? (options.unmodeledAttachments === true ? UNMODELED_ATTACHMENT_TYPES : []);
+  writeVarint(out, unmodeled.length + 2); // attachments on it
+  for (const type of unmodeled) writeUnmodeledAttachment(out, type, nonessential);
   writeVarint(out, 1); // key -> 'body-attachment'
   writeVarint(out, 0); // name: absent, so the key is used
   out.push(0); // type: region
@@ -706,49 +737,68 @@ function writeVarint(out: number[], value: number): void {
 // bug at all, which is the fixture-symmetry trap in a form specific to variable-length encodings.
 const UNMODELED_ATTACHMENT_COLOR = 0x01020304;
 
-function writeUnmodeledAttachments(out: number[], nonessential: boolean): void {
+function writeUnmodeledAttachment(out: number[], type: UnmodeledAttachmentType, nonessential: boolean): void {
   const vertices = (count: number) => {
     writeVarint(out, count);
     out.push(0); // not weighted
     for (let i = 0; i < count * 2; i++) writeFloat(out, i);
   };
-  const header = (key: number, type: number) => {
-    writeVarint(out, key);
+  const header = (typeOrdinal: number) => {
+    writeVarint(out, 3); // key
     writeVarint(out, 0); // name absent, key is used
-    out.push(type);
+    out.push(typeOrdinal);
   };
 
-  header(3, 1); // boundingbox
-  vertices(2);
-  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
-
-  header(3, 6); // clipping
-  writeVarint(out, 0); // end slot
-  vertices(2);
-  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
-
-  header(3, 5); // point
-  writeFloat(out, 0); // rotation
-  writeFloat(out, 0); // x
-  writeFloat(out, 0); // y
-  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
-
-  header(3, 3); // linkedmesh
-  writeVarint(out, 0); // path
-  writeInt(out, UNMODELED_ATTACHMENT_COLOR); // color
-  writeVarint(out, 0); // skin name
-  writeVarint(out, 0); // parent mesh
-  out.push(0); // inherit timelines
-  out.push(0); // sequence absent
-  if (nonessential) {
-    writeFloat(out, 0); // width
-    writeFloat(out, 0); // height
+  if (type === 'boundingbox') {
+    header(1);
+    vertices(2);
+    if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
+  } else if (type === 'clipping') {
+    header(6);
+    writeVarint(out, 0); // end slot
+    vertices(2);
+    if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
+  } else if (type === 'point') {
+    header(5);
+    writeFloat(out, 0); // rotation
+    writeFloat(out, 0); // x
+    writeFloat(out, 0); // y
+    if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
+  } else if (type === 'linkedmesh') {
+    header(3);
+    writeVarint(out, 0); // path
+    writeInt(out, UNMODELED_ATTACHMENT_COLOR); // color
+    writeVarint(out, 0); // skin name
+    writeVarint(out, 0); // parent mesh
+    out.push(0); // inherit timelines
+    out.push(0); // sequence absent
+    if (nonessential) {
+      writeFloat(out, 0); // width
+      writeFloat(out, 0); // height
+    }
+  } else {
+    header(4); // path
+    out.push(0); // closed
+    out.push(0); // constantSpeed
+    vertices(3);
+    writeFloat(out, 0); // one per-curve length for 3 vertices
+    if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
   }
+}
 
-  header(3, 4); // path
-  out.push(0); // closed
-  out.push(0); // constantSpeed
-  vertices(3);
-  writeFloat(out, 0); // one per-curve length for 3 vertices
-  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
+const UNMODELED_ATTACHMENT_TYPES = ['boundingbox', 'clipping', 'point', 'linkedmesh', 'path'] as const;
+
+type UnmodeledAttachmentType = (typeof UNMODELED_ATTACHMENT_TYPES)[number];
+
+// How many bytes of a file the parser did not consume — the reader's end offset, observed through the only
+// seam that reports it. Compared BASELINE-RELATIVE by the per-record test above, because the nonessential
+// fixture path already leaves a tail for reasons unrelated to attachment widths (the events section);
+// an absolute assertion would measure that instead of the record under test. A record walked correctly
+// changes this number by zero, whatever the baseline happens to be.
+function unreadByteCount(bytes: Readonly<Uint8Array>): number {
+  const crumbs = collectImportDiagnostics((sink) => parseSpineSkeletonBinary(bytes, sink));
+  const truncated = crumbs.find((crumb) => crumb.kind === 'spine.binary-truncated');
+  if (truncated !== undefined) return Number.NaN; // ran PAST the end: never equal to a baseline
+  const tail = crumbs.find((crumb) => crumb.kind === 'spine.binary-tail-unparsed');
+  return tail === undefined ? 0 : (tail.detail as { bytes: number }).bytes;
 }
