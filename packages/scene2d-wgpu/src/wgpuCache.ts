@@ -66,20 +66,9 @@ export function createWgpuCacheState(screenState: WgpuRenderState): WgpuRenderSt
   copyAllRenderersFromRenderState(cacheState, screenState);
 
   // Cache baking follows blend-mode support enabled on the screen after this long-lived state is
-  // created, while a deliberate cache-local assignment still detaches and overrides the inherited hook.
-  Object.defineProperty(cacheState, 'applyBlendMode', {
-    configurable: true,
-    enumerable: true,
-    get: () => screenState.applyBlendMode,
-    set: (value: WgpuRenderState['applyBlendMode']) => {
-      Object.defineProperty(cacheState, 'applyBlendMode', {
-        configurable: true,
-        enumerable: true,
-        value,
-        writable: true,
-      });
-    },
-  });
+  // created. The draw seam resolves this explicit parent unless the cache installs a local hook.
+  cacheState.applyBlendMode = null;
+  cacheRuntime.applyBlendModeParent = screenState;
   (cacheState as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
   (cacheState as { context: GPUCanvasContext }).context = screenState.context;
   (cacheState as { device: GPUDevice }).device = screenState.device;

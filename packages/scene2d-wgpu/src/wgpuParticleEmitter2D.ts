@@ -1,6 +1,7 @@
 import {
   getWgpuRenderStateRuntime,
   getWgpuSampler,
+  resolveWgpuApplyBlendMode,
   resolveWgpuTexture,
   retireWgpuBuffer,
 } from '@flighthq/render-wgpu/contract';
@@ -200,7 +201,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   const resources = ensureParticleResources(state);
   ensureParticleInstanceBuffer(state, particleCount);
 
-  state.applyBlendMode?.(state, renderProxy.blendMode);
+  resolveWgpuApplyBlendMode(state)?.(state, renderProxy.blendMode);
   const textureEntry = resolveWgpuTexture(state, atlas.texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (textureEntry === null) return;
   const textureBindGroup = state.device.createBindGroup({

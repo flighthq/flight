@@ -45,6 +45,7 @@ let createWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.createWgpuRenderSt
 let getWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.getWgpuRenderStateRuntime;
 let getWgpuMaterialRenderer: typeof WgpuRenderWgpuModule.getWgpuMaterialRenderer;
 let registerWgpuMaterialRenderer: typeof WgpuRenderWgpuModule.registerWgpuMaterialRenderer;
+let resolveWgpuApplyBlendMode: typeof WgpuRenderWgpuModule.resolveWgpuApplyBlendMode;
 let beginWgpuFrame: typeof WgpuRenderWgpuModule.beginWgpuFrame;
 let destroyWgpuRenderTarget: typeof WgpuRenderWgpuModule.destroyWgpuRenderTarget;
 let drawWgpuRenderTargetResult: typeof WgpuRenderWgpuModule.drawWgpuRenderTargetResult;
@@ -112,6 +113,7 @@ beforeAll(async () => {
     getWgpuMaterialRenderer,
     getWgpuRenderStateRuntime,
     registerWgpuMaterialRenderer,
+    resolveWgpuApplyBlendMode,
     submitWgpuRenderPass,
   } = await import('@flighthq/render-wgpu/contract'));
   ({ flushWgpuQuadBatchWriter } = await import('./wgpuQuadBatchWriter'));
@@ -143,7 +145,7 @@ function makeCacheNode(source: unknown): any {
 }
 
 describe('createWgpuCacheState', () => {
-  it('resolves late screen blend-mode wiring until locally overridden', () => {
+  it('resolves late screen blend-mode wiring explicitly until locally overridden', () => {
     const screen = fakeScreen();
     screen.applyBlendMode = null;
     const cacheState = createWgpuCacheState(screen);
@@ -152,12 +154,15 @@ describe('createWgpuCacheState', () => {
     const cacheHook = vi.fn();
 
     expect(cacheState.applyBlendMode).toBeNull();
+    expect(Object.getOwnPropertyDescriptor(cacheState, 'applyBlendMode')?.get).toBeUndefined();
+    expect(resolveWgpuApplyBlendMode(cacheState)).toBeNull();
     screen.applyBlendMode = screenHook;
-    expect(cacheState.applyBlendMode).toBe(screenHook);
+    expect(cacheState.applyBlendMode).toBeNull();
+    expect(resolveWgpuApplyBlendMode(cacheState)).toBe(screenHook);
 
     cacheState.applyBlendMode = cacheHook;
     screen.applyBlendMode = laterScreenHook;
-    expect(cacheState.applyBlendMode).toBe(cacheHook);
+    expect(resolveWgpuApplyBlendMode(cacheState)).toBe(cacheHook);
   });
 
   it('copies renderers and shares the GPU device but keeps its own node map', () => {

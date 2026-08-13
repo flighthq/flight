@@ -33,6 +33,7 @@ export {
   releaseWgpuRenderTexture,
   renderIntoWgpuRenderTexture,
   renderWgpuBackground,
+  resolveWgpuApplyBlendMode,
   resolveWgpuTexture,
   resolveWgpuSmoothingBindGroup,
   setWgpuRenderTransform2D,

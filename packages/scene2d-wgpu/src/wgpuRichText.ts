@@ -1,6 +1,10 @@
 import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contract';
 import { createWgpuTextureEntry, drawWgpuQuad, updateWgpuTextureEntry } from '@flighthq/render-wgpu/contract';
-import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuRenderStateRuntime,
+  resolveWgpuApplyBlendMode,
+  retireWgpuTexture,
+} from '@flighthq/render-wgpu/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -109,7 +113,7 @@ export function drawWgpuRichTextWithOverlay(
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
 
-  state.applyBlendMode?.(state, renderProxy.blendMode);
+  resolveWgpuApplyBlendMode(state)?.(state, renderProxy.blendMode);
 
   const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
   if (richData === null) return;

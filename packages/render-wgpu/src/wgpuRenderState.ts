@@ -31,15 +31,9 @@ export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source
   const targetRuntime = getWgpuRenderStateRuntime(target);
   const sourceRuntime = getWgpuRenderStateRuntime(source);
   // Blend-mode wiring belongs to the screen pipeline and may be enabled after a derived state is
-  // created. Resolve it from the live source until the target deliberately installs its own hook.
-  Object.defineProperty(target, 'applyBlendMode', {
-    configurable: true,
-    enumerable: true,
-    get: () => source.applyBlendMode,
-    set: (value: WgpuRenderState['applyBlendMode']) => {
-      Object.defineProperty(target, 'applyBlendMode', { configurable: true, enumerable: true, value, writable: true });
-    },
-  });
+  // created. Keep the entity field plain; resolve its explicit parent at each draw seam.
+  target.applyBlendMode = null;
+  targetRuntime.applyBlendModeParent = source;
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
@@ -83,7 +77,7 @@ export function createWgpuOffscreenRenderState(screenState: WgpuRenderState): Wg
     roundPixels: screenState.roundPixels,
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
   }) as WgpuRenderState;
-  state.applyBlendMode = screenState.applyBlendMode;
+  state.applyBlendMode = null;
   (state as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
   (state as { context: GPUCanvasContext }).context = screenState.context;
   (state as { device: GPUDevice }).device = screenState.device;
@@ -271,6 +265,7 @@ export async function createWgpuRenderState(
 // mutable (not Readonly).
 export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
+  runtime.applyBlendModeParent = null;
   runtime.registries = {
     compressedTextureDecoder: createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered'),
     compressedTextureUpload: createSlotTable('WgpuCompressedTextureUpload', 'Unregistered'),
@@ -395,6 +390,10 @@ export function getWgpuSampler(
   return sampler;
 }
 
+export function isWgpuSupported(): boolean {
+  return typeof navigator !== 'undefined' && 'gpu' in navigator && navigator.gpu !== null;
+}
+
 // Small-integer codes for the sampler-cache numeric key (see getWgpuSampler). Module-level so the key
 // packing reads a field instead of allocating — no per-call table construction.
 const SAMPLER_FILTER_BITS: Record<GPUFilterMode, number> = { nearest: 0, linear: 1 };
@@ -505,6 +504,15 @@ const WGPU_DEVICE_RUNTIME_KEYS = [
 const _deviceRuntimeByStateRuntime = new WeakMap<WgpuRenderStateRuntime, WgpuDeviceRuntime>();
 const _destroyedStates = new WeakSet<WgpuRenderState>();
 
-export function isWgpuSupported(): boolean {
-  return typeof navigator !== 'undefined' && 'gpu' in navigator && navigator.gpu !== null;
+// Resolve the blend hook at the draw seam rather than hiding derived-state delegation behind an
+// entity accessor. A locally installed hook wins; otherwise walk toward the screen pipeline so
+// support enabled after derivation is visible to long-lived offscreen and cache states.
+export function resolveWgpuApplyBlendMode(state: WgpuRenderState): WgpuRenderState['applyBlendMode'] {
+  let current = state;
+  while (current.applyBlendMode === null) {
+    const parent = getWgpuRenderStateRuntime(current).applyBlendModeParent;
+    if (parent === null) return null;
+    current = parent;
+  }
+  return current.applyBlendMode;
 }

@@ -106,6 +106,9 @@ export interface WgpuColorAdjustmentFlush {
 // out-of-package custom renderers can reach the same state.
 export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   registries: WgpuRenderRegistries;
+  // Derived pipelines resolve optional blend-mode wiring through this parent at the draw seam. The
+  // entity's applyBlendMode member stays a plain field, so the delegation is explicit and portable.
+  applyBlendModeParent: WgpuRenderState | null;
   // Active blend mode tracked to avoid redundant pipeline rebinds. Internal — formerly public on the
   // WgpuRenderState entity.
   currentBlendMode: BlendMode | null;

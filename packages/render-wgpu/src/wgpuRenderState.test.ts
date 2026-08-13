@@ -37,6 +37,7 @@ import {
   getWgpuRenderStateRuntime,
   getWgpuSampler,
   isWgpuSupported,
+  resolveWgpuApplyBlendMode,
 } from './wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 import { registerWgpuTextureResolver } from './wgpuTextureResolver';
@@ -126,23 +127,30 @@ describe('copyWgpuRenderStateRegistrations', () => {
 });
 
 describe('createWgpuOffscreenRenderState', () => {
-  it('resolves late screen blend-mode wiring until locally overridden', async () => {
+  it('resolves late screen blend-mode wiring explicitly until locally overridden', async () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(screen);
+    const nested = createWgpuOffscreenRenderState(offscreen);
     const screenHook = vi.fn();
     const laterScreenHook = vi.fn();
     const offscreenHook = vi.fn();
 
     expect(offscreen.applyBlendMode).toBeNull();
+    expect(Object.getOwnPropertyDescriptor(offscreen, 'applyBlendMode')?.get).toBeUndefined();
+    expect(resolveWgpuApplyBlendMode(offscreen)).toBeNull();
     screen.applyBlendMode = screenHook;
-    expect(offscreen.applyBlendMode).toBe(screenHook);
+    expect(offscreen.applyBlendMode).toBeNull();
+    expect(resolveWgpuApplyBlendMode(offscreen)).toBe(screenHook);
+    expect(resolveWgpuApplyBlendMode(nested)).toBe(screenHook);
 
     offscreen.applyBlendMode = offscreenHook;
     screen.applyBlendMode = laterScreenHook;
-    expect(offscreen.applyBlendMode).toBe(offscreenHook);
+    expect(resolveWgpuApplyBlendMode(offscreen)).toBe(offscreenHook);
+    expect(resolveWgpuApplyBlendMode(nested)).toBe(offscreenHook);
 
     copyWgpuRenderStateRegistrations(offscreen, screen);
-    expect(offscreen.applyBlendMode).toBe(laterScreenHook);
+    expect(offscreen.applyBlendMode).toBeNull();
+    expect(resolveWgpuApplyBlendMode(offscreen)).toBe(laterScreenHook);
   });
 
   it('shares device resources while snapshotting independent registration policy', async () => {
@@ -564,5 +572,14 @@ describe('getWgpuSampler', () => {
 describe('isWgpuSupported', () => {
   it('returns true when navigator.gpu is present', () => {
     expect(isWgpuSupported()).toBe(true);
+  });
+});
+
+describe('resolveWgpuApplyBlendMode', () => {
+  it('returns a hook installed directly on the state', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const hook = vi.fn();
+    state.applyBlendMode = hook;
+    expect(resolveWgpuApplyBlendMode(state)).toBe(hook);
   });
 });
