@@ -28,6 +28,9 @@
       "path": "../lighting"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../materials"
     },
     {
