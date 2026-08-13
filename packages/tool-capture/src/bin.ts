@@ -65,6 +65,51 @@ batch options:
 Manifest: { "subject": "app", "entries": [{ "name": "home", "renderers": ["webgl"],
   "routes": { "webgl": "pages/home/" } }] }`;
 
+const CAPTURE_CLI_COMMANDS: ReadonlySet<string> = new Set(['batch', 'benchmark', 'capture', 'observe', 'validate']);
+const CAPTURE_CLI_OPTIONS: ReadonlySet<string> = new Set([
+  'benchmark-reference',
+  'build',
+  'capture-timeout',
+  'config',
+  'dev',
+  'dir',
+  'fail-on-changed',
+  'fail-on-error',
+  'filter',
+  'frames',
+  'iterations',
+  'manifest',
+  'no-parity',
+  'no-regression',
+  'no-verify',
+  'observe',
+  'only',
+  'out',
+  'parallel',
+  'parity-tolerance',
+  'performance-tolerance',
+  'regression-tolerance',
+  'renderer',
+  'report',
+  'retries',
+  'root',
+  'sample-duration',
+  'samples',
+  'sequential',
+  'stability-epsilon',
+  'stability-tolerance',
+  'subject',
+  'subjects-parallel',
+  'tool',
+  'update-baseline',
+  'update-benchmarks',
+  'update-fingerprints',
+  'url',
+  'verify',
+  'wait',
+  'warmup',
+]);
+
 function flag(argv: readonly string[], key: string): string | undefined {
   const equals = argv.find((arg) => arg.startsWith(`--${key}=`));
   if (equals !== undefined) return equals.slice(key.length + 3);
@@ -275,6 +320,11 @@ async function batch(argv: readonly string[]): Promise<number> {
 
 async function main(): Promise<void> {
   const [command, ...argv] = process.argv.slice(2);
+  if (command === undefined || !CAPTURE_CLI_COMMANDS.has(command)) {
+    console.error(USAGE);
+    process.exit(2);
+  }
+  validateCaptureCliOptions(argv);
   // Pinned once for the process rather than threaded through every option bag: the budget governs
   // waits in the capture core, the validation loader and the stall reason alike, and those are reached
   // from three different call shapes. One resolution point is also what keeps `--capture-timeout` and
@@ -298,8 +348,6 @@ async function main(): Promise<void> {
   if (command === 'validate') process.exit(await validate(argv));
   if (command === 'benchmark') process.exit(await benchmark(argv));
   if (command === 'batch') process.exit(await batch(argv));
-  console.error(USAGE);
-  process.exit(2);
 }
 
 function captureWorkerCount(argv: readonly string[]): number {
@@ -331,6 +379,15 @@ function removeBatchOptions(argv: readonly string[]): string[] {
     else if (argument === `--${key}`) index++;
   }
   return result;
+}
+
+function validateCaptureCliOptions(argv: readonly string[]): void {
+  for (const argument of argv) {
+    if (!argument.startsWith('--')) continue;
+    const equalsIndex = argument.indexOf('=');
+    const name = argument.slice(2, equalsIndex < 0 ? undefined : equalsIndex);
+    if (!CAPTURE_CLI_OPTIONS.has(name)) throw new Error(`unknown option --${name}`);
+  }
 }
 
 main().catch((err: unknown) => {
