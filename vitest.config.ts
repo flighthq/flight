@@ -40,6 +40,11 @@ const TEST_RUN_COVERAGE_FILE = 'scripts/testRunCoverage.test.ts';
 // catches. It is listed here so the other projects can exclude it by name in one place.
 const TOOL_CAPTURE_TEST_FILES = ['packages/tool-capture/src/**/*.test.ts'];
 
+// This file asserts the empty pre-state of a process-global registry. Route it through the existing
+// isolate:true project so that assertion owns its module registry; the shared pool would make it a
+// statement about whether another shape test happened to register commands first.
+const ISOLATED_STATEFUL_TEST_FILES = ['packages/shape/src/registerDefaultShapeBoundsCommands.test.ts'];
+
 // The browser contracts, split out because this list has two OPPOSITE jobs and only one of them may
 // narrow. `TOOL_CAPTURE_TEST_FILES` is the EXCLUDE for the three parallel projects and must stay the
 // full set: narrowing it there would stop excluding these two files, and they would be picked up and
@@ -98,6 +103,7 @@ export default mergeConfig(
               ...COMMON_EXCLUDE,
               ...TOOL_CAPTURE_TEST_FILES,
               ...ISOLATED_MOCK_TEST_FILES,
+              ...ISOLATED_STATEFUL_TEST_FILES,
               TEST_RUN_COVERAGE_FILE,
             ],
             sequence: { groupOrder: 0 },
@@ -108,7 +114,7 @@ export default mergeConfig(
           test: {
             name: 'isolated',
             isolate: true,
-            include: [...ISOLATED_MOCK_TEST_FILES],
+            include: [...ISOLATED_MOCK_TEST_FILES, ...ISOLATED_STATEFUL_TEST_FILES],
             exclude: [...COMMON_EXCLUDE, ...TOOL_CAPTURE_TEST_FILES],
             sequence: { groupOrder: 0 },
           },
