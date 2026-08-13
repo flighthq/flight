@@ -26,13 +26,9 @@ describe('parseSpineSkeletonBinary', () => {
   // assertion here, not a stronger one.
   it.each(UNMODELED_ATTACHMENT_TYPES)('walks an unmodeled %s record byte-exactly, in isolation', (type) => {
     for (const nonessential of [false, true]) {
-      const baseline = unreadByteCount(buildSpineBinary({ nonessential }));
-      const withRecord = unreadByteCount(buildSpineBinary({ nonessential, unmodeledAttachmentTypes: [type] }));
+      const unread = unreadByteCount(buildSpineBinary({ nonessential, unmodeledAttachmentTypes: [type] }));
 
-      expect(
-        withRecord,
-        `unmodeled ${type} (nonessential=${nonessential}) left the reader ${withRecord - baseline} bytes off`,
-      ).toBe(baseline);
+      expect(unread, `unmodeled ${type} (nonessential=${nonessential}) left the reader ${unread} bytes off`).toBe(0);
     }
   });
 
@@ -588,6 +584,11 @@ function buildSpineBinary(
   }
   writeVarint(out, 0); // hull length
   out.push(0); // sequence: absent
+  if (nonessential) {
+    writeVarint(out, 0); // editor edge count
+    writeFloat(out, 0); // width
+    writeFloat(out, 0); // height
+  }
 
   writeVarint(out, 0); // alternate skins
   writeVarint(out, 0); // event definitions
@@ -799,10 +800,12 @@ const UNMODELED_ATTACHMENT_TYPES = ['boundingbox', 'clipping', 'point', 'linkedm
 type UnmodeledAttachmentType = (typeof UNMODELED_ATTACHMENT_TYPES)[number];
 
 // How many bytes of a file the parser did not consume — the reader's end offset, observed through the only
-// seam that reports it. Compared BASELINE-RELATIVE by the per-record test above, because the nonessential
-// fixture path already leaves a tail for reasons unrelated to attachment widths (the events section);
-// an absolute assertion would measure that instead of the record under test. A record walked correctly
-// changes this number by zero, whatever the baseline happens to be.
+// seam that reports it. The per-record test asserts this is ZERO rather than comparing against a baseline
+// built from the same fixture, and the difference is load-bearing: a baseline-relative check subtracts out
+// any whole-fixture desync, so it would have SILENTLY ABSORBED the defect that this fixture actually had —
+// the mesh attachment's nonessential block (an edge count, then width and height) was never written, so
+// every `nonessential: true` parse ran 9 bytes adrift from the mesh onward and left 19 bytes unread. An
+// absolute zero is the assertion that a recurrence cannot hide from.
 function unreadByteCount(bytes: Readonly<Uint8Array>): number {
   const crumbs = collectImportDiagnostics((sink) => parseSpineSkeletonBinary(bytes, sink));
   const truncated = crumbs.find((crumb) => crumb.kind === 'spine.binary-truncated');
