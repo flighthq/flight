@@ -57,8 +57,17 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
       return result;
     };
   const writeBuffer = (...args: unknown[]): void => {
+    validateWriteBufferDestinationOffset(args[1] as number);
     validateWriteBufferData(args[2], args[3] as number | undefined, args[4] as number | undefined);
     calls.push({ name: 'writeBuffer', args });
+  };
+  const setIndexBuffer = (buffer: GPUBuffer, indexFormat: GPUIndexFormat, offset = 0, size?: number): void => {
+    validateRenderBufferRange('setIndexBuffer', buffer, offset, size, indexFormat === 'uint32' ? 4 : 2);
+    calls.push({ name: 'setIndexBuffer', args: [buffer, indexFormat, offset, size] });
+  };
+  const setVertexBuffer = (slot: number, buffer: GPUBuffer | null, offset = 0, size?: number): void => {
+    if (buffer !== null) validateRenderBufferRange('setVertexBuffer', buffer, offset, size, 4);
+    calls.push({ name: 'setVertexBuffer', args: [slot, buffer, offset, size] });
   };
 
   const renderPass = {
@@ -66,9 +75,9 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
     drawIndexed: record('drawIndexed'),
     end: record('end'),
     setBindGroup: record('setBindGroup'),
-    setIndexBuffer: record('setIndexBuffer'),
+    setIndexBuffer,
     setPipeline: record('setPipeline'),
-    setVertexBuffer: record('setVertexBuffer'),
+    setVertexBuffer,
     setViewport: record('setViewport'),
   } as unknown as GPURenderPassEncoder;
 
@@ -94,9 +103,9 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
       calls.push({ name: 'createCommandEncoder', args: [] });
       return commandEncoder;
     },
-    createBuffer: (descriptor: unknown) => {
+    createBuffer: (descriptor: GPUBufferDescriptor) => {
       calls.push({ name: 'createBuffer', args: [descriptor] });
-      return { destroy: () => {} } as unknown as GPUBuffer;
+      return { destroy: () => {}, size: descriptor.size } as unknown as GPUBuffer;
     },
     createPipelineLayout: record('createPipelineLayout', {}),
     createRenderPipeline: record('createRenderPipeline', {}),
@@ -176,4 +185,34 @@ function validateWriteBufferData(data: unknown, dataOffset = 0, size?: number): 
 
 function getTypedArrayElementByteLength(data: ArrayBufferView): number {
   return (data as ArrayBufferView & { readonly BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT;
+}
+
+// These are the numeric buffer-binding constraints Flight derives from mesh data. The fake buffers
+// expose the same public size field as GPUBuffer; hand-authored opaque buffers remain record-only.
+function validateRenderBufferRange(
+  call: 'setIndexBuffer' | 'setVertexBuffer',
+  buffer: GPUBuffer,
+  offset: number,
+  size: number | undefined,
+  offsetAlignment: number,
+): void {
+  if (offset < 0 || (size !== undefined && size < 0)) {
+    throw new Error(`Fake GPU validation: ${call} offset and size must be non-negative`);
+  }
+  if (offset % offsetAlignment !== 0) {
+    throw new Error(`Fake GPU validation: ${call} offset must be aligned to ${offsetAlignment} bytes`);
+  }
+
+  const bufferSize = buffer.size;
+  if (typeof bufferSize !== 'number') return;
+  const rangeSize = size ?? Math.max(0, bufferSize - offset);
+  if (offset + rangeSize > bufferSize) {
+    throw new Error(`Fake GPU validation: ${call} range exceeds the buffer size`);
+  }
+}
+
+function validateWriteBufferDestinationOffset(bufferOffset: number): void {
+  if (bufferOffset % 4 !== 0) {
+    throw new Error('Fake GPU validation: GPUQueue.writeBuffer destination offset must be aligned to 4 bytes');
+  }
 }
