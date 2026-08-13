@@ -16,12 +16,14 @@ export function pick<T>(random: RandomSource, items: Readonly<T[]>): T | undefin
  *  Suitable for modeling inter-arrival times in a Poisson process, particle
  *  lifetimes, and decay events.
  *
- *  The result is always non-negative. Throws if `rate <= 0`.
+ *  The result is always non-negative. Throws if `rate` is non-finite or not positive.
  *
  *  Deterministic: same `random` sequence → same output sequence.
  */
 export function randomExponential(random: RandomSource, rate: number = 1): number {
-  if (rate <= 0) throw new RangeError('randomExponential: rate must be > 0');
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new RangeError('randomExponential: rate must be finite and > 0');
+  }
   const u = random();
   // Avoid ln(0) — replace exactly 0 with the smallest usable positive value.
   return -Math.log(u === 0 ? Number.EPSILON : u) / rate;
@@ -159,12 +161,14 @@ export function randomOnUnitSphere(random: RandomSource, out: Vector3Like): void
  *  `lambda` (λ ≤ ~30); for large lambda, `randomGaussian(random, lambda,
  *  Math.sqrt(lambda))` is a faster approximation.
  *
- *  The result is a non-negative integer. Throws if `lambda <= 0`.
+ *  The result is a non-negative integer. Throws if `lambda` is non-finite or not positive.
  *
  *  Deterministic: same `random` sequence → same output sequence.
  */
 export function randomPoisson(random: RandomSource, lambda: number = 1): number {
-  if (lambda <= 0) throw new RangeError('randomPoisson: lambda must be > 0');
+  if (!Number.isFinite(lambda) || lambda <= 0) {
+    throw new RangeError('randomPoisson: lambda must be finite and > 0');
+  }
   const limit = Math.exp(-lambda);
   let k = 0;
   let product = random();

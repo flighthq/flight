@@ -19,6 +19,9 @@ describe('randomBool', () => {
     const random = rng();
     for (let i = 0; i < 10; i++) expect(randomBool(random, 0)).toBe(false);
   });
+  it('uses a half-open comparison at the probability boundary', () => {
+    expect(randomBool(() => 0.5, 0.5)).toBe(false);
+  });
   it('is deterministic for the same seed', () => {
     const a = rng();
     const b = rng();
@@ -43,6 +46,12 @@ describe('randomInt', () => {
   it('throws when min > max', () => {
     const random = rng();
     expect(() => randomInt(random, 10, 5)).toThrow(RangeError);
+  });
+  it('can select the inclusive upper endpoint', () => {
+    expect(randomInt(() => 0.999999, 2, 4)).toBe(4);
+  });
+  it('rounds negative fractional bounds down', () => {
+    expect(randomInt(() => 0, -1.2, -0.2)).toBe(-2);
   });
   it('is deterministic for the same seed', () => {
     const a = rng();
@@ -90,6 +99,9 @@ describe('randomSign', () => {
     }
     expect(sawPositive).toBe(true);
     expect(sawNegative).toBe(true);
+  });
+  it('selects the positive sign at the half-open boundary', () => {
+    expect(randomSign(() => 0.5)).toBe(1);
   });
   it('is deterministic for the same seed', () => {
     const a = rng();

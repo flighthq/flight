@@ -63,6 +63,9 @@ describe('hashCombine', () => {
   it('produces different results for different seeds', () => {
     expect(hashCombine(1, 100)).not.toBe(hashCombine(2, 100));
   });
+  it('pins the complete multi-term mix with a known-answer vector', () => {
+    expect(hashCombine(100, 200)).toBe(3347962280);
+  });
 });
 
 describe('hashUint32', () => {

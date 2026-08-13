@@ -40,6 +40,11 @@ describe('gcd', () => {
   it('throws when both arguments are 0', () => {
     expect(() => gcd(0, 0)).toThrow(RangeError);
   });
+  it('rejects non-finite inputs instead of returning a non-finite value or looping', () => {
+    expect(() => gcd(Infinity, 0)).toThrow(RangeError);
+    expect(() => gcd(0, -Infinity)).toThrow(RangeError);
+    expect(() => gcd(NaN, 0)).toThrow(RangeError);
+  });
 });
 
 describe('hypot2', () => {
@@ -91,5 +96,9 @@ describe('lcm', () => {
   });
   it('accepts negative inputs', () => {
     expect(lcm(-4, 6)).toBe(12);
+  });
+  it('rejects non-finite inputs through the shared GCD validation', () => {
+    expect(() => lcm(Infinity, 0)).toThrow(RangeError);
+    expect(() => lcm(0, NaN)).toThrow(RangeError);
   });
 });

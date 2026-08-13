@@ -32,6 +32,9 @@ describe('deltaAngle', () => {
   it('returns a negative delta when the target is behind', () => {
     expect(deltaAngle(Math.PI / 2, 0)).toBeCloseTo(-Math.PI / 2, 10);
   });
+  it('keeps the positive half-turn in its documented (-π, π] range', () => {
+    expect(deltaAngle(0, Math.PI)).toBe(Math.PI);
+  });
   it('result is always within (-π, π]', () => {
     for (let i = -10; i <= 10; i++) {
       const d = deltaAngle(i, i + 3);
