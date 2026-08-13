@@ -1,6 +1,7 @@
 import {
   getWgpuRenderStateRuntime,
   resolveWgpuMaterialRenderer,
+  resolveWgpuApplyBlendMode,
   resolveWgpuShader,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
@@ -28,7 +29,7 @@ export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2
   const shader = resolveWgpuShader(state, renderProxy);
   if (shader !== null) {
     flushWgpuQuadBatchWriter(state);
-    state.applyBlendMode?.(state, renderProxy.blendMode);
+    resolveWgpuApplyBlendMode(state)?.(state, renderProxy.blendMode);
     if (resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE) === null) return;
     shader.bind(state, renderProxy);
     return;

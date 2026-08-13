@@ -1,4 +1,9 @@
-import { getWgpuBlendState, getWgpuSampler, resolveWgpuSmoothingBindGroup } from '@flighthq/render-wgpu/contract';
+import {
+  getWgpuBlendState,
+  getWgpuSampler,
+  resolveWgpuApplyBlendMode,
+  resolveWgpuSmoothingBindGroup,
+} from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
 import { getWgpuColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
@@ -167,7 +172,7 @@ export function flushWgpuQuadBatchWriter(state: WgpuRenderState): void {
     state.device.queue.writeBuffer(slot.materialBuffer, 0, group3Data.buffer, 0, group3Bytes);
   }
 
-  state.applyBlendMode?.(state, blendMode);
+  resolveWgpuApplyBlendMode(state)?.(state, blendMode);
   const textureBindGroup =
     sampler !== null
       ? createWgpuTextureSamplerBindGroup(state, texture.view, sampler)
