@@ -1026,6 +1026,27 @@ describe('parse3ds', () => {
 });
 
 describe('parse3ds diagnostics', () => {
+  // ★ A CLEAN PARSE IS TWO CLAIMS: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // in this file checks the first. This checks the second, which is the one that goes unnoticed — a
+  // diagnostic nothing asserts on is a silent failure again, and it is silent in precisely the cases it was
+  // built for, because those are the cases nobody wrote a test for.
+  //
+  // The reason it matters here specifically: this importer walks a chunked binary format by length, so a
+  // mis-stepped chunk desynchronises the walk and produces a truncation crumb while STILL returning a scene
+  // whose asserted fields happen to look right. That is exactly what happened in the Spine binary reader
+  // today — a wrong skip width left every value assertion green and raised `spine.binary-tail-unparsed`
+  // into a void. Asserting the absence is what makes the alarm audible.
+  it('raises no truncation or unreadable diagnostic for a well-formed file', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parse3ds(buildTriangle3ds('Triangle', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]), diagnostics);
+
+    const complaints = diagnostics
+      .map((diagnostic) => diagnostic.kind)
+      .filter((kind) => /truncated|unreadable|malformed|unparsed/.test(kind));
+    expect(complaints, `a good 3ds file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('drops and reports 3ds.vertices-truncated (no-count) for a vertex chunk too small for its count', () => {
     const bytes = wrapTrimesh(
       'V',
