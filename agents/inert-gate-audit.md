@@ -97,9 +97,9 @@ independently ("the bare `npm run check` runner's 24 unique leaf stages").
 | Gate | Subject | Disposition |
 | --- | --- | --- |
 | `evidence:check` | capture coverage manifest census | **Wired** into bare `npm run check` |
-| `capture:{examples,functional}:check` | committed screenshot hashes | **Wired** onto the render-test matrix |
+| `capture:{examples,functional}:check` | committed screenshot hashes | **Wired** onto the render-test matrix, pinned backends only |
 | `reachability:runtime:check` | registrar runtime probe | Left alone; blocking contract undecided above |
-| `test:size` | the `tools/size` vitest suite | Fenced — see below |
+| `test:size` | the `tools/size` vitest suite | **Not a finding after all — see the correction below** |
 
 `evidence:check` is the sharpest case, because its own header states the intent it was denied: it
 needs no browser, and "that is what makes it cheap enough to gate on rather than to run only at
@@ -122,11 +122,51 @@ to no lane is invisible to any single-lane audit.** It is missed by the check/si
 route (its header records that it is no longer a project of the master `vitest.config.ts`, so
 `npm run test` does not collect it). A check of either route alone reports it covered by the other.
 
+**Correction: that reachability fact is true, and the conclusion drawn from it was wrong.** Listing it
+beside the other three implied its SUBJECT was unguarded. It is not. `tools/size/size.test.ts` and the
+already-invoked `npm run size` both import `collectSizeCases` / `didSizeChecksPass` from
+`scripts/size-runner` and both read the same `tools/size/size.baseline.json`, so the size budget is
+gated on every push. `test:size` is a second front-end over one runner and one baseline — not an
+orphaned gate.
+
+Two things follow, and the second is the reason this correction is recorded rather than deleted.
+
+- **The fence was deliberate and still holds.** `aeb609c0d` merged the master config to a single
+  jsdom project including `packages/**/src/**`, and the SAME commit pointed `test-size.ts` at its own
+  config and wrote the explanatory comment. `tools/size/vitest.config.ts` needs `environment: 'node'`
+  and a 300s timeout for real builds; it cannot join a suite tuned for per-file environment reuse.
+  Restoring it to the master config would be wrong.
+- **Underneath the wrong conclusion there was a real, smaller finding.** Four assertions in that suite
+  needed no build at all — two on the size-case declarations, one on the key format, one on the debug
+  stub's transform — and were reachable only through a five-minute lane nothing ran. They now live in
+  `scripts/size-runner.test.ts` and `scripts/size-debug-stub.test.ts`, which the ordinary suite
+  collects. Three of them also carried `if (…) return` guards that made them pass vacuously whenever a
+  filter narrowed the case set; the guards are gone, so they can now fail. The fifth assertion reads
+  the built `results` and correctly stayed behind.
+
+The generalisable part is not the size suite. **A reachability finding says a process does not run; it
+does not say the subject is uncovered.** Those are different claims, and the second needs its own
+check — here, one grep for who else imports the runner.
+
 ### Reachable is not the same as effective
 
 Every gate on the INVOKED list is only known to RUN. The tables above this section are the evidence
 on whether each can fail, and they find live P1/P2 defects in several of them. The two audits compose;
 neither substitutes for the other.
+
+### And a third question, found while wiring: does anyone RECEIVE the red?
+
+Auditing invocation turned one up that neither question above asks. `nightly.yml`'s two jobs —
+`test:coverage` and `api` generation — both run, and both can fail, and until `75da6b20b` **nothing
+routed their failure anywhere**: no `if: failure()`, no issue, no notification, in any of the four
+workflow files. A scheduled run has no author watching it, so a red landed in a log nobody opens.
+
+That is the same defect one step further along the chain. A gate that cannot fail, a gate that never
+runs, and a gate whose red reaches no one are three distinct ways to hold a verification that verifies
+nothing, and passing either of the first two checks says nothing about the third. The fix routes each
+failing job to one deduplicated issue, keyed on a stable title so a persistent failure accumulates
+comments on one issue rather than filing a new one nightly — an unread inbox being the next way the
+same defect comes back.
 
 ### Not invoked, with a reason (12)
 
