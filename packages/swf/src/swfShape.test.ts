@@ -1,4 +1,5 @@
 import { createTexture } from '@flighthq/texture/contract';
+import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { SwfReader } from './swfReader';
 import { createSwfGlyphShape, createSwfShape, readSwfMorphShapePaths } from './swfShape';
@@ -268,6 +269,52 @@ describe('createSwfShape', () => {
     expect(shape?.data.commands[5]).toEqual([0, 255]);
     expect(shape?.data.commands[6]).toMatchObject({ a: 1, b: 0, c: 0, d: 1, tx: 20, ty: 40 });
     expect(shape?.data.commands[7]).toBe('pad');
+  });
+
+  // The fill matrix is file data, so a collapsed one is a plain thing to encounter. Validated where it
+  // enters rather than at the renderer, which would otherwise invert it into a defined-but-wrong matrix
+  // (a/b/c/d zeroed, tx/ty negated) and paint wrong pixels with nothing raised and nothing to grep for.
+  it('drops a singular bitmap fill matrix and names the character, keeping the fill', () => {
+    const writer = new ShapeWriter();
+    writer.writeFillStyleCount(1);
+    writer.writeByte(0x41);
+    writer.writeUint16(7);
+    writer.writeZeroScaleMatrix();
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(2000, 0);
+    writer.writeEndShape();
+
+    const diagnostics: ImportDiagnostic[] = [];
+    const shape = createSwfShape(writer.toReader(), 1, () => createTexture(), diagnostics);
+
+    const matches = diagnostics.filter((d) => d.kind === 'swf.fill-matrix-singular');
+    expect(matches).toHaveLength(1);
+    expect(matches[0].severity).toBe('Recover');
+    expect(matches[0].detail).toMatchObject({ character: 7 });
+    // Recovered, not rejected: the fill is still emitted, just untransformed.
+    expect(shape?.data.commands[0]).toBe('beginTextureFill');
+    expect(shape?.data.commands[3]).toBeNull();
+  });
+
+  it('keeps an invertible bitmap fill matrix and reports nothing', () => {
+    const writer = new ShapeWriter();
+    writer.writeFillStyleCount(1);
+    writer.writeByte(0x41);
+    writer.writeUint16(7);
+    writer.writeIdentityMatrix(0, 0);
+    writer.writeLineStyleCount(0);
+    writer.writeStyleBits(1, 0);
+    writer.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+    writer.writeStraightEdge(2000, 0);
+    writer.writeEndShape();
+
+    const diagnostics: ImportDiagnostic[] = [];
+    const shape = createSwfShape(writer.toReader(), 1, () => createTexture(), diagnostics);
+
+    expect(diagnostics.filter((d) => d.kind === 'swf.fill-matrix-singular')).toHaveLength(0);
+    expect(shape?.data.commands[3]).not.toBeNull();
   });
 
   it('emits geometry for a bitmap fill, with a texture its pixels arrive into later', () => {
