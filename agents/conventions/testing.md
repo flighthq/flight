@@ -140,14 +140,35 @@ So: **binary fixtures use values whose encoding terminates promptly**, and the r
 constant, because the next person to touch it will otherwise read it as arbitrary. `0x01020304` over
 `0xffffffff`, `0x7f`-and-below over `0xff` fills.
 
-**And that fix is necessary, not sufficient — re-measured afterwards, it catches 3 of the 5 records.** With
-the terminating constant in place, deleting the colour skip for `boundingbox`, `clipping` or `path` each
-turns a test red; deleting it for `point` or `linkedmesh` leaves the file green, though the fixture writes
-those records too. **The reason is one level up from the value: the only assertion is a known attachment on
-the far side, so a per-record claim is resting on a whole-stream oracle.** Such an oracle sees a record's
-desync only when the error propagates all the way to the end, and whether it propagates is a property of
-the bytes that happen to follow, not of the code under test — so detection is luck that varies per record.
-Fixing the value made the luck better; it could not make it unnecessary.
+**And that fix is necessary, not sufficient.** The reason is one level up from the value: with only a known
+attachment asserted on the far side, **a per-record claim was resting on a whole-stream oracle**, and such an
+oracle sees a record's desync only when the error propagates all the way to the end — which is a property of
+the bytes that happen to follow, not of the code under test. Fixing the value made the luck better; it could
+not make it unnecessary. Measured per line against the per-record isolation test that replaced it: of the
+**18 reader-advancing statements** in the unmodeled-attachment block, deleting any one is **killed in 17
+cases**. The 18th — the `linkedmesh` unconditional colour skip — is **UNRESOLVED**: four payloads
+(`0x01020304`, `0xffffffff`, `0x80808080`, `0x01000000` — all-low, all-high, all-continuation, and
+low-then-zero) show no observable difference, no structural reason for that independence has been found, and
+**equivalence is neither established nor refuted.** Failing to find the structure that would *prove*
+equivalence is not the same as finding an input that *disproves* it, and disproving it needs exactly one
+input where behaviour differs, which nobody has.
+
+**Do not re-run a per-type sweep to check this number** — and the reason matters more than the instruction.
+The earlier *"3 of 5 record types"* figure was **superseded, not erroneous**: every one of its five mutations
+applied, each verdict was what the whole-stream oracle then gave, and re-measured after the isolation test
+landed exactly one flipped (`point`, which the old oracle missed and the new one kills). **What was wrong was
+the denominator — a record type is not a mutation.** A record holds several reader-advancing statements with
+different verdicts: on the pre-isolation tree, deleting `point`'s 12-byte rotation/x/y skip was killed while
+deleting `point`'s colour skip was not. So *"one skip per type"* names no definite mutant, and two per-type
+sweeps that happen to pick different lines disagree without either being wrong. **Per line, the question has
+one answer; per type, it has no determinate one.**
+
+**When two explanations of one behaviour are refuted inside an hour, stop explaining and start recording.**
+Both accounts offered for the 18th site failed — the second by its own prediction, which said `0x01000000`
+would discriminate and it did not. Reaching for a third guess is how a document acquires a tidy mechanism
+that has to be corrected again; **this paragraph has already been wrong twice, each time by overclaiming in
+the opposite direction.** An admitted unknown invites the measurement that settles it; a wrong mechanism ends
+the search.
 
 ⇒ **A per-item claim needs a per-item oracle.** Where a fixture walks N records and the comment says each
 one stays in step, assert the reader offset after each record rather than checking a single value at the
