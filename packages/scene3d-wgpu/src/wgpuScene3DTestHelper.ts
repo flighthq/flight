@@ -56,6 +56,10 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
       calls.push({ name, args });
       return result;
     };
+  const writeBuffer = (...args: unknown[]): void => {
+    validateWriteBufferData(args[2], args[3] as number | undefined, args[4] as number | undefined);
+    calls.push({ name: 'writeBuffer', args });
+  };
 
   const renderPass = {
     draw: record('draw'),
@@ -81,7 +85,7 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
     queue: {
       copyExternalImageToTexture: record('copyExternalImageToTexture'),
       submit: record('submit'),
-      writeBuffer: record('writeBuffer'),
+      writeBuffer,
       writeTexture: record('writeTexture'),
     },
     createBindGroup: record('createBindGroup', {}),
@@ -146,4 +150,30 @@ export function makeWgpuSkinningAdapter(): WgpuSkinningAdapter {
   const { state } = makeWgpuScene3DState();
   registerWgpuGpuSkinning(state);
   return getWgpuSkinningAdapter(state)!;
+}
+
+// Mirrors writeBuffer's synchronous BufferSource validation. Typed-array dataOffset/size values are
+// element counts; ArrayBuffer and DataView values are bytes. Keeping this at the fake queue boundary
+// makes every scene3d-wgpu unit path reject a call that a browser would reject before scheduling it.
+function validateWriteBufferData(data: unknown, dataOffset = 0, size?: number): void {
+  const isArrayBuffer = data instanceof ArrayBuffer;
+  const isSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer;
+  const isView = ArrayBuffer.isView(data);
+  if (!isArrayBuffer && !isSharedArrayBuffer && !isView) {
+    throw new TypeError('GPUQueue.writeBuffer: data must be a BufferSource');
+  }
+
+  const elementByteLength = isView && !(data instanceof DataView) ? getTypedArrayElementByteLength(data) : 1;
+  const dataElementLength = data.byteLength / elementByteLength;
+  const contentElementLength = size ?? dataElementLength - dataOffset;
+  if (contentElementLength < 0 || dataOffset + contentElementLength > dataElementLength) {
+    throw new DOMException('GPUQueue.writeBuffer: data range is out of bounds', 'OperationError');
+  }
+  if ((contentElementLength * elementByteLength) % 4 !== 0) {
+    throw new DOMException('GPUQueue.writeBuffer: content byte length must be a multiple of 4', 'OperationError');
+  }
+}
+
+function getTypedArrayElementByteLength(data: ArrayBufferView): number {
+  return (data as ArrayBufferView & { readonly BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT;
 }
