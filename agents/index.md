@@ -91,6 +91,9 @@ which is why they are not in the map.
   writing tests for a residue, not only when auditing one.
 - [test depth review](test-depth-review.md) — the unit-test-depth review and its gap list.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
+- [boundary-only checks](boundary-only-checks.md) — its mirror: checks that verify exactly what they
+  claim and that CI cannot run, because each one's subject is a parcel and a parcel is not in the tree.
+  An index, not a gate — it cannot make them run, only make their disappearance visible.
 - [unbacked register](unbacked-register.md) — claims that reached the merged tree with nothing looking
   at them. Entries owned by integration; the file carries its own limit, because it can only hold what
   someone noticed.
