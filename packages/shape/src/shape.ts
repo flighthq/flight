@@ -61,6 +61,14 @@ export function getShapeBounds(out: Rectangle, source: Readonly<Shape>, mode: Sh
   const complete = computeShapeBoundsRectangle(out, source, mode);
   const runtime = getNode2DRuntime(source) as ShapeRuntime;
   runtime.shapeBoundsCommandRegistryRevision = getShapeBoundsCommandRegistryRevision();
+  // The lower-level traversal deliberately preserves known contributions for diagnostics. Public and
+  // scene-graph callers ask for a complete box, so never let them mistake that partial output for truth.
+  if (!complete) {
+    out.x = 0;
+    out.y = 0;
+    out.width = 0;
+    out.height = 0;
+  }
   return complete;
 }
 

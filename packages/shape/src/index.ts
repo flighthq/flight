@@ -54,6 +54,7 @@ export {
   hasNonSolidShapeStroke,
   hasShapeFill,
   isShapeEmpty,
+  registerDefaultShapeBoundsCommands,
   setMorphShapeProgress,
 } from './contract';
 export * from './scale9ShapeCommands';

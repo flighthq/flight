@@ -46,6 +46,8 @@ import {
   appendShapeLineStyle,
   appendShapePath,
   createShape,
+  getShapeBounds,
+  registerDefaultShapeBoundsCommands,
 } from '@flighthq/shape/contract';
 import { createRichText, createTextLabel } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textlayout/contract';
@@ -67,7 +69,7 @@ import type {
   Transform2D,
   XmlElement,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RichTextKind, TextLabelKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 /**
@@ -97,6 +99,8 @@ export function createScene2DFromSvgDocument(
     );
     return out;
   }
+
+  registerDefaultShapeBoundsCommands();
 
   const context: SvgImportContext = {
     cssRules: collectCssRules(document),
@@ -413,7 +417,18 @@ function createSvgNode2DBounds(target: Node2D, context: SvgImportContext): Recta
   // container — a 10x10 rect with stroke-width 4 measured 14 through a parent <g> and 10 when clipped
   // directly, so the same element got two different boxes depending on which node carried the clip.
   const recorded = context.objectBoundingBoxes.get(target);
-  let hasBounds = copyNonEmptySvgBounds(out, recorded ?? getNodeLocalBoundsRectangle(target), false);
+  let ownBounds: Readonly<Rectangle>;
+  if (target.kind === ShapeKind) {
+    const shapeBounds = createRectangle();
+    // A partial box is worse than no box for objectBoundingBox units: it places a valid-looking clip at
+    // the wrong coordinates. Validate the complete command stream even when SVG retained its fill-only
+    // source geometry separately, then keep using that recorded geometry to exclude stroke as required.
+    if (!getShapeBounds(shapeBounds, target as Shape, 'fill')) return null;
+    ownBounds = recorded ?? shapeBounds;
+  } else {
+    ownBounds = recorded ?? getNodeLocalBoundsRectangle(target);
+  }
+  let hasBounds = copyNonEmptySvgBounds(out, ownBounds, false);
   let hasUnresolvedChildBounds = false;
   const childCount = getNodeChildCount(target);
   for (let index = 0; index < childCount; index++) {

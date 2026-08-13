@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import { getShapeBounds } from '@flighthq/shape/contract';
+import { getShapeBounds, getShapeBoundsCommand, unregisterShapeBoundsCommand } from '@flighthq/shape/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Sprite, ImportDiagnostic, Matrix, Node2D, RichText, Shape, TextLabel } from '@flighthq/types/contract';
 import {
@@ -16,6 +16,18 @@ import { createScene2DFromSvgDocument } from './svgDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
 describe('createScene2DFromSvgDocument', () => {
+  it('explicitly registers neutral bounds for shapes imported without a renderer', () => {
+    unregisterShapeBoundsCommand('drawPath');
+    expect(getShapeBoundsCommand('drawPath')).toBeNull();
+
+    const root = createScene2DFromSvgDocument('<svg><rect x="3" width="10" height="10"/></svg>');
+    const shape = getNodeChildAt(root, 0) as Shape;
+    const bounds = createRectangle();
+
+    expect(getShapeBounds(bounds, shape, 'fill')).toBe(true);
+    expect(bounds).toMatchObject({ height: 10, width: 10, x: 3, y: 0 });
+  });
+
   // ★ THE BOUNDING BOX THESE UNITS ARE DEFINED AGAINST EXCLUDES STROKE-WIDTH. Asserted as an AGREEMENT
   // between two routes to the same box, because that is the form the defect took: the node's own bounds
   // include the stroke (correct for culling and hit-testing), so a shape clipped through a parent <g> got a

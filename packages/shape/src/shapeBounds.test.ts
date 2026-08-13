@@ -1,6 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
+import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
 import { createShape } from './shape';
 import {
   computeShapeBoundsRectangle,
@@ -32,7 +33,7 @@ import {
 } from './shapeCommands';
 
 beforeAll(() => {
-  registerTestShapeBoundsCommands();
+  registerDefaultShapeBoundsCommands();
 });
 
 describe('computeShapeBoundsRectangle', () => {
@@ -267,21 +268,3 @@ describe('setShapeBoundsGuard', () => {
     expect(misses).toEqual(['__test.guard-callback__']);
   });
 });
-
-function registerTestShapeBoundsCommands(): void {
-  const commandBindings = [
-    ['beginFill', defaultShapeBoundsFlush, defaultShapeBoundsFlush],
-    ['cubicCurveTo', defaultShapeBoundsCubicCurveTo, defaultShapeBoundsCubicCurveTo],
-    ['curveTo', defaultShapeBoundsCurveTo, defaultShapeBoundsCurveTo],
-    ['drawCircle', defaultShapeBoundsDrawCircle, defaultShapeBoundsDrawCircle],
-    ['drawEllipse', defaultShapeBoundsDrawEllipse, defaultShapeBoundsDrawEllipse],
-    ['drawPath', defaultShapeBoundsDrawPath, defaultShapeBoundsDrawPath],
-    ['drawRectangle', defaultShapeBoundsDrawRectangle, defaultShapeBoundsDrawRectangle],
-    ['lineStyle', defaultShapeBoundsFlush, defaultShapeBoundsLineStyle],
-    ['lineTo', defaultShapeBoundsLineTo, defaultShapeBoundsLineTo],
-    ['moveTo', defaultShapeBoundsMoveTo, defaultShapeBoundsMoveTo],
-  ] as const;
-  for (const [key, fillBounds, strokeBounds] of commandBindings) {
-    registerShapeBoundsCommand({ fillBounds, key, strokeBounds });
-  }
-}
