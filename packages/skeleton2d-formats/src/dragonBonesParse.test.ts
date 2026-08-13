@@ -877,6 +877,48 @@ describe('parseDragonBonesSkeleton', () => {
     expect(Array.from(channel.track.values)).toEqual([90, 360]);
   });
 
+  // ★ THE COUNTER-CLOCKWISE HALF OF THE SAME MECHANISM, which had never run. `clockwise` is a SIGNED spin
+  // count — an animator saying "turn twice the long way round" — and the unwrap has two mirrored branches:
+  // a positive count consumes a turn when the authored angle rose past the previous one, a negative count
+  // consumes one when it fell below. Only the positive side was exercised, so the sign test and the
+  // decrement/increment were each half covered. A wrong sign here is a bone spinning backwards through an
+  // animation, which no static assertion about a pose would catch.
+  //
+  // Both expectations are derived from the rule rather than read off the output: with previousRotation 90
+  // and one unconsumed counter-clockwise turn, 180 becomes 180 - 360 = -180.
+  it('subtracts a whole turn per unconsumed negative `clockwise`, mirroring the positive case', () => {
+    const doc = rotateDoc([
+      { clockwise: -1, duration: 10, rotate: 90 },
+      { duration: 10, rotate: 180 },
+    ]);
+
+    const channel = findChannel(
+      parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels,
+      0,
+      Skeleton2DAnimationPath.Rotation,
+    )!;
+
+    expect(Array.from(channel.track.values)).toEqual([90, -180]);
+  });
+
+  // The other arm of the same condition: the authored angle FELL below the previous one, which is the
+  // direction a counter-clockwise turn already travels, so the spin is consumed and no 360 is added.
+  // Together with the test above this pins both arms of the sign test and both of the counter.
+  it('consumes a negative `clockwise` when the authored angle already fell below the previous one', () => {
+    const doc = rotateDoc([
+      { clockwise: -1, duration: 10, rotate: 90 },
+      { duration: 10, rotate: 0 },
+    ]);
+
+    const channel = findChannel(
+      parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels,
+      0,
+      Skeleton2DAnimationPath.Rotation,
+    )!;
+
+    expect(Array.from(channel.track.values)).toEqual([90, 0]);
+  });
+
   it('maps rotateFrame `skew` to a Shear channel, and emits none when no frame skews', () => {
     const skewed = parseDragonBonesSkeleton(
       JSON.stringify(
