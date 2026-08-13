@@ -85,6 +85,25 @@ re-introduced by the next person.
   shader family uses `@builtin(front_facing)` to negate the back-side geometric normal, so a wrong
   `frontFace` *mislights* mirrored double-sided meshes with nothing culled.
 
+- **Trilinear/anisotropic sampling has no mip chain to sample.** `bindWgpuTexture`
+  (`wgpuDraw.ts`) builds a full chain via `generateWgpuMipmaps`, but only when its `generateMips`
+  parameter is true. **What reaches it: nothing.** `resolveWgpuTexture` — what every real consumer calls
+  (`scene3d-wgpu/wgpuMeshPipeline.ts:782`, `scene3d-wgpu/wgpuParticleEmitter3D.ts:271`,
+  `scene2d-wgpu/wgpuSprite.ts:33`) — **does not expose the parameter at all**; its third argument is
+  `premultiply`, so the positional `true` at `wgpuSprite.ts:33` reads like a mip request and is not one.
+  No in-tree caller passes `generateMips: true` anywhere. **Render-visible:** a material configured for
+  trilinear or anisotropic filtering gets a sampler expecting a chain on a `mipLevelCount = 1` texture;
+  per `bindWgpuTexture`'s own note it "simply samples the base level", so the request degrades silently
+  to bilinear-on-base and the symptom is minification aliasing that reads as an asset problem.
+  **How it escaped:** nothing asserts a mip chain exists — the parameter has a default and no test
+  exercises the true branch, so the capability is reachable only by calling the export directly.
+  **Sibling:** GL should be checked for the same gap before either is fixed; fixing one backend alone
+  would leave the two disagreeing about whether a mip request is honoured. Found 2026-08-13 while
+  investigating the mipmap generator's bundle retention (a separate, real, size finding being fixed on
+  its own); deliberately NOT folded into that fix. The `bindWgpuTexture` comment that described a
+  material-path opt-in which does not exist was corrected in `947174aca` — that removes the misdirection
+  without claiming why the opt-in is absent, which remains unestablished.
+
 ### Fix complete, awaiting the maintainer's merge decision
 
 - **Non-indexed draw** — the fix above landed and was validated before the deferral reached the builder.
@@ -317,6 +336,10 @@ source, and WGPU has neither, so guarding them would be a warning that can never
 - **2026-08-12** — Created. WGPU work deferred behind other work by standing decision; the non-indexed
   draw defect was ruled priority-one on severity and then deferred under that decision, with the
   consequence stated rather than absorbed.
+- **2026-08-13** — Added the missing mip-chain entry (trilinear/anisotropic sampling has no chain),
+  recorded by builder on foreman's instruction while investigating the mipmap generator's bundle
+  retention. Recorded rather than fixed on purpose: it is a correctness gap larger than the size arc that
+  surfaced it, and half-fixing it inside that arc would have marked it done.
 - **2026-08-13** — Added the `bindWgpuTexture` / `bindWgpuVideoTexture` lane decision, recorded by
   integration on manager's 2026-08-12 ruling. Written here by integration because the file lives in the
   integrated tree; if manager wrote their own copy, keep one.
