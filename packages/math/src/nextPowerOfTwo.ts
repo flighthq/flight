@@ -41,11 +41,16 @@ export function nextPowerOfTwo(n: number): number {
 export function previousPowerOfTwo(n: number): number {
   if (n <= 1) return 1;
   // Fill all bits below the highest set bit, then shift right by 1.
+  //
+  // The shift is UNSIGNED, matching nextPowerOfTwo's `>>> 0`. With a signed `>>` the fill leaves bit 31 set
+  // for any input at or above 2^30, and sign extension then returned a NEGATIVE power of two — -1073741824
+  // for both 2^30 and 2^31-1. The two functions are mirror images and the operator is the only place they
+  // were allowed to differ.
   n = n | 0;
   n |= n >> 1;
   n |= n >> 2;
   n |= n >> 4;
   n |= n >> 8;
   n |= n >> 16;
-  return (n + 1) >> 1;
+  return (n + 1) >>> 1;
 }
