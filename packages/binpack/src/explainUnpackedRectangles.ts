@@ -1,6 +1,7 @@
 import type {
   BinPackOptions,
   PackableRectangle,
+  RectangleId,
   UnpackedRectangleExplanation,
   UnpackedRectangleReason,
 } from '@flighthq/types/contract';
@@ -28,10 +29,22 @@ export function explainUnpackedRectangles(
   const result = packRectangles(rectangles, options);
   if (result.unpacked.length === 0) return [];
 
-  const unpacked = new Set(result.unpacked);
+  // `unpacked` is a MULTISET, not a set. packRectangles treats two rectangles sharing an id as distinct
+  // pieces, so an id appears once per piece that failed — and matching on mere membership emitted an
+  // entry for every rectangle carrying an unpacked id, which is two explanations for one failure when
+  // only one of a duplicate pair fits. Consuming a count keeps the entry count equal to the failure
+  // count, which is what the contract above promises.
+  //
+  // WHICH duplicate a given entry describes is input order, and that is the honest limit: the packer
+  // sorts by area before placing and reports bare ids, so an id cannot identify a piece the packer
+  // treats as distinct. The count is right; the attribution between same-id pieces is positional.
+  const outstanding = new Map<RectangleId, number>();
+  for (const id of result.unpacked) outstanding.set(id, (outstanding.get(id) ?? 0) + 1);
   const explanations: UnpackedRectangleExplanation[] = [];
   for (const rectangle of rectangles) {
-    if (!unpacked.has(rectangle.id)) continue;
+    const remaining = outstanding.get(rectangle.id) ?? 0;
+    if (remaining === 0) continue;
+    outstanding.set(rectangle.id, remaining - 1);
     explanations.push({
       id: rectangle.id,
       reason: getUnpackedReason(rectangle, usableWidth, usableHeight, allowRotation),
