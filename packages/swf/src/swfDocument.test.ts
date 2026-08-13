@@ -2499,6 +2499,45 @@ describe('createScene2DFromSwf', () => {
 });
 
 describe('createScene2DFromSwf import diagnostics', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // in this file checks the first. This checks the second — the one that catches a tag walk that
+  // desynchronised and still left the asserted fields looking plausible, which is the failure mode a
+  // length-prefixed tag format has most of.
+  //
+  // Skip is excluded rather than the list asserted empty: a well-formed SWF may legitimately use a feature
+  // this importer does not model, and reporting that is correct behaviour on correct input. What must not
+  // appear is anything of higher severity — the importer may say "I do not model this", never "I could not
+  // read this".
+  it('raises no data-integrity diagnostic for a well-formed file', () => {
+    const crumbs = collectImportDiagnostics((sink) => {
+      createScene2DFromSwf(
+        createSwf([
+          createTag(TAG_FILE_ATTRIBUTES, new Uint8Array(4)),
+          createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(7), swfString('Game.Avatar'))),
+          createTag(
+            TAG_PLACE_OBJECT_2,
+            joinBytes(
+              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+              uint16(3),
+              uint16(7),
+              createMatrix(1.5, 0.25, -0.125, 0.5, 200, -40),
+              swfString('avatarSlot'),
+            ),
+          ),
+          createTag(TAG_SHOW_FRAME),
+          createTag(TAG_END),
+        ]),
+        sink,
+      );
+    });
+
+    const integrity = crumbs.filter((crumb) => crumb.severity !== ImportDiagnosticSeverity.Skip);
+    expect(
+      integrity.map((crumb) => crumb.kind),
+      `a good SWF made the importer complain: ${integrity.map((c) => c.kind).join(', ')}`,
+    ).toEqual([]);
+  });
+
   it('reports an unreadable container as a Reject naming which check refused it', () => {
     const notSwf = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
     const diagnostics = collectImportDiagnostics((sink) => {
