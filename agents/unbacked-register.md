@@ -108,7 +108,7 @@ number is the thing people trust.
 | 23 | `capture-baseline` | `01aea9432..18930fda1` (landing range; builder4's commit `94b5374e`) | builder4: recaptured the `sha256` for one screenshot-hash-tier target, `text-underline/dom` — a single column, not a sweep. Same shape as row 21: the previously-committed `sourceHash` disagreed with `sha256` of the current scene file, and the rewritten value now equals it. | B | **verified-at-tree by integration** — the one column read directly, old and new `sourceHash` compared against the current scene `sha256` the same way as row 21. |
 | 24 | `capture-baseline` | `01aea9432..18930fda1` (landing range; builder4's commit `94b5374e`, same as row 23) | builder4: whether the recaptured `sha256` for `text-underline/dom` is a correct render, as opposed to merely a freshly matching hash. | A | as-reported / unbacked-by-sender — only builder4's clone rendered and compared it. Same split as rows 21/22, applied to a single target instead of 50. |
 | 25 | `capture-baseline` | `01aea9432..18930fda1` (repo-wide sweep taken at this landing, not one commit) | integration: row 23's target is the **second** recorded instance of a pattern first documented at **L35** (`swf-import`, DOM column) — a refreshed `sha256` sitting beside an unrefreshed `fingerprint` in the same baseline column. A repo-wide sweep comparing every committed `sourceHash` against `sha256` of its current scene source file turns the pair into a measured population: **316 columns disagree (264 fingerprint, 52 sha256), down from 367 before this landing.** | B | **verified-at-tree by integration** — the same cheap comparison used in rows 21 and 23, run across every baseline column in the repo rather than one target. This row is the general/standing form of L35, not a replacement for it — see the note below the table. |
-| 26 | `sender-environment` | `01aea9432..18930fda1` (landing range; runtime measurement, not tied to one commit) | builder2: a runtime liveness measurement — which of the shipped conformance oracles the verifier actually **invokes**, not merely which are exported. **374 of 374 — no dead oracles.** A complete `--build` capture of all 493 functional targets gives 374 invoked, 119 absent, 0 unrecorded, 0 failed (374 + 119 = 493, matching the committed evidence census on both sides). This needs a browser leg integration does not have, so it is necessarily as-reported. | A | as-reported — **still unbacked by integration, the browser leg has not moved** — but this is no longer "a re-check landed on a better estimate." builder2 found and fixed a real defect in their own measurement instrument, falsified the fix with a two-arm browser contract test, and re-measured; see the note below the table, which names both retired figures (~~369~~ ~~373~~ 374 of 374) rather than describing them. The liveness claim as a whole stays sender-only, but the correction itself is backed by the fix commit, the falsifying test, and the reconciling arithmetic. |
+| 26 | `sender-environment` | `01aea9432..18930fda1` (landing range; runtime measurement, not tied to one commit) | builder2: a runtime liveness measurement — which of the shipped conformance oracles the verifier actually **invokes**, not merely which are exported. **374 of 374 — no dead oracles**, measured in the producing clone after fixing a defect in the measurement instrument itself. **Not yet landed**: as of this writing, the oracle-recording assignment inside `captureEntry.ts`'s `catch (err)` block still hardcodes the field to `null` regardless of outcome in the tree this register describes, so `374 of 374` is not yet a fact about the repository — only about the clone that produced it. This needs a browser leg integration does not have, so it was always necessarily as-reported; it is now also a report of unlanded work. | A | as-reported, and **doubly so** — not just an unbacked measurement, but an unbacked measurement resting on a fix that has not landed. builder2 found and fixed a real defect in their own measurement instrument, falsified it with a two-arm browser contract test, and re-measured — all real, all verified, all still confined to the producing clone. See the note below the table for how this row briefly cited the fix as landed, at a real-but-wrong site, before being corrected. |
 
 **Rows 11 and 12 come from one parcel and belong to different halves of the register's cost split, which
 is the point of recording them separately.** A `mutation-test` row is normally class B — revert the fix,
@@ -224,35 +224,43 @@ a claim about either target, which is why it earns its own row instead of a line
 itself is left untouched: it stays the first-documented, best-documented instance, and row 25 is where
 the running total lives so the next instance does not have to re-derive it.
 
-**Row 26's number changed a second time, and this time not because a re-check landed on a better
-estimate — an instrument defect was found, fixed, and falsified.** builder2's oracle-liveness
-measurement is a per-target status field, `oracle: 'absent' | 'invoked' | null`; `captureEntry.ts`'s
-catch-path status wrote a hardcoded `null` regardless of outcome, while the actual verification result —
-computed inside the `try` — was never in scope on the error path. So an oracle that ran and **threw an
-assertion failure** was recorded identically to one that never ran at all: exactly the distinction the
-field exists to draw, missing on the one path where it mattered. **The tell was the artifact contradicting
-itself, not a bisect or an external check**: the failing record read `oracle: null` sitting beside
-`error: "[text-strikethrough/dom] no wide continuous ink run found in the native CSS line-through band
-(widest run 0px…)"` — a message only that oracle's own body can produce. A record cannot truthfully claim
-"never ran" while carrying an error only a run emits. Fixed at `6a220b32d` — the verification binding
-hoisted out of the `try` so the catch path can read it, `oracle: verification?.oracle ?? null` replacing
-the hardcoded `null` (present today at `captureEntry.ts:585` and `:644`) — and **falsified, not merely
-asserted**: a new two-arm browser contract test in `captureEntry.e2e.test.ts` fails against the pre-fix
-code shape with *"expected null to be invoked"* while a control arm keeps passing, showing the test
-discriminates rather than asserts a constant. Re-measured after the fix: a complete `--build` capture of
-all 493 functional targets gives **374 invoked, 119 absent, 0 unrecorded, 0 failed** — 374 + 119 = 493,
-matching the committed evidence census (`agents/inert-gate-audit.md`: "119 no oracle") on both sides,
-which is the arithmetic that makes the new figure trustworthy rather than merely rounder. **This
-register's own figure moved twice, named rather than described:** ~~369 of 374~~ ~~373 of 374~~
-**374 of 374 — no dead oracles**. That matches how a superseded value is recorded elsewhere in this
-file (L4, L11, L15, L16, L18, L19) — struck through, not omitted, because naming a retired value
-records that it was made and retired rather than repeating it as a live claim. It matters concretely
-here:
-`369` also lives, unstruck, in integration's own attestation record, which they cannot edit; a register
-that never names it leaves a reader holding both documents with no way to match "the pre-correction
-figure" in one against a specific number in the other. Same self-correction discipline as row 10 and
-row L7's `unchecked` fix, this time with a real instrument defect underneath it rather than a
-verification slip.
+**Row 26's fix was briefly cited as landed, and the citation resolved — to real code, at the wrong
+site, which is worse than a citation that resolves to nothing.** builder2's oracle-liveness measurement
+is a per-target status field, `oracle: 'absent' | 'invoked' | null`; the catch-path status in
+`captureEntry.ts` writes a hardcoded `null` regardless of outcome, while the actual verification
+result — computed inside the corresponding `try` — is never in scope on that error path. So an oracle
+that ran and **threw an assertion failure** is recorded identically to one that never ran at all:
+exactly the distinction the field exists to draw, missing on the one path where it mattered. **The tell
+was the artifact contradicting itself, not a bisect or an external check**: the failing record read
+`oracle: null` sitting beside `error: "[text-strikethrough/dom] no wide continuous ink run found in the
+native CSS line-through band (widest run 0px…)"` — a message only that oracle's own body can produce. A
+record cannot truthfully claim "never ran" while carrying an error only a run emits.
+
+**The fix is real. It is also not in the tree this register describes.** It was built, falsified with a
+two-arm browser contract test, and re-measured entirely inside the producing clone, but had not merged
+into `quimby/base` by the time this row first named it as done. The row originally cited a fix commit
+and a new test file; neither resolves anywhere in the landed history (`git log --all` finds no such
+commit; the test file does not exist on any ref). Worse, the row's line-number citation for the fix site
+pointed at real, current, plausible-looking code — `captureEntry.ts:585` and `:644` do read
+`oracle: verification?.oracle ?? null` — but `git blame` shows both belong to `0f93278033`, a different,
+unrelated commit that landed this morning and happens to touch that shape of line elsewhere in the same
+file; it left the catch-path assignment two lines below `:644`, at `:693`, exactly as broken as before.
+**A citation that resolves to nothing makes a reader stop and check it; a citation that resolves to real
+code at the wrong site looks satisfied and gets trusted** — this is the row-7/L7 distinction again
+(committed-and-attested-in-a-clone is not landed), this time caught inside the register's own entry
+rather than in a sender's report. The site is now named by **identity, not position** — "the
+oracle-recording assignment inside `captureEntry.ts`'s `catch (err)` block" — so the citation survives
+whatever lands above it, unlike the line numbers that just drifted out from under it.
+
+**This register's own figure moved twice before this correction, named rather than described:**
+~~369 of 374~~ ~~373 of 374~~ **374 of 374 — no dead oracles, not yet landed**. That matches how a
+superseded value is recorded elsewhere in this file (L4, L11, L15, L16, L18, L19) — struck through, not
+omitted, because naming a retired value records that it was made and retired rather than repeating it as
+a live claim. It matters concretely here: `369` also lives, unstruck, in integration's own attestation
+record, which they cannot edit; a register that never names it leaves a reader holding both documents
+with no way to match "the pre-correction figure" in one against a specific number in the other. Same
+self-correction discipline as row 10 and row L7's `unchecked` fix — this time what is being corrected is
+the register's own premature claim of landing, not a measurement error.
 
 ## Landed defects — a third state beside unbacked and unbuilt
 
