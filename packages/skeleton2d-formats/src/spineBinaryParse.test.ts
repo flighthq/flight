@@ -65,23 +65,22 @@ describe('parseSpineSkeletonBinary', () => {
         0x07, // varint 0x7fffffff, in place of whatever byte was here
         ...base.subarray(at + 1),
       ]);
+      let result: ReturnType<typeof parseSpineSkeletonBinary> | undefined;
       expect(() => {
-        parseSpineSkeletonBinary(spliced);
+        result = parseSpineSkeletonBinary(spliced);
       }, `inflated varint spliced at byte ${at} of ${base.length}`).not.toThrow();
+
+      // Restored now that the importer bounds a bone's parent — see the note that used to sit below.
+      // A skeleton handed back from a corrupt file must still be one `validateSkeleton2D` would accept,
+      // because a caller who got a non-null return has no reason to go and ask.
+      const bones = result?.skeleton.bones;
+      if (bones === undefined) continue;
+      for (const bone of bones) {
+        expect(bone.parentIndex, `parentIndex after splice at ${at}`).toBeLessThan(bones.length);
+        expect(bone.parentIndex, `parentIndex after splice at ${at}`).toBeGreaterThanOrEqual(-1);
+      }
     }
   });
-
-  // ★ THE COHERENCE HALF OF THE SWEEP ABOVE IS DELIBERATELY ABSENT, AND THIS NAMES WHY RATHER THAN
-  // QUIETLY DROPPING IT. Asserting that a returned skeleton's bone parentIndex is in range FAILS TODAY:
-  // 7 of the 348 splice positions that parse successfully return a skeleton `validateSkeleton2D` rejects,
-  // every one of them for `bone N parentIndex N is not < its own index`. The importer reads a bone's
-  // parent as a raw varint (`spineBinaryParse.ts` in readSpineBinaryBones) and never checks it against
-  // the bones read so far, so a corrupt file yields a structurally invalid skeleton — and posing one
-  // produces NaN world matrices, silently, for any caller who does not run the validator.
-  //
-  // That is a reported defect awaiting a convention ruling, not a weak spot in this test. The assertion
-  // returns here when the importer bounds the index; leaving it in now would mean landing a red test, and
-  // deleting it without saying so would hide a measured defect behind a green one.
 
   // The two ALLOCATION-shaped counts, which the per-loop overrun guards cannot help with because the array
   // is sized from the file's number before the first read. Measured before the bounds check existed, on a
