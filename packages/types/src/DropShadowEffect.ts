@@ -10,6 +10,9 @@ export interface DropShadowEffect extends RenderEffect {
   angle?: number;
   blurX?: number;
   blurY?: number;
+  // 24-bit RGB (`0xRRGGBB`) — opacity is the separate `alpha`. Every backend tints through the
+  // shared RGB tint pass.
+  // ★ NOT the packed RGBA BitmapDropShadowOptions.color carries for the same operation offscreen.
   color?: number;
   distance?: number;
   quality?: number;

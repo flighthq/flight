@@ -10,6 +10,7 @@ import type { Texture } from './Texture';
 // `baseColorMap`'s own alpha); it takes effect only when `alphaMode` is 'blend' or 'mask'.
 export interface StandardPbrMaterialProperties {
   alphaMap: Texture | null;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer. Default 0xffffffff.
   baseColor: number;
   baseColorMap: Texture | null;
   emissive: number;

@@ -3,6 +3,7 @@ import type { Vector3Like } from './Vector3';
 export interface DirectionalLightOptions {
   // Enables the explicit directional shadow-map pass when this light is passed to it.
   castsShadow?: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding DirectionalLight.color. Default 0xffffffff.
   color?: number;
   direction?: Readonly<Vector3Like>;
   intensity?: number;

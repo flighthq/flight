@@ -14,6 +14,7 @@ export interface Slot2D {
   // Read through `getSkeleton2DSlotDeformOffsets`, which compares that attachment against the one shown.
   deform?: Skeleton2DSlotDeform | null;
   boneIndex: number;
+  // Packed sRGB RGBA (`0xRRGGBBAA`); the animation target packs the four sampled channels in that order.
   color?: number;
   name?: string | null;
 }

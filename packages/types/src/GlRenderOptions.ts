@@ -7,6 +7,7 @@ export interface GlRenderOptions {
   // crispness, or to save fill cost). This is geometric edge AA only — image/texture filtering is
   // the separate `imageSmoothingEnabled` knob.
   antialias?: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), split into clear-color channels by renderColor.
   backgroundColor?: number;
   contextAttributes?: WebGLContextAttributes;
   imageSmoothingEnabled?: boolean;

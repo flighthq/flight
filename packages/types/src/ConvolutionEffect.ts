@@ -12,6 +12,9 @@ export interface ConvolutionEffect extends RenderEffect {
   matrixY: number;
   bias?: number;
   clamp?: boolean;
+  // ★ 0xAARRGGBB — alpha in the HIGH byte, the only color in the SDK packed this way. Both the GL and
+  // Wgpu runners read it as (>>16, >>8, &0xff) for RGB with (>>>24) for alpha. It is neither the packed
+  // RGBA of most SDK colors nor the 24-bit RGB of the neighbouring effects. Default 0 (transparent).
   color?: number;
   divisor?: number;
   preserveAlpha?: boolean;

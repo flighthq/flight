@@ -4,6 +4,7 @@ import type { Vector3Like } from './Vector3';
 // area lights do not consume castsShadow, normalBias, pcfRadius, or shadowBias.
 export interface AreaLightOptions {
   castsShadow?: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding AreaLight.color. Default 0xffffffff.
   color?: number;
   direction?: Readonly<Vector3Like>;
   intensity?: number;

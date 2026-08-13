@@ -8,6 +8,7 @@ export interface WrappedDiffusePbrExtension extends PbrExtension {
   thickness: number;
   thicknessMap: Texture | null;
   thicknessMapUvSet: PbrUvSet;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer.
   wrappedDiffuseColor: number;
   wrappedDiffuseMap: Texture | null;
   wrappedDiffuseMapUvSet: PbrUvSet;

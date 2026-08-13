@@ -9,6 +9,7 @@ import type { Modifier } from './Modifier';
 export interface RimModifier extends Modifier {
   kind: 'RimModifier';
   slot: 'Effect';
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend modifier binding.
   color: number;
   power?: number; // Fresnel falloff exponent, higher = tighter rim. Default 3.
   intensity?: number; // additive strength of the rim. Default 1.

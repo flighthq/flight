@@ -25,5 +25,6 @@ export interface BitmapDisplacementMapOptions {
    */
   edgeMode?: BitmapEdgeMode;
   /** Packed 0xRRGGBBAA fill used when `mode` is 'color'. Default 0. */
+  // Packed sRGB RGBA (`0xRRGGBBAA`), the color written where the displaced sample falls outside.
   fillColor?: number;
 }
