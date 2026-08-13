@@ -233,6 +233,34 @@ describe('setGlBaseUniforms', () => {
 });
 
 describe('setGlMatrixFromTransform', () => {
+  it('projects the quad corner order to a clockwise triangle, which is why 2D draws need culling off', () => {
+    // Measured in a real WebGL2 context, not argued: with CULL_FACE enabled and the CCW default, this
+    // quad renders 0 lit pixels where it otherwise renders 2304 — a single-sided 3D draw earlier in the
+    // frame therefore erases all 2D content. `renderGlScene2D` disables CULL_FACE because of THIS, and
+    // without an assertion the reason lives only in a comment: someone who later made the winding CCW
+    // would find the disable looking superfluous. The corner order below mirrors the quadVertexData
+    // fill in glDraw.ts and must be changed with it.
+    const gl = makeGL();
+    const m = new Float32Array(9);
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 100;
+    setGlMatrixFromTransform(gl, makeShaderLoc(), m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, canvas);
+
+    const project = (x: number, y: number): [number, number] => [
+      m[0] * x + m[3] * y + m[6],
+      m[1] * x + m[4] * y + m[7],
+    ];
+    const [x0, y0, x1, y1] = [20, 30, 120, 80];
+    const [ax, ay] = project(x0, y0);
+    const [bx, by] = project(x1, y0);
+    const [cx, cy] = project(x1, y1);
+
+    // Signed area of the first indexed triangle (indices [0, 1, 2]); negative is clockwise.
+    const signedArea = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    expect(signedArea).toBeLessThan(0);
+  });
+
   it('computes matrix scaled by canvas dimensions for identity transform', () => {
     const gl = makeGL();
     const loc = makeShaderLoc();
