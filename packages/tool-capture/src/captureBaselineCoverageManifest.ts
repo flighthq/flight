@@ -5,8 +5,9 @@
 // a committed manifest of IDENTITIES (never a count), an explicit diff that names every gain and loss
 // individually, and a separate `--update` acceptance path guarded so a scoped run can never accept away
 // a whole-repo pin. The two are separate mechanisms over separate subjects — do not merge them — but the
-// shape is the same on purpose, so that reading one teaches you the other. The sibling registrar manifest
-// (`scripts/reachability-registrars.json`) is built to the same four rules and cites this one by name.
+// shape is the same on purpose, so that reading one teaches you the other. The sibling mechanism is the
+// registrar manifest — `scripts/reachability-registrar-manifest.ts` over `scripts/reachability-registrars.json`
+// — built to the same four rules over `packageName/registrar` identities, and it cites this one by name.
 //
 // WHY A MANIFEST AND NOT A COUNT. `isCaptureRegressionCoverageFailure` fails only when a run compared
 // NOTHING (`regressionComparisons === 0 && regressionUncovered > 0`). One covered target rescues a run of
@@ -57,7 +58,9 @@ export function createCaptureBaselineCoverageManifest(
 /**
  * Diffs observed coverage against the manifest for one subject.
  *
- * `visited` is every identity the run actually reached, so a scoped run is judged only on what it ran.
+ * `visited` is every identity whose coverage the run DETERMINED, so a scoped run is judged only on what
+ * it settled. `scope.undetermined` names the ones it could not settle at all (a page that never loaded):
+ * those are neither a loss nor a vanishing, because the run learned nothing about them.
  * A LOSS (visited, but no baseline) is reportable from any run — the target was there and its evidence
  * was not. An ABSENCE (pinned but never visited) is only meaningful when the run could have visited it,
  * because otherwise "not visited" is indistinguishable from "filtered out".
@@ -71,7 +74,11 @@ export function diffCaptureBaselineCoverage(
   subject: string,
   covered: readonly string[],
   visited: readonly string[],
-  scope: Readonly<{ entryFiltered: boolean; activeRenderers: readonly string[] | null }>,
+  scope: Readonly<{
+    entryFiltered: boolean;
+    activeRenderers: readonly string[] | null;
+    undetermined?: readonly string[];
+  }>,
 ): CaptureBaselineCoverageDiff {
   const pinned = new Set(manifest.subjects[subject] ?? []);
   const coveredSet = new Set(covered);
@@ -82,9 +89,12 @@ export function diffCaptureBaselineCoverage(
 
   const gained = covered.filter((identity) => !pinned.has(identity)).sort();
   const lost = [...pinned].filter((identity) => visitedSet.has(identity) && !coveredSet.has(identity)).sort();
+  const undeterminedSet = new Set(scope.undetermined ?? []);
   const absent = scope.entryFiltered
     ? []
-    : [...pinned].filter((identity) => rendererActive(identity) && !visitedSet.has(identity)).sort();
+    : [...pinned]
+        .filter((identity) => rendererActive(identity) && !visitedSet.has(identity) && !undeterminedSet.has(identity))
+        .sort();
 
   return { gained, lost, absent };
 }
@@ -121,24 +131,27 @@ export function readCaptureBaselineCoverageManifest(root: string): CaptureBaseli
  * Rewrites ONE subject's pin, preserving every other subject — an update run covers the subject it ran and
  * knows nothing about the other, so it must not speak for it.
  *
- * `activeRenderers` applies the same rule one level down. The regression tier is legitimately renderer-
- * scoped (`--renderer=canvas,webgl,webgpu`; DOM produces no fingerprint), so refusing every scoped update
- * would refuse the tier's own canonical command. Instead a scoped update replaces only the pins for the
- * renderers it ran and CARRIES THE REST FORWARD, so a narrower run can never retire what it never looked at.
+ * `activeRenderers` and `determined` apply the same rule one level down, twice. The regression tier is
+ * legitimately renderer-scoped (`--renderer=canvas,webgl,webgpu`; DOM produces no fingerprint), so refusing
+ * every scoped update would refuse the tier's own canonical command; and within an accepted run a page that
+ * failed to load settles nothing about its target. So a pin is retired ONLY when this run positively
+ * determined that identity to be uncovered. Everything else is carried forward. One flaky target therefore
+ * cannot quietly retire a pin, and cannot block the whole acceptance either.
  */
 export function writeCaptureBaselineCoverageManifest(
   root: string,
   subject: string,
   identities: readonly string[],
   activeRenderers: readonly string[] | null = null,
+  determined: readonly string[] | null = null,
 ): CaptureBaselineCoverageManifest {
   const existing = readCaptureBaselineCoverageManifest(root);
-  const carried =
-    activeRenderers === null
-      ? []
-      : (existing.subjects[subject] ?? []).filter(
-          (identity) => !activeRenderers.includes(identity.slice(identity.lastIndexOf('/') + 1)),
-        );
+  const determinedSet = determined === null ? null : new Set(determined);
+  const carried = (existing.subjects[subject] ?? []).filter((identity) => {
+    const renderer = identity.slice(identity.lastIndexOf('/') + 1);
+    if (activeRenderers !== null && !activeRenderers.includes(renderer)) return true;
+    return determinedSet !== null && !determinedSet.has(identity);
+  });
   const manifest = createCaptureBaselineCoverageManifest({
     ...existing.subjects,
     [subject]: [...new Set([...carried, ...identities])],

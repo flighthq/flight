@@ -6,6 +6,10 @@ import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import { setBaselineField } from './baselineStore';
+import {
+  readCaptureBaselineCoverageManifest,
+  writeCaptureBaselineCoverageManifest,
+} from './captureBaselineCoverageManifest';
 import { setCaptureTimeoutMs } from './captureTimeout';
 import {
   explainCaptureParityUncovered,
@@ -257,6 +261,58 @@ async function validateParityFixture(input: Readonly<Record<string, unknown>>) {
 }
 
 describe('runCaptureValidation', () => {
+  // The acceptance path must not become the hole. Writing the manifest from an early return reported
+  // exit 0 over a leg with real regression failures — the same "reports green" defect the manifest
+  // exists to close, one level up. Coverage is accepted; the run's own verdict still stands.
+  it('accepts new coverage WITHOUT masking the regression failures of the same run', async () => {
+    const { root, kill } = createRegressionFixture('export const scene = 1;\n', sha256('export const scene = 1;\n'));
+    mkdirSync(join(root, 'scripts'), { recursive: true });
+    const result = await runCaptureValidation({
+      subject: 'functional',
+      entries: [{ name: 'sample', renderers: ['canvas'] }],
+      server: { url: 'http://unused.invalid', kill },
+      root,
+      gateParity: false,
+      quiet: true,
+      updateCoverage: true,
+      fingerprints: { sample: { canvas: '2:ffffffffffffffffff000000' } },
+      browserSession: {
+        browser: { close: vi.fn() } as never,
+        context: { newPage: vi.fn() } as never,
+      },
+    });
+    expect(result.regressionFailures).toBe(1);
+    expect(result.shouldFail).toBe(true);
+    // A target with a FAILING comparison still has baseline evidence, so it is still covered.
+    expect(readCaptureBaselineCoverageManifest(root).subjects.functional).toEqual(['sample/canvas']);
+  });
+
+  // The blanket refusal this replaces was too coarse: one flaky target blocked every acceptance. The
+  // precise rule is that a run retires only what it POSITIVELY DETERMINED to be uncovered, so a target
+  // that never loaded keeps its pin — it cannot be retired by its own flakiness, and it blocks nothing.
+  it('keeps the pin of a target it could not load, instead of retiring it', async () => {
+    const { root, kill } = createRegressionFixture('export const scene = 1;\n', sha256('export const scene = 1;\n'));
+    mkdirSync(join(root, 'scripts'), { recursive: true });
+    writeCaptureBaselineCoverageManifest(root, 'functional', ['sample/canvas']);
+    const result = await runCaptureValidation({
+      subject: 'functional',
+      entries: [{ name: 'sample', renderers: ['canvas'] }],
+      server: { url: 'http://unused.invalid', kill },
+      root,
+      gateParity: false,
+      quiet: true,
+      updateCoverage: true,
+      fingerprints: {},
+      browserSession: {
+        browser: { close: vi.fn() } as never,
+        context: { newPage: vi.fn().mockRejectedValue(new Error('page unavailable')) } as never,
+      },
+    });
+    expect(result.loadFailures).toBeGreaterThan(0);
+    expect(result.shouldFail).toBe(true);
+    expect(readCaptureBaselineCoverageManifest(root).subjects.functional).toEqual(['sample/canvas']);
+  });
+
   it('yields NO PAIRS when a declared parity reference is skipped, instead of falling back to all-pairs', async () => {
     // The defect: `present.includes(reference)` is false both when a group declares no reference and
     // when a skip removed the one it declared, so the second case inherited the first case's all-pairs
