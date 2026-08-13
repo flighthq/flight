@@ -93,6 +93,15 @@ if (!scoped) {
   add('capabilities:sites:check', 'tsx', ['scripts/swf-diagnostic-sites.ts', '--check']);
   add('capabilities:numbers', 'tsx', ['scripts/swf-doc-numbers.ts']);
   add('fingerprint-source-hashes:check', 'tsx', ['scripts/check-fingerprint-source-hashes.ts']);
+
+  // Advisory, and deliberately not a gate: `scripts/size.ts` always exits 0, so this reports which
+  // bundles moved against the unminified baseline without ever failing the sweep. A red here would
+  // push an agent to rewrite the baseline to clear it, and the shipping pins sit one command away —
+  // see agents/bundle-size.md. It carries no `:check` suffix because it checks nothing.
+  //
+  // Whole-repo only. The sweep measures all 139 cases regardless of selector, so running it under a
+  // package selector would cost a minute to answer a question the selector did not ask.
+  add('size (advisory)', 'tsx', ['scripts/size.ts']);
 }
 
 // Gates are independent and still all run, but a small worker pool overlaps their repeated repository

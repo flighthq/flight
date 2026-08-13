@@ -16,7 +16,8 @@ more than it checked?**
 **A gate that counts is not enough. It has to compare what it did against what was declared.**
 
 The parity gate below is the worked case, but the rule generalises to every instrument in the repo,
-and the size gate is the proof it is not parity-specific: `scripts/size.ts` compares bytes against
+and the size gate is the proof it is not parity-specific: the terser instrument (`scripts/size.ts` when
+this was written, `scripts/size-minified.ts` since) compares bytes against
 `tools/size/size.baseline.json` and never asks whether that number was produced by a measurement of
 *this* tree — nor whether the prose it enforces says what it enforces. Measured on a tree at
 `d03a0bb57`, all four `pathboolean` entries disagree with their pins (+0.6%, −0.4%, −0.1%, −0.1%),
@@ -382,6 +383,15 @@ Two instruments exist for one subject, and neither is wired anywhere —
 | --- | --- | --- |
 | `size` / `size:baseline` | `scripts/size.ts` | direct build-and-compare; owns the 5% band |
 | `test:size` / `test:size:baseline` | `scripts/test-size.ts` | spawns vitest against a separate size config |
+
+**Resolved 2026-08-13.** The decomposition question above was answered when a fast unminified size
+path was added and forced it: `test:size` / `test:size:baseline` and `scripts/test-size.ts` are
+deleted, the terser instrument moved to `scripts/size-minified.ts` under `size:minified` /
+`size:minified:baseline`, and `scripts/size.ts` now holds the unminified sweep under `size` /
+`size:baseline`. Two subjects, one instrument and one baseline each. The paragraphs below describe
+the state that prompted it and are kept as the record; the file and command names in them are
+historical. What is **not** resolved is this document's actual subject — the 5% band, its one-sidedness,
+and the unconditional re-pin are unchanged in `size-runner.ts`, which `size:minified` still uses.
 
 **And the two docs name different commands as the size check.**
 [`bundle-size.md:3`](bundle-size.md) calls `npm run size` "the preferred size command for agents";
