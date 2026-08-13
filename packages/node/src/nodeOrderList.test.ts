@@ -272,6 +272,28 @@ describe('applyNodeOrderList', () => {
     expectChildren(container, [childA, childB]);
     expect(getNodeChildrenRevision(container)).toBe(revision);
   });
+
+  it('leaves a childless target alone when the list is nonempty', () => {
+    const list = createNodeOrderList();
+    addNodeOrderListEntry(list, childA, 1);
+
+    expect(() => applyNodeOrderList(container, list)).not.toThrow();
+    expect(getNodeRuntime(container).children).toBeNull();
+  });
+
+  it('does not apply retained entries outside the valid window', () => {
+    addNodeChild(container, childC);
+    addNodeChild(container, childB);
+    const list = createNodeOrderList();
+    addNodeOrderListEntry(list, childC, 10);
+    addNodeOrderListEntry(list, childB, 0);
+    clearNodeOrderList(list);
+    addNodeOrderListEntry(list, childC, 10);
+
+    applyNodeOrderList(container, list);
+
+    expectChildren(container, [childC, childB]);
+  });
 });
 
 describe('clearNodeOrderList', () => {
@@ -483,6 +505,15 @@ describe('setNodeOrderListEntryAbove', () => {
     addNodeOrderListEntry(list, childC, 6);
 
     setNodeOrderListEntryAbove(list, childA, childB);
+
+    expect(list.entryCount).toBe(3);
+    expect(list.nodes).toHaveLength(3);
+    expect(list.sortKeys).toHaveLength(3);
+    expect(list.nodes[0]).toBe(childB);
+    expect(list.nodes[1]).toBe(childA);
+    expect(list.nodes[2]).toBe(childC);
+    expect(list.sortKeys.slice(0, 3)).toEqual([5, 5, 6]);
+
     applyNodeOrderList(container, list);
 
     // No midpoint exists between 5 and 6, so bisection could not express this; the equal-key plus
