@@ -32,8 +32,23 @@ export interface ConformanceFixtureInput {
 
 export interface ConformanceFixtureObservation {
   diagnostics: readonly Readonly<ImportDiagnostic>[];
+  featureOutcomes?: readonly Readonly<ConformanceFixtureFeatureOutcome>[];
   imported: boolean;
   notRunReason?: string;
+}
+
+export interface ConformanceFixtureFeatureDefinition {
+  /** Format-owned stable identity; the shared core never interprets or synthesizes feature ids. */
+  id: string;
+  label: string;
+}
+
+export interface ConformanceFixtureFeatureOutcome {
+  /** Must name one feature declared by the adapter that produced this outcome. */
+  id: string;
+  notRunReason?: string;
+  /** Passed/failed comes only from an explicit adapter probe or oracle, never from import acceptance. */
+  state: 'failed' | 'not-run' | 'passed';
 }
 
 export type ConformanceFixtureAdapterImplementation =
@@ -47,6 +62,7 @@ export type ConformanceFixtureAdapterImplementation =
     };
 
 export interface ConformanceFixtureAdapter {
+  features: readonly Readonly<ConformanceFixtureFeatureDefinition>[];
   id: string;
   implementation: ConformanceFixtureAdapterImplementation;
   selects(tree: Readonly<ConformanceFixtureTree>, reference: string): boolean;
@@ -59,6 +75,7 @@ export interface ConformanceFixtureResult {
   diagnosticKinds: readonly string[];
   diagnostics: Readonly<Record<'Drop' | 'Recover' | 'Reject' | 'Skip', number>>;
   errorName?: string;
+  featureOutcomes: readonly Readonly<ConformanceFixtureFeatureOutcome>[];
   notRunReason?: string;
   packs: readonly string[];
   reference: string;
@@ -118,21 +135,56 @@ export interface ConformanceFixtureFamilyScore {
   selectionCoverage: ConformanceFixtureFractionScore;
 }
 
+export interface ConformanceFixtureFileScore {
+  acceptedCoverage: ConformanceFixtureFractionScore;
+  acceptedFiles: number;
+  acceptedOfAttempted: ConformanceFixtureFractionScore;
+  attemptedFiles: number;
+  completedFiles: number;
+  corpusFiles: number;
+  executionCoverage: ConformanceFixtureFractionScore;
+  matchedFiles: number;
+  selectionCoverage: ConformanceFixtureFractionScore;
+}
+
+export interface ConformanceFixtureFeatureScoreRow {
+  adapter: string;
+  checks: Readonly<Record<ConformanceFixtureFeatureOutcome['state'], number>>;
+  id: string;
+  label: string;
+  state: 'conforming' | 'failing' | 'not-tested' | 'unobserved';
+}
+
+export interface ConformanceFixtureFeatureScore {
+  checks: Readonly<Record<ConformanceFixtureFeatureOutcome['state'], number>>;
+  conformingFeatures: number;
+  declaredFeatures: number;
+  observedFeatures: number;
+  rows: readonly Readonly<ConformanceFixtureFeatureScoreRow>[];
+  testedFeatures: number;
+  workingAsExpected: ConformanceFixtureFractionScore;
+}
+
 export interface ConformanceFixtureScore {
   acceptedImport: ConformanceFixtureFractionScore;
   assurance: {
+    featureCorrectness: 'adapter-declared-outcomes-only';
     fixtureContent: 'not-retained';
-    semanticCorrectness: 'not-measured';
+    importAcceptanceSemanticCorrectness: 'not-measured';
   };
   definitions: {
     acceptedImport: string;
     executionCoverage: string;
+    fileCoverage: string;
     implementationCoverage: string;
     outcomeStates: Readonly<Record<ConformanceFixtureState, string>>;
     selectionCoverage: string;
+    workingAsExpected: string;
   };
   executionCoverage: ConformanceFixtureFractionScore;
   families: readonly Readonly<ConformanceFixtureFamilyScore>[];
+  features: Readonly<ConformanceFixtureFeatureScore>;
+  files: Readonly<ConformanceFixtureFileScore>;
   implementationCoverage: ConformanceFixtureFractionScore;
   outcomes: Readonly<Record<ConformanceFixtureState, number>>;
   selectionCoverage: ConformanceFixtureFractionScore;
@@ -202,11 +254,22 @@ export function createConformanceFixturePlan(
     throw new Error('Fixture conformance limit must be a positive safe integer');
   }
   const adapterIds = new Set<string>();
+  const featureIds = new Set<string>();
   for (const adapter of adapters) {
     if (adapter.id.trim() === '') throw new Error('Fixture conformance adapter id must be non-empty');
     if (adapterIds.has(adapter.id)) throw new Error(`Duplicate fixture conformance adapter id ${adapter.id}`);
     if (adapter.implementation.state === 'unavailable' && adapter.implementation.reason.trim() === '') {
       throw new Error(`Unavailable fixture conformance adapter ${adapter.id} must name its reason`);
+    }
+    for (const feature of adapter.features) {
+      if (!isConformanceIdentifier(feature.id)) {
+        throw new Error(`Fixture conformance adapter ${adapter.id} has invalid feature id`);
+      }
+      if (feature.label.trim() === '') {
+        throw new Error(`Fixture conformance feature ${feature.id} must have a non-empty label`);
+      }
+      if (featureIds.has(feature.id)) throw new Error(`Duplicate fixture conformance feature id ${feature.id}`);
+      featureIds.add(feature.id);
     }
     adapterIds.add(adapter.id);
   }
@@ -332,13 +395,96 @@ export function scoreConformanceFixturePlan(
   const executed = results.filter((result) => result.state !== 'not-run').length;
   return {
     acceptedImport: fractionScore(results.filter((result) => result.state === 'imported').length, executed),
-    assurance: { fixtureContent: 'not-retained', semanticCorrectness: 'not-measured' },
+    assurance: {
+      featureCorrectness: 'adapter-declared-outcomes-only',
+      fixtureContent: 'not-retained',
+      importAcceptanceSemanticCorrectness: 'not-measured',
+    },
     definitions: CONFORMANCE_FIXTURE_SCORE_DEFINITIONS,
     executionCoverage: fractionScore(executed, implemented),
     families,
+    features: scoreConformanceFixtureFeatures(plan, results),
+    files: scoreConformanceFixtureFiles(plan, results),
     implementationCoverage: fractionScore(implemented, plan.candidates.length),
     outcomes: summarizeOutcomes(results),
     selectionCoverage: fractionScore(plan.candidates.length, plan.eligibleCandidateRuns),
+  };
+}
+
+function scoreConformanceFixtureFiles(
+  plan: Readonly<ConformanceFixturePlan>,
+  results: readonly Readonly<ConformanceFixtureResult>[],
+): ConformanceFixtureFileScore {
+  const files = new Map<string, ConformanceFixtureResult[]>();
+  for (let index = 0; index < plan.candidates.length; index++) {
+    const candidate = plan.candidates[index]!;
+    const key = `${candidate.input.tree.directory}\0${candidate.input.reference}`;
+    const fileResults = files.get(key) ?? [];
+    fileResults.push(results[index]!);
+    files.set(key, fileResults);
+  }
+  const attemptedFiles = files.size;
+  const completedFiles = [...files.values()].filter((fileResults) =>
+    fileResults.every((result) => result.state !== 'not-run' && result.state !== 'threw'),
+  ).length;
+  const acceptedFiles = [...files.values()].filter((fileResults) =>
+    fileResults.every((result) => result.state === 'imported'),
+  ).length;
+  const matchedFiles = plan.trees.reduce((total, tree) => total + tree.matchedFixtureFiles, 0);
+  const corpusFiles = plan.trees.reduce((total, tree) => total + tree.fixtureFiles, 0);
+  return {
+    acceptedCoverage: fractionScore(acceptedFiles, corpusFiles),
+    acceptedFiles,
+    acceptedOfAttempted: fractionScore(acceptedFiles, attemptedFiles),
+    attemptedFiles,
+    completedFiles,
+    corpusFiles,
+    executionCoverage: fractionScore(completedFiles, corpusFiles),
+    matchedFiles,
+    selectionCoverage: fractionScore(attemptedFiles, corpusFiles),
+  };
+}
+
+function scoreConformanceFixtureFeatures(
+  plan: Readonly<ConformanceFixturePlan>,
+  results: readonly Readonly<ConformanceFixtureResult>[],
+): ConformanceFixtureFeatureScore {
+  const rows = plan.adapters
+    .flatMap((adapter) =>
+      adapter.features.map((feature): ConformanceFixtureFeatureScoreRow => {
+        const outcomes = results
+          .filter((result) => result.adapter === adapter.id)
+          .flatMap((result) => result.featureOutcomes)
+          .filter((outcome) => outcome.id === feature.id);
+        const checks = summarizeFeatureOutcomes(outcomes);
+        return {
+          adapter: adapter.id,
+          checks,
+          id: feature.id,
+          label: feature.label,
+          state:
+            outcomes.length === 0
+              ? 'unobserved'
+              : checks.failed > 0
+                ? 'failing'
+                : checks.passed > 0
+                  ? 'conforming'
+                  : 'not-tested',
+        };
+      }),
+    )
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const tested = rows.filter((row) => row.state === 'conforming' || row.state === 'failing');
+  const checks = summarizeFeatureOutcomes(results.flatMap((result) => result.featureOutcomes));
+  const conformingFeatures = tested.filter((row) => row.state === 'conforming').length;
+  return {
+    checks,
+    conformingFeatures,
+    declaredFeatures: rows.length,
+    observedFeatures: rows.filter((row) => row.state !== 'unobserved').length,
+    rows,
+    testedFeatures: tested.length,
+    workingAsExpected: fractionScore(conformingFeatures, tested.length),
   };
 }
 
@@ -382,6 +528,7 @@ async function runConformanceFixtureAdapter(
       ...identity,
       diagnosticKinds: [],
       diagnostics: { Drop: 0, Recover: 0, Reject: 0, Skip: 0 },
+      featureOutcomes: [],
       notRunReason: adapter.implementation.reason,
       state: 'not-run',
     };
@@ -389,8 +536,15 @@ async function runConformanceFixtureAdapter(
   try {
     const observation = await adapter.implementation.run(input);
     const diagnostics = summarizeDiagnostics(observation.diagnostics);
+    const featureOutcomes = normalizeFeatureOutcomes(adapter, observation.featureOutcomes ?? []);
     if (observation.notRunReason !== undefined) {
-      return { ...identity, ...diagnostics, notRunReason: observation.notRunReason, state: 'not-run' };
+      return {
+        ...identity,
+        ...diagnostics,
+        featureOutcomes,
+        notRunReason: observation.notRunReason,
+        state: 'not-run',
+      };
     }
     const rejected = observation.diagnostics.some((diagnostic) => diagnostic.severity === 'Reject');
     const degraded = observation.diagnostics.some(
@@ -401,6 +555,7 @@ async function runConformanceFixtureAdapter(
     return {
       ...identity,
       ...diagnostics,
+      featureOutcomes,
       state: unsupported
         ? 'unsupported'
         : !observation.imported || rejected
@@ -417,9 +572,37 @@ async function runConformanceFixtureAdapter(
       diagnosticKinds: [],
       diagnostics: { Drop: 0, Recover: 0, Reject: 0, Skip: 0 },
       errorName: error instanceof Error ? error.name : typeof error,
+      featureOutcomes: [],
       state: 'threw',
     };
   }
+}
+
+function normalizeFeatureOutcomes(
+  adapter: Readonly<ConformanceFixtureAdapter>,
+  outcomes: readonly Readonly<ConformanceFixtureFeatureOutcome>[],
+): ConformanceFixtureFeatureOutcome[] {
+  const declared = new Set(adapter.features.map((feature) => feature.id));
+  const seen = new Set<string>();
+  return outcomes
+    .map((outcome) => {
+      if (!declared.has(outcome.id) || seen.has(outcome.id)) {
+        throw new Error('Fixture adapter emitted an undeclared or duplicate feature outcome');
+      }
+      if (outcome.state !== 'failed' && outcome.state !== 'not-run' && outcome.state !== 'passed') {
+        throw new Error('Fixture adapter emitted an invalid feature outcome state');
+      }
+      if (outcome.state === 'not-run') {
+        if (outcome.notRunReason === undefined || !isConformanceIdentifier(outcome.notRunReason)) {
+          throw new Error('Fixture adapter emitted an invalid feature not-run reason');
+        }
+      } else if (outcome.notRunReason !== undefined) {
+        throw new Error('Fixture adapter attached a not-run reason to a measured feature outcome');
+      }
+      seen.add(outcome.id);
+      return { ...outcome };
+    })
+    .sort((left, right) => left.id.localeCompare(right.id));
 }
 
 function summarizeDiagnostics(
@@ -459,6 +642,18 @@ function summarizeOutcomes(
   return outcomes;
 }
 
+function summarizeFeatureOutcomes(
+  outcomes: readonly Readonly<ConformanceFixtureFeatureOutcome>[],
+): Record<ConformanceFixtureFeatureOutcome['state'], number> {
+  const summary = { failed: 0, 'not-run': 0, passed: 0 };
+  for (const outcome of outcomes) summary[outcome.state] += 1;
+  return summary;
+}
+
+function isConformanceIdentifier(value: string): boolean {
+  return /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(value);
+}
+
 function compareFixtureTree(left: Readonly<ConformanceFixtureTree>, right: Readonly<ConformanceFixtureTree>): number {
   return left.variant.localeCompare(right.variant) || left.tree.localeCompare(right.tree);
 }
@@ -468,6 +663,8 @@ const CONFORMANCE_FIXTURE_SCORE_DEFINITIONS = {
     'Selected candidate runs classified imported divided by implemented candidate runs that reached their target Flight method. This is execution evidence, not semantic-correctness evidence.',
   executionCoverage:
     'Implemented candidate runs that reached their target Flight method divided by selected candidate runs assigned to an available fixture adapter.',
+  fileCoverage:
+    'Unique files accepted, attempted, or completed divided by every fixture file in the selected verified trees. Unmatched files stay in the denominator rather than disappearing.',
   implementationCoverage:
     'Selected candidate runs assigned to an available fixture adapter divided by all selected candidate runs, including declared fixture families whose Flight implementation is unavailable.',
   outcomeStates: {
@@ -482,4 +679,6 @@ const CONFORMANCE_FIXTURE_SCORE_DEFINITIONS = {
   },
   selectionCoverage:
     'Candidate runs selected after the optional deterministic limit divided by all adapter-matched candidate runs in the verified corpus.',
+  workingAsExpected:
+    'Adapter-declared features whose every measured fixture outcome passed divided by adapter-declared features with at least one passed or failed outcome. Import acceptance alone never creates a feature outcome.',
 } as const;

@@ -74,6 +74,13 @@ describe('runImportFixtureConformance', () => {
     expect(report.results).toMatchObject([
       { adapter: 'fbx', notRunReason: 'flight-importer-unavailable', state: 'not-run' },
     ]);
+    expect(report.schemaVersion).toBe(4);
+    expect(report.score.files).toMatchObject({
+      acceptedCoverage: { denominator: 1, numerator: 0, state: 'measured', value: 0 },
+      attemptedFiles: 1,
+      completedFiles: 0,
+      corpusFiles: 1,
+    });
     expect(report.score.implementationCoverage).toEqual({
       denominator: 1,
       numerator: 0,
@@ -97,6 +104,18 @@ describe('runImportFixtureConformance', () => {
 
     expect(report.results).toEqual([]);
     expect(report.score.selectionCoverage).toEqual({
+      denominator: 0,
+      numerator: 0,
+      state: 'not-measured',
+      value: null,
+    });
+    expect(report.score.files.selectionCoverage).toEqual({
+      denominator: 1,
+      numerator: 0,
+      state: 'measured',
+      value: 0,
+    });
+    expect(report.score.features.workingAsExpected).toEqual({
       denominator: 0,
       numerator: 0,
       state: 'not-measured',

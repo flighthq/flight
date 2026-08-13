@@ -46,6 +46,7 @@ import type {
 
 import type {
   ConformanceFixtureAdapter,
+  ConformanceFixtureFeatureDefinition,
   ConformanceFixtureInput,
   ConformanceFixtureObservation,
   ConformanceFixtureTree,
@@ -98,8 +99,10 @@ function adapter(
   id: string,
   extensions: readonly string[],
   run: Extract<ConformanceFixtureAdapter['implementation'], { state: 'available' }>['run'],
+  features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
 ): ConformanceFixtureAdapter {
   return {
+    features,
     id,
     implementation: { run, state: 'available' },
     selects: (_tree, reference) => hasExtension(reference, extensions),
@@ -112,8 +115,10 @@ function packAdapter(
   extensions: readonly string[],
   run: Extract<ConformanceFixtureAdapter['implementation'], { state: 'available' }>['run'],
   excludedPackTokens: readonly string[] = [],
+  features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
 ): ConformanceFixtureAdapter {
   return {
+    features,
     id,
     implementation: { run, state: 'available' },
     selects: (tree, reference) =>
@@ -121,8 +126,13 @@ function packAdapter(
   };
 }
 
-function unavailableAdapter(id: string, extensions: readonly string[]): ConformanceFixtureAdapter {
+function unavailableAdapter(
+  id: string,
+  extensions: readonly string[],
+  features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
+): ConformanceFixtureAdapter {
   return {
+    features,
     id,
     implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
     selects: (_tree, reference) => hasExtension(reference, extensions),
@@ -133,8 +143,10 @@ function unavailablePackAdapter(
   id: string,
   packTokens: readonly string[],
   extensions: readonly string[],
+  features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
 ): ConformanceFixtureAdapter {
   return {
+    features,
     id,
     implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
     selects: (tree, reference) => hasExtension(reference, extensions) && hasPackToken(tree, packTokens),
