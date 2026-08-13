@@ -18,6 +18,19 @@ describe('computeDropShadowEffectCss', () => {
   });
 });
 
+// The channel order and the alpha fold are the migration. Under the 24-bit reading this path used to
+// carry, 0x9d55ffff keeps its low three bytes and emits rgba(85,255,255,...) — a different color that
+// still looks deliberate, which is the exact 0x44ffee failure shape this unification exists to remove.
+it('reads the color as packed RGBA and multiplies its alpha into the separate alpha field', () => {
+  expect(computeDropShadowEffectCss({ alpha: 0.5, color: 0x9d55ff80, kind: 'DropShadowEffect' })).toBe(
+    'drop-shadow(3px 3px 4px rgba(157,85,255,0.251))',
+  );
+});
+
+it('defaults to opaque black, the same shadow the pre-migration default produced', () => {
+  expect(computeDropShadowEffectCss({ kind: 'DropShadowEffect' })).toBe('drop-shadow(3px 3px 4px rgba(0,0,0,1.000))');
+});
+
 describe('computeOuterGlowEffectCss', () => {
   it('is a function', () => {
     expect(typeof computeOuterGlowEffectCss).toBe('function');

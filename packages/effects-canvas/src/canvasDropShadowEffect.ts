@@ -1,3 +1,4 @@
+import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import type {
   CanvasRenderEffectRunner,
   CanvasRenderState,
@@ -79,7 +80,14 @@ function applyDropShadowEffectToCanvasWithPool(
   const blur = Math.max(0, ((effect.blurX ?? 4) + (effect.blurY ?? 4)) / 2);
   const sourceMode = effect.sourceMode ?? 'draw';
 
-  drawCanvasTintedAlphaMask(mask, source, effect.color ?? 0, effect.alpha ?? 1, tintStrength);
+  const packed = effect.color ?? 0x000000ff;
+  drawCanvasTintedAlphaMask(
+    mask,
+    source,
+    getColorRgb(packed),
+    (effect.alpha ?? 1) * getColorAlpha(packed),
+    tintStrength,
+  );
   drawCanvasEffectPass(blurred, mask, blur > 0 ? `blur(${blur}px)` : 'none');
 
   clearCanvasTarget(dest);

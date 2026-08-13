@@ -38,6 +38,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/color": "*",
     "@flighthq/adjustments": "*",
     "@flighthq/scene2d-canvas": "*",
     "@flighthq/effects": "*",

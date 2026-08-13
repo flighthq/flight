@@ -64,7 +64,7 @@ const shadow = createDropShadowEffect({
   angle: 0,
   blurX: 4,
   blurY: 4,
-  color: 0x9d55ff,
+  color: 0x9d55ffff,
   distance: 18,
   strength: 1,
 });

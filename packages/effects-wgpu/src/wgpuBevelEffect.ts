@@ -1,3 +1,4 @@
+import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import { acquireWgpuRenderTarget, releaseWgpuRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   BevelEffect,
@@ -40,10 +41,15 @@ export function applyBevelEffectToWgpu(
   // Match the surface reference, which snaps the light offset to whole pixels.
   const offsetX = Math.round(Math.cos(angle) * distance);
   const offsetY = Math.round(Math.sin(angle) * distance);
-  const shadowColor = effect.shadowColor ?? 0x000000;
-  const shadowAlpha = effect.shadowAlpha ?? 1;
-  const highlightColor = effect.highlightColor ?? 0xffffff;
-  const highlightAlpha = effect.highlightAlpha ?? 1;
+  // The color is packed RGBA and its alpha multiplies the separate *Alpha field, matching what
+  // BitmapBevelOptions does offscreen. The composite still wants RGB plus one alpha, so the split
+  // happens here rather than in the shader.
+  const shadowPacked = effect.shadowColor ?? 0x000000ff;
+  const shadowColor = getColorRgb(shadowPacked);
+  const shadowAlpha = (effect.shadowAlpha ?? 1) * getColorAlpha(shadowPacked);
+  const highlightPacked = effect.highlightColor ?? 0xffffffff;
+  const highlightColor = getColorRgb(highlightPacked);
+  const highlightAlpha = (effect.highlightAlpha ?? 1) * getColorAlpha(highlightPacked);
   const strength = effect.strength ?? 1;
   const quality = Math.max(1, Math.round(effect.quality ?? 1));
   const sourceMode = effect.sourceMode ?? 'draw';
