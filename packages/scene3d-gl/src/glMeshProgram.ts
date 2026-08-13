@@ -1,5 +1,5 @@
-import { getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
-import { createMatrix3, createMatrix4, getMatrix4Position, inverseMatrix4 } from '@flighthq/geometry/contract';
+import { getCamera3DPosition, getCamera3DViewProjectionMatrix4 } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createGlProgram, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
@@ -241,16 +241,13 @@ export function setGlMeshCameraPosition(
   gl: WebGL2RenderingContext,
   locCameraPosition: WebGLUniformLocation | null,
   camera: Readonly<Camera3D>,
-): boolean {
-  // Reports a view with no inverse and uploads NOTHING, matching `updateCamera3DInverseViewProjection`,
-  // which already treats that as a real state and leaves its cache intact. The uniform keeps whatever
-  // was last uploaded, which is a stale camera position rather than a NaN one — and NaN here does not
-  // stay local: it reaches the fragment stage as the view vector and takes the whole lit family's
-  // shading with it, with nothing raised.
-  if (!inverseMatrix4(scratchInverseView, camera.view)) return false;
-  getMatrix4Position(scratchCameraPosition, scratchInverseView);
+): void {
+  // Delegates to the canonical eye-position primitive instead of inverting the view here. A view matrix
+  // is orthonormal by contract, so the eye is -(Rᵀ·t) — a transpose, with no determinant and no
+  // division, which cannot fail. Inverting a 4x4 to read three numbers out of it was both the slower
+  // way and the only reason this call had a failure mode to report.
+  getCamera3DPosition(scratchCameraPosition, camera);
   gl.uniform3f(locCameraPosition, scratchCameraPosition.x, scratchCameraPosition.y, scratchCameraPosition.z);
-  return true;
 }
 
 // Uploads the camera view-projection matrix to a program's u_viewProjection. Every family's vertex
@@ -395,7 +392,6 @@ mat3 skinNormalMatrix() {
 `;
 
 const scratchViewProjection = createMatrix4();
-const scratchInverseView = createMatrix4();
 const scratchCameraPosition = { x: 0, y: 0, z: 0 };
 // Column-major uv matrix composed per bind and uploaded directly; reused across every
 // bindGlUvTransform call (single-threaded GL draw path).

@@ -77,6 +77,14 @@ export function setCamera3DJitter(camera: Camera3D, x: number, y: number): void 
   camera.jitter.y = y;
 }
 
+// The seam the guard layer installs into; `null` keeps this module free of message text and of any
+// dependency on @flighthq/log. Installed here rather than at each consumer because the precondition is a
+// fact about the CAMERA — reporting it once where the matrix enters beats one warning per consumer that
+// happens to rely on it.
+export function setCamera3DViewGuard(guard: ((camera: Readonly<Camera3D>) => void) | null): void {
+  camera3DViewGuard = guard;
+}
+
 // Builds the camera's world->view matrix in place from an eye position, a look-at target, and an
 // up vector (right-handed look-at). This is the common path for positioning a camera without an
 // explicit world transform.
@@ -93,8 +101,20 @@ export function setCamera3DViewMatrix4FromLookAt(
 
 // Copies a precomputed world->view matrix into the camera in place. Use this when the view matrix
 // is derived elsewhere (for example, the inverse of a scene node's world transform).
+//
+// ★ PRECONDITION: `view` must be ORTHONORMAL — a rigid placement, position and orientation only. A view
+// matrix is the inverse of a camera's world placement, and a placement does not scale; this is what the
+// term means everywhere (Unity `worldToCameraMatrix`, Unreal's view matrix), not a Flight restriction.
+// Reflections are FINE: an improper orthogonal matrix (det = -1, as a water or mirror camera produces)
+// is still orthogonal, so Rᵀ is still R⁻¹ and every consumer that relies on the transpose stays exact.
+// What is excluded is a SCALED view, which has no coherent meaning as a placement inverse.
+//
+// The precondition is not enforced here — checking it on every assignment would cost every correct
+// caller for the benefit of an incorrect one. `explainCamera3DView` reports it on demand, and
+// `enableCameraGuards` warns on it; consumers such as `getCamera3DPosition` simply rely on it.
 export function setCamera3DViewMatrix4FromMatrix4(camera: Camera3D, view: Readonly<Matrix4Like>): void {
   camera.view.m.set(view.m);
+  camera3DViewGuard?.(camera);
 }
 
 // Refreshes the camera's required inverse-view-projection cache for the supplied viewport aspect.
@@ -126,3 +146,5 @@ function applyCamera3DProjectionJitter(out: Matrix4Like, x: number, y: number): 
 const __scratchInverse = createMatrix4();
 const __scratchProjection = createMatrix4();
 const __scratchViewProjection = createMatrix4();
+
+let camera3DViewGuard: ((camera: Readonly<Camera3D>) => void) | null = null;

@@ -12,6 +12,7 @@ import {
   getCamera3DViewProjectionMatrix4,
   setCamera3DAspect,
   setCamera3DJitter,
+  setCamera3DViewGuard,
   setCamera3DViewMatrix4FromLookAt,
   setCamera3DViewMatrix4FromMatrix4,
   updateCamera3DInverseViewProjection,
@@ -154,6 +155,25 @@ describe('setCamera3DJitter', () => {
     expect(camera.jitter).toBe(jitter);
     expect(camera.jitter.x).toBe(0.25);
     expect(camera.jitter.y).toBe(-0.5);
+  });
+});
+
+describe('setCamera3DViewGuard', () => {
+  it('is notified whenever a view matrix is assigned, and not otherwise', () => {
+    const seen: number[] = [];
+    setCamera3DViewGuard((camera) => seen.push(camera.view.m[0]));
+    try {
+      const camera = createCamera3D({
+        far: 100,
+        near: 0.1,
+        projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+      });
+      expect(seen).toEqual([]);
+      setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1));
+      expect(seen).toEqual([4]);
+    } finally {
+      setCamera3DViewGuard(null);
+    }
   });
 });
 
