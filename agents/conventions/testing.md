@@ -92,8 +92,8 @@ Named failure shapes worth checking for directly, distinct from each other:
 
 ## Assertions that cannot fail
 
-Four shapes where the test and the code are each fine but the test still proves nothing. All are
-invisible on a green run and only show up under mutation.
+Five shapes where the test and the code are each fine but the test still proves nothing. All are
+invisible on a green run, and the last one is invisible under mutation too.
 
 **A once-per-process observation is single-use — order the assertions inside ONE test.** `logOnce`
 suppresses a key for the lifetime of the process, not the test. So the *second* test to touch a key
@@ -137,6 +137,26 @@ skips that had also been passing.
 So: **binary fixtures use values whose encoding terminates promptly**, and the reason is recorded beside the
 constant, because the next person to touch it will otherwise read it as arbitrary. `0x01020304` over
 `0xffffffff`, `0x7f`-and-below over `0xff` fills.
+
+**A fixture built from the same understanding as the code cannot falsify that understanding.** The other
+four shapes are defects in a test. This one is a defect in the *input*, and it is the only one mutation
+cannot find: mutation asks whether the test notices the code changing, and here the test and the code agree
+with each other while both disagree with reality. Exhaustiveness does not help either — more inputs derived
+from the same belief are more of the same belief.
+
+Measured, and the tell was a comment rather than a failure: `parseSpineSkeletonBinary` reported
+`spine.binary-tail-unparsed` on *every* successful parse, with `bytes: 0`. Three tests asserted that as
+correct. The cause is that `buildSpineBinary()` ends exactly where the parser stops reading, so a fixture
+authored alongside the parser could only ever report a remainder of zero — `bytes: 0` was an artifact of the
+fixture being built to the parser's reach, not evidence of a complete parse. No amount of hand-built input
+could have shown otherwise, because every such input inherits the same stopping point.
+
+So: **for any format, protocol, or wire contract, at least one input must come from a foreign producer** — a
+real file, another implementation's output, a published vector. Ask *who authored this input, and did they
+get their understanding from the same place the code did?* The two directions are complementary and neither
+substitutes for the other: a corpus tells you what real files actually contain, and hand-built input reaches
+the branches no artist happened to author. A corpus is authority on whether real files parse, never on
+whether the format is handled — a branch it never reaches is not thereby fine.
 
 **A captured or golden fixture keeps every field verbatim — except one whose meaning is POSITIONAL.** A
 numeric enum ordinal, an array index into a reorderable list, a bitfield position: name those, and keep
