@@ -332,6 +332,27 @@ unusual care all session precisely because it was judged fragile, and THE CARE O
 VERIFIED.** Faithfully copied, never re-checked. ⇒ **Re-derive a carried constraint against the current tree
 before acting on it; a person who has changed their mind might tell you, and the code cannot.**
 
+★★ **A LAGGING BASE DOES NOT JUST CAUSE CONFLICTS — IT MANUFACTURES SPLIT-PROVENANCE BASELINES, AND THAT
+IS WHY A BASELINE CONFLICT IS NEVER INTEGRATION'S TO RESOLVE BY HAND.** *(Not a counted entry: no claim
+here reached the merged tree. It is recorded because the hazard recurs and its reason is not obvious.)*
+While the delivered base trails the integrated tree, **every parcel is authored against a tree that no
+longer matches the one it will land on** — verified across three clones, not inferred: integration at base
+`b22c948a2`, manager and `builder4` both at `9f59a84e8`, with the DOM-verification commit present in
+none of them. The resulting conflicts are neither builder nor integrator error; they are a function of the
+gap and widen with it.
+⇒ **What makes it more than housekeeping is WHERE the conflicts land.** A source conflict is resolvable by
+reading the code. A **baseline** conflict is not: one side's `fingerprint` and the other's `sha256` can each
+be correct for the tree that captured it, and merging them yields **one column whose fields describe
+different renders** — the split-provenance defect of **L9/L12/L20**, hand-made. **Baselines and fingerprints
+are capture evidence, and evidence cannot be reconstructed from source**, so the integrator has no way to
+produce the missing half and no gate to catch the mismatch: `fingerprint-source-hashes:check` verifies a
+`sourceHash` is present and internally consistent, never that it agrees with what the scene renders.
+⇒ **So: hold the parcel and ask for a recapture from the merged tree, and state the alternative explicitly
+so the outcome is chosen rather than achieved by a merge nobody decided.** And unblocking is not fixing —
+a handoff carries the sender's whole tree since `quimby/seed`, so peers can be unstuck by parcel while the
+gap itself stays visible. **If the fleet routes around a structural gap quietly enough, it stops being
+visible, which is how it becomes permanent.**
+
 ★★ **A NEGATIVE RESULT WITH ITS SCOPE NAMED IS WORTH SEVERAL WITHOUT** (manager, on the **L33** geometry —
 the same law as the praise line, pointing at a *result* instead of at credit). The question asked was
 whether a widened oracle band overlaps where an underline sits. The answer was **no** — and a bare "no"
