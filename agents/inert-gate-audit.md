@@ -145,27 +145,46 @@ silently absorb:
 | 5 | Nightly `api` | API quality/generation contributes to promotion | `npm run api` and `npm run api:json` only print parsed output; neither invokes rules nor persists/diffs an artifact. An `isEven(...): number` mutation made both commands exit 0 while `api:check` exited 1 for an accessor violation. | **P1 — parser smoke does not enforce API policy** | **RECOMMENDATION:** Add `api:check`, or narrow the job's documented trust claim to parser smoke. |
 | 6 | `edge-publish` dependencies | Published snapshots passed CI | By explicit policy it needs only `build` and `test-fast`. A snapshot can publish despite failures in isolated/tool-capture tests, quality, size, harness builds, or any render leg. This is documented reduced fidelity, not accidental control flow, but the artifact must not be described as fully CI-gated. | **P1 — snapshot evidence intentionally omits six families** | **RECOMMENDATION:** Either add the omitted dependencies or label snapshots as build-plus-fast-test gated. |
 
-**NEW — Tier 4 per-scene oracle / `functionalVerify.ts`: a misnamed oracle is silently no oracle.**
-`await testModule.assertRender?.(bitmap)` optional-chains the per-scene pixel oracle, so an export that is
-absent and an export that is MISSPELLED are the same thing to the verifier, and nothing downstream records
-whether an oracle ran — the result carries `stage`, `coverage`, and `fingerprint`, never "an oracle
-executed." 233 of 352 functional scenes export `assertRender`, so this is the majority of the suite.
+**ONE DEFECT, FOUR MANIFESTATIONS: the pipeline records which evidence EXISTS and never records which
+evidence SHOULD exist.** Wherever evidence is optional, its absence is indistinguishable from
+satisfaction. This is not three gates each missing a check — it is one missing concept, surfacing once
+per evidence kind over the SAME target set. It will surface again in any tier added until something
+declares what ought to be there.
 
-Proved with a two-arm experiment on `node-alpha`, whose oracle asserts a region is blue:
-
-| Arm | Scene | Oracle export | Result |
+| # | Tier | Two-arm proof | Result |
 | --- | --- | --- | --- |
-| A | fill changed blue → green | `assertRender` | **exit 1**, `[node-alpha] bottom-only region not blue — got #00ff00` on canvas, webgl, webgpu |
-| B | same broken fill | renamed to `asserRender` | **exit 0** — no verifier failure on any backend |
+| 1 | Fingerprint regression | one target's fingerprint deleted while others still compare | run stays **green**: the zero-floor is satisfied by any single comparison |
+| 2 | Screenshot hash (`capture:check`) | `node-alpha/canvas` sha256 **wrong** vs **absent** | wrong → `±`, **exit 1**. absent → `✓`, **exit 0**. Deleting a baseline is safer than breaking one. |
+| 3 | Tier-4 oracle (`functionalVerify.ts`) | `node-alpha` fill broken, oracle intact vs export misspelled | intact → **exit 1** named on canvas/webgl/webgpu. misspelled → **exit 0**. |
+| 4 | Oracle outcome not recorded anywhere | tried to confirm one target's oracle result from its own artifacts | `status.json` and `logs.jsonl` carry **no** oracle record; the outcome is only inferable from control flow (a failure writes `state: 'error'`). Observed, not mutated. |
 
-The only trace in arm B is `± changed (hash differs from baseline)`, which the screenshot-hash tier reports
-without gating under `--fail-on-error`. So a one-character typo disables a scene's entire pixel oracle
-while the scene renders visibly wrong and the smoke gate reports success.
+Manifestation 2 was found independently and landed as rank 1 of the `2026-08-13` table above; this row is
+corroboration by a second method, not a separate finding.
 
-**RECOMMENDATION:** make the oracle population observable rather than inferred — record per target whether
-an oracle ran, and pin the set of scenes that have one, so losing an oracle is a named diff rather than
-silence. This is the same shape as the capture baseline coverage manifest above, one tier down: the gate
-cannot distinguish "nothing to check" from "the check went missing."
+**Current exposure, measured per TARGET (entry × declared renderer), which is what the gates select:**
+functional 493 targets — 88 carry no fingerprint, 43 no screenshot hash, 119 no oracle; examples 132
+targets — 1 carries no screenshot hash, and **none** carry an oracle, because the examples harness has no
+`assertRender` equivalent at all. Counting baseline *columns* instead gives smaller numbers (33 rather
+than 43 for screenshots) because a target with no baseline file has no column to count — the column view
+structurally cannot see the targets that are missing entirely.
+
+**The exposed set is GROWING.** Of the 14 functional scenes with no screenshot hash, 10 first appeared in
+the two days before this entry: nothing requires a new scene to arrive with a baseline, so every scene
+that lands widens the gap silently.
+
+**Ten of those fourteen scenes are this session's own work** — `node-transform-mirror`,
+`swf-mirrored-placement`, `mesh-tangent-mirror-handedness`, `text-markup-color`, and all six `svg-*`
+scenes. `node-transform-mirror` has been ungated on all three of its backends from the moment it landed:
+it was written this session to close the mirroring blind spot, and it was itself partly inert. A
+deliverable of this session could not fail its own gate. That is the strongest argument that exists for
+why this sweep was worth running, and it is recorded here rather than left for review to find.
+
+**FIX (landed):** the capture baseline coverage manifest carries all three evidence kinds as columns on
+one row per target, rather than three parallel manifests — a target's evidence profile is one fact, and
+three files would be three places for it to drift. A loss is named `target#kind`. The acceptance path and
+the scoped-run guard are inherited unchanged. One rule makes the consolidation safe: a run declares which
+kinds it OBSERVED, and unobserved kinds are never reported lost — otherwise a validate run, which sees
+only fingerprints, would report every screenshot and oracle pin as missing.
 
 Two lower-ranked findings remain:
 
