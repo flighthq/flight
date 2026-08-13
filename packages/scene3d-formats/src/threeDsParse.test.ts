@@ -1031,19 +1031,21 @@ describe('parse3ds diagnostics', () => {
   // diagnostic nothing asserts on is a silent failure again, and it is silent in precisely the cases it was
   // built for, because those are the cases nobody wrote a test for.
   //
-  // The reason it matters here specifically: this importer walks a chunked binary format by length, so a
-  // mis-stepped chunk desynchronises the walk and produces a truncation crumb while STILL returning a scene
-  // whose asserted fields happen to look right. That is exactly what happened in the Spine binary reader
-  // today — a wrong skip width left every value assertion green and raised `spine.binary-tail-unparsed`
-  // into a void. Asserting the absence is what makes the alarm audible.
-  it('raises no truncation or unreadable diagnostic for a well-formed file', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a walk that desynchronised and
+  // still left the asserted fields looking plausible.
+  //
+  // It asserts the diagnostic list is EMPTY rather than filtering for truncation-shaped kind names. The
+  // filter was the first version and it was wrong: `awd2.block-length-past-end` is a parse failure whose
+  // name contains none of the words you would think to grep for, so a pattern built from expected
+  // vocabulary silently exempted it. A good file should produce no crumbs at all, which needs no
+  // vocabulary to state and cannot be defeated by a kind name nobody anticipated.
+  it('raises no diagnostic at all for a well-formed file', () => {
     const diagnostics: ImportDiagnostic[] = [];
 
     parse3ds(buildTriangle3ds('Triangle', [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2]), diagnostics);
 
-    const complaints = diagnostics
-      .map((diagnostic) => diagnostic.kind)
-      .filter((kind) => /truncated|unreadable|malformed|unparsed/.test(kind));
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
     expect(complaints, `a good 3ds file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
   });
 

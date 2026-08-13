@@ -1812,13 +1812,16 @@ describe('createScene3DFromAwd2 animations', () => {
 });
 
 describe('parseAwd2', () => {
-  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. This file has
-  // twelve ways to say a block could not be read and every other test here checks only the first claim.
-  // AWD2 is length-prefixed block-by-block, so a mis-sized block desynchronises the stream while the
-  // blocks already read still assert correctly — the exact failure this second claim exists to catch.
-  // Matched by pattern, not an enumerated list, so a kind added later is covered without anyone
-  // remembering this test exists.
-  it('raises no truncation or unreadable diagnostic for a well-formed file', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches a walk that desynchronised and
+  // still left the asserted fields looking plausible.
+  //
+  // It asserts the diagnostic list is EMPTY rather than filtering for truncation-shaped kind names. The
+  // filter was the first version and it was wrong: `awd2.block-length-past-end` is a parse failure whose
+  // name contains none of the words you would think to grep for, so a pattern built from expected
+  // vocabulary silently exempted it. A good file should produce no crumbs at all, which needs no
+  // vocabulary to state and cannot be defeated by a kind name nobody anticipated.
+  it('raises no diagnostic at all for a well-formed file', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const indices = new Uint16Array([0, 1, 2]);
     const geomBody = buildTriangleGeometryBody('Triangle', [
@@ -1840,9 +1843,7 @@ describe('parseAwd2', () => {
 
     parseAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
 
-    const complaints = diagnostics
-      .map((diagnostic) => diagnostic.kind)
-      .filter((kind) => /truncated|unreadable|malformed|unparsed|overrun|corrupt/.test(kind));
+    const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
     expect(complaints, `a good awd2 file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
   });
 
