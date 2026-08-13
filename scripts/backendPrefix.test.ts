@@ -1,4 +1,4 @@
-import { findWedgedBackendSegment } from './backendPrefix';
+import { findWedgedBackendSegment, runBackendPrefixScan } from './backendPrefix';
 
 // ★ EVERY NEGATIVE CONTROL FOR A PROOF PATH LIVES HERE, PERMANENTLY, AND THE STANDING RULE IS:
 // A NEW PROOF PATH MUST LEAVE EVERY PRE-EXISTING NEGATIVE CONTROL STILL FAILING.
@@ -47,5 +47,26 @@ describe('findWedgedBackendSegment', () => {
     expect(findWedgedBackendSegment('registerGlToonMaterial', noRegistrars, types)).toBeNull();
     expect(findWedgedBackendSegment('registerSomethingGl', noRegistrars, types)).toBeNull();
     expect(findWedgedBackendSegment('registerSpecularGlossinessThing', noRegistrars, types)).toBeNull();
+  });
+});
+
+// ★ THE CASE THAT COVERS THE GATE RATHER THAN THE RULE, AND IT IS NOT OPTIONAL FOR A GATE'S SUITE.
+// Everything above exercises a pure predicate; CI runs an EXECUTABLE. A refactor that moves the body
+// behind a main-guard and strands a module-scope reference breaks the second while leaving every case
+// above green — which is exactly what happened here: a ReferenceError in `packageOf`, five tests
+// passing, `npm run backend-prefix:check` dead. A suite without this case covers the RULE and silently
+// claims to cover the GATE.
+// Detection question for any gate suite: DOES ANY CASE EXECUTE THE THING CI EXECUTES, or do they all
+// execute a function CI never calls directly?
+describe('runBackendPrefixScan', () => {
+  it('runs end to end over the real tree and finds no violations', () => {
+    const { allowed, scanned, violations } = runBackendPrefixScan();
+
+    expect(violations).toEqual([]);
+    expect(allowed).toBe(0);
+    // Not pinned to an exact count: registrars are added routinely and a hard number would fail on
+    // unrelated work, turning a wiring check into a maintenance tax. The floor still proves the walk
+    // reached the packages tree rather than scanning nothing and reporting clean.
+    expect(scanned).toBeGreaterThan(250);
   });
 });
