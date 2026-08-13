@@ -22,14 +22,29 @@
 // The manifest records only that a target HAD a comparable baseline, never what the baseline contained.
 // It is a pin on the SHAPE of the evidence, not on the evidence, so re-baselining a scene is not a
 // manifest change and does not need acceptance.
+//
+// ★ ONE DEFECT, THREE TIERS, ONE MANIFEST. The pipeline records which evidence EXISTS and never records
+// which evidence SHOULD exist, so wherever evidence is optional its absence is indistinguishable from
+// satisfaction. That surfaced independently in three tiers over the SAME target set — a missing
+// fingerprint skips the regression comparison, a missing `sha256` leaves `changed` null so
+// `--fail-on-changed` cannot fire, and a missing (or misspelled) `assertRender` export silently runs no
+// oracle. They are not three defects: they are three kinds of evidence about one row, and a target's
+// evidence profile is ONE fact. Three parallel manifests would be three places for that fact to drift
+// apart, so the kinds are COLUMNS on one row here, and a loss is named as `target#kind`.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+/** The three kinds of evidence a capture target can carry. Each is independently losable. */
+export type CaptureBaselineEvidenceKind = 'fingerprint' | 'oracle' | 'screenshot';
+
 export interface CaptureBaselineCoverageManifest {
-  schemaVersion: 1;
-  /** Sorted `entry/renderer` identities, keyed by subject (`functional`, `examples`). */
-  subjects: Record<string, string[]>;
+  schemaVersion: 2;
+  /**
+   * Per subject (`functional`, `examples`): each `entry/renderer` identity mapped to the sorted evidence
+   * kinds it carries. A target with no evidence at all is absent rather than mapped to an empty list.
+   */
+  subjects: Record<string, Record<string, CaptureBaselineEvidenceKind[]>>;
 }
 
 export interface CaptureBaselineCoverageDiff {
@@ -41,7 +56,13 @@ export interface CaptureBaselineCoverageDiff {
   absent: string[];
 }
 
-export const CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION = 1;
+export const CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION = 2;
+
+export const CAPTURE_BASELINE_EVIDENCE_KINDS: readonly CaptureBaselineEvidenceKind[] = [
+  'fingerprint',
+  'oracle',
+  'screenshot',
+];
 
 /** Where the committed pin lives — one file, keyed by subject, beside the reachability baseline. */
 export function captureBaselineCoverageManifestPath(root: string): string {
@@ -49,10 +70,20 @@ export function captureBaselineCoverageManifestPath(root: string): string {
 }
 
 export function createCaptureBaselineCoverageManifest(
-  subjects: Readonly<Record<string, readonly string[]>>,
+  subjects: Readonly<Record<string, Readonly<Record<string, readonly CaptureBaselineEvidenceKind[]>>>>,
 ): CaptureBaselineCoverageManifest {
-  const out: Record<string, string[]> = {};
-  for (const [subject, identities] of Object.entries(subjects)) out[subject] = [...identities].sort();
+  const out: Record<string, Record<string, CaptureBaselineEvidenceKind[]>> = {};
+  for (const [subject, targets] of Object.entries(subjects)) {
+    const row: Record<string, CaptureBaselineEvidenceKind[]> = {};
+    // A target with no evidence at all is ABSENT rather than pinned-with-nothing: pinning an empty row
+    // would assert "this target is known to carry no evidence", which is the claim the manifest exists
+    // to make impossible to state by accident.
+    for (const identity of Object.keys(targets).sort()) {
+      const kinds = [...new Set(targets[identity])].sort();
+      if (kinds.length > 0) row[identity] = kinds;
+    }
+    out[subject] = row;
+  }
   return { schemaVersion: CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION, subjects: out };
 }
 
@@ -73,28 +104,49 @@ export function createCaptureBaselineCoverageManifest(
 export function diffCaptureBaselineCoverage(
   manifest: Readonly<CaptureBaselineCoverageManifest>,
   subject: string,
-  covered: readonly string[],
+  covered: Readonly<Record<string, readonly CaptureBaselineEvidenceKind[]>>,
   visited: readonly string[],
   scope: Readonly<{
     entryFiltered: boolean;
     activeRenderers: readonly string[] | null;
     undetermined?: readonly string[];
+    /**
+     * The evidence kinds this run was able to observe. A run that never looked at screenshots must not
+     * report every screenshot pin as lost — the same not-observed-is-not-absent rule the other two scope
+     * fields apply to entries and renderers, applied to the third axis.
+     */
+    kinds?: readonly CaptureBaselineEvidenceKind[];
   }>,
 ): CaptureBaselineCoverageDiff {
-  const pinned = new Set(manifest.subjects[subject] ?? []);
-  const coveredSet = new Set(covered);
+  const kindObserved = (kind: CaptureBaselineEvidenceKind): boolean =>
+    scope.kinds === undefined || scope.kinds.includes(kind);
+  const pinnedRows = manifest.subjects[subject] ?? {};
+  const pinned = new Set(
+    Object.entries(pinnedRows).flatMap(([identity, kinds]) =>
+      kinds.filter(kindObserved).map((kind) => formatCaptureBaselineEvidenceIdentity(identity, kind)),
+    ),
+  );
+  const coveredSet = new Set(
+    Object.entries(covered).flatMap(([identity, kinds]) =>
+      [...kinds].filter(kindObserved).map((kind) => formatCaptureBaselineEvidenceIdentity(identity, kind)),
+    ),
+  );
   const visitedSet = new Set(visited);
+  const targetOf = (evidence: string): string => evidence.slice(0, evidence.lastIndexOf('#'));
   const rendererOf = (identity: string): string => identity.slice(identity.lastIndexOf('/') + 1);
   const rendererActive = (identity: string): boolean =>
     scope.activeRenderers === null || scope.activeRenderers.includes(rendererOf(identity));
 
-  const gained = covered.filter((identity) => !pinned.has(identity)).sort();
-  const lost = [...pinned].filter((identity) => visitedSet.has(identity) && !coveredSet.has(identity)).sort();
+  const gained = [...coveredSet].filter((evidence) => !pinned.has(evidence)).sort();
+  const lost = [...pinned].filter((evidence) => visitedSet.has(targetOf(evidence)) && !coveredSet.has(evidence)).sort();
   const undeterminedSet = new Set(scope.undetermined ?? []);
   const absent = scope.entryFiltered
     ? []
     : [...pinned]
-        .filter((identity) => rendererActive(identity) && !visitedSet.has(identity) && !undeterminedSet.has(identity))
+        .filter((evidence) => {
+          const identity = targetOf(evidence);
+          return rendererActive(identity) && !visitedSet.has(identity) && !undeterminedSet.has(identity);
+        })
         .sort();
 
   return { gained, lost, absent };
@@ -103,6 +155,11 @@ export function diffCaptureBaselineCoverage(
 /** `entry/renderer`, the identity a manifest pins. */
 export function formatCaptureBaselineCoverageIdentity(entry: string, renderer: string): string {
   return `${entry}/${renderer}`;
+}
+
+/** `entry/renderer#kind` — the unit a loss is named in. `#` because a renderer id may contain `:`. */
+export function formatCaptureBaselineEvidenceIdentity(identity: string, kind: CaptureBaselineEvidenceKind): string {
+  return `${identity}#${kind}`;
 }
 
 /**
@@ -119,13 +176,33 @@ export function isCaptureBaselineCoverageFailure(diff: Readonly<CaptureBaselineC
   return diff.gained.length > 0 || diff.lost.length > 0 || diff.absent.length > 0;
 }
 
+/** Every `target#kind` a manifest pins for one subject, sorted. */
+export function listCaptureBaselineEvidence(
+  manifest: Readonly<CaptureBaselineCoverageManifest>,
+  subject: string,
+): string[] {
+  const targets = manifest.subjects[subject] ?? {};
+  return Object.entries(targets)
+    .flatMap(([identity, kinds]) => kinds.map((kind) => formatCaptureBaselineEvidenceIdentity(identity, kind)))
+    .sort();
+}
+
 /** The committed pin, or an empty manifest when none exists yet. A missing file is not an error. */
 export function readCaptureBaselineCoverageManifest(root: string): CaptureBaselineCoverageManifest {
   const path = captureBaselineCoverageManifestPath(root);
   if (!existsSync(path)) return createCaptureBaselineCoverageManifest({});
   const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
-  const subjects = (parsed as { subjects?: Record<string, string[]> }).subjects;
-  return createCaptureBaselineCoverageManifest(subjects ?? {});
+  const subjects = (parsed as { subjects?: Record<string, unknown> }).subjects ?? {};
+  const migrated: Record<string, Record<string, readonly CaptureBaselineEvidenceKind[]>> = {};
+  for (const [subject, value] of Object.entries(subjects)) {
+    // Schema 1 pinned a bare identity list, and every identity in it meant "has a comparable fingerprint"
+    // because that was the only evidence kind the manifest knew about. Read it as exactly that claim
+    // rather than as a target with all three, which would manufacture pins nobody ever accepted.
+    migrated[subject] = Array.isArray(value)
+      ? Object.fromEntries((value as string[]).map((identity) => [identity, ['fingerprint' as const]]))
+      : (value as Record<string, CaptureBaselineEvidenceKind[]>);
+  }
+  return createCaptureBaselineCoverageManifest(migrated);
 }
 
 /**
@@ -142,21 +219,31 @@ export function readCaptureBaselineCoverageManifest(root: string): CaptureBaseli
 export function writeCaptureBaselineCoverageManifest(
   root: string,
   subject: string,
-  identities: readonly string[],
+  covered: Readonly<Record<string, readonly CaptureBaselineEvidenceKind[]>>,
   activeRenderers: readonly string[] | null = null,
   determined: readonly string[] | null = null,
+  observedKinds: readonly CaptureBaselineEvidenceKind[] | null = null,
 ): CaptureBaselineCoverageManifest {
   const existing = readCaptureBaselineCoverageManifest(root);
   const determinedSet = determined === null ? null : new Set(determined);
-  const carried = (existing.subjects[subject] ?? []).filter((identity) => {
+  const previous = existing.subjects[subject] ?? {};
+  const merged: Record<string, CaptureBaselineEvidenceKind[]> = {};
+  for (const [identity, kinds] of Object.entries(previous)) {
     const renderer = identity.slice(identity.lastIndexOf('/') + 1);
-    if (activeRenderers !== null && !activeRenderers.includes(renderer)) return true;
-    return determinedSet !== null && !determinedSet.has(identity);
-  });
-  const manifest = createCaptureBaselineCoverageManifest({
-    ...existing.subjects,
-    [subject]: [...new Set([...carried, ...identities])],
-  });
+    const rendererOutOfScope = activeRenderers !== null && !activeRenderers.includes(renderer);
+    const notDetermined = determinedSet !== null && !determinedSet.has(identity);
+    // Carry forward every kind this run could not speak for: a renderer it did not run, a target it
+    // never settled, or an evidence kind it never observed. A run retires only what it positively
+    // determined to be gone, on all three axes.
+    const carried = kinds.filter(
+      (kind) => rendererOutOfScope || notDetermined || (observedKinds !== null && !observedKinds.includes(kind)),
+    );
+    if (carried.length > 0) merged[identity] = carried;
+  }
+  for (const [identity, kinds] of Object.entries(covered)) {
+    merged[identity] = [...new Set([...(merged[identity] ?? []), ...kinds])];
+  }
+  const manifest = createCaptureBaselineCoverageManifest({ ...existing.subjects, [subject]: merged });
   writeFileSync(captureBaselineCoverageManifestPath(root), `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
 }

@@ -1149,12 +1149,16 @@ export async function runCaptureValidation(
       ? diffCaptureBaselineCoverage(
           readCaptureBaselineCoverageManifest(options.root),
           options.subject,
-          [...new Set(coveredIdentities)],
+          Object.fromEntries([...new Set(coveredIdentities)].map((identity) => [identity, ['fingerprint' as const]])),
           [...new Set(visitedIdentities)],
           {
             entryFiltered,
             activeRenderers: options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
             undetermined: [...new Set(undeterminedIdentities)],
+            // Validation observes the FINGERPRINT column and nothing else. Without this the screenshot
+            // and oracle pins would read as lost on every validate run — absence of observation reported
+            // as absence of evidence, which is the defect this manifest exists to prevent.
+            kinds: ['fingerprint'],
           },
         )
       : { gained: [], lost: [], absent: [] };
@@ -1176,9 +1180,10 @@ export async function runCaptureValidation(
     writeCaptureBaselineCoverageManifest(
       options.root,
       options.subject,
-      identities,
+      Object.fromEntries(identities.map((identity) => [identity, ['fingerprint' as const]])),
       options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
       [...new Set(visitedIdentities)],
+      ['fingerprint'],
     );
     if (!options.quiet)
       console.log(

@@ -284,7 +284,9 @@ describe('runCaptureValidation', () => {
     expect(result.regressionFailures).toBe(1);
     expect(result.shouldFail).toBe(true);
     // A target with a FAILING comparison still has baseline evidence, so it is still covered.
-    expect(readCaptureBaselineCoverageManifest(root).subjects.functional).toEqual(['sample/canvas']);
+    expect(readCaptureBaselineCoverageManifest(root).subjects.functional).toEqual({
+      'sample/canvas': ['fingerprint'],
+    });
   });
 
   // The blanket refusal this replaces was too coarse: one flaky target blocked every acceptance. The
@@ -293,7 +295,7 @@ describe('runCaptureValidation', () => {
   it('keeps the pin of a target it could not load, instead of retiring it', async () => {
     const { root, kill } = createRegressionFixture('export const scene = 1;\n', sha256('export const scene = 1;\n'));
     mkdirSync(join(root, 'scripts'), { recursive: true });
-    writeCaptureBaselineCoverageManifest(root, 'functional', ['sample/canvas']);
+    writeCaptureBaselineCoverageManifest(root, 'functional', { 'sample/canvas': ['fingerprint'] });
     const result = await runCaptureValidation({
       subject: 'functional',
       entries: [{ name: 'sample', renderers: ['canvas'] }],
@@ -310,7 +312,9 @@ describe('runCaptureValidation', () => {
     });
     expect(result.loadFailures).toBeGreaterThan(0);
     expect(result.shouldFail).toBe(true);
-    expect(readCaptureBaselineCoverageManifest(root).subjects.functional).toEqual(['sample/canvas']);
+    expect(readCaptureBaselineCoverageManifest(root).subjects.functional).toEqual({
+      'sample/canvas': ['fingerprint'],
+    });
   });
 
   it('yields NO PAIRS when a declared parity reference is skipped, instead of falling back to all-pairs', async () => {
