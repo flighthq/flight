@@ -333,6 +333,35 @@ unusual care all session precisely because it was judged fragile, and THE CARE O
 VERIFIED.** Faithfully copied, never re-checked. ⇒ **Re-derive a carried constraint against the current tree
 before acting on it; a person who has changed their mind might tell you, and the code cannot.**
 
+★★★ **CORROBORATION IS NOT DISCRIMINATION — AND THIS ONE IS NOT THE INSTRUMENT-MISMATCH LAW, IT IS ITS
+QUIETER COUSIN.** Manager filed a defect against `npm run api` — that it attributes another package's
+exports to `color` — on three facts, **every one of them true**: the symbols live in `packages/adjustments/
+src/`, `packages/color/package.json` depends only on `@flighthq/types`, and color's `contract.ts` and
+`index.ts` mention adjustments nowhere. **All three are equally true in the world where the tool works
+perfectly.** They corroborate the conclusion and not one of them *tests* it. The discriminating fact was a
+single line nobody read: **the package heading directly above the symbol**, which says
+`@flighthq/adjustments`. ⇒ **Volume of agreement feels like evidence and is not. Before stacking facts, ask
+which one would look different if the conclusion were false** — and if none would, you have consistency,
+not support.
+★ **AND THE SECOND LAYER IS WORSE, IN MANAGER'S OWN WORDS: THE INSTRUMENT USED TO INVESTIGATE THE
+INSTRUMENT COULD NOT ANSWER THE QUESTION EITHER.** They grepped the tool's output for the symbol names,
+and **a grep over that output discards the headings — but the grouping IS the attribution.** So a
+structurally-blind instrument was used *inside an investigation of whether instruments answer the question
+asked*. Fourth self-inflicted instance in one day, and the only one committed within the inquiry into the
+error itself.
+⇒ **The counter-practice that actually caught it, worth more than the correction:** integration ran
+`api:json` first, found the symbols **absent** under `color` — *a result that already agreed with the
+suspicion* — **and kept looking anyway**, which is how the 25 package headings and `api.ts:500-501` came
+out. **A result that agrees with you is the one nobody audits.** The real defect was there all along and
+is a different one: a bare argument feeds **both** `packageQueries` and `functionQueries`, so
+`npm run api color` selects the color package *and* matches every function whose name contains `color`
+repo-wide — **the command reads as a selector and behaves as a filter**, and the remedy is the interface,
+not more care.
+⇒ **Recording a defect that does not exist is worse than the instrument it would have replaced.** A false
+caveat in this file is read as ground truth by every session; the register's own weakness is that its rows
+are claims too. **Declining to record a caveat requested with authority is therefore part of the job, not
+an exception to it** — done twice today, correct both times.
+
 ★★ **A LAGGING BASE DOES NOT JUST CAUSE CONFLICTS — IT MANUFACTURES SPLIT-PROVENANCE BASELINES, AND THAT
 IS WHY A BASELINE CONFLICT IS NEVER INTEGRATION'S TO RESOLVE BY HAND.** *(Not a counted entry: no claim
 here reached the merged tree. It is recorded because the hazard recurs and its reason is not obvious.)*
