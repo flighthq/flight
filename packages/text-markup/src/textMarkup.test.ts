@@ -34,7 +34,7 @@ describe('formatTextMarkup', () => {
 
   it('emits font color as a #rrggbb attribute', () => {
     const content: RichTextContent = {
-      formatRanges: [{ end: 3, format: { color: 0xff0000, font: 'Verdana', size: 18 }, start: 0 }],
+      formatRanges: [{ end: 3, format: { color: 0xff0000ff, font: 'Verdana', size: 18 }, start: 0 }],
       text: 'red',
     };
     expect(formatTextMarkup(content)).toBe('<font color="#ff0000" size="18" face="Verdana">red</font>');
@@ -111,18 +111,18 @@ describe('parseTextMarkup', () => {
 
   it('uses a passed registry instead of the standard dialect', () => {
     const registry = createMarkupTagRegistry();
-    registerMarkupTag(registry, 'hot', () => ({ color: 0xff0000 }));
+    registerMarkupTag(registry, 'hot', () => ({ color: 0xff0000ff }));
     const content = parseTextMarkup('<hot>x</hot><b>y</b>', registry);
     expect(content.text).toBe('xy');
     // `hot` is registered; `b` is not, so it keeps its text with no format.
-    expect(formatAt(content, 0)).toEqual({ color: 0xff0000 });
+    expect(formatAt(content, 0)).toEqual({ color: 0xff0000ff });
     expect(formatAt(content, 1)).toEqual({});
   });
 
   it('parses font color (#rrggbb, #rgb, 0x), size, and face', () => {
-    expect(formatAt(parseTextMarkup('<font color="#ff0000">x</font>'), 0).color).toBe(0xff0000);
-    expect(formatAt(parseTextMarkup('<font color="#f00">x</font>'), 0).color).toBe(0xff0000);
-    expect(formatAt(parseTextMarkup('<font color="0x00ff00">x</font>'), 0).color).toBe(0x00ff00);
+    expect(formatAt(parseTextMarkup('<font color="#ff0000">x</font>'), 0).color).toBe(0xff0000ff);
+    expect(formatAt(parseTextMarkup('<font color="#f00">x</font>'), 0).color).toBe(0xff0000ff);
+    expect(formatAt(parseTextMarkup('<font color="0x00ff00">x</font>'), 0).color).toBe(0x00ff00ff);
     expect(formatAt(parseTextMarkup('<font size="24" face="Arial">x</font>'), 0)).toEqual({ font: 'Arial', size: 24 });
   });
 
@@ -185,7 +185,7 @@ describe('parseTextMarkup', () => {
 
   it('composes nested tags into a single range', () => {
     const content = parseTextMarkup('<font color="#0000ff"><b>x</b></font>');
-    expect(formatAt(content, 0)).toEqual({ bold: true, color: 0x0000ff });
+    expect(formatAt(content, 0)).toEqual({ bold: true, color: 0x0000ffff });
   });
 
   it('splits ranges at format boundaries', () => {

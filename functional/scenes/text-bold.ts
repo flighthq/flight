@@ -26,7 +26,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const TEXT_COLOR = 0xffffff; // white — maximize contrast against the black background for ink counting
+const TEXT_COLOR = 0xffffffff; // white — maximize contrast against the black background for ink counting
 const FONT_SIZE = 56;
 
 const FIELD_X = 80;

@@ -1,7 +1,6 @@
-// text-multiformat — validates per-range text formatting: a single RichText whose string carries TWO
-// format ranges of DIFFERENT colors (first half red, second half blue) renders each range in its own
-// color. This proves the layout/raster path honors `textFormatRanges` (a TextFormat applied to a
-// [start, end) character span) rather than painting the whole field one color.
+// text-multiformat — validates markup-produced per-range text formatting: a single RichText parsed from
+// two `<font color>` runs renders each range in its own color. This proves the markup producer widens its
+// RGB-only syntax to visible packed RGBA and the layout/raster path honors the resulting ranges.
 //
 // Multi-format runs are the core of rich text and are purely visual — only a real render shows the two
 // colors side by side. The oracle is FUZZY about glyph positions: the red half is the LEFT portion of the
@@ -9,25 +8,21 @@
 // RIGHT third for blue pixels, leaving the middle as an unscanned buffer (the exact split pixel depends
 // on glyph metrics). Both colors appearing in their expected halves proves the ranges took effect.
 //
-// API used: `setRichTextFormatRange(field, format, start, end)` pushes a {start, end, format} entry onto
-// `field.data.textFormatRanges`; each TextFormat is a plain object ({ color, size, ... }). When a range's
-// format omits `color`, content falls back to `data.textColor`; here both ranges set an explicit color.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
   createDisplayObject,
   createRichText,
   getBitmapPixelRgb,
+  parseTextMarkup,
   RichTextKind,
-  setRichTextFormatRange,
+  setRichTextContent,
 } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const RED = 0xff0000;
-const BLUE = 0x0000ff;
 const FIELD_X = 80;
 const FIELD_Y = 220;
 const FIELD_W = 640;
@@ -37,9 +32,6 @@ const FONT_SIZE = 56;
 // The string splits cleanly into two equal-length halves at the space; the first half renders red, the
 // second blue. With equal glyph counts per half, the color boundary lands near the field's horizontal
 // midpoint, so the left third is reliably red and the right third reliably blue.
-const TEXT = 'REDSIDE BLUESIDE';
-const SPLIT = TEXT.indexOf(' '); // end of the red range / start (after space) of the blue range
-
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
@@ -57,11 +49,10 @@ field.x = FIELD_X;
 field.y = FIELD_Y;
 field.data.width = FIELD_W;
 field.data.height = FIELD_H;
-field.data.text = TEXT;
-
-// Two format ranges of different colors over disjoint character spans.
-setRichTextFormatRange(field, { color: RED }, 0, SPLIT);
-setRichTextFormatRange(field, { color: BLUE }, SPLIT + 1, TEXT.length);
+setRichTextContent(
+  field,
+  parseTextMarkup('<font color="#ff0000">REDSIDE</font> <font color="#0000ff">BLUESIDE</font>'),
+);
 
 addNodeChild(root, field);
 

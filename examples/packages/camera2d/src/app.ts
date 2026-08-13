@@ -240,14 +240,14 @@ appendShapeEndFill(hudBg);
 addNodeChild(hudContainer, hudBg);
 
 const cameraLabel = createTextLabel();
-cameraLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+cameraLabel.data.textFormat = { size: 13, color: 0xffffffff, font: 'monospace' };
 cameraLabel.x = 16;
 cameraLabel.y = 16;
 invalidateNodeLocalTransform(cameraLabel);
 addNodeChild(hudContainer, cameraLabel);
 
 const playerLabel = createTextLabel();
-playerLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+playerLabel.data.textFormat = { size: 13, color: 0xffffffff, font: 'monospace' };
 playerLabel.x = 16;
 playerLabel.y = 34;
 invalidateNodeLocalTransform(playerLabel);
@@ -255,7 +255,7 @@ addNodeChild(hudContainer, playerLabel);
 
 const controlsLabel = createTextLabel();
 controlsLabel.data.text = 'WASD/Arrows: move  Scroll: zoom';
-controlsLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+controlsLabel.data.textFormat = { size: 13, color: 0xffffffff, font: 'monospace' };
 controlsLabel.x = 16;
 controlsLabel.y = 52;
 invalidateNodeLocalTransform(controlsLabel);
@@ -263,7 +263,7 @@ addNodeChild(hudContainer, controlsLabel);
 
 const legendLabel = createTextLabel();
 legendLabel.data.text = 'Green = visible bounds  Red = world border';
-legendLabel.data.textFormat = { size: 13, color: 0xffffff, font: 'monospace' };
+legendLabel.data.textFormat = { size: 13, color: 0xffffffff, font: 'monospace' };
 legendLabel.x = 16;
 legendLabel.y = 70;
 invalidateNodeLocalTransform(legendLabel);

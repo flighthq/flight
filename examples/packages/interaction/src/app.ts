@@ -232,7 +232,7 @@ for (const ds of shapes) {
 
 const hudEventLabel = createTextLabel();
 hudEventLabel.data.text = 'Event: none';
-hudEventLabel.data.textFormat = { size: 14, color: 0xdddddd };
+hudEventLabel.data.textFormat = { size: 14, color: 0xddddddff };
 hudEventLabel.x = 10;
 hudEventLabel.y = CANVAS_HEIGHT - 80;
 invalidateNodeLocalTransform(hudEventLabel);
@@ -240,7 +240,7 @@ addNodeChild(root, hudEventLabel);
 
 const hudHoverLabel = createTextLabel();
 hudHoverLabel.data.text = 'Hovered: none';
-hudHoverLabel.data.textFormat = { size: 14, color: 0xdddddd };
+hudHoverLabel.data.textFormat = { size: 14, color: 0xddddddff };
 hudHoverLabel.x = 10;
 hudHoverLabel.y = CANVAS_HEIGHT - 58;
 invalidateNodeLocalTransform(hudHoverLabel);
@@ -248,7 +248,7 @@ addNodeChild(root, hudHoverLabel);
 
 const hudDragLabel = createTextLabel();
 hudDragLabel.data.text = 'Drag: idle';
-hudDragLabel.data.textFormat = { size: 14, color: 0xdddddd };
+hudDragLabel.data.textFormat = { size: 14, color: 0xddddddff };
 hudDragLabel.x = 10;
 hudDragLabel.y = CANVAS_HEIGHT - 36;
 invalidateNodeLocalTransform(hudDragLabel);
@@ -256,7 +256,7 @@ addNodeChild(root, hudDragLabel);
 
 const hudOverlapLabel = createTextLabel();
 hudOverlapLabel.data.text = 'Overlaps: none';
-hudOverlapLabel.data.textFormat = { size: 14, color: 0xdddddd };
+hudOverlapLabel.data.textFormat = { size: 14, color: 0xddddddff };
 hudOverlapLabel.x = 10;
 hudOverlapLabel.y = CANVAS_HEIGHT - 102;
 invalidateNodeLocalTransform(hudOverlapLabel);
@@ -264,7 +264,7 @@ addNodeChild(root, hudOverlapLabel);
 
 const titleLabel = createTextLabel();
 titleLabel.data.text = 'Drag shapes. Hover for precise hit + grab cursor. Overlaps update live.';
-titleLabel.data.textFormat = { size: 16, color: 0x999999 };
+titleLabel.data.textFormat = { size: 16, color: 0x999999ff };
 titleLabel.x = 10;
 titleLabel.y = 10;
 invalidateNodeLocalTransform(titleLabel);

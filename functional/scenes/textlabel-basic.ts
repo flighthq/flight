@@ -18,7 +18,7 @@ const FIELD_X = 200;
 const FIELD_Y = 240;
 const FIELD_W = 420;
 const FIELD_H = 120;
-const INK = 0xffcc00; // amber
+const INK = 0xffcc00ff; // amber
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

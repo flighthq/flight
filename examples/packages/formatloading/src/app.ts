@@ -140,15 +140,15 @@ function addPanel(x: number, accent: number): void {
   addNodeChild(root, panel);
 }
 
-addLabel('Standard Format Loading', 24, 20, 28, 0xf4f7fb);
-addLabel('Three authoring formats parsed through @flighthq/sdk/formats', 25, 57, 15, 0x91a4bf);
+addLabel('Standard Format Loading', 24, 20, 28, 0xf4f7fbff);
+addLabel('Three authoring formats parsed through @flighthq/sdk/formats', 25, 57, 15, 0x91a4bfff);
 
 addPanel(24, 0x61dafb);
 addPanel(284, 0xffc857);
 addPanel(544, 0x55d187);
 
-addLabel('glTF 2.0', 42, 118, 20, 0x61dafb);
-addLabel('mesh geometry', 42, 146, 13, 0xaebbd0);
+addLabel('glTF 2.0', 42, 118, 20, 0x61dafbff);
+addLabel('mesh geometry', 42, 146, 13, 0xaebbd0ff);
 
 const gltfShape = createShape();
 const geometry = gltf.meshes[0].geometry;
@@ -170,11 +170,11 @@ appendShapeLineTo(gltfShape, projected[1].x, projected[1].y);
 appendShapeLineTo(gltfShape, projected[2].x, projected[2].y);
 appendShapeLineTo(gltfShape, projected[0].x, projected[0].y);
 addNodeChild(root, gltfShape);
-addLabel(`${gltf.meshes.length} mesh • 3 vertices`, 42, 414, 14, 0xd7e3f4);
-addLabel(`${gltf.nodes.length} node • ${gltf.scenes.length} scene`, 42, 440, 13, 0x8fa3bf);
+addLabel(`${gltf.meshes.length} mesh • 3 vertices`, 42, 414, 14, 0xd7e3f4ff);
+addLabel(`${gltf.nodes.length} node • ${gltf.scenes.length} scene`, 42, 440, 13, 0x8fa3bfff);
 
-addLabel('TexturePacker', 302, 118, 20, 0xffc857);
-addLabel('JSON atlas', 302, 146, 13, 0xaebbd0);
+addLabel('TexturePacker', 302, 118, 20, 0xffc857ff);
+addLabel('JSON atlas', 302, 146, 13, 0xaebbd0ff);
 
 const atlasShape = createShape();
 const atlasX = 310;
@@ -211,11 +211,11 @@ for (let i = 0; i < spritesheet.frames.length; i++) {
   );
 }
 addNodeChild(root, atlasShape);
-addLabel(`${spritesheet.frames.length} frames • ${spritesheet.animations.length} animation`, 302, 414, 14, 0xd7e3f4);
-addLabel(`${spritesheet.imageWidth}×${spritesheet.imageHeight} atlas`, 302, 440, 13, 0x8fa3bf);
+addLabel(`${spritesheet.frames.length} frames • ${spritesheet.animations.length} animation`, 302, 414, 14, 0xd7e3f4ff);
+addLabel(`${spritesheet.imageWidth}×${spritesheet.imageHeight} atlas`, 302, 440, 13, 0x8fa3bfff);
 
-addLabel('Tiled TMJ', 562, 118, 20, 0x55d187);
-addLabel('orthogonal tilemap', 562, 146, 13, 0xaebbd0);
+addLabel('Tiled TMJ', 562, 118, 20, 0x55d187ff);
+addLabel('orthogonal tilemap', 562, 146, 13, 0xaebbd0ff);
 
 const tileLayer = tiled.layers[0];
 if (tileLayer.type !== 'tilelayer') throw new Error('Tiled fixture layer missing');
@@ -233,13 +233,13 @@ for (let row = 0; row < tileLayer.height; row++) {
   }
 }
 addNodeChild(root, tileShape);
-addLabel(`${tiled.width}×${tiled.height} map • ${tileLayer.name}`, 562, 414, 14, 0xd7e3f4);
-addLabel(`${tiled.tilesets.length} tileset • ${tileLayer.data.length} cells`, 562, 440, 13, 0x8fa3bf);
+addLabel(`${tiled.width}×${tiled.height} map • ${tileLayer.name}`, 562, 414, 14, 0xd7e3f4ff);
+addLabel(`${tiled.tilesets.length} tileset • ${tileLayer.data.length} cells`, 562, 440, 13, 0x8fa3bfff);
 
-addLabel('✓ parsed', 42, 520, 15, 0x61dafb);
-addLabel('✓ parsed', 302, 520, 15, 0xffc857);
-addLabel('✓ parsed', 562, 520, 15, 0x55d187);
-addLabel('Self-contained fixtures • no network required', 255, 564, 13, 0x71839d);
+addLabel('✓ parsed', 42, 520, 15, 0x61dafbff);
+addLabel('✓ parsed', 302, 520, 15, 0xffc857ff);
+addLabel('✓ parsed', 562, 520, 15, 0x55d187ff);
+addLabel('Self-contained fixtures • no network required', 255, 564, 13, 0x71839dff);
 
 function enterFrame(): void {
   render(root);

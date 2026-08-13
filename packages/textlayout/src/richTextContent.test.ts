@@ -24,7 +24,7 @@ function createData(data: Partial<RichTextData> = {}): RichTextData {
     scrollV: 1,
     selectable: true,
     text: '',
-    textColor: 0,
+    textColor: 0x000000ff,
     textFormat: {},
     textFormatRanges: [],
     verticalAlign: 'top',
@@ -50,10 +50,10 @@ describe('clearRichTextContent', () => {
 describe('computeRichTextContent', () => {
   it('renders plain text under the base format', () => {
     const content = createRichTextContent();
-    computeRichTextContent(content, createData({ text: 'hello', textColor: 0x336699 }));
+    computeRichTextContent(content, createData({ text: 'hello', textColor: 0x336699ff }));
     expect(content.text).toBe('hello');
     expect(content.formatRanges).toHaveLength(1);
-    expect(content.formatRanges[0].format.color).toBe(0x336699);
+    expect(content.formatRanges[0].format.color).toBe(0x336699ff);
   });
 
   it('decodes entities in plain text', () => {
@@ -109,11 +109,11 @@ describe('computeRichTextContent', () => {
       content,
       createData({
         text: 'hello',
-        textColor: 0x000000,
-        textFormatRanges: [{ start: 1, end: 4, format: { color: 0xff0000 } }],
+        textColor: 0x000000ff,
+        textFormatRanges: [{ start: 1, end: 4, format: { color: 0xff0000ff } }],
       }),
     );
-    expect(content.formatRanges[1].format.color).toBe(0xff0000);
+    expect(content.formatRanges[1].format.color).toBe(0xff0000ff);
   });
 });
 

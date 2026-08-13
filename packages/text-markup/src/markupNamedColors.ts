@@ -1,3 +1,4 @@
+import { packOpaqueColor } from '@flighthq/color/contract';
 import type { MarkupTagRegistry } from '@flighthq/types/contract';
 
 import { resolveMarkupHexColor } from './markupTagRegistry';
@@ -26,10 +27,11 @@ function resolveMarkupNamedColor(value: string): number | null {
   const hex = resolveMarkupHexColor(value);
   if (hex !== null) return hex;
   const named = markupNamedColors[value.trim().toLowerCase()];
-  return named === undefined ? null : named;
+  return named === undefined ? null : packOpaqueColor(named);
 }
 
-// The CSS Color Module Level 4 named-color keywords, packed as 24-bit RGB. Reachable only through
+// The CSS Color Module Level 4 named-color syntax table, stored as 24-bit RGB and widened by the
+// resolver to Flight's packed RGBA. Reachable only through
 // `registerMarkupNamedColors`; a bundle that never opts in tree-shakes it out.
 const markupNamedColors: Readonly<Record<string, number>> = {
   aliceblue: 0xf0f8ff,

@@ -1,4 +1,4 @@
-﻿import { computeRgbHexString } from '@flighthq/color/contract';
+﻿import { computeRgbaCssString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
@@ -46,7 +46,7 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
 
   for (const group of result.groups) {
     context.font = computeTextFormatFontString(group.format);
-    context.fillStyle = computeRgbHexString(group.format.color ?? 0);
+    context.fillStyle = computeRgbaCssString(group.format.color ?? 0x000000ff);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX;
     // group.ascent = font-size; CSS places the alphabetic baseline at ~80% of the em-size.
@@ -56,7 +56,7 @@ export function drawCanvasTextLabel(state: CanvasRenderState, renderProxy: Rende
 
     if (group.format.underline) {
       const lineY = y + group.descent;
-      context.strokeStyle = computeRgbHexString(group.format.color ?? 0);
+      context.strokeStyle = computeRgbaCssString(group.format.color ?? 0x000000ff);
       context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
       context.beginPath();
       context.moveTo(x, lineY);

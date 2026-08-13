@@ -48,8 +48,8 @@ describe('getTextFormatLeading', () => {
 
 describe('mergeTextFormat', () => {
   it('applies non-null override fields onto base', () => {
-    const result = mergeTextFormat({ size: 12, bold: false }, { bold: true, color: 0xff0000 });
-    expect(result).toMatchObject({ size: 12, bold: true, color: 0xff0000 });
+    const result = mergeTextFormat({ size: 12, bold: false }, { bold: true, color: 0xff0000ff });
+    expect(result).toMatchObject({ size: 12, bold: true, color: 0xff0000ff });
   });
 
   it('skips null and undefined override fields', () => {

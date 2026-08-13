@@ -102,7 +102,7 @@ addNodeChild(root, uiOverlay);
 
 const scoreLabel = createTextLabel();
 scoreLabel.data.text = 'Score: 0';
-scoreLabel.data.textFormat = { font: 'monospace', size: 16, color: 0xffffff };
+scoreLabel.data.textFormat = { font: 'monospace', size: 16, color: 0xffffffff };
 scoreLabel.x = 20;
 scoreLabel.y = 440;
 invalidateNodeLocalTransform(scoreLabel);
@@ -110,7 +110,7 @@ addNodeChild(root, scoreLabel);
 
 const helpLabel = createTextLabel();
 helpLabel.data.text = '[S] Save  [R] Restore  [1-5] Load slot  [I] Interpolate to slot 1';
-helpLabel.data.textFormat = { font: 'monospace', size: 13, color: 0x999999 };
+helpLabel.data.textFormat = { font: 'monospace', size: 13, color: 0x999999ff };
 helpLabel.x = 20;
 helpLabel.y = 468;
 invalidateNodeLocalTransform(helpLabel);
@@ -118,7 +118,7 @@ addNodeChild(root, helpLabel);
 
 const statusLabel = createTextLabel();
 statusLabel.data.text = '';
-statusLabel.data.textFormat = { font: 'monospace', size: 14, color: 0x44cc88 };
+statusLabel.data.textFormat = { font: 'monospace', size: 14, color: 0x44cc88ff };
 statusLabel.x = 400;
 statusLabel.y = 440;
 invalidateNodeLocalTransform(statusLabel);

@@ -176,7 +176,7 @@ describe('createRichText', () => {
     expect(richText.data.scrollH).toBe(0);
     expect(richText.data.scrollV).toBe(1);
     expect(richText.data.selectable).toBe(true);
-    expect(richText.data.textColor).toBe(0);
+    expect(richText.data.textColor).toBe(0x000000ff);
     expect(richText.data.textFormatRanges).toEqual([]);
     expect(richText.data.wordWrap).toBe(false);
     expect(richText.kind).toStrictEqual(RichTextKind);
@@ -195,7 +195,7 @@ describe('createRichText', () => {
         mouseWheelEnabled: false,
         multiline: false,
         selectable: false,
-        textColor: 0xff,
+        textColor: 0x0000ffff,
         textFormatRanges: [{ start: 0, end: 2, format: { bold: true } }],
         wordWrap: true,
       },
@@ -416,7 +416,7 @@ describe('getRichTextFormatRangeAt', () => {
   it('merges defaultTextFormat with overlapping ranges', () => {
     const richText = createRichText({
       data: {
-        defaultTextFormat: { size: 12, color: 0xff0000 },
+        defaultTextFormat: { size: 12, color: 0xff0000ff },
         text: 'hello world',
       },
     });
@@ -424,7 +424,7 @@ describe('getRichTextFormatRangeAt', () => {
     const out: Record<string, unknown> = {};
     getRichTextFormatRangeAt(out, richText, 2);
     expect(out.size).toBe(12);
-    expect(out.color).toBe(0xff0000);
+    expect(out.color).toBe(0xff0000ff);
     expect(out.bold).toBe(true);
   });
 

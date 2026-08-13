@@ -85,7 +85,7 @@ for (let i = 0; i < easings.length; i++) {
 
   const label = createTextLabel();
   label.data.text = easings[i].name;
-  label.data.textFormat = { size: 13, color: 0xcccccc };
+  label.data.textFormat = { size: 13, color: 0xccccccff };
   label.x = cellX + 10;
   label.y = cellY + 8;
   invalidateNodeLocalTransform(label);

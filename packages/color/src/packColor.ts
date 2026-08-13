@@ -7,7 +7,18 @@ export function allocateLinearColor(): LinearColor {
   return [0, 0, 0, 0];
 }
 
-// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a TextFormat color) and returns a
+// Takes Flight's packed sRGB `0xRRGGBBAA` color and returns a CSS `rgba()` string. Alpha stays a
+// linear coverage value, matching Canvas/CSS compositing rather than going through sRGB transfer.
+export function computeRgbaCssString(color: number): string {
+  const packed = color >>> 0;
+  const red = (packed >>> 24) & 0xff;
+  const green = (packed >>> 16) & 0xff;
+  const blue = (packed >>> 8) & 0xff;
+  const alpha = (packed & 0xff) / 0xff;
+  return `rgba(${red},${green},${blue},${alpha})`;
+}
+
+// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a shape authoring color) and returns a
 // CSS `#RRGGBB` string. Any high-byte bits are masked off, so a 32-bit RGBA
 // value would keep `GGBBAA` — pass RGB, not RGBA.
 export function computeRgbHexString(color: number): string {
@@ -50,7 +61,7 @@ export function packLinearToColor(color: Readonly<LinearColor>): number {
   return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
-// Widens a 24-bit RGB color (`0xRRGGBB` — a CSS hex literal, a Flash/AwayJS/TextFormat color, a
+// Widens a 24-bit RGB color (`0xRRGGBB` — a CSS hex literal, a Flash/AwayJS source color, a
 // 24-bit format field) to a fully opaque packed `0xRRGGBBAA` integer, Flight's canonical color form.
 // Bits above 24 are masked off, so `packOpaqueColor(0xff8800)` is `0xff8800ff`. The complement of
 // `getColorRgb`; use `setColorAlpha` afterward for a non-opaque alpha. The value stays sRGB — Flight

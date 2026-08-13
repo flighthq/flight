@@ -43,6 +43,7 @@
     "@flighthq/audio": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/clip": "*",
+    "@flighthq/color": "*",
     "@flighthq/compression": "*",
     "@flighthq/effects": "*",
     "@flighthq/geometry": "*",

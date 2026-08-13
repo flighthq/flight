@@ -56,7 +56,7 @@ addNodeChild(root, quadBatch);
 
 const countLabel = createTextLabel();
 countLabel.data.text = '0 shapes';
-countLabel.data.textFormat = { size: 14, color: 0xffffff };
+countLabel.data.textFormat = { size: 14, color: 0xffffffff };
 countLabel.x = 10;
 countLabel.y = HEIGHT - 24;
 invalidateNodeLocalTransform(countLabel);

@@ -14,7 +14,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const TEXT_COLOR = 0x33ccff; // bright cyan-blue
+const TEXT_COLOR = 0x33ccffff; // bright cyan-blue
 const FIELD_X = 120;
 const FIELD_Y = 120;
 // Narrow field: at size 30 this sentence is far wider than 260px, forcing several wrapped lines.

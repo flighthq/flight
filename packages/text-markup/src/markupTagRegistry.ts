@@ -1,3 +1,4 @@
+import { packOpaqueColor } from '@flighthq/color/contract';
 import type {
   MarkupClassResolver,
   MarkupColorResolver,
@@ -68,10 +69,10 @@ export function registerStandardMarkupTags(registry: MarkupTagRegistry): void {
 }
 
 /**
- * Resolves a hex `<font color>` value — `#rgb`, `#rrggbb`, or `0xRRGGBB` — to a packed 24-bit RGB
- * integer, or null when unrecognized. This is the default color seam `registerStandardMarkupTags`
+ * Resolves a hex `<font color>` value — `#rgb`, `#rrggbb`, or `0xRRGGBB` — to Flight's opaque packed
+ * RGBA integer, or null when unrecognized. This is the default color seam `registerStandardMarkupTags`
  * installs; it imports no named-color table, so the standard dialect stays hex-only until a caller
- * opts into `registerMarkupNamedColors`. Alpha is not modeled — `TextFormat.color` is opaque RGB.
+ * opts into `registerMarkupNamedColors`. Markup has no alpha syntax, so every recognized color is opaque.
  */
 export function resolveMarkupHexColor(value: string): number | null {
   const color = value.trim().toLowerCase();
@@ -79,14 +80,17 @@ export function resolveMarkupHexColor(value: string): number | null {
     const hex = color.slice(1);
     if (hex.length === 3) {
       const parsed = Number.parseInt(`${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`, 16);
-      return Number.isNaN(parsed) ? null : parsed;
+      return Number.isNaN(parsed) ? null : packOpaqueColor(parsed);
     }
+    if (hex.length !== 6) return null;
     const parsed = Number.parseInt(hex, 16);
-    return Number.isNaN(parsed) ? null : parsed;
+    return Number.isNaN(parsed) ? null : packOpaqueColor(parsed);
   }
   if (color.startsWith('0x')) {
-    const parsed = Number.parseInt(color.slice(2), 16);
-    return Number.isNaN(parsed) ? null : parsed;
+    const hex = color.slice(2);
+    if (hex.length !== 6) return null;
+    const parsed = Number.parseInt(hex, 16);
+    return Number.isNaN(parsed) ? null : packOpaqueColor(parsed);
   }
   return null;
 }

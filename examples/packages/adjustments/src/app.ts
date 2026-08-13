@@ -132,7 +132,7 @@ function updateLabel(label: Node2D, text: string): void {
 }
 
 // Title and section labels.
-addNodeChild(root, createLabel('4x5 Color Matrix (fused)', MATRIX_X, MATRIX_Y - 30, 16, 0xcccccc));
+addNodeChild(root, createLabel('4x5 Color Matrix (fused)', MATRIX_X, MATRIX_Y - 30, 16, 0xccccccff));
 
 const ROW_LABELS = ["R'", "G'", "B'", "A'"];
 const COL_LABELS = ['R', 'G', 'B', 'A', 'Offset'];
@@ -140,19 +140,19 @@ const COL_LABELS = ['R', 'G', 'B', 'A', 'Offset'];
 for (let col = 0; col < 5; col++) {
   addNodeChild(
     root,
-    createLabel(COL_LABELS[col], MATRIX_X + 40 + col * MATRIX_CELL_WIDTH, MATRIX_Y - 10, 12, 0x888888),
+    createLabel(COL_LABELS[col], MATRIX_X + 40 + col * MATRIX_CELL_WIDTH, MATRIX_Y - 10, 12, 0x888888ff),
   );
 }
 
 for (let row = 0; row < 4; row++) {
-  addNodeChild(root, createLabel(ROW_LABELS[row], MATRIX_X, MATRIX_Y + 14 + row * MATRIX_CELL_HEIGHT, 12, 0x888888));
+  addNodeChild(root, createLabel(ROW_LABELS[row], MATRIX_X, MATRIX_Y + 14 + row * MATRIX_CELL_HEIGHT, 12, 0x888888ff));
   for (let col = 0; col < 5; col++) {
     const label = createLabel(
       '0.000',
       MATRIX_X + 40 + col * MATRIX_CELL_WIDTH,
       MATRIX_Y + 14 + row * MATRIX_CELL_HEIGHT,
       13,
-      0xeedd44,
+      0xeedd44ff,
     );
     addNodeChild(root, label);
     matrixLabels.push(label);
@@ -160,9 +160,9 @@ for (let row = 0; row < 4; row++) {
 }
 
 // Color swatch shapes: "before" row (original) and "after" row (matrix-transformed).
-addNodeChild(root, createLabel('Original colors', SWATCHES_X, SWATCHES_BEFORE_Y - 22, 14, 0xcccccc));
-addNodeChild(root, createLabel('After matrix', SWATCHES_X, SWATCHES_AFTER_Y - 22, 14, 0xcccccc));
-addNodeChild(root, createLabel('Per-instance node tint', SWATCHES_X, SWATCHES_TINT_Y - 22, 14, 0xcccccc));
+addNodeChild(root, createLabel('Original colors', SWATCHES_X, SWATCHES_BEFORE_Y - 22, 14, 0xccccccff));
+addNodeChild(root, createLabel('After matrix', SWATCHES_X, SWATCHES_AFTER_Y - 22, 14, 0xccccccff));
+addNodeChild(root, createLabel('Per-instance node tint', SWATCHES_X, SWATCHES_TINT_Y - 22, 14, 0xccccccff));
 
 const afterSwatches: Shape[] = [];
 
@@ -191,7 +191,7 @@ for (let i = 0; i < SAMPLE_COLORS.length; i++) {
 const afterHexLabels: Node2D[] = [];
 for (let i = 0; i < SAMPLE_COLORS.length; i++) {
   const x = SWATCHES_X + i * (SWATCH_SIZE + SWATCH_GAP);
-  const hexLabel = createLabel('', x, SWATCHES_AFTER_Y + SWATCH_SIZE + 4, 9, 0x888888);
+  const hexLabel = createLabel('', x, SWATCHES_AFTER_Y + SWATCH_SIZE + 4, 9, 0x888888ff);
   addNodeChild(root, hexLabel);
   afterHexLabels.push(hexLabel);
 }
@@ -204,7 +204,7 @@ addNodeChild(
     SWATCHES_X,
     CANVAS_HEIGHT - 22,
     12,
-    0x666666,
+    0x666666ff,
   ),
 );
 

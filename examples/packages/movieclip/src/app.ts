@@ -159,19 +159,19 @@ function updateLabel(label: Node2D, text: string): void {
   invalidateNodeAppearance(label);
 }
 
-const titleLabel = createLabel('Movie Clip', 20, 10, 24, 0xffffff);
+const titleLabel = createLabel('Movie Clip', 20, 10, 24, 0xffffffff);
 addNodeChild(root, titleLabel);
 
-const frameLabel = createLabel('', 20, 50, 16, 0xcccccc);
+const frameLabel = createLabel('', 20, 50, 16, 0xccccccff);
 addNodeChild(root, frameLabel);
 
-const labelLabel = createLabel('', 20, 75, 16, 0x88aacc);
+const labelLabel = createLabel('', 20, 75, 16, 0x88aaccff);
 addNodeChild(root, labelLabel);
 
-const statusLabel = createLabel('', 20, 100, 16, 0x88cc88);
+const statusLabel = createLabel('', 20, 100, 16, 0x88cc88ff);
 addNodeChild(root, statusLabel);
 
-const scriptLabel = createLabel('', 20, 125, 14, 0xccaa44);
+const scriptLabel = createLabel('', 20, 125, 14, 0xccaa44ff);
 addNodeChild(root, scriptLabel);
 
 const controlsLabel = createLabel(
@@ -179,7 +179,7 @@ const controlsLabel = createLabel(
   20,
   470,
   13,
-  0x888888,
+  0x888888ff,
 );
 addNodeChild(root, controlsLabel);
 

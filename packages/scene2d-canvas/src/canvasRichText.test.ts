@@ -51,7 +51,7 @@ describe('drawCanvasRichText', () => {
     const node = createRichText();
     node.data.text = 'redbold';
     node.data.textFormatRanges = [
-      { start: 0, end: 3, format: { color: 0xff0000 } },
+      { start: 0, end: 3, format: { color: 0xff0000ff } },
       { start: 3, end: 7, format: { bold: true } },
     ];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
@@ -61,6 +61,29 @@ describe('drawCanvasRichText', () => {
 
     expect(spy).toHaveBeenCalledWith('red', expect.any(Number), expect.any(Number));
     expect(spy).toHaveBeenCalledWith('bold', expect.any(Number), expect.any(Number));
+  });
+
+  it('keeps packed run alpha separate from resolved node alpha', () => {
+    const state = makeState();
+    const node = createRichText();
+    node.alpha = 0.5;
+    node.data.text = 'alpha';
+    node.data.textFormatRanges = [{ start: 0, end: 5, format: { color: 0xff000080, underline: true } }];
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    renderProxy.alpha = node.alpha;
+    const fills: Array<{ alpha: number; style: string | CanvasGradient | CanvasPattern }> = [];
+    const strokes: Array<{ alpha: number; style: string | CanvasGradient | CanvasPattern }> = [];
+    vi.spyOn(state.context, 'fillText').mockImplementation(() => {
+      fills.push({ alpha: state.context.globalAlpha, style: state.context.fillStyle });
+    });
+    vi.spyOn(state.context, 'stroke').mockImplementation(() => {
+      strokes.push({ alpha: state.context.globalAlpha, style: state.context.strokeStyle });
+    });
+
+    drawCanvasRichText(state, renderProxy);
+
+    expect(fills).toEqual([{ alpha: 0.5, style: 'rgba(255, 0, 0, 0.5019607843137255)' }]);
+    expect(strokes).toEqual([{ alpha: 0.5, style: 'rgba(255, 0, 0, 0.5019607843137255)' }]);
   });
 });
 

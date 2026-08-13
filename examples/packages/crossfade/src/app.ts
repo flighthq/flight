@@ -140,12 +140,12 @@ function label(text: string, x: number, y: number, size: number, color: number):
   return result;
 }
 
-label('Animation State Machine', 24, 18, 26, 0xffffff);
-label('Idle -> N-way locomotion | masked additive body layer', 24, 54, 14, 0x9aa9c7);
-label('IDLE', 86, 390, 14, 0x7086ad);
-label('BLENDED POSE', 330, 390, 14, 0x63e6be);
-label('WALK/RUN', 644, 390, 14, 0xf0a85b);
-const status = label('', 250, 438, 15, 0xffffff);
+label('Animation State Machine', 24, 18, 26, 0xffffffff);
+label('Idle -> N-way locomotion | masked additive body layer', 24, 54, 14, 0x9aa9c7ff);
+label('IDLE', 86, 390, 14, 0x7086adff);
+label('BLENDED POSE', 330, 390, 14, 0x63e6beff);
+label('WALK/RUN', 644, 390, 14, 0xf0a85bff);
+const status = label('', 250, 438, 15, 0xffffffff);
 
 function pointFromLeg(x: number, y: number, length: number, angle: number): readonly [number, number] {
   const radians = ((90 + angle) * Math.PI) / 180;

@@ -1,3 +1,4 @@
+import { getColorRgb } from '@flighthq/color/contract';
 import { createRichTextContent, createTextFormatRange } from '@flighthq/textlayout/contract';
 import type {
   MarkupTagEffect,
@@ -155,7 +156,7 @@ function formatMarkupAnchorTag(format: Readonly<TextFormat>): string {
 }
 
 function formatMarkupColor(color: number): string {
-  return `#${((color >>> 0) & 0xffffff).toString(16).padStart(6, '0')}`;
+  return `#${getColorRgb(color).toString(16).padStart(6, '0')}`;
 }
 
 function formatMarkupFontTag(format: Readonly<TextFormat>): string | null {

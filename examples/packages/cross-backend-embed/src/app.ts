@@ -91,12 +91,12 @@ liveView.y = 92;
 invalidateNodeLocalTransform(liveView);
 addNodeChild(root, liveView);
 
-addLabel('ONE GL QUADBATCH PRODUCER, TWO DOM EMBEDS', 24, 18, 18, 0xe8edf7);
-addLabel('PORTABLE — Sprite + canvas ImageResource', 24, 62, 13, 0x7ab8ff);
-addLabel('LIVE — HtmlView mounts the canvas', 416, 62, 13, 0x5dd39e);
-addLabel('copy / upload on every invalidated version', 24, 286, 12, 0x9aa7bd);
-const liveEventLabel = addLabel('zero-copy; click for a native DOM event', 416, 286, 12, 0x9aa7bd);
-addLabel('Producer owns pixels + cadence. Consumer owns placement.', 24, 336, 13, 0xd5dbea);
+addLabel('ONE GL QUADBATCH PRODUCER, TWO DOM EMBEDS', 24, 18, 18, 0xe8edf7ff);
+addLabel('PORTABLE — Sprite + canvas ImageResource', 24, 62, 13, 0x7ab8ffff);
+addLabel('LIVE — HtmlView mounts the canvas', 416, 62, 13, 0x5dd39eff);
+addLabel('copy / upload on every invalidated version', 24, 286, 12, 0x9aa7bdff);
+const liveEventLabel = addLabel('zero-copy; click for a native DOM event', 416, 286, 12, 0x9aa7bdff);
+addLabel('Producer owns pixels + cadence. Consumer owns placement.', 24, 336, 13, 0xd5dbeaff);
 
 let phaseOffset = 0;
 let clickCount = 0;

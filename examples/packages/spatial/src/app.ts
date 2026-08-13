@@ -111,7 +111,7 @@ addNodeChild(root, queryOverlay);
 // HUD label.
 const hudLabel = createTextLabel();
 hudLabel.data.text = 'Click: point query | R: ray query | Q: region query';
-hudLabel.data.textFormat = { size: 13, color: 0x888888 };
+hudLabel.data.textFormat = { size: 13, color: 0x888888ff };
 hudLabel.x = 10;
 hudLabel.y = 6;
 invalidateNodeLocalTransform(hudLabel);
@@ -119,7 +119,7 @@ addNodeChild(root, hudLabel);
 
 const modeLabel = createTextLabel();
 modeLabel.data.text = 'Mode: Pairs';
-modeLabel.data.textFormat = { size: 14, color: 0xcccccc };
+modeLabel.data.textFormat = { size: 14, color: 0xccccccff };
 modeLabel.x = 10;
 modeLabel.y = CANVAS_HEIGHT - 30;
 invalidateNodeLocalTransform(modeLabel);

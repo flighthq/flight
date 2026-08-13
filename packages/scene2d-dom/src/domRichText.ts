@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
@@ -149,12 +149,12 @@ function drawDomRichTextField(state: DomRenderState, renderProxy: RenderProxy2D)
       bulletLines.add(group.lineIndex);
       const bulletSize = fmt.size ?? 12;
       const bulletX = x - bulletSize * 0.7 - DOM_BULLET_GAP;
-      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${computeRgbHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+      const bulletStyle = `position:absolute;left:${bulletX}px;top:${y}px;font:${fontStr};line-height:1;color:${computeRgbaCssString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
       html += `<div style="${bulletStyle}">Ã¢â‚¬Â¢</div>`;
     }
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${fontStr};line-height:1;`;
-    style += `color:${computeRgbHexString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
+    style += `color:${computeRgbaCssString(fmt.color ?? source.data.textColor)};white-space:nowrap;`;
     if (fmt.underline || fmt.strikethrough) {
       const decorations = [];
       if (fmt.underline) decorations.push('underline');

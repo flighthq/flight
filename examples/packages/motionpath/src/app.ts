@@ -123,19 +123,19 @@ function updateLabel(label: Node2D, text: string): void {
   invalidateNodeAppearance(label);
 }
 
-const titleLabel = createLabel('Motion Path', 20, 10, 24, 0xffffff);
+const titleLabel = createLabel('Motion Path', 20, 10, 24, 0xffffffff);
 addNodeChild(root, titleLabel);
 
-const speedLabel = createLabel('Speed: ' + speed, 20, 445, 16, 0xcccccc);
+const speedLabel = createLabel('Speed: ' + speed, 20, 445, 16, 0xccccccff);
 addNodeChild(root, speedLabel);
 
-const modeLabel = createLabel('Mode: ' + loopMode + ' (1/2/3)', 20, 465, 16, 0xcccccc);
+const modeLabel = createLabel('Mode: ' + loopMode + ' (1/2/3)', 20, 465, 16, 0xccccccff);
 addNodeChild(root, modeLabel);
 
-const progressLabel = createLabel('Progress: 0%', 250, 445, 16, 0xcccccc);
+const progressLabel = createLabel('Progress: 0%', 250, 445, 16, 0xccccccff);
 addNodeChild(root, progressLabel);
 
-const controlsLabel = createLabel('+/- speed    1 clamp  2 loop  3 pingpong', 250, 465, 14, 0x888888);
+const controlsLabel = createLabel('+/- speed    1 clamp  2 loop  3 pingpong', 250, 465, 14, 0x888888ff);
 addNodeChild(root, controlsLabel);
 
 // Keyboard controls.

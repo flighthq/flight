@@ -28,7 +28,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const INK = 0xffee44; // bright yellow text + underline, far from the black background
+const INK = 0xffee44ff; // bright yellow text + underline, far from the black background
 const FIELD_X = 120;
 const FIELD_Y = 240;
 const FIELD_W = 560;

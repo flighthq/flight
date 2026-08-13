@@ -129,7 +129,7 @@ export function createRichTextData(data?: Readonly<Partial<RichTextData>>): Rich
   _data.scrollH = data?.scrollH ?? 0;
   _data.scrollV = data?.scrollV ?? 1;
   _data.selectable = data?.selectable ?? true;
-  _data.textColor = data?.textColor ?? 0;
+  _data.textColor = data?.textColor ?? 0x000000ff;
   _data.textFormatRanges = data?.textFormatRanges ? data.textFormatRanges.map((range) => ({ ...range })) : [];
   _data.wordWrap = data?.wordWrap ?? false;
   return _data;

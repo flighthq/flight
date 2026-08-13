@@ -17,17 +17,17 @@ describe('registerMarkupNamedColors', () => {
     const registry = createMarkupTagRegistry();
     registerStandardMarkupTags(registry);
     registerMarkupNamedColors(registry);
-    expect(formatAt(parseTextMarkup('<font color="red">x</font>', registry), 0).color).toBe(0xff0000);
-    expect(formatAt(parseTextMarkup('<font color="RebeccaPurple">x</font>', registry), 0).color).toBe(0x663399);
-    expect(formatAt(parseTextMarkup('<font color="cornflowerblue">x</font>', registry), 0).color).toBe(0x6495ed);
+    expect(formatAt(parseTextMarkup('<font color="red">x</font>', registry), 0).color).toBe(0xff0000ff);
+    expect(formatAt(parseTextMarkup('<font color="RebeccaPurple">x</font>', registry), 0).color).toBe(0x663399ff);
+    expect(formatAt(parseTextMarkup('<font color="cornflowerblue">x</font>', registry), 0).color).toBe(0x6495edff);
   });
 
   it('still resolves hex colors once named colors are registered', () => {
     const registry = createMarkupTagRegistry();
     registerStandardMarkupTags(registry);
     registerMarkupNamedColors(registry);
-    expect(formatAt(parseTextMarkup('<font color="#f00">x</font>', registry), 0).color).toBe(0xff0000);
-    expect(formatAt(parseTextMarkup('<font color="0x00ff00">x</font>', registry), 0).color).toBe(0x00ff00);
+    expect(formatAt(parseTextMarkup('<font color="#f00">x</font>', registry), 0).color).toBe(0xff0000ff);
+    expect(formatAt(parseTextMarkup('<font color="0x00ff00">x</font>', registry), 0).color).toBe(0x00ff00ff);
   });
 
   it('leaves an unknown color name unresolved rather than erroring', () => {
@@ -43,7 +43,7 @@ describe('registerMarkupNamedColors', () => {
     registerMarkupNamedColors(registry);
     // size and face still parse through the same `<font>` handler.
     expect(formatAt(parseTextMarkup('<font color="red" size="24" face="Arial">x</font>', registry), 0)).toEqual({
-      color: 0xff0000,
+      color: 0xff0000ff,
       font: 'Arial',
       size: 24,
     });

@@ -1,5 +1,6 @@
 import {
   computeRgbHexString,
+  computeRgbaCssString,
   allocateLinearColor,
   getColorAlpha,
   getColorRgb,
@@ -14,6 +15,14 @@ import {
 describe('allocateLinearColor', () => {
   it('allocates a zeroed four-component color', () => {
     expect(allocateLinearColor()).toEqual([0, 0, 0, 0]);
+  });
+});
+
+describe('computeRgbaCssString', () => {
+  it('preserves every channel of a packed RGBA color in CSS form', () => {
+    expect(computeRgbaCssString(0xff0000ff)).toBe('rgba(255,0,0,1)');
+    expect(computeRgbaCssString(0x00ff0080)).toBe('rgba(0,255,0,0.5019607843137255)');
+    expect(computeRgbaCssString(0x00000000)).toBe('rgba(0,0,0,0)');
   });
 });
 
