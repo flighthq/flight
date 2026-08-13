@@ -126,15 +126,15 @@ export function parseSpineSkeletonBinary(
   if (isSpineBinaryReaderOverrun(reader)) {
     reportImportDiagnostic(
       diagnostics,
-      ImportDiagnosticSeverity.Recover,
+      // Drop, not Recover. Nothing STANDS IN for the unread remainder — the skeleton is simply short of
+      // what the file described, and "degraded but usable" is the consequence rather than the criterion.
+      ImportDiagnosticSeverity.Drop,
       'spine.binary-truncated',
       'parseSpineSkeletonBinary',
       { bones: bones.length, slots: slots.length },
     );
   } else if (reader.offset < bytes.byteLength) {
-    // Recover, not Skip. Skip means a RECOGNIZED-but-unsupported feature was ignored; bytes left over in a
-    // sequentially-consumed format are unexplained data, which is the definition of a data-integrity signal.
-    // The distinction is load-bearing: a Skip here exempts itself from every "did the parser complain"
+    // The distinction is load-bearing: a Skip here would exempt itself from every "did the parser complain"
     // check, which is precisely how a desynchronized walk that stops early stays invisible.
     //
     // Guarded on a remainder actually existing. Firing unconditionally made this crumb useless in both
@@ -142,7 +142,12 @@ export function parseSpineSkeletonBinary(
     // clean parse was never silent and the alarm carried no information.
     reportImportDiagnostic(
       diagnostics,
-      ImportDiagnosticSeverity.Recover,
+      // Drop, and SKIP WAS NEVER AVAILABLE HERE: skip claims RECOGNITION — you can only skip something you
+      // identified — and an unparsed remainder is by definition unidentified. We cannot tell an unimplemented
+      // section from unexpected trailing data, so the honest severity is "data unaccounted for, cause
+      // unknown". That is also why this is not split into two kinds: a split needs the causes to be
+      // distinguishable AT THE SITE, and `remainder > 0` cannot distinguish them.
+      ImportDiagnosticSeverity.Drop,
       'spine.binary-tail-unparsed',
       'parseSpineSkeletonBinary',
       { bytes: bytes.byteLength - reader.offset },

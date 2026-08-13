@@ -395,9 +395,12 @@ describe('parseSpineSkeletonBinary', () => {
     const tail = crumbs.find((c) => c.kind === 'spine.binary-tail-unparsed')!;
     expect(tail).toBeDefined();
     expect(tail.detail).toMatchObject({ bytes: 24 });
-    // Recover, not Skip: leftover bytes are unexplained data, not a recognized-but-unsupported feature. A
-    // Skip would exempt this from every severity-based "did the parser complain" check.
-    expect(tail.severity).toBe(ImportDiagnosticSeverity.Recover);
+    // Drop. Skip was never available: skip claims RECOGNITION — you can only skip what you identified — and
+    // an unparsed remainder is by definition unidentified. Recover is not available either: nothing stands
+    // in for the missing bytes, and the skeleton being usable is a consequence, not a substitute. This
+    // assertion has now been wrong twice (Skip, then Recover), so it is pinned with the reason rather than
+    // the value alone.
+    expect(tail.severity).toBe(ImportDiagnosticSeverity.Drop);
   });
 
   it('RECOVERS from a truncated file, keeping whatever records were complete', () => {
