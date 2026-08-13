@@ -11,6 +11,14 @@ by: principal
 
 ## Open
 
+- **Vertex accessors reach the same buffer through two access models.** Getters read by FLOAT index
+  (`getVertexAttributeFloatOffset` returns `attr.byteOffset / 4`, unguarded for alignment); setters write
+  by BYTE offset through a little-endian `DataView`. They agree only while every attribute is 4-byte
+  aligned and the host is little-endian. NOT A BUG TODAY — misalignment is unreachable while every
+  non-float format (`unorm8x4`, `uint8x4`, `uint16x4`) is a multiple of 4 — and nothing in this package
+  can make it reachable, which is why it is recorded rather than fixed. Raised against
+  [portability](../../portability.md) as well, since a future porter reads that and not this file.
+
 Every item was re-checked against `packages/mesh/src/` (and `packages/types/src/`) on 2026-08-08.
 A file:line here is a claim about this tree, not about a session.
 

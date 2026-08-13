@@ -58,6 +58,28 @@ GC (TS) → manual (C) → ownership/borrow (Rust) is the real design work, and 
 - **The native seam.** Hot, ownership-heavy paths are hand-written per target as native crates (`flight-rs` / `surface-rs`; the coordinated `bitmap-rs` rename is pending in `flight-rs`), behind registered seams. The codegen carries the **bulk** (the cellular, portable subset); it never has to solve the hardest ownership paths — those are hand-owned per language.
 - **The subset.** Because allocation and ownership are already explicit in the source, the lowering has data to work with rather than GC magic to reverse-engineer.
 
+## Byte layout is a lowering hazard, and JS hides it
+
+A class of defect is **inert in TS and load-bearing after the port**: anywhere the source reaches the same
+buffer through two different access models. In JS, `Float32Array[i]` (element-indexed, host-endian) and
+`DataView.setFloat32(byteOffset, v, true)` (byte-addressed, explicitly little-endian) agree — but only
+because every current attribute format happens to be 4-byte sized and every host that matters is
+little-endian. Neither is a guarantee the source states; both are coincidences the runtime is currently
+providing for free.
+
+The worked example is `@flighthq/mesh`: its vertex accessors *read* by float index
+(`getVertexAttributeFloatOffset` returns `attr.byteOffset / 4`, with no check that the offset is
+4-aligned) and *write* by byte offset through a little-endian `DataView`. There is no bug today —
+misalignment is unreachable while every non-float format (`unorm8x4`, `uint8x4`, `uint16x4`) is a
+multiple of 4 — and that is exactly what makes it a portability item rather than a mesh item: nothing in
+the package can go wrong, so nothing in the package will ever flag it.
+
+For the subset contract this means: a lowered target must either pin one access model per buffer, or make
+endianness and alignment explicit at the seam. An unguarded `byteOffset / 4` is a fractional index in JS
+(silently `undefined`, then `NaN`) and a misaligned load in C — undefined behaviour on some targets, a
+silent slow path on others. Prefer stating the packing rule in the layout type over inferring it from a
+division.
+
 ## `flight-hx` is the R&D, not the port
 
 Even though Haxe is not the canonical substrate, `flight-hx` is where the **lowering rules are being discovered empirically** — which TS constructs map cleanly, which do not (the await-unwrap finding is exactly that). That knowledge is the input to any backend, TS-AST or otherwise. Treat it as the proving ground for the subset + mapping, feeding the subset contract above.
