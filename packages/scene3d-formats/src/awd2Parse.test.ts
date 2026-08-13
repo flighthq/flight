@@ -1812,6 +1812,40 @@ describe('createScene3DFromAwd2 animations', () => {
 });
 
 describe('parseAwd2', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. This file has
+  // twelve ways to say a block could not be read and every other test here checks only the first claim.
+  // AWD2 is length-prefixed block-by-block, so a mis-sized block desynchronises the stream while the
+  // blocks already read still assert correctly — the exact failure this second claim exists to catch.
+  // Matched by pattern, not an enumerated list, so a kind added later is covered without anyone
+  // remembering this test exists.
+  it('raises no truncation or unreadable diagnostic for a well-formed file', () => {
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const indices = new Uint16Array([0, 1, 2]);
+    const geomBody = buildTriangleGeometryBody('Triangle', [
+      {
+        streams: [
+          buildStream(AWD2_STREAM_POSITIONS, AWD2_DATA_FLOAT32, positions),
+          buildStream(AWD2_STREAM_INDICES, AWD2_DATA_UINT16, indices),
+        ],
+      },
+    ]);
+    const meshBody = buildMeshInstanceBody('TriMesh', 0, IDENTITY_TRANSFORM, 1);
+    const body = concatBytes(
+      buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length),
+      geomBody,
+      buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length),
+      meshBody,
+    );
+    const diagnostics: ImportDiagnostic[] = [];
+
+    parseAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+
+    const complaints = diagnostics
+      .map((diagnostic) => diagnostic.kind)
+      .filter((kind) => /truncated|unreadable|malformed|unparsed|overrun|corrupt/.test(kind));
+    expect(complaints, `a good awd2 file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
+  });
+
   it('returns a format-neutral document: a mesh node names its mesh by index, roots list it', () => {
     const positions = new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0]);
     const indices = new Uint16Array([0, 1, 2]);
