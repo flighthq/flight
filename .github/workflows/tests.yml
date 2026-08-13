@@ -283,9 +283,19 @@ jobs:
   render-test:
     # One leg per (subject × check) so a failure isolates both which tool and which kind of failure —
     # e.g. parity failing while smoke passes means the backends disagree, not that rendering is broken.
-    # Environment-independent checks only: smoke (Tiers 1/2/4) and parity (cross-backend, Tier 3). The
+    # Smoke (Tiers 1/2/4) and parity (cross-backend, Tier 3) are environment-independent. The
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
+    #
+    # The screenshot-baseline legs are the one open question in this job. They compare committed
+    # sha256 hashes of decoded RGBA, which is the same SHAPE of coupling that keeps fingerprint
+    # regression out — WebGPU is pinned to a SwiftShader adapter, but WebGL is NOT pinned to a
+    # software rasterizer (agents/packages/capture/charter.md records that as an open decision), so
+    # its output can in principle track the driver. What is known: the hashes reproduce on a
+    # developer clone, and no run of this gate on a CI runner exists yet to compare against. If these
+    # legs prove environment-coupled in practice, the answer is to pin WebGL's rasterizer or to scope
+    # the legs to the pinned backends — NOT to widen a tolerance, and not to let a standing failure
+    # sit here being ignored.
     #
     # Needs `build` for its dist artifact, not to be sequenced behind it: each leg used to run its own
     # `npm run build`, so a full tsc -b over all 141 projects ran six more times per push to produce
@@ -318,6 +328,26 @@ jobs:
           - label: examples · parity
             check: test:examples:parity
             args: --parallel 1 --retries 2
+          # The screenshot-baseline gate. Unlike smoke (which resolves packages from source through
+          # the dev server) these SERVE THE BUILT HARNESS and refuse to run against a stale one — the
+          # capture server counts discovered routes against what dist actually contains and exits
+          # rather than capturing a subset. So they declare `harness`, and only they pay for it.
+          #
+          # One leg per tool with `--parallel 1`, following the parity legs rather than the smoke
+          # split: splitting WebGPU out would satisfy the same durable serialization rule but doubles
+          # the number of legs paying for a harness build, which is the dominant cost here.
+          #
+          # `--retries 2` cannot launder a changed hash. Retries fire only on a transient error or an
+          # unusable observation (captureEntry.ts:963); a screenshot that differs is neither, so it is
+          # reported the first time and every time.
+          - label: functional · screenshot baseline
+            check: capture:functional:check
+            args: --parallel 1 --retries 2
+            harness: build:functional
+          - label: examples · screenshot baseline
+            check: capture:examples:check
+            args: --parallel 1 --retries 2
+            harness: build:examples
 
     steps:
       - uses: actions/checkout@v4
@@ -336,6 +366,13 @@ jobs:
       - name: Restore dist from the build job
         run: tar -xzf dist.tgz
       - run: npx playwright install --with-deps chromium
+      # Only the screenshot-baseline legs declare `harness`; an undefined matrix key is the empty
+      # string, so every other leg skips this. Built here rather than reused from `harness-build`
+      # because that job emits no artifact — it builds to prove the harness compiles and discards the
+      # output. Uploading it there would remove this rebuild; it is a larger change than wiring the
+      # gate, so it is left as the obvious next optimisation rather than folded in silently.
+      - if: matrix.harness != ''
+        run: npm run ${{ matrix.harness }}
       # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
       #
       # Worker count: the runner has one SwiftShader adapter, so the default (available parallelism

@@ -59,6 +59,118 @@ empty selection. These are real negative controls, not inferences from a clean r
   does not consume them in its failure predicate; the existing baseline failures mask that gap. Treat it
   as a report-shaped `:check` whose intended blocking contract is undecided, not as evidence of safety.
 
+## 2026-08-13 follow-up: which check processes CI actually invokes
+
+that doc audits whether a gate CAN fail; this audits whether it RUNS.
+
+"That doc" is everything above this section. The distinction matters because the two failures are
+independent and neither implies the other: a gate can be mutation-proved live and never execute, and a
+gate can execute on every push while being unable to fail. The `5eba48616` follow-up above found two
+instances of the first by hand; this pass asks it of the whole population rather than of whichever
+gates someone thought to check. Audited at `18930fda1` against all four `.github/workflows/*.yml`,
+over the 162 scripts in the root `package.json`.
+
+**Result: 40 of 162 are reachable from CI; 122 are not.** Of the 40, 18 are named directly in a
+workflow and 24 are leaves of bare `npm run check` (two are reached both ways).
+
+### Method: a name grep of the workflows is wrong in both directions
+
+Neither direction is safe alone, which is why the number above is not a grep count.
+
+- **False negatives.** The workflows name only 18 scripts, but `npm run check` (tests.yml, `quality`)
+  fans out to 24 leaf gates that appear in no `.yml` at all. Grepping `packages:check` across the
+  workflow files returns zero hits, and it runs on every push. Resolving this needs the closure:
+  `npm run X` inside script bodies transitively, the `scripts/check.ts` gate table matched back by
+  underlying script FILE plus check-flag rather than by label, and the matrix values behind
+  `npm run ${{ matrix.check }}`. Two gates (`lint`, `format:check`) are registered through a ternary
+  rather than an array literal, so even a parse of that table misses them.
+- **False positives.** A first pass scored `test:regression` and `electron:gallery` as invoked. Both
+  hits were in workflow COMMENTS — and one of them is the comment explaining why regression is
+  EXCLUDED. Scoring a documented exclusion as coverage is the worse error of the two, because it
+  reports the gap as closed.
+
+Cross-check: 24 leaves in bare mode is the same count the `e6f845bbb` pass above derived
+independently ("the bare `npm run check` runner's 24 unique leaf stages").
+
+### Findings: gate-shaped, exits nonzero on a real bad state, nothing in CI runs it
+
+| Gate | Subject | Disposition |
+| --- | --- | --- |
+| `evidence:check` | capture coverage manifest census | **Wired** into bare `npm run check` |
+| `capture:{examples,functional}:check` | committed screenshot hashes | **Wired** onto the render-test matrix |
+| `reachability:runtime:check` | registrar runtime probe | Left alone; blocking contract undecided above |
+| `test:size` | the `tools/size` vitest suite | Fenced — see below |
+
+`evidence:check` is the sharpest case, because its own header states the intent it was denied: it
+needs no browser, and "that is what makes it cheap enough to gate on rather than to run only at
+acceptance time." Built to be gated on; not gated on. It is now mutation-proved live in the direction
+that matters — pinning an oracle on `effect-bloom/canvas` that the scene does not export made it exit
+1 naming `effect-bloom/canvas#oracle (pinned, no longer carried)`, which is exactly the pin-stopped-
+being-true case the header says it exists to catch. It is green on the current tree, so wiring it
+does not import a standing red.
+
+Its placement is load-bearing and should not be "simplified" later. The coverage manifest is a
+COMMITTED file, so a commit that deletes a pin from it touches no code and routes down the docs lane
+under the `code`/`docs` filter split. Put in `quality`, the gate against silently retiring coverage
+would itself be silently skippable through the exact door the manifest exists to close — the same
+anti-correlation between a gate's coverage and its subject that the `docs:check` finding above
+records. Bare `check` runs on every code path.
+
+`test:size` earns its own line for the general shape, not the specific gap: **something that belongs
+to no lane is invisible to any single-lane audit.** It is missed by the check/size route (it is not a
+`check.ts` gate and is distinct from the invoked `size`, which is `scripts/size.ts`) and by the test
+route (its header records that it is no longer a project of the master `vitest.config.ts`, so
+`npm run test` does not collect it). A check of either route alone reports it covered by the other.
+
+### Reachable is not the same as effective
+
+Every gate on the INVOKED list is only known to RUN. The tables above this section are the evidence
+on whether each can fail, and they find live P1/P2 defects in several of them. The two audits compose;
+neither substitutes for the other.
+
+### Not invoked, with a reason (12)
+
+Reportable but not defects — separating these from the four above is the point of reporting both
+columns rather than a flat list.
+
+- `test:regression` and its two leaves: excluded BY NAME in `tests.yml`, environment-coupled baselines.
+- `build:check`: the preflight was removed deliberately; `check` runs `packages:check` and `typecheck`
+  as its first two gates.
+- `test:browser`, `test:smoke`, `test:parity`: aggregates whose leaves the render matrix runs directly.
+- The corpus family — `conformance`, `conformance:fixtures`, `check:import-conformance`,
+  `import:conformance:index`, `oracle:woff2-reversal` — needs an externally-acquired corpus, and
+  `npm run fixtures` appears in no workflow. **This is a gap that had not been filled, not a structural
+  impossibility.** An earlier draft of this section called it CI-absent "by construction" and that was
+  wrong: the licence policy forbids VENDORING, while expressly permitting testing against licensed
+  material by fetching on demand, keeping it outside the repo, and committing nothing. A workflow step
+  that fetches into a gitignored cache is the sanctioned pattern, not an exception to it. The two
+  phrasings invite opposite actions from a future reader, which is why the correction is recorded here
+  rather than quietly amended.
+
+One nuance that is pre-loaded to be misread by anyone skimming for "is conformance covered": the 24
+files under `conformance/**/*.test.ts` DO run in CI, in the `conformance` vitest project of
+`npm run test`. They are not the gate. Every one of these CLIs sits behind an
+`import.meta.url === process.argv[1]` main-guard, so importing the module in a test runs no corpus and
+produces no verdict. **Green conformance unit tests say nothing about corpus conformance.**
+
+### Not gates (104), by exclusion reason
+
+The population is what makes the four findings meaningful, so it is counted rather than listed.
+
+| Count | Category | Why not a gate |
+| ---: | --- | --- |
+| 15 | Baseline / acceptance updaters | Rewrite the thing a gate compares against; manual by design |
+| 12 | Generators | Their `:check` counterpart is invoked and compares the committed output |
+| 4 | Fixers (`fix`, `lint:fix`, `order:fix`, `format`) | Mutate the tree; the non-fixing form gates |
+| 24 | Reports, queries, `:json` variants, diagnostic instruments | Return data, not a verdict; `unchecked`/`untested` are documented as non-gating |
+| ~46 | Dev servers, harnesses, cleanup, local tooling | No verdict and no CI role |
+| 3 | Git hooks (`precommit`, `prepush`, `prepare`) | Local, not CI; both `precommit` gates are independently reached by bare `check`, so nothing is hook-exclusive |
+
+### Caveat
+
+This is static reachability read from the workflow files; no workflow was executed. It establishes
+which processes CI starts, not what they do when they get there.
+
 ## Re-measured at `092a14194` — the examples findings in the `2026-08-12` severity-ranked table are CLOSED
 
 Scope: this closes the EXAMPLES-side rows of the severity-ranked table dated `2026-08-12` (ranks 2 and 4),
