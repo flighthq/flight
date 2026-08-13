@@ -9,6 +9,7 @@ export interface InnerGlowEffect extends RenderEffect {
   alpha?: number;
   blurX?: number;
   blurY?: number;
+  // 24-bit RGB (`0xRRGGBB`) — opacity is the separate `alpha`, applied by the runner as edgeAlpha.
   color?: number;
   quality?: number;
   sourceMode?: InnerEffectSourceMode;

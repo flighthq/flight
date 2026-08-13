@@ -10,6 +10,7 @@ import type { Vector3 } from './Vector3';
 // scene3d-wgpu render spot lighting without shadows; setting those four fields has no rendering effect.
 export interface SpotLight extends Light {
   castsShadow: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`); radiance is unpackColorToLinear(color) x intensity.
   color: number;
   direction: Vector3;
   innerConeCos: number;

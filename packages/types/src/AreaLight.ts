@@ -9,6 +9,7 @@ import type { Vector3 } from './Vector3';
 // scene3d-wgpu render area lighting without shadows; setting those four fields has no rendering effect.
 export interface AreaLight extends Light {
   castsShadow: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`); radiance is unpackColorToLinear(color) x intensity.
   color: number;
   direction: Vector3;
   intensity: number;

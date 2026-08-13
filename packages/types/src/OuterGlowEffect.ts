@@ -9,6 +9,7 @@ export interface OuterGlowEffect extends RenderEffect {
   alpha?: number;
   blurX?: number;
   blurY?: number;
+  // 24-bit RGB (`0xRRGGBB`) — opacity is the separate `alpha`. Default 0xff0000.
   color?: number;
   quality?: number;
   sourceMode?: EffectSourceMode;

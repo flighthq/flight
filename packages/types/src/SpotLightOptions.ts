@@ -4,6 +4,7 @@ import type { Vector3Like } from './Vector3';
 // spot lights do not consume castsShadow, normalBias, pcfRadius, or shadowBias.
 export interface SpotLightOptions {
   castsShadow?: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding SpotLight.color. Default 0xffffffff.
   color?: number;
   direction?: Readonly<Vector3Like>;
   // Inner cone half-angle in degrees; full intensity inside it. Defaults to 0 (a sharp center).

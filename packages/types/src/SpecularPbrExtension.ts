@@ -5,6 +5,7 @@ import type { Texture } from './Texture';
 export interface SpecularPbrExtension extends PbrExtension {
   readonly kind: 'SpecularPbrExtension';
   specular: number;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer.
   specularColor: number;
   specularColorMap: Texture | null;
   specularColorMapUvSet: PbrUvSet;

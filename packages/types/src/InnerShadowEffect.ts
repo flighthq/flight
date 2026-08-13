@@ -10,6 +10,7 @@ export interface InnerShadowEffect extends RenderEffect {
   angle?: number;
   blurX?: number;
   blurY?: number;
+  // 24-bit RGB (`0xRRGGBB`) — opacity is the separate `alpha`, applied by the runner as edgeAlpha.
   color?: number;
   distance?: number;
   quality?: number;

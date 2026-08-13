@@ -12,6 +12,7 @@ import type { Vector3 } from './Vector3';
 // scene3d-wgpu render point lighting without shadows; setting those four fields has no rendering effect.
 export interface PointLight extends Light {
   castsShadow: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`); radiance is unpackColorToLinear(color) x intensity.
   color: number;
   intensity: number;
   kind: 'PointLight';

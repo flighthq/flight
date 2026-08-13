@@ -10,6 +10,7 @@ import type { Vector3 } from './Vector3';
 export interface DirectionalLight extends Light {
   // Enables the explicit directional shadow-map pass when this light is passed to it.
   castsShadow: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`); radiance is unpackColorToLinear(color) x intensity.
   color: number;
   direction: Vector3;
   intensity: number;

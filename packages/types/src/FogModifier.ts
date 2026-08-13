@@ -23,6 +23,7 @@ export type FogModifierMode = (typeof FogModifierMode)[keyof typeof FogModifierM
 export interface FogModifier extends Modifier {
   kind: 'FogModifier';
   slot: 'Effect';
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend modifier binding.
   color: number;
   mode?: FogModifierMode; // distance-to-density curve. Default FogModifierMode.Linear.
   near?: number; // Linear: distance where fog begins (factor 0). Default 0.

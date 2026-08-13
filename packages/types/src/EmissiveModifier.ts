@@ -23,6 +23,7 @@ export type EmissiveModifierFacing = (typeof EmissiveModifierFacing)[keyof typeo
 export interface EmissiveModifier extends Modifier {
   kind: 'EmissiveModifier';
   slot: 'Emissive';
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend modifier binding.
   color: number;
   strength: number;
   mask?: Texture; // optional mask modulating where emissive applies; omitted = unmasked

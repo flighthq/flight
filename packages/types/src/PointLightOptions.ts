@@ -4,6 +4,7 @@ import type { Vector3Like } from './Vector3';
 // point lights do not consume castsShadow, normalBias, pcfRadius, or shadowBias.
 export interface PointLightOptions {
   castsShadow?: boolean;
+  // Packed sRGB RGBA (`0xRRGGBBAA`), seeding PointLight.color. Default 0xffffffff.
   color?: number;
   intensity?: number;
   normalBias?: number;

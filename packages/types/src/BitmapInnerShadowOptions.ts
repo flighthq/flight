@@ -2,6 +2,7 @@ import type { BitmapShadowBlurOptions } from './BitmapShadowBlurOptions';
 
 export interface BitmapInnerShadowOptions extends BitmapShadowBlurOptions {
   /** Packed 0xRRGGBBAA inner shadow color. Default 0x000000ff (opaque black). */
+  // Packed sRGB RGBA (`0xRRGGBBAA`). Default 0x000000ff.
   color?: number;
   /** Overall intensity multiplier applied to the shadow alpha. Default 1. */
   intensity?: number;

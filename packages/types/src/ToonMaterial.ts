@@ -5,6 +5,7 @@ import type { Texture } from './Texture';
 // `baseColor` is packed sRgb-albedo RGBA, `baseColorMap` tints it, and `steps` is the band
 // count used when no ramp is bound.
 export interface ToonMaterial extends SurfaceMaterial {
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer.
   baseColor: number;
   baseColorMap: Texture | null;
   ramp: Texture | null;

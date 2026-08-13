@@ -6,6 +6,7 @@ import type { Texture } from './Texture';
 // The backend resolver decides whether to upload CPU-origin pixels or return a GPU-origin
 // attachment; the material has one sampling slot.
 export interface UnlitMaterial extends SurfaceMaterial {
+  // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer.
   baseColor: number;
   baseColorMap: Texture | null;
 }
