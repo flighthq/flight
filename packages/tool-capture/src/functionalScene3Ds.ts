@@ -4,6 +4,8 @@
 // A scene is a file under functional/scenes/. Its filename encodes its backend set:
 //   <name>.ts               backend-agnostic — one file that runs on every default backend.
 //   <name>.<backend>.ts     backend-specific — a self-contained target for that one backend.
+// A backend-specific file may override one leg of a backend-agnostic scene without removing the other
+// default backends; with no backend-agnostic file, the specific files are the scene's complete backend set.
 // The backend a comparison groups by is the `<name>`; the set of backends a name runs on is simply
 // which files exist. There is no package.json and no renderers[] field: existence is the manifest.
 
@@ -18,9 +20,9 @@ export interface FunctionalScene3D {
   renderers: string[];
 }
 
-// Every scene grouped by name, each with the sorted backend set it runs on. A name is either
-// backend-agnostic (a single no-suffix file → all default backends) or backend-specific (one entry
-// per <name>.<backend>.ts file); the two forms do not mix for one name.
+// Every scene grouped by name, each with the sorted backend set it runs on. A no-suffix file supplies all
+// default backends even when one or more have a specific-file override. Without it, the specific files are
+// the complete backend set.
 export function discoverFunctionalScene3Ds(scenesDir: string): FunctionalScene3D[] {
   if (!existsSync(scenesDir)) return [];
   const agnostic = new Set<string>();
