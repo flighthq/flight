@@ -12,8 +12,9 @@ import { registerDecompressor } from './decompressor';
 // Real containers mix the two framings — SWF's `CWS` body and Away3D's `ByteArray.compress()` are zlib
 // (a 2-byte header, the DEFLATE stream, an Adler-32), while other producers emit the bare stream — so a
 // zlib header is detected and skipped when present and the input is otherwise read as raw DEFLATE.
-// `uncompressedLength` is unused: DEFLATE encodes its own end and the output buffer grows to fit.
-export const inflateDeflate: Decompressor = (compressed) => {
+// A nonzero `uncompressedLength` is a container-owned ceiling enforced while bytes are written; callers
+// without one pass 0 and retain the package-wide safety cap.
+export const inflateDeflate: Decompressor = (compressed, uncompressedLength) => {
   const input = compressed as Uint8Array;
   // A zlib header: the low nibble of CMF is the compression method (8 = deflate) and the big-endian
   // (CMF,FLG) pair is a multiple of 31. A preset dictionary (FDICT) is not supported.
@@ -23,7 +24,7 @@ export const inflateDeflate: Decompressor = (compressed) => {
     start = 2;
   }
   try {
-    return rawInflate(input, start);
+    return rawInflate(input, start, uncompressedLength);
   } catch {
     return null;
   }
@@ -66,13 +67,16 @@ interface HuffmanTree {
 class InflateState {
   bitBuffer = 0;
   bitCount = 0;
-  output = new Uint8Array(1024);
+  output: Uint8Array;
   outputLength = 0;
 
   constructor(
     readonly input: Uint8Array,
     public position: number,
-  ) {}
+    readonly outputLimit: number,
+  ) {
+    this.output = new Uint8Array(Math.min(INITIAL_INFLATE_BYTES, outputLimit));
+  }
 
   readBit(): number {
     if (this.bitCount === 0) {
@@ -93,6 +97,7 @@ class InflateState {
   }
 
   writeByte(byte: number): void {
+    if (this.outputLength >= this.outputLimit) throw new Error('deflate: output exceeds the inflate limit');
     if (this.outputLength >= this.output.length) {
       // Every other bound in this package is a field checked against the buffer. This one cannot be:
       // the quantity that sizes the allocation is the COMPRESSION RATIO, which is not in the file, is
@@ -100,8 +105,7 @@ class InflateState {
       // length back-references expands to gigabytes and takes the process with it — unrecoverable, and
       // reachable from any untrusted .awd. Where the file cannot bound the allocation, an explicit cap
       // has to.
-      if (this.output.length * 2 > MAX_INFLATE_BYTES) throw new Error('deflate: output exceeds the inflate limit');
-      const grown = new Uint8Array(this.output.length * 2);
+      const grown = new Uint8Array(Math.min(this.output.length * 2, this.outputLimit));
       grown.set(this.output);
       this.output = grown;
     }
@@ -110,8 +114,9 @@ class InflateState {
 }
 
 // Inflates the raw DEFLATE block stream at `start`, returning exactly the decompressed bytes.
-function rawInflate(input: Uint8Array, start: number): Uint8Array {
-  const state = new InflateState(input, start);
+function rawInflate(input: Uint8Array, start: number, uncompressedLength: number): Uint8Array {
+  const declaredLimit = uncompressedLength > 0 ? uncompressedLength : MAX_INFLATE_BYTES;
+  const state = new InflateState(input, start, Math.min(declaredLimit, MAX_INFLATE_BYTES));
   let final = 0;
   do {
     final = state.readBit();
@@ -121,7 +126,7 @@ function rawInflate(input: Uint8Array, start: number): Uint8Array {
     else if (type === 2) inflateDynamicBlock(state);
     else throw new Error('deflate: invalid block type');
   } while (final === 0);
-  return state.output.slice(0, state.outputLength);
+  return state.outputLength === state.output.length ? state.output : state.output.slice(0, state.outputLength);
 }
 
 // A stored (uncompressed) block: align to the next byte, read the 16-bit LEN and its one's-complement
@@ -251,3 +256,4 @@ function buildFixedLiteralTree(): HuffmanTree {
 // The ceiling on a single inflate. Generous for any real AWD body — a 256 MB scene is far past what
 // this importer is used for — and small enough that hitting it fails a parse instead of the process.
 const MAX_INFLATE_BYTES = 256 * 1024 * 1024;
+const INITIAL_INFLATE_BYTES = 1024;

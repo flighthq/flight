@@ -68,6 +68,12 @@ describe('inflateDeflate', () => {
     expect(inflateDeflate(decodeBase64(FIXTURES.HIGH_RATIO), 0)).toEqual(source);
   });
 
+  it('stops expansion at the container-declared output bound', () => {
+    const compressed = decodeBase64(FIXTURES.HIGH_RATIO);
+    expect(inflateDeflate(compressed, 64 * 1024)).toHaveLength(64 * 1024);
+    expect(inflateDeflate(compressed, 64 * 1024 - 1)).toBeNull();
+  });
+
   it('round-trips a short literal run (zlib-wrapped)', () => {
     expect(inflateDeflate(decodeBase64(FIXTURES.LITERAL), 0)).toEqual(encode('flighthq scene-formats'));
   });
