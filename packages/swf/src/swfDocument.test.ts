@@ -3295,7 +3295,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(kindFor(noFrameRate)).toContain('swf.header-truncated');
   });
 
-  it('reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread', () => {
+  it('reports a discarded JPEG alpha stream as a Skip, since alpha compositing is not implemented yet', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const file = createSwf([
       createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length), jpeg3, new Uint8Array([1, 2, 3]))),
@@ -3308,7 +3308,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-alpha-stream');
     expect(dropped).toHaveLength(1);
-    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
+    expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Skip);
     expect(dropped[0].detail).toEqual({
       capability: 'swf.bitmap.define-bits-jpeg-3',
       characterId: 16,

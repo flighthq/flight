@@ -728,12 +728,24 @@ function createSvgImageNode(
   context: SvgImportContext,
 ): Node2D | null {
   const href = attribute(element, 'href');
-  const image = href === null ? null : (context.options?.resolveImageResource?.(href) ?? null);
+  // THREE DISTINGUISHABLE CAUSES, and the third is not the caller's document at all. Splitting them here
+  // because the site CAN tell them apart: a caller who never wired `resolveImageResource` used to read
+  // "your file lost data" when the truth is "you did not wire the integration", which is a diagnosability
+  // defect wearing a severity question.
+  //
+  // All three are Drop. Images ARE supported, so none is a capability gap, and nothing stands in for the
+  // missing picture either way — Skip would claim a recognition we do not have.
+  const resolver = context.options?.resolveImageResource;
+  const image = href === null || resolver === undefined ? null : (resolver(href) ?? null);
   if (href === null || image === null) {
     reportImportDiagnostic(
       context.diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      href === null ? 'svg.image-missing-href' : 'svg.unresolved-image',
+      ImportDiagnosticSeverity.Drop,
+      href === null
+        ? 'svg.image-missing-href'
+        : resolver === undefined
+          ? 'svg.image-resolver-unwired'
+          : 'svg.unresolved-image',
       'createSvgImageNode',
       href === null ? undefined : { href },
     );

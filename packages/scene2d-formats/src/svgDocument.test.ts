@@ -537,8 +537,11 @@ describe('createScene2DFromSvgDocument', () => {
     );
 
     expect(getNodeChildCount(root)).toBe(6);
+    // `image-resolver-unwired`, not `unresolved-image`: this document wires no resolveImageResource hook
+    // at all, which is an unwired host integration rather than a fault in the file. The split exists so a
+    // caller stops reading "your file lost data" when they simply have not wired the seam.
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual([
-      'svg.unresolved-image',
+      'svg.image-resolver-unwired',
       'svg.unsupported-foreignObject',
     ]);
   });

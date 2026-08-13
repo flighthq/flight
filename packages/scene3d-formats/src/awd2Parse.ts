@@ -239,7 +239,10 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
     const blockDataStart = offset + AWD2_BLOCK_HEADER_BYTES;
 
     if (blockDataStart + blockLength > bodyEnd) {
-      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'awd2.block-length-past-end', 'parseAwd2');
+      // Drop: the `break` below abandons every remaining block, and nothing stands in for them — a file
+      // with an inflated block length comes back with zero nodes. Data absent from the output, no
+      // substitute, so not Recover; a document is still returned, so not Reject.
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'awd2.block-length-past-end', 'parseAwd2');
       break;
     }
 
@@ -597,9 +600,12 @@ export function parseAwd2SkeletonAnimations(
     const blockDataStart = offset + AWD2_BLOCK_HEADER_BYTES;
 
     if (blockDataStart + blockLength > bodyEnd) {
+      // Drop, matching the same kind's other emit site: the `break` abandons the remaining blocks and
+      // nothing stands in for them. Two sites, one kind, one severity — they were never distinguishable
+      // to a caller reading the kind.
       reportImportDiagnostic(
         diagnostics,
-        ImportDiagnosticSeverity.Recover,
+        ImportDiagnosticSeverity.Drop,
         'awd2.block-length-past-end',
         'parseAwd2SkeletonAnimations',
       );
@@ -2359,7 +2365,9 @@ function resolveAwdMaterial(
   if (strength > 1) {
     reportImportDiagnostic(
       diagnostics,
-      ImportDiagnosticSeverity.Skip,
+      // Recover: the clamped value IS written — createShadedMaterial below builds from it. The kind name
+      // says clamped and a substitute stands in, so this was never an ignored feature.
+      ImportDiagnosticSeverity.Recover,
       'awd2.material-specular-strength-clamped',
       'resolveAwdMaterial',
       { strength },
