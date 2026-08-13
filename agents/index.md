@@ -85,6 +85,9 @@ which is why they are not in the map.
 - [port readiness](port-readiness.md) — the roadmap toward the C/C++ port (draft).
 - [review work items](review-work-items.md) — outstanding items raised by review passes.
 - [sdk blocking issues](sdk-blocking-issues.md) — what blocks AwayJS example parity.
+- [test escape modes](test-escape-modes.md) — seven measured ways a real defect survives a green suite,
+  each with its detection question, and what `untested` / `unchecked` can and cannot see. Read before
+  writing tests for a residue, not only when auditing one.
 - [test depth review](test-depth-review.md) — the unit-test-depth review and its gap list.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
 - [unbacked register](unbacked-register.md) — claims that reached the merged tree with nothing looking
