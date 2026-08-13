@@ -96,6 +96,18 @@ union choice.
 - [2026-07-22 · picked] Extract the shared `vertexFormat.ts` primitive so the byte-length/component-
   count/read-write-component switch is not duplicated (and drifting) across `meshGeometryLayout.ts` and
   `meshGeometryAttributes.ts` — assessment.md#recommended item 1. Blessed, not yet implemented.
+- [2026-08-13 · picked] Recommended items 2 and 3 approved, and item 1 re-confirmed, in one pass.
+  Item 1 lands in `packages/mesh`; `scene3d-gl/glMeshUpload.ts` also handles `VertexFormat`, so if it
+  duplicates the same switch that is the evidence the primitive belongs below `mesh` — check during the
+  extraction, do not pre-decide.
+  Item 2 resolves as an out-parameter plus a runtime-cached view: `getAttributeByteLocation` fills a
+  caller-owned record and returns a boolean, matching the existing `out`-param and sentinel conventions
+  rather than inventing one; the `DataView` caches on the runtime slot with a validity check against the
+  current `vertices` buffer, since weld/compact/expand replace that array wholesale. The float/packed
+  asymmetry is intrinsic — packed formats need `DataView` for endianness — so the goal is to stop paying
+  per call, not to remove it. **Orthogonal to the getter-indexes-by-float / setter-writes-by-byte divide;
+  it must not be reported as addressing that.**
+  Item 3 as written.
 
 ## Backlog
 
