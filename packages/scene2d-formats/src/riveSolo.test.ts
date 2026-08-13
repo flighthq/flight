@@ -1,5 +1,6 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { createScene2DFromRiveDocument } from './riveScene2D';
 
@@ -65,6 +66,9 @@ describe('applyRiveSolo', () => {
     );
 
     expect(diagnostics.map((entry) => entry.kind)).toEqual(['rive.solo-unresolved-active']);
+    // Drop, not Skip: the feature is supported and the DATA failed, so this is lost data rather than a
+    // capability gap. Pinned because a Skip here would exempt itself from every severity-based check.
+    expect(diagnostics[0].severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(visibility(solo)).toEqual([['a', true]]);
   });
 

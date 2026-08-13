@@ -14,6 +14,7 @@ import type {
   Skeleton2DAnimationTarget,
 } from '@flighthq/types/contract';
 import {
+  ImportDiagnosticSeverity,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
   Skeleton2DAnimationPath,
@@ -745,7 +746,13 @@ describe('parseDragonBonesSkeleton', () => {
     const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
       (c) => c.kind,
     );
+    const crumbs = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink));
     expect(kinds).toContain('dragonbones.unresolved-bone-parent');
+    // Drop, not Skip: the feature is supported and the DATA failed, so this is lost data rather than a
+    // capability gap. Pinned because a Skip here would exempt itself from every severity-based check.
+    expect(crumbs.find((c) => c.kind === 'dragonbones.unresolved-bone-parent')!.severity).toBe(
+      ImportDiagnosticSeverity.Drop,
+    );
     expect(parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0].parentIndex).toBe(-1);
   });
 

@@ -64,9 +64,11 @@ export function parseSpineDrawOrderTimeline(
     const entry = frame as { offsets?: unknown; time?: unknown };
     const ordering = resolveSpineDrawOrder(entry.offsets, slots);
     if (ordering === null) {
+      // Drop, not Skip: draw-order timelines are supported. What failed is the data — offsets that do
+      // not resolve against the slots — and the keyframe is discarded, so this is lost data, not a gap.
       reportImportDiagnostic(
         diagnostics,
-        ImportDiagnosticSeverity.Skip,
+        ImportDiagnosticSeverity.Drop,
         'spine.draworder-keyframe-unresolved',
         'parseSpineDrawOrderTimeline',
         { time: numberOr(entry.time, 0) },
