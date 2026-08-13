@@ -165,13 +165,17 @@ export function getNodeWorldBoundsRectangle<Traits extends object>(target: Spati
 
 export function setNodeHeight<Traits extends object>(target: Spatial2DNode<Traits>, value: number): void {
   if (target.scaleY === 0) return;
-  target.scaleY = (value * target.scaleY) / getNodeHeight(target);
+  const height = getNodeHeight(target);
+  if (height === 0) return;
+  target.scaleY = (value * target.scaleY) / height;
   invalidateNodeLocalTransform(target);
 }
 
 export function setNodeWidth<Traits extends object>(target: Spatial2DNode<Traits>, value: number): void {
   if (target.scaleX === 0) return;
-  target.scaleX = (value * target.scaleX) / getNodeWidth(target);
+  const width = getNodeWidth(target);
+  if (width === 0) return;
+  target.scaleX = (value * target.scaleX) / width;
   invalidateNodeLocalTransform(target);
 }
 
