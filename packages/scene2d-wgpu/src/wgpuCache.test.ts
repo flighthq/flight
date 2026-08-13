@@ -143,6 +143,23 @@ function makeCacheNode(source: unknown): any {
 }
 
 describe('createWgpuCacheState', () => {
+  it('resolves late screen blend-mode wiring until locally overridden', () => {
+    const screen = fakeScreen();
+    screen.applyBlendMode = null;
+    const cacheState = createWgpuCacheState(screen);
+    const screenHook = vi.fn();
+    const laterScreenHook = vi.fn();
+    const cacheHook = vi.fn();
+
+    expect(cacheState.applyBlendMode).toBeNull();
+    screen.applyBlendMode = screenHook;
+    expect(cacheState.applyBlendMode).toBe(screenHook);
+
+    cacheState.applyBlendMode = cacheHook;
+    screen.applyBlendMode = laterScreenHook;
+    expect(cacheState.applyBlendMode).toBe(cacheHook);
+  });
+
   it('copies renderers and shares the GPU device but keeps its own node map', () => {
     const screen = fakeScreen();
     const resolver = vi.fn();

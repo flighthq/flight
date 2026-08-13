@@ -30,7 +30,16 @@ const RING_SLOT_COUNT = 4096;
 export function copyWgpuRenderStateRegistrations(target: WgpuRenderState, source: WgpuRenderState): void {
   const targetRuntime = getWgpuRenderStateRuntime(target);
   const sourceRuntime = getWgpuRenderStateRuntime(source);
-  target.applyBlendMode = source.applyBlendMode;
+  // Blend-mode wiring belongs to the screen pipeline and may be enabled after a derived state is
+  // created. Resolve it from the live source until the target deliberately installs its own hook.
+  Object.defineProperty(target, 'applyBlendMode', {
+    configurable: true,
+    enumerable: true,
+    get: () => source.applyBlendMode,
+    set: (value: WgpuRenderState['applyBlendMode']) => {
+      Object.defineProperty(target, 'applyBlendMode', { configurable: true, enumerable: true, value, writable: true });
+    },
+  });
   targetRuntime.defaultBitmapShader = sourceRuntime.defaultBitmapShader;
   targetRuntime.webgpuShaderBindingResolver = sourceRuntime.webgpuShaderBindingResolver;
   targetRuntime.registries = {
