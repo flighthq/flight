@@ -88,11 +88,6 @@ if (!scoped) {
   add('facets:check', 'tsx', ['scripts/requirement-facets.ts', '--check']);
   add('catalog:check', 'tsx', ['scripts/catalog.ts', '--check']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
-  // Whole-repo only, and it belongs HERE rather than in a render leg: the census reads committed
-  // baselines and scene sources off disk and needs no browser, no GPU and no capture output — verified
-  // by running it with `.artifacts` and the functional dist absent. It was written to gate and then
-  // wired to nothing, which is the inert-gate shape its own subject is about.
-  add('evidence:check', 'tsx', ['scripts/capture-evidence.ts', '--check']);
   add('capabilities:check', 'tsx', ['scripts/swf-capabilities.ts', '--check']);
   add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);
   add('capabilities:sites:check', 'tsx', ['scripts/swf-diagnostic-sites.ts', '--check']);
@@ -103,8 +98,15 @@ if (!scoped) {
   // deletes a pin from the manifest and touches no code is a .md-free but code-free change, which a
   // path filter routes down the docs lane. That would let coverage be retired through the exact door
   // the manifest exists to close, and the diff would read as ordinary housekeeping while doing it. A
-  // gate against silent removal must not itself be silently skippable. It is a static scan of sources
-  // and committed baselines — no browser, no dist — so always running it costs effectively nothing.
+  // gate against silent removal must not itself be silently skippable. It reads committed baselines
+  // and scene sources off disk with no browser, no GPU and no capture output — verified by running it
+  // with `.artifacts` and the functional dist absent — so always running it costs effectively nothing.
+  //
+  // ★ ONE REGISTRATION, AND IT ARRIVED TWICE. builder and builder2 each added this identical line
+  // independently, five lines apart, from the same base blob. Neither hunk conflicted with the other,
+  // so both applied clean and the stage was registered twice — `add` does not reject a duplicate name,
+  // and a sweep that runs a stage twice is green either way. NON-OVERLAPPING TEXT IS NOT INDEPENDENT
+  // INTENT: proximity, not identity, is what git checks.
   add('evidence:check', 'tsx', ['scripts/capture-evidence.ts', '--check']);
 
   // Advisory, and deliberately not a gate: `scripts/size.ts` always exits 0, so this reports which
