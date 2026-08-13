@@ -2,45 +2,9 @@
   "schemaVersion": 1,
   "entries": [
     {
-      "packageName": "scene2d-canvas",
-      "symbol": "defaultCanvasRenderCacheRenderer",
-      "dot": false,
-      "contract": true
-    },
-    {
-      "packageName": "scene2d-canvas",
-      "symbol": "defaultCanvasScene2DRenderer",
-      "dot": false,
-      "contract": true
-    },
-    {
-      "packageName": "scene2d-dom",
-      "symbol": "defaultDomRenderCacheRenderer",
-      "dot": false,
-      "contract": true
-    },
-    {
-      "packageName": "scene2d-dom",
-      "symbol": "defaultDomScene2DRenderer",
-      "dot": false,
-      "contract": true
-    },
-    {
-      "packageName": "scene2d-gl",
-      "symbol": "defaultGlRenderCacheRenderer",
-      "dot": false,
-      "contract": true
-    },
-    {
-      "packageName": "scene2d-gl",
-      "symbol": "defaultGlScene2DRenderer",
-      "dot": false,
-      "contract": true
-    },
-    {
-      "packageName": "scene2d-wgpu",
-      "symbol": "defaultWgpuRenderCacheRenderer",
-      "dot": false,
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasBevelEffectRunner",
+      "dot": true,
       "contract": true
     },
     {
@@ -63,6 +27,12 @@
     },
     {
       "packageName": "effects-canvas",
+      "symbol": "defaultCanvasCompositeEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
       "symbol": "defaultCanvasDropShadowEffectRunner",
       "dot": true,
       "contract": true
@@ -70,6 +40,30 @@
     {
       "packageName": "effects-canvas",
       "symbol": "defaultCanvasFilmGrainEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasGradientBevelEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasGradientGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasInnerGlowEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasInnerShadowEffectRunner",
       "dot": true,
       "contract": true
     },
@@ -99,6 +93,12 @@
     },
     {
       "packageName": "effects-canvas",
+      "symbol": "registerCanvasBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
       "symbol": "registerCanvasBlendEffect",
       "dot": true,
       "contract": true
@@ -117,6 +117,12 @@
     },
     {
       "packageName": "effects-canvas",
+      "symbol": "registerCanvasCompositeEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
       "symbol": "registerCanvasDropShadowEffect",
       "dot": true,
       "contract": true
@@ -124,6 +130,30 @@
     {
       "packageName": "effects-canvas",
       "symbol": "registerCanvasFilmGrainEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasGradientBevelEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasGradientGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasInnerGlowEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasInnerShadowEffect",
       "dot": true,
       "contract": true
     },
@@ -1275,6 +1305,12 @@
     },
     {
       "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasRenderCacheRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
       "symbol": "defaultCanvasRichTextRenderer",
       "dot": true,
       "contract": true
@@ -1283,6 +1319,12 @@
       "packageName": "scene2d-canvas",
       "symbol": "defaultCanvasScale9ShapeRenderer",
       "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-canvas",
+      "symbol": "defaultCanvasScene2DRenderer",
+      "dot": false,
       "contract": true
     },
     {
@@ -1329,6 +1371,12 @@
     },
     {
       "packageName": "scene2d-dom",
+      "symbol": "defaultDomRenderCacheRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
       "symbol": "defaultDomRichTextRenderer",
       "dot": true,
       "contract": true
@@ -1337,6 +1385,12 @@
       "packageName": "scene2d-dom",
       "symbol": "defaultDomScale9ShapeRenderer",
       "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-dom",
+      "symbol": "defaultDomScene2DRenderer",
+      "dot": false,
       "contract": true
     },
     {
@@ -1395,6 +1449,12 @@
     },
     {
       "packageName": "scene2d-gl",
+      "symbol": "defaultGlRenderCacheRenderer",
+      "dot": false,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
       "symbol": "defaultGlRichTextRenderer",
       "dot": true,
       "contract": true
@@ -1403,6 +1463,12 @@
       "packageName": "scene2d-gl",
       "symbol": "defaultGlScale9ShapeRenderer",
       "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-gl",
+      "symbol": "defaultGlScene2DRenderer",
+      "dot": false,
       "contract": true
     },
     {
@@ -1463,6 +1529,12 @@
       "packageName": "scene2d-wgpu",
       "symbol": "defaultWgpuRasterShapeRenderer",
       "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "scene2d-wgpu",
+      "symbol": "defaultWgpuRenderCacheRenderer",
+      "dot": false,
       "contract": true
     },
     {
