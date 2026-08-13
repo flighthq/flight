@@ -54,14 +54,15 @@ describe('computeNodeWorldTransformRevision', () => {
     expect(runtime.worldTransformUsingParentTransformId).toBe(7);
   });
 
-  it('assigns a fresh world revision on every recompute', () => {
+  it('assigns the next monotonic world revision on every recompute', () => {
     const runtime = getEntityRuntime(node);
     computeNodeWorldTransformRevision(runtime);
     const first = runtime.worldTransformId;
 
     computeNodeWorldTransformRevision(runtime);
 
-    expect(runtime.worldTransformId).not.toBe(first);
+    const next = (first + 1) >>> 0;
+    expect(runtime.worldTransformId).toBe(next === 0 ? 1 : next);
   });
 });
 
