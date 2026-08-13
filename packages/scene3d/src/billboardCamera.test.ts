@@ -17,7 +17,11 @@ import type { Camera3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createBillboard } from './billboard';
-import { orientBillboardToCamera, orientScene3DBillboardsToCamera } from './billboardCamera';
+import {
+  orientBillboardToCamera,
+  orientScene3DBillboardsToCamera,
+  setBillboardCameraBasisGuard,
+} from './billboardCamera';
 import { createMesh } from './mesh';
 import { createNode3D } from './sceneNode';
 
@@ -185,5 +189,25 @@ describe('orientScene3DBillboardsToCamera', () => {
     expect(m[10]).toBeCloseTo(1, 5);
     expect(m[2]).toBeCloseTo(0, 5);
     expect(m[8]).toBeCloseTo(0, 5);
+  });
+});
+
+describe('setBillboardCameraBasisGuard', () => {
+  it('is notified on the decline and never on an invertible view', () => {
+    const seen: number[] = [];
+    setBillboardCameraBasisGuard((camera) => seen.push(camera.view.m[0]));
+    try {
+      const camera = createCamera3D({
+        far: 100,
+        near: 0.1,
+        projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
+      });
+      setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+      orientBillboardToCamera(createBillboard(createPlaneMeshGeometry(), [null], 'full'), camera);
+      orientBillboardToCamera(createBillboard(createPlaneMeshGeometry(), [null], 'full'), cameraLookingFrom(0, 0, 10));
+      expect(seen).toEqual([0]);
+    } finally {
+      setBillboardCameraBasisGuard(null);
+    }
   });
 });

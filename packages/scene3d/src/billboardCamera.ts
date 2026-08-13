@@ -39,6 +39,14 @@ export function orientScene3DBillboardsToCamera(scene: Readonly<Node3D>, camera:
   return true;
 }
 
+// The seam the guard layer installs into; `null` keeps this module free of message text and of any
+// dependency on @flighthq/log. The boolean return is the caller's signal and matches the sibling
+// `updateCamera3DInverseViewProjection`; this is the caller-facing REPORT, which that sibling has no
+// equivalent of, so the two are complementary rather than duplicates.
+export function setBillboardCameraBasisGuard(guard: ((camera: Readonly<Camera3D>) => void) | null): void {
+  billboardCameraBasisGuard = guard;
+}
+
 // Rewrites `billboard.localMatrix` from the module-scratch camera basis (set by setBillboardCameraBasis)
 // so the billboard's world transform faces the camera. Reads the billboard's current world matrix for
 // its world position and scale, builds the facing world matrix, then converts it back through the
@@ -93,7 +101,10 @@ function setBillboardCameraBasis(camera: Readonly<Camera3D>): boolean {
   // degenerate bases — coincident eye/target, and `up` parallel to the view direction), while
   // `setCamera3DViewMatrix4FromMatrix4` copies an arbitrary caller matrix with no validation at all and
   // documents deriving it from a scene node's world transform, which a zero-scale node makes singular.
-  if (!inverseMatrix4(_cameraWorld, camera.view)) return false;
+  if (!inverseMatrix4(_cameraWorld, camera.view)) {
+    billboardCameraBasisGuard?.(camera);
+    return false;
+  }
   const m = _cameraWorld.m;
   _cameraEyeX = m[12];
   _cameraEyeY = m[13];
@@ -269,3 +280,5 @@ let _cameraUpZ = 0;
 let _cameraBackX = 0;
 let _cameraBackY = 0;
 let _cameraBackZ = 1;
+
+let billboardCameraBasisGuard: ((camera: Readonly<Camera3D>) => void) | null = null;

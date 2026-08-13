@@ -1,5 +1,6 @@
 export * from './billboard';
 export * from './billboardCamera';
+export * from './enableScene3DGuards';
 export * from './mesh';
 export * from './prepareScene3DMorph';
 export * from './scene';
