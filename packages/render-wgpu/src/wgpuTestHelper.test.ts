@@ -45,4 +45,20 @@ describe('installWgpuMock', () => {
       /must have COPY_DST usage/,
     );
   });
+
+  it('rejects writeTexture data smaller than an rgba8 copy requires', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const texture = state.device.createTexture({
+      size: [2, 2, 1],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.COPY_DST,
+    });
+
+    expect(() =>
+      state.device.queue.writeTexture({ texture }, new Uint8Array(15), { bytesPerRow: 8, rowsPerImage: 2 }, [2, 2, 1]),
+    ).toThrow(expect.objectContaining({ name: 'OperationError' }));
+    expect(() =>
+      state.device.queue.writeTexture({ texture }, new Uint8Array(16), { bytesPerRow: 8, rowsPerImage: 2 }, [2, 2, 1]),
+    ).not.toThrow();
+  });
 });

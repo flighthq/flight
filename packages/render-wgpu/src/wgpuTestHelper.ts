@@ -53,10 +53,19 @@ function makeBuffer(descriptor: GPUBufferDescriptor): GPUBuffer {
   } as unknown as GPUBuffer;
 }
 
-function makeTexture(): GPUTexture {
+function makeTexture(descriptor?: GPUTextureDescriptor): GPUTexture {
+  const [width, height, depthOrArrayLayers] = normalizeGpuExtent3D(descriptor?.size ?? [1, 1, 1]);
   return {
     createView: () => ({}) as GPUTextureView,
+    depthOrArrayLayers,
+    dimension: descriptor?.dimension ?? '2d',
     destroy: () => {},
+    format: descriptor?.format ?? 'bgra8unorm',
+    height,
+    mipLevelCount: descriptor?.mipLevelCount ?? 1,
+    sampleCount: descriptor?.sampleCount ?? 1,
+    usage: descriptor?.usage ?? GPUTextureUsage.RENDER_ATTACHMENT,
+    width,
   } as unknown as GPUTexture;
 }
 
@@ -107,6 +116,14 @@ function makeDevice(): GPUDevice {
   ): void => {
     validateWriteBufferDestination(buffer, bufferOffset, data, dataOffset, size);
   };
+  const writeTexture = (
+    destination: GPUTexelCopyTextureInfo,
+    data: GPUAllowSharedBufferSource,
+    dataLayout: GPUTexelCopyBufferLayout,
+    size: GPUExtent3D,
+  ): void => {
+    validateWriteTextureSourceAllocation(destination, data, dataLayout, size);
+  };
 
   return {
     features: new Set(),
@@ -119,12 +136,12 @@ function makeDevice(): GPUDevice {
     createRenderPipeline: (descriptor: GPURenderPipelineDescriptor) => makePipeline(descriptor),
     createSampler: () => makeSampler(),
     createShaderModule: () => makeShaderModule(),
-    createTexture: () => makeTexture(),
+    createTexture: (descriptor: GPUTextureDescriptor) => makeTexture(descriptor),
     queue: {
       copyExternalImageToTexture: () => {},
       submit: () => {},
       writeBuffer,
-      writeTexture: () => {},
+      writeTexture,
     },
   } as unknown as GPUDevice;
 }
@@ -177,6 +194,64 @@ function validateWriteBufferDestination(
 
 function getTypedArrayElementByteLength(data: ArrayBufferView): number {
   return (data as ArrayBufferView & { readonly BYTES_PER_ELEMENT: number }).BYTES_PER_ELEMENT;
+}
+
+function getWriteTextureBytesPerTexel(format: GPUTextureFormat): number | null {
+  if (
+    format === 'rgba8unorm' ||
+    format === 'rgba8unorm-srgb' ||
+    format === 'bgra8unorm' ||
+    format === 'bgra8unorm-srgb'
+  ) {
+    return 4;
+  }
+  if (format === 'rgba32float') return 16;
+  return null;
+}
+
+function normalizeGpuExtent3D(size: GPUExtent3D): [number, number, number] {
+  if (Symbol.iterator in Object(size)) {
+    const values = Array.from(size as Iterable<number>);
+    return [values[0] ?? 1, values[1] ?? 1, values[2] ?? 1];
+  }
+  const dictionary = size as GPUExtent3DDict;
+  return [dictionary.width, dictionary.height ?? 1, dictionary.depthOrArrayLayers ?? 1];
+}
+
+// writeTexture imports the caller's BufferSource synchronously. Model the exact source-allocation
+// requirement for the uncompressed formats exercised through this reusable fake; block-compressed
+// formats remain record-only until their block geometry is modeled deliberately.
+function validateWriteTextureSourceAllocation(
+  destination: GPUTexelCopyTextureInfo,
+  data: GPUAllowSharedBufferSource,
+  dataLayout: GPUTexelCopyBufferLayout,
+  size: GPUExtent3D,
+): void {
+  const isArrayBuffer = data instanceof ArrayBuffer;
+  const isSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer;
+  const isView = ArrayBuffer.isView(data);
+  if (!isArrayBuffer && !isSharedArrayBuffer && !isView) {
+    throw new TypeError('GPUQueue.writeTexture: data must be a BufferSource');
+  }
+
+  const bytesPerTexel = getWriteTextureBytesPerTexel(destination.texture.format);
+  if (bytesPerTexel === null) return;
+  const [width, height, depthOrArrayLayers] = normalizeGpuExtent3D(size);
+  if (width === 0 || height === 0 || depthOrArrayLayers === 0) return;
+  const bytesInLastRow = width * bytesPerTexel;
+  const bytesPerRow = Math.max(bytesInLastRow, dataLayout.bytesPerRow ?? bytesInLastRow);
+  const rowsPerImage = Math.max(height, dataLayout.rowsPerImage ?? height);
+  const requiredByteLength =
+    (dataLayout.offset ?? 0) +
+    bytesPerRow * rowsPerImage * (depthOrArrayLayers - 1) +
+    bytesPerRow * (height - 1) +
+    bytesInLastRow;
+  if (requiredByteLength > data.byteLength) {
+    throw new DOMException(
+      `GPUQueue.writeTexture: data byte length ${data.byteLength} is smaller than the ${requiredByteLength} bytes required by the copy`,
+      'OperationError',
+    );
+  }
 }
 
 function makeAdapter(): GPUAdapter {
