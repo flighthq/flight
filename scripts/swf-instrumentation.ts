@@ -61,7 +61,7 @@ const INSTRUMENTATION: readonly SwfInstrumentation[] = [
   },
   {
     audits: ['payload', 'scope'],
-    fires: ['reports a discarded JPEG alpha stream as a Drop, since the bytes are present and go unread'],
+    fires: ['reports a discarded JPEG alpha stream as a Skip, since alpha compositing is not implemented yet'],
     id: 'swf.bitmap.define-bits-jpeg-3',
     lossFamily: null,
     staysSilent: ['stays silent about a font, a spliced JPEG and a JPEG3 that lose nothing'],
