@@ -120,15 +120,14 @@ export interface FixtureTreeStampPack {
 // `@flighthq/types` because `scripts/` is outside the package graph — a build-script type does not belong
 // in the SDK's exported surface.
 export interface FixtureExtractionVerification {
-  // Fixture entries the archive actually contains, excluding the pack's own metadata.
-  archiveFixtureEntries: number;
-  // What the release manifest says the pack holds. Disagreeing with `archiveFixtureEntries` means the
-  // publication is inconsistent with itself; disagreeing with `presentFixtureFiles` means the local
-  // extraction is incomplete. Different causes and different remedies, so they stay separate fields.
+  // How many paths the pack's manifest declares. The specification, not a measurement.
   declaredFixtureFiles: number;
-  metadataEntries: readonly string[];
   missingSample: readonly string[];
+  // Declared paths found on disk. Short of `declaredFixtureFiles` means the extraction is incomplete.
   presentFixtureFiles: number;
+  // Archive entries the manifest does not declare — a pack's own NOTICE, licences, and its manifest.
+  // Reported so an unexpected arrival is visible, never gated on: an undeclared file is not a fixture.
+  unlistedEntries: readonly string[];
 }
 
 export interface FixtureArguments {
@@ -148,31 +147,22 @@ export function extractFixturePack(archivePath: string, treeDirectory: string): 
   execFileSync('tar', ['-xzf', archivePath, '-C', treeDirectory], { stdio: 'pipe' });
 }
 
-// A pack root carries its own metadata beside the corpus. These are EXCLUDED BY NAME from the fixture
-// count rather than absorbed into a tolerance — a tolerance would re-hide exactly what the count exists
-// to surface, since "11 fewer than expected" is indistinguishable from a truncated extraction once it is
-// inside a slack band. Named here, so a pack that grows a new metadata file fails loudly and gets a
-// deliberate decision rather than silently widening the band.
+// A pack root carries its own metadata beside the corpus. Named here rather than absorbed into a
+// tolerance, so a pack that grows a new metadata file is visible rather than silently inside a slack band.
+//
+// ★ THIS NO LONGER GATES THE FETCH, and that is the point of the 2026-08-12 change above: deciding what
+// counts as metadata required this reader and each pack's author to agree, and the first pack that filed
+// a per-project licence beside its assets proved they need not. Extraction is now verified against the
+// manifest's path set, where the question does not arise. What survives here is the DIRECTORY WALK in
+// `conformance/core/fixture-conformance.ts`, which needs to know which files on disk are candidates to
+// feed an importer — a different question, asked of a tree rather than of a manifest.
 export const FIXTURE_PACK_METADATA_ROOT_FILES: readonly string[] = ['NOTICE.md', 'README.md', 'manifest.json'];
 export const FIXTURE_PACK_METADATA_DIRECTORY = 'LICENSES/';
-
-// Metadata a pack carries BESIDE EACH ITEM rather than once at its root, matched by exact basename at
-// any depth. A corpus of third-party models commonly files one of these inside every model directory.
-//
-// ★ THIS IS A NAMED EXCLUSION, NOT A DEPTH TOLERANCE, AND THE DISTINCTION IS THE WHOLE POINT. Excluding
-// "any .md below the root" would re-hide what the count exists to surface: a pack that grew a stray
-// note, or lost real fixtures and gained files, would still balance. Only this exact filename is
-// exempt, so anything else new still fails loudly and gets a deliberate decision — the same rule the
-// root list above is written to.
 export const FIXTURE_PACK_METADATA_NESTED_FILES: readonly string[] = ['LICENSE.md'];
 
-// True for a pack's own metadata rather than a fixture. Paths come from `tar -t`, which may or may not
-// carry a `./` prefix depending on how the archive was created, so it is normalized off first.
-//
-// ★ A NESTED ENTRY COUNTED AS A FIXTURE FAILS THE VERIFICATION AND BLAMES THE WRONG PARTY. The count
-// mismatch is reported as "the manifest disagrees with its own archive", which reads as a publication
-// fault — but a publisher that correctly omits per-item metadata from its file count is right, and the
-// reader that counts it is wrong. The error message cannot tell those apart, so the classifier has to.
+// True for a pack's own metadata rather than a fixture. Paths come from a directory walk or `tar -t`,
+// which may or may not carry a `./` prefix depending on how the archive was created, so it is normalized
+// off first.
 export function isFixturePackMetadataEntry(path: string): boolean {
   const normalized = path.startsWith('./') ? path.slice(2) : path;
   if (normalized.startsWith(FIXTURE_PACK_METADATA_DIRECTORY)) return true;
@@ -181,50 +171,72 @@ export function isFixturePackMetadataEntry(path: string): boolean {
   return normalized.includes('/') && FIXTURE_PACK_METADATA_NESTED_FILES.includes(basename);
 }
 
-// WHAT ACTUALLY LANDED, COMPARED AGAINST WHAT THE MANIFEST SAID WOULD.
+// The paths a pack declares, read from the `manifest.json` it ships inside its own archive. That file is
+// covered by the archive sha256 verified before extraction, so trusting it here adds no new trust: it is
+// the same bytes, already checked. Throws rather than returning a sentinel if it is unreadable or shaped
+// wrongly — a pack whose manifest cannot be parsed is a programmer-visible publication fault, not an
+// expected condition a caller should carry on past.
+export function readFixturePackManifestPaths(treeDirectory: string): readonly string[] {
+  const manifestPath = join(treeDirectory, 'manifest.json');
+  if (!existsSync(manifestPath)) throw new Error(`${manifestPath} is missing — the pack declares no file list`);
+  const parsed: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const files = (parsed as { files?: unknown }).files;
+  if (!Array.isArray(files)) throw new Error(`${manifestPath} has no 'files' array`);
+  return files.map((file, index) => {
+    const path = (file as { path?: unknown }).path;
+    if (typeof path !== 'string') throw new Error(`${manifestPath} entry ${index} has no string 'path'`);
+    return path.startsWith('./') ? path.slice(2) : path;
+  });
+}
+
+// WHAT ACTUALLY LANDED, COMPARED AGAINST THE PACK'S OWN MANIFEST OF PATHS.
 //
-// The fetcher used to print a success tick after `tar` returned and copy the manifest's `files` count
-// straight into the stamp — so THE RECORD STATED A COUNT NOTHING HAD CHECKED. The number needed to check
-// it was already in hand and unused. This closes that: the archive's own listing is partitioned into
-// fixtures and metadata, the fixture count is compared against the manifest, and every fixture entry is
-// confirmed present on disk.
+// ★ THE MANIFEST'S PATH SET IS THE SPECIFICATION; THE TREE EITHER CONTAINS IT OR IT DOES NOT. This
+// replaces a comparison of COUNTS, which required the pack's author and this reader to independently
+// classify every file the same way — a coordination requirement disguised as a verification. It failed on
+// the first pack that filed a per-project licence beside the assets it covers (correct for a multi-project
+// corpus, and what our own licence rules ask for), because the reader counted those as fixtures and the
+// publisher did not. Neither side was wrong; needing them to agree was.
 //
-// Two distinct failures are separated because their remedies differ: a manifest that disagrees with its
-// own archive is a publication problem, while entries missing from disk after a successful `tar` is a
-// local write problem — file-descriptor exhaustion on a sandbox mount is the case this repository has
-// already hit, and it is why `FLIGHT_FIXTURES_DIR` exists.
+// Comparing path sets removes the disagreement rather than adjudicating it. A file on disk the manifest
+// does not list is simply not a fixture and needs no classification — which is why no metadata rules
+// survive here. The archive listing is still read, but only to report what arrived UNLISTED; nothing gates
+// on it.
+//
+// The download itself is covered by the archive sha256, which is the strong check. This one covers the
+// EXTRACTION: entries missing after a successful `tar` is a local write problem — file-descriptor
+// exhaustion on a sandbox mount is the case this repository has already hit, and it is why
+// `FLIGHT_FIXTURES_DIR` exists.
 export function verifyFixtureExtraction(
   archivePath: string,
   treeDirectory: string,
-  declaredFixtureFiles: number,
+  manifestPaths: readonly string[],
 ): FixtureExtractionVerification {
   // The `./` prefix is present or absent depending only on how the archive was created, so it is
-  // normalized off once here. Otherwise a reported missing path would carry provenance noise, and two
-  // archives of identical content would produce differently-spelled failure messages.
+  // normalized off once here. Otherwise two archives of identical content would produce differently
+  // spelled failure messages.
   const listing = execFileSync('tar', ['-tzf', archivePath], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 })
     .split('\n')
     .filter((line) => line !== '' && !line.endsWith('/'))
     .map((line) => (line.startsWith('./') ? line.slice(2) : line));
 
-  const metadata: string[] = [];
-  const fixtures: string[] = [];
-  for (const path of listing) (isFixturePackMetadataEntry(path) ? metadata : fixtures).push(path);
+  const declared = new Set(manifestPaths);
+  const unlisted = listing.filter((path) => !declared.has(path)).sort();
 
   // Only the first few absences are kept: a wholly failed extraction would otherwise build a
   // 16,000-entry array to say one thing, and the count already carries the magnitude.
   const missing: string[] = [];
   let presentFixtureFiles = 0;
-  for (const path of fixtures) {
+  for (const path of manifestPaths) {
     if (existsSync(join(treeDirectory, path))) presentFixtureFiles += 1;
     else if (missing.length < 10) missing.push(path);
   }
 
   return {
-    archiveFixtureEntries: fixtures.length,
-    declaredFixtureFiles,
-    metadataEntries: metadata.sort(),
+    declaredFixtureFiles: manifestPaths.length,
     missingSample: missing,
     presentFixtureFiles,
+    unlistedEntries: unlisted,
   };
 }
 
@@ -431,15 +443,12 @@ async function realizeFixturePlan(plan: Readonly<FixturePlan>): Promise<void> {
     // unread. Both failures below are hard, and they are separate because their remedies are: a manifest
     // that disagrees with its own archive is a publication problem, while entries missing after a
     // successful extraction is a local write problem.
-    const verified = verifyFixtureExtraction(archivePath, treeDirectory, entry.files);
-    if (verified.archiveFixtureEntries !== verified.declaredFixtureFiles) {
+    // The pack's own manifest is the list of paths that must be on disk. It travels inside the archive,
+    // whose sha256 already verified, so it is as trustworthy as the bytes it describes.
+    const verified = verifyFixtureExtraction(archivePath, treeDirectory, readFixturePackManifestPaths(treeDirectory));
+    if (verified.presentFixtureFiles !== verified.declaredFixtureFiles) {
       throw new Error(
-        `${entry.pack} [${entry.variant}] manifest disagrees with its own archive\n  manifest states ${verified.declaredFixtureFiles} fixture files\n  archive contains ${verified.archiveFixtureEntries} (plus ${verified.metadataEntries.length} pack-metadata entries: ${verified.metadataEntries.join(', ')})`,
-      );
-    }
-    if (verified.presentFixtureFiles !== verified.archiveFixtureEntries) {
-      throw new Error(
-        `${entry.pack} [${entry.variant}] extraction is incomplete — ${verified.archiveFixtureEntries - verified.presentFixtureFiles} of ${verified.archiveFixtureEntries} fixture files are absent from ${treeDirectory}\n  first missing: ${verified.missingSample.join(', ')}\n  a partial write on a constrained mount is the known cause; FLIGHT_FIXTURES_DIR moves the pool off it`,
+        `${entry.pack} [${entry.variant}] extraction is incomplete — ${verified.declaredFixtureFiles - verified.presentFixtureFiles} of ${verified.declaredFixtureFiles} declared files are absent from ${treeDirectory}\n  first missing: ${verified.missingSample.join(', ')}\n  a partial write on a constrained mount is the known cause; FLIGHT_FIXTURES_DIR moves the pool off it`,
       );
     }
 
@@ -448,7 +457,7 @@ async function realizeFixturePlan(plan: Readonly<FixturePlan>): Promise<void> {
         ...(stamp?.packs ?? []).filter((recorded) => recorded.pack !== entry.pack),
         {
           file: entry.file,
-          metadataFiles: verified.metadataEntries.length,
+          metadataFiles: verified.unlistedEntries.length,
           pack: entry.pack,
           sha256: entry.sha256,
           verifiedFixtureFiles: verified.presentFixtureFiles,
@@ -458,7 +467,7 @@ async function realizeFixturePlan(plan: Readonly<FixturePlan>): Promise<void> {
       variant: entry.variant,
     });
     console.log(
-      `  ✔ ${entry.pack} extracted and verified — ${verified.presentFixtureFiles} fixture files present, ${verified.metadataEntries.length} pack-metadata entries → ${treeDirectory}`,
+      `  ✔ ${entry.pack} extracted and verified — ${verified.presentFixtureFiles} fixture files present, ${verified.unlistedEntries.length} pack-metadata entries → ${treeDirectory}`,
     );
   }
 

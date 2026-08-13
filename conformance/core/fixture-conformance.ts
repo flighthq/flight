@@ -7,6 +7,7 @@ import {
   FIXTURE_RELEASE_TAG,
   FIXTURE_STAMP_FILE,
   isFixturePackMetadataEntry,
+  readFixturePackManifestPaths,
   readFixtureTreeStamp,
 } from '../../scripts/fixtures';
 
@@ -226,7 +227,21 @@ export function getConformanceFixtureTreeLabel(tree: Readonly<ConformanceFixture
   return `${tree.variant}/${basename(tree.directory)}`;
 }
 
+// ★ THE PACK'S MANIFEST DECIDES WHAT IS A FIXTURE, not a rule applied to a directory walk. Classifying
+// the walk required this reader and each pack's author to reach the same verdict on every file, and the
+// first pack filing a per-project licence beside its assets showed they need not: the walk counted 1,144
+// where the manifest declared 1,126, and the stamp comparison below rejected a tree that was perfectly
+// intact. Reading the declared set removes the disagreement instead of adjudicating it — the same change
+// made in `scripts/fixtures.ts` for extraction, applied here to enumeration.
+//
+// The walk is still what finds files, because it is what proves they are ON DISK; the manifest only says
+// which of them count. A tree with no manifest keeps the old classifier, so any pack shape not seen here
+// behaves as before.
 export function listConformanceFixtureReferences(treeDirectory: string): string[] {
+  let declared: ReadonlySet<string> | null = null;
+  if (existsSync(join(treeDirectory, 'manifest.json'))) {
+    declared = new Set(readFixturePackManifestPaths(treeDirectory));
+  }
   const references: string[] = [];
   const pending = [treeDirectory];
   while (pending.length > 0) {
@@ -235,9 +250,11 @@ export function listConformanceFixtureReferences(treeDirectory: string): string[
       const path = join(directory, entry.name);
       const reference = relative(treeDirectory, path).split(sep).join('/');
       if (entry.isDirectory()) {
-        if (reference === 'LICENSES') continue;
+        if (declared === null && reference === 'LICENSES') continue;
         pending.push(path);
-      } else if (entry.isFile() && reference !== FIXTURE_STAMP_FILE && !isFixturePackMetadataEntry(reference)) {
+      } else if (!entry.isFile() || reference === FIXTURE_STAMP_FILE) {
+        continue;
+      } else if (declared === null ? !isFixturePackMetadataEntry(reference) : declared.has(reference)) {
         references.push(reference);
       }
     }

@@ -1,7 +1,7 @@
 # Validation — Who Enforces an Invariant, and Where
 
-_Drafted 2026-08-12, **unratified**: the division below is derived from rules the repository already
-has, but the nine existing `validate*` exports have not been changed to match it and that decision is
+_Drafted 2026-08-12, **unratified**: two of the three categories below are already settled by
+rules in AGENTS.md, but the nine existing `validate*` exports have not been changed to match it and that decision is
 the user's. Read before adding a `validate*` function, before writing a check that an invariant holds,
 or when deciding whether a rule belongs in a parser, a constructor, or a query._
 
