@@ -40,9 +40,12 @@ export function decomposeMatrixToTransform2D(out: Transform2DLike, source: Reado
   const d = source.d;
   const scaleX = Math.sqrt(a * a + b * b);
   // A negative determinant is a reflection one scale factor cannot absorb; carry it on scaleY.
-  const scaleY = a * d - b * c < 0 ? -Math.sqrt(c * c + d * d) : Math.sqrt(c * c + d * d);
+  const reflected = a * d - b * c < 0;
+  const scaleY = reflected ? -Math.sqrt(c * c + d * d) : Math.sqrt(c * c + d * d);
   // Forward: the c/d axis carries (rotation + skewX), the a/b axis carries (rotation + skewY).
-  const skewXDegrees = Math.atan2(-c, d) * RAD_TO_DEG;
+  // Inverting c = -sin(skewX) * scaleY and d = cos(skewX) * scaleY gives atan2(-c / scaleY, d / scaleY);
+  // dividing by a negative scaleY flips the sign of both arguments, so the reflected branch is atan2(c, -d).
+  const skewXDegrees = (reflected ? Math.atan2(c, -d) : Math.atan2(-c, d)) * RAD_TO_DEG;
   const skewYDegrees = Math.atan2(b, a) * RAD_TO_DEG;
   if (skewXDegrees === skewYDegrees) {
     // Both axes share one angle: a pure rotation, no skew.

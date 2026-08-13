@@ -81,4 +81,42 @@ describe('decomposeMatrixToTransform2D', () => {
     expect(out.scaleX).toBeCloseTo(1);
     expect(out.scaleY).toBeCloseTo(-1);
   });
+
+  it('round-trips a mirrored matrix through the forward build', () => {
+    expectRoundTrip(createMatrix(1, 0, 0, -1, 0, 0));
+    expectRoundTrip(createMatrix(-1, 0, 0, 1, 0, 0));
+    expectRoundTrip(createMatrix(0.5, 0.8, 0.8, -0.5, 3, 4));
+  });
+
+  // The failure set is the negative-determinant set on any input, not a mirror-specific shape, so the
+  // property is asserted over a grid spanning both determinant signs rather than at hand-picked cases.
+  it('round-trips every non-degenerate matrix in a grid spanning both determinant signs', () => {
+    const values = [-2, -1, -0.5, 0.5, 1, 2];
+    let negativeDeterminantCount = 0;
+    for (const a of values) {
+      for (const b of values) {
+        for (const c of values) {
+          for (const d of values) {
+            if (Math.abs(a * d - b * c) < 1e-9) continue;
+            if (a * d - b * c < 0) negativeDeterminantCount++;
+            expectRoundTrip(createMatrix(a, b, c, d, 0, 0));
+          }
+        }
+      }
+    }
+    // Guards the guard: a grid that stopped covering reflections would still pass every assertion above.
+    expect(negativeDeterminantCount).toBe(572);
+  });
 });
+
+// Decomposing and rebuilding through the forward convention must reproduce the original cells. This is
+// the losslessness `setNodeLocalMatrix` promises its callers, and it holds for both determinant signs.
+function expectRoundTrip(source: Readonly<ReturnType<typeof createMatrix>>) {
+  const out = createTransform2D();
+  decomposeMatrixToTransform2D(out, source);
+  const rebuilt = buildMatrix(out.x, out.y, out.rotation, out.scaleX, out.scaleY, out.skewX, out.skewY);
+  expect(rebuilt.a).toBeCloseTo(source.a);
+  expect(rebuilt.b).toBeCloseTo(source.b);
+  expect(rebuilt.c).toBeCloseTo(source.c);
+  expect(rebuilt.d).toBeCloseTo(source.d);
+}
