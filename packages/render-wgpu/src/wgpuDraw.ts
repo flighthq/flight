@@ -111,10 +111,16 @@ function bindWgpuTextureSourceTexture(
 
 // Uploads (and caches per image source) the GPU texture for an image, returning its texture, full view,
 // and a 2D bind group. With generateMips the texture is allocated with a full mip chain and its lower
-// levels are rendered via generateWgpuMipmaps — the material path opts in for its trilinear/anisotropic
-// samplers; the 2D bitmap path leaves it false for a single-level texture. Because WebGPU fixes
-// mipLevelCount at creation and the cache is keyed by source, the first caller decides whether a shared
-// image gets a chain; a mip sampler on a chainless texture simply samples the base level.
+// levels are rendered via generateWgpuMipmaps; left false it is a single-level texture. Because WebGPU
+// fixes mipLevelCount at creation and the cache is keyed by source, the first caller decides whether a
+// shared image gets a chain; a mip sampler on a chainless texture simply samples the base level.
+//
+// NO IN-TREE CALLER PASSES `generateMips` TODAY. This previously read as though the material path opted
+// in; it does not, and neither does any other — the paths that resolve textures go through
+// `resolveWgpuTexture`, which does not expose the parameter at all (its third argument is `premultiply`).
+// The capability is reachable only by an external caller invoking this export directly. Stated because
+// the previous wording sent a reader looking for a consumer that is not there, and because the static
+// import of `generateWgpuMipmaps` above retains that module for every image upload regardless.
 export function bindWgpuTexture(
   state: WgpuRenderState,
   imageSource: CanvasImageSource,
