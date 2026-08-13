@@ -4,6 +4,7 @@ import {
   enableNodeSignals,
   getNodeRuntime,
   getNodeSignals,
+  initAppearanceRuntimeTrait,
   initAppearanceTrait,
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
@@ -26,10 +27,7 @@ export function createNode3D(
 export function createNode3DRuntime(): Node3DRuntime {
   const out = createNodeRuntime<Node3DTraits>() as Node3DRuntime;
   out.traits = Node3DTraitsKey;
-  out.worldAlpha = null;
-  out.worldAlphaUsingAppearanceId = -1;
-  out.worldAlphaUsingParentAppearanceId = -1;
-  out.worldAppearanceId = 0;
+  initAppearanceRuntimeTrait(out);
   initTransform3DRuntimeTrait(out);
   return out;
 }
