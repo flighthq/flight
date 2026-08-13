@@ -1,8 +1,11 @@
-import { registerDeflateDecompressor } from '@flighthq/compression/contract';
-import { unregisterDecompressor } from '@flighthq/compression/contract';
+import {
+  registerDecompressor,
+  registerDeflateDecompressor,
+  unregisterDecompressor,
+} from '@flighthq/compression/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import type { DecodedImage, SwfJpegAlphaPayload } from '@flighthq/types/contract';
-import { BitmapTextureSourceKind, Compression } from '@flighthq/types/contract';
+import { BitmapTextureSourceKind, Compression, CompressionFraming } from '@flighthq/types/contract';
 
 import { createSwfJpegAlphaBitmap, createSwfLosslessBitmap } from './swfBitmap';
 
@@ -103,6 +106,17 @@ describe('createSwfLosslessBitmap', () => {
     expect(createSwfLosslessBitmap(payload(5, 64, 64, stored([0, 1, 2, 3])), false)).toBeNull();
     expect(createSwfLosslessBitmap(new Uint8Array([5, 1]), false)).toBeNull();
   });
+
+  it('bounds lossless expansion to the exact row layout and requests zlib framing', () => {
+    unregisterDecompressor(Compression.Deflate);
+    registerDecompressor(Compression.Deflate, (_compressed, uncompressedLength, framing) => {
+      expect(uncompressedLength).toBe(12); // 3 pixels × 4 bytes, with no implicit unbounded growth.
+      expect(framing).toBe(CompressionFraming.Rfc1950);
+      return new Uint8Array(uncompressedLength);
+    });
+
+    expect(createSwfLosslessBitmap(payload(5, 3, 1, [0]), false)).not.toBeNull();
+  });
 });
 
 function payload(format: number, width: number, height: number, pixels: readonly number[]): Uint8Array {
@@ -138,5 +152,25 @@ function jpegAlphaPayload(width: number, height: number, alpha: readonly number[
 // decompressor rather than a stub.
 function stored(bytes: readonly number[]): number[] {
   const length = bytes.length;
-  return [0x78, 0x01, 0x01, length & 0xff, length >> 8, ~length & 0xff, (~length >> 8) & 0xff, ...bytes, 0, 0, 0, 0];
+  let first = 1;
+  let second = 0;
+  for (const byte of bytes) {
+    first = (first + byte) % 65_521;
+    second = (second + first) % 65_521;
+  }
+  const adler = ((second << 16) | first) >>> 0;
+  return [
+    0x78,
+    0x01,
+    0x01,
+    length & 0xff,
+    length >> 8,
+    ~length & 0xff,
+    (~length >> 8) & 0xff,
+    ...bytes,
+    adler >>> 24,
+    (adler >>> 16) & 0xff,
+    (adler >>> 8) & 0xff,
+    adler & 0xff,
+  ];
 }

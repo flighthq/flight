@@ -1,4 +1,5 @@
-import { Compression } from '@flighthq/types/contract';
+import type { Decompressor } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createSyntheticFont, encodeSyntheticWoff2 } from './openTypeTestHelper';
@@ -7,7 +8,10 @@ import { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './wof
 
 // The synthetic container stores its stream uncompressed, so the whole container path is reachable with
 // an identity decompressor and no Brotli implementation anywhere near the suite.
-const identity = (compressed: Readonly<Uint8Array>): Uint8Array => compressed as Uint8Array;
+const identity: Decompressor = (compressed, _uncompressedLength, framing) => {
+  expect(framing).toBe(CompressionFraming.Raw);
+  return compressed as Uint8Array;
+};
 
 describe('readWoff2Font', () => {
   it('rebuilds an sfnt carrying the same tables as the original', () => {

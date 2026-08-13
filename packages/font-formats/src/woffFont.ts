@@ -1,5 +1,6 @@
-import type { WoffChecksumMismatch } from '@flighthq/types/contract';
-import { Compression } from '@flighthq/types/contract';
+import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import type { Decompressor, ImportDiagnostic, WoffChecksumMismatch } from '@flighthq/types/contract';
+import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { assembleSfntFont, computeSfntTableChecksum } from './sfntAssembly';
 
@@ -31,7 +32,7 @@ const WOFF_DIRECTORY_ENTRY_BYTES = 20;
 // arithmetic — the same shape as `explainOpenTypeFont`, for the same reason.
 export function readWoffChecksumMismatches(
   bytes: Readonly<Uint8Array>,
-  decompress: ((compressed: Readonly<Uint8Array>, uncompressedLength: number) => Uint8Array | null) | null,
+  decompress: Decompressor | null,
 ): readonly WoffChecksumMismatch[] {
   if (bytes.byteLength < WOFF_HEADER_BYTES) return [];
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -54,7 +55,7 @@ export function readWoffChecksumMismatches(
     let data: Uint8Array | null = raw as Uint8Array;
     if (compressedLength !== originalLength) {
       if (decompress === null) continue;
-      data = decompress(raw, originalLength);
+      data = decompress(raw, originalLength, CompressionFraming.Rfc1950);
       if (data === null || data.byteLength !== originalLength) continue;
     }
 
@@ -75,7 +76,8 @@ export const WOFF_COMPRESSION: Compression = Compression.Deflate;
 // `explainOpenTypeFont`, since one wants a repaired file and the other wants one line of registration.
 export function readWoffFont(
   bytes: Readonly<Uint8Array>,
-  decompress: ((compressed: Readonly<Uint8Array>, uncompressedLength: number) => Uint8Array | null) | null,
+  decompress: Decompressor | null,
+  diagnostics?: ImportDiagnostic[],
 ): Uint8Array | null {
   if (bytes.byteLength < WOFF_HEADER_BYTES) return null;
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -111,11 +113,34 @@ export function readWoffFont(
       continue;
     }
 
-    if (decompress === null) return null;
-    const inflated = decompress(stored, originalLength);
+    if (decompress === null) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Reject,
+        'woff.no-decompressor-registered',
+        'readWoffFont',
+        { table: readWoffTagText(view, record) },
+      );
+      return null;
+    }
+    const inflated = decompress(stored, originalLength, CompressionFraming.Rfc1950);
     // A decompressor that returns the wrong length has produced something that is not this table, and
     // reassembling it would yield a font whose directory lengths lie about its own contents.
-    if (inflated === null || inflated.byteLength !== originalLength) return null;
+    if (inflated === null || inflated.byteLength !== originalLength) {
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Reject,
+        'woff.decompression-failed',
+        'readWoffFont',
+        {
+          compressedLength,
+          originalLength,
+          outputLength: inflated?.byteLength ?? -1,
+          table: readWoffTagText(view, record),
+        },
+      );
+      return null;
+    }
     tables.push({ data: inflated, tag });
   }
 

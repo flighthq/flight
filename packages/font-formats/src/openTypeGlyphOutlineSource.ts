@@ -4,6 +4,7 @@ import type {
   CffTable,
   GlyphOutlineMetrics,
   GlyphOutlineSource,
+  ImportDiagnostic,
   OpenTypeFontExplanation,
   Path,
   SfntTableDirectory,
@@ -45,18 +46,24 @@ import { readWoffFont, WOFF_COMPRESSION } from './woffFont';
 // directory, both outline flavors, CID — reads the rebuilt sfnt without knowing it arrived compressed.
 // Returns the source unchanged for a plain sfnt, and the null sentinel for a container this package does
 // not open or one whose tables need a decompressor nobody registered.
-function unwrapFontContainer(source: Readonly<Uint8Array>): Readonly<Uint8Array> | null {
+function unwrapFontContainer(
+  source: Readonly<Uint8Array>,
+  diagnostics?: ImportDiagnostic[],
+): Readonly<Uint8Array> | null {
   const format = detectFontFormat(source as Uint8Array);
   if (format === 'truetype' || format === 'opentype') return source;
   if (format !== 'woff') return null;
-  return readWoffFont(source, getDecompressor(WOFF_COMPRESSION));
+  return readWoffFont(source, getDecompressor(WOFF_COMPRESSION), diagnostics);
 }
 
 // The producer. Returns the null sentinel for any font this package cannot read, which covers cases
 // with completely different remedies — so `explainOpenTypeFont` is the shakeable query that separates
 // them, and a caller diagnosing a rejection calls it rather than reading a message string.
-export function createGlyphOutlineSourceFromOpenTypeFont(source: Readonly<Uint8Array>): GlyphOutlineSource | null {
-  const parsed = readOpenTypeFontTables(source);
+export function createGlyphOutlineSourceFromOpenTypeFont(
+  source: Readonly<Uint8Array>,
+  diagnostics?: ImportDiagnostic[],
+): GlyphOutlineSource | null {
+  const parsed = readOpenTypeFontTables(source, diagnostics);
   if (parsed === null) return null;
 
   const { advances, bytes, cff, codepoints, directory, glyphCount, metrics, ranges } = parsed;
@@ -171,8 +178,11 @@ interface OpenTypeFontTables {
 // The single parse both entry points run, so the producer and the explanation can never disagree about
 // whether a font is readable — a disagreement there is the defect where a caller is told the font is
 // fine and still gets null.
-function readOpenTypeFontTables(source: Readonly<Uint8Array>): OpenTypeFontTables | null {
-  const bytes = unwrapFontContainer(source);
+function readOpenTypeFontTables(
+  source: Readonly<Uint8Array>,
+  diagnostics?: ImportDiagnostic[],
+): OpenTypeFontTables | null {
+  const bytes = unwrapFontContainer(source, diagnostics);
   if (bytes === null) return null;
 
   const directory = readSfntTableDirectory(bytes);

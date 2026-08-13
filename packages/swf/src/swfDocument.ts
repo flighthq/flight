@@ -77,6 +77,7 @@ import {
   AdvancedBlendMode,
   BlendMode,
   Compression,
+  CompressionFraming,
   ImportDiagnosticSeverity,
   MorphShapeKind,
   TimelineAudioCueKind,
@@ -629,7 +630,8 @@ function uncompressSwfSource(source: Uint8Array, diagnostics: ImportDiagnostic[]
     );
     return null;
   }
-  const body = decompress(source.subarray(streamStart), bodyLength);
+  const framing = compression === Compression.Deflate ? CompressionFraming.Rfc1950 : CompressionFraming.Raw;
+  const body = decompress(source.subarray(streamStart), bodyLength, framing);
   if (body === null || body.length < bodyLength) {
     reportImportDiagnostic(
       diagnostics,

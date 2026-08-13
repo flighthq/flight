@@ -1,5 +1,5 @@
-import type { Woff2TableDirectory, Woff2TableEntry } from '@flighthq/types/contract';
-import { Compression } from '@flighthq/types/contract';
+import type { Decompressor, Woff2TableDirectory, Woff2TableEntry } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/types/contract';
 
 import { assembleSfntFont, packSfntTag } from './sfntAssembly';
 
@@ -99,7 +99,7 @@ export const WOFF2_COMPRESSION: Compression = Compression.Brotli;
 // a different producer respectively.
 export function readWoff2Font(
   bytes: Readonly<Uint8Array>,
-  decompress: ((compressed: Readonly<Uint8Array>, uncompressedLength: number) => Uint8Array | null) | null,
+  decompress: Decompressor | null,
   reverseTransform:
     | ((tag: string, transformed: Readonly<Uint8Array>, tables: ReadonlyMap<string, Uint8Array>) => Uint8Array | null)
     | null,
@@ -117,7 +117,11 @@ export function readWoff2Font(
   const streamEnd = directory.streamStart + totalCompressedSize;
   if (streamEnd > bytes.byteLength) return null;
 
-  const stream = decompress(bytes.subarray(directory.streamStart, streamEnd), directory.totalUncompressedLength);
+  const stream = decompress(
+    bytes.subarray(directory.streamStart, streamEnd),
+    directory.totalUncompressedLength,
+    CompressionFraming.Raw,
+  );
   if (stream === null || stream.byteLength < directory.totalUncompressedLength) return null;
 
   // Tables sit end to end in the decompressed stream, in directory order, each occupying its transformed

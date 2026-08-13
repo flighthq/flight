@@ -1,4 +1,5 @@
 import { inflateDeflate } from '@flighthq/compression/contract';
+import { CompressionFraming } from '@flighthq/types/contract';
 
 export interface SwfCapabilityProbe {
   capabilities: string[];
@@ -439,7 +440,7 @@ function uncompressSwf(source: Readonly<Uint8Array<ArrayBufferLike>>): Uint8Arra
   if (declaredLength < 12) return null;
   if (source[0] === 0x46) return source.length >= declaredLength ? source.subarray(0, declaredLength) : null;
   if (source[0] !== 0x43) return null;
-  const body = inflateDeflate(source.subarray(8), declaredLength - 8);
+  const body = inflateDeflate(source.subarray(8), declaredLength - 8, CompressionFraming.Rfc1950);
   if (body === null || body.length < declaredLength - 8) return null;
   const bytes = new Uint8Array(declaredLength);
   bytes.set(source.subarray(0, 8));

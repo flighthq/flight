@@ -17,6 +17,7 @@ import { join } from 'node:path';
 
 import { inflateDeflate, registerDeflateDecompressor } from '@flighthq/compression/contract';
 import { createScene2DFromSwf } from '@flighthq/swf/contract';
+import { CompressionFraming } from '@flighthq/types/contract';
 
 const DEFINE_SPRITE = 39;
 const END = 0;
@@ -30,7 +31,7 @@ function uncompressContainer(source: Uint8Array): Uint8Array | null {
   if (source[0] === FWS) return source;
   if (source[0] !== CWS) return null;
   const length = source[4] | (source[5] << 8) | (source[6] << 16) | (source[7] << 24);
-  const body = inflateDeflate(source.subarray(8), length - 8);
+  const body = inflateDeflate(source.subarray(8), length - 8, CompressionFraming.Rfc1950);
   if (body === null) return null;
   const out = new Uint8Array(length);
   out.set(source.subarray(0, 8));

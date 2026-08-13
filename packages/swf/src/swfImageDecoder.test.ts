@@ -49,5 +49,25 @@ function losslessPayload(format: number, width: number, height: number, pixels: 
 
 function stored(bytes: readonly number[]): number[] {
   const length = bytes.length;
-  return [0x78, 0x01, 0x01, length & 0xff, length >> 8, ~length & 0xff, (~length >> 8) & 0xff, ...bytes, 0, 0, 0, 0];
+  let first = 1;
+  let second = 0;
+  for (const byte of bytes) {
+    first = (first + byte) % 65_521;
+    second = (second + first) % 65_521;
+  }
+  const adler = ((second << 16) | first) >>> 0;
+  return [
+    0x78,
+    0x01,
+    0x01,
+    length & 0xff,
+    length >> 8,
+    ~length & 0xff,
+    (~length >> 8) & 0xff,
+    ...bytes,
+    adler >>> 24,
+    (adler >>> 16) & 0xff,
+    (adler >>> 8) & 0xff,
+    adler & 0xff,
+  ];
 }
