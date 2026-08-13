@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import type { Plugin } from 'vitest/config';
 import { createVitest } from 'vitest/node';
 
-import { applyMutantText, WORKER_PROTOCOL_PREFIX } from './unchecked-core';
+import { applyMutantText, readMutantRunResult, WORKER_PROTOCOL_PREFIX } from './unchecked-core';
 import type { MutantRequest, MutantResponse } from './unchecked-core';
 
 // A long-lived vitest server that runs mutants for a whole package, replacing the spawn-per-mutant loop.
@@ -81,21 +81,22 @@ async function main(): Promise<void> {
     // Empty targets mean the package's own include glob — the escalation tier.
     const targets = request.targets.length > 0 ? [...request.targets] : undefined;
     const scope = targets?.join('|') ?? '<package>';
-    const known = specificationsByScope.get(scope);
-    if (known === undefined) {
-      const globbed = await vitest.globTestSpecifications(targets);
+    let specifications = specificationsByScope.get(scope);
+    if (specifications === undefined) {
+      specifications = await vitest.globTestSpecifications(targets);
       // Zero specifications is the repo's evidence invariant: a run with no test files would pass, and every
       // mutant would then "survive" a suite that never existed. Refuse instead of reporting that.
-      if (globbed.length === 0) throw new Error(`No test file matched ${scope}.`);
-      specificationsByScope.set(scope, globbed);
-      await vitest.runTestSpecifications(globbed, true);
-    } else await vitest.rerunTestSpecifications(known, true);
+      if (specifications.length === 0) throw new Error(`No test file matched ${scope}.`);
+      specificationsByScope.set(scope, specifications);
+      await vitest.runTestSpecifications(specifications, true);
+    } else await vitest.rerunTestSpecifications(specifications, true);
 
-    const files = vitest.state.getFiles();
-    // No file having run at all is not a pass. A rerun that matched nothing would otherwise report every
-    // mutant as surviving a suite that never executed.
-    const passed = files.length > 0 && !files.some((file) => file.result?.state === 'fail');
-    respond({ applied, id: request.id, passed });
+    // Keyed by the specifications THIS request ran, never the bare `getFiles()` — see `readMutantRunResult`,
+    // which owns the rule and the reason. An unfiltered read here reported mutants as killed by failures
+    // left in the server by an earlier, unrelated run.
+    const paths = specifications.map((specification) => specification.moduleId);
+    const result = readMutantRunResult(paths, vitest.state.getFiles(paths));
+    respond({ applied: applied && result.measured, id: request.id, passed: result.passed });
   }
 
   await vitest.close();
