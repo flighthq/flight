@@ -126,6 +126,25 @@ describe('copyWgpuRenderStateRegistrations', () => {
 });
 
 describe('createWgpuOffscreenRenderState', () => {
+  it('resolves late screen blend-mode wiring until locally overridden', async () => {
+    const screen = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(screen);
+    const screenHook = vi.fn();
+    const laterScreenHook = vi.fn();
+    const offscreenHook = vi.fn();
+
+    expect(offscreen.applyBlendMode).toBeNull();
+    screen.applyBlendMode = screenHook;
+    expect(offscreen.applyBlendMode).toBe(screenHook);
+
+    offscreen.applyBlendMode = offscreenHook;
+    screen.applyBlendMode = laterScreenHook;
+    expect(offscreen.applyBlendMode).toBe(offscreenHook);
+
+    copyWgpuRenderStateRegistrations(offscreen, screen);
+    expect(offscreen.applyBlendMode).toBe(laterScreenHook);
+  });
+
   it('shares device resources while snapshotting independent registration policy', async () => {
     const screen = await createWgpuRenderStateForTest();
     const renderer = { createData: () => null, submit: vi.fn() };
