@@ -4616,7 +4616,57 @@
       "label": "Svg",
       "scenes": [
         {
+          "scene": "svg-clip-path",
+          "backends": {
+            "canvas": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
           "scene": "svg-import",
+          "backends": {
+            "canvas": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": true
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
+          "scene": "svg-transform",
           "backends": {
             "canvas": {
               "status": "realized",
