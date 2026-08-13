@@ -89,6 +89,10 @@ export function applyNodeOrderList<Traits extends object = NodeTraits>(
   });
 
   let moved = false;
+  // `members` and `slots` have exactly the same length: every append and every reset above changes them
+  // as a pair. The equality check consequently makes a trailing iteration inert too — both lookups are
+  // `undefined` and it continues without writing. If those paired writes ever diverge, re-examine this
+  // loop boundary rather than relying on that equivalence.
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
     if (children[slot] === members[i]) continue;
@@ -289,6 +293,9 @@ function insertNodeOrderListEntryBeside<Traits extends object>(
   const sortKey = list.sortKeys[targetIndex];
   const at = targetIndex + offset;
   addNodeOrderListEntry(list, node, sortKey);
+  // The assignments after this loop author `at` without reading it, so an additional iteration at
+  // `i === at` would only copy into a slot that is immediately overwritten. If those final assignments
+  // move, become conditional, or gain an intervening read, re-examine the strict loop boundary.
   for (let i = list.entryCount - 1; i > at; i--) {
     list.nodes[i] = list.nodes[i - 1];
     list.sortKeys[i] = list.sortKeys[i - 1];
