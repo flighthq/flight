@@ -27,7 +27,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const INK = 0x44ffee; // bright cyan text + strike, far from the black background
+const INK = 0x44ffeeff; // bright cyan text + strike, far from the black background
 const FIELD_X = 120;
 const FIELD_Y = 240;
 const FIELD_W = 560;

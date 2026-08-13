@@ -30,7 +30,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const TEXT_COLOR = 0xffffff; // white — maximize contrast for ink detection
+const TEXT_COLOR = 0xffffffff; // white — maximize contrast for ink detection
 const FONT_SIZE = 72; // large and tall, so the top↔bottom slant offset is several pixels
 
 const FIELD_X = 80;

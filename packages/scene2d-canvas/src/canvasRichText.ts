@@ -1,4 +1,5 @@
 ﻿import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -121,7 +122,7 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
     if (group.lineIndex < firstVisibleLine) continue;
 
     context.font = computeTextFormatFontString(group.format);
-    context.fillStyle = computeRgbHexString(group.format.color ?? data.textColor);
+    context.fillStyle = computeRgbaCssString(group.format.color ?? data.textColor);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX - scrollXOffset;
     const y = group.offsetY + group.ascent - scrollYOffset;
@@ -134,7 +135,7 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
 
     context.fillText(slice, x, y);
 
-    const lineColor = computeRgbHexString(group.format.color ?? data.textColor);
+    const lineColor = computeRgbaCssString(group.format.color ?? data.textColor);
     const lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
     if (group.format.underline || group.format.strikethrough) {
       context.strokeStyle = lineColor;

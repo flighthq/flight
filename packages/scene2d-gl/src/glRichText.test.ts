@@ -92,7 +92,7 @@ describe('drawGlRichText', () => {
     node.data.text = 'BoldGreen';
     node.data.textFormatRanges = [
       { start: 0, end: 4, format: { bold: true } },
-      { start: 4, end: 9, format: { color: 0x00ff00 } },
+      { start: 4, end: 9, format: { color: 0x00ff00ff } },
     ];
     drawGlRichText(state, renderProxy);
     expect(gl.drawElements).toHaveBeenCalled();

@@ -1,3 +1,4 @@
+import { packColor } from '@flighthq/color/contract';
 import { parseTextMarkup } from '@flighthq/text-markup/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type { RichText, TextFormat, TextFormatAlign } from '@flighthq/types/contract';
@@ -34,12 +35,12 @@ export function readSwfEditTextFactory(
     const red = reader.readUint8();
     const green = reader.readUint8();
     const blue = reader.readUint8();
-    reader.readUint8();
-    color = red * 0x10000 + green * 0x100 + blue;
+    const alpha = reader.readUint8();
+    color = packColor(red / 0xff, green / 0xff, blue / 0xff, alpha / 0xff);
     hasColor = true;
   }
 
-  const maxChars = (flags & EDIT_TEXT_HAS_MAX_LENGTH) !== 0 ? reader.readUint16() : 0;
+  const maxChars = (flags & EDIT_TEXT_HAS_MAX_LENGTH) !== 0 ? reader.readUint16() : -1;
 
   let align: TextFormatAlign = 'left';
   let leftMargin = 0;
@@ -114,7 +115,7 @@ function createSwfEditTextNode(field: Readonly<SwfEditTextField>, fontName: stri
   node.data.selectable = field.selectable && !field.readOnly;
   node.data.text = content === null ? field.text : content.text;
   if (content !== null) node.data.textFormatRanges = content.formatRanges;
-  node.data.textColor = field.color;
+  if (field.hasColor) node.data.textColor = field.color;
   node.data.textFormat = format;
   node.data.width = field.width;
   node.data.wordWrap = field.wordWrap;

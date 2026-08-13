@@ -42,6 +42,34 @@ describe('readSwfEditTextFactory', () => {
     expect(field.data.wordWrap).toBe(true);
     expect(field.data.border).toBe(true);
     expect(field.data.selectable).toBe(false);
+    expect(field.data.maxChars).toBe(-1);
+  });
+
+  it('preserves an authored maximum character count', () => {
+    const field = build({ maxChars: 12, text: 'limited' })(() => '');
+
+    expect(field.data.maxChars).toBe(12);
+  });
+
+  it('preserves the authored RGBA text color', () => {
+    const field = build({ color: 0x11223344, text: 'Color' })(() => '');
+
+    expect(field.data.defaultTextFormat.color).toBe(0x11223344);
+    expect(field.data.textColor).toBe(0x11223344);
+  });
+
+  it('preserves an authored zero alpha instead of making it opaque', () => {
+    const field = build({ color: 0x11223300, text: 'Transparent' })(() => '');
+
+    expect(field.data.defaultTextFormat.color).toBe(0x11223300);
+    expect(field.data.textColor).toBe(0x11223300);
+  });
+
+  it('uses the opaque black field default when the tag omits text color', () => {
+    const field = build({ color: null, text: 'Default' })(() => '');
+
+    expect(field.data.defaultTextFormat.color).toBeUndefined();
+    expect(field.data.textColor).toBe(0x000000ff);
   });
 
   it('parses the markup of a field flagged as html into text and format ranges', () => {
@@ -70,12 +98,14 @@ describe('readSwfEditTextFactory', () => {
 
 interface FieldOptions {
   border?: boolean;
+  color?: number | null;
   fontHeight?: number;
   fontId?: number;
   html?: boolean;
   indent?: number;
   leading?: number;
   leftMargin?: number;
+  maxChars?: number;
   multiline?: boolean;
   noSelect?: boolean;
   rightMargin?: number;
@@ -102,7 +132,13 @@ function bytesFor(options: Readonly<FieldOptions>): Uint8Array {
     u8(0);
   };
 
-  const flags = 0x80 | 0x04 | 0x01 | (options.wordWrap === true ? 0x40 : 0) | (options.multiline === true ? 0x20 : 0);
+  const flags =
+    0x80 |
+    0x01 |
+    (options.color === null ? 0 : 0x04) |
+    (options.wordWrap === true ? 0x40 : 0) |
+    (options.multiline === true ? 0x20 : 0) |
+    (options.maxChars === undefined ? 0 : 0x02);
   const layoutFlags =
     0x20 |
     (options.border === true ? 0x08 : 0) |
@@ -112,10 +148,14 @@ function bytesFor(options: Readonly<FieldOptions>): Uint8Array {
   u8(layoutFlags);
   u16(options.fontId ?? 1);
   u16(options.fontHeight ?? 200);
-  u8(0x11);
-  u8(0x22);
-  u8(0x33);
-  u8(0xff);
+  if (options.color !== null) {
+    const color = options.color ?? 0x112233ff;
+    u8(color >>> 24);
+    u8(color >>> 16);
+    u8(color >>> 8);
+    u8(color);
+  }
+  if (options.maxChars !== undefined) u16(options.maxChars);
   u8(0); // align: left
   u16(options.leftMargin ?? 0);
   u16(options.rightMargin ?? 0);

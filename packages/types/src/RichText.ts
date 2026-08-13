@@ -22,6 +22,7 @@ export interface RichTextData extends TextLabelData {
   scrollV: number;
   selectable: boolean;
   text: string;
+  // Field color as Flight's packed sRGB RGBA integer (`0xRRGGBBAA`); alpha is linear coverage.
   textColor: number;
   textFormatRanges: TextFormatRange[];
   width: number;

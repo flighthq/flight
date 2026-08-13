@@ -116,7 +116,7 @@ for (const def of platformDefs) {
 
 const titleLabel = createTextLabel();
 titleLabel.data.text = 'PLATFORMER';
-titleLabel.data.textFormat = { color: 0xffffff, size: 48, font: 'Arial', bold: true, align: 'center' };
+titleLabel.data.textFormat = { color: 0xffffffff, size: 48, font: 'Arial', bold: true, align: 'center' };
 titleLabel.data.width = CANVAS_WIDTH;
 titleLabel.data.height = 100;
 titleLabel.y = 150;
@@ -126,7 +126,7 @@ addNodeChild(uiContainer, titleLabel);
 
 const subtitleLabel = createTextLabel();
 subtitleLabel.data.text = 'Click to Play';
-subtitleLabel.data.textFormat = { color: 0xdddddd, size: 24, font: 'Arial', align: 'center' };
+subtitleLabel.data.textFormat = { color: 0xddddddff, size: 24, font: 'Arial', align: 'center' };
 subtitleLabel.data.width = CANVAS_WIDTH;
 subtitleLabel.data.height = 60;
 subtitleLabel.y = 260;
@@ -136,7 +136,7 @@ addNodeChild(uiContainer, subtitleLabel);
 
 const gameOverLabel = createTextLabel();
 gameOverLabel.data.text = 'Game Over - Click to Restart';
-gameOverLabel.data.textFormat = { color: 0xff4444, size: 32, font: 'Arial', bold: true, align: 'center' };
+gameOverLabel.data.textFormat = { color: 0xff4444ff, size: 32, font: 'Arial', bold: true, align: 'center' };
 gameOverLabel.data.width = CANVAS_WIDTH;
 gameOverLabel.data.height = 80;
 gameOverLabel.y = 200;

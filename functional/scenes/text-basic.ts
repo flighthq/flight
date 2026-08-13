@@ -15,7 +15,7 @@ const WIDTH = 800;
 const HEIGHT = 600;
 
 // Bright amber text on black. The field box is placed at a known location; the string is short so it fits.
-const TEXT_COLOR = 0xffcc00;
+const TEXT_COLOR = 0xffcc00ff;
 const FIELD_X = 120;
 const FIELD_Y = 180;
 const FIELD_W = 420;

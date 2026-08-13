@@ -19,7 +19,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const TEXT_COLOR = 0x66ff66; // bright green
+const TEXT_COLOR = 0x66ff66ff; // bright green
 const TEXT = 'FLIGHT'; // short, so it occupies far less than the field width — alignment is visible
 const FONT_SIZE = 64;
 

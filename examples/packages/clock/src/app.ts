@@ -133,28 +133,28 @@ function updateLabel(label: Node2D, text: string): void {
   invalidateNodeAppearance(label);
 }
 
-const titleLabel = createLabel('Hierarchical Clocks', 20, 10, 24, 0xffffff);
+const titleLabel = createLabel('Hierarchical Clocks', 20, 10, 24, 0xffffffff);
 addNodeChild(root, titleLabel);
 
 // Root clock labels.
-const rootNameLabel = createLabel('Root Clock', ROOT_X - 40, ROOT_Y - 55, 14, 0xaaaaaa);
+const rootNameLabel = createLabel('Root Clock', ROOT_X - 40, ROOT_Y - 55, 14, 0xaaaaaaff);
 addNodeChild(root, rootNameLabel);
 
-const rootInfoLabel = createLabel('', ROOT_X - 80, ROOT_Y + 40, 12, 0x8888aa);
+const rootInfoLabel = createLabel('', ROOT_X - 80, ROOT_Y + 40, 12, 0x8888aaff);
 addNodeChild(root, rootInfoLabel);
 
 // Child A labels.
-const childANameLabel = createLabel('Child A (1x)', CHILD_A_X - 45, CHILD_A_Y - 55, 14, 0xaaaaaa);
+const childANameLabel = createLabel('Child A (1x)', CHILD_A_X - 45, CHILD_A_Y - 55, 14, 0xaaaaaaff);
 addNodeChild(root, childANameLabel);
 
-const childAInfoLabel = createLabel('', CHILD_A_X - 80, CHILD_A_Y + 45, 12, 0x88aa88);
+const childAInfoLabel = createLabel('', CHILD_A_X - 80, CHILD_A_Y + 45, 12, 0x88aa88ff);
 addNodeChild(root, childAInfoLabel);
 
 // Child B labels.
-const childBNameLabel = createLabel('Child B (0.5x)', CHILD_B_X - 50, CHILD_B_Y - 55, 14, 0xaaaaaa);
+const childBNameLabel = createLabel('Child B (0.5x)', CHILD_B_X - 50, CHILD_B_Y - 55, 14, 0xaaaaaaff);
 addNodeChild(root, childBNameLabel);
 
-const childBInfoLabel = createLabel('', CHILD_B_X - 80, CHILD_B_Y + 45, 12, 0xaa8844);
+const childBInfoLabel = createLabel('', CHILD_B_X - 80, CHILD_B_Y + 45, 12, 0xaa8844ff);
 addNodeChild(root, childBInfoLabel);
 
 // Controls label.
@@ -163,20 +163,20 @@ const controlsLabel = createLabel(
   20,
   470,
   13,
-  0x888888,
+  0x888888ff,
 );
 addNodeChild(root, controlsLabel);
 
 // Paused overlay indicators (shown when a clock is paused).
-const rootPausedLabel = createLabel('PAUSED', ROOT_X - 25, ROOT_Y - 8, 14, 0xff4444);
+const rootPausedLabel = createLabel('PAUSED', ROOT_X - 25, ROOT_Y - 8, 14, 0xff4444ff);
 rootPausedLabel.visible = false;
 addNodeChild(root, rootPausedLabel);
 
-const childAPausedLabel = createLabel('PAUSED', CHILD_A_X - 25, CHILD_A_Y - 8, 14, 0xff4444);
+const childAPausedLabel = createLabel('PAUSED', CHILD_A_X - 25, CHILD_A_Y - 8, 14, 0xff4444ff);
 childAPausedLabel.visible = false;
 addNodeChild(root, childAPausedLabel);
 
-const childBPausedLabel = createLabel('PAUSED', CHILD_B_X - 25, CHILD_B_Y - 8, 14, 0xff4444);
+const childBPausedLabel = createLabel('PAUSED', CHILD_B_X - 25, CHILD_B_Y - 8, 14, 0xff4444ff);
 childBPausedLabel.visible = false;
 addNodeChild(root, childBPausedLabel);
 

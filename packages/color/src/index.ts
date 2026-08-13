@@ -5,6 +5,7 @@ export {
   clampLinearRgb,
   colorFromKelvin,
   computeRgbHexString,
+  computeRgbaCssString,
   getColorAlpha,
   getColorContrastRatio,
   getColorLuminance,

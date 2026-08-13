@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { createEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
@@ -83,7 +83,7 @@ export function drawDomTextLabel(state: DomRenderState, renderProxy: RenderProxy
     const y = group.offsetY;
 
     let style = `position:absolute;left:${x}px;top:${y}px;font:${computeTextFormatFontString(fmt)};`;
-    style += `color:${computeRgbHexString(fmt.color ?? 0)};white-space:nowrap;`;
+    style += `color:${computeRgbaCssString(fmt.color ?? 0x000000ff)};white-space:nowrap;`;
     if (fmt.underline) style += 'text-decoration:underline;';
 
     html += `<div style="${style}">${slice}</div>`;

@@ -20,42 +20,42 @@ const headingBasics = createTextLabel();
 headingBasics.x = 30;
 headingBasics.y = 20;
 headingBasics.data.text = 'TextLabel Basics';
-headingBasics.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222 };
+headingBasics.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222ff };
 addNodeChild(root, headingBasics);
 
 const labelSansSerif = createTextLabel();
 labelSansSerif.x = 30;
 labelSansSerif.y = 48;
 labelSansSerif.data.text = 'Sans-serif 16px';
-labelSansSerif.data.textFormat = { font: 'sans-serif', size: 16, color: 0x333333 };
+labelSansSerif.data.textFormat = { font: 'sans-serif', size: 16, color: 0x333333ff };
 addNodeChild(root, labelSansSerif);
 
 const labelSerif = createTextLabel();
 labelSerif.x = 200;
 labelSerif.y = 48;
 labelSerif.data.text = 'Serif 16px';
-labelSerif.data.textFormat = { font: 'serif', size: 16, color: 0x333333 };
+labelSerif.data.textFormat = { font: 'serif', size: 16, color: 0x333333ff };
 addNodeChild(root, labelSerif);
 
 const labelMono = createTextLabel();
 labelMono.x = 340;
 labelMono.y = 48;
 labelMono.data.text = 'Monospace 16px';
-labelMono.data.textFormat = { font: 'monospace', size: 16, color: 0x333333 };
+labelMono.data.textFormat = { font: 'monospace', size: 16, color: 0x333333ff };
 addNodeChild(root, labelMono);
 
 const labelLarge = createTextLabel();
 labelLarge.x = 540;
 labelLarge.y = 40;
 labelLarge.data.text = 'Large 28px';
-labelLarge.data.textFormat = { font: 'sans-serif', size: 28, color: 0x1a6b3c };
+labelLarge.data.textFormat = { font: 'sans-serif', size: 28, color: 0x1a6b3cff };
 addNodeChild(root, labelLarge);
 
 const labelSmall = createTextLabel();
 labelSmall.x = 30;
 labelSmall.y = 74;
 labelSmall.data.text = 'Small 12px in a different color';
-labelSmall.data.textFormat = { font: 'sans-serif', size: 12, color: 0x7a0026 };
+labelSmall.data.textFormat = { font: 'sans-serif', size: 12, color: 0x7a0026ff };
 addNodeChild(root, labelSmall);
 
 // Section 2: Text alignment — left, center, right aligned text labels.
@@ -64,7 +64,7 @@ const headingAlignment = createTextLabel();
 headingAlignment.x = 30;
 headingAlignment.y = 110;
 headingAlignment.data.text = 'Text Alignment';
-headingAlignment.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222 };
+headingAlignment.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222ff };
 addNodeChild(root, headingAlignment);
 
 const alignLeft = createRichText();
@@ -73,7 +73,7 @@ alignLeft.y = 138;
 alignLeft.data.width = 220;
 alignLeft.data.height = 24;
 alignLeft.data.text = 'Left aligned (default)';
-alignLeft.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444, align: 'left' };
+alignLeft.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444ff, align: 'left' };
 alignLeft.data.border = true;
 alignLeft.data.borderColor = 0xcccccc;
 addNodeChild(root, alignLeft);
@@ -84,7 +84,7 @@ alignCenter.y = 138;
 alignCenter.data.width = 220;
 alignCenter.data.height = 24;
 alignCenter.data.text = 'Center aligned';
-alignCenter.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444, align: 'center' };
+alignCenter.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444ff, align: 'center' };
 alignCenter.data.border = true;
 alignCenter.data.borderColor = 0xcccccc;
 addNodeChild(root, alignCenter);
@@ -95,7 +95,7 @@ alignRight.y = 138;
 alignRight.data.width = 220;
 alignRight.data.height = 24;
 alignRight.data.text = 'Right aligned';
-alignRight.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444, align: 'right' };
+alignRight.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444ff, align: 'right' };
 alignRight.data.border = true;
 alignRight.data.borderColor = 0xcccccc;
 addNodeChild(root, alignRight);
@@ -106,7 +106,7 @@ const headingWrapping = createTextLabel();
 headingWrapping.x = 30;
 headingWrapping.y = 185;
 headingWrapping.data.text = 'Word Wrapping';
-headingWrapping.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222 };
+headingWrapping.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222ff };
 addNodeChild(root, headingWrapping);
 
 const wrappedText = createRichText();
@@ -120,7 +120,7 @@ wrappedText.data.text =
   'It spans a scene graph, four interchangeable renderers, ' +
   'offscreen image processing, and a full application layer. ' +
   'This paragraph demonstrates word wrapping within a fixed width.';
-wrappedText.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444, leading: 4 };
+wrappedText.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x444444ff, leading: 4 };
 addNodeChild(root, wrappedText);
 
 const wrappedSerif = createRichText();
@@ -133,7 +133,7 @@ wrappedSerif.data.text =
   'The same paragraph rendered in serif at a slightly larger size. ' +
   'Each renderable node type is identified by a Kind string, and ' +
   'concrete renderers are registered explicitly by the caller.';
-wrappedSerif.data.defaultTextFormat = { font: 'serif', size: 15, color: 0x555555, leading: 4 };
+wrappedSerif.data.defaultTextFormat = { font: 'serif', size: 15, color: 0x555555ff, leading: 4 };
 addNodeChild(root, wrappedSerif);
 
 // Section 4: Styled text parsed from the supported markup format.
@@ -142,7 +142,7 @@ const headingStyles = createTextLabel();
 headingStyles.x = 30;
 headingStyles.y = 345;
 headingStyles.data.text = 'Text Styles';
-headingStyles.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222 };
+headingStyles.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222ff };
 addNodeChild(root, headingStyles);
 
 const markupStyles = createRichText();
@@ -150,7 +150,7 @@ markupStyles.x = 30;
 markupStyles.y = 373;
 markupStyles.data.width = 700;
 markupStyles.data.height = 26;
-markupStyles.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0x333333 };
+markupStyles.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0x333333ff };
 setRichTextContent(
   markupStyles,
   parseTextMarkup(
@@ -163,21 +163,21 @@ const styleLetterSpacing = createTextLabel();
 styleLetterSpacing.x = 30;
 styleLetterSpacing.y = 400;
 styleLetterSpacing.data.text = 'Letter spacing: 4';
-styleLetterSpacing.data.textFormat = { font: 'sans-serif', size: 14, letterSpacing: 4, color: 0x666666 };
+styleLetterSpacing.data.textFormat = { font: 'sans-serif', size: 14, letterSpacing: 4, color: 0x666666ff };
 addNodeChild(root, styleLetterSpacing);
 
 const styleSerifBold = createTextLabel();
 styleSerifBold.x = 280;
 styleSerifBold.y = 400;
 styleSerifBold.data.text = 'Serif bold italic';
-styleSerifBold.data.textFormat = { font: 'serif', size: 16, bold: true, italic: true, color: 0x8b4513 };
+styleSerifBold.data.textFormat = { font: 'serif', size: 16, bold: true, italic: true, color: 0x8b4513ff };
 addNodeChild(root, styleSerifBold);
 
 const styleMonoBold = createTextLabel();
 styleMonoBold.x = 500;
 styleMonoBold.y = 400;
 styleMonoBold.data.text = 'Mono bold';
-styleMonoBold.data.textFormat = { font: 'monospace', size: 14, bold: true, color: 0x2a6e3f };
+styleMonoBold.data.textFormat = { font: 'monospace', size: 14, bold: true, color: 0x2a6e3fff };
 addNodeChild(root, styleMonoBold);
 
 // Section 5: Text with background and border — RichText with background and border colors.
@@ -186,7 +186,7 @@ const headingBackgrounds = createTextLabel();
 headingBackgrounds.x = 30;
 headingBackgrounds.y = 440;
 headingBackgrounds.data.text = 'Background & Border';
-headingBackgrounds.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222 };
+headingBackgrounds.data.textFormat = { font: 'sans-serif', size: 18, bold: true, color: 0x222222ff };
 addNodeChild(root, headingBackgrounds);
 
 const bgLight = createRichText();
@@ -195,7 +195,7 @@ bgLight.y = 468;
 bgLight.data.width = 220;
 bgLight.data.height = 30;
 bgLight.data.text = 'Light background';
-bgLight.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x333333 };
+bgLight.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0x333333ff };
 bgLight.data.background = true;
 bgLight.data.backgroundColor = 0xf0f0f0;
 bgLight.data.border = true;
@@ -208,7 +208,7 @@ bgColored.y = 468;
 bgColored.data.width = 220;
 bgColored.data.height = 30;
 bgColored.data.text = 'Colored background';
-bgColored.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0xffffff };
+bgColored.data.defaultTextFormat = { font: 'sans-serif', size: 14, color: 0xffffffff };
 bgColored.data.background = true;
 bgColored.data.backgroundColor = 0x336699;
 bgColored.data.border = true;
@@ -221,7 +221,7 @@ bgWarning.y = 468;
 bgWarning.data.width = 220;
 bgWarning.data.height = 30;
 bgWarning.data.text = 'Warning style';
-bgWarning.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x856404 };
+bgWarning.data.defaultTextFormat = { font: 'sans-serif', size: 14, bold: true, color: 0x856404ff };
 bgWarning.data.background = true;
 bgWarning.data.backgroundColor = 0xfff3cd;
 bgWarning.data.border = true;
@@ -238,7 +238,7 @@ bgMultiline.data.text =
   'A multiline RichText with background and border. ' +
   'Word wrapping is enabled so the text flows within the specified width, ' +
   'and the background and border wrap the content area.';
-bgMultiline.data.defaultTextFormat = { font: 'sans-serif', size: 13, color: 0x333333, leading: 3 };
+bgMultiline.data.defaultTextFormat = { font: 'sans-serif', size: 13, color: 0x333333ff, leading: 3 };
 bgMultiline.data.background = true;
 bgMultiline.data.backgroundColor = 0xeef6ff;
 bgMultiline.data.border = true;
@@ -253,7 +253,7 @@ bgCode.data.wordWrap = true;
 bgCode.data.multiline = true;
 bgCode.data.text =
   "const label = createTextLabel();\nlabel.data.text = 'Hello Flight';\nlabel.data.textFormat = { font: 'monospace' };";
-bgCode.data.defaultTextFormat = { font: 'monospace', size: 13, color: 0xd4d4d4 };
+bgCode.data.defaultTextFormat = { font: 'monospace', size: 13, color: 0xd4d4d4ff };
 bgCode.data.background = true;
 bgCode.data.backgroundColor = 0x1e1e1e;
 bgCode.data.border = true;

@@ -15,6 +15,7 @@
     { "path": "../audio" },
     { "path": "../bitmap" },
     { "path": "../clip" },
+    { "path": "../color" },
     { "path": "../compression" },
     { "path": "../effects" },
     { "path": "../font" },

@@ -61,7 +61,7 @@ function configureField(field: RichText, y: number, placeholder: string): void {
   field.data.border = true;
   field.data.borderColor = 0x999999;
   field.data.text = placeholder;
-  field.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0x222222 };
+  field.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0x222222ff };
 }
 
 configureField(normalField, START_Y + 22, '');
@@ -86,7 +86,7 @@ function createFieldLabel(text: string, y: number): ReturnType<typeof createText
   label.x = LABEL_X;
   label.y = y;
   label.data.text = text;
-  label.data.textFormat = { font: 'sans-serif', size: 14, color: 0x444444 };
+  label.data.textFormat = { font: 'sans-serif', size: 14, color: 0x444444ff };
   invalidateNodeLocalTransform(label);
   return label;
 }
@@ -102,14 +102,14 @@ const focusHighlight = createShape();
 const hudText = createTextLabel();
 hudText.x = 30;
 hudText.y = START_Y + FIELD_GAP * 3 + 10;
-hudText.data.textFormat = { font: 'monospace', size: 13, color: 0x333333 };
+hudText.data.textFormat = { font: 'monospace', size: 13, color: 0x333333ff };
 invalidateNodeLocalTransform(hudText);
 
 // Instructions label.
 const instructionsText = createTextLabel();
 instructionsText.x = 30;
 instructionsText.y = START_Y + FIELD_GAP * 3 + 110;
-instructionsText.data.textFormat = { font: 'sans-serif', size: 12, color: 0x666666 };
+instructionsText.data.textFormat = { font: 'sans-serif', size: 12, color: 0x666666ff };
 instructionsText.data.text =
   'Click a field to focus. Type to enter text.\n' +
   'Arrow keys: move caret | Shift+Arrow: select\n' +

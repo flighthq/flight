@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { createImageResource, invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
@@ -144,7 +144,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
     for (const group of result.groups) {
       ctx.font = computeTextFormatFontString(group.format);
-      ctx.fillStyle = computeRgbHexString(group.format.color ?? 0);
+      ctx.fillStyle = computeRgbaCssString(group.format.color ?? 0x000000ff);
       const slice = text.substring(group.startIndex, group.endIndex);
       ctx.fillText(slice, group.offsetX, group.offsetY + group.ascent * 0.815);
     }

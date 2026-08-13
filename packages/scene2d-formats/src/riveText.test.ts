@@ -132,6 +132,7 @@ describe('createRiveRichText', () => {
     );
 
     expect(label.data.textFormat?.color).toBe(packColor(0x33 / 255, 0x66 / 255, 0xcc / 255, 1));
+    expect(label.data.textColor).toBe(0x3366ccff);
   });
 
   it('ignores a colour belonging to a different style', () => {

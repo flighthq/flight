@@ -24,14 +24,14 @@ beforeAll(async () => {
     const actual = (await importOriginal()) as Record<string, unknown>;
     return {
       ...actual,
-      computeTextLayout: vi.fn((result: { groups: object[] }) => {
+      computeTextLayout: vi.fn((result: { groups: object[] }, params: { formatRanges: Array<{ format: object }> }) => {
         result.groups.push({
           offsetX: 0,
           offsetY: 0,
           width: 50,
           ascent: 12,
           descent: 4,
-          format: {},
+          format: params.formatRanges[0]?.format ?? {},
           startIndex: 0,
           endIndex: 5,
         });
@@ -104,6 +104,22 @@ describe('drawWgpuTextLabel', () => {
     registerWgpuStandardMaterial(state);
     drawWgpuTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
+    submitWgpuRenderPass(state);
+  });
+
+  it('rasterizes packed run alpha into the canvas color', async () => {
+    const state = await createWgpuRenderStateForTest();
+    renderWgpuBackground(state);
+    registerWgpuStandardMaterial(state);
+    const data = makeTextData();
+    const proxy = makeTextProxy('hello', data);
+    (proxy.source as ReturnType<typeof createTextLabel>).data.textFormat = { color: 0xff000080 };
+    const styles: Array<string | CanvasGradient | CanvasPattern> = [];
+    vi.spyOn(data.ctx, 'fillText').mockImplementation(() => styles.push(data.ctx.fillStyle));
+
+    drawWgpuTextLabel(state, proxy);
+
+    expect(styles).toEqual(['rgba(255, 0, 0, 0.5019607843137255)']);
     submitWgpuRenderPass(state);
   });
 

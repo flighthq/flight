@@ -106,7 +106,7 @@ describe('drawDomRichText', () => {
     node.data.text = 'BoldGreen';
     node.data.textFormatRanges = [
       { start: 0, end: 4, format: { bold: true } },
-      { start: 4, end: 9, format: { color: 0x00ff00 } },
+      { start: 4, end: 9, format: { color: 0x00ff00ff } },
     ];
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
@@ -114,7 +114,19 @@ describe('drawDomRichText', () => {
     expect(div.innerHTML).toContain('Bold');
     expect(div.innerHTML).toContain('Green');
     expect(div.innerHTML).toContain('bold');
-    expect(div.innerHTML).toContain('#00ff00');
+    expect(div.innerHTML).toContain('rgba(0,255,0,1)');
+  });
+
+  it('emits packed run alpha in the CSS color', () => {
+    const state = makeState();
+    const node = createRichText();
+    node.data.text = 'alpha';
+    node.data.textFormatRanges = [{ start: 0, end: 5, format: { color: 0x00ff0080 } }];
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+
+    const div = drawGetEl(state, () => drawDomRichText(state, renderProxy))!;
+
+    expect(div.innerHTML).toContain('rgba(0,255,0,0.5019607843137255)');
   });
 
   it('renders an uninterrupted underline like the raster text backends', () => {

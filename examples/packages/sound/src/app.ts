@@ -372,7 +372,7 @@ drawPanSliders();
 // Labels.
 const titleLabel = createTextLabel();
 titleLabel.data.text = 'Sound Example - Procedural Audio & Mixer';
-titleLabel.data.textFormat = { size: 18, color: 0xcccccc };
+titleLabel.data.textFormat = { size: 18, color: 0xccccccff };
 titleLabel.x = 60;
 titleLabel.y = 30;
 invalidateNodeLocalTransform(titleLabel);
@@ -380,7 +380,7 @@ addNodeChild(root, titleLabel);
 
 const instructionLabel = createTextLabel();
 instructionLabel.data.text = 'Click the buttons to play procedurally generated tones.';
-instructionLabel.data.textFormat = { size: 13, color: 0x888888 };
+instructionLabel.data.textFormat = { size: 13, color: 0x888888ff };
 instructionLabel.x = 60;
 instructionLabel.y = 65;
 invalidateNodeLocalTransform(instructionLabel);
@@ -391,7 +391,7 @@ addNodeChild(root, instructionLabel);
 for (const btn of buttons) {
   const label = createTextLabel();
   label.data.text = btn.label;
-  label.data.textFormat = { size: 14, color: 0xffffff };
+  label.data.textFormat = { size: 14, color: 0xffffffff };
   label.x = btn.x + 12;
   label.y = btn.y + btn.h / 2 - 8;
   invalidateNodeLocalTransform(label);
@@ -400,7 +400,7 @@ for (const btn of buttons) {
 
 const masterLabel = createTextLabel();
 masterLabel.data.text = 'Master Volume';
-masterLabel.data.textFormat = { size: 13, color: 0xaaaaaa };
+masterLabel.data.textFormat = { size: 13, color: 0xaaaaaaff };
 masterLabel.x = SLIDER_X;
 masterLabel.y = SLIDER_Y - 24;
 invalidateNodeLocalTransform(masterLabel);
@@ -408,7 +408,7 @@ addNodeChild(root, masterLabel);
 
 const masterValueLabel = createTextLabel();
 masterValueLabel.data.text = Math.round(masterGain * 100) + '%';
-masterValueLabel.data.textFormat = { size: 13, color: 0xdddddd };
+masterValueLabel.data.textFormat = { size: 13, color: 0xddddddff };
 masterValueLabel.x = SLIDER_X + SLIDER_W + 12;
 masterValueLabel.y = SLIDER_Y + 4;
 invalidateNodeLocalTransform(masterValueLabel);
@@ -416,7 +416,7 @@ addNodeChild(root, masterValueLabel);
 
 const sfxBusLabel = createTextLabel();
 sfxBusLabel.data.text = 'SFX Bus Gain';
-sfxBusLabel.data.textFormat = { size: 12, color: 0x8899bb };
+sfxBusLabel.data.textFormat = { size: 12, color: 0x8899bbff };
 sfxBusLabel.x = SLIDER_X;
 sfxBusLabel.y = BUS_SLIDER_Y - 20;
 invalidateNodeLocalTransform(sfxBusLabel);
@@ -424,7 +424,7 @@ addNodeChild(root, sfxBusLabel);
 
 const musicBusLabel = createTextLabel();
 musicBusLabel.data.text = 'Music Bus Gain';
-musicBusLabel.data.textFormat = { size: 12, color: 0x88bb99 };
+musicBusLabel.data.textFormat = { size: 12, color: 0x88bb99ff };
 musicBusLabel.x = SLIDER_X + BUS_SLIDER_W + 80;
 musicBusLabel.y = BUS_SLIDER_Y - 20;
 invalidateNodeLocalTransform(musicBusLabel);
@@ -432,7 +432,7 @@ addNodeChild(root, musicBusLabel);
 
 const sfxPanLabel = createTextLabel();
 sfxPanLabel.data.text = 'SFX Bus Pan';
-sfxPanLabel.data.textFormat = { size: 12, color: 0x8899bb };
+sfxPanLabel.data.textFormat = { size: 12, color: 0x8899bbff };
 sfxPanLabel.x = SLIDER_X;
 sfxPanLabel.y = PAN_SLIDER_Y - 20;
 invalidateNodeLocalTransform(sfxPanLabel);
@@ -440,7 +440,7 @@ addNodeChild(root, sfxPanLabel);
 
 const musicPanLabel = createTextLabel();
 musicPanLabel.data.text = 'Music Bus Pan';
-musicPanLabel.data.textFormat = { size: 12, color: 0x88bb99 };
+musicPanLabel.data.textFormat = { size: 12, color: 0x88bb99ff };
 musicPanLabel.x = SLIDER_X + BUS_SLIDER_W + 80;
 musicPanLabel.y = PAN_SLIDER_Y - 20;
 invalidateNodeLocalTransform(musicPanLabel);
@@ -448,7 +448,7 @@ addNodeChild(root, musicPanLabel);
 
 const statusLabel = createTextLabel();
 statusLabel.data.text = 'Ready';
-statusLabel.data.textFormat = { size: 13, color: 0x999999 };
+statusLabel.data.textFormat = { size: 13, color: 0x999999ff };
 statusLabel.x = 60;
 statusLabel.y = 530;
 invalidateNodeLocalTransform(statusLabel);

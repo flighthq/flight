@@ -1,4 +1,5 @@
 ﻿import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { createGlTexture, drawGlQuad, updateGlTexture, useGlProgram } from '@flighthq/render-gl/contract';
 import { resolveGlShader } from '@flighthq/render-gl/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
@@ -152,14 +153,14 @@ function drawRichTextToCanvas(
     if (group.lineIndex < firstVisibleLine) continue;
 
     context.font = computeTextFormatFontString(group.format);
-    context.fillStyle = computeRgbHexString(group.format.color ?? data.textColor);
+    context.fillStyle = computeRgbaCssString(group.format.color ?? data.textColor);
     const slice = text.substring(group.startIndex, group.endIndex);
     const x = group.offsetX - scrollXOffset;
     const y = group.offsetY + group.ascent - scrollYOffset;
     context.fillText(slice, x, y);
 
     if (group.format.underline || group.format.strikethrough) {
-      context.strokeStyle = computeRgbHexString(group.format.color ?? data.textColor);
+      context.strokeStyle = computeRgbaCssString(group.format.color ?? data.textColor);
       context.lineWidth = Math.max(1, (group.format.size ?? 12) / 16);
       if (group.format.underline) {
         const lineY = y + group.descent;

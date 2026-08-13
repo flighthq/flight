@@ -78,6 +78,18 @@ describe('drawDomTextLabel', () => {
     expect(div.innerHTML).toContain('world');
   });
 
+  it('emits packed run alpha in the CSS color', () => {
+    const state = makeState();
+    const node = createTextLabel();
+    node.data.text = 'alpha';
+    node.data.textFormat = { color: 0xff000080 };
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+
+    const div = drawGetEl(state, () => drawDomTextLabel(state, renderProxy))!;
+
+    expect(div.innerHTML).toContain('rgba(255,0,0,0.5019607843137255)');
+  });
+
   it('reuses the same div across multiple draws', () => {
     const state = makeState();
     const node = createTextLabel();

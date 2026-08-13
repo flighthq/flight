@@ -37,9 +37,9 @@ describe('createMarkupTagRegistry', () => {
 describe('registerMarkupTag', () => {
   it('registers a custom tag whose handler contributes format', () => {
     const registry = createMarkupTagRegistry();
-    registerMarkupTag(registry, 'acme.hot', () => ({ color: 0xff0000 }));
+    registerMarkupTag(registry, 'acme.hot', () => ({ color: 0xff0000ff }));
     const content = parseTextMarkup('<acme.hot>x</acme.hot>', registry);
-    expect(formatAt(content, 0)).toEqual({ color: 0xff0000 });
+    expect(formatAt(content, 0)).toEqual({ color: 0xff0000ff });
   });
 
   it('matches tag names case-insensitively', () => {
@@ -104,7 +104,7 @@ describe('registerStandardMarkupTags', () => {
 
   it('parses a hex font color but leaves a named color unresolved by default', () => {
     const registry = standardRegistry();
-    expect(formatAt(parseTextMarkup('<font color="#ff0000">x</font>', registry), 0).color).toBe(0xff0000);
+    expect(formatAt(parseTextMarkup('<font color="#ff0000">x</font>', registry), 0).color).toBe(0xff0000ff);
     // Named colors are gated behind `registerMarkupNamedColors`; the standard dialect alone is hex-only,
     // so a named color resolves to no color gracefully rather than erroring.
     expect(formatAt(parseTextMarkup('<font color="red">x</font>', registry), 0).color).toBeUndefined();
@@ -125,15 +125,16 @@ describe('registerStandardMarkupTags', () => {
 
 describe('resolveMarkupHexColor', () => {
   it('parses #rrggbb, #rgb, and 0xRRGGBB values', () => {
-    expect(resolveMarkupHexColor('#ff0000')).toBe(0xff0000);
-    expect(resolveMarkupHexColor('#f00')).toBe(0xff0000);
-    expect(resolveMarkupHexColor('0x00ff00')).toBe(0x00ff00);
-    expect(resolveMarkupHexColor('  #0000FF  ')).toBe(0x0000ff);
+    expect(resolveMarkupHexColor('#ff0000')).toBe(0xff0000ff);
+    expect(resolveMarkupHexColor('#f00')).toBe(0xff0000ff);
+    expect(resolveMarkupHexColor('0x00ff00')).toBe(0x00ff00ff);
+    expect(resolveMarkupHexColor('  #0000FF  ')).toBe(0x0000ffff);
   });
 
   it('returns null for a named color or unparseable value — no table on this path', () => {
     expect(resolveMarkupHexColor('red')).toBeNull();
     expect(resolveMarkupHexColor('#zz0000')).toBeNull();
+    expect(resolveMarkupHexColor('#ff000080')).toBeNull();
     expect(resolveMarkupHexColor('')).toBeNull();
   });
 });

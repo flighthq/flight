@@ -16,10 +16,10 @@ describe('registerMarkupClassStyles', () => {
   it('styles a span by its class after being registered', () => {
     const registry = createMarkupTagRegistry();
     registerStandardMarkupTags(registry);
-    registerMarkupClassStyles(registry, { warn: { bold: true, color: 0xff0000 } });
+    registerMarkupClassStyles(registry, { warn: { bold: true, color: 0xff0000ff } });
     const content = parseTextMarkup('<span class="warn">x</span>', registry);
     expect(content.text).toBe('x');
-    expect(formatAt(content, 0)).toEqual({ bold: true, color: 0xff0000 });
+    expect(formatAt(content, 0)).toEqual({ bold: true, color: 0xff0000ff });
   });
 
   it('leaves a span inert when its class is not in the map', () => {
@@ -36,13 +36,13 @@ describe('registerMarkupClassStyles', () => {
     registerStandardMarkupTags(registry);
     registerMarkupClassStyles(registry, {
       big: { size: 24 },
-      loud: { bold: true, color: 0x0000ff },
-      quiet: { color: 0x333333 },
+      loud: { bold: true, color: 0x0000ffff },
+      quiet: { color: 0x333333ff },
     });
     // `loud` then `quiet` both name color; the later `quiet` wins the shared field, `size` survives.
     expect(formatAt(parseTextMarkup('<span class="big loud quiet">x</span>', registry), 0)).toEqual({
       bold: true,
-      color: 0x333333,
+      color: 0x333333ff,
       size: 24,
     });
   });

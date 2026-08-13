@@ -11,6 +11,7 @@ export interface TextFormat {
   blockIndent?: number;
   bold?: boolean;
   bullet?: boolean;
+  // Run color as Flight's packed sRGB RGBA integer (`0xRRGGBBAA`); alpha is linear coverage.
   color?: number;
   font?: string;
   indent?: number;

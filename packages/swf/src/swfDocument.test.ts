@@ -1067,7 +1067,7 @@ describe('createScene2DFromSwf', () => {
     expect(node.data.multiline).toBe(true);
     expect(node.data.wordWrap).toBe(true);
     expect(node.data.border).toBe(true);
-    expect(node.data.textColor).toBe(0x112233);
+    expect(node.data.textColor).toBe(0x112233ff);
     expect(node.data.width).toBe(200);
     expect(node.data.height).toBe(40);
     // Twips convert throughout: a 240-twip font height is 12px, and the 20/40/60/80-twip layout values

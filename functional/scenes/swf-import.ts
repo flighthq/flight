@@ -8,7 +8,7 @@ import { getRenderProxy2D } from '@flighthq/render/contract';
 // EM grid; DefineFont3 stores the same square as 10240 units on its twenty-times-finer grid. Both text
 // records author the same height, so their rendered extents must match. A wrong SWF EM-square conversion
 // makes the modern glyph twenty times too large instead of merely leaving a non-blank frame.
-import type { Bitmap, ColorScaleBias, MovieClip } from '@flighthq/sdk';
+import type { Bitmap, ColorScaleBias, MovieClip, RichText } from '@flighthq/sdk';
 import {
   createScene2DFromSwf,
   getBitmapPixelRgb,
@@ -22,6 +22,7 @@ import {
   registerDeflateDecompressor,
   registerSwfImageDecoders,
   registerWgpuColorAdjustmentMaterialFeature,
+  RichTextKind,
   ShapeKind,
   SpriteKind,
 } from '@flighthq/sdk';
@@ -62,6 +63,10 @@ const LEGACY_TEXT_X = 140;
 const MODERN_TEXT_X = 360;
 const TEXT_Y = 370;
 const TEXT_SIZE = 100;
+const EDIT_TEXT_X = 300;
+const EDIT_TEXT_Y = 500;
+const EDIT_TEXT_WIDTH = 260;
+const EDIT_TEXT_HEIGHT = 70;
 
 const TINTED_SPRITE_X = 600;
 const TINTED_SPRITE_Y = 400;
@@ -70,6 +75,7 @@ let backend: 'canvas' | 'dom' | 'webgl' | 'webgpu' = 'canvas';
 let targetWidth = WIDTH;
 let nestedChildColorScaleBias: Readonly<ColorScaleBias> | null = null;
 let nestedParentColorScaleBias: Readonly<ColorScaleBias> | null = null;
+let editTextRenderDescription = '';
 
 export function assertRender(frame: Readonly<Bitmap>): void {
   const scale = frame.width / targetWidth;
@@ -82,7 +88,15 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   assertDirectBitmap(at);
   assertPremultipliedBitmap(at);
   assertEquivalentFontGrids(at);
+  assertEditText(at);
   assertNestedColorTransform(at);
+}
+
+function assertEditText(at: PixelReader): void {
+  const bounds = findColorBounds(at, isRed, EDIT_TEXT_X, EDIT_TEXT_Y, EDIT_TEXT_WIDTH, EDIT_TEXT_HEIGHT);
+  if (bounds === null) {
+    throw new Error(`[swf-import] imported edit text did not draw (${editTextRenderDescription})`);
+  }
 }
 
 function assertDirectBitmap(at: PixelReader): void {
@@ -237,6 +251,7 @@ function createFunctionalSwf(): Uint8Array {
     createModernFont(),
     createStaticText(LEGACY_TEXT_ID, LEGACY_FONT_ID, 0xf72585),
     createStaticText(MODERN_TEXT_ID, MODERN_FONT_ID, 0x80ff72),
+    createEditText(),
     createTintedChildBitmap(),
     createTintedChildShape(),
     createTintedSprite(),
@@ -249,6 +264,7 @@ function createFunctionalSwf(): Uint8Array {
     placeWithColorTransform(TINTED_SPRITE_ID, 7, TINTED_SPRITE_X, TINTED_SPRITE_Y),
     place(ALPHA_BITMAP_SHAPE_ID, 8, ALPHA_BITMAP_X, ALPHA_BITMAP_Y),
     place(BITMAP_CHARACTER_ID, 9, DIRECT_BITMAP_X, DIRECT_BITMAP_Y),
+    place(EDIT_TEXT_ID, 10, EDIT_TEXT_X, EDIT_TEXT_Y),
     createTag(TAG_SHOW_FRAME),
     move(1, SOLID_FRAME_2_X, SOLID_Y),
     createTag(TAG_SHOW_FRAME),
@@ -289,6 +305,20 @@ function createGradientShape(): Uint8Array {
   writer.writeRectangle(GRADIENT_WIDTH * TWIPS_PER_PIXEL, GRADIENT_HEIGHT * TWIPS_PER_PIXEL);
   writer.writeEndShape();
   return defineShape(GRADIENT_SHAPE_ID, GRADIENT_WIDTH, GRADIENT_HEIGHT, writer.toBytes());
+}
+
+function createEditText(): Uint8Array {
+  const body = joinBytes(
+    uint16(EDIT_TEXT_ID),
+    createRectangle(0, EDIT_TEXT_WIDTH * TWIPS_PER_PIXEL, 0, EDIT_TEXT_HEIGHT * TWIPS_PER_PIXEL),
+    new Uint8Array([0x85, 0x00]),
+    uint16(LEGACY_FONT_ID),
+    uint16(48 * TWIPS_PER_PIXEL),
+    new Uint8Array([0xff, 0x20, 0x20, 0xff]),
+    new Uint8Array([0]),
+    new TextEncoder().encode('EDIT TEXT\0'),
+  );
+  return createTag(TAG_DEFINE_EDIT_TEXT, body);
 }
 
 function createLegacyFont(): Uint8Array {
@@ -779,6 +809,7 @@ const BITMAP_CHARACTER_ID = 9;
 const BITMAP_SHAPE_ID = 4;
 const BITMAP_SOURCE_SIZE = BITMAP_CELL * 2;
 const CYAN_RGB = [0x21, 0xd4, 0xfd] as const;
+const EDIT_TEXT_ID = 19;
 const FIXED_16_ONE = 0x10000;
 const GRADIENT_BOX_WIDTH = 1638.4;
 const GRADIENT_SHAPE_ID = 2;
@@ -796,6 +827,7 @@ const STROKE_SHAPE_ID = 3;
 const SWF_PREFIX_LENGTH = 8;
 const TAG_DEFINE_BITS_LOSSLESS = 20;
 const TAG_DEFINE_BITS_LOSSLESS_2 = 36;
+const TAG_DEFINE_EDIT_TEXT = 37;
 const TAG_DEFINE_FONT = 10;
 const TAG_DEFINE_FONT_3 = 75;
 const TAG_DEFINE_SHAPE = 2;
@@ -836,18 +868,27 @@ if (getMovieClipTotalFrames(root) !== 2) {
   throw new Error(`[swf-import] expected a two-frame timeline, got ${getMovieClipTotalFrames(root)}`);
 }
 gotoAndStopMovieClip(root, 2);
+const importedEditText = getNodeChildren(root).find((child) => child.kind === RichTextKind) as RichText | undefined;
+if (importedEditText === undefined || importedEditText.data.text !== 'EDIT TEXT') {
+  throw new Error('[swf-import] imported edit text was not attached to frame 2');
+}
 
 const target = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: document.backgroundColor ?? BACKGROUND,
-  kinds: [ShapeKind, SpriteKind],
+  kinds: [RichTextKind, ShapeKind, SpriteKind],
 });
 if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);
 backend = target.kind;
 targetWidth = target.width;
 target.render(root);
+const editTextRenderProxy = getRenderProxy2D(target.state, importedEditText);
+if (editTextRenderProxy === undefined) {
+  throw new Error('[swf-import] imported edit text has no render proxy');
+}
+editTextRenderDescription = `transform=${editTextRenderProxy.transform2D.tx},${editTextRenderProxy.transform2D.ty}; alpha=${editTextRenderProxy.alpha}; color=${importedEditText.data.defaultTextFormat.color?.toString(16)}; size=${importedEditText.data.defaultTextFormat.size}; box=${importedEditText.data.width}x${importedEditText.data.height}`;
 const nestedParent = getNodeChildren(root).find((child) => child.kind === MovieClipKind)!;
 const nestedChild = getNodeChildren(nestedParent)[0];
 nestedParentColorScaleBias = getRenderProxy2D(target.state, nestedParent)?.colorScaleBias ?? null;
