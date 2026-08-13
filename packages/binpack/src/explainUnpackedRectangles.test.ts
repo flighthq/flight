@@ -1,6 +1,8 @@
+import type { RectangleId } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainUnpackedRectangles } from './explainUnpackedRectangles';
+import { packRectangles } from './packRectangles';
 
 describe('explainUnpackedRectangles', () => {
   it('returns nothing when everything was placed', () => {
@@ -54,3 +56,72 @@ describe('explainUnpackedRectangles', () => {
     expect(explanation).toMatchObject({ id: 'a', usableWidth: 90, usableHeight: 90 });
   });
 });
+
+describe('explainUnpackedRectangles cross-checked against packRectangles', () => {
+  // The two functions must agree about the same input: an explanation per failure, no more and no less.
+  // They can disagree because they identify pieces differently — the packer treats two rectangles sharing
+  // an id as DISTINCT and reports bare ids, so a membership test cannot tell one failure from two.
+  it('returns exactly one entry per unpacked piece when two rectangles share an id', () => {
+    const rectangles = [
+      { id: 'a', width: 60, height: 60 },
+      { id: 'a', width: 60, height: 60 },
+    ];
+    const options = { growable: false, maxHeight: 64, maxWidth: 64 } as const;
+
+    const result = packRectangles(rectangles, options);
+    // One of the pair fits and the other does not, which is the case a set-based match gets wrong.
+    expect(result.placements).toHaveLength(1);
+    expect(result.unpacked).toEqual(['a']);
+
+    expect(explainUnpackedRectangles(rectangles, options)).toHaveLength(1);
+  });
+
+  it('returns one entry per failure when BOTH duplicates fail', () => {
+    const rectangles = [
+      { id: 'a', width: 500, height: 500 },
+      { id: 'a', width: 500, height: 500 },
+    ];
+    const options = { growable: false, maxHeight: 64, maxWidth: 64 } as const;
+
+    expect(packRectangles(rectangles, options).unpacked).toEqual(['a', 'a']);
+    expect(explainUnpackedRectangles(rectangles, options)).toHaveLength(2);
+  });
+
+  it('agrees with packRectangles across seeded inputs, counting ids rather than assuming uniqueness', () => {
+    for (let seed = 1; seed <= 30; seed += 1) {
+      const random = makeRandom(seed);
+      const count = 1 + Math.floor(random() * 12);
+      const rectangles = Array.from({ length: count }, (_, index) => ({
+        // Ids collide on purpose: half the seeds draw from a pool smaller than the rectangle count, so
+        // duplicate ids are the common case here rather than the exotic one.
+        id: seed % 2 === 0 ? `id-${index % 3}` : `id-${index}`,
+        width: 1 + Math.floor(random() * 80),
+        height: 1 + Math.floor(random() * 80),
+      }));
+      const options = { growable: false, maxHeight: 96, maxWidth: 96 } as const;
+      const label = `seed ${seed}`;
+
+      const unpacked = packRectangles(rectangles, options).unpacked;
+      const explained = explainUnpackedRectangles(rectangles, options);
+
+      expect(explained.length, label).toBe(unpacked.length);
+      expect(countById(explained.map((entry) => entry.id)), label).toEqual(countById(unpacked));
+    }
+  });
+});
+
+function countById(ids: readonly RectangleId[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const id of ids) counts[String(id)] = (counts[String(id)] ?? 0) + 1;
+  return counts;
+}
+
+// A small deterministic PRNG, so a failure names a seed a reader can re-run rather than a shape that
+// vanishes on the next run.
+function makeRandom(seed: number): () => number {
+  let state = seed * 1103515245 + 12345;
+  return () => {
+    state = (state * 1103515245 + 12345) % 2147483648;
+    return state / 2147483648;
+  };
+}
