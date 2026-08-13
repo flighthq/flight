@@ -105,6 +105,23 @@ Measure honestly and say so: `npm run size <example>` for the affected fixture, 
 parent-versus-commit for any figure you intend to report. The unminified sweep is a minute over all
 139 cases and seconds from cache; the terser sweep is the slow one.
 
+### ACCEPTED-BUT-UNWRITTEN — the shape bounds registry, 2026-08-13
+
+**The `shapes` pins in `size.baseline.json` disagree with the tree on purpose. Do not close the gap.**
+The user's instruction is that the baseline number is not to be written, and it outranks any earlier
+ruling; what has to survive is the reasoning, not the number.
+
+Accepted at **net −3,320 gzip**. GL and WGPU pay for cursor/context/traversal machinery they never
+needed — they always called the kernel directly — without the outline-stack removal that pays for it
+on the other three lanes. And **"GL/WGPU barely move" was a design guarantee that turned out wrong as
+stated**, which is the part worth keeping: the pins now record a prediction that failed, and a rewrite
+would erase the evidence that it failed.
+
+This entry exists because **an un-updated pin looks exactly like an overlooked chore.** A future
+reader finds a stale-looking number, one command away from tidy, and no reason not to. The reason is
+here. Nothing in the tooling can express "deliberately not updated" — `size:minified` will keep
+failing these cases nightly, and that red is the intended state, not a task.
+
 ## The discipline these numbers protect
 
 - Do not add convenience exports, eager registration, shared top-level mutable state, or new dependencies that make small examples larger — unless the size tradeoff is intentional and measured.
