@@ -8,7 +8,7 @@
 //                 where the registry is per-file. The rule is about the registry, not the API.
 //   untiered-mock A file that mocks modules but is not in the isolated tier, so it is running under the
 //                 shared registry where its mocks can leak.
-//   stale-tier    A file listed in the isolated tier that no longer mocks anything, so it is paying for
+//   stale-tier    A `mocks-modules` entry that no longer mocks anything, so it is paying for
 //                 isolation it does not need — demote it.
 //   orphan-unmock A `vi.doUnmock('x')` whose specifier no other call in the file ever mocked. It
 //                 unmocks nothing, which is worse than absent: it reads as cleanup that is happening.
@@ -22,13 +22,14 @@ import { join, relative } from 'node:path';
 
 import pc from 'picocolors';
 
-import { ISOLATED_MOCK_TEST_FILES } from './mockTiers';
+import { REGISTRY_ISOLATED_TESTS } from './registryIsolatedTests';
 import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 
 type Rule = 'hoisted-mock' | 'orphan-unmock' | 'stale-tier' | 'untiered-mock';
 
 const RULE_MESSAGE: Record<Rule, string> = {
-  'stale-tier': 'listed in vitest.tiers.ts but mocks nothing — demote it to the shared tier',
+  'stale-tier':
+    'declared mocks-modules in scripts/registryIsolatedTests.ts but mocks nothing — demote it, or state the real reason',
   'untiered-mock': 'mocks a module but is not in vitest.tiers.ts — its mocks leak under the shared registry',
   'hoisted-mock':
     'top-level vi.mock() — hoists above imports and leaks across files under isolate:false; use vi.doMock() in beforeAll plus a dynamic import',
@@ -53,7 +54,11 @@ interface Violation {
   rule: Rule;
 }
 
-const tier = new Set(ISOLATED_MOCK_TEST_FILES);
+// Keyed by reason, because the two reasons are checked to different depths. `mocks-modules` is
+// verified in both directions; `process-global-registry` is accepted on its declared reason, since
+// there is no honest pattern for "asserts process state". THE WEAKER CHECK IS DELIBERATE — its
+// enforcement is review, not a regex — so do not close the gap by inventing a detector.
+const tierReason = new Map(REGISTRY_ISOLATED_TESTS.map((t) => [t.path, t.reason]));
 const violations: Violation[] = [];
 let allowed = 0;
 
@@ -89,14 +94,15 @@ for (const path of testFiles) {
 
   const hoisted = Array.from(text.matchAll(HOISTED));
   const doMocks = Array.from(text.matchAll(DO_MOCK));
-  const isolated = tier.has(rel);
+  const reason = tierReason.get(rel);
+  const isolated = reason !== undefined;
   const mocksModules = hoisted.length > 0 || doMocks.length > 0;
 
   // Hoisted mocks are a violation only where the registry is shared.
   if (!isolated) for (const m of hoisted) record('hoisted-mock', m.index);
   // Both directions of the tier boundary, so membership is checked rather than remembered.
   if (mocksModules && !isolated) record('untiered-mock', (hoisted[0] ?? doMocks[0])!.index);
-  if (isolated && !mocksModules) record('stale-tier', 0);
+  if (reason === 'mocks-modules' && !mocksModules) record('stale-tier', 0);
 
   const mocked = new Set(doMocks.map((m) => m[1]));
   for (const m of hoisted) mocked.add(m[1]);
@@ -126,7 +132,7 @@ for (const v of violations) {
   console.log(`  ${pc.yellow('!')} ${pc.white(`${v.path}:${v.line}`)} ${pc.dim(RULE_MESSAGE[v.rule])}`);
 }
 console.log(
-  `\n${pc.dim('If an escape is genuinely intentional and contained, add it to ALLOW in scripts/mocks.ts with a reason. Tier membership lives in scripts/mockTiers.ts; the rules are in vitest.config.ts.')}`,
+  `\n${pc.dim('If an escape is genuinely intentional and contained, add it to ALLOW in scripts/mocks.ts with a reason. Tier membership lives in scripts/registryIsolatedTests.ts; the rules are in vitest.config.ts.')}`,
 );
 process.exit(checkMode ? 1 : 0);
 
