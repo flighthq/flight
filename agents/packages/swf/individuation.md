@@ -133,8 +133,8 @@ one site and cannot see that two writers converge; the silent-drop sweep sees a 
 value is later consumed. This one names the convergence and still cannot see the consumer, so it reports
 where a distinction was *available to lose*, not where losing it cost anything.
 
-**Measured: 193 candidates, of which 23 of 31 multi-cause sentinels report nothing at any of their
-returns.** The remaining eight are already resolved or partly resolved by diagnostic wiring.
+**Measured: 193 candidates, of which 22 of 31 multi-cause sentinels report nothing at any of their
+returns.** The remaining nine are already resolved or partly resolved by diagnostic wiring.
 
 **That number moved under this doc without the doc noticing, which is why the check exists.** It read 23
 until `readSwfFile` was wired, and the sweep's own headline had been stale for hours. `npm run

@@ -3,10 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, test } from 'vitest';
 
+import type { SizeResult } from './size-runner';
 import {
   collectSizeCases,
   didSizeChecksPass,
   formatSizeResult,
+  getFlightDiagnosticsSizeDelta,
   getSizeCaseKey,
   parseSizeBaselineOrigins,
 } from './size-runner';
@@ -43,6 +45,27 @@ describe('formatSizeResult', () => {
       passed: false,
       threshold: null,
     });
+  });
+});
+
+describe('getFlightDiagnosticsSizeDelta', () => {
+  // Recovered coverage, not new coverage. This was the ONE assertion deliberately left in
+  // tools/size/size.test.ts because it read the BUILT results; that file was deleted wholesale when the
+  // size lane was reworked, taking the only test of this export with it. Constructing the two results
+  // directly needs no build, so the assertion belongs here and no longer depends on a five-minute lane.
+  const sizeResult = (key: string, gzipSize: number): SizeResult => ({ gzipSize, key }) as unknown as SizeResult;
+
+  test('reports the enabled build as a positive delta over the release stub', () => {
+    const delta = getFlightDiagnosticsSizeDelta([
+      sizeResult('flight-diagnostics:canvas', 1000),
+      sizeResult('flight-diagnostics:canvas:diagnostics', 1750),
+    ]);
+    expect(delta).toBe(750);
+  });
+
+  test('reports null when either side of the pair is absent', () => {
+    expect(getFlightDiagnosticsSizeDelta([sizeResult('flight-diagnostics:canvas', 1000)])).toBeNull();
+    expect(getFlightDiagnosticsSizeDelta([])).toBeNull();
   });
 });
 

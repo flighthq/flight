@@ -99,7 +99,7 @@ independently ("the bare `npm run check` runner's 24 unique leaf stages").
 | `evidence:check` | capture coverage manifest census | **Wired** into bare `npm run check` |
 | `capture:{examples,functional}:check` | committed screenshot hashes | **Wired** onto the render-test matrix, pinned backends only |
 | `reachability:runtime:check` | registrar runtime probe | Left alone; blocking contract undecided above |
-| `test:size` | the `tools/size` vitest suite | **Not a finding after all — see the correction below** |
+| `test:size` | the `tools/size` vitest suite | **Not a finding after all, and the script no longer exists — see below** |
 
 `evidence:check` is the sharpest case, because its own header states the intent it was denied: it
 needs no browser, and "that is what makes it cheap enough to gate on rather than to run only at
@@ -143,6 +143,16 @@ Two things follow, and the second is the reason this correction is recorded rath
   collects. Three of them also carried `if (…) return` guards that made them pass vacuously whenever a
   filter narrowed the case set; the guards are gone, so they can now fail. The fifth assertion reads
   the built `results` and correctly stayed behind.
+
+**Superseded 2026-08-13 by `afeeacea9`.** That commit reworked the size lane and deleted `test:size`,
+`tools/size/size.test.ts`, and `tools/size/vitest.config.ts` outright, replacing them with
+`scripts/size-fast-runner.ts` and `size:minified`. The reachability observation and the correction under
+it are kept as the record of a reasoning error worth not repeating, not as live findings — the subject is
+gone. One thing did NOT survive the two changes meeting: the single build-dependent assertion left behind
+in `tools/size/size.test.ts` was the only test of `getFlightDiagnosticsSizeDelta`, which is still exported
+and still used by `size-minified.ts`. Deleting the file took that coverage with it, invisibly to both
+changes — the deletion had no reason to know the file held unique coverage, and the move had left exactly
+one assertion there. It is restored in `scripts/size-runner.test.ts`, where it needs no build at all.
 
 The generalisable part is not the size suite. **A reachability finding says a process does not run; it
 does not say the subject is uncovered.** Those are different claims, and the second needs its own
