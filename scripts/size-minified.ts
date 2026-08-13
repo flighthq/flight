@@ -30,7 +30,7 @@ if (options.help) {
 // not on a TTY and run unguarded.
 if (process.stdout.isTTY && rawArgs.length === 0 && process.env.UPDATE_BASELINE !== '1') {
   console.log(pc.yellow('size:minified builds every case through terser — roughly 10 minutes for the full sweep.'));
-  console.log(`Most size questions are answered in ~30s by ${pc.bold('npm run size')}, the fast path.`);
+  console.log(`Most size questions are answered in about a minute by ${pc.bold('npm run size')}.`);
   console.log(pc.dim('Filter to a few cases (`npm run size:minified shapes`), or pass --yes for the full sweep.'));
   process.exit(0);
 }
@@ -201,7 +201,7 @@ function printUsage(): void {
   console.log('Usage: npm run size:minified [filters...] [--yes] [report=json] [output=path]');
   console.log('');
   console.log('The shipping number: every case built and minified through terser. ~10 minutes for');
-  console.log('the full sweep, which is why it is the nightly job. For a ~30s tree-shaking signal');
+  console.log('the full sweep, which is why it is the nightly job. For a one-minute tree-shaking read');
   console.log('while you work, use `npm run size`.');
   console.log('');
   console.log('  npm run size:minified shapes');

@@ -261,8 +261,12 @@ jobs:
       - run: npm ci
       - run: npm run check
 
+  # Advisory, not a gate: `npm run size` always exits 0. It reports which bundles moved against the
+  # committed unminified baseline so a reviewer sees the tree-shaking delta in the log. The shipping
+  # number is terser-minified and lives in nightly (`size-minified`) — it takes ~10 minutes, and
+  # gating on it would push an author to rewrite the pin to clear the red, laundering the regression.
   size:
-    name: Bundle size
+    name: Bundle size (advisory)
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest

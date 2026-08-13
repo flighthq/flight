@@ -91,7 +91,14 @@ the bare repository sweep, while focused package checks omit both repository-wid
 
 ## Read vs write: `:baseline`
 
-A check that compares against a committed baseline **reads** under its bare name and **writes** under `:baseline`. `test:size` compares; `test:size:baseline` rewrites. `test:functional:regression` compares; `test:functional:regression:baseline` rewrites. `:baseline` is always the write-mode of the check it follows — and only a check that owns a baseline has one (smoke and parity have nothing to write).
+A check that compares against a committed baseline **reads** under its bare name and **writes** under `:baseline`. `size` compares; `size:baseline` rewrites. `test:functional:regression` compares; `test:functional:regression:baseline` rewrites. `:baseline` is always the write-mode of the check it follows — and only a check that owns a baseline has one (smoke and parity have nothing to write).
+
+The size pair also carries the rule's limit: **one subject, one instrument.** `size` and `test:size`
+once both compared bundle bytes against the same baseline by different mechanisms, and the two docs
+that described them named different commands as the check — so neither a reader nor an agent could
+say which gate existed. They are now one instrument per baseline: `size` / `size:baseline` for the
+unminified tree-shaking number, `size:minified` / `size:minified:baseline` for the shipping one. A
+third name for either subject would be that defect returning, not a convenience.
 
 ## Word choice
 
