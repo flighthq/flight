@@ -1,3 +1,4 @@
+import { createMatrix } from '@flighthq/geometry/contract';
 import { createImageResource } from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import {
@@ -136,6 +137,36 @@ describe('defaultCanvasBeginTextureFill', () => {
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
     expect(drawImageSpy).not.toHaveBeenCalled();
     expect(fillSpy).toHaveBeenCalled();
+  });
+
+  // A singular fill matrix must take the SAME path as no matrix. `inverseMatrix` answers a singular
+  // input with a defined-but-wrong matrix (a/b/c/d zeroed, tx/ty negated) rather than NaN, so an
+  // unchecked return does not merely mis-place the fill — flushCanvasShapePath wraps the fill in
+  // `context.transform(...)` / `context.transform(inverse...)`, and a ZEROED inverse never undoes the
+  // first, leaving the canvas transform collapsed for everything drawn afterwards.
+  it('drops a singular fill matrix to the untransformed path instead of a defined-but-wrong inverse', () => {
+    const { context, state } = makeShapeTarget();
+    const transformSpy = vi.spyOn(context, 'transform');
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, makeBitmapTexture(50, 50), createMatrix(0, 0, 0, 0, 0, 0));
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
+    expect(transformSpy).not.toHaveBeenCalled();
+  });
+
+  it('still applies an invertible fill matrix and undoes it afterwards', () => {
+    const { context, state } = makeShapeTarget();
+    const transformSpy = vi.spyOn(context, 'transform');
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, makeBitmapTexture(50, 50), createMatrix(1, 0, 0, 1, 10, 5));
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    appendShapeEndFill(shape);
+    renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
+    expect(transformSpy).toHaveBeenCalledTimes(2);
+    // The second call must UNDO the first, which is the property a zeroed inverse silently breaks.
+    expect(transformSpy.mock.calls[0][4]).toBeCloseTo(10, 6);
+    expect(transformSpy.mock.calls[1][4]).toBeCloseTo(-10, 6);
   });
 
   it('sets imageSmoothingEnabled from the texture sampler', () => {

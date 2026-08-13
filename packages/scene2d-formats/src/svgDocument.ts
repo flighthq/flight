@@ -8,6 +8,7 @@ import { packColor } from '@flighthq/color/contract';
 import {
   createGradientTransformMatrix,
   createMatrix,
+  inverseMatrix,
   createRectangle,
   createTransform2D,
   decomposeMatrixToTransform2D,
@@ -1360,6 +1361,36 @@ function parseSvgColor(value: string): SvgColor | null {
   return named === undefined ? null : { alpha: 1, rgb: named };
 }
 
+// A gradientTransform is authored text, so it can be singular — `scale(0)` is the plain case. Validated
+// HERE, where the file's value enters and a diagnostics sink exists, rather than at the renderer that
+// eventually inverts it: `inverseMatrix` answers a singular matrix with a defined-but-wrong result
+// (a/b/c/d zeroed, tx/ty negated) rather than NaN, so an unvalidated one paints wrong pixels with no
+// error raised and nothing to grep for. Dropping it to `null` is the same untransformed path a gradient
+// with no gradientTransform already takes — an existing, supported state rather than a new one, and
+// honest in a way identity would not be, since identity silently resizes and repositions the fill.
+//
+// Shares the predicate with the consumer by asking `inverseMatrix` rather than testing a determinant
+// here, so the two cannot drift apart on what "singular" means.
+function resolveSvgGradientTransform(
+  element: Readonly<XmlElement>,
+  inherited: Readonly<SvgGradient> | null | undefined,
+  context: SvgImportContext,
+): Matrix | null {
+  const transform = parseSvgTransform(attribute(element, 'gradientTransform')) ?? inherited?.transform ?? null;
+  if (transform === null) return null;
+  if (inverseMatrix(_gradientTransformScratch, transform)) return transform;
+  reportImportDiagnostic(
+    context.diagnostics,
+    ImportDiagnosticSeverity.Recover,
+    'svg.gradient-transform-singular',
+    'parseSvgDocument',
+    { gradient: attribute(element, 'id') ?? '<unnamed>' },
+  );
+  return null;
+}
+
+const _gradientTransformScratch = createMatrix();
+
 function parseSvgGradient(element: Readonly<XmlElement>, context: SvgImportContext): SvgGradient | null {
   const kind = localName(element.name) === 'linearGradient' ? 'linear' : 'radial';
   const href = attribute(element, 'href');
@@ -1416,7 +1447,7 @@ function parseSvgGradient(element: Readonly<XmlElement>, context: SvgImportConte
     radius: parseSvgCoordinate(attribute(element, 'r'), inherited?.radius ?? 0.5),
     spreadMethod: parseSvgSpreadMethod(attribute(element, 'spreadMethod')) ?? inherited?.spreadMethod ?? 'pad',
     stops: resolvedStops,
-    transform: parseSvgTransform(attribute(element, 'gradientTransform')) ?? inherited?.transform ?? null,
+    transform: resolveSvgGradientTransform(element, inherited, context),
     units:
       attribute(element, 'gradientUnits') === 'userSpaceOnUse'
         ? 'userSpaceOnUse'
