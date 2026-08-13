@@ -132,6 +132,27 @@ Log-backed guard modules import `@flighthq/log` only behind the sibling-module b
 modules never do, so the dependency sheds with the guards. Core enablers use the narrow exception below.
 The caller-composed `layout` and `spatial` forms carry no logger dependency themselves.
 
+### A package's first log-backed guard adds a dependency — declare it in the same commit
+
+`enable<Domain>Guards.ts` imports `@flighthq/log`, so **the package that grows its first log-backed
+guard grows a dependency on `@flighthq/log`**, without exception. That is a property of the pattern,
+not of the package, which is why the step belongs here rather than in anyone's memory. Three edits, in
+the commit that adds the guard:
+
+1. `"@flighthq/log": "*"` in the package's `package.json` `dependencies`.
+2. `{ "path": "../log" }` in the package's `tsconfig.json` `references`.
+3. `npm install --package-lock-only` to carry it into `package-lock.json`.
+
+Then `npm run packages:check`, which is fast and is what catches the omission.
+
+**Why this is written down rather than left to the check.** The consequence is invisible from the file
+being edited: nothing in a new `enableFooGuards.ts` looks different from any other new source file, and
+the cost lands in a JSON file one directory up that the edit never touches. It recurred inside a single
+session — diagnosed and fixed for two packages, then reintroduced two commits later in two more, by the
+same hand — because the code edit does not imply the manifest edit in any way the editor can see. A
+step that does not follow from what you are looking at belongs in the procedure for the pattern that
+generates it, so `packages:check` goes back to being the net rather than the teacher.
+
 ## Message convention
 
 Every guard message has the shape:
