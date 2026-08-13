@@ -40,6 +40,19 @@ tests that *cannot see*; this is a test that **saw perfectly and recorded the wr
 caught a genuine arithmetic regression. Every quality signal says it is fine: precise, specific, green,
 covered, and mutation confirms it catches changes to the code it guards.
 
+**Worst when the fixture comes with prose explaining why the wrong answer is correct.** A comment
+justifying the behavior *pre-refutes the reader who finds it*: the one-minute check becomes an argument
+with an absent author who has already stated their reasoning, so the cheapest move is to believe them.
+
+> `spine.binary-tail-unparsed` fired on every successful parse, reporting `bytes: 0`. Its test asserted
+> that as correct, above a comment explaining that the crumb "still fires to record that the importer
+> STOPPED rather than finished." The prose was the defect's own defence. Reading it as a *signal* rather
+> than an explanation is what exposed the cause: `buildSpineBinary()` ends exactly where the parser stops,
+> so `bytes: 0` was an artifact of the fixture being built to the parser's reach — not evidence of a
+> complete parse.
+
+Treat a comment defending surprising behavior as evidence about the behavior, not as a reason to move on.
+
 **Detection:** read what the test *asserts* and ask whether that is the answer you want — never whether the
 test is well written, because it is. There is no instrument for this.
 
