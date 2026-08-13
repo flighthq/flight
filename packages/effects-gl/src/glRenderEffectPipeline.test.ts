@@ -1,10 +1,12 @@
 import { createGlRenderState, endGlRenderPass } from '@flighthq/render-gl/contract';
+import type { RenderEffect } from '@flighthq/types/contract';
 
 import {
   beginGlRenderEffectPipeline,
   createGlRenderEffectPipeline,
   destroyGlRenderEffectPipeline,
   endGlRenderEffectPipeline,
+  setGlRenderEffectPipelineSkipGuard,
   setGlRenderEffectVelocityTexture,
 } from './glRenderEffectPipeline';
 
@@ -42,6 +44,29 @@ describe('destroyGlRenderEffectPipeline', () => {
 describe('endGlRenderEffectPipeline', () => {
   it('is a function', () => {
     expect(typeof endGlRenderEffectPipeline).toBe('function');
+  });
+});
+
+describe('setGlRenderEffectPipelineSkipGuard', () => {
+  it('reports every effect kind the pass drops, and goes silent again when cleared', () => {
+    const state = createGlRenderState(document.createElement('canvas'));
+    const pipeline = createGlRenderEffectPipeline(state);
+    const dropped: string[] = [];
+    const chain = [{ kind: 'test.pipeline-skip-seam' } as RenderEffect];
+
+    setGlRenderEffectPipelineSkipGuard(state, (_state, kind) => dropped.push(kind));
+    beginGlRenderEffectPipeline(state, pipeline);
+    endGlRenderEffectPipeline(state, pipeline, chain);
+
+    expect(dropped).toEqual(['test.pipeline-skip-seam']);
+
+    // Clearing must restore the original silence exactly: the seam is the ONLY path by which a dropped
+    // effect is observable, so a stale guard would be the difference between a diagnostic and a leak.
+    setGlRenderEffectPipelineSkipGuard(state, null);
+    beginGlRenderEffectPipeline(state, pipeline);
+    endGlRenderEffectPipeline(state, pipeline, chain);
+
+    expect(dropped).toEqual(['test.pipeline-skip-seam']);
   });
 });
 
