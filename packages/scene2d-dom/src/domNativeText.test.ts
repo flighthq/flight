@@ -104,6 +104,32 @@ describe('drawDomNativeText', () => {
     expect(bottomDiv.style.justifyContent).toBe('flex-end');
   });
 
+  // The channel order is the whole assertion. Under the 24-bit reading this file used to carry, the
+  // packed value below keeps its low three bytes and comes out `#44ffee` — a plausible-looking cyan that
+  // is wrong in every channel. The named case is the one that failed in the field: a cyan authored as
+  // `0x44ffee` under an RGBA field means r=0x00, and nothing draws where the scene expects ink.
+  it('converts the packed RGBA style color channel-correctly, alpha included', () => {
+    const state = makeState();
+    const node = createNativeText({ data: { text: 'hi', style: { color: 0x44ffee80 } } });
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+
+    // The expected strings are what the CSS engine serializes back, not what the renderer wrote: alpha
+    // is rounded and a fully opaque color drops to `rgb()`. The channel triple is the load-bearing part.
+    const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
+    expect(div.style.color).toBe('rgba(68, 255, 238, 0.502)');
+  });
+
+  it('defaults an unset style color to opaque black rather than transparent', () => {
+    const state = makeState();
+    const node = createNativeText({ data: { text: 'hi' } });
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+
+    const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
+    // A bare 0 default would be alpha 0 under RGBA — `rgba(0, 0, 0, 0)`, a field that renders nothing.
+    // Opaque black serializes back without the alpha component.
+    expect(div.style.color).toBe('rgb(0, 0, 0)');
+  });
+
   it('drops the flexbox framing under autoSize (no slack to align within)', () => {
     const state = makeState();
     const node = createNativeText({ data: { text: 'hi', autoSize: 'left', verticalAlign: 'middle' } });

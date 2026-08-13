@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { getNativeTextRuntime } from '@flighthq/text/contract';
 import type {
   Scene2DRenderer,
@@ -102,7 +102,10 @@ function applyNativeTextStyle(element: HTMLElement, style: Readonly<NativeTextSt
   const weight = style.bold ? 'bold ' : '';
   const slant = style.italic ? 'italic ' : '';
   element.style.font = `${slant}${weight}${size}px ${family}`;
-  element.style.color = computeRgbHexString(style.color ?? 0);
+  // style.color is packed RGBA (`0xRRGGBBAA`), so it converts through the RGBA helper — the RGB one
+  // would silently keep `GGBBAA` and shift every channel. The default is opaque black, not 0: under RGBA
+  // a bare 0 is alpha 0, which draws nothing.
+  element.style.color = computeRgbaCssString(style.color ?? 0x000000ff);
   if (style.align !== undefined) element.style.textAlign = style.align;
   if (style.leading !== undefined) element.style.lineHeight = `${size + style.leading}px`;
 }

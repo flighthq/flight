@@ -176,10 +176,10 @@ describe('getNativeTextStyle', () => {
 describe('patchNativeTextStyle', () => {
   it('merges the patch into the existing style', () => {
     const native = createNativeText({ data: { style: { size: 14, bold: false } } });
-    patchNativeTextStyle(native, { bold: true, color: 0xff0000 });
+    patchNativeTextStyle(native, { bold: true, color: 0xff0000ff });
     expect(native.data.style.size).toBe(14);
     expect(native.data.style.bold).toBe(true);
-    expect(native.data.style.color).toBe(0xff0000);
+    expect(native.data.style.color).toBe(0xff0000ff);
   });
 
   it('bumps content after patching', () => {
