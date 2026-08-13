@@ -98,6 +98,7 @@ function renderSpriteAsCanvas(
     sourceRectangle.height,
   );
   applyDomStyle(state, data.canvas, renderProxy);
+  applyDomSpriteSampling(state, data.canvas, renderProxy);
   setDomRendererElement(state, data.canvas);
 }
 
@@ -117,6 +118,7 @@ function renderSpriteAsImage(
   }
   if (data.image.src !== source.src) data.image.src = source.src;
   applyDomStyle(state, data.image, renderProxy);
+  applyDomSpriteSampling(state, data.image, renderProxy);
   setDomRendererElement(state, data.image);
 }
 
@@ -132,7 +134,14 @@ function renderSpriteAsVideo(
   data.video = source;
   prepareDomElement(source);
   applyDomStyle(state, source, renderProxy);
+  applyDomSpriteSampling(state, source, renderProxy);
   setDomRendererElement(state, source);
+}
+
+function applyDomSpriteSampling(state: DomRenderState, element: HTMLElement, renderProxy: RenderProxy2D): void {
+  const texture = (renderProxy.source as Sprite).data.texture!;
+  element.style.imageRendering =
+    state.allowSmoothing && !texture.sampler.magFilter.startsWith('nearest') ? '' : 'pixelated';
 }
 
 export const defaultDomSpriteRenderer: Scene2DRenderer = {

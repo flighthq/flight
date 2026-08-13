@@ -160,6 +160,9 @@ function drawDomRichTextField(state: DomRenderState, renderProxy: RenderProxy2D)
       if (fmt.underline) decorations.push('underline');
       if (fmt.strikethrough) decorations.push('line-through');
       style += `text-decoration:${decorations.join(' ')};`;
+      // Flight's raster text backends draw one uninterrupted decoration stroke for the formatted run.
+      // Disable CSS's default skip-ink gaps so DOM has the same observable underline geometry.
+      if (fmt.underline) style += 'text-decoration-skip-ink:none;';
     }
 
     switch (fmt.align) {

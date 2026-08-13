@@ -117,6 +117,21 @@ describe('drawDomRichText', () => {
     expect(div.innerHTML).toContain('#00ff00');
   });
 
+  it('renders an uninterrupted underline like the raster text backends', () => {
+    const state = makeState();
+    const node = createRichText({
+      data: {
+        text: 'underlined',
+        textFormatRanges: [{ end: 10, format: { underline: true }, start: 0 }],
+      },
+    });
+
+    const div = drawGetEl(state, () => drawDomRichText(state, getOrCreateRenderProxy2D(state, node)))!;
+
+    expect(div.innerHTML).toContain('text-decoration:underline');
+    expect(div.innerHTML).toContain('text-decoration-skip-ink:none');
+  });
+
   it('sets backgroundColor when background is enabled', () => {
     const state = makeState();
     const node = createRichText();

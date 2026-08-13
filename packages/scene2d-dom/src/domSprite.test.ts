@@ -1,7 +1,7 @@
 import { createImageResource, createImageResourceFromCanvas } from '@flighthq/image/contract';
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import { createTexture } from '@flighthq/texture/contract';
+import { createPixelArtSampler, createTexture } from '@flighthq/texture/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
 import { registerDomImageTextureResolver } from './domImageTextureResolver';
@@ -50,6 +50,25 @@ describe('drawDomSprite', () => {
     });
     drawDomSprite(state, getOrCreateRenderProxy2D(state, sprite));
     expect(getDomRenderStateRuntime(state).domCurrentElement?.tagName).toBe('CANVAS');
+  });
+
+  it('applies pixelated CSS sampling to a nearest-neighbor texture', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const image = createImageResourceFromCanvas(canvas);
+    const state = createDomRenderState(document.createElement('div'));
+    registerDomImageTextureResolver(state);
+    registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+    const sprite = createSprite({
+      data: {
+        texture: createTexture({ dimension: '2d', sampler: createPixelArtSampler(), source: image }),
+      },
+    });
+
+    drawDomSprite(state, getOrCreateRenderProxy2D(state, sprite));
+
+    expect(getDomRenderStateRuntime(state).domCurrentElement?.style.imageRendering).toBe('pixelated');
   });
 
   it('uses the source video element directly', () => {

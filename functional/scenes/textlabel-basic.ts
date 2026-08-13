@@ -46,14 +46,14 @@ export function assertRender(frame: Readonly<Bitmap>): void {
 
   // Count amber ink across a grid inside the label box — glyphs must have rendered.
   let ink = 0;
-  for (let gx = 0; gx <= 20; gx++) {
-    for (let gy = 0; gy <= 8; gy++) {
-      const x = FIELD_X + (gx / 20) * FIELD_W;
-      const y = FIELD_Y + (gy / 8) * FIELD_H;
+  for (let gx = 0; gx <= 40; gx++) {
+    for (let gy = 0; gy <= 12; gy++) {
+      const x = FIELD_X + (gx / 40) * FIELD_W;
+      const y = FIELD_Y + (gy / 12) * FIELD_H;
       if (isAmber(at(x, y))) ink++;
     }
   }
-  if (ink < 12) {
+  if (ink < 20) {
     throw new Error(`[textlabel-basic] too few amber ink pixels in the label box (${ink}) — TextLabel did not render`);
   }
 

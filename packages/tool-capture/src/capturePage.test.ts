@@ -19,12 +19,26 @@ function resetCapturePageWindow(): void {
     __ftTarget?: unknown;
     __ftVerification?: unknown;
     __ftBenchmarkTarget?: unknown;
+    __ftProvideDomRenderPixels?: (readback: { data: Uint8ClampedArray; height: number; width: number } | null) => void;
   };
   flags.__flightCapture = undefined;
   flags.__flightCaptureVerify = undefined;
   flags.__ftTarget = undefined;
   flags.__ftVerification = undefined;
   flags.__ftBenchmarkTarget = undefined;
+  flags.__ftProvideDomRenderPixels = undefined;
+}
+
+async function provideDomRenderPixels(): Promise<void> {
+  const flags = window as unknown as {
+    __ftProvideDomRenderPixels?: (readback: { data: Uint8ClampedArray; height: number; width: number } | null) => void;
+  };
+  await vi.waitFor(() => expect(flags.__ftProvideDomRenderPixels).toBeTypeOf('function'));
+  flags.__ftProvideDomRenderPixels?.({
+    data: new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255]),
+    height: 1,
+    width: 2,
+  });
 }
 
 beforeEach(resetCapturePageWindow);
@@ -49,7 +63,9 @@ describe('installCaptureElementTarget', () => {
   it('adapts a renderer-owned DOM element without requiring a Flight render state', async () => {
     const element = document.createElement('div');
     element.textContent = 'reference renderer';
-    await expect(installCaptureElementTarget({ renderer: 'dom', element, verify: true })).resolves.toMatchObject({
+    const verification = installCaptureElementTarget({ renderer: 'dom', element, verify: true });
+    await provideDomRenderPixels();
+    await expect(verification).resolves.toMatchObject({
       render: 'dom',
       state: 'passed',
     });
@@ -67,7 +83,7 @@ describe('installCaptureTarget', () => {
     const render = vi.fn(() => {
       element.textContent = 'ready';
     });
-    const result = await installCaptureTarget({
+    const verification = installCaptureTarget({
       renderer: 'dom',
       state: { element } as unknown as DomRenderState,
       width: 800,
@@ -75,6 +91,8 @@ describe('installCaptureTarget', () => {
       render,
       verify: true,
     });
+    await provideDomRenderPixels();
+    const result = await verification;
 
     expect(render).toHaveBeenCalledOnce();
     expect(result).toMatchObject({
@@ -116,6 +134,8 @@ describe('verifyCaptureTarget', () => {
       width: 1,
       height: 1,
     });
-    await expect(verifyCaptureTarget({}, 'dom')).resolves.toMatchObject({ state: 'passed' });
+    const verification = verifyCaptureTarget({}, 'dom');
+    await provideDomRenderPixels();
+    await expect(verification).resolves.toMatchObject({ state: 'passed' });
   });
 });

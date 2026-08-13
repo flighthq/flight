@@ -36,8 +36,14 @@ const FINGERPRINT_GRID = 16;
 // Same rule captureTimeout.ts states for the runner-side waits, now covering the page's: one number
 // governs all of them, and moving it moves them together.
 const PRESENTED_FRAME_BUDGET_SHARE = 4 / 15;
-const WGPU_READBACK_BUDGET_SHARE = 8 / 15;
+const READBACK_BUDGET_SHARE = 8 / 15;
 const FALLBACK_CAPTURE_TIMEOUT_MS = 15_000;
+
+interface FunctionalDomReadback {
+  data: Uint8ClampedArray;
+  height: number;
+  width: number;
+}
 
 export type FunctionalRenderOracle = (bitmap: Readonly<Bitmap>) => void | Promise<void>;
 
@@ -93,6 +99,7 @@ export type FunctionalTarget = FunctionalCanvasTarget | FunctionalDomTarget | Fu
 
 type VerificationWindow = typeof window & {
   __ftCaptureTimeoutMs?: number;
+  __ftProvideDomRenderPixels?: (readback: FunctionalDomReadback | null) => void;
   __ftRealRequestAnimationFrame?: (cb: FrameRequestCallback) => number;
   __ftRenderImage?: string;
   __ftTarget?: FunctionalTarget;
@@ -192,24 +199,25 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
       const element = target.state.element;
       const hasContent = element.childElementCount > 0 || (element.textContent ?? '').trim() !== '';
       if (!hasContent) throw new Error(`[verify:${render}] blank render: no DOM output produced`);
-      result.stage = 'done';
-      result.state = 'passed';
-      return;
     }
 
-    // Every backend but webgpu reads pixels back out of the canvas, so it waits for the browser to hand
-    // over an animation frame first. The webgpu path does not: frame capture redirects the frame into an
-    // offscreen texture that submitWgpuRenderPass copies into the retained capture buffer in the same
-    // frame (wgpuSurface.ts), so the pixels this verifier reads are already resident before it runs.
-    // Waiting buys nothing there and costs a dependency on the browser still scheduling frames for a
-    // canvas it never presents — a dependency that holds locally and is exactly what stalls under a
-    // contended CI adapter.
-    if (render !== 'webgpu') {
+    // Canvas/WebGL read pixels out of the presented canvas, so wait for the browser to hand over a frame
+    // first. WebGPU's retained capture buffer is already resident; DOM is synchronized by the element
+    // screenshot that supplies its pixels. Waiting buys nothing for either and costs a dependency on the
+    // browser still scheduling frames after the deterministic capture halt.
+    if (render !== 'dom' && render !== 'webgpu') {
       await waitForPresentedFrame(render, getCaptureWaitBudgetMs(PRESENTED_FRAME_BUDGET_SHARE));
     }
 
     result.stage = 'readingBack';
-    const bitmap = await snapshotFunctionalRender();
+    // Browser page JavaScript has no API that rasterizes an arbitrary DOM subtree. The Playwright-side
+    // runner therefore screenshots the registered element and supplies its RGBA bytes through this
+    // one-shot bridge. From this point on DOM uses the same bitmap coverage, scene oracle, and
+    // fingerprint legs as the canvas/GPU backends; merely finding a child element is not a pass.
+    const bitmap =
+      render === 'dom'
+        ? await waitForDomRenderPixels(getCaptureWaitBudgetMs(READBACK_BUDGET_SHARE))
+        : await snapshotFunctionalRender();
     if (bitmap === null) throw new Error(`[verify:${render}] blank render: no readable render bitmap`);
 
     result.stage = 'measuring';
@@ -225,7 +233,14 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
     result.stage = 'asserting';
     await testModule.assertRender?.(bitmap);
     result.stage = 'encoding';
-    (window as VerificationWindow).__ftRenderImage = encodeBitmapToDataUrl(getFunctionalRenderImageBitmap() ?? bitmap);
+    // DOM capture already owns the Playwright screenshot that supplied this bitmap. Publishing another
+    // PNG would only re-encode those pixels; the raster backends still need this data URL because their
+    // compositor screenshots may be blank or unavailable.
+    if (render !== 'dom') {
+      (window as VerificationWindow).__ftRenderImage = encodeBitmapToDataUrl(
+        getFunctionalRenderImageBitmap() ?? bitmap,
+      );
+    }
     result.coverage = coverage;
     result.fingerprint = fingerprint;
     result.stage = 'done';
@@ -241,12 +256,41 @@ export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   const target = (window as VerificationWindow).__ftTarget;
   if (target?.kind === 'dom') return null;
   if (target?.kind === 'webgpu') {
-    return createBitmapFromWgpuRenderState(target.state, getCaptureWaitBudgetMs(WGPU_READBACK_BUDGET_SHARE));
+    return createBitmapFromWgpuRenderState(target.state, getCaptureWaitBudgetMs(READBACK_BUDGET_SHARE));
   }
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
   if (target?.kind === 'webgl') target.state.gl.finish();
   return createBitmapFromImageSource(canvas, canvas.width, canvas.height);
+}
+
+function waitForDomRenderPixels(timeoutMs: number): Promise<Bitmap | null> {
+  const captureWindow = window as VerificationWindow;
+  return new Promise((resolve) => {
+    let settled = false;
+    const provide = (readback: FunctionalDomReadback | null): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (captureWindow.__ftProvideDomRenderPixels === provide) {
+        captureWindow.__ftProvideDomRenderPixels = undefined;
+      }
+      if (
+        readback === null ||
+        readback.width <= 0 ||
+        readback.height <= 0 ||
+        readback.data.length !== readback.width * readback.height * 4
+      ) {
+        resolve(null);
+        return;
+      }
+      const bitmap = createBitmap(readback.width, readback.height);
+      bitmap.data.set(readback.data);
+      resolve(bitmap);
+    };
+    const timer = setTimeout(() => provide(null), timeoutMs);
+    captureWindow.__ftProvideDomRenderPixels = provide;
+  });
 }
 
 function getFunctionalRenderImageBitmap(): Bitmap | null {

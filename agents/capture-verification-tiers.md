@@ -149,11 +149,35 @@ Re-measured on the fixed leg, where all 132 captures now emit a real `verifying 
 | webgpu | 40 | 40 | 2 transient, both passed on retry |
 | dom | 24 | 23 | 1 |
 
-**dom is not short** — all 24 dom entries do register and reach the verifier, so the original conclusion
-holds on real evidence now. The single dom failure is `formatloading`, reported as
-`[verify:dom] blank render: no DOM output produced`; it passed when re-run alone, so on the evidence so far
-it is load-dependent rather than a deterministic break, and it is stated here as one observation rather
-than a diagnosis. The two webgpu entries (`crossfade`, `effects`) hit
+**Reaching the DOM verifier was not DOM verification.** All 24 DOM entries registered a target, but
+`runRenderVerification` returned after checking that its element had a child or text. It did not read a
+bitmap, measure coverage, call the scene's `assertRender`, or publish a fingerprint. The historical record
+itself closes that distinction: the only DOM failure event recorded in the versioned suite history is the
+structural sentinel `[verify:dom] blank render: no DOM output produced`. Extracting the message from every
+revision yields 15/15 copies of that sentinel (repeated snapshots of the one event); the retained local
+artifacts yield 8/8 copies across report, status, and log files, with no second DOM failure class. That is
+evidence for the child check firing, not for any pixel oracle.
+
+Page JavaScript cannot rasterize an arbitrary DOM subtree. The verifier now pauses at `readingBack` while
+the Playwright runner screenshots the registered element and supplies its RGBA bytes back to the page.
+DOM then runs the same coverage, `assertRender`, and fingerprint legs as the raster targets. The committed
+evidence had been 43 functional and 24 example DOM `sha256` fields, compared by `capture:*:check`; there
+were zero DOM coarse `fingerprint` fields, and the regression scripts excluded DOM. DOM is now included in
+the parity/regression/baseline commands, so the coarse committed fingerprint is written by the baseline
+leg and compared by the later regression leg rather than inferred from an exact screenshot capture.
+
+Running every newly reachable oracle rejected five of the 43 functional DOM scenes instead of silently
+blessing them. Two were renderer defects: DOM sprite scaling ignored a nearest-neighbor texture sampler,
+and Shape bounds cropped miter geometry beyond the half-width envelope. Three were native-text oracle
+assumptions: the decoration search band missed CSS line placement, default CSS underline skip-ink broke
+the expected continuous run, and a sparse TextLabel grid landed just below its threshold despite visible
+glyphs. After repairing those paths and re-running from fresh builds, all 43 functional and all 24 example
+DOM entries wrote coarse fingerprints; independent regression runs then compared all 67 at distance
+`0.00`. A forced `-1` tolerance on `node-blend-modes-advanced` rejected its fresh `0.00` distance, proving
+the regression leg was comparing the committed fingerprint rather than merely writing it.
+
+The former single DOM failure was `formatloading`; it passed when re-run alone, so the evidence supports
+load dependence rather than a deterministic break, not a diagnosis. The two webgpu entries (`crossfade`, `effects`) hit
 `render verifier did not reach a terminal state` and succeeded on retry — the same stall class as
 `scene3d`, now visible on the smoke leg because verification finally runs there.
 

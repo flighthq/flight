@@ -27,7 +27,10 @@ import {
   appendShapeCubicCurveTo,
   appendShapeCurveTo,
   appendShapeEllipse,
+  appendShapeLineStyle,
+  appendShapeLineTo,
   appendShapeMoveTo,
+  appendShapeRectangle,
 } from './shapeCommands';
 
 describe('clearShapeCommands', () => {
@@ -137,6 +140,30 @@ describe('computeShapeLocalBoundsRectangle', () => {
     expect(out.y).toBe(0);
     expect(out.width).toBe(80);
     expect(out.height).toBe(60);
+  });
+
+  it('includes a miter point beyond the half-width endpoint envelope', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 30, 0xffffff, 1, false, 'normal', 'none', 'miter', 6);
+    appendShapeMoveTo(shape, -110, -110);
+    appendShapeLineTo(shape, 0, 0);
+    appendShapeLineTo(shape, 110, -110);
+    const out = createRectangle();
+
+    computeShapeLocalBoundsRectangle(out, shape as any);
+
+    expect(out.y + out.height).toBeGreaterThan(18);
+  });
+
+  it('uses the authored miter-limit envelope when an exact stroke outline is unavailable', () => {
+    const shape = createShape();
+    appendShapeLineStyle(shape, 30, 0xffffff, 1, false, 'normal', 'none', 'miter', 6);
+    appendShapeRectangle(shape, 0, 0, 100, 100);
+    const out = createRectangle();
+
+    computeShapeLocalBoundsRectangle(out, shape as any);
+
+    expect(out).toMatchObject({ height: 280, width: 280, x: -90, y: -90 });
   });
 
   it('computes bounds from a quadratic bezier with an interior extremum', () => {
