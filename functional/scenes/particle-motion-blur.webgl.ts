@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
   ParticleEmitter2DKind,
   addNodeChild,
@@ -30,6 +30,7 @@ import {
   renderGlVelocity,
   reserveParticleEmitter2D,
   setGlRenderEffectVelocityTexture,
+  getBitmapPixelRgb,
 } from '@flighthq/sdk';
 
 // The particle emitter writes per-particle velocity into the G-buffer (registerGlVelocityWriter with
@@ -132,3 +133,47 @@ for (let i = 0; i < PARTICLE_COUNT; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Motion blur redistributes each particle's energy along its velocity: the bright cores vanish and a wide
+// dim smear takes their place. Both facts are invisible to the regression fingerprint, whose committed
+// grid scores 0.57 against a uniform frame of its own background — the whole picture is worth a ninth of
+// the gate's threshold, so nothing confined to it can ever fail. Measured with the effect applied vs the
+// same scene rendered with the pipeline bypassed: mid-dim 0.01170 vs 0.00401, bright cores 0.00000 vs
+// 0.00312. The floors sit between the two arms.
+//
+// LIMIT, stated because the scene's purpose is narrower than what this proves: this verifies the blur was
+// APPLIED, not that each particle was smeared along its OWN vector. A single shared blur direction — the
+// bug per-particle velocity exists to prevent — also erases the cores and also fills the mid band, so it
+// would pass. Radial extent cannot separate them here either: the smear is a few pixels against a ring
+// radius of ~0.42 of the frame, so both arms measure the ring, not the streak.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const { brightCores, midDim } = measureSmear(frame);
+  if (midDim < 0.008) {
+    throw new Error(
+      `[particle-motion-blur] mid-dim coverage is ${(midDim * 100).toFixed(3)}% (expected >= 0.8%) — the ` +
+        `particles carry no smear, so the motion-blur pass did not reach the frame`,
+    );
+  }
+  if (brightCores > 0.0005) {
+    throw new Error(
+      `[particle-motion-blur] ${(brightCores * 100).toFixed(3)}% of the frame is still at full particle ` +
+        `brightness (expected <= 0.05%) — the cores were never spread along their velocity`,
+    );
+  }
+}
+
+function measureSmear(frame: Readonly<Bitmap>): { brightCores: number; midDim: number } {
+  let midDim = 0;
+  let brightCores = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (value > 40 && value <= 90) midDim += 1;
+      else if (value > 160) brightCores += 1;
+    }
+  }
+  const total = frame.width * frame.height;
+  return { brightCores: brightCores / total, midDim: midDim / total };
+}

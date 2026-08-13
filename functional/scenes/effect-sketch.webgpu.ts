@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -21,6 +21,7 @@ import {
   renderWgpuBackground,
   renderWgpuScene2D,
   submitWgpuRenderPass,
+  getBitmapPixelRgb,
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
@@ -76,3 +77,51 @@ for (let i = 0; i < 18; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// The sketch pass renders the scene as pencil strokes, and its sharpest signature is that the result is
+// MONOCHROME: the six saturated fills collapse to gray. Measured with the effect applied vs the same
+// scene with the pipeline bypassed — mean chroma 0.000 vs 8.750, adjacent-pixel energy 1.75 vs 0.66. Both
+// are invisible to the regression fingerprint, whose committed grid scores 3.86 against a uniform frame
+// of its own background, under the gate's threshold of 5. Chroma is the load-bearing check; the energy
+// floor is the second arm, so a frame that is gray for the wrong reason (a flat wash) still fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const { highFrequency, saturation } = measureSketch(frame);
+  if (saturation > 2) {
+    throw new Error(
+      `[effect-sketch] mean chroma is ${saturation.toFixed(2)} (expected <= 2) — the fills kept their color, ` +
+        `so the sketch pass did not reach the frame`,
+    );
+  }
+  if (highFrequency < 1.2) {
+    throw new Error(
+      `[effect-sketch] adjacent-pixel energy is ${highFrequency.toFixed(2)} (expected >= 1.2) — the frame is ` +
+        `gray but carries no stroke structure`,
+    );
+  }
+}
+
+function measureSketch(frame: Readonly<Bitmap>): { highFrequency: number; saturation: number } {
+  let deltas = 0;
+  let pairs = 0;
+  let chroma = 0;
+  let samples = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    let previous = -1;
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const r = (rgb >> 16) & 255;
+      const g = (rgb >> 8) & 255;
+      const b = rgb & 255;
+      const value = (r + g + b) / 3;
+      chroma += Math.max(r, g, b) - Math.min(r, g, b);
+      samples += 1;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return { highFrequency: pairs === 0 ? 0 : deltas / pairs, saturation: samples === 0 ? 0 : chroma / samples };
+}
