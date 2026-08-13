@@ -66,6 +66,7 @@ const KNOWN_CAPTURE_FLAGS: ReadonlySet<string> = new Set([
   'tool',
   'update-baseline',
   'update-benchmarks',
+  'update-coverage',
   'update-fingerprints',
   'url',
   'verify',

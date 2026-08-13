@@ -32,6 +32,13 @@ import type { BrowserContext, Page } from '@playwright/test';
 import pc from 'picocolors';
 
 import { getBaselineField, setBaselineField } from './baselineStore.js';
+import {
+  diffCaptureBaselineCoverage,
+  formatCaptureBaselineCoverageIdentity,
+  isCaptureBaselineCoverageFailure,
+  readCaptureBaselineCoverageManifest,
+  writeCaptureBaselineCoverageManifest,
+} from './captureBaselineCoverageManifest.js';
 import { isUniformCaptureFingerprint } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
@@ -60,6 +67,8 @@ export interface CaptureValidationOptions {
   captureFrames?: number;
   report?: boolean;
   updateFingerprints?: boolean;
+  /** Accept the observed coverage as the new capture baseline coverage manifest instead of gating on it. */
+  updateCoverage?: boolean;
   gateRegression?: boolean;
   gateParity?: boolean;
   stabilityEpsilon?: number;
@@ -151,6 +160,7 @@ interface ResolvedCaptureValidationOptions {
   captureFrames: number;
   report: boolean;
   updateFingerprints: boolean;
+  updateCoverage: boolean;
   gateRegression: boolean;
   gateParity: boolean;
   stabilityEpsilon: number;
@@ -497,6 +507,10 @@ export function isCaptureRegressionCoverageFailure(run: Readonly<CaptureRegressi
 }
 
 interface EntryResult {
+  /** `entry/renderer` identities this run reached the baseline lookup for. */
+  visited: string[];
+  /** Of those, the ones that HAD a comparable committed baseline. */
+  covered: string[];
   regressionFailures: number;
   regressionUncovered: number;
   parityFailures: number;
@@ -519,6 +533,8 @@ async function processEntry(
   samples: Readonly<FingerprintSamples>,
 ): Promise<EntryResult> {
   const result: EntryResult = {
+    visited: [],
+    covered: [],
     regressionFailures: 0,
     regressionUncovered: 0,
     parityFailures: 0,
@@ -569,6 +585,10 @@ async function processEntry(
     });
     return result;
   }
+
+  // Every identity below this point reached the baseline lookup, so an absent one really was excluded
+  // by scope rather than silently dropped.
+  result.visited.push(...renderers.map((renderer) => formatCaptureBaselineCoverageIdentity(entry.name, renderer)));
 
   const eligible = new Map<string, string>();
 
@@ -669,6 +689,7 @@ async function processEntry(
         status: 'passed',
         message: 'baseline written',
       });
+      result.covered.push(formatCaptureBaselineCoverageIdentity(entry.name, renderer));
       eligible.set(renderer, fingerprint);
       continue;
     }
@@ -687,6 +708,10 @@ async function processEntry(
       });
       continue;
     }
+    // Coverage is recorded HERE, where it is a fact, not inferred later from the shape of the checks:
+    // a smoke leg gates neither regression nor report and so emits no regression check at all, and
+    // deriving coverage by subtracting skips would call every one of those targets lost.
+    result.covered.push(formatCaptureBaselineCoverageIdentity(entry.name, renderer));
     const dist = distance(fingerprint, committed);
     eligible.set(renderer, fingerprint);
     if (dist === null) {
@@ -926,6 +951,9 @@ export async function runCaptureValidation(
     ? input.entries.filter((entry) => entry.name.includes(input.filter!))
     : [...input.entries];
   if (entries.length === 0) throw new Error(`No validation entries found subject=${input.subject}`);
+  // A filtered run cannot tell "this pinned target vanished" from "I excluded it", so it must not claim
+  // an absence. It can still report a LOSS, because that is about a target it actually ran.
+  const entryFiltered = input.filter !== undefined && input.filter !== '';
   const options: ResolvedCaptureValidationOptions = {
     subject: input.subject,
     root: resolve(input.root ?? process.cwd()),
@@ -934,6 +962,7 @@ export async function runCaptureValidation(
     report: input.report ?? false,
     quiet: input.quiet ?? false,
     updateFingerprints: input.updateFingerprints ?? false,
+    updateCoverage: input.updateCoverage ?? false,
     gateRegression: input.gateRegression ?? true,
     gateParity: input.gateParity ?? true,
     stabilityEpsilon: input.stabilityEpsilon ?? 4,
@@ -965,6 +994,8 @@ export async function runCaptureValidation(
   let updated = 0;
   let skipped = 0;
   const checks: CaptureValidationCheck[] = [];
+  const coveredIdentities: string[] = [];
+  const visitedIdentities: string[] = [];
 
   try {
     // Balance pages, not entries: a four-renderer entry must not monopolize one worker while another
@@ -1020,6 +1051,10 @@ export async function runCaptureValidation(
           updated += result.updated;
           skipped += result.skipped;
           checks.push(...result.checks);
+          coveredIdentities.push(...result.covered);
+          visitedIdentities.push(...result.visited);
+          coveredIdentities.push(...result.covered);
+          visitedIdentities.push(...result.visited);
           if (!options.quiet) for (const line of result.output) console.log(line);
         }
       });
@@ -1048,6 +1083,31 @@ export async function runCaptureValidation(
 
   const interrupted = isAborted();
   const note = interrupted ? pc.yellow('   — interrupted (partial run)') : '';
+
+  if (options.updateCoverage) {
+    // A partial or load-failed run does not know what it did not reach. Accepting one would silently
+    // retire every target it never got to — the exact erosion the manifest exists to catch.
+    if (interrupted || loadFailures > 0) {
+      console.error(
+        pc.red(
+          `\nRefusing to update the capture baseline coverage manifest from an incomplete run (${interrupted ? 'interrupted' : `${loadFailures} load failure(s)`}).`,
+        ),
+      );
+      return createResult(true);
+    }
+    const identities = [...new Set(coveredIdentities)];
+    writeCaptureBaselineCoverageManifest(
+      options.root,
+      options.subject,
+      identities,
+      options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
+    );
+    if (!options.quiet)
+      console.log(
+        `\ncapture baseline coverage manifest updated — ${identities.length} identit${identities.length === 1 ? 'y' : 'ies'} pinned for ${options.subject}`,
+      );
+    return createResult(false);
+  }
 
   if (options.updateFingerprints) {
     if (!options.quiet)
@@ -1094,7 +1154,24 @@ export async function runCaptureValidation(
     parityUncovered,
     rendererFilterCount: options.rendererFilter.length,
   });
+  // The zero-floor above asks only whether ANY comparison ran. This asks WHICH ones did: a pinned
+  // identity that ran and no longer has a baseline is named individually, instead of being absorbed into
+  // an "uncovered" count that still satisfies the floor as long as one other target compared.
+  const coverageDiff = options.gateRegression
+    ? diffCaptureBaselineCoverage(
+        readCaptureBaselineCoverageManifest(options.root),
+        options.subject,
+        [...new Set(coveredIdentities)],
+        [...new Set(visitedIdentities)],
+        {
+          entryFiltered,
+          activeRenderers: options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
+        },
+      )
+    : { gained: [], lost: [], absent: [] };
+  const coverageFailed = isCaptureBaselineCoverageFailure(coverageDiff);
   const failed =
+    coverageFailed ||
     regressionFailures > 0 ||
     parityFailures > 0 ||
     loadFailures > 0 ||
@@ -1120,6 +1197,23 @@ export async function runCaptureValidation(
   // reader sees what the comparison actually found rather than only that nothing crossed the line.
   const ranking = formatCaptureParityRanking(checks);
   if (ranking !== null && !options.quiet) console.log(ranking);
+
+  for (const identity of coverageDiff.lost) {
+    console.error(pc.red(`  - ${identity}  (pinned, ran, no comparable baseline)`));
+  }
+  for (const identity of coverageDiff.absent) {
+    console.error(pc.red(`  - ${identity}  (pinned, never reached by this run)`));
+  }
+  for (const identity of coverageDiff.gained) {
+    console.error(pc.red(`  + ${identity}  (newly covered, not yet pinned)`));
+  }
+  if (coverageFailed) {
+    console.error(
+      pc.red(
+        `\nCapture baseline coverage does not match scripts/capture-baseline-coverage-manifest.json — the manifest is an exact set, so a gain counts too. Repair a missing baseline, or accept the change deliberately with --update-coverage (no --filter).`,
+      ),
+    );
+  }
 
   // Name the entries behind an "N uncovered" count: a bare number tells a reader something is missing but
   // not what to go look at, and the entries differ in why.

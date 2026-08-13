@@ -48,7 +48,7 @@ capture options:
 Every command writes a versioned aggregate JSON report beneath its artifact directory.
 
 validation options:
-  --report --update-fingerprints --no-regression --no-parity
+  --report --update-fingerprints --update-coverage --no-regression --no-parity
   --stability-epsilon <n> --regression-tolerance <n> --parity-tolerance <n>
 
 FLIGHT_CAPTURE_WORKER_COUNT pins worker concurrency when --parallel is omitted.
@@ -240,12 +240,24 @@ function validationOptions(
   manifest: CaptureManifest | null,
 ): CaptureWorkflowValidationOptions {
   const preset = getFlightCaptureValidationPreset(subject);
+  const updateCoverage = hasFlag(argv, 'update-coverage');
+  const filter = flag(argv, 'filter');
+  const rendererFilter = (flag(argv, 'renderer') ?? '').split(',').filter(Boolean);
+  // ★ The same guard scripts/reachability.ts puts on its baseline: an entry-filtered run has seen only
+  // part of the subject, so accepting its coverage as the pin would silently retire every entry outside
+  // the filter — the erosion this manifest exists to catch, performed by the tool itself.
+  // `--renderer` needs no such refusal: the regression tier is renderer-scoped by definition, and a
+  // renderer-scoped update carries the pins it did not run forward instead of dropping them.
+  if (updateCoverage && filter !== undefined) {
+    throw new Error('Capture baseline coverage manifest updates must be whole-subject — drop --filter');
+  }
   return {
-    filter: flag(argv, 'filter'),
-    rendererFilter: (flag(argv, 'renderer') ?? '').split(',').filter(Boolean),
+    filter,
+    rendererFilter,
     captureFrames: Math.max(1, parseNonNegativeInteger(flag(argv, 'frames'), 1)),
     report: hasFlag(argv, 'report'),
     updateFingerprints: hasFlag(argv, 'update-fingerprints'),
+    updateCoverage,
     gateRegression: !hasFlag(argv, 'no-regression'),
     gateParity: !hasFlag(argv, 'no-parity'),
     stabilityEpsilon: parseNumber(flag(argv, 'stability-epsilon')),
