@@ -860,7 +860,7 @@ describe('setGlQuadMatrixFromOffset', () => {
     // Identity transform + offset (dx=10, dy=20): effective tx = 0 + 1*10 + 0*20 = 10
     const runtime = getGlRenderStateRuntime(state);
     setGlQuadMatrixFromOffset(state, 1, 0, 0, 1, 0, 0, 10, 20);
-    expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(runtime.shaderLoc.locMatrix, false, runtime.matrixArray);
+    expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(runtime.shaderLoc!.locMatrix, false, runtime.matrixArray);
     // tx * 2/200 - 1 = 10 * 0.01 - 1 = -0.9
     expect(runtime.matrixArray[6]).toBeCloseTo(-0.9);
     // -ty * 2/100 + 1 = -20 * 0.02 + 1 = 0.6
@@ -933,13 +933,13 @@ describe('useGlProgram', () => {
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentProgram = null;
     useGlProgram(state);
-    expect(gl.useProgram).toHaveBeenCalledWith(runtime.shaderLoc.program);
+    expect(gl.useProgram).toHaveBeenCalledWith(runtime.shaderLoc!.program);
   });
 
   it('does not call useProgram when program is already active', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    runtime.currentProgram = runtime.shaderLoc.program;
+    runtime.currentProgram = runtime.shaderLoc!.program;
     useGlProgram(state);
     expect(gl.useProgram).not.toHaveBeenCalled();
   });
@@ -949,7 +949,7 @@ describe('useGlProgram', () => {
     const runtime = getGlRenderStateRuntime(state);
     runtime.currentProgram = null;
     useGlProgram(state);
-    expect(runtime.currentProgram).toBe(runtime.shaderLoc.program);
+    expect(runtime.currentProgram).toBe(runtime.shaderLoc!.program);
   });
 
   it('uses the registered bitmap shader program and locations', () => {
@@ -957,7 +957,7 @@ describe('useGlProgram', () => {
     const runtime = getGlRenderStateRuntime(state);
     const shader = {
       bind: vi.fn(),
-      locations: { ...runtime.shaderLoc, program: {} as WebGLProgram },
+      locations: { ...runtime.shaderLoc!, program: {} as WebGLProgram },
       program: {} as WebGLProgram,
     };
     shader.locations.program = shader.program;

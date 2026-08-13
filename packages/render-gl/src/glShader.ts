@@ -104,6 +104,16 @@ export function createGlBitmapShader(
   };
 }
 
+export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShader {
+  const runtime = getGlRenderStateRuntime(state);
+  if (runtime.defaultBitmapShader !== null) return runtime.defaultBitmapShader;
+  const shaderLoc = compileDefaultGlProgram(state.gl);
+  const shader = createDefaultGlBitmapShader(shaderLoc, runtime.matrixArray);
+  runtime.defaultBitmapShader = shader;
+  runtime.shaderLoc = shaderLoc;
+  return shader;
+}
+
 export function setGlAttributes(gl: WebGL2RenderingContext, loc: GlShaderLocations): void {
   gl.enableVertexAttribArray(loc.locPosition);
   gl.enableVertexAttribArray(loc.locTexCoord);

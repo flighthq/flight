@@ -1,16 +1,18 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { getGlRenderStateRuntime } from './glRenderState';
 import {
   compileDefaultGlProgram,
   compileGlBitmapProgram,
   createDefaultGlBitmapShader,
   createGlBitmapShader,
+  ensureDefaultGlBitmapShader,
   setGlAttributes,
   setGlBaseUniforms,
   setGlMatrixFromTransform,
   setGlMatrixFromValues,
 } from './glShader';
-import { makeGL, makeShaderLoc } from './glTestHelper';
+import { createGlState, makeGL, makeShaderLoc } from './glTestHelper';
 
 describe('compileDefaultGlProgram', () => {
   it('returns shader locations with all required fields', () => {
@@ -147,6 +149,30 @@ describe('createGlBitmapShader', () => {
     );
 
     expect(onBind).toHaveBeenCalledWith(gl, shader.locations, renderProxy);
+  });
+});
+
+describe('ensureDefaultGlBitmapShader', () => {
+  it('compiles and caches the default shader on first call', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.defaultBitmapShader = null;
+    runtime.shaderLoc = null;
+    const shader = ensureDefaultGlBitmapShader(state);
+    expect(shader).toBeDefined();
+    expect(shader.program).toBeDefined();
+    expect(runtime.defaultBitmapShader).toBe(shader);
+    expect(runtime.shaderLoc).not.toBeNull();
+  });
+
+  it('returns the cached shader on subsequent calls', () => {
+    const { state } = createGlState();
+    const runtime = getGlRenderStateRuntime(state);
+    runtime.defaultBitmapShader = null;
+    runtime.shaderLoc = null;
+    const first = ensureDefaultGlBitmapShader(state);
+    const second = ensureDefaultGlBitmapShader(state);
+    expect(second).toBe(first);
   });
 });
 

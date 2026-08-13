@@ -65,7 +65,7 @@ describe('drawGlRichText', () => {
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
 
-    const bindSpy = vi.spyOn(getGlRenderStateRuntime(state).defaultBitmapShader, 'bind');
+    const bindSpy = vi.spyOn(getGlRenderStateRuntime(state).defaultBitmapShader!, 'bind');
     drawGlRichText(state, renderProxy);
 
     expect(bindSpy).toHaveBeenCalledWith(state.gl, state, renderProxy);

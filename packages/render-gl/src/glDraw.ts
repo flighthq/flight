@@ -18,7 +18,7 @@ import type {
 import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
-import { setGlAttributes, setGlMatrixFromValues } from './glShader';
+import { ensureDefaultGlBitmapShader, setGlAttributes, setGlMatrixFromValues } from './glShader';
 import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload';
 import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
 
@@ -333,7 +333,7 @@ export function drawGlQuad(
   gl.bindBuffer(gl.ARRAY_BUFFER, quadVertexBuffer);
   gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadIndexBuffer);
-  setGlAttributes(gl, shaderLoc);
+  setGlAttributes(gl, shaderLoc!);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 }
 
@@ -385,7 +385,7 @@ export function setGlQuadMatrixFromOffset(
   const runtime = getGlRenderStateRuntime(state);
   setGlMatrixFromValues(
     state.gl,
-    runtime.shaderLoc,
+    runtime.shaderLoc!,
     runtime.matrixArray,
     a,
     b,
@@ -511,7 +511,7 @@ type GlTextureSourceUpload = (
 
 export function useGlProgram(state: GlRenderState, shader?: GlBitmapShader): void {
   const runtime = getGlRenderStateRuntime(state);
-  const resolved = shader ?? runtime.defaultBitmapShader;
+  const resolved = shader ?? ensureDefaultGlBitmapShader(state);
   runtime.shaderLoc = resolved.locations;
   const program = resolved.program;
   if (runtime.currentProgram !== program) {

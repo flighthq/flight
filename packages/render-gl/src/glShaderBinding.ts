@@ -3,6 +3,7 @@ import type { Node2D, GlRenderState, Kind, RenderProxy2D } from '@flighthq/types
 import type { GlBitmapShader } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
+import { ensureDefaultGlBitmapShader } from './glShader';
 
 // Per-state shader bindings, keyed by the render node. Because render nodes are
 // per-state (state.renderProxyMap), a module-level map keyed by render node is
@@ -45,7 +46,7 @@ export function resolveGlShader(state: GlRenderState, renderProxy: RenderProxy2D
     const shader = runtime.materialBitmapShaderMap?.get(material.kind);
     if (shader !== undefined) return shader;
   }
-  return runtime.defaultBitmapShader;
+  return ensureDefaultGlBitmapShader(state);
 }
 
 /**

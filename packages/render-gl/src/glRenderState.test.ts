@@ -306,7 +306,7 @@ describe('createGlOffscreenRenderState', () => {
     expect(gl.deleteProgram).not.toHaveBeenCalled();
 
     destroyGlRenderState(screen);
-    expect(gl.deleteProgram).toHaveBeenCalled();
+    expect(gl.deleteBuffer).toHaveBeenCalled();
   });
 });
 
@@ -493,7 +493,7 @@ describe('createGlRenderStateRuntime', () => {
 });
 
 describe('destroyGlRenderState', () => {
-  it('deletes the state-owned shader programs and buffers', () => {
+  it('deletes buffers on destroy even when no shader was compiled', () => {
     const { canvas, gl } = makeCanvas();
     const state = createGlRenderState(canvas);
     const deleteProgram = vi.spyOn(gl, 'deleteProgram');
@@ -501,7 +501,7 @@ describe('destroyGlRenderState', () => {
 
     destroyGlRenderState(state);
 
-    expect(deleteProgram).toHaveBeenCalled();
+    expect(deleteProgram).not.toHaveBeenCalled();
     expect(deleteBuffer).toHaveBeenCalled();
   });
 
@@ -590,7 +590,7 @@ describe('getGlRenderStateRuntime', () => {
     const state = createGlRenderState(canvas);
     const runtime = getGlRenderStateRuntime(state);
     expect(runtime).toBeDefined();
-    expect(runtime.defaultBitmapShader).toBeDefined();
+    expect(runtime.defaultBitmapShader).toBeNull();
   });
 
   it('resolves the same runtime object on repeated calls', () => {
