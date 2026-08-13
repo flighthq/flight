@@ -387,6 +387,30 @@ describe('parseSpineSkeletonBinary', () => {
     expect(beyond[1].transformMode).toEqual(TransformMode2D.Normal);
   });
 
+  // ★ EVERY UNMODELED ATTACHMENT TYPE, WALKED BYTE-EXACTLY, WITH AND WITHOUT NONESSENTIAL DATA. Five types
+  // Flight does not model — boundingbox, clipping, point, linkedmesh, path — each of which still occupies
+  // bytes the reader must step over exactly. Nine of this file's branch arms are the `if (nonessential)`
+  // half of those skips, and none had ever run: the flag changes the width of every one of these records,
+  // so a reader that honours it in some and not others desynchronises only for files exported from the
+  // editor, which is the export most likely to be handed to a developer debugging something else.
+  //
+  // The proof is a KNOWN attachment on the far side. All five unmodeled records are written before the
+  // region, so a wrong width anywhere shows up as the region reading back as garbage — the same shape as
+  // the IK-constraint test above, and the reason this asserts field values rather than a bare not-null.
+  it.each([false, true])('walks every unmodeled attachment type byte-exactly (nonessential=%s)', (nonessential) => {
+    const result = parseSpineSkeletonBinary(buildSpineBinary({ nonessential, unmodeledAttachments: true }))!;
+
+    expect(result).not.toBeNull();
+    expect(result.skeleton.slots![0].attachment).toMatchObject({
+      height: 32,
+      name: 'body-attachment',
+      rotation: 12.5,
+      width: 64,
+      x: 3.5,
+      y: 4.5,
+    });
+  });
+
   it('honors the nonessential flag, which changes the bone record width', () => {
     // With nonessential set, each bone carries a trailing editor color. Reading the flag but not the color
     // would desynchronize every following record, so the slot below is the canary.
@@ -417,6 +441,7 @@ function buildSpineBinary(
   options: {
     version?: string;
     nonessential?: boolean;
+    unmodeledAttachments?: boolean;
     transformMode?: number;
     darkColor?: number;
     ikConstraints?: number;
@@ -478,7 +503,8 @@ function buildSpineBinary(
   // Default skin: one slot entry carrying a region and a mesh.
   writeVarint(out, 1); // slot entries
   writeVarint(out, 0); // slot index
-  writeVarint(out, 2); // attachments on it
+  writeVarint(out, options.unmodeledAttachments === true ? 7 : 2); // attachments on it
+  if (options.unmodeledAttachments === true) writeUnmodeledAttachments(out, nonessential);
   writeVarint(out, 1); // key -> 'body-attachment'
   writeVarint(out, 0); // name: absent, so the key is used
   out.push(0); // type: region
@@ -644,4 +670,69 @@ function writeVarint(out: number[], value: number): void {
     remaining >>>= 7;
   }
   out.push(remaining);
+}
+
+// The five attachment types Flight does not model but must still WALK BYTE-EXACTLY, each written at the
+// width the importer skips. Emitted BEFORE the region attachment on purpose: the region is the known
+// quantity on the far side, so if any of these widths is walked wrong the region reads back as garbage and
+// the test fails there rather than here.
+//
+// ★ WHAT THIS CAN AND CANNOT PROVE. The widths below are the ones the importer skips, so this cannot
+// confirm them against the real format — for that the layout was read against a purchased 4.1 export (see
+// the package status). What it does prove is that the two paths through each record, with and without
+// nonessential data, stay in step with each other and with the reader, which is exactly what drifts when
+// someone edits one skip and not its sibling.
+// ★ THE COLOUR VALUE IS LOAD-BEARING AND 0xffffffff WOULD MAKE THIS TEST UNABLE TO FAIL. Every byte of
+// 0xffffffff has the varint continuation bit set, so when a reader is four bytes behind, the next varint
+// SWALLOWS the stray colour and resynchronises by accident — measured: dropping the boundingbox skip
+// entirely left this test green. A colour whose bytes are below 0x80 terminates a varint immediately, so
+// the same drop desynchronises and is caught. The fixture value decides whether the test can detect the
+// bug at all, which is the fixture-symmetry trap in a form specific to variable-length encodings.
+const UNMODELED_ATTACHMENT_COLOR = 0x01020304;
+
+function writeUnmodeledAttachments(out: number[], nonessential: boolean): void {
+  const vertices = (count: number) => {
+    writeVarint(out, count);
+    out.push(0); // not weighted
+    for (let i = 0; i < count * 2; i++) writeFloat(out, i);
+  };
+  const header = (key: number, type: number) => {
+    writeVarint(out, key);
+    writeVarint(out, 0); // name absent, key is used
+    out.push(type);
+  };
+
+  header(3, 1); // boundingbox
+  vertices(2);
+  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
+
+  header(3, 6); // clipping
+  writeVarint(out, 0); // end slot
+  vertices(2);
+  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
+
+  header(3, 5); // point
+  writeFloat(out, 0); // rotation
+  writeFloat(out, 0); // x
+  writeFloat(out, 0); // y
+  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
+
+  header(3, 3); // linkedmesh
+  writeVarint(out, 0); // path
+  writeInt(out, UNMODELED_ATTACHMENT_COLOR); // color
+  writeVarint(out, 0); // skin name
+  writeVarint(out, 0); // parent mesh
+  out.push(0); // inherit timelines
+  out.push(0); // sequence absent
+  if (nonessential) {
+    writeFloat(out, 0); // width
+    writeFloat(out, 0); // height
+  }
+
+  header(3, 4); // path
+  out.push(0); // closed
+  out.push(0); // constantSpeed
+  vertices(3);
+  writeFloat(out, 0); // one per-curve length for 3 vertices
+  if (nonessential) writeInt(out, UNMODELED_ATTACHMENT_COLOR);
 }
