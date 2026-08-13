@@ -93,6 +93,14 @@ if (!scoped) {
   add('capabilities:sites:check', 'tsx', ['scripts/swf-diagnostic-sites.ts', '--check']);
   add('capabilities:numbers', 'tsx', ['scripts/swf-doc-numbers.ts']);
   add('fingerprint-source-hashes:check', 'tsx', ['scripts/check-fingerprint-source-hashes.ts']);
+  // Lives HERE, in the gate every commit reaches, rather than in a CI job selected by changed paths.
+  // Its subject is scripts/capture-baseline-coverage-manifest.json, a COMMITTED file: a commit that
+  // deletes a pin from the manifest and touches no code is a .md-free but code-free change, which a
+  // path filter routes down the docs lane. That would let coverage be retired through the exact door
+  // the manifest exists to close, and the diff would read as ordinary housekeeping while doing it. A
+  // gate against silent removal must not itself be silently skippable. It is a static scan of sources
+  // and committed baselines — no browser, no dist — so always running it costs effectively nothing.
+  add('evidence:check', 'tsx', ['scripts/capture-evidence.ts', '--check']);
 
   // Advisory, and deliberately not a gate: `scripts/size.ts` always exits 0, so this reports which
   // bundles moved against the unminified baseline without ever failing the sweep. A red here would
