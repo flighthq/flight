@@ -334,25 +334,39 @@ export function removeNodeChildren<Traits extends object>(
 }
 
 /**
- * Moves a child to a new parent while preserving its world-space position.
- * The child's local transform fields are recomputed so its effective world transform remains
+ * Moves a child to a new parent while preserving its world-space position, and reports whether it
+ * did. The child's local transform fields are recomputed so its effective world transform remains
  * unchanged. Its pivot is preserved; rotation and skew may be reparameterized because a general
  * affine matrix has multiple equivalent decompositions.
  *
- * To reparent without preserving world position (keeping local TRS unchanged),
- * use addNodeChild instead.
+ * Returns `false`, having changed NOTHING — neither the attachment nor the transform — when
+ * `newParent`'s world matrix has no inverse (a zero scale anywhere in its ancestry). This is not a
+ * computation that went wrong: under a singular parent there EXISTS no local transform that would
+ * preserve the child's world transform, so there is no right answer to write and inventing one is
+ * the defect. Declining whole is what keeps the caller out of a half-applied state it would have to
+ * untangle without being told which half happened.
+ *
+ * To reparent without preserving world position (keeping local TRS unchanged), use addNodeChild
+ * instead — that is also the composition to reach for when a caller wants the attachment regardless.
  */
 export function reparentNode<Traits extends object>(
   child: Transform2DNode<Traits>,
   newParent: Transform2DNode<Traits>,
-): NodeOf<Traits> {
+): boolean {
   ensureNodeWorldMatrix(child);
+  ensureNodeWorldMatrix(newParent);
   const oldWorld = acquireMatrix();
   const localM = acquireMatrix();
   try {
     copyMatrix(oldWorld, getNodeWorldMatrix(child));
+    // Inverted BEFORE attaching, which is what makes "no mutation at all" achievable rather than a
+    // rollback: the parent's world transform does not depend on the child, so this is the same matrix
+    // it would be afterwards.
+    if (!inverseMatrix(localM, getNodeWorldMatrix(newParent))) {
+      reparentNodeGuard?.(child as Node, newParent as Node);
+      return false;
+    }
     addNodeChild(newParent, child);
-    inverseMatrix(localM, getNodeWorldMatrix(newParent));
     multiplyMatrix(localM, localM, oldWorld);
 
     const pivotX = child.pivotX;
@@ -368,7 +382,7 @@ export function reparentNode<Traits extends object>(
     releaseMatrix(oldWorld);
     releaseMatrix(localM);
   }
-  return child as unknown as NodeOf<Traits>;
+  return true;
 }
 
 /**
@@ -410,6 +424,12 @@ export function setNodeChildIndex<Traits extends object>(
       if (targetSignals !== null) emitSignal(targetSignals.onChildrenOrderChanged);
     }
   }
+}
+
+// The seam the guard layer installs into; `null` keeps this module free of message text and of any
+// dependency on @flighthq/log.
+export function setReparentNodeGuard(guard: ((child: Node, newParent: Node) => void) | null): void {
+  reparentNodeGuard = guard;
 }
 
 /**
@@ -473,3 +493,6 @@ function invalidateNodeChildren<Traits extends object>(runtime: NodeRuntime<Trai
 function throwOutOfBoundsError(): void {
   throw new RangeError('The supplied index is out of bounds.');
 }
+
+// Module state for the opt-in guard seam above; see enableNodeGuards.
+let reparentNodeGuard: ((child: Node, newParent: Node) => void) | null = null;
