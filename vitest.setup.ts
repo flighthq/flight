@@ -1,5 +1,26 @@
 export {};
 
+interface FakeGlErrorAuditState {
+  takePendingAuditMessage(): string | null;
+}
+
+const GL_ERROR_AUDIT_REGISTER_KEY = '__flightRegisterFakeGlErrorAuditState';
+const glErrorAuditStates = new Set<FakeGlErrorAuditState>();
+(globalThis as Record<string, unknown>)[GL_ERROR_AUDIT_REGISTER_KEY] = (state: FakeGlErrorAuditState): void => {
+  glErrorAuditStates.add(state);
+};
+
+afterEach(() => {
+  const pending = Array.from(glErrorAuditStates, (state) => state.takePendingAuditMessage()).filter(
+    (message): message is string => message !== null,
+  );
+  if (pending.length > 0) {
+    throw new Error(
+      `Fake WebGL context ended the test with ${pending.length} unretrieved GL error${pending.length === 1 ? '' : 's'}:\n${pending.join('\n')}`,
+    );
+  }
+});
+
 if (typeof window !== 'undefined' && 'document' in window) {
   // Vitest's jsdom global can pair Node's TextEncoder with jsdom's Uint8Array constructor. The
   // encoded bytes then fail the platform invariant `bytes instanceof Uint8Array` (and esbuild
@@ -59,6 +80,12 @@ const GL_CONSTANTS: Record<string, number> = {
   STATIC_DRAW: 0x88b4,
   DYNAMIC_DRAW: 0x88b8,
   TRIANGLES: 0x0004,
+  POINTS: 0x0000,
+  LINES: 0x0001,
+  LINE_LOOP: 0x0002,
+  LINE_STRIP: 0x0003,
+  TRIANGLE_STRIP: 0x0005,
+  TRIANGLE_FAN: 0x0006,
   VERTEX_SHADER: 0x8b31,
   FRAGMENT_SHADER: 0x8b30,
   COMPILE_STATUS: 0x8b81,
@@ -92,6 +119,9 @@ const GL_CONSTANTS: Record<string, number> = {
   STENCIL_BUFFER_BIT: 0x0400,
   FRAMEBUFFER_COMPLETE: 0x8cd5,
   NO_ERROR: 0,
+  INVALID_ENUM: 0x0500,
+  INVALID_VALUE: 0x0501,
+  INVALID_OPERATION: 0x0502,
   COLOR_ATTACHMENT0: 0x8ce0,
   FRAMEBUFFER: 0x8d40,
   RENDERBUFFER: 0x8d41,
@@ -173,6 +203,7 @@ const GL_METHODS = [
   'drawBuffers',
   'drawElements',
   'drawElementsInstanced',
+  // Deliberately record-only: Flight has no production drawRangeElements call to validate today.
   'drawRangeElements',
   'enable',
   'enableVertexAttribArray',
@@ -342,7 +373,9 @@ function makeGl2Context(): WebGL2RenderingContext {
     return undefined;
   });
   (ctx.getAttribLocation as ReturnType<typeof vi.fn>).mockImplementation(() => 0);
-  (ctx.getError as ReturnType<typeof vi.fn>).mockImplementation(() => GL_CONSTANTS.NO_ERROR);
+  const errorState = createFakeGlErrorState('shared WebGL2 fake');
+  installFakeGlDrawValidation(ctx, errorState);
+  (ctx.getError as ReturnType<typeof vi.fn>).mockImplementation(() => errorState.getError());
   (ctx.getProgramInfoLog as ReturnType<typeof vi.fn>).mockImplementation(() => '');
   (ctx.getProgramParameter as ReturnType<typeof vi.fn>).mockImplementation(() => true);
   (ctx.getShaderInfoLog as ReturnType<typeof vi.fn>).mockImplementation(() => '');
@@ -350,4 +383,147 @@ function makeGl2Context(): WebGL2RenderingContext {
   (ctx.getUniformLocation as ReturnType<typeof vi.fn>).mockImplementation(() => ({}));
   (ctx.isContextLost as ReturnType<typeof vi.fn>).mockImplementation(() => false);
   return ctx as unknown as WebGL2RenderingContext;
+}
+
+function createFakeGlErrorState(label: string): {
+  getError(): number;
+  setError(code: number, call: string, args: readonly unknown[]): void;
+  takePendingAuditMessage(): string | null;
+} {
+  let pendingError = GL_CONSTANTS.NO_ERROR;
+  let pendingMessage: string | null = null;
+  const state = {
+    getError(): number {
+      const result = pendingError;
+      pendingError = GL_CONSTANTS.NO_ERROR;
+      pendingMessage = null;
+      return result;
+    },
+    setError(code: number, call: string, args: readonly unknown[]): void {
+      if (pendingError !== GL_CONSTANTS.NO_ERROR) return;
+      pendingError = code;
+      pendingMessage = `${label}: ${glErrorName(code)} from ${call}(${args.join(', ')})`;
+    },
+    takePendingAuditMessage(): string | null {
+      const result = pendingMessage;
+      pendingError = GL_CONSTANTS.NO_ERROR;
+      pendingMessage = null;
+      return result;
+    },
+  };
+  glErrorAuditStates.add(state);
+  return state;
+}
+
+function glErrorName(error: number): string {
+  if (error === GL_CONSTANTS.INVALID_ENUM) return 'INVALID_ENUM';
+  if (error === GL_CONSTANTS.INVALID_VALUE) return 'INVALID_VALUE';
+  return 'INVALID_OPERATION';
+}
+
+function installFakeGlDrawValidation(
+  ctx: Record<string, unknown>,
+  errorState: ReturnType<typeof createFakeGlErrorState>,
+): void {
+  ctx.drawArrays = makeValidatedFakeGlDrawMock(
+    ctx.drawArrays as ReturnType<typeof vi.fn>,
+    (mode: number, first: number, count: number) =>
+      validateFakeGlDrawArrays(errorState, 'drawArrays', mode, first, count),
+  );
+  ctx.drawArraysInstanced = makeValidatedFakeGlDrawMock(
+    ctx.drawArraysInstanced as ReturnType<typeof vi.fn>,
+    (mode: number, first: number, count: number, instanceCount: number) =>
+      validateFakeGlDrawArrays(errorState, 'drawArraysInstanced', mode, first, count, instanceCount),
+  );
+  ctx.drawElements = makeValidatedFakeGlDrawMock(
+    ctx.drawElements as ReturnType<typeof vi.fn>,
+    (mode: number, count: number, type: number, offset: number) =>
+      validateFakeGlDrawElements(errorState, 'drawElements', mode, count, type, offset),
+  );
+  ctx.drawElementsInstanced = makeValidatedFakeGlDrawMock(
+    ctx.drawElementsInstanced as ReturnType<typeof vi.fn>,
+    (mode: number, count: number, type: number, offset: number, instanceCount: number) =>
+      validateFakeGlDrawElements(errorState, 'drawElementsInstanced', mode, count, type, offset, instanceCount),
+  );
+}
+
+function makeValidatedFakeGlDrawMock(
+  mock: ReturnType<typeof vi.fn>,
+  validate: (...args: never[]) => boolean,
+): ReturnType<typeof vi.fn> {
+  return new Proxy(mock, {
+    apply(target, thisArg, args: never[]) {
+      if (!validate(...args)) return undefined;
+      return Reflect.apply(target, thisArg, args);
+    },
+  });
+}
+
+function isFakeGlPrimitiveMode(mode: number): boolean {
+  return (
+    mode === GL_CONSTANTS.POINTS ||
+    mode === GL_CONSTANTS.LINES ||
+    mode === GL_CONSTANTS.LINE_LOOP ||
+    mode === GL_CONSTANTS.LINE_STRIP ||
+    mode === GL_CONSTANTS.TRIANGLES ||
+    mode === GL_CONSTANTS.TRIANGLE_STRIP ||
+    mode === GL_CONSTANTS.TRIANGLE_FAN
+  );
+}
+
+function validateFakeGlDrawArrays(
+  errorState: ReturnType<typeof createFakeGlErrorState>,
+  call: string,
+  mode: number,
+  first: number,
+  count: number,
+  instanceCount?: number,
+): boolean {
+  const args = instanceCount === undefined ? [mode, first, count] : [mode, first, count, instanceCount];
+  if (!isFakeGlPrimitiveMode(mode)) {
+    errorState.setError(GL_CONSTANTS.INVALID_ENUM, call, args);
+    return false;
+  }
+  if (first < 0 || count < 0 || (instanceCount !== undefined && instanceCount < 0)) {
+    errorState.setError(GL_CONSTANTS.INVALID_VALUE, call, args);
+    return false;
+  }
+  return true;
+}
+
+function validateFakeGlDrawElements(
+  errorState: ReturnType<typeof createFakeGlErrorState>,
+  call: string,
+  mode: number,
+  count: number,
+  type: number,
+  offset: number,
+  instanceCount?: number,
+): boolean {
+  const args = instanceCount === undefined ? [mode, count, type, offset] : [mode, count, type, offset, instanceCount];
+  if (!isFakeGlPrimitiveMode(mode)) {
+    errorState.setError(GL_CONSTANTS.INVALID_ENUM, call, args);
+    return false;
+  }
+  const typeSize =
+    type === GL_CONSTANTS.UNSIGNED_BYTE
+      ? 1
+      : type === GL_CONSTANTS.UNSIGNED_SHORT
+        ? 2
+        : type === GL_CONSTANTS.UNSIGNED_INT
+          ? 4
+          : 0;
+  if (typeSize === 0) {
+    errorState.setError(GL_CONSTANTS.INVALID_ENUM, call, args);
+    return false;
+  }
+  if (count < 0 || offset < 0 || (instanceCount !== undefined && instanceCount < 0)) {
+    errorState.setError(GL_CONSTANTS.INVALID_VALUE, call, args);
+    return false;
+  }
+  if (offset % typeSize !== 0) {
+    errorState.setError(GL_CONSTANTS.INVALID_OPERATION, call, args);
+    return false;
+  }
+  return true;
 }

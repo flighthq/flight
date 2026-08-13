@@ -13,6 +13,20 @@ export interface FakeGl2 extends WebGL2RenderingContext {
   calls: { name: string; args: unknown[] }[];
 }
 
+interface FakeGlErrorAuditState {
+  takePendingAuditMessage(): string | null;
+}
+
+const GL_ERROR_AUDIT_REGISTER_KEY = '__flightRegisterFakeGlErrorAuditState';
+const GL_NO_ERROR = 0;
+const GL_INVALID_ENUM = 0x0500;
+const GL_INVALID_VALUE = 0x0501;
+const GL_INVALID_OPERATION = 0x0502;
+const GL_UNSIGNED_BYTE = 0x1401;
+const GL_UNSIGNED_SHORT = 0x1403;
+const GL_UNSIGNED_INT = 0x1405;
+const GL_PRIMITIVE_MODES = new Set([0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006]);
+
 // Builds a fresh fake WebGL2 context. compileOk/linkOk control the COMPILE_STATUS/LINK_STATUS the
 // stub reports, so a test can assert the program-cache throws on a shader failure.
 export function makeFakeGl2(options?: {
@@ -24,6 +38,7 @@ export function makeFakeGl2(options?: {
   const linkOk = options?.linkOk ?? true;
   const activeUniforms = options?.activeUniforms ?? [];
   const calls: { name: string; args: unknown[] }[] = [];
+  const errorState = createFakeGlErrorState('scene3d WebGL2 fake');
   // GL starts with every capability disabled except DITHER; tests seed what they need via gl.enable.
   const enabledCapabilities = new Set<number>();
 
@@ -41,14 +56,16 @@ export function makeFakeGl2(options?: {
     ELEMENT_ARRAY_BUFFER: 0x8893,
     STATIC_DRAW: 0x88e4,
     FLOAT: 0x1406,
-    UNSIGNED_BYTE: 0x1401,
-    UNSIGNED_SHORT: 0x1403,
-    UNSIGNED_INT: 0x1405,
+    UNSIGNED_BYTE: GL_UNSIGNED_BYTE,
+    UNSIGNED_SHORT: GL_UNSIGNED_SHORT,
+    UNSIGNED_INT: GL_UNSIGNED_INT,
     LINES: 0x0001,
     LINE_STRIP: 0x0003,
     POINTS: 0x0000,
     TRIANGLES: 0x0004,
     TRIANGLE_STRIP: 0x0005,
+    TRIANGLE_FAN: 0x0006,
+    LINE_LOOP: 0x0002,
     TEXTURE0: 0x84c0,
     TEXTURE1: 0x84c1,
     TEXTURE_2D: 0x0de1,
@@ -79,6 +96,10 @@ export function makeFakeGl2(options?: {
     DEPTH_BUFFER_BIT: 0x0100,
     COLOR: 0x1800,
     DEPTH_STENCIL: 0x84f9,
+    NO_ERROR: GL_NO_ERROR,
+    INVALID_ENUM: GL_INVALID_ENUM,
+    INVALID_VALUE: GL_INVALID_VALUE,
+    INVALID_OPERATION: GL_INVALID_OPERATION,
     MAX_TEXTURE_IMAGE_UNITS: 0x8872,
     MAX_VERTEX_UNIFORM_VECTORS: 0x8dfb,
     RGBA32F: 0x8814,
@@ -93,6 +114,7 @@ export function makeFakeGl2(options?: {
     TEXTURE_WRAP_S: 0x2802,
     TEXTURE_WRAP_T: 0x2803,
     getParameter: (pname: number) => (pname === 0x8dfb ? 1024 : pname === 0x8872 ? 16 : 0),
+    getError: (): number => errorState.getError(),
     getExtension: record('getExtension', null),
     createShader: record('createShader', {}),
     shaderSource: record('shaderSource'),
@@ -161,9 +183,32 @@ export function makeFakeGl2(options?: {
     // Tracked rather than recorded, because code that saves a capability bit and restores it reads the
     // bit back: a stub returning undefined makes every restore look like a no-op and hides the leak.
     isEnabled: (capability: number): boolean => enabledCapabilities.has(capability),
-    drawElements: record('drawElements'),
-    drawElementsInstanced: record('drawElementsInstanced'),
-    drawArrays: record('drawArrays'),
+    drawElements: (mode: number, count: number, type: number, offset: number): void => {
+      const args = [mode, count, type, offset];
+      if (validateFakeGlDrawElements(errorState, 'drawElements', mode, count, type, offset)) {
+        calls.push({ name: 'drawElements', args });
+      }
+    },
+    drawElementsInstanced: (mode: number, count: number, type: number, offset: number, instanceCount: number): void => {
+      const args = [mode, count, type, offset, instanceCount];
+      if (validateFakeGlDrawElements(errorState, 'drawElementsInstanced', mode, count, type, offset, instanceCount)) {
+        calls.push({ name: 'drawElementsInstanced', args });
+      }
+    },
+    drawArrays: (mode: number, first: number, count: number): void => {
+      const args = [mode, first, count];
+      if (validateFakeGlDrawArrays(errorState, 'drawArrays', mode, first, count)) {
+        calls.push({ name: 'drawArrays', args });
+      }
+    },
+    drawArraysInstanced: (mode: number, first: number, count: number, instanceCount: number): void => {
+      const args = [mode, first, count, instanceCount];
+      if (validateFakeGlDrawArrays(errorState, 'drawArraysInstanced', mode, first, count, instanceCount)) {
+        calls.push({ name: 'drawArraysInstanced', args });
+      }
+    },
+    // Deliberately record-only: Flight has no production drawRangeElements call to validate today.
+    drawRangeElements: record('drawRangeElements'),
     activeTexture: record('activeTexture'),
     bindTexture: record('bindTexture'),
     createTexture: record('createTexture', {}),
@@ -186,6 +231,95 @@ export function makeFakeGl2(options?: {
   } as unknown as FakeGl2;
 
   return gl;
+}
+
+function createFakeGlErrorState(label: string): {
+  getError(): number;
+  setError(code: number, call: string, args: readonly unknown[]): void;
+  takePendingAuditMessage(): string | null;
+} {
+  let pendingError = GL_NO_ERROR;
+  let pendingMessage: string | null = null;
+  const state = {
+    getError(): number {
+      const result = pendingError;
+      pendingError = GL_NO_ERROR;
+      pendingMessage = null;
+      return result;
+    },
+    setError(code: number, call: string, args: readonly unknown[]): void {
+      if (pendingError !== GL_NO_ERROR) return;
+      pendingError = code;
+      pendingMessage = `${label}: ${getGlErrorName(code)} from ${call}(${args.join(', ')})`;
+    },
+    takePendingAuditMessage(): string | null {
+      const result = pendingMessage;
+      pendingError = GL_NO_ERROR;
+      pendingMessage = null;
+      return result;
+    },
+  };
+  const register = (globalThis as Record<string, unknown>)[GL_ERROR_AUDIT_REGISTER_KEY] as
+    | ((auditState: FakeGlErrorAuditState) => void)
+    | undefined;
+  register?.(state);
+  return state;
+}
+
+function getGlErrorName(error: number): string {
+  if (error === GL_INVALID_ENUM) return 'INVALID_ENUM';
+  if (error === GL_INVALID_VALUE) return 'INVALID_VALUE';
+  return 'INVALID_OPERATION';
+}
+
+function validateFakeGlDrawArrays(
+  errorState: ReturnType<typeof createFakeGlErrorState>,
+  call: string,
+  mode: number,
+  first: number,
+  count: number,
+  instanceCount?: number,
+): boolean {
+  const args = instanceCount === undefined ? [mode, first, count] : [mode, first, count, instanceCount];
+  if (!GL_PRIMITIVE_MODES.has(mode)) {
+    errorState.setError(GL_INVALID_ENUM, call, args);
+    return false;
+  }
+  if (first < 0 || count < 0 || (instanceCount !== undefined && instanceCount < 0)) {
+    errorState.setError(GL_INVALID_VALUE, call, args);
+    return false;
+  }
+  return true;
+}
+
+function validateFakeGlDrawElements(
+  errorState: ReturnType<typeof createFakeGlErrorState>,
+  call: string,
+  mode: number,
+  count: number,
+  type: number,
+  offset: number,
+  instanceCount?: number,
+): boolean {
+  const args = instanceCount === undefined ? [mode, count, type, offset] : [mode, count, type, offset, instanceCount];
+  if (!GL_PRIMITIVE_MODES.has(mode)) {
+    errorState.setError(GL_INVALID_ENUM, call, args);
+    return false;
+  }
+  const typeSize = type === GL_UNSIGNED_BYTE ? 1 : type === GL_UNSIGNED_SHORT ? 2 : type === GL_UNSIGNED_INT ? 4 : 0;
+  if (typeSize === 0) {
+    errorState.setError(GL_INVALID_ENUM, call, args);
+    return false;
+  }
+  if (count < 0 || offset < 0 || (instanceCount !== undefined && instanceCount < 0)) {
+    errorState.setError(GL_INVALID_VALUE, call, args);
+    return false;
+  }
+  if (offset % typeSize !== 0) {
+    errorState.setError(GL_INVALID_OPERATION, call, args);
+    return false;
+  }
+  return true;
 }
 
 // A GlRenderState backed by the fake WebGL2 context, with the render-gl runtime attached (so
