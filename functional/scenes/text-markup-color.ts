@@ -48,8 +48,15 @@ const PLAIN_Y = 220;
 const BAND_HEIGHT = FONT_SIZE + 20;
 
 // Widely separated so an antialiased edge of one can never satisfy the other's test.
-const DEFAULT_COLOR = 0x33ccff; // light blue, from the default text format
-const TAG_COLOR = 0xff8833; // orange, from the markup tag
+//
+// ★ BOTH COLOURS COME FROM THE MARKUP SOURCE, NOT FROM A COLOUR LITERAL IN THIS SCENE. That is
+// deliberate and load-bearing: TextFormat.color's numeric convention is under migration, so a scene
+// that hand-wrote `color: 0x33ccff` into a defaultTextFormat would itself be a producer using the old
+// convention, and would start failing the moment the convention changed — fighting the fix rather than
+// guarding it. Every colour here is authored as markup hex and resolved by the markup parser, so the
+// scene asserts the CONTRACT ("this hex must paint") and is agnostic to how the value is packed.
+const FIRST_HEX = '#33ccff'; // light blue
+const SECOND_HEX = '#ff8833'; // orange
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,
@@ -60,24 +67,27 @@ const { render } = await createFunctionalTarget({
 
 const root = createDisplayObject();
 
-// Mixed run: untagged text then a colour-tagged span. Both colours must survive into the same line.
+// Two differently-coloured spans on one line. Both colours must survive into the same run.
 const mixed = createRichText();
 mixed.x = TEXT_X;
 mixed.y = MIXED_Y;
 mixed.data.width = WIDTH - TEXT_X * 2;
 mixed.data.height = BAND_HEIGHT;
-mixed.data.defaultTextFormat = { color: DEFAULT_COLOR, font: 'sans-serif', size: FONT_SIZE };
-setRichTextContent(mixed, parseTextMarkup(`PLAIN<font color="#${TAG_COLOR.toString(16)}">TAGGED</font>`));
+mixed.data.defaultTextFormat = { font: 'sans-serif', size: FONT_SIZE };
+setRichTextContent(
+  mixed,
+  parseTextMarkup(`<font color="${FIRST_HEX}">PLAIN</font><font color="${SECOND_HEX}">TAGGED</font>`),
+);
 addNodeChild(root, mixed);
 
-// Untagged run: the tag colour must not reach it.
+// A run carrying only the FIRST colour: the second must not reach it.
 const plain = createRichText();
 plain.x = TEXT_X;
 plain.y = PLAIN_Y;
 plain.data.width = WIDTH - TEXT_X * 2;
 plain.data.height = BAND_HEIGHT;
-plain.data.defaultTextFormat = { color: DEFAULT_COLOR, font: 'sans-serif', size: FONT_SIZE };
-setRichTextContent(plain, parseTextMarkup('UNTAGGED'));
+plain.data.defaultTextFormat = { font: 'sans-serif', size: FONT_SIZE };
+setRichTextContent(plain, parseTextMarkup(`<font color="${FIRST_HEX}">UNTAGGED</font>`));
 addNodeChild(root, plain);
 
 render(root);
@@ -86,28 +96,28 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   const scale = frame.width / WIDTH;
   const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * scale), Math.round(y * scale));
 
-  const mixedDefault = count(at, isDefaultColor, MIXED_Y);
-  const mixedTagged = count(at, isTagColor, MIXED_Y);
-  const plainDefault = count(at, isDefaultColor, PLAIN_Y);
-  const plainTagged = count(at, isTagColor, PLAIN_Y);
-  const reading = `mixed(default ${mixedDefault}, tagged ${mixedTagged}), plain(default ${plainDefault}, tagged ${plainTagged})`;
+  const mixedFirst = count(at, isFirstColor, MIXED_Y);
+  const mixedSecond = count(at, isSecondColor, MIXED_Y);
+  const plainFirst = count(at, isFirstColor, PLAIN_Y);
+  const plainSecond = count(at, isSecondColor, PLAIN_Y);
+  const reading = `mixed(first ${mixedFirst}, second ${mixedSecond}), single(first ${plainFirst}, second ${plainSecond})`;
 
-  if (mixedDefault < 10) {
-    throw new Error(`[text-markup-color] the untagged part of the mixed run lost its default colour — ${reading}`);
+  if (mixedFirst < 10) {
+    throw new Error(`[text-markup-color] the first markup <font color> did not paint — ${reading}`);
   }
-  if (mixedTagged < 10) {
+  if (mixedSecond < 10) {
     throw new Error(
-      `[text-markup-color] the markup <font color> did not paint — ${reading}. The run rendered in a ` +
-        `single colour, so the parsed format range never reached the renderer.`,
+      `[text-markup-color] the second markup <font color> did not paint — ${reading}. The run rendered ` +
+        `in a single colour, so the parsed format range never reached the renderer.`,
     );
   }
-  if (plainDefault < 10) {
-    throw new Error(`[text-markup-color] the untagged run did not paint its default colour — ${reading}`);
+  if (plainFirst < 10) {
+    throw new Error(`[text-markup-color] the single-colour run did not paint at all — ${reading}`);
   }
-  if (plainTagged > 0) {
+  if (plainSecond > 0) {
     throw new Error(
-      `[text-markup-color] the markup colour leaked into an untagged run — ${reading}. The format range ` +
-        `is not bounded to its own text.`,
+      `[text-markup-color] the second markup colour leaked into a run that never used it — ${reading}. ` +
+        `The format range is not bounded to its own text.`,
     );
   }
 }
@@ -129,10 +139,10 @@ function channel(rgb: number, shift: number): number {
 
 // Antialiased glyph edges blend toward the background, so both tests want a solid core of the colour
 // rather than anything merely tinted — which also keeps the two from matching each other.
-function isDefaultColor(rgb: number): boolean {
+function isFirstColor(rgb: number): boolean {
   return channel(rgb, 0) > 170 && channel(rgb, 8) > 130 && channel(rgb, 16) < 120;
 }
 
-function isTagColor(rgb: number): boolean {
+function isSecondColor(rgb: number): boolean {
   return channel(rgb, 16) > 170 && channel(rgb, 8) > 90 && channel(rgb, 0) < 110;
 }
