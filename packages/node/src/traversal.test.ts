@@ -196,6 +196,12 @@ describe('getNodeNextSibling', () => {
 
     expect(getNodeNextSibling(childA)).toBeNull();
   });
+
+  it('returns null for a stale parent whose nonempty child list omits the source', () => {
+    (getNodeRuntime(root) as NodeRuntime).children = [childB];
+
+    expect(getNodeNextSibling(childA)).toBeNull();
+  });
 });
 
 describe('getNodePreviousSibling', () => {
