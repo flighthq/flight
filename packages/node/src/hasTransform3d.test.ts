@@ -29,8 +29,27 @@ describe('initTransform3DTrait', () => {
     const rotation = createQuaternion();
     const scale = createVector3(2, 2, 2);
     initTransform3DTrait(node, { position, rotation, scale });
-    expect(node.position).toBe(position);
-    expect(node.rotation).toBe(rotation);
-    expect(node.scale).toBe(scale);
+    expect(node.position).toMatchObject({ x: 7, y: 0, z: 0 });
+    expect(node.rotation).toMatchObject({ x: 0, y: 0, z: 0, w: 1 });
+    expect(node.scale).toMatchObject({ x: 2, y: 2, z: 2 });
+  });
+
+  it('copies out of the options object so two nodes never share storage', () => {
+    const options = { position: createVector3(1, 2, 3), rotation: createQuaternion(), scale: createVector3(2, 2, 2) };
+    const first = {} as HasTransform3D;
+    const second = {} as HasTransform3D;
+    initTransform3DTrait(first, options);
+    initTransform3DTrait(second, options);
+
+    first.position.x = 999;
+    first.scale.y = 999;
+    first.rotation.w = 0;
+
+    expect(second.position.x).toBe(1);
+    expect(second.scale.y).toBe(2);
+    expect(second.rotation.w).toBe(1);
+    expect(options.position.x).toBe(1);
+    expect(options.scale.y).toBe(2);
+    expect(options.rotation.w).toBe(1);
   });
 });
