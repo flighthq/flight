@@ -90,6 +90,34 @@ Mocking remains the right tool for genuine **interaction** assertions — which 
 - **Read a zero only from a command whose other output proves it ran.** An instrument that reports only when it has something to say makes *measured, none* and *never executed* the same observation — silence — and a bare exit status cannot separate them. A command that also prints unrelated output can, because the surrounding output witnesses the run. Generalized: when building any instrument, ask whether it can fail to apply, and give it three outcomes from the start rather than two plus a later discovery.
 - Trust a gate's own exit code and its own verdict, never a grep for one expected failure signature. `npm run check 2>&1 | grep -c "error TS"` only reads the typecheck stage; `check` also runs lint, format, order, exports, type-home, portable, api, and support, and a hand-written filter silently discards a real failure in any of those (`exports:check` failing plainly, thrown away by a pattern that was never looking for it). This is the same shape as the other rules on this list: a check written to answer the question you already expect the answer to.
 
+## Audit-lane composition and instrument choice
+
+Two independent audit lanes over the same package can have three relationships. **CONVERGENT** means
+both lanes independently reach the same finding. **DISJOINT** means they reach different findings.
+**COMPOSE** means one lane supplies an **ADDRESS** the other had not reached, and the second
+lane's method supplies the **DIAGNOSIS**; neither lane alone reached the finding. A mid-arc handoff is
+therefore not end-state agreement or disagreement. In the measured `math` instance, builder4's per-file
+mutation-survivor counts pointed builder's sibling-diff lane at `interpolationAdvanced.ts`, which its first
+pass had not reached. Sibling comparison there diagnosed that `smootherStep` shared `smoothStep`'s
+defect. That finding was COMPOSE.
+
+Choose instruments from the code's shape and the plausible shape of wrongness:
+
+- In graph and hierarchy node code, the measured defects were in branch logic and divergence among
+  sibling implementations. Sibling-diff and mutation were both productive, and their lanes converged.
+- In scalar math, the three measured production defects occupied unconsidered input domains:
+  non-finite values, overflow, and representable limits. Domain probes guided by [test escape mode
+  C](../test-escape-modes.md#c--the-case-is-never-constructed) found all three; mutation testing found
+  zero of three. That result is an empirical structural blind spot, not a disappointing score:
+  mutation changes code, but it cannot invent the missing input. The audit method transfers between
+  packages; the instrument mix does not. Apply an instrument where its failure model is plausible,
+  rather than applying every instrument everywhere.
+
+A deliberate divergence with its site-level reason recorded is a **DECISION**, not an inconsistency.
+Commit `43a4643cb` supplies the model in `saturate`: “Follows GPU semantics: NaN returns 0, unlike
+`clamp` which propagates NaN”. Future blessed deviations from a stated principle should leave that
+reason at the divergent site, rather than leave a silent difference for a later audit to reverse-engineer.
+
 ## Review lenses
 
 Named failure shapes worth checking for directly, distinct from each other:
