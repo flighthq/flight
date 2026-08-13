@@ -40,6 +40,58 @@ const DB_TWO_BONES = JSON.stringify({
   ],
 });
 
+// The sibling of the Spine type sweep, and NOT a ritual copy of it: this is a different importer with its
+// own guards, its own nesting (everything hangs off `armature`), and 37 of the package's type-guard arms
+// against Spine's 23. Same single policy — THE IMPORTER NEVER TRUSTS A FIELD'S TYPE — pointed at the
+// document shape DragonBones actually uses.
+const DB_RICH = {
+  armature: [
+    {
+      animation: [
+        {
+          bone: [{ frame: [{ duration: 5, tweenEasing: 0 }], name: 'arm' }],
+          duration: 10,
+          ffd: [{ name: 'mesh', slot: 'body' }],
+          frame: [{ duration: 10 }],
+          name: 'walk',
+          slot: [{ displayFrame: [{ value: 0 }], name: 'body' }],
+        },
+      ],
+      bone: [{ name: 'root' }, { length: 50, name: 'arm', parent: 'root', transform: { skX: 45, x: 10, y: 20 } }],
+      defaultActions: [{ gotoAndPlay: 'walk' }],
+      ik: [{ bone: 'arm', name: 'aim', target: 'root' }],
+      name: 'armatureA',
+      skin: [{ name: '', slot: [{ display: [{ name: 'mesh', type: 'mesh', vertices: [0, 0, 1, 1] }], name: 'body' }] }],
+      slot: [{ blendMode: 'normal', color: { aM: 100 }, displayIndex: 0, name: 'body', parent: 'root' }],
+    },
+  ],
+  frameRate: 24,
+  name: 'demo',
+  version: '5.5',
+};
+
+function everyJsonPath(node: unknown, prefix: readonly (string | number)[] = []): (string | number)[][] {
+  const here: (string | number)[][] = prefix.length > 0 ? [[...prefix]] : [];
+  if (Array.isArray(node)) {
+    node.forEach((child, i) => here.push(...everyJsonPath(child, [...prefix, i])));
+  } else if (node !== null && typeof node === 'object') {
+    for (const [key, child] of Object.entries(node)) here.push(...everyJsonPath(child, [...prefix, key]));
+  }
+  return here;
+}
+
+function withValueAt(doc: unknown, path: readonly (string | number)[], value: unknown): unknown {
+  const copy: any = Array.isArray(doc) ? [...doc] : { ...(doc as object) };
+  let node = copy;
+  for (let i = 0; i < path.length - 1; i++) {
+    const key = path[i];
+    node[key] = Array.isArray(node[key]) ? [...node[key]] : { ...node[key] };
+    node = node[key];
+  }
+  node[path[path.length - 1]] = value;
+  return copy;
+}
+
 describe('parseDragonBonesSkeleton', () => {
   it('parses the first armature, topologically sorts bones, and maps the skX/skY transform', () => {
     const result = parseDragonBonesSkeleton(DB_TWO_BONES);
@@ -1002,6 +1054,31 @@ describe('parseDragonBonesSkeleton', () => {
     expect(parseDragonBonesSkeleton('42')).toBeNull();
     expect(parseDragonBonesSkeleton(JSON.stringify({ bones: [] }))).toBeNull(); // a Spine-shaped doc
     expect(parseDragonBonesSkeleton(JSON.stringify({ armature: [] }))).toBeNull(); // empty armature list
+  });
+});
+
+describe('parseDragonBonesSkeleton type resilience', () => {
+  it('never trusts a field type: any value replaced by a wrong-typed one still imports coherently', () => {
+    const paths = everyJsonPath(DB_RICH);
+    expect(paths.length, 'the rich document walked no paths').toBeGreaterThan(40);
+
+    for (const path of paths) {
+      for (const wrong of [42, 'wrong', [], {}, null, true]) {
+        const label = `${path.join('.')} = ${JSON.stringify(wrong)}`;
+        const json = JSON.stringify(withValueAt(DB_RICH, path, wrong));
+        let result: ReturnType<typeof parseDragonBonesSkeleton> | undefined;
+        expect(() => {
+          result = parseDragonBonesSkeleton(json);
+        }, label).not.toThrow();
+
+        const bones = result?.skeleton.bones;
+        if (bones === undefined) continue;
+        for (const bone of bones) {
+          expect(bone.parentIndex, `parentIndex after ${label}`).toBeLessThan(bones.length);
+          expect(bone.parentIndex, `parentIndex after ${label}`).toBeGreaterThanOrEqual(-1);
+        }
+      }
+    }
   });
 });
 
