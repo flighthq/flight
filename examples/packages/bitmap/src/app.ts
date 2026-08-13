@@ -4,9 +4,9 @@ import {
   createSprite,
   createDisplayObject,
   createImageResource,
+  createImageResourceFromCanvas,
   createTexture,
   invalidateNodeAppearance,
-  loadImageResourceFromUrl,
 } from '@flighthq/sdk';
 
 import { render, scale } from './render';
@@ -21,7 +21,7 @@ const gradientBitmap = createSprite();
 gradientBitmap.x = 60;
 gradientBitmap.y = 60;
 addNodeChild(root, gradientBitmap);
-void loadSpriteImage(gradientBitmap, createGradientImage(128, 128));
+loadSpriteImage(gradientBitmap, createGradientImage(128, 128));
 
 // Checkerboard pattern: demonstrates procedural pattern generation.
 
@@ -74,11 +74,12 @@ function createImageTexture(source: HTMLCanvasElement) {
   return createTexture({ dimension: '2d', source: createImageResource(source) });
 }
 
-async function loadSpriteImage(sprite: ReturnType<typeof createSprite>, source: HTMLCanvasElement): Promise<void> {
-  // A data URL keeps the example self-contained while exercising the same asynchronous image
-  // acquisition API an application uses for a bundled or remote URL.
-  const image = await loadImageResourceFromUrl(source.toDataURL('image/png'));
-  sprite.data.texture = createTexture({ dimension: '2d', source: image });
+function loadSpriteImage(sprite: ReturnType<typeof createSprite>, source: HTMLCanvasElement): void {
+  // Binds the canvas directly. This used to encode it to a PNG data URL and decode it back through
+  // loadImageResourceFromUrl, which is the right API for a bundled or remote URL and the wrong one for
+  // a canvas this code just drew — it round-tripped through an encoder to recover something already in
+  // hand, and pulled the URL-loading path into a bundle that needs none of it.
+  sprite.data.texture = createTexture({ dimension: '2d', source: createImageResourceFromCanvas(source) });
   invalidateNodeAppearance(sprite);
 }
 

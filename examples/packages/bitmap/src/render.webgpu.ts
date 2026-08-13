@@ -6,7 +6,7 @@ import {
   enableFlightDiagnostics,
   defaultWgpuSpriteRenderer,
   prepareScene2DRender,
-  registerStandardWgpuTextureResolvers,
+  registerWgpuImageTextureResolver,
   registerWgpuStandardMaterial,
   registerRenderer,
   renderWgpuBackground,
@@ -25,7 +25,11 @@ export const state = await createWgpuRenderState(canvas, {
 });
 enableFlightDiagnostics(state);
 
-registerStandardWgpuTextureResolvers(state);
+// This example creates only Image sources, so it registers only the Image resolver. The
+// registerStandard* bag is a legitimate convenience and stays as it is — but an example is
+// documentation, and reaching for the bag here would teach "install everything" while quietly
+// carrying the Bitmap and RenderTarget resolvers this app never resolves.
+registerWgpuImageTextureResolver(state);
 registerWgpuStandardMaterial(state);
 registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
 
