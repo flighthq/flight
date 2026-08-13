@@ -33,8 +33,14 @@ export const defaultCanvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill
     state.hasFill = pattern !== null;
     state.fillStyle = pattern ?? '';
     state.fillMatrix = matrix;
-    if (matrix !== null) {
-      inverseMatrix(_fillMatrixInverse, matrix);
+    // A singular fill matrix takes the SAME path as no matrix at all: draw the fill untransformed.
+    // `inverseMatrix` does not produce NaN here — it zeroes a/b/c/d and negates tx/ty — so ignoring the
+    // return would map every fill coordinate through a defined-but-wrong matrix and paint wrong pixels
+    // with no error and nothing to search for. Falling back to the existing untransformed path is the
+    // honest answer: identity would silently resize and reposition the fill, which is a different wrong
+    // answer rather than a neutral one. Importers tally the degenerate matrix at their own boundary,
+    // where a diagnostics sink exists; this is the last line of defence for an app-supplied matrix.
+    if (matrix !== null && inverseMatrix(_fillMatrixInverse, matrix)) {
       state.fillMatrixInverse = _fillMatrixInverse;
     } else {
       state.fillMatrixInverse = null;

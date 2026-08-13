@@ -58,6 +58,36 @@ describe('createScene2DFromSvgDocument', () => {
   // render baseline three layers away. The numbers are derived from the format, not read off the output:
   // an objectBoundingBox ramp x1=0→x2=1 over a rect at x=60 width=320 must span 60→380, so the box is 320
   // wide and its CENTRE — which is what the matrix carries after the helper's own offset — is 220.
+  // A gradientTransform is authored text, so `scale(0)` is a plain thing to write. Validated where the
+  // file's value enters rather than at the renderer: `inverseMatrix` answers a singular matrix with a
+  // defined-but-wrong result rather than NaN, so an unvalidated one paints wrong pixels silently.
+  it('drops a singular gradientTransform and names the gradient, rather than carrying it to the renderer', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene2DFromSvgDocument(
+      `<svg>
+        <defs><linearGradient id="collapsed" gradientTransform="scale(0)" x1="0" x2="1"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>
+        <rect x="0" y="0" width="100" height="100" fill="url(#collapsed)"/>
+      </svg>`,
+      diagnostics,
+    );
+    const matches = diagnostics.filter((d) => d.kind === 'svg.gradient-transform-singular');
+    expect(matches).toHaveLength(1);
+    expect(matches[0].severity).toBe('Recover');
+    expect(matches[0].detail).toMatchObject({ gradient: 'collapsed' });
+  });
+
+  it('keeps an invertible gradientTransform and reports nothing', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene2DFromSvgDocument(
+      `<svg>
+        <defs><linearGradient id="fine" gradientTransform="scale(2)" x1="0" x2="1"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>
+        <rect x="0" y="0" width="100" height="100" fill="url(#fine)"/>
+      </svg>`,
+      diagnostics,
+    );
+    expect(diagnostics.filter((d) => d.kind === 'svg.gradient-transform-singular')).toHaveLength(0);
+  });
+
   it('places a linear gradient box by its origin, spanning the shape rather than starting at its middle', () => {
     const root = createScene2DFromSvgDocument(
       `<svg>
