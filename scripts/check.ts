@@ -88,6 +88,11 @@ if (!scoped) {
   add('facets:check', 'tsx', ['scripts/requirement-facets.ts', '--check']);
   add('catalog:check', 'tsx', ['scripts/catalog.ts', '--check']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
+  // Whole-repo only, and it belongs HERE rather than in a render leg: the census reads committed
+  // baselines and scene sources off disk and needs no browser, no GPU and no capture output — verified
+  // by running it with `.artifacts` and the functional dist absent. It was written to gate and then
+  // wired to nothing, which is the inert-gate shape its own subject is about.
+  add('evidence:check', 'tsx', ['scripts/capture-evidence.ts', '--check']);
   add('capabilities:check', 'tsx', ['scripts/swf-capabilities.ts', '--check']);
   add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);
   add('capabilities:sites:check', 'tsx', ['scripts/swf-diagnostic-sites.ts', '--check']);

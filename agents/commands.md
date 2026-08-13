@@ -143,6 +143,23 @@ in the report — only reading the code separates them:
 
 Same report, same shape, opposite worth. This is why the output is a list of addresses and not a score.
 
+### `npm run evidence` — which evidence each capture target actually carries
+
+A census of the three evidence kinds — fingerprint, screenshot hash, and pixel oracle — per capture
+target, compared against `scripts/capture-baseline-coverage-manifest.json`. Unlike `contrast` below, this
+one **gates**: `evidence:check` is a stage of the whole-repo `npm run check`. It reads committed baselines
+and scene sources off disk and needs no browser, no GPU and no capture output, which is what makes a gate
+affordable.
+
+    npm run evidence                 # the census, per subject
+    npm run evidence:check           # gate: fails naming every gained or lost `target#kind`
+    npm run evidence:baseline        # accept the current census (whole-repo only, never scoped)
+    npm run evidence:json            # the same rows as JSON
+
+**It is a static scan**, so the oracle column means *the scene exports an oracle*, never *the verifier
+called it*. Only the verifier settles the second, and it records that per target as `oracle` in its own
+status artifact. A green census is not evidence that oracles ran.
+
 ### `npm run contrast` — how much the regression gate has to grip
 
 The third reading tool, and the render-side counterpart to the pair above: `untested` asks which arms no

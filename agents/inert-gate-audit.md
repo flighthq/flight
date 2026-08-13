@@ -323,6 +323,18 @@ declares what ought to be there.
 Manifestation 2 was found independently and landed as rank 1 of the `2026-08-13` table above; this row is
 corroboration by a second method, not a separate finding.
 
+**The census itself was inert by NON-INVOCATION until 2026-08-13, which is the same defect one level up.**
+`evidence:check` was written to gate, falsified in both directions, and then wired to nothing: not
+`scripts/check.ts`, not any workflow. A deliberate opt-out and an oversight look identical from outside,
+so the category had to be established before the remedy — a check CI genuinely cannot run belongs in
+[boundary-only checks](boundary-only-checks.md), and only a check CI *can* run is fixable by wiring.
+Established by control rather than by reading its header: the census reads committed baselines and scene
+sources off disk, and it exits 0 with `.artifacts` and the functional dist both absent. So it can run in
+CI, and it is now a stage of the whole-repo `npm run check`, which the `quality` job runs under a **code**
+change trigger — the right one, since an oracle export vanishing is a code change and not a docs change.
+Falsified after wiring: dropping one pin from the manifest makes the whole sweep exit 1 naming
+`material-subsurface/webgl#oracle`, not merely the standalone script.
+
 **Manifestation 4 is closed, and its first fix had a hole worth keeping on the record.** The verifier now
 records `oracle: 'invoked' | 'absent'` from the branch that calls, and `captureEntry` carries it into
 `status.json`. But the error-path status wrote a hardcoded `null`, with the `verification` binding scoped
