@@ -35,8 +35,12 @@ about the module *registry*, not about the `vi.mock` API.
 - **Shared tier** (the default, `isolate: false`) — one module registry per worker rather than one
   environment per file. This is where the suite's speed comes from: per-file environment setup, not
   test logic, dominates its cost.
-- **Isolated tier** (`isolate: true`) — every file that mocks a module, listed in
-  `scripts/mockTiers.ts`. Each file gets its own registry from the platform.
+- **Isolated tier** (`isolate: true`) — every file that cannot share a module registry, listed in
+  `scripts/registryIsolatedTests.ts`. Each file gets its own registry from the platform. The list is
+  keyed by *mechanism*, so each entry carries the `reason` it needs a private registry:
+  `mocks-modules` (the case below) or `process-global-registry` (the file asserts something about
+  process state, typically that nothing has been registered yet — a claim decided by file scheduling
+  rather than by the code, under the shared tier).
 
 **A top-level `vi.mock` is hoisted above the file's imports and registers against whichever registry
 the file is running in.** That single fact produces both halves of the rule:
@@ -56,11 +60,18 @@ any machine slow enough or any cache cold enough. That pattern produced a flake 
 across two days, presenting as a setup failure with zero test failures on a different subset of files
 each run. If a file needs a module mock, it belongs in the isolated tier.
 
-**The tier boundary is machine-checked, not remembered.** `npm run mocks:check` (part of
-`npm run check`) reads the same `scripts/mockTiers.ts` the config does and enforces it in both
-directions: a file that mocks but is not tiered, a tiered file that no longer mocks, and a
-`vi.doUnmock` naming a specifier the file never mocked. Add a file to the tier list when you add a mock
-to it; the check will tell you if you forget, and will tell you when a file can be demoted.
+**The `mocks-modules` arm of the tier boundary is machine-checked, not remembered.**
+`npm run mocks:check` (part of `npm run check`) reads the same `scripts/registryIsolatedTests.ts` the
+config does and enforces that arm in both directions: a file that mocks but is not tiered, a
+`mocks-modules` entry that no longer mocks, and a `vi.doUnmock` naming a specifier the file never
+mocked. Add a file to the tier list when you add a mock to it; the check will tell you if you forget,
+and will tell you when a file can be demoted.
+
+**The `process-global-registry` arm is enforced by review, not by the gate, and that is a choice.**
+There is no honest pattern for "asserts process state", and a detector that guessed would license
+whatever it matched while rejecting correct cases it did not — converting a known-weak check into an
+apparently-strong one. So an entry with that reason is accepted on its declared reason alone. Do not
+close the gap by inventing a detector; if such an entry is wrong, only a reader will catch it.
 
 **Prefer extracting the pure kernel over mocking at all.** A test that reaches for a module mock to capture a callback is usually telling you the unit bundles a pure function it has not exported. That was the actual defect in `canvasColorMatrixPass.ts`: the per-pixel matrix math was a closure inside the pass, and the mock existed only to get at it. Exporting `applyColorMatrixToImageDataBytes` made the math directly testable, and the pass itself is now verified with plain stub objects for the two canvas contexts — no module substitution, no order dependence, faster, and it gained multi-pixel coverage that the mock shape made awkward.
 
