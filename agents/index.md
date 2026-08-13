@@ -24,7 +24,8 @@ only so the library is complete.
 [diagnostics](conventions/diagnostics.md), [export lanes](conventions/export-lanes.md),
 [file naming & type home](conventions/file-naming.md), [invalidation](conventions/invalidation.md),
 [naming](conventions/naming.md), [npm scripts](conventions/npm-scripts.md),
-[testing](conventions/testing.md), [types layout & kind identity](conventions/types-layout.md).
+[testing](conventions/testing.md), [types layout & kind identity](conventions/types-layout.md),
+[validation](conventions/validation.md).
 
 **Rule references** — [anti-goals](anti-goals.md), [bundle size](bundle-size.md),
 [commands](commands.md), [feature lookup](feature-lookup.md), [packaging](packaging.md),
