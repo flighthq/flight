@@ -1,3 +1,5 @@
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 describe('makeWgpuScene3DState', () => {
@@ -25,5 +27,41 @@ describe('makeWgpuScene3DState', () => {
     expect(() => state.device.queue.writeBuffer({} as GPUBuffer, 0, new Uint16Array([0, 1, 2]))).toThrow(
       expect.objectContaining({ name: 'OperationError' }),
     );
+  });
+
+  it('rejects a writeBuffer destination offset that is not aligned to four bytes', () => {
+    const { state } = makeWgpuScene3DState();
+
+    expect(() => state.device.queue.writeBuffer({} as GPUBuffer, 2, new Uint32Array([0]))).toThrow(
+      /destination offset must be aligned to 4 bytes/,
+    );
+  });
+
+  it('rejects misaligned or out-of-range index buffer bindings', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const buffer = state.device.createBuffer({ size: 8, usage: GPUBufferUsage.INDEX });
+    const pass = getWgpuRenderStateRuntime(state).renderPass!;
+
+    expect(() => pass.setIndexBuffer(buffer, 'uint16', -2)).toThrow(/offset and size must be non-negative/);
+    expect(() => pass.setIndexBuffer(buffer, 'uint32', 2)).toThrow(/offset must be aligned to 4 bytes/);
+    expect(() => pass.setIndexBuffer(buffer, 'uint16', 6, 4)).toThrow(/range exceeds the buffer size/);
+    expect(fake.calls.some((call) => call.name === 'setIndexBuffer')).toBe(false);
+
+    pass.setIndexBuffer(buffer, 'uint16', 2, 4);
+    expect(fake.calls.filter((call) => call.name === 'setIndexBuffer')).toHaveLength(1);
+  });
+
+  it('rejects misaligned or out-of-range vertex buffer bindings', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const buffer = state.device.createBuffer({ size: 8, usage: GPUBufferUsage.VERTEX });
+    const pass = getWgpuRenderStateRuntime(state).renderPass!;
+
+    expect(() => pass.setVertexBuffer(0, buffer, 0, -4)).toThrow(/offset and size must be non-negative/);
+    expect(() => pass.setVertexBuffer(0, buffer, 2)).toThrow(/offset must be aligned to 4 bytes/);
+    expect(() => pass.setVertexBuffer(0, buffer, 4, 8)).toThrow(/range exceeds the buffer size/);
+    expect(fake.calls.some((call) => call.name === 'setVertexBuffer')).toBe(false);
+
+    pass.setVertexBuffer(0, buffer, 4, 4);
+    expect(fake.calls.filter((call) => call.name === 'setVertexBuffer')).toHaveLength(1);
   });
 });
