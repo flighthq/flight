@@ -2,7 +2,7 @@ import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Sprite, ImportDiagnostic, Matrix, RichText, Shape, TextLabel } from '@flighthq/types/contract';
+import type { Sprite, ImportDiagnostic, Matrix, Node2D, RichText, Shape, TextLabel } from '@flighthq/types/contract';
 import {
   SpriteKind,
   DisplayObjectKind,
@@ -16,6 +16,27 @@ import { createScene2DFromSvgDocument } from './svgDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
 describe('createScene2DFromSvgDocument', () => {
+  // ★ THE BOUNDING BOX THESE UNITS ARE DEFINED AGAINST EXCLUDES STROKE-WIDTH. Asserted as an AGREEMENT
+  // between two routes to the same box, because that is the form the defect took: the node's own bounds
+  // include the stroke (correct for culling and hit-testing), so a shape clipped through a parent <g> got a
+  // 14-wide box while the same shape clipped directly got 10. Two answers for one element, and no assertion
+  // anywhere compared them.
+  //
+  // A single-route test would pass against either convention as long as it was applied consistently, which
+  // is exactly what was NOT true here. Pinning the number as well, so the pair cannot agree on the wrong one.
+  it('measures the objectBoundingBox without stroke, identically through a shape and through its group', () => {
+    const clip = `<defs><clipPath id="c" clipPathUnits="objectBoundingBox"><rect width="0.5" height="1"/></clipPath></defs>`;
+    const stroked = `<rect x="0" y="0" width="10" height="10" fill="#f00" stroke="#00f" stroke-width="4"`;
+    const clipWidth = (body: string): number | undefined => {
+      const root = createScene2DFromSvgDocument(`<svg>${clip}${body}</svg>`);
+      return (getNodeChildAt(root, 0) as Node2D | null)?.clip?.rect.width;
+    };
+
+    // Half of a 10-wide geometry box. The inked extent is 14 wide, which would give 7.
+    expect(clipWidth(`${stroked} clip-path="url(#c)"/>`)).toBeCloseTo(5, 4);
+    expect(clipWidth(`<g clip-path="url(#c)">${stroked}/></g>`)).toBeCloseTo(5, 4);
+  });
+
   // ★ THE GRADIENT BOX IS PLACED BY ITS ORIGIN, NOT ITS CENTRE. `createGradientTransformMatrix` ends with
   // `tx + width / 2` — it centres the box itself — so a caller that passes the midpoint gets the offset
   // applied twice and every gradient slides by half its own extent. That shipped: a 320-wide rect at x=60

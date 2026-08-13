@@ -107,6 +107,7 @@ export function createScene2DFromSvgDocument(
     parentByElement: new Map(),
     reportedUnsupportedElements: new Set(),
     resolvingClipUses: new Set(),
+    objectBoundingBoxes: new Map(),
     resolvingClips: new Set(),
     resolvingGradients: new Set(),
     resolvingUses: new Set(),
@@ -117,7 +118,7 @@ export function createScene2DFromSvgDocument(
   const viewport = createSvgViewportMatrix(document);
   const rootStyle = applySvgElementAppearance(out, document, defaultSvgStyle, context, viewport, true);
   appendSvgChildren(out, document, rootStyle, context);
-  applySvgElementClip(out, document, context, createSvgNode2DBounds(out));
+  applySvgElementClip(out, document, context, createSvgNode2DBounds(out, context));
   reportRemainingUnsupportedSvgElements(document, context);
   return out;
 }
@@ -169,6 +170,10 @@ interface SvgImportContext {
   gradientsById: Map<string, SvgGradient>;
   options: Readonly<SvgDocumentImportOptions> | undefined;
   parentByElement: Map<XmlElement, XmlElement | null>;
+  // Geometry-only bounds for every shape this importer creates, recorded at creation because it is the
+  // only point where the source PATH is still in hand. See `createSvgNode2DBounds` for why the node's own
+  // bounds cannot be used instead.
+  objectBoundingBoxes: Map<Node2D, Rectangle>;
   reportedUnsupportedElements: Set<XmlElement>;
   resolvingClipUses: Set<string>;
   resolvingClips: Set<string>;
@@ -394,16 +399,27 @@ function hasUnmeasurableSvgText(target: Node2D): boolean {
   return false;
 }
 
-function createSvgNode2DBounds(target: Node2D): Rectangle | null {
+function createSvgNode2DBounds(target: Node2D, context: SvgImportContext): Rectangle | null {
   if (target.kind === TextLabelKind || target.kind === RichTextKind) return null;
   const out = createRectangle();
-  let hasBounds = copyNonEmptySvgBounds(out, getNodeLocalBoundsRectangle(target), false);
+  // ★ THIS BOX EXISTS TO SATISFY A FORMAT RULE, NOT TO DESCRIBE THE SHAPE. The bounding box these units are
+  // defined against EXCLUDES stroke-width (and clipping, masking, filters and opacity) — it is the geometry's
+  // extent, not the inked extent. `getNodeLocalBoundsRectangle` deliberately includes the stroke, which is
+  // correct for culling, hit-testing and picking and WRONG here, so the importer keeps its own geometry-only
+  // box recorded at shape-creation time.
+  //
+  // Do not "fix" this back toward the node's bounds because stroke-inclusive looks more accurate in
+  // isolation: it silently oversized every objectBoundingBox consumer, and only on stroked shapes inside a
+  // container — a 10x10 rect with stroke-width 4 measured 14 through a parent <g> and 10 when clipped
+  // directly, so the same element got two different boxes depending on which node carried the clip.
+  const recorded = context.objectBoundingBoxes.get(target);
+  let hasBounds = copyNonEmptySvgBounds(out, recorded ?? getNodeLocalBoundsRectangle(target), false);
   let hasUnresolvedChildBounds = false;
   const childCount = getNodeChildCount(target);
   for (let index = 0; index < childCount; index++) {
     const child = getNodeChildAt(target, index) as Node2D | null;
     if (child === null) continue;
-    const childBounds = createSvgNode2DBounds(child);
+    const childBounds = createSvgNode2DBounds(child, context);
     if (childBounds === null) {
       hasUnresolvedChildBounds = true;
       continue;
@@ -673,7 +689,7 @@ function createSvgElementNode(
     const viewport = name === 'svg' ? createSvgViewportMatrix(element) : null;
     const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
     appendSvgChildren(container, element, style, context);
-    applySvgElementClip(container, element, context, createSvgNode2DBounds(container));
+    applySvgElementClip(container, element, context, createSvgNode2DBounds(container, context));
     return container;
   }
 
@@ -689,6 +705,7 @@ function createSvgElementNode(
     appendSvgShapePaint(shape, path, style, element, context);
     const bounds = createRectangle();
     getPathBounds(path, bounds);
+    context.objectBoundingBoxes.set(shape, bounds);
     applySvgElementClip(shape, element, context, bounds);
     return shape;
   }
@@ -927,7 +944,7 @@ function createSvgUseNode(
       ? createSvgSymbolNode(referenced, element, style, context)
       : createSvgElementNode(referenced, style, context);
   if (referencedNode !== null) addNodeChild(container, referencedNode);
-  applySvgElementClip(container, element, context, createSvgNode2DBounds(container));
+  applySvgElementClip(container, element, context, createSvgNode2DBounds(container, context));
   context.resolvingUses.delete(id);
   return container;
 }
@@ -949,7 +966,7 @@ function createSvgSymbolNode(
   });
   const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
   appendSvgChildren(container, element, style, context);
-  applySvgElementClip(container, element, context, createSvgNode2DBounds(container));
+  applySvgElementClip(container, element, context, createSvgNode2DBounds(container, context));
   return container;
 }
 
