@@ -302,13 +302,24 @@ function applySvgElementClip(
     return;
   }
   if (usesSvgObjectBoundingBoxUnits(clipElement) && targetBounds === null) {
-    reportImportDiagnostic(
-      context.diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'svg.object-bounding-box-clip-without-bounds',
-      'applySvgElementClip',
-      { id: clipId, reason: hasUnmeasurableSvgText(target) ? 'unmeasurable-text' : 'empty-geometry' },
-    );
+    // TWO SITUATIONS REACH HERE AND ONLY ONE IS A DEFECT.
+    //
+    // Zero-area target: objectBoundingBox units on geometry with no width or height means the effect is
+    // IGNORED. Dropping the clip is the correct rendering, so this path is conformant and says nothing —
+    // a failure-flavoured diagnostic on correct behaviour trains callers to ignore the channel.
+    //
+    // Unmeasurable target: the format defines a box here and we cannot compute one, because this importer
+    // performs no text layout. That is our capability gap, and it is the caller's only warning that the
+    // rendering they get is not the rendering the file describes.
+    if (hasUnmeasurableSvgText(target)) {
+      reportImportDiagnostic(
+        context.diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        'svg.object-bounding-box-clip-unmeasurable-bounds',
+        'applySvgElementClip',
+        { id: clipId },
+      );
+    }
     return;
   }
   target.clip = createSvgClipRegion(clipElement, targetBounds, context);
@@ -951,6 +962,11 @@ function appendSvgShapePaint(
 ): void {
   const fillGradient = resolveSvgGradient(style.fill, context);
   const fillColor = resolveSvgColor(style.fill, style.color);
+  // A resolved gradient whose objectBoundingBox is zero-area is IGNORED, not unresolved: the reference was
+  // found, the format says the effect does not apply, and nothing is painted. Kept distinct from the
+  // `fillGradient === null` path below on purpose — that one means the url() named nothing, which is a real
+  // defect in the file and is reported. Collapsing the two would file conformant behaviour as a Drop.
+  if (fillGradient !== null && hasZeroAreaSvgGradientBox(fillGradient, path)) return;
   if (fillGradient !== null) {
     appendShapeBeginGradientFill(
       shape,
@@ -958,7 +974,7 @@ function appendSvgShapePaint(
       fillGradient.stops.map((stop) => stop.color.rgb),
       fillGradient.stops.map((stop) => stop.color.alpha * style.fillOpacity),
       fillGradient.stops.map((stop) => Math.round(stop.offset * 255)),
-      createSvgGradientMatrix(fillGradient, path, context),
+      createSvgGradientMatrix(fillGradient, path),
       fillGradient.spreadMethod,
     );
   } else if (fillColor !== null) {
@@ -1010,7 +1026,7 @@ function appendSvgShapePaint(
       strokeGradient.stops.map((stop) => stop.color.rgb),
       strokeGradient.stops.map((stop) => stop.color.alpha * style.strokeOpacity),
       strokeGradient.stops.map((stop) => Math.round(stop.offset * 255)),
-      createSvgGradientMatrix(strokeGradient, path, context),
+      createSvgGradientMatrix(strokeGradient, path),
       strokeGradient.spreadMethod,
     );
   }
@@ -1069,27 +1085,20 @@ function appendSvgTextRun(out: SvgTextRun[], style: Readonly<SvgStyle>, source: 
   if (text !== '') out.push({ opacity, style, text });
 }
 
-function createSvgGradientMatrix(
-  gradient: Readonly<SvgGradient>,
-  path: Readonly<Path>,
-  context: SvgImportContext,
-): Matrix {
+// objectBoundingBox units on geometry with no width or height: the format says the effect is IGNORED, and
+// that rule is defined once for every consumer of these units — clipPath, mask, pattern, filter, gradient.
+// The clip path already behaves this way; this is what lets the gradient match it instead of scaling by a
+// zero and producing a collapsed matrix that still paints.
+function hasZeroAreaSvgGradientBox(gradient: Readonly<SvgGradient>, path: Readonly<Path>): boolean {
+  if (gradient.units !== 'objectBoundingBox') return false;
   const bounds = createRectangle();
   getPathBounds(path, bounds);
-  // objectBoundingBox scales by the box, so a zero-width or zero-height box collapses the gradient onto a
-  // line or a point. The result is still a matrix and still renders, which is why this needed saying: the
-  // clip path refuses the same situation loudly while this one used to proceed in silence, and one of the
-  // two had to be wrong. Reported, not refused — what the correct rendering IS depends on a spec question
-  // that is still open, and a diagnostic commits to nothing while silence commits to the current answer.
-  if (gradient.units === 'objectBoundingBox' && (bounds.width === 0 || bounds.height === 0)) {
-    reportImportDiagnostic(
-      context.diagnostics,
-      ImportDiagnosticSeverity.Recover,
-      'svg.object-bounding-box-gradient-without-bounds',
-      'createSvgGradientMatrix',
-      { height: bounds.height, kind: gradient.kind, width: bounds.width },
-    );
-  }
+  return bounds.width === 0 || bounds.height === 0;
+}
+
+function createSvgGradientMatrix(gradient: Readonly<SvgGradient>, path: Readonly<Path>): Matrix {
+  const bounds = createRectangle();
+  getPathBounds(path, bounds);
   const mapX = (value: number): number =>
     gradient.units === 'objectBoundingBox' ? bounds.x + value * bounds.width : value;
   const mapY = (value: number): number =>
