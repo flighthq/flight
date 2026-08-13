@@ -66,8 +66,8 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
     p3x: number,
     p3y: number,
   ): void {
-    expandCubicAxis(p0x, p1x, p2x, p3x, p0y, p1y, p2y, p3y);
-    expandCubicAxis(p0y, p1y, p2y, p3y, p0x, p1x, p2x, p3x);
+    expandCubicAxis(p0x, p1x, p2x, p3x, p0y, p1y, p2y, p3y, true);
+    expandCubicAxis(p0y, p1y, p2y, p3y, p0x, p1x, p2x, p3x, false);
   }
 
   function expandCubicAxis(
@@ -79,6 +79,7 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
     q1: number,
     q2: number,
     q3: number,
+    primaryIsX: boolean,
   ): void {
     // Derivative: 3[(-p0+3p1-3p2+p3)t² + 2(p0-2p1+p2)t + (-p0+p1)]
     const a = -p0 + 3 * p1 - 3 * p2 + p3;
@@ -88,7 +89,7 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
     if (Math.abs(a) < 1e-12) {
       if (Math.abs(b) > 1e-12) {
         const t = -c / b;
-        if (t > 0 && t < 1) expand(cubicPoint(t, p0, p1, p2, p3), cubicPoint(t, q0, q1, q2, q3));
+        if (t > 0 && t < 1) expandCubicAxisExtremum(t, p0, p1, p2, p3, q0, q1, q2, q3, primaryIsX);
       }
       return;
     }
@@ -98,8 +99,26 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
     const sqrtDisc = Math.sqrt(disc);
     const t1 = (-b + sqrtDisc) / (2 * a);
     const t2 = (-b - sqrtDisc) / (2 * a);
-    if (t1 > 0 && t1 < 1) expand(cubicPoint(t1, p0, p1, p2, p3), cubicPoint(t1, q0, q1, q2, q3));
-    if (t2 > 0 && t2 < 1) expand(cubicPoint(t2, p0, p1, p2, p3), cubicPoint(t2, q0, q1, q2, q3));
+    if (t1 > 0 && t1 < 1) expandCubicAxisExtremum(t1, p0, p1, p2, p3, q0, q1, q2, q3, primaryIsX);
+    if (t2 > 0 && t2 < 1) expandCubicAxisExtremum(t2, p0, p1, p2, p3, q0, q1, q2, q3, primaryIsX);
+  }
+
+  function expandCubicAxisExtremum(
+    t: number,
+    p0: number,
+    p1: number,
+    p2: number,
+    p3: number,
+    q0: number,
+    q1: number,
+    q2: number,
+    q3: number,
+    primaryIsX: boolean,
+  ): void {
+    const primary = cubicPoint(t, p0, p1, p2, p3);
+    const secondary = cubicPoint(t, q0, q1, q2, q3);
+    if (primaryIsX) expand(primary, secondary);
+    else expand(secondary, primary);
   }
 
   let i = 0;

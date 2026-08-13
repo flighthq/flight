@@ -86,21 +86,16 @@ describe('computeShapeLocalBoundsRectangle', () => {
     //   c = -0 + 0 = 0
     //   One root at t = 0, excluded (not in open interval). Other: t = -b/a = -300/-450 = 2/3.
     //   y at t=2/3: u=1/3, u^3*0 + 3*(1/9)*(2/3)*0 + 3*(1/3)*(4/9)*150 + (8/27)*0 = 200/3 ~ 66.667.
-    // expandCubicAxis for Y-axis extrema calls expand(yAtT, xAtT) which is swapped vs expand(x,y).
-    // yAtT = cubicPoint(2/3, 0, 0, 150, 0) = 200/3. xAtT = cubicPoint(2/3, 0, 0, 200, 200) ~ 148.15.
-    // So expand(200/3, 148.15), treating 200/3 as x-extent and 148.15 as y-extent.
-    // Final bounds include endpoints (0,0) and (200,0), plus the extremum expansion.
+    // Final bounds include endpoints (0,0) and (200,0), plus the exact Y extremum at 200/3.
     const shape = createShape();
     appendShapeMoveTo(shape, 0, 0);
     appendShapeCubicCurveTo(shape, 0, 0, 200, 150, 200, 0);
     const out = createRectangle();
     computeShapeLocalBoundsRectangle(out, shape as any);
-    // Bounds encompass at least the two endpoints.
     expect(out.x).toBe(0);
     expect(out.y).toBe(0);
     expect(out.width).toBe(200);
-    // The curve bulges above y=0; the extremum expansion contributes a y-extent of ~148.15.
-    expect(out.height).toBeGreaterThan(100);
+    expect(out.height).toBeCloseTo(200 / 3, 5);
   });
 
   it('computes bounds from a cubic bezier with a simple horizontal S-curve', () => {
