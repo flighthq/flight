@@ -1,4 +1,18 @@
-import type { MeshGeometry, VertexAttribute, VertexAttributeLayout, VertexSemantic } from '@flighthq/types/contract';
+import { getEntityRuntime } from '@flighthq/entity/contract';
+import type {
+  MeshGeometry,
+  VertexAttribute,
+  VertexAttributeLayout,
+  VertexSemantic,
+  MeshGeometryRuntime,
+} from '@flighthq/types/contract';
+
+import {
+  getVertexFormatByteLength,
+  getVertexFormatComponentCount,
+  readVertexFormatComponent,
+  writeVertexFormatComponent,
+} from './vertexFormat';
 
 // Attribute introspection and typed per-vertex read/write accessors for interleaved mesh geometry.
 // Every accessor resolves float offsets through getVertexAttributeFloatOffset, so they work on any
@@ -265,15 +279,16 @@ function getFourComponentAttribute(
   semantic: VertexSemantic,
   allowFloat3: boolean,
 ): boolean {
-  const location = getAttributeByteLocation(geometry, vertexIndex, semantic);
-  if (location === null) return false;
+  const location: AttributeByteLocation = { attribute: null, byteOffset: 0, view: null };
+  if (!getAttributeByteLocation(location, geometry, vertexIndex, semantic)) return false;
   const { attribute, byteOffset, view } = location;
+  if (attribute === null || view === null) return false;
   const componentCount = getVertexFormatComponentCount(attribute.format);
   if (componentCount !== 4 && !(allowFloat3 && attribute.format === 'float32x3')) return false;
-  const x = readVertexComponent(view, byteOffset, attribute.format, 0);
-  const y = readVertexComponent(view, byteOffset, attribute.format, 1);
-  const z = readVertexComponent(view, byteOffset, attribute.format, 2);
-  const w = componentCount === 4 ? readVertexComponent(view, byteOffset, attribute.format, 3) : 1;
+  const x = readVertexFormatComponent(view, byteOffset, attribute.format, 0);
+  const y = readVertexFormatComponent(view, byteOffset, attribute.format, 1);
+  const z = readVertexFormatComponent(view, byteOffset, attribute.format, 2);
+  const w = componentCount === 4 ? readVertexFormatComponent(view, byteOffset, attribute.format, 3) : 1;
   out.x = x;
   out.y = y;
   out.z = z;
@@ -290,8 +305,8 @@ function setFloat2Attribute(
 ): boolean {
   const attribute = getVertexAttribute(geometry.layout, semantic);
   if (attribute?.format !== 'float32x2') return false;
-  const location = getAttributeByteLocation(geometry, vertexIndex, semantic);
-  if (location === null) return false;
+  const location: AttributeByteLocation = { attribute: null, byteOffset: 0, view: null };
+  if (!getAttributeByteLocation(location, geometry, vertexIndex, semantic) || location.view === null) return false;
   location.view.setFloat32(location.byteOffset, x, true);
   location.view.setFloat32(location.byteOffset + 4, y, true);
   geometry.version++;
@@ -308,117 +323,64 @@ function setFourComponentAttribute(
   w: number,
   allowFloat3: boolean,
 ): boolean {
-  const location = getAttributeByteLocation(geometry, vertexIndex, semantic);
-  if (location === null) return false;
+  const location: AttributeByteLocation = { attribute: null, byteOffset: 0, view: null };
+  if (!getAttributeByteLocation(location, geometry, vertexIndex, semantic)) return false;
   const { attribute, byteOffset, view } = location;
+  if (attribute === null || view === null) return false;
   const componentCount = getVertexFormatComponentCount(attribute.format);
   if (componentCount !== 4 && !(allowFloat3 && attribute.format === 'float32x3')) return false;
-  writeVertexComponent(view, byteOffset, attribute.format, 0, x);
-  writeVertexComponent(view, byteOffset, attribute.format, 1, y);
-  writeVertexComponent(view, byteOffset, attribute.format, 2, z);
-  if (componentCount === 4) writeVertexComponent(view, byteOffset, attribute.format, 3, w);
+  writeVertexFormatComponent(view, byteOffset, attribute.format, 0, x);
+  writeVertexFormatComponent(view, byteOffset, attribute.format, 1, y);
+  writeVertexFormatComponent(view, byteOffset, attribute.format, 2, z);
+  if (componentCount === 4) writeVertexFormatComponent(view, byteOffset, attribute.format, 3, w);
   geometry.version++;
   return true;
 }
 
+interface AttributeByteLocation {
+  attribute: VertexAttribute | null;
+  byteOffset: number;
+  view: DataView | null;
+}
+
 function getAttributeByteLocation(
+  out: AttributeByteLocation,
   geometry: Readonly<MeshGeometry>,
   vertexIndex: number,
   semantic: VertexSemantic,
-): { attribute: VertexAttribute; byteOffset: number; view: DataView } | null {
+): boolean {
+  out.attribute = null;
+  out.byteOffset = 0;
+  out.view = null;
   const attribute = getVertexAttribute(geometry.layout, semantic);
-  if (attribute === null || vertexIndex < 0 || geometry.layout.stride <= 0) return null;
+  if (attribute === null || vertexIndex < 0 || geometry.layout.stride <= 0) return false;
   const attributeByteLength = getVertexFormatByteLength(attribute.format);
-  if (attributeByteLength === 0 || attribute.byteOffset < 0) return null;
-  if (attribute.byteOffset + attributeByteLength > geometry.layout.stride) return null;
+  if (attributeByteLength === 0 || attribute.byteOffset < 0) return false;
+  if (attribute.byteOffset + attributeByteLength > geometry.layout.stride) return false;
   const vertexCount = Math.floor(geometry.vertices.byteLength / geometry.layout.stride);
-  if (vertexIndex >= vertexCount) return null;
+  if (vertexIndex >= vertexCount) return false;
   const byteOffset = vertexIndex * geometry.layout.stride + attribute.byteOffset;
-  if (byteOffset + attributeByteLength > geometry.vertices.byteLength) return null;
-  return {
-    attribute,
-    byteOffset,
-    view: new DataView(geometry.vertices.buffer, geometry.vertices.byteOffset, geometry.vertices.byteLength),
+  if (byteOffset + attributeByteLength > geometry.vertices.byteLength) return false;
+  const runtime = getEntityRuntime(geometry) as MeshGeometryRuntime;
+  const buffer = geometry.vertices.buffer;
+  const cached = runtime.attributeDataView;
+  const view =
+    cached &&
+    cached.buffer === buffer &&
+    cached.byteOffset === geometry.vertices.byteOffset &&
+    cached.byteLength === geometry.vertices.byteLength
+      ? cached.view
+      : new DataView(buffer, geometry.vertices.byteOffset, geometry.vertices.byteLength);
+  runtime.attributeDataView = {
+    buffer,
+    byteOffset: geometry.vertices.byteOffset,
+    byteLength: geometry.vertices.byteLength,
+    view,
   };
-}
-
-function getVertexFormatByteLength(format: VertexAttribute['format']): number {
-  switch (format) {
-    case 'float32x2':
-      return 8;
-    case 'float32x3':
-      return 12;
-    case 'float32x4':
-      return 16;
-    case 'uint16x4':
-      return 8;
-    case 'uint8x4':
-    case 'unorm8x4':
-      return 4;
-  }
-}
-
-function getVertexFormatComponentCount(format: VertexAttribute['format']): number {
-  switch (format) {
-    case 'float32x2':
-      return 2;
-    case 'float32x3':
-      return 3;
-    case 'float32x4':
-    case 'uint16x4':
-    case 'uint8x4':
-    case 'unorm8x4':
-      return 4;
-  }
-}
-
-function readVertexComponent(
-  view: DataView,
-  byteOffset: number,
-  format: VertexAttribute['format'],
-  component: number,
-): number {
-  switch (format) {
-    case 'float32x2':
-    case 'float32x3':
-    case 'float32x4':
-      return view.getFloat32(byteOffset + component * 4, true);
-    case 'uint16x4':
-      return view.getUint16(byteOffset + component * 2, true);
-    case 'uint8x4':
-      return view.getUint8(byteOffset + component);
-    case 'unorm8x4':
-      return view.getUint8(byteOffset + component) / 255;
-  }
-}
-
-function writeVertexComponent(
-  view: DataView,
-  byteOffset: number,
-  format: VertexAttribute['format'],
-  component: number,
-  value: number,
-): void {
-  switch (format) {
-    case 'float32x2':
-    case 'float32x3':
-    case 'float32x4':
-      view.setFloat32(byteOffset + component * 4, value, true);
-      break;
-    case 'uint16x4':
-      view.setUint16(byteOffset + component * 2, Math.round(clamp(value, 0, 65_535)), true);
-      break;
-    case 'uint8x4':
-      view.setUint8(byteOffset + component, Math.round(clamp(value, 0, 255)));
-      break;
-    case 'unorm8x4':
-      view.setUint8(byteOffset + component, Math.round(clamp(value, 0, 1) * 255));
-      break;
-  }
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
+  out.attribute = attribute;
+  out.byteOffset = byteOffset;
+  out.view = view;
+  return true;
 }
 
 function getFloat3Attribute(

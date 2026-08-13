@@ -94,6 +94,7 @@ export interface MeshGeometryWgpuData {
 // result corresponds to; blendMeshGeometryMorph's caller compares against it to skip re-blending a
 // morph whose weights did not move this frame. Null until the first blend.
 export interface MeshGeometryRuntime extends EntityRuntime {
+  attributeDataView: { buffer: ArrayBufferLike; byteOffset: number; byteLength: number; view: DataView } | null;
   boundsVersion: number;
   morphBindPose: MeshMorphBindPose | null;
   morphBlendedWeights: Float32Array | null;
