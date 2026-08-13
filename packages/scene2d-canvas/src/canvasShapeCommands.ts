@@ -197,6 +197,13 @@ export const defaultCanvasDrawPath: CanvasShapeCommand<'drawPath'> = {
           di += 6;
           state.hasPendingPath = true;
           break;
+        case 7: // CLOSE — consumes no operands, so the data cursor does not advance
+          // Without this the verb falls through the switch and the subpath is stroked as if it were open,
+          // losing its CLOSING SEGMENT entirely: a stroked rect drew three sides. It reached every backend,
+          // not just this one, because scene2d-gl and scene2d-wgpu rasterize through these same commands
+          // whenever a stroke is closed — the tessellators deliberately defer closed rings to raster.
+          context.closePath();
+          break;
       }
     }
   },

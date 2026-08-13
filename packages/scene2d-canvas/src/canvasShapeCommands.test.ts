@@ -263,6 +263,38 @@ describe('defaultCanvasDrawPath', () => {
     expect(spy).toHaveBeenCalledWith(25, -50, 75, -50, 100, 0);
   });
 
+  // A CLOSE verb must reach the context, or the subpath is stroked as though it were open and its closing
+  // segment is never drawn — a stroked rect rendered three of its four sides, on canvas, webgl and webgpu
+  // alike, because both GPU backends rasterize closed strokes through this replay.
+  //
+  // Asserted as a spy on closePath rather than through pixels, so the omission fails here rather than in a
+  // render baseline. The negative case is included because the bug was a MISSING SWITCH CASE: a test that
+  // only checked the closed path would pass against an implementation that closed everything.
+  it('closes a subpath when the path carries a CLOSE verb, and only then', () => {
+    const closed = makeShapeTarget();
+    const closeSpy = vi.spyOn(closed.context, 'closePath');
+    const closedShape = createShape();
+    appendShapeBeginFill(closedShape, 0xff0000);
+    appendShapePath(
+      closedShape,
+      [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],
+      [0, 0, 100, 0, 100, 100],
+      'nonZero',
+    );
+    appendShapeEndFill(closedShape);
+    renderCanvasShapeCommands(closed.context, closed.state, closedShape.data.commands, resolvers);
+    expect(closeSpy).toHaveBeenCalledTimes(1);
+
+    const open = makeShapeTarget();
+    const openSpy = vi.spyOn(open.context, 'closePath');
+    const openShape = createShape();
+    appendShapeBeginFill(openShape, 0xff0000);
+    appendShapePath(openShape, [PathCommand.MOVE_TO, PathCommand.LINE_TO], [0, 0, 100, 100], 'nonZero');
+    appendShapeEndFill(openShape);
+    renderCanvasShapeCommands(open.context, open.state, openShape.data.commands, resolvers);
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
   it('uses nonzero winding rule when drawPath winding is nonZero', () => {
     const { context, state } = makeShapeTarget();
     const fillSpy = vi.spyOn(context, 'fill');
