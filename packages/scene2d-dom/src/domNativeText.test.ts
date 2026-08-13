@@ -1,5 +1,5 @@
 import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
-import { createNativeText } from '@flighthq/text/contract';
+import { createNativeText, getNativeTextRuntime } from '@flighthq/text/contract';
 import { NativeTextKind } from '@flighthq/types/contract';
 
 import { defaultDomNativeTextRenderer, drawDomNativeText, drawDomNativeTextMask } from './domNativeText';
@@ -58,6 +58,29 @@ describe('drawDomNativeText', () => {
     expect(div.style.width).toBe('120px');
     expect(div.style.height).toBe('40px');
     expect(div.style.overflow).toBe('hidden');
+  });
+
+  it('publishes the dimensions laid out by the DOM element', () => {
+    const state = makeState();
+    const node = createNativeText({ data: { text: 'measured', width: 137, height: 41 } });
+    const renderProxy = getOrCreateRenderProxy2D(state, node);
+    const measure = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement): DOMRect {
+        const width = Number.parseFloat(this.style.width) || 0;
+        const height = Number.parseFloat(this.style.height) || 0;
+        return new DOMRect(0, 0, width, height);
+      });
+
+    try {
+      drawDomNativeText(state, renderProxy);
+
+      const runtime = getNativeTextRuntime(node);
+      expect(runtime.measuredWidth).toBe(node.data.width);
+      expect(runtime.measuredHeight).toBe(node.data.height);
+    } finally {
+      measure.mockRestore();
+    }
   });
 
   it('positions the block vertically via the flexbox on a fixed box', () => {

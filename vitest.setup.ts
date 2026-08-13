@@ -39,6 +39,7 @@ if (typeof window !== 'undefined' && 'document' in window) {
   // @ts-expect-error: quiet warning about types
   await import('@testing-library/jest-dom');
   await import('vitest-webgl-canvas-mock');
+  installCanvas2dPixelReadbackValidation();
 
   // jsdom has no webgl2 context, and vitest-webgl-canvas-mock only covers webgl /
   // experimental-webgl, so patch getContext('webgl2') to return a vi.fn()-stubbed mock.
@@ -52,6 +53,49 @@ if (typeof window !== 'undefined' && 'document' in window) {
   } as typeof HTMLCanvasElement.prototype.getContext;
 } else {
   // node environment
+}
+
+// vitest-webgl-canvas-mock records getImageData calls but ignores all four rectangle arguments and
+// returns the full canvas. Keep the dependency's intentionally non-rasterizing buffer while restoring
+// the browser contract that protects every jsdom consumer from a wrong-sized readback.
+function installCanvas2dPixelReadbackValidation(): void {
+  CanvasRenderingContext2D.prototype.getImageData = function (
+    this: CanvasRenderingContext2D,
+    sx: number,
+    sy: number,
+    sw: number,
+    sh: number,
+  ): ImageData {
+    if (arguments.length < 4) {
+      throw new TypeError(
+        `Failed to execute 'getImageData' on 'CanvasRenderingContext2D': 4 arguments required, but only ${arguments.length} present.`,
+      );
+    }
+
+    enforceCanvasImageDataLong(sx);
+    enforceCanvasImageDataLong(sy);
+    const width = enforceCanvasImageDataLong(sw);
+    const height = enforceCanvasImageDataLong(sh);
+    if (width === 0 || height === 0) {
+      throw new DOMException(
+        "Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source width or height is 0.",
+        'IndexSizeError',
+      );
+    }
+    return new ImageData(Math.abs(width), Math.abs(height));
+  } as typeof CanvasRenderingContext2D.prototype.getImageData;
+}
+
+function enforceCanvasImageDataLong(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new TypeError("Failed to execute 'getImageData' on 'CanvasRenderingContext2D': value is not finite.");
+  }
+  const integer = Math.trunc(numeric);
+  if (integer < -0x80000000 || integer > 0x7fffffff) {
+    throw new TypeError("Failed to execute 'getImageData' on 'CanvasRenderingContext2D': value is outside long range.");
+  }
+  return integer;
 }
 
 const GL_CONSTANTS: Record<string, number> = {
