@@ -16,6 +16,12 @@ export type CaptureVerificationStage =
   | 'encoding'
   | 'done';
 
+// Whether the scene's own pixel oracle actually RAN. Existence and invocation are different claims: a
+// scene can export `assertRender` and still have it silently skipped (a misspelled export is simply
+// absent to the verifier), and no static scan of the source can tell the two apart. Recorded here so
+// the answer is a durable fact rather than an inference from the absence of an error.
+export type CaptureVerificationOracle = 'absent' | 'invoked';
+
 /** Machine-facing page result published at `window.__ftVerification`. */
 export interface CaptureVerification {
   protocolVersion: typeof CAPTURE_PROTOCOL_VERSION;
@@ -26,6 +32,8 @@ export interface CaptureVerification {
   // Meaningful only while `state` is 'pending'; a terminal state has already said what happened.
   stage: CaptureVerificationStage;
   error: string | null;
+  /** Set once the verifier reaches the assert step: whether this target's oracle was called. */
+  oracle?: CaptureVerificationOracle;
 }
 
 /** Repeatable page work exposed to the benchmark runner by the normal capture-target registration. */

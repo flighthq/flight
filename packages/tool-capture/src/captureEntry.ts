@@ -44,6 +44,14 @@ export interface CaptureStatus {
   /** null = no baseline exists yet; false = hash matches baseline; true = hash differs from baseline */
   changed: boolean | null;
   /**
+   * Whether this target's own pixel oracle was CALLED, straight from the verifier, or null when the
+   * verifier published no answer. Recorded because existence and invocation are different claims: a
+   * misspelled `assertRender` export is simply absent to the verifier, and reading the source can never
+   * tell you which happened. Without this the only way to establish that an oracle ran is to reason
+   * backwards from the absence of an error.
+   */
+  oracle: 'absent' | 'invoked' | null;
+  /**
    * Present only for an observe-mode capture: what the eyes actually saw. Observe never gates or
    * touches baselines — it always emits a screenshot plus this block so a reviewing agent can tell
    * "geometry drew but wrong" (blank:false, coverage>0) from "nothing drew" (blank:true, coverage 0)
@@ -574,6 +582,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           protocolVersion: CAPTURE_PROTOCOL_VERSION,
           state: 'ready',
           capturedAt: Date.now(),
+          oracle: verification?.oracle ?? null,
           error: null,
           hash,
           baselineHash: null,
@@ -632,6 +641,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         hash,
         baselineHash,
         changed,
+        oracle: verification?.oracle ?? null,
       };
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
 
@@ -680,6 +690,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         hash: null,
         baselineHash: null,
         changed: null,
+        oracle: null,
       };
       writeFileSync(statusPath, JSON.stringify(errorStatus, null, 2));
 
@@ -1134,6 +1145,7 @@ async function captureUrlAttempt(
       hash: createHash('sha256').update(screenshotBuffer).digest('hex'),
       baselineHash: null,
       changed: null,
+      oracle: null,
       observe: diagnostics,
     };
     writeFileSync(join(outDir, 'status.json'), JSON.stringify(status, null, 2));
@@ -1165,6 +1177,7 @@ async function captureUrlAttempt(
       hash: screenshotBuffer === null ? null : createHash('sha256').update(screenshotBuffer).digest('hex'),
       baselineHash: null,
       changed: null,
+      oracle: null,
       observe: diagnostics,
     };
     writeFileSync(join(outDir, 'status.json'), JSON.stringify(status, null, 2));

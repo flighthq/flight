@@ -231,7 +231,15 @@ export async function runRenderVerification(testModule: FunctionalTestModule, re
     }
 
     result.stage = 'asserting';
-    await testModule.assertRender?.(bitmap);
+    // Record INVOCATION, not existence — and record it from the branch that actually calls, so the fact
+    // cannot drift from the behaviour it describes.
+    const oracle = testModule.assertRender;
+    if (typeof oracle === 'function') {
+      result.oracle = 'invoked';
+      await oracle(bitmap);
+    } else {
+      result.oracle = 'absent';
+    }
     result.stage = 'encoding';
     // DOM capture already owns the Playwright screenshot that supplied this bitmap. Publishing another
     // PNG would only re-encode those pixels; the raster backends still need this data URL because their
