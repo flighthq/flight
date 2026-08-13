@@ -284,6 +284,43 @@ describe('getVertexAttributeFloatOffset', () => {
   });
 });
 
+describe('mesh vertex accessor rejection family', () => {
+  it.each([
+    ['color0', getMeshGeometryVertexColor0],
+    ['joints0', getMeshGeometryVertexJoints0],
+    ['weights0', getMeshGeometryVertexWeights0],
+  ])('leaves four-component output untouched when %s is absent', (_semantic, read) => {
+    const out = { w: 7, x: 8, y: 9, z: 10 };
+    expect(read(out, makeOneVertex(), 0)).toBe(false);
+    expect(out).toEqual({ w: 7, x: 8, y: 9, z: 10 });
+  });
+
+  it.each([
+    ['normal', getMeshGeometryVertexNormal],
+    ['position', getMeshGeometryVertexPosition],
+    ['tangent', getMeshGeometryVertexTangent],
+  ])('leaves float3/4 output untouched when %s is absent', (_semantic, read) => {
+    const out = { w: 7, x: 8, y: 9, z: 10 };
+    expect(
+      read(out, createMeshGeometry({ layout: { attributes: [], stride: 0 }, vertices: new Float32Array(0) }), 0),
+    ).toBe(false);
+    expect(out).toEqual({ w: 7, x: 8, y: 9, z: 10 });
+  });
+
+  it('rejects non-float formats, negative/past indices, and zero stride without touching output', () => {
+    const packed = createMeshGeometry({
+      layout: { attributes: [{ byteOffset: 0, format: 'uint8x4', semantic: 'position' }], stride: 4 },
+      vertices: new Float32Array(1),
+    });
+    const out = { x: 7, y: 8, z: 9 };
+    expect(getMeshGeometryVertexPosition(out, packed, 0)).toBe(false);
+    expect(out).toEqual({ x: 7, y: 8, z: 9 });
+    expect(getMeshGeometryVertexPosition(out, makeOneVertex(), -1)).toBe(false);
+    expect(getMeshGeometryVertexPosition(out, makeOneVertex(), 1)).toBe(false);
+    expect(out).toEqual({ x: 7, y: 8, z: 9 });
+  });
+});
+
 describe('setMeshGeometryVertexColor0', () => {
   it('encodes and versions the declared color storage', () => {
     const geometry = makePackedVertex();
