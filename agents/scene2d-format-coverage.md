@@ -249,7 +249,8 @@ outside the handled set, which an idiomatic authoring-tool export routinely cont
 `svg.unresolved-gradient-reference`, `svg.unresolved-fill-gradient`, `svg.unresolved-stroke-gradient`;
 the cycle family `svg.recursive-use`, `svg.recursive-gradient`; `svg.image-missing-href` and
 `svg.unresolved-image`; `svg.mixed-clip-rule`; and
-`svg.object-bounding-box-clip-without-bounds`.
+`svg.object-bounding-box-clip-unmeasurable-bounds` (raised only when a text descendant leaves the box
+unmeasurable — a zero-area target is conformant and silent, since the format ignores the effect).
 
 ## Rive (`.riv`)
 
