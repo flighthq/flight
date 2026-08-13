@@ -3,12 +3,48 @@ import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
 import { getShapeBounds } from '@flighthq/shape/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Sprite, ImportDiagnostic, RichText, Shape, TextLabel } from '@flighthq/types/contract';
-import { SpriteKind, DisplayObjectKind, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
+import {
+  SpriteKind,
+  DisplayObjectKind,
+  ImportDiagnosticSeverity,
+  RichTextKind,
+  ShapeKind,
+  TextLabelKind,
+} from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
 describe('createScene2DFromSvgDocument', () => {
+  // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
+  // here checks the first. This checks the second — the one that catches an importer that produced a
+  // plausible-looking tree while telling nobody it could not read part of the input.
+  //
+  // Skip is excluded rather than the list asserted empty: SVG is a large format and a well-formed document
+  // may use an element this importer does not model, which is correct behaviour on correct input. What must
+  // not appear is anything of higher severity.
+  it('raises no data-integrity diagnostic for a well-formed document', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+
+    createScene2DFromSvgDocument(
+      `
+        <svg>
+          <rect x="1" y="2" width="30" height="40" fill="#ff0000" />
+          <g transform="translate(5,6)">
+            <circle cx="10" cy="10" r="4" fill="#00ff00" />
+          </g>
+        </svg>
+      `,
+      diagnostics,
+    );
+
+    const integrity = diagnostics.filter((diagnostic) => diagnostic.severity !== ImportDiagnosticSeverity.Skip);
+    expect(
+      integrity.map((diagnostic) => diagnostic.kind),
+      `a good SVG made the importer complain: ${integrity.map((d) => d.kind).join(', ')}`,
+    ).toEqual([]);
+  });
+
   it('applies object-bounding-box clip and mask content units to target geometry', () => {
     const root = createScene2DFromSvgDocument(`
       <svg>
