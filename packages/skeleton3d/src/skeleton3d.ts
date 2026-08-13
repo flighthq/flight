@@ -6,6 +6,7 @@ import {
   inverseMatrix4,
   multiplyMatrix4,
   setMatrix3NormalFromMatrix4,
+  setMatrix4Identity,
 } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeParent, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { Matrix4Like, Node3D, Skeleton3D, Skeleton3DValidationDiagnostic } from '@flighthq/types/contract';
@@ -144,9 +145,31 @@ export function getSkeleton3DJointWorldMatrixByName(
 export function setSkeleton3DBindPose(skeleton: Readonly<Skeleton3D>): void {
   const { inverseBindMatrices, joints } = skeleton;
   for (let j = 0; j < joints.length; j++) {
-    inverseMatrix4(_result, getNodeWorldMatrix4(joints[j]));
-    inverseBindMatrices.set(_result.m, j * 16);
+    // A joint's world matrix is singular when anything in its chain carries a zero scale, and that value
+    // is not necessarily the app's: glTF import writes node scale straight from unvalidated file data
+    // and joints ARE nodes, so a collapsed rig arrives from a file we do not control.
+    //
+    // Identity per joint, matching the AWD2 bind-pose recovery rather than declining the whole call: one
+    // degenerate joint costs its own bind pose and leaves it undeformed, while every other joint keeps
+    // working. Writing the failed inverse instead puts NaN in the palette, and NaN there does not stay
+    // put — it reaches the skinned vertices and takes the mesh with it, silently.
+    if (inverseMatrix4(_result, getNodeWorldMatrix4(joints[j]))) {
+      inverseBindMatrices.set(_result.m, j * 16);
+    } else {
+      setMatrix4Identity(_result);
+      inverseBindMatrices.set(_result.m, j * 16);
+      skeleton3DBindPoseGuard?.(skeleton, j);
+    }
   }
+}
+
+// The seam the guard layer installs into. This package has no importdiagnostics sink — it is not an
+// importer, even though the degenerate value usually originates in one — so the caller-facing message
+// lives in the guard layer, like `reparentNode`'s, rather than as a tally.
+export function setSkeleton3DBindPoseGuard(
+  guard: ((skeleton: Readonly<Skeleton3D>, jointIndex: number) => void) | null,
+): void {
+  skeleton3DBindPoseGuard = guard;
 }
 
 export function validateSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3DValidationDiagnostic | null {
@@ -165,3 +188,5 @@ export function validateSkeleton3D(skeleton: Readonly<Skeleton3D>): Skeleton3DVa
 const _invBind = createMatrix4();
 const _result = createMatrix4();
 const _normal = createMatrix3();
+
+let skeleton3DBindPoseGuard: ((skeleton: Readonly<Skeleton3D>, jointIndex: number) => void) | null = null;

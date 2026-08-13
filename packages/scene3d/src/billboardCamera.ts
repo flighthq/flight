@@ -22,9 +22,10 @@ import { getNode3DRuntime } from './sceneNode';
 // Call once per frame per billboard after the camera's view matrix is set and before drawing. For a
 // whole subtree, orientScene3DBillboardsToCamera walks and orients every Billboard in one pass, deriving
 // the camera basis a single time.
-export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<Camera3D>): void {
-  setBillboardCameraBasis(camera);
+export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<Camera3D>): boolean {
+  if (!setBillboardCameraBasis(camera)) return false;
   applyBillboardFacing(billboard);
+  return true;
 }
 
 // Orients every Billboard in the subtree rooted at `scene` to face `camera` in one pass. Non-billboard
@@ -32,9 +33,10 @@ export function orientBillboardToCamera(billboard: Billboard, camera: Readonly<C
 // camera basis is derived once and reused across every billboard. Parents are oriented before their
 // descendants (top-down), so a billboard nested under another billboard sees its parent's updated
 // transform.
-export function orientScene3DBillboardsToCamera(scene: Readonly<Node3D>, camera: Readonly<Camera3D>): void {
-  setBillboardCameraBasis(camera);
+export function orientScene3DBillboardsToCamera(scene: Readonly<Node3D>, camera: Readonly<Camera3D>): boolean {
+  if (!setBillboardCameraBasis(camera)) return false;
   orientBillboardSubtree(scene);
+  return true;
 }
 
 // Rewrites `billboard.localMatrix` from the module-scratch camera basis (set by setBillboardCameraBasis)
@@ -80,8 +82,18 @@ function orientBillboardSubtree(node: Readonly<Node3D>): void {
 // basis vectors are normalized so a camera with a scaled view still yields a rotation-only billboard
 // basis. `_back` is the camera's +Z world axis (toward the viewer), which is the facing normal a
 // screen-aligned billboard adopts.
-function setBillboardCameraBasis(camera: Readonly<Camera3D>): void {
-  inverseMatrix4(_cameraWorld, camera.view);
+function setBillboardCameraBasis(camera: Readonly<Camera3D>): boolean {
+  // Matches `updateCamera3DInverseViewProjection`, which already treats a non-invertible view as a real
+  // state: report it and leave the prior basis untouched rather than deriving one from a garbage matrix.
+  // Reading `m` after a failed inverse would seed every axis and the eye position from NaN, and the
+  // billboards would be silently unplaceable rather than simply not re-oriented this frame.
+  //
+  // Whether a view can BE singular depends on which setter filled it, and the two differ:
+  // `setCamera3DViewMatrix4FromLookAt` is safe by construction (`setMatrix4LookAt` reseeds both
+  // degenerate bases — coincident eye/target, and `up` parallel to the view direction), while
+  // `setCamera3DViewMatrix4FromMatrix4` copies an arbitrary caller matrix with no validation at all and
+  // documents deriving it from a scene node's world transform, which a zero-scale node makes singular.
+  if (!inverseMatrix4(_cameraWorld, camera.view)) return false;
   const m = _cameraWorld.m;
   _cameraEyeX = m[12];
   _cameraEyeY = m[13];
@@ -108,6 +120,7 @@ function setBillboardCameraBasis(camera: Readonly<Camera3D>): void {
   _cameraBackX /= bl;
   _cameraBackY /= bl;
   _cameraBackZ /= bl;
+  return true;
 }
 
 // Writes a camera-facing world matrix into `out` from the module-scratch camera basis, the billboard's
