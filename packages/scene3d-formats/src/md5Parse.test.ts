@@ -1364,7 +1364,9 @@ describe('importMd5Mesh', () => {
     expect(Object.keys(scene.animations)).toHaveLength(0);
     const crumb = findDiagnostic(diagnostics, 'md5mesh.animation-no-skeleton');
     expect(crumb).toBeDefined();
-    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
+    // Drop, not Skip: skeletal animation is implemented, so what failed is the caller's data pairing, and
+    // the animation is lost. Pinned because a Skip here would exempt itself from every severity check.
+    expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Drop);
     expect(crumb!.origin).toBe('importMd5Mesh');
   });
 });
