@@ -131,10 +131,18 @@ export function parseSpineSkeletonBinary(
       'parseSpineSkeletonBinary',
       { bones: bones.length, slots: slots.length },
     );
-  } else {
+  } else if (reader.offset < bytes.byteLength) {
+    // Recover, not Skip. Skip means a RECOGNIZED-but-unsupported feature was ignored; bytes left over in a
+    // sequentially-consumed format are unexplained data, which is the definition of a data-integrity signal.
+    // The distinction is load-bearing: a Skip here exempts itself from every "did the parser complain"
+    // check, which is precisely how a desynchronized walk that stops early stays invisible.
+    //
+    // Guarded on a remainder actually existing. Firing unconditionally made this crumb useless in both
+    // directions — it could not distinguish a file that ended cleanly from one the walk abandoned, so a
+    // clean parse was never silent and the alarm carried no information.
     reportImportDiagnostic(
       diagnostics,
-      ImportDiagnosticSeverity.Skip,
+      ImportDiagnosticSeverity.Recover,
       'spine.binary-tail-unparsed',
       'parseSpineSkeletonBinary',
       { bytes: bytes.byteLength - reader.offset },

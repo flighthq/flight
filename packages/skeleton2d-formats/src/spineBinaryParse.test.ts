@@ -2,7 +2,7 @@ import { easeCubicBezier } from '@flighthq/easing/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { applyAnimationClipToSkeleton2D, cloneSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type { RegionAttachment2D } from '@flighthq/types/contract';
-import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { parseSpineSkeletonBinary } from './spineBinaryParse';
@@ -281,7 +281,10 @@ describe('parseSpineSkeletonBinary', () => {
     // The mesh is the second attachment on the slot; it is not the setup one, so reach it via the region's
     // sibling — the parse must still have consumed it correctly for the file to end cleanly.
     const crumbs = collectImportDiagnostics((sink) => parseSpineSkeletonBinary(buildSpineBinary(), sink));
-    expect(crumbs.find((c) => c.kind === 'spine.binary-tail-unparsed')!.detail).toMatchObject({ bytes: 0 });
+    expect(
+      crumbs.map((c) => c.kind),
+      'a fully consumed fixture must parse silently',
+    ).toEqual([]);
     expect(skin.skeleton.slots!.length).toBe(1);
   });
 
@@ -291,8 +294,10 @@ describe('parseSpineSkeletonBinary', () => {
     const crumbs = collectImportDiagnostics((sink) =>
       parseSpineSkeletonBinary(buildSpineBinary({ weightedMesh: true }), sink),
     );
-    expect(crumbs.find((c) => c.kind === 'spine.binary-tail-unparsed')!.detail).toMatchObject({ bytes: 0 });
-    expect(crumbs.map((c) => c.kind)).not.toContain('spine.binary-truncated');
+    expect(
+      crumbs.map((c) => c.kind),
+      'a fully consumed fixture must parse silently',
+    ).toEqual([]);
   });
 
   it('CONSUMES IK constraint records it does not model, so the skin after them still parses', () => {
@@ -350,14 +355,25 @@ describe('parseSpineSkeletonBinary', () => {
     expect(kinds).toContain('spine.binary-header-unreadable');
   });
 
-  it('reports how many bytes of the file it did not parse', () => {
-    const bytes = buildSpineBinary();
-    const crumbs = collectImportDiagnostics((sink) => parseSpineSkeletonBinary(bytes, sink));
+  it('reports how many bytes of the file it did not parse, and says nothing when it parsed them all', () => {
+    // Both arms, because the crumb previously fired unconditionally — including with `bytes: 0`, which the
+    // superseded test asserted as correct. A complaint raised on every successful parse cannot distinguish
+    // a file that ended cleanly from one the walk abandoned, so it was as silent as no complaint at all.
+    const consumed = buildSpineBinary();
+    expect(
+      collectImportDiagnostics((sink) => parseSpineSkeletonBinary(consumed, sink)).map((c) => c.kind),
+      'a file consumed to its last byte has no tail to report',
+    ).toEqual([]);
+
+    const withTail = new Uint8Array(consumed.length + 24);
+    withTail.set(consumed);
+    const crumbs = collectImportDiagnostics((sink) => parseSpineSkeletonBinary(withTail, sink));
     const tail = crumbs.find((c) => c.kind === 'spine.binary-tail-unparsed')!;
-    // The fixture ends exactly where this landing stops parsing, so nothing is left over — the crumb still
-    // fires to record that the importer STOPPED rather than finished, which is the honest signal while the
-    // event and animation sections are still unmodeled.
-    expect(tail.detail).toMatchObject({ bytes: 0 });
+    expect(tail).toBeDefined();
+    expect(tail.detail).toMatchObject({ bytes: 24 });
+    // Recover, not Skip: leftover bytes are unexplained data, not a recognized-but-unsupported feature. A
+    // Skip would exempt this from every severity-based "did the parser complain" check.
+    expect(tail.severity).toBe(ImportDiagnosticSeverity.Recover);
   });
 
   it('RECOVERS from a truncated file, keeping whatever records were complete', () => {
