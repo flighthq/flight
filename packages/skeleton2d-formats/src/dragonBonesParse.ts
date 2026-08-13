@@ -509,7 +509,7 @@ function dragonBonesInterpolation(
       // Recover: the authored easing is unsupported, but this function RETURNS an interpolation mode that
       // is written in its place, so a substitute is present in the output.
       ImportDiagnosticSeverity.Recover,
-      'dragonbones.tween-easing-unsupported',
+      'dragonbones.tween-easing-approximated',
       'dragonBonesInterpolation',
       { frames: approximated },
     );

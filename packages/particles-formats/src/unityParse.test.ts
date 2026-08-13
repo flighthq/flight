@@ -264,7 +264,7 @@ describe('parseUnityParticleDocument', () => {
       expect(diagnostics.some((d) => d.detail?.module === 'trails')).toBe(false);
     });
 
-    it('reports unity.extra-bursts-dropped (Skip) when more than one burst is present', () => {
+    it('reports unity.extra-bursts-unsupported (Skip) when more than one burst is present', () => {
       const json = JSON.stringify({
         ...JSON.parse(SMOKE_JSON),
         emission: {
@@ -275,7 +275,9 @@ describe('parseUnityParticleDocument', () => {
           ],
         },
       });
-      const crumb = parseUnityParticleDocument(json).diagnostics.find((d) => d.kind === 'unity.extra-bursts-dropped');
+      const crumb = parseUnityParticleDocument(json).diagnostics.find(
+        (d) => d.kind === 'unity.extra-bursts-unsupported',
+      );
       expect(crumb).toBeDefined();
       expect(crumb!.severity).toBe(ImportDiagnosticSeverity.Skip);
       expect(crumb!.origin).toBe('collectUnityDiagnostics');

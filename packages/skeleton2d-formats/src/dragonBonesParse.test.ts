@@ -705,7 +705,7 @@ describe('parseDragonBonesSkeleton', () => {
     };
     expect(
       collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(curved), sink)).map((c) => c.kind),
-    ).not.toContain('dragonbones.tween-easing-unsupported');
+    ).not.toContain('dragonbones.tween-easing-approximated');
 
     // The quadratic variants have no corpus coverage, so they stay reported rather than guessed.
     const quad = {
@@ -724,7 +724,7 @@ describe('parseDragonBonesSkeleton', () => {
     };
     expect(
       collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(quad), sink)).map((c) => c.kind),
-    ).toContain('dragonbones.tween-easing-unsupported');
+    ).toContain('dragonbones.tween-easing-approximated');
   });
 
   it('leaves an uncurved DragonBones timeline with no segment easings', () => {
@@ -1095,7 +1095,7 @@ describe('parseDragonBonesSkeleton', () => {
     expect(kinds).toContain('dragonbones.ik-timeline-unsupported');
     expect(kinds).toContain('dragonbones.zorder-timeline-unsupported');
     expect(kinds).toContain('dragonbones.legacy-bone-frame-unsupported');
-    expect(kinds).toContain('dragonbones.tween-easing-unsupported');
+    expect(kinds).toContain('dragonbones.tween-easing-approximated');
   });
 
   it('returns null for malformed JSON and for a non-DragonBones document (no armature)', () => {
