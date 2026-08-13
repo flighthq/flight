@@ -127,7 +127,9 @@ describe('SVG conformance matrix', () => {
     );
 
     expect(getNodeChildAt(root, 0)?.clip).toBeNull();
-    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain('svg.object-bounding-box-clip-without-bounds');
+    expect(diagnostics.map((diagnostic) => diagnostic.kind)).toContain(
+      'svg.object-bounding-box-clip-unmeasurable-bounds',
+    );
   });
 
   it('instantiates path, symbol, and nested-use geometry inside clip paths', () => {
