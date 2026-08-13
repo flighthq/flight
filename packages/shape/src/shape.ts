@@ -1,4 +1,6 @@
+import { createRectangle } from '@flighthq/geometry/contract';
 import { invalidateContent } from '@flighthq/node/contract';
+import { getPathBounds } from '@flighthq/path/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   BoundsNodeAny,
@@ -11,6 +13,8 @@ import type {
 } from '@flighthq/types/contract';
 import { MorphShapeKind, ShapeKind } from '@flighthq/types/contract';
 
+import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline';
+
 export function clearShapeCommands(shape: Shape): void {
   shape.data.commands.length = 0;
   if (shape.kind === MorphShapeKind) (shape as MorphShape).data.paintBindings.length = 0;
@@ -20,6 +24,7 @@ export function clearShapeCommands(shape: Shape): void {
 export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
   const shape = source as unknown as Shape;
   const commands = shape.data.commands;
+  const strokeOutlines = getShapeStrokeOutlineRegions(commands);
 
   let minX = Infinity;
   let minY = Infinity;
@@ -183,6 +188,11 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
       }
       case 'lineStyle': {
         strokeHalf = (commands[b] as number) / 2;
+        // Exact outlines below cover solid open strokes. Closed and non-solid strokes fall back to the
+        // maximum authored miter envelope instead of cropping valid geometry at half-width.
+        if (strokeOutlines === null && commands[b + 6] === 'miter') {
+          strokeHalf *= commands[b + 7] as number;
+        }
         break;
       }
       case 'drawPath': {
@@ -264,6 +274,21 @@ export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonl
     }
 
     i += argCount + 2;
+  }
+
+  // Endpoint +/- half-width is sufficient for caps, bevels, and round joins, but a miter can extend
+  // farther than that envelope. Include the exact solid open-stroke outline so bounds consumers such as
+  // the DOM renderer do not crop a valid miter point at their per-shape canvas edge. Closed or non-solid
+  // strokes return null and retain the conservative legacy envelope above.
+  if (strokeOutlines !== null) {
+    const strokeBounds = createRectangle();
+    for (const outline of strokeOutlines) {
+      if (!getPathBounds(outline.path, strokeBounds)) continue;
+      minX = Math.min(minX, strokeBounds.x);
+      minY = Math.min(minY, strokeBounds.y);
+      maxX = Math.max(maxX, strokeBounds.x + strokeBounds.width);
+      maxY = Math.max(maxY, strokeBounds.y + strokeBounds.height);
+    }
   }
 
   if (minX === Infinity) {

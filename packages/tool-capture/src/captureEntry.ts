@@ -18,6 +18,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
+import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
@@ -841,10 +842,11 @@ function isCaptureReadPixelsWarning(text: string): boolean {
 }
 
 async function waitForRenderVerification(page: Page): Promise<RenderVerification | null> {
-  await page
+  const reachedReadbackOrTerminal = await page
     .waitForFunction(
       () => {
         const w = window as unknown as {
+          __ftProvideDomRenderPixels?: unknown;
           __ftRenderImage?: string;
           __ftVerification?: RenderVerification;
         };
@@ -852,6 +854,7 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
         if (document.getElementById('ft-error') !== null) return true;
         if (verification === undefined) return false;
         if (verification.state === 'failed') return true;
+        if (verification.render === 'dom' && typeof w.__ftProvideDomRenderPixels === 'function') return true;
         if (verification.state !== 'passed') return false;
         if (verification.render === 'dom') return true;
         return verification.fingerprint !== null && typeof w.__ftRenderImage === 'string' && w.__ftRenderImage !== '';
@@ -859,7 +862,25 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
       null,
       { polling: 100, timeout: getCaptureTimeoutMs() },
     )
-    .catch(() => {});
+    .then(() => true)
+    .catch(() => false);
+
+  if (reachedReadbackOrTerminal && (await provideCaptureDomRenderPixels(page))) {
+    await page
+      .waitForFunction(
+        () => {
+          const verification = (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification;
+          return (
+            verification?.state === 'failed' ||
+            (verification?.state === 'passed' && verification.fingerprint !== null) ||
+            document.getElementById('ft-error') !== null
+          );
+        },
+        null,
+        { polling: 100, timeout: getCaptureTimeoutMs() },
+      )
+      .catch(() => {});
+  }
 
   return page
     .evaluate(() => (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification ?? null)

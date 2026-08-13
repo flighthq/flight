@@ -12,10 +12,8 @@
 // Oracle (coverage-based, lenient): the underline stroke is drawn at roughly the bottom of the line box
 // (canvasRichText draws it at baseline + descent). We scan a horizontal BAND in the lower portion of the
 // text line for a wide CONTINUOUS run of ink (text-colored) pixels — that horizontal extent is the
-// underline. We then check a GAP scanline just above the glyph bodies (between the top gutter and the cap
-// line) which should be mostly background, confirming the lower ink is a decoration and not just tall
-// glyphs. Estimates are deliberately fuzzy because exact glyph metrics are font-dependent and we cannot
-// run a browser.
+// underline. Native DOM text decoration normally skips descender ink, but the Flight DOM renderer disables
+// that CSS behavior so its underline has the same uninterrupted run geometry as the raster backends.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,

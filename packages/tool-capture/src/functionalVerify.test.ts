@@ -17,6 +17,7 @@ interface VerificationWindowLike {
   __ftTarget?: unknown;
   __ftVerification?: unknown;
   __ftRenderImage?: unknown;
+  __ftProvideDomRenderPixels?: (readback: { data: Uint8ClampedArray; height: number; width: number } | null) => void;
   __ftBenchmarkTarget?: { run(): void | Promise<void> };
   __ftCaptureTimeoutMs?: number;
   __ftRealRequestAnimationFrame?: (callback: FrameRequestCallback) => number;
@@ -57,6 +58,7 @@ function resetVerificationWindow(): void {
   w.__ftTarget = undefined;
   w.__ftVerification = undefined;
   w.__ftRenderImage = undefined;
+  w.__ftProvideDomRenderPixels = undefined;
   w.__ftBenchmarkTarget = undefined;
   w.__ftRealRequestAnimationFrame = undefined;
   w.__ftCaptureTimeoutMs = undefined;
@@ -75,6 +77,12 @@ function domTarget(element: HTMLElement): FunctionalTarget {
     scale: 1,
     render: () => {},
   };
+}
+
+function provideDomRenderPixels(data = new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255])): void {
+  const provide = (window as unknown as VerificationWindowLike).__ftProvideDomRenderPixels;
+  expect(provide).toBeTypeOf('function');
+  provide?.({ data, height: 1, width: 2 });
 }
 
 describe('publishFunctionalRenderSync', () => {
@@ -128,12 +136,34 @@ describe('runRenderVerification', () => {
     expect(verification()).toMatchObject({ state: 'failed' });
   });
 
-  it('passes a DOM render that emitted content and records the verification', async () => {
+  it('runs DOM pixels through coverage, the scene oracle, and fingerprinting', async () => {
     const host = document.createElement('div');
     host.appendChild(document.createElement('span'));
     registerFunctionalTarget(domTarget(host));
-    await runRenderVerification({}, 'dom');
-    expect(verification()).toMatchObject({ render: 'dom', state: 'passed', error: null });
+    const assertRender = vi.fn();
+    const run = runRenderVerification({ assertRender }, 'dom');
+    provideDomRenderPixels();
+    await run;
+
+    expect(assertRender).toHaveBeenCalledOnce();
+    expect(verification()).toMatchObject({
+      render: 'dom',
+      state: 'passed',
+      coverage: 0.5,
+      fingerprint: expect.stringMatching(/^16:/),
+      error: null,
+    });
+  });
+
+  it('rejects nonempty DOM structure whose supplied pixels are blank', async () => {
+    const host = document.createElement('div');
+    host.appendChild(document.createElement('span'));
+    registerFunctionalTarget(domTarget(host));
+    const run = runRenderVerification({}, 'dom');
+    provideDomRenderPixels(new Uint8ClampedArray([0, 0, 0, 255, 0, 0, 0, 255]));
+
+    await expect(run).rejects.toThrow(/coverage/);
+    expect(verification()).toMatchObject({ state: 'failed', stage: 'measuring' });
   });
 
   it('does not wait for an animation frame on webgpu', async () => {

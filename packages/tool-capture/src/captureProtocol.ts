@@ -6,7 +6,8 @@ export type CaptureVerificationState = 'pending' | 'passed' | 'failed';
 // Which await the verifier is sitting in while `state` is 'pending'. A stalled verifier reports only
 // "pending", which names the symptom and not the cause — and the two causes have nothing in common: a
 // presented-frame callback that never fires is a page/scheduler problem, while a readback that never
-// resolves is a GPU-driver one. Recorded as the verifier advances so a timeout can say which.
+// resolves is either a GPU-driver problem or a DOM runner bridge that never replied. Recorded as the
+// verifier advances so a timeout can say which.
 export type CaptureVerificationStage =
   | 'awaitingFrame'
   | 'readingBack'

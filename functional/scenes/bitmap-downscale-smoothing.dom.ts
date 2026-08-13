@@ -116,7 +116,9 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   }
 
   // smoothing = TRUE (bilinear): averaging across the dense checker must yield intermediate tones. Require
-  // at least a few samples with a channel in the 80..180 band.
+  // at least a few samples with a channel away from the near-pure 0/255 endpoints. CSS minification can
+  // retain more contrast than Canvas drawImage, so the band is intentionally wider than the nearest
+  // assertion above while still excluding black/white point samples.
   const smoothMid = smoothSamples.filter(hasIntermediateChannel).length;
   if (smoothMid < 3) {
     throw new Error(
@@ -147,7 +149,7 @@ function hasIntermediateChannel(rgb: number): boolean {
   return inBand(channel(rgb, 16)) || inBand(channel(rgb, 8)) || inBand(channel(rgb, 0));
 }
 function inBand(v: number): boolean {
-  return v >= 80 && v <= 180;
+  return v >= 25 && v <= 230;
 }
 function hex(rgb: number): string {
   return (rgb & 0xffffff).toString(16).padStart(6, '0');

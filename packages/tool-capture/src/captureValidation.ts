@@ -35,6 +35,7 @@ import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { isUniformCaptureFingerprint } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
+import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
@@ -269,16 +270,42 @@ async function loadFingerprint(
     // race because their readback is synchronous). So wait until the fingerprint is populated OR an error
     // overlay appears, then read the result. Poll on a timer (the capture harness halts rAF).
     const waitStartedAt = performance.now();
-    await page
+    const reachedReadbackOrTerminal = await page
       .waitForFunction(
         () => {
-          const v = (window as unknown as { __ftVerification?: Verification }).__ftVerification;
-          return v?.state === 'passed' || v?.state === 'failed' || document.getElementById('ft-error') !== null;
+          const w = window as unknown as {
+            __ftProvideDomRenderPixels?: unknown;
+            __ftVerification?: Verification;
+          };
+          const verification = w.__ftVerification;
+          return (
+            verification?.state === 'passed' ||
+            verification?.state === 'failed' ||
+            (verification?.render === 'dom' && typeof w.__ftProvideDomRenderPixels === 'function') ||
+            document.getElementById('ft-error') !== null
+          );
         },
         null,
         { timeout: getCaptureTimeoutMs(), polling: 100 },
       )
-      .catch(() => {});
+      .then(() => true)
+      .catch(() => false);
+    if (reachedReadbackOrTerminal && (await provideCaptureDomRenderPixels(page))) {
+      await page
+        .waitForFunction(
+          () => {
+            const verification = (window as unknown as { __ftVerification?: Verification }).__ftVerification;
+            return (
+              verification?.state === 'passed' ||
+              verification?.state === 'failed' ||
+              document.getElementById('ft-error') !== null
+            );
+          },
+          null,
+          { timeout: getCaptureTimeoutMs(), polling: 100 },
+        )
+        .catch(() => {});
+    }
     const waitedMs = Math.round(performance.now() - waitStartedAt);
     const verification = await page
       .evaluate(() => (window as unknown as { __ftVerification?: Verification }).__ftVerification ?? null)
@@ -417,7 +444,8 @@ export function explainCaptureVerificationStall(
   }
   // Registered and still non-terminal: it started and never finished, which is a stall rather than a
   // scene that is merely expensive. The STAGE is the actionable half — 'awaitingFrame' means a presented
-  // frame never arrived (page/scheduler), 'readingBack' means the GPU readback never resolved (driver).
+  // frame never arrived (page/scheduler), while 'readingBack' means a GPU readback or the DOM runner bridge
+  // never resolved.
   const stage = (verification as { stage?: string }).stage;
   const where = stage === undefined ? '' : ` at stage "${stage}"`;
   return `verifier registered but stalled${where} in state "${verification.state}" (${budget}); it started and never reached a terminal state`;
