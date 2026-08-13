@@ -1,5 +1,5 @@
 import type { Decompressor } from '@flighthq/types/contract';
-import { Compression } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/types/contract';
 
 import { registerDecompressor } from './decompressor';
 
@@ -10,21 +10,27 @@ import { registerDecompressor } from './decompressor';
 // wasm codec registers that instead.
 //
 // Real containers mix the two framings — SWF's `CWS` body and Away3D's `ByteArray.compress()` are zlib
-// (a 2-byte header, the DEFLATE stream, an Adler-32), while other producers emit the bare stream — so a
-// zlib header is detected and skipped when present and the input is otherwise read as raw DEFLATE.
-// A nonzero `uncompressedLength` is a container-owned ceiling enforced while bytes are written; callers
+// (a 2-byte header, the DEFLATE stream, an Adler-32), while other producers emit the bare stream. The
+// caller supplies that container-owned fact explicitly because the first raw bytes can also form a valid
+// zlib header. A nonzero `uncompressedLength` is a ceiling enforced while bytes are written; callers
 // without one pass 0 and retain the package-wide safety cap.
-export const inflateDeflate: Decompressor = (compressed, uncompressedLength) => {
+export const inflateDeflate: Decompressor = (compressed, uncompressedLength, framing) => {
   const input = compressed as Uint8Array;
-  // A zlib header: the low nibble of CMF is the compression method (8 = deflate) and the big-endian
-  // (CMF,FLG) pair is a multiple of 31. A preset dictionary (FDICT) is not supported.
   let start = 0;
-  if (input.length >= 2 && (input[0] & 0x0f) === 8 && (((input[0] << 8) | input[1]) & 0xffff) % 31 === 0) {
-    if ((input[1] & 0x20) !== 0) return null;
+  let end = input.length;
+  if (framing === CompressionFraming.Rfc1950) {
+    if (input.length < ZLIB_HEADER_BYTES + ZLIB_TRAILER_BYTES) return null;
+    const cmf = input[0];
+    const flg = input[1];
+    if ((cmf & 0x0f) !== 8 || cmf >> 4 > 7 || ((cmf << 8) | flg) % 31 !== 0 || (flg & 0x20) !== 0) return null;
     start = 2;
-  }
+    end -= ZLIB_TRAILER_BYTES;
+  } else if (framing !== CompressionFraming.Raw) return null;
+
   try {
-    return rawInflate(input, start, uncompressedLength);
+    const output = rawInflate(input.subarray(0, end), start, uncompressedLength);
+    if (framing === CompressionFraming.Rfc1950 && readZlibAdler32(input, end) !== computeAdler32(output)) return null;
+    return output;
   } catch {
     return null;
   }
@@ -171,6 +177,7 @@ function inflateDynamicBlock(state: InflateState): void {
   const literalCount = state.readBits(5, 257);
   const distanceCount = state.readBits(5, 1);
   const codeLengthCount = state.readBits(4, 4);
+  if (literalCount > 286) throw new Error('deflate: too many literal/length symbols');
 
   const codeLengthLengths = new Array<number>(19).fill(0);
   for (let i = 0; i < codeLengthCount; i++) codeLengthLengths[CODE_LENGTH_ORDER[i]] = state.readBits(3, 0);
@@ -187,16 +194,18 @@ function inflateDynamicBlock(state: InflateState): void {
     } else if (symbol === 16) {
       if (i === 0) throw new Error('deflate: repeat with no previous length');
       const repeat = state.readBits(2, 3);
+      if (i + repeat > lengths.length) throw new Error('deflate: code-length repeat exceeds the declared table');
       const previous = lengths[i - 1];
-      for (let r = 0; r < repeat && i < lengths.length; r++) lengths[i++] = previous;
+      for (let r = 0; r < repeat; r++) lengths[i++] = previous;
     } else if (symbol === 17) {
       const repeat = state.readBits(3, 3);
-      for (let r = 0; r < repeat && i < lengths.length; r++) lengths[i++] = 0;
-    } else if (symbol === 18) {
-      const repeat = state.readBits(7, 11);
-      for (let r = 0; r < repeat && i < lengths.length; r++) lengths[i++] = 0;
+      if (i + repeat > lengths.length) throw new Error('deflate: code-length repeat exceeds the declared table');
+      for (let r = 0; r < repeat; r++) lengths[i++] = 0;
     } else {
-      throw new Error('deflate: invalid code-length symbol');
+      // The code-length alphabet has exactly symbols 0-18, so after the cases above this is 18.
+      const repeat = state.readBits(7, 11);
+      if (i + repeat > lengths.length) throw new Error('deflate: code-length repeat exceeds the declared table');
+      for (let r = 0; r < repeat; r++) lengths[i++] = 0;
     }
   }
 
@@ -240,6 +249,22 @@ function decodeSymbol(state: InflateState, tree: HuffmanTree): number {
   throw new Error('deflate: invalid Huffman code');
 }
 
+function computeAdler32(input: Readonly<Uint8Array>): number {
+  let first = 1;
+  let second = 0;
+  for (const byte of input) {
+    first += byte;
+    if (first >= ADLER_MODULUS) first -= ADLER_MODULUS;
+    second += first;
+    if (second >= ADLER_MODULUS) second -= ADLER_MODULUS;
+  }
+  return ((second << 16) | first) >>> 0;
+}
+
+function readZlibAdler32(input: Uint8Array, offset: number): number {
+  return ((input[offset] << 24) | (input[offset + 1] << 16) | (input[offset + 2] << 8) | input[offset + 3]) >>> 0;
+}
+
 // The RFC 1951 fixed Huffman trees: literals/lengths 0-287 (lengths 8/9/7/8 by range) and 5-bit distances.
 const FIXED_LITERAL_TREE = buildFixedLiteralTree();
 const FIXED_DISTANCE_TREE = buildHuffmanTree(new Array<number>(30).fill(5), 30);
@@ -257,3 +282,6 @@ function buildFixedLiteralTree(): HuffmanTree {
 // this importer is used for — and small enough that hitting it fails a parse instead of the process.
 const MAX_INFLATE_BYTES = 256 * 1024 * 1024;
 const INITIAL_INFLATE_BYTES = 1024;
+const ZLIB_HEADER_BYTES = 2;
+const ZLIB_TRAILER_BYTES = 4;
+const ADLER_MODULUS = 65521;

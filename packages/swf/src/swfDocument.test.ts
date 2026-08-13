@@ -52,6 +52,7 @@ import {
   BitmapTextureSourceKind,
   BlendMode,
   Compression,
+  CompressionFraming,
   DisplayObjectKind,
   ImageResourceReferenceKind,
   ImportDiagnosticSeverity,
@@ -818,8 +819,9 @@ describe('createScene2DFromSwf', () => {
     // Without a decompressor the bytes are unreadable, and that reads as the document's null sentinel.
     expect(createScene2DFromSwf(compressed)).toBeNull();
 
-    registerDecompressor(Compression.Deflate, (body, uncompressedLength) => {
+    registerDecompressor(Compression.Deflate, (body, uncompressedLength, framing) => {
       expect(uncompressedLength).toBe(uncompressed.length - 8);
+      expect(framing).toBe(CompressionFraming.Rfc1950);
       return new Uint8Array(body).reverse();
     });
     try {
@@ -2560,6 +2562,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       expect(createScene2DFromSwf(compressed, sink)).toBeNull();
     });
     expect(unregistered.map((entry) => entry.kind)).toEqual(['swf.no-decompressor-registered']);
+    expect(unregistered[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
 
     registerDecompressor(Compression.Deflate, () => null);
     try {
@@ -2567,6 +2570,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
         expect(createScene2DFromSwf(compressed, sink)).toBeNull();
       });
       expect(failed.map((entry) => entry.kind)).toEqual(['swf.decompression-failed']);
+      expect(failed[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
     } finally {
       unregisterDecompressor(Compression.Deflate);
     }
@@ -4613,7 +4617,31 @@ function losslessPayload(format: number, width: number, height: number, pixels: 
 // decompressor rather than a stub.
 function storedDeflate(bytes: readonly number[]): number[] {
   const length = bytes.length;
-  return [0x78, 0x01, 0x01, length & 0xff, length >> 8, ~length & 0xff, (~length >> 8) & 0xff, ...bytes, 0, 0, 0, 0];
+  const adler = testAdler32(bytes);
+  return [
+    0x78,
+    0x01,
+    0x01,
+    length & 0xff,
+    length >> 8,
+    ~length & 0xff,
+    (~length >> 8) & 0xff,
+    ...bytes,
+    adler >>> 24,
+    (adler >>> 16) & 0xff,
+    (adler >>> 8) & 0xff,
+    adler & 0xff,
+  ];
+}
+
+function testAdler32(bytes: readonly number[]): number {
+  let first = 1;
+  let second = 0;
+  for (const byte of bytes) {
+    first = (first + byte) % 65_521;
+    second = (second + first) % 65_521;
+  }
+  return ((second << 16) | first) >>> 0;
 }
 
 // One closed box `width` twips across under fill style 1, as a morph endpoint's bare SHAPE.

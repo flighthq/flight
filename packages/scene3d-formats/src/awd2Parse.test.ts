@@ -16,7 +16,7 @@ import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/n
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Decompressor } from '@flighthq/types/contract';
-import { Compression } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/types/contract';
 import type {
   AmbientLight,
   AnimationClip,
@@ -3399,7 +3399,10 @@ describe('rehydrateAwdBody', () => {
   // stream, and the decompressor strips the marker. A compressed length that differs from the inflated
   // length exercises the header body-length rewrite the rehydration performs.
   const MARKER = [0xde, 0xad, 0xbe, 0xef];
-  const stripMarker: Decompressor = (compressed) => compressed.subarray(MARKER.length);
+  const stripMarker: Decompressor = (compressed, _uncompressedLength, framing) => {
+    expect(framing).toBe(CompressionFraming.Rfc1950);
+    return compressed.subarray(MARKER.length);
+  };
 
   // Re-wraps an uncompressed AWD as a `method`-compressed file whose body is `MARKER + originalBody`.
   const asCompressed = (uncompressed: Uint8Array, method: number): Uint8Array => {

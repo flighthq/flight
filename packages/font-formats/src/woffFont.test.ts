@@ -1,5 +1,10 @@
-import { registerDeflateDecompressor, unregisterDecompressor } from '@flighthq/compression/contract';
-import { Compression } from '@flighthq/types/contract';
+import {
+  registerDecompressor,
+  registerDeflateDecompressor,
+  unregisterDecompressor,
+} from '@flighthq/compression/contract';
+import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
+import { Compression, CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -156,12 +161,47 @@ describe('readWoffFont', () => {
     const woff = encodeSyntheticWoff(createSyntheticFont());
     // Mark the first table as compressed so the decompressor path is taken.
     new DataView(woff.buffer).setUint32(44 + 8, 4);
-    expect(readWoffFont(woff, () => new Uint8Array(3))).toBeNull();
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(
+        readWoffFont(
+          woff,
+          (_compressed, _uncompressedLength, framing) => {
+            expect(framing).toBe(CompressionFraming.Rfc1950);
+            return new Uint8Array(3);
+          },
+          sink,
+        ),
+      ).toBeNull();
+    });
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['woff.decompression-failed']);
+    expect(diagnostics[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(diagnostics[0]!.origin).toBe('readWoffFont');
+    expect(diagnostics[0]!.detail?.outputLength).toBe(3);
   });
 
   it('returns the sentinel for a compressed table when no decompressor is available', () => {
     const woff = encodeSyntheticWoff(createSyntheticFont());
     new DataView(woff.buffer).setUint32(44 + 8, 4);
-    expect(readWoffFont(woff, null)).toBeNull();
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(readWoffFont(woff, null, sink)).toBeNull();
+    });
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['woff.no-decompressor-registered']);
+    expect(diagnostics[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
+  });
+
+  it('emits a Reject diagnostic from the public WOFF importer when decompression fails', () => {
+    const woff = encodeSyntheticWoff(createSyntheticFont());
+    new DataView(woff.buffer).setUint32(44 + 8, 4);
+    registerDecompressor(Compression.Deflate, (_compressed, _uncompressedLength, framing) => {
+      expect(framing).toBe(CompressionFraming.Rfc1950);
+      return null;
+    });
+
+    const diagnostics = collectImportDiagnostics((sink) => {
+      expect(createGlyphOutlineSourceFromOpenTypeFont(woff, sink)).toBeNull();
+    });
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['woff.decompression-failed']);
+    expect(diagnostics[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    expect(diagnostics[0]!.origin).toBe('readWoffFont');
   });
 });

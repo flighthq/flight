@@ -1,7 +1,7 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
 import { getDecompressor } from '@flighthq/compression/contract';
 import type { Bitmap, DecodedImage, SwfJpegAlphaPayload } from '@flighthq/types/contract';
-import { Compression } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/types/contract';
 
 // Joins a decoded JPEG colour plane with the separately-compressed alpha plane retained from its SWF
 // definition. Decoding stays outside this pure format step: the caller chooses and awaits the image
@@ -17,7 +17,7 @@ export function createSwfJpegAlphaBitmap(
 
   const decompress = getDecompressor(Compression.Deflate);
   if (decompress === null) return null;
-  const alpha = decompress(payload.compressedAlphaBytes, pixelCount);
+  const alpha = decompress(payload.compressedAlphaBytes, pixelCount, CompressionFraming.Rfc1950);
   if (alpha === null || alpha.length !== pixelCount) return null;
 
   const bitmap = createBitmap(payload.width, payload.height);
@@ -48,11 +48,16 @@ export function createSwfLosslessBitmap(payload: Readonly<Uint8Array>, hasAlpha:
   const hasColorTable = format === FORMAT_COLOR_MAPPED;
   const colorCount = hasColorTable ? source[5] + 1 : 0;
   const compressed = source.subarray(LOSSLESS_HEADER_BYTES + (hasColorTable ? 1 : 0));
+  const uncompressedLength = hasColorTable
+    ? colorCount * (hasAlpha ? 4 : 3) + alignSwfRow(width) * height
+    : format === FORMAT_15_BIT
+      ? alignSwfRow(width * 2) * height
+      : width * 4 * height;
 
   const decompress = getDecompressor(Compression.Deflate);
   if (decompress === null) return null;
-  const pixels = decompress(compressed, 0);
-  if (pixels === null) return null;
+  const pixels = decompress(compressed, uncompressedLength, CompressionFraming.Rfc1950);
+  if (pixels === null || pixels.length !== uncompressedLength) return null;
 
   const bitmap = createBitmap(width, height);
   const unpacked = hasColorTable

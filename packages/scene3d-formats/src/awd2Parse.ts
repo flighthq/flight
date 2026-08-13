@@ -25,7 +25,7 @@ import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
 import type { Scene3D } from '@flighthq/types/contract';
 import type { Decompressor } from '@flighthq/types/contract';
-import { Compression } from '@flighthq/types/contract';
+import { Compression, CompressionFraming } from '@flighthq/types/contract';
 import type {
   AnimationClip,
   AnimationTrack,
@@ -2850,7 +2850,8 @@ function rehydrateAwdBody(
   const compressedEnd = Math.min(AWD2_HEADER_BYTES + view.getUint32(8, true), input.byteLength);
   // AWD declares no uncompressed length, so the codec is told 0 and decides for itself whether that
   // matters — DEFLATE grows its own buffer, LZMA reads its stream's own end marker.
-  const inflated = decompressor(input.subarray(AWD2_HEADER_BYTES, compressedEnd), 0);
+  const framing = compression === AWD2_COMPRESSION_DEFLATE ? CompressionFraming.Rfc1950 : CompressionFraming.Raw;
+  const inflated = decompressor(input.subarray(AWD2_HEADER_BYTES, compressedEnd), 0, framing);
   if (inflated === null) {
     reportImportDiagnostic(
       diagnostics,
