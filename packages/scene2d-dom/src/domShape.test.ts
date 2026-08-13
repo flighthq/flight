@@ -1,7 +1,15 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
-import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
+import {
+  appendShapeBeginFill,
+  appendShapeEndFill,
+  appendShapeLineStyle,
+  appendShapeLineTo,
+  appendShapeMoveTo,
+  appendShapeRectangle,
+  createShape,
+} from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
@@ -59,6 +67,21 @@ describe('drawDomShape', () => {
 
     expect(el).not.toBeNull();
     expect(el!.tagName).toBe('CANVAS');
+    expect((el as HTMLCanvasElement).width).toBe(50);
+  });
+
+  it('sizes its production canvas from the paired stroke contribution', () => {
+    const state = makeState();
+    const shape = createShape();
+    appendShapeLineStyle(shape, 30, 0xffffff, 1, false, 'normal', 'none', 'miter', 6);
+    appendShapeMoveTo(shape, -110, -110);
+    appendShapeLineTo(shape, 0, 0);
+    appendShapeLineTo(shape, 110, -110);
+    const renderProxy = getOrCreateRenderProxy2D(state, shape);
+
+    const canvas = drawGetEl(state, () => drawDomShape(state, renderProxy)) as HTMLCanvasElement;
+
+    expect(canvas.height).toBeGreaterThan(143);
   });
 
   it('sets canvas size to at least 1x1 for zero-size shapes', () => {

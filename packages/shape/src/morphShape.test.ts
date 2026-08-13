@@ -18,7 +18,17 @@ import {
   setMorphShapeProgress,
 } from './morphShape';
 import { getShapeBounds } from './shape';
+import { defaultShapeBoundsDrawPath } from './shapeBounds';
+import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
 import { appendShapeBeginFill, appendShapeEndFill } from './shapeCommands';
+
+beforeAll(() => {
+  registerShapeBoundsCommand({
+    fillBounds: defaultShapeBoundsDrawPath,
+    key: 'drawPath',
+    strokeBounds: defaultShapeBoundsDrawPath,
+  });
+});
 
 describe('appendMorphShapePath', () => {
   it('inserts the live path between ordinary Shape styling commands', () => {

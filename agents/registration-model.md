@@ -12,19 +12,28 @@ section that covers it, rather than describing an intention as though it were sh
 
 ## 1. The model: open registries, and nothing registers itself
 
-Every extensible family in Flight — render effects, materials, node renderers, texture resolvers — is an
-**open registry keyed by a string `kind`**. A registry maps a kind to the implementation that realizes it
-for one backend, on one render state.
+Every extensible family in Flight — render effects, materials, node renderers, texture resolvers, Shape
+commands — is an **open registry keyed by a string `kind`**. Render implementations map a kind to the
+implementation that realizes it for one backend, on one render state. Shape bounds are the deliberate
+exception to that owner: they map a command key to backend-neutral geometry in one process registry,
+because bounds are a scene-graph property pulled before and outside rendering.
 
 Two consequences follow, and together they explain most of what surprises a new consumer:
 
 - **The SDK ships implementations; it does not install them.** Importing `@flighthq/effects-gl` registers
   nothing. Packages are `"sideEffects": false` and must stay that way, so no module writes to a registry at
   import time. An unregistered kind is not a broken build — it is a registry with nothing under that key.
-- **Registration is per render state, not global.** You register into a `state`. A second state (an
+- **Render registration is per render state.** You register into a `state`. A second state (an
   offscreen pass, a second canvas) starts empty. This is why `copyGlRenderStateRegistrations(offscreenState,
   screenState)` exists: it is the sanctioned way to give an offscreen state the registrations its screen
   state already has, rather than repeating the calls.
+
+  Shape bounds are process-global for the opposite reason: parent bounds, culling, hit testing, picking,
+  and DOM canvas sizing may pull them before a render state exists. `registerCanvasShapeCommand` therefore
+  binds the state-local draw handler and the command's mandatory `fillBounds`/`strokeBounds` pair together;
+  the latter is forwarded into `@flighthq/shape`. Registration remains explicit, import-side-effect-free,
+  and last-write-wins. A key names one backend-neutral geometry; genuinely different geometry needs a
+  vendor-prefixed key rather than a state-specific meaning for the same key.
 
 The payoff is that an application pays only for what it names. The cost is that **you must name it**, and
 that is the whole subject of this document.
@@ -213,9 +222,10 @@ registerCanvasShapeCommands(state, defaultCanvasShapeCommands);  // fine
 registerBuiltInGlModifierSnippets(state);                        // not
 ```
 
-The first passes an **array the caller names**, whose every member is separately exported, over a vocabulary
-pinned to `keyof ShapeCommandRegistry` — a closed union in `@flighthq/types`. It can only grow by a
-deliberate, reviewed edit to that vocabulary. The second names nothing, offers no per-item path, and grows
+The first passes an **array the caller names**, whose every member is separately exported, over the
+declaration-mergeable `keyof ShapeCommandRegistry` vocabulary in `@flighthq/types`. It grows only when the
+caller opts into another separately exported command (including a vendor-prefixed extension). The second
+names nothing, offers no per-item path, and grows
 every time someone adds a modifier, so an app written last year silently pays for this year's additions.
 
 So the test is not the plural, and not "does it register several things". It is:
@@ -236,20 +246,24 @@ Not every kind-keyed family wants a registry:
 - **Open family, or the answer is a policy choice** → registry. Which renderer draws a `Shape` is policy
   (Canvas `arc()`, a GL tessellation, and a DOM path are all correct), so shape *draw* commands are
   registered per state.
-- **Closed vocabulary and exactly one right answer** → a plain function with an internal switch. "Does this
-  circle contain this point" is the same answer on every backend, so `getShapeFillRegions` switches over the
-  closed command union inside one function — shakeable as a unit, no wiring, and impossible to half-register.
+- **Closed vocabulary and exactly one right answer** → a plain function with an internal switch. A truly
+  closed geometry kernel can keep that shape. Shape commands no longer qualify: their header registry is
+  declaration-mergeable and custom draw commands need matching bounds knowledge.
 
-That is why the two halves of `ShapeCommandKey` diverge: draw handlers are a per-backend registry, hit
-testing is a function in `@flighthq/shape` feeding `containsPathPoint` in `@flighthq/path`. A per-command
-hit-test *registry* used to exist alongside it and was deleted — it had no consumers and a strictly weaker
-contract than the function that replaced it.
+Shape draw handlers remain per-backend, while bounds contributions are backend-neutral and paired into the
+same `CanvasShapeCommand`: a draw command cannot be registered while accidentally omitting bounds.
+`fillBounds`/`strokeBounds` are mandatory fields whose `null` means deliberately no geometry; an absent key
+means nobody registered it. Bounds traversal reports `false` and contributes nothing for that command;
+`explainShapeBounds` names every missing key, and `enableShapeBoundsGuards` adds opt-in warnings. There is no
+invented fallback rectangle, and consumers that require a complete box reject the partial result.
 
-Registries also need an owner, and the owner is not always a render state. Where the path already threads
-one, use it (`RenderStateRuntime.canvasShapeCommandRegistry`). Where it does not — hit testing works with no
-renderer at all — use a caller-owned bag, as `ModifierRegistry`, `MarkupTagRegistry`, and
-`Scene3DMaterialTextureRegistry` do. **Never a module global**: it cannot be introspected, cannot be
-isolated between states, and makes "wired" indistinguishable from "wired by someone else's test".
+Registries also need an owner, and the owner is not always a render state. Where policy varies by render
+state, use it (`RenderStateRuntime.canvasShapeCommandRegistry`). Where callers need isolated policy, use a
+caller-owned bag, as `ModifierRegistry`, `MarkupTagRegistry`, and `Scene3DMaterialTextureRegistry` do. A
+process registry is reserved for backend-neutral capability consumed without either owner; Shape bounds
+qualify because a Shape has bounds without drawing. Its revision participates in the existing
+`isLocalBoundsRectangleValid` hook, so a late key binding invalidates cached Shape bounds without a second
+cache path.
 
 ## 5. The capability matrix
 

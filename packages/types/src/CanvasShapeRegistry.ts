@@ -1,4 +1,5 @@
 import type { CanvasShapeDrawState } from './CanvasShapeDrawState';
+import type { ShapeBoundsCommand } from './ShapeBounds';
 import type { ShapeCommandKey } from './ShapeCommand';
 
 // Handler for drawing a command. Reads args from the flat command buffer at position i.
@@ -9,7 +10,6 @@ export type CanvasShapeHandler = (
   i: number,
 ) => void;
 
-export interface CanvasShapeCommand<K extends ShapeCommandKey = ShapeCommandKey> {
-  readonly key: K;
+export interface CanvasShapeCommand<K extends ShapeCommandKey = ShapeCommandKey> extends ShapeBoundsCommand<K> {
   readonly draw: CanvasShapeHandler;
 }

@@ -40,6 +40,7 @@
   "dependencies": {
     "@flighthq/animation": "*",
     "@flighthq/geometry": "*",
+    "@flighthq/log": "*",
     "@flighthq/math": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
