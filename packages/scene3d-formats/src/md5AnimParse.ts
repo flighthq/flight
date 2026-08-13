@@ -131,7 +131,10 @@ export function parseMd5Anim(
       // parseRetainedDiagnosticDetail, and ImportConformanceFixtureDiagnosticDetail, whose current
       // evidence contract is SWF-shaped. Adding frame or bound values here is therefore a cross-package
       // schema change, not a local parser enhancement; rich measurements belong to md5.animation-bounds.
-      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Drop, 'md5anim.bounds-discarded', 'parseMd5Anim');
+      // Skip, not Drop. The bounds block is RECOGNIZED and deliberately not modelled — a capability gap on
+      // a well-formed file, which is what Skip means. Drop would claim the file lost data through a failure,
+      // and would exclude a correct parse from every severity-based "did the importer complain" check.
+      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'md5anim.bounds-discarded', 'parseMd5Anim');
       continue;
     }
 
