@@ -234,7 +234,12 @@ describe('parseFixtureArguments', () => {
 });
 
 describe('verifyFixtureExtraction', () => {
-  it('counts fixtures and metadata separately, and confirms every fixture landed', () => {
+  // ★ THE MANIFEST'S PATH SET IS THE SPECIFICATION. Files the manifest does not declare are reported as
+  // unlisted and gate nothing — the pack's NOTICE, its licences and its own manifest arrive alongside the
+  // corpus and are not fixtures. This replaced a count comparison that needed the pack's author and this
+  // reader to classify every file identically; the first pack filing a per-project licence beside its
+  // assets showed they need not agree, and that neither of them was wrong.
+  it('confirms every declared path landed and reports undeclared arrivals without gating on them', () => {
     const archivePath = buildTarball('verified', {
       'NOTICE.md': 'n',
       'README.md': 'r',
@@ -242,16 +247,19 @@ describe('verifyFixtureExtraction', () => {
       'LICENSES/terms-a.txt': 'x',
       'avm1/a.swf': 'a',
       'avm1/b.swf': 'b',
+      'avm1/deep/license.txt': 'per-asset licence, one level down — the case that broke the old check',
     });
     const treeDirectory = join(workspace, 'verified-tree');
     extractFixturePack(archivePath, treeDirectory);
 
-    const result = verifyFixtureExtraction(archivePath, treeDirectory, 2);
-    expect(result.archiveFixtureEntries).toBe(2);
-    expect(result.presentFixtureFiles).toBe(2);
+    const result = verifyFixtureExtraction(archivePath, treeDirectory, ['avm1/a.swf', 'avm1/b.swf']);
+
     expect(result.declaredFixtureFiles).toBe(2);
-    expect(result.metadataEntries).toHaveLength(4);
+    expect(result.presentFixtureFiles).toBe(2);
     expect(result.missingSample).toEqual([]);
+    // Five undeclared arrivals, including the nested per-asset licence. Visible, not fatal.
+    expect(result.unlistedEntries).toContain('avm1/deep/license.txt');
+    expect(result.unlistedEntries).toHaveLength(5);
   });
 
   // THE CASE THE CHECK EXISTS FOR. Before this, a partial write produced the same success line as a whole
@@ -262,22 +270,11 @@ describe('verifyFixtureExtraction', () => {
     extractFixturePack(archivePath, treeDirectory);
     rmSync(join(treeDirectory, 'avm1', 'b.swf'));
 
-    const result = verifyFixtureExtraction(archivePath, treeDirectory, 3);
-    expect(result.archiveFixtureEntries).toBe(3);
+    const result = verifyFixtureExtraction(archivePath, treeDirectory, ['avm1/a.swf', 'avm1/b.swf', 'avm1/c.swf']);
+
+    expect(result.declaredFixtureFiles).toBe(3);
     expect(result.presentFixtureFiles).toBe(2);
     expect(result.missingSample).toEqual(['avm1/b.swf']);
-  });
-
-  it('reports a manifest that disagrees with its own archive, which is a different failure', () => {
-    const archivePath = buildTarball('mismatch', { 'avm1/a.swf': 'a' });
-    const treeDirectory = join(workspace, 'mismatch-tree');
-    extractFixturePack(archivePath, treeDirectory);
-
-    // Extraction is complete; the published count is simply wrong. Distinct remedy, so distinct fields.
-    const result = verifyFixtureExtraction(archivePath, treeDirectory, 99);
-    expect(result.declaredFixtureFiles).toBe(99);
-    expect(result.archiveFixtureEntries).toBe(1);
-    expect(result.presentFixtureFiles).toBe(1);
   });
 
   it('caps the missing sample so a wholly failed extraction does not carry thousands of entries', () => {
@@ -287,7 +284,8 @@ describe('verifyFixtureExtraction', () => {
     const treeDirectory = join(workspace, 'never-extracted');
     mkdirSync(treeDirectory, { recursive: true });
 
-    const result = verifyFixtureExtraction(archivePath, treeDirectory, 25);
+    const declared = Array.from({ length: 25 }, (_unused, index) => `avm1/f${index}.swf`);
+    const result = verifyFixtureExtraction(archivePath, treeDirectory, declared);
     expect(result.presentFixtureFiles).toBe(0);
     expect(result.missingSample).toHaveLength(10);
   });
