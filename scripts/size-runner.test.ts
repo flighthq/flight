@@ -1,6 +1,38 @@
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, test } from 'vitest';
 
-import { didSizeChecksPass, formatSizeResult, parseSizeBaselineOrigins } from './size-runner';
+import {
+  collectSizeCases,
+  didSizeChecksPass,
+  formatSizeResult,
+  getSizeCaseKey,
+  parseSizeBaselineOrigins,
+} from './size-runner';
+
+// These read the size-case declarations off disk and assert nothing that requires a bundle, so they
+// belong in the ordinary suite rather than in `tools/size`, whose config exists to buy a node
+// environment and a 300s timeout for real builds. The build-dependent assertions stay there.
+const examplesDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'examples/packages');
+
+describe('collectSizeCases', () => {
+  test('orders the canonical release target before its diagnostics variant', () => {
+    const diagnosticsCases = collectSizeCases(examplesDirectory).filter((item) => item.name === 'flight-diagnostics');
+    expect(diagnosticsCases.map((item) => item.variant)).toEqual([null, 'diagnostics']);
+  });
+
+  test('preserves the declared renderer order', () => {
+    const adjustmentCases = collectSizeCases(examplesDirectory).filter((item) => item.name === 'adjustments');
+    expect(adjustmentCases.map((item) => item.render)).toEqual(['dom', 'canvas', 'webgl', 'webgpu']);
+  });
+});
+
+describe('didSizeChecksPass', () => {
+  test('fails when no size cases were checked', () => {
+    expect(didSizeChecksPass([])).toBe(false);
+  });
+});
 
 describe('formatSizeResult', () => {
   test('fails a bundle of any size when no baseline exists', () => {
@@ -12,9 +44,16 @@ describe('formatSizeResult', () => {
       threshold: null,
     });
   });
+});
 
-  test('fails when no size cases were checked', () => {
-    expect(didSizeChecksPass([])).toBe(false);
+describe('getSizeCaseKey', () => {
+  test('uses the canonical release key plus one diagnostics suffix', () => {
+    expect(getSizeCaseKey({ name: 'flight-diagnostics', render: 'canvas', variant: null })).toBe(
+      'flight-diagnostics:canvas',
+    );
+    expect(getSizeCaseKey({ name: 'flight-diagnostics', render: 'canvas', variant: 'diagnostics' })).toBe(
+      'flight-diagnostics:canvas:diagnostics',
+    );
   });
 });
 

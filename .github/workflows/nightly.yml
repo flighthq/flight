@@ -112,3 +112,70 @@ jobs:
       - run: npm ci
       - run: npm run api
       - run: npm run api:json
+
+  # Routes the red. A scheduled run has no author watching it, so without this its failures land
+  # nowhere — which is not hypothetical: `coverage` and `api` ran unrouted for their whole existence,
+  # and a signal nobody receives is indistinguishable from a signal that never fired.
+  #
+  # ★ IT DEDUPLICATES, and that is the difference between a route and a nuisance. A job that opens a
+  # fresh issue every night turns one persistent failure into thirty issues a month, and the reader
+  # mutes the label — the same death as never routing at all. Each failing job maps to a STABLE
+  # TITLE, and an already-open issue with that title gets a comment instead of a duplicate. So a
+  # standing failure is one issue that accumulates run links, and its comment count is how long it
+  # has been broken.
+  #
+  # It deliberately does NOT auto-close on a later green: closing an issue somebody may be
+  # investigating is a worse failure than leaving it open, and a fixed failure stops accumulating
+  # comments, which is the readable signal anyway.
+  #
+  # `if: failure()` fires when a needed job failed; the per-job `result` check below is what keeps a
+  # green job from being named in the report.
+  report-failure:
+    name: Route nightly failures
+    needs: [resolve, coverage, api]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      # The only privilege this workflow needs beyond read. No secret and no external service: the
+      # automatic GITHUB_TOKEN carries it, which is why this route works in a fork-free scheduled run.
+      contents: read
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Open or update one issue per failing job
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RESOLVE_RESULT: ${{ needs.resolve.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+          API_RESULT: ${{ needs.api.result }}
+        run: |
+          set -euo pipefail
+          route() {
+            job="$1"; result="$2"
+            # Only a real failure routes. `skipped` and `cancelled` are not defects, and routing them
+            # is how a route trains its reader to ignore it.
+            [ "$result" = "failure" ] || return 0
+            title="Nightly failure: $job"
+            # Dedup key is the exact title. `--search` is a fuzzy match, so the jq filter re-checks
+            # equality — otherwise "Nightly failure: api" would match "Nightly failure: api-extras"
+            # and a second job's red would be filed as a comment on the first job's issue.
+            existing=$(gh issue list --state open --search "\"$title\" in:title" \
+              --json number,title --jq "map(select(.title == \"$title\")) | .[0].number // empty")
+            if [ -n "$existing" ]; then
+              gh issue comment "$existing" --body "Still failing — $RUN_URL"
+              echo "$job: commented on #$existing"
+            else
+              gh issue create --title "$title" --body \
+          "The nightly \`$job\` job failed.
+
+          First observed: $RUN_URL
+
+          This issue is reused for every later failure of the same job, so the comment count is how long it has been red. It is not closed automatically — a green run simply stops adding comments."
+              echo "$job: opened a new issue"
+            fi
+          }
+          route "resolve" "$RESOLVE_RESULT"
+          route "coverage" "$COVERAGE_RESULT"
+          route "api" "$API_RESULT"
