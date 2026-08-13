@@ -323,6 +323,18 @@ declares what ought to be there.
 Manifestation 2 was found independently and landed as rank 1 of the `2026-08-13` table above; this row is
 corroboration by a second method, not a separate finding.
 
+**Manifestation 4 is closed, and its first fix had a hole worth keeping on the record.** The verifier now
+records `oracle: 'invoked' | 'absent'` from the branch that calls, and `captureEntry` carries it into
+`status.json`. But the error-path status wrote a hardcoded `null`, with the `verification` binding scoped
+inside the `try` — so the record was dropped on exactly the path that motivated the field. An oracle that
+runs and rejects a frame both ran and failed, and the artifact said it never ran while carrying an error
+message only that oracle body could produce. A reader who trusts the field then counts a live oracle as a
+dead one. Fixed by hoisting the binding; pinned by `captureEntry.e2e.test.ts`, whose two arms separate
+"oracle threw" from "failed before the assert step". **Measured after the fix, over a full functional
+capture of all 493 targets: 374 invoked, 119 absent, 0 unrecorded — every oracle the census pins actually
+runs.** The general shape: a field that reports whether a step happened must survive the failure of that
+step, or it only ever describes the successful case.
+
 **Current exposure, measured per TARGET (entry × declared renderer), which is what the gates select:**
 functional 493 targets — 88 carry no fingerprint, 43 no screenshot hash, 119 no oracle; examples 132
 targets — 1 carries no screenshot hash, and **none** carry an oracle, because the examples harness has no
