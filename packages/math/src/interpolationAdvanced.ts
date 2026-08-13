@@ -42,7 +42,10 @@ export function moveTowards(current: number, target: number, maxDelta: number): 
  *  `pingPong(t, 1)` cycles: 0 → 1 → 0 → 1 → …
  */
 export function pingPong(t: number, length: number): number {
-  if (length <= 0) return 0;
+  // No guard on a non-positive length: the arithmetic yields NaN and NaN PROPAGATES. These functions do not
+  // invent values — a silent 0 turns a loud upstream failure into a plausible number, and IEEE propagation
+  // lowers for free where an explicit branch does not. Callers who want a warning get one from a guard
+  // layer, not from silent coercion here.
   const cycle = 2 * length;
   const mod = ((t % cycle) + cycle) % cycle;
   return mod <= length ? mod : cycle - mod;
@@ -53,7 +56,10 @@ export function pingPong(t: number, length: number): number {
  *  `repeat(1.6, 1)` → `0.6`. Analogous to Unity's `Mathf.Repeat`.
  */
 export function repeat(t: number, length: number): number {
-  if (length <= 0) return 0;
+  // No guard on a non-positive length: the arithmetic yields NaN and NaN PROPAGATES. These functions do not
+  // invent values — a silent 0 turns a loud upstream failure into a plausible number, and IEEE propagation
+  // lowers for free where an explicit branch does not. Callers who want a warning get one from a guard
+  // layer, not from silent coercion here.
   return ((t % length) + length) % length;
 }
 

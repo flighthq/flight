@@ -75,8 +75,11 @@ describe('pingPong', () => {
   it('bounces back at t = 1.5 * length', () => {
     expect(pingPong(1.5, 1)).toBeCloseTo(0.5, 10);
   });
-  it('returns 0 when length is 0', () => {
-    expect(pingPong(1, 0)).toBe(0);
+  // NaN, not 0. These functions do not invent values: a non-positive length has no wrap interval, the
+  // arithmetic yields NaN, and NaN propagates so an upstream failure stays visible. A silent 0 is a
+  // plausible number that hides the break — this assertion previously pinned that coercion.
+  it('propagates NaN when length is 0', () => {
+    expect(pingPong(1, 0)).toBeNaN();
   });
   it('works with larger lengths', () => {
     expect(pingPong(3, 2)).toBeCloseTo(1, 10);
@@ -95,8 +98,11 @@ describe('repeat', () => {
     expect(r).toBeGreaterThanOrEqual(0);
     expect(r).toBeLessThan(1);
   });
-  it('returns 0 when length is 0', () => {
-    expect(repeat(1, 0)).toBe(0);
+  // NaN, not 0. These functions do not invent values: a non-positive length has no wrap interval, the
+  // arithmetic yields NaN, and NaN propagates so an upstream failure stays visible. A silent 0 is a
+  // plausible number that hides the break — this assertion previously pinned that coercion.
+  it('propagates NaN when length is 0', () => {
+    expect(repeat(1, 0)).toBeNaN();
   });
 });
 

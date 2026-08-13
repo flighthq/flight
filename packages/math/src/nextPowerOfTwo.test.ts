@@ -82,3 +82,14 @@ describe('previousPowerOfTwo', () => {
     expect(previousPowerOfTwo(1025)).toBe(1024);
   });
 });
+
+describe('previousPowerOfTwo', () => {
+  // BY VALUE, not by sign: a `>= 0` assertion would pass against a still-broken version returning 0,
+  // which is exactly what input 2147483648 did before the fix. The signed `>>` returned -1073741824 for
+  // both of these inputs — the negative value is the thing being pinned.
+  it('returns a positive power of two at and above 2^30, where a signed shift sign-extended', () => {
+    expect(previousPowerOfTwo(1073741824)).toBe(1073741824);
+    expect(previousPowerOfTwo(2147483647)).toBe(1073741824);
+    expect(nextPowerOfTwo(1073741824)).toBe(1073741824);
+  });
+});
