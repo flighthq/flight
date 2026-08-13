@@ -16,6 +16,25 @@ import { createScene2DFromSvgDocument } from './svgDocument';
 import { createReadyImageResourceForTest } from './testHelper';
 
 describe('createScene2DFromSvgDocument', () => {
+  // objectBoundingBox has TWO consumers in this importer and they used to disagree about an empty box: the
+  // clip path refused it loudly, the gradient applied a degenerate matrix in silence. Whether the correct
+  // rendering is "ignore the effect" or "render nothing" is a spec question that is still open — this pins
+  // only that the situation is REPORTED, which commits to neither answer, where silence committed to one.
+  it('reports an objectBoundingBox gradient on a zero-area shape instead of scaling by it silently', () => {
+    const zeroArea: ImportDiagnostic[] = [];
+    const gradient = `<defs><linearGradient id="g"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs>`;
+
+    createScene2DFromSvgDocument(`<svg>${gradient}<rect width="0" height="10" fill="url(#g)"/></svg>`, zeroArea);
+    expect(zeroArea.map((diagnostic) => diagnostic.kind)).toContain('svg.object-bounding-box-gradient-without-bounds');
+
+    // ...and stays quiet when the box is real, so the crumb carries information rather than firing always.
+    const measurable: ImportDiagnostic[] = [];
+    createScene2DFromSvgDocument(`<svg>${gradient}<rect width="10" height="10" fill="url(#g)"/></svg>`, measurable);
+    expect(measurable.map((diagnostic) => diagnostic.kind)).not.toContain(
+      'svg.object-bounding-box-gradient-without-bounds',
+    );
+  });
+
   // A clean parse is two claims: the values are right AND THE PARSER IS NOT COMPLAINING. Every other test
   // here checks the first. This checks the second — the one that catches an importer that produced a
   // plausible-looking tree while telling nobody it could not read part of the input.
@@ -98,8 +117,11 @@ describe('createScene2DFromSvgDocument', () => {
     expect(getNodeChildAt(root, 1)?.clip?.rect).toMatchObject({ height: 100, width: 100, x: 0, y: 0 });
     expect(getNodeChildAt(root, 2)?.clip?.rect).toMatchObject({ height: 100, width: 100, x: 0, y: 0 });
     expect(getNodeChildAt(root, 3)?.clip).toBeNull();
+    // `reason` separates OUR unimplemented measurement from THEIR empty geometry. Here it is ours: this
+    // importer performs no text layout, so the <text> element's bounding box is unknown rather than empty,
+    // and a caller reading only "your clip was dropped" cannot tell which of the two happened.
     expect(diagnostics).toContainEqual({
-      detail: { id: 'half' },
+      detail: { id: 'half', reason: 'unmeasurable-text' },
       kind: 'svg.object-bounding-box-clip-without-bounds',
       origin: 'applySvgElementClip',
       severity: 'Skip',
