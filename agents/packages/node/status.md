@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/node'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-13
+by: builder3
 ---
 
 # node — Status
@@ -11,9 +11,18 @@ by: principal
 
 ## Open
 
-Every item was re-checked against `packages/node/src/` (and `packages/types/src/`) on 2026-08-08.
-A file:line here is a claim about this tree, not about a session.
+The mutation item was checked on 2026-08-13; the remaining items were re-checked against
+`packages/node/src/` (and `packages/types/src/`) on 2026-08-08. A file:line here is a claim about this
+tree, not about a session.
 
+- **Three `nodeOrderList.ts` mutation survivors are UNRESOLVED, not equivalent.** The `<` → `<=`
+  survivors in `addNodeOrderListEntry`, `applyNodeOrderList`'s child scan, and
+  `removeNodeOrderListEntryAtIndex` depend respectively on equal backing-array capacities, a valid
+  `Node` in every active entry, and callers never observing retained capacity. The factory and package
+  mutators preserve those conditions, but `NodeOrderList` is a caller-owned structural interface with
+  public mutable `entryCount`, `nodes`, and `sortKeys`; no type or runtime boundary enforces them. The
+  other two survivors are structurally equivalent under locally enforced write structure, with their
+  preconditions and invalidation tripwires recorded beside the loops.
 - **No diagnostics layer at all.** `packages/node/src/` contains zero `enable*Guards` and zero
   `explain*` exports, while 20+ sibling packages carry both. Node returns silent sentinels —
   `removeNodeChildAt` → `null` (`hierarchy.ts:286`), `getNodeCommonAncestor` → `null`,
@@ -50,6 +59,9 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-13** — Re-audited all five `nodeOrderList.ts` mutation survivors: two internal loop
+  boundaries have structural proofs and source tripwires; three valid-window-dependent survivors are
+  explicitly UNRESOLVED in `Open` because the structural list contract does not enforce their premise.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The largest false claim dropped: the
   whole transform-decomposition blocker ("`reparentNode` moves child without world-transform
   preservation … no `decomposeMatrix` exists in `@flighthq/geometry`", plus the deferred
