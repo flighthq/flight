@@ -11,6 +11,12 @@ by: principal
 
 ## Open
 
+**CI's screenshot-baseline legs exclude WebGL, and only the charter's pinning decision can restore it.**
+`tests.yml` runs `capture:{functional,examples}:check` on dom/canvas/webgpu — the pinned rasterizers —
+because a committed sha256 over decoded RGBA is only environment-independent where the rasterizer is.
+Not a failure: the WebGL hashes reproduce on a developer clone, and no CI-runner run exists to compare
+against. Settling charter Open direction 1 (pin WebGL to SwiftShader) is what would let that column in.
+
 **Restored `scene-*` fingerprints are UNVERIFIED against current output.** `85280ab17` renamed four
 baselines back from `scene3d-*` (swept there by the package rename `c0eeab24e`), restoring seven `✓`
 marks: `scene-morph`, `scene-skin-morph-compose`, `scene-skinning`, `scene-transparent`. Those
