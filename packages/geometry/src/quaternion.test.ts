@@ -675,6 +675,26 @@ describe('slerpQuaternion', () => {
     expectQuaternionClose(out, expected.x, expected.y, expected.z, expected.w);
   });
 
+  it('takes the shortest path when the inputs face opposite hemispheres', () => {
+    // A quaternion and its negation are the SAME rotation, so slerping toward either must give the same
+    // result — that is what the cosHalfTheta < 0 branch exists to guarantee. Without an input pair whose
+    // dot product is negative, that branch never runs and its per-component sign flips are unobservable;
+    // the tilted axis then keeps bx and bz non-zero so a dropped flip on either actually moves the answer.
+    const axis = createVector3(1, 2, 3);
+    normalizeVector3(axis, axis);
+    const a = createQuaternion();
+    const far = createQuaternion();
+    setQuaternionFromAxisAngle(far, axis, Math.PI / 2);
+    const negated = createQuaternion(-far.x, -far.y, -far.z, -far.w);
+
+    const out = createQuaternion();
+    slerpQuaternion(out, a, negated, 0.5);
+
+    const expected = createQuaternion();
+    setQuaternionFromAxisAngle(expected, axis, Math.PI / 4);
+    expectQuaternionClose(out, expected.x, expected.y, expected.z, expected.w);
+  });
+
   it('halfway interpolates the angle', () => {
     const a = createQuaternion();
     const b = createQuaternion();
