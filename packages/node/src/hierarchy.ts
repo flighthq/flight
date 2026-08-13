@@ -1,4 +1,11 @@
-import { acquireMatrix, copyMatrix, inverseMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
+import {
+  acquireMatrix,
+  copyMatrix,
+  decomposeMatrixToTransform2D,
+  inverseMatrix,
+  multiplyMatrix,
+  releaseMatrix,
+} from '@flighthq/geometry/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types/contract';
 
@@ -350,13 +357,7 @@ export function reparentNode<Traits extends object>(
 
     const pivotX = child.pivotX;
     const pivotY = child.pivotY;
-    // Use positive axis magnitudes and carry any reflection in the angle between the axes. This
-    // represents every affine linear transform exactly, including reflected and skewed matrices.
-    child.rotation = 0;
-    child.scaleX = Math.sqrt(localM.a * localM.a + localM.b * localM.b);
-    child.scaleY = Math.sqrt(localM.c * localM.c + localM.d * localM.d);
-    child.skewX = Math.atan2(-localM.c, localM.d) * RAD_TO_DEG;
-    child.skewY = Math.atan2(localM.b, localM.a) * RAD_TO_DEG;
+    decomposeMatrixToTransform2D(child, localM);
     child.pivotX = pivotX;
     child.pivotY = pivotY;
     child.x = localM.tx + (localM.a * pivotX + localM.c * pivotY);
@@ -472,5 +473,3 @@ function invalidateNodeChildren<Traits extends object>(runtime: NodeRuntime<Trai
 function throwOutOfBoundsError(): void {
   throw new RangeError('The supplied index is out of bounds.');
 }
-
-const RAD_TO_DEG = 180 / Math.PI;

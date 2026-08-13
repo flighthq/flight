@@ -780,6 +780,43 @@ describe('reparentNode', () => {
     expect(after.ty).toBeCloseTo(before.ty, 10);
   });
 
+  it('preserves shear induced by rotation across non-uniformly scaled parents', () => {
+    const parentA = createTransformNode();
+    parentA.rotation = -15;
+    parentA.scaleX = 0.75;
+    parentA.scaleY = 2.5;
+    invalidateNodeLocalTransform(parentA);
+
+    const child = createTransformNode();
+    child.x = 10;
+    child.y = 5;
+    child.rotation = 37;
+    child.scaleX = 1.2;
+    child.scaleY = 0.9;
+    invalidateNodeLocalTransform(child);
+    addNodeChild(parentA, child);
+
+    expect(child.skewX).toBe(0);
+    expect(child.skewY).toBe(0);
+    const before = cloneMatrix(getNodeWorldMatrix(child));
+
+    const parentB = createTransformNode();
+    parentB.rotation = 22;
+    parentB.scaleX = 2.4;
+    parentB.scaleY = 0.6;
+    invalidateNodeLocalTransform(parentB);
+
+    reparentNode(child, parentB);
+    const after = getNodeWorldMatrix(child);
+
+    expect(after.a).toBeCloseTo(before.a, 10);
+    expect(after.b).toBeCloseTo(before.b, 10);
+    expect(after.c).toBeCloseTo(before.c, 10);
+    expect(after.d).toBeCloseTo(before.d, 10);
+    expect(after.tx).toBeCloseTo(before.tx, 10);
+    expect(after.ty).toBeCloseTo(before.ty, 10);
+  });
+
   it('preserves a skewed world transform across asymmetric parents', () => {
     const parentA = createTransformNode();
     parentA.x = 50;
@@ -899,6 +936,7 @@ describe('reparentNode', () => {
     reparentNode(child, parentB);
     const after = getNodeWorldMatrix(child);
 
+    expect(child.scaleY).toBeLessThan(0);
     expect(after.a).toBeCloseTo(before.a, 10);
     expect(after.b).toBeCloseTo(before.b, 10);
     expect(after.c).toBeCloseTo(before.c, 10);
