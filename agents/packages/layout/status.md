@@ -46,13 +46,22 @@ Bundle isolation still holds: the size baseline records `layout:canvas` at 647 b
   28 cases. The symmetry/axis-transposition review exposed `wrap-reverse` stacking lines in ordinary
   cross order; the weighted-overflow boundary pattern exposed shrink clamping without redistributing
   the remaining deficit; and the grid span-composition invariant exposed auto tracks counting fixed
-  tracks and gaps twice. Temporary old-behavior runs made the named guards red with `[45, 60]` instead
-  of `[70, 45]`, `86.3636` instead of `50`, and `140 x 95` instead of `100 x 70`, respectively; the
-  restored fixes are green. Survivor-directed asymmetric, nested, enum, zero, non-finite, and exact-fit
+  tracks and gaps twice. Temporary old-behavior runs made four named guards red with `[45, 60]` instead
+  of `[70, 45]`, `[0, 35, 40, 10]` instead of `[0, 80, 40, 10]`, `86.3636` instead of `50`, and
+  `140 x 95` instead of `100 x 70`; the restored fixes are green. Survivor-directed asymmetric,
+  nested, enum, zero, non-finite, and exact-fit
   controls bring the suite to 104 cases. `untested` now lists only 4 structurally unreachable defensive
   arms. Final own-file `unchecked` runs leave 23/232 flex, 18/167 grid, 1/52 resolver, 0/100 anchor,
-  and 0/3 state survivors; each survivor is equivalent on validated inputs or a redundant defensive
-  bound, not an inferred defect. **OBSERVED:** an item spanning auto and fraction tracks still assigns
+  and 0/3 state survivors: 42 total, not 41. Structural re-review proves 41 equivalent or redundant:
+  flex has 12 validated fallback/zero substitutions, 4 sentinel/index initializations, 2 shrink-scale
+  seed edits made redundant by the freeze loop's reweighting, and 5 boundary/control-flow identities;
+  grid has 13 validated fallback/zero substitutions and 4 post-validation bounds; the resolver has 1
+  zero-size identity. Re-examine those proofs if enum/numeric domains widen, non-root index origin or
+  parent filtering changes, the freeze loop stops reweighting, placement/auto-track preconditions
+  change, or zero-size normalization changes. **OBSERVED / UNRESOLVED:** grid's invalid-sibling skip
+  survivor can change partial `out` writes before a later `false`; failure-output semantics are unstated,
+  so equivalence is not claimed. **HYPOTHESIS-UNTESTED:** callers ignore partial output after failure.
+  **OBSERVED:** an item spanning auto and fraction tracks still assigns
   intrinsic demand to auto before fraction allocation. **HYPOTHESIS-UNTESTED:** a richer CSS-like grid
   might apportion that demand differently; the charter's deliberately smaller grid and absent consumer
   evidence do not justify changing it here.
