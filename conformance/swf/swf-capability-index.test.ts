@@ -6,9 +6,11 @@ import { join } from 'node:path';
 import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from '../../scripts/fixtures';
 import { deriveImportConformanceCapabilityScopedUnknownEvidence } from '../core/import-conformance-score';
 import {
-  createSwfImportConformanceDenominators,
   SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
   SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN,
+  UNVERIFIED_SWF_FIXTURE_TREE_MESSAGE,
+  createSwfImportConformanceDenominators,
+  resolveVerifiedSwfFixturePack,
 } from './swf-capability-index';
 
 describe('SWF scoreboard declarations', () => {
@@ -69,47 +71,77 @@ describe('SWF scoreboard declarations', () => {
   });
 });
 
+describe('resolveVerifiedSwfFixturePack', () => {
+  // The accept and reject conditions the CLI turns on, asserted where they are decided. A pure function
+  // of the stamp on disk: no argv, no exit code, no stdout, and nothing about the corpus.
+  it('returns the pack entry for a tree stamped with the pinned release', () => {
+    const tree = stampedTree({ tag: FIXTURE_RELEASE_TAG, variant: 'full' });
+
+    expect(resolveVerifiedSwfFixturePack(tree)).toMatchObject({
+      pack: 'swf-ruffle-fixtures',
+      verifiedFixtureFiles: 1,
+    });
+  });
+
+  it('returns null for a stale release tag, an unstamped tree, and a mismatched variant alike', () => {
+    // One sentinel for all of them on purpose: the caller's remedy is the same in every case, which is
+    // why the CLI carries one message rather than four.
+    expect(
+      resolveVerifiedSwfFixturePack(stampedTree({ tag: `${FIXTURE_RELEASE_TAG}-stale`, variant: 'full' })),
+    ).toBeNull();
+    expect(resolveVerifiedSwfFixturePack(stampedTree({ tag: FIXTURE_RELEASE_TAG, variant: 'demo' }))).toBeNull();
+    expect(resolveVerifiedSwfFixturePack(unstampedTree())).toBeNull();
+    expect(resolveVerifiedSwfFixturePack(join(unstampedTree(), 'absent'))).toBeNull();
+  });
+
+  it('returns null when the stamp names other packs but not this one', () => {
+    const tree = stampedTree({ pack: 'some-other-pack', tag: FIXTURE_RELEASE_TAG, variant: 'full' });
+
+    expect(resolveVerifiedSwfFixturePack(tree)).toBeNull();
+  });
+});
+
 describe('swf-capability-index CLI', () => {
-  it('accepts the pinned fixture stamp and rejects a stale release stamp', () => {
-    const root = mkdtempSync(join(tmpdir(), 'flight-swf-capability-index-'));
-    const tree = join(root, 'extracted', 'full', 'swf-ruffle-fixtures');
-    mkdirSync(tree, { recursive: true });
-    writeFileSync(join(tree, 'unreadable.swf'), Uint8Array.of(0));
-    const stamp = {
-      packs: [
-        {
-          file: 'unused.tar.gz',
-          metadataFiles: 0,
-          pack: 'swf-ruffle-fixtures',
-          sha256: 'a'.repeat(64),
-          verifiedFixtureFiles: 1,
-        },
-      ],
-      tag: FIXTURE_RELEASE_TAG,
-      variant: 'full',
-    } as const;
-
-    writeFixtureTreeStamp(tree, stamp);
-    const accepted = runCli(root);
-    expect(accepted.status).toBe(0);
-    expect(accepted.stdout).toContain('Indexed 1 SWFs from 1 corpus files; 1 unreadable.');
-
-    writeFixtureTreeStamp(tree, { ...stamp, tag: `${FIXTURE_RELEASE_TAG}-stale` });
-    const rejected = runCli(root);
-    expect(rejected.status).toBe(1);
-    expect(rejected.stderr).toContain('Verified swf-ruffle-fixtures full tree is unavailable');
-  }, 15_000);
-
-  it('rejects an unstamped fixture tree instead of producing measured evidence', () => {
-    const root = mkdtempSync(join(tmpdir(), 'flight-swf-capability-index-'));
-    mkdirSync(join(root, 'extracted', 'full', 'swf-ruffle-fixtures'), { recursive: true });
-
-    const result = runCli(root);
+  // ONE spawn, for the one property that only exists in a process: a thrown main surfaces as exit code 1
+  // with the message on stderr. The conditions that decide whether main throws are asserted above, so
+  // this does not re-pay a process per condition to observe a mapping that does not vary with them.
+  it('surfaces an unusable fixture tree as a failing exit code and a message on stderr', () => {
+    const result = runCli(unstampedTree(true));
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Verified swf-ruffle-fixtures full tree is unavailable');
+    expect(result.stderr).toContain(UNVERIFIED_SWF_FIXTURE_TREE_MESSAGE);
   }, 15_000);
 });
+
+function stampedTree(options: { pack?: string; tag: string; variant: string }): string {
+  const root = mkdtempSync(join(tmpdir(), 'flight-swf-capability-index-'));
+  const tree = join(root, 'extracted', 'full', 'swf-ruffle-fixtures');
+  mkdirSync(tree, { recursive: true });
+  writeFileSync(join(tree, 'unreadable.swf'), Uint8Array.of(0));
+  writeFixtureTreeStamp(tree, {
+    packs: [
+      {
+        file: 'unused.tar.gz',
+        metadataFiles: 0,
+        pack: options.pack ?? 'swf-ruffle-fixtures',
+        sha256: 'a'.repeat(64),
+        verifiedFixtureFiles: 1,
+      },
+    ],
+    tag: options.tag,
+    variant: options.variant,
+  });
+  return tree;
+}
+
+// Returns the tree by default, or the ROOT when the CLI is the caller — it resolves the tree itself from
+// FLIGHT_FIXTURES_DIR and would otherwise be handed a path one level too deep.
+function unstampedTree(asRoot = false): string {
+  const root = mkdtempSync(join(tmpdir(), 'flight-swf-capability-index-'));
+  const tree = join(root, 'extracted', 'full', 'swf-ruffle-fixtures');
+  mkdirSync(tree, { recursive: true });
+  return asRoot ? root : tree;
+}
 
 function runCli(root: string) {
   return spawnSync(process.execPath, ['--import', 'tsx', join(import.meta.dirname, 'swf-capability-index.ts')], {
