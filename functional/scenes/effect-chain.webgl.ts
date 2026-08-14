@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -18,6 +18,7 @@ import {
   defaultGlShapeRenderer,
   registerGlVignetteEffect,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -87,3 +88,22 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// The chain applies bloom + color-grade + vignette. Bloom pushes glow into dark areas; vignette
+// darkens edges. A mid-frame edge sample should show bloom glow (luminance > 10, vs. pure
+// background ~5). Without any effects, the dark background pixel stays at ~5 and fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const rgb = getBitmapPixelRgb(frame, 8, Math.round(frame.height / 2));
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 10) {
+    throw new Error(
+      `[effect-chain] edge pixel luminance is ${lum.toFixed(1)} (expected > 10) — ` +
+        `no bloom glow detected in dark area; rgb(${r},${g},${b})`,
+    );
+  }
+}

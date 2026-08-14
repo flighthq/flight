@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   defaultGlShapeRenderer,
   registerGlVignetteEffect,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -68,3 +69,28 @@ appendShapeEndFill(fill);
 addNodeChild(root, fill);
 
 render(root);
+
+// ORACLE-BLOCK
+// Vignette darkens edges while preserving the center. The uniform fill (0xe8ecf4, luminance ~234)
+// fills the entire frame. The center pixel should remain bright while corner pixels should be
+// darkened by the vignette. Without the effect, center and corner luminances are equal, so the
+// gap is 0 and fails the > 20 check.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  function luminanceAt(x: number, y: number): number {
+    const rgb = getBitmapPixelRgb(frame, x, y);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = rgb & 0xff;
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  const centerLum = luminanceAt(Math.round(frame.width / 2), Math.round(frame.height / 2));
+  const cornerLum = luminanceAt(4, 4);
+
+  if (centerLum <= cornerLum + 20) {
+    throw new Error(
+      `[effect-vignette] center luminance ${centerLum.toFixed(1)} is not > corner luminance ` +
+        `${cornerLum.toFixed(1)} + 20 — vignette not applied`,
+    );
+  }
+}

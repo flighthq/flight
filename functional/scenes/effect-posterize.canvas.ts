@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -11,6 +11,7 @@ import {
   createCanvasRenderState,
   createDisplayObject,
   createPosterizeEffect,
+  getBitmapPixelRgb,
   createShape,
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
@@ -76,3 +77,38 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Posterize quantizes each channel to 4 levels. The 6 input cells have 5 unique blue channel values
+// (48, 64, 255, 192, 208). After quantization to 4 levels, at most 4 unique B values remain —
+// verified in both sRGB and linear quantization paths. Without the effect, the original 5 unique B
+// values exceed the threshold.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const blues = new Set<number>();
+
+  for (let i = 0; i < cols * rows; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = Math.round(((col + 0.5) * frame.width) / cols);
+    const cy = Math.round(((row + 0.5) * frame.height) / rows);
+    const rgb = getBitmapPixelRgb(frame, cx, cy);
+    const b = rgb & 0xff;
+    let found = false;
+    for (const existing of blues) {
+      if (Math.abs(existing - b) < 8) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) blues.add(b);
+  }
+
+  if (blues.size > 4) {
+    throw new Error(
+      `[effect-posterize] expected <= 4 distinct blue levels after quantization, got ${blues.size} — ` +
+        `values: ${[...blues].join(', ')}`,
+    );
+  }
+}

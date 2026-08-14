@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,6 +8,7 @@ import {
   beginWgpuRenderEffectPipeline,
   createChannelMixerAdjustment,
   createDisplayObject,
+  getBitmapPixelRgb,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -84,3 +85,22 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// The channel mixer rotates RGB channels (R<-B, G<-R, B<-G). Cell 0 (red, R=255, G=48, B=48) becomes
+// approximately (R=48, G=255, B=48) — green-dominant. Without the effect, R=255 > G=48 fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const cx = Math.round(((0 + 0.5) * frame.width) / cols);
+  const cy = Math.round(((0 + 0.5) * frame.height) / rows);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+
+  if (g <= r) {
+    throw new Error(
+      `[effect-channel-mixer] red cell has G=${g}, R=${r} after R<-B,G<-R,B<-G rotation — expected G > R`,
+    );
+  }
+}
