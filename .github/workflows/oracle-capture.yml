@@ -52,8 +52,38 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  capture:
+  # Enumerating is its own job so the capture can be a MATRIX over requests. That matters for more than
+  # tidiness: intake extracts one artifact and reads `candidate.json` at its ROOT, so an archive can hold
+  # exactly one request's candidate. One artifact per request is therefore the consumer's contract, not a
+  # preference — and a matrix additionally isolates a failing capture to its own request rather than
+  # letting it block a sibling's PR.
+  requests:
     runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.queue.outputs.list }}
+      any: ${{ steps.queue.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: queue
+        run: |
+          if [ -n "${{ github.event.inputs.request }}" ]; then
+            stems="$(basename "${{ github.event.inputs.request }}" .json)"
+          else
+            stems=$(ls oracle-requests/*.json 2>/dev/null | xargs -r -n1 basename | sed 's/\.json$//' | tr '\n' ' ')
+          fi
+          list=$(printf '%s' "$stems" | tr ' ' '\n' | grep -v '^$' | jq -R . | jq -s -c .)
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+          echo "any=$([ "$list" = '[]' ] && echo false || echo true)" >> "$GITHUB_OUTPUT"
+          echo "outstanding: $list"
+
+  capture:
+    needs: requests
+    if: needs.requests.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        request: ${{ fromJSON(needs.requests.outputs.list) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,122 +98,64 @@ jobs:
 
       - run: npm ci
 
-      # ★ THE QUEUE IS THE DIRECTORY, NOT THE DIFF. §5: "The directory is a queue of outstanding work, not
-      # an archive of every completed request. The lock-bump PR removes a fulfilled request." So every file
-      # present IS outstanding, and asking git what this push changed answers a question the design does not
-      # pose.
-      #
-      # The first run proved why that matters: diffing against the push event's `before` SHA died with
-      # `fatal: bad object`, because actions/checkout is a shallow clone and that commit is not in it.
-      # `fetch-depth: 0` would have fixed that one symptom and left the others — a force-push, a first push
-      # to a new branch, and a squash merge all produce a `before` that is absent, all-zeroes, or unrelated.
-      # Enumerating the queue has none of those cases, and it self-heals: a request whose capture failed is
-      # still in the directory, so the next push retries it instead of needing the failure re-committed.
-      - id: requests
-        run: |
-          if [ -n "${{ github.event.inputs.request }}" ]; then
-            list="${{ github.event.inputs.request }}"
-          else
-            list=$(ls oracle-requests/*.json 2>/dev/null | tr '\n' ' ')
-          fi
-          echo "list=$list" >> "$GITHUB_OUTPUT"
-          echo "outstanding requests: ${list:-<none>}"
-
-      # ★ THE BUILD IS PAID ONLY WHEN THERE IS WORK, AND THAT IS WHAT LETS THE TRIGGER BE BROAD.
-      # The capture needs a built tree — the first successful-looking run produced a bundle with zero
-      # images because this step was missing, so the harness had nothing to render. But building before
-      # knowing whether anything is outstanding made every triggered run expensive, which is why the
-      # trigger was path-filtered, which is why three separate pushes silently commissioned nothing.
-      # Deciding first inverts that: an empty queue costs a checkout and an `npm ci`, so the trigger can
-      # be every push to the trunk and the body's "process what is outstanding" finally matches it.
       - name: Build the harness
-        if: success() && steps.requests.outputs.list != ''
         run: |
           npm run build
           npm run build:functional
 
-      - name: Install Playwright browsers
-        if: success() && steps.requests.outputs.list != ''
-        run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium
 
       # ★ THE ENVIRONMENT IS RECORDED, NOT PINNED. §10 has not been ruled: whether reference sets are keyed
       # per backend or per backend × environment is open, so this workflow does not presume a canonical
-      # environment exists. It records WHAT PRODUCED the image — runner image, browser build — as an
-      # opaque id travelling with the bundle. When §10 lands, this becomes either a pinned digest or a key;
-      # until then, recording it costs nothing and claiming it would be the schema decision being deferred.
+      # environment exists. It records WHAT PRODUCED the image as an opaque id travelling with the
+      # candidate. The `sha256-` prefix is required by the Oracle schema.
       - id: environment
-        if: success() && steps.requests.outputs.list != ''
         run: |
           browser=$(npx playwright --version | tr -d ' ')
           descriptor="runner=${ImageOS:-unknown};image=${ImageVersion:-unknown};${browser};viewport=default"
           echo "id=sha256-$(printf '%s' "$descriptor" | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
           echo "descriptor=$descriptor" >> "$GITHUB_OUTPUT"
 
-      - name: Capture the commissioned cells
-        if: success() && steps.requests.outputs.list != ''
+      - name: Capture ${{ matrix.request }}
         env:
           ORACLE_ENVIRONMENT_ID: ${{ steps.environment.outputs.id }}
         run: |
           set -euo pipefail
-          for request in ${{ steps.requests.outputs.list }}; do
-            echo "::group::$request"
-            # The scope comes from the request through one code path (getOracleRequestCells), so the
-            # workflow never re-derives which cells are in scope. A second derivation here would be a
-            # second definition of "in scope" for the pending allowance to disagree with.
-            npx tsx ./scripts/oracle-commission.ts scope "$request" | while read -r args; do
-              npx tsx ./packages/tool-capture/src/bin.ts capture $args
-            done
-            npx tsx ./scripts/oracle-commission.ts bundle "$request" \
-              --artifacts .artifacts \
-              --stage candidate
-            echo "::endgroup::"
+          request="oracle-requests/${{ matrix.request }}.json"
+          # The scope comes from the request through one code path (getOracleRequestCells), so the
+          # workflow never re-derives which cells are in scope.
+          npx tsx ./scripts/oracle-commission.ts scope "$request" | while read -r args; do
+            npx tsx ./packages/tool-capture/src/bin.ts capture $args
           done
+          npx tsx ./scripts/oracle-commission.ts bundle "$request" --artifacts .artifacts --stage stage
 
-      # The candidate PNGs and the bundle travel together: intake verifies the bundle's per-image
-      # artifactSha256 against these exact bytes before it stages anything.
-      # ★ THE MANIFEST IS ALWAYS `candidate.json`, ONE PER REQUEST DIRECTORY. That fixed name is the
-      # intake contract and it forces the per-request split: two requests staged into one tree would
-      # collide on the filename. The archive therefore holds `<requestStem>/candidate.json` plus that
-      # request's `images/`, and the bridge's envelope names the `requestPath` that selects which
-      # directory a given dispatch refers to.
-      #
-      # Whether Oracle wants ONE ARTIFACT PER REQUEST instead of one artifact holding per-request
-      # directories is an open interface question, not something to decide unilaterally here — the
-      # envelope already carries the binding either way.
+      # ★ `candidate.json` SITS AT THE ARCHIVE ROOT. Intake opens `<extracted>/candidate.json` directly;
+      # a subdirectory reads to it as a missing manifest, which is the failure this replaces. Pointing
+      # `path` at the single request's directory makes ITS CONTENTS the archive root.
+      - name: Assert the archive shape before uploading
+        run: |
+          dir="stage/${{ matrix.request }}"
+          test -f "$dir/candidate.json" || { echo "no candidate.json in $dir" >&2; exit 1; }
+          pngs=$(find "$dir/images" -name '*.png' 2>/dev/null | wc -l)
+          echo "candidate.json + $pngs image(s):"
+          find "$dir" -type f | sed 's/^/  /'
+          [ "$pngs" -gt 0 ] || { echo "no image staged for ${{ matrix.request }}" >&2; exit 1; }
+
       - uses: actions/upload-artifact@v4
-        if: success() && steps.requests.outputs.list != ''
         with:
-          name: oracle-candidate-${{ github.sha }}
-          path: candidate
+          name: oracle-candidate-${{ matrix.request }}
+          path: stage/${{ matrix.request }}
           if-no-files-found: error
           retention-days: 30
 
-      # A count, checked, because a glob that silently matches nothing is what produced the 622-byte
-      # artifact. This fails the run rather than letting a hash-only bundle reach intake.
-      - name: Assert the candidate carries its images
-        if: success() && steps.requests.outputs.list != ''
-        run: |
-          pngs=$(find candidate -name '*.png' 2>/dev/null | wc -l)
-          echo "staged images: $pngs"
-          find candidate -type f | sed 's/^/  /'
-          if [ "$pngs" -eq 0 ]; then
-            echo "oracle-capture: the bundle reported captures but no image was staged to upload" >&2
-            exit 1
-          fi
-
-      - if: success() && steps.requests.outputs.list != ''
-        run: |
+      - run: |
           {
-            echo "### oracle candidate"
+            echo "### oracle candidate · ${{ matrix.request }}"
             echo ""
             echo "- commit: \`${{ github.sha }}\`"
             echo "- environment: \`${{ steps.environment.outputs.descriptor }}\`"
-            echo "- environmentId: \`${{ steps.environment.outputs.id }}\`"
             echo ""
-            for bundle in candidate/*/candidate.json; do
-              echo "\`$bundle\`:"
-              echo '```json'
-              cat "$bundle"
-              echo '```'
-            done
+            echo '```json'
+            cat "stage/${{ matrix.request }}/candidate.json"
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
