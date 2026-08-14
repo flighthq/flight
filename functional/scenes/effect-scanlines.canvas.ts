@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -16,6 +16,7 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -73,3 +74,36 @@ for (let i = 0; i < 18; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Scanlines (count 240, intensity 0.5) overlay alternating dark horizontal bands on the frame.
+// Every ~2.5 rows (600/240), the brightness alternates, creating high vertical-frequency content.
+// Measuring vertical adjacent-pixel energy captures this periodic pattern. Without the effect,
+// vertical HF stays near the base scene level (~1-2); with scanlines it exceeds 3.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const hf = measureVerticalHighFrequency(frame);
+  if (hf < 3) {
+    throw new Error(
+      `[effect-scanlines] vertical high-frequency energy is ${hf.toFixed(2)} (expected >= 3) — ` +
+        `scanline bands not visible`,
+    );
+  }
+}
+
+function measureVerticalHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let x = 0; x < frame.width; x += 2) {
+    let previous = -1;
+    for (let y = 0; y < frame.height; y += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}

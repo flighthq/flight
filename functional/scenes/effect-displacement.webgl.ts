@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,6 +8,7 @@ import {
   beginGlRenderEffectPipeline,
   createDisplacementEffect,
   createDisplayObject,
+  getBitmapPixelRgb,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -72,3 +73,36 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Displacement (intensity 10, frequency 14) warps pixel positions through a procedural noise field,
+// creating wave-like distortions along shape edges. This adds extra transitions where shapes meet
+// background, raising high-frequency energy above 3. Without the effect, the clean small shapes on
+// dark background have lower HF (~2) and the check fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const hf = measureHighFrequency(frame);
+  if (hf < 3) {
+    throw new Error(
+      `[effect-displacement] high-frequency energy is ${hf.toFixed(2)} (expected >= 3) — ` +
+        `displacement distortion should increase edge transitions`,
+    );
+  }
+}
+
+function measureHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    let previous = -1;
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}

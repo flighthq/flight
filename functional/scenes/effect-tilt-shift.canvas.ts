@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -77,3 +78,36 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+function measureHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    let previous = -1;
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}
+
+// ORACLE-BLOCK
+// Tilt-shift (blur 6, width 0.25) selectively blurs the top and bottom of the frame while keeping
+// the center strip sharp. The blurred regions lose their sharp edges, reducing overall HF energy.
+// The unprocessed scene has HF ~3-4; after tilt-shift it drops below 2.5. Without the effect,
+// all edges remain sharp and HF stays above 2.5.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const hf = measureHighFrequency(frame);
+  if (hf >= 2.5) {
+    throw new Error(
+      `[effect-tilt-shift] high-frequency energy is ${hf.toFixed(2)} (expected < 2.5) — ` +
+        `tilt-shift blur should smooth edges in the out-of-focus bands`,
+    );
+  }
+}

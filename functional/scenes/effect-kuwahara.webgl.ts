@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   registerGlKuwaharaEffect,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -74,3 +75,37 @@ for (let i = 0; i < 18; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Kuwahara (radius 4) is an edge-preserving smoothing filter (oil-painting effect). It reduces
+// fine detail at shape edges and within textured regions while keeping broad color boundaries.
+// The unprocessed scene with 18 rotated shapes has horizontal HF energy around 2-4 from the many
+// small edge transitions. After Kuwahara smoothing, HF drops below 2 as edges soften. Without the
+// effect, the sharp edges keep HF above 2 and the assertion fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const hf = measureHighFrequency(frame);
+  if (hf >= 2) {
+    throw new Error(
+      `[effect-kuwahara] high-frequency energy is ${hf.toFixed(2)} (expected < 2) — ` +
+        `Kuwahara smoothing not applied`,
+    );
+  }
+}
+
+function measureHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    let previous = -1;
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}
