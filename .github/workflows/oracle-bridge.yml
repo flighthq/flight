@@ -78,7 +78,6 @@ jobs:
             echo "event              : ${{ github.event_name }}"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
-
       - name: Require the bridge credential
         env:
           ORACLE_BRIDGE_TOKEN: ${{ secrets.ORACLE_BRIDGE_TOKEN }}
