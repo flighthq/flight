@@ -264,13 +264,21 @@ export function joinOracleState(input: Readonly<OracleJoinInput>): OracleJoinRes
     failures.push({ kind: 'regression', identity: cell.identity, detail: describe(comparison) });
   }
 
-  // §9: a gated run that compared zero non-pending images is unconfigured, not clean. Guarded on there
-  // being work at all, so an empty corpus is not reported as a misconfiguration.
-  if (comparedCount === 0 && required.size > 0) {
+  // §9: "a gated run that compared zero NON-PENDING images is unconfigured, not clean." The denominator is
+  // the non-pending required cells, not every required cell.
+  //
+  // ★ THE SEED RUN IS WHY THIS IS NOT `comparedCount === 0 && required.size > 0`. Commissioning the very
+  // first reference image leaves exactly one required cell, legitimately pending, and nothing to compare —
+  // the documented bootstrap state (§6, "pending → locked and gating"). The stricter form failed it, which
+  // would have made the first run of the mechanism indistinguishable from a broken one and taught everybody
+  // to expect a red on seeding. A gate that cries wolf on the state the design intends is worse than no
+  // gate: it fires when nothing is wrong, so it is ignored when something is.
+  const gatedCells = required.size - pendingCount;
+  if (comparedCount === 0 && gatedCells > 0) {
     failures.push({
       kind: 'zero-comparisons',
       identity: null,
-      detail: `${required.size} required cell(s) and zero comparisons — unconfigured, not clean`,
+      detail: `${gatedCells} non-pending required cell(s) and zero comparisons — unconfigured, not clean`,
     });
   }
 
