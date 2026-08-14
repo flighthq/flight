@@ -129,5 +129,61 @@ describe('collideContactManifold', () => {
     expect(collideContactManifold({ kind: 'aabb', minX: 0, minY: 9, maxX: 2, maxY: 11 }, ground, out)).toBe(false);
     expect(out.pointCount).toBe(0);
     expect(out.depth).toBe(0);
+    // The NORMAL is the field a stale manifold reports most convincingly: a caller that checks the
+    // boolean is safe, but one that reads the normal after a false return gets the previous hit's
+    // direction, which is a plausible value rather than an obviously wrong one.
+    expect(out.overlapping).toBe(false);
+    expect(out.normalX).toBe(0);
+    expect(out.normalY).toBe(0);
+  });
+
+  it('clears the same manifold when the following pair is a DIFFERENT kind that misses', () => {
+    // Reuse across kinds, because the miss path is per-kind: a pair that clears correctly within its own
+    // kind says nothing about the path a different kind takes to the same shared manifold.
+    const out = createCollisionContactManifold();
+    expect(
+      collideContactManifold(
+        { kind: 'obb', halfH: 2, halfW: 2, rotation: 0.3, x: 0, y: 0 },
+        { kind: 'obb', halfH: 2, halfW: 2, rotation: -0.2, x: 1, y: 1 },
+        out,
+      ),
+    ).toBe(true);
+    expect(out.pointCount).toBeGreaterThan(0);
+    expect(Math.abs(out.normalX) + Math.abs(out.normalY)).toBeGreaterThan(0);
+
+    expect(
+      collideContactManifold(
+        { kind: 'circle', radius: 1, x: 0, y: 0 },
+        { kind: 'circle', radius: 1, x: 50, y: 0 },
+        out,
+      ),
+    ).toBe(false);
+    expect(out).toMatchObject({ depth: 0, normalX: 0, normalY: 0, overlapping: false, pointCount: 0 });
+  });
+
+  it('leaves the point ARRAY untouched behind pointCount, which is the contract callers read', () => {
+    // Stated rather than assumed: clearing resets pointCount, not the two point slots behind it. A test
+    // asserting the slots were zeroed would be pinning an implementation detail the contract does not
+    // promise, and would fail the day the manifold reuses its allocation differently.
+    const out = createCollisionContactManifold();
+    expect(
+      collideContactManifold(
+        { kind: 'aabb', maxX: 2, maxY: 2, minX: 0, minY: 0 },
+        { kind: 'aabb', maxX: 3, maxY: 3, minX: 1, minY: 1 },
+        out,
+      ),
+    ).toBe(true);
+    const populated = out.points.map((point) => ({ x: point.x, y: point.y }));
+
+    expect(
+      collideContactManifold(
+        { kind: 'aabb', maxX: 1, maxY: 1, minX: 0, minY: 0 },
+        { kind: 'aabb', maxX: 41, maxY: 41, minX: 40, minY: 40 },
+        out,
+      ),
+    ).toBe(false);
+
+    expect(out.pointCount).toBe(0);
+    expect(out.points.map((point) => ({ x: point.x, y: point.y }))).toEqual(populated);
   });
 });
