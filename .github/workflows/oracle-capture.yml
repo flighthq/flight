@@ -53,18 +53,26 @@ jobs:
 
       - run: npm ci
 
-      # Which requests to capture: the dispatched one, or every request the push added or changed. A push
-      # that touches no request produces no matrix entry and the job ends green having done nothing —
-      # correct, because there was nothing commissioned.
+      # ★ THE QUEUE IS THE DIRECTORY, NOT THE DIFF. §5: "The directory is a queue of outstanding work, not
+      # an archive of every completed request. The lock-bump PR removes a fulfilled request." So every file
+      # present IS outstanding, and asking git what this push changed answers a question the design does not
+      # pose.
+      #
+      # The first run proved why that matters: diffing against the push event's `before` SHA died with
+      # `fatal: bad object`, because actions/checkout is a shallow clone and that commit is not in it.
+      # `fetch-depth: 0` would have fixed that one symptom and left the others — a force-push, a first push
+      # to a new branch, and a squash merge all produce a `before` that is absent, all-zeroes, or unrelated.
+      # Enumerating the queue has none of those cases, and it self-heals: a request whose capture failed is
+      # still in the directory, so the next push retries it instead of needing the failure re-committed.
       - id: requests
         run: |
           if [ -n "${{ github.event.inputs.request }}" ]; then
-            echo "list=${{ github.event.inputs.request }}" >> "$GITHUB_OUTPUT"
+            list="${{ github.event.inputs.request }}"
           else
-            list=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'oracle-requests/*.json' | tr '\n' ' ')
-            echo "list=$list" >> "$GITHUB_OUTPUT"
+            list=$(ls oracle-requests/*.json 2>/dev/null | tr '\n' ' ')
           fi
-          echo "requests: $(cat "$GITHUB_OUTPUT")"
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+          echo "outstanding requests: ${list:-<none>}"
 
       - name: Install Playwright browsers
         if: steps.requests.outputs.list != ''
