@@ -88,10 +88,12 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
   const ownsBrowser = options.browserSession === undefined;
   const launched =
     options.browserSession ??
-    (await launchBrowser({ captureFrames, verify, observe: options.observe }).catch((error: unknown) => {
-      options.server.kill();
-      throw error;
-    }));
+    (await launchBrowser({ captureFrames, verify, observe: options.observe, serverUrl: options.server.url }).catch(
+      (error: unknown) => {
+        options.server.kill();
+        throw error;
+      },
+    ));
   const { browser, context } = launched;
   const isAborted = installAbortHandler();
   let captured = 0;

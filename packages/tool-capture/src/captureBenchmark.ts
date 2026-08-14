@@ -476,7 +476,7 @@ export async function runCaptureBenchmark(options: Readonly<CaptureBenchmarkOpti
   const ownsBrowser = options.browserSession === undefined;
   const launched =
     options.browserSession ??
-    (await launchBrowser({ captureFrames: 0, verify: true }).catch((error: unknown) => {
+    (await launchBrowser({ captureFrames: 0, verify: true, serverUrl: options.server.url }).catch((error: unknown) => {
       options.server.kill();
       throw error;
     }));

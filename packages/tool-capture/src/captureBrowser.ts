@@ -16,7 +16,13 @@ export interface CaptureBrowserSession {
 }
 
 export async function launchBrowser(
-  options: { captureFrames?: number; verify?: boolean; observe?: boolean; timeoutMs?: number } = {},
+  options: {
+    captureFrames?: number;
+    verify?: boolean;
+    observe?: boolean;
+    timeoutMs?: number;
+    serverUrl?: string;
+  } = {},
 ): Promise<CaptureBrowserSession> {
   const { chromium } = await import('@playwright/test');
 
@@ -29,6 +35,15 @@ export async function launchBrowser(
     args: ['--enable-unsafe-webgpu', '--use-webgpu-adapter=swiftshader'],
   });
   const context = await browser.newContext({ viewport: { width: 800, height: 600 } });
+
+  // SwiftShader's Vulkan ICD cold-starts the first time a page requests a GPU adapter — JIT,
+  // driver init, and device creation can take 10–20 s on a software adapter, well beyond the
+  // per-page capture timeout. Warm the adapter here so every real capture page gets a hot path.
+  // The page is discarded; only the process-level GPU state survives. Needs a localhost URL
+  // (secure context) — navigator.gpu is unavailable on about:blank.
+  if (options.serverUrl) {
+    await warmWgpuAdapter(context, options.serverUrl);
+  }
 
   // Always signal capture mode before any page script runs. A page whose render advances over time
   // holds a fixed, self-seeded frame in this mode (the landing backgrounds do), so its screenshot —
@@ -321,4 +336,24 @@ export async function launchBrowser(
   );
 
   return { browser, context };
+}
+
+async function warmWgpuAdapter(context: BrowserContext, serverUrl: string): Promise<void> {
+  const page = await context.newPage();
+  try {
+    await page.goto(serverUrl, { waitUntil: 'commit', timeout: 10_000 });
+    const result = await page.evaluate(async () => {
+      if (typeof navigator === 'undefined' || !navigator.gpu) return 'no-gpu';
+      const adapter = await navigator.gpu.requestAdapter();
+      if (adapter === null) return 'no-adapter';
+      const device = await adapter.requestDevice();
+      device.destroy();
+      return 'ok';
+    });
+    if (result !== 'ok') {
+      console.warn(`[capture] WebGPU warm-up: ${result}`);
+    }
+  } finally {
+    await page.close().catch(() => {});
+  }
 }
