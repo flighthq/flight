@@ -1,7 +1,3 @@
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
 vi.mock('./wgpuEffectPass', () => ({
   createWgpuDualSourceEffectPipeline: vi.fn(() => ({ blendMode: 'replace', pipeline: {} })),
   createWgpuEffectPipeline: vi.fn(() => ({ blendMode: 'replace', pipeline: {} })),
