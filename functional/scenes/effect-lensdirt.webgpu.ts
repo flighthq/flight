@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,6 +7,7 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
+  getBitmapPixelRgb,
   createLensDirtEffect,
   createShape,
   createWgpuCanvasElement,
@@ -74,3 +75,23 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Lens dirt (intensity 1.5, threshold 0.45) overlays a procedural scattering pattern on bright
+// regions, simulating light spreading through a dirty lens. Background pixels near bright shapes
+// should show elevated luminance from the dirt scattering. A pixel at the frame edge center should
+// have luminance > 8 (above pure background ~5). Without the effect, it stays at ~5 and fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const rgb = getBitmapPixelRgb(frame, 8, Math.round(frame.height / 2));
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 8) {
+    throw new Error(
+      `[effect-lensdirt] edge pixel luminance is ${lum.toFixed(1)} (expected > 8) — ` +
+        `lens dirt scattering not visible; rgb(${r},${g},${b})`,
+    );
+  }
+}

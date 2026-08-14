@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   registerWgpuFxaaEffect,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -74,3 +75,25 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// FXAA smooths aliased edges through a full-frame post-process pass. Shape 0 (white, 0xffffffff)
+// at its center position should retain high luminance (> 200) after the FXAA pass, verifying the
+// pipeline processes content correctly. Without the effect pipeline or with a broken pass, the
+// frame is blank or corrupted and luminance drops below 200.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cx = Math.round(frame.width * 0.28);
+  const cy = Math.round(frame.height * 0.3);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 200) {
+    throw new Error(
+      `[effect-fxaa] white shape center has luminance ${lum.toFixed(1)} (expected > 200) — ` +
+        `FXAA pipeline should preserve content; rgb(${r},${g},${b})`,
+    );
+  }
+}

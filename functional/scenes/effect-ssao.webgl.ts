@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   defaultGlShapeRenderer,
   registerGlSsaoEffect,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -80,3 +81,25 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// SSAO (intensity 1, 16 samples) applies screen-space ambient occlusion, which may darken areas
+// near depth edges. Shape 0 (white, 0xffffffff) at its center should retain high luminance (> 150)
+// — SSAO darkens edges, not centers. This verifies the SSAO pipeline produces valid output.
+// Without the pipeline, the frame is blank.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cx = Math.round(frame.width * 0.28);
+  const cy = Math.round(frame.height * 0.3);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 150) {
+    throw new Error(
+      `[effect-ssao] white shape center has luminance ${lum.toFixed(1)} (expected > 150) — ` +
+        `SSAO pipeline should preserve content at shape centers; rgb(${r},${g},${b})`,
+    );
+  }
+}

@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -13,6 +13,7 @@ import {
   createWgpuRenderState,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -75,3 +76,20 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// MSAA (sampleCount 4) renders through a multisampled offscreen target that resolves to the canvas.
+// Shape 0 (0xff5c7c, R~255) at its center should retain R > 200 after the MSAA resolve, verifying
+// the pipeline produces correct content. Without the pipeline, the frame is blank.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cx = Math.round(frame.width * 0.28);
+  const cy = Math.round(frame.height * 0.3);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+
+  if (r <= 200) {
+    throw new Error(
+      `[effect-msaa] shape 0 center has R=${r} (expected > 200) — ` + `MSAA pipeline should preserve content`,
+    );
+  }
+}
