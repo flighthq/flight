@@ -125,10 +125,12 @@ for (const subject of subjects) {
   });
   report[subject] = diff;
   if (!jsonMode) {
-    const counts = { fingerprint: 0, oracle: 0, screenshot: 0 };
-    for (const kinds of Object.values(targets)) for (const kind of kinds) counts[kind]++;
+    // Derived from the observed kinds rather than a literal per-kind object: a new evidence kind must not
+    // be able to increment a key that does not exist and report NaN.
+    const counts: Partial<Record<CaptureBaselineEvidenceKind, number>> = {};
+    for (const kinds of Object.values(targets)) for (const kind of kinds) counts[kind] = (counts[kind] ?? 0) + 1;
     console.log(
-      `${subject}: ${Object.keys(targets).length} targets — ${counts.fingerprint} fingerprint, ${counts.screenshot} screenshot, ${counts.oracle} oracle`,
+      `${subject}: ${Object.keys(targets).length} targets — ${counts.fingerprint ?? 0} fingerprint, ${counts.screenshot ?? 0} screenshot, ${counts.oracle ?? 0} oracle`,
     );
     for (const lost of diff.lost) console.error(`  - ${lost}  (pinned, no longer carried)`);
     for (const absent of diff.absent) console.error(`  - ${absent}  (pinned, target no longer exists)`);
