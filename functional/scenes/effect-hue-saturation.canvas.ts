@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -76,3 +77,18 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const cx = Math.round(((0 + 0.5) * frame.width) / cols);
+  const cy = Math.round(((0 + 0.5) * frame.height) / rows);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const g = (rgb >> 8) & 0xff;
+
+  if (g <= 80) {
+    throw new Error(
+      `[effect-hue-saturation] red cell G=${g} after 90-degree hue rotation — expected G > 80 (original G=48)`,
+    );
+  }
+}
