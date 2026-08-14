@@ -80,8 +80,11 @@ describe('joinOracleState', () => {
 
   // ── §9 gates, each observed firing ────────────────────────────────────────────────────────────────
 
-  it('fires zero-comparisons when required cells exist and nothing compared', () => {
-    const result = join([cell('functional/a/webgl', { pinned: false })], [record(request('r1', 'functional', 'a'))]);
+  it('fires zero-comparisons when a required cell that nothing demoted failed to compare', () => {
+    // Deliberately NOT covered by a request: a pending cell is excluded from the denominator, so using
+    // one here would assert the gate fires on the documented bootstrap state. It did, until seeding the
+    // first real cell exposed it.
+    const result = join([cell('functional/a/webgl', { pinned: false })], []);
 
     expect(result.comparedCount).toBe(0);
     expect(kinds(result)).toContain('zero-comparisons');
@@ -89,6 +92,31 @@ describe('joinOracleState', () => {
 
   it('does not fire zero-comparisons on an empty corpus, which is not a misconfiguration', () => {
     expect(kinds(join([], []))).not.toContain('zero-comparisons');
+  });
+
+  // ★ THE SEED RUN. Commissioning the first reference image leaves one required cell, legitimately
+  // pending, and nothing to compare. This is the documented bootstrap state — a gate that fails it would
+  // make the mechanism's own first run look broken, and teach everyone to expect a red on seeding.
+  it('does not fire zero-comparisons when every required cell is legitimately pending', () => {
+    const result = join(
+      [cell('functional/shape-fill-solid/webgl', { pinned: false })],
+      [record(request('seed', 'functional', 'shape-fill-solid'))],
+    );
+
+    expect(verdicts(result)['functional/shape-fill-solid/webgl']).toBe('pending-uncaptured');
+    expect(kinds(result)).not.toContain('zero-comparisons');
+    expect(result.failures).toEqual([]);
+  });
+
+  // The control: one non-pending required cell that did not compare still trips the gate, so excluding
+  // pending cells narrowed the denominator rather than disabling the check.
+  it('still fires zero-comparisons when a non-pending required cell failed to compare', () => {
+    const result = join(
+      [cell('functional/a/webgl', { pinned: false }), cell('functional/b/webgl', { pinned: false })],
+      [record(request('seed', 'functional', 'a'))],
+    );
+
+    expect(kinds(result)).toContain('zero-comparisons');
   });
 
   it('fires orphaned-reference-image for pinned bytes with no live requirement', () => {

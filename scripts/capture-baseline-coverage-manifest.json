@@ -368,7 +368,7 @@
       "shape-fill-radial/webgpu": ["fingerprint", "oracle", "screenshot"],
       "shape-fill-solid/canvas": ["fingerprint", "oracle", "screenshot"],
       "shape-fill-solid/dom": ["fingerprint", "oracle", "screenshot"],
-      "shape-fill-solid/webgl": ["fingerprint", "oracle", "screenshot"],
+      "shape-fill-solid/webgl": ["fingerprint", "oracle", "referenceImage", "screenshot"],
       "shape-fill-solid/webgpu": ["fingerprint", "oracle", "screenshot"],
       "shape-fill-stroke-combined/canvas": ["oracle", "screenshot"],
       "shape-fill-stroke-combined/webgl": ["oracle", "screenshot"],
