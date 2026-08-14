@@ -1,0 +1,104 @@
+# Forwards a completed capture to `flight-oracles` as a fixed dispatch envelope.
+# agents/render-oracle-repository.md §7 step 3.
+#
+# ★★ THIS IS THE PRIVILEGED HALF, AND IT NEVER EXECUTES THE COMMISSIONED CHECKOUT.
+# It holds the credential that can open a pull request in another repository, so §7 requires it to be a
+# separately triggered workflow that "does not execute the Flight checkout or extract candidate-controlled
+# archives; it forwards only the fixed dispatch envelope and recorded digest."
+#
+# `workflow_run` is what enforces that. A `workflow_run` job runs the workflow file from the DEFAULT
+# BRANCH, with a fresh context — not the commissioned commit's copy of it. So a request that lands
+# malicious code changes what `oracle-capture` runs, and changes nothing about this file, this token, or
+# this envelope. There is deliberately NO checkout step here, and deliberately no artifact download: this
+# workflow never reads a byte the capture produced. It reads the run's metadata through the API and sends
+# identifiers onward. Intake downloads and verifies the bytes itself, with its own separation of
+# unprivileged extraction from privileged writing.
+#
+# ★ IF YOU ARE TEMPTED TO ADD `actions/download-artifact` HERE, THAT IS THE BOUNDARY BEING CROSSED.
+# Extracting a candidate-controlled archive in the job that holds the cross-repository token is exactly
+# the thing the split exists to prevent — an archive is attacker-controlled input, and this job's token
+# can rewrite the store the candidate is being measured against.
+name: oracle-bridge
+
+on:
+  workflow_run:
+    workflows: [oracle-capture]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  dispatch:
+    # Only a capture that actually succeeded is worth forwarding. A failed capture has no bundle, and an
+    # envelope pointing at nothing would open an intake run that can only fail further from the cause.
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the candidate artifact
+        id: artifact
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+            const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId,
+            });
+            const artifact = data.artifacts.find((entry) => entry.name.startsWith('oracle-candidate-'));
+            if (artifact === undefined) {
+              // Not an error worth failing the run over: an oracle-capture run that commissioned nothing
+              // uploads nothing, and that is its correct outcome. Saying so beats a red with no cause.
+              core.info('no candidate artifact on this run — nothing was commissioned');
+              core.setOutput('found', 'false');
+              return;
+            }
+            core.setOutput('found', 'true');
+            core.setOutput('id', String(artifact.id));
+            // The digest is what binds the envelope to bytes. Intake re-verifies it; forwarding it means a
+            // swapped artifact is detectable rather than merely unlikely.
+            core.setOutput('digest', artifact.digest ?? '');
+            core.setOutput('expires', artifact.expires_at ?? '');
+
+      - name: Dispatch to flight-oracles
+        if: steps.artifact.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          # A narrowly-scoped App or bot installed on both repositories (§7). Never the automatic
+          # GITHUB_TOKEN — it cannot reach another repository, and widening it would give this job's
+          # sibling capture workflow a token it must not have.
+          github-token: ${{ secrets.ORACLE_BRIDGE_TOKEN }}
+          script: |
+            const run = context.payload.workflow_run;
+            // ★ THE ENVELOPE IS FIXED AND CARRIES NO CANDIDATE-CONTROLLED CONTENT. Every field is either a
+            // repository fact or an identifier this job read from the Actions API. Nothing here was parsed
+            // out of the bundle, so a malicious bundle cannot influence what intake is told.
+            await github.rest.repos.createDispatchEvent({
+              owner: 'flighthq',
+              repo: 'flight-oracles',
+              event_type: 'flight-candidate',
+              client_payload: {
+                repository: `${context.repo.owner}/${context.repo.repo}`,
+                flightCommit: run.head_sha,
+                workflowRunId: String(run.id),
+                artifactId: steps.artifact.outputs.id,
+                artifactDigest: steps.artifact.outputs.digest,
+                artifactExpiresAt: steps.artifact.outputs.expires,
+              },
+            });
+            core.info(`dispatched candidate for ${run.head_sha} (artifact ${steps.artifact.outputs.id})`);
+
+      - name: Record what was forwarded
+        if: steps.artifact.outputs.found == 'true'
+        run: |
+          {
+            echo "### oracle bridge"
+            echo ""
+            echo "- flightCommit: \`${{ github.event.workflow_run.head_sha }}\`"
+            echo "- workflowRunId: \`${{ github.event.workflow_run.id }}\`"
+            echo "- artifactId: \`${{ steps.artifact.outputs.id }}\`"
+            echo "- artifactDigest: \`${{ steps.artifact.outputs.digest }}\`"
+            echo "- expires: \`${{ steps.artifact.outputs.expires }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

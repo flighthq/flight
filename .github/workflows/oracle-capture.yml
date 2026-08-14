@@ -1,0 +1,137 @@
+# Captures the cells one outstanding oracle request names and uploads the candidate bundle.
+# agents/render-oracle-repository.md §7 step 2.
+#
+# ★★ THIS WORKFLOW IS UNTRUSTED-CODE EXECUTION AND HOLDS NO CROSS-REPOSITORY CREDENTIAL.
+# It checks out a commissioned Flight commit and runs its build, its browsers and its capture tool —
+# whoever can land a request can run arbitrary code in this job. `permissions` is therefore read-only on
+# contents and nothing else, and there is no secret in this file. The dispatch to `flight-oracles` lives
+# in `oracle-bridge.yml`, which never executes this checkout. §7's credential boundary exists so that a
+# commissioned source commit cannot read the credential able to rewrite the store it is measured against;
+# splitting it across two workflows is what enforces it, not a convention anyone has to remember.
+#
+# ★ NOT `pull_request_target`, AND NOT A FORK TRIGGER. Both would hand a commissioned commit a token with
+# write scope on this repository. The trigger is a push to the trunk — work that has already landed — plus
+# a manual dispatch for re-running one request. That is the same boundary §7 names: "the user's normal
+# merge/push is the boundary at which remote automation can act."
+name: oracle-capture
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'oracle-requests/**'
+  workflow_dispatch:
+    inputs:
+      request:
+        description: 'Path to one oracle-requests/<id>.json to capture'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  # One capture per request at a time. Two concurrent runs of the same request would upload two bundles
+  # with the same request hash and different artifact digests, and intake could not tell which was current.
+  group: oracle-capture-${{ github.event.inputs.request || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The exact commissioned commit. `github.sha` on a push to the trunk IS the landed commit, which
+          # is the value §5 says binds a request — the request itself deliberately does not name it.
+          ref: ${{ github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Which requests to capture: the dispatched one, or every request the push added or changed. A push
+      # that touches no request produces no matrix entry and the job ends green having done nothing —
+      # correct, because there was nothing commissioned.
+      - id: requests
+        run: |
+          if [ -n "${{ github.event.inputs.request }}" ]; then
+            echo "list=${{ github.event.inputs.request }}" >> "$GITHUB_OUTPUT"
+          else
+            list=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'oracle-requests/*.json' | tr '\n' ' ')
+            echo "list=$list" >> "$GITHUB_OUTPUT"
+          fi
+          echo "requests: $(cat "$GITHUB_OUTPUT")"
+
+      - name: Install Playwright browsers
+        if: steps.requests.outputs.list != ''
+        run: npx playwright install --with-deps chromium
+
+      # ★ THE ENVIRONMENT IS RECORDED, NOT PINNED. §10 has not been ruled: whether reference sets are keyed
+      # per backend or per backend × environment is open, so this workflow does not presume a canonical
+      # environment exists. It records WHAT PRODUCED the image — runner image, browser build — as an
+      # opaque id travelling with the bundle. When §10 lands, this becomes either a pinned digest or a key;
+      # until then, recording it costs nothing and claiming it would be the schema decision being deferred.
+      - id: environment
+        if: steps.requests.outputs.list != ''
+        run: |
+          browser=$(npx playwright --version | tr -d ' ')
+          descriptor="runner=${ImageOS:-unknown};image=${ImageVersion:-unknown};${browser};viewport=default"
+          echo "id=$(printf '%s' "$descriptor" | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
+          echo "descriptor=$descriptor" >> "$GITHUB_OUTPUT"
+
+      - name: Capture the commissioned cells
+        if: steps.requests.outputs.list != ''
+        env:
+          ORACLE_FLIGHT_COMMIT: ${{ github.sha }}
+          ORACLE_ENVIRONMENT_ID: ${{ steps.environment.outputs.id }}
+        run: |
+          set -euo pipefail
+          for request in ${{ steps.requests.outputs.list }}; do
+            echo "::group::$request"
+            # The scope comes from the request through one code path (getOracleRequestCells), so the
+            # workflow never re-derives which cells are in scope. A second derivation here would be a
+            # second definition of "in scope" for the pending allowance to disagree with.
+            npx tsx ./scripts/oracle-commission.ts scope "$request" | while read -r args; do
+              npx tsx ./packages/tool-capture/src/bin.ts capture $args
+            done
+            npx tsx ./scripts/oracle-commission.ts bundle "$request" \
+              --artifacts .artifacts \
+              --out "candidate-$(basename "$request")"
+            echo "::endgroup::"
+          done
+
+      # The candidate PNGs and the bundle travel together: intake verifies the bundle's per-image
+      # artifactSha256 against these exact bytes before it stages anything.
+      - uses: actions/upload-artifact@v4
+        if: steps.requests.outputs.list != ''
+        with:
+          name: oracle-candidate-${{ github.sha }}
+          path: |
+            candidate-*.json
+            .artifacts/functional/**/screenshot.png
+            .artifacts/functional/**/status.json
+          if-no-files-found: error
+          retention-days: 30
+
+      # Recorded in the job summary so a human can see what was commissioned without downloading anything.
+      # §8: a capture failure is an explicit missing row — the bundle already carries it, this surfaces it.
+      - if: steps.requests.outputs.list != ''
+        run: |
+          {
+            echo "### oracle candidate"
+            echo ""
+            echo "- commit: \`${{ github.sha }}\`"
+            echo "- environment: \`${{ steps.environment.outputs.descriptor }}\`"
+            echo "- environmentId: \`${{ steps.environment.outputs.id }}\`"
+            echo ""
+            for bundle in candidate-*.json; do
+              echo "\`$bundle\`:"
+              echo '```json'
+              cat "$bundle"
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
