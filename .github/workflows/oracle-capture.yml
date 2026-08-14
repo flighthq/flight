@@ -142,16 +142,19 @@ jobs:
 
       # The candidate PNGs and the bundle travel together: intake verifies the bundle's per-image
       # artifactSha256 against these exact bytes before it stages anything.
+      # ★ THE MANIFEST IS ALWAYS `candidate.json`, ONE PER REQUEST DIRECTORY. That fixed name is the
+      # intake contract and it forces the per-request split: two requests staged into one tree would
+      # collide on the filename. The archive therefore holds `<requestStem>/candidate.json` plus that
+      # request's `images/`, and the bridge's envelope names the `requestPath` that selects which
+      # directory a given dispatch refers to.
+      #
+      # Whether Oracle wants ONE ARTIFACT PER REQUEST instead of one artifact holding per-request
+      # directories is an open interface question, not something to decide unilaterally here — the
+      # envelope already carries the binding either way.
       - uses: actions/upload-artifact@v4
         if: success() && steps.requests.outputs.list != ''
         with:
           name: oracle-candidate-${{ github.sha }}
-          # ★ ONE SELF-CONTAINED CANDIDATE TREE, AND `image.file` IS ITS ONLY MAP.
-          # Previously this uploaded Flight's raw capture tree, so the archive held
-          # `.artifacts/<subject>/<entry>/<renderer>/screenshot.png` while every bundle record said
-          # `<identity>.png` — intake would have read that as every image missing. It also needed
-          # `include-hidden-files` purely because `.artifacts` begins with a dot. Staging removes both:
-          # the archive shape is now a contract rather than a reflection of Flight's internals.
           path: candidate
           if-no-files-found: error
           retention-days: 30
@@ -161,7 +164,7 @@ jobs:
       - name: Assert the candidate carries its images
         if: success() && steps.requests.outputs.list != ''
         run: |
-          pngs=$(find candidate/images -name '*.png' 2>/dev/null | wc -l)
+          pngs=$(find candidate -name '*.png' 2>/dev/null | wc -l)
           echo "staged images: $pngs"
           find candidate -type f | sed 's/^/  /'
           if [ "$pngs" -eq 0 ]; then
@@ -178,7 +181,7 @@ jobs:
             echo "- environment: \`${{ steps.environment.outputs.descriptor }}\`"
             echo "- environmentId: \`${{ steps.environment.outputs.id }}\`"
             echo ""
-            for bundle in candidate/*.bundle.json; do
+            for bundle in candidate/*/candidate.json; do
               echo "\`$bundle\`:"
               echo '```json'
               cat "$bundle"

@@ -66,9 +66,15 @@ const bundle = buildOracleCandidateBundle({
   requestSha256: hashOracleFile(requestPath),
 });
 
-mkdirSync(stage, { recursive: true });
-const staged = stageOracleCandidateImages(bundle, artifactsRoot, stage);
-const out = join(stage, `${basename(requestPath, '.json')}.bundle.json`);
+// ★ ONE DIRECTORY PER REQUEST, AND THE MANIFEST IS ALWAYS `candidate.json`.
+// The fixed name is the Oracle intake contract, and it FORCES the per-request split: two requests
+// staged into one tree would collide on the filename, so "one artifact per request" is not a
+// preference here, it is the only shape a fixed manifest name admits.
+const requestStem = basename(requestPath, '.json');
+const stageRoot = join(stage, requestStem);
+mkdirSync(stageRoot, { recursive: true });
+const staged = stageOracleCandidateImages(bundle, artifactsRoot, stageRoot);
+const out = join(stageRoot, 'candidate.json');
 writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`);
 
 const captured = bundle.images.filter((image) => image.state === 'captured');
