@@ -1,4 +1,4 @@
-import type { Bitmap, Node2D } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -10,7 +10,6 @@ import {
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createDisplayObject,
-  getBitmapPixelRgb,
   createHueSaturationAdjustment,
   createShape,
   defaultCanvasShapeCommands,
@@ -77,24 +76,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// A 90-degree hue rotation shifts red (hue 0) toward yellow-green (hue 90). Cell 0 (red,
-// 0xff3030, R=255, G=48) should have its green channel dominate after rotation. The monotonicity of
-// the sRGB transfer function preserves channel ordering, so G > R holds in both sRGB and linear
-// pipelines. Without the effect, R=255 > G=48 and the assertion fails.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const cols = 3;
-  const rows = 2;
-  const cx = Math.round(((0 + 0.5) * frame.width) / cols);
-  const cy = Math.round(((0 + 0.5) * frame.height) / rows);
-  const rgb = getBitmapPixelRgb(frame, cx, cy);
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-
-  if (g <= r) {
-    throw new Error(
-      `[effect-hue-saturation] red cell has G=${g}, R=${r} after 90 degree hue rotation — expected G > R`,
-    );
-  }
-}

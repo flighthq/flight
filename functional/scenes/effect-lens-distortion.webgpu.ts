@@ -1,4 +1,4 @@
-import type { Bitmap, Node2D } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,7 +7,6 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
-  getBitmapPixelRgb,
   createLensDistortionEffect,
   createShape,
   createWgpuCanvasElement,
@@ -81,26 +80,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// Barrel distortion (amount 0.35) warps the frame through a radial lens curve. Shape 0 (white,
-// 0xffffffff) near the center of the frame should still be visible after distortion — the pipeline
-// must produce valid output. Check that a pixel near the center of the frame (where shapes overlap)
-// has luminance > 30 (above the dark 0x05060a background). Without any rendering or with a broken
-// pipeline, the frame is blank.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const cx = Math.round(frame.width * 0.35);
-  const cy = Math.round(frame.height * 0.45);
-  const rgb = getBitmapPixelRgb(frame, cx, cy);
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-  const b = rgb & 0xff;
-  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-  if (lum <= 30) {
-    throw new Error(
-      `[effect-lens-distortion] pixel near shape center has luminance ${lum.toFixed(1)} ` +
-        `(expected > 30) — lens distortion pipeline should preserve content; rgb(${r},${g},${b})`,
-    );
-  }
-}

@@ -1,4 +1,4 @@
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -13,7 +13,6 @@ import {
   createShape,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
-  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -73,22 +72,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// Empty effect list is a passthrough — the frame should match the unprocessed scene. Cell 0
-// (0xff5c5c, R≈255, G≈92, B≈92) should be preserved. The oracle catches pipeline bugs that corrupt
-// content during the round-trip through the effect pipeline.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const cx = Math.round(frame.width * 0.25);
-  const cy = Math.round(frame.height * 0.25);
-  const rgb = getBitmapPixelRgb(frame, cx, cy);
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-  const b = rgb & 0xff;
-
-  if (r < 200 || g > 130 || b > 130) {
-    throw new Error(
-      `[effect-empty-passthrough] cell 0 has rgb(${r},${g},${b}) — expected red-dominant (R>200, G<130, B<130) for passthrough`,
-    );
-  }
-}

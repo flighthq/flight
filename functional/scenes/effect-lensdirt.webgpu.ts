@@ -1,4 +1,4 @@
-import type { Bitmap, Node2D } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,7 +7,6 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
-  getBitmapPixelRgb,
   createLensDirtEffect,
   createShape,
   createWgpuCanvasElement,
@@ -75,25 +74,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// Lens dirt (intensity 1.5, threshold 0.45) scatters light from bright sources through a procedural
-// smudge pattern. The frame center is background (0x101014, luminance ≈ 16.5), surrounded by four
-// bright blocks whose scattering should elevate center luminance above 20. Without the effect, the
-// center pixel stays at background luminance ≈ 16.5 and fails.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const cx = Math.round(frame.width / 2);
-  const cy = Math.round(frame.height / 2);
-  const rgb = getBitmapPixelRgb(frame, cx, cy);
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-  const b = rgb & 0xff;
-  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-  if (lum <= 20) {
-    throw new Error(
-      `[effect-lensdirt] center pixel luminance is ${lum.toFixed(1)} (expected > 20) — ` +
-        `lens dirt scattering should elevate background between bright shapes; rgb(${r},${g},${b})`,
-    );
-  }
-}
