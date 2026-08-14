@@ -38,7 +38,7 @@ describe('CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION', () => {
 
 describe('CAPTURE_BASELINE_EVIDENCE_KINDS', () => {
   it('is the three evidence kinds, sorted', () => {
-    expect(CAPTURE_BASELINE_EVIDENCE_KINDS).toEqual(['fingerprint', 'oracle', 'screenshot']);
+    expect(CAPTURE_BASELINE_EVIDENCE_KINDS).toEqual(['fingerprint', 'oracle', 'referenceImage', 'screenshot']);
   });
 });
 
@@ -295,6 +295,48 @@ describe('schema 1 migration', () => {
 });
 
 describe('writeCaptureBaselineCoverageManifest', () => {
+  // ★ THE FIRING TEST FOR THE referenceImage ASYMMETRY. A referenceImage lives in a flight-oracles
+  // release, so no local capture run can observe one. If the routine `--update` could retire what it
+  // cannot see, a single acceptance command would delete the whole full-resolution tier's requirements —
+  // the "make CI green by deleting the requirement" failure the manifest exists to prevent. The carry-
+  // forward is what stops it, and this is the test that watches it hold.
+  it('carries a referenceImage pin forward through an update that could not observe it', () => {
+    const root = mkdtempSync(join(tmpdir(), 'flight-coverage-refimg-'));
+    mkdirSync(join(root, 'scripts'));
+    writeCaptureBaselineCoverageManifest(root, 'functional', { 'a/webgl': ['fingerprint', 'referenceImage'] });
+
+    // A capture run observes only what it produces; referenceImage is absent from observedKinds.
+    const manifest = writeCaptureBaselineCoverageManifest(
+      root,
+      'functional',
+      { 'a/webgl': ['fingerprint'] },
+      null,
+      ['a/webgl'],
+      ['fingerprint', 'oracle', 'screenshot'],
+    );
+
+    expect(manifest.subjects['functional']?.['a/webgl']).toEqual(['fingerprint', 'referenceImage']);
+  });
+
+  // The control for the test above: a kind the run CAN observe is still retired when it goes missing,
+  // so the carry-forward is scoped to unobservable kinds rather than disabling retirement wholesale.
+  it('still retires an observable kind the run determined to be gone', () => {
+    const root = mkdtempSync(join(tmpdir(), 'flight-coverage-refimg-control-'));
+    mkdirSync(join(root, 'scripts'));
+    writeCaptureBaselineCoverageManifest(root, 'functional', { 'a/webgl': ['fingerprint', 'screenshot'] });
+
+    const manifest = writeCaptureBaselineCoverageManifest(
+      root,
+      'functional',
+      { 'a/webgl': ['fingerprint'] },
+      null,
+      ['a/webgl'],
+      ['fingerprint', 'oracle', 'screenshot'],
+    );
+
+    expect(manifest.subjects['functional']?.['a/webgl']).toEqual(['fingerprint']);
+  });
+
   // A functional update run knows nothing about the examples subject and must not speak for it.
   it('rewrites ONE subject and preserves the others', () => {
     const root = mkdtempSync(join(tmpdir(), 'flight-coverage-'));

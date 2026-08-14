@@ -35,8 +35,24 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** The three kinds of evidence a capture target can carry. Each is independently losable. */
-export type CaptureBaselineEvidenceKind = 'fingerprint' | 'oracle' | 'screenshot';
+/**
+ * The kinds of evidence a capture target can carry. Each is independently losable.
+ *
+ * ★ `referenceImage` IS NOT LOCALLY OBSERVABLE, AND THAT ASYMMETRY IS DELIBERATE. The other three are
+ * produced by a capture run and can be seen on disk after it. A `referenceImage` is a blessed full-
+ * resolution PNG living in a `flight-oracles` release, joined in through `scripts/oracle-lock.json`
+ * (agents/render-oracle-repository.md §5) — no local run can confirm or deny one. So `scripts/capture-
+ * evidence.ts` deliberately does NOT pass it in `observedKinds`, which makes `writeCaptureBaselineCoverage-
+ * Manifest` carry every `referenceImage` pin forward untouched on every `--update`.
+ * That looks like an omission and is the opposite: without it, the routine acceptance command would
+ * retire the entire tier's requirements simply because it could not see them, which is precisely the
+ * "make CI green by deleting the thing CI was meant to require" failure §5 exists to prevent.
+ *
+ * ★ NOT NAMED `oracle`. `oracle` already means the scene's in-page `assertRender` mechanism in this very
+ * union. Reusing it would let a static scan finding an `assertRender` export be mistaken for proof that a
+ * blessed reference image exists — two different claims about two different artifacts.
+ */
+export type CaptureBaselineEvidenceKind = 'fingerprint' | 'oracle' | 'referenceImage' | 'screenshot';
 
 export interface CaptureBaselineCoverageManifest {
   schemaVersion: 2;
@@ -61,6 +77,7 @@ export const CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION = 2;
 export const CAPTURE_BASELINE_EVIDENCE_KINDS: readonly CaptureBaselineEvidenceKind[] = [
   'fingerprint',
   'oracle',
+  'referenceImage',
   'screenshot',
 ];
 

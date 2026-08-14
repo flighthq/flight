@@ -1,0 +1,244 @@
+// The two Flight-owned records of the render-oracle proposal (agents/render-oracle-repository.md §5):
+// the immutable consumer lock, and the outstanding-commission queue. Parsing and validation only —
+// the join that turns these into CI verdicts is `oracle-state.ts`, and the identity generator that
+// says what a reference-image identity IS remains unwritten pending the §10 environment ruling.
+//
+// ★ THREE RECORDS, THREE MEANINGS, AND THEY ARE NOT MERGEABLE (§5). The coverage manifest says which
+// identities OWE a referent; a request says which are being re-commissioned and why; the lock says
+// which immutable bytes satisfy them. Collapsing any two would let an agent make CI green by deleting
+// the thing CI was meant to require — the coverage manifest already carries that argument for its own
+// subject (`captureBaselineCoverageManifest.ts`) and it is the same argument here.
+//
+// ★ IDENTITIES ARE OPAQUE STRINGS ON PURPOSE. §10 is an open decision — whether a reference set has one
+// column per backend or one per backend × environment — and it determines the KEYING. Nothing in this
+// file or in `oracle-state.ts` parses an identity, so the ruling changes only whoever generates them.
+// Do not add an `environmentId` field here to "get ahead": committing the schema is exactly what the
+// document defers.
+//
+// Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
+// graph — the same reason `FixtureExtractionVerification` lives in `scripts/fixtures.ts`.
+import { readFileSync } from 'node:fs';
+
+export interface OracleLock {
+  schemaVersion: 1;
+  /** `owner/name` of the repository whose releases supply the blessed bytes. */
+  repository: string;
+  /** The 40-hex Oracle commit the release was cut from. */
+  oracleCommit: string;
+  /** The immutable release tag. Never `latest` — see FIXTURE_RELEASE_TAG for the same argument. */
+  releaseTag: string;
+  manifestSha256: string;
+  /** Pack id → the asset that carries it. Packs, never individual image allowances (§5). */
+  packs: Record<string, OracleLockPack>;
+}
+
+export interface OracleLockPack {
+  file: string;
+  sha256: string;
+}
+
+export interface OracleRequest {
+  schemaVersion: 1;
+  id: string;
+  subject: string;
+  targets: readonly OracleRequestTarget[];
+  frames: number;
+  reason: string;
+}
+
+export interface OracleRequestTarget {
+  entry: string;
+  renderers: readonly string[];
+}
+
+/** A record that did not parse, named so a caller can report it rather than throw over the corpus. */
+export interface OracleRecordProblem {
+  /** The file the problem was found in, as given to the reader. */
+  source: string;
+  /** Machine-readable, and stable enough to assert on in a firing test. */
+  kind: OracleRecordProblemKind;
+  detail: string;
+}
+
+export type OracleRecordProblemKind =
+  | 'not-json'
+  | 'not-an-object'
+  | 'schema-version'
+  | 'field-missing'
+  | 'field-type'
+  | 'field-empty'
+  | 'duplicate-target';
+
+const HEX_40 = /^[0-9a-f]{40}$/;
+const HEX_64 = /^[0-9a-f]{64}$/;
+
+/**
+ * Reads and validates a consumer lock. Returns the lock, or every problem found — a malformed lock is a
+ * reportable condition, not a crash, because CI must name it in the summary alongside the cells it
+ * could not verify.
+ */
+export function readOracleLock(path: string): OracleLockResult {
+  const parsed = readJsonRecord(path);
+  if ('problems' in parsed) return parsed;
+  const value = parsed.value;
+  const problems: OracleRecordProblem[] = [];
+
+  requireSchemaVersion(problems, path, value, 1);
+  requireNonEmptyString(problems, path, value, 'repository');
+  requirePattern(problems, path, value, 'oracleCommit', HEX_40, 'a 40-hex commit');
+  requireNonEmptyString(problems, path, value, 'releaseTag');
+  requirePattern(problems, path, value, 'manifestSha256', HEX_64, 'a 64-hex sha256');
+
+  const packs = value['packs'];
+  if (packs === undefined) problems.push(problem(path, 'field-missing', 'packs is missing'));
+  else if (!isPlainObject(packs)) problems.push(problem(path, 'field-type', 'packs must be an object'));
+  else if (Object.keys(packs).length === 0) problems.push(problem(path, 'field-empty', 'packs is empty'));
+  else {
+    for (const [id, pack] of Object.entries(packs)) {
+      if (!isPlainObject(pack)) {
+        problems.push(problem(path, 'field-type', `packs.${id} must be an object`));
+        continue;
+      }
+      requireNonEmptyString(problems, path, pack, `packs.${id}.file`, pack['file']);
+      requirePattern(problems, path, pack, `packs.${id}.sha256`, HEX_64, 'a 64-hex sha256', pack['sha256']);
+    }
+  }
+
+  return problems.length > 0 ? { problems } : { lock: value as unknown as OracleLock };
+}
+
+export type OracleLockResult = { lock: OracleLock } | { problems: OracleRecordProblem[] };
+
+/**
+ * Reads and validates one outstanding commission. A request names live targets and a reason; it never
+ * carries the SHA of the commit containing it (§5) — that self-reference cannot be known before the
+ * commit exists, and the trusted workflow binds the request to the landed `github.sha` instead.
+ */
+export function readOracleRequest(path: string): OracleRequestResult {
+  const parsed = readJsonRecord(path);
+  if ('problems' in parsed) return parsed;
+  const value = parsed.value;
+  const problems: OracleRecordProblem[] = [];
+
+  requireSchemaVersion(problems, path, value, 1);
+  requireNonEmptyString(problems, path, value, 'id');
+  requireNonEmptyString(problems, path, value, 'subject');
+  requireNonEmptyString(problems, path, value, 'reason');
+
+  const frames = value['frames'];
+  if (frames === undefined) problems.push(problem(path, 'field-missing', 'frames is missing'));
+  else if (typeof frames !== 'number' || !Number.isInteger(frames) || frames < 1) {
+    problems.push(problem(path, 'field-type', 'frames must be a positive integer'));
+  }
+
+  const targets = value['targets'];
+  if (targets === undefined) problems.push(problem(path, 'field-missing', 'targets is missing'));
+  else if (!Array.isArray(targets)) problems.push(problem(path, 'field-type', 'targets must be an array'));
+  else if (targets.length === 0) problems.push(problem(path, 'field-empty', 'targets is empty'));
+  else {
+    const seen = new Set<string>();
+    for (const [index, target] of targets.entries()) {
+      if (!isPlainObject(target)) {
+        problems.push(problem(path, 'field-type', `targets[${index}] must be an object`));
+        continue;
+      }
+      requireNonEmptyString(problems, path, target, `targets[${index}].entry`, target['entry']);
+      const renderers = target['renderers'];
+      if (!Array.isArray(renderers) || renderers.length === 0) {
+        problems.push(problem(path, 'field-empty', `targets[${index}].renderers must be a non-empty array`));
+        continue;
+      }
+      for (const renderer of renderers) {
+        if (typeof renderer !== 'string' || renderer.length === 0) {
+          problems.push(problem(path, 'field-type', `targets[${index}].renderers must be strings`));
+          continue;
+        }
+        // A request that names the same cell twice would let one entry be satisfied while the other
+        // silently keeps the cell pending, so it is rejected at the door rather than deduplicated.
+        const cell = `${String(target['entry'])}/${renderer}`;
+        if (seen.has(cell)) problems.push(problem(path, 'duplicate-target', `${cell} is named twice`));
+        seen.add(cell);
+      }
+    }
+  }
+
+  return problems.length > 0 ? { problems } : { request: value as unknown as OracleRequest };
+}
+
+export type OracleRequestResult = { request: OracleRequest } | { problems: OracleRecordProblem[] };
+
+/**
+ * The cells one request claims, as `subject/entry/renderer`. This is the ONLY place a request's scope is
+ * expanded, so "in scope" has exactly one definition for the pending allowance and the out-of-scope gate.
+ */
+export function getOracleRequestCells(request: Readonly<OracleRequest>): string[] {
+  const cells: string[] = [];
+  for (const target of request.targets) {
+    for (const renderer of target.renderers) cells.push(`${request.subject}/${target.entry}/${renderer}`);
+  }
+  return cells;
+}
+
+function readJsonRecord(path: string): { value: Record<string, unknown> } | { problems: OracleRecordProblem[] } {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    return { problems: [problem(path, 'not-json', `unreadable: ${String(error)}`)] };
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch (error) {
+    return { problems: [problem(path, 'not-json', String(error))] };
+  }
+  if (!isPlainObject(value)) return { problems: [problem(path, 'not-an-object', 'the root value is not an object')] };
+  return { value };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function problem(source: string, kind: OracleRecordProblemKind, detail: string): OracleRecordProblem {
+  return { source, kind, detail };
+}
+
+function requireNonEmptyString(
+  problems: OracleRecordProblem[],
+  source: string,
+  holder: Record<string, unknown>,
+  field: string,
+  value: unknown = holder[field],
+): void {
+  if (value === undefined) problems.push(problem(source, 'field-missing', `${field} is missing`));
+  else if (typeof value !== 'string') problems.push(problem(source, 'field-type', `${field} must be a string`));
+  else if (value.length === 0) problems.push(problem(source, 'field-empty', `${field} is empty`));
+}
+
+function requirePattern(
+  problems: OracleRecordProblem[],
+  source: string,
+  holder: Record<string, unknown>,
+  field: string,
+  pattern: RegExp,
+  expectation: string,
+  value: unknown = holder[field],
+): void {
+  if (value === undefined) problems.push(problem(source, 'field-missing', `${field} is missing`));
+  else if (typeof value !== 'string') problems.push(problem(source, 'field-type', `${field} must be a string`));
+  else if (!pattern.test(value)) problems.push(problem(source, 'field-type', `${field} must be ${expectation}`));
+}
+
+function requireSchemaVersion(
+  problems: OracleRecordProblem[],
+  source: string,
+  value: Record<string, unknown>,
+  expected: number,
+): void {
+  const actual = value['schemaVersion'];
+  if (actual === undefined) problems.push(problem(source, 'field-missing', 'schemaVersion is missing'));
+  else if (actual !== expected) {
+    problems.push(problem(source, 'schema-version', `schemaVersion ${String(actual)} is not ${expected}`));
+  }
+}

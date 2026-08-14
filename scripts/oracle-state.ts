@@ -1,0 +1,288 @@
+// The Flight-side join of the render-oracle proposal (agents/render-oracle-repository.md §6 and §9):
+// given what the coverage manifest REQUIRES, what the lock PINS, and what the request queue has
+// OUTSTANDING, decide each cell's verdict — and decide it in one place so "pending" cannot mean two
+// things in two reports.
+//
+// ★ WHY A JOIN AND NOT THREE INDEPENDENT CHECKS. The states are not independent: a missing image is a
+// hard failure ONLY when nothing requested it, and a mismatch is demoted to pending ONLY when a request
+// names that exact cell. Computed separately, each check has to re-derive the other two's inputs, and
+// the version that drifts is whichever one a later change forgets — the parallel-re-derivation failure
+// the diagnostics convention names. One function, one table, one vocabulary.
+//
+// ★ PENDING IS A NARROW ALLOWANCE, NOT A SKIP LIST (§6). It never prints as a pass, it demotes only the
+// cells its request names, and a request that has gone stale stops demoting anything. The document is
+// explicit that without a bound "the commissioning queue becomes a permanent skip list under a more
+// reassuring name", so `maxPendingDays` is a required input here rather than an option with a default.
+//
+// ★ IDENTITIES ARE OPAQUE. Nothing here parses `subject/entry/renderer`. §10 has not been ruled, so the
+// keying may gain an environment column; when it does, the generator changes and this file does not.
+import type { OracleRequest } from './oracle-records';
+import { getOracleRequestCells } from './oracle-records';
+
+/** What CI may claim about one required cell. Ordered worst-first for stable reporting. */
+export type OracleCellVerdict =
+  /** Required, no pinned bytes, and nothing outstanding asked for them. §6 row 4. */
+  | 'missing'
+  /** Pinned bytes exist for a cell nothing requires — evidence with no live referent. */
+  | 'orphan'
+  /** Compared and outside tolerance, with no request covering it. */
+  | 'regressed'
+  /** A dimension change: reported as a verdict rather than thrown, so one resized scene cannot abort the corpus. */
+  | 'incomparable'
+  /** A request names it and no pinned bytes exist yet: explicitly pending, no comparison claimed. §6 row 3. */
+  | 'pending-uncaptured'
+  /** A request names it, prior bytes exist, and the movement is in scope. §6 row 2. */
+  | 'pending-changed'
+  /** Compared against the pinned bytes and within tolerance. The only verdict that is a pass. */
+  | 'compared';
+
+export interface OracleCellInput {
+  identity: string;
+  /** Does the coverage manifest require a referenceImage for this cell? */
+  required: boolean;
+  /** Did the lock's packs supply bytes for it? */
+  pinned: boolean;
+  /**
+   * The comparison outcome, when one was actually performed. `null` when no comparison was attempted —
+   * which is not the same as a comparison that found nothing, and is why this is not a boolean.
+   */
+  comparison: OracleCellComparison | null;
+}
+
+export interface OracleCellComparison {
+  /** From getBitmapMismatch. Do NOT inherit the fingerprint-space tolerances (§2). */
+  fraction: number;
+  maxChannelDelta: number;
+  /** True when the two images differed in size; `fraction` and `maxChannelDelta` are then meaningless. */
+  dimensionMismatch: boolean;
+}
+
+export interface OracleComparisonPolicy {
+  /** Versioned so a threshold change is a visible record change, not a silent re-tune (§8). */
+  comparisonPolicyId: string;
+  maxFraction: number;
+  /** When false, `maxChannelDelta` is reported but does not gate — the document leaves this a policy choice. */
+  gateOnMaxChannelDelta: boolean;
+  maxChannelDelta: number;
+}
+
+export interface OracleRequestRecord {
+  request: OracleRequest;
+  /** Age in days at evaluation time, supplied by the caller so this stays a pure function. */
+  ageDays: number;
+}
+
+export interface OracleJoinInput {
+  cells: readonly OracleCellInput[];
+  requests: readonly OracleRequestRecord[];
+  policy: Readonly<OracleComparisonPolicy>;
+  /** §6: repository policy must bound how long a request may remain pending. No default is offered. */
+  maxPendingDays: number;
+}
+
+export interface OracleCellResult {
+  identity: string;
+  verdict: OracleCellVerdict;
+  /** The request id that demoted this cell, when one did. */
+  requestId: string | null;
+  detail: string;
+}
+
+export interface OracleJoinResult {
+  cells: readonly OracleCellResult[];
+  /** Every failure the run must surface, worst-first. Empty means the run may pass. */
+  failures: readonly OracleJoinFailure[];
+  /** Cells that compared and passed. Zero of these with work outstanding is itself a failure. */
+  comparedCount: number;
+  pendingCount: number;
+}
+
+export interface OracleJoinFailure {
+  kind: OracleJoinFailureKind;
+  identity: string | null;
+  detail: string;
+}
+
+export type OracleJoinFailureKind =
+  | 'missing-reference-image'
+  | 'orphaned-reference-image'
+  | 'regression'
+  | 'incomparable-dimensions'
+  | 'zero-comparisons'
+  | 'request-expired'
+  | 'request-overlap'
+  | 'request-off-target';
+
+/**
+ * Joins requirement, pinned bytes and outstanding requests into one verdict per cell, plus the run-level
+ * gates. Pure: the caller supplies ages and comparison outcomes, so this is decidable in a unit test
+ * without a network, a GPU, or a clock.
+ */
+export function joinOracleState(input: Readonly<OracleJoinInput>): OracleJoinResult {
+  const failures: OracleJoinFailure[] = [];
+  const required = new Set(input.cells.filter((cell) => cell.required).map((cell) => cell.identity));
+  const live = new Set(input.cells.map((cell) => cell.identity));
+
+  // Which cells are legitimately demoted, and by which request. Expired requests demote nothing — an
+  // unbounded queue is a skip list — and a cell claimed twice is rejected rather than arbitrated, since
+  // picking a winner would make the overlap invisible in exactly the case it matters.
+  const demotedBy = new Map<string, string>();
+  const claimants = new Map<string, string[]>();
+  for (const record of input.requests) {
+    const expired = record.ageDays > input.maxPendingDays;
+    if (expired) {
+      failures.push({
+        kind: 'request-expired',
+        identity: null,
+        detail: `request ${record.request.id} is ${record.ageDays}d old, over the ${input.maxPendingDays}d bound`,
+      });
+    }
+    for (const cell of getOracleRequestCells(record.request)) {
+      claimants.set(cell, [...(claimants.get(cell) ?? []), record.request.id]);
+      // A request may only name cells that exist and are required; otherwise it could silence a cell
+      // nobody is watching, or pre-authorise one that was never commissioned.
+      if (!live.has(cell) || !required.has(cell)) {
+        failures.push({
+          kind: 'request-off-target',
+          identity: cell,
+          detail: `request ${record.request.id} names ${cell}, which is not a required live cell`,
+        });
+        continue;
+      }
+      if (!expired) demotedBy.set(cell, record.request.id);
+    }
+  }
+  for (const [cell, ids] of claimants) {
+    if (ids.length > 1) {
+      failures.push({
+        kind: 'request-overlap',
+        identity: cell,
+        detail: `${cell} is claimed by ${ids.length} open requests: ${ids.join(', ')}`,
+      });
+    }
+  }
+
+  const cells: OracleCellResult[] = [];
+  let comparedCount = 0;
+  let pendingCount = 0;
+
+  for (const cell of input.cells) {
+    const requestId = demotedBy.get(cell.identity) ?? null;
+
+    if (!cell.required) {
+      if (cell.pinned) {
+        cells.push({ identity: cell.identity, verdict: 'orphan', requestId, detail: 'pinned with no requirement' });
+        failures.push({
+          kind: 'orphaned-reference-image',
+          identity: cell.identity,
+          detail: 'a pinned reference image has no live required target',
+        });
+      }
+      continue;
+    }
+
+    if (!cell.pinned) {
+      if (requestId !== null) {
+        pendingCount += 1;
+        cells.push({
+          identity: cell.identity,
+          verdict: 'pending-uncaptured',
+          requestId,
+          detail: 'commissioned; no blessed bytes yet, so no comparison is claimed',
+        });
+      } else {
+        cells.push({
+          identity: cell.identity,
+          verdict: 'missing',
+          requestId: null,
+          detail: 'required, unpinned, and nothing requested it',
+        });
+        failures.push({
+          kind: 'missing-reference-image',
+          identity: cell.identity,
+          detail: 'required reference image is absent and uncommissioned',
+        });
+      }
+      continue;
+    }
+
+    const comparison = cell.comparison;
+    if (comparison === null) {
+      cells.push({
+        identity: cell.identity,
+        verdict: 'missing',
+        requestId,
+        detail: 'pinned but never compared — a capture that did not run is missing, not passing',
+      });
+      failures.push({
+        kind: 'missing-reference-image',
+        identity: cell.identity,
+        detail: 'pinned reference image was never compared',
+      });
+      continue;
+    }
+
+    // A dimension change is a verdict, not a crash (§9). getBitmapMismatch throws on mismatched sizes,
+    // which is correct for a programmer error but wrong for a corpus run: one resized scene must not
+    // abort the other four hundred.
+    if (comparison.dimensionMismatch) {
+      cells.push({
+        identity: cell.identity,
+        verdict: 'incomparable',
+        requestId,
+        detail: 'reference and candidate differ in size',
+      });
+      failures.push({
+        kind: 'incomparable-dimensions',
+        identity: cell.identity,
+        detail: 'reference and candidate differ in size',
+      });
+      continue;
+    }
+
+    const withinFraction = comparison.fraction <= input.policy.maxFraction;
+    const withinChannel =
+      !input.policy.gateOnMaxChannelDelta || comparison.maxChannelDelta <= input.policy.maxChannelDelta;
+    if (withinFraction && withinChannel) {
+      comparedCount += 1;
+      cells.push({ identity: cell.identity, verdict: 'compared', requestId, detail: describe(comparison) });
+      continue;
+    }
+
+    if (requestId !== null) {
+      pendingCount += 1;
+      cells.push({
+        identity: cell.identity,
+        verdict: 'pending-changed',
+        requestId,
+        detail: `in-scope movement awaiting blessing — ${describe(comparison)}`,
+      });
+      continue;
+    }
+
+    cells.push({ identity: cell.identity, verdict: 'regressed', requestId: null, detail: describe(comparison) });
+    failures.push({ kind: 'regression', identity: cell.identity, detail: describe(comparison) });
+  }
+
+  // §9: a gated run that compared zero non-pending images is unconfigured, not clean. Guarded on there
+  // being work at all, so an empty corpus is not reported as a misconfiguration.
+  if (comparedCount === 0 && required.size > 0) {
+    failures.push({
+      kind: 'zero-comparisons',
+      identity: null,
+      detail: `${required.size} required cell(s) and zero comparisons — unconfigured, not clean`,
+    });
+  }
+
+  return { cells, failures, comparedCount, pendingCount };
+}
+
+/** Stable one-line summary of a comparison, so a report row and a failure detail cannot disagree. */
+export function describeOracleComparison(comparison: Readonly<OracleCellComparison>): string {
+  return describe(comparison);
+}
+
+function describe(comparison: Readonly<OracleCellComparison>): string {
+  if (comparison.dimensionMismatch) return 'dimension mismatch';
+  return `fraction ${comparison.fraction.toFixed(6)}, maxChannelDelta ${comparison.maxChannelDelta}`;
+}
