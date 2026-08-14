@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,6 +7,7 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
+  getBitmapPixelRgb,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -82,3 +83,20 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Warm white balance (temperature 0.4) boosts the red channel and attenuates blue. Cell 2
+// (blue, 0x3060ff, R=48) should have its red channel lifted above 60. Without the effect,
+// R=48 < 60 and the assertion fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const cx = Math.round(((2 + 0.5) * frame.width) / cols);
+  const cy = Math.round(((0 + 0.5) * frame.height) / rows);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+
+  if (r <= 60) {
+    throw new Error(`[effect-white-balance] blue cell R=${r} after warm temperature — expected R > 60`);
+  }
+}

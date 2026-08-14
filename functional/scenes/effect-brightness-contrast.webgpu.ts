@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,6 +8,7 @@ import {
   beginWgpuRenderEffectPipeline,
   createBrightnessContrastAdjustment,
   createDisplayObject,
+  getBitmapPixelRgb,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -82,3 +83,26 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Positive brightness (0.15) lifts all luminances. Cell 2 (blue, 0x3060ff) has the lowest input
+// perceived luminance at ~100. After the brightness lift, its output luminance exceeds 115 in both
+// sRGB and linear pipelines. Without the effect, cell 2 stays at ~100 and fails the check.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const cx = Math.round(((2 + 0.5) * frame.width) / cols);
+  const cy = Math.round(((0 + 0.5) * frame.height) / rows);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 115) {
+    throw new Error(
+      `[effect-brightness-contrast] blue cell luminance is ${lum.toFixed(1)} (expected > 115) — ` +
+        `brightness lift not applied; rgb(${r},${g},${b})`,
+    );
+  }
+}

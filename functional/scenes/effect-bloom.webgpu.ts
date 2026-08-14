@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   registerWgpuBloomEffect,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -77,3 +78,23 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Bloom adds glow from bright regions into surrounding dark areas. The background (0x05060a,
+// luminance ~5) should receive light bleeding from the nearby bright shapes. A sample point at
+// the frame's left edge center (between shapes) should show elevated luminance from bloom glow.
+// Without bloom, this pixel is the pure background at luminance ~5 and fails the > 10 check.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const rgb = getBitmapPixelRgb(frame, 8, Math.round(frame.height / 2));
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 10) {
+    throw new Error(
+      `[effect-bloom] edge pixel luminance is ${lum.toFixed(1)} (expected > 10) — ` +
+        `no bloom glow detected in dark area; rgb(${r},${g},${b})`,
+    );
+  }
+}

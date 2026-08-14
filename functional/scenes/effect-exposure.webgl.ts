@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -14,6 +14,7 @@ import {
   createShape,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -75,3 +76,21 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Exposure 1 applies a 2x brightness multiplier. The dark background (0x05060a, luminance ~5)
+// should double to ~10+. Without the effect, the background stays at ~5 and fails the > 8 check.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const rgb = getBitmapPixelRgb(frame, 4, 4);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 8) {
+    throw new Error(
+      `[effect-exposure] corner pixel luminance is ${lum.toFixed(1)} (expected > 8) — ` +
+        `exposure multiplier not applied; rgb(${r},${g},${b})`,
+    );
+  }
+}
