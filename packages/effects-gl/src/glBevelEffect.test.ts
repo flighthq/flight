@@ -8,10 +8,6 @@ const glMock = vi.hoisted(() => ({
   uniform4f: vi.fn(),
 }));
 
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
 vi.mock('@flighthq/render-gl/contract', () => {
   let nextTargetId = 0;
   return {

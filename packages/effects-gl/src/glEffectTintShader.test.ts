@@ -9,10 +9,6 @@ const glMock = vi.hoisted(() => ({
   uniform3f: vi.fn(),
 }));
 
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
 vi.mock('@flighthq/render-gl/contract', () => ({
   compileGlFullscreenProgram: vi.fn(() => ({
     locAlpha: 'u_alpha',
