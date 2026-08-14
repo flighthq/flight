@@ -1,14 +1,27 @@
 import type * as NetModule from '@flighthq/net/contract';
 import type * as Scene3DFormatsModule from '@flighthq/scene3d-formats/contract';
 import type { NetResponse, Scene3DDocument } from '@flighthq/types/contract';
-import type { Mock } from 'vitest';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type * as Load3dsModule from './threeDsLoad';
+import { loadScene3DDocumentFrom3dsUrl } from './threeDsLoad';
 
-let loadScene3DDocumentFrom3dsUrl: typeof Load3dsModule.loadScene3DDocumentFrom3dsUrl;
-let parse3ds: Mock<typeof Scene3DFormatsModule.parse3ds>;
-let sendNetRequest: Mock<typeof NetModule.sendNetRequest>;
+// This file runs in the isolated tier (scripts/registryIsolatedTests.ts), so the module registry is
+// already private to it and a top-level `vi.mock` is the sanctioned form here. It previously bought that
+// same hermeticity by hand — `vi.resetModules()` plus `vi.doMock` plus a dynamic re-import inside
+// `beforeAll` — which rebuilds this subject's whole transitive module graph on every run, inside a FIXED
+// 60s hook deadline: unbounded work under a fixed budget, which is why members of this cluster failed as
+// SUITES with zero failing tests, the presentation agents/conventions/testing.md predicts.
+//
+// The mocks are established ONCE for the file and never re-registered per test, which is what makes the
+// hoisted form expressible here. A file that re-mocks DIFFERENTLY PER TEST genuinely needs resetModules
+// plus a dynamic import, and must not be converted this way.
+const mocks = vi.hoisted(() => ({
+  parse3ds: vi.fn<typeof Scene3DFormatsModule.parse3ds>(),
+  sendNetRequest: vi.fn<typeof NetModule.sendNetRequest>(),
+}));
+
+vi.mock('@flighthq/net/contract', () => ({ sendNetRequest: mocks.sendNetRequest }));
+vi.mock('@flighthq/scene3d-formats/contract', () => ({ parse3ds: mocks.parse3ds }));
 
 function emptyDocument(): Scene3DDocument {
   return {
@@ -29,35 +42,20 @@ function okResponse(body: ArrayBuffer): NetResponse {
   return { body, headers: {}, ok: true, status: 200, statusText: 'OK', url: 'u' };
 }
 
-beforeAll(async () => {
-  vi.resetModules();
-  parse3ds = vi.fn<typeof Scene3DFormatsModule.parse3ds>();
-  sendNetRequest = vi.fn<typeof NetModule.sendNetRequest>();
-  vi.doMock('@flighthq/net/contract', () => ({ sendNetRequest }));
-  vi.doMock('@flighthq/scene3d-formats/contract', () => ({ parse3ds }));
-  ({ loadScene3DDocumentFrom3dsUrl } = await import('./threeDsLoad'));
-});
-
-afterAll(() => {
-  vi.doUnmock('@flighthq/net/contract');
-  vi.doUnmock('@flighthq/scene3d-formats/contract');
-  vi.resetModules();
-});
-
 afterEach(() => {
-  parse3ds.mockReset();
-  sendNetRequest.mockReset();
+  mocks.parse3ds.mockReset();
+  mocks.sendNetRequest.mockReset();
 });
 
 describe('loadScene3DDocumentFrom3dsUrl', () => {
   it('fetches bytes and returns the parsed CPU document without resolving resources', async () => {
     const document = emptyDocument();
-    parse3ds.mockReturnValue(document);
-    sendNetRequest.mockResolvedValue(okResponse(new Uint8Array([9, 8]).buffer));
+    mocks.parse3ds.mockReturnValue(document);
+    mocks.sendNetRequest.mockResolvedValue(okResponse(new Uint8Array([9, 8]).buffer));
 
     const loaded = await loadScene3DDocumentFrom3dsUrl('model.3ds');
 
-    expect(Array.from(parse3ds.mock.calls[0][0])).toEqual([9, 8]);
+    expect(Array.from(mocks.parse3ds.mock.calls[0][0])).toEqual([9, 8]);
     expect(loaded).toBe(document);
   });
 });
