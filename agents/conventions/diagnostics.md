@@ -172,6 +172,63 @@ Guards warn at the *moment* of misuse; `explain*` answers "why is my frame blank
 - An `explain<Type>*` function is a **pure query over existing seams returning plain data** (so agents and tests can assert on it), with an optional `format*` companion for humans. It recomputes the cause on demand by re-walking the failure conditions the silent path checks, retains nothing, mutates nothing, and never throws. Example: `explainDisplayObjectRender(state, source)` — the first `explain*` in the SDK, the worked exemplar every later one copies — recomputes why a display object would render blank: whether a renderer is registered for its kind, whether it was prepared, and its effective visibility/alpha, returning a `reason` classification. (`explainRenderState(state, root)` would generalize this to the whole tree — kinds with no renderer, nodes without proxies, the prepare/draw frame-id relation, feature data present while its hook slot is null.)
 - **The high-value, confusing sentinels get a shakeable explainer** — it is a targeted tool, not a blanket obligation on every sentinel. A sentinel earns an `explain*` when its silent failure genuinely confuses (a blank frame with many possible causes is the archetype); a self-evident lookup miss does not. The reason it is targeted rather than universal is maintenance cost: each `explain*` duplicates the silent path's failure conditions and must be kept in step with them, so spend that upkeep only where the confusion warrants it. Where present, the sentinel return stays the zero-cost baseline and the diagnostic twin turns silent state into words; production sheds the explainer while agents always import it.
 
+### Three architectures, and only one of them can drift
+
+The maintenance cost above — an `explain*` duplicating the silent path's conditions — is real for *some*
+explainers and structurally impossible for others. Which one you are writing decides whether the
+duplication needs saying out loud:
+
+- **Shared implementation.** The explainer and its boolean predicate read one enumeration.
+  `explainScene2DCoverage` and `hasScene2DCoverage` both call `collectScene2DCoverageGaps`, whose header
+  states the reason: *"The single implementation both tiers read, so the boolean can never disagree with
+  the explanation."* Cannot drift.
+- **Re-execution.** The explainer re-runs the subject and reads its result — `explainUnpackedRectangles`
+  re-runs `packRectangles`. Costs a second pass; cannot drift on logic.
+- **Parallel re-derivation.** The explainer walks its own branches to reach the same conclusion.
+  This is the only one that can fall out of step, and it fails **silently in the "nothing is wrong"
+  direction** — the shape a caller is least able to detect.
+
+Census at 2026-08-14, over the 59 exported `explain*` in `packages/*/src`: 32 shared or re-executing, 27
+re-deriving, plus `explainSpatialIndexing`, which delegates to a `*Backend` method and is neither.
+
+★ **Re-execution is drift-proof only while it is synchronous.** `explainPermissionState` is the one
+`async` explainer; its subject is async, so the re-read is honest, but awaiting makes the re-execution
+*interleavable* and its `state` field is therefore a second observation, not the same one. The other 58
+are safe because nothing can run between their two calls — a property of the environment, not of their
+design, which the next async explainer will not inherit.
+
+**When re-derivation cannot be avoided — because the subject's predicate is a file-local function in
+another package — declare it at the seam.** `explainBitmapReadback` is the house pattern and needs no
+inventing: *"it duplicates the constructor's failure conditions by design — the maintenance seam is that
+a new way for the readback to fail must gain a matching branch here or this query silently goes stale."*
+One sentence. It still drifts; it cannot drift *unnoticed by the person changing the file*.
+
+### Scope: enumerate the subject's outcomes, not the sentinel's values
+
+An `explain*` is not a decoder for a return value. The sentinel is a lossy projection of what the subject
+can do, so an explainer scoped to the sentinel's cases is correct and **structurally blind to any failure
+the sentinel cannot encode**.
+
+`explainBitmapFontGlyph` is the exemplar: `getBitmapFontGlyph` returns null for two reasons, and the
+explainer reports three — the third being a well-formed glyph that is zero-sized, which the return value
+has no way to signal and which is indistinguishable from a missing glyph on a blank screen.
+`explainAssetLoad` does the same, distinguishing six situations behind one null.
+
+The failure is the mirror image: an outcome the subject produces that no explainer speaks for. Punctual
+forward-light selection is scoped to point and spot lights, and hemisphere lights are truncated by the
+same budget with no diagnostic anywhere — so a scene silently loses a light and the explainer
+affirmatively reports `'within-budget'`. **A narrow-scoped explainer and a missing one fail identically
+from the caller's chair:** you ask why the picture is wrong and are told nothing is wrong.
+
+### What an `explain*` returns depends on which side of the SDK boundary it is on
+
+Inside the SDK the rule is uniform and holds without exception: an explainer returns **plain data**.
+Outside it — `tool-capture` and `scripts/`, both deliberately outside the `@flighthq/sdk` barrel — there
+is **no enforced contract**, and authors have chosen both prose (`explainCaptureParityUncovered`,
+`explainEmptyCheckSelection`) and typed reasons (`explainPairDerivationScope`). That is two contracts
+sharing one verb, split on the SDK boundary and distinguishable only by which package a reader is in, so
+state which one you are writing when the file is outside the SDK.
+
 ## Import diagnostics: choosing a severity, and naming the kind to match
 
 **Severity is a fact about the OUTPUT, not about the cause.** Decide it in this order:
