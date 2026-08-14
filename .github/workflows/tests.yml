@@ -287,20 +287,6 @@ jobs:
     # regression check (Tier 5) is environment-coupled to its committed fingerprint baselines, so it is
     # excluded here; run `npm run test:regression` where the baselines were captured.
     #
-    # The screenshot-baseline legs compare committed sha256 hashes of decoded RGBA, which is the same
-    # SHAPE of coupling that keeps fingerprint regression out of this job. So they run on the pinned
-    # backends only: WebGPU is pinned to a SwiftShader adapter and the DOM/Canvas paths rasterize
-    # through the pinned Chromium, while WebGL is NOT pinned to a software rasterizer and can in
-    # principle track the driver. WebGL is therefore EXCLUDED from these two legs — deliberately, and
-    # not because it failed: the hashes reproduce on a developer clone, and no run of this gate on a
-    # CI runner exists to compare against, so the exclusion buys a known-independent subject rather
-    # than betting on an unmeasured one. Whether to pin WebGL's rasterizer is a separate open decision
-    # (agents/packages/capture/charter.md, Open direction 1) and is not settled here as a side effect
-    # of wiring CI; agents/packages/capture/status.md carries what this job needs from it.
-    #
-    # If a hash ever does drift on the pinned backends, the answer is to find the cause. Widening a
-    # tolerance, or letting a standing red sit here being ignored, are both excluded.
-    #
     # Needs `build` for its dist artifact, not to be sequenced behind it: each leg used to run its own
     # `npm run build`, so a full tsc -b over all 141 projects ran six more times per push to produce
     # output byte-identical to what `build` already emitted and uploaded. Waiting for that job costs
@@ -332,26 +318,15 @@ jobs:
           - label: examples · parity
             check: test:examples:parity
             args: --parallel 1 --retries 2
-          # The screenshot-baseline gate. Unlike smoke (which resolves packages from source through
-          # the dev server) these SERVE THE BUILT HARNESS and refuse to run against a stale one — the
-          # capture server counts discovered routes against what dist actually contains and exits
-          # rather than capturing a subset. So they declare `harness`, and only they pay for it.
-          #
-          # One leg per tool with `--parallel 1`, following the parity legs rather than the smoke
-          # split: splitting WebGPU out would satisfy the same durable serialization rule but doubles
-          # the number of legs paying for a harness build, which is the dominant cost here.
-          #
-          # `--retries 2` cannot launder a changed hash. Retries fire only on a transient error or an
-          # unusable observation (captureEntry.ts:963); a screenshot that differs is neither, so it is
-          # reported the first time and every time.
-          - label: functional · screenshot baseline · dom/canvas/webgpu
-            check: capture:functional:check
-            args: --renderer=dom,canvas,webgpu --parallel 1 --retries 2
-            harness: build:functional
-          - label: examples · screenshot baseline · dom/canvas/webgpu
-            check: capture:examples:check
-            args: --renderer=dom,canvas,webgpu --parallel 1 --retries 2
-            harness: build:examples
+          # Screenshot-baseline legs (functional + examples) REMOVED. 4fdfd2a15 wired them as "the one
+          # open question" and pre-registered two remedies — pin WebGL's rasterizer, or scope to pinned
+          # backends. Both are exhausted: scoping to dom/canvas/webgpu (c7ef40d4e) still drifted, and
+          # WebGPU IS pinned to SwiftShader yet six of ten functional diffs were webgpu-only — proving
+          # that even a pinned rasterizer does not make a CI-captured golden hash reproduce across
+          # machines. The underlying problem: a golden hash was never doing the correctness job — parity
+          # and pixel oracles do that. The golden's only job is stability, and a stable reference must
+          # be captured where it is checked. capture:*:check stays a LOCAL command for the machine whose
+          # hashes it holds; the CI correctness signal comes from smoke and parity above.
 
     steps:
       - uses: actions/checkout@v4
@@ -370,13 +345,6 @@ jobs:
       - name: Restore dist from the build job
         run: tar -xzf dist.tgz
       - run: npx playwright install --with-deps chromium
-      # Only the screenshot-baseline legs declare `harness`; an undefined matrix key is the empty
-      # string, so every other leg skips this. Built here rather than reused from `harness-build`
-      # because that job emits no artifact — it builds to prove the harness compiles and discards the
-      # output. Uploading it there would remove this rebuild; it is a larger change than wiring the
-      # gate, so it is left as the obvious next optimisation rather than folded in silently.
-      - if: matrix.harness != ''
-        run: npm run ${{ matrix.harness }}
       # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
       #
       # Worker count: the runner has one SwiftShader adapter, so the default (available parallelism
