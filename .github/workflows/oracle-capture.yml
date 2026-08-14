@@ -9,6 +9,15 @@
 # commissioned source commit cannot read the credential able to rewrite the store it is measured against;
 # splitting it across two workflows is what enforces it, not a convention anyone has to remember.
 #
+# ★ THE TRIGGER IS EVERY PUSH TO THE TRUNK, DELIBERATELY, AND THAT REPLACED A PATH FILTER THAT KEPT
+# SILENTLY MISSING COMMISSIONS. A path filter answers "did the queue change in this push"; the body
+# answers "what is outstanding now". Those are different questions, and three separate pushes ran no
+# capture because a fix landed under `scripts/` or under the sibling workflow file rather than under
+# `oracle-requests/`. Each miss looked like success: no run, no error, nothing in the run list.
+# The body is the queue's only reader, so the trigger now simply asks it on every push. That is only
+# affordable because the build is gated on there being work (below) — an empty queue is a checkout and
+# an `npm ci`.
+#
 # ★ NOT `pull_request_target`, AND NOT A FORK TRIGGER. Both would hand a commissioned commit a token with
 # write scope on this repository. The trigger is a push to the trunk — work that has already landed — plus
 # a manual dispatch for re-running one request. That is the same boundary §7 names: "the user's normal
@@ -24,9 +33,6 @@ name: oracle-capture
 on:
   push:
     branches: [develop]
-    paths:
-      - 'oracle-requests/**'
-      - '.github/workflows/oracle-capture.yml'
   workflow_dispatch:
     inputs:
       request:
@@ -62,14 +68,6 @@ jobs:
 
       - run: npm ci
 
-      # ★ THE CAPTURE NEEDS A BUILT TREE. The first successful-looking run produced a bundle with zero
-      # images because this step was missing: the harness had nothing to render, every cell came back
-      # `missing`, and the artifact carried only JSON. `tests.yml`'s capture lane builds first (it restores
-      # a dist tarball from a prior job); this workflow builds inline instead, because it runs rarely and a
-      # cross-job artifact would be a second thing to keep in step for no gain.
-      - run: npm run build
-      - run: npm run build:functional
-
       # ★ THE QUEUE IS THE DIRECTORY, NOT THE DIFF. §5: "The directory is a queue of outstanding work, not
       # an archive of every completed request. The lock-bump PR removes a fulfilled request." So every file
       # present IS outstanding, and asking git what this push changed answers a question the design does not
@@ -90,6 +88,19 @@ jobs:
           fi
           echo "list=$list" >> "$GITHUB_OUTPUT"
           echo "outstanding requests: ${list:-<none>}"
+
+      # ★ THE BUILD IS PAID ONLY WHEN THERE IS WORK, AND THAT IS WHAT LETS THE TRIGGER BE BROAD.
+      # The capture needs a built tree — the first successful-looking run produced a bundle with zero
+      # images because this step was missing, so the harness had nothing to render. But building before
+      # knowing whether anything is outstanding made every triggered run expensive, which is why the
+      # trigger was path-filtered, which is why three separate pushes silently commissioned nothing.
+      # Deciding first inverts that: an empty queue costs a checkout and an `npm ci`, so the trigger can
+      # be every push to the trunk and the body's "process what is outstanding" finally matches it.
+      - name: Build the harness
+        if: success() && steps.requests.outputs.list != ''
+        run: |
+          npm run build
+          npm run build:functional
 
       - name: Install Playwright browsers
         if: success() && steps.requests.outputs.list != ''
