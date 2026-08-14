@@ -78,17 +78,39 @@ jobs:
             echo "event              : ${{ github.event_name }}"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # ★ A MISSING CREDENTIAL IS NAMED, NOT ARGUED. An unset secret interpolates to an empty string and
+      # the failure then surfaces as a token-minting or auth error that points at GitHub rather than at the
+      # one thing an operator has to do. Checked through `env:` rather than a step-level `if:` — `secrets`
+      # is not a context available to a step condition, so the `if` form would silently never fire.
       - name: Require the bridge credential
         env:
-          ORACLE_BRIDGE_TOKEN: ${{ secrets.ORACLE_BRIDGE_TOKEN }}
+          APP_ID: ${{ secrets.ORACLE_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.ORACLE_APP_PRIVATE_KEY }}
         run: |
-          if [ -n "$ORACLE_BRIDGE_TOKEN" ]; then exit 0; fi
-          echo "oracle-bridge: ORACLE_BRIDGE_TOKEN is not set on this repository." >&2
-          echo "  It is the ONLY credential this pipeline needs, and it is deliberately not the automatic" >&2
-          echo "  GITHUB_TOKEN, which cannot reach another repository." >&2
-          echo "  Create a fine-grained PAT scoped to flighthq/flight-oracles with Contents: read and write," >&2
-          echo "  then store it as the ORACLE_BRIDGE_TOKEN Actions secret. See agents/render-oracle-repository.md §7." >&2
-          exit 1
+          missing=''
+          [ -z "$APP_ID" ] && missing="$missing ORACLE_APP_ID"
+          [ -z "$APP_PRIVATE_KEY" ] && missing="$missing ORACLE_APP_PRIVATE_KEY"
+          if [ -n "$missing" ]; then
+            echo "oracle-bridge: missing secret(s):$missing" >&2
+            echo "  This pipeline authenticates as a GitHub App installed on flighthq/flight-oracles." >&2
+            echo "  It is deliberately not the automatic GITHUB_TOKEN, which cannot reach another repository." >&2
+            echo "  Store the App's numeric id and its full .pem private key as those two Actions secrets." >&2
+            echo "  See agents/render-oracle-repository.md §7." >&2
+            exit 1
+          fi
+
+      # ★ A SHORT-LIVED INSTALLATION TOKEN, SCOPED TO ONE REPOSITORY. This is what §7 asks for over a
+      # personal token: it expires in an hour, it carries no human's identity, it is revocable on its own,
+      # and `repositories:` narrows it to the single repo the envelope is sent to. The App's private key
+      # never leaves this job, and the capture workflow — which executes commissioned code — has neither.
+      - name: Mint an installation token
+        id: app
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ORACLE_APP_ID }}
+          private-key: ${{ secrets.ORACLE_APP_PRIVATE_KEY }}
+          owner: flighthq
+          repositories: flight-oracles
 
       - name: Resolve the candidate artifact
         id: artifact
@@ -130,7 +152,7 @@ jobs:
         with:
           # A narrowly-scoped App or bot installed on both repositories (§7). Never the automatic
           # GITHUB_TOKEN — it cannot reach another repository.
-          github-token: ${{ secrets.ORACLE_BRIDGE_TOKEN }}
+          github-token: ${{ steps.app.outputs.token }}
           script: |
             const crypto = require('node:crypto');
             const run = context.payload.workflow_run;
