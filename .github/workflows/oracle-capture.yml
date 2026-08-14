@@ -116,13 +116,12 @@ jobs:
         run: |
           browser=$(npx playwright --version | tr -d ' ')
           descriptor="runner=${ImageOS:-unknown};image=${ImageVersion:-unknown};${browser};viewport=default"
-          echo "id=$(printf '%s' "$descriptor" | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
+          echo "id=sha256-$(printf '%s' "$descriptor" | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
           echo "descriptor=$descriptor" >> "$GITHUB_OUTPUT"
 
       - name: Capture the commissioned cells
         if: success() && steps.requests.outputs.list != ''
         env:
-          ORACLE_FLIGHT_COMMIT: ${{ github.sha }}
           ORACLE_ENVIRONMENT_ID: ${{ steps.environment.outputs.id }}
         run: |
           set -euo pipefail

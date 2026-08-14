@@ -1,129 +1,106 @@
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import {
-  buildOracleCandidateBundle,
-  hashOracleFile,
-  readPngDimensions,
-  stageOracleCandidateImages,
-} from './oracle-candidate';
+import { buildOracleCandidateBundle, readPngDimensions, stageOracleCandidateImages } from './oracle-candidate';
+import type { OracleCandidateInput } from './oracle-candidate';
 import type { OracleRequest } from './oracle-records';
 
 const PIXEL_HASH = 'c'.repeat(64);
 
 describe('buildOracleCandidateBundle', () => {
-  it('copies the capture’s decoded-pixel hash rather than recomputing one', () => {
-    const root = captureRoot({ hash: PIXEL_HASH });
+  it('emits the identity structured, not slash-joined, because the consumer keys on the parts', () => {
+    const capture = buildOracleCandidateBundle(input(root({ hash: PIXEL_HASH }))).captures[0];
 
-    const bundle = buildOracleCandidateBundle(input(root));
-    const image = bundle.images[0];
-
-    // ★ The whole point: a second decoder with a second convention would put a DIFFERENT "pixel hash"
-    // beside the one already stored for the same image, and nothing downstream could say which was right.
-    expect(image?.state).toBe('captured');
-    expect(image && 'pixelSha256' in image && image.pixelSha256).toBe(PIXEL_HASH);
+    expect(capture?.identity).toEqual({ entry: 'shape', renderer: 'webgl', subject: 'functional' });
   });
 
-  it('computes artifactSha256 over the encoded file, distinct from the pixel hash', () => {
-    const root = captureRoot({ hash: PIXEL_HASH });
+  it('names the file at the path the archive actually uses', () => {
+    const capture = buildOracleCandidateBundle(input(root({ hash: PIXEL_HASH }))).captures[0];
 
-    const image = buildOracleCandidateBundle(input(root)).images[0];
-
-    expect(image && 'artifactSha256' in image && image.artifactSha256).toBe(
-      createHash('sha256').update(pngBytes()).digest('hex'),
-    );
-    expect(image && 'artifactSha256' in image && image.artifactSha256).not.toBe(PIXEL_HASH);
+    expect(capture && 'file' in capture && capture.file).toBe('images/functional/shape/webgl.png');
   });
 
-  it('reads the dimensions out of the PNG header', () => {
-    const image = buildOracleCandidateBundle(input(captureRoot({ hash: PIXEL_HASH }))).images[0];
+  it('copies provenance from the committed baseline rather than synthesising it', () => {
+    // Synthesised values would assert a capture condition nothing observed, in a store whose whole
+    // purpose is to say what produced a blessed image.
+    const capture = buildOracleCandidateBundle(input(root({ hash: PIXEL_HASH }))).captures[0];
 
-    expect(image && 'width' in image && [image.width, image.height]).toEqual([3, 2]);
+    expect(capture && 'provenance' in capture && capture.provenance).toEqual({
+      frames: 2,
+      sourceHash: 'd'.repeat(64),
+      targetKind: 'webgl',
+      verifyPublished: true,
+      warmupFrames: 1,
+    });
   });
 
-  // ── §8: every requested cell is represented; a failure is an explicit row ─────────────────────────
+  it('reports a cell whose baseline records no provenance as missing, not as captured without it', () => {
+    const directory = root({ hash: PIXEL_HASH, provenance: false });
 
+    const capture = buildOracleCandidateBundle(input(directory)).captures[0];
+
+    expect(capture?.status).toBe('missing');
+    expect(capture && 'error' in capture && capture.error).toContain('sha256Provenance');
+  });
+
+  it('prefixes a bare environment digest, since the schema requires the algorithm', () => {
+    const bundle = buildOracleCandidateBundle(input(root({ hash: PIXEL_HASH })));
+
+    expect(bundle.environmentId).toBe(`sha256-${'e'.repeat(64)}`);
+  });
+
+  it('does not prefix one that already carries it', () => {
+    const bundle = buildOracleCandidateBundle({
+      ...input(root({ hash: PIXEL_HASH })),
+      environmentId: `sha256-${'f'.repeat(64)}`,
+    });
+
+    expect(bundle.environmentId).toBe(`sha256-${'f'.repeat(64)}`);
+  });
+
+  // §8: every requested cell is represented; a failure is an explicit row with a reason.
   it('represents an uncaptured cell as an explicit missing row, never as an absence', () => {
     const bundle = buildOracleCandidateBundle(input(mkdtempSync(join(tmpdir(), 'oracle-empty-'))));
 
-    expect(bundle.images).toHaveLength(1);
-    expect(bundle.images[0]?.state).toBe('missing');
-    expect(bundle.images[0] && 'reason' in bundle.images[0] && bundle.images[0].reason).toContain('screenshot.png');
+    expect(bundle.captures).toHaveLength(1);
+    expect(bundle.captures[0]?.status).toBe('missing');
   });
 
   it('reports a failed capture with its own error rather than bundling the stale image', () => {
-    const root = captureRoot({ error: 'page never loaded', hash: PIXEL_HASH, state: 'error' });
+    const capture = buildOracleCandidateBundle(
+      input(root({ error: 'page never loaded', hash: PIXEL_HASH, state: 'error' })),
+    ).captures[0];
 
-    const image = buildOracleCandidateBundle(input(root)).images[0];
+    expect(capture && 'error' in capture && capture.error).toContain('page never loaded');
+  });
+});
 
-    expect(image?.state).toBe('missing');
-    expect(image && 'reason' in image && image.reason).toContain('page never loaded');
+describe('readPngDimensions', () => {
+  it('reads width and height from IHDR', () => {
+    expect(readPngDimensions(png())).toEqual({ height: 2, width: 3 });
   });
 
-  it('reports a blank frame as missing, because a blank capture records no hash', () => {
-    // captureEntry refuses to hash a blank frame, so an absent hash means there is no render to bless.
-    const root = captureRoot({ hash: null });
-
-    expect(buildOracleCandidateBundle(input(root)).images[0]?.state).toBe('missing');
+  it('returns null for bytes that are not a PNG', () => {
+    expect(readPngDimensions(new Uint8Array(32))).toBeNull();
   });
 
-  it('carries the request binding and environment as provenance', () => {
-    const bundle = buildOracleCandidateBundle(input(captureRoot({ hash: PIXEL_HASH })));
-
-    expect(bundle.requestId).toBe('seed-1');
-    expect(bundle.requestSha256).toBe('a'.repeat(64));
-    expect(bundle.flightCommit).toBe('b'.repeat(40));
-    expect(bundle.environmentId).toBe('env-1');
-  });
-
-  it('covers every cell a multi-renderer request names', () => {
-    const request: OracleRequest = {
-      frames: 1,
-      id: 'seed-1',
-      reason: 'seed',
-      schemaVersion: 1,
-      subject: 'functional',
-      targets: [{ entry: 'shape', renderers: ['webgl', 'webgpu'] }],
-    };
-
-    const bundle = buildOracleCandidateBundle({ ...input(captureRoot({ hash: PIXEL_HASH })), request });
-
-    expect(bundle.images.map((image) => image.identity)).toEqual(['functional/shape/webgl', 'functional/shape/webgpu']);
+  it('returns null for a truncated header rather than reading past the end', () => {
+    expect(readPngDimensions(png().subarray(0, 20))).toBeNull();
   });
 });
 
 describe('stageOracleCandidateImages', () => {
   it('places every captured image at exactly the path its record names', () => {
-    const root = captureRoot({ hash: PIXEL_HASH });
-    const bundle = buildOracleCandidateBundle(input(root));
+    const directory = root({ hash: PIXEL_HASH });
+    const bundle = buildOracleCandidateBundle(input(directory));
     const stage = mkdtempSync(join(tmpdir(), 'oracle-stage-'));
 
-    const staged = stageOracleCandidateImages(bundle, root, stage);
-
-    // The bundle is the archive's only map: if these two ever disagree, intake reads every image as
-    // missing while the run reports success.
-    expect(staged).toBe(1);
-    for (const image of bundle.images) {
-      if (image.state !== 'captured') continue;
-      expect(existsSync(join(stage, image.file))).toBe(true);
+    expect(stageOracleCandidateImages(bundle, directory, stage)).toBe(1);
+    for (const capture of bundle.captures) {
+      if (capture.status !== 'captured') continue;
+      expect(existsSync(join(stage, capture.file))).toBe(true);
     }
-  });
-
-  it('refuses a staged copy whose bytes do not match the record', () => {
-    const root = captureRoot({ hash: PIXEL_HASH });
-    const bundle = buildOracleCandidateBundle(input(root));
-    const tampered = {
-      ...bundle,
-      images: bundle.images.map((image) => ({ ...image, artifactSha256: 'f'.repeat(64) })),
-    };
-
-    // A staging step that wrote the wrong source would ship an archive whose bytes fail intake's
-    // verification one repository away from the cause. It fails here instead.
-    expect(() => stageOracleCandidateImages(tampered, root, mkdtempSync(join(tmpdir(), 'oracle-stage-')))).toThrow(
-      /staged to/,
-    );
   });
 
   it('stages nothing for a missing cell rather than inventing a file', () => {
@@ -134,46 +111,12 @@ describe('stageOracleCandidateImages', () => {
   });
 });
 
-describe('hashOracleFile', () => {
-  it('hashes the file bytes', () => {
-    const path = join(mkdtempSync(join(tmpdir(), 'oracle-hash-')), 'f.bin');
-    writeFileSync(path, 'abc');
-
-    expect(hashOracleFile(path)).toBe(createHash('sha256').update('abc').digest('hex'));
-  });
-});
-
-describe('readPngDimensions', () => {
-  it('reads width and height from IHDR', () => {
-    expect(readPngDimensions(pngBytes())).toEqual({ height: 2, width: 3 });
-  });
-
-  it('returns null for bytes that are not a PNG', () => {
-    expect(readPngDimensions(new Uint8Array(32))).toBeNull();
-  });
-
-  it('returns null for a truncated header rather than reading past the end', () => {
-    expect(readPngDimensions(pngBytes().subarray(0, 20))).toBeNull();
-  });
-});
-
-function captureRoot(status: { hash: string | null; state?: string; error?: string }): string {
-  const root = mkdtempSync(join(tmpdir(), 'oracle-candidate-'));
-  const directory = join(root, 'functional', 'shape', 'webgl');
-  mkdirSync(directory, { recursive: true });
-  writeFileSync(join(directory, 'screenshot.png'), pngBytes());
-  writeFileSync(
-    join(directory, 'status.json'),
-    JSON.stringify({ error: status.error ?? null, hash: status.hash, state: status.state ?? 'ready' }),
-  );
-  return root;
-}
-
-function input(artifactsRoot: string) {
+function input(directory: string): OracleCandidateInput {
   return {
-    artifactsRoot,
-    environmentId: 'env-1',
-    flightCommit: 'b'.repeat(40),
+    artifactsRoot: directory,
+    comparisonPolicyId: 'uncalibrated',
+    environmentId: 'e'.repeat(64),
+    repositoryRoot: directory,
     request: {
       frames: 1,
       id: 'seed-1',
@@ -182,12 +125,35 @@ function input(artifactsRoot: string) {
       subject: 'functional',
       targets: [{ entry: 'shape', renderers: ['webgl'] }],
     } as OracleRequest,
-    requestSha256: 'a'.repeat(64),
   };
 }
 
+function root(status: { hash: string | null; state?: string; error?: string; provenance?: boolean }): string {
+  const directory = mkdtempSync(join(tmpdir(), 'oracle-candidate-'));
+  const cell = join(directory, 'functional', 'shape', 'webgl');
+  mkdirSync(cell, { recursive: true });
+  writeFileSync(join(cell, 'screenshot.png'), png());
+  writeFileSync(
+    join(cell, 'status.json'),
+    JSON.stringify({ error: status.error ?? null, hash: status.hash, state: status.state ?? 'ready' }),
+  );
+  mkdirSync(join(directory, 'functional', 'baselines'), { recursive: true });
+  const column: Record<string, unknown> = { sha256: status.hash };
+  if (status.provenance !== false) {
+    column['sha256Provenance'] = {
+      frames: 2,
+      sourceHash: 'd'.repeat(64),
+      targetKind: 'webgl',
+      verifyPublished: true,
+      warmupFrames: 1,
+    };
+  }
+  writeFileSync(join(directory, 'functional', 'baselines', 'shape.json'), JSON.stringify({ webgl: column }));
+  return directory;
+}
+
 /** A minimal 3×2 PNG header — signature, IHDR length, type, width, height. Format facts, not a fixture. */
-function pngBytes(): Uint8Array {
+function png(): Uint8Array {
   const bytes = new Uint8Array(32);
   bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
   const view = new DataView(bytes.buffer);

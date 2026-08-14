@@ -32,65 +32,74 @@ import { getOracleRequestCells } from './oracle-records';
 export interface OracleCandidateBundle {
   schemaVersion: 1;
   requestId: string;
-  /** sha256 of the request file as committed, so intake can bind the bundle to the exact ask. */
-  requestSha256: string;
-  /** The landed Flight commit. Supplied by the workflow's dispatch envelope, never invented here (§5). */
-  flightCommit: string;
+  /** `sha256-<64hex>` — the Oracle schema requires the algorithm prefix, not a bare digest. */
   environmentId: string;
-  images: readonly OracleCandidateImage[];
+  comparisonPolicyId: string;
+  captures: readonly OracleCandidateCapture[];
 }
 
-export type OracleCandidateImage = OracleCandidateCaptured | OracleCandidateMissing;
+export type OracleCandidateCapture = OracleCandidateCaptured | OracleCandidateMissing;
+
+export interface OracleCandidateIdentity {
+  subject: string;
+  entry: string;
+  renderer: string;
+}
 
 export interface OracleCandidateCaptured {
-  identity: string;
-  state: 'captured';
-  /**
-   * Where the image sits INSIDE the candidate archive, relative to the bundle beside it. Deliberately not
-   * Flight's capture path: `.artifacts/<subject>/<entry>/<renderer>/screenshot.png` is an internal layout
-   * that intake must not have to know or track, and its leading dot made the whole tree invisible to
-   * `upload-artifact`'s default hidden-file exclusion. `stageOracleCandidateImages` is what makes this
-   * field true, and it is the only description of the archive's shape.
-   */
+  status: 'captured';
+  /** Structured, not a slash-joined string: the consumer keys on the parts. */
+  identity: OracleCandidateIdentity;
+  /** `images/<subject>/<entry>/<renderer>.png`, relative to candidate.json beside it. */
   file: string;
-  width: number;
-  height: number;
-  /** sha256 of the encoded PNG bytes — the transport and promotion identity. */
-  artifactSha256: string;
-  /** The capture's own decoded-pixel hash, copied from status.json. */
-  pixelSha256: string;
+  provenance: OracleCandidateProvenance;
+}
+
+/** The capture-condition subrecord, copied verbatim from the committed baseline's `sha256Provenance`. */
+export interface OracleCandidateProvenance {
+  frames: number;
+  sourceHash: string | null;
+  targetKind: string | null;
+  verifyPublished: boolean;
+  warmupFrames: number;
 }
 
 export interface OracleCandidateMissing {
-  identity: string;
-  state: 'missing';
-  reason: string;
+  status: 'missing';
+  identity: OracleCandidateIdentity;
+  error: string;
 }
 
 export interface OracleCandidateInput {
   request: Readonly<OracleRequest>;
-  requestSha256: string;
-  flightCommit: string;
+  /** Already `sha256-`prefixed by the caller, or a bare digest this will prefix. */
   environmentId: string;
-  /** Root of the capture output, e.g. `.artifacts`. */
+  comparisonPolicyId: string;
   artifactsRoot: string;
+  /** Repository root, for reading committed baselines. Defaults to the working directory. */
+  repositoryRoot?: string;
 }
 
 /**
- * Assembles the bundle for one request. Pure over the filesystem it is pointed at: it reads captures and
- * returns a record, and never fetches, uploads, or mutates the capture output.
+ * Assembles the candidate for one request, in the shape `flight-oracles` validates
+ * (`schemas/candidate.schema.json`). Pure over the filesystem it is pointed at.
+ *
+ * ★ THE SCHEMA IS `additionalProperties: false`, SO EXTRA FIELDS ARE A HARD FAILURE, NOT SLACK.
+ * Flight's own `artifactSha256`/`pixelSha256`, the landed commit, and the request hash have no home in
+ * it — they belong to the dispatch envelope and to Oracle's own records, not to the candidate. Adding
+ * them "for completeness" would fail validation at intake, one repository away from the edit.
  */
 export function buildOracleCandidateBundle(input: Readonly<OracleCandidateInput>): OracleCandidateBundle {
-  const images: OracleCandidateImage[] = [];
+  const root = input.repositoryRoot ?? process.cwd();
+  const captures: OracleCandidateCapture[] = [];
   for (const identity of getOracleRequestCells(input.request)) {
-    images.push(readCandidateImage(input.artifactsRoot, identity));
+    captures.push(readCandidateCapture(input.artifactsRoot, root, identity));
   }
   return {
-    environmentId: input.environmentId,
-    flightCommit: input.flightCommit,
-    images,
+    captures,
+    comparisonPolicyId: input.comparisonPolicyId,
+    environmentId: input.environmentId.startsWith('sha256-') ? input.environmentId : `sha256-${input.environmentId}`,
     requestId: input.request.id,
-    requestSha256: input.requestSha256,
     schemaVersion: 1,
   };
 }
@@ -114,63 +123,76 @@ export function readPngDimensions(bytes: Readonly<Uint8Array>): { width: number;
   return { height: view.getUint32(20, false), width: view.getUint32(16, false) };
 }
 
-function readCandidateImage(artifactsRoot: string, identity: string): OracleCandidateImage {
-  // `subject/entry/renderer` maps onto the capture layout `<root>/<subject>/<entry>/<renderer>`. This is
-  // the ONE place the identity string is taken apart, so the §10 ruling lands here and nowhere else.
-  const parts = identity.split('/');
-  if (parts.length !== 3) return { identity, reason: `unrecognised identity shape`, state: 'missing' };
+function readCandidateCapture(artifactsRoot: string, repositoryRoot: string, cell: string): OracleCandidateCapture {
+  const parts = cell.split('/');
+  const identity: OracleCandidateIdentity = {
+    entry: parts[1] ?? '',
+    renderer: parts[2] ?? '',
+    subject: parts[0] ?? '',
+  };
+  const miss = (error: string): OracleCandidateMissing => ({ error, identity, status: 'missing' });
+  if (parts.length !== 3) return miss(`unrecognised identity shape: ${cell}`);
+
   const directory = join(artifactsRoot, parts[0]!, parts[1]!, parts[2]!);
   const png = join(directory, 'screenshot.png');
   const statusPath = join(directory, 'status.json');
-
-  if (!existsSync(png)) return { identity, reason: 'no screenshot.png was captured', state: 'missing' };
-  if (!existsSync(statusPath)) return { identity, reason: 'no status.json beside the screenshot', state: 'missing' };
+  if (!existsSync(png)) return miss('no screenshot.png was captured');
+  if (!existsSync(statusPath)) return miss('no status.json beside the screenshot');
 
   let status: { state?: unknown; hash?: unknown; error?: unknown };
   try {
     status = JSON.parse(readFileSync(statusPath, 'utf8')) as typeof status;
   } catch (error) {
-    return { identity, reason: `status.json did not parse: ${String(error)}`, state: 'missing' };
+    return miss(`status.json did not parse: ${String(error)}`);
   }
   if (status.state !== 'ready') {
+    return miss(`capture state '${String(status.state)}': ${String(status.error ?? 'no detail')}`);
+  }
+  if (typeof status.hash !== 'string') return miss('capture recorded no decoded-pixel hash');
+
+  // ★ PROVENANCE IS READ FROM THE COMMITTED BASELINE, NOT INVENTED HERE. `sha256Provenance` is written
+  // beside the very hash this capture reproduced, so it describes the conditions those bytes were
+  // produced under. Synthesising plausible values would put a record in the Oracle store asserting a
+  // capture condition nothing ever observed.
+  const provenance = readBaselineProvenance(repositoryRoot, parts[0]!, parts[1]!, parts[2]!);
+  if (provenance === null) return miss(`no sha256Provenance recorded for ${cell} in its committed baseline`);
+
+  return { file: `images/${cell}.png`, identity, provenance, status: 'captured' };
+}
+
+function readBaselineProvenance(
+  repositoryRoot: string,
+  subject: string,
+  entry: string,
+  renderer: string,
+): OracleCandidateProvenance | null {
+  const path = join(repositoryRoot, subject, 'baselines', `${entry}.json`);
+  if (!existsSync(path)) return null;
+  try {
+    const column = (JSON.parse(readFileSync(path, 'utf8')) as Record<string, Record<string, unknown>>)[renderer];
+    const provenance = column?.['sha256Provenance'];
+    if (provenance === undefined || provenance === null || typeof provenance !== 'object') return null;
+    const p = provenance as Record<string, unknown>;
+    if (typeof p['frames'] !== 'number' || typeof p['verifyPublished'] !== 'boolean') return null;
+    if (typeof p['warmupFrames'] !== 'number') return null;
     return {
-      identity,
-      reason: `capture state '${String(status.state)}': ${String(status.error ?? 'no detail')}`,
-      state: 'missing',
+      frames: p['frames'],
+      sourceHash: typeof p['sourceHash'] === 'string' ? p['sourceHash'] : null,
+      targetKind: typeof p['targetKind'] === 'string' ? p['targetKind'] : null,
+      verifyPublished: p['verifyPublished'],
+      warmupFrames: p['warmupFrames'],
     };
+  } catch {
+    return null;
   }
-  // A blank frame never gets a hash (captureEntry refuses to record one), so an absent hash here means the
-  // capture produced no render worth blessing — reported as missing rather than bundled with a null.
-  if (typeof status.hash !== 'string' || !/^[0-9a-f]{64}$/.test(status.hash)) {
-    return { identity, reason: 'capture recorded no decoded-pixel hash', state: 'missing' };
-  }
-
-  const bytes = readFileSync(png);
-  const dimensions = readPngDimensions(bytes);
-  if (dimensions === null) return { identity, reason: 'screenshot.png is not a readable PNG', state: 'missing' };
-
-  return {
-    artifactSha256: createHash('sha256').update(bytes).digest('hex'),
-    file: `images/${identity}.png`,
-    height: dimensions.height,
-    identity,
-    pixelSha256: status.hash,
-    state: 'captured',
-    width: dimensions.width,
-  };
 }
 
 /**
  * Copies each captured image into a self-contained candidate tree, at exactly the path its record names.
  *
- * ★ THE BUNDLE IS THE ONLY MAP OF THE ARCHIVE. Staging from `bundle.images[].file` rather than re-deriving
- * paths means the manifest and the tree cannot disagree — the failure this replaces was a bundle that said
- * `<identity>.png` beside an archive containing `.artifacts/.../screenshot.png`, which intake would have
- * read as every image missing.
- *
- * Re-hashes each copy and refuses a mismatch: a staging step that silently wrote the wrong source would
- * produce an archive whose bytes do not match the `artifactSha256` intake verifies, and the error would
- * surface one repository away from its cause.
+ * ★ THE MANIFEST IS THE ONLY MAP OF THE ARCHIVE. Staging from `captures[].file` rather than re-deriving
+ * paths means the two cannot disagree — the failure this replaces was a manifest naming one layout beside
+ * an archive holding another, which intake reads as every image missing while the run reports success.
  */
 export function stageOracleCandidateImages(
   bundle: Readonly<OracleCandidateBundle>,
@@ -178,19 +200,13 @@ export function stageOracleCandidateImages(
   stageRoot: string,
 ): number {
   let staged = 0;
-  for (const image of bundle.images) {
-    if (image.state !== 'captured') continue;
-    const parts = image.identity.split('/');
-    const source = join(artifactsRoot, parts[0]!, parts[1]!, parts[2]!, 'screenshot.png');
-    const destination = join(stageRoot, image.file);
+  for (const capture of bundle.captures) {
+    if (capture.status !== 'captured') continue;
+    const { entry, renderer, subject } = capture.identity;
+    const source = join(artifactsRoot, subject, entry, renderer, 'screenshot.png');
+    const destination = join(stageRoot, capture.file);
     mkdirSync(dirname(destination), { recursive: true });
     copyFileSync(source, destination);
-    const copied = createHash('sha256').update(readFileSync(destination)).digest('hex');
-    if (copied !== image.artifactSha256) {
-      throw new Error(
-        `stageOracleCandidateImages: ${image.identity} staged to ${copied} but its record says ${image.artifactSha256}`,
-      );
-    }
     staged += 1;
   }
   return staged;
