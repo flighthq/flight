@@ -10,10 +10,6 @@ const glMock = vi.hoisted(() => ({
   uniform4f: vi.fn(),
 }));
 
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
 vi.mock('@flighthq/render-gl/contract', () => ({
   drawGlFullscreenPass: vi.fn((_state, _program, _textures, _dest, setUniforms) => {
     setUniforms(glMock as never, { program: {} } as never);
