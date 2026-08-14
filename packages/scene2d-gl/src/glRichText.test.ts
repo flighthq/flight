@@ -65,7 +65,15 @@ describe('drawGlRichText', () => {
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
 
-    const bindSpy = vi.spyOn(getGlRenderStateRuntime(state).defaultBitmapShader!, 'bind');
+    // The default bitmap shader is compiled on FIRST USE and is null until then, so this first draw is
+    // what brings it into existence — spying before it would attach to nothing. A `!` here would only
+    // silence the type error announcing that, which is how this test previously passed typecheck and
+    // failed at runtime. Draw once to force the compile, then spy on the real object and draw again.
+    drawGlRichText(state, renderProxy);
+    const shader = getGlRenderStateRuntime(state).defaultBitmapShader;
+    expect(shader).not.toBeNull();
+
+    const bindSpy = vi.spyOn(shader!, 'bind');
     drawGlRichText(state, renderProxy);
 
     expect(bindSpy).toHaveBeenCalledWith(state.gl, state, renderProxy);
