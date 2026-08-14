@@ -62,6 +62,14 @@ jobs:
 
       - run: npm ci
 
+      # ★ THE CAPTURE NEEDS A BUILT TREE. The first successful-looking run produced a bundle with zero
+      # images because this step was missing: the harness had nothing to render, every cell came back
+      # `missing`, and the artifact carried only JSON. `tests.yml`'s capture lane builds first (it restores
+      # a dist tarball from a prior job); this workflow builds inline instead, because it runs rarely and a
+      # cross-job artifact would be a second thing to keep in step for no gain.
+      - run: npm run build
+      - run: npm run build:functional
+
       # ★ THE QUEUE IS THE DIRECTORY, NOT THE DIFF. §5: "The directory is a queue of outstanding work, not
       # an archive of every completed request. The lock-bump PR removes a fulfilled request." So every file
       # present IS outstanding, and asking git what this push changed answers a question the design does not
@@ -84,7 +92,7 @@ jobs:
           echo "outstanding requests: ${list:-<none>}"
 
       - name: Install Playwright browsers
-        if: steps.requests.outputs.list != ''
+        if: success() && steps.requests.outputs.list != ''
         run: npx playwright install --with-deps chromium
 
       # ★ THE ENVIRONMENT IS RECORDED, NOT PINNED. §10 has not been ruled: whether reference sets are keyed
@@ -93,7 +101,7 @@ jobs:
       # opaque id travelling with the bundle. When §10 lands, this becomes either a pinned digest or a key;
       # until then, recording it costs nothing and claiming it would be the schema decision being deferred.
       - id: environment
-        if: steps.requests.outputs.list != ''
+        if: success() && steps.requests.outputs.list != ''
         run: |
           browser=$(npx playwright --version | tr -d ' ')
           descriptor="runner=${ImageOS:-unknown};image=${ImageVersion:-unknown};${browser};viewport=default"
@@ -101,7 +109,7 @@ jobs:
           echo "descriptor=$descriptor" >> "$GITHUB_OUTPUT"
 
       - name: Capture the commissioned cells
-        if: steps.requests.outputs.list != ''
+        if: success() && steps.requests.outputs.list != ''
         env:
           ORACLE_FLIGHT_COMMIT: ${{ github.sha }}
           ORACLE_ENVIRONMENT_ID: ${{ steps.environment.outputs.id }}
@@ -124,19 +132,24 @@ jobs:
       # The candidate PNGs and the bundle travel together: intake verifies the bundle's per-image
       # artifactSha256 against these exact bytes before it stages anything.
       - uses: actions/upload-artifact@v4
-        if: steps.requests.outputs.list != ''
+        if: success() && steps.requests.outputs.list != ''
         with:
           name: oracle-candidate-${{ github.sha }}
           path: |
             candidate-*.json
             .artifacts/functional/**/screenshot.png
             .artifacts/functional/**/status.json
+          # ★ THE PNG IS THE POINT. §8: the reviewer is "blessing an image", and the report shows
+          # old │ new │ delta. A bundle without its images is a manifest of hashes nobody can look at —
+          # which is what the first run uploaded, and it is why `error` here is not enough on its own:
+          # the JSON alone satisfies "some file was found". The real guard is that the bundle step now
+          # exits non-zero when nothing captured, and `success()` above stops this step from running.
           if-no-files-found: error
           retention-days: 30
 
       # Recorded in the job summary so a human can see what was commissioned without downloading anything.
       # §8: a capture failure is an explicit missing row — the bundle already carries it, this surfaces it.
-      - if: steps.requests.outputs.list != ''
+      - if: success() && steps.requests.outputs.list != ''
         run: |
           {
             echo "### oracle candidate"
