@@ -24,6 +24,14 @@
 # candidate uploads, and nothing is ever dispatched. `promote.yml` carries the identical warning for the
 # identical reason; read it if this needs re-deriving.
 #
+# ★★ AND THE CONSEQUENCE THAT IS EASY TO MISS EVEN KNOWING THE RULE: EVERY EDIT TO THIS FILE NEEDS A
+# PROMOTION BEFORE IT TAKES EFFECT. A fix pushed to `develop` changes nothing about what runs — the
+# default branch's copy executes, so the OLD code runs again and fails identically, which reads as "my
+# fix did not work" rather than "my fix is not deployed". That cost a full debugging round: a broken
+# `steps.` reference was fixed on develop and the very next run reproduced the same stack trace.
+# Its sibling `oracle-capture.yml` is a `push` workflow and runs the PUSHED branch's copy, so the two
+# iterate at different speeds. When changing this file, expect: push -> CI green -> promote -> then test.
+#
 # ★ THIS DOES NOT MAKE COMMISSIONING WAIT FOR A PROMOTION. Where this FILE lives and which branch the
 # TRIGGERING RUN is on are different things, and conflating them is the easy mistake. The file lands on
 # `main` once; from then on a capture running on `develop` dispatches immediately. `main` advances
