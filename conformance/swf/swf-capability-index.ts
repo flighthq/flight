@@ -5,6 +5,7 @@ import { availableParallelism } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { FixtureTreeStampPack } from '../../scripts/fixtures';
 import {
   FIXTURE_RELEASE_TAG,
   getFixtureTreePath,
@@ -204,16 +205,26 @@ export function inventoryImportConformanceCorpus(treeDirectory: string): ImportC
   };
 }
 
+// The pack entry proving this tree is the pinned release, or null when it is not: no stamp, no entry for
+// this pack, or a stamp naming a different tag or variant. All four are one outcome — the tree cannot be
+// used as evidence — so there is one message rather than four, and a caller that only needs the yes/no
+// never pays for the distinction.
+//
+// Separated from `main` because the decision is the whole subject of the CLI's accept and reject
+// behaviour, and it is a pure function of the stamp on disk: no argv, no exit code, no stdout. Fusing it
+// into `main` left it reachable only by running the program, which verifies the decision and the process
+// together and cannot say which of the two a failure came from.
+export function resolveVerifiedSwfFixturePack(treeDirectory: string): FixtureTreeStampPack | null {
+  const stamp = readFixtureTreeStamp(treeDirectory);
+  if (stamp === null || stamp.tag !== FIXTURE_RELEASE_TAG || stamp.variant !== PACK_VARIANT) return null;
+  return stamp.packs.find((candidate) => candidate.pack === PACK_ID) ?? null;
+}
+
 async function main(): Promise<void> {
   const cacheDirectory = resolveFixtureCacheDirectory();
   const treeDirectory = getFixtureTreePath(cacheDirectory, PACK_VARIANT, PACK_ID);
-  const stamp = readFixtureTreeStamp(treeDirectory);
-  const pack = stamp?.packs.find((candidate) => candidate.pack === PACK_ID);
-  if (stamp === null || pack === undefined || stamp.tag !== FIXTURE_RELEASE_TAG || stamp.variant !== PACK_VARIANT) {
-    throw new Error(
-      `Verified ${PACK_ID} ${PACK_VARIANT} tree is unavailable; run npm run fixtures -- ${PACK_ID} --variant ${PACK_VARIANT}`,
-    );
-  }
+  const pack = resolveVerifiedSwfFixturePack(treeDirectory);
+  if (pack === null) throw new Error(UNVERIFIED_SWF_FIXTURE_TREE_MESSAGE);
   const definitions = parseImportConformanceCapabilityDefinitions(
     JSON.parse(readFileSync(join(REPOSITORY_ROOT, 'agents', 'packages', 'swf', 'capabilities.json'), 'utf8')),
   );
@@ -248,6 +259,11 @@ async function mapWithConcurrency<Input, Output>(
   await Promise.all(Array.from({ length: Math.min(concurrency, inputs.length) }, work));
   return outputs;
 }
+
+// The one thing a caller can do about any of the four unverified cases, which is why they share a
+// message: fetch the pinned tree.
+export const UNVERIFIED_SWF_FIXTURE_TREE_MESSAGE =
+  'Verified swf-ruffle-fixtures full tree is unavailable; run npm run fixtures -- swf-ruffle-fixtures --variant full';
 
 const PACK_ID = 'swf-ruffle-fixtures';
 const PACK_VARIANT = 'full';
