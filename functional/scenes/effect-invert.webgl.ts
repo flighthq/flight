@@ -1,4 +1,4 @@
-import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -14,6 +14,7 @@ import {
   createShape,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -77,3 +78,23 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const col = 3 % cols;
+  const row = Math.floor(3 / cols);
+  const cx = Math.round(((col + 0.5) * frame.width) / cols);
+  const cy = Math.round(((row + 0.5) * frame.height) / rows);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum >= 170) {
+    throw new Error(
+      `[effect-invert] yellow cell luminance is ${lum.toFixed(1)} (expected < 170 after inversion, original ~204)`,
+    );
+  }
+}
