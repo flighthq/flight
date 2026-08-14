@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -14,6 +14,7 @@ import {
   createWgpuRenderState,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -80,3 +81,31 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Sepia maps every color to a warm brown scale whose channel ordering is R >= G >= B. The sepia
+// matrix's row coefficients are R-row > G-row > B-row in every column, so this ordering holds
+// regardless of whether the operation runs in sRGB or linear space. Without the effect, cell 1
+// (0x30c040, G=192 >> R=48) and cell 2 (0x3060ff, B=255 >> R=48) violate R >= G >= B and fail.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const labels = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan'];
+
+  for (let i = 0; i < cols * rows; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = Math.round(((col + 0.5) * frame.width) / cols);
+    const cy = Math.round(((row + 0.5) * frame.height) / rows);
+    const rgb = getBitmapPixelRgb(frame, cx, cy);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = rgb & 0xff;
+
+    if (r < g - 3 || g < b - 3) {
+      throw new Error(
+        `[effect-sepia] ${labels[i]} cell has rgb(${r},${g},${b}) — expected warm-tone ordering R >= G >= B`,
+      );
+    }
+  }
+}

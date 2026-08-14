@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -13,6 +13,7 @@ import {
   createGrayscaleAdjustment,
   createShape,
   defaultGlShapeRenderer,
+  getBitmapPixelRgb,
   endGlRenderEffectPipeline,
   prepareScene2DRender,
   registerGlStandardMaterial,
@@ -77,3 +78,38 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const labels = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan'];
+  const grays: number[] = [];
+
+  for (let i = 0; i < cols * rows; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = Math.round(((col + 0.5) * frame.width) / cols);
+    const cy = Math.round(((row + 0.5) * frame.height) / rows);
+    const rgb = getBitmapPixelRgb(frame, cx, cy);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = rgb & 0xff;
+    const spread = Math.max(r, g, b) - Math.min(r, g, b);
+    if (spread >= 5) {
+      throw new Error(`[effect-grayscale] ${labels[i]} cell not grayscale — rgb(${r},${g},${b}), spread=${spread}`);
+    }
+    grays.push(r);
+  }
+
+  const distinct: number[] = [];
+  for (const v of grays) {
+    if (!distinct.some((d) => Math.abs(d - v) < 10)) {
+      distinct.push(v);
+    }
+  }
+  if (distinct.length < 3) {
+    throw new Error(
+      `[effect-grayscale] expected >= 3 distinct luminance levels, got ${distinct.length} — values: ${grays.join(', ')}`,
+    );
+  }
+}
