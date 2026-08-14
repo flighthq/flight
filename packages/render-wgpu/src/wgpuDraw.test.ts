@@ -240,6 +240,39 @@ describe('bindWgpuTexture', () => {
     expect(createTexture).toHaveBeenCalledWith(expect.objectContaining({ mipLevelCount: 4 }));
     expect(submit).toHaveBeenCalled();
   });
+
+  it('degrades to a single mip level when generateMips is true but no generator is registered', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const createTexture = vi.spyOn(state.device, 'createTexture');
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    bindWgpuTexture(state, canvas, true);
+    expect(createTexture).toHaveBeenCalledWith(expect.objectContaining({ mipLevelCount: 1 }));
+  });
+
+  it('invokes the mipmapDegradedGuard when degrading', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const guard = vi.fn();
+    getWgpuRenderStateRuntime(state).mipmapDegradedGuard = guard;
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    bindWgpuTexture(state, canvas, true);
+    expect(guard).toHaveBeenCalledWith(state);
+  });
+
+  it('does not invoke the mipmapDegradedGuard when the generator is registered', async () => {
+    const state = await createWgpuRenderStateForTest();
+    registerWgpuMipmapGeneration(state);
+    const guard = vi.fn();
+    getWgpuRenderStateRuntime(state).mipmapDegradedGuard = guard;
+    const canvas = document.createElement('canvas');
+    canvas.width = 8;
+    canvas.height = 8;
+    bindWgpuTexture(state, canvas, true);
+    expect(guard).not.toHaveBeenCalled();
+  });
 });
 
 describe('bindWgpuVideoTexture', () => {

@@ -150,7 +150,8 @@ export function bindWgpuTexture(
 
   if (!isWgpuExternalImageSourceReady(imageSource as GPUCopyExternalImageSource, width, height)) return null;
 
-  const mipLevelCount = generateMips ? wgpuMipLevelCount(width, height) : 1;
+  if (generateMips && runtime.mipmapGenerator == null) runtime.mipmapDegradedGuard?.(state);
+  const mipLevelCount = generateMips && runtime.mipmapGenerator != null ? wgpuMipLevelCount(width, height) : 1;
   const texture = device.createTexture({
     size: [width, height, 1],
     format: 'rgba8unorm',
@@ -539,7 +540,8 @@ function uploadWgpuBitmapEntry(
   const { device } = state;
   const width = bitmap.width || 1;
   const height = bitmap.height || 1;
-  const mipLevelCount = generateMips ? wgpuMipLevelCount(width, height) : 1;
+  if (generateMips && runtime.mipmapGenerator == null) runtime.mipmapDegradedGuard?.(state);
+  const mipLevelCount = generateMips && runtime.mipmapGenerator != null ? wgpuMipLevelCount(width, height) : 1;
   const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
@@ -603,7 +605,8 @@ function uploadWgpuImageResourceEntry(
   const width = resource.width || 1;
   const height = resource.height || 1;
   if (!isWgpuExternalImageSourceReady(resource.source as GPUCopyExternalImageSource, width, height)) return null;
-  const mipLevelCount = generateMips ? wgpuMipLevelCount(width, height) : 1;
+  if (generateMips && runtime.mipmapGenerator == null) runtime.mipmapDegradedGuard?.(state);
+  const mipLevelCount = generateMips && runtime.mipmapGenerator != null ? wgpuMipLevelCount(width, height) : 1;
   const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
   const texture = device.createTexture({
     size: [width, height, 1],
