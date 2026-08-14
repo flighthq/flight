@@ -88,6 +88,7 @@
     "evidence:baseline": "tsx ./scripts/capture-evidence.ts --update",
     "evidence:check": "tsx ./scripts/capture-evidence.ts --check",
     "evidence:json": "tsx ./scripts/capture-evidence.ts --json",
+    "hermeticity": "tsx ./scripts/handRolledHermeticity.ts",
     "contrast": "tsx ./scripts/capture-contrast.ts",
     "contrast:json": "tsx ./scripts/capture-contrast.ts --json",
     "exports:check": "tsx ./scripts/completeness.ts",

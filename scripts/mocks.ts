@@ -41,7 +41,18 @@ const RULE_MESSAGE: Record<Rule, string> = {
 const IGNORED_DIRS = new Set([...SCAN_SKIP_DIRECTORIES, '.claude', '.quimby', 'worktrees', 'incoming']);
 
 // Genuinely-intentional escapes, named with a reason, never silently.
-const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [];
+const ALLOW: { rule: Rule; match: (rel: string) => boolean; why: string }[] = [
+  {
+    match: (rel) => rel === 'scripts/handRolledHermeticity.test.ts',
+    rule: 'untiered-mock',
+    why:
+      'This file does not mock anything — it writes SAMPLE SOURCE containing `vi.mock(` into temp files ' +
+      'and asserts what the hand-rolled-hermeticity predicate makes of them. The detector matches the ' +
+      'token wherever it appears, so a test ABOUT mocking reads as a test THAT mocks, which is the same ' +
+      'token-versus-call-site confusion that predicate exists to remove. Obfuscating the fixtures would ' +
+      'silence this at the cost of the test no longer exercising a realistic call site.',
+  },
+];
 
 const args = process.argv.slice(2);
 const checkMode = args.includes('--check');
