@@ -13,7 +13,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
-import { buildOracleCandidateBundle, hashOracleFile, stageOracleCandidateImages } from './oracle-candidate';
+import { buildOracleCandidateBundle, stageOracleCandidateImages } from './oracle-candidate';
 import { getOracleRequestCells, readOracleRequest } from './oracle-records';
 
 const [subcommand, requestPath, ...rest] = process.argv.slice(2);
@@ -55,15 +55,17 @@ const stage = readOption(rest, '--stage') ?? 'candidate';
 // The landed commit and the environment identity are supplied by the workflow, never invented here (§5):
 // an agent-local SHA may be replaced when work lands, and a value this script guessed would be a claim
 // about the world it cannot check.
-const flightCommit = requireEnv('ORACLE_FLIGHT_COMMIT');
 const environmentId = requireEnv('ORACLE_ENVIRONMENT_ID');
 
 const bundle = buildOracleCandidateBundle({
   artifactsRoot,
+  // ★ `uncalibrated` is a deliberate, schema-valid identifier, not a placeholder to tidy later.
+  // §8: a comparison policy records the calibrated channelTolerance and mismatch fraction, and §2 says
+  // that calibration must choose them before the first policy is published. None has been run, so any
+  // other value here would name a policy that does not exist.
+  comparisonPolicyId: process.env['ORACLE_COMPARISON_POLICY_ID'] ?? 'uncalibrated',
   environmentId,
-  flightCommit,
   request,
-  requestSha256: hashOracleFile(requestPath),
 });
 
 // ★ ONE DIRECTORY PER REQUEST, AND THE MANIFEST IS ALWAYS `candidate.json`.
@@ -77,10 +79,13 @@ const staged = stageOracleCandidateImages(bundle, artifactsRoot, stageRoot);
 const out = join(stageRoot, 'candidate.json');
 writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`);
 
-const captured = bundle.images.filter((image) => image.state === 'captured');
-const missing = bundle.images.filter((image) => image.state === 'missing');
+const captured = bundle.captures.filter((capture) => capture.status === 'captured');
+const missing = bundle.captures.filter((capture) => capture.status === 'missing');
 console.log(`${basename(requestPath)}: ${captured.length} captured, ${missing.length} missing`);
-for (const image of missing) console.log(`  missing  ${image.identity}  ${'reason' in image ? image.reason : ''}`);
+for (const capture of missing) {
+  const { entry, renderer, subject } = capture.identity;
+  console.log(`  missing  ${subject}/${entry}/${renderer}  ${'error' in capture ? capture.error : ''}`);
+}
 console.log(`staged ${staged} image(s) and wrote ${out}`);
 
 // ★ A BUNDLE WITH NOTHING IN IT IS A FAILURE, NOT AN EMPTY SUCCESS. Dispatching it would open an Oracle
