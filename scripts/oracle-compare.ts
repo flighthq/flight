@@ -1,0 +1,48 @@
+// The CI adapter between `getBitmapMismatch` and the render-oracle join
+// (agents/render-oracle-repository.md §9, "Dimensions are a verdict, not a crash").
+//
+// ★ NO NEW COMPARISON ALGORITHM. `packages/bitmap/src/bitmapCompare.ts` already has it, it is tested,
+// and §2 is explicit that none is missing. This file adds exactly one thing: it turns the primitive's
+// correct-but-fatal precondition into a reportable row.
+//
+// ★ WHY THE THROW IS RIGHT AND STILL HAS TO BE CAUGHT HERE. `getBitmapMismatch` throws when the two
+// bitmaps differ in size, and that is the right call for a library: comparing incompatible surfaces IS a
+// programmer error. But a corpus run compares hundreds of cells in a loop, and one scene whose viewport
+// changed would abort every cell after it — turning a single resized scene into an unexplained absence
+// of four hundred results. The adapter therefore converts that one precondition into `dimensionMismatch`,
+// which the join reports as `incomparable` and gates on. The library keeps its contract; CI keeps its
+// corpus.
+//
+// ★ THE TOLERANCE IS NOT DEFAULTED HERE, ON PURPOSE. §2: `CAPTURE_PARITY_TOLERANCE` (15) and
+// `CAPTURE_REGRESSION_TOLERANCE` (5) are mean-absolute differences in FINGERPRINT space — a mean over 256
+// averaged cells. Pixel-space `fraction` and `maxChannelDelta` are different units over a different
+// distribution, so copying either number across "would look principled and mean nothing". The caller
+// passes a calibrated `channelTolerance` from a published comparison policy, and the calibration run that
+// chooses it is part of the work, not a default anyone can inherit by accident.
+import { getBitmapMismatch } from '../packages/bitmap/src/bitmapCompare.js';
+import type { Bitmap } from '../packages/types/src/Bitmap.js';
+import type { OracleCellComparison } from './oracle-state';
+
+/**
+ * Compares a candidate render against its blessed reference, returning a verdict-shaped result even when
+ * the two are incomparable. Never throws for a dimension difference; a genuinely unexpected error still
+ * propagates, because an adapter that swallows everything would report a broken decoder as a clean run.
+ */
+export function compareOracleReference(
+  reference: Readonly<Bitmap>,
+  candidate: Readonly<Bitmap>,
+  channelTolerance: number,
+): OracleCellComparison {
+  if (reference.width !== candidate.width || reference.height !== candidate.height) {
+    // Checked BEFORE calling rather than caught after: catching would also swallow a future unrelated
+    // throw from the primitive and label it a dimension mismatch, which is a wrong verdict rather than a
+    // missing one — and a wrong verdict is the harder of the two to notice.
+    return { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 };
+  }
+  const mismatch = getBitmapMismatch(reference, candidate, channelTolerance);
+  return {
+    dimensionMismatch: false,
+    fraction: mismatch.fraction,
+    maxChannelDelta: mismatch.maxChannelDelta,
+  };
+}
