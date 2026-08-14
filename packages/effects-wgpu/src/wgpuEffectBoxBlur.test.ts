@@ -2,10 +2,6 @@ const mockState = vi.hoisted(() => ({
   uniformSnapshots: [] as number[][],
 }));
 
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
 vi.mock('./wgpuEffectPass', () => ({
   createWgpuEffectPipeline: vi.fn(() => ({ blendMode: 'replace', pipeline: {} })),
   drawWgpuEffectPass: vi.fn((_state, _source, _dest, _pipeline, setUniforms) => {

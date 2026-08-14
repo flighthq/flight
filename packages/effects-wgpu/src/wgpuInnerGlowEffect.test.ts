@@ -1,7 +1,3 @@
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
 vi.mock('@flighthq/render-wgpu/contract', () => {
   let nextTargetId = 0;
   return {
