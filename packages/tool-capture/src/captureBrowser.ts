@@ -42,7 +42,9 @@ export async function launchBrowser(
   // The page is discarded; only the process-level GPU state survives. Needs a localhost URL
   // (secure context) — navigator.gpu is unavailable on about:blank.
   if (options.serverUrl) {
-    await warmWgpuAdapter(context, options.serverUrl);
+    await warmWgpuAdapter(context, options.serverUrl).catch((e: unknown) => {
+      console.warn(`[capture] WebGPU warm-up failed (non-fatal): ${e instanceof Error ? e.message : String(e)}`);
+    });
   }
 
   // Always signal capture mode before any page script runs. A page whose render advances over time
@@ -346,8 +348,12 @@ async function warmWgpuAdapter(context: BrowserContext, serverUrl: string): Prom
       if (typeof navigator === 'undefined' || !navigator.gpu) return 'no-gpu';
       const adapter = await navigator.gpu.requestAdapter();
       if (adapter === null) return 'no-adapter';
-      const device = await adapter.requestDevice();
-      device.destroy();
+      try {
+        const device = await adapter.requestDevice();
+        device.destroy();
+      } catch (e: unknown) {
+        return `device-error: ${e instanceof Error ? e.message : String(e)}`;
+      }
       return 'ok';
     });
     if (result !== 'ok') {
