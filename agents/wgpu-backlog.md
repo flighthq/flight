@@ -85,24 +85,14 @@ re-introduced by the next person.
   shader family uses `@builtin(front_facing)` to negate the back-side geometric normal, so a wrong
   `frontFace` *mislights* mirrored double-sided meshes with nothing culled.
 
-- **Trilinear/anisotropic sampling has no mip chain to sample.** `bindWgpuTexture`
-  (`wgpuDraw.ts`) builds a full chain via `generateWgpuMipmaps`, but only when its `generateMips`
-  parameter is true. **What reaches it: nothing.** `resolveWgpuTexture` — what every real consumer calls
-  (`scene3d-wgpu/wgpuMeshPipeline.ts:782`, `scene3d-wgpu/wgpuParticleEmitter3D.ts:271`,
-  `scene2d-wgpu/wgpuSprite.ts:33`) — **does not expose the parameter at all**; its third argument is
-  `premultiply`, so the positional `true` at `wgpuSprite.ts:33` reads like a mip request and is not one.
-  No in-tree caller passes `generateMips: true` anywhere. **Render-visible:** a material configured for
-  trilinear or anisotropic filtering gets a sampler expecting a chain on a `mipLevelCount = 1` texture;
-  per `bindWgpuTexture`'s own note it "simply samples the base level", so the request degrades silently
-  to bilinear-on-base and the symptom is minification aliasing that reads as an asset problem.
-  **How it escaped:** nothing asserts a mip chain exists — the parameter has a default and no test
-  exercises the true branch, so the capability is reachable only by calling the export directly.
-  **Sibling:** GL should be checked for the same gap before either is fixed; fixing one backend alone
-  would leave the two disagreeing about whether a mip request is honoured. Found 2026-08-13 while
-  investigating the mipmap generator's bundle retention (a separate, real, size finding being fixed on
-  its own); deliberately NOT folded into that fix. The `bindWgpuTexture` comment that described a
-  material-path opt-in which does not exist was corrected in `947174aca` — that removes the misdirection
-  without claiming why the opt-in is absent, which remains unestablished.
+- **~~Trilinear/anisotropic sampling has no mip chain to sample.~~** FIXED. The upload paths
+  (`bindWgpuBitmapTexture`, `uploadWgpuBitmapEntry`, `uploadWgpuImageResourceEntry`) now gate
+  `mipLevelCount` on whether `runtime.mipmapGenerator` is registered. When the generator is absent,
+  the texture is allocated with a single mip level — graceful degradation to bilinear rather than
+  allocating uninitialized mip levels. A guard slot (`mipmapDegradedGuard`) reports the degradation
+  when `enableWgpuTextureResolverGuards` is active. GL has no equivalent gap — `gl.generateMipmap`
+  is a native API call that always works. HYPOTHESIS, UNTESTED: visible darkening on a minified
+  texture when levels 1+ are uninitialized (predicted, not witnessed — no functional capture yet).
 
 ### Fix complete, awaiting the maintainer's merge decision
 
