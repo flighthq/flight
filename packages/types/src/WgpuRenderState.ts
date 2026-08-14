@@ -140,6 +140,10 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   nearestSampler: GPUSampler;
   samplerCache: Map<number, GPUSampler>;
 
+  // Guard callback invoked when a texture requests mipmaps but no generator is registered. The
+  // upload path degrades to a single-level texture; this slot reports the degradation. Null until
+  // a guard module installs a handler.
+  mipmapDegradedGuard: ((state: WgpuRenderState) => void) | null;
   // Registered mip-chain generator. Null until registerWgpuMipmapGeneration installs one; the
   // upload paths read this slot rather than statically importing the generator module, so a bundle
   // that never registers mip generation tree-shakes the pipeline, shader, and cache entirely.
