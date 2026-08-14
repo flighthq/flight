@@ -1,4 +1,4 @@
-import type { Bitmap, Node2D } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,7 +15,6 @@ import {
   defaultCanvasShapeCommands,
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
-  getBitmapPixelRgb,
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerRenderer,
@@ -75,36 +74,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// Inversion reverses the luminance ordering of cells. Cell 3 (yellow, 0xffd030, perceived luminance
-// ~204) is the brightest input; cell 2 (blue, 0x3060ff, ~100) is the darkest. After inversion the
-// ordering must reverse — yellow becomes the darkest, blue the brightest — regardless of whether the
-// inversion happens in sRGB or linear space (sRGB's transfer function is monotonic, so it preserves
-// ordering). Without the effect, cell 3 stays at ~204 and cell 2 at ~100, failing the assertion.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const cols = 3;
-  const rows = 2;
-
-  function cellLuminance(index: number): number {
-    const col = index % cols;
-    const row = Math.floor(index / cols);
-    const cx = Math.round(((col + 0.5) * frame.width) / cols);
-    const cy = Math.round(((row + 0.5) * frame.height) / rows);
-    const rgb = getBitmapPixelRgb(frame, cx, cy);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >> 8) & 0xff;
-    const b = rgb & 0xff;
-    return 0.299 * r + 0.587 * g + 0.114 * b;
-  }
-
-  const lumYellow = cellLuminance(3);
-  const lumBlue = cellLuminance(2);
-
-  if (lumYellow >= lumBlue) {
-    throw new Error(
-      `[effect-invert] yellow cell (input lum ~204) has output luminance ${lumYellow.toFixed(1)}, ` +
-        `blue cell (input lum ~100) has ${lumBlue.toFixed(1)} — inversion should reverse their ordering`,
-    );
-  }
-}

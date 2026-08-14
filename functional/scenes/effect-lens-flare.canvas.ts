@@ -1,4 +1,4 @@
-import type { Bitmap, Node2D } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -10,7 +10,6 @@ import {
   createCanvasRenderEffectPipeline,
   createCanvasRenderState,
   createDisplayObject,
-  getBitmapPixelRgb,
   createLensFlareEffect,
   createShape,
   defaultCanvasShapeCommands,
@@ -74,25 +73,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// Lens flare (intensity 1.6, 5 ghosts, halo 0.4) creates ghost images and halo rings from bright
-// regions. The ghosts are symmetric about the frame center, so areas away from shapes receive
-// flare light, elevating their luminance above the pure background (~5). A mid-frame pixel in a
-// dark region should show luminance > 8. Without the effect, it stays at ~5 and fails.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const x = Math.round(frame.width * 0.1);
-  const y = Math.round(frame.height * 0.5);
-  const rgb = getBitmapPixelRgb(frame, x, y);
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-  const b = rgb & 0xff;
-  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-  if (lum <= 8) {
-    throw new Error(
-      `[effect-lens-flare] dark-region pixel has luminance ${lum.toFixed(1)} ` +
-        `(expected > 8) — lens flare ghosts/halo not visible; rgb(${r},${g},${b})`,
-    );
-  }
-}

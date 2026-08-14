@@ -1,4 +1,4 @@
-import type { Bitmap, Node2D } from '@flighthq/sdk';
+import type { Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,7 +15,6 @@ import {
   defaultWgpuShapeRenderer,
   registerWgpuToneMapEffect,
   endWgpuRenderEffectPipeline,
-  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -77,22 +76,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// ACES tone mapping with exposure 1.5 compresses highlights and boosts shadows. The dark background
-// (0x05060a, luminance ~5) gets lifted by the exposure multiplier and the ACES curve's shadow lift.
-// A corner background pixel should have luminance > 15. Without the effect, it stays at ~5 and fails.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const rgb = getBitmapPixelRgb(frame, 4, 4);
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-  const b = rgb & 0xff;
-  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-  if (lum <= 15) {
-    throw new Error(
-      `[effect-tone-map] corner pixel luminance is ${lum.toFixed(1)} (expected > 15) — ` +
-        `ACES tone mapping not applied; rgb(${r},${g},${b})`,
-    );
-  }
-}

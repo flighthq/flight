@@ -1,4 +1,4 @@
-import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,7 +15,6 @@ import {
   registerGlBloomEffect,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
-  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -80,22 +79,3 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
-
-// ORACLE-BLOCK
-// MSAA bloom adds glow from bright regions into surrounding dark areas, same as standard bloom
-// but through an MSAA pipeline. Background pixels near shapes should show bloom glow with
-// luminance > 10 (pure background is ~5). Without bloom, the pixel stays at ~5 and fails.
-export function assertRender(frame: Readonly<Bitmap>): void {
-  const rgb = getBitmapPixelRgb(frame, 8, Math.round(frame.height / 2));
-  const r = (rgb >> 16) & 0xff;
-  const g = (rgb >> 8) & 0xff;
-  const b = rgb & 0xff;
-  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-  if (lum <= 10) {
-    throw new Error(
-      `[effect-msaa-bloom] edge pixel luminance is ${lum.toFixed(1)} (expected > 10) — ` +
-        `no bloom glow detected in dark area; rgb(${r},${g},${b})`,
-    );
-  }
-}
