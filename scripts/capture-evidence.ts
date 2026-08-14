@@ -93,6 +93,17 @@ function collectExamples(): Record<string, CaptureBaselineEvidenceKind[]> {
   return out;
 }
 
+// ★ THE KINDS A LOCAL RUN CAN SPEAK FOR, DECLARED ONCE AND USED BY BOTH PATHS.
+// `referenceImage` is deliberately absent: those bytes live in a `flight-oracles` release and are joined
+// in through `scripts/oracle-lock.json`, so nothing this script inspects can confirm or deny one
+// (see CaptureBaselineEvidenceKind for the full argument).
+//
+// It has to reach BOTH call sites below or they disagree about what this run settled. It previously
+// reached only the `--update` path, and the diff path then reported every pinned `referenceImage` as
+// "pinned, no longer carried" — a coverage LOSS, blocking a merge, for a kind no run was ever able to
+// carry. One constant, two uses, so the two cannot drift apart again.
+const LOCALLY_OBSERVABLE_KINDS: readonly CaptureBaselineEvidenceKind[] = ['fingerprint', 'oracle', 'screenshot'];
+
 const observed: Record<string, Record<string, CaptureBaselineEvidenceKind[]>> = {
   examples: collectExamples(),
   functional: collectFunctional(),
@@ -107,7 +118,7 @@ if (updateMode) {
       observed[subject],
       null,
       Object.keys(observed[subject]),
-      ['fingerprint', 'oracle', 'screenshot'],
+      LOCALLY_OBSERVABLE_KINDS,
     );
     console.log(`${subject}: pinned ${Object.keys(manifest.subjects[subject] ?? {}).length} targets`);
   }
@@ -122,6 +133,7 @@ for (const subject of subjects) {
   const diff = diffCaptureBaselineCoverage(manifest, subject, targets, Object.keys(targets), {
     entryFiltered: false,
     activeRenderers: null,
+    kinds: LOCALLY_OBSERVABLE_KINDS,
   });
   report[subject] = diff;
   if (!jsonMode) {

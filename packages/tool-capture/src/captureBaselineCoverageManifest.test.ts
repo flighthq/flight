@@ -176,6 +176,56 @@ describe('diffCaptureBaselineCoverage', () => {
   });
 });
 
+describe('diffCaptureBaselineCoverage · unobservable kinds', () => {
+  // ★ THE FIRING TEST FOR THE GATE THAT BLOCKED A MERGE. A `referenceImage` lives in a flight-oracles
+  // release, so no local run carries one. The write path already carried such pins forward; the DIFF path
+  // did not, and reported every pinned referenceImage as "pinned, no longer carried" — a coverage LOSS for
+  // a kind nothing was ever able to carry. Both paths must be told the same thing about what a run settled.
+  it('does not report a loss for a kind this run could not observe', () => {
+    const manifest = createCaptureBaselineCoverageManifest({
+      functional: { 'a/webgl': ['fingerprint', 'referenceImage'] },
+    });
+
+    const diff = diffCaptureBaselineCoverage(manifest, 'functional', { 'a/webgl': ['fingerprint'] }, ['a/webgl'], {
+      activeRenderers: null,
+      entryFiltered: false,
+      kinds: ['fingerprint', 'oracle', 'screenshot'],
+    });
+
+    expect(diff.lost).toEqual([]);
+  });
+
+  // The control: WITHOUT the scope, the same inputs do report the loss. That is what the gate looked like
+  // when it blocked the merge, and it proves `kinds` is the load-bearing part rather than decoration.
+  it('reports it as lost when the run does not declare which kinds it observed', () => {
+    const manifest = createCaptureBaselineCoverageManifest({
+      functional: { 'a/webgl': ['fingerprint', 'referenceImage'] },
+    });
+
+    const diff = diffCaptureBaselineCoverage(manifest, 'functional', { 'a/webgl': ['fingerprint'] }, ['a/webgl'], {
+      activeRenderers: null,
+      entryFiltered: false,
+    });
+
+    expect(diff.lost).toEqual(['a/webgl#referenceImage']);
+  });
+
+  // And an observable kind that really did vanish is still a loss, so narrowing the scope did not blunt it.
+  it('still reports a loss for a kind the run could observe', () => {
+    const manifest = createCaptureBaselineCoverageManifest({
+      functional: { 'a/webgl': ['fingerprint', 'screenshot'] },
+    });
+
+    const diff = diffCaptureBaselineCoverage(manifest, 'functional', { 'a/webgl': ['fingerprint'] }, ['a/webgl'], {
+      activeRenderers: null,
+      entryFiltered: false,
+      kinds: ['fingerprint', 'oracle', 'screenshot'],
+    });
+
+    expect(diff.lost).toEqual(['a/webgl#screenshot']);
+  });
+});
+
 describe('evidence-kind scope', () => {
   const all = ['svg-image/webgl', 'svg-image/canvas', 'node-alpha/canvas'];
 
