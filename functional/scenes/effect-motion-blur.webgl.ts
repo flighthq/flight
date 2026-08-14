@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, GlRenderTarget, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -20,6 +20,7 @@ import {
   registerGlMotionBlurEffect,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   getNodeChildAt,
   getNodeChildCount,
   prepareScene2DRender,
@@ -103,3 +104,35 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+function measureHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    let previous = -1;
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}
+
+// ORACLE-BLOCK
+// Motion blur (intensity 1, 16 samples) smears the scene along the motion vector. The 4 squares
+// have axis-aligned edges, but the blur spreads color across boundaries, reducing HF energy from
+// the sharp transitions. Without the effect, clean square edges keep HF above 1.5.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const hf = measureHighFrequency(frame);
+  if (hf >= 1.5) {
+    throw new Error(
+      `[effect-motion-blur] high-frequency energy is ${hf.toFixed(2)} (expected < 1.5) — ` +
+        `motion blur should smooth transitions`,
+    );
+  }
+}

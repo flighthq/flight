@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,6 +7,7 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
+  getBitmapPixelRgb,
   createGlitchEffect,
   createShape,
   createWgpuCanvasElement,
@@ -76,3 +77,31 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Glitch (intensity 0.7, seed 3) displaces horizontal blocks and shifts RGB channels. The 5 clean
+// color bars get torn — at least one bar's center row should show a color that differs from its
+// original fill by > 30 in at least one channel. Without the effect, all bar centers match their
+// original fills exactly.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const originals = [0xff3366, 0x33ff99, 0x3399ff, 0xffcc33, 0xcc33ff];
+  let displaced = 0;
+
+  for (let i = 0; i < originals.length; i++) {
+    const cx = Math.round(frame.width * 0.5);
+    const cy = Math.round(frame.height * (0.1 + i * 0.16 + 0.06));
+    const rgb = getBitmapPixelRgb(frame, cx, cy);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = rgb & 0xff;
+    const origR = (originals[i] >> 16) & 0xff;
+    const origG = (originals[i] >> 8) & 0xff;
+    const origB = originals[i] & 0xff;
+    const maxDiff = Math.max(Math.abs(r - origR), Math.abs(g - origG), Math.abs(b - origB));
+    if (maxDiff > 30) displaced++;
+  }
+
+  if (displaced === 0) {
+    throw new Error(`[effect-glitch] all 5 bar centers match original fills — glitch displacement not visible`);
+  }
+}

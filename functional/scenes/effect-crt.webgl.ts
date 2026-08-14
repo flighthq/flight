@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   registerGlCrtEffect,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -76,3 +77,36 @@ for (let i = 0; i < 18; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// CRT combines scanlines (intensity 0.5), barrel curvature (0.3), vignette (0.4), and chromatic
+// aberration (0.4). The scanlines alone produce periodic brightness variation across rows, raising
+// vertical high-frequency energy above 2. Without the effect, vertical HF stays near the base
+// scene level and fails the check.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const hf = measureVerticalHighFrequency(frame);
+  if (hf < 2) {
+    throw new Error(
+      `[effect-crt] vertical high-frequency energy is ${hf.toFixed(2)} (expected >= 2) — ` +
+        `CRT scanlines not visible`,
+    );
+  }
+}
+
+function measureVerticalHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let x = 0; x < frame.width; x += 2) {
+    let previous = -1;
+    for (let y = 0; y < frame.height; y += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}

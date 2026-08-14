@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   registerWgpuCameraMotionBlurEffect,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -75,3 +76,35 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+function measureHighFrequency(frame: Readonly<Bitmap>): number {
+  let deltas = 0;
+  let pairs = 0;
+  for (let y = 0; y < frame.height; y += 1) {
+    let previous = -1;
+    for (let x = 0; x < frame.width; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (previous >= 0) {
+        deltas += Math.abs(value - previous);
+        pairs += 1;
+      }
+      previous = value;
+    }
+  }
+  return pairs === 0 ? 0 : deltas / pairs;
+}
+
+// ORACLE-BLOCK
+// Camera motion blur (intensity 0.8) simulates camera movement, smearing the entire frame. The
+// unprocessed scene with 4 rotated shapes has HF energy ~3-4. After motion blur, HF drops below
+// 1.5. Without the effect, sharp edges keep HF above 1.5 and the check fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const hf = measureHighFrequency(frame);
+  if (hf >= 1.5) {
+    throw new Error(
+      `[effect-camera-motion-blur] high-frequency energy is ${hf.toFixed(2)} (expected < 1.5) — ` +
+        `camera motion blur should smooth edges`,
+    );
+  }
+}

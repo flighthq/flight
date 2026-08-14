@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,6 +8,7 @@ import {
   beginWgpuRenderEffectPipeline,
   createChromaticAberrationEffect,
   createDisplayObject,
+  getBitmapPixelRgb,
   createShape,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -83,3 +84,32 @@ for (let i = 0; i < positions.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Radial chromatic aberration (intensity 4) separates RGB channels outward from center. Edge pixels
+// of shapes show channel fringing — the R, G, and B channels sample from slightly different positions.
+// A background pixel adjacent to a shape edge should show color fringing (channel imbalance > 15)
+// from the offset channel samples. Without the effect, edge-adjacent background pixels are uniform
+// near-black and the maximum channel difference is ~1.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  let maxImbalance = 0;
+  const cx = Math.round(frame.width * 0.5);
+  for (let y = 2; y < frame.height - 2; y += 3) {
+    const rgb = getBitmapPixelRgb(frame, cx, y);
+    const r = (rgb >> 16) & 0xff;
+    const g = (rgb >> 8) & 0xff;
+    const b = rgb & 0xff;
+    const avg = (r + g + b) / 3;
+    if (avg > 5 && avg < 200) {
+      const imbalance = Math.max(r, g, b) - Math.min(r, g, b);
+      if (imbalance > maxImbalance) maxImbalance = imbalance;
+    }
+  }
+
+  if (maxImbalance < 15) {
+    throw new Error(
+      `[effect-chromatic-aberration] max channel imbalance at mid-luminance pixels is ${maxImbalance} ` +
+        `(expected >= 15) — chromatic fringing not visible`,
+    );
+  }
+}
