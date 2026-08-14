@@ -1,6 +1,6 @@
 # Fixture import conformance
 
-This lane runs every selected, locally acquired `flight-oracles` file through Flight's public import methods. One file rejecting or throwing never stops later files: outcomes produce a positive coverage score and never determine the process exit code. Missing or stale corpora, fixture-file population changes, and invalid CLI configuration remain hard harness errors.
+This lane runs every selected, locally acquired `flight-fixtures` file through Flight's public import methods. One file rejecting or throwing never stops later files: outcomes produce a positive coverage score and never determine the process exit code. Missing or stale corpora, fixture-file population changes, and invalid CLI configuration remain hard harness errors.
 
 Acquire fixtures explicitly, then score them:
 
