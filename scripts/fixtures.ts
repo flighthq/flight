@@ -103,7 +103,7 @@ import {
 // every future conformance number irreproducible, and the failure is silent — the score just changes.
 export const FIXTURE_RELEASE_TAG = '0.1.1';
 
-export const FIXTURE_RELEASE_BASE_URL = 'https://github.com/flighthq/flight-oracles/releases/download';
+export const FIXTURE_RELEASE_BASE_URL = 'https://github.com/flighthq/flight-fixtures/releases/download';
 
 // Written into every extraction tree. A tree that cannot say which tag and which variant produced it is
 // a tree two runs can disagree about without either being able to tell.

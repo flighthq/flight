@@ -268,7 +268,7 @@ const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const USAGE = `usage: npm run conformance:fixtures -- [options]
 
 Scores exhaustive per-file execution and adapter-declared feature expectations over matching files in locally
-verified flight-oracles trees. Every selected file is attempted even when earlier files reject or throw.
+verified flight-fixtures trees. Every selected file is attempted even when earlier files reject or throw.
 Fixture outcomes and unavailable implementations are evidence, not a gate: they are recorded and the command succeeds.
 Missing or stale corpora, fixture-file population changes, and invalid configuration exit nonzero and leave no stale report.
 
