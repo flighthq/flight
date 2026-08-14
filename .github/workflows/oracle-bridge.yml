@@ -123,37 +123,79 @@ jobs:
         env:
           # ★ VALUES REACH THE SCRIPT THROUGH `env`, NEVER THROUGH `${{ }}` INSIDE THE SCRIPT BODY.
           # The body is plain Node — there is no `steps` object in it, which is what the first dispatch
-          # discovered ("ReferenceError: steps is not defined"). Interpolating `${{ }}` into the source
-          # would have run too, and is the worse fix: it splices text into a program, which is the
-          # script-injection shape. These particular values come from the Actions API rather than from a
-          # candidate, but the safe form costs nothing and does not depend on that staying true.
+          # discovered ("ReferenceError: steps is not defined"). Interpolating would also have run, and is
+          # the worse fix: it splices text into a program, which is the script-injection shape.
           ARTIFACT_ID: ${{ steps.artifact.outputs.id }}
           ARTIFACT_DIGEST: ${{ steps.artifact.outputs.digest }}
           ARTIFACT_EXPIRES: ${{ steps.artifact.outputs.expires }}
         with:
           # A narrowly-scoped App or bot installed on both repositories (§7). Never the automatic
-          # GITHUB_TOKEN — it cannot reach another repository, and widening it would give this job's
-          # sibling capture workflow a token it must not have.
+          # GITHUB_TOKEN — it cannot reach another repository.
           github-token: ${{ secrets.ORACLE_BRIDGE_TOKEN }}
           script: |
+            const crypto = require('node:crypto');
             const run = context.payload.workflow_run;
-            // ★ THE ENVELOPE IS FIXED AND CARRIES NO CANDIDATE-CONTROLLED CONTENT. Every field is either a
-            // repository fact or an identifier this job read from the Actions API. Nothing here was parsed
-            // out of the bundle, so a malicious bundle cannot influence what intake is told.
-            await github.rest.repos.createDispatchEvent({
-              owner: 'flighthq',
-              repo: 'flight-oracles',
-              event_type: 'flight-candidate',
-              client_payload: {
-                repository: `${context.repo.owner}/${context.repo.repo}`,
-                flightCommit: run.head_sha,
-                workflowRunId: String(run.id),
-                artifactId: process.env.ARTIFACT_ID,
-                artifactDigest: process.env.ARTIFACT_DIGEST,
-                artifactExpiresAt: process.env.ARTIFACT_EXPIRES,
-              },
+
+            // ★ THE REQUEST BINDING COMES FROM THE REPOSITORY, NOT FROM THE CANDIDATE.
+            // §7 requires the envelope to carry the request path and hash. The obvious source is the
+            // bundle the capture produced — and that is exactly the source this job must not read, since
+            // opening candidate-controlled data in the job holding the cross-repository token is the
+            // boundary the two-workflow split exists to enforce.
+            // So the queue is read from the landed commit through the API instead. That is strictly
+            // better than trusting the bundle: the hash is computed from what is actually committed at
+            // `head_sha`, so a candidate cannot name a request it did not come from, and intake can
+            // re-derive the same value independently.
+            const listing = await github.rest.repos.getContent({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: 'oracle-requests',
+              ref: run.head_sha,
             });
-            core.info(`dispatched candidate for ${run.head_sha} (artifact ${process.env.ARTIFACT_ID})`);
+            const requests = (Array.isArray(listing.data) ? listing.data : []).filter((e) =>
+              e.type === 'file' && e.name.endsWith('.json'),
+            );
+            if (requests.length === 0) {
+              core.setFailed(`no outstanding request at ${run.head_sha}, but a candidate was produced`);
+              return;
+            }
+
+            // One event per request: §7's envelope names ONE request path and hash, and a reviewer blesses
+            // one commission at a time. Sending a list would make the Oracle side invent a policy for
+            // partial acceptance that nobody has specified.
+            for (const entry of requests) {
+              const file = await github.rest.repos.getContent({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                path: entry.path,
+                ref: run.head_sha,
+              });
+              // sha256 of the file's bytes — deliberately NOT `entry.sha`, which is git's SHA-1 blob id
+              // over a `blob <len>\0` header and would not match the value Flight's own
+              // `hashOracleFile` computes for the same file.
+              const bytes = Buffer.from(file.data.content, file.data.encoding);
+              const requestSha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+
+              await github.rest.repos.createDispatchEvent({
+                owner: 'flighthq',
+                repo: 'flight-oracles',
+                // ★ MUST MATCH THE ORACLE INTAKE TRIGGER EXACTLY. GitHub accepts an unmatched
+                // repository_dispatch with a 204 and creates no run and no warning — a silent success on
+                // both sides. `flight-candidate` was sent for a full round against an intake subscribed to
+                // `flight-oracle-candidate`, and nothing anywhere reported a problem.
+                event_type: 'flight-oracle-candidate',
+                client_payload: {
+                  repository: `${context.repo.owner}/${context.repo.repo}`,
+                  flightCommit: run.head_sha,
+                  requestPath: entry.path,
+                  requestSha256,
+                  workflowRunId: String(run.id),
+                  artifactId: process.env.ARTIFACT_ID,
+                  artifactDigest: process.env.ARTIFACT_DIGEST,
+                  artifactExpiresAt: process.env.ARTIFACT_EXPIRES,
+                },
+              });
+              core.info(`dispatched ${entry.path} (${requestSha256.slice(0, 12)}…) for ${run.head_sha}`);
+            }
 
       - name: Record what was forwarded
         if: steps.artifact.outputs.found == 'true'
