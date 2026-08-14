@@ -18,6 +18,17 @@
 # Extracting a candidate-controlled archive in the job that holds the cross-repository token is exactly
 # the thing the split exists to prevent — an archive is attacker-controlled input, and this job's token
 # can rewrite the store the candidate is being measured against.
+# ★★ THIS FILE MUST LIVE ON THE REPOSITORY'S DEFAULT BRANCH (`main`) OR IT DOES NOT RUN AT ALL.
+# GitHub registers `workflow_run` workflows only from the default branch: a copy on `develop` alone is
+# invisible to Actions, never appears in the run list, and reports no error — the capture succeeds, the
+# candidate uploads, and nothing is ever dispatched. `promote.yml` carries the identical warning for the
+# identical reason; read it if this needs re-deriving.
+#
+# ★ THIS DOES NOT MAKE COMMISSIONING WAIT FOR A PROMOTION. Where this FILE lives and which branch the
+# TRIGGERING RUN is on are different things, and conflating them is the easy mistake. The file lands on
+# `main` once; from then on a capture running on `develop` dispatches immediately. `main` advances
+# automatically whenever develop's CI concludes green (promote.yml), so the one-time cost is seconds,
+# not a manual gate, and it is the same one every workflow here already paid.
 name: oracle-bridge
 
 on:
