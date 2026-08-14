@@ -15,16 +15,25 @@
 # merge/push is the boundary at which remote automation can act."
 name: oracle-capture
 
+# ★ THE TRIGGER AND THE BODY MUST AGREE ABOUT WHAT THE QUEUE IS. The body processes every OUTSTANDING
+# request (§5), so a request can be outstanding while nothing re-triggers a run for it — which is exactly
+# what happened once the queue-enumeration fix landed: the request was still pending, the workflow was
+# fixed, and no push touched `oracle-requests/**` again, so nothing ran. The workflow files are therefore
+# part of the trigger too: a fix to this pipeline tests itself against the live queue. That is cheap by
+# construction — with an empty queue the job installs dependencies, finds nothing outstanding, and exits.
 on:
   push:
     branches: [develop]
     paths:
       - 'oracle-requests/**'
+      - '.github/workflows/oracle-capture.yml'
   workflow_dispatch:
     inputs:
       request:
-        description: 'Path to one oracle-requests/<id>.json to capture'
-        required: true
+        # Optional: omit it to process the whole outstanding queue, which is the manual equivalent of what
+        # a push does. Requiring a path made "re-run the queue" impossible without inventing a commit.
+        description: 'One oracle-requests/<id>.json, or leave blank for every outstanding request'
+        required: false
         type: string
 
 permissions:
