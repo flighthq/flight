@@ -10,16 +10,16 @@
 // Two subcommands rather than one, because the capture happens BETWEEN them and is not this script's job:
 //   scope   → prints the --filter-exact / --renderer arguments the request implies, for the capture step
 //   bundle  → reads the captures that step produced and writes candidate-bundle.json
-import { writeFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { basename, join } from 'node:path';
 
-import { buildOracleCandidateBundle, hashOracleFile } from './oracle-candidate';
+import { buildOracleCandidateBundle, hashOracleFile, stageOracleCandidateImages } from './oracle-candidate';
 import { getOracleRequestCells, readOracleRequest } from './oracle-records';
 
 const [subcommand, requestPath, ...rest] = process.argv.slice(2);
 
 if (subcommand !== 'scope' && subcommand !== 'bundle') {
-  console.error('usage: oracle-commission <scope|bundle> <request.json> [--artifacts <dir>] [--out <file>]');
+  console.error('usage: oracle-commission <scope|bundle> <request.json> [--artifacts <dir>] [--stage <dir>]');
   process.exit(2);
 }
 if (requestPath === undefined) {
@@ -49,7 +49,9 @@ if (subcommand === 'scope') {
 }
 
 const artifactsRoot = readOption(rest, '--artifacts') ?? '.artifacts';
-const out = readOption(rest, '--out') ?? 'candidate-bundle.json';
+// One self-contained directory holds the bundle and its images. The archive layout is then a contract
+// intake can rely on, rather than a mirror of Flight's internal capture tree.
+const stage = readOption(rest, '--stage') ?? 'candidate';
 // The landed commit and the environment identity are supplied by the workflow, never invented here (§5):
 // an agent-local SHA may be replaced when work lands, and a value this script guessed would be a claim
 // about the world it cannot check.
@@ -64,13 +66,16 @@ const bundle = buildOracleCandidateBundle({
   requestSha256: hashOracleFile(requestPath),
 });
 
+mkdirSync(stage, { recursive: true });
+const staged = stageOracleCandidateImages(bundle, artifactsRoot, stage);
+const out = join(stage, `${basename(requestPath, '.json')}.bundle.json`);
 writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`);
 
 const captured = bundle.images.filter((image) => image.state === 'captured');
 const missing = bundle.images.filter((image) => image.state === 'missing');
 console.log(`${basename(requestPath)}: ${captured.length} captured, ${missing.length} missing`);
 for (const image of missing) console.log(`  missing  ${image.identity}  ${'reason' in image ? image.reason : ''}`);
-console.log(`wrote ${out}`);
+console.log(`staged ${staged} image(s) and wrote ${out}`);
 
 // ★ A BUNDLE WITH NOTHING IN IT IS A FAILURE, NOT AN EMPTY SUCCESS. Dispatching it would open an Oracle
 // PR proposing to bless no images, which a reviewer can only reject — and the run that produced it would

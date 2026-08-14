@@ -1,9 +1,14 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { buildOracleCandidateBundle, hashOracleFile, readPngDimensions } from './oracle-candidate';
+import {
+  buildOracleCandidateBundle,
+  hashOracleFile,
+  readPngDimensions,
+  stageOracleCandidateImages,
+} from './oracle-candidate';
 import type { OracleRequest } from './oracle-records';
 
 const PIXEL_HASH = 'c'.repeat(64);
@@ -86,6 +91,46 @@ describe('buildOracleCandidateBundle', () => {
     const bundle = buildOracleCandidateBundle({ ...input(captureRoot({ hash: PIXEL_HASH })), request });
 
     expect(bundle.images.map((image) => image.identity)).toEqual(['functional/shape/webgl', 'functional/shape/webgpu']);
+  });
+});
+
+describe('stageOracleCandidateImages', () => {
+  it('places every captured image at exactly the path its record names', () => {
+    const root = captureRoot({ hash: PIXEL_HASH });
+    const bundle = buildOracleCandidateBundle(input(root));
+    const stage = mkdtempSync(join(tmpdir(), 'oracle-stage-'));
+
+    const staged = stageOracleCandidateImages(bundle, root, stage);
+
+    // The bundle is the archive's only map: if these two ever disagree, intake reads every image as
+    // missing while the run reports success.
+    expect(staged).toBe(1);
+    for (const image of bundle.images) {
+      if (image.state !== 'captured') continue;
+      expect(existsSync(join(stage, image.file))).toBe(true);
+    }
+  });
+
+  it('refuses a staged copy whose bytes do not match the record', () => {
+    const root = captureRoot({ hash: PIXEL_HASH });
+    const bundle = buildOracleCandidateBundle(input(root));
+    const tampered = {
+      ...bundle,
+      images: bundle.images.map((image) => ({ ...image, artifactSha256: 'f'.repeat(64) })),
+    };
+
+    // A staging step that wrote the wrong source would ship an archive whose bytes fail intake's
+    // verification one repository away from the cause. It fails here instead.
+    expect(() => stageOracleCandidateImages(tampered, root, mkdtempSync(join(tmpdir(), 'oracle-stage-')))).toThrow(
+      /staged to/,
+    );
+  });
+
+  it('stages nothing for a missing cell rather than inventing a file', () => {
+    const empty = mkdtempSync(join(tmpdir(), 'oracle-empty-'));
+    const bundle = buildOracleCandidateBundle(input(empty));
+
+    expect(stageOracleCandidateImages(bundle, empty, mkdtempSync(join(tmpdir(), 'oracle-stage-')))).toBe(0);
   });
 });
 

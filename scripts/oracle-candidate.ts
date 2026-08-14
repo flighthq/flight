@@ -23,8 +23,8 @@
 // never absent from the bundle. An absent row is indistinguishable from a cell nobody asked for, which
 // is the difference between "we could not render this" and "this was never in scope".
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 import type { OracleRequest } from './oracle-records';
 import { getOracleRequestCells } from './oracle-records';
@@ -45,6 +45,13 @@ export type OracleCandidateImage = OracleCandidateCaptured | OracleCandidateMiss
 export interface OracleCandidateCaptured {
   identity: string;
   state: 'captured';
+  /**
+   * Where the image sits INSIDE the candidate archive, relative to the bundle beside it. Deliberately not
+   * Flight's capture path: `.artifacts/<subject>/<entry>/<renderer>/screenshot.png` is an internal layout
+   * that intake must not have to know or track, and its leading dot made the whole tree invisible to
+   * `upload-artifact`'s default hidden-file exclusion. `stageOracleCandidateImages` is what makes this
+   * field true, and it is the only description of the archive's shape.
+   */
   file: string;
   width: number;
   height: number;
@@ -144,11 +151,47 @@ function readCandidateImage(artifactsRoot: string, identity: string): OracleCand
 
   return {
     artifactSha256: createHash('sha256').update(bytes).digest('hex'),
-    file: `${identity}.png`,
+    file: `images/${identity}.png`,
     height: dimensions.height,
     identity,
     pixelSha256: status.hash,
     state: 'captured',
     width: dimensions.width,
   };
+}
+
+/**
+ * Copies each captured image into a self-contained candidate tree, at exactly the path its record names.
+ *
+ * ★ THE BUNDLE IS THE ONLY MAP OF THE ARCHIVE. Staging from `bundle.images[].file` rather than re-deriving
+ * paths means the manifest and the tree cannot disagree — the failure this replaces was a bundle that said
+ * `<identity>.png` beside an archive containing `.artifacts/.../screenshot.png`, which intake would have
+ * read as every image missing.
+ *
+ * Re-hashes each copy and refuses a mismatch: a staging step that silently wrote the wrong source would
+ * produce an archive whose bytes do not match the `artifactSha256` intake verifies, and the error would
+ * surface one repository away from its cause.
+ */
+export function stageOracleCandidateImages(
+  bundle: Readonly<OracleCandidateBundle>,
+  artifactsRoot: string,
+  stageRoot: string,
+): number {
+  let staged = 0;
+  for (const image of bundle.images) {
+    if (image.state !== 'captured') continue;
+    const parts = image.identity.split('/');
+    const source = join(artifactsRoot, parts[0]!, parts[1]!, parts[2]!, 'screenshot.png');
+    const destination = join(stageRoot, image.file);
+    mkdirSync(dirname(destination), { recursive: true });
+    copyFileSync(source, destination);
+    const copied = createHash('sha256').update(readFileSync(destination)).digest('hex');
+    if (copied !== image.artifactSha256) {
+      throw new Error(
+        `stageOracleCandidateImages: ${image.identity} staged to ${copied} but its record says ${image.artifactSha256}`,
+      );
+    }
+    staged += 1;
+  }
+  return staged;
 }
