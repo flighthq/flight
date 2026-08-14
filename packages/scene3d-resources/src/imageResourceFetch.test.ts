@@ -1,17 +1,20 @@
 import type * as ImageModule from '@flighthq/image/contract';
 import type { ExternalImageResourceReference, Image } from '@flighthq/types/contract';
 import { ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
-import type { Mock } from 'vitest';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type * as ImageResourceFetchModule from './imageResourceFetch';
+import { fetchWebImageResource, resolveImageResourceUri } from './imageResourceFetch';
+
+const mocks = vi.hoisted(() => ({
+  loadFromUrl: vi.fn<typeof ImageModule.loadImageResourceFromUrl>(),
+}));
+
+vi.mock('@flighthq/image/contract', () => ({
+  loadImageResourceFromBytes: vi.fn(),
+  loadImageResourceFromUrl: mocks.loadFromUrl,
+}));
 
 const fakeImage = { height: 1, width: 1 } as unknown as Image;
-type LoadImageResourceFromUrl = typeof ImageModule.loadImageResourceFromUrl;
-
-let fetchWebImageResource: typeof ImageResourceFetchModule.fetchWebImageResource;
-let loadFromUrl: Mock<LoadImageResourceFromUrl>;
-let resolveImageResourceUri: typeof ImageResourceFetchModule.resolveImageResourceUri;
 
 function externalRef(uri: string, basePath: string | null): ExternalImageResourceReference {
   return {
@@ -24,38 +27,23 @@ function externalRef(uri: string, basePath: string | null): ExternalImageResourc
   };
 }
 
-beforeAll(async () => {
-  vi.resetModules();
-  loadFromUrl = vi.fn<LoadImageResourceFromUrl>();
-  vi.doMock('@flighthq/image/contract', () => ({
-    loadImageResourceFromBytes: vi.fn(),
-    loadImageResourceFromUrl: loadFromUrl,
-  }));
-  ({ fetchWebImageResource, resolveImageResourceUri } = await import('./imageResourceFetch'));
-});
-
-afterAll(() => {
-  vi.doUnmock('@flighthq/image/contract');
-  vi.resetModules();
-});
-
 afterEach(() => {
-  loadFromUrl.mockReset();
+  mocks.loadFromUrl.mockReset();
 });
 
 describe('fetchWebImageResource', () => {
   it('fetches the resolved URL and returns the decoded image', async () => {
-    loadFromUrl.mockResolvedValue(fakeImage);
+    mocks.loadFromUrl.mockResolvedValue(fakeImage);
     const result = await fetchWebImageResource(
       externalRef('leaf.png', 'assets/textures'),
       new AbortController().signal,
     );
-    expect(loadFromUrl).toHaveBeenCalledWith('assets/textures/leaf.png', undefined, expect.anything());
+    expect(mocks.loadFromUrl).toHaveBeenCalledWith('assets/textures/leaf.png', undefined, expect.anything());
     expect(result).toBe(fakeImage);
   });
 
   it('returns null on a non-abort failure', async () => {
-    loadFromUrl.mockRejectedValue(new Error('404'));
+    mocks.loadFromUrl.mockRejectedValue(new Error('404'));
     const result = await fetchWebImageResource(externalRef('missing.png', null), new AbortController().signal);
     expect(result).toBeNull();
   });
@@ -63,7 +51,7 @@ describe('fetchWebImageResource', () => {
   it('rethrows when the signal aborted (a cancellation, not a failure)', async () => {
     const controller = new AbortController();
     controller.abort();
-    loadFromUrl.mockRejectedValue(new Error('aborted'));
+    mocks.loadFromUrl.mockRejectedValue(new Error('aborted'));
     await expect(fetchWebImageResource(externalRef('x.png', null), controller.signal)).rejects.toThrow();
   });
 });
