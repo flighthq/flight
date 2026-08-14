@@ -62,6 +62,23 @@ jobs:
       # Checked through `env:` rather than a step-level `if:` — `secrets` is not one of the contexts
       # available to a step condition, so the `if` form would silently never fire and this guard would be
       # decoration. `env:` does take secrets, so the check happens where it can actually run.
+      # ★ SAY WHICH COPY OF THIS FILE IS RUNNING, BEFORE ANYTHING ELSE.
+      # Two things make that genuinely ambiguous here and they compound: a `workflow_run` job executes the
+      # DEFAULT BRANCH's copy rather than the branch under development, and a RE-RUN replays the ORIGINAL
+      # workflow version rather than the current one. So a fixed bridge can fail with the old error twice
+      # over — once because the fix is not promoted, once because the run being retried predates it — and
+      # both present as "the fix did not work". `github.sha` on a workflow_run event IS this file's own
+      # commit, so printing it answers the question directly instead of leaving it to be inferred.
+      - name: Identify this bridge
+        run: |
+          {
+            echo "bridge file commit : ${{ github.sha }}"
+            echo "triggering capture : ${{ github.event.workflow_run.head_sha }}"
+            echo "triggering run     : ${{ github.event.workflow_run.id }}"
+            echo "event              : ${{ github.event_name }}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+
       - name: Require the bridge credential
         env:
           ORACLE_BRIDGE_TOKEN: ${{ secrets.ORACLE_BRIDGE_TOKEN }}
