@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,6 +7,7 @@ import {
   appendShapeRectangle,
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
+  getBitmapPixelRgb,
   createGodRaysEffect,
   createShape,
   createWgpuCanvasElement,
@@ -95,3 +96,25 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// God rays stream light outward from the center (0.5, 0.4). The bright core and shapes create
+// radial streaks that elevate background luminance along the ray directions. A pixel at the far
+// right edge of the frame (on the ray axis) should show luminance > 8 (above pure background ~5).
+// Without the effect, this pixel is pure background at ~5 and fails the check.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const x = frame.width - 10;
+  const y = Math.round(frame.height * 0.4);
+  const rgb = getBitmapPixelRgb(frame, x, y);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 8) {
+    throw new Error(
+      `[effect-god-rays] ray-axis pixel at far edge has luminance ${lum.toFixed(1)} ` +
+        `(expected > 8) — god ray streaks not reaching edges; rgb(${r},${g},${b})`,
+    );
+  }
+}

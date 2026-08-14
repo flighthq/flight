@@ -1,4 +1,4 @@
-import type { Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -7,6 +7,7 @@ import {
   appendShapeRectangle,
   beginGlRenderEffectPipeline,
   createDisplayObject,
+  getBitmapPixelRgb,
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
@@ -80,3 +81,22 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ORACLE-BLOCK
+// Screen-space fog (color 0x9fb4c8, density 0.6) blends a blue-gray fog over the frame. The dark
+// background (0x05060a, luminance ~5) shifts toward the fog color (luminance ~180), raising corner
+// pixel luminance above 30. Without the effect, corners stay at ~5 and the check fails.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const rgb = getBitmapPixelRgb(frame, 4, 4);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 30) {
+    throw new Error(
+      `[effect-screen-space-fog] corner pixel luminance is ${lum.toFixed(1)} (expected > 30) — ` +
+        `fog overlay not applied; rgb(${r},${g},${b})`,
+    );
+  }
+}

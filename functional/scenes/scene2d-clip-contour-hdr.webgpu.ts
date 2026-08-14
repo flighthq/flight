@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -20,6 +20,7 @@ import {
   defaultWgpuShapeRenderer,
   enableWgpuClipSupport,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -91,3 +92,25 @@ setNode2DClip(shape, createClipRegionFromPath(clipPath));
 
 addNodeChild(root, shape);
 render(root);
+
+// ORACLE-BLOCK
+// A triangular contour clip masks a bright white square, rendered through an HDR (rgba16f) bloom
+// pipeline. The center of the frame (where the triangle's interior is) should show the white
+// content with luminance > 150, verifying both the stencil-based clip and the HDR bloom pipeline
+// work together. Without the pipeline, the frame is blank.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cx = Math.round(frame.width * 0.5);
+  const cy = Math.round(frame.height * 0.5);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+  if (lum <= 150) {
+    throw new Error(
+      `[scene2d-clip-contour-hdr] center pixel has luminance ${lum.toFixed(1)} (expected > 150) — ` +
+        `clip + HDR bloom pipeline should render the triangular white region; rgb(${r},${g},${b})`,
+    );
+  }
+}
