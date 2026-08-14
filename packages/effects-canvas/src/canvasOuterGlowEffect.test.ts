@@ -1,7 +1,3 @@
-vi.hoisted(() => {
-  vi.resetModules();
-});
-
 vi.mock('./canvasEffectCompositing', () => ({
   drawCanvasEffectPass: vi.fn(),
 }));
