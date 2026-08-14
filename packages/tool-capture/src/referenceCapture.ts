@@ -83,6 +83,7 @@ export async function runReferenceCapture(options: Readonly<ReferenceCaptureOpti
     captureFrames: options.captureFrames ?? 1,
     verify: true,
     observe: options.observe,
+    serverUrl: server.url,
   });
   const isAborted = installAbortHandler();
 

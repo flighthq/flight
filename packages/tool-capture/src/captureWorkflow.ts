@@ -179,6 +179,7 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
         captureFrames,
         verify: validationOptions !== null || captureOptions?.verify === true || isVerifiedCaptureTool(options.subject),
         observe: captureOptions?.observe,
+        serverUrl: options.server.url,
       });
       if (captureOptions !== null) {
         capture = await runCaptureSuite({

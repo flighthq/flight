@@ -987,10 +987,12 @@ export async function runCaptureValidation(
   const ownsBrowser = input.browserSession === undefined;
   const launched =
     input.browserSession ??
-    (await launchBrowser({ captureFrames: options.captureFrames }).catch((error: unknown) => {
-      input.server.kill();
-      throw error;
-    }));
+    (await launchBrowser({ captureFrames: options.captureFrames, serverUrl: input.server.url }).catch(
+      (error: unknown) => {
+        input.server.kill();
+        throw error;
+      },
+    ));
   const { browser, context } = launched;
   const isAborted = installAbortHandler();
 
