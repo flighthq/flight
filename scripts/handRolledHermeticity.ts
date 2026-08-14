@@ -15,6 +15,20 @@
 //   `vi.resetModules(` alone — vestigial: a dead call in a file whose mocks are already hoisted. Worth
 //     removing, but it rebuilds nothing and cannot time out.
 //
+// ★ THE POPULATION IS THE TIER LIST, ON PURPOSE. DO NOT ENUMERATE FROM DISK.
+// This walks `REGISTRY_ISOLATED_TESTS`, so it cannot see a file that hand-rolls hermeticity WITHOUT
+// being tiered. That reads like a gap when you find it from inside this script, and it is not one:
+// `mocks:check` already polices that boundary from the other side — `scripts/mocks.ts` reports
+// `untiered-mock` for any file that mocks modules (`vi.doMock` included) and is absent from the list.
+// So this script measures WITHIN the tier and that one guards the EDGE of it, covering both directions
+// with no overlap.
+// "Fixing" this to scan `packages/*/src/*.test.ts` would give two gates one responsibility — the exact
+// defect removed from `scripts/check.ts` on 2026-08-13, where two agents independently registered
+// `evidence:check` and both hunks applied clean because they landed five lines apart. A second opinion
+// on a question that already has an owner is not extra safety; it is two things to keep in agreement.
+// Measured when this note was written: zero files outside the tier do the dance. That is a fact about
+// today. The boundary is a fact about the instrument.
+//
 // Reads only. Prints a list and a count; never fails a build. Same standing as `untested` / `unchecked` /
 // `contrast`: an address list to go and read.
 import { readFileSync } from 'node:fs';
