@@ -36,6 +36,25 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
+      # ★ A MISSING CREDENTIAL IS NAMED, NOT ARGUED. An unset secret interpolates to an empty string, and
+      # the dispatch then fails several steps later with an auth error that points at GitHub rather than at
+      # the one thing an operator has to do. The capture-verification-tiers rule this proposal cites is the
+      # same one: never fill in a missing premise from reasoning — say which premise is missing.
+      # Checked through `env:` rather than a step-level `if:` — `secrets` is not one of the contexts
+      # available to a step condition, so the `if` form would silently never fire and this guard would be
+      # decoration. `env:` does take secrets, so the check happens where it can actually run.
+      - name: Require the bridge credential
+        env:
+          ORACLE_BRIDGE_TOKEN: ${{ secrets.ORACLE_BRIDGE_TOKEN }}
+        run: |
+          if [ -n "$ORACLE_BRIDGE_TOKEN" ]; then exit 0; fi
+          echo "oracle-bridge: ORACLE_BRIDGE_TOKEN is not set on this repository." >&2
+          echo "  It is the ONLY credential this pipeline needs, and it is deliberately not the automatic" >&2
+          echo "  GITHUB_TOKEN, which cannot reach another repository." >&2
+          echo "  Create a fine-grained PAT scoped to flighthq/flight-oracles with Contents: read and write," >&2
+          echo "  then store it as the ORACLE_BRIDGE_TOKEN Actions secret. See agents/render-oracle-repository.md §7." >&2
+          exit 1
+
       - name: Resolve the candidate artifact
         id: artifact
         uses: actions/github-script@v7
