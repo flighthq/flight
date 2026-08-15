@@ -21,9 +21,10 @@ describe('buildOracleCandidateBundle', () => {
     expect(capture && 'file' in capture && capture.file).toBe('images/functional/shape/webgl.png');
   });
 
-  it('copies provenance from the committed baseline rather than synthesising it', () => {
-    // Synthesised values would assert a capture condition nothing observed, in a store whose whole
-    // purpose is to say what produced a blessed image.
+  it('takes provenance from THIS capture, not from a committed baseline', () => {
+    // ★ A stale record is as false as a fabricated one. Reading the baseline was the previous design and
+    // flight-oracles rejected a candidate over it: the baseline said frames 0 while the commission asked
+    // for 1, so the record described conditions those bytes were not produced under.
     const capture = buildOracleCandidateBundle(input(root({ hash: PIXEL_HASH }))).captures[0];
 
     expect(capture && 'provenance' in capture && capture.provenance).toEqual({
@@ -35,13 +36,13 @@ describe('buildOracleCandidateBundle', () => {
     });
   });
 
-  it('reports a cell whose baseline records no provenance as missing, not as captured without it', () => {
+  it('reports a capture that recorded no provenance as missing, never as captured without it', () => {
     const directory = root({ hash: PIXEL_HASH, provenance: false });
 
     const capture = buildOracleCandidateBundle(input(directory)).captures[0];
 
     expect(capture?.status).toBe('missing');
-    expect(capture && 'error' in capture && capture.error).toContain('sha256Provenance');
+    expect(capture && 'error' in capture && capture.error).toContain('no provenance');
   });
 
   it('prefixes a bare environment digest, since the schema requires the algorithm', () => {
@@ -133,14 +134,13 @@ function root(status: { hash: string | null; state?: string; error?: string; pro
   const cell = join(directory, 'functional', 'shape', 'webgl');
   mkdirSync(cell, { recursive: true });
   writeFileSync(join(cell, 'screenshot.png'), png());
-  writeFileSync(
-    join(cell, 'status.json'),
-    JSON.stringify({ error: status.error ?? null, hash: status.hash, state: status.state ?? 'ready' }),
-  );
-  mkdirSync(join(directory, 'functional', 'baselines'), { recursive: true });
-  const column: Record<string, unknown> = { sha256: status.hash };
+  const record: Record<string, unknown> = {
+    error: status.error ?? null,
+    hash: status.hash,
+    state: status.state ?? 'ready',
+  };
   if (status.provenance !== false) {
-    column['sha256Provenance'] = {
+    record['provenance'] = {
       frames: 2,
       sourceHash: 'd'.repeat(64),
       targetKind: 'webgl',
@@ -148,7 +148,7 @@ function root(status: { hash: string | null; state?: string; error?: string; pro
       warmupFrames: 1,
     };
   }
-  writeFileSync(join(directory, 'functional', 'baselines', 'shape.json'), JSON.stringify({ webgl: column }));
+  writeFileSync(join(cell, 'status.json'), JSON.stringify(record));
   return directory;
 }
 
