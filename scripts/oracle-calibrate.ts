@@ -123,9 +123,19 @@ export function formatCalibrationReport(report: Readonly<CalibrationReport>): st
         ' agreement in either direction — it is an unconfigured run, not a clean one.',
     );
   } else if (report.disagreed.length === 0) {
+    // ★ THIS TOOL CANNOT SEE WHETHER THE RUNS CAME FROM INDEPENDENT HOSTS, SO IT MUST NOT SAY THEY DID.
+    // It is handed directories. Two captures on ONE machine and two on separate machines produce
+    // identical input here and answer completely different questions — within-host determinism is
+    // necessary for a canonical environment and nowhere near sufficient for one. The first real run of
+    // this tool was within-host and it announced "a single canonical environment is viable", which is a
+    // conclusion the data could not support. State what was measured; let the caller supply what the
+    // runs were.
     lines.push(
-      'VERDICT: every compared cell was byte-identical across runs. A single canonical environment is' +
-        ' viable on this evidence, and the pixel noise floor is zero — any positive tolerance clears it.',
+      'VERDICT: every compared cell was byte-identical across the runs given, so the noise floor ACROSS' +
+        ' THESE RUNS is zero.',
+      '  If the runs were on INDEPENDENT HOSTS, this is the evidence a single canonical environment needs.',
+      '  If they were repeats on ONE host, it establishes only within-host determinism — necessary for a' +
+        ' canonical environment, and not sufficient. This tool is given directories and cannot tell which.',
     );
   } else {
     lines.push(
