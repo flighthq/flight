@@ -105,32 +105,23 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      # ★ THE DESCRIPTOR NAMES WHAT WAS MEASURED TO MATTER, AND DELIBERATELY OMITS WHAT WAS MEASURED
-      # NOT TO. A cross-host run on 2026-08-15 captured eight GPU-shaded cells on two independent
-      # machines — different CPU, kernel, Ubuntu release (26.04 vs 24.04) and Node major (22 vs 24) —
-      # and every cell was byte-identical. What was held constant was the chromium build and the pinned
-      # SwiftShader adapter, so those are what the identity commits to.
+      # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/oracle-capture-identity.json`, NOT COMPUTED HERE.
+      # It is registered in `flight-oracles` and copied verbatim. This workflow previously derived its own
+      # from a runner descriptor, which was wrong twice over: it hashed the runner OS image — measured on
+      # 2026-08-15 not to affect output, so two hosts rendering identical pixels got DIFFERENT ids — and a
+      # locally-derived value drifts from the registered record the moment either side changes.
+      # One producer of one identity. `oracle-commission` reads the file; nothing here needs to.
       #
-      # This previously hashed `ImageOS`/`ImageVersion`. That is the exact inversion the measurement
-      # exposed: two hosts rendering identical pixels would have been given DIFFERENT environment ids,
-      # scoping every reference image to a runner image that demonstrably does not reach the rasterizer.
-      # An environment id is a claim about what changes the output; putting an irrelevant variable in it
-      # fragments the reference set for no reason, and omitting a relevant one silently blesses drift.
-      #
-      # `--use-webgpu-adapter=swiftshader` is pinned in captureBrowser.ts, so WebGPU rasterizes in
-      # software regardless of the host GPU; that pin is part of the identity because removing it would
-      # change the output.
+      # The descriptor is still ECHOED for the log, so a run that drifts out of the registered environment
+      # is visible to a reader rather than silently blessed under an id that no longer describes it.
       - id: environment
         run: |
-          browser=$(npx playwright --version | tr -d ' ')
-          descriptor="${browser};webgpu-adapter=swiftshader;viewport=default"
-          echo "id=sha256-$(printf '%s' "$descriptor" | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
-          echo "descriptor=$descriptor" >> "$GITHUB_OUTPUT"
-          echo "environment descriptor: $descriptor"
+          chrome=$(npx playwright --version | tr -d ' ')
+          echo "registered identity: $(node -p "require('./scripts/oracle-capture-identity.json').environmentId")"
+          echo "observed playwright: $chrome"
+          echo "observed chromium:   $(find ~/.cache/ms-playwright -name chrome -type f 2>/dev/null | head -1 | xargs -r -I{} {} --version 2>/dev/null)"
 
       - name: Capture ${{ matrix.request }}
-        env:
-          ORACLE_ENVIRONMENT_ID: ${{ steps.environment.outputs.id }}
         run: |
           set -euo pipefail
           request="oracle-requests/${{ matrix.request }}.json"
@@ -165,7 +156,6 @@ jobs:
             echo "### oracle candidate · ${{ matrix.request }}"
             echo ""
             echo "- commit: \`${{ github.sha }}\`"
-            echo "- environment: \`${{ steps.environment.outputs.descriptor }}\`"
             echo ""
             echo '```json'
             cat "stage/${{ matrix.request }}/candidate.json"

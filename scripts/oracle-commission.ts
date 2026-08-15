@@ -10,8 +10,11 @@
 // Two subcommands rather than one, because the capture happens BETWEEN them and is not this script's job:
 //   scope   → prints the --filter-exact / --renderer arguments the request implies, for the capture step
 //   bundle  → reads the captures that step produced and writes candidate-bundle.json
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { buildOracleCandidateBundle, stageOracleCandidateImages } from './oracle-candidate';
 import { getOracleRequestCells, readOracleRequest } from './oracle-records';
@@ -49,13 +52,19 @@ if (subcommand === 'scope') {
 }
 
 const artifactsRoot = readOption(rest, '--artifacts') ?? '.artifacts';
+// ★ THE IDENTITIES ARE READ FROM A COMMITTED RECORD, NEVER COMPUTED. They are registered in
+// `flight-oracles` and copied here verbatim; a value Flight derives would be a second producer of one
+// identity, and the two drift the moment either side changes. Overridable by env only for local probes.
+const identity = JSON.parse(readFileSync(join(__dirname, 'oracle-capture-identity.json'), 'utf8')) as {
+  environmentId: string;
+  comparisonPolicyId: string;
+};
 // One self-contained directory holds the bundle and its images. The archive layout is then a contract
 // intake can rely on, rather than a mirror of Flight's internal capture tree.
 const stage = readOption(rest, '--stage') ?? 'candidate';
 // The landed commit and the environment identity are supplied by the workflow, never invented here (§5):
 // an agent-local SHA may be replaced when work lands, and a value this script guessed would be a claim
 // about the world it cannot check.
-const environmentId = requireEnv('ORACLE_ENVIRONMENT_ID');
 
 const bundle = buildOracleCandidateBundle({
   artifactsRoot,
@@ -63,8 +72,8 @@ const bundle = buildOracleCandidateBundle({
   // §8: a comparison policy records the calibrated channelTolerance and mismatch fraction, and §2 says
   // that calibration must choose them before the first policy is published. None has been run, so any
   // other value here would name a policy that does not exist.
-  comparisonPolicyId: process.env['ORACLE_COMPARISON_POLICY_ID'] ?? 'uncalibrated',
-  environmentId,
+  comparisonPolicyId: process.env['ORACLE_COMPARISON_POLICY_ID'] ?? identity.comparisonPolicyId,
+  environmentId: process.env['ORACLE_ENVIRONMENT_ID'] ?? identity.environmentId,
   request,
 });
 
@@ -99,15 +108,6 @@ if (captured.length === 0) {
 function readOption(argv: readonly string[], name: string): string | undefined {
   const index = argv.indexOf(name);
   return index === -1 ? undefined : argv[index + 1];
-}
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (value === undefined || value.length === 0) {
-    console.error(`oracle-commission: ${name} is required — the workflow supplies it, this script never guesses it`);
-    process.exit(2);
-  }
-  return value;
 }
 
 export {};
