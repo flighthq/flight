@@ -67,8 +67,11 @@ describe('formatCalibrationReport', () => {
       compareCalibrationRuns([run({ 'functional/a/webgl': 'a' }), run({ 'functional/a/webgl': 'a' })]),
     );
 
-    expect(text).toContain('byte-identical across runs');
-    expect(text).toContain('noise floor is zero');
+    expect(text).toContain('byte-identical across the runs given');
+    // ★ It must NOT assert a canonical environment: the tool is handed directories and cannot tell a
+    // two-host comparison from two repeats on one machine, which answer different questions.
+    expect(text).toContain('cannot tell which');
+    expect(text).not.toMatch(/single canonical environment is viable/);
   });
 
   it('demands a magnitude measurement when anything differed, rather than implying a threshold', () => {
