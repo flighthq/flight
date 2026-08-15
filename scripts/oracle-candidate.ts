@@ -139,7 +139,7 @@ function readCandidateCapture(artifactsRoot: string, repositoryRoot: string, cel
   if (!existsSync(png)) return miss('no screenshot.png was captured');
   if (!existsSync(statusPath)) return miss('no status.json beside the screenshot');
 
-  let status: { state?: unknown; hash?: unknown; error?: unknown };
+  let status: { state?: unknown; hash?: unknown; error?: unknown; provenance?: unknown };
   try {
     status = JSON.parse(readFileSync(statusPath, 'utf8')) as typeof status;
   } catch (error) {
@@ -150,41 +150,34 @@ function readCandidateCapture(artifactsRoot: string, repositoryRoot: string, cel
   }
   if (typeof status.hash !== 'string') return miss('capture recorded no decoded-pixel hash');
 
-  // ★ PROVENANCE IS READ FROM THE COMMITTED BASELINE, NOT INVENTED HERE. `sha256Provenance` is written
-  // beside the very hash this capture reproduced, so it describes the conditions those bytes were
-  // produced under. Synthesising plausible values would put a record in the Oracle store asserting a
-  // capture condition nothing ever observed.
-  const provenance = readBaselineProvenance(repositoryRoot, parts[0]!, parts[1]!, parts[2]!);
-  if (provenance === null) return miss(`no sha256Provenance recorded for ${cell} in its committed baseline`);
+  // ★ PROVENANCE COMES FROM THIS CAPTURE, NOT FROM THE COMMITTED BASELINE.
+  // Reading the baseline was the previous design and it was wrong for the same reason inventing values
+  // would have been: the baseline describes SOME EARLIER capture, made under conditions that may differ
+  // from the one being blessed. flight-oracles rejected a candidate over precisely that gap — the record
+  // said `frames: 0` from a stale baseline while the commission asked for 1. A stale record is as false
+  // as a fabricated one; both assert conditions these bytes were not produced under.
+  const provenance = readCaptureProvenance(status);
+  if (provenance === null) {
+    return miss(`capture recorded no provenance for ${cell} — recapture with a build that writes it`);
+  }
 
   return { file: `images/${cell}.png`, identity, provenance, status: 'captured' };
 }
 
-function readBaselineProvenance(
-  repositoryRoot: string,
-  subject: string,
-  entry: string,
-  renderer: string,
-): OracleCandidateProvenance | null {
-  const path = join(repositoryRoot, subject, 'baselines', `${entry}.json`);
-  if (!existsSync(path)) return null;
-  try {
-    const column = (JSON.parse(readFileSync(path, 'utf8')) as Record<string, Record<string, unknown>>)[renderer];
-    const provenance = column?.['sha256Provenance'];
-    if (provenance === undefined || provenance === null || typeof provenance !== 'object') return null;
-    const p = provenance as Record<string, unknown>;
-    if (typeof p['frames'] !== 'number' || typeof p['verifyPublished'] !== 'boolean') return null;
-    if (typeof p['warmupFrames'] !== 'number') return null;
-    return {
-      frames: p['frames'],
-      sourceHash: typeof p['sourceHash'] === 'string' ? p['sourceHash'] : null,
-      targetKind: typeof p['targetKind'] === 'string' ? p['targetKind'] : null,
-      verifyPublished: p['verifyPublished'],
-      warmupFrames: p['warmupFrames'],
-    };
-  } catch {
-    return null;
-  }
+function readCaptureProvenance(status: { provenance?: unknown }): OracleCandidateProvenance | null {
+  const p = status.provenance;
+  if (p === undefined || p === null || typeof p !== 'object') return null;
+  const r = p as Record<string, unknown>;
+  if (typeof r['frames'] !== 'number') return null;
+  if (typeof r['verifyPublished'] !== 'boolean') return null;
+  if (typeof r['warmupFrames'] !== 'number') return null;
+  return {
+    frames: r['frames'],
+    sourceHash: typeof r['sourceHash'] === 'string' ? r['sourceHash'] : null,
+    targetKind: typeof r['targetKind'] === 'string' ? r['targetKind'] : null,
+    verifyPublished: r['verifyPublished'],
+    warmupFrames: r['warmupFrames'],
+  };
 }
 
 /**

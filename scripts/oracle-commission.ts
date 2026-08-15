@@ -46,7 +46,15 @@ if (subcommand === 'scope') {
   // line per entry. Emitted as shell-ready arguments so the workflow never re-derives the scope itself —
   // a second derivation is a second thing to keep in step with getOracleRequestCells.
   for (const target of request.targets) {
-    console.log(`--tool=${request.subject} --filter-exact ${target.entry} --renderer ${target.renderers.join(',')}`);
+    // ★ `--frames` IS NOT OPTIONAL HERE. `bin.ts` defaults an omitted value to 0, so leaving it off
+    // captures at a DIFFERENT frame count than the request commissioned, and the candidate then records
+    // conditions the commission did not ask for. flight-oracles rejected exactly that: request frames 1,
+    // capture frames 0. The request is the authority on capture conditions; the scope must carry all of
+    // them, not just the ones that happen to have no default.
+    console.log(
+      `--tool=${request.subject} --filter-exact ${target.entry} ` +
+        `--renderer ${target.renderers.join(',')} --frames ${request.frames}`,
+    );
   }
   process.exit(0);
 }

@@ -44,6 +44,17 @@ export interface CaptureStatus {
   /** null = no baseline exists yet; false = hash matches baseline; true = hash differs from baseline */
   changed: boolean | null;
   /**
+   * The conditions THIS capture ran under, recorded beside the hash it produced.
+   *
+   * ★ WITHOUT THIS, A CONSUMER HAS NO SOURCE FOR THE CAPTURE'S OWN CONDITIONS AND WILL REACH FOR THE
+   * COMMITTED BASELINE'S. That is a different capture, made at a different time under conditions that may
+   * differ — `flight-oracles` rejected a candidate for exactly this: the record said `frames: 0`, copied
+   * from a baseline, while the commission asked for 1. The same argument the fingerprint provenance makes
+   * two hundred lines below applies here: attaching another capture's conditions to these bytes
+   * manufactures an agreement that was never observed.
+   */
+  provenance?: CaptureBaselineProvenance;
+  /**
    * Whether this target's own pixel oracle was CALLED, straight from the verifier, or null when the
    * verifier published no answer. Recorded because existence and invocation are different claims: a
    * misspelled `assertRender` export is simply absent to the verifier, and reading the source can never
@@ -647,6 +658,9 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         baselineHash,
         changed,
         oracle: verification?.oracle ?? null,
+        // The conditions these exact bytes were produced under — the same object the fingerprint
+        // provenance is built from, so the two can never describe different captures.
+        provenance: captureProvenance,
       };
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
 
