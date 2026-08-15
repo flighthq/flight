@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 1,
-  "id": "shape-fill-solid-webgl-2026-08-14",
-  "subject": "functional",
-  "targets": [{ "entry": "shape-fill-solid", "renderers": ["webgl"] }],
-  "frames": 1,
-  "reason": "seed the first flight-oracles run: commission the first full-resolution reference image so the commission -> capture -> review -> release -> lock loop can be exercised end to end on one cell"
-}
