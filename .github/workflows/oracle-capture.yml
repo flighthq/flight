@@ -105,16 +105,28 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      # ★ THE ENVIRONMENT IS RECORDED, NOT PINNED. §10 has not been ruled: whether reference sets are keyed
-      # per backend or per backend × environment is open, so this workflow does not presume a canonical
-      # environment exists. It records WHAT PRODUCED the image as an opaque id travelling with the
-      # candidate. The `sha256-` prefix is required by the Oracle schema.
+      # ★ THE DESCRIPTOR NAMES WHAT WAS MEASURED TO MATTER, AND DELIBERATELY OMITS WHAT WAS MEASURED
+      # NOT TO. A cross-host run on 2026-08-15 captured eight GPU-shaded cells on two independent
+      # machines — different CPU, kernel, Ubuntu release (26.04 vs 24.04) and Node major (22 vs 24) —
+      # and every cell was byte-identical. What was held constant was the chromium build and the pinned
+      # SwiftShader adapter, so those are what the identity commits to.
+      #
+      # This previously hashed `ImageOS`/`ImageVersion`. That is the exact inversion the measurement
+      # exposed: two hosts rendering identical pixels would have been given DIFFERENT environment ids,
+      # scoping every reference image to a runner image that demonstrably does not reach the rasterizer.
+      # An environment id is a claim about what changes the output; putting an irrelevant variable in it
+      # fragments the reference set for no reason, and omitting a relevant one silently blesses drift.
+      #
+      # `--use-webgpu-adapter=swiftshader` is pinned in captureBrowser.ts, so WebGPU rasterizes in
+      # software regardless of the host GPU; that pin is part of the identity because removing it would
+      # change the output.
       - id: environment
         run: |
           browser=$(npx playwright --version | tr -d ' ')
-          descriptor="runner=${ImageOS:-unknown};image=${ImageVersion:-unknown};${browser};viewport=default"
+          descriptor="${browser};webgpu-adapter=swiftshader;viewport=default"
           echo "id=sha256-$(printf '%s' "$descriptor" | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
           echo "descriptor=$descriptor" >> "$GITHUB_OUTPUT"
+          echo "environment descriptor: $descriptor"
 
       - name: Capture ${{ matrix.request }}
         env:
