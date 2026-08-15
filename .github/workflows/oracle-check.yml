@@ -1,0 +1,108 @@
+# Compares today's render against the blessed reference bytes the consumer lock pins.
+# agents/render-oracle-repository.md §6 and §9.
+#
+# ★ THIS IS THE ONLY PART OF THE SYSTEM THAT CAN CATCH A REGRESSION. Everything upstream — the request
+# queue, the capture, the bridge, the blessing — exists to make this job's answer mean something. If this
+# workflow does not run, or runs and compares nothing, the whole tier is ceremony. That is why a run with
+# zero comparisons is a FAILURE here and not a pass (`zero-comparisons`, §9): a gate that verifies nothing
+# and reports green is worse than no gate, because it also removes the pressure to build one.
+#
+# ★ IT HOLDS NO CREDENTIAL AND NEEDS NONE. Release assets are public reads over HTTPS, so unlike
+# `oracle-capture.yml` this can run on a pull request, on a fork, and on untrusted code. `permissions` is
+# read-only on contents and there is no secret in this file. The credential boundary §7 draws is between
+# capture and dispatch; this side of the loop sits entirely outside it.
+#
+# ★ IT RUNS ON EVERY PUSH AND PULL REQUEST, WHICH IS THE POINT. A reference image that is only consulted
+# on demand tells you a render changed at the moment someone thought to ask, not at the commit that
+# changed it. The cost is bounded by the lock: only cells the packs supply bytes for are captured.
+name: oracle-check
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# ★ THE CAPTURE CONDITIONS ARE DECLARED HERE BECAUSE THE PACK DOES NOT CARRY THEM. `pack-manifest.json`
+# records hashes and dimensions but no provenance, so nothing downstream can derive which frame the
+# blessed image was taken at. Capturing at a different frame yields a different image and reports a
+# regression that is really a configuration mistake — so the value is stated once, echoed into the run
+# summary next to the verdict, and never guessed. The durable fix is for the pack manifest to echo the
+# provenance Flight already sends in the candidate; until then this constant must track what was blessed.
+env:
+  ORACLE_CAPTURE_FRAMES: 1
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Fetching FIRST means a lock that no longer resolves fails in seconds, before the expensive build.
+      # It also decides the capture scope, so there is nothing to build when the lock pins no packs.
+      - name: Fetch and verify the pinned reference packs
+        run: npx tsx ./scripts/oracle-check.ts fetch
+
+      - name: Resolve the capture scope
+        id: scope
+        run: |
+          set -euo pipefail
+          scope=$(npx tsx ./scripts/oracle-check.ts scope --frames "$ORACLE_CAPTURE_FRAMES")
+          echo "$scope"
+          {
+            echo 'lines<<SCOPE'
+            echo "$scope"
+            echo 'SCOPE'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build the harness
+        run: |
+          npm run build
+          npm run build:functional
+
+      - run: npx playwright install --with-deps chromium
+
+      # The registered identity is echoed, never recomputed: it is owned by the `flight-oracles` record
+      # and copied verbatim into `scripts/oracle-capture-identity.json`. A run whose observed browser has
+      # drifted out of that environment is then visible to a reader rather than silently compared under an
+      # id that no longer describes it.
+      - name: Echo the registered capture environment
+        run: |
+          echo "registered identity: $(node -p "require('./scripts/oracle-capture-identity.json').environmentId")"
+          echo "observed playwright: $(npx playwright --version | tr -d ' ')"
+
+      - name: Capture the pinned cells
+        run: |
+          set -euo pipefail
+          printf '%s\n' "${{ steps.scope.outputs.lines }}" | while read -r args; do
+            [ -n "$args" ] || continue
+            npx tsx ./packages/tool-capture/src/bin.ts capture $args
+          done
+
+      # Sets the exit code, and appends the per-cell verdict table to the run summary so a failure is
+      # readable without opening the log.
+      - name: Compare against the blessed references
+        run: npx tsx ./scripts/oracle-check.ts check --frames "$ORACLE_CAPTURE_FRAMES"
+
+      # ★ `if: failure()` IS DELIBERATE AND MUST NOT BECOME `always()`. On a green run these images are
+      # bytes nobody will look at; on a red one they are the whole diagnosis — the render CI actually
+      # produced, next to the reference it was measured against.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oracle-check-captures
+          path: |
+            .artifacts/functional/**/screenshot.png
+            .artifacts/oracle-packs/**/*.png
+          include-hidden-files: true
+          if-no-files-found: warn
