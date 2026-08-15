@@ -1,0 +1,126 @@
+# Measures whether repeated captures agree across independent hosts — the precondition `flight-oracles`
+# requires before a first blessing, and the measurement that settles §10 of the render-oracle proposal.
+#
+# ★ THIS IS AN EXPERIMENT, NOT A GATE. It gates nothing, blesses nothing, and dispatches nowhere. It is
+# run by hand when someone needs the number, and its whole output is a report.
+#
+# ★ EACH MATRIX LEG IS AN INDEPENDENT CLEAN HOST, WHICH IS THE POINT. `flight-oracles` asks for a
+# canonical environment "measured across at least two independent clean hosts". Separate matrix legs are
+# separate runner VMs with the same image — same declared environment, different machine — which is
+# exactly the comparison that matters. Two captures in ONE job would measure determinism within a host
+# and prove nothing about portability, which is the thing that has already failed here once: `tests.yml`
+# records that pinning SwiftShader did NOT make a CI-captured golden reproduce across machines.
+#
+# ★ WHAT IT CAN AND CANNOT ESTABLISH. It compares the pixel hash each capture already records, so it can
+# say whether two hosts produced IDENTICAL bytes. If they did, the noise floor is zero and any positive
+# tolerance clears it. If they did not, this cannot say how far apart they are — a magnitude needs an
+# in-page decode, because `createImageBitmap` is the only decoder in this repo. Do not read a tolerance
+# out of a disagreement reported here.
+name: oracle-calibrate
+
+on:
+  workflow_dispatch:
+    inputs:
+      entries:
+        description: 'Comma-separated functional entries to capture (blank = the whole suite)'
+        required: false
+        type: string
+      renderers:
+        description: 'Renderers to capture'
+        required: false
+        default: 'webgl,webgpu,canvas,dom'
+        type: string
+      hosts:
+        description: 'How many independent hosts to capture on'
+        required: false
+        default: '2'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [1, 2, 3]
+    runs-on: ubuntu-latest
+    steps:
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        uses: actions/checkout@v4
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        run: npm ci
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        run: |
+          npm run build
+          npm run build:functional
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        run: npx playwright install --with-deps chromium
+
+      # The descriptor every leg records. If the legs disagree on their own descriptor, they were not the
+      # same declared environment and the comparison below is not the one anyone meant to run.
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        id: environment
+        run: |
+          browser=$(npx playwright --version | tr -d ' ')
+          descriptor="runner=${ImageOS:-unknown};image=${ImageVersion:-unknown};${browser};viewport=default"
+          echo "descriptor=$descriptor" >> "$GITHUB_OUTPUT"
+          echo "id=sha256-$(printf '%s' "$descriptor" | sha256sum | cut -c1-64)" >> "$GITHUB_OUTPUT"
+          echo "host ${{ matrix.host }} descriptor: $descriptor"
+
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        run: |
+          set -euo pipefail
+          args="--tool=functional --renderer ${{ github.event.inputs.renderers || 'webgl,webgpu,canvas,dom' }}"
+          if [ -n "${{ github.event.inputs.entries }}" ]; then
+            for entry in $(printf '%s' "${{ github.event.inputs.entries }}" | tr ',' ' '); do
+              npx tsx ./packages/tool-capture/src/bin.ts capture $args --filter-exact "$entry"
+            done
+          else
+            npx tsx ./packages/tool-capture/src/bin.ts capture $args
+          fi
+
+      # Only the status files travel: the hashes are the measurement, and shipping every PNG would move
+      # hundreds of megabytes to answer a question about equality.
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        uses: actions/upload-artifact@v4
+        with:
+          name: calibration-host-${{ matrix.host }}
+          path: .artifacts/functional/**/status.json
+          include-hidden-files: true
+          if-no-files-found: error
+
+      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        run: |
+          echo "- host ${{ matrix.host }}: ${{ steps.environment.outputs.id }}" >> "$GITHUB_STEP_SUMMARY"
+
+  compare:
+    needs: capture
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: calibration-host-*
+          path: runs
+      - run: |
+          set -euo pipefail
+          roots=$(ls -d runs/calibration-host-*/.artifacts 2>/dev/null | tr '\n' ' ' || true)
+          if [ -z "$roots" ]; then
+            echo "no calibration output to compare — every host failed to capture" >&2
+            exit 1
+          fi
+          echo "comparing: $roots"
+          npx tsx ./scripts/oracle-calibrate.ts $roots | tee -a "$GITHUB_STEP_SUMMARY"
