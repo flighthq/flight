@@ -412,6 +412,59 @@ between two counts is easier when you know where they diverge:
   counts any non-null backend key; a hand count that requires `fingerprint` silently skips those and
   undercounts.
 
+## An instrument that cannot discriminate is not a weak signal — it is noise
+
+The same shape as *a fingerprint with no scene is not weak evidence* above, one layer up: applied to a
+measuring instrument rather than to a stored artifact. Recorded because the instrument in question was
+**built, validated, and deleted** on 2026-08-16, and a deleted thing leaves no trace to warn the next
+person who has the same idea.
+
+**What it was for.** The commissioning bar in `scripts/oracle-eligibility.ts` treats a scene's
+`assertRender` as BINARY — `oracle: invoked` and nothing more. That is the only condition in the bar that
+speaks to a render being *right* rather than merely stable, so a weak oracle is the cheapest route by
+which a wrong picture reaches a permanent blessing, and the bar cannot see the difference between an
+oracle sampling both the kept and the clipped side of a clip path and one checking that coverage exceeds
+a floor. The instrument was to rank every scene oracle — 325 scene files, carrying the 465 oracle-bearing
+cells the evidence census counts — by structural features of their assertion text
+— throw sites, specific-pixel reads, comparison count, and whether the body bounds a quantity from both
+sides — so the semantic review could be targeted instead of swept.
+
+**The ground truth it was validated against, before use.** Oracles observed *throwing on a real render*
+during two full capture sweeps. Those are demonstrably non-vacuous: whatever else is true of them, they
+catch something, so a ranking that cannot place them above the corpus median is measuring a different
+property than the one it claims.
+
+The set needed pruning first, and the pruning is part of the record. Ten scenes were observed failing;
+three of them — `svg-gradient`, `svg-stroke`, `bitmap-downscale-smoothing` — turned out to be **stale
+capture residue** rather than renders (see the tool-capture cell). The first two have no scene file at
+all and so never entered the scan; the third does, but the column that failed was a retired `webgl` one,
+so its two live columns are not evidence of firing either. Excluding them leaves **12 oracle/renderer
+pairs across 7 scenes**: `effect-halftone`, `effect-lift-gamma-gain`, `effect-outline`, `effect-sketch`,
+`material-subsurface`, `particle-motion-blur`, `text-native`.
+
+**The result: it could not.** Across 325 scanned oracles the scores ran 6–53 with a median of 15, and the
+twelve known-firing pairs landed between the **23rd and 71st percentile, with 4 of 12 below the
+median** — a flat distribution, indistinguishable from the corpus. (The unpruned 14-pair figure was 4 of
+14 over the same percentile range; the conclusion does not turn on the pruning, and the pruned set is
+the one that is actually ground truth.)
+
+**So it was deleted, and the wording of that matters.** A metric that fails to separate the one class
+there is ground truth for is not a weak signal to apply carefully, and it is not a starting point to
+refine. It is noise, and a ranked list is worse than no list because it directs attention with false
+confidence — the review would go to the scenes the metric happened to score low, and the reason it scored
+them low is unknown. Keeping it "as a hint" would have preserved exactly the property that made it
+useless while discarding the evidence that it was useless.
+
+**What the failed measurement establishes for anyone who tries again.** A static proxy over assertion
+text does not predict whether an oracle catches anything; the weak-oracle review has to stay semantic,
+scene by scene. The one property that did look meaningful on inspection is worth carrying as a **human
+review criterion** rather than a metric: the strongest oracles in this corpus make a PAIRED
+positive-and-negative assertion, and say so themselves — `svg-clip-path` checks the kept side *and* the
+clipped side, commenting *"without this, a clip that never applied would pass"*. An oracle that only
+checks the effect happened passes an effect applied everywhere; one that only checks it did not happen
+everywhere passes an effect that never ran. That reads clearly to a person and did not survive
+mechanization.
+
 ## Scope
 
 Not covered here: the tilemap/webgpu blank render itself (a real bug, possibly sharing a root cause with the
