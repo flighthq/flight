@@ -6,6 +6,7 @@ import type {
   OracleParityWithholding,
 } from './oracle-eligibility';
 import {
+  addReferenceImageCoverage,
   findParityWithholdings,
   groupOracleTargets,
   selectCommissionableCells,
@@ -19,6 +20,46 @@ import {
 //
 // Each test starts from a cell that WOULD be eligible and breaks exactly one thing, so a pass proves the
 // named condition did the withholding rather than some other one that happened to be tripped too.
+
+describe('addReferenceImageCoverage', () => {
+  // ★ THE HALF OF A COMMISSION THAT FAILS SILENTLY. §5 makes the request and the coverage identity one
+  // change: file only the request and the cell is never REQUIRED, so nothing fails when the bytes never
+  // arrive — the commission expires quietly and CI was never told to ask. Everything that did happen
+  // still looks correct, which is why this needs an assertion rather than an eyeball.
+
+  it('adds referenceImage to each commissioned identity and keeps the kinds sorted', () => {
+    expect(
+      addReferenceImageCoverage({ 'a/webgl': ['fingerprint', 'oracle', 'screenshot'] }, ['functional/a/webgl']),
+    ).toEqual({ coverage: { 'a/webgl': ['fingerprint', 'oracle', 'referenceImage', 'screenshot'] } });
+  });
+
+  it('leaves every cell the batch did not name untouched', () => {
+    expect(
+      addReferenceImageCoverage({ 'a/webgl': ['fingerprint'], 'b/canvas': ['oracle'] }, ['functional/a/webgl']),
+    ).toEqual({ coverage: { 'a/webgl': ['fingerprint', 'referenceImage'], 'b/canvas': ['oracle'] } });
+  });
+
+  it('is idempotent on a cell that already carries the kind', () => {
+    expect(addReferenceImageCoverage({ 'a/webgl': ['fingerprint', 'referenceImage'] }, ['functional/a/webgl'])).toEqual(
+      { coverage: { 'a/webgl': ['fingerprint', 'referenceImage'] } },
+    );
+  });
+
+  it('never mutates the coverage it was handed', () => {
+    // The caller writes this object back to disk; mutating the input would let a later refusal leave a
+    // half-applied manifest behind.
+    const original = { 'a/webgl': ['fingerprint'] };
+    addReferenceImageCoverage(original, ['functional/a/webgl']);
+
+    expect(original).toEqual({ 'a/webgl': ['fingerprint'] });
+  });
+
+  it('reports the identity that vanished between the read and the write', () => {
+    expect(addReferenceImageCoverage({ 'a/webgl': ['fingerprint'] }, ['functional/gone/webgl'])).toEqual({
+      missing: 'functional/gone/webgl',
+    });
+  });
+});
 
 describe('findParityWithholdings', () => {
   const IDENTITIES = ['functional/a/canvas', 'functional/a/webgl', 'functional/b/webgl'];

@@ -276,6 +276,35 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
   return { blocked, collisions, eligible };
 }
 
+/**
+ * Adds the `referenceImage` evidence kind to each commissioned identity's coverage entry.
+ *
+ * ★ THE COVERAGE IDENTITY AND THE REQUEST ARE ONE CHANGE (§5), AND THIS IS THE HALF THAT CAN BE WRONG
+ * SILENTLY. Filing only the request leaves the cell unrequired, so nothing ever fails when the bytes do
+ * not arrive: the commission expires quietly and CI never asked for it. The failure is invisible because
+ * everything that DID happen looks correct — the request is well-formed, the queue accepts it, and the
+ * consumer gate simply has nothing to say about a cell it was never told to require.
+ *
+ * Returns a sentinel rather than throwing when an identity is absent: it means the manifest changed
+ * between the read that selected the batch and the write that records it, which the caller must report
+ * against the specific cell rather than as a crash.
+ */
+export function addReferenceImageCoverage(
+  subjectCoverage: Readonly<Record<string, readonly string[]>>,
+  identities: readonly string[],
+): { coverage: Record<string, string[]> } | { missing: string } {
+  const coverage: Record<string, string[]> = {};
+  for (const [cell, kinds] of Object.entries(subjectCoverage)) coverage[cell] = [...kinds];
+  for (const identity of identities) {
+    const cell = identity.split('/').slice(1).join('/');
+    const kinds = coverage[cell];
+    if (kinds === undefined) return { missing: identity };
+    if (!kinds.includes('referenceImage')) kinds.push('referenceImage');
+    kinds.sort();
+  }
+  return { coverage };
+}
+
 /** One `parity` row of a validation report: the scene it judged, and the verdict it reached. */
 export interface OracleParityCheck {
   entry?: string;

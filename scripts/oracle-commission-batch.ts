@@ -26,6 +26,7 @@ import type {
   OracleParityWithholding,
 } from './oracle-eligibility';
 import {
+  addReferenceImageCoverage,
   findParityWithholdings,
   groupOracleTargets,
   selectCommissionableCells,
@@ -157,16 +158,14 @@ const manifestPath = join(__dirname, 'capture-baseline-coverage-manifest.json');
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
   subjects: Record<string, Record<string, string[]>>;
 };
-for (const identity of batch) {
-  const key = identity.split('/').slice(1).join('/');
-  const kinds = manifest.subjects[subject]?.[key];
-  if (kinds === undefined) {
-    console.error(`oracle-commission-batch: ${identity} vanished from the coverage manifest between read and write`);
-    process.exit(1);
-  }
-  if (!kinds.includes('referenceImage')) kinds.push('referenceImage');
-  kinds.sort();
+const updated = addReferenceImageCoverage(manifest.subjects[subject] ?? {}, batch);
+if ('missing' in updated) {
+  console.error(
+    `oracle-commission-batch: ${updated.missing} vanished from the coverage manifest between read and write`,
+  );
+  process.exit(1);
 }
+manifest.subjects[subject] = updated.coverage;
 writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 console.log('');
