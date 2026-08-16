@@ -79,10 +79,9 @@ for (let i = 0; i < colors.length; i++) {
 render(root);
 
 // ORACLE-BLOCK
-// Posterize quantizes each channel to 4 levels. The 6 input cells have 5 unique blue channel values
-// (48, 64, 255, 192, 208). After quantization to 4 levels, at most 4 unique B values remain —
-// verified in both sRGB and linear quantization paths. Without the effect, the original 5 unique B
-// values exceed the threshold.
+// Control column: canvas has no posterize runner, so the 6 input shapes render unquantized.
+// The 6 RGBA colors yield 5 distinct blue channels (48, 64, 255, 192, 208). Exactly 5 confirms the
+// shapes rendered with correct RGBA unpacking and no spurious quantization was applied.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;
   const rows = 2;
@@ -105,9 +104,9 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     if (!found) blues.add(b);
   }
 
-  if (blues.size > 4) {
+  if (blues.size !== 5) {
     throw new Error(
-      `[effect-posterize] expected <= 4 distinct blue levels after quantization, got ${blues.size} — ` +
+      `[effect-posterize] control column expects 5 distinct blue levels (no quantization), got ${blues.size} — ` +
         `values: ${[...blues].join(', ')}`,
     );
   }
