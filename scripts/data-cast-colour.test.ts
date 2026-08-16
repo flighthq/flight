@@ -62,6 +62,23 @@ describe('findDataCastColourViolations', () => {
     expect(findColourFieldsIn(text)).toEqual([]);
   });
 
+  // Arrays, unions and single-identifier type aliases are followed; a GENERIC INSTANTIATION is the
+  // stated bound. Measured against the real resolver, not assumed from the regex.
+  it.each([
+    [
+      'an array element type',
+      'interface E { readonly color: number; }\ninterface T { readonly eps: E[]; }\nconst d = s.data as T;',
+      'eps.color',
+    ],
+    [
+      'a union member',
+      'interface A { readonly bounds: number; }\ninterface B { readonly tint: number; }\ninterface T { readonly paint: A | B; }\nconst d = s.data as T;',
+      'paint.tint',
+    ],
+  ])('follows colour through %s', (_label, text, expected) => {
+    expect(findColourFieldsIn(text).map((hit) => hit.field)).toEqual([expected]);
+  });
+
   // The window defect this whole check descends from: a fixed-size context read attributes the NEXT
   // declaration's fields to the interface above it. Matching to the balanced closing brace is what makes
   // the empty body read as empty.

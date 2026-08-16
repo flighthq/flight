@@ -13,11 +13,12 @@ import { join } from 'node:path';
 export function findDataCastColourViolations(repoRoot: string): DataCastColourViolation[] {
   const sources = SCANNED_TREES.flatMap((tree) => collectTypeScriptSources(join(repoRoot, tree)));
   const declarations = collectInterfaceBodies(sources);
+  const aliases = collectTypeAliases(sources);
   const violations: DataCastColourViolation[] = [];
 
   for (const source of sources) {
     for (const typeName of findDataCastTargets(source.text)) {
-      const field = findColourField(typeName, declarations, new Set());
+      const field = findColourField(typeName, declarations, aliases, new Set());
       if (field === null) continue;
       violations.push({ field, file: source.path, typeName });
     }
@@ -52,12 +53,13 @@ export interface DataCastColourViolation {
 function findColourField(
   typeName: string,
   declarations: ReadonlyMap<string, string>,
+  aliases: ReadonlyMap<string, string>,
   seen: Set<string>,
 ): string | null {
   if (seen.has(typeName)) return null;
   seen.add(typeName);
 
-  const body = declarations.get(typeName);
+  const body = declarations.get(typeName) ?? declarations.get(aliases.get(typeName) ?? '');
   if (body === undefined) return null;
 
   for (const line of body.split('\n')) {
@@ -68,7 +70,7 @@ function findColourField(
     if (/colou?r|tint/i.test(field)) return field;
 
     for (const candidate of declaredType.matchAll(/[A-Za-z_]\w*/g)) {
-      const nested = findColourField(candidate[0], declarations, seen);
+      const nested = findColourField(candidate[0], declarations, aliases, seen);
       if (nested !== null) return `${field}.${nested}`;
     }
   }
@@ -103,6 +105,19 @@ function collectInterfaceBodies(sources: readonly TypeScriptSource[]): Map<strin
   return bodies;
 }
 
+// `type Alias = SomeInterface;` is 15-strong in this repo, so a field declared through one would
+// otherwise resolve to nothing and read as colourless. Only the bare single-identifier form is followed:
+// a generic instantiation (`Map<string, T>`) is NOT resolved, which is the stated bound of this checker.
+function collectTypeAliases(sources: readonly TypeScriptSource[]): Map<string, string> {
+  const aliases = new Map<string, string>();
+  for (const source of sources) {
+    for (const match of source.text.matchAll(TYPE_ALIAS)) {
+      if (match[1] !== undefined && match[2] !== undefined) aliases.set(match[1], match[2]);
+    }
+  }
+  return aliases;
+}
+
 function collectTypeScriptSources(root: string): TypeScriptSource[] {
   const sources: TypeScriptSource[] = [];
   if (!existsSync(root)) return sources;
@@ -132,6 +147,7 @@ const DATA_CAST = /\.data as (?:unknown as )?([A-Za-z_]\w*)/g;
 // as repository violations.
 const SCANNED_TREES = ['packages', 'functional', 'examples', 'conformance', 'tools'];
 const INTERFACE_HEAD = /(?:export )?interface (\w+)[^{]*\{/g;
+const TYPE_ALIAS = /(?:export )?type (\w+) = ([A-Za-z_]\w*);/g;
 
 // `Partial`, `Readonly` and `object` are wrappers or the empty type: they declare no fields of their own,
 // so they can carry no colour and resolving them would only report their argument.
