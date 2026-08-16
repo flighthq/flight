@@ -128,6 +128,7 @@ export interface CaptureParityCoverage {
   interrupted: boolean;
   parityComparisons: number;
   parityUncovered: number;
+  parityUndeclaredUncovered: number;
   rendererFilterCount: number;
 }
 
@@ -493,7 +494,7 @@ export function formatCaptureParityRanking(
 export function isCaptureParityCoverageFailure(run: Readonly<CaptureParityCoverage>): boolean {
   if (!run.gateParity || run.interrupted) return false;
   if (run.rendererFilterCount === 1) return false;
-  return run.parityComparisons === 0 && run.parityUncovered > 0;
+  return run.parityComparisons === 0 && run.parityUndeclaredUncovered > 0;
 }
 
 // A tier either has what it needs and gates hard, or it says so loudly — there is no silent
@@ -520,6 +521,7 @@ interface EntryResult {
   regressionUncovered: number;
   parityFailures: number;
   parityUncovered: number;
+  parityUndeclaredUncovered: number;
   regressionPasses: number;
   parityPasses: number;
   loadFailures: number;
@@ -545,6 +547,7 @@ async function processEntry(
     regressionUncovered: 0,
     parityFailures: 0,
     parityUncovered: 0,
+    parityUndeclaredUncovered: 0,
     regressionPasses: 0,
     parityPasses: 0,
     loadFailures: 0,
@@ -845,6 +848,9 @@ async function processEntry(
   // Report and baseline-write modes are excluded because neither claims to gate anything.
   if (pairs.length === 0 && options.gateParity && !options.report && !options.updateFingerprints) {
     result.parityUncovered++;
+    if (skip === undefined && eligible.size >= 2) {
+      result.parityUndeclaredUncovered++;
+    }
     result.checks.push({
       entry: entry.name,
       renderers: [...eligible.keys()],
@@ -985,6 +991,7 @@ export async function runCaptureValidation(
   let regressionFailures = 0;
   let parityFailures = 0;
   let parityUncovered = 0;
+  let parityUndeclaredUncovered = 0;
   let regressionUncovered = 0;
   let regressionPasses = 0;
   let parityPasses = 0;
@@ -1043,6 +1050,7 @@ export async function runCaptureValidation(
           regressionFailures += result.regressionFailures;
           parityFailures += result.parityFailures;
           parityUncovered += result.parityUncovered;
+          parityUndeclaredUncovered += result.parityUndeclaredUncovered;
           regressionUncovered += result.regressionUncovered;
           regressionPasses += result.regressionPasses;
           parityPasses += result.parityPasses;
@@ -1067,6 +1075,7 @@ export async function runCaptureValidation(
         regressionFailures += result.regressionFailures;
         parityFailures += result.parityFailures;
         parityUncovered += result.parityUncovered;
+        parityUndeclaredUncovered += result.parityUndeclaredUncovered;
         regressionUncovered += result.regressionUncovered;
         regressionPasses += result.regressionPasses;
         parityPasses += result.parityPasses;
@@ -1128,6 +1137,7 @@ export async function runCaptureValidation(
     interrupted,
     parityComparisons: parityPasses + parityFailures,
     parityUncovered,
+    parityUndeclaredUncovered,
     rendererFilterCount: options.rendererFilter.length,
   });
   // The zero-floor above asks only whether ANY comparison ran. This asks WHICH ones did: a pinned
@@ -1254,7 +1264,7 @@ export async function runCaptureValidation(
   if (parityCoverageFailed) {
     console.error(
       pc.red(
-        `\nParity compared NOTHING across all ${parityUncovered} entr${parityUncovered === 1 ? 'y' : 'ies'} — this leg is unconfigured, not clean.`,
+        `\nParity compared NOTHING — ${parityUndeclaredUncovered} entr${parityUndeclaredUncovered === 1 ? 'y has' : 'ies have'} 2+ eligible backends with no declared skip and 0 pairs.`,
       ),
     );
     for (const reason of new Set(
