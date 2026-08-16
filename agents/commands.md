@@ -184,13 +184,20 @@ backends are at parity, and — *when the repository has one* — the capture ma
 `assertRender` is the only one of those that speaks to the render being **right**; the rest say it is
 stable, and four backends can be stably wrong together.
 
+The baseline check is named `baseline-unreproduced-here`, not `baseline-drift`, because that is the
+question it actually answers. It compares against a baseline captured somewhere else, so it settles
+*does this reproduce in THIS environment* — while a blessing needs *does it reproduce in the BLESSING
+environment*. `drift` named it as a property of the cell, as though the render had moved; on the 14 cells
+it caught, nothing that could move the render had moved. The block is unchanged; only the claim the label
+makes.
+
 A baseline is **checked when it exists and is not required to exist**. Requiring one looked principled
 and was circular: a baseline written today is a *first* capture, so it proves nothing about reproduction
 until something later re-runs against it, and "capture the 42 missing ones and accept them" would have
 been true on any host. Cross-time reproduction comes from stage-one determinism instead, measured now
-rather than stored earlier. An *existing* baseline still gates, and earns it: of 450 baselined cells, 13
+rather than stored earlier. An *existing* baseline still gates, and earns it: of 450 baselined cells, 14
 reproduced byte-for-byte across both of one session's runs and still disagreed with their committed
-baseline — stage one called all 13 agreed, because it compares today to today and cannot see a render
+baseline — stage one called all 14 agreed, because it compares today to today and cannot see a render
 that moved last week.
 
 Byte-identity with a sibling backend is **reported and does not withhold**. It was a blocking condition

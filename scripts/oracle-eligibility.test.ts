@@ -397,13 +397,13 @@ describe('selectCommissionableCells', () => {
     expect(select({ capture: { baselineHash: null } }).eligible).toEqual(['functional/good/webgl']);
   });
 
-  it('still gates on a baseline that exists and no longer matches', () => {
+  it('still gates on a baseline that exists and does not reproduce', () => {
     // The check earns its place on measured data: 13 of 450 baselined cells reproduced byte-for-byte
     // across both of today's runs and still disagreed with their committed baseline. Stage one called
     // all 13 agreed — it compares today to today and cannot see a render that moved last week.
     expect(blockOf(select({ capture: { hash: 'moved' } }))).toEqual([
-      'baseline-drift',
-      'capture does not match the committed baseline',
+      'baseline-unreproduced-here',
+      'the committed baseline does not reproduce in this environment',
     ]);
   });
 
