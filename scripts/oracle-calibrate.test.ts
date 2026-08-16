@@ -99,3 +99,22 @@ function run(cells: Readonly<Record<string, string | null>>): string {
   }
   return root;
 }
+
+describe('formatCalibrationReport, on the population it compared', () => {
+  it('names every agreed cell rather than only counting them', () => {
+    // ★ THE FIRING TEST FOR A GAP THAT ALREADY COST SOMETHING. The cross-host run behind the first
+    // blessed reference recorded only "eight GPU-shaded cells"; when that lock was later questioned,
+    // the tree could not say whether the locked cell had been among the eight, so a measurement that
+    // may well have covered it could not be used to defend it. A count cannot answer "was this one
+    // covered", and that is the only question a reader comes back with.
+    const text = formatCalibrationReport({
+      agreed: ['functional/shape-fill-solid/webgl'],
+      cells: [{ hashes: ['a', 'a'], identity: 'functional/shape-fill-solid/webgl' }],
+      disagreed: [],
+      incomplete: [],
+      runs: 2,
+    });
+
+    expect(text).toContain('AGREED     functional/shape-fill-solid/webgl');
+  });
+});

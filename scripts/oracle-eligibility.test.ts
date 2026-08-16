@@ -1,6 +1,7 @@
 import type {
   OracleCaptureFact,
   OracleDeterminismVerdict,
+  OracleDeterminismScope,
   OracleEligibilityInput,
   OracleParityWithholding,
 } from './oracle-eligibility';
@@ -216,6 +217,36 @@ describe('selectCommissionableCells', () => {
     ]);
   });
 
+  it('withholds a locally-agreeing cell until an independent host has agreed too', () => {
+    // ★ STAGE ONE IS NOT STAGE TWO. Repeats on one machine prove that machine reproduces itself. The lock
+    // is verified on a DIFFERENT machine at maxChannelDelta 0, and `tests.yml` records SwiftShader pinning
+    // already failing to survive a machine change once, so local agreement advances a cell — it never
+    // completes it.
+    expect(blockOf(select({ determinismScope: 'one-host' }))).toEqual([
+      'determinism-within-host-only',
+      'stage one clear; cross-host portability is unmeasured',
+    ]);
+  });
+
+  it('does not let the cross-host stage mask a defect the repair track could act on', () => {
+    // ★ THE ORDERING BUG THIS PINS. Checked before the other conditions, this reason swallowed all 445
+    // otherwise-clean cells under one heading and every actionable list went empty. It names a
+    // measurement nobody in a sandbox can run and it is true of every cell at once, so it is checked
+    // last: a cell that also lacks an oracle reports the oracle.
+    expect(blockOf(select({ capture: { oracle: 'absent' }, determinismScope: 'one-host' }))).toEqual([
+      'no-scene-oracle',
+      'the scene exports no assertRender',
+    ]);
+  });
+
+  it('treats a local disagreement as conclusive, with no cross-host run owed', () => {
+    // The asymmetry: a cell that cannot reproduce itself on one machine will not reproduce across two.
+    expect(blockOf(select({ determinism: 'disagreed', determinismScope: 'one-host' }))).toEqual([
+      'nondeterministic',
+      'repeated captures did not agree',
+    ]);
+  });
+
   it('withholds a cell whose backends disagree on the scene', () => {
     expect(blockOf(select({ parityWithheld: [['functional/good/webgl', 'disagreement']] }))).toEqual([
       'parity-disagreement',
@@ -378,6 +409,7 @@ function select(options: {
   captures?: readonly OracleCaptureFact[];
   coverage?: readonly (readonly [string, readonly string[]])[];
   determinism?: OracleDeterminismVerdict | null;
+  determinismScope?: OracleDeterminismScope;
   determinismMap?: readonly (readonly [string, OracleDeterminismVerdict])[];
   held?: readonly (readonly [string, string])[];
   outstanding?: readonly string[];
@@ -391,6 +423,7 @@ function select(options: {
     captures: options.captures ?? [fact('functional/good/webgl', options.capture)],
     coverage: new Map(options.coverage ?? [['functional/good/webgl', ['fingerprint', 'oracle']]]),
     determinism: new Map(determinism),
+    determinismScope: options.determinismScope ?? 'independent-hosts',
     held: new Map(options.held ?? []),
     outstanding: new Set(options.outstanding ?? []),
     parityWithheld: new Map(options.parityWithheld ?? []),
