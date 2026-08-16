@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -14,6 +14,7 @@ import {
   createWgpuRenderState,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -84,3 +85,24 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const cols = 3;
+  const rows = 2;
+  const cx = Math.round((0.5 * frame.width) / cols);
+  const cy = Math.round((0.5 * frame.height) / rows);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+
+  if (g < 200) {
+    throw new Error(
+      `[effect-channel-mixer] cell 0 green channel is ${g} (expected ≥200 after R→G rotation, input R was 255)`,
+    );
+  }
+  if (r > 100) {
+    throw new Error(
+      `[effect-channel-mixer] cell 0 red channel is ${r} (expected ≤100 after B→R rotation, input B was 48)`,
+    );
+  }
+}

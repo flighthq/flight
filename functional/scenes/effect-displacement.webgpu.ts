@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   registerWgpuDisplacementEffect,
   defaultWgpuShapeRenderer,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -73,3 +74,29 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const bgRgb = getBitmapPixelRgb(frame, 0, 0);
+
+  const barCx = Math.round(0.5 * frame.width);
+  const barCy = Math.round(0.145 * frame.height);
+  const centerRgb = getBitmapPixelRgb(frame, barCx, barCy);
+  if (centerRgb === bgRgb) {
+    throw new Error('[effect-displacement] bar 0 center matches background — scene content missing');
+  }
+
+  const edgeX = Math.round(0.18 * frame.width);
+  const barTop = Math.round(0.08 * frame.height);
+  const barBot = Math.round(0.21 * frame.height);
+  const distinctColors = new Set<number>();
+  for (let i = 0; i < 8; i++) {
+    const y = barTop + Math.round(((barBot - barTop) * (i + 0.5)) / 8);
+    distinctColors.add(getBitmapPixelRgb(frame, edgeX, y));
+  }
+  if (distinctColors.size < 2) {
+    throw new Error(
+      `[effect-displacement] bar 0 left edge has ${distinctColors.size} distinct colour(s) across 8 samples — ` +
+        'expected ≥2 (displacement should warp the straight edge into a wavy boundary)',
+    );
+  }
+}

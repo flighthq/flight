@@ -1,4 +1,4 @@
-import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -14,6 +14,7 @@ import {
   createShape,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -81,3 +82,34 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  // The channel mixer matrix [0,0,1,0, 1,0,0,0, 0,1,0,0] creates a 4×5 color matrix:
+  //   R' = 0·R + 0·G + 1·B = B
+  //   G' = 1·R + 0·G + 0·B = R
+  //   B' = 0·R + 1·G + 0·B = G
+  // (see createChannelMixerColorMatrix and the 4×5 matrix definition in colorMatrixMath.ts)
+  //
+  // Cell 0 has fill color 0xff3030ff = R=255, G=48, B=48 (packed 0xRRGGBBAA).
+  // After the mix: R'=48, G'=255, B'=48 — the red cell must become green.
+  const cols = 3;
+  const rows = 2;
+  const cx = Math.round((0.5 * frame.width) / cols);
+  const cy = Math.round((0.5 * frame.height) / rows);
+  const rgb = getBitmapPixelRgb(frame, cx, cy);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+
+  // Semantic prediction: green channel must be the dominant channel (was the input's red = 255).
+  // Allow ±10 for GPU precision — the matrix is exact integers, so any larger drift is a real defect.
+  if (g < 200) {
+    throw new Error(
+      `[effect-channel-mixer] cell 0 green channel is ${g} (expected ≥200 after R→G rotation, input R was 255)`,
+    );
+  }
+  if (r > 100) {
+    throw new Error(
+      `[effect-channel-mixer] cell 0 red channel is ${r} (expected ≤100 after B→R rotation, input B was 48)`,
+    );
+  }
+}

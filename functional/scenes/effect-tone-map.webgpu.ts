@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   defaultWgpuShapeRenderer,
   registerWgpuToneMapEffect,
   endWgpuRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
   registerRenderer,
@@ -76,3 +77,40 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const whiteCx = Math.round(0.3 * frame.width);
+  const whiteCy = Math.round(0.32 * frame.height);
+  const whiteRgb = getBitmapPixelRgb(frame, whiteCx, whiteCy);
+  const wR = (whiteRgb >> 16) & 0xff;
+  const wG = (whiteRgb >> 8) & 0xff;
+  const wB = whiteRgb & 0xff;
+  const whiteLum = 0.299 * wR + 0.587 * wG + 0.114 * wB;
+  if (whiteLum < 150) {
+    throw new Error(
+      `[effect-tone-map] white block luminance is ${whiteLum.toFixed(1)} (expected ≥150 — tone mapping should preserve brightness)`,
+    );
+  }
+  if (wR >= 250 && wG >= 250 && wB >= 250) {
+    throw new Error(
+      `[effect-tone-map] white block is still clipped white (${wR},${wG},${wB}) — ACES highlight rolloff did not apply`,
+    );
+  }
+
+  const redCx = Math.round(0.7 * frame.width);
+  const redCy = Math.round(0.32 * frame.height);
+  const redRgb = getBitmapPixelRgb(frame, redCx, redCy);
+  const rR = (redRgb >> 16) & 0xff;
+  const rG = (redRgb >> 8) & 0xff;
+  const rB = redRgb & 0xff;
+  if (rR < 150) {
+    throw new Error(
+      `[effect-tone-map] red block R channel is ${rR} (expected ≥150 — red highlight should stay bright after ACES)`,
+    );
+  }
+  if (rG > 50 || rB > 50) {
+    throw new Error(
+      `[effect-tone-map] red block has G=${rG}, B=${rB} (expected <50 each — ACES should preserve hue, not bleed into other channels)`,
+    );
+  }
+}

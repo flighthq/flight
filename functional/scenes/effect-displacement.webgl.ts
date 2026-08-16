@@ -1,4 +1,4 @@
-import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   registerGlDisplacementEffect,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -72,3 +73,42 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  // Displacement with intensity=10, frequency=14 warps bar edges via a per-channel sine field.
+  // Without displacement, bar 0 has a clean vertical left edge at x ≈ 0.18 × width. The sine
+  // warp displaces each channel independently, so edge pixels gain per-channel colour separation
+  // that a straight edge never has.
+  //
+  // Semantic checks:
+  // 1. Bar center (well inside the bar) is NOT background — the scene rendered content.
+  // 2. The nominal left-edge column of bar 0 has multiple distinct colours across its height,
+  //    proving the edge was warped (an undisplaced edge is a single vertical colour boundary).
+
+  const bgRgb = getBitmapPixelRgb(frame, 0, 0);
+
+  // Bar 0 center: x ≈ (0.18 + 0.32) × width = 0.5 × width, y ≈ (0.08 + 0.065) × height.
+  const barCx = Math.round(0.5 * frame.width);
+  const barCy = Math.round(0.145 * frame.height);
+  const centerRgb = getBitmapPixelRgb(frame, barCx, barCy);
+  if (centerRgb === bgRgb) {
+    throw new Error('[effect-displacement] bar 0 center matches background — scene content missing');
+  }
+
+  // Sample the nominal left edge (x = 0.18 × width) at 8 evenly spaced Y positions within bar 0.
+  // Bar 0 spans y from 0.08 × height to (0.08 + 0.13) × height.
+  const edgeX = Math.round(0.18 * frame.width);
+  const barTop = Math.round(0.08 * frame.height);
+  const barBot = Math.round(0.21 * frame.height);
+  const distinctColors = new Set<number>();
+  for (let i = 0; i < 8; i++) {
+    const y = barTop + Math.round(((barBot - barTop) * (i + 0.5)) / 8);
+    distinctColors.add(getBitmapPixelRgb(frame, edgeX, y));
+  }
+  if (distinctColors.size < 2) {
+    throw new Error(
+      `[effect-displacement] bar 0 left edge has ${distinctColors.size} distinct colour(s) across 8 samples — ` +
+        'expected ≥2 (displacement should warp the straight edge into a wavy boundary)',
+    );
+  }
+}
