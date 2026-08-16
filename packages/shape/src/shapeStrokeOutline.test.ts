@@ -21,7 +21,7 @@ describe('getShapeStrokeOutlineRegions', () => {
 
   it('defers closed and non-solid strokes to the renderer fallback', () => {
     const closed = createShape();
-    appendShapeLineStyle(closed, 8);
+    appendShapeLineStyle(closed, 8, 0x000000ff);
     appendShapeRectangle(closed, 0, 0, 20, 10);
     expect(getShapeStrokeOutlineRegions(closed.data.commands)).toBeNull();
 

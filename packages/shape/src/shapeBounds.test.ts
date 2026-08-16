@@ -57,7 +57,7 @@ describe('computeShapeBoundsRectangle', () => {
 
   it('selects fill-only or ink-inclusive contributions from the same command binding', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 10);
+    appendShapeLineStyle(shape, 10, 0x000000ff);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     const fill = createRectangle();
     const ink = createRectangle();

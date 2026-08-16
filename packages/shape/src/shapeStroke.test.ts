@@ -44,7 +44,7 @@ describe('getShapeStrokeRegions', () => {
 
   it('emits no region for a cleared stroke (lineStyle thickness 0) and for a stroke-free shape', () => {
     const cleared = createShape();
-    appendShapeLineStyle(cleared, 0);
+    appendShapeLineStyle(cleared, 0, 0x000000ff);
     appendShapeMoveTo(cleared, 0, 0);
     appendShapeLineTo(cleared, 50, 0);
     expect(getShapeStrokeRegions(cleared.data.commands)).toEqual([]);
@@ -139,7 +139,7 @@ describe('getShapeStrokeRegions', () => {
 describe('hasNonSolidShapeStroke', () => {
   it('is true only for a gradient or bitmap stroke, not a solid lineStyle', () => {
     const solid = createShape();
-    appendShapeLineStyle(solid, 3);
+    appendShapeLineStyle(solid, 3, 0x000000ff);
     expect(hasNonSolidShapeStroke(solid.data.commands)).toBe(false);
     expect(hasNonSolidShapeStroke(['lineGradientStyle', 1, 0] as ShapeCommandToken[])).toBe(true);
     expect(hasNonSolidShapeStroke(['lineTextureStyle', 1, 0] as ShapeCommandToken[])).toBe(true);
