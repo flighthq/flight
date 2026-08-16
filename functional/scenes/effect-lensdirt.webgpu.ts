@@ -89,27 +89,40 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     );
   }
 
-  const darkSamples = [
-    [0.5, 0.5],
-    [0.1, 0.1],
-    [0.9, 0.1],
-    [0.1, 0.9],
-    [0.9, 0.9],
-    [0.5, 0.15],
-    [0.5, 0.85],
-    [0.15, 0.5],
-    [0.85, 0.5],
+  // Probe a background-only band 6–20 pixels outside every block. Six pixels clears shape-edge AA;
+  // 20 stays inside the fixed Gaussian branch's 24-pixel support. The old pointwise shader leaves this
+  // entire band at the raw 0x101014 background, while the real bright-pass → blur → dirt recipe carries
+  // light into it. Scanning the band also remains valid when GL and WebGPU orient the procedural mask
+  // differently; the effect must produce smudged bleed somewhere, not at one backend-specific UV.
+  const blockCenters = [
+    [0.3, 0.32],
+    [0.7, 0.32],
+    [0.3, 0.7],
+    [0.7, 0.7],
   ];
-  let aboveRawBg = 0;
-  for (const [fx, fy] of darkSamples) {
-    const rgb = getBitmapPixelRgb(frame, Math.round(fx * frame.width), Math.round(fy * frame.height));
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >> 8) & 0xff;
-    const b = rgb & 0xff;
-    if (r > 20 || g > 20 || b > 24) aboveRawBg++;
+  const blockHalfWidth = frame.width * 0.1;
+  const blockHalfHeight = frame.height * (80 / 600);
+  let brightenedBackgroundSamples = 0;
+  for (let y = 0; y < frame.height; y += 4) {
+    for (let x = 0; x < frame.width; x += 4) {
+      let distance = Number.POSITIVE_INFINITY;
+      for (const [centerX, centerY] of blockCenters) {
+        const dx = Math.max(Math.abs(x - centerX * frame.width) - blockHalfWidth, 0);
+        const dy = Math.max(Math.abs(y - centerY * frame.height) - blockHalfHeight, 0);
+        distance = Math.min(distance, Math.hypot(dx, dy));
+      }
+      if (distance < 6 || distance > 20) continue;
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const r = (rgb >> 16) & 0xff;
+      const g = (rgb >> 8) & 0xff;
+      const b = rgb & 0xff;
+      if (r > 20 || g > 20 || b > 24) brightenedBackgroundSamples++;
+    }
   }
 
-  if (aboveRawBg === 0) {
-    throw new Error('[effect-lensdirt] no background pixel is above raw background level — lens dirt glow is absent');
+  if (brightenedBackgroundSamples < 8) {
+    throw new Error(
+      `[effect-lensdirt] only ${brightenedBackgroundSamples} background samples contain light bleed (expected ≥8)`,
+    );
   }
 }
