@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // `NodeData` is `object`, so a `node.data as SomeType` cast can attach fields the declared data type does
@@ -6,16 +6,18 @@ import { join } from 'node:path';
 // codebase currently does, not something the type system forbids, so it decays silently: the next cast to
 // introduce a colour field would create a second colour store nobody enumerated. This turns the snapshot
 // into a maintained invariant. See the boundary sequence in `agents/inert-gate-audit.md`.
+//
+// Every tree that can contain a cast is scanned, not just `packages/`. Scenes and examples hold no such
+// cast today, but "today" is the decaying kind of claim this file exists to replace, so the population is
+// widened rather than justified.
 export function findDataCastColourViolations(repoRoot: string): DataCastColourViolation[] {
-  const sources = collectTypeScriptSources(join(repoRoot, 'packages'));
+  const sources = SCANNED_TREES.flatMap((tree) => collectTypeScriptSources(join(repoRoot, tree)));
   const declarations = collectInterfaceBodies(sources);
   const violations: DataCastColourViolation[] = [];
 
   for (const source of sources) {
     for (const typeName of findDataCastTargets(source.text)) {
-      const body = declarations.get(typeName);
-      if (body === undefined) continue;
-      const field = findColourField(body);
+      const field = findColourField(typeName, declarations, new Set());
       if (field === null) continue;
       violations.push({ field, file: source.path, typeName });
     }
@@ -41,13 +43,36 @@ export interface DataCastColourViolation {
   typeName: string;
 }
 
-// A field whose name says it carries colour. Bounds, geometry and transforms are the expected payload of
-// these casts; a colour field is the thing that would create a second store.
-function findColourField(body: string): string | null {
+// Colour is found by FLOW, not by spelling. A name-only filter answers "does this type declare a field
+// literally called colour" while being read as "does this type carry a colour" — the same defect that made
+// an earlier enumeration miss six functions taking a `MorphShapeColorEndpoint` struct, in which no
+// parameter is spelled colour. So a field whose declared TYPE resolves to another interface is followed
+// into that interface. `seen` breaks reference cycles; the dotted path is returned so a report names where
+// the colour actually lives rather than the field that merely leads to it.
+function findColourField(
+  typeName: string,
+  declarations: ReadonlyMap<string, string>,
+  seen: Set<string>,
+): string | null {
+  if (seen.has(typeName)) return null;
+  seen.add(typeName);
+
+  const body = declarations.get(typeName);
+  if (body === undefined) return null;
+
   for (const line of body.split('\n')) {
-    const match = line.match(/(?:readonly\s+)?(\w*(?:colou?r|tint)\w*)\s*\??\s*:/i);
-    if (match?.[1] !== undefined) return match[1];
+    const declaration = line.match(/(?:readonly\s+)?(\w+)\s*\??\s*:\s*([^;,]+)/);
+    if (declaration?.[1] === undefined || declaration[2] === undefined) continue;
+
+    const [, field, declaredType] = declaration;
+    if (/colou?r|tint/i.test(field)) return field;
+
+    for (const candidate of declaredType.matchAll(/[A-Za-z_]\w*/g)) {
+      const nested = findColourField(candidate[0], declarations, seen);
+      if (nested !== null) return `${field}.${nested}`;
+    }
   }
+
   return null;
 }
 
@@ -80,6 +105,7 @@ function collectInterfaceBodies(sources: readonly TypeScriptSource[]): Map<strin
 
 function collectTypeScriptSources(root: string): TypeScriptSource[] {
   const sources: TypeScriptSource[] = [];
+  if (!existsSync(root)) return sources;
   const walk = (dir: string): void => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
@@ -100,6 +126,11 @@ interface TypeScriptSource {
 }
 
 const DATA_CAST = /\.data as (?:unknown as )?([A-Za-z_]\w*)/g;
+
+// Every tree that can hold a `.data as` cast. `scripts` is excluded deliberately: this checker's own
+// colocated test declares cast fixtures as string literals, and scanning them would report the fixtures
+// as repository violations.
+const SCANNED_TREES = ['packages', 'functional', 'examples', 'conformance', 'tools'];
 const INTERFACE_HEAD = /(?:export )?interface (\w+)[^{]*\{/g;
 
 // `Partial`, `Readonly` and `object` are wrappers or the empty type: they declare no fields of their own,

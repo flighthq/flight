@@ -32,6 +32,36 @@ describe('findDataCastColourViolations', () => {
     expect(findColourFieldsIn(text)).toEqual([]);
   });
 
+  // The NAME-FILTER defect, which this checker itself shipped with in its first version: a type whose
+  // colour sits one level in declares no field spelled colour, so a name-only filter clears it. Colour is
+  // followed by TYPE FLOW instead, and the report names the dotted path to where it actually lives.
+  it('follows a struct-typed field into the type that carries the colour', () => {
+    const text = [
+      'interface AcmeEndpoint {',
+      '  readonly alpha?: number;',
+      '  readonly color: number;',
+      '}',
+      'interface AcmeNestedData {',
+      '  readonly paint: AcmeEndpoint;',
+      '}',
+      'const data = shape.data as unknown as AcmeNestedData;',
+    ].join('\n');
+
+    expect(findColourFieldsIn(text)).toEqual([{ field: 'paint.color', typeName: 'AcmeNestedData' }]);
+  });
+
+  it('terminates on a self-referential type rather than recursing forever', () => {
+    const text = [
+      'interface AcmeCyclicData {',
+      '  readonly parent: AcmeCyclicData;',
+      '  readonly bounds: number;',
+      '}',
+      'const data = shape.data as AcmeCyclicData;',
+    ].join('\n');
+
+    expect(findColourFieldsIn(text)).toEqual([]);
+  });
+
   // The window defect this whole check descends from: a fixed-size context read attributes the NEXT
   // declaration's fields to the interface above it. Matching to the balanced closing brace is what makes
   // the empty body read as empty.
@@ -82,17 +112,28 @@ function findColourFieldsIn(text: string): { field: string; typeName: string }[]
     }
   }
 
-  const found: { field: string; typeName: string }[] = [];
-  for (const typeName of findDataCastTargets(text)) {
+  const resolve = (typeName: string, seen: Set<string>): string | null => {
+    if (seen.has(typeName)) return null;
+    seen.add(typeName);
     const body = bodies.get(typeName);
-    if (body === undefined) continue;
+    if (body === undefined) return null;
     for (const line of body.split('\n')) {
-      const match = line.match(/(?:readonly\s+)?(\w*(?:colou?r|tint)\w*)\s*\??\s*:/i);
-      if (match?.[1] !== undefined) {
-        found.push({ field: match[1], typeName });
-        break;
+      const declaration = line.match(/(?:readonly\s+)?(\w+)\s*\??\s*:\s*([^;,]+)/);
+      if (declaration?.[1] === undefined || declaration[2] === undefined) continue;
+      const [, field, declaredType] = declaration;
+      if (/colou?r|tint/i.test(field)) return field;
+      for (const candidate of declaredType.matchAll(/[A-Za-z_]\w*/g)) {
+        const nested = resolve(candidate[0], seen);
+        if (nested !== null) return `${field}.${nested}`;
       }
     }
+    return null;
+  };
+
+  const found: { field: string; typeName: string }[] = [];
+  for (const typeName of findDataCastTargets(text)) {
+    const field = resolve(typeName, new Set());
+    if (field !== null) found.push({ field, typeName });
   }
   return found;
 }
