@@ -160,6 +160,34 @@ affordable.
 called it*. Only the verifier settles the second, and it records that per target as `oracle` in its own
 status artifact. A green census is not evidence that oracles ran.
 
+### `npm run oracle:commission` — which cells may be commissioned, and why the rest may not
+
+Commissioning a reference image blesses whatever the capture shows, permanently: every later regression
+check agrees with it, so a wrong pixel blessed here does not fail to catch a defect, it makes the defect
+undetectable. This command is the bar that stands in front of that, and its default is a **report** —
+writing is a separate word.
+
+    npm run oracle:commission -- --runs .artifacts,/tmp/run2          # report; writes nothing
+    npm run oracle:commission -- --runs …,… --verbose                 # every blocked cell, with its reason
+    npm run oracle:commission:write -- --runs …,… --id <id> --reason "…" --limit 8
+
+It withholds a cell unless **every** independent statement about it agrees: the capture reached `ready`,
+the scene's own `assertRender` was invoked and did not throw, repeated captures were byte-identical, the
+backends are at parity, no sibling backend returned the *same* bytes, and the capture matches its
+committed baseline. `assertRender` is the only one of those that speaks to the render being **right** —
+the rest say it is stable, and four backends can be stably wrong together.
+
+Two arguments are refused rather than defaulted. **Fewer than two capture roots** is refused because
+determinism is measured and one run cannot measure it; accepting one root would silently downgrade every
+cell to unmeasured while still printing a report. **`--limit` is bounded by review throughput, not by how
+many cells clear the bar**: `MAX_PENDING_DAYS` in `scripts/oracle-check.ts` is 14, so every commissioned
+cell starts a clock, and a batch larger than `flight-oracles` can review and release inside that window
+turns CI red on day 15 for cells that were never wrong.
+
+`scripts/oracle-held.json` names cells that must not be commissioned whatever today's capture says. A
+hold is read **before** any capture fact, because the holder knows something a capture run cannot see;
+releasing one is a reviewed deletion with a name on it.
+
 ### `npm run contrast` — how much the regression gate has to grip
 
 The third reading tool, and the render-side counterpart to the pair above: `untested` asks which arms no

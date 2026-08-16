@@ -113,6 +113,8 @@
     "mocks:check": "tsx ./scripts/mocks.ts --check",
     "mocks:json": "tsx ./scripts/mocks.ts --json",
     "oracle:check": "tsx ./scripts/oracle-check.ts check",
+    "oracle:commission": "tsx ./scripts/oracle-commission-batch.ts report",
+    "oracle:commission:write": "tsx ./scripts/oracle-commission-batch.ts write",
     "oracle:fetch": "tsx ./scripts/oracle-check.ts fetch",
     "oracle:scope": "tsx ./scripts/oracle-check.ts scope",
     "oracle:woff2-reversal": "tsx ./conformance/font/woff2-reversal-oracle.ts",
