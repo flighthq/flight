@@ -1,6 +1,11 @@
-import type { OracleCaptureFact, OracleDeterminismVerdict, OracleEligibilityInput } from './oracle-eligibility';
+import type {
+  OracleCaptureFact,
+  OracleDeterminismVerdict,
+  OracleEligibilityInput,
+  OracleParityWithholding,
+} from './oracle-eligibility';
 import {
-  findParityDisagreements,
+  findParityWithholdings,
   groupOracleTargets,
   selectCommissionableCells,
   summarizeOracleBlocks,
@@ -14,13 +19,13 @@ import {
 // Each test starts from a cell that WOULD be eligible and breaks exactly one thing, so a pass proves the
 // named condition did the withholding rather than some other one that happened to be tripped too.
 
-describe('findParityDisagreements', () => {
+describe('findParityWithholdings', () => {
   const IDENTITIES = ['functional/a/canvas', 'functional/a/webgl', 'functional/b/webgl'];
 
   it('withholds every cell of a scene whose backends disagreed, not just the failing column', () => {
     // Parity says the pair differs; it does not say which one is wrong. Blessing the column that matched
     // the reference backend would pin the yardstick as the answer.
-    const found = findParityDisagreements(
+    const found = findParityWithholdings(
       [
         { entry: 'a', kind: 'parity', status: 'failed' },
         { entry: 'b', kind: 'parity', status: 'passed' },
@@ -28,19 +33,50 @@ describe('findParityDisagreements', () => {
       IDENTITIES,
     );
 
-    expect(found).toEqual({ disagreed: new Set(['functional/a/canvas', 'functional/a/webgl']) });
+    expect(found).toEqual({
+      withheld: new Map([
+        ['functional/a/canvas', 'disagreement'],
+        ['functional/a/webgl', 'disagreement'],
+      ]),
+    });
   });
 
-  it('withholds a scene parity could not evaluate at all', () => {
-    const found = findParityDisagreements(
+  it('separates a scene parity could not evaluate from one it judged and rejected', () => {
+    // The two route to different people: a disagreement is a defect somebody must find, an unevaluated
+    // scene has no comparable pair and needs a parity group or a second backend column.
+    const found = findParityWithholdings(
       [
         { entry: 'a', kind: 'parity', status: 'skipped' },
+        { entry: 'b', kind: 'parity', status: 'failed' },
+      ],
+      IDENTITIES,
+    );
+
+    expect(found).toEqual({
+      withheld: new Map([
+        ['functional/a/canvas', 'unevaluated'],
+        ['functional/a/webgl', 'unevaluated'],
+        ['functional/b/webgl', 'disagreement'],
+      ]),
+    });
+  });
+
+  it('takes the worse verdict when one scene carries both', () => {
+    const found = findParityWithholdings(
+      [
+        { entry: 'a', kind: 'parity', status: 'skipped' },
+        { entry: 'a', kind: 'parity', status: 'failed' },
         { entry: 'b', kind: 'parity', status: 'passed' },
       ],
       IDENTITIES,
     );
 
-    expect(found).toEqual({ disagreed: new Set(['functional/a/canvas', 'functional/a/webgl']) });
+    expect(found).toEqual({
+      withheld: new Map([
+        ['functional/a/canvas', 'disagreement'],
+        ['functional/a/webgl', 'disagreement'],
+      ]),
+    });
   });
 
   it('refuses a report-only run instead of reading it as universal agreement', () => {
@@ -48,7 +84,7 @@ describe('findParityDisagreements', () => {
     // `reported` — a distance with no verdict — so a status-based read would have found nothing that
     // "failed" and cleared the parity condition for the entire corpus on a run that gated nothing.
     expect(
-      findParityDisagreements(
+      findParityWithholdings(
         [
           { entry: 'a', kind: 'parity', status: 'reported' },
           { entry: 'b', kind: 'parity', status: 'reported' },
@@ -59,13 +95,13 @@ describe('findParityDisagreements', () => {
   });
 
   it('refuses a report with no parity rows at all', () => {
-    expect(findParityDisagreements([{ entry: 'a', kind: 'regression', status: 'passed' }], IDENTITIES)).toEqual({
+    expect(findParityWithholdings([{ entry: 'a', kind: 'regression', status: 'passed' }], IDENTITIES)).toEqual({
       refused: 'the report carries no gated parity verdict, so it cannot say any scene agreed',
     });
   });
 
   it('accepts a report that gated some scenes and only reported others', () => {
-    const found = findParityDisagreements(
+    const found = findParityWithholdings(
       [
         { entry: 'a', kind: 'parity', status: 'passed' },
         { entry: 'b', kind: 'parity', status: 'reported' },
@@ -73,7 +109,7 @@ describe('findParityDisagreements', () => {
       IDENTITIES,
     );
 
-    expect(found).toEqual({ disagreed: new Set(['functional/b/webgl']) });
+    expect(found).toEqual({ withheld: new Map([['functional/b/webgl', 'unevaluated']]) });
   });
 });
 
@@ -109,6 +145,46 @@ describe('selectCommissionableCells', () => {
     expect(blockOf(select({ captures: [] }))).toEqual(['capture-failed', 'the capture run produced no status for it']);
   });
 
+  it('withholds a healthy column whose sibling backend failed in the same scene', () => {
+    // ★ A SCENE IS REPAIRED AS A WHOLE. The fix for the failing column usually moves this one too, and a
+    // reference blessed today would then read that repair as a regression against a picture nobody meant
+    // to freeze.
+    const report = select({
+      coverage: [
+        ['functional/good/canvas', ['fingerprint', 'oracle']],
+        ['functional/good/webgl', ['fingerprint', 'oracle']],
+      ],
+      captures: [fact('functional/good/canvas'), fact('functional/good/webgl', { state: 'error' })],
+      determinismMap: [
+        ['functional/good/canvas', 'agreed'],
+        ['functional/good/webgl', 'agreed'],
+      ],
+    });
+
+    expect(report.eligible).toEqual([]);
+    expect(report.blocked).toEqual([
+      {
+        detail: 'functional/good/webgl failed in this scene',
+        identity: 'functional/good/canvas',
+        reason: 'sibling-column-failed',
+      },
+      { detail: 'capture state is error', identity: 'functional/good/webgl', reason: 'capture-failed' },
+    ]);
+  });
+
+  it('does not read a failure in a different scene as a sibling failure', () => {
+    const report = select({
+      coverage: [
+        ['functional/good/canvas', ['fingerprint', 'oracle']],
+        ['functional/other/webgl', ['fingerprint', 'oracle']],
+      ],
+      captures: [fact('functional/good/canvas'), fact('functional/other/webgl', { state: 'error' })],
+      determinismMap: [['functional/good/canvas', 'agreed']],
+    });
+
+    expect(report.eligible).toEqual(['functional/good/canvas']);
+  });
+
   it('withholds a scene that ships no assertRender, however stable its render is', () => {
     // ★ THE CONDITION WITH NO SUBSTITUTE. This cell is deterministic, at parity, and byte-identical to
     // its committed baseline — every stability signal is green. None of them says the picture is RIGHT.
@@ -141,9 +217,16 @@ describe('selectCommissionableCells', () => {
   });
 
   it('withholds a cell whose backends disagree on the scene', () => {
-    expect(blockOf(select({ parityDisagreed: ['functional/good/webgl'] }))).toEqual([
+    expect(blockOf(select({ parityWithheld: [['functional/good/webgl', 'disagreement']] }))).toEqual([
       'parity-disagreement',
       'backends disagree on this scene',
+    ]);
+  });
+
+  it('withholds a cell parity could not judge under its own reason', () => {
+    expect(blockOf(select({ parityWithheld: [['functional/good/webgl', 'unevaluated']] }))).toEqual([
+      'parity-unevaluated',
+      'parity formed no comparable pair',
     ]);
   });
 
@@ -298,7 +381,7 @@ function select(options: {
   determinismMap?: readonly (readonly [string, OracleDeterminismVerdict])[];
   held?: readonly (readonly [string, string])[];
   outstanding?: readonly string[];
-  parityDisagreed?: readonly string[];
+  parityWithheld?: readonly (readonly [string, OracleParityWithholding])[];
   pinned?: readonly string[];
 }) {
   const determinism =
@@ -310,7 +393,7 @@ function select(options: {
     determinism: new Map(determinism),
     held: new Map(options.held ?? []),
     outstanding: new Set(options.outstanding ?? []),
-    parityDisagreed: new Set(options.parityDisagreed ?? []),
+    parityWithheld: new Map(options.parityWithheld ?? []),
     pinned: new Set(options.pinned ?? []),
   };
   return selectCommissionableCells(input);

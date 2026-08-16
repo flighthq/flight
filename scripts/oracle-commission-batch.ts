@@ -19,9 +19,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { compareCalibrationRuns } from './oracle-calibrate';
-import type { OracleCaptureFact, OracleDeterminismVerdict, OracleParityCheck } from './oracle-eligibility';
+import type {
+  OracleCaptureFact,
+  OracleDeterminismVerdict,
+  OracleParityCheck,
+  OracleParityWithholding,
+} from './oracle-eligibility';
 import {
-  findParityDisagreements,
+  findParityWithholdings,
   groupOracleTargets,
   selectCommissionableCells,
   summarizeOracleBlocks,
@@ -67,7 +72,7 @@ const report = selectCommissionableCells({
   determinism: readDeterminism(runs),
   held: readHeld(),
   outstanding: readOutstanding(),
-  parityDisagreed: readParityDisagreements(runs[0]!, subject),
+  parityWithheld: readParityWithholdings(runs[0]!, subject),
   pinned: new Set(),
 });
 
@@ -237,7 +242,7 @@ function readOutstanding(): Set<string> {
 }
 
 /** The cells the parity leg's verdicts withhold, from the validation report the gated run wrote. */
-function readParityDisagreements(root: string, name: string): Set<string> {
+function readParityWithholdings(root: string, name: string): Map<string, OracleParityWithholding> {
   const path = join(root, name, 'validation-report.json');
   if (!existsSync(path)) {
     console.error(`oracle-commission-batch: no parity report at ${path}; run \`npm run test:functional:parity\``);
@@ -246,13 +251,13 @@ function readParityDisagreements(root: string, name: string): Set<string> {
   const parsed = JSON.parse(readFileSync(path, 'utf8')) as {
     result?: { checks?: OracleParityCheck[] };
   };
-  const found = findParityDisagreements(parsed.result?.checks ?? [], coverage.keys());
+  const found = findParityWithholdings(parsed.result?.checks ?? [], coverage.keys());
   if ('refused' in found) {
     console.error(`oracle-commission-batch: ${path}: ${found.refused}`);
     console.error('  Re-run `npm run test:functional:parity` without --report.');
     process.exit(1);
   }
-  return found.disagreed;
+  return found.withheld;
 }
 
 function directories(path: string): string[] {
