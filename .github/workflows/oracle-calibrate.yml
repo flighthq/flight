@@ -79,16 +79,23 @@ jobs:
           set -euo pipefail
           args="--tool=functional --renderer ${{ github.event.inputs.renderers || 'webgl,webgpu,canvas,dom' }}"
           if [ -n "${{ github.event.inputs.entries }}" ]; then
+            failed_entries=()
             for entry in $(printf '%s' "${{ github.event.inputs.entries }}" | tr ',' ' '); do
-              npx tsx ./packages/tool-capture/src/bin.ts capture $args --filter-exact "$entry"
+              if ! npx tsx ./packages/tool-capture/src/bin.ts capture $args --filter-exact "$entry"; then
+                failed_entries+=("$entry")
+              fi
             done
+            if [ "${#failed_entries[@]}" -ne 0 ]; then
+              printf 'capture failed for %s\n' "${failed_entries[*]}" >&2
+              exit 1
+            fi
           else
             npx tsx ./packages/tool-capture/src/bin.ts capture $args
           fi
 
       # Only the status files travel: the hashes are the measurement, and shipping every PNG would move
       # hundreds of megabytes to answer a question about equality.
-      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+      - if: always() && matrix.host <= fromJSON(github.event.inputs.hosts || '2')
         uses: actions/upload-artifact@v4
         with:
           name: calibration-host-${{ matrix.host }}
@@ -96,7 +103,7 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
 
-      - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+      - if: always() && matrix.host <= fromJSON(github.event.inputs.hosts || '2')
         run: |
           echo "- host ${{ matrix.host }}: ${{ steps.environment.outputs.id }}" >> "$GITHUB_STEP_SUMMARY"
 
