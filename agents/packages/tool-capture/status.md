@@ -43,6 +43,10 @@ and its inline exported types are a stated exemption from the types-home rule �
   `examples/scene3d/webgl`'s verifier stall (register `agents/unbacked-register.md` L31): the throw
   sent the investigation hunting a stall that wasn't happening — the true cause was the verifier never
   registering at all (a missing `captureMode` guard in that one example, fixed at `271c1a211`).
+- **`src/bin.test.ts` is load-sensitive, unowned, and not known to be a defect.** Under the whole-repo
+  sweep it fails as `expected 143 to be 1` — 143 is 128+15, SIGTERM, so the spawned CLI is killed rather
+  than exiting 1; run alone with `--project tool-capture` it passes in ~15s. Before reading a red sweep
+  as a regression here, apply the discriminator in [commands](../../commands.md).
 - **Observe mode cannot diagnose a never-registered verifier.** Its diagnostics block sits downstream
   (`captureEntry.ts:536`) of the throw it exists to explain (`:414`) — the same shape as the
   logging-order defect fixed 2026-08-10 below (hash computed before screenshot/logs were written),
