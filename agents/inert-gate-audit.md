@@ -6,6 +6,72 @@ was not present in this clone or reachable history, so capture tier names below 
 documented in `captureValidation.ts`: smoke is Tiers 1/2/4, parity is Tier 3, and committed-fingerprint
 regression is Tier 5.
 
+## 2026-08-16: a differential oracle is blind upstream of the fork
+
+The largest population this audit has recorded, and the clearest instance of its central question —
+*does the check actually fail on the bad state it is supposed to catch?* Traced by builder from two
+unrelated-looking symptoms (`effect-tone-map`'s transposed channels and `effect-channel-mixer` appearing
+not to apply); the code locations and the population below were verified independently before this entry
+was written.
+
+**The instance.** `appendShapeBeginFill` (`packages/shape/src/shapeCommands.ts:143`) takes a **24-bit
+RGB** colour. That is stated at `packages/types/src/ShapeFillRegion.ts:8-10`, in a comment that names the
+hazard exactly:
+
+> `24-bit RGB (0xRRGGBB)` — opacity is the separate `alpha` on the fill, not a fourth channel. This is
+> the shape authoring convention, NOT the packed RGBA most SDK colors carry.
+
+Functional scenes pass packed **32-bit RGBA**. Every backend then reads the wrong bytes, because every
+backend implements the documented convention correctly — canvas at
+`packages/scene2d-canvas/src/canvasShapeCommands.ts:454-459` does `(color >> 16) & 0xff`,
+`(color >> 8) & 0xff`, `color & 0xff`, and the GL and WGPU mesh shape renderers pass `region.color`
+through to the same 24-bit interpretation. For an author writing `0xff5ce0ff` meaning R=`ff` G=`5c`
+B=`e0` at full alpha, the renderer reads R=`5c` G=`e0` B=`ff`: every channel shifted one byte, red
+discarded, alpha read as blue.
+
+**The population, counted rather than estimated.** Of 163 functional scene files calling
+`appendShapeBeginFill`, **117 pass a 32-bit RGBA value at at least one of 119 call sites**; 66 call sites
+pass a correct ≤24-bit value. Counted by extracting the colour argument at every call site and resolving
+scalar and array constants declared in the same file — 7 call sites remain unresolved, all of them a
+`color` parameter of a local helper.
+
+> **A DIFFERENTIAL ORACLE CAN ONLY EVER FIND DIVERGENCE, SO IT IS BLIND BY CONSTRUCTION TO ANYTHING
+> UPSTREAM OF THE FORK.**
+>
+> Corollary, for the gate this instance is about: **parity proves agreement, not correctness.**
+
+Roughly a hundred scenes rendered demonstrably wrong colours, every backend agreed exactly, and the
+parity gate stayed green throughout. The gate did not malfunction, no baseline was stale, and this was
+not a near miss: it is the gate working exactly as designed, on the wrong question. A comparator's whole
+power comes from its operands differing, so it can see only what happens AFTER the point where its
+operands could diverge. The wrong 24 bits were chosen before that point — in a shared authoring
+convention every backend then read identically and correctly — so they were never among the states parity
+is capable of distinguishing.
+
+This is why a **discriminating input** settled it and no amount of parity green ever could have. The two
+are not the same kind of evidence at different strengths; the differential gate has no sensitivity to this
+class at all, and running it a thousand more times adds nothing. It is the same shape as the commissioning
+bar's `oracle: invoked` blindness recorded elsewhere in this arc: agreement and stability are not
+correctness, and only something that states what the pixels should MEAN can tell the difference.
+
+**Question 3, at a scale not seen before in this arc.** The audit's standing question is whether a check
+fails on the bad state it claims to catch. Here the honest answer is that the bad state was never in the
+set of states the check CAN distinguish — not unreachable (the trigger arrived, at 119 call sites), not
+untested, simply outside the sensitivity of a comparator whose operands were both wrong in the same way.
+The general form above is what makes that predictable in advance rather than only in hindsight: for any
+differential check, ask where the fork is, and treat everything upstream of it as unmeasured.
+
+**The sharper edge: the divergence was known, and documentation was the remedy that was tried.** Someone
+wrote a precise comment describing the mismatch instead of removing it, and it did not prevent 117 scenes
+from getting it wrong. That is the diagnostics convention's *missing guard* pattern one level up — a
+missing **design fix**, not a missing warning. It also contradicts the codebase map's own constraint,
+which names this exact hazard: *"Colors are packed RGBA integers (`0xeeddccff`) with one convention across
+the SDK, not a color type or a mix of RGB-with-separate-alpha conventions."* A comment that warns callers
+about a convention mismatch is evidence the convention is wrong, not that callers need reminding.
+
+**Ruled:** fix the API, not the ~100 callers. Pre-release, no migration obligation, and leaving the trap
+armed for caller 118 is the worse outcome.
+
 ## 2026-08-16: a gate can fire in its test and be unreachable in production
 
 Found at `866c7712d`, closed at `f8d13e12b` and `14b9788c4`. This entry is one worked instance and a
