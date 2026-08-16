@@ -229,7 +229,7 @@ function sha256(source: string): string {
   return createHash('sha256').update(source).digest('hex');
 }
 
-async function validateRegressionFixture(root: string, kill: () => void) {
+async function validateRegressionFixture(root: string, kill: () => void, fingerprint = '2:ffffffffffffffffff000000') {
   return runCaptureValidation({
     subject: 'functional',
     entries: [{ name: 'sample', renderers: ['canvas'] }],
@@ -240,7 +240,7 @@ async function validateRegressionFixture(root: string, kill: () => void) {
     // Printing it would put a real-looking "✗ FAILED" block in the CI log of a file whose tests all
     // pass, which is the kind of noise that teaches a reader to scroll past a genuine one.
     quiet: true,
-    fingerprints: { sample: { canvas: '2:ffffffffffffffffff000000' } },
+    fingerprints: { sample: { canvas: fingerprint } },
     browserSession: {
       browser: { close: vi.fn() } as never,
       context: { newPage: vi.fn() } as never,
@@ -431,6 +431,28 @@ describe('runCaptureValidation', () => {
         sourceHashStatus: 'unchanged',
       });
       expect(failure?.message).toContain('environment drift; never rebaseline');
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+
+  it('reports recapture debt when a stale-source fingerprint still passes within tolerance', async () => {
+    const fixture = createRegressionFixture('changed scene', sha256('captured scene'));
+    try {
+      const result = await validateRegressionFixture(fixture.root, fixture.kill, '2:000000000000000000ffffff');
+      const passed = result.checks.find((check) => check.kind === 'regression');
+
+      // The temporary root has no coverage manifest, so its aggregate verdict is independently red.
+      // Freshness itself must not turn this passing comparison into a regression failure.
+      expect(result.regressionFailures).toBe(0);
+      expect(result.regressionPasses).toBe(1);
+      expect(passed).toMatchObject({
+        currentSourceHash: sha256('changed scene'),
+        recordedSourceHash: sha256('captured scene'),
+        sourceHashStatus: 'changed',
+        status: 'passed',
+      });
+      expect(passed?.message).toContain('recapture owed by the scene owner');
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
     }

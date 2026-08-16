@@ -150,7 +150,7 @@ export interface CaptureValidationCheck {
   message: string;
   distance?: number;
   threshold?: number;
-  /** Classification present only on a fingerprint mismatch that the regression leg already failed. */
+  /** Scene-source freshness classification for every gated fingerprint comparison. */
   sourceHashStatus?: 'changed' | 'unchanged' | 'unavailable';
   recordedSourceHash?: string | null;
   currentSourceHash?: string | null;
@@ -752,11 +752,12 @@ async function processEntry(
       });
     } else if (options.gateRegression) {
       const check = evaluateCaptureRegression(fingerprint, committed, options.regressionTolerance);
+      const recordedSourceHash = getBaselineField(options.root, options.subject, entry.name, renderer, 'sourceHash');
+      const currentSourceHash = getCaptureSceneSourceHash(options.root, options.subject, entry, renderer);
+      const freshness = classifyCaptureBaselineFreshness(recordedSourceHash, currentSourceHash);
+      const freshnessMessage = describeCaptureBaselineFreshness(freshness, check.pass);
       if (!check.pass) {
-        const recordedSourceHash = getBaselineField(options.root, options.subject, entry.name, renderer, 'sourceHash');
-        const currentSourceHash = getCaptureSceneSourceHash(options.root, options.subject, entry, renderer);
-        const freshness = classifyCaptureBaselineFreshness(recordedSourceHash, currentSourceHash);
-        const message = `regression ${dist.toFixed(2)} > ${options.regressionTolerance} — ${freshness.message}`;
+        const message = `regression ${dist.toFixed(2)} > ${options.regressionTolerance} — ${freshnessMessage}`;
         result.output.push(statusLine('fail', renderer, message));
         result.regressionFailures++;
         result.checks.push({
@@ -772,18 +773,20 @@ async function processEntry(
           currentSourceHash,
         });
       } else {
-        result.output.push(
-          statusLine('pass', renderer, `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance}`),
-        );
+        const message = `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance} — ${freshnessMessage}`;
+        result.output.push(statusLine('pass', renderer, message));
         result.regressionPasses++;
         result.checks.push({
           entry: entry.name,
           renderers: [renderer],
           kind: 'regression',
           status: 'passed',
-          message: `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance}`,
+          message,
           distance: dist,
           threshold: options.regressionTolerance,
+          sourceHashStatus: freshness.status,
+          recordedSourceHash,
+          currentSourceHash,
         });
       }
     }
@@ -937,14 +940,25 @@ function classifyCaptureBaselineFreshness(
   }
   if (recordedSourceHash !== currentSourceHash) {
     return {
-      message: 'scene source changed since baseline — recapture owed by the scene owner',
+      message: 'scene source changed since baseline',
       status: 'changed',
     };
   }
   return {
-    message: 'scene source unchanged since baseline — environment drift; never rebaseline',
+    message: 'scene source unchanged since baseline',
     status: 'unchanged',
   };
+}
+
+function describeCaptureBaselineFreshness(
+  freshness: ReturnType<typeof classifyCaptureBaselineFreshness>,
+  regressionPassed: boolean,
+): string {
+  if (freshness.status === 'changed') return `${freshness.message} — recapture owed by the scene owner`;
+  if (freshness.status === 'unchanged' && !regressionPassed) {
+    return `${freshness.message} — environment drift; never rebaseline`;
+  }
+  return freshness.message;
 }
 
 export async function runCaptureValidation(
