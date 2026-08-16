@@ -255,9 +255,31 @@ describe('selectCommissionableCells', () => {
   });
 
   it('withholds a cell parity could not judge under its own reason', () => {
+    const report = select({
+      coverage: [
+        ['functional/good/webgl', ['fingerprint', 'oracle']],
+        ['functional/good/canvas', ['fingerprint', 'oracle']],
+      ],
+      captures: [fact('functional/good/webgl'), fact('functional/good/canvas')],
+      determinismMap: [
+        ['functional/good/webgl', 'agreed'],
+        ['functional/good/canvas', 'agreed'],
+      ],
+      parityWithheld: [
+        ['functional/good/webgl', 'unevaluated'],
+        ['functional/good/canvas', 'unevaluated'],
+      ],
+    });
+
+    expect(report.blocked.map((cell) => cell.reason)).toEqual(['parity-unevaluated', 'parity-unevaluated']);
+  });
+
+  it('separates a scene parity can never apply to from one where it merely did not run', () => {
+    // ★ UNRUN vs UNRUNNABLE. A one-column scene has no cross-backend evidence to produce, ever. Filing it
+    // as `parity-unevaluated` sends someone looking for a defect that is a property of the scene.
     expect(blockOf(select({ parityWithheld: [['functional/good/webgl', 'unevaluated']] }))).toEqual([
-      'parity-unevaluated',
-      'parity formed no comparable pair',
+      'parity-single-column',
+      'the scene has one backend column',
     ]);
   });
 
