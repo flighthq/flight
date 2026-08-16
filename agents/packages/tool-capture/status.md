@@ -78,6 +78,10 @@ and its inline exported types are a stated exemption from the types-home rule â€
   The fix shape is the one applied twice that day and once already in `evidence:baseline`'s exact-target
   fix: **operate on a DECLARED list, not on found state.** Intersect with the coverage manifest at every
   read; a directory listing is not a statement about what exists now.
+  The other half of this is filed at `1b701379f` in
+  [inert-gate-audit.md](../../inert-gate-audit.md), as the mirror of a gate whose trigger could never
+  arrive: there, residue let a trigger reach a gate that should not have had one. Same rule from the
+  other side â€” read either alone and it looks like an incident, read the pair and it is a rule.
 
 ## Log
 

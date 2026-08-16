@@ -56,6 +56,14 @@ live columns. So the companion question has a mirror — *can a state that is no
 same fix answers both: intersect the gate's input with the live manifest rather than with whatever is on
 disk.
 
+That fix is not local to this gate, which is why the residue half is filed separately in the
+[tool-capture cell](packages/tool-capture/status.md) `## Open` and the two entries point at each other.
+Read either alone and it reads as an incident; read together they are one rule with three known
+instances — this gate, the capture-analysis read that produced seven retracted defect reports, and
+`evidence:baseline`'s exact-`--target` fix. **Operate on a declared list, not on found state.** A
+directory listing, an artifacts root, and a pack manifest are all statements about what once happened,
+never about what is live now.
+
 **Why the coverage landed where it did.** `oracle-eligibility.ts` (442 lines) had 37 tests while
 `oracle-check.ts` and `oracle-commission-batch.ts`, which touch the real tree and the real workflow, had
 none. That distribution is not an accident of effort:
