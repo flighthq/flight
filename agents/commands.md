@@ -173,9 +173,18 @@ writing is a separate word.
 
 It withholds a cell unless **every** independent statement about it agrees: the capture reached `ready`,
 the scene's own `assertRender` was invoked and did not throw, repeated captures were byte-identical, the
-backends are at parity, and the capture matches its committed baseline. `assertRender` is the only one of
-those that speaks to the render being **right** — the rest say it is stable, and four backends can be
-stably wrong together.
+backends are at parity, and — *when the repository has one* — the capture matches its committed baseline.
+`assertRender` is the only one of those that speaks to the render being **right**; the rest say it is
+stable, and four backends can be stably wrong together.
+
+A baseline is **checked when it exists and is not required to exist**. Requiring one looked principled
+and was circular: a baseline written today is a *first* capture, so it proves nothing about reproduction
+until something later re-runs against it, and "capture the 42 missing ones and accept them" would have
+been true on any host. Cross-time reproduction comes from stage-one determinism instead, measured now
+rather than stored earlier. An *existing* baseline still gates, and earns it: of 450 baselined cells, 13
+reproduced byte-for-byte across both of one session's runs and still disagreed with their committed
+baseline — stage one called all 13 agreed, because it compares today to today and cannot see a render
+that moved last week.
 
 Byte-identity with a sibling backend is **reported and does not withhold**. It was a blocking condition
 until the corpus refuted its premise: 33 of the 76 scenes carrying both a canvas and a webgl column are

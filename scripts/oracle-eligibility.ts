@@ -94,8 +94,6 @@ export type OracleBlockReason =
   | 'parity-single-column'
   /** Today's capture does not match the committed baseline. Something moved and nobody has explained it. */
   | 'baseline-drift'
-  /** No committed baseline, so there is no second, independent statement about these pixels. */
-  | 'no-baseline'
   /** A peer or a ruling holds this cell. Local evidence never overrides that. */
   | 'held'
   /** Already claimed by an open request. */
@@ -236,11 +234,20 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
       blocked.push({ detail: 'parity formed no comparable pair', identity, reason: 'parity-unevaluated' });
       continue;
     }
-    if (capture.baselineHash === null) {
-      blocked.push({ detail: 'no committed capture baseline', identity, reason: 'no-baseline' });
-      continue;
-    }
-    if (capture.hash !== capture.baselineHash) {
+    // ★ A COMMITTED BASELINE IS CHECKED WHEN ONE EXISTS AND IS NOT REQUIRED TO EXIST.
+    // Requiring one was wrong, and the argument that killed it is worth keeping: a baseline WRITTEN TODAY
+    // is not cross-time evidence for a decision made today. It is a first capture, and it proves nothing
+    // about reproduction until something later re-runs against it — so "capture the missing 42 and accept
+    // them" would have been circular, on any host. Cross-time reproduction comes from stage-one
+    // determinism instead, measured now rather than stored earlier; and correctness comes from the
+    // scene's own `assertRender`, which states the picture is RIGHT where a baseline only states it is
+    // the same as last time.
+    //
+    // An EXISTING baseline still gates, and it earns that: of 450 baselined cells, 13 reproduced
+    // byte-for-byte across both of today's runs and still disagreed with their committed baseline. Stage
+    // one called all 13 `agreed`, because it compares today to today and cannot see a render that moved
+    // last week. That is a real check no other condition here performs.
+    if (capture.baselineHash !== null && capture.hash !== capture.baselineHash) {
       blocked.push({ detail: 'capture does not match the committed baseline', identity, reason: 'baseline-drift' });
       continue;
     }
@@ -427,7 +434,6 @@ const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'parity-unevaluated',
   'parity-single-column',
   'baseline-drift',
-  'no-baseline',
   'held',
   'already-commissioned',
   'already-pinned',

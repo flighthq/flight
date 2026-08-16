@@ -11,6 +11,8 @@
     "functional/effect-empty-passthrough/canvas": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
     "functional/effect-empty-passthrough/webgl": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
     "functional/effect-empty-passthrough/webgpu": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-god-rays/webgl": "parity is inapplicable by design, not merely unrun: FLIGHT_PARITY_SKIP marks this scene 'all', so no eligible backend pair exists and zero pairs is CORRECT behavior. It has no cross-backend evidence and never will; it must not inherit a parity-green that never existed",
+    "functional/effect-god-rays/webgpu": "parity is inapplicable by design, not merely unrun: FLIGHT_PARITY_SKIP marks this scene 'all', so no eligible backend pair exists and zero pairs is CORRECT behavior. It has no cross-backend evidence and never will; it must not inherit a parity-green that never existed",
     "functional/effect-invert/canvas": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
     "functional/effect-invert/webgl": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
     "functional/effect-invert/webgpu": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",

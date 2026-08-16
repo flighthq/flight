@@ -334,17 +334,21 @@ describe('selectCommissionableCells', () => {
     expect(report.collisions).toEqual([]);
   });
 
-  it('withholds a cell that no longer matches its committed baseline', () => {
+  it('does not require a committed baseline to exist', () => {
+    // ★ THE CONDITION THAT WAS REMOVED, AND WHY IT CANNOT COME BACK AS "JUST CAPTURE THEM". A baseline
+    // written today is a FIRST capture: it proves nothing about reproduction until something later
+    // re-runs against it, so capturing the missing ones and accepting them would be circular on any
+    // host. Cross-time reproduction is stage-one determinism's job; correctness is assertRender's.
+    expect(select({ capture: { baselineHash: null } }).eligible).toEqual(['functional/good/webgl']);
+  });
+
+  it('still gates on a baseline that exists and no longer matches', () => {
+    // The check earns its place on measured data: 13 of 450 baselined cells reproduced byte-for-byte
+    // across both of today's runs and still disagreed with their committed baseline. Stage one called
+    // all 13 agreed — it compares today to today and cannot see a render that moved last week.
     expect(blockOf(select({ capture: { hash: 'moved' } }))).toEqual([
       'baseline-drift',
       'capture does not match the committed baseline',
-    ]);
-  });
-
-  it('withholds a cell the repository has never pinned a baseline for', () => {
-    expect(blockOf(select({ capture: { baselineHash: null } }))).toEqual([
-      'no-baseline',
-      'no committed capture baseline',
     ]);
   });
 
