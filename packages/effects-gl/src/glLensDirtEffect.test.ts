@@ -20,6 +20,7 @@ vi.mock('./glEffectProgramCache', () => ({
 }));
 
 import { acquireGlRenderTarget, drawGlFullscreenPass, releaseGlRenderTarget } from '@flighthq/render-gl/contract';
+import type { GlRenderTarget } from '@flighthq/types/contract';
 
 import { applyGaussianBlurToGl } from './glBlurEffect';
 import { getGlEffectProgram } from './glEffectProgramCache';
@@ -44,7 +45,11 @@ describe('applyLensDirtEffectToGl', () => {
     });
 
     expect(acquireGlRenderTarget).toHaveBeenCalledTimes(3);
-    const [bright, blurred, temp] = vi.mocked(acquireGlRenderTarget).mock.results.map((result) => result.value!);
+    const [bright, blurred, temp] = vi.mocked(acquireGlRenderTarget).mock.results.map((result) => result.value!) as [
+      GlRenderTarget,
+      GlRenderTarget,
+      GlRenderTarget,
+    ];
     expect(getGlEffectProgram).toHaveBeenNthCalledWith(1, state, 'lens.lensDirt.bright', expect.any(String));
     expect(drawGlFullscreenPass).toHaveBeenNthCalledWith(
       1,
@@ -96,8 +101,8 @@ function createState(): never {
   return { gl: {} } as never;
 }
 
-function createTarget(id: string): never {
-  return { format: 'rgba8', height: 16, id, texture: {}, width: 32 } as never;
+function createTarget(id: string): GlRenderTarget {
+  return { format: 'rgba8', height: 16, id, texture: {}, width: 32 } as unknown as GlRenderTarget;
 }
 
 describe('registerGlLensDirtEffect', () => {
