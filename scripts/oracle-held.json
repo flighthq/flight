@@ -1,0 +1,23 @@
+{
+  "$comment": "Cells that must NOT be commissioned, with who holds each and why. A hold is checked before any local evidence is read, so a cell that looks perfect in today's capture still stays held — the holder knows something a capture run cannot see. This file exists because the alternative is a hold that lives only in one agent's session: it is lost on a reset, and the cell is then commissioned by whoever looks next and finds nothing wrong with it. A hold is released by DELETING its entry, which is a reviewed change with a name on it.",
+  "schemaVersion": 1,
+  "held": {
+    "functional/effect-bloom/canvas": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-bloom/webgl": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-bloom/webgpu": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-chain/canvas": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-chain/webgl": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-chain/webgpu": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-empty-passthrough/canvas": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-empty-passthrough/webgl": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-empty-passthrough/webgpu": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-invert/canvas": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-invert/webgl": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-invert/webgpu": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-msaa-bloom/canvas": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-msaa-bloom/webgl": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-msaa-bloom/webgpu": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
+    "functional/effect-msaa/webgl": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI",
+    "functional/effect-msaa/webgpu": "held pending a design ruling; deliberately not parked as a pending request, which would expire at 14 days and fail CI"
+  }
+}

@@ -150,8 +150,22 @@ async function check(): Promise<void> {
     for (const problem of verified.problems) problems.push(`${problem.kind}: ${problem.identity} — ${problem.detail}`);
   }
 
+  // ★ THE REQUIREMENT COMES FROM THE COVERAGE MANIFEST, NOT FROM THE PACKS. Deriving the cell list from
+  // the packs alone answers only "do the bytes we already have still match" — the one question that
+  // cannot detect an absence. Two of §6's four rows were unreachable because of it: a cell the manifest
+  // requires and no pack supplies never appeared, so a freshly commissioned cell reported nothing rather
+  // than `pending`, and a reference that silently stopped being published read as a clean run. The
+  // orphan gate was unreachable from the other side for the same reason — every pack cell was marked
+  // required by construction, so a pinned image with no live target could never be seen as one.
+  const required = readRequiredIdentities();
+  const joined: OracleCellInput[] = cells.map((cell) => ({ ...cell, required: required.has(cell.identity) }));
+  const supplied = new Set(joined.map((cell) => cell.identity));
+  for (const identity of required) {
+    if (!supplied.has(identity)) joined.push({ comparison: null, identity, pinned: false, required: true });
+  }
+
   const result = joinOracleState({
-    cells,
+    cells: joined,
     maxPendingDays: MAX_PENDING_DAYS,
     policy: {
       comparisonPolicyId: readIdentity().comparisonPolicyId,
@@ -172,7 +186,7 @@ async function check(): Promise<void> {
     '',
   ];
   for (const cell of result.cells) {
-    const comparison = cells.find((input) => input.identity === cell.identity)?.comparison;
+    const comparison = joined.find((input) => input.identity === cell.identity)?.comparison;
     const detail = comparison === null || comparison === undefined ? cell.detail : describeOracleComparison(comparison);
     lines.push(`  ${cell.verdict.padEnd(19)} ${cell.identity}  ${detail}`);
   }
@@ -194,6 +208,24 @@ async function check(): Promise<void> {
   }
 
   process.exit(result.failures.length > 0 ? 1 : 0);
+}
+
+/**
+ * The cells that OWE a reference image, as `subject/entry/renderer`, from the coverage manifest (§5).
+ *
+ * This is the record an agent cannot quietly weaken: removing an identity from it is a reviewed coverage
+ * reduction, whereas failing to add one would only ever have made a run compare less than it claimed.
+ */
+function readRequiredIdentities(): Set<string> {
+  const path = join(__dirname, 'capture-baseline-coverage-manifest.json');
+  const manifest = JSON.parse(readFileSync(path, 'utf8')) as { subjects?: Record<string, Record<string, string[]>> };
+  const required = new Set<string>();
+  for (const [subject, cells] of Object.entries(manifest.subjects ?? {})) {
+    for (const [cell, kinds] of Object.entries(cells)) {
+      if (kinds.includes('referenceImage')) required.add(`${subject}/${cell}`);
+    }
+  }
+  return required;
 }
 
 /** The cells the extracted packs supply bytes for, as `subject/entry/renderer`. */
