@@ -54,6 +54,26 @@ number.** They are worth listing because each looks like a result:
   packed RGBA, i.e. the exact defect, in production importer source. **Enumerate the accepted form and
   flag the remainder**, so the check fails toward *stop*.
 
+**The rule that would have prevented every one of them**, reached by `builder2` after four of these in
+a row and sharpened by `manager` after it failed a fifth time:
+
+> **Enumerate the DEFINITION space, not the usage space** — a usage space always has another usage
+> outside it, and a definition space closes.
+> **But only if enumerated by what FLOWS, not by how it is SPELLED.**
+
+The second half is not decoration; it was learned by the first half failing. An enumeration over the
+correct boundary — every exported function of the owning package — still came up short by six, because
+its filter matched the *identifier* `color` and those six take a `MorphShapeColorEndpoint` **struct**
+with no parameter of that name. It answered *"which functions have a parameter spelled colour"* while
+being read as *"which functions take a colour."* **A correct boundary with a name-based predicate is
+still a leaking boundary**, and it looks closed, which is worse than looking incomplete.
+
+**Where that leaves the strongest available form of the claim.** A count is a claim about *a search*;
+a chokepoint is a claim about *the code*. The count here was wrong by six and the chokepoint survived
+both corrections — so when both are available, prefer the one that **cannot be wrong because of how you
+looked**. And when even the chokepoint is challenged, drop to the **type**: the data interface's field
+list is not a list anyone maintains by hand, and extending it is a visible act with a compiler behind it.
+
 **And a zero that means "not measured here" rather than "nothing here":** `appendShapeBeginGradientFill`
 and `appendShapeLineGradientStyle` report 0 to every scalar-argument parser **by construction** — their
 colours are `number[]`. A 0 in that row beside rows reading 121 and 68 reads as no-problem-here. It is
