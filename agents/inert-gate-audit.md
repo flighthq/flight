@@ -6,6 +6,14 @@ was not present in this clone or reachable history, so capture tier names below 
 documented in `captureValidation.ts`: smoke is Tiers 1/2/4, parity is Tier 3, and committed-fingerprint
 regression is Tier 5.
 
+**The standing questions are deliberately un-numbered, and that is a temporary state with a job owed.**
+The 2026-08-16 entries were written in separate clones by agents who could not read each other's
+sections, so numbering any of them would have been asserting the contents of a document the author could
+not see — two sections both claiming to be third is worse than none claiming it. Ordinal-free was the
+right call while the entries were in flight. **Once every 2026-08-16 entry is on one tree, someone owes a
+single pass that enumerates the standing questions accurately** — this note exists so that pass is a
+visible debt rather than a convention nobody remembers was provisional.
+
 ## 2026-08-16: a differential oracle is blind upstream of the fork
 
 The largest population this audit has recorded, and the clearest instance of its central question —
