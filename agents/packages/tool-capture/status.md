@@ -53,6 +53,15 @@ and its inline exported types are a stated exemption from the types-home rule �
   found independently in the same package. A diagnostic downstream of the failure it explains only
   exists when it isn't needed. Also surfaced by L31: 3 observe-mode runs against the stalled verifier
   yielded nothing, for exactly this reason.
+- **A check runs, its verdict is persisted, its measurement is not — twice now, so it is a shape.**
+  `runRenderVerification` measures `coverage` and throws below `DEFAULT_MIN_COVERAGE`
+  (`functionalVerify.ts:224-231`), which is what makes `ready` carry a non-blank guarantee. But
+  `status.json` keeps `state` and `hash`, never the number, so the non-blank claim is an
+  *implication*, not an auditable record: the floor is 0.0008, so 0.1% coverage and 90% look alike.
+  Prior instance: `formatCalibrationReport` named the DISAGREED cells and only counted the agreed
+  ones — fixed by naming them, after a cross-host run's population could not be recovered to say
+  whether one locked cell was in it. Both times the verdict is durable and its evidence discarded.
+  Treat it as a pattern: persist the measurement wherever a capture-side check produces one.
 
 ## Log
 
