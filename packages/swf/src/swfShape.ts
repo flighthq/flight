@@ -644,7 +644,7 @@ function readSwfShapeFillStyle(
 
     return {
       alphas,
-      color: 0,
+      color: 0x000000ff,
       colors,
       focalPoint,
       gradientType: type === FILL_LINEAR_GRADIENT ? 'linear' : 'radial',
@@ -668,7 +668,7 @@ function readSwfShapeFillStyle(
     if (!reader.valid) return null;
     const repeat = type === FILL_REPEATING_BITMAP || type === FILL_NON_SMOOTHED_REPEATING_BITMAP;
     const smoothed = type === FILL_REPEATING_BITMAP || type === FILL_CLIPPED_BITMAP;
-    const fill = createSwfShapeFill(0, 1);
+    const fill = createSwfShapeFill(0x000000ff, 1);
     fill.texture = resolveBitmapFill?.(characterId, repeat, smoothed) ?? null;
     // A bitmap fill's matrix maps the image's PIXEL space into shape space, but SWF writes shape space in
     // twips, so an unscaled 1:1 fill arrives as a scale of 20. readSwfShapeMatrix already converted the

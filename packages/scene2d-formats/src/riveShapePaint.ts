@@ -428,7 +428,7 @@ function createRivePaint(
     : null;
   const paint: RivePaint = {
     alpha: 1,
-    color: 0,
+    color: 0x000000ff,
     effects: stroke === null ? [] : readRiveStrokeEffects(artboard, index),
     // Rive states a fill rule of 0 as non-zero and 1 as even-odd.
     fillRule: readRiveNumber(source, RIVE_FILL_RULE, 0) === 1 ? 'evenOdd' : 'nonZero',

@@ -83,7 +83,17 @@ describe('formatShapeJson', () => {
 
   it('serializes a matrix argument as its {a,b,c,d,tx,ty} fields', () => {
     const shape = createShape();
-    appendShapeBeginGradientFill(shape, 'radial', [0], [1], [0], createMatrix(2, 0, 0, 3, 5, 7), 'pad', 'rgb', 0);
+    appendShapeBeginGradientFill(
+      shape,
+      'radial',
+      [0x000000ff],
+      [1],
+      [0],
+      createMatrix(2, 0, 0, 3, 5, 7),
+      'pad',
+      'rgb',
+      0,
+    );
     const parsed = JSON.parse(formatShapeJson(shape));
     expect(parsed.commands[0].args[4]).toEqual({ a: 2, b: 0, c: 0, d: 3, tx: 5, ty: 7 });
   });
@@ -94,7 +104,7 @@ describe('formatShapeJson', () => {
       const shape = createShape();
       const matrix = createMatrix(2, 0, 0, 3, 5, 7);
       matrix[field] = 1e308;
-      appendShapeBeginGradientFill(shape, 'radial', [0], [1], [0], matrix, 'pad', 'rgb', 0);
+      appendShapeBeginGradientFill(shape, 'radial', [0x000000ff], [1], [0], matrix, 'pad', 'rgb', 0);
 
       const text = formatShapeJson(shape);
       const restored = parseShapeJson(text);
