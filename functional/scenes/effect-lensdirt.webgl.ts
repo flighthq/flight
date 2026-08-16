@@ -62,7 +62,7 @@ const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
 // Bright, near-white blocks so the dirt threshold (scene luminance) is exceeded and the smudges light up.
-const colors = [0xffffffff, 0xfff0c0ff, 0xc0f0ffff, 0xffffffff];
+const colors = [0xffffff, 0xfff0c0, 0xc0f0ff, 0xffffff];
 for (let i = 0; i < colors.length; i++) {
   const block = createShape();
   appendShapeBeginFill(block, colors[i], 1);
