@@ -259,6 +259,30 @@ describe('parseShapeJson argument validation', () => {
     ).toBeNull();
   });
 
+  it.each(['a', 'b', 'c', 'd', 'tx', 'ty'])('rejects a non-finite %s matrix field', (field) => {
+    const values: Record<string, string> = { a: '1', b: '0', c: '0', d: '1', tx: '2', ty: '3' };
+    values[field] = '1e999';
+    const matrix = `{${Object.entries(values)
+      .map(([key, value]) => `"${key}":${value}`)
+      .join(',')}}`;
+    const text =
+      `{"shapeFormat":2,"commands":[{"key":"beginGradientFill","args":` +
+      `["linear",[1],[1],[0],${matrix},"pad","rgb",0]}]}`;
+
+    expect(parseShapeJson(text)).toBeNull();
+  });
+
+  it('rejects a matrix field serialized from Infinity to null', () => {
+    const text = document([
+      {
+        key: 'beginGradientFill',
+        args: ['linear', [1], [1], [0], { a: Infinity, b: 0, c: 0, d: 1, tx: 2, ty: 3 }, 'pad', 'rgb', 0],
+      },
+    ]);
+    expect(text).toContain('"a":null');
+    expect(parseShapeJson(text)).toBeNull();
+  });
+
   // A texture command still drops rather than failing the parse: an unresolved reference is a missing
   // asset, not a malformed document, and that distinction predates this validation.
   it('drops rather than rejects a texture command whose reference does not resolve', () => {

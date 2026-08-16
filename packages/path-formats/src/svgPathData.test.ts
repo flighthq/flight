@@ -178,6 +178,16 @@ describe('parseSvgPathData', () => {
     ]);
   });
 
+  it('accepts large finite coordinates at both signs', () => {
+    const path = parseSvgPathData('M1e308 -1e308');
+    expect(collectSegments(path as Path)).toEqual([{ kind: 'moveTo', x: 1e308, y: -1e308 }]);
+  });
+
+  it('returns null when a numeric token overflows at either sign', () => {
+    expect(parseSvgPathData('M1e999 0')).toBeNull();
+    expect(parseSvgPathData('M-1e999 0')).toBeNull();
+  });
+
   it('parses packed arc flags with no separators', () => {
     const path = parseSvgPathData('M0 0A5 5 0 0110 0');
     expect(path).not.toBeNull();

@@ -81,7 +81,8 @@ export function appendSvgPathData(path: Path, d: string): boolean {
       }
       if (!expDigit) pos = expStart;
     }
-    return Number.parseFloat(d.slice(start, pos));
+    const value = Number.parseFloat(d.slice(start, pos));
+    return Number.isFinite(value) ? value : null;
   }
 
   // An arc flag is a single '0' or '1' character, which may be packed against neighbours with no

@@ -42,7 +42,7 @@ export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<Shape
       if (value === null) {
         // An omitted fill/line matrix, or absent triangle indices/uv data.
         args.push(null);
-      } else if (isMatrixValue(value)) {
+      } else if (isMatrixLike(value)) {
         args.push({ a: value.a, b: value.b, c: value.c, d: value.d, tx: value.tx, ty: value.ty });
       } else if (isSerializableScalarOrArray(value)) {
         // Numbers, strings (enum keywords), booleans, and numeric arrays (colors/ratios, path
@@ -119,14 +119,7 @@ function reconstructShapeCommandArg(value: unknown, resolveTexture: ShapeJsonPar
     const resolved = resolveTexture?.({ index: value.texture.index }) ?? null;
     return resolved === null ? DROP_COMMAND : resolved;
   }
-  if (
-    typeof value.a === 'number' &&
-    typeof value.b === 'number' &&
-    typeof value.c === 'number' &&
-    typeof value.d === 'number' &&
-    typeof value.tx === 'number' &&
-    typeof value.ty === 'number'
-  ) {
+  if (isMatrixValue(value)) {
     return createMatrix(value.a, value.b, value.c, value.d, value.tx, value.ty);
   }
   return MALFORMED_ARG;
@@ -187,6 +180,18 @@ function isFiniteNumberArray(value: unknown): boolean {
 function isMatrixValue(
   value: unknown,
 ): value is { a: number; b: number; c: number; d: number; tx: number; ty: number } {
+  return (
+    isMatrixLike(value) &&
+    Number.isFinite(value.a) &&
+    Number.isFinite(value.b) &&
+    Number.isFinite(value.c) &&
+    Number.isFinite(value.d) &&
+    Number.isFinite(value.tx) &&
+    Number.isFinite(value.ty)
+  );
+}
+
+function isMatrixLike(value: unknown): value is { a: number; b: number; c: number; d: number; tx: number; ty: number } {
   return (
     isPlainObject(value) &&
     typeof value.a === 'number' &&
