@@ -36,10 +36,12 @@ export function parseXmlDocument(xml: string): XmlElement | null {
   const entities: Record<string, string> = {};
   src = stripXmlDoctypes(src.replace(/<\?[\s\S]*?\?>/g, ''), entities).trim();
 
-  return parseElement(expandXmlEntities(src, entities), { pos: 0 });
+  return parseElement(expandXmlEntities(src, entities), { depth: 0, depthExceeded: false, pos: 0 });
 }
 
 interface ParseState {
+  depth: number;
+  depthExceeded: boolean;
   pos: number;
 }
 
@@ -47,6 +49,10 @@ interface ParseState {
 const MAX_XML_ENTITY_PASSES = 8;
 const MAX_XML_ENTITY_GROWTH = 16;
 const MAX_XML_ENTITY_BUDGET = 65536;
+
+// Authored XML rarely nests beyond a few dozen elements. This leaves an order of magnitude of margin
+// while stopping recursion well below the engine-dependent call-stack limit.
+const MAX_XML_ELEMENT_DEPTH = 256;
 
 const XML_ENTITIES: Record<string, string> = {
   amp: '&',
@@ -98,6 +104,10 @@ function decodeXmlEntities(s: string): string {
 }
 
 function parseElement(src: string, state: ParseState): XmlElement | null {
+  if (state.depth >= MAX_XML_ELEMENT_DEPTH) {
+    state.depthExceeded = true;
+    return null;
+  }
   skipWhitespace(src, state);
   if (state.pos >= src.length || src[state.pos] !== '<') return null;
 
@@ -179,7 +189,10 @@ function parseElement(src: string, state: ParseState): XmlElement | null {
         break;
       }
 
+      state.depth++;
       const child = parseElement(src, state);
+      state.depth--;
+      if (state.depthExceeded) return null;
       if (child) {
         children.push(child);
         content.push(child);

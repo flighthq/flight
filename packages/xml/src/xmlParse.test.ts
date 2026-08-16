@@ -100,6 +100,21 @@ describe('parseXmlDocument', () => {
     expect(c?.attributes.value).toBe('deep');
   });
 
+  it('accepts element nesting with broad margin for authored documents', () => {
+    const depth = 128;
+    const xml = '<node>'.repeat(depth) + '<leaf/>' + '</node>'.repeat(depth);
+
+    expect(parseXmlDocument(xml)).not.toBeNull();
+  });
+
+  it('returns null instead of exhausting the call stack on excessive element nesting', () => {
+    const depth = 300;
+    const xml = '<node>'.repeat(depth) + '<leaf/>' + '</node>'.repeat(depth);
+
+    expect(() => parseXmlDocument(xml)).not.toThrow();
+    expect(parseXmlDocument(xml)).toBeNull();
+  });
+
   it('returns null when the input contains no recognizable element', () => {
     expect(parseXmlDocument('')).toBeNull();
     expect(parseXmlDocument('   just text, no tags   ')).toBeNull();
