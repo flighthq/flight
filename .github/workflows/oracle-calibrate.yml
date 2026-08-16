@@ -95,11 +95,22 @@ jobs:
 
       # Only the status files travel: the hashes are the measurement, and shipping every PNG would move
       # hundreds of megabytes to answer a question about equality.
+      # Stage the subject directory explicitly. upload-artifact strips the path before its first wildcard,
+      # so uploading .artifacts/functional/** directly would discard both directories the comparer needs.
+      - if: always() && matrix.host <= fromJSON(github.event.inputs.hosts || '2')
+        run: |
+          set -euo pipefail
+          mkdir -p calibration/functional
+          if [ -d .artifacts/functional ]; then
+            cd .artifacts/functional
+            find . -name status.json -exec cp --parents {} ../../calibration/functional/ \;
+          fi
+
       - if: always() && matrix.host <= fromJSON(github.event.inputs.hosts || '2')
         uses: actions/upload-artifact@v4
         with:
           name: calibration-host-${{ matrix.host }}
-          path: .artifacts/functional/**/status.json
+          path: calibration
           include-hidden-files: true
           if-no-files-found: error
 
@@ -122,12 +133,20 @@ jobs:
         with:
           pattern: calibration-host-*
           path: runs
-      - run: |
+      - if: always()
+        run: |
           set -euo pipefail
-          roots=$(ls -d runs/calibration-host-*/.artifacts 2>/dev/null | tr '\n' ' ' || true)
-          if [ -z "$roots" ]; then
-            echo "no calibration output to compare — every host failed to capture" >&2
+          shopt -s nullglob
+          roots=(runs/calibration-host-*)
+          if [ "${#roots[@]}" -eq 0 ]; then
+            echo "no calibration artifacts were downloaded" >&2
             exit 1
           fi
-          echo "comparing: $roots"
-          npx tsx ./scripts/oracle-calibrate.ts $roots | tee -a "$GITHUB_STEP_SUMMARY"
+          first_status=$(find "${roots[@]}" -name status.json -print -quit)
+          if [ -z "$first_status" ]; then
+            echo "calibration artifacts were downloaded but contained no status files" >&2
+            exit 1
+          fi
+          echo "first status file: $first_status"
+          printf 'comparing: %s\n' "${roots[*]}"
+          npx tsx ./scripts/oracle-calibrate.ts "${roots[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
