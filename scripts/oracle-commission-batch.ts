@@ -19,8 +19,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { compareCalibrationRuns } from './oracle-calibrate';
-import type { OracleCaptureFact, OracleDeterminismVerdict } from './oracle-eligibility';
-import { groupOracleTargets, selectCommissionableCells, summarizeOracleBlocks } from './oracle-eligibility';
+import type { OracleCaptureFact, OracleDeterminismVerdict, OracleParityCheck } from './oracle-eligibility';
+import {
+  findParityDisagreements,
+  groupOracleTargets,
+  selectCommissionableCells,
+  summarizeOracleBlocks,
+} from './oracle-eligibility';
 import { getOracleRequestCells, readOracleRequest } from './oracle-records';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -223,42 +228,23 @@ function readOutstanding(): Set<string> {
   return out;
 }
 
-/**
- * Every cell of every scene the parity leg reported failing, expanded from the scene the report names.
- *
- * ★ THE WHOLE SCENE IS WITHHELD, NOT THE FAILING COLUMN. Parity says the backends disagree; it does not
- * say which of them is wrong. Blessing the one that happened to match the reference backend would pin
- * whichever picture the comparison used as its yardstick, and a disagreement is exactly the case where
- * that choice cannot be justified.
- *
- * A missing report withholds nothing: absence of a parity run is reported as `determinism-unmeasured`'s
- * sibling problem — see the refusal in the caller when fewer than two runs are given — rather than being
- * silently read as "no scene disagreed".
- */
+/** The cells the parity leg's verdicts withhold, from the validation report the gated run wrote. */
 function readParityDisagreements(root: string, name: string): Set<string> {
   const path = join(root, name, 'validation-report.json');
-  const out = new Set<string>();
   if (!existsSync(path)) {
-    console.error(
-      `oracle-commission-batch: no parity report at ${path}; run \`npm run test:functional:parity -- --report\``,
-    );
+    console.error(`oracle-commission-batch: no parity report at ${path}; run \`npm run test:functional:parity\``);
     process.exit(1);
   }
   const parsed = JSON.parse(readFileSync(path, 'utf8')) as {
-    result?: { checks?: { entry?: string; kind?: string; renderers?: string[]; status?: string }[] };
+    result?: { checks?: OracleParityCheck[] };
   };
-  const checks = parsed.result?.checks ?? [];
-  if (!checks.some((check) => check.kind === 'parity')) {
-    console.error(`oracle-commission-batch: ${path} contains no parity check; it cannot say any scene agreed`);
+  const found = findParityDisagreements(parsed.result?.checks ?? [], coverage.keys());
+  if ('refused' in found) {
+    console.error(`oracle-commission-batch: ${path}: ${found.refused}`);
+    console.error('  Re-run `npm run test:functional:parity` without --report.');
     process.exit(1);
   }
-  for (const check of checks) {
-    if (check.kind !== 'parity' || check.status === 'passed' || check.entry === undefined) continue;
-    for (const identity of [...coverage.keys()]) {
-      if (identity.split('/')[1] === check.entry) out.add(identity);
-    }
-  }
-  return out;
+  return found.disagreed;
 }
 
 function directories(path: string): string[] {

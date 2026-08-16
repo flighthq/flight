@@ -1,5 +1,10 @@
 import type { OracleCaptureFact, OracleDeterminismVerdict, OracleEligibilityInput } from './oracle-eligibility';
-import { groupOracleTargets, selectCommissionableCells, summarizeOracleBlocks } from './oracle-eligibility';
+import {
+  findParityDisagreements,
+  groupOracleTargets,
+  selectCommissionableCells,
+  summarizeOracleBlocks,
+} from './oracle-eligibility';
 
 // ★ EVERY CONDITION IN THE BAR HAS A TEST THAT WATCHES IT WITHHOLD A CELL, because the bar is the only
 // thing between a bad capture and a permanent reference. A condition nobody has seen fire is a condition
@@ -8,6 +13,69 @@ import { groupOracleTargets, selectCommissionableCells, summarizeOracleBlocks } 
 //
 // Each test starts from a cell that WOULD be eligible and breaks exactly one thing, so a pass proves the
 // named condition did the withholding rather than some other one that happened to be tripped too.
+
+describe('findParityDisagreements', () => {
+  const IDENTITIES = ['functional/a/canvas', 'functional/a/webgl', 'functional/b/webgl'];
+
+  it('withholds every cell of a scene whose backends disagreed, not just the failing column', () => {
+    // Parity says the pair differs; it does not say which one is wrong. Blessing the column that matched
+    // the reference backend would pin the yardstick as the answer.
+    const found = findParityDisagreements(
+      [
+        { entry: 'a', kind: 'parity', status: 'failed' },
+        { entry: 'b', kind: 'parity', status: 'passed' },
+      ],
+      IDENTITIES,
+    );
+
+    expect(found).toEqual({ disagreed: new Set(['functional/a/canvas', 'functional/a/webgl']) });
+  });
+
+  it('withholds a scene parity could not evaluate at all', () => {
+    const found = findParityDisagreements(
+      [
+        { entry: 'a', kind: 'parity', status: 'skipped' },
+        { entry: 'b', kind: 'parity', status: 'passed' },
+      ],
+      IDENTITIES,
+    );
+
+    expect(found).toEqual({ disagreed: new Set(['functional/a/canvas', 'functional/a/webgl']) });
+  });
+
+  it('refuses a report-only run instead of reading it as universal agreement', () => {
+    // ★ THE FIRING TEST FOR THE INVERSION THAT NEARLY SHIPPED. `--report` records every pair as
+    // `reported` — a distance with no verdict — so a status-based read would have found nothing that
+    // "failed" and cleared the parity condition for the entire corpus on a run that gated nothing.
+    expect(
+      findParityDisagreements(
+        [
+          { entry: 'a', kind: 'parity', status: 'reported' },
+          { entry: 'b', kind: 'parity', status: 'reported' },
+        ],
+        IDENTITIES,
+      ),
+    ).toEqual({ refused: 'the report carries no gated parity verdict, so it cannot say any scene agreed' });
+  });
+
+  it('refuses a report with no parity rows at all', () => {
+    expect(findParityDisagreements([{ entry: 'a', kind: 'regression', status: 'passed' }], IDENTITIES)).toEqual({
+      refused: 'the report carries no gated parity verdict, so it cannot say any scene agreed',
+    });
+  });
+
+  it('accepts a report that gated some scenes and only reported others', () => {
+    const found = findParityDisagreements(
+      [
+        { entry: 'a', kind: 'parity', status: 'passed' },
+        { entry: 'b', kind: 'parity', status: 'reported' },
+      ],
+      IDENTITIES,
+    );
+
+    expect(found).toEqual({ disagreed: new Set(['functional/b/webgl']) });
+  });
+});
 
 describe('groupOracleTargets', () => {
   it('collapses renderers of one scene into a single request target', () => {
