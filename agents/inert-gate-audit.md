@@ -72,6 +72,36 @@ about a convention mismatch is evidence the convention is wrong, not that caller
 **Ruled:** fix the API, not the ~100 callers. Pre-release, no migration obligation, and leaving the trap
 armed for caller 118 is the worse outcome.
 
+## 2026-08-16: the standing questions audit instruments, not inferences
+
+A scope boundary on this document's method, recorded because the method got strong enough in one day to
+start absorbing things it does not fit — and filing an error under the wrong doctrine is the same error
+one level up.
+
+Every standing question here interrogates an **instrument**: what bad state must make it fail, whether it
+has ever failed on that state, whether that state can reach it, which way it fails when it is wrong. All
+of them assume the thing at fault is the measuring apparatus.
+
+**There is a second failure with its own check: the instrument measured correctly and the CONCLUSION
+drawn from it did not follow.** No amount of interrogating the instrument reaches it, because the
+instrument is fine.
+
+The worked instance is from the same day. A ranking metric was validated against known-firing oracles;
+the measurement — 12 oracle/renderer pairs, scores spanning the 23rd to 71st percentile of a 325-oracle
+corpus, 4 below the median — was correct, checked, and correctly scoped. The inference drawn from it was
+that *uniformity across the set made a host-coupling explanation more credible*. That does not follow.
+Uniformity distinguishes a single cause from a mixed population; it says nothing about WHICH single
+cause, and was equally consistent with the rival hypothesis already on the table (a real render change
+with no commit found). What actually supported host-coupling was a different pair of facts: that 436 of
+450 baselined cells reproduce in that environment, and that the 14 which do not are GPU-heavy WebGPU plus
+DOM text/stroke — a composition predicted in advance rather than read off the result.
+
+**The check that catches it is not "state your population".** It is: *what else is equally consistent
+with this measurement?* Population discipline — the habit that catches a true count generalised past the
+cells it examined — would have passed this case cleanly, because the population was right. The two
+failures are independent, and a reader who has just internalised one is at their most likely to file the
+other underneath it.
+
 ## 2026-08-16: a gate can fire in its test and be unreachable in production
 
 Found at `866c7712d`, closed at `f8d13e12b` and `14b9788c4`. This entry is one worked instance and a
