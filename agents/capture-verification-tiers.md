@@ -289,6 +289,19 @@ break, and capture remains a deliberate act. This is the reachability-style **re
 making freshness a gate would train reflexive baseline regeneration and destroy the evidence the annotation
 exists to protect.
 
+`npm run capture:provenance` makes the same classification available without rendering. It imports the
+canonical discovery and source-hash helpers rather than reconstructing the backend-specific-file fallback.
+Its bare form is a census over every committed examples + functional fingerprint column, so a mismatch means
+only that provenance cannot verify the current source — not that the rendered baseline is bad. The command
+prints exact matches as a control and names the exact-vs-fingerprint freshness gap explicitly.
+
+The census denominator and a validator denominator are equal only on a whole-corpus run. The inversion first
+surfaced all 273 then-recorded functional mismatches because that particular run gated the full functional
+corpus; “expected 273, got 273” is not a rule that generalizes to a filter. For a scoped run, pass its
+`validation-report.json` with `--tool` and `--validation-report`. The script slices to passed/failed regression
+checks — the columns the run actually gated — before comparing. A selection flag alone cannot establish that
+a page loaded and reached the gate.
+
 ### A recorded hash is evidence; a back-derived one is an inference
 
 The capture pipeline records `sourceHash` at write time, hashing the scene as it stands at the moment it

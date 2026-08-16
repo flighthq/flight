@@ -85,9 +85,16 @@ generated lock metadata and the two repository-policy examples are named, justif
 every run. The gate runs in precommit and the bare `npm run check` sweep.
 
 `check:fingerprint-source-hashes` requires every functional and example fingerprint column to retain its
-scene-source hash. Seven historical columns have neither a pixel hash nor a recoverable write boundary;
+scene-source hash. Named historical columns have neither a pixel hash nor a recoverable write boundary;
 the command names each one and prints why absence is the honest state. It runs beside `support:check` in
 the bare repository sweep, while focused package checks omit both repository-wide baseline invariants.
+
+`capture:provenance` is the non-gating currency census for those hashes. Its default denominator is every
+committed examples + functional fingerprint column, including evidence whose live scene no longer resolves.
+That global number is not comparable with a scoped validation run. To make that comparison, pass the run's
+versioned report with `--tool <examples|functional> --validation-report <path>`; the census then selects only
+the passed/failed regression identities the run actually gated. Exact-match counts remain visible as the
+hash-rule control, and the exact-vs-fingerprint freshness gap is printed as its own named measurement.
 
 ## Read vs write: `:baseline`
 
