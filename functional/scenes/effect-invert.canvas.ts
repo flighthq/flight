@@ -57,7 +57,7 @@ root.scaleY = scale;
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
-const colors = [0xff3030ff, 0x30c040ff, 0x3060ffff, 0xffd030ff, 0xff30c0ff, 0x30d0d0ff];
+const colors = [0xff3030, 0x30c040, 0x3060ff, 0xffd030, 0xff30c0, 0x30d0d0];
 const cols = 3;
 const rows = 2;
 const cellWidth = logicalWidth / cols;
