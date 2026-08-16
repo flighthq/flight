@@ -98,7 +98,7 @@ describe('drawGlShape', () => {
     registerGlShapeRasterizer(state, noopRasterizer);
     const shape = createShape();
     appendShapeBeginFill(shape, 0x00cc00ff);
-    appendShapeLineStyle(shape, 0);
+    appendShapeLineStyle(shape, 0, 0x000000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     appendShapeEndFill(shape);
     appendShapeLineStyle(shape, 4, 0xff0000ff);

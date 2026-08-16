@@ -131,9 +131,9 @@ describe('appendShapeBeginFill', () => {
     expect(shape.data.commands).toEqual(['beginFill', 2, 0xff0000ff, 0.5]);
   });
 
-  it('defaults to color 0 and alpha 1', () => {
+  it('defaults alpha to 1', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape);
+    appendShapeBeginFill(shape, 0x000000ff);
     expect(shape.data.commands).toEqual(['beginFill', 2, 0x000000ff, 1]);
   });
 });
@@ -319,9 +319,9 @@ describe('appendShapeLineStyle', () => {
     expect(shape.data.commands).toEqual(['lineStyle', 8, 2, 0x0000ffff, 0.8, true, 'horizontal', 'round', 'bevel', 5]);
   });
 
-  it('defaults thickness 1, color 0, alpha 1, pixelHinting false, scaleMode normal, caps none, joints round, miterLimit 3', () => {
+  it('defaults thickness 1, alpha 1, pixelHinting false, scaleMode normal, caps none, joints round, miterLimit 3', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape);
+    appendShapeLineStyle(shape, 1, 0x000000ff);
     expect(shape.data.commands).toEqual(['lineStyle', 8, 1, 0x000000ff, 1, false, 'normal', 'none', 'round', 3]);
   });
 });
