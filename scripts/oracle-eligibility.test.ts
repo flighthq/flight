@@ -214,6 +214,20 @@ describe('selectCommissionableCells', () => {
     ]);
   });
 
+  it('ignores a failed column that is no longer a live coverage cell', () => {
+    // ★ THE FIRING TEST FOR RESIDUE. A capture root ACCUMULATES — a fresh run writes the current suite
+    // and deletes nothing — so it keeps `error` output for columns a scene no longer has. On the real
+    // tree a three-week-old `bitmap-downscale-smoothing/webgl` withheld that scene's two live columns.
+    // A cell that no longer exists cannot be under repair.
+    const report = select({
+      coverage: [['functional/good/canvas', ['fingerprint', 'oracle']]],
+      captures: [fact('functional/good/canvas'), fact('functional/good/webgl', { state: 'error' })],
+      determinismMap: [['functional/good/canvas', 'agreed']],
+    });
+
+    expect(report.eligible).toEqual(['functional/good/canvas']);
+  });
+
   it('does not read a failure in a different scene as a sibling failure', () => {
     const report = select({
       coverage: [

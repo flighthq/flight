@@ -135,8 +135,15 @@ export interface OracleBackendCollision {
  */
 export function selectCommissionableCells(input: Readonly<OracleEligibilityInput>): OracleEligibilityReport {
   const byIdentity = new Map(input.captures.map((capture) => [capture.identity, capture]));
-  const collided = findBackendCollisions(input.captures);
-  const brokenScenes = findScenesWithAFailedColumn(input.captures);
+  const collided = findBackendCollisions(input.captures.filter((capture) => input.coverage.has(capture.identity)));
+  // ★ ONLY LIVE CELLS COUNT AS SIBLINGS, AND A REAL RUN PROVED WHY. A capture root is a directory that
+  // ACCUMULATES: it keeps output for scenes and columns that have since been removed, because a fresh
+  // capture writes the current suite and deletes nothing. `bitmap-downscale-smoothing/webgl` sat there
+  // from three weeks earlier, `error`, for a column the scene no longer has — and it withheld the two
+  // live columns of that scene as `sibling-column-failed`. A cell that no longer exists cannot be under
+  // repair, and residue must not be able to withhold anything.
+  const live = input.captures.filter((capture) => input.coverage.has(capture.identity));
+  const brokenScenes = findScenesWithAFailedColumn(live);
   const columns = countSceneColumns(input.coverage.keys());
 
   const eligible: string[] = [];
