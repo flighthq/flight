@@ -91,6 +91,67 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+## 2026-08-16: a silent omission makes the data you DO see unfalsifiable
+
+`scripts/oracle-calibrate.ts` built its identity set from the cells that parsed AND reported `ready`. A
+cell that failed on **every** run therefore entered no map, no identity set, and no bucket: it did not
+report as `incomplete`, it **vanished**, and the totals still looked complete without it. Fixed at
+`53ae51767`; `readRun` now tracks `seen` — every identity with a `status.json` present, whatever the file
+says — separately from the subset that yielded a hash.
+
+**The numbers, on real local data rather than a fixture.** Two capture runs the author had been quoting
+throughout the arc:
+
+| | agreed | disagreed | incomplete | accounted | seen |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| before | 483 | 0 | 164 | 647 | — |
+| after | 483 | 0 | 172 | 655 | 655 |
+
+Eight cells were absent from every report the tool had produced. The same defect had already published
+`491 agreed / 0 disagreed / 0 incomplete` for a 493-cell corpus in a real cross-host CI run, caught only
+because a reader happened to know the corpus size.
+
+> **A silent omission does not just lose data; it makes the data you DO see unfalsifiable, because the
+> thing that would contradict it is exactly what went missing.**
+
+**The same defect bit the same person twice, in opposite directions.** The tool silently dropped eight
+cells from every calibration report. Separately, six of those same cells surfaced through a different
+check and were reported as live render defects — they were stale residue from deleted scenes, and the
+report was retracted. Neither reading corrected the other, because neither side knew the cells were being
+dropped by the other instrument. One instrument said nothing about them and the other said the wrong
+thing, and the two errors were mutually invisible.
+
+**What the eight actually were, since "eight cells" is a count and this document does not accept counts.**
+Seven are residue: `svg-gradient/{canvas,webgl,webgpu}` and `svg-stroke/{canvas,webgl,webgpu}`, whose
+scenes no longer exist, plus `bitmap-downscale-smoothing/webgl`, a column its scene no longer has —
+status dated three weeks stale, absent from the second run entirely, absent from the coverage manifest.
+
+The eighth is live and was worth finding: **`env-ibl/webgpu`** is a required coverage-manifest cell whose
+scene files exist, and it failed in **both** runs, same day, with
+`createBitmapFromWgpuRenderState: frame capture buffer did not map within 8000ms`. Consistently failing,
+not flaky — and it had been mislabelled as environment flakiness on the belief it had captured in one run.
+
+**The sharpest part is a cross-instrument disagreement.** The commissioning bar in
+`scripts/oracle-eligibility.ts` reads the same capture tree and reported `env-ibl/webgpu` correctly as
+`capture-failed`, and withheld its sibling `env-ibl/webgl` as `sibling-column-failed`. So one instrument
+dropped the cell while another named it, over identical input, and nobody noticed the first was wrong
+**because the second was right**. A spot-check for the cell would have found it present. That is what makes
+this failure mode different from a gate that cannot fire: the missing data is not merely absent, it is
+covered for.
+
+**Q2 and Q4 together, which is why the remedy is an assertion rather than a wider search.** The bad state
+could reach the instrument (it did, eight times) and the instrument evaluated a proposition adjacent to
+the one its readers wanted: *of the cells that produced a hash somewhere, how many agreed* rather than *of
+the cells in this run, how many agreed*. No amount of re-running answers that. The fix is that the tool
+now prints `cells seen` and asserts `agreed + disagreed + incomplete === seen`, printing
+`accounting: BROKEN — N bucketed vs M seen` when it does not, so the discrepancy no longer requires a
+reader who already knows the corpus size. **A total that does not reconcile must say so in the report that
+carries it.**
+
+The limit that remains, stated rather than implied: a cell with **no** `status.json` in **any** run is
+still invisible here, because nothing on disk distinguishes "never attempted" from "does not exist". That
+needs the coverage manifest — the same requirement join `oracle-check.ts` uses for the same gap.
+
 ## 2026-08-16: a differential oracle is blind upstream of the fork
 
 The largest population this audit has recorded, and the clearest instance of its central question —
