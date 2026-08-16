@@ -39,6 +39,26 @@ pass `colors[i]` or `colors[i % colors.length]`**, and a further 34 pass a named
 matching literals sees roughly a fourteenth of the surface and reports a confident small number — Q4
 applied to your own search.
 
+**Three ways that same search has since come back wrong, all in the direction of a confident small
+number.** They are worth listing because each looks like a result:
+
+- **Wrong argument position.** `appendShapeLineStyle(shape, thickness, color, …)` takes its colour
+  **third**. A parser reading argument two classifies `thickness` values and reports **0 colour literals
+  across 105 sites**. **A zero from a parser is the shape of a parser looking in the wrong place** —
+  disbelieve it before publishing it. Corrected, that family contributes 68 more sites.
+- **Wrong scope.** Two partitions agreed exactly on 192 call sites, and both were scoped to
+  `functional/scenes/`. Repo-wide the surface is **426** across both colour-taking functions. Agreement
+  is worth the independence of the weakest shared step, and scope is a step.
+- **Enumerating the bad form instead of the good one.** A check for "any surviving six-digit literal"
+  silently passes a bare `0` — which is opaque black under 24-bit RGB and **fully transparent** under
+  packed RGBA, i.e. the exact defect, in production importer source. **Enumerate the accepted form and
+  flag the remainder**, so the check fails toward *stop*.
+
+**And a zero that means "not measured here" rather than "nothing here":** `appendShapeBeginGradientFill`
+and `appendShapeLineGradientStyle` report 0 to every scalar-argument parser **by construction** — their
+colours are `number[]`. A 0 in that row beside rows reading 121 and 68 reads as no-problem-here. It is
+not a finding; the arrays need their own instrument, and none has been run.
+
 **A scope boundary sits beside them and is deliberately not a fourth question** — see
 [the standing questions audit instruments, not inferences](#2026-08-16-the-standing-questions-audit-instruments-not-inferences).
 Q1–Q3 all assume the measuring apparatus is at fault. When the instrument measured correctly and the
