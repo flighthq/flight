@@ -71,7 +71,7 @@ describe('computeShapeBoundsRectangle', () => {
 
   it('resolves a miter from adjacent segment summaries', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 30, 0, 1, false, 'normal', 'none', 'miter', 6);
+    appendShapeLineStyle(shape, 30, 0x000000ff, 1, false, 'normal', 'none', 'miter', 6);
     appendShapeMoveTo(shape, -110, -110);
     appendShapeLineTo(shape, 0, 0);
     appendShapeLineTo(shape, 110, -110);
@@ -84,7 +84,7 @@ describe('computeShapeBoundsRectangle', () => {
 
   it('falls back to the half-width bevel envelope beyond the authored miter limit', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 30, 0, 1, false, 'normal', 'none', 'miter', 1);
+    appendShapeLineStyle(shape, 30, 0x000000ff, 1, false, 'normal', 'none', 'miter', 1);
     appendShapeMoveTo(shape, -110, -110);
     appendShapeLineTo(shape, 0, 0);
     appendShapeLineTo(shape, 110, -110);
@@ -97,7 +97,7 @@ describe('computeShapeBoundsRectangle', () => {
 
   it('includes square cap extension for an open stroke', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 10, 0, 1, false, 'normal', 'square');
+    appendShapeLineStyle(shape, 10, 0x000000ff, 1, false, 'normal', 'square');
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     const out = createRectangle();
@@ -109,7 +109,7 @@ describe('computeShapeBoundsRectangle', () => {
 
   it('tracks CLOSE as the final segment and last-to-first join', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 10, 0, 1, false, 'normal', 'none', 'miter', 4);
+    appendShapeLineStyle(shape, 10, 0x000000ff, 1, false, 'normal', 'none', 'miter', 4);
     appendShapePath(
       shape,
       [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],

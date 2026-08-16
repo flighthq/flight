@@ -83,8 +83,8 @@ describe('appendMorphShapeBeginGradientFill', () => {
       appendMorphShapeBeginGradientFill(
         shape,
         'linear',
-        { alphas: [1], colors: [0], ratios: [0] },
-        { alphas: [1, 1], colors: [0, 1], ratios: [0, 255] },
+        { alphas: [1], colors: [0x000000ff], ratios: [0] },
+        { alphas: [1, 1], colors: [0x000000ff, 0xffffffff], ratios: [0, 255] },
       ),
     ).toBe(false);
     expect(shape.data.commands).toStrictEqual([]);
@@ -98,7 +98,7 @@ describe('appendMorphShapeBeginGradientFill', () => {
       appendMorphShapeBeginGradientFill(
         shape,
         'linear',
-        { alphas: [1], colors: [0], ratios: [0] },
+        { alphas: [1], colors: [0x000000ff], ratios: [0] },
         { alphas: [1], colors: [0xffffffff], matrix: createMatrix(3, 0, 0, 5, 20, 40), ratios: [255] },
       ),
     ).toBe(true);
