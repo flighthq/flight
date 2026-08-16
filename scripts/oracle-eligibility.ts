@@ -92,8 +92,12 @@ export type OracleBlockReason =
   | 'parity-unevaluated'
   /** The scene has ONE backend column, so parity is not merely unrun — it can never apply. */
   | 'parity-single-column'
-  /** Today's capture does not match the committed baseline. Something moved and nobody has explained it. */
-  | 'baseline-drift'
+  /**
+   * The committed baseline does not reproduce HERE. Named for the question the check actually answers,
+   * which is narrower than the one commissioning needs — see the check itself for why the distinction
+   * is load-bearing rather than pedantic.
+   */
+  | 'baseline-unreproduced-here'
   /** A peer or a ruling holds this cell. Local evidence never overrides that. */
   | 'held'
   /** Already claimed by an open request. */
@@ -250,12 +254,26 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
     // scene's own `assertRender`, which states the picture is RIGHT where a baseline only states it is
     // the same as last time.
     //
-    // An EXISTING baseline still gates, and it earns that: of 450 baselined cells, 13 reproduced
+    // An EXISTING baseline still gates, and it earns that: of 450 baselined cells, 14 reproduced
     // byte-for-byte across both of today's runs and still disagreed with their committed baseline. Stage
-    // one called all 13 `agreed`, because it compares today to today and cannot see a render that moved
+    // one called all 14 `agreed`, because it compares today to today and cannot see a render that moved
     // last week. That is a real check no other condition here performs.
+    //
+    // ★ THE NAME ANSWERS THE QUESTION THE CHECK ASKS, WHICH IS NOT THE QUESTION COMMISSIONING NEEDS.
+    // This compares against a baseline captured somewhere else, so what it settles is "does this
+    // reproduce in THIS environment" — while a blessing needs "does it reproduce in the BLESSING
+    // environment". Calling the verdict `baseline-drift` named it as a property of the CELL, as though
+    // the render had moved; on the 14 cells this caught, nothing that could move the render had moved,
+    // and the weight of evidence was that the baseline does not reproduce here. Same shape as asking
+    // whether a bad state can reach a gate: a true verdict about a narrower question, read as an answer
+    // to the wider one. The block is unchanged — a cell whose committed evidence does not reproduce
+    // where the capture ran is not one to bless — only the claim the label makes.
     if (capture.baselineHash !== null && capture.hash !== capture.baselineHash) {
-      blocked.push({ detail: 'capture does not match the committed baseline', identity, reason: 'baseline-drift' });
+      blocked.push({
+        detail: 'the committed baseline does not reproduce in this environment',
+        identity,
+        reason: 'baseline-unreproduced-here',
+      });
       continue;
     }
 
@@ -469,7 +487,7 @@ const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'parity-disagreement',
   'parity-unevaluated',
   'parity-single-column',
-  'baseline-drift',
+  'baseline-unreproduced-here',
   'held',
   'already-commissioned',
   'already-pinned',
