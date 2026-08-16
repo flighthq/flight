@@ -64,7 +64,7 @@ root.scaleY = scale;
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
-const colors = [0xff3030ff, 0x30c040ff, 0x3060ffff, 0xffd030ff, 0xff30c0ff, 0x30d0d0ff];
+const colors = [0xff8020ff, 0x30c040ff, 0x3060ffff, 0xffd030ff, 0xff30c0ff, 0x30d0d0ff];
 const cols = 3;
 const rows = 2;
 const cellWidth = logicalWidth / cols;
@@ -88,10 +88,12 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   //   R' = 0·R + 0·G + 1·B = B
   //   G' = 1·R + 0·G + 0·B = R
   //   B' = 0·R + 1·G + 0·B = G
-  // (see createChannelMixerColorMatrix and the 4×5 matrix definition in colorMatrixMath.ts)
   //
-  // Cell 0 has fill color 0xff3030ff = R=255, G=48, B=48 (packed 0xRRGGBBAA).
-  // After the mix: R'=48, G'=255, B'=48 — the red cell must become green.
+  // Cell 0 has fill color 0xff8020ff = R=255, G=128, B=32 (packed 0xRRGGBBAA).
+  // All three channels are distinct so every permutation yields a unique triple:
+  //   correct:         (32, 255, 128)
+  //   not-applying:    (255, 128, 32) — input unchanged
+  //   applied+R/B-swap:(128, 255, 32) — distinct from both
   const cols = 3;
   const rows = 2;
   const cx = Math.round((0.5 * frame.width) / cols);
@@ -99,17 +101,24 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   const rgb = getBitmapPixelRgb(frame, cx, cy);
   const r = (rgb >> 16) & 0xff;
   const g = (rgb >> 8) & 0xff;
+  const b = rgb & 0xff;
 
-  // Semantic prediction: green channel must be the dominant channel (was the input's red = 255).
-  // Allow ±10 for GPU precision — the matrix is exact integers, so any larger drift is a real defect.
   if (g < 200) {
     throw new Error(
-      `[effect-channel-mixer] cell 0 green channel is ${g} (expected ≥200 after R→G rotation, input R was 255)`,
+      `[effect-channel-mixer] cell 0 G=${g} (expected ≥200 — G'=R=255). R=${r}, B=${b}. ` +
+        `Input was (255,128,32); correct output is (32,255,128).`,
     );
   }
-  if (r > 100) {
+  if (r > 80) {
     throw new Error(
-      `[effect-channel-mixer] cell 0 red channel is ${r} (expected ≤100 after B→R rotation, input B was 48)`,
+      `[effect-channel-mixer] cell 0 R=${r} (expected ≤80 — R'=B=32). G=${g}, B=${b}. ` +
+        `Input was (255,128,32); correct output is (32,255,128).`,
+    );
+  }
+  if (b < 80) {
+    throw new Error(
+      `[effect-channel-mixer] cell 0 B=${b} (expected ≥80 — B'=G=128). R=${r}, G=${g}. ` +
+        `Input was (255,128,32); correct output is (32,255,128).`,
     );
   }
 }
