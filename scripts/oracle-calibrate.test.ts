@@ -113,8 +113,69 @@ describe('formatCalibrationReport, on the population it compared', () => {
       disagreed: [],
       incomplete: [],
       runs: 2,
+      seen: 1,
     });
 
     expect(text).toContain('AGREED     functional/shape-fill-solid/webgl');
+  });
+});
+
+describe('formatCalibrationReport, on its own accounting', () => {
+  it('says BROKEN when the buckets do not sum to the cells seen', () => {
+    // The exact shape of the real miss: totals that look complete because nothing names the discrepancy.
+    const text = formatCalibrationReport({
+      agreed: ['functional/a/webgl'],
+      cells: [{ hashes: ['a', 'a'], identity: 'functional/a/webgl' }],
+      disagreed: [],
+      incomplete: [],
+      runs: 2,
+      seen: 3,
+    });
+
+    expect(text).toContain('accounting:        BROKEN');
+    expect(text).toContain('2 cell(s) unaccounted for');
+  });
+});
+
+describe('compareCalibrationRuns, on cells that never produced a hash', () => {
+  // ★ THE DEFEATING TEST FOR A CELL THAT VANISHED RATHER THAN BEING LABELLED. `readRunHashes` used to
+  // record a cell only when its status parsed AND said `ready`, and the identity set was built from
+  // those keys — so a cell that FAILED ON EVERY RUN entered no map, no identity set, and no bucket. It
+  // did not appear as `incomplete`; it disappeared, and the report's own totals looked complete without
+  // it. That is the exact failure the doc comment promised could not happen, and it went unnoticed in a
+  // real cross-host run: 491/0/0 against a 493-cell corpus, caught only because someone happened to know
+  // the corpus size.
+  it('reports a cell that failed on EVERY run as incomplete, not as absent', () => {
+    const a = run({ 'functional/broken/webgl': null, 'functional/fine/webgl': 'a' });
+    const b = run({ 'functional/broken/webgl': null, 'functional/fine/webgl': 'a' });
+
+    const report = compareCalibrationRuns([a, b]);
+
+    expect(report.incomplete).toEqual(['functional/broken/webgl']);
+    expect(report.agreed).toEqual(['functional/fine/webgl']);
+    expect(report.seen).toBe(2);
+  });
+
+  it('counts a cell whose status.json is unparseable as seen and incomplete', () => {
+    // A directory containing a status.json IS the cell, whatever the file says. Treating an unreadable
+    // status as "an absent measurement" inferred the cell's existence from its content — the same class
+    // of error as keying on `state === 'ready'`.
+    const a = run({ 'functional/fine/webgl': 'a' });
+    writeFileSync(join(a, 'functional', 'fine', 'webgl', 'status.json'), '{ not json');
+
+    const report = compareCalibrationRuns([a, run({ 'functional/fine/webgl': 'a' })]);
+
+    expect(report.incomplete).toEqual(['functional/fine/webgl']);
+    expect(report.seen).toBe(1);
+  });
+
+  it('accounts for every seen cell in exactly one bucket', () => {
+    const a = run({ 'functional/agree/webgl': 'a', 'functional/differ/webgl': 'b', 'functional/gone/webgl': null });
+    const b = run({ 'functional/agree/webgl': 'a', 'functional/differ/webgl': 'c', 'functional/gone/webgl': null });
+
+    const report = compareCalibrationRuns([a, b]);
+
+    expect(report.agreed.length + report.disagreed.length + report.incomplete.length).toBe(report.seen);
+    expect(report.seen).toBe(3);
   });
 });
