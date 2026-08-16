@@ -451,6 +451,44 @@ describe('writeCaptureBaselineCoverageManifest', () => {
     expect(Object.keys(manifest.subjects.functional)).toEqual(['a/canvas']);
   });
 
+  // Exact acceptance is a review boundary, so the source diff must be as narrow as the accepted identity.
+  // Expanding every compact evidence array made an eight-row decision look like a whole-manifest rewrite.
+  it('changes only the selected compact row when accepting one exact target', () => {
+    const root = mkdtempSync(join(tmpdir(), 'flight-coverage-exact-format-'));
+    mkdirSync(join(root, 'scripts'));
+    const path = captureBaselineCoverageManifestPath(root);
+    const before = `{
+  "schemaVersion": 2,
+  "subjects": {
+    "functional": {
+      "a/canvas": ["fingerprint", "screenshot"],
+      "unrelated/webgl": ["fingerprint", "referenceImage", "screenshot"]
+    },
+    "examples": {
+      "untouched/canvas": ["fingerprint", "screenshot"]
+    }
+  }
+}
+`;
+    writeFileSync(path, before);
+
+    writeCaptureBaselineCoverageManifest(
+      root,
+      'functional',
+      { 'a/canvas': ['fingerprint', 'oracle', 'screenshot'] },
+      null,
+      ['a/canvas'],
+      ['fingerprint', 'oracle', 'screenshot'],
+    );
+
+    expect(readFileSync(path, 'utf8')).toBe(
+      before.replace(
+        '      "a/canvas": ["fingerprint", "screenshot"],',
+        '      "a/canvas": ["fingerprint", "oracle", "screenshot"],',
+      ),
+    );
+  });
+
   it('writes a trailing newline so the format gate never churns it', () => {
     const root = mkdtempSync(join(tmpdir(), 'flight-coverage-'));
     mkdirSync(join(root, 'scripts'));

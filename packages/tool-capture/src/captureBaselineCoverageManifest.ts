@@ -222,6 +222,41 @@ export function readCaptureBaselineCoverageManifest(root: string): CaptureBaseli
   return createCaptureBaselineCoverageManifest(migrated);
 }
 
+// Matches the committed manifest's formatter-owned shape: structural objects are indented, while each
+// target's short evidence-kind array stays on the same line as its identity. Raw pretty JSON expands every
+// array and turns one exact-target acceptance into a whole-file formatting diff, obscuring the decision the
+// acceptance command was designed to make reviewable.
+function formatCaptureBaselineCoverageManifest(manifest: Readonly<CaptureBaselineCoverageManifest>): string {
+  const subjects = Object.entries(manifest.subjects);
+  if (subjects.length === 0)
+    return `{
+  "schemaVersion": ${manifest.schemaVersion},
+  "subjects": {}
+}
+`;
+
+  const lines = ['{', `  "schemaVersion": ${manifest.schemaVersion},`, '  "subjects": {'];
+  for (let subjectIndex = 0; subjectIndex < subjects.length; subjectIndex++) {
+    const [subject, targets] = subjects[subjectIndex];
+    const identities = Object.entries(targets);
+    const subjectSuffix = subjectIndex + 1 === subjects.length ? '' : ',';
+    if (identities.length === 0) {
+      lines.push(`    ${JSON.stringify(subject)}: {}${subjectSuffix}`);
+      continue;
+    }
+    lines.push(`    ${JSON.stringify(subject)}: {`);
+    for (let identityIndex = 0; identityIndex < identities.length; identityIndex++) {
+      const [identity, kinds] = identities[identityIndex];
+      const identitySuffix = identityIndex + 1 === identities.length ? '' : ',';
+      const serializedKinds = kinds.map((kind) => JSON.stringify(kind)).join(', ');
+      lines.push(`      ${JSON.stringify(identity)}: [${serializedKinds}]${identitySuffix}`);
+    }
+    lines.push(`    }${subjectSuffix}`);
+  }
+  lines.push('  }', '}', '');
+  return lines.join('\n');
+}
+
 /**
  * Rewrites ONE subject's pin, preserving every other subject — an update run covers the subject it ran and
  * knows nothing about the other, so it must not speak for it.
@@ -261,6 +296,6 @@ export function writeCaptureBaselineCoverageManifest(
     merged[identity] = [...new Set([...(merged[identity] ?? []), ...kinds])];
   }
   const manifest = createCaptureBaselineCoverageManifest({ ...existing.subjects, [subject]: merged });
-  writeFileSync(captureBaselineCoverageManifestPath(root), `${JSON.stringify(manifest, null, 2)}\n`);
+  writeFileSync(captureBaselineCoverageManifestPath(root), formatCaptureBaselineCoverageManifest(manifest));
   return manifest;
 }
