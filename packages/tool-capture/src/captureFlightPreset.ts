@@ -33,12 +33,26 @@ const FLIGHT_VISUAL_PARITY_GROUPS: Readonly<Record<string, Readonly<CaptureParit
 };
 
 const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> = {
+  // Canvas and DOM antialias inherently and expose no switch to disable it. WebGPU cannot be moved in
+  // the other direction yet: its pooled effect targets deliberately stay sampleCount 1 until the
+  // pipelines gain multisample variants (render-wgpu/src/wgpuRenderTargetPool.ts:14-15). AA everywhere
+  // will remove this systematic one-hard-edged-backend gap, but distinct rasterizers will still differ
+  // sample for sample, so these entries promise comparable AA policy rather than pixel-identical edges.
+  // Invert agrees away from its shape boundaries; its WebGPU boundary pixels come from that single-sample
+  // scene target while this scene's WebGL target explicitly uses sampleCount 4.
+  'effect-invert': ['webgpu'],
   // Canvas has no lens-distortion runner; its functional column intentionally renders the unwarped
   // control scene, so only the two realized GPU recipes are comparable.
   'effect-lens-distortion': ['canvas'],
   // Canvas likewise has no lens-flare runner and intentionally records an unmodified control scene.
   // The realized WebGL and WebGPU flare recipes remain the meaningful comparison.
   'effect-lens-flare': ['canvas'],
+  // This scene exists to isolate a sampleCount-4 effect target. Its WebGPU option is currently a no-op,
+  // so comparing that single-sample control would absorb the missing capability into parity tolerance.
+  'effect-msaa': ['webgpu'],
+  // Bloom runs on WebGPU, but its rotated source shapes enter the recipe through the same single-sample
+  // target. Keep WebGPU out while Canvas's inherent AA and WebGL's sampleCount-4 source remain comparable.
+  'effect-msaa-bloom': ['webgpu'],
   // Canvas has no posterize runner; its scene is an explicit unsupported-control column rather than
   // a realization of the GPU hard-step quantization recipe.
   'effect-posterize': ['canvas'],

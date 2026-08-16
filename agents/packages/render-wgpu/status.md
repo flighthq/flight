@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/render-wgpu'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-16
+by: builder4
 ---
 
 # render-wgpu — Status
@@ -24,7 +24,9 @@ A file:line here is a claim about this tree, not about a session.
   availability that nothing consumes.
 - **No MSAA anywhere in the backend.** The render state carries no multisample texture or `sampleCount`, and
   pooled targets are pinned to sampleCount 1 by a stated design choice (`wgpuRenderTargetPool.ts:14-15`).
-  Antialiased offscreen effect targets are consequently unreachable.
+  Queue multisample-capable pipeline variants plus an explicit caller-invoked multisample-and-resolve pass;
+  this is not a context attribute. The unread `WgpuRenderOptions.antialias` orphan must be removed rather
+  than wired, because it promises a render-state capability the backend cannot perform.
 - **No sampleable depth.** `getWgpuRenderTargetDepthTexture` does not exist, which is exactly why
   `effects-wgpu` feeds `sceneDepthTexture: null` (`packages/effects-wgpu/src/wgpuRenderEffectPipeline.ts:165`)
   while its GL peer feeds a real texture. This is the single keystone under SSAO, screen-space fog, and
