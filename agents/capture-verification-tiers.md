@@ -264,7 +264,7 @@ everything and pass* — and that is the whole defect.
    than "the page loaded and a screenshot was taken". `reference` stays opt-in, since its pages only register
    a target once its own harness does.
 
-## Baseline freshness annotates reds; it is not another leg
+## Baseline freshness annotates every gated comparison; it is not another leg
 
 Each fingerprint baseline column records a `sourceHash`: the SHA-256 of the exact scene-source bytes when
 that renderer's fingerprint was deliberately captured. Functional targets hash their backend-specific scene
@@ -272,19 +272,22 @@ file when one exists and otherwise their shared scene file; examples hash the sh
 or reformat therefore changes the hash even when it changes no pixel. That is intentional evidence, not a
 verdict.
 
-The regression leg reads this metadata only to explain a fingerprint mismatch it was already going to fail:
+The regression leg reads this metadata for every gated comparison, independently from whether the coarse
+fingerprint passes its tolerance:
 
-- **source hash changed** — the scene changed; recapture is owed by the scene owner;
-- **source hash unchanged** — the scene did not change; classify the red as environment drift and never
-  rebaseline it;
+- **source hash changed** — the scene changed; recapture is owed by the scene owner even when the old
+  fingerprint still happens to pass within tolerance;
+- **source hash unchanged** — the scene did not change; a red is environment drift and must never be
+  rebaselined, while a green confirms that the fingerprint describes the current source;
 - **hash unavailable** — keep the original failure and say the freshness classification is unavailable.
 
 The aggregate JSON report carries the same distinction mechanically as `sourceHashStatus` plus the recorded
-and current hashes. It is absent from passing checks. No freshness command is wired into `npm run check`, no
-new warning appears on green runs, and capture remains a deliberate act. This is the reachability-style
-**report-and-accept** choice: a cosmetic source edit becomes a harmless explanation if the regression leg is
-already red. Making freshness a gate would turn whitespace into a build break and train reflexive baseline
-regeneration, destroying the evidence the annotation exists to protect.
+and current hashes on both passing and failing checks. A changed source is therefore visible even when its
+render moved less than the coarse tolerance — the case that used to leave a superseded fingerprint silently
+green. Freshness remains an annotation rather than a gate: a cosmetic source edit does not become a build
+break, and capture remains a deliberate act. This is the reachability-style **report-and-accept** choice;
+making freshness a gate would train reflexive baseline regeneration and destroy the evidence the annotation
+exists to protect.
 
 ### A recorded hash is evidence; a back-derived one is an inference
 
