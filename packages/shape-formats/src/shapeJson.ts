@@ -22,11 +22,10 @@ import {
 import type { Shape, ShapeJsonFormatOptions, ShapeJsonParseOptions } from '@flighthq/types/contract';
 
 // Serializes a shape's full drawing-command stream to a native JSON string that `parseShapeJson`
-// restores. Every non-texture command round-trips exactly, with one exception the format cannot
-// represent: JSON has no NaN or Infinity literal, so a non-finite coordinate is written as `null` and
-// the document will not parse back. That is deliberate — the alternative is restoring a shape whose
-// geometry silently differs from the one serialized. `beginTextureFill`/`lineTextureStyle` textures
-// serialize as an ordinal `ShapeTextureReference` (see the type) rather than the live `Texture`.
+// restores. Every stored command is checked against the same positional and finiteness predicates the
+// reader uses before anything is emitted: a writer that can produce a document its own reader rejects
+// has broken the format's round-trip contract. `beginTextureFill`/`lineTextureStyle` textures serialize
+// as an ordinal `ShapeTextureReference` (see the type) rather than the live `Texture`.
 export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<ShapeJsonFormatOptions>): string {
   const commands = shape.data.commands;
   const entries: SerializedShapeCommand[] = [];
@@ -36,13 +35,17 @@ export function formatShapeJson(shape: Readonly<Shape>, options?: Readonly<Shape
     const key = commands[i] as string;
     const argCount = commands[i + 1] as number;
     const base = i + 2;
+    const commandArgs = commands.slice(base, base + argCount);
+    if (!isValidShapeCommandArgs(key, commandArgs)) {
+      throw new TypeError(`Shape command "${key}" cannot be represented as shape JSON`);
+    }
     const args: unknown[] = [];
     for (let a = 0; a < argCount; a++) {
-      const value = commands[base + a];
+      const value = commandArgs[a];
       if (value === null) {
         // An omitted fill/line matrix, or absent triangle indices/uv data.
         args.push(null);
-      } else if (isMatrixLike(value)) {
+      } else if (isMatrixValue(value)) {
         args.push({ a: value.a, b: value.b, c: value.c, d: value.d, tx: value.tx, ty: value.ty });
       } else if (isSerializableScalarOrArray(value)) {
         // Numbers, strings (enum keywords), booleans, and numeric arrays (colors/ratios, path
