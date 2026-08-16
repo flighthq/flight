@@ -80,7 +80,7 @@ function makeMeshPassSpy(): GPURenderPassEncoder {
 
 function gradientShape() {
   const shape = createShape();
-  appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255], null);
+  appendShapeBeginGradientFill(shape, 'linear', [0xff0000ff, 0x0000ffff], [1, 1], [0, 255], null);
   appendShapeRectangle(shape, 8, 8, 32, 24);
   appendShapeEndFill(shape);
   return shape;
@@ -133,7 +133,7 @@ describe('drawWgpuMeshShape', () => {
     const pass = makeMeshPassSpy();
     getWgpuRenderStateRuntime(state).renderPass = pass;
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x00cc00);
+    appendShapeBeginFill(shape, 0x00cc00ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     appendShapeEndFill(shape);
 
@@ -154,7 +154,7 @@ describe('drawWgpuMeshShape', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x00cc00);
+    appendShapeBeginFill(shape, 0x00cc00ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     appendShapeEndFill(shape);
 

@@ -51,19 +51,19 @@ const root = createDisplayObject();
 
 // Draw order (bottom to top): red, then green (so green wins the overlap), then blue.
 const red = createShape();
-appendShapeBeginFill(red, 0xff0000, 1);
+appendShapeBeginFill(red, 0xff0000ff, 1);
 appendShapeRectangle(red, RED_X, RED_Y, RED_W, RED_H);
 appendShapeEndFill(red);
 addNodeChild(root, red);
 
 const green = createShape();
-appendShapeBeginFill(green, 0x00ff00, 1);
+appendShapeBeginFill(green, 0x00ff00ff, 1);
 appendShapeRectangle(green, GREEN_X, GREEN_Y, GREEN_W, GREEN_H);
 appendShapeEndFill(green);
 addNodeChild(root, green);
 
 const blue = createShape();
-appendShapeBeginFill(blue, 0x0000ff, 1);
+appendShapeBeginFill(blue, 0x0000ffff, 1);
 appendShapeRectangle(blue, BLUE_X, BLUE_Y, BLUE_W, BLUE_H);
 appendShapeEndFill(blue);
 addNodeChild(root, blue);
@@ -121,5 +121,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

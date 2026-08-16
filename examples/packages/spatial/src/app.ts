@@ -30,13 +30,13 @@ import { canvas, render, scale } from './render';
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 500;
 
-const COLOR_IDLE = 0x4488cc;
-const COLOR_OVERLAP = 0xcc4444;
-const COLOR_POINT_HIT = 0x44cc44;
-const COLOR_RAY_HIT = 0xcccc44;
-const COLOR_REGION_HIT = 0x44cccc;
-const COLOR_OUTLINE = 0x335577;
-const COLOR_GRID = 0x263954;
+const COLOR_IDLE = 0x4488ccff;
+const COLOR_OVERLAP = 0xcc4444ff;
+const COLOR_POINT_HIT = 0x44cc44ff;
+const COLOR_RAY_HIT = 0xcccc44ff;
+const COLOR_REGION_HIT = 0x44ccccff;
+const COLOR_OUTLINE = 0x335577ff;
+const COLOR_GRID = 0x263954ff;
 
 const OBJECT_COUNT = 20;
 const MOVING_COUNT = 5;

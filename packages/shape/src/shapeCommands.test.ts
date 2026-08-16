@@ -127,14 +127,14 @@ describe('appendShapeArcTo', () => {
 describe('appendShapeBeginFill', () => {
   it('pushes a beginFill command with color and alpha', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 0.5);
-    expect(shape.data.commands).toEqual(['beginFill', 2, 0xff0000, 0.5]);
+    appendShapeBeginFill(shape, 0xff0000ff, 0.5);
+    expect(shape.data.commands).toEqual(['beginFill', 2, 0xff0000ff, 0.5]);
   });
 
   it('defaults to color 0 and alpha 1', () => {
     const shape = createShape();
     appendShapeBeginFill(shape);
-    expect(shape.data.commands).toEqual(['beginFill', 2, 0, 1]);
+    expect(shape.data.commands).toEqual(['beginFill', 2, 0x000000ff, 1]);
   });
 });
 
@@ -144,7 +144,7 @@ describe('appendShapeBeginGradientFill', () => {
     appendShapeBeginGradientFill(
       shape,
       'linear',
-      [0xff0000, 0x0000ff],
+      [0xff0000ff, 0x0000ffff],
       [1, 1],
       [0, 255],
       fakeMatrix,
@@ -156,7 +156,7 @@ describe('appendShapeBeginGradientFill', () => {
       'beginGradientFill',
       8,
       'linear',
-      [0xff0000, 0x0000ff],
+      [0xff0000ff, 0x0000ffff],
       [1, 1],
       [0, 255],
       fakeMatrix,
@@ -168,12 +168,12 @@ describe('appendShapeBeginGradientFill', () => {
 
   it('defaults matrix null, spreadMethod pad, interpolationMethod rgb, focalPointRatio 0', () => {
     const shape = createShape();
-    appendShapeBeginGradientFill(shape, 'radial', [0xffffff], [1], [0]);
+    appendShapeBeginGradientFill(shape, 'radial', [0xffffffff], [1], [0]);
     expect(shape.data.commands).toEqual([
       'beginGradientFill',
       8,
       'radial',
-      [0xffffff],
+      [0xffffffff],
       [1],
       [0],
       null,
@@ -255,7 +255,7 @@ describe('appendShapeDrawTriangles', () => {
 
   it('works within a beginFill/endFill cycle', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendShapeDrawTriangles(shape, [0, 0, 100, 0, 50, 80], [0, 1, 2]);
     appendShapeEndFill(shape);
     const keys: string[] = [];
@@ -296,12 +296,12 @@ describe('appendShapeEndFill', () => {
 describe('appendShapeLineGradientStyle', () => {
   it('pushes a lineGradientStyle command with all fields', () => {
     const shape = createShape();
-    appendShapeLineGradientStyle(shape, 'linear', [0xff0000], [1], [0]);
+    appendShapeLineGradientStyle(shape, 'linear', [0xff0000ff], [1], [0]);
     expect(shape.data.commands).toEqual([
       'lineGradientStyle',
       8,
       'linear',
-      [0xff0000],
+      [0xff0000ff],
       [1],
       [0],
       null,
@@ -315,14 +315,14 @@ describe('appendShapeLineGradientStyle', () => {
 describe('appendShapeLineStyle', () => {
   it('pushes a lineStyle command with all parameters', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 2, 0x0000ff, 0.8, true, 'horizontal', 'round', 'bevel', 5);
-    expect(shape.data.commands).toEqual(['lineStyle', 8, 2, 0x0000ff, 0.8, true, 'horizontal', 'round', 'bevel', 5]);
+    appendShapeLineStyle(shape, 2, 0x0000ffff, 0.8, true, 'horizontal', 'round', 'bevel', 5);
+    expect(shape.data.commands).toEqual(['lineStyle', 8, 2, 0x0000ffff, 0.8, true, 'horizontal', 'round', 'bevel', 5]);
   });
 
   it('defaults thickness 1, color 0, alpha 1, pixelHinting false, scaleMode normal, caps none, joints round, miterLimit 3', () => {
     const shape = createShape();
     appendShapeLineStyle(shape);
-    expect(shape.data.commands).toEqual(['lineStyle', 8, 1, 0, 1, false, 'normal', 'none', 'round', 3]);
+    expect(shape.data.commands).toEqual(['lineStyle', 8, 1, 0x000000ff, 1, false, 'normal', 'none', 'round', 3]);
   });
 });
 
@@ -404,7 +404,7 @@ describe('appendShapePath', () => {
 
   it('works within a beginFill/endFill cycle', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x00ff00, 1);
+    appendShapeBeginFill(shape, 0x00ff00ff, 1);
     appendShapePath(shape, [PathCommand.MOVE_TO, PathCommand.LINE_TO], [0, 0, 100, 100]);
     appendShapeEndFill(shape);
     const keys: string[] = [];

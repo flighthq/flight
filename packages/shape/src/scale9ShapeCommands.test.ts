@@ -11,8 +11,8 @@ describe('mapScale9ShapeCommands', () => {
 
   it('passes style commands through unchanged', () => {
     const mapper = { mapX: (x: number) => x, mapY: (y: number) => y };
-    mapScale9ShapeCommands(out, ['beginFill', 2, 0xff0000, 1], mapper);
-    expect(out).toEqual(['beginFill', 2, 0xff0000, 1]);
+    mapScale9ShapeCommands(out, ['beginFill', 2, 0xff0000ff, 1], mapper);
+    expect(out).toEqual(['beginFill', 2, 0xff0000ff, 1]);
   });
 
   it('remaps moveTo coordinates', () => {
@@ -54,7 +54,7 @@ describe('mapScale9ShapeCommands', () => {
 
   it('returns a buffer with the same element count as the input', () => {
     const shape = createScale9Shape(grid);
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     // A mapper is any pair of coordinate functions; building one from a grid is a renderer's job, and
     // the rewrite under test does not care where the mapping came from.

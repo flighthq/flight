@@ -21,7 +21,7 @@ beforeAll(() => {
 const TRIANGLE: WgpuShapeMesh = {
   vertices: new Float32Array([0, 0, 10, 0, 0, 10]),
   indices: new Uint16Array([0, 1, 2]),
-  color: 0xff8040,
+  color: 0xff8040ff,
   alpha: 1,
 };
 
@@ -111,7 +111,7 @@ describe('drawWgpuShapeMeshBatch', () => {
     drawWgpuShapeMeshBatch(
       state,
       makeProxy({ alpha: 0.5 }),
-      [{ ...TRIANGLE, color: 0xffffff }],
+      [{ ...TRIANGLE, color: 0xffffffff }],
       buffers,
       pipelineEntry,
       uniformBuffers,
@@ -146,7 +146,7 @@ describe('drawWgpuShapeMeshes', () => {
     const state = await makeState();
     const buffers = makeBuffers();
 
-    drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE, { ...TRIANGLE, color: 0x0080ff }], buffers);
+    drawWgpuShapeMeshes(state, makeProxy(), [TRIANGLE, { ...TRIANGLE, color: 0x0080ffff }], buffers);
 
     expect(buffers.vertexBuffers).toHaveLength(2);
     expect(buffers.indexBuffers).toHaveLength(2);
@@ -219,7 +219,7 @@ describe('drawWgpuShapeMeshes', () => {
       }
     }) as unknown as GPUQueue['writeBuffer'];
 
-    drawWgpuShapeMeshes(state, makeProxy({ alpha: 0.5 }), [{ ...TRIANGLE, color: 0xffffff }], buffers);
+    drawWgpuShapeMeshes(state, makeProxy({ alpha: 0.5 }), [{ ...TRIANGLE, color: 0xffffffff }], buffers);
 
     const uniformData = writes.get(buffers.uniformBuffers[0]);
     expect(uniformData).toBeDefined();
@@ -288,7 +288,7 @@ describe('drawWgpuShapeMeshes', () => {
     drawWgpuShapeMeshes(
       state,
       makeProxy({ alpha: 0.5, colorScaleBias: ct(0.25, 0.5, 0.75, 0.8, 0.1, 0.2, 0.3, 0.4) }),
-      [{ ...TRIANGLE, color: 0xffffff }],
+      [{ ...TRIANGLE, color: 0xffffffff }],
       buffers,
     );
 

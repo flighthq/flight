@@ -234,7 +234,7 @@ const visibleBoundsShape = createShape();
 addNodeChild(worldContainer, visibleBoundsShape);
 
 const hudBg = createShape();
-appendShapeBeginFill(hudBg, 0x000000, 0.5);
+appendShapeBeginFill(hudBg, 0x000000ff, 0.5);
 appendShapeRectangle(hudBg, 8, 8, 260, 80);
 appendShapeEndFill(hudBg);
 addNodeChild(hudContainer, hudBg);
@@ -271,7 +271,7 @@ addNodeChild(hudContainer, legendLabel);
 
 function buildGridShape(): void {
   clearShapeCommands(gridShape);
-  appendShapeLineStyle(gridShape, 1, 0x64788c, 0.15);
+  appendShapeLineStyle(gridShape, 1, 0x64788cff, 0.15);
   const gridSize = 100;
   for (let x = 0; x <= WORLD_WIDTH; x += gridSize) {
     appendShapeMoveTo(gridShape, x, 0);
@@ -287,7 +287,7 @@ function buildGridShape(): void {
 
 function buildBorderShape(): void {
   clearShapeCommands(borderShape);
-  appendShapeLineStyle(borderShape, 3, 0xc85050, 0.5);
+  appendShapeLineStyle(borderShape, 3, 0xc85050ff, 0.5);
   appendShapeRectangle(borderShape, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
   appendShapeEndFill(borderShape);
   invalidateNodeAppearance(borderShape);
@@ -299,7 +299,7 @@ buildBorderShape();
 function rebuildStars(): void {
   clearShapeCommands(starsShape);
   for (const star of stars) {
-    appendShapeBeginFill(starsShape, 0xffffd0, star.brightness);
+    appendShapeBeginFill(starsShape, 0xffffd0ff, star.brightness);
     appendShapeCircle(starsShape, star.x, star.y, star.radius);
     appendShapeEndFill(starsShape);
   }
@@ -309,7 +309,7 @@ function rebuildStars(): void {
 function rebuildMountains(): void {
   clearShapeCommands(mountainsShape);
   for (const mt of mountains) {
-    appendShapeBeginFill(mountainsShape, 0x3c5064, 0.6);
+    appendShapeBeginFill(mountainsShape, 0x3c5064ff, 0.6);
     appendShapePolygon(mountainsShape, [
       mt.x - mt.width * 0.5,
       mt.baseY,
@@ -326,7 +326,7 @@ function rebuildMountains(): void {
 function rebuildClouds(): void {
   clearShapeCommands(cloudsShape);
   for (const cloud of clouds) {
-    appendShapeBeginFill(cloudsShape, 0xc8d2e6, 0.4);
+    appendShapeBeginFill(cloudsShape, 0xc8d2e6ff, 0.4);
     appendShapeEllipse(
       cloudsShape,
       cloud.x - cloud.width * 0.5,
@@ -426,7 +426,7 @@ function enterFrame(): void {
   invalidateNodeLocalTransform(worldContainer);
 
   clearShapeCommands(playerShape);
-  appendShapeBeginFill(playerShape, 0xffcc33, 1);
+  appendShapeBeginFill(playerShape, 0xffcc33ff, 1);
   appendShapePolygon(playerShape, [
     player.x,
     player.y - PLAYER_SIZE,
@@ -436,7 +436,7 @@ function enterFrame(): void {
     player.y + PLAYER_SIZE * 0.6,
   ]);
   appendShapeEndFill(playerShape);
-  appendShapeLineStyle(playerShape, 2, 0xcc9900, 1);
+  appendShapeLineStyle(playerShape, 2, 0xcc9900ff, 1);
   appendShapePolygon(playerShape, [
     player.x,
     player.y - PLAYER_SIZE,
@@ -449,7 +449,7 @@ function enterFrame(): void {
   invalidateNodeAppearance(playerShape);
 
   clearShapeCommands(visibleBoundsShape);
-  appendShapeLineStyle(visibleBoundsShape, 2, 0x00c864, 0.6);
+  appendShapeLineStyle(visibleBoundsShape, 2, 0x00c864ff, 0.6);
   appendShapeRectangle(visibleBoundsShape, visibleBounds.x, visibleBounds.y, visibleBounds.width, visibleBounds.height);
   appendShapeEndFill(visibleBoundsShape);
   invalidateNodeAppearance(visibleBoundsShape);

@@ -84,7 +84,7 @@ render(root);
 // original fill by > 30 in at least one channel. Without the effect, all bar centers match their
 // original fills exactly.
 export function assertRender(frame: Readonly<Bitmap>): void {
-  const originals = [0xff3366, 0x33ff99, 0x3399ff, 0xffcc33, 0xcc33ff];
+  const originals = [0xff3366ff, 0x33ff99ff, 0x3399ffff, 0xffcc33ff, 0xcc33ffff];
   let displaced = 0;
 
   for (let i = 0; i < originals.length; i++) {

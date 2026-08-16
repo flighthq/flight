@@ -60,7 +60,7 @@ function vShape(apexY: number, joint: JointStyle): void {
   const shape = createShape();
   // caps 'none' (irrelevant here — leg ends are off-corner); miterLimit 6 is high enough that the 90°
   // corner's miter ratio (~1.41) is never clamped.
-  appendShapeLineStyle(shape, THICKNESS, 0xffffff, 1, false, 'normal', 'none', joint, 6);
+  appendShapeLineStyle(shape, THICKNESS, 0xffffffff, 1, false, 'normal', 'none', joint, 6);
   appendShapeMoveTo(shape, APEX_X - LEG_DX, apexY - LEG_DY); // top-left
   appendShapeLineTo(shape, APEX_X, apexY); // bottom-center apex (sharp corner)
   appendShapeLineTo(shape, APEX_X + LEG_DX, apexY - LEG_DY); // top-right
@@ -132,5 +132,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

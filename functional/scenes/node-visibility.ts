@@ -30,14 +30,14 @@ const VISIBLE_X = 120;
 const VISIBLE_Y = 200;
 const VISIBLE_W = 200;
 const VISIBLE_H = 200;
-const VISIBLE_FILL = 0xff0000; // red
+const VISIBLE_FILL = 0xff0000ff; // red
 
 // Hidden shape (green) — right region, fully separate from the visible one.
 const HIDDEN_X = 480;
 const HIDDEN_Y = 200;
 const HIDDEN_W = 200;
 const HIDDEN_H = 200;
-const HIDDEN_FILL = 0x00ff00; // green
+const HIDDEN_FILL = 0x00ff00ff; // green
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
@@ -97,5 +97,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

@@ -36,14 +36,14 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const redCircle = createShape();
-appendShapeBeginFill(redCircle, 0xff0000, 1);
+appendShapeBeginFill(redCircle, 0xff0000ff, 1);
 appendShapeCircle(redCircle, 150, 150, 80);
 appendShapeEndFill(redCircle);
 invalidateNodeAppearance(redCircle);
 addNodeChild(root, redCircle);
 
 const blueCircle = createShape();
-appendShapeBeginFill(blueCircle, 0x0000ff, 1);
+appendShapeBeginFill(blueCircle, 0x0000ffff, 1);
 appendShapeCircle(blueCircle, 350, 150, 60);
 appendShapeEndFill(blueCircle);
 invalidateNodeAppearance(blueCircle);
@@ -86,5 +86,5 @@ function isBlack(rgb: number): boolean {
   return ((rgb >> 16) & 0xff) < 30 && ((rgb >> 8) & 0xff) < 30 && (rgb & 0xff) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

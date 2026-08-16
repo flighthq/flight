@@ -47,7 +47,7 @@ function makeShapeNode(data: Record<string, unknown>, rendererData: unknown = ma
 
 function solidShape() {
   const shape = createShape();
-  appendShapeBeginFill(shape, 0x00cc00);
+  appendShapeBeginFill(shape, 0x00cc00ff);
   appendShapeRectangle(shape, 8, 8, 32, 24);
   appendShapeEndFill(shape);
   return shape;
@@ -55,7 +55,7 @@ function solidShape() {
 
 function gradientShape() {
   const shape = createShape();
-  appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255], null);
+  appendShapeBeginGradientFill(shape, 'linear', [0xff0000ff, 0x0000ffff], [1, 1], [0, 255], null);
   appendShapeRectangle(shape, 8, 8, 32, 24);
   appendShapeEndFill(shape);
   return shape;

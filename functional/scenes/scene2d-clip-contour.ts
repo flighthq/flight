@@ -34,7 +34,7 @@ const HEIGHT = 600;
 const SHAPE_X = 150;
 const SHAPE_Y = 100;
 const SHAPE_SIZE = 460;
-const SHAPE_COLOR = 0x00ccdd; // 24-bit RGB (cyan)
+const SHAPE_COLOR = 0x00ccddff; // 24-bit RGB (cyan)
 
 // Triangle clip in the shape node's LOCAL space: apex top-center, base along the bottom.
 const APEX_X = 400;
@@ -108,5 +108,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

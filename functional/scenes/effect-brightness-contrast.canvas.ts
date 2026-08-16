@@ -79,7 +79,7 @@ for (let i = 0; i < colors.length; i++) {
 render(root);
 
 // ORACLE-BLOCK
-// Positive brightness (0.15) lifts all luminances. Cell 2 (blue, 0x3060ff) has the lowest input
+// Positive brightness (0.15) lifts all luminances. Cell 2 (blue, 0x3060ffff) has the lowest input
 // perceived luminance at ~100. After the brightness lift, its output luminance exceeds 115 in both
 // sRGB and linear pipelines. Without the effect, cell 2 stays at ~100 and fails the check.
 export function assertRender(frame: Readonly<Bitmap>): void {

@@ -140,7 +140,7 @@ export function appendShapeArcTo(shape: Shape, x1: number, y1: number, x2: numbe
   invalidateContent(shape);
 }
 
-export function appendShapeBeginFill(shape: Shape, color = 0, alpha = 1): void {
+export function appendShapeBeginFill(shape: Shape, color = 0x000000ff, alpha = 1): void {
   shape.data.commands.push('beginFill', 2, color, alpha);
   invalidateContent(shape);
 }
@@ -255,7 +255,7 @@ export function appendShapeLineGradientStyle(
 export function appendShapeLineStyle(
   shape: Shape,
   thickness = 1,
-  color = 0,
+  color = 0x000000ff,
   alpha = 1,
   pixelHinting = false,
   scaleMode: LineScaleMode = 'normal',

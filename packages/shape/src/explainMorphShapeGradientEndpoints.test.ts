@@ -8,7 +8,7 @@ describe('explainMorphShapeGradientEndpoints', () => {
     expect(
       explainMorphShapeGradientEndpoints(
         { alphas: [1], colors: [0], ratios: [0] },
-        { alphas: [1], colors: [0xffffff], ratios: [255] },
+        { alphas: [1], colors: [0xffffffff], ratios: [255] },
       ),
     ).toStrictEqual({ endStopCount: 1, reason: 'ok', startStopCount: 1, supported: true });
   });
@@ -40,7 +40,7 @@ describe('getMorphShapeGradientEndpointIssue', () => {
     expect(
       getMorphShapeGradientEndpointIssue(
         { alphas: [1], colors: [0], ratios: [0] },
-        { alphas: [1], colors: [0xffffff], ratios: [255] },
+        { alphas: [1], colors: [0xffffffff], ratios: [255] },
       ),
     ).toBe(0);
   });

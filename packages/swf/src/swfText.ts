@@ -33,7 +33,7 @@ export function createSwfTextShape(
   const glyphOutline = createPath();
   let font: GlyphOutlineSource | null = null;
   let unitsPerEm = DEFAULT_FONT_UNITS_PER_EM;
-  let color = 0;
+  let color = 0x000000ff;
   let height = 0;
   let x = 0;
   let y = 0;
@@ -53,8 +53,8 @@ export function createSwfTextShape(
       const red = reader.readUint8();
       const green = reader.readUint8();
       const blue = reader.readUint8();
-      if (version >= 2) reader.readUint8();
-      color = red * 0x10000 + green * 0x100 + blue;
+      const alpha = version >= 2 ? reader.readUint8() : 0xff;
+      color = ((red << 24) | (green << 16) | (blue << 8) | alpha) >>> 0;
     }
     if ((flags & TEXT_HAS_X_OFFSET) !== 0) x = readSwfTextOffset(reader);
     if ((flags & TEXT_HAS_Y_OFFSET) !== 0) y = readSwfTextOffset(reader);

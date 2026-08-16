@@ -53,7 +53,7 @@ const CONTROL_X = 100;
 // The mirrored copy's local origin: local +x runs LEFT from here, so the glyph occupies x = 500..620.
 const MIRROR_X = 620;
 
-const FILL = 0x33ccff;
+const FILL = 0x33ccffff;
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,
@@ -130,7 +130,7 @@ function channel(rgb: number, shift: number): number {
 }
 
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }
 
 function isFill(rgb: number): boolean {

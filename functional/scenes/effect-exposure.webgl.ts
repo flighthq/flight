@@ -78,7 +78,7 @@ for (let i = 0; i < colors.length; i++) {
 render(root);
 
 // ORACLE-BLOCK
-// Exposure 1 applies a 2x brightness multiplier. The dark background (0x05060a, luminance ~5)
+// Exposure 1 applies a 2x brightness multiplier. The dark background (0x05060aff, luminance ~5)
 // should double to ~10+. Without the effect, the background stays at ~5 and fails the > 8 check.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const rgb = getBitmapPixelRgb(frame, 4, 4);

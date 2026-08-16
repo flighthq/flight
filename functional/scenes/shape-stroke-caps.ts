@@ -46,7 +46,7 @@ const root = createDisplayObject();
 
 function segment(y: number, caps: CapsStyle): void {
   const shape = createShape();
-  appendShapeLineStyle(shape, THICKNESS, 0xffffff, 1, false, 'normal', caps, 'round', 3);
+  appendShapeLineStyle(shape, THICKNESS, 0xffffffff, 1, false, 'normal', caps, 'round', 3);
   appendShapeMoveTo(shape, SEG_X0, y);
   appendShapeLineTo(shape, SEG_X1, y);
   addNodeChild(root, shape);
@@ -117,5 +117,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

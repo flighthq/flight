@@ -75,7 +75,7 @@ describe('applyAnimationClipToRiveDocument', () => {
 
     expect(shape[field]).toBeCloseTo(expected, 3);
     expect(pathPoints(shape)[0][0]).toBeCloseTo(30, 3);
-    expect(fillPaint(shape).color).toBe(0x304050);
+    expect(fillPaint(shape).color).toBe(0x304050ff);
     expect(fillPaint(shape).alpha).toBeCloseTo(0x80 / 0xff, 6);
   });
 
@@ -103,7 +103,7 @@ describe('applyAnimationClipToRiveDocument', () => {
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 1);
 
-    expect(fillPaint(shape)).toEqual({ alpha: 1, color: 0xddeeff });
+    expect(fillPaint(shape)).toEqual({ alpha: 1, color: 0xddeeffff });
   });
 
   it('interpolates packed ARGB by channel instead of treating it as one scalar', () => {
@@ -112,7 +112,7 @@ describe('applyAnimationClipToRiveDocument', () => {
 
     applyAnimationClipToRiveDocument(result.artboards[0].animations[0].clip, 0.5);
 
-    expect(fillPaint(shape).color).toBe(0x304050);
+    expect(fillPaint(shape).color).toBe(0x304050ff);
     expect(fillPaint(shape).alpha).toBeCloseTo(0x80 / 0xff, 6);
   });
 

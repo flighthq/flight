@@ -25,7 +25,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const FILL = 0x3399ff;
+const FILL = 0x3399ffff;
 
 const SIDE = 160;
 const HALF = SIDE / 2; // 80
@@ -102,12 +102,12 @@ function channel(rgb: number, shift: number): number {
   return (rgb >> shift) & 255;
 }
 function isFill(rgb: number): boolean {
-  // 0x3399ff: low red, mid green, high blue.
+  // 0x3399ffff: low red, mid green, high blue.
   return channel(rgb, 16) < 110 && channel(rgb, 8) > 100 && channel(rgb, 0) > 180;
 }
 function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

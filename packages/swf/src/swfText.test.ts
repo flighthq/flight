@@ -23,7 +23,7 @@ describe('createSwfTextShape', () => {
 
     // Two glyphs, each its own fill span, the second offset by the first's 600-twip advance (30px).
     expect(shape?.data.commands.filter((token) => token === 'beginFill')).toHaveLength(2);
-    expect(shape?.data.commands.slice(0, 8)).toEqual(['beginFill', 2, 0x00ff00, 1, 'moveTo', 2, 0, 0]);
+    expect(shape?.data.commands.slice(0, 8)).toEqual(['beginFill', 2, 0x00ff00ff, 1, 'moveTo', 2, 0, 0]);
     const secondMove = shape!.data.commands.indexOf('moveTo', 8);
     expect(shape?.data.commands.slice(secondMove, secondMove + 4)).toEqual(['moveTo', 2, 30, 0]);
   });
@@ -74,6 +74,18 @@ describe('createSwfTextShape', () => {
 
     expect(shape).not.toBeNull();
     expect(shape?.data.commands).toEqual([]);
+  });
+
+  it('preserves DefineText2 alpha in the packed RGBA fill color', () => {
+    const font = boxFont(512);
+    const writer = new TextWriter();
+    writer.writeRecord({ alpha: 0x80, color: 0x00ff00, fontId: 1, height: 1024 });
+    writer.writeGlyph(0, 0);
+    writer.end();
+
+    const shape = createSwfTextShape(writer.toReader(), 2, new Map([[1, font]]));
+
+    expect(shape?.data.commands[2]).toBe(0x00ff0080);
   });
 
   it('returns null for a record stream that runs out', () => {
@@ -131,7 +143,7 @@ describe('readSwfFontGlyphs', () => {
     const glyphs = readSwfFontGlyphs(new SwfReader(bytes, 0, bytes.length), 1);
 
     expect(glyphs).toHaveLength(1);
-    expect(glyphs![0]?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0, 1]);
+    expect(glyphs![0]?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0x000000ff, 1]);
   });
 
   it('reads a version 2 font through its declared glyph count and code-table offset', () => {
@@ -144,7 +156,7 @@ describe('readSwfFontGlyphs', () => {
     const glyphs = readSwfFontGlyphs(new SwfReader(bytes, 0, bytes.length), 2);
 
     expect(glyphs).toHaveLength(1);
-    expect(glyphs![0]?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0, 1]);
+    expect(glyphs![0]?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0x000000ff, 1]);
   });
 
   it('returns null for a font whose offset table runs past its tag', () => {
@@ -224,11 +236,12 @@ class TextWriter {
     for (let i = 15; i >= 0; i--) this.bits.push((value >> i) & 1);
   }
 
-  writeRecord(record: Readonly<{ color: number; fontId: number; height: number }>): void {
+  writeRecord(record: Readonly<{ alpha?: number; color: number; fontId: number; height: number }>): void {
     this.flush();
     this.bytes.push(0x80 | 0x08 | 0x04);
     this.bytes.push(record.fontId & 0xff, (record.fontId >> 8) & 0xff);
     this.bytes.push((record.color >> 16) & 0xff, (record.color >> 8) & 0xff, record.color & 0xff);
+    if (record.alpha !== undefined) this.bytes.push(record.alpha);
     this.bytes.push(record.height & 0xff, (record.height >> 8) & 0xff);
     // Glyph count is patched by the caller's writeGlyph calls, so it is written as a placeholder the
     // helper fills when the record closes; here the tests always write exactly what they declare.

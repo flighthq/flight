@@ -58,7 +58,7 @@ describe('drawDomShape', () => {
   it('produces a canvas element when the shape has draw commands', () => {
     const state = makeState();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
@@ -73,7 +73,7 @@ describe('drawDomShape', () => {
   it('sizes its production canvas from the paired stroke contribution', () => {
     const state = makeState();
     const shape = createShape();
-    appendShapeLineStyle(shape, 30, 0xffffff, 1, false, 'normal', 'none', 'miter', 6);
+    appendShapeLineStyle(shape, 30, 0xffffffff, 1, false, 'normal', 'none', 'miter', 6);
     appendShapeMoveTo(shape, -110, -110);
     appendShapeLineTo(shape, 0, 0);
     appendShapeLineTo(shape, 110, -110);
@@ -87,7 +87,7 @@ describe('drawDomShape', () => {
   it('sets canvas size to at least 1x1 for zero-size shapes', () => {
     const state = makeState();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 0, 0);
     appendShapeEndFill(shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);
@@ -100,7 +100,7 @@ describe('drawDomShape', () => {
   it('reuses the same canvas element across multiple draws', () => {
     const state = makeState();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 40, 40);
     appendShapeEndFill(shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);

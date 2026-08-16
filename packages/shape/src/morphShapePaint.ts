@@ -253,14 +253,14 @@ function sampleMorphShapePaintBinding(
   const i = binding.commandIndex;
   if (binding.kind === 'color') {
     if (commands[i] !== 'beginFill') return;
-    commands[i + 2] = interpolateRgb(binding.startColor, binding.endColor, progress);
+    commands[i + 2] = interpolateRgba(binding.startColor, binding.endColor, progress);
     commands[i + 3] = interpolateNumber(binding.startAlpha, binding.endAlpha, progress);
     return;
   }
   if (binding.kind === 'line') {
     if (commands[i] !== 'lineStyle') return;
     commands[i + 2] = interpolateNumber(binding.startThickness, binding.endThickness, progress);
-    commands[i + 3] = interpolateRgb(binding.startColor, binding.endColor, progress);
+    commands[i + 3] = interpolateRgba(binding.startColor, binding.endColor, progress);
     commands[i + 4] = interpolateNumber(binding.startAlpha, binding.endAlpha, progress);
     return;
   }
@@ -273,7 +273,7 @@ function sampleMorphShapePaintBinding(
   const alphas = commands[i + 4] as number[];
   const ratios = commands[i + 5] as number[];
   for (let n = 0; n < binding.startColors.length; n++) {
-    colors[n] = interpolateRgb(binding.startColors[n], binding.endColors[n], progress);
+    colors[n] = interpolateRgba(binding.startColors[n], binding.endColors[n], progress);
     alphas[n] = interpolateNumber(binding.startAlphas[n], binding.endAlphas[n], progress);
     ratios[n] = interpolateNumber(binding.startRatios[n], binding.endRatios[n], progress);
   }
@@ -304,13 +304,12 @@ function interpolateNumber(start: number, end: number, progress: number): number
   return start + (end - start) * progress;
 }
 
-// Shape colors are packed 0xRRGGBB. Morph them component-wise like existing color tweens and legacy
-// vector formats; clamping each packed channel keeps deliberate progress overshoot representable safely.
-function interpolateRgb(start: number, end: number, progress: number): number {
-  const r = interpolateByte((start >>> 16) & 0xff, (end >>> 16) & 0xff, progress);
-  const g = interpolateByte((start >>> 8) & 0xff, (end >>> 8) & 0xff, progress);
-  const b = interpolateByte(start & 0xff, end & 0xff, progress);
-  return r * 0x10000 + g * 0x100 + b;
+function interpolateRgba(start: number, end: number, progress: number): number {
+  const r = interpolateByte((start >>> 24) & 0xff, (end >>> 24) & 0xff, progress);
+  const g = interpolateByte((start >>> 16) & 0xff, (end >>> 16) & 0xff, progress);
+  const b = interpolateByte((start >>> 8) & 0xff, (end >>> 8) & 0xff, progress);
+  const a = interpolateByte(start & 0xff, end & 0xff, progress);
+  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
 }
 
 function interpolateByte(start: number, end: number, progress: number): number {

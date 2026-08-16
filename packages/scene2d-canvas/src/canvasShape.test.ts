@@ -70,7 +70,7 @@ describe('drawCanvasShape', () => {
     appendPathMoveTo(end, 20, 30);
     appendPathLineTo(end, 40, 30);
     const shape = createMorphShape(createPathMorph(start, end)!);
-    appendMorphShapeBeginFill(shape, { color: 0xff0000 }, { color: 0x0000ff });
+    appendMorphShapeBeginFill(shape, { color: 0xff0000ff }, { color: 0x0000ffff });
     appendMorphShapePath(shape);
     appendShapeEndFill(shape);
     const commands = shape.data.path.commands;
@@ -124,7 +124,7 @@ describe('drawCanvasShape', () => {
     const state = makeShapeState(canvas);
     registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
     const data = getOrCreateRenderProxy2D(state, shape);
@@ -146,7 +146,7 @@ describe('renderCanvasShapeCommands', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'fill');
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
@@ -157,7 +157,7 @@ describe('renderCanvasShapeCommands', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'stroke');
     const shape = createShape();
-    appendShapeLineStyle(shape, 2, 0x000000);
+    appendShapeLineStyle(shape, 2, 0x000000ff);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
@@ -174,8 +174,8 @@ describe('renderCanvasShapeCommands', () => {
       order.push('stroke');
     });
     const shape = createShape();
-    appendShapeLineStyle(shape, 2, 0x000000);
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeLineStyle(shape, 2, 0x000000ff);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 50);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
@@ -186,7 +186,7 @@ describe('renderCanvasShapeCommands', () => {
     const { context, state } = makeShapeTarget();
     const spy = vi.spyOn(context, 'fill');
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);
@@ -196,7 +196,7 @@ describe('renderCanvasShapeCommands', () => {
   it('does not throw on a zero-size rectangle', () => {
     const { context, state } = makeShapeTarget();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendShapeRectangle(shape, 10, 10, 0, 0);
     appendShapeEndFill(shape);
     expect(() => renderCanvasShapeCommands(context, state, shape.data.commands, resolvers)).not.toThrow();
@@ -205,7 +205,7 @@ describe('renderCanvasShapeCommands', () => {
   it('does not throw on NaN coordinates', () => {
     const { context, state } = makeShapeTarget();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendShapeMoveTo(shape, Number.NaN, Number.NaN);
     appendShapeLineTo(shape, Number.NaN, 10);
     appendShapeRectangle(shape, Number.NaN, 0, Number.NaN, 10);
@@ -216,7 +216,7 @@ describe('renderCanvasShapeCommands', () => {
   it('does not throw on Infinity coordinates', () => {
     const { context, state } = makeShapeTarget();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendShapeMoveTo(shape, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY);
     appendShapeLineTo(shape, Number.POSITIVE_INFINITY, 0);
     appendShapeEndFill(shape);
@@ -226,7 +226,7 @@ describe('renderCanvasShapeCommands', () => {
   it('does not throw on very large coordinates', () => {
     const { context, state } = makeShapeTarget();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendShapeRectangle(shape, -1e20, -1e20, 2e20, 2e20);
     appendShapeEndFill(shape);
     expect(() => renderCanvasShapeCommands(context, state, shape.data.commands, resolvers)).not.toThrow();

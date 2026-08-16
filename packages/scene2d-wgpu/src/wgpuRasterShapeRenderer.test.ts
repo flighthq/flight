@@ -76,7 +76,7 @@ function makeMeshPassSpy(): GPURenderPassEncoder {
 // A plain solid rectangle — precisely the shape the mesh strategy would tessellate.
 function solidShape() {
   const shape = createShape();
-  appendShapeBeginFill(shape, 0x00cc00);
+  appendShapeBeginFill(shape, 0x00cc00ff);
   appendShapeRectangle(shape, 8, 8, 32, 24);
   appendShapeEndFill(shape);
   return shape;

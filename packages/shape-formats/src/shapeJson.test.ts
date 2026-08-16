@@ -76,7 +76,7 @@ describe('formatShapeJson', () => {
     const shape = createShape();
     appendShapeBeginFill(shape, 0x112233ff, 1);
     const parsed = JSON.parse(formatShapeJson(shape));
-    expect(parsed.shapeFormat).toBe(2);
+    expect(parsed.shapeFormat).toBe(3);
     expect(Array.isArray(parsed.commands)).toBe(true);
     expect(parsed.commands[0]).toEqual({ key: 'beginFill', args: [0x112233ff, 1] });
   });
@@ -140,7 +140,7 @@ describe('parseShapeJson', () => {
   });
 
   it('returns null for a mismatched version tag', () => {
-    expect(parseShapeJson(JSON.stringify({ shapeFormat: 3, commands: [] }))).toBeNull();
+    expect(parseShapeJson(JSON.stringify({ shapeFormat: 999, commands: [] }))).toBeNull();
   });
 
   it('returns null when the top level is not an object', () => {
@@ -148,12 +148,12 @@ describe('parseShapeJson', () => {
   });
 
   it('returns null for an unknown command key', () => {
-    const json = JSON.stringify({ shapeFormat: 2, commands: [{ key: 'notACommand', args: [] }] });
+    const json = JSON.stringify({ shapeFormat: 3, commands: [{ key: 'notACommand', args: [] }] });
     expect(parseShapeJson(json)).toBeNull();
   });
 
   it('returns null for a malformed argument object', () => {
-    const json = JSON.stringify({ shapeFormat: 2, commands: [{ key: 'beginFill', args: [{ nonsense: true }, 1] }] });
+    const json = JSON.stringify({ shapeFormat: 3, commands: [{ key: 'beginFill', args: [{ nonsense: true }, 1] }] });
     expect(parseShapeJson(json)).toBeNull();
   });
 
@@ -205,7 +205,7 @@ describe('parseShapeJson', () => {
 
 describe('parseShapeJson argument validation', () => {
   function document(commands: readonly unknown[]): string {
-    return JSON.stringify({ shapeFormat: 2, commands });
+    return JSON.stringify({ shapeFormat: 3, commands });
   }
 
   // Every rejection below used to build a Shape instead. The parser checked that an entry looked like

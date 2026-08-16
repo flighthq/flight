@@ -61,7 +61,7 @@ function drawSquare(shape: ReturnType<typeof createShape>, size: number, color: 
   appendShapeEndFill(shape);
 }
 
-drawSquare(rootShape, 60, 0x4488cc);
+drawSquare(rootShape, 60, 0x4488ccff);
 rootShape.x = ROOT_X;
 rootShape.y = ROOT_Y;
 invalidateNodeLocalTransform(rootShape);
@@ -82,7 +82,7 @@ function drawTriangle(shape: ReturnType<typeof createShape>, size: number, color
   appendShapeEndFill(shape);
 }
 
-drawTriangle(childShapeA, 50, 0x44cc88);
+drawTriangle(childShapeA, 50, 0x44cc88ff);
 childShapeA.x = CHILD_A_X;
 childShapeA.y = CHILD_A_Y;
 invalidateNodeLocalTransform(childShapeA);
@@ -97,12 +97,12 @@ function drawNotchedCircle(shape: ReturnType<typeof createShape>, radius: number
   appendShapeCircle(shape, 0, 0, radius);
   appendShapeEndFill(shape);
   // Draw a line from center to edge as a rotation indicator.
-  appendShapeLineStyle(shape, 3, 0xffffff);
+  appendShapeLineStyle(shape, 3, 0xffffffff);
   appendShapeMoveTo(shape, 0, 0);
   appendShapeLineTo(shape, radius, 0);
 }
 
-drawNotchedCircle(childShapeB, 30, 0xcc8844);
+drawNotchedCircle(childShapeB, 30, 0xcc8844ff);
 childShapeB.x = CHILD_B_X;
 childShapeB.y = CHILD_B_Y;
 invalidateNodeLocalTransform(childShapeB);
@@ -110,7 +110,7 @@ addNodeChild(root, childShapeB);
 
 // Hierarchy lines connecting root to children.
 const hierarchyLines = createShape();
-appendShapeLineStyle(hierarchyLines, 2, 0x555555);
+appendShapeLineStyle(hierarchyLines, 2, 0x555555ff);
 appendShapeMoveTo(hierarchyLines, ROOT_X, ROOT_Y + 30);
 appendShapeLineTo(hierarchyLines, CHILD_A_X, CHILD_A_Y - 40);
 appendShapeMoveTo(hierarchyLines, ROOT_X, ROOT_Y + 30);

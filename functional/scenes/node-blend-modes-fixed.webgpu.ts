@@ -20,7 +20,7 @@ import { createFunctionalTarget } from '@ft/render';
 
 // WebGPU-only coverage for the complete fixed-function node BlendMode set. Six tessellated Shape
 // probes cover every state, and a Bitmap Multiply probe exercises the sprite-batch pipeline separately.
-const BASE_GRAY = 0x808080;
+const BASE_GRAY = 0x808080ff;
 const BAND_X = 40;
 const BAND_Y = 50;
 const BAND_W = 720;
@@ -28,12 +28,12 @@ const BAND_H = 500;
 const OVERLAY_W = 140;
 const OVERLAY_H = 80;
 const PROBES: readonly (readonly [number, number, number, BlendMode, number])[] = [
-  [100, 100, 0x505050, BlendMode.Normal, 80],
-  [330, 100, 0x505050, BlendMode.Add, 208],
-  [560, 100, 0x808080, BlendMode.Multiply, 64],
-  [100, 260, 0x808080, BlendMode.Screen, 192],
-  [330, 260, 0x404040, BlendMode.Darken, 64],
-  [560, 260, 0xc0c0c0, BlendMode.Lighten, 192],
+  [100, 100, 0x505050ff, BlendMode.Normal, 80],
+  [330, 100, 0x505050ff, BlendMode.Add, 208],
+  [560, 100, 0x808080ff, BlendMode.Multiply, 64],
+  [100, 260, 0x808080ff, BlendMode.Screen, 192],
+  [330, 260, 0x404040ff, BlendMode.Darken, 64],
+  [560, 260, 0xc0c0c0ff, BlendMode.Lighten, 192],
 ];
 const BITMAP_X = 100;
 const BITMAP_Y = 420;

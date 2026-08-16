@@ -42,7 +42,7 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const ellipse = createShape();
-appendShapeBeginFill(ellipse, 0xcccc00, 1);
+appendShapeBeginFill(ellipse, 0xcccc00ff, 1);
 appendShapeEllipse(ellipse, EX, EY, EW, EH);
 appendShapeEndFill(ellipse);
 invalidateNodeAppearance(ellipse);
@@ -82,5 +82,5 @@ function isBlack(rgb: number): boolean {
   return ((rgb >> 16) & 0xff) < 30 && ((rgb >> 8) & 0xff) < 30 && (rgb & 0xff) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

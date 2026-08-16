@@ -48,11 +48,11 @@ export function drawGlShapeMeshBatch(
     if (mesh.indices.length === 0) continue;
     const a = mesh.alpha * nodeAlpha;
     if (a <= 0) continue;
-    // Premultiplied color for the standard ONE / ONE_MINUS_SRC_ALPHA blend the renderer uses.
-    const r = ((mesh.color >> 16) & 0xff) / 255;
-    const g = ((mesh.color >> 8) & 0xff) / 255;
-    const b = (mesh.color & 0xff) / 255;
-    gl.uniform4f(binding.colorLocation, r * a, g * a, b * a, a);
+    const r = ((mesh.color >>> 24) & 0xff) / 255;
+    const g = ((mesh.color >>> 16) & 0xff) / 255;
+    const b = ((mesh.color >>> 8) & 0xff) / 255;
+    const ca = ((mesh.color & 0xff) / 255) * a;
+    gl.uniform4f(binding.colorLocation, r * ca, g * ca, b * ca, ca);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STREAM_DRAW);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STREAM_DRAW);
     gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);

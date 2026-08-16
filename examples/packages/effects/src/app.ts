@@ -22,7 +22,7 @@ root.scaleY = scale;
 
 // Bright shapes on a dark background — bloom makes them glow, vignette draws focus
 // to the center, and tone mapping compresses highlights.
-const colors = [0xff3366, 0x33ff99, 0x3399ff, 0xffcc33, 0xff66cc];
+const colors = [0xff3366ff, 0x33ff99ff, 0x3399ffff, 0xffcc33ff, 0xff66ccff];
 
 for (let i = 0; i < colors.length; i++) {
   const shape = createShape();
@@ -38,7 +38,7 @@ for (let i = 0; i < colors.length; i++) {
 
 // Center diamond shape.
 const center = createShape();
-appendShapeBeginFill(center, 0xffffff, 1);
+appendShapeBeginFill(center, 0xffffffff, 1);
 appendShapeRectangle(center, -50, -50, 100, 100);
 appendShapeEndFill(center);
 center.x = 400;

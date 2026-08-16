@@ -79,7 +79,7 @@ for (let i = 0; i < 18; i++) {
 render(root);
 
 // ORACLE-BLOCK
-// The outline pass draws pure black (0x000000ff) edges over a 0x101014 background, so black is a color
+// The outline pass draws pure black (0x000000ff) edges over a 0x101014ff background, so black is a color
 // only the outline can produce — every other pixel in the scene is either the backdrop or a saturated
 // fill. Counting pixels below 8 on every channel therefore counts outline directly. Measured with the
 // effect applied vs the same scene with the pipeline bypassed: 2.82% of the frame vs exactly 0%. The

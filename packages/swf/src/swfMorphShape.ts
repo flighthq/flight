@@ -211,7 +211,7 @@ function readSwfMorphColor(reader: SwfReader): { alpha: number; color: number } 
   const green = reader.readUint8();
   const blue = reader.readUint8();
   const alpha = reader.readUint8();
-  return { alpha: alpha / 0xff, color: red * 0x10000 + green * 0x100 + blue };
+  return { alpha: alpha / 0xff, color: ((red << 24) | (green << 16) | (blue << 8) | 0xff) >>> 0 };
 }
 
 function readSwfMorphFillStyles(

@@ -7,7 +7,7 @@ import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline';
 describe('getShapeStrokeOutlineRegions', () => {
   it('converts a solid open stroke into a fill region with matching color and alpha', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0x123456, 0.5, false, 'normal', 'square', 'bevel', 4);
+    appendShapeLineStyle(shape, 8, 0x123456ff, 0.5, false, 'normal', 'square', 'bevel', 4);
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 20, 0);
 
@@ -15,7 +15,7 @@ describe('getShapeStrokeOutlineRegions', () => {
 
     expect(regions).not.toBeNull();
     expect(regions).toHaveLength(1);
-    expect(regions![0]).toMatchObject({ alpha: 0.5, color: 0x123456 });
+    expect(regions![0]).toMatchObject({ alpha: 0.5, color: 0x123456ff });
     expect(regions![0].path.commands.length).toBeGreaterThan(0);
   });
 

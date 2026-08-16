@@ -86,7 +86,7 @@ render(root);
 
 // ORACLE-BLOCK
 // Warm white balance (temperature 0.4) boosts the red channel and attenuates blue. Cell 2
-// (blue, 0x3060ff, R=48) should have its red channel lifted above 60. Without the effect,
+// (blue, 0x3060ffff, R=48) should have its red channel lifted above 60. Without the effect,
 // R=48 < 60 and the assertion fails.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;

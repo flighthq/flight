@@ -54,7 +54,7 @@ describe('drawGlScale9Shape', () => {
   it('returns early when rendererData is null', () => {
     const { state, gl } = createGlState();
     const shape = createScale9Shape(grid);
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     const data = getOrCreateRenderProxy2D(state, shape);
 

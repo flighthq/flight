@@ -40,7 +40,7 @@ describe('appendShapeGeometryCommand', () => {
 
     // A styling command name is a no-op.
     const noop = { commands: [] as number[], data: [] as number[], winding: 'nonZero' as const };
-    appendShapeGeometryCommand(noop, 'beginFill', ['beginFill', 2, 0xff0000, 1], 2);
+    appendShapeGeometryCommand(noop, 'beginFill', ['beginFill', 2, 0xff0000ff, 1], 2);
     expect(noop.commands).toEqual([]);
   });
 
@@ -79,7 +79,7 @@ describe('getPathCommandOperandCount', () => {
 describe('getShapeFillRegions', () => {
   it('resolves a solid rectangle fill into one region with a closed outline', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
     appendShapeRectangle(shape, 10, 20, 100, 50);
     appendShapeEndFill(shape);
 
@@ -87,7 +87,7 @@ describe('getShapeFillRegions', () => {
 
     expect(regions).not.toBeNull();
     expect(regions!.length).toBe(1);
-    expect(regions![0].color).toBe(0xff0000);
+    expect(regions![0].color).toBe(0xff0000ff);
     expect(regions![0].alpha).toBe(1);
     expect(regions![0].path.commands).toEqual([
       PathCommand.MOVE_TO,
@@ -101,7 +101,7 @@ describe('getShapeFillRegions', () => {
 
   it('expands a circle into four cubic curves', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x00ff00);
+    appendShapeBeginFill(shape, 0x00ff00ff);
     appendShapeCircle(shape, 50, 50, 20);
     appendShapeEndFill(shape);
 
@@ -119,7 +119,7 @@ describe('getShapeFillRegions', () => {
 
   it('resolves a moveTo/lineTo polygon fill', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x0000ff);
+    appendShapeBeginFill(shape, 0x0000ffff);
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 100, 0);
     appendShapeLineTo(shape, 50, 80);
@@ -132,19 +132,19 @@ describe('getShapeFillRegions', () => {
 
   it('returns a region per fill span when fills are not explicitly ended', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x111111);
+    appendShapeBeginFill(shape, 0x111111ff);
     appendShapeRectangle(shape, 0, 0, 10, 10);
-    appendShapeBeginFill(shape, 0x222222);
+    appendShapeBeginFill(shape, 0x222222ff);
     appendShapeRectangle(shape, 20, 20, 10, 10);
     appendShapeEndFill(shape);
 
     const regions = getShapeFillRegions(shape.data.commands)!;
-    expect(regions.map((r) => r.color)).toEqual([0x111111, 0x222222]);
+    expect(regions.map((r) => r.color)).toEqual([0x111111ff, 0x222222ff]);
   });
 
   it('returns null for a gradient fill (falls back to raster)', () => {
     const shape = createShape();
-    appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
+    appendShapeBeginGradientFill(shape, 'linear', [0xff0000ff, 0x0000ffff], [1, 1], [0, 255]);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
 
@@ -153,22 +153,22 @@ describe('getShapeFillRegions', () => {
 
   it('resolves solid fills independently of a solid stroke', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 2, 0x000000);
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeLineStyle(shape, 2, 0x000000ff);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
 
     const regions = getShapeFillRegions(shape.data.commands);
     expect(regions).not.toBeNull();
     expect(regions).toHaveLength(1);
-    expect(regions![0].color).toBe(0xff0000);
+    expect(regions![0].color).toBe(0xff0000ff);
   });
 });
 
 describe('hasNonSolidShapeFill', () => {
   it('is false for solid fills only', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 10, 10);
     appendShapeEndFill(shape);
     expect(hasNonSolidShapeFill(shape.data.commands)).toBe(false);
@@ -179,7 +179,7 @@ describe('hasNonSolidShapeFill', () => {
     appendShapeLineStyle(shape, 1, 0);
     expect(hasNonSolidShapeFill(shape.data.commands)).toBe(false);
 
-    appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
+    appendShapeBeginGradientFill(shape, 'linear', [0xff0000ff, 0x0000ffff], [1, 1], [0, 255]);
     expect(hasNonSolidShapeFill(shape.data.commands)).toBe(true);
   });
 });
@@ -187,7 +187,7 @@ describe('hasNonSolidShapeFill', () => {
 describe('hasShapeFill', () => {
   it('is true when a fill is declared and false for a stroke-only shape', () => {
     const filled = createShape();
-    appendShapeBeginFill(filled, 0xff0000);
+    appendShapeBeginFill(filled, 0xff0000ff);
     appendShapeRectangle(filled, 0, 0, 10, 10);
     expect(hasShapeFill(filled.data.commands)).toBe(true);
 

@@ -333,22 +333,22 @@ describe('SVG conformance matrix', () => {
 
   it.each([
     {
-      expected: 0xffa500,
+      expected: 0xffa500ff,
       kind: 'shape',
       target: '<rect class="accent" fill="blue" width="10" height="10"/>',
     },
     {
-      expected: 0xff0000,
+      expected: 0xff0000ff,
       kind: 'group inheritance',
       target: '<g class="theme"><rect width="10" height="10"/></g>',
     },
     {
-      expected: 0xff0000,
+      expected: 0xff0000ff,
       kind: 'use inheritance',
       target: '<use href="#mark" class="theme"/>',
     },
     {
-      expected: 0xff0000,
+      expected: 0xff0000ff,
       kind: 'symbol inheritance',
       target: '<use href="#symbol" class="theme"/>',
     },
@@ -582,7 +582,7 @@ describe('SVG inherit keyword', () => {
   ])('takes the parent value for an inherited $name', ({ declaration, from }) => {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg"><g ${from}><rect width="10" height="10" ${declaration}/></g></svg>`;
 
-    expect(firstShapeCommands(svg)).toContain(0xff0000);
+    expect(firstShapeCommands(svg)).toContain(0xff0000ff);
   });
 
   it('resolves currentColor against a color that itself inherits', () => {
@@ -590,7 +590,7 @@ describe('SVG inherit keyword', () => {
       '<svg xmlns="http://www.w3.org/2000/svg"><g color="#008000"><g color="inherit">' +
       '<rect width="10" height="10" fill="currentColor"/></g></g></svg>';
 
-    expect(firstShapeCommands(svg)).toContain(0x008000);
+    expect(firstShapeCommands(svg)).toContain(0x008000ff);
   });
 
   // opacity is not inherited, so `inherit` is the one way to ask for the parent's value rather than

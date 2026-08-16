@@ -40,7 +40,7 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const arc = createShape();
-appendShapeBeginFill(arc, 0xff0000, 1);
+appendShapeBeginFill(arc, 0xff0000ff, 1);
 appendShapeMoveTo(arc, CX, CY);
 appendShapeLineTo(arc, CX + RADIUS, CY);
 appendShapeArc(arc, CX, CY, RADIUS, 0, Math.PI / 2);
@@ -78,5 +78,5 @@ function isBlack(rgb: number): boolean {
   return ((rgb >> 16) & 0xff) < 30 && ((rgb >> 8) & 0xff) < 30 && (rgb & 0xff) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

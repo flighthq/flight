@@ -24,7 +24,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const GRAY = 0x808080; // base AND overlay color; result is the blend equation alone (luma ≈ 128)
+const GRAY = 0x808080ff; // base AND overlay color; result is the blend equation alone (luma ≈ 128)
 const BAND_X = 100;
 const BAND_Y = 200;
 const BAND_W = 600;

@@ -38,7 +38,7 @@ const CONTENT_HEIGHT = 60;
 const GLOW_X = 185;
 const SHADOW_X = 475;
 const RESULT_Y = 250;
-const BACKING = 0x292440;
+const BACKING = 0x292440ff;
 
 export const minCoverage = 0;
 
@@ -117,7 +117,7 @@ function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectP
   const destTexture = acquireGlRenderTexture(state, pool, descriptor);
   const scratchTexture = acquireGlRenderTexture(state, pool, descriptor);
   const source = createShape();
-  appendShapeBeginFill(source, 0x43dce8, 1);
+  appendShapeBeginFill(source, 0x43dce8ff, 1);
   appendShapeRectangle(source, padding.left, padding.top, CONTENT_WIDTH, CONTENT_HEIGHT);
   appendShapeEndFill(source);
   renderIntoGlRenderTexture(offscreenState, sourceTexture, (captureState) => {
@@ -163,7 +163,7 @@ function channel(rgb: number, shift: number): number {
 }
 
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }
 
 function isBacking(rgb: number): boolean {

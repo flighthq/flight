@@ -33,8 +33,8 @@ const HEIGHT = 600;
 // Natural (unscaled) shape: a NATURAL×NATURAL panel with a BORDER-thick frame.
 const NATURAL = 60;
 const BORDER = 12;
-const FILL_COLOR = 0xffff00; // yellow center
-const BORDER_COLOR = 0x0000ff; // blue frame
+const FILL_COLOR = 0xffff00ff; // yellow center
+const BORDER_COLOR = 0x0000ffff; // blue frame
 
 // scale9Grid: the non-stretching center, inset BORDER on every side.
 const GRID = { x: BORDER, y: BORDER, width: NATURAL - BORDER * 2, height: NATURAL - BORDER * 2 };
@@ -132,5 +132,5 @@ function isBorder(rgb: number): boolean {
   return channel(rgb, 16) < 90 && channel(rgb, 8) < 90 && channel(rgb, 0) > 180;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

@@ -62,7 +62,7 @@ const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
 // Bright, near-white blocks so the dirt threshold (scene luminance) is exceeded and the smudges light up.
-const colors = [0xffffff, 0xfff0c0, 0xc0f0ff, 0xffffff];
+const colors = [0xffffffff, 0xfff0c0ff, 0xc0f0ffff, 0xffffffff];
 for (let i = 0; i < colors.length; i++) {
   const block = createShape();
   appendShapeBeginFill(block, colors[i], 1);
@@ -77,13 +77,13 @@ render(root);
 
 export function assertRender(frame: Readonly<Bitmap>): void {
   // Lens dirt adds procedural smudge blobs that only brighten where scene luminance exceeds the
-  // threshold (0.45). The scene has bright near-white blocks on a dark 0x101014 field.
+  // threshold (0.45). The scene has bright near-white blocks on a dark 0x101014ff field.
   //
   // Semantic checks:
   // 1. Block centers remain bright (the dirt adds light, never subtracts).
   // 2. The bright blocks' luminance exceeds the threshold, so the dirt effect must be active —
   //    verify that at least one background-region pixel between blocks is brighter than the raw
-  //    background (0x101014), proving the procedural smudge glow bled into the dark field.
+  //    background (0x101014ff), proving the procedural smudge glow bled into the dark field.
 
   // Block 0 center: x = 0.3 × width, y = 0.32 × height.
   const blockCx = Math.round(0.3 * frame.width);

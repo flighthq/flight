@@ -30,7 +30,7 @@ const HEIGHT = 600;
 const SHAPE_X = 200;
 const SHAPE_Y = 120;
 const SHAPE_SIZE = 400;
-const SHAPE_COLOR = 0xff8800; // 24-bit RGB
+const SHAPE_COLOR = 0xff8800ff; // 24-bit RGB
 
 // The clip window is in the shape node's LOCAL space. It keeps a 160x160 patch anchored at the shape's
 // top-left corner, so the rest of the orange square is clipped away.
@@ -95,5 +95,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

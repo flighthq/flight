@@ -54,19 +54,19 @@ const root = createDisplayObject();
 addNodeChild(root, cameraRoot);
 
 const redCircle = createShape();
-appendShapeBeginFill(redCircle, 0xff0000, 1);
+appendShapeBeginFill(redCircle, 0xff0000ff, 1);
 appendShapeCircle(redCircle, 200, 200, RADIUS);
 appendShapeEndFill(redCircle);
 addNodeChild(cameraRoot, redCircle);
 
 const blueCircle = createShape();
-appendShapeBeginFill(blueCircle, 0x0000ff, 1);
+appendShapeBeginFill(blueCircle, 0x0000ffff, 1);
 appendShapeCircle(blueCircle, 100, 100, RADIUS);
 appendShapeEndFill(blueCircle);
 addNodeChild(cameraRoot, blueCircle);
 
 const greenCircle = createShape();
-appendShapeBeginFill(greenCircle, 0x00ff00, 1);
+appendShapeBeginFill(greenCircle, 0x00ff00ff, 1);
 appendShapeCircle(greenCircle, 300, 300, RADIUS);
 appendShapeEndFill(greenCircle);
 addNodeChild(cameraRoot, greenCircle);
@@ -110,5 +110,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 30 && channel(rgb, 8) < 30 && channel(rgb, 0) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

@@ -84,7 +84,7 @@ render(root);
 
 // ORACLE-BLOCK
 // LUT color grading remaps every pixel through a lookup table at strength 1. Cell 0 (red,
-// 0xff3030, R=255, G=48, B=48) should have at least one channel differ by >= 15 from its original
+// 0xff3030ff, R=255, G=48, B=48) should have at least one channel differ by >= 15 from its original
 // value. Without the effect, all channels match the input and the maximum change is 0.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;

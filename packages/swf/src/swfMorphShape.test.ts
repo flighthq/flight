@@ -15,15 +15,15 @@ describe('createSwfMorphShape', () => {
     // Progress 0 and 1 are the authored endpoints; the interesting assertion is the midpoint, where both
     // halves must move together — geometry from the edge sets, paint from the style pair.
     setMorphShapeProgress(shape!, 0);
-    expect(fillOf(shape!)).toEqual([0xff0000, 1]);
+    expect(fillOf(shape!)).toEqual([0xff0000ff, 1]);
     expect(widthOf(shape!)).toBeCloseTo(10);
 
     setMorphShapeProgress(shape!, 1);
-    expect(fillOf(shape!)).toEqual([0x0000ff, 0]);
+    expect(fillOf(shape!)).toEqual([0x0000ffff, 0]);
     expect(widthOf(shape!)).toBeCloseTo(20);
 
     setMorphShapeProgress(shape!, 0.5);
-    expect(fillOf(shape!)).toEqual([0x800080, 0.5]);
+    expect(fillOf(shape!)).toEqual([0x800080ff, 0.5]);
     expect(widthOf(shape!)).toBeCloseTo(15);
   });
 
@@ -40,8 +40,8 @@ describe('createSwfMorphShape', () => {
       .map((token, i) => (token === 'beginFill' ? [shape.data.commands[i + 2], shape.data.commands[i + 3]] : null))
       .filter((entry) => entry !== null);
     expect(fills).toEqual([
-      [0x800080, 1],
-      [0x008000, 1],
+      [0x800080ff, 1],
+      [0x008000ff, 1],
     ]);
   });
 
@@ -51,7 +51,7 @@ describe('createSwfMorphShape', () => {
     setMorphShapeProgress(shape, 0.5);
     const index = shape.data.commands.indexOf('lineStyle');
     expect(shape.data.commands[index + 2]).toBeCloseTo(15);
-    expect(shape.data.commands[index + 3]).toBe(0x808000);
+    expect(shape.data.commands[index + 3]).toBe(0x808000ff);
   });
 
   it('shares one texture across both endpoints and morphs only its matrix', () => {

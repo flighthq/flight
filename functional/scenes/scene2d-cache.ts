@@ -40,11 +40,11 @@ const HEIGHT = 600;
 // Two rectangles inside one container subtree, laid out in the subtree's local space.
 const MAGENTA_X = 200;
 const MAGENTA_Y = 180;
-const MAGENTA_COLOR = 0xdd22aa; // 24-bit RGB
+const MAGENTA_COLOR = 0xdd22aaff; // 24-bit RGB
 
 const GREEN_X = 440;
 const GREEN_Y = 320;
-const GREEN_COLOR = 0x33cc44; // 24-bit RGB
+const GREEN_COLOR = 0x33cc44ff; // 24-bit RGB
 
 const RECT_SIZE = 160;
 
@@ -138,5 +138,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

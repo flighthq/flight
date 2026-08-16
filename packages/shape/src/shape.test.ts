@@ -144,7 +144,7 @@ describe('computeShapeLocalBoundsRectangle', () => {
 
   it('includes a miter point beyond the half-width endpoint envelope', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 30, 0xffffff, 1, false, 'normal', 'none', 'miter', 6);
+    appendShapeLineStyle(shape, 30, 0xffffffff, 1, false, 'normal', 'none', 'miter', 6);
     appendShapeMoveTo(shape, -110, -110);
     appendShapeLineTo(shape, 0, 0);
     appendShapeLineTo(shape, 110, -110);
@@ -157,7 +157,7 @@ describe('computeShapeLocalBoundsRectangle', () => {
 
   it('bounds a closed rectangle stroke without applying the miter limit to every axis', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 30, 0xffffff, 1, false, 'normal', 'none', 'miter', 6);
+    appendShapeLineStyle(shape, 30, 0xffffffff, 1, false, 'normal', 'none', 'miter', 6);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     const out = createRectangle();
 
@@ -202,13 +202,13 @@ describe('copyShapeCommands', () => {
   it('discards target paint bindings when replacing a MorphShape command stream', () => {
     const path = createPath();
     const target = createMorphShape(createPathMorph(path, path)!);
-    appendMorphShapeBeginFill(target, { color: 0 }, { color: 0xffffff });
-    const source = createShape({ data: { commands: ['beginFill', 2, 0x123456, 1] } });
+    appendMorphShapeBeginFill(target, { color: 0 }, { color: 0xffffffff });
+    const source = createShape({ data: { commands: ['beginFill', 2, 0x123456ff, 1] } });
 
     copyShapeCommands(target, source);
     setMorphShapeProgress(target, 1);
 
-    expect(target.data.commands).toStrictEqual(['beginFill', 2, 0x123456, 1]);
+    expect(target.data.commands).toStrictEqual(['beginFill', 2, 0x123456ff, 1]);
     expect(target.data.paintBindings).toStrictEqual([]);
   });
 
@@ -338,7 +338,7 @@ describe('getShapeCommandCount', () => {
 
   it('counts each command entry (not each flat array element)', () => {
     const shape = createShape();
-    shape.data.commands.push('beginFill', 2, 0xff0000, 1);
+    shape.data.commands.push('beginFill', 2, 0xff0000ff, 1);
     shape.data.commands.push('drawRectangle', 4, 0, 0, 100, 100);
     shape.data.commands.push('endFill', 0);
     expect(getShapeCommandCount(shape)).toBe(3);

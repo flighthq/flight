@@ -57,9 +57,9 @@ function configureField(field: RichText, y: number, placeholder: string): void {
   field.data.wordWrap = false;
   field.data.selectable = true;
   field.data.background = true;
-  field.data.backgroundColor = 0xffffff;
+  field.data.backgroundColor = 0xffffffff;
   field.data.border = true;
-  field.data.borderColor = 0x999999;
+  field.data.borderColor = 0x999999ff;
   field.data.text = placeholder;
   field.data.defaultTextFormat = { font: 'sans-serif', size: 16, color: 0x222222ff };
 }
@@ -160,7 +160,7 @@ function updateFocusHighlight(): void {
   clearShapeCommands(focusHighlight);
   if (focusedField === null) return;
   const pad = 3;
-  appendShapeBeginFill(focusHighlight, 0x3399ff, 0.3);
+  appendShapeBeginFill(focusHighlight, 0x3399ffff, 0.3);
   appendShapeRectangle(
     focusHighlight,
     focusedField.x - pad,

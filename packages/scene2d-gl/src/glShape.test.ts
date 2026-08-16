@@ -97,11 +97,11 @@ describe('drawGlShape', () => {
     const { state, gl } = createGlState();
     registerGlShapeRasterizer(state, noopRasterizer);
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x00cc00);
+    appendShapeBeginFill(shape, 0x00cc00ff);
     appendShapeLineStyle(shape, 0);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     appendShapeEndFill(shape);
-    appendShapeLineStyle(shape, 4, 0xff0000);
+    appendShapeLineStyle(shape, 4, 0xff0000ff);
     appendShapeMoveTo(shape, 8, 4);
     appendShapeLineTo(shape, 40, 4);
 
@@ -116,7 +116,7 @@ describe('drawGlShape', () => {
     registerGlShapeRasterizer(state, noopRasterizer);
     enableGlStrokePathTessellation(state);
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
 
     drawGlShape(state, makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData()));
@@ -130,7 +130,7 @@ describe('drawGlShape', () => {
     registerGlShapeRasterizer(state, noopRasterizer);
     registerGlStandardMaterial(state);
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
 
     drawGlShape(state, makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData()));
@@ -151,7 +151,7 @@ describe('drawGlShape', () => {
       });
     });
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
 
     // The stubbed bounds are 64x48; a shape on the raster lane must back that with 3x the pixels and
@@ -171,7 +171,7 @@ describe('drawGlShape', () => {
     let rasterCount = 0;
     registerGlShapeRasterizer(state, () => void rasterCount++);
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     const proxy = makeShapeNode({ commands: shape.data.commands, version: 1 }, makeShapeData());
 
@@ -191,7 +191,7 @@ describe('drawGlShape', () => {
     enableGlStrokePathTessellation(state);
     registerGlStandardMaterial(state);
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapePath(
       shape,
       [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],

@@ -16,7 +16,7 @@ describe('explainShapeTessellation', () => {
     // because a translucent shape that fails to draw invites blaming the alpha.
     for (const alpha of [1, 0.25, 0]) {
       const shape = createShape();
-      appendShapeBeginFill(shape, 0xff0000, alpha);
+      appendShapeBeginFill(shape, 0xff0000ff, alpha);
       appendShapeRectangle(shape, 0, 0, 50, 50);
       appendShapeEndFill(shape);
 
@@ -26,7 +26,7 @@ describe('explainShapeTessellation', () => {
 
   it('reports an open stroke as tessellating', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 2, 0x000000);
+    appendShapeLineStyle(shape, 2, 0x000000ff);
     appendShapeMoveTo(shape, 0, 0);
     appendShapeLineTo(shape, 50, 0);
 
@@ -35,8 +35,8 @@ describe('explainShapeTessellation', () => {
 
   it('names the closed stroke that the default lane declines, and clears it for the opt-in lane', () => {
     const shape = createShape();
-    appendShapeBeginFill(shape, 0xff0000, 1);
-    appendShapeLineStyle(shape, 2, 0x000000);
+    appendShapeBeginFill(shape, 0xff0000ff, 1);
+    appendShapeLineStyle(shape, 2, 0x000000ff);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
 
@@ -52,7 +52,7 @@ describe('explainShapeTessellation', () => {
 
   it('names a non-solid fill, which no stroke lane setting can rescue', () => {
     const shape = createShape();
-    appendShapeBeginGradientFill(shape, 'linear', [0xff0000, 0x0000ff], [1, 1], [0, 255]);
+    appendShapeBeginGradientFill(shape, 'linear', [0xff0000ff, 0x0000ffff], [1, 1], [0, 255]);
     appendShapeRectangle(shape, 0, 0, 50, 50);
     appendShapeEndFill(shape);
 

@@ -44,7 +44,7 @@ for (let i = 0; i < 5; i++) {
 const root = createDisplayObject();
 
 const pentagon = createShape();
-appendShapeBeginFill(pentagon, 0x00cc00, 1);
+appendShapeBeginFill(pentagon, 0x00cc00ff, 1);
 appendShapePolygon(pentagon, points);
 appendShapeEndFill(pentagon);
 invalidateNodeAppearance(pentagon);
@@ -79,5 +79,5 @@ function isBlack(rgb: number): boolean {
   return ((rgb >> 16) & 0xff) < 30 && ((rgb >> 8) & 0xff) < 30 && (rgb & 0xff) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }
