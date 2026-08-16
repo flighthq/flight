@@ -178,6 +178,47 @@ failing job to one deduplicated issue, keyed on a stable title so a persistent f
 comments on one issue rather than filing a new one nightly — an unread inbox being the next way the
 same defect comes back.
 
+### And a further question: WHICH WAY does it fail when it is wrong?
+
+The questions above establish *that* an instrument is defective. This one prices it. A gate that cannot
+fail, one that never runs, one whose red reaches nobody, and one that answers a narrower question than
+the one asked are all ways to hold a verification that verifies nothing — but two instruments with the
+same defect are not equally expensive. **An instrument that fails toward "proceed" is strictly worse
+than one that fails toward "stop", because nobody investigates a green.**
+
+**Worked instance, and it is deliberately not a gate.** `parcel-new-commits.sh` in the integration agent
+root answers "which patches in this parcel are not already on my tree?" It hashes patch content — and
+the patch content *includes surrounding context lines*. So a patch that has already landed reports
+**NEW** on a re-send as soon as the file's context has moved: once because the patch was landed via a
+hand-resolved conflict (the resulting commit is then not byte-identical to the patch), and once because
+the same file had been separately edited. Both occurred within one day.
+
+The narrower-question defect is the familiar one: the script evaluates *"have I seen this exact patch
+text?"* while every caller reads it as *"is this change on my tree?"* Those diverge the moment anything
+rewrites context. **The direction is the part this section adds.** Erring toward NEW costs a look. The
+same script erring toward LANDED would silently discard a commit and leave no artifact at all — the
+failure its own header says it exists to prevent. Identical defect, identical doctrine, opposite blast
+radius.
+
+The fix is a second pass that compares **changed lines** — every `+` and `-`, context-free and
+order-independent — against commits touching the same files, run only when the exact-content pass
+misses. Note what the direction question forces during the repair itself: the first version of that
+pass compared **added lines only**, which would have called a commit landed when it added the same lines
+while *deleting* different ones. That converts a cost-a-look failure into a silent-discard failure —
+**the repair would have moved the defect to the expensive side while appearing to fix it.** Comparing
+both signs is what keeps the looser test safe, and the check that caught it was asking, of the fix,
+the same question being asked of the original.
+
+Two consequences worth carrying:
+
+- **A looser test is only safe where it fails toward the cheap side.** Widening a comparison to catch
+  more cases is sound when a false positive costs a look, and unsound when it costs a silent discard.
+  Decide which you have *before* widening.
+- **This is the one instance in this document whose evidence comes from outside the gate population.**
+  The other findings are gates in `scripts/` and CI. This is a shell script in one agent's workflow,
+  which is the argument that the questions are not a property of gates — they are a property of
+  instruments, and every workflow is full of instruments nobody audits because they are not called gates.
+
 ### Not invoked, with a reason (12)
 
 Reportable but not defects — separating these from the four above is the point of reporting both
