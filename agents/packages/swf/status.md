@@ -66,6 +66,10 @@ Every item was re-checked against source on 2026-08-08. A file:line is a claim a
   shape. `swfDocument.ts:2965` records that it names no declared capability.
 - **Nested masks do not intersect.** The innermost mask covering a depth wins (`swfDocument.ts:950`),
   because Flight carries one clip per node. Scene ranges are likewise staged rather than misrepresented.
+- **`conformance/swf/swf-import-conformance-worker-pool` is load-sensitive, unowned, and not known to be
+  a defect.** Under the whole-repo sweep it fails as `Test timed out in 15000ms`; run alone with
+  `--project conformance` it passes in ~23s. Before reading a red sweep as a regression here, apply the
+  discriminator in [commands](../../commands.md).
 
 Per-tag disposition — carried, or read past and why — is in [`tag-coverage.md`](tag-coverage.md).
 
