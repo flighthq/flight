@@ -12,11 +12,32 @@ a gate, a check, a script whose exit status someone reads as a verdict:
 > **Q1 — what exact bad state must make this process fail, and has it ever failed on that state?**
 > **Q2 — can the bad state reach it in production?**
 > **Q3 — which way does it fail when it is wrong: toward *stop*, or toward *proceed*?**
+> **Q4 — what proposition does this instrument actually evaluate, and is it the one its readers believe
+> it answers?**
 
 They fail independently and in that order of discovery, not of importance. Q1 unproven means the gate
 may be incapable of failing; Q2 unmet means it is capable but never reached; Q3 is not a pass/fail on the
 gate at all — it prices the other two, because an instrument that fails toward *proceed* is strictly
 worse than one that fails toward *stop*, and nobody investigates a green.
+
+**Q4 is logically prior to Q1–Q3 and numbered last only because it was written last: read it first.**
+There is no point asking whether an instrument can fail, whether the bad state reaches it, or which way
+it fails, until you know what it is asserting. An instrument can satisfy Q1–Q3 completely and still be
+worthless — capable of failing, reachable by the bad state, failing toward *stop*, and evaluating a
+proposition adjacent to the one anyone cares about. **That failure is invisible precisely because the
+instrument is working.** Its worked instance is
+[a differential oracle is blind upstream of the fork](#2026-08-16-a-differential-oracle-is-blind-upstream-of-the-fork),
+which is deliberately not restated here: parity evaluates *the backends agree* while its readers took it
+to mean *the render is correct*, and the population that proves it is measured in that section rather
+than quoted twice. The general form is there too — a differential oracle can only find divergence, so it
+is blind by construction to anything upstream of the fork, and what settles a question the instrument
+cannot reach is a **discriminating input**, not more green.
+
+A caution for anyone re-measuring that population: **a naive grep understates it badly.** Of the
+`appendShapeBeginFill` call sites in `functional/scenes/`, only 13 pass an inline 8-hex literal; **106
+pass `colors[i]` or `colors[i % colors.length]`**, and a further 34 pass a named identifier. A pattern
+matching literals sees roughly a fourteenth of the surface and reports a confident small number — Q4
+applied to your own search.
 
 **A scope boundary sits beside them and is deliberately not a fourth question** — see
 [the standing questions audit instruments, not inferences](#2026-08-16-the-standing-questions-audit-instruments-not-inferences).
