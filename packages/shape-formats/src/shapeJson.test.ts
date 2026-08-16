@@ -88,6 +88,24 @@ describe('formatShapeJson', () => {
     expect(parsed.commands[0].args[4]).toEqual({ a: 2, b: 0, c: 0, d: 3, tx: 5, ty: 7 });
   });
 
+  it.each(['a', 'b', 'c', 'd', 'tx', 'ty'] as const)(
+    'round-trips a large finite %s matrix field and refuses a non-finite one',
+    (field) => {
+      const shape = createShape();
+      const matrix = createMatrix(2, 0, 0, 3, 5, 7);
+      matrix[field] = 1e308;
+      appendShapeBeginGradientFill(shape, 'radial', [0], [1], [0], matrix, 'pad', 'rgb', 0);
+
+      const text = formatShapeJson(shape);
+      const restored = parseShapeJson(text);
+      expect(restored).not.toBeNull();
+      expect(formatShapeJson(restored!)).toBe(text);
+
+      matrix[field] = Infinity;
+      expect(() => formatShapeJson(shape)).toThrow(TypeError);
+    },
+  );
+
   it('serializes a texture as an ordinal reference, never the texture', () => {
     const shape = createShape();
     appendShapeBeginTextureFill(shape, createFakeTexture(), null);
