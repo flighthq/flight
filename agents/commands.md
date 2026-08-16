@@ -193,6 +193,15 @@ many cells clear the bar**: `MAX_PENDING_DAYS` in `scripts/oracle-check.ts` is 1
 cell starts a clock, and a batch larger than `flight-oracles` can review and release inside that window
 turns CI red on day 15 for cells that were never wrong.
 
+Two pairs of reasons look alike and route to different people, so they are kept apart.
+`parity-disagreement` means the backends were compared and differed — a defect somebody must find.
+`parity-unevaluated` means no comparable pair formed although the scene has several columns — something
+to fix in the comparison topology. `parity-single-column` means the scene has exactly ONE backend column,
+so cross-backend agreement is not evidence that exists for it and no repair will produce it. Likewise
+`capture-failed` names the column that failed, while `sibling-column-failed` names its healthy siblings:
+a scene is repaired as a whole, and a reference blessed from the passing column today would read that
+repair as a regression tomorrow.
+
 **Determinism is two stages, and the two answers are not symmetric.** A DISAGREEMENT between two roots is
 conclusive at either scope: a cell that cannot reproduce itself on one machine will not reproduce across
 two, so the cell is out and no further measurement is owed. AGREEMENT is not: repeats on one host prove

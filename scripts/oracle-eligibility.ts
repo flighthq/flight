@@ -90,6 +90,8 @@ export type OracleBlockReason =
   | 'parity-disagreement'
   /** Parity could not judge this scene at all — no comparable pair, so no cross-backend evidence exists. */
   | 'parity-unevaluated'
+  /** The scene has ONE backend column, so parity is not merely unrun — it can never apply. */
+  | 'parity-single-column'
   /** Today's capture does not match the committed baseline. Something moved and nobody has explained it. */
   | 'baseline-drift'
   /** No committed baseline, so there is no second, independent statement about these pixels. */
@@ -137,6 +139,7 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
   const byIdentity = new Map(input.captures.map((capture) => [capture.identity, capture]));
   const collided = findBackendCollisions(input.captures);
   const brokenScenes = findScenesWithAFailedColumn(input.captures);
+  const columns = countSceneColumns(input.coverage.keys());
 
   const eligible: string[] = [];
   const blocked: OracleBlockedCell[] = [];
@@ -221,6 +224,15 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
       continue;
     }
     if (parity === 'unevaluated') {
+      // ★ UNRUN AND UNRUNNABLE ARE DIFFERENT PROBLEMS AND ONLY ONE OF THEM IS A BUG. A scene with two or
+      // more backend columns that formed no pair has something to fix — a reference backend the topology
+      // could not reach, a column that failed. A scene with exactly ONE column has nothing to fix ever:
+      // cross-backend agreement is not evidence that exists for it, and reporting it as though a repair
+      // would produce it sends someone looking for a defect that is a property of the scene.
+      if (columns.get(sceneOf(identity)) === 1) {
+        blocked.push({ detail: 'the scene has one backend column', identity, reason: 'parity-single-column' });
+        continue;
+      }
       blocked.push({ detail: 'parity formed no comparable pair', identity, reason: 'parity-unevaluated' });
       continue;
     }
@@ -329,6 +341,16 @@ export function groupOracleTargets(identities: readonly string[]): { entry: stri
     .map(([entry, renderers]) => ({ entry, renderers: [...renderers].sort() }));
 }
 
+/** How many backend columns each scene carries in the coverage manifest. */
+function countSceneColumns(identities: Iterable<string>): Map<string, number> {
+  const columns = new Map<string, number>();
+  for (const identity of identities) {
+    const scene = sceneOf(identity);
+    columns.set(scene, (columns.get(scene) ?? 0) + 1);
+  }
+  return columns;
+}
+
 /** Scenes with at least one failed column, mapped to the identity of one that failed. */
 function findScenesWithAFailedColumn(captures: readonly OracleCaptureFact[]): Map<string, string> {
   const broken = new Map<string, string>();
@@ -403,6 +425,7 @@ const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'determinism-unmeasured',
   'parity-disagreement',
   'parity-unevaluated',
+  'parity-single-column',
   'baseline-drift',
   'no-baseline',
   'held',
