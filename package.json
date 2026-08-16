@@ -51,6 +51,7 @@
     "capture:functional:baseline": "tsx ./packages/tool-capture/src/bin.ts capture --tool=functional --update-baseline",
     "capture:functional:check": "tsx ./packages/tool-capture/src/bin.ts capture --tool=functional --fail-on-changed",
     "capture:functional:watch": "tsx ./scripts/watch-capture.ts --tool=functional",
+    "capture:provenance": "tsx ./scripts/capture-provenance-census.ts",
     "capture:reference": "tsx ./scripts/reference-tool.ts capture",
     "catalog": "tsx ./scripts/catalog.ts",
     "catalog:check": "tsx ./scripts/catalog.ts --check",
