@@ -202,7 +202,7 @@ describe('copyShapeCommands', () => {
   it('discards target paint bindings when replacing a MorphShape command stream', () => {
     const path = createPath();
     const target = createMorphShape(createPathMorph(path, path)!);
-    appendMorphShapeBeginFill(target, { color: 0 }, { color: 0xffffffff });
+    appendMorphShapeBeginFill(target, { color: 0x000000ff }, { color: 0xffffffff });
     const source = createShape({ data: { commands: ['beginFill', 2, 0x123456ff, 1] } });
 
     copyShapeCommands(target, source);

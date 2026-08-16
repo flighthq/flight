@@ -176,7 +176,7 @@ describe('hasNonSolidShapeFill', () => {
 
   it('is false for a solid stroke and true for a bitmap or gradient style', () => {
     const shape = createShape();
-    appendShapeLineStyle(shape, 1, 0);
+    appendShapeLineStyle(shape, 1, 0x000000ff);
     expect(hasNonSolidShapeFill(shape.data.commands)).toBe(false);
 
     appendShapeBeginGradientFill(shape, 'linear', [0xff0000ff, 0x0000ffff], [1, 1], [0, 255]);
@@ -192,7 +192,7 @@ describe('hasShapeFill', () => {
     expect(hasShapeFill(filled.data.commands)).toBe(true);
 
     const strokeOnly = createShape();
-    appendShapeLineStyle(strokeOnly, 2, 0);
+    appendShapeLineStyle(strokeOnly, 2, 0x000000ff);
     appendShapeMoveTo(strokeOnly, 0, 0);
     appendShapeLineTo(strokeOnly, 10, 0);
     expect(hasShapeFill(strokeOnly.data.commands)).toBe(false);

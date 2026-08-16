@@ -44,9 +44,11 @@ export interface MorphShapeLineEndpoint extends MorphShapeColorEndpoint {
 export interface MorphShapeColorPaintBinding {
   readonly commandIndex: number;
   readonly endAlpha: number;
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly endColor: number;
   readonly kind: 'color';
   readonly startAlpha: number;
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly startColor: number;
 }
 
@@ -54,12 +56,14 @@ export interface MorphShapeGradientPaintBinding {
   readonly commandIndex: number;
   readonly commandKey: 'beginGradientFill' | 'lineGradientStyle';
   readonly endAlphas: readonly number[];
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly endColors: readonly number[];
   readonly endFocalPointRatio: number;
   readonly endMatrix: Readonly<Matrix> | null;
   readonly endRatios: readonly number[];
   readonly kind: 'gradient';
   readonly startAlphas: readonly number[];
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly startColors: readonly number[];
   readonly startFocalPointRatio: number;
   readonly startMatrix: Readonly<Matrix> | null;
@@ -69,10 +73,12 @@ export interface MorphShapeGradientPaintBinding {
 export interface MorphShapeLinePaintBinding {
   readonly commandIndex: number;
   readonly endAlpha: number;
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly endColor: number;
   readonly endThickness: number;
   readonly kind: 'line';
   readonly startAlpha: number;
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly startColor: number;
   readonly startThickness: number;
 }
