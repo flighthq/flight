@@ -139,6 +139,27 @@ dropped the cell while another named it, over identical input, and nobody notice
 this failure mode different from a gate that cannot fire: the missing data is not merely absent, it is
 covered for.
 
+**And the consequence is worth more than the eight cells, because it names a detector nobody has built.**
+The contradicting evidence was never missing. It was sitting in another instrument's output, available and
+unread, for the entire arc — `capture-failed functional/env-ibl/webgpu` in one report while the other
+reported nothing about that cell at all. Nobody went looking because the second instrument was right and
+nothing suggested the first was wrong.
+
+> **Agreement between instruments reading the same input is not the thing to check for. DISAGREEMENT
+> between them is a signal, and nothing currently watches for it.**
+
+Every check in this repository asks whether one instrument is internally sound — can it fail, is it
+reached, which way does it fail, what does it actually assert. None asks whether two instruments over the
+same input describe the same world. That question needs no new measurement: both reports already exist,
+and the comparison is free.
+
+Two cautions for whoever builds it, so it is not stillborn. **Divergence is not by itself a defect** — the
+calibrator's population is the capture tree while the commissioning bar's is the coverage manifest, so
+residue legitimately appears in one and not the other. The detector's output is *where two instruments
+disagree about a cell, and whether that difference is explainable*, not *they must match*. And it must
+report the difference **by name**: a count of divergences is the same failure this entry is about, one
+level up.
+
 **Q2 and Q4 together, which is why the remedy is an assertion rather than a wider search.** The bad state
 could reach the instrument (it did, eight times) and the instrument evaluated a proposition adjacent to
 the one its readers wanted: *of the cells that produced a hash somewhere, how many agreed* rather than *of
