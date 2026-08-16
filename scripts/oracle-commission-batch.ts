@@ -83,8 +83,16 @@ console.log(`blocked ${report.blocked.length}`);
 for (const { count, reason } of summarizeOracleBlocks(report.blocked)) {
   console.log(`  ${String(count).padStart(4)}  ${reason}`);
 }
+// ★ REPORTED BECAUSE IT IS MEASURED, NOT BECAUSE IT DECIDES ANYTHING. Byte-identity across backends was
+// a blocking condition until the corpus refuted its premise (see `findBackendCollisions`). It is printed
+// so a collision on a scene that could not plausibly be pixel-exact — a blur, a gradient, an antialiased
+// curve — is still visible to someone who can look at the scene.
+console.log('');
+console.log(`byte-identical to a sibling backend ${report.collisions.length} (reported, not blocking)`);
+
 if (readOption('--verbose') !== undefined || rest.includes('--verbose')) {
   for (const cell of report.blocked) console.log(`  ${cell.reason.padEnd(23)} ${cell.identity}  ${cell.detail}`);
+  for (const pair of report.collisions) console.log(`  collision              ${pair.identity}  == ${pair.twin}`);
 }
 
 if (subcommand === 'report') process.exit(0);

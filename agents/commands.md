@@ -173,9 +173,16 @@ writing is a separate word.
 
 It withholds a cell unless **every** independent statement about it agrees: the capture reached `ready`,
 the scene's own `assertRender` was invoked and did not throw, repeated captures were byte-identical, the
-backends are at parity, no sibling backend returned the *same* bytes, and the capture matches its
-committed baseline. `assertRender` is the only one of those that speaks to the render being **right** —
-the rest say it is stable, and four backends can be stably wrong together.
+backends are at parity, and the capture matches its committed baseline. `assertRender` is the only one of
+those that speaks to the render being **right** — the rest say it is stable, and four backends can be
+stably wrong together.
+
+Byte-identity with a sibling backend is **reported and does not withhold**. It was a blocking condition
+until the corpus refuted its premise: 33 of the 76 scenes carrying both a canvas and a webgl column are
+byte-identical, and `captureBrowser.ts` pins webgl and webgpu to the *same* SwiftShader rasterizer, so
+`webgl == webgpu` is one rasterizer answering twice. Read a collision as worth a look when the scene's
+content could not plausibly be pixel-exact — a blur, a gradient, an antialiased curve — and as expected
+otherwise.
 
 Two arguments are refused rather than defaulted. **Fewer than two capture roots** is refused because
 determinism is measured and one run cannot measure it; accepting one root would silently downgrade every
