@@ -6,13 +6,29 @@ was not present in this clone or reachable history, so capture tier names below 
 documented in `captureValidation.ts`: smoke is Tiers 1/2/4, parity is Tier 3, and committed-fingerprint
 regression is Tier 5.
 
-**The standing questions are deliberately un-numbered, and that is a temporary state with a job owed.**
-The 2026-08-16 entries were written in separate clones by agents who could not read each other's
-sections, so numbering any of them would have been asserting the contents of a document the author could
-not see — two sections both claiming to be third is worse than none claiming it. Ordinal-free was the
-right call while the entries were in flight. **Once every 2026-08-16 entry is on one tree, someone owes a
-single pass that enumerates the standing questions accurately** — this note exists so that pass is a
-visible debt rather than a convention nobody remembers was provisional.
+**The three standing questions, enumerated.** Every finding below interrogates an **instrument** —
+a gate, a check, a script whose exit status someone reads as a verdict:
+
+> **Q1 — what exact bad state must make this process fail, and has it ever failed on that state?**
+> **Q2 — can the bad state reach it in production?**
+> **Q3 — which way does it fail when it is wrong: toward *stop*, or toward *proceed*?**
+
+They fail independently and in that order of discovery, not of importance. Q1 unproven means the gate
+may be incapable of failing; Q2 unmet means it is capable but never reached; Q3 is not a pass/fail on the
+gate at all — it prices the other two, because an instrument that fails toward *proceed* is strictly
+worse than one that fails toward *stop*, and nobody investigates a green.
+
+**A scope boundary sits beside them and is deliberately not a fourth question** — see
+[the standing questions audit instruments, not inferences](#2026-08-16-the-standing-questions-audit-instruments-not-inferences).
+Q1–Q3 all assume the measuring apparatus is at fault. When the instrument measured correctly and the
+*conclusion* drawn from it did not follow, none of them reaches it, and the check is a different one:
+*what else is equally consistent with this measurement?*
+
+**Enumeration history, so the numbering is not mistaken for age.** The 2026-08-16 entries were written in
+separate clones by agents who could not read each other's sections, so each was deliberately written
+ordinal-free — numbering then would have asserted the contents of a document the author could not see,
+and two sections both claiming to be third is worse than none claiming it. This pass was made once every
+2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
 ## 2026-08-16: a differential oracle is blind upstream of the fork
 
@@ -139,12 +155,12 @@ gate that cannot fire on the tree.
 
 **The method amendment.** The question this document has asked of every finding is:
 
-> what exact bad state must make this process fail, and has it ever failed on that state?
+> **Q1** — what exact bad state must make this process fail, and has it ever failed on that state?
 
 For these three the honest answer was **yes**, and they would have passed that audit unchanged. The
 question is necessary and not sufficient, so it gains a companion:
 
-> **can the bad state reach it in production?**
+> **Q2 — can the bad state reach it in production?**
 
 Firing is not reachability. A gate can be provably capable of failing and still sit somewhere its trigger
 never arrives. The two questions fail independently: a gate that has never fired is unproven, and a gate
@@ -358,7 +374,7 @@ failing job to one deduplicated issue, keyed on a stable title so a persistent f
 comments on one issue rather than filing a new one nightly — an unread inbox being the next way the
 same defect comes back.
 
-### And a further question: WHICH WAY does it fail when it is wrong?
+### Q3: WHICH WAY does it fail when it is wrong?
 
 The questions above establish *that* an instrument is defective. This one prices it. A gate that cannot
 fail, one that never runs, one whose red reaches nobody, and one that answers a narrower question than
