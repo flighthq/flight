@@ -64,7 +64,7 @@ root.scaleY = scale;
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
-const colors = [0xff8020ff, 0x30c040ff, 0x3060ffff, 0xffd030ff, 0xff30c0ff, 0x30d0d0ff];
+const colors = [0xff8020, 0x30c040, 0x3060ff, 0xffd030, 0xff30c0, 0x30d0d0];
 const cols = 3;
 const rows = 2;
 const cellWidth = logicalWidth / cols;
@@ -89,7 +89,7 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   //   G' = 1·R + 0·G + 0·B = R
   //   B' = 0·R + 1·G + 0·B = G
   //
-  // Cell 0 has fill color 0xff8020ff = R=255, G=128, B=32 (packed 0xRRGGBBAA).
+  // Cell 0 has fill color 0xff8020 = R=255, G=128, B=32 (24-bit RGB).
   // All three channels are distinct so every permutation yields a unique triple:
   //   correct:         (32, 255, 128)
   //   not-applying:    (255, 128, 32) — input unchanged

@@ -65,7 +65,7 @@ root.scaleY = scale;
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
-const colors = [0xffffffff, 0xff0000ff, 0x00ff00ff, 0x0000ffff];
+const colors = [0xffffff, 0xff0000, 0x00ff00, 0x0000ff];
 for (let i = 0; i < colors.length; i++) {
   const shape = createShape();
   appendShapeBeginFill(shape, colors[i], 1);
