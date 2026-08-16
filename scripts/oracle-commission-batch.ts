@@ -38,8 +38,9 @@ const repoRoot = join(__dirname, '..');
 
 const [subcommand = 'report', ...rest] = process.argv.slice(2);
 if (subcommand !== 'report' && subcommand !== 'write') {
-  console.error('usage: oracle-commission-batch <report|write> [--runs <dir,dir>] [--subject <name>] [--limit <n>]');
-  console.error('       [--id <request-id>] [--reason <text>] [--frames <n>] [--only <entry,entry>]');
+  console.error('usage: oracle-commission-batch <report|write> --runs <dir,dir> --hosts <independent-hosts|one-host>');
+  console.error('       [--subject <name>] [--limit <n>] [--id <request-id>] [--reason <text>] [--frames <n>]');
+  console.error('       [--only <entry,entry>] [--verbose]');
   process.exit(2);
 }
 
@@ -65,11 +66,26 @@ if (runs.length < 2) {
   process.exit(2);
 }
 
+// ★ AND THE CALLER MUST SAY WHERE THE ROOTS CAME FROM, BECAUSE NOTHING HERE CAN FIND OUT. Two runs in one
+// sandbox and two runs on separate machines are indistinguishable from a directory listing, and they
+// answer different questions: one host reproducing itself is necessary for a pixel-exact lock; two
+// independent hosts agreeing is what the lock actually rests on, since the blessing machine and the
+// verifying machine are never the same one. Defaulting this would let the weaker claim pass as the
+// stronger one silently — which is the exact substitution the standing rule forbids.
+const scope = readOption('--hosts');
+if (scope !== 'independent-hosts' && scope !== 'one-host') {
+  console.error('oracle-commission-batch: --hosts must be `independent-hosts` or `one-host`');
+  console.error('  Nothing here can derive it: two runs in one sandbox and two runs on separate machines');
+  console.error('  produce identical input. Only independent hosts can complete the determinism condition.');
+  process.exit(2);
+}
+
 const coverage = readCoverage(subject);
 const report = selectCommissionableCells({
   captures: readCaptureFacts(runs[0]!, subject),
   coverage,
   determinism: readDeterminism(runs),
+  determinismScope: scope,
   held: readHeld(),
   outstanding: readOutstanding(),
   parityWithheld: readParityWithholdings(runs[0]!, subject),
@@ -79,7 +95,7 @@ const report = selectCommissionableCells({
 const eligible = report.eligible.filter((identity) => only.size === 0 || only.has(identity.split('/')[1] ?? ''));
 const batch = eligible.slice(0, Math.max(0, limit));
 
-console.log(`subject ${subject} | ${coverage.size} live cell(s) | runs: ${runs.length}`);
+console.log(`subject ${subject} | ${coverage.size} live cell(s) | ${runs.length} run(s) on ${scope}`);
 console.log('');
 console.log(`eligible ${eligible.length}${eligible.length > batch.length ? ` (this batch: ${batch.length})` : ''}`);
 for (const identity of batch) console.log(`  COMMISSION ${identity}`);

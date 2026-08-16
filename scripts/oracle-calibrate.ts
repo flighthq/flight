@@ -104,6 +104,13 @@ export function formatCalibrationReport(report: Readonly<CalibrationReport>): st
     `cells incomplete:  ${report.incomplete.length}`,
     '',
   ];
+  // ★ THE AGREED CELLS ARE NAMED, NOT COUNTED, AND THE OMISSION ALREADY COST SOMETHING. A cross-host run
+  // established that two independent machines rendered byte-identical output, and the only durable record
+  // of it was a count — "eight GPU-shaded cells". When the single locked reference image was later
+  // questioned, nobody could tell from the tree whether that cell had been among the eight, so a
+  // measurement that may well have covered it could not be used to defend it. A population that is not
+  // written down cannot be checked later, and the count is the part nobody needs.
+  for (const identity of report.agreed) lines.push(`  AGREED     ${identity}`);
   for (const identity of report.disagreed) {
     const cell = report.cells.find((c) => c.identity === identity);
     lines.push(`  DISAGREED  ${identity}`);

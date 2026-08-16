@@ -42,6 +42,9 @@ export interface OracleCaptureFact {
 
 export type OracleDeterminismVerdict = 'agreed' | 'disagreed' | 'incomplete';
 
+/** Whether the compared capture roots came from separate machines or repeats on one. */
+export type OracleDeterminismScope = 'independent-hosts' | 'one-host';
+
 export interface OracleEligibilityInput {
   captures: readonly OracleCaptureFact[];
   /** Every `subject/entry/renderer` the coverage manifest lists, with the evidence kinds it requires. */
@@ -56,6 +59,15 @@ export interface OracleEligibilityInput {
   held: ReadonlyMap<string, string>;
   /** Per-identity verdict from `compareCalibrationRuns`. A cell absent from this map is unmeasured. */
   determinism: ReadonlyMap<string, OracleDeterminismVerdict>;
+  /**
+   * Where the compared capture roots came from. The caller declares it; NOTHING can derive it.
+   *
+   * ★ `compareCalibrationRuns` IS HANDED DIRECTORIES AND CANNOT TELL. Two runs on one machine and two
+   * runs on separate machines produce byte-identical input to it and answer completely different
+   * questions, and its own header records that its first real run was within-host while announcing a
+   * conclusion only cross-host data could support. So the scope is an input here, not an inference.
+   */
+  determinismScope: OracleDeterminismScope;
 }
 
 /**
@@ -73,6 +85,7 @@ export type OracleBlockReason =
   | 'nondeterministic'
   /** No repeated capture covered it, so determinism is unknown — which is not the same as stable. */
   | 'determinism-unmeasured'
+
   /** Backends disagree on this scene, so at least one of them is wrong and it is not known which. */
   | 'parity-disagreement'
   /** Parity could not judge this scene at all — no comparable pair, so no cross-backend evidence exists. */
@@ -86,7 +99,9 @@ export type OracleBlockReason =
   /** Already claimed by an open request. */
   | 'already-commissioned'
   /** Already blessed and gating. Re-commissioning is a re-bless, which is a separate decision. */
-  | 'already-pinned';
+  | 'already-pinned'
+  /** Everything else agreed, and the repeats were on ONE host. Stage one clear, cross-host unmeasured. */
+  | 'determinism-within-host-only';
 
 export interface OracleBlockedCell {
   identity: string;
@@ -175,6 +190,13 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
       continue;
     }
 
+    // ★ DETERMINISM IS TWO STAGES, AND THE TWO ANSWERS ARE NOT SYMMETRIC.
+    // DISAGREEMENT is conclusive at either scope: a cell that cannot reproduce itself on one machine
+    // will not reproduce across two, so no further measurement is owed and the cell is simply out.
+    // AGREEMENT is not. Repeats on one host prove that host reproduces itself — necessary, and nowhere
+    // near sufficient for a lock verified on a DIFFERENT machine at maxChannelDelta 0. `tests.yml`
+    // records SwiftShader pinning already failing to survive a machine change once. So local agreement
+    // advances a cell to the cross-host stage; it never completes it.
     const determinism = input.determinism.get(identity);
     if (determinism === 'disagreed') {
       blocked.push({ detail: 'repeated captures did not agree', identity, reason: 'nondeterministic' });
@@ -208,6 +230,20 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
     }
     if (capture.hash !== capture.baselineHash) {
       blocked.push({ detail: 'capture does not match the committed baseline', identity, reason: 'baseline-drift' });
+      continue;
+    }
+
+    // ★ CHECKED LAST, BECAUSE IT IS NOT A DEFECT AND IT MUST NOT MASK ONE. Every other reason names work
+    // somebody can do — write an oracle, fix a render, capture a baseline. This one names a measurement
+    // only a cross-host workflow run can supply, and it is true of every cell at once. Checked earlier it
+    // swallowed all 445 otherwise-clean cells under one heading and the repair track lost its list; a
+    // cell that ALSO lacks an oracle should report the oracle, which is the thing anyone can act on.
+    if (input.determinismScope === 'one-host') {
+      blocked.push({
+        detail: 'stage one clear; cross-host portability is unmeasured',
+        identity,
+        reason: 'determinism-within-host-only',
+      });
       continue;
     }
 
@@ -372,4 +408,6 @@ const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'held',
   'already-commissioned',
   'already-pinned',
+  // Last on purpose: it is the only reason that names no defect, and it is true of every cell at once.
+  'determinism-within-host-only',
 ];

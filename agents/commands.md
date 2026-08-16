@@ -184,12 +184,26 @@ byte-identical, and `captureBrowser.ts` pins webgl and webgpu to the *same* Swif
 content could not plausibly be pixel-exact — a blur, a gradient, an antialiased curve — and as expected
 otherwise.
 
-Two arguments are refused rather than defaulted. **Fewer than two capture roots** is refused because
+Three arguments are refused rather than defaulted. **Fewer than two capture roots** is refused because
 determinism is measured and one run cannot measure it; accepting one root would silently downgrade every
-cell to unmeasured while still printing a report. **`--limit` is bounded by review throughput, not by how
+cell to unmeasured while still printing a report. **`--hosts`** is refused because nothing can derive it:
+two runs in one sandbox and two runs on separate machines are indistinguishable from a directory listing.
+That distinction decides what the run proved — see below. **`--limit` is bounded by review throughput, not by how
 many cells clear the bar**: `MAX_PENDING_DAYS` in `scripts/oracle-check.ts` is 14, so every commissioned
 cell starts a clock, and a batch larger than `flight-oracles` can review and release inside that window
 turns CI red on day 15 for cells that were never wrong.
+
+**Determinism is two stages, and the two answers are not symmetric.** A DISAGREEMENT between two roots is
+conclusive at either scope: a cell that cannot reproduce itself on one machine will not reproduce across
+two, so the cell is out and no further measurement is owed. AGREEMENT is not: repeats on one host prove
+that host reproduces itself, while the lock is verified on a *different* machine at `maxChannelDelta 0`,
+and `tests.yml` records SwiftShader pinning already failing to survive a machine change once. So
+`--hosts one-host` clears a cell to `determinism-within-host-only` — stage one done, never commissionable —
+and only `.github/workflows/oracle-calibrate.yml`, dispatched with real Actions credentials, supplies the
+independent-host roots that finish it.
+
+That reason is checked **last**, after every condition that names work somebody can do. Checked earlier it
+swallowed all 341 otherwise-clean cells under one heading and every actionable list went empty.
 
 `scripts/oracle-held.json` names cells that must not be commissioned whatever today's capture says. A
 hold is read **before** any capture fact, because the holder knows something a capture run cannot see;
