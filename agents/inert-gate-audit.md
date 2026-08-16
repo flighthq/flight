@@ -6,6 +6,74 @@ was not present in this clone or reachable history, so capture tier names below 
 documented in `captureValidation.ts`: smoke is Tiers 1/2/4, parity is Tier 3, and committed-fingerprint
 regression is Tier 5.
 
+## 2026-08-16: a gate can fire in its test and be unreachable in production
+
+Found at `866c7712d`, closed at `f8d13e12b` and `14b9788c4`. This entry is one worked instance and a
+resulting amendment to the method above; it is not a new population sweep.
+
+**The instance.** `scripts/oracle-check.ts` implements the four-state table in
+[render oracle repository](render-oracle-repository.md) §6 through the pure `joinOracleState`, and three
+of those states — `missing`, `pending-uncaptured`, and `orphan` — each had a firing test in
+`scripts/oracle-state.test.ts` that **passed**. Two are hard failures (`missing-reference-image`,
+`orphaned-reference-image`) and one is the narrow allowance that lets a commissioned run stay green.
+All three were unreachable from the running gate.
+
+The cause was one level above the gate. `check()` built its cell list **from the extracted pack images
+alone**, so it could only ever ask *do the bytes we already have still match* — the one question that
+cannot detect an absence. A required cell that no pack supplied never entered the list, so `missing` and
+`pending-uncaptured` had no input to fire on; and every pack-derived cell arrived marked `required: true`
+by construction, so `orphan` had none either. The consequence in use: a freshly commissioned cell
+reported **nothing at all** rather than `pending`, and a reference image that silently stopped being
+published read as a clean run.
+
+> **A tested gate wired to a list that cannot contain its trigger. The passing test is not incidental to
+> the concealment; it IS the concealment.**
+
+An audit that greps for gate names finds all three covered. An audit that asks *has this gate ever fired
+on that state* also finds all three covered — it has fired, in the test. Both audits return green on a
+gate that cannot fire on the tree.
+
+**The method amendment.** The question this document has asked of every finding is:
+
+> what exact bad state must make this process fail, and has it ever failed on that state?
+
+For these three the honest answer was **yes**, and they would have passed that audit unchanged. The
+question is necessary and not sufficient, so it gains a companion:
+
+> **can the bad state reach it in production?**
+
+Firing is not reachability. A gate can be provably capable of failing and still sit somewhere its trigger
+never arrives. The two questions fail independently: a gate that has never fired is unproven, and a gate
+that fires only in its own fixtures is unreachable, and neither symptom is visible from the other's
+evidence.
+
+**Reachability cuts both ways**, found the same day at `14b9788c4` and worth recording beside it. The
+commissioning bar's sibling-column condition was reachable by a trigger that should not have existed:
+`findScenesWithAFailedColumn` read every capture fact in the artifacts root, and a capture root
+*accumulates* — a fresh run writes the current suite and deletes nothing. A three-week-old `error` record
+for `bitmap-downscale-smoothing/webgl`, a column the scene no longer has, was withholding that scene's two
+live columns. So the companion question has a mirror — *can a state that is not bad reach it?* — and the
+same fix answers both: intersect the gate's input with the live manifest rather than with whatever is on
+disk.
+
+**Why the coverage landed where it did.** `oracle-eligibility.ts` (442 lines) had 37 tests while
+`oracle-check.ts` and `oracle-commission-batch.ts`, which touch the real tree and the real workflow, had
+none. That distribution is not an accident of effort:
+
+> A pure function is cheap to test **and** cheap to get wrong, because it cannot be wired to the wrong
+> thing. So coverage accumulates there, while the wiring — where being wrong actually costs — stays
+> untested.
+
+Whether the pieces connect is not testable by the instrument that tests the pieces. The only instrument
+that answers it is running the real process and diffing its output and exit codes against the same run
+before the change; that is what established the closure here, on the real tree rather than in fixtures.
+
+**Closure.** The requirement join was extracted to `withRequiredIdentities` in `scripts/oracle-state.ts`
+and covered by seven tests, three of which drive it end to end through `joinOracleState` to assert the
+three formerly unreachable states. Before that, all three were observed firing against the real tree and
+then reverted: required-and-unpinned with no request → `missing`, exit 1; the same cell with an open
+request → `pending-uncaptured`, exit 0; a pinned image with its requirement removed → `orphan`, exit 1.
+
 ## 2026-08-13 follow-up: repository check processes
 
 Audited at `e6f845bbb`. This pass derived the population from process-level verdicts, not from the
