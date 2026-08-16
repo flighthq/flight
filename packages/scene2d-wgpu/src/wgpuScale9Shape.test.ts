@@ -60,7 +60,7 @@ describe('drawWgpuScale9Shape', () => {
     const state = await createWgpuRenderStateForTest();
     renderWgpuBackground(state);
     const shape = createScale9Shape(grid);
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     prepareScene2DRender(state, shape);
     const renderProxy = getOrCreateRenderProxy2D(state, shape);

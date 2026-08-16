@@ -36,7 +36,7 @@ const { render, state, width } = target;
 const root = createDisplayObject();
 
 const backing = createShape();
-appendShapeBeginFill(backing, 0x175d6b, 1);
+appendShapeBeginFill(backing, 0x175d6bff, 1);
 appendShapeRectangle(backing, 160, 100, 480, 400);
 appendShapeEndFill(backing);
 addNodeChild(root, backing);
@@ -52,7 +52,7 @@ invalidateNodeLocalTransform(renderTargetNode);
 addNodeChild(root, renderTargetNode);
 
 const foreground = createShape();
-appendShapeBeginFill(foreground, 0xffc928, 1);
+appendShapeBeginFill(foreground, 0xffc928ff, 1);
 appendShapeRectangle(foreground, 520, 400, 120, 50);
 appendShapeEndFill(foreground);
 addNodeChild(root, foreground);
@@ -133,7 +133,7 @@ function channel(rgb: number, shift: number): number {
 }
 
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }
 
 function isBackground(rgb: number): boolean {

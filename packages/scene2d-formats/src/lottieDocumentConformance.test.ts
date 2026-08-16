@@ -294,7 +294,7 @@ describe('Lottie document conformance census', () => {
     const shape = findFirstKind(findByName(result.root, 'gradient-opacity')!, ShapeKind) as Shape;
     const gradientIndex = shape.data.commands.indexOf('beginGradientFill');
 
-    expect(shape.data.commands[gradientIndex + 3]).toEqual([0xff0000, 0x00ff00, 0x0000ff]);
+    expect(shape.data.commands[gradientIndex + 3]).toEqual([0xff0000ff, 0x00ff00ff, 0x0000ffff]);
     expect(shape.data.commands[gradientIndex + 4]).toEqual([0.1, 0.25, 0.4]);
     expect(shape.data.commands[gradientIndex + 5]).toEqual([0, 128, 255]);
   });

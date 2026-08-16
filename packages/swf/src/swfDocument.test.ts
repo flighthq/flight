@@ -226,7 +226,7 @@ describe('createScene2DFromSwf', () => {
     expect(document?.slots).toEqual([]);
     const drawn = getNodeChildren(document!.root)[0] as Shape;
     expect(drawn.kind).toBe(ShapeKind);
-    expect(drawn.data.commands.slice(0, 8)).toEqual(['beginFill', 2, 0x3366cc, 1, 'moveTo', 2, 0, 0]);
+    expect(drawn.data.commands.slice(0, 8)).toEqual(['beginFill', 2, 0x3366ccff, 1, 'moveTo', 2, 0, 0]);
     expect(getNodeLocalMatrix(drawn)).toMatchObject({ tx: 3, ty: 4 });
     // The authored RECT still sizes the node, not the extent of its own commands.
     expect(getNodeLocalBoundsRectangle(drawn)).toMatchObject({ height: 50, width: 100, x: 0, y: 0 });
@@ -914,7 +914,7 @@ describe('createScene2DFromSwf', () => {
     expect(drawn.kind).toBe(ShapeKind);
     // The glyph's own fill is dropped and the record's colour used instead.
     expect(drawn.data.commands[0]).toBe('beginFill');
-    expect(drawn.data.commands[2]).toBe(0xff0000);
+    expect(drawn.data.commands[2]).toBe(0xff0000ff);
     // Height 1024 twips over a 1024-unit EM grid is a scale of 1, so the glyph's 512 units land at
     // 512/20 = 25.6px — the same twips-to-pixels conversion every other coordinate gets.
     expect(drawn.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 25.6, 0]);

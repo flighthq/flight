@@ -41,7 +41,7 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const roundRect = createShape();
-appendShapeBeginFill(roundRect, 0x00cccc, 1);
+appendShapeBeginFill(roundRect, 0x00ccccff, 1);
 appendShapeRoundRectangle(roundRect, RX, RY, RW, RH, ELLIPSE, ELLIPSE);
 appendShapeEndFill(roundRect);
 invalidateNodeAppearance(roundRect);
@@ -76,5 +76,5 @@ function isBlack(rgb: number): boolean {
   return ((rgb >> 16) & 0xff) < 30 && ((rgb >> 8) & 0xff) < 30 && (rgb & 0xff) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

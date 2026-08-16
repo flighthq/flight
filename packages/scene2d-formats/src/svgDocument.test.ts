@@ -218,7 +218,7 @@ describe('createScene2DFromSvgDocument', () => {
     const root = createScene2DFromSvgDocument('<svg fill="red"><rect width="10" height="10"/></svg>');
     const shape = getNodeChildAt(root, 0) as Shape;
 
-    expect(shape.data.commands).toContain(0xff0000);
+    expect(shape.data.commands).toContain(0xff0000ff);
   });
 
   it('parses HSL colors and percentage alpha components', () => {
@@ -229,8 +229,8 @@ describe('createScene2DFromSvgDocument', () => {
     const fill = shape.data.commands.indexOf('beginFill');
     const stroke = shape.data.commands.indexOf('lineStyle');
 
-    expect(shape.data.commands.slice(fill + 2, fill + 4)).toEqual([0x008000, 0.5]);
-    expect(shape.data.commands.slice(stroke + 3, stroke + 5)).toEqual([0x0000ff, 0.25]);
+    expect(shape.data.commands.slice(fill + 2, fill + 4)).toEqual([0x008000ff, 0.5]);
+    expect(shape.data.commands.slice(stroke + 3, stroke + 5)).toEqual([0x0000ffff, 0.25]);
   });
 
   it('resolves currentColor in gradient stops', () => {
@@ -248,7 +248,7 @@ describe('createScene2DFromSvgDocument', () => {
     const shape = getNodeChildAt(root, 0) as Shape;
     const gradient = shape.data.commands.indexOf('beginGradientFill');
 
-    expect(shape.data.commands[gradient + 3]).toEqual([0x123456, 0xabcdef]);
+    expect(shape.data.commands[gradient + 3]).toEqual([0x123456ff, 0xabcdefff]);
   });
 
   it('composes image geometry before its SVG transform', () => {
@@ -440,8 +440,8 @@ describe('createScene2DFromSvgDocument', () => {
     `);
     const shape = getNodeChildAt(root, 0) as Shape;
 
-    expect(shape.data.commands).toContain(0xffa500);
-    expect(shape.data.commands).not.toContain(0x0000ff);
+    expect(shape.data.commands).toContain(0xffa500ff);
+    expect(shape.data.commands).not.toContain(0x0000ffff);
   });
 
   it('preserves mixed text and tspan source order', () => {
@@ -504,8 +504,8 @@ describe('createScene2DFromSvgDocument', () => {
     expect(shape.data.commands).toContain('beginFill');
     expect(shape.data.commands).toContain('lineStyle');
     expect(shape.data.commands).toContain('drawPath');
-    expect(shape.data.commands).toContain(0x123456);
-    expect(shape.data.commands).toContain(0xff0000);
+    expect(shape.data.commands).toContain(0x123456ff);
+    expect(shape.data.commands).toContain(0xff0000ff);
   });
 
   it('imports gradients, use references, text, clips, and mask degradation', () => {
@@ -539,7 +539,7 @@ describe('createScene2DFromSvgDocument', () => {
     const gradientShape = getNodeChildAt(symbol, 0) as Shape;
     const gradientCommandIndex = gradientShape.data.commands.indexOf('beginGradientFill');
     expect(gradientCommandIndex).toBeGreaterThanOrEqual(0);
-    expect(gradientShape.data.commands[gradientCommandIndex + 3]).toEqual([0xff0000, 0x0000ff]);
+    expect(gradientShape.data.commands[gradientCommandIndex + 3]).toEqual([0xff0000ff, 0x0000ffff]);
 
     const text = getNodeChildAt(root, 1) as TextLabel;
     expect(text.kind).toBe(TextLabelKind);
@@ -666,7 +666,7 @@ describe('createScene2DFromSvgDocument', () => {
     expect(root.x).toBe(50);
     const shape = getNodeChildAt(root, 0) as Shape;
     const gradientCommandIndex = shape.data.commands.indexOf('beginGradientFill');
-    expect(shape.data.commands[gradientCommandIndex + 3]).toEqual([0xff0000, 0x0000ff]);
+    expect(shape.data.commands[gradientCommandIndex + 3]).toEqual([0xff0000ff, 0x0000ffff]);
 
     const stretched = createScene2DFromSvgDocument(
       '<svg width="200" height="100" viewBox="0 0 50 50" preserveAspectRatio="none"/>',

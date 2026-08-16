@@ -170,7 +170,7 @@ for (let i = 0; i < SAMPLE_COLORS.length; i++) {
   const x = SWATCHES_X + i * (SWATCH_SIZE + SWATCH_GAP);
 
   const beforeShape = createShape();
-  appendShapeBeginFill(beforeShape, SAMPLE_COLORS[i] >>> 8, 1);
+  appendShapeBeginFill(beforeShape, SAMPLE_COLORS[i], 1);
   appendShapeRectangle(beforeShape, x, SWATCHES_BEFORE_Y, SWATCH_SIZE, SWATCH_SIZE);
   addNodeChild(root, beforeShape);
 
@@ -181,7 +181,7 @@ for (let i = 0; i < SAMPLE_COLORS.length; i++) {
   // The geometry stays white. Each node carries its own packed-RGBA tint, which the render walk
   // resolves to the backend's per-instance color scale/bias data.
   const tintedShape = createShape();
-  appendShapeBeginFill(tintedShape, 0xffffff, 1);
+  appendShapeBeginFill(tintedShape, 0xffffffff, 1);
   appendShapeRectangle(tintedShape, x, SWATCHES_TINT_Y, SWATCH_SIZE, SWATCH_SIZE);
   setNodeColorAdjustmentsTint(tintedShape, SAMPLE_COLORS[i]);
   addNodeChild(root, tintedShape);
@@ -248,7 +248,7 @@ function updateSwatches(): void {
     const x = SWATCHES_X + i * (SWATCH_SIZE + SWATCH_GAP);
     const shape = afterSwatches[i];
     clearShapeCommands(shape);
-    appendShapeBeginFill(shape, transformed >>> 8, (transformed & 0xff) / 255);
+    appendShapeBeginFill(shape, transformed, 1);
     appendShapeRectangle(shape, x, SWATCHES_AFTER_Y, SWATCH_SIZE, SWATCH_SIZE);
     invalidateNodeAppearance(shape);
 

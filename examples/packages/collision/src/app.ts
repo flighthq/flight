@@ -28,9 +28,9 @@ import { canvas, render, scale } from './render';
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
-const COLOR_IDLE = 0x4488cc;
-const COLOR_COLLIDING = 0xcc4444;
-const COLOR_MTV = 0x44cc44;
+const COLOR_IDLE = 0x4488ccff;
+const COLOR_COLLIDING = 0xcc4444ff;
+const COLOR_MTV = 0x44cc44ff;
 
 const main = createDisplayObject();
 main.scaleX = scale;

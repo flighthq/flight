@@ -80,7 +80,7 @@ render(root);
 // Sepia maps every color to a warm brown scale whose channel ordering is R >= G >= B. The sepia
 // matrix's row coefficients are R-row > G-row > B-row in every column, so this ordering holds
 // regardless of whether the operation runs in sRGB or linear space. Without the effect, cell 1
-// (0x30c040, G=192 >> R=48) and cell 2 (0x3060ff, B=255 >> R=48) violate R >= G >= B and fail.
+// (0x30c040ff, G=192 >> R=48) and cell 2 (0x3060ffff, B=255 >> R=48) violate R >= G >= B and fail.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;
   const rows = 2;

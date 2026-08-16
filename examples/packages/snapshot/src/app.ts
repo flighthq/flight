@@ -219,7 +219,7 @@ function drawPlayer(shape: Shape, x: number, y: number, rotation: number): void 
   const rightX = x + Math.cos(radians - 2.4) * size;
   const rightY = y + Math.sin(radians - 2.4) * size;
 
-  appendShapeBeginFill(shape, 0x44aaff);
+  appendShapeBeginFill(shape, 0x44aaffff);
   appendShapeMoveTo(shape, tipX, tipY);
   appendShapeLineTo(shape, leftX, leftY);
   appendShapeLineTo(shape, rightX, rightY);
@@ -235,7 +235,7 @@ function drawItem(shape: Shape, item: Readonly<ItemState>): void {
     invalidateNodeAppearance(shape);
     return;
   }
-  appendShapeBeginFill(shape, 0xffcc33);
+  appendShapeBeginFill(shape, 0xffcc33ff);
   appendShapeCircle(shape, item.x, item.y, 10);
   appendShapeEndFill(shape);
   invalidateNodeAppearance(shape);
@@ -248,15 +248,15 @@ function drawSlotIndicators(shape: Shape): void {
   for (let i = 0; i < SLOT_COUNT; i += 1) {
     const cx = startX + i * 24;
     if (snapshots[i] !== null) {
-      appendShapeBeginFill(shape, 0x44cc88);
+      appendShapeBeginFill(shape, 0x44cc88ff);
       appendShapeCircle(shape, cx, y, 8);
       appendShapeEndFill(shape);
     } else {
-      appendShapeLineStyle(shape, 2, 0x555555);
+      appendShapeLineStyle(shape, 2, 0x555555ff);
       appendShapeCircle(shape, cx, y, 8);
     }
     // Slot number label drawn as a small tick mark above.
-    appendShapeLineStyle(shape, 1, 0x777777);
+    appendShapeLineStyle(shape, 1, 0x777777ff);
     appendShapeMoveTo(shape, cx, y - 14);
     appendShapeLineTo(shape, cx, y - 18);
   }

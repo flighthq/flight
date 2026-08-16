@@ -54,13 +54,13 @@ interface Platform {
 }
 
 const platformDefs: readonly { x: number; y: number; w: number; h: number; color: number }[] = [
-  { x: -200, y: 400, w: 1600, h: 40, color: 0x4a7c59 },
-  { x: 100, y: 320, w: 150, h: 16, color: 0x8b6914 },
-  { x: 350, y: 260, w: 120, h: 16, color: 0x8b6914 },
-  { x: 550, y: 200, w: 180, h: 16, color: 0x8b6914 },
-  { x: 780, y: 300, w: 140, h: 16, color: 0x8b6914 },
-  { x: 980, y: 220, w: 160, h: 16, color: 0x8b6914 },
-  { x: 50, y: 160, w: 100, h: 16, color: 0x8b6914 },
+  { x: -200, y: 400, w: 1600, h: 40, color: 0x4a7c59ff },
+  { x: 100, y: 320, w: 150, h: 16, color: 0x8b6914ff },
+  { x: 350, y: 260, w: 120, h: 16, color: 0x8b6914ff },
+  { x: 550, y: 200, w: 180, h: 16, color: 0x8b6914ff },
+  { x: 780, y: 300, w: 140, h: 16, color: 0x8b6914ff },
+  { x: 980, y: 220, w: 160, h: 16, color: 0x8b6914ff },
+  { x: 50, y: 160, w: 100, h: 16, color: 0x8b6914ff },
 ];
 
 const root = createDisplayObject();

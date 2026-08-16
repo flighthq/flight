@@ -74,7 +74,7 @@ invalidateNodeLocalTransform(source);
 const sourceVisible = source.visible;
 
 const sourceShape = createShape();
-appendShapeBeginFill(sourceShape, 0x4de7f2, 1);
+appendShapeBeginFill(sourceShape, 0x4de7f2ff, 1);
 appendShapeRectangle(
   sourceShape,
   -SOURCE_HALF_WIDTH,
@@ -121,7 +121,7 @@ if (state.gl.getParameter(state.gl.FRAMEBUFFER_BINDING) !== null) {
 
 const displayRoot = createDisplayObject();
 const backing = createShape();
-appendShapeBeginFill(backing, 0x292440, 1);
+appendShapeBeginFill(backing, 0x292440ff, 1);
 appendShapeRectangle(backing, 235, 170, 330, 240);
 appendShapeEndFill(backing);
 addNodeChild(displayRoot, backing);
@@ -199,7 +199,7 @@ function channel(rgb: number, shift: number): number {
 }
 
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }
 
 function isCyan(rgb: number, minimum: number): boolean {

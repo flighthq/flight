@@ -27,8 +27,8 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const BASE_GRAY = 0x808080; // luma ≈ 128
-const OVERLAY = 0x505050; // luma ≈ 80 — darker than the base, so Normal-mode draws DARKER, Add draws BRIGHTER
+const BASE_GRAY = 0x808080ff; // luma ≈ 128
+const OVERLAY = 0x505050ff; // luma ≈ 80 — darker than the base, so Normal-mode draws DARKER, Add draws BRIGHTER
 const BAND_X = 100;
 const BAND_Y = 200;
 const BAND_W = 600;

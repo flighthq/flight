@@ -116,10 +116,10 @@ describe('drawWgpuShape', () => {
     renderWgpuBackground(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     const shape = createShape();
-    appendShapeBeginFill(shape, 0x00cc00);
+    appendShapeBeginFill(shape, 0x00cc00ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     appendShapeEndFill(shape);
-    appendShapeLineStyle(shape, 4, 0xff0000);
+    appendShapeLineStyle(shape, 4, 0xff0000ff);
     appendShapeMoveTo(shape, 8, 4);
     appendShapeLineTo(shape, 40, 4);
     const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
@@ -141,7 +141,7 @@ describe('drawWgpuShape', () => {
     renderWgpuBackground(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
 
@@ -163,7 +163,7 @@ describe('drawWgpuShape', () => {
     const pass = makeMeshPassSpy();
     getWgpuRenderStateRuntime(state).renderPass = pass;
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
     const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
 
@@ -183,7 +183,7 @@ describe('drawWgpuShape', () => {
     const pass = makeMeshPassSpy();
     getWgpuRenderStateRuntime(state).renderPass = pass;
     const shape = createShape();
-    appendShapeLineStyle(shape, 8, 0xff0000);
+    appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapePath(
       shape,
       [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],

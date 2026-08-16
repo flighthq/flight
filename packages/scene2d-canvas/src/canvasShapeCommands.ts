@@ -452,8 +452,9 @@ export const defaultCanvasTextureShapeCommands: CanvasShapeCommand<any>[] = [
 ];
 
 function rgbaString(color: number, alpha: number): string {
-  const r = (color >> 16) & 0xff;
-  const g = (color >> 8) & 0xff;
-  const b = color & 0xff;
-  return `rgba(${r},${g},${b},${alpha})`;
+  const r = (color >>> 24) & 0xff;
+  const g = (color >>> 16) & 0xff;
+  const b = (color >>> 8) & 0xff;
+  const a = ((color & 0xff) / 0xff) * alpha;
+  return `rgba(${r},${g},${b},${a})`;
 }

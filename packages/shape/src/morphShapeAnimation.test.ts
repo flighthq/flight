@@ -39,7 +39,7 @@ describe('applyAnimationClipToMorphShape', () => {
   it('applies one clip sample atomically to compound geometry and paint', () => {
     const shape = createTestMorphShape();
     const secondMorph = createTestMorph(100);
-    appendMorphShapeBeginFill(shape, { color: 0xff0000 }, { color: 0x0000ff });
+    appendMorphShapeBeginFill(shape, { color: 0xff0000ff }, { color: 0x0000ffff });
     appendMorphShapePath(shape);
     const secondPath = appendMorphShapePath(shape, secondMorph);
     const revision = getNodeLocalContentRevision(shape);
@@ -54,7 +54,7 @@ describe('applyAnimationClipToMorphShape', () => {
 
     expect(shape.data.path.data.slice(0, 2)).toStrictEqual([10, 15]);
     expect(secondPath.data.slice(0, 2)).toStrictEqual([110, 115]);
-    expect(shape.data.commands[2]).toBe(0x800080);
+    expect(shape.data.commands[2]).toBe(0x800080ff);
     expect(getNodeLocalContentRevision(shape)).toBe(revision + 1);
   });
 

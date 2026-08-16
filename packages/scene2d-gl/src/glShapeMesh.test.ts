@@ -40,7 +40,7 @@ function ct(
 const TRIANGLE = {
   vertices: new Float32Array([0, 0, 10, 0, 0, 10]),
   indices: new Uint16Array([0, 1, 2]),
-  color: 0xff8040,
+  color: 0xff8040ff,
   alpha: 1,
 };
 
@@ -85,7 +85,7 @@ describe('drawGlShapeMeshes', () => {
   it('uploads premultiplied color (color * alpha) for the standard blend', () => {
     const { state, gl } = createGlState();
 
-    drawGlShapeMeshes(state, makeProxy(), [{ ...TRIANGLE, color: 0xffffff, alpha: 0.5 }]);
+    drawGlShapeMeshes(state, makeProxy(), [{ ...TRIANGLE, color: 0xffffffff, alpha: 0.5 }]);
 
     expect(gl.uniform4f).toHaveBeenCalledWith(expect.anything(), 0.5, 0.5, 0.5, 0.5);
   });
@@ -121,7 +121,7 @@ describe('drawGlShapeMeshes', () => {
 
     // White fill, half-brightness scale, +0.5 normalized-linear red bias.
     drawGlShapeMeshes(state, makeProxy({ colorScaleBias: ct(0.5, 0.5, 0.5, 1, 0.5, 0, 0, 0) }), [
-      { ...TRIANGLE, color: 0xffffff, alpha: 1 },
+      { ...TRIANGLE, color: 0xffffffff, alpha: 1 },
     ]);
 
     const shader = getGlRenderStateRuntime(state).shapeMeshColorScaleBiasShader!;

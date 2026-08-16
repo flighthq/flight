@@ -83,8 +83,8 @@ for (let i = 0; i < colors.length; i++) {
 render(root);
 
 // ORACLE-BLOCK
-// Screen-space fog (color 0x9fb4c8, density 0.6) blends a blue-gray fog over the frame. The dark
-// background (0x05060a, luminance ~5) shifts toward the fog color (luminance ~180), raising corner
+// Screen-space fog (color 0x9fb4c8ff, density 0.6) blends a blue-gray fog over the frame. The dark
+// background (0x05060aff, luminance ~5) shifts toward the fog color (luminance ~180), raising corner
 // pixel luminance above 30. Without the effect, corners stay at ~5 and the check fails.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const rgb = getBitmapPixelRgb(frame, 4, 4);

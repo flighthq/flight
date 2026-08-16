@@ -1316,14 +1316,14 @@ function renderLottieShapeState(state: LottieShapeState): void {
   }
   for (const paint of state.paints) {
     if (paint.kind === 'fill') {
-      appendShapeBeginFill(state.shape, lottieRgb(paint.color), paint.opacity);
+      appendShapeBeginFill(state.shape, lottieRgba(paint.color), paint.opacity);
       appendLottieShapePaths(state, paint.winding);
       appendShapeEndFill(state.shape);
     } else if (paint.kind === 'stroke') {
       appendShapeLineStyle(
         state.shape,
         paint.width,
-        lottieRgb(paint.color),
+        lottieRgba(paint.color),
         paint.opacity,
         false,
         'normal',
@@ -1373,7 +1373,7 @@ function appendLottieGradientFill(shape: Shape, paint: LottieGradientPaint): voi
 
 function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): void {
   const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeLineStyle(shape, paint.width, 0, 1, false, 'normal', paint.caps, paint.joints, paint.miterLimit);
+  appendShapeLineStyle(shape, paint.width, 0x000000ff, 1, false, 'normal', paint.caps, paint.joints, paint.miterLimit);
   appendShapeLineGradientStyle(
     shape,
     paint.shape === 2 ? 'radial' : 'linear',
@@ -1620,7 +1620,7 @@ function parseLottieGradient(values: readonly number[], count: number, opacity: 
     const offset = index * 4;
     const ratio = clamp(values[offset] ?? 0, 0, 1);
     ratios.push(Math.round(ratio * 255));
-    colors.push(lottieRgb(values.slice(offset + 1, offset + 4)));
+    colors.push(lottieRgba(values.slice(offset + 1, offset + 4)));
     alphas.push(opacity * interpolateLottieGradientOpacity(opacityStops, ratio));
   }
   return { alphas, colors, ratios };
@@ -1656,11 +1656,13 @@ function createLottieGradientMatrix(start: readonly number[], end: readonly numb
   );
 }
 
-function lottieRgb(color: readonly number[]): number {
+function lottieRgba(color: readonly number[]): number {
   return (
-    (Math.round(clamp(color[0] ?? 0, 0, 1) * 255) << 16) |
-    (Math.round(clamp(color[1] ?? 0, 0, 1) * 255) << 8) |
-    Math.round(clamp(color[2] ?? 0, 0, 1) * 255)
+    ((Math.round(clamp(color[0] ?? 0, 0, 1) * 255) << 24) |
+      (Math.round(clamp(color[1] ?? 0, 0, 1) * 255) << 16) |
+      (Math.round(clamp(color[2] ?? 0, 0, 1) * 255) << 8) |
+      0xff) >>>
+    0
   );
 }
 
@@ -1674,7 +1676,7 @@ function mapLottieLineJoin(value: 1 | 2 | 3 | undefined): 'bevel' | 'miter' | 'r
 
 function parseHexColor(value: string): number {
   const parsed = Number.parseInt(value.replace(/^#/, ''), 16);
-  return Number.isFinite(parsed) ? parsed & 0xffffff : 0;
+  return Number.isFinite(parsed) ? (((parsed & 0xffffff) << 8) | 0xff) >>> 0 : 0x000000ff;
 }
 
 function degreesToRadians(value: number): number {

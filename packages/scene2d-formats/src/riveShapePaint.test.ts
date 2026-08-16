@@ -48,7 +48,7 @@ describe('appendRiveShapePaint', () => {
     const tokens = shape.data.commands as unknown[];
     const at = tokens.indexOf('beginFill');
 
-    expect(tokens[at + 2]).toBe(0xff8040);
+    expect(tokens[at + 2]).toBe(0xff8040ff);
     expect(tokens[at + 3]).toBeCloseTo(0x80 / 255, 6);
   });
 
@@ -59,7 +59,7 @@ describe('appendRiveShapePaint', () => {
     ]);
     const tokens = shape.data.commands as unknown[];
 
-    expect(tokens[tokens.indexOf('beginFill') + 2]).toBe(0x747474);
+    expect(tokens[tokens.indexOf('beginFill') + 2]).toBe(0x747474ff);
   });
 
   it('keeps every paint a shape states, in the order it states them', () => {
@@ -197,7 +197,7 @@ describe('appendRiveShapePaint', () => {
     const at = tokens.indexOf('beginGradientFill');
 
     expect(tokens[at + 2]).toBe('linear');
-    expect(tokens[at + 3]).toEqual([0xff0000, 0x0000ff]);
+    expect(tokens[at + 3]).toEqual([0xff0000ff, 0x0000ffff]);
     // Stop alpha times the gradient's own opacity, and Flight states the ratio out of 255.
     expect((tokens[at + 4] as number[])[0]).toBeCloseTo(0.5, 6);
     expect((tokens[at + 4] as number[])[1]).toBeCloseTo((0x80 / 255) * 0.5, 6);

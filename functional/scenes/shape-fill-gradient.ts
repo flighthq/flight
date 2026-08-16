@@ -45,7 +45,7 @@ const rect = createShape();
 // origin centers and stretches the horizontal ramp across the full rect width: left edge = ratio 0
 // (black), right edge = ratio 255 (white).
 const gradientMatrix = createGradientTransformMatrix(RECT_W, RECT_H, 0, RECT_X, RECT_Y);
-appendShapeBeginGradientFill(rect, 'linear', [0x000000, 0xffffff], [1, 1], [0, 255], gradientMatrix);
+appendShapeBeginGradientFill(rect, 'linear', [0x000000ff, 0xffffffff], [1, 1], [0, 255], gradientMatrix);
 appendShapeRectangle(rect, RECT_X, RECT_Y, RECT_W, RECT_H);
 appendShapeEndFill(rect);
 addNodeChild(root, rect);
@@ -86,5 +86,5 @@ function luma(rgb: number): number {
   return (channel(rgb, 16) + channel(rgb, 8) + channel(rgb, 0)) / 3;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

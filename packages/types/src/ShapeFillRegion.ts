@@ -5,8 +5,8 @@ import type { Path } from './Path';
 // `getShapeFillRegions` for the GPU shape-fill path; gradient/texture fills are not expressed here.
 export interface ShapeFillRegion {
   path: Path;
-  // 24-bit RGB (`0xRRGGBB`) — opacity is the separate `alpha` on the fill, not a fourth channel.
-  // This is the shape authoring convention, NOT the packed RGBA most SDK colors carry.
+  // Packed RGBA (`0xRRGGBBAA`). The alpha channel is the color's own opacity; the separate `alpha`
+  // field is an additional fill-level opacity multiplier. Final rendered alpha = colorAlpha * alpha.
   color: number;
   alpha: number;
 }

@@ -1016,14 +1016,14 @@ function appendSvgShapePaint(
     appendShapeBeginGradientFill(
       shape,
       fillGradient.kind,
-      fillGradient.stops.map((stop) => stop.color.rgb),
+      fillGradient.stops.map((stop) => ((stop.color.rgb << 8) | 0xff) >>> 0),
       fillGradient.stops.map((stop) => stop.color.alpha * style.fillOpacity),
       fillGradient.stops.map((stop) => Math.round(stop.offset * 255)),
       createSvgGradientMatrix(fillGradient, path),
       fillGradient.spreadMethod,
     );
   } else if (fillColor !== null) {
-    appendShapeBeginFill(shape, fillColor.rgb, fillColor.alpha * style.fillOpacity);
+    appendShapeBeginFill(shape, ((fillColor.rgb << 8) | 0xff) >>> 0, fillColor.alpha * style.fillOpacity);
   }
   if (fillGradient !== null || fillColor !== null) {
     appendShapePath(shape, path.commands.slice(), path.data.slice(), path.winding);
@@ -1056,7 +1056,7 @@ function appendSvgShapePaint(
   appendShapeLineStyle(
     shape,
     style.strokeWidth,
-    strokeColor?.rgb ?? 0,
+    strokeColor !== null ? ((strokeColor.rgb << 8) | 0xff) >>> 0 : 0x000000ff,
     (strokeColor?.alpha ?? 1) * style.strokeOpacity,
     false,
     'normal',
@@ -1068,7 +1068,7 @@ function appendSvgShapePaint(
     appendShapeLineGradientStyle(
       shape,
       strokeGradient.kind,
-      strokeGradient.stops.map((stop) => stop.color.rgb),
+      strokeGradient.stops.map((stop) => ((stop.color.rgb << 8) | 0xff) >>> 0),
       strokeGradient.stops.map((stop) => stop.color.alpha * style.strokeOpacity),
       strokeGradient.stops.map((stop) => Math.round(stop.offset * 255)),
       createSvgGradientMatrix(strokeGradient, path),

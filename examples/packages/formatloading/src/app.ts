@@ -131,7 +131,7 @@ function addLabel(text: string, x: number, y: number, size: number, color: numbe
 
 function addPanel(x: number, accent: number): void {
   const panel = createShape();
-  appendShapeBeginFill(panel, 0x192438);
+  appendShapeBeginFill(panel, 0x192438ff);
   appendShapeRectangle(panel, x, 96, 232, 390);
   appendShapeEndFill(panel);
   appendShapeBeginFill(panel, accent);
@@ -143,9 +143,9 @@ function addPanel(x: number, accent: number): void {
 addLabel('Standard Format Loading', 24, 20, 28, 0xf4f7fbff);
 addLabel('Three authoring formats parsed through @flighthq/sdk/formats', 25, 57, 15, 0x91a4bfff);
 
-addPanel(24, 0x61dafb);
-addPanel(284, 0xffc857);
-addPanel(544, 0x55d187);
+addPanel(24, 0x61dafbff);
+addPanel(284, 0xffc857ff);
+addPanel(544, 0x55d187ff);
 
 addLabel('glTF 2.0', 42, 118, 20, 0x61dafbff);
 addLabel('mesh geometry', 42, 146, 13, 0xaebbd0ff);
@@ -158,13 +158,13 @@ for (let i = 0; i < 3; i++) {
   if (!getMeshGeometryVertexPosition(vertex, geometry, i)) throw new Error('glTF vertex missing');
   projected.push({ x: 140 + vertex.x * 78, y: 280 - vertex.y * 78 });
 }
-appendShapeBeginFill(gltfShape, 0x3478c9, 0.75);
+appendShapeBeginFill(gltfShape, 0x3478c9ff, 0.75);
 appendShapeMoveTo(gltfShape, projected[0].x, projected[0].y);
 appendShapeLineTo(gltfShape, projected[1].x, projected[1].y);
 appendShapeLineTo(gltfShape, projected[2].x, projected[2].y);
 appendShapeLineTo(gltfShape, projected[0].x, projected[0].y);
 appendShapeEndFill(gltfShape);
-appendShapeLineStyle(gltfShape, 3, 0x8ee7ff);
+appendShapeLineStyle(gltfShape, 3, 0x8ee7ffff);
 appendShapeMoveTo(gltfShape, projected[0].x, projected[0].y);
 appendShapeLineTo(gltfShape, projected[1].x, projected[1].y);
 appendShapeLineTo(gltfShape, projected[2].x, projected[2].y);
@@ -180,7 +180,7 @@ const atlasShape = createShape();
 const atlasX = 310;
 const atlasY = 190;
 const atlasScale = 1.55;
-appendShapeBeginFill(atlasShape, 0x0f1726);
+appendShapeBeginFill(atlasShape, 0x0f1726ff);
 appendShapeRectangle(
   atlasShape,
   atlasX,
@@ -189,7 +189,7 @@ appendShapeRectangle(
   spritesheet.imageHeight * atlasScale,
 );
 appendShapeEndFill(atlasShape);
-const frameColors = [0xf08a5d, 0xf9c74f, 0x9b5de5];
+const frameColors = [0xf08a5dff, 0xf9c74fff, 0x9b5de5ff];
 for (let i = 0; i < spritesheet.frames.length; i++) {
   const frame = spritesheet.frames[i];
   appendShapeBeginFill(atlasShape, frameColors[i], 0.88);
@@ -201,7 +201,7 @@ for (let i = 0; i < spritesheet.frames.length; i++) {
     frame.height * atlasScale,
   );
   appendShapeEndFill(atlasShape);
-  appendShapeLineStyle(atlasShape, 1, 0xffffff, 0.55);
+  appendShapeLineStyle(atlasShape, 1, 0xffffffff, 0.55);
   appendShapeRectangle(
     atlasShape,
     atlasX + frame.x * atlasScale,
@@ -220,7 +220,7 @@ addLabel('orthogonal tilemap', 562, 146, 13, 0xaebbd0ff);
 const tileLayer = tiled.layers[0];
 if (tileLayer.type !== 'tilelayer') throw new Error('Tiled fixture layer missing');
 const tileShape = createShape();
-const tileColors = [0x3f8f5f, 0x4b84c6, 0xd9ad4a, 0x80664b];
+const tileColors = [0x3f8f5fff, 0x4b84c6ff, 0xd9ad4aff, 0x80664bff];
 const cellSize = 30;
 const mapX = 570;
 const mapY = 190;

@@ -47,7 +47,7 @@ if (captureMode) setMotionPathProgress(mp, 0.42);
 
 // Draw the visible track on screen as a shape with a line style.
 const track = createShape();
-appendShapeLineStyle(track, 2, 0x4488aa);
+appendShapeLineStyle(track, 2, 0x4488aaff);
 appendShapeMoveTo(track, 100, 400);
 appendShapeCubicCurveTo(track, 250, 100, 350, 100, 400, 250);
 appendShapeCubicCurveTo(track, 450, 400, 550, 400, 700, 100);
@@ -66,7 +66,7 @@ const controlPoints = [
 
 for (const [cx, cy] of controlPoints) {
   const dot = createShape();
-  appendShapeBeginFill(dot, 0x335566);
+  appendShapeBeginFill(dot, 0x335566ff);
   // Draw a small diamond as a control-point marker.
   const r = 4;
   appendShapeMoveTo(dot, cx, cy - r);
@@ -92,7 +92,7 @@ function drawArrow(x: number, y: number, headingDegrees: number): void {
   invalidateNodeLocalTransform(arrow);
 
   // Triangle centered at origin, pointing right (+X).
-  appendShapeBeginFill(arrow, 0xff6644);
+  appendShapeBeginFill(arrow, 0xff6644ff);
   appendShapeMoveTo(arrow, ARROW_LENGTH, 0);
   appendShapeLineTo(arrow, -ARROW_LENGTH / 2, -ARROW_HALF_WIDTH);
   appendShapeLineTo(arrow, -ARROW_LENGTH / 2, ARROW_HALF_WIDTH);

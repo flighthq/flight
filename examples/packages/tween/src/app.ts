@@ -96,7 +96,7 @@ for (let i = 0; i < easings.length; i++) {
   const trackY = cellY + CELL_HEIGHT * 0.62;
 
   const circle = createShape();
-  appendShapeBeginFill(circle, 0x44aaee);
+  appendShapeBeginFill(circle, 0x44aaeeff);
   appendShapeCircle(circle, 0, 0, CIRCLE_RADIUS);
   appendShapeEndFill(circle);
   circle.x = trackStartX;

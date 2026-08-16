@@ -20,14 +20,14 @@ const CELL_W = 400;
 const CELL_H = 300;
 
 const FILL_COLORS: readonly number[] = [
-  0x2980b9, // union: blue
-  0x27ae60, // intersect: green
-  0xc0392b, // difference: red
-  0x8e44ad, // xor: purple
+  0x2980b9ff, // union: blue
+  0x27ae60ff, // intersect: green
+  0xc0392bff, // difference: red
+  0x8e44adff, // xor: purple
 ];
 
-const OUTLINE_COLOR_A = 0x34495e;
-const OUTLINE_COLOR_B = 0xe67e22;
+const OUTLINE_COLOR_A = 0x34495eff;
+const OUTLINE_COLOR_B = 0xe67e22ff;
 
 const root = createDisplayObject();
 root.scaleX = scale;

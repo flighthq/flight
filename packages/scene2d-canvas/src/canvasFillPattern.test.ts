@@ -81,7 +81,7 @@ describe('createGradientPattern', () => {
     const result = createGradientPattern(
       context,
       'linear',
-      [0xff0000, 0x0000ff],
+      [0xff0000ff, 0x0000ffff],
       [1, 1],
       [0, 255],
       null,
@@ -95,21 +95,21 @@ describe('createGradientPattern', () => {
   it('returns a CanvasGradient for radial type', () => {
     const context = makeContext();
     const spy = vi.spyOn(context, 'createRadialGradient');
-    createGradientPattern(context, 'radial', [0xff0000, 0x0000ff], [1, 1], [0, 255], null, 'pad', 'rgb', 0);
+    createGradientPattern(context, 'radial', [0xff0000ff, 0x0000ffff], [1, 1], [0, 255], null, 'pad', 'rgb', 0);
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('calls createLinearGradient for linear type with pad spread', () => {
     const context = makeContext();
     const spy = vi.spyOn(context, 'createLinearGradient');
-    createGradientPattern(context, 'linear', [0xff0000], [1], [128], null, 'pad', 'rgb', 0);
+    createGradientPattern(context, 'linear', [0xff0000ff], [1], [128], null, 'pad', 'rgb', 0);
     expect(spy).toHaveBeenCalledOnce();
   });
 
   it('uses focal point for radial gradient', () => {
     const context = makeContext();
     const spy = vi.spyOn(context, 'createRadialGradient');
-    createGradientPattern(context, 'radial', [0xff0000], [1], [128], null, 'pad', 'rgb', 0.5);
+    createGradientPattern(context, 'radial', [0xff0000ff], [1], [128], null, 'pad', 'rgb', 0.5);
     const [fx] = spy.mock.calls[0];
     expect(fx).not.toBe(0);
   });

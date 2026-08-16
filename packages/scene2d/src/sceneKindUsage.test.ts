@@ -58,7 +58,7 @@ describe('getScene2DKindUsage', () => {
 
   it('reads the command keys out of a recorded stream', () => {
     const usage = usageOf((root) => {
-      addNodeChild(root, shapeLikeNode('beginFill', 2, 0xff0000, 1, 'drawRectangle', 4, 0, 0, 10, 10, 'endFill', 0));
+      addNodeChild(root, shapeLikeNode('beginFill', 2, 0xff0000ff, 1, 'drawRectangle', 4, 0, 0, 10, 10, 'endFill', 0));
     });
     expect(usage.shapeCommandKeys).toEqual(['beginFill', 'drawRectangle', 'endFill']);
   });
@@ -75,7 +75,7 @@ describe('getScene2DKindUsage', () => {
     // The stream is [key, argCount, ...args]. Misreading the stride would report an argument value —
     // here the string 'round' — as if it were a command key. That is the failure this pins.
     const usage = usageOf((root) => {
-      addNodeChild(root, shapeLikeNode('lineStyle', 3, 2, 0x000000, 'round', 'moveTo', 2, 0, 0));
+      addNodeChild(root, shapeLikeNode('lineStyle', 3, 2, 0x000000ff, 'round', 'moveTo', 2, 0, 0));
     });
     expect(usage.shapeCommandKeys).toEqual(['lineStyle', 'moveTo']);
   });

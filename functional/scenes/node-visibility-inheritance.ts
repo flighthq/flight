@@ -34,12 +34,12 @@ const SHAPE_H = 200;
 // container has no transform, so world position equals these coords.
 const VISIBLE_CHILD_X = 120;
 const VISIBLE_CHILD_Y = 200;
-const VISIBLE_FILL = 0xff0000; // red
+const VISIBLE_FILL = 0xff0000ff; // red
 
 // Hidden container's child (green) — right region, fully separate.
 const HIDDEN_CHILD_X = 480;
 const HIDDEN_CHILD_Y = 200;
-const HIDDEN_FILL = 0x00ff00; // green
+const HIDDEN_FILL = 0x00ff00ff; // green
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
@@ -111,5 +111,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

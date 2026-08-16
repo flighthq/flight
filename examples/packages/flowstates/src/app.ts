@@ -85,7 +85,7 @@ const bootState: FlowState = {
   onEnter() {
     bootTimer = 0;
     const container = createStateContainer(bootState);
-    addNodeChild(container, createBackground(0x111111, 1));
+    addNodeChild(container, createBackground(0x111111ff, 1));
     addNodeChild(container, createLabel('FLIGHT SDK', 200, 140, 32, 0xffffffff));
     addNodeChild(container, createLabel('Loading...', 240, 190, 18, 0x888888ff));
   },
@@ -105,7 +105,7 @@ const menuState: FlowState = {
   name: 'Menu',
   onEnter() {
     const container = createStateContainer(menuState);
-    addNodeChild(container, createBackground(0x1a3a5c, 1));
+    addNodeChild(container, createBackground(0x1a3a5cff, 1));
     addNodeChild(container, createLabel('FLOW STATES', 170, 80, 36, 0xffffffff));
     addNodeChild(container, createLabel('A @flighthq/flow demo', 190, 130, 16, 0xaaaaaaff));
     addNodeChild(container, createLabel('Press ENTER to play', 195, 220, 20, 0x44cc88ff));
@@ -123,7 +123,7 @@ const playState: FlowState = {
   onEnter() {
     score = 0;
     const container = createStateContainer(playState);
-    addNodeChild(container, createBackground(0x2d5016, 1));
+    addNodeChild(container, createBackground(0x2d5016ff, 1));
     addNodeChild(container, createLabel('PLAYING', 230, 30, 28, 0xffffffff));
     playScoreLabel = createLabel('Score: 0', 30, 100, 22, 0xeedd44ff);
     addNodeChild(container, playScoreLabel);
@@ -151,7 +151,7 @@ const pauseState: FlowState = {
   renderBelow: true,
   onEnter() {
     const container = createStateContainer(pauseState);
-    addNodeChild(container, createBackground(0x000000, 0.6));
+    addNodeChild(container, createBackground(0x000000ff, 0.6));
     addNodeChild(container, createLabel('PAUSED', 225, 150, 40, 0xffffffff));
     addNodeChild(container, createLabel('Press ESCAPE to resume', 185, 210, 18, 0xccccccff));
   },
@@ -164,7 +164,7 @@ const gameOverState: FlowState = {
   name: 'GameOver',
   onEnter() {
     const container = createStateContainer(gameOverState);
-    addNodeChild(container, createBackground(0x5c1a1a, 1));
+    addNodeChild(container, createBackground(0x5c1a1aff, 1));
     addNodeChild(container, createLabel('GAME OVER', 185, 100, 36, 0xff4444ff));
     addNodeChild(container, createLabel('Final Score: ' + score, 200, 160, 24, 0xffffffff));
     addNodeChild(container, createLabel('Press R to restart', 205, 240, 18, 0xccccccff));

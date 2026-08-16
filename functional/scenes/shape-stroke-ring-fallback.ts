@@ -40,12 +40,12 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const ring = createShape();
-appendShapeLineStyle(ring, STROKE, 0x00dd66, 1);
+appendShapeLineStyle(ring, STROKE, 0x00dd66ff, 1);
 appendShapeRectangle(ring, RING_X, RING_Y, RING_W, RING_H);
 addNodeChild(root, ring);
 
 const pathological = createShape();
-appendShapeLineStyle(pathological, STROKE, 0xff3344, 1);
+appendShapeLineStyle(pathological, STROKE, 0xff3344ff, 1);
 appendShapePath(
   pathological,
   [PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO, PathCommand.CLOSE],
@@ -100,5 +100,5 @@ function isBlack(rgb: number): boolean {
 }
 
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

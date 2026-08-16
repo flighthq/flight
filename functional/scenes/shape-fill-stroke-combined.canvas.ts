@@ -44,10 +44,10 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const shape = createShape();
-appendShapeBeginFill(shape, 0x00cc00, 1);
+appendShapeBeginFill(shape, 0x00cc00ff, 1);
 appendShapeRectangle(shape, RX, RY, RW, RH);
 appendShapeEndFill(shape);
-appendShapeLineStyle(shape, STROKE, 0xff0000, 1);
+appendShapeLineStyle(shape, STROKE, 0xff0000ff, 1);
 appendShapeMoveTo(shape, RX, RY - STROKE / 2);
 appendShapeLineTo(shape, RX + RW, RY - STROKE / 2);
 addNodeChild(root, shape);
@@ -84,5 +84,5 @@ function isBlack(rgb: number): boolean {
   return ((rgb >> 16) & 0xff) < 30 && ((rgb >> 8) & 0xff) < 30 && (rgb & 0xff) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

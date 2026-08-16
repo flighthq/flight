@@ -75,14 +75,14 @@ export function drawWgpuShapeMeshBatch(
     queue.writeBuffer(vertexBuffer, 0, mesh.vertices.buffer, mesh.vertices.byteOffset, mesh.vertices.byteLength);
     writeShapeMeshIndices(queue, indexBuffer, mesh.indices);
 
-    // Premultiplied color (r*a, g*a, b*a, a) for the one / one-minus-src-alpha target blend.
-    const r = ((mesh.color >> 16) & 0xff) / 255;
-    const g = ((mesh.color >> 8) & 0xff) / 255;
-    const b = (mesh.color & 0xff) / 255;
-    uniformData[12] = r * a;
-    uniformData[13] = g * a;
-    uniformData[14] = b * a;
-    uniformData[15] = a;
+    const r = ((mesh.color >>> 24) & 0xff) / 255;
+    const g = ((mesh.color >>> 16) & 0xff) / 255;
+    const b = ((mesh.color >>> 8) & 0xff) / 255;
+    const ca = ((mesh.color & 0xff) / 255) * a;
+    uniformData[12] = r * ca;
+    uniformData[13] = g * ca;
+    uniformData[14] = b * ca;
+    uniformData[15] = ca;
     queue.writeBuffer(uniformBuffers[i], 0, uniformData.buffer, uniformData.byteOffset, uniformData.byteLength);
 
     pass.setBindGroup(0, bindGroups[i]);

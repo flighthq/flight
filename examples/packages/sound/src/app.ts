@@ -143,8 +143,8 @@ const buttons: SoundButton[] = [
   {
     shape: createShape(),
     label: 'Click (440 Hz)',
-    color: 0x3a7bd5,
-    hoverColor: 0x5a9bf5,
+    color: 0x3a7bd5ff,
+    hoverColor: 0x5a9bf5ff,
     x: 60,
     y: BUTTON_Y,
     w: BUTTON_W,
@@ -155,8 +155,8 @@ const buttons: SoundButton[] = [
   {
     shape: createShape(),
     label: 'Blip (880 Hz)',
-    color: 0x2ecc71,
-    hoverColor: 0x4eec91,
+    color: 0x2ecc71ff,
+    hoverColor: 0x4eec91ff,
     x: 60 + BUTTON_W + BUTTON_GAP,
     y: BUTTON_Y,
     w: BUTTON_W,
@@ -167,8 +167,8 @@ const buttons: SoundButton[] = [
   {
     shape: createShape(),
     label: 'Sweep (200-800 Hz)',
-    color: 0xe74c3c,
-    hoverColor: 0xf76c5c,
+    color: 0xe74c3cff,
+    hoverColor: 0xf76c5cff,
     x: 60 + (BUTTON_W + BUTTON_GAP) * 2,
     y: BUTTON_Y,
     w: BUTTON_W,
@@ -274,11 +274,11 @@ function drawPanBar(
 }
 
 function drawMasterSlider(): void {
-  drawSliderBar(sliderTrack, sliderFill, SLIDER_X, SLIDER_Y, SLIDER_W, SLIDER_H, masterGain, 0x444444, 0xdddddd);
+  drawSliderBar(sliderTrack, sliderFill, SLIDER_X, SLIDER_Y, SLIDER_W, SLIDER_H, masterGain, 0x444444ff, 0xddddddff);
 
   clearShapeCommands(sliderHandle);
   const handleX = SLIDER_X + SLIDER_W * masterGain - 4;
-  appendShapeBeginFill(sliderHandle, 0xffffff, 1);
+  appendShapeBeginFill(sliderHandle, 0xffffffff, 1);
   appendShapeRectangle(sliderHandle, handleX, SLIDER_Y - 4, 8, SLIDER_H + 8);
   appendShapeEndFill(sliderHandle);
   invalidateNodeLocalTransform(sliderHandle);
@@ -293,8 +293,8 @@ function drawBusSliders(): void {
     BUS_SLIDER_W,
     BUS_SLIDER_H,
     sfxBus.gain,
-    0x444444,
-    0x3a7bd5,
+    0x444444ff,
+    0x3a7bd5ff,
   );
   drawSliderBar(
     musicSliderTrack,
@@ -304,8 +304,8 @@ function drawBusSliders(): void {
     BUS_SLIDER_W,
     BUS_SLIDER_H,
     musicBus.gain,
-    0x444444,
-    0x2ecc71,
+    0x444444ff,
+    0x2ecc71ff,
   );
 }
 
@@ -318,8 +318,8 @@ function drawPanSliders(): void {
     BUS_SLIDER_W,
     BUS_SLIDER_H,
     sfxBus.pan,
-    0x444444,
-    0x3a7bd5,
+    0x444444ff,
+    0x3a7bd5ff,
   );
   drawPanBar(
     musicPanTrack,
@@ -329,8 +329,8 @@ function drawPanSliders(): void {
     BUS_SLIDER_W,
     BUS_SLIDER_H,
     musicBus.pan,
-    0x444444,
-    0x2ecc71,
+    0x444444ff,
+    0x2ecc71ff,
   );
 }
 

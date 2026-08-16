@@ -55,7 +55,7 @@ describe('drawDomScale9Shape', () => {
     const state = createDomRenderState(document.createElement('div'));
     registerDomShapeRasterizer(state, noopRasterizer);
     const shape = createScale9Shape(grid);
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     const data = getOrCreateRenderProxy2D(state, shape);
 
@@ -70,7 +70,7 @@ describe('drawDomScale9Shape', () => {
     const shape = createScale9Shape(grid);
     shape.scaleX = 2;
     shape.scaleY = 3;
-    appendShapeBeginFill(shape, 0xff0000);
+    appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 100);
     const data = getOrCreateRenderProxy2D(state, shape);
     data.rendererData = createDomScale9ShapeData(state, shape);

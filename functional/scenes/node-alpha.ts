@@ -41,14 +41,14 @@ const root = createDisplayObject();
 
 // Bottom: fully opaque blue.
 const bottom = createShape();
-appendShapeBeginFill(bottom, 0x0000ff, 1);
+appendShapeBeginFill(bottom, 0x0000ffff, 1);
 appendShapeRectangle(bottom, BOTTOM_X, BOTTOM_Y, SQUARE, SQUARE);
 appendShapeEndFill(bottom);
 addNodeChild(root, bottom);
 
 // Top: opaque-colored red, drawn at half node alpha so it blends source-over what is beneath it.
 const top = createShape();
-appendShapeBeginFill(top, 0xff0000, 1);
+appendShapeBeginFill(top, 0xff0000ff, 1);
 appendShapeRectangle(top, TOP_X, TOP_Y, SQUARE, SQUARE);
 appendShapeEndFill(top);
 top.alpha = 0.5;
@@ -92,5 +92,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

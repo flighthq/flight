@@ -136,7 +136,7 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
     const db = (rgb & 255) - b;
     return Math.abs(dr) <= tol && Math.abs(dg) <= tol && Math.abs(db) <= tol;
   };
-  const hex = (rgb: number): string => (rgb & 0xffffff).toString(16).padStart(6, '0');
+  const hex = (rgb: number): string => (rgb & 0xffffffff).toString(16).padStart(6, '0');
 
   // Top-left: white layer over white backdrop → Difference black. THIS is the discriminating probe — a
   // passthrough (blend not applied) would leave it white.

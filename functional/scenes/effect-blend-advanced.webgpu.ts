@@ -114,7 +114,7 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
     const blueDelta = (rgb & 255) - blue;
     return Math.abs(redDelta) <= tolerance && Math.abs(greenDelta) <= tolerance && Math.abs(blueDelta) <= tolerance;
   };
-  const hex = (rgb: number): string => (rgb & 0xffffff).toString(16).padStart(6, '0');
+  const hex = (rgb: number): string => (rgb & 0xffffffff).toString(16).padStart(6, '0');
   const topLeft = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.25), Math.floor(bitmap.height * 0.25));
   const topRight = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.75), Math.floor(bitmap.height * 0.25));
   const bottomLeft = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.25), Math.floor(bitmap.height * 0.75));

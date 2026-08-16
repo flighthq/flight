@@ -86,8 +86,8 @@ function drawStar(
   }
 }
 
-const FILL_COLOR = 0x4488cc;
-const STROKE_COLOR = 0x88ccff;
+const FILL_COLOR = 0x4488ccff;
+const STROKE_COLOR = 0x88ccffff;
 
 // ===== Row 1: Basic primitives =====
 
@@ -187,7 +187,7 @@ const linearGradient = createShape();
 appendShapeBeginGradientFill(
   linearGradient,
   'linear',
-  [0xff4d6d, 0xffc300, 0x00bbf9],
+  [0xff4d6dff, 0xffc300ff, 0x00bbf9ff],
   [1, 1, 1],
   [0, 128, 255],
   createGradientTransformMatrix(120, fillSize, 0, 60, fillSize / 2),
@@ -200,7 +200,7 @@ const radialGradient = createShape();
 appendShapeBeginGradientFill(
   radialGradient,
   'radial',
-  [0xffffff, 0x70e000, 0x007200],
+  [0xffffffff, 0x70e000ff, 0x007200ff],
   [1, 1, 1],
   [0, 140, 255],
   createGradientTransformMatrix(100, fillSize, 0, 50, fillSize / 2),
@@ -213,11 +213,11 @@ appendShapeEndFill(radialGradient);
 placeShape(radialGradient, COL_START + 160, row4Y + 15);
 
 const gradientStroke = createShape();
-appendShapeLineStyle(gradientStroke, 10, 0xffffff, 1, false, 'normal', 'round', 'round');
+appendShapeLineStyle(gradientStroke, 10, 0xffffffff, 1, false, 'normal', 'round', 'round');
 appendShapeLineGradientStyle(
   gradientStroke,
   'linear',
-  [0x9b5de5, 0xf15bb5, 0xfee440, 0x00f5d4],
+  [0x9b5de5ff, 0xf15bb5ff, 0xfee440ff, 0x00f5d4ff],
   [1, 1, 1, 1],
   [0, 85, 170, 255],
   createGradientTransformMatrix(210, fillSize, 0, 105, fillSize / 2),
@@ -234,10 +234,10 @@ let interactiveStarHovered = false;
 let interactiveStarPressed = false;
 
 function redrawInteractiveStar(): void {
-  const color = interactiveStarPressed ? 0x00f5d4 : interactiveStarHovered ? 0xfee440 : 0xf15bb5;
+  const color = interactiveStarPressed ? 0x00f5d4ff : interactiveStarHovered ? 0xfee440ff : 0xf15bb5ff;
   clearShapeCommands(interactiveStar);
   appendShapeBeginFill(interactiveStar, color);
-  appendShapeLineStyle(interactiveStar, interactiveStarPressed ? 7 : 3, 0xffffff);
+  appendShapeLineStyle(interactiveStar, interactiveStarPressed ? 7 : 3, 0xffffffff);
   drawStar(interactiveStar, fillSize / 2, fillSize / 2, fillSize / 2, fillSize * 0.2, 5);
   appendShapeEndFill(interactiveStar);
   invalidateNodeLocalTransform(interactiveStar);
@@ -305,34 +305,34 @@ placeShape(thinStroke, COL_START, row5Y);
 
 // Cap styles: none, round, square.
 const capsNone = createShape();
-appendShapeLineStyle(capsNone, 10, 0xcc8844, 1, false, 'normal', 'none');
+appendShapeLineStyle(capsNone, 10, 0xcc8844ff, 1, false, 'normal', 'none');
 appendShapeMoveTo(capsNone, 10, 20);
 appendShapeLineTo(capsNone, strokeLineLength - 10, 20);
-appendShapeLineStyle(capsNone, 10, 0x44cc88, 1, false, 'normal', 'round');
+appendShapeLineStyle(capsNone, 10, 0x44cc88ff, 1, false, 'normal', 'round');
 appendShapeMoveTo(capsNone, 10, 50);
 appendShapeLineTo(capsNone, strokeLineLength - 10, 50);
-appendShapeLineStyle(capsNone, 10, 0x8844cc, 1, false, 'normal', 'square');
+appendShapeLineStyle(capsNone, 10, 0x8844ccff, 1, false, 'normal', 'square');
 appendShapeMoveTo(capsNone, 10, 80);
 appendShapeLineTo(capsNone, strokeLineLength - 10, 80);
 placeShape(capsNone, COL_START + 220, row5Y);
 
 // Join styles: miter, round, bevel.
 const joinMiter = createShape();
-appendShapeLineStyle(joinMiter, 6, 0xcc8844, 1, false, 'normal', 'none', 'miter');
+appendShapeLineStyle(joinMiter, 6, 0xcc8844ff, 1, false, 'normal', 'none', 'miter');
 appendShapeMoveTo(joinMiter, 0, 80);
 appendShapeLineTo(joinMiter, 40, 10);
 appendShapeLineTo(joinMiter, 80, 80);
 placeShape(joinMiter, COL_START + 440, row5Y + 10);
 
 const joinRound = createShape();
-appendShapeLineStyle(joinRound, 6, 0x44cc88, 1, false, 'normal', 'none', 'round');
+appendShapeLineStyle(joinRound, 6, 0x44cc88ff, 1, false, 'normal', 'none', 'round');
 appendShapeMoveTo(joinRound, 0, 80);
 appendShapeLineTo(joinRound, 40, 10);
 appendShapeLineTo(joinRound, 80, 80);
 placeShape(joinRound, COL_START + 550, row5Y + 10);
 
 const joinBevel = createShape();
-appendShapeLineStyle(joinBevel, 6, 0x8844cc, 1, false, 'normal', 'none', 'bevel');
+appendShapeLineStyle(joinBevel, 6, 0x8844ccff, 1, false, 'normal', 'none', 'bevel');
 appendShapeMoveTo(joinBevel, 0, 80);
 appendShapeLineTo(joinBevel, 40, 10);
 appendShapeLineTo(joinBevel, 80, 80);

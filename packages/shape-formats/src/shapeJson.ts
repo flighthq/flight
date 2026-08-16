@@ -231,7 +231,7 @@ const MALFORMED_ARG = Symbol('shapeFormats.malformedArg');
 // Sentinel returned when a texture reference cannot be resolved; the owning command is dropped.
 const DROP_COMMAND = Symbol('shapeFormats.dropCommand');
 
-const SHAPE_JSON_FORMAT = 2;
+const SHAPE_JSON_FORMAT = 3;
 
 type ShapeCommandArgType = 'boolean' | 'matrixOrNull' | 'number' | 'numbers' | 'numbersOrNull' | 'string' | 'texture';
 

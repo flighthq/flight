@@ -50,7 +50,7 @@ function radialCircle(cx: number, cy: number, focalPointRatio: number): void {
   appendShapeBeginGradientFill(
     shape,
     'radial',
-    [0xffffff, 0x000000],
+    [0xffffffff, 0x000000ff],
     [1, 1],
     [0, 255],
     matrix,

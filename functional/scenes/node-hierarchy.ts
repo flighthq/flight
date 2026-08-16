@@ -25,7 +25,7 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 
-const FILL = 0x33cc66; // green: R=0x33, G=0xcc, B=0x66
+const FILL = 0x33cc66ff; // green: R=0x33, G=0xcc, B=0x66
 const SHAPE_SIZE = 120;
 
 const OUTER_X = 200;
@@ -99,5 +99,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

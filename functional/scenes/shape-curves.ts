@@ -31,7 +31,7 @@ const R = 150;
 // Cubic Bézier circle-arc control offset (kappa * radius) for a 90° arc.
 const K = 0.5522847498 * R;
 
-const FILL_COLOR = 0xff8800; // solid orange
+const FILL_COLOR = 0xff8800ff; // solid orange
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
@@ -80,7 +80,7 @@ export function assertRender(frame: Readonly<Bitmap>): void {
 function channel(rgb: number, shift: number): number {
   return (rgb >> shift) & 255;
 }
-// Orange 0xff8800: high red, mid green, low blue.
+// Orange 0xff8800ff: high red, mid green, low blue.
 function isFill(rgb: number): boolean {
   return channel(rgb, 16) > 180 && channel(rgb, 8) > 80 && channel(rgb, 8) < 200 && channel(rgb, 0) < 90;
 }
@@ -88,5 +88,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

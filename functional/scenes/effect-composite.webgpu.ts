@@ -107,7 +107,7 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
   const overlap = sample(0.25, 0.25);
   const sourceOnly = sample(0.75, 0.25);
   const backdropOnly = sample(0.25, 0.75);
-  const hex = (rgb: number): string => (rgb & 0xffffff).toString(16).padStart(6, '0');
+  const hex = (rgb: number): string => (rgb & 0xffffffff).toString(16).padStart(6, '0');
 
   if (!near(overlap, 255)) {
     throw new Error(`[effect-composite] overlap is #${hex(overlap)}, expected SourceIn to retain the source`);

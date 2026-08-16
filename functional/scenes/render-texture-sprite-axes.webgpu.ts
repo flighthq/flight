@@ -29,7 +29,7 @@ const SPRITE_X = 340;
 const SPRITE_Y = 250;
 const SPRITE_WIDTH = 100;
 const SPRITE_HEIGHT = 80;
-const BACKING = 0x292440;
+const BACKING = 0x292440ff;
 
 export const minCoverage = 0;
 
@@ -68,10 +68,10 @@ if (
 }
 
 const producer = createDisplayObject();
-addRect(producer, 0, 0, 50, 40, 0xf04a4a);
-addRect(producer, 50, 0, 50, 40, 0x42d681);
-addRect(producer, 0, 40, 50, 40, 0x3d72e8);
-addRect(producer, 50, 40, 50, 40, 0xf2ca52);
+addRect(producer, 0, 0, 50, 40, 0xf04a4aff);
+addRect(producer, 50, 0, 50, 40, 0x42d681ff);
+addRect(producer, 0, 40, 50, 40, 0x3d72e8ff);
+addRect(producer, 50, 40, 50, 40, 0xf2ca52ff);
 beginWgpuFrame(state);
 renderIntoWgpuRenderTexture(state, renderTexture, (captureState) => {
   setWgpuRenderTransform2D(captureState, createMatrix());
@@ -132,7 +132,7 @@ function channel(rgb: number, shift: number): number {
 }
 
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }
 
 function isBacking(rgb: number): boolean {

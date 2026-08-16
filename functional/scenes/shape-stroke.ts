@@ -45,13 +45,13 @@ const { render, width } = await createFunctionalTarget({
 const root = createDisplayObject();
 
 const line = createShape();
-appendShapeLineStyle(line, LINE_THICKNESS, 0xffffff, 1);
+appendShapeLineStyle(line, LINE_THICKNESS, 0xffffffff, 1);
 appendShapeMoveTo(line, LINE_X0, LINE_Y);
 appendShapeLineTo(line, LINE_X1, LINE_Y);
 addNodeChild(root, line);
 
 const rect = createShape();
-appendShapeLineStyle(rect, RECT_THICKNESS, 0xff0000, 1);
+appendShapeLineStyle(rect, RECT_THICKNESS, 0xff0000ff, 1);
 // No beginFill: lineStyle draws the rectangle's outline only.
 appendShapeRectangle(rect, RECT_X, RECT_Y, RECT_W, RECT_H);
 addNodeChild(root, rect);
@@ -98,5 +98,5 @@ function isBackground(rgb: number): boolean {
   return channel(rgb, 16) < 60 && channel(rgb, 8) < 60 && channel(rgb, 0) < 60;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

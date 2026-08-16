@@ -10,11 +10,13 @@ export interface MorphShapePathBinding {
 
 export interface MorphShapeColorEndpoint {
   readonly alpha?: number;
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly color: number;
 }
 
 export interface MorphShapeGradientEndpoint {
   readonly alphas: readonly number[];
+  // Packed RGBA (`0xRRGGBBAA`).
   readonly colors: readonly number[];
   readonly focalPointRatio?: number;
   readonly matrix?: Readonly<Matrix> | null;

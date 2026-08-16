@@ -33,7 +33,7 @@ beforeAll(() => {
 describe('appendMorphShapePath', () => {
   it('inserts the live path between ordinary Shape styling commands', () => {
     const shape = createMorphShape(createTestMorph());
-    appendShapeBeginFill(shape, 0x336699, 0.75);
+    appendShapeBeginFill(shape, 0x336699ff, 0.75);
 
     appendMorphShapePath(shape);
     appendShapeEndFill(shape);
@@ -41,7 +41,7 @@ describe('appendMorphShapePath', () => {
     expect(shape.data.commands).toStrictEqual([
       'beginFill',
       2,
-      0x336699,
+      0x336699ff,
       0.75,
       'drawPath',
       3,
@@ -98,7 +98,7 @@ describe('createMorphShape', () => {
   });
 
   it('uses initial progress and a provided command buffer', () => {
-    const commands: ShapeCommandToken[] = ['beginFill', 2, 0xff0000, 1];
+    const commands: ShapeCommandToken[] = ['beginFill', 2, 0xff0000ff, 1];
 
     const shape = createMorphShape(createTestMorph(), { data: { commands, progress: 0.5 } });
 

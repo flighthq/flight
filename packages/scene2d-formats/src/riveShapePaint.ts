@@ -96,7 +96,7 @@ function appendRiveStrokeStyle(shape: Shape, paint: Readonly<RivePaint>): void {
     );
     return;
   }
-  appendShapeLineStyle(shape, stroke.thickness, 0, 1, false, 'normal', stroke.caps, stroke.joints);
+  appendShapeLineStyle(shape, stroke.thickness, 0x000000ff, 1, false, 'normal', stroke.caps, stroke.joints);
   appendShapeLineGradientStyle(
     shape,
     paint.gradient.radial ? 'radial' : 'linear',
@@ -447,7 +447,7 @@ function applyRivePaintMutator(paint: RivePaint, artboard: Readonly<RiveArtboard
     const object = artboard.objects[index];
     if (isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_SOLID_COLOR)) {
       const packed = readRiveNumber(object, RIVE_SOLID_COLOR_VALUE, RIVE_DEFAULT_SOLID_COLOR);
-      paint.color = packed & 0xffffff;
+      paint.color = (((packed & 0xffffff) << 8) | 0xff) >>> 0;
       paint.alpha = ((packed >>> 24) & 0xff) / 255;
       return;
     }
@@ -480,7 +480,7 @@ function createRiveGradient(
     const object = artboard.objects[stop];
     if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_GRADIENT_STOP)) continue;
     const packed = readRiveNumber(object, RIVE_GRADIENT_STOP_COLOR, RIVE_DEFAULT_STOP_COLOR);
-    gradient.colors.push(packed & 0xffffff);
+    gradient.colors.push((((packed & 0xffffff) << 8) | 0xff) >>> 0);
     gradient.alphas.push((((packed >>> 24) & 0xff) / 255) * opacity);
     // Flight states a gradient stop's position as a 0-255 ratio; Rive states it as a fraction.
     gradient.ratios.push(Math.round(clampRiveUnit(readRiveNumber(object, RIVE_GRADIENT_STOP_POSITION, 0)) * 255));

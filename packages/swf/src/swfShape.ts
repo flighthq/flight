@@ -32,7 +32,7 @@ import type { SwfReader } from './swfReader';
 // decoder is handed a single implicit fill (the one every glyph edge references) and the emitted geometry
 // is recoloured at composition time. Coordinates stay in the font's EM grid, scaled by each use.
 export function createSwfGlyphShape(reader: SwfReader): Shape | null {
-  return decodeSwfShapeBody(reader, 1, { fills: [createSwfShapeFill(0, 1)], lines: [] });
+  return decodeSwfShapeBody(reader, 1, { fills: [createSwfShapeFill(0x000000ff, 1)], lines: [] });
 }
 
 // Decodes a SHAPEWITHSTYLE body into a Shape whose command stream draws it, or null when the body does
@@ -541,7 +541,7 @@ function readSwfShapeColor(reader: SwfReader, hasAlpha: boolean): { color: numbe
   const green = reader.readUint8();
   const blue = reader.readUint8();
   const alpha = hasAlpha ? reader.readUint8() : 0xff;
-  return { color: red * 0x10000 + green * 0x100 + blue, opacity: alpha / 0xff };
+  return { color: ((red << 24) | (green << 16) | (blue << 8) | 0xff) >>> 0, opacity: alpha / 0xff };
 }
 
 // Reads one edge off the wire, from the pen position the caller supplies. The pen moves to the edge's

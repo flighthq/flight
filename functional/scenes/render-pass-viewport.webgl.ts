@@ -94,7 +94,7 @@ const root2D = createDisplayObject();
 root2D.scaleX = scale;
 root2D.scaleY = scale;
 const clippedShape = createShape();
-appendShapeBeginFill(clippedShape, 0xff8a24, 1);
+appendShapeBeginFill(clippedShape, 0xff8a24ff, 1);
 appendShapeRectangle(clippedShape, 0, 0, 270, 220);
 appendShapeEndFill(clippedShape);
 setNode2DClip(clippedShape, createClipRegionFromRectangle({ height: 120, width: 160, x: 40, y: 40 }));
@@ -305,5 +305,5 @@ function isOrange(rgb: number): boolean {
   return red(rgb) > 160 && green(rgb) > 70 && green(rgb) < 190 && blue(rgb) < 100;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

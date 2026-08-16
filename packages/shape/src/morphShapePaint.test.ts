@@ -20,14 +20,14 @@ describe('appendMorphShapeBeginFill', () => {
   it('retains one command while sampling packed RGB and alpha at the current progress', () => {
     const shape = createTestMorphShape(0.5);
 
-    appendMorphShapeBeginFill(shape, { alpha: 0.25, color: 0xff0000 }, { alpha: 0.75, color: 0x0000ff });
+    appendMorphShapeBeginFill(shape, { alpha: 0.25, color: 0xff0000ff }, { alpha: 0.75, color: 0x0000ffff });
 
-    expect(shape.data.commands).toStrictEqual(['beginFill', 2, 0x800080, 0.5]);
+    expect(shape.data.commands).toStrictEqual(['beginFill', 2, 0x800080ff, 0.5]);
     expect(shape.data.paintBindings).toHaveLength(1);
     const commands = shape.data.commands;
     setMorphShapeProgress(shape, 1);
     expect(shape.data.commands).toBe(commands);
-    expect(shape.data.commands).toStrictEqual(['beginFill', 2, 0x0000ff, 0.75]);
+    expect(shape.data.commands).toStrictEqual(['beginFill', 2, 0x0000ffff, 0.75]);
   });
 });
 
@@ -43,14 +43,14 @@ describe('appendMorphShapeBeginGradientFill', () => {
         'radial',
         {
           alphas: [0.25, 0.5],
-          colors: [0x000000, 0xff0000],
+          colors: [0x000000ff, 0xff0000ff],
           focalPointRatio: -0.5,
           matrix: startMatrix,
           ratios: [0, 100],
         },
         {
           alphas: [0.75, 1],
-          colors: [0xffffff, 0x0000ff],
+          colors: [0xffffffff, 0x0000ffff],
           focalPointRatio: 0.5,
           matrix: endMatrix,
           ratios: [100, 200],
@@ -68,7 +68,7 @@ describe('appendMorphShapeBeginGradientFill', () => {
     expect(shape.data.commands[4]).toBe(alphas);
     expect(shape.data.commands[5]).toBe(ratios);
     expect(shape.data.commands[6]).toBe(matrix);
-    expect(colors).toStrictEqual([0x808080, 0x800080]);
+    expect(colors).toStrictEqual([0x808080ff, 0x800080ff]);
     expect(alphas).toStrictEqual([0.5, 0.75]);
     expect(ratios).toStrictEqual([50, 150]);
     expect(matrix).toMatchObject({ a: 2, b: 3, c: 4, d: 5, tx: 6, ty: 7 });
@@ -99,7 +99,7 @@ describe('appendMorphShapeBeginGradientFill', () => {
         shape,
         'linear',
         { alphas: [1], colors: [0], ratios: [0] },
-        { alphas: [1], colors: [0xffffff], matrix: createMatrix(3, 0, 0, 5, 20, 40), ratios: [255] },
+        { alphas: [1], colors: [0xffffffff], matrix: createMatrix(3, 0, 0, 5, 20, 40), ratios: [255] },
       ),
     ).toBe(true);
     const matrix = shape.data.commands[6];
@@ -142,14 +142,14 @@ describe('appendMorphShapeLineGradientStyle', () => {
       appendMorphShapeLineGradientStyle(
         shape,
         'linear',
-        { alphas: [1], colors: [0xff0000], ratios: [0] },
-        { alphas: [0.5], colors: [0x0000ff], ratios: [255] },
+        { alphas: [1], colors: [0xff0000ff], ratios: [0] },
+        { alphas: [0.5], colors: [0x0000ffff], ratios: [255] },
       ),
     ).toBe(true);
     setMorphShapeProgress(shape, 1);
 
     expect(shape.data.commands[0]).toBe('lineGradientStyle');
-    expect(shape.data.commands[3]).toStrictEqual([0x0000ff]);
+    expect(shape.data.commands[3]).toStrictEqual([0x0000ffff]);
     expect(shape.data.commands[4]).toStrictEqual([0.5]);
     expect(shape.data.commands[5]).toStrictEqual([255]);
   });
@@ -161,8 +161,8 @@ describe('appendMorphShapeLineStyle', () => {
 
     appendMorphShapeLineStyle(
       shape,
-      { alpha: 0.25, color: 0xff0000, thickness: 2 },
-      { alpha: 0.75, color: 0x0000ff, thickness: 10 },
+      { alpha: 0.25, color: 0xff0000ff, thickness: 2 },
+      { alpha: 0.75, color: 0x0000ffff, thickness: 10 },
       true,
       'horizontal',
       'round',
@@ -174,7 +174,7 @@ describe('appendMorphShapeLineStyle', () => {
       'lineStyle',
       8,
       6,
-      0x800080,
+      0x800080ff,
       0.5,
       true,
       'horizontal',
@@ -202,7 +202,7 @@ describe('appendMorphShapeLineTextureStyle', () => {
 describe('clearShapeCommands with MorphShape paint', () => {
   it('removes stale paint bindings with the ordinary Shape command stream', () => {
     const shape = createTestMorphShape();
-    appendMorphShapeBeginFill(shape, { color: 0 }, { color: 0xffffff });
+    appendMorphShapeBeginFill(shape, { color: 0x000000ff }, { color: 0xffffffff });
 
     clearShapeCommands(shape);
     setMorphShapeProgress(shape, 1);
@@ -215,13 +215,13 @@ describe('clearShapeCommands with MorphShape paint', () => {
 describe('sampleMorphShapePaintBindings', () => {
   it('can resample prepared paint bindings without reallocating their command values', () => {
     const shape = createTestMorphShape();
-    appendMorphShapeBeginFill(shape, { color: 0 }, { color: 0xffffff });
+    appendMorphShapeBeginFill(shape, { color: 0x000000ff }, { color: 0xffffffff });
     const commands = shape.data.commands;
 
     sampleMorphShapePaintBindings(shape.data, 0.25);
 
     expect(shape.data.commands).toBe(commands);
-    expect(shape.data.commands[2]).toBe(0x404040);
+    expect(shape.data.commands[2]).toBe(0x404040ff);
   });
 });
 

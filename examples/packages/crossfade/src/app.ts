@@ -173,17 +173,17 @@ function drawCharacter(shape: Shape, x: number, y: number, leftAngle: number, ri
   appendShapeLineTo(shape, rightKnee[0] + 12, rightKnee[1] + 38);
 }
 
-appendShapeLineStyle(scene2d, 2, 0x34405a);
+appendShapeLineStyle(scene2d, 2, 0x34405aff);
 appendShapeMoveTo(scene2d, 30, 366);
 appendShapeLineTo(scene2d, 770, 366);
-drawCharacter(scene2d, 115, 265, -3, 3, 0x7086ad);
-drawCharacter(scene2d, 685, 259, -28, 28, 0xf0a85b);
+drawCharacter(scene2d, 115, 265, -3, 3, 0x7086adff);
+drawCharacter(scene2d, 685, 259, -28, 28, 0xf0a85bff);
 
 function drawUpperBody(shape: Shape): void {
-  appendShapeBeginFill(shape, 0x63e6be);
+  appendShapeBeginFill(shape, 0x63e6beff);
   appendShapeCircle(shape, 0, -70, 18);
   appendShapeEndFill(shape);
-  appendShapeLineStyle(shape, 8, 0x63e6be);
+  appendShapeLineStyle(shape, 8, 0x63e6beff);
   appendShapeMoveTo(shape, 0, -50);
   appendShapeLineTo(shape, 0, 12);
   appendShapeMoveTo(shape, 0, -32);
@@ -193,7 +193,7 @@ function drawUpperBody(shape: Shape): void {
 }
 
 function drawLeg(shape: Shape, footDirection: number): void {
-  appendShapeLineStyle(shape, 8, 0x63e6be);
+  appendShapeLineStyle(shape, 8, 0x63e6beff);
   appendShapeMoveTo(shape, 0, 0);
   appendShapeLineTo(shape, 0, 43);
   appendShapeLineTo(shape, footDirection * 12, 81);
@@ -221,14 +221,14 @@ drawLeg(rightLeg, 1);
 addNodeChild(root, rightLeg);
 
 const barTrack = createShape();
-drawBar(barTrack, 0x2c3850);
+drawBar(barTrack, 0x2c3850ff);
 barTrack.x = 240;
 barTrack.y = 414;
 invalidateNodeLocalTransform(barTrack);
 addNodeChild(root, barTrack);
 
 const barFill = createShape();
-drawBar(barFill, 0x63e6be);
+drawBar(barFill, 0x63e6beff);
 barFill.x = 240;
 barFill.y = 414;
 barFill.scaleX = 0.001;

@@ -18,7 +18,7 @@ describe('createSwfGlyphShape', () => {
 
     const glyph = createSwfGlyphShape(writer.toReader());
 
-    expect(glyph?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0, 1]);
+    expect(glyph?.data.commands.slice(0, 4)).toEqual(['beginFill', 2, 0x000000ff, 1]);
     expect(glyph?.data.commands.slice(4, 12)).toEqual(['moveTo', 2, 0, 0, 'lineTo', 2, 51.2, 0]);
   });
 
@@ -50,7 +50,7 @@ describe('createSwfShape', () => {
     expect(shape?.data.commands).toEqual([
       'beginFill',
       2,
-      0xff0000,
+      0xff0000ff,
       1,
       'moveTo',
       2,
@@ -92,7 +92,7 @@ describe('createSwfShape', () => {
     expect(shape?.data.commands).toEqual([
       'beginFill',
       2,
-      0x0000ff,
+      0x0000ffff,
       1,
       'moveTo',
       2,
@@ -126,7 +126,7 @@ describe('createSwfShape', () => {
     expect(shape?.data.commands).toEqual([
       'beginFill',
       2,
-      0x00ff00,
+      0x00ff00ff,
       1,
       'moveTo',
       2,
@@ -165,7 +165,7 @@ describe('createSwfShape', () => {
     expect(shape?.data.commands).toEqual([
       'beginFill',
       2,
-      0xffffff,
+      0xffffffff,
       1,
       'moveTo',
       2,
@@ -204,7 +204,7 @@ describe('createSwfShape', () => {
 
     const shape = createSwfShape(writer.toReader(), 3);
 
-    expect(shape?.data.commands[2]).toBe(0x112233);
+    expect(shape?.data.commands[2]).toBe(0x112233ff);
     expect(shape?.data.commands[3]).toBe(1);
   });
 
@@ -227,7 +227,7 @@ describe('createSwfShape', () => {
       'lineStyle',
       8,
       2,
-      0x102030,
+      0x102030ff,
       1,
       false,
       'normal',
@@ -264,7 +264,7 @@ describe('createSwfShape', () => {
 
     expect(shape?.data.commands[0]).toBe('beginGradientFill');
     expect(shape?.data.commands[2]).toBe('linear');
-    expect(shape?.data.commands[3]).toEqual([0xff0000, 0x0000ff]);
+    expect(shape?.data.commands[3]).toEqual([0xff0000ff, 0x0000ffff]);
     expect(shape?.data.commands[4]).toEqual([1, 1]);
     expect(shape?.data.commands[5]).toEqual([0, 255]);
     expect(shape?.data.commands[6]).toMatchObject({ a: 1, b: 0, c: 0, d: 1, tx: 20, ty: 40 });

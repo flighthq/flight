@@ -45,7 +45,7 @@ const result = xorPaths(pathA, pathB);
 
 const root = createDisplayObject();
 const shape = createShape();
-appendShapeBeginFill(shape, 0x00cccc, 1);
+appendShapeBeginFill(shape, 0x00ccccff, 1);
 appendShapePath(shape, result.commands, result.data, result.winding);
 appendShapeEndFill(shape);
 invalidateNodeAppearance(shape);
@@ -83,5 +83,5 @@ function isBlack(rgb: number): boolean {
   return ((rgb >> 16) & 0xff) < 30 && ((rgb >> 8) & 0xff) < 30 && (rgb & 0xff) < 30;
 }
 function hex(rgb: number): string {
-  return (rgb & 0xffffff).toString(16).padStart(6, '0');
+  return (rgb & 0xffffffff).toString(16).padStart(6, '0');
 }

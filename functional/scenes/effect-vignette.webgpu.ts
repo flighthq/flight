@@ -72,7 +72,7 @@ addNodeChild(root, fill);
 render(root);
 
 // ORACLE-BLOCK
-// Vignette darkens edges while preserving the center. The uniform fill (0xe8ecf4, luminance ~234)
+// Vignette darkens edges while preserving the center. The uniform fill (0xe8ecf4ff, luminance ~234)
 // fills the entire frame. The center pixel should remain bright while corner pixels should be
 // darkened by the vignette. Without the effect, center and corner luminances are equal, so the
 // gap is 0 and fails the > 20 check.
