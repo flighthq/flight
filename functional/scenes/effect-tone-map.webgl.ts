@@ -1,4 +1,4 @@
-import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -15,6 +15,7 @@ import {
   defaultGlShapeRenderer,
   registerGlToneMapEffect,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlStandardMaterial,
   registerRenderer,
@@ -76,3 +77,50 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  // ACES filmic tone map with exposure 1.5 on an rgba16f pipeline. Pure white (1.0 linear) ×
+  // exposure 1.5 enters ACES at 1.5 — the curve compresses this below 1.0, so the 8-bit result
+  // must be below 255. Standard ACES(1.5) ≈ 0.877 → ~224 in 8-bit.
+  //
+  // Semantic checks:
+  // 1. White block center is still bright (luminance > 150) but NOT clipped white (each channel < 250).
+  // 2. Red block center preserves hue: R is the dominant channel, G and B are low.
+
+  // Block 0 (white, 0xffffffff): x = 0.3 × width, y = 0.32 × height.
+  const whiteCx = Math.round(0.3 * frame.width);
+  const whiteCy = Math.round(0.32 * frame.height);
+  const whiteRgb = getBitmapPixelRgb(frame, whiteCx, whiteCy);
+  const wR = (whiteRgb >> 16) & 0xff;
+  const wG = (whiteRgb >> 8) & 0xff;
+  const wB = whiteRgb & 0xff;
+  const whiteLum = 0.299 * wR + 0.587 * wG + 0.114 * wB;
+  if (whiteLum < 150) {
+    throw new Error(
+      `[effect-tone-map] white block luminance is ${whiteLum.toFixed(1)} (expected ≥150 — tone mapping should preserve brightness)`,
+    );
+  }
+  if (wR >= 250 && wG >= 250 && wB >= 250) {
+    throw new Error(
+      `[effect-tone-map] white block is still clipped white (${wR},${wG},${wB}) — ACES highlight rolloff did not apply`,
+    );
+  }
+
+  // Block 1 (red, 0xff0000ff): x = 0.7 × width, y = 0.32 × height.
+  const redCx = Math.round(0.7 * frame.width);
+  const redCy = Math.round(0.32 * frame.height);
+  const redRgb = getBitmapPixelRgb(frame, redCx, redCy);
+  const rR = (redRgb >> 16) & 0xff;
+  const rG = (redRgb >> 8) & 0xff;
+  const rB = redRgb & 0xff;
+  if (rR < 150) {
+    throw new Error(
+      `[effect-tone-map] red block R channel is ${rR} (expected ≥150 — red highlight should stay bright after ACES)`,
+    );
+  }
+  if (rG > 50 || rB > 50) {
+    throw new Error(
+      `[effect-tone-map] red block has G=${rG}, B=${rB} (expected <50 each — ACES should preserve hue, not bleed into other channels)`,
+    );
+  }
+}
