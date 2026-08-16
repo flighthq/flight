@@ -63,6 +63,22 @@ and its inline exported types are a stated exemption from the types-home rule �
   whether one locked cell was in it. Both times the verdict is durable and its evidence discarded.
   Treat it as a pattern: persist the measurement wherever a capture-side check produces one.
 
+- **A capture root ACCUMULATES, and reading facts out of it is a recurrence, not an incident.** A run
+  writes the current suite and deletes nothing, so `.artifacts/<subject>/` keeps status and screenshots
+  for scenes and columns that no longer exist, indefinitely. Both of 2026-08-16's appearances, because
+  one was harmless and one was expensive and the difference is the whole lesson:
+  *Harmless* — the calibration roots held cells back to 2026-07-24. `compareCalibrationRuns` requires a
+  hash from **every** run, so residue can only ever land in `incomplete`, never inflate `agreed`. It
+  operates on the intersection by construction.
+  *Expensive* — the capture-analysis side read whatever was in the root. Seven cells were drafted and
+  sent as render defects (`svg-gradient` ×3, `svg-stroke` ×3, `bitmap-downscale-smoothing/webgl`) and all
+  seven were residue: no scene file, no manifest entry, the quoted assertion text present nowhere in the
+  tree, status dated 2026-08-13 and 2026-07-25 against runs on 2026-08-16. Retracted. The same residue
+  reached code — a phantom `webgl` column withheld its scene's two live columns until `14b9788c4`.
+  The fix shape is the one applied twice that day and once already in `evidence:baseline`'s exact-target
+  fix: **operate on a DECLARED list, not on found state.** Intersect with the coverage manifest at every
+  read; a directory listing is not a statement about what exists now.
+
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look. Detail lives in
