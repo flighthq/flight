@@ -794,9 +794,6 @@ async function processEntry(
   const allowed = (renderer: string): boolean => skip !== 'all' && !skip?.includes(renderer);
   const pairs: { a: string; b: string; label: string; dist: number; tolerance: number }[] = [];
   const groups = Object.entries(options.parityGroups);
-  // Groups whose declared reference is not present, as "<group> → <reference>". Carried to the uncovered
-  // explanation so the reason names the missing reference instead of collapsing into the skip message.
-  const unavailableReferences: string[] = [];
   if (groups.length === 0) {
     const present = [...eligible.keys()].filter(allowed);
     for (let i = 0; i < present.length; i++) {
@@ -807,30 +804,19 @@ async function processEntry(
   } else {
     for (const [groupName, group] of groups) {
       const present = group.targets.filter((renderer) => eligible.has(renderer) && allowed(renderer));
-      // A group that DECLARES a reference is claiming agreement WITH THAT BACKEND. If the reference is
-      // not present — removed by a skip, or never parity-eligible — that claim cannot be checked, and
-      // comparing the remaining targets to each other substitutes a DIFFERENT, weaker claim under the
-      // same group name. Yield no pairs instead, so the scene reports itself uncovered by name.
+      // When the declared reference is absent (skipped or never a column), the reference claim cannot
+      // be checked. Fall through to all-pairs among the remaining targets: weaker than the reference
+      // claim, but real coverage, and the label makes the substitution transparent.
       if (group.reference !== undefined) {
-        // Only a SKIP-removed reference kills the group. A skip is a deliberate statement that this
-        // backend is not to be trusted for this scene, so comparing the survivors to each other
-        // substitutes a different, weaker claim under the same group name — yield nothing and let the
-        // scene report itself uncovered.
-        //
-        // A reference that was never there is NOT the same thing and must keep the all-pairs branch:
-        // the built-in group declares `reference: 'canvas'` once for every scene, and 83 scenes have no
-        // canvas column at all. Treating those as reference-removed silently deletes 85 real
-        // cross-backend comparisons — measured, not estimated: 253 → 168 on the functional suite.
-        if (eligible.has(group.reference) && !allowed(group.reference)) {
-          unavailableReferences.push(`${groupName} → ${group.reference}`);
-          continue;
-        }
         if (!present.includes(group.reference)) {
-          // The comparison is FINE here and the CLAIM was false: nobody asked for the reference to go,
-          // it simply is not a column for this scene, and all-pairs among the columns that DO exist is
-          // real coverage worth keeping. What was wrong is reporting it under a group that asserts a
-          // reference it never used, so the label says so rather than the pairs disappearing.
-          const label = `${groupName} (all-pairs, no ${group.reference} column)`;
+          // The reference is absent — either this scene has no column for it, or a paritySkip
+          // deliberately excluded it. Either way, all-pairs among the columns that DO exist is real
+          // coverage worth keeping. The label says which case it is so the claim is transparent.
+          const reason =
+            eligible.has(group.reference) && !allowed(group.reference)
+              ? `${group.reference} skipped`
+              : `no ${group.reference} column`;
+          const label = `${groupName} (all-pairs, ${reason})`;
           for (let i = 0; i < present.length; i++) {
             for (let j = i + 1; j < present.length; j++) {
               addPair(pairs, eligible, present[i]!, present[j]!, label, group.tolerance ?? options.parityTolerance);
@@ -864,7 +850,7 @@ async function processEntry(
       renderers: [...eligible.keys()],
       kind: 'parity',
       status: 'skipped',
-      message: explainCaptureParityUncovered(eligible.size, groups.length > 0, unavailableReferences),
+      message: explainCaptureParityUncovered(eligible.size, groups.length > 0),
     });
   }
   if (pairs.length > 0) {

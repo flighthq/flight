@@ -317,22 +317,18 @@ describe('runCaptureValidation', () => {
     });
   });
 
-  it('yields NO PAIRS when a declared parity reference is skipped, instead of falling back to all-pairs', async () => {
-    // The defect: `present.includes(reference)` is false both when a group declares no reference and
-    // when a skip removed the one it declared, so the second case inherited the first case's all-pairs
-    // fallback. The run then compared a DIFFERENT set of backends under the group's name and reported
-    // success. Two eligible renderers here, so a fallback would produce exactly one pair — the
-    // assertion is that it produces none.
+  it('falls through to all-pairs when a declared parity reference is skipped', async () => {
     const result = await validateParityFixture({
-      parityGroups: { 'ref-group': { targets: ['canvas', 'webgl'], reference: 'canvas' } },
+      entries: [{ name: 'sample', renderers: ['canvas', 'webgl', 'webgpu'] }],
+      fingerprints: { sample: { canvas: '1:000000', webgl: '1:000000', webgpu: '1:000000' } },
+      parityGroups: { 'ref-group': { targets: ['canvas', 'webgl', 'webgpu'], reference: 'canvas' } },
       paritySkip: { sample: ['canvas'] },
     });
 
-    expect(result.parityPasses + result.parityFailures).toBe(0);
-    expect(result.parityUncovered).toBe(1);
-    const uncovered = result.checks.find((check) => check.kind === 'parity');
-    expect(uncovered?.status).toBe('skipped');
-    expect(uncovered?.message).toContain('ref-group → canvas');
+    expect(result.parityPasses + result.parityFailures).toBe(1);
+    expect(result.parityUncovered).toBe(0);
+    const passed = result.checks.find((check) => check.kind === 'parity' && check.status === 'passed');
+    expect(passed?.message).toContain('all-pairs, canvas skipped');
   });
 
   it("still compares all pairs for a group that declares NO reference, which is that branch's real job", async () => {
