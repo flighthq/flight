@@ -191,6 +191,42 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
   return { blocked, eligible };
 }
 
+/** One `parity` row of a validation report: the scene it judged, and the verdict it reached. */
+export interface OracleParityCheck {
+  entry?: string;
+  kind?: string;
+  status?: string;
+}
+
+/**
+ * Expands the parity leg's verdicts into the cells they withhold, or refuses the report.
+ *
+ * ★ THE WHOLE SCENE IS WITHHELD, NOT THE FAILING COLUMN. Parity says the backends disagree; it does not
+ * say WHICH is wrong. Blessing the one that happened to match the reference backend would pin whichever
+ * picture the comparison used as its yardstick, and a disagreement is exactly the case where that choice
+ * cannot be justified.
+ *
+ * ★ A REPORT-ONLY RUN IS REFUSED, NOT READ AS AGREEMENT. `--report` records every pair as `reported` —
+ * a distance with no verdict, because that mode gates nothing. Treating those rows as "no scene
+ * disagreed" would convert the loudest possible ABSENCE of a parity judgement into the strongest
+ * possible parity pass, and every cell in the corpus would clear a condition nothing had evaluated.
+ */
+export function findParityDisagreements(
+  checks: readonly Readonly<OracleParityCheck>[],
+  identities: Iterable<string>,
+): { disagreed: Set<string> } | { refused: string } {
+  const parity = checks.filter((check) => check.kind === 'parity');
+  if (!parity.some((check) => check.status === 'passed' || check.status === 'failed')) {
+    return { refused: 'the report carries no gated parity verdict, so it cannot say any scene agreed' };
+  }
+  const disagreed = new Set<string>();
+  const scenes = new Set(parity.filter((check) => check.status !== 'passed').map((check) => check.entry));
+  for (const identity of identities) {
+    if (scenes.has(identity.split('/')[1])) disagreed.add(identity);
+  }
+  return { disagreed };
+}
+
 /**
  * Groups eligible cells into the `targets` shape a request carries, one entry per scene.
  *
