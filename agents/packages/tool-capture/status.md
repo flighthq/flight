@@ -82,6 +82,19 @@ and its inline exported types are a stated exemption from the types-home rule �
   [inert-gate-audit.md](../../inert-gate-audit.md), as the mirror of a gate whose trigger could never
   arrive: there, residue let a trigger reach a gate that should not have had one. Same rule from the
   other side — read either alone and it looks like an incident, read the pair and it is a rule.
+  **A stale FINDING used as ground truth is residue too** — the same thing one abstraction up from stale
+  files on disk, and it happened the same day: a metric was validated against a set of "oracles observed
+  firing on real renders" assembled *before* the retraction above, still containing three of the
+  withdrawn scenes. So a retraction has a **blast radius, and it is two-directional**. Only one half was
+  checked, promptly and correctly:
+  *Outbound* — who was told, and do they need correcting? Asked and answered.
+  *Inbound* — what had already CONSUMED this as an input, and is that thing now wrong? Never asked, and
+  it is the half that bit. Nothing in a retraction naturally asks who is holding the claim.
+  The remedy is the entry's own rule applied to claims rather than files: when the thing being checked is
+  a claim, "found state" is every set, count, and half-written analysis already built on it — including,
+  most dangerously, the ones in your own session, which feel checked because you were just looking at
+  them. Enumerate consumers at retraction time, and when a corrected figure differs, carry **both**
+  numbers with the reason, so a reader can tell a correction from a revision.
 
 ## Log
 
