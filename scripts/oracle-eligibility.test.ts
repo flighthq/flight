@@ -96,6 +96,7 @@ describe('selectCommissionableCells', () => {
 
     expect(report.eligible).toEqual(['functional/good/webgl']);
     expect(report.blocked).toEqual([]);
+    expect(report.collisions).toEqual([]);
   });
 
   it('withholds a cell whose capture errored', () => {
@@ -146,10 +147,12 @@ describe('selectCommissionableCells', () => {
     ]);
   });
 
-  it('withholds both cells when two backends return byte-identical renders', () => {
-    // ★ THE FIRING TEST FOR THE FALLBACK TRAP. Independent rasterizers do not agree to the byte, so
-    // equality means one backend did not render its own path. Blessing it pins one backend's picture as
-    // the other's reference, after which the column agrees forever by construction and can never fail.
+  it('reports a byte-identical sibling backend without withholding either cell', () => {
+    // ★ THE CONDITION THIS REPLACED, AND WHY. Byte-identity across backends was a blocking rule on the
+    // premise that independent rasterizers never agree exactly. The corpus refuted it: 33 of the 76
+    // scenes carrying both a canvas and a webgl column are byte-identical, and webgl/webgpu share one
+    // SwiftShader rasterizer besides. Blocking withheld 179 of 493 cells — most of them the simplest and
+    // safest in the suite — for an observation with no discriminating power.
     const report = select({
       coverage: [
         ['functional/good/webgl', ['fingerprint', 'oracle']],
@@ -165,24 +168,17 @@ describe('selectCommissionableCells', () => {
       ],
     });
 
-    expect(report.eligible).toEqual([]);
-    expect(report.blocked).toEqual([
-      {
-        detail: 'byte-identical to functional/good/webgpu',
-        identity: 'functional/good/webgl',
-        reason: 'backend-collision',
-      },
-      {
-        detail: 'byte-identical to functional/good/webgl',
-        identity: 'functional/good/webgpu',
-        reason: 'backend-collision',
-      },
+    expect(report.eligible).toEqual(['functional/good/webgl', 'functional/good/webgpu']);
+    expect(report.blocked).toEqual([]);
+    expect(report.collisions).toEqual([
+      { identity: 'functional/good/webgl', twin: 'functional/good/webgpu' },
+      { identity: 'functional/good/webgpu', twin: 'functional/good/webgl' },
     ]);
   });
 
-  it('does not read two scenes sharing a hash as a backend collision', () => {
-    // Different scenes are allowed to look alike; only a SIBLING backend of the SAME scene is evidence
-    // that one render was served by the other.
+  it('does not report two scenes sharing a hash as a collision', () => {
+    // Different scenes are allowed to look alike; only a SIBLING backend of the SAME scene is the
+    // observation worth printing.
     const report = select({
       coverage: [
         ['functional/good/webgl', ['fingerprint', 'oracle']],
@@ -199,6 +195,7 @@ describe('selectCommissionableCells', () => {
     });
 
     expect(report.eligible).toEqual(['functional/good/webgl', 'functional/other/webgl']);
+    expect(report.collisions).toEqual([]);
   });
 
   it('withholds a cell that no longer matches its committed baseline', () => {

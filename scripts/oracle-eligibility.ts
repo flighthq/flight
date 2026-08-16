@@ -73,8 +73,6 @@ export type OracleBlockReason =
   | 'determinism-unmeasured'
   /** Backends disagree on this scene, so at least one of them is wrong and it is not known which. */
   | 'parity-disagreement'
-  /** Two backends returned byte-identical renders: one did not run its own path. */
-  | 'backend-collision'
   /** Today's capture does not match the committed baseline. Something moved and nobody has explained it. */
   | 'baseline-drift'
   /** No committed baseline, so there is no second, independent statement about these pixels. */
@@ -97,6 +95,16 @@ export interface OracleEligibilityReport {
   eligible: readonly string[];
   /** Every other live cell, with the first condition it failed. */
   blocked: readonly OracleBlockedCell[];
+  /**
+   * Cells whose capture is byte-identical to a sibling backend's. REPORTED, NEVER BLOCKING — see
+   * `findBackendCollisions` for the measurement that took this out of the bar.
+   */
+  collisions: readonly OracleBackendCollision[];
+}
+
+export interface OracleBackendCollision {
+  identity: string;
+  twin: string;
 }
 
 /**
@@ -170,12 +178,6 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
       blocked.push({ detail: 'backends disagree on this scene', identity, reason: 'parity-disagreement' });
       continue;
     }
-    const twin = collided.get(identity);
-    if (twin !== undefined) {
-      blocked.push({ detail: `byte-identical to ${twin}`, identity, reason: 'backend-collision' });
-      continue;
-    }
-
     if (capture.baselineHash === null) {
       blocked.push({ detail: 'no committed capture baseline', identity, reason: 'no-baseline' });
       continue;
@@ -188,7 +190,11 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
     eligible.push(identity);
   }
 
-  return { blocked, eligible };
+  const collisions = [...collided.entries()]
+    .filter(([identity]) => input.coverage.has(identity))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([identity, twin]) => ({ identity, twin }));
+  return { blocked, collisions, eligible };
 }
 
 /** One `parity` row of a validation report: the scene it judged, and the verdict it reached. */
@@ -253,11 +259,23 @@ export function groupOracleTargets(identities: readonly string[]): { entry: stri
 /**
  * Finds cells whose capture hash equals a SIBLING BACKEND's hash for the same scene.
  *
- * ★ THIS IS NOT A PARITY CHECK — IT IS ITS OPPOSITE. Parity asks whether backends agree closely enough;
- * this asks whether two of them agree EXACTLY, which independent rasterizers do not do. Byte equality
- * across backends means one of them did not render: a fallback silently served the other's frame, or the
- * capture read the wrong surface. Blessing that pins one backend's picture as the other's reference, and
- * the two then agree forever by construction — the column stops being able to fail.
+ * ★ THIS WAS A BLOCKING CONDITION AND THE MEASUREMENT REFUTED IT. The premise was that independent
+ * rasterizers never agree to the byte, so equality had to mean one backend did not render its own path.
+ * On this corpus, 33 of the 76 scenes with both a canvas and a webgl column are byte-identical — 43% —
+ * and canvas (Skia) and webgl (SwiftShader) are genuinely separate implementations. Integer-aligned
+ * solid fills and unfiltered blits simply are exactly reproducible. Blocking on it withheld 179 of 493
+ * cells, most of them the simplest and safest in the suite.
+ *
+ * ★ AND THE GPU PAIR IS NOT INDEPENDENT AT ALL. `captureBrowser.ts` pins
+ * `--use-webgpu-adapter=swiftshader`, and headless WebGL rasterizes through SwiftShader too, so
+ * `webgl == webgpu` is one rasterizer answering twice. It is the single most common collision here (60
+ * of 157 scenes) and it is evidence of the capture configuration, not of a fallback.
+ *
+ * So this is REPORTED, never blocking: it is a real observation with no discriminating power on its
+ * own, and there is no in-tree signal that separates "trivial content" from "one backend did not run".
+ * A collision on a scene whose content could not plausibly be pixel-exact — a blur, a gradient, an
+ * antialiased curve — is still worth a human look, which is why the census is printed rather than
+ * dropped.
  */
 function findBackendCollisions(captures: readonly OracleCaptureFact[]): Map<string, string> {
   const byScene = new Map<string, OracleCaptureFact[]>();
@@ -294,7 +312,6 @@ const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'nondeterministic',
   'determinism-unmeasured',
   'parity-disagreement',
-  'backend-collision',
   'baseline-drift',
   'no-baseline',
   'held',
