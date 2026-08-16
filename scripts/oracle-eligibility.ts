@@ -50,8 +50,8 @@ export interface OracleEligibilityInput {
   pinned: ReadonlySet<string>;
   /** Identities an open request already claims. Re-commissioning one would be a `request-overlap` failure. */
   outstanding: ReadonlySet<string>;
-  /** Identities whose scene the parity leg reports as disagreeing across backends. */
-  parityDisagreed: ReadonlySet<string>;
+  /** Identities the parity leg withholds, and whether it judged them or could not judge them at all. */
+  parityWithheld: ReadonlyMap<string, OracleParityWithholding>;
   /** Identities a peer has claimed for repair, or a ruling has held. Never overridden by local evidence. */
   held: ReadonlyMap<string, string>;
   /** Per-identity verdict from `compareCalibrationRuns`. A cell absent from this map is unmeasured. */
@@ -65,6 +65,8 @@ export interface OracleEligibilityInput {
 export type OracleBlockReason =
   /** The capture errored. Its scene oracle may not even have run, so nothing was verified. */
   | 'capture-failed'
+  /** A sibling backend of the same scene failed, so the scene is under repair and this column with it. */
+  | 'sibling-column-failed'
   /** No `assertRender`: nothing in-tree ever asserted this render means what the scene claims. */
   | 'no-scene-oracle'
   /** Repeated captures disagreed. A reference blessed from one of them would fail against the next. */
@@ -73,6 +75,8 @@ export type OracleBlockReason =
   | 'determinism-unmeasured'
   /** Backends disagree on this scene, so at least one of them is wrong and it is not known which. */
   | 'parity-disagreement'
+  /** Parity could not judge this scene at all — no comparable pair, so no cross-backend evidence exists. */
+  | 'parity-unevaluated'
   /** Today's capture does not match the committed baseline. Something moved and nobody has explained it. */
   | 'baseline-drift'
   /** No committed baseline, so there is no second, independent statement about these pixels. */
@@ -117,6 +121,7 @@ export interface OracleBackendCollision {
 export function selectCommissionableCells(input: Readonly<OracleEligibilityInput>): OracleEligibilityReport {
   const byIdentity = new Map(input.captures.map((capture) => [capture.identity, capture]));
   const collided = findBackendCollisions(input.captures);
+  const brokenScenes = findScenesWithAFailedColumn(input.captures);
 
   const eligible: string[] = [];
   const blocked: OracleBlockedCell[] = [];
@@ -144,6 +149,16 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
     }
     if (capture.state !== 'ready') {
       blocked.push({ detail: `capture state is ${capture.state}`, identity, reason: 'capture-failed' });
+      continue;
+    }
+    // ★ A SCENE IS REPAIRED AS A WHOLE, SO ITS HEALTHY COLUMNS ARE NOT SEPARATELY BLESSABLE. When one
+    // backend of a scene fails its own oracle, the fix lands in that scene — and a fix for, say, a
+    // smoothing defect on webgl will usually move the canvas column too. A reference blessed from the
+    // passing column today would then read the repair as a regression tomorrow, against a picture nobody
+    // ever meant to freeze. The whole scene waits for the repair track.
+    const brokenSibling = brokenScenes.get(sceneOf(identity));
+    if (brokenSibling !== undefined) {
+      blocked.push({ detail: `${brokenSibling} failed in this scene`, identity, reason: 'sibling-column-failed' });
       continue;
     }
     // ★ THE ONE CONDITION WITH NO SUBSTITUTE. Everything else here says the render is STABLE — that it
@@ -174,8 +189,17 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
       continue;
     }
 
-    if (input.parityDisagreed.has(identity)) {
+    // ★ TWO PARITY OUTCOMES, TWO REASONS, BECAUSE THEY ROUTE TO DIFFERENT PEOPLE. A scene whose backends
+    // DISAGREE has a defect somebody must find. A scene parity could not EVALUATE has no defect on the
+    // evidence — it has no comparable pair, so it needs a parity group or a second backend column. Folding
+    // them together would file the second kind on the repair track, where nobody can act on it.
+    const parity = input.parityWithheld.get(identity);
+    if (parity === 'disagreement') {
       blocked.push({ detail: 'backends disagree on this scene', identity, reason: 'parity-disagreement' });
+      continue;
+    }
+    if (parity === 'unevaluated') {
+      blocked.push({ detail: 'parity formed no comparable pair', identity, reason: 'parity-unevaluated' });
       continue;
     }
     if (capture.baselineHash === null) {
@@ -204,8 +228,11 @@ export interface OracleParityCheck {
   status?: string;
 }
 
+/** Why the parity leg withholds a cell: it judged the scene and it differed, or it could not judge it. */
+export type OracleParityWithholding = 'disagreement' | 'unevaluated';
+
 /**
- * Expands the parity leg's verdicts into the cells they withhold, or refuses the report.
+ * Expands the parity leg's verdicts into the cells they withhold and why, or refuses the report.
  *
  * ★ THE WHOLE SCENE IS WITHHELD, NOT THE FAILING COLUMN. Parity says the backends disagree; it does not
  * say WHICH is wrong. Blessing the one that happened to match the reference backend would pin whichever
@@ -217,20 +244,30 @@ export interface OracleParityCheck {
  * disagreed" would convert the loudest possible ABSENCE of a parity judgement into the strongest
  * possible parity pass, and every cell in the corpus would clear a condition nothing had evaluated.
  */
-export function findParityDisagreements(
+export function findParityWithholdings(
   checks: readonly Readonly<OracleParityCheck>[],
   identities: Iterable<string>,
-): { disagreed: Set<string> } | { refused: string } {
+): { withheld: Map<string, OracleParityWithholding> } | { refused: string } {
   const parity = checks.filter((check) => check.kind === 'parity');
   if (!parity.some((check) => check.status === 'passed' || check.status === 'failed')) {
     return { refused: 'the report carries no gated parity verdict, so it cannot say any scene agreed' };
   }
-  const disagreed = new Set<string>();
-  const scenes = new Set(parity.filter((check) => check.status !== 'passed').map((check) => check.entry));
-  for (const identity of identities) {
-    if (scenes.has(identity.split('/')[1])) disagreed.add(identity);
+
+  const scenes = new Map<string, OracleParityWithholding>();
+  for (const check of parity) {
+    if (check.entry === undefined || check.status === 'passed') continue;
+    // A scene with several rows takes the worse one: one failed pair is a disagreement even if another
+    // pair of the same scene was merely uncomparable.
+    if (check.status === 'failed') scenes.set(check.entry, 'disagreement');
+    else if (!scenes.has(check.entry)) scenes.set(check.entry, 'unevaluated');
   }
-  return { disagreed };
+
+  const withheld = new Map<string, OracleParityWithholding>();
+  for (const identity of identities) {
+    const verdict = scenes.get(identity.split('/')[1] ?? '');
+    if (verdict !== undefined) withheld.set(identity, verdict);
+  }
+  return { withheld };
 }
 
 /**
@@ -254,6 +291,23 @@ export function groupOracleTargets(identities: readonly string[]): { entry: stri
   return [...byEntry.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([entry, renderers]) => ({ entry, renderers: [...renderers].sort() }));
+}
+
+/** Scenes with at least one failed column, mapped to the identity of one that failed. */
+function findScenesWithAFailedColumn(captures: readonly OracleCaptureFact[]): Map<string, string> {
+  const broken = new Map<string, string>();
+  for (const capture of captures) {
+    if (capture.state !== 'ready' && !broken.has(sceneOf(capture.identity))) {
+      broken.set(sceneOf(capture.identity), capture.identity);
+    }
+  }
+  return broken;
+}
+
+/** `subject/entry` of a cell identity. */
+function sceneOf(identity: string): string {
+  const parts = identity.split('/');
+  return `${parts[0] ?? ''}/${parts[1] ?? ''}`;
 }
 
 /**
@@ -281,8 +335,7 @@ function findBackendCollisions(captures: readonly OracleCaptureFact[]): Map<stri
   const byScene = new Map<string, OracleCaptureFact[]>();
   for (const capture of captures) {
     if (capture.hash === null || capture.state !== 'ready') continue;
-    const parts = capture.identity.split('/');
-    const scene = `${parts[0] ?? ''}/${parts[1] ?? ''}`;
+    const scene = sceneOf(capture.identity);
     byScene.set(scene, [...(byScene.get(scene) ?? []), capture]);
   }
 
@@ -308,10 +361,12 @@ export function summarizeOracleBlocks(blocked: readonly OracleBlockedCell[]): { 
 
 const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'capture-failed',
+  'sibling-column-failed',
   'no-scene-oracle',
   'nondeterministic',
   'determinism-unmeasured',
   'parity-disagreement',
+  'parity-unevaluated',
   'baseline-drift',
   'no-baseline',
   'held',
