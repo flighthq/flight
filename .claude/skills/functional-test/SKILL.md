@@ -105,7 +105,10 @@ Logs land in `logs.jsonl` after capture; the harness installs the capture sink b
 1. `npm run capture:functional -- --filter={name}` (auto-starts the server). If this stops right after `Ready at …` with no `screenshot.png` and a signal exit, headless Chromium's system libs are missing — run `sudo npx playwright install-deps chromium` (the sandbox grants sudo) and retry; see the `visual-capture` skill. Capture — including WebGPU — then runs in-sandbox, so do not defer baselining to the host.
 2. Read `tools/output/functional/{name}/{backend}/screenshot.png` — confirm it looks right on each backend.
 3. Read `tools/output/functional/{name}/{backend}/logs.jsonl` — check for `pageerror` entries.
-4. When correct, set the baseline: `npm run capture:functional:baseline -- --filter={name}`.
-5. Commit `functional/baselines/{name}.json` (the fingerprint baseline; screenshots are gitignored).
+4. When correct, set the baseline with exact selection: `npm run capture:functional:baseline -- --filter-exact={name}`. This writes the fingerprint and decoded-pixel screenshot hash into `functional/baselines/{name}.json`; the PNG itself stays gitignored.
+5. Run `npm run support` and `npm run evidence:check`. Accept only the intended evidence rows, one exact renderer target at a time: `npm run evidence:baseline -- --target functional/{name}/{renderer}`. Never use a blanket evidence-manifest update.
+6. Commit `functional/baselines/{name}.json`, `agents/support-matrix.{json,md}`, and `scripts/capture-baseline-coverage-manifest.json` when they changed.
+
+A full-resolution reference PNG is a separate, explicit commissioning act rather than a side effect of the fingerprint/screenshot-hash baseline. Follow [render-oracle-repository.md](../../../agents/render-oracle-repository.md) for that review and release flow; do not treat a clean `evidence:check` as a reference-image blessing.
 
 The headless pass/fail gate CI runs is `npm run test:functional` (its `smoke` / `parity` / `regression` legs) — your new scene is discovered automatically. See `agents/conventions/npm-scripts.md` for that vocabulary, and the `visual-capture` skill for capture/watch detail.

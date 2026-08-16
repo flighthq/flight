@@ -25,6 +25,7 @@ import {
   readCaptureBaselineCoverageManifest,
   writeCaptureBaselineCoverageManifest,
 } from '../packages/tool-capture/src/captureBaselineCoverageManifest.js';
+import { readRepeatedCliOption, selectCaptureEvidenceTargets } from './capture-evidence-selection.js';
 
 const FUNCTIONAL_BACKENDS = ['dom', 'canvas', 'webgl', 'webgpu'];
 const ORACLE_EXPORT = /export\s+(?:async\s+)?function\s+assertRender\s*\(|export\s+const\s+assertRender\s*[:=]/;
@@ -33,10 +34,14 @@ const root = process.cwd();
 const checkMode = process.argv.includes('--check');
 const jsonMode = process.argv.includes('--json');
 const updateMode = process.argv.includes('--update');
-const selectors = process.argv.slice(2).filter((argument) => !argument.startsWith('--'));
-// ★ The same guard scripts/reachability.ts puts on its baseline, for the same reason: a scoped run has
-// seen only part of the subject, so accepting its census would silently retire every target outside it.
-if (updateMode && selectors.length > 0) throw new Error('Capture evidence baseline updates must be whole-repo');
+const argv = process.argv.slice(2);
+const updateTargets = readRepeatedCliOption(argv, 'target');
+const selectors = argv.filter((argument, index) => !argument.startsWith('--') && argv[index - 1] !== '--target');
+if (updateMode && selectors.length > 0) throw new Error('Use exact --target subject/entry/renderer selectors');
+if (updateMode && updateTargets.length === 0) {
+  throw new Error('Capture evidence acceptance requires at least one exact --target subject/entry/renderer');
+}
+if (!updateMode && updateTargets.length > 0) throw new Error('--target is only valid with evidence:baseline');
 
 function baselineField(subject: string, name: string, column: string, field: string): unknown {
   const path = join(root, subject, 'baselines', `${name}.json`);
@@ -109,23 +114,24 @@ const observed: Record<string, Record<string, CaptureBaselineEvidenceKind[]>> = 
   functional: collectFunctional(),
 };
 const subjects = selectors.length > 0 ? selectors.filter((s) => s in observed) : Object.keys(observed);
+const manifest = readCaptureBaselineCoverageManifest(root);
 
 if (updateMode) {
-  for (const subject of subjects) {
-    const manifest = writeCaptureBaselineCoverageManifest(
+  const selections = selectCaptureEvidenceTargets(updateTargets, observed, manifest.subjects);
+  for (const [subject, selection] of Object.entries(selections)) {
+    writeCaptureBaselineCoverageManifest(
       root,
       subject,
-      observed[subject],
+      selection.covered,
       null,
-      Object.keys(observed[subject]),
+      selection.determined,
       LOCALLY_OBSERVABLE_KINDS,
     );
-    console.log(`${subject}: pinned ${Object.keys(manifest.subjects[subject] ?? {}).length} targets`);
+    console.log(`${subject}: accepted ${selection.determined.length} exact target(s)`);
   }
   process.exit(0);
 }
 
-const manifest = readCaptureBaselineCoverageManifest(root);
 let failed = false;
 const report: Record<string, unknown> = {};
 for (const subject of subjects) {
@@ -153,7 +159,7 @@ for (const subject of subjects) {
 if (jsonMode) console.log(JSON.stringify(report, null, 2));
 if (checkMode && failed) {
   console.error(
-    '\nCapture evidence does not match scripts/capture-baseline-coverage-manifest.json — repair it, or accept deliberately with "npm run evidence:baseline" (whole-repo).',
+    '\nCapture evidence does not match scripts/capture-baseline-coverage-manifest.json — repair it, or accept named targets deliberately with "npm run evidence:baseline -- --target functional/name/renderer".',
   );
   process.exit(1);
 }

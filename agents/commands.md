@@ -153,12 +153,19 @@ affordable.
 
     npm run evidence                 # the census, per subject
     npm run evidence:check           # gate: fails naming every gained or lost `target#kind`
-    npm run evidence:baseline        # accept the current census (whole-repo only, never scoped)
+    npm run evidence:baseline -- --target functional/name/renderer
+                                        # accept only exact named targets; repeat --target as needed
     npm run evidence:json            # the same rows as JSON
 
 **It is a static scan**, so the oracle column means *the scene exports an oracle*, never *the verifier
 called it*. Only the verifier settles the second, and it records that per target as `oracle` in its own
 status artifact. A green census is not evidence that oracles ran.
+
+The current 450 functional screenshot pins were inherited from a blanket `evidence:baseline` update;
+they were not reviewed and accepted target by target. A clean `evidence:check` therefore proves only that
+today's tree matches that inherited manifest shape, not that someone deliberately ruled on every pinned
+or pinless target. Exact `--target` acceptance prevents a future decision nobody made from becoming
+precedent merely because an unrelated whole-repository census was refreshed.
 
 ### `npm run oracle:commission` — which cells may be commissioned, and why the rest may not
 
