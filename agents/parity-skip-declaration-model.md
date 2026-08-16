@@ -446,6 +446,52 @@ each time in a comment or a doc that only a reader already inside that file woul
 is not discipline imposed on a codebase that lacks it. **The discipline is already here, correct,
 four times over. What it lacks is a surface it can travel on.**
 
+## A run-level zero-check cannot detect a scene-level zero
+
+**Measured 2026-08-16.** `isCaptureParityCoverageFailure` (`:493-496`) fires when
+`parityComparisons === 0 && parityUncovered > 0` — **run-level**, summed across all scenes. A
+scene-level zero is invisible as long as any sibling compares.
+
+**Evidence.** Four scenes — `effect-lens-distortion`, `effect-lens-flare`, `effect-posterize`,
+`effect-vignette` — have `['canvas']` parity skips. Because `canvas` is the visual group's reference,
+removing it makes those scenes fall through to all-pairs among webgl and webgpu (1 pair each — a
+substituted comparison nobody declared, as described above). So they are not zero-pair scenes on
+today's code; they are **wrong-topology** scenes. Under option 1 (stop conflating no-reference with
+skipped-reference), they would become zero-pair scenes that increment `parityUncovered`.
+
+`effect-god-rays` has `skip = 'all'` and is already a zero-pair scene. It increments
+`parityUncovered` today.
+
+All five have been in this state since at least `3e55135123` (2026-08-10). The run-level floor never
+fired because sibling scenes continued to compare. The per-scene `status: 'skipped'` check at `:846`
+produces a warning but no failure — it increments `parityUncovered`, and the run-level guard at
+`:493` asks only whether the **total** is zero.
+
+**Blast radius of a per-scene floor (measured on committed baselines, 2026-08-16 tree).**
+
+| Category | Count | Explanation |
+| --- | --- | --- |
+| 0 eligible backends (no baselines at all) | 47 | Scenes not yet baselined — structurally unable to pair |
+| 1 eligible backend (single-column) | 19 | Scenes with only one fingerprinted backend — by construction cannot pair |
+| 2+ eligible, 0 pairs from explicit skip | 1 | `effect-god-rays` (skip = `'all'`) |
+| **Total with 0 pairs** | **67** | Out of 203 total scenes |
+| Scenes with ≥1 pair | 136 | Would be unaffected |
+
+**Only 1 scene would newly fail that is not already structurally unable to pair.** The 47 + 19
+no-baseline / single-column scenes cannot pair regardless of the check's granularity — they have
+nothing to compare. A per-scene floor that fires on `scene.parityComparisons === 0 &&
+scene.parityUncovered > 0` would newly fail only `effect-god-rays`, because it is the only scene
+where the zero is a **policy choice** (explicit skip) rather than an **infrastructure absence** (no
+baseline or no second backend).
+
+The four `['canvas']` scenes are not in this count because under today's code they DO form 1 pair
+each (webgl-vs-webgpu, via the all-pairs fallback). Under option 1, they would also have 0 pairs,
+raising the newly-failing count from 1 to 5.
+
+**Commits.** The coverage-floor fix `2ff7b9007` (2026-08-15) is tooling-only and does not change
+which scenes pair or what they pair against. The original nine-skip commit was `3e55135123`
+(2026-08-10).
+
 ## The open question
 
 Does this generalize past parity? The same shape appeared twice more in one week: `CONTRACT.md`
