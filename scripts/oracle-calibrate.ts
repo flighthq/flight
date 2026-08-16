@@ -33,6 +33,11 @@ export interface CalibrationReport {
   disagreed: readonly string[];
   /** Cells at least one run failed to capture — neither agreement nor disagreement is claimable. */
   incomplete: readonly string[];
+  /**
+   * Cells any run had a `status.json` for, whatever it said. `agreed + disagreed + incomplete` must equal
+   * this, and `formatCalibrationReport` asserts it — see the report's own accounting line for why.
+   */
+  seen: number;
 }
 
 /**
@@ -41,11 +46,24 @@ export interface CalibrationReport {
  * A cell missing from any run is `incomplete`, never folded into agreement: a run that did not capture
  * says nothing about whether it would have matched, and counting it either way would manufacture a
  * result. This is the same rule the capture tiers state as "a missing premise is labelled, never argued".
+ *
+ * ★ EXISTENCE IS READ FROM THE DIRECTORY, NEVER FROM THE STATUS CONTENT, and the distinction is not
+ * pedantic — it was a real defect. The identity set used to be built from the cells that parsed AND said
+ * `ready`, so a cell that failed on EVERY run entered no map, no identity set, and no bucket: it did not
+ * report as `incomplete`, it VANISHED, while the totals still looked complete. A real cross-host run
+ * published 491/0/0 against a 493-cell corpus and was caught only because a reader happened to know the
+ * corpus size. A directory holding a `status.json` IS the cell, whatever the file says — including an
+ * unparseable one, which is a seen cell with no hash rather than an absent measurement.
+ *
+ * ★ THE LIMIT THIS STILL HAS, stated rather than implied: a cell with NO `status.json` in ANY run is
+ * invisible here. Nothing was written for it, so nothing on disk distinguishes "never attempted" from
+ * "does not exist". Answering that needs the coverage manifest, which is a different record and a
+ * deliberate one — see `oracle-check.ts`'s requirement join for the same rule applied to the same gap.
  */
 export function compareCalibrationRuns(roots: readonly string[]): CalibrationReport {
   const identities = new Set<string>();
-  const perRun = roots.map((root) => readRunHashes(root));
-  for (const run of perRun) for (const identity of run.keys()) identities.add(identity);
+  const perRun = roots.map((root) => readRun(root));
+  for (const run of perRun) for (const identity of run.seen) identities.add(identity);
 
   const cells: CalibrationCell[] = [];
   const agreed: string[] = [];
@@ -53,7 +71,7 @@ export function compareCalibrationRuns(roots: readonly string[]): CalibrationRep
   const incomplete: string[] = [];
 
   for (const identity of [...identities].sort()) {
-    const hashes = perRun.map((run) => run.get(identity) ?? null);
+    const hashes = perRun.map((run) => run.hashes.get(identity) ?? null);
     cells.push({ hashes, identity });
     if (hashes.some((hash) => hash === null)) {
       incomplete.push(identity);
@@ -63,30 +81,38 @@ export function compareCalibrationRuns(roots: readonly string[]): CalibrationRep
     else disagreed.push(identity);
   }
 
-  return { agreed, cells, disagreed, incomplete, runs: roots.length };
+  return { agreed, cells, disagreed, incomplete, runs: roots.length, seen: identities.size };
 }
 
-/** `<root>/<subject>/<entry>/<renderer>/status.json` → identity → recorded pixel hash. */
-function readRunHashes(root: string): Map<string, string> {
-  const out = new Map<string, string>();
-  if (!existsSync(root)) return out;
+/**
+ * One run's cells: every identity it has a `status.json` for, and the subset that yielded a usable hash.
+ *
+ * The two are tracked separately on purpose. `seen` answers "was this cell part of this run", which is a
+ * question about the filesystem; `hashes` answers "did it produce a comparable measurement", which is a
+ * question about the file's contents. Deriving the first from the second is what made failed cells
+ * disappear instead of being labelled.
+ */
+function readRun(root: string): { seen: Set<string>; hashes: Map<string, string> } {
+  const seen = new Set<string>();
+  const hashes = new Map<string, string>();
+  if (!existsSync(root)) return { hashes, seen };
   for (const subject of directories(root)) {
     for (const entry of directories(join(root, subject))) {
       for (const renderer of directories(join(root, subject, entry))) {
         const path = join(root, subject, entry, renderer, 'status.json');
         if (!existsSync(path)) continue;
+        const identity = `${subject}/${entry}/${renderer}`;
+        seen.add(identity);
         try {
           const status = JSON.parse(readFileSync(path, 'utf8')) as { hash?: unknown; state?: unknown };
-          if (status.state === 'ready' && typeof status.hash === 'string') {
-            out.set(`${subject}/${entry}/${renderer}`, status.hash);
-          }
+          if (status.state === 'ready' && typeof status.hash === 'string') hashes.set(identity, status.hash);
         } catch {
-          // An unreadable status is an absent measurement, not a disagreement.
+          // Seen, with no usable hash — which is `incomplete`, not absent. The cell is already in `seen`.
         }
       }
     }
   }
-  return out;
+  return { hashes, seen };
 }
 
 function directories(path: string): string[] {
@@ -97,11 +123,20 @@ function directories(path: string): string[] {
 }
 
 export function formatCalibrationReport(report: Readonly<CalibrationReport>): string {
+  // ★ THE TOOL ASSERTS ITS OWN ACCOUNTING RATHER THAN LEAVING IT TO ARITHMETIC. The defect this replaced
+  // published `491 agreed / 0 disagreed / 0 incomplete` for a 493-cell corpus, and it was caught only
+  // because a reader happened to know the corpus size — "0 incomplete" reads as "nothing skipped" to
+  // anyone who does not. A total that does not reconcile must say so in the report that carries it.
+  const bucketed = report.agreed.length + report.disagreed.length + report.incomplete.length;
   const lines = [
     `runs compared:     ${report.runs}`,
+    `cells seen:        ${report.seen}`,
     `cells agreed:      ${report.agreed.length}`,
     `cells disagreed:   ${report.disagreed.length}`,
     `cells incomplete:  ${report.incomplete.length}`,
+    bucketed === report.seen
+      ? `accounting:        ${bucketed} = ${report.seen} seen, every cell in exactly one bucket`
+      : `accounting:        BROKEN — ${bucketed} bucketed vs ${report.seen} seen; ${report.seen - bucketed} cell(s) unaccounted for`,
     '',
   ];
   // ★ THE AGREED CELLS ARE NAMED, NOT COUNTED, AND THE OMISSION ALREADY COST SOMETHING. A cross-host run
