@@ -26,6 +26,7 @@ const COVERED: Readonly<Parameters<typeof isCaptureParityCoverageFailure>[0]> = 
   interrupted: false,
   parityComparisons: 0,
   parityUncovered: 1,
+  parityUndeclaredUncovered: 1,
   rendererFilterCount: 0,
 };
 
@@ -133,9 +134,14 @@ describe('formatCaptureParityRanking', () => {
 });
 
 describe('isCaptureParityCoverageFailure', () => {
-  it('FAILS a gated run that compared nothing while entries wanted a comparison', () => {
-    // The defect this gate exists for: 107 entries skipped, leg green.
-    expect(isCaptureParityCoverageFailure({ ...COVERED, parityUncovered: 107 })).toBe(true);
+  it('FAILS a gated run that compared nothing while undeclared entries wanted a comparison', () => {
+    expect(isCaptureParityCoverageFailure({ ...COVERED, parityUndeclaredUncovered: 107 })).toBe(true);
+  });
+
+  it('does not fail when all uncovered entries are declared skips or structural', () => {
+    expect(isCaptureParityCoverageFailure({ ...COVERED, parityUncovered: 107, parityUndeclaredUncovered: 0 })).toBe(
+      false,
+    );
   });
 
   it('passes as soon as a single comparison actually ran', () => {
@@ -152,12 +158,13 @@ describe('isCaptureParityCoverageFailure', () => {
 
   it('exempts a run narrowed to ONE renderer, which cannot compare by construction', () => {
     expect(isCaptureParityCoverageFailure({ ...COVERED, rendererFilterCount: 1 })).toBe(false);
-    // Two named renderers can still disagree, so that narrowing stays gated.
     expect(isCaptureParityCoverageFailure({ ...COVERED, rendererFilterCount: 2 })).toBe(true);
   });
 
   it('does not fire when nothing wanted a comparison in the first place', () => {
-    expect(isCaptureParityCoverageFailure({ ...COVERED, parityUncovered: 0 })).toBe(false);
+    expect(isCaptureParityCoverageFailure({ ...COVERED, parityUncovered: 0, parityUndeclaredUncovered: 0 })).toBe(
+      false,
+    );
   });
 });
 
