@@ -1,6 +1,6 @@
 import type { OracleRequest } from './oracle-records';
 import type { OracleCellComparison, OracleCellInput, OracleJoinFailureKind, OracleRequestRecord } from './oracle-state';
-import { describeOracleComparison, joinOracleState } from './oracle-state';
+import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './oracle-state';
 
 // ★ EVERY GATE IN §9 HAS A FIRING TEST HERE, per the capture-verification-tiers rule that a gate row and
 // its defeating test are added together. A gate nobody has watched fail is a gate nobody knows fires —
@@ -233,3 +233,100 @@ function request(id: string, subject: string, entry: string, renderers: string[]
 function verdicts(result: { cells: readonly { identity: string; verdict: string }[] }): Record<string, string> {
   return Object.fromEntries(result.cells.map((cell) => [cell.identity, cell.verdict]));
 }
+
+describe('withRequiredIdentities', () => {
+  // ★ THE SEAM THAT MAKES THREE OF §6's FOUR ROWS REACHABLE. A caller building its cell list from the
+  // pack images alone can only ask "do the bytes we already have still match" — the one question that
+  // cannot detect an absence. These tests exist because that was the real state of the consumer gate:
+  // `missing`, `pending-uncaptured` and `orphan` were all unreachable, so a freshly commissioned cell
+  // reported NOTHING rather than pending, and a reference that stopped being published read as clean.
+
+  it('adds a required identity no pack supplied, as unpinned', () => {
+    expect(withRequiredIdentities([], new Set(['functional/a/webgl']))).toEqual([
+      { comparison: null, identity: 'functional/a/webgl', pinned: false, required: true },
+    ]);
+  });
+
+  it('marks a pack cell nothing requires as not required, which is what makes it an orphan', () => {
+    // Every pack cell used to arrive `required: true` by construction, so a pinned image with no live
+    // target could never be seen as one.
+    const joined = withRequiredIdentities(
+      [{ comparison: null, identity: 'functional/a/webgl', pinned: true, required: true }],
+      new Set(),
+    );
+
+    expect(joined).toEqual([{ comparison: null, identity: 'functional/a/webgl', pinned: true, required: false }]);
+  });
+
+  it('keeps a pack cell that is also required, without duplicating it', () => {
+    const joined = withRequiredIdentities(
+      [{ comparison: clean(), identity: 'functional/a/webgl', pinned: true, required: false }],
+      new Set(['functional/a/webgl']),
+    );
+
+    expect(joined).toEqual([{ comparison: clean(), identity: 'functional/a/webgl', pinned: true, required: true }]);
+  });
+
+  it('does not mutate the cells it was given', () => {
+    const cells = [{ comparison: null, identity: 'functional/a/webgl', pinned: true, required: true }];
+    withRequiredIdentities(cells, new Set());
+
+    expect(cells[0]!.required).toBe(true);
+  });
+
+  it('carries a required-and-unsupplied cell through to `missing` when nothing requested it', () => {
+    const result = joinOracleState({
+      cells: withRequiredIdentities([], new Set(['functional/a/webgl'])),
+      maxPendingDays: 14,
+      policy: POLICY,
+      requests: [],
+    });
+
+    expect(result.cells.map((cell) => cell.verdict)).toEqual(['missing']);
+    // `zero-comparisons` fires alongside it, and correctly: the run required a cell, demoted nothing,
+    // and compared nothing, which §9 calls unconfigured rather than clean.
+    expect(result.failures.map((failure) => failure.kind)).toEqual(['missing-reference-image', 'zero-comparisons']);
+  });
+
+  it('carries the same cell through to `pending-uncaptured` when a request names it, and does not fail', () => {
+    // The commissioning path, end to end through the seam: this is the run that must stay GREEN so the
+    // asynchronous cross-repository process can start.
+    const result = joinOracleState({
+      cells: withRequiredIdentities([], new Set(['functional/a/webgl'])),
+      maxPendingDays: 14,
+      policy: POLICY,
+      requests: [
+        {
+          ageDays: 0,
+          request: {
+            schemaVersion: 1,
+            id: 'a-webgl-2026-08-16',
+            subject: 'functional',
+            targets: [{ entry: 'a', renderers: ['webgl'] }],
+            frames: 1,
+            reason: 'first reference',
+          },
+        },
+      ],
+    });
+
+    expect(result.cells.map((cell) => cell.verdict)).toEqual(['pending-uncaptured']);
+    expect(result.failures).toEqual([]);
+    expect(result.pendingCount).toBe(1);
+  });
+
+  it('carries an unrequired pack cell through to `orphan`', () => {
+    const result = joinOracleState({
+      cells: withRequiredIdentities(
+        [{ comparison: clean(), identity: 'functional/a/webgl', pinned: true, required: true }],
+        new Set(),
+      ),
+      maxPendingDays: 14,
+      policy: POLICY,
+      requests: [],
+    });
+
+    expect(result.cells.map((cell) => cell.verdict)).toEqual(['orphan']);
+    expect(result.failures.map((failure) => failure.kind)).toEqual(['orphaned-reference-image']);
+  });
+});

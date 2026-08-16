@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 
 import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './oracle-pack';
 import { getOracleRequestCells, readOracleLock, readOracleRequest } from './oracle-records';
-import { describeOracleComparison, joinOracleState } from './oracle-state';
+import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './oracle-state';
 import type { OracleCellInput, OracleRequestRecord } from './oracle-state';
 import { readPackManifest, verifyOracleCaptures } from './oracle-verify';
 
@@ -157,12 +157,7 @@ async function check(): Promise<void> {
   // than `pending`, and a reference that silently stopped being published read as a clean run. The
   // orphan gate was unreachable from the other side for the same reason — every pack cell was marked
   // required by construction, so a pinned image with no live target could never be seen as one.
-  const required = readRequiredIdentities();
-  const joined: OracleCellInput[] = cells.map((cell) => ({ ...cell, required: required.has(cell.identity) }));
-  const supplied = new Set(joined.map((cell) => cell.identity));
-  for (const identity of required) {
-    if (!supplied.has(identity)) joined.push({ comparison: null, identity, pinned: false, required: true });
-  }
+  const joined = withRequiredIdentities(cells, readRequiredIdentities());
 
   const result = joinOracleState({
     cells: joined,
