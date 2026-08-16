@@ -100,9 +100,18 @@ compressed stream globally even where the image barely moved.
 Caveat held open: webgl→webgpu is a *larger* change than a typical re-bless, so 88% is a pessimistic
 bound; 60–90% is the realistic band. It does not approach zero at any point in that band.
 
-Projected: ~12 MB packed for the current 427 functional PNGs, then **~1 MB permanently per PR that
-re-blesses 30 images**, ~18 MB per full re-bless of all 559, ~500 MB over 500 PRs of renderer work.
-Every clone pays it forever, and it never shrinks.
+The current denominator is reproducible rather than inferred: `npm run evidence -- --check` reports
+493 functional targets, 450 with screenshot-hash pins and 43 without. A direct baseline census finds
+483 renderer columns, so the 43 are 33 hashless columns plus 10 targets with no column. A full
+`capture:functional -- --build --fail-on-error` plus exact retries emitted a ready PNG for all 493
+targets (15.03 MiB total), including all 43 pinless targets; `git ls-files` and `git log --all` find no
+committed functional PNG in the repository or its history. Thus 427 is neither a committed-corpus count
+nor a screenshot-hash-column count; whether it once described an external runtime capture is not
+reproducible from the tree.
+
+Projected from that current capture: ~15 MB packed for the 493 functional PNGs, then **~1 MB permanently
+per PR that re-blesses 30 images**, ~20 MB per full re-bless of all 625 functional and example targets,
+~500 MB over 500 PRs of renderer work. Every clone pays it forever, and it never shrinks.
 
 ### The proposal: git holds text, releases hold images
 
