@@ -29,8 +29,11 @@ describe('getFlightCaptureValidationPreset', () => {
 
   it('keeps only the parity exceptions backed by current renderer behavior', () => {
     expect(getFlightCaptureValidationPreset('functional').paritySkip).toEqual({
+      'effect-invert': ['webgpu'],
       'effect-lens-distortion': ['canvas'],
       'effect-lens-flare': ['canvas'],
+      'effect-msaa': ['webgpu'],
+      'effect-msaa-bloom': ['webgpu'],
       'effect-posterize': ['canvas'],
       'effect-vignette': ['canvas'],
       'effect-god-rays': 'all',

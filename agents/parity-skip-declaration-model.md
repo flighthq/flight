@@ -446,6 +446,33 @@ each time in a comment or a doc that only a reader already inside that file woul
 is not discipline imposed on a codebase that lacks it. **The discipline is already here, correct,
 four times over. What it lacks is a surface it can travel on.**
 
+## WebGPU MSAA: a reasoned scope that does not settle this proposal
+
+**Scoped ruling 2026-08-16.** Three edge-bearing scenes now exclude WebGPU for one named capability
+gap: `effect-msaa`, `effect-msaa-bloom`, and `effect-invert`. Canvas and DOM antialias inherently and
+offer no switch to turn it off; WebGL can opt into sampleCount 4, while WebGPU's effect-target pool is
+deliberately fixed at sampleCount 1 until its pipelines gain multisample variants
+(`packages/render-wgpu/src/wgpuRenderTargetPool.ts:14-15`). Uniform antialiasing is therefore
+unreachable today in either direction.
+
+The scope does not promise that adding WebGPU MSAA will make boundary pixels identical. It will remove
+the systematic difference — one hard-edged backend against three antialiased backends — while Canvas's
+rasterizer, WebGL MSAA, and a future WebGPU MSAA pass can still choose different samples. The three
+declarations record scene-specific consequences at the entries themselves: `effect-msaa` isolates the
+missing pass, `effect-msaa-bloom` feeds aliased geometry into bloom, and `effect-invert` differs on the
+shape boundaries rather than on its interior colour transform.
+
+The queued capability is an explicit caller-invoked multisample-and-resolve pass backed by
+multisample-capable WebGPU pipeline variants. It is deliberately not an `antialias` render-state option
+mirroring WebGL's context attribute; the existing unread `WgpuRenderOptions.antialias` field is an
+orphan to remove, not the seam to wire.
+
+This supplies real per-entry reasons but does **not** settle the proposal's mechanism question. The
+reasons still live in comments because the current skip schema can carry only renderer names or
+`'all'`; whether reasons become checked data remains the open ruling below. This case strengthens that
+need: one backend cause narrows three gate entries for three different observable consequences, and a
+bare `['webgpu']` value preserves none of that distinction.
+
 ## A run-level zero-check cannot detect a scene-level zero
 
 **Measured 2026-08-16.** `isCaptureParityCoverageFailure` (`:493-496`) fires when
@@ -473,20 +500,20 @@ produces a warning but no failure — it increments `parityUncovered`, and the r
 | --- | --- | --- |
 | 0 eligible backends (no baselines at all) | 47 | Scenes not yet baselined — structurally unable to pair |
 | 1 eligible backend (single-column) | 19 | Scenes with only one fingerprinted backend — by construction cannot pair |
-| 2+ eligible, 0 pairs from explicit skip | 1 | `effect-god-rays` (skip = `'all'`) |
-| **Total with 0 pairs** | **67** | Out of 203 total scenes |
-| Scenes with ≥1 pair | 136 | Would be unaffected |
+| 2+ eligible, 0 pairs from explicit skip | 2 | `effect-god-rays` (`'all'`) and `effect-msaa` (`['webgpu']`) |
+| **Total with 0 pairs** | **68** | Out of 203 total scenes |
+| Scenes with ≥1 pair | 135 | Would be unaffected |
 
-**Only 1 scene would newly fail that is not already structurally unable to pair.** The 47 + 19
+**Only 2 scenes would newly fail that are not already structurally unable to pair.** The 47 + 19
 no-baseline / single-column scenes cannot pair regardless of the check's granularity — they have
 nothing to compare. A per-scene floor that fires on `scene.parityComparisons === 0 &&
-scene.parityUncovered > 0` would newly fail only `effect-god-rays`, because it is the only scene
-where the zero is a **policy choice** (explicit skip) rather than an **infrastructure absence** (no
-baseline or no second backend).
+scene.parityUncovered > 0` would newly fail `effect-god-rays` and `effect-msaa`, because their zeros
+are **policy choices** (explicit skips) rather than **infrastructure absences** (no baseline or no
+second backend).
 
 The four `['canvas']` scenes are not in this count because under today's code they DO form 1 pair
 each (webgl-vs-webgpu, via the all-pairs fallback). Under option 1, they would also have 0 pairs,
-raising the newly-failing count from 1 to 5.
+raising the newly-failing count from 2 to 6.
 
 **Commits.** The coverage-floor fix `2ff7b9007` (2026-08-15) is tooling-only and does not change
 which scenes pair or what they pair against. The original nine-skip commit was `3e55135123`
