@@ -114,6 +114,31 @@ export type OracleJoinFailureKind =
   | 'request-off-target';
 
 /**
+ * Unions the cells a pack supplied with the identities the coverage manifest REQUIRES.
+ *
+ * ★ WITHOUT THIS, HALF OF §6 IS UNREACHABLE. A caller that builds its cell list from the pack images
+ * alone can only ask "do the bytes we already have still match" — the one question that cannot detect an
+ * absence. A required cell no pack supplies never appears, so `missing` and `pending-uncaptured` can
+ * never be reached; and every pack cell arrives marked required by construction, so `orphan` cannot be
+ * reached either. Three of the four rows in the §6 table were dead for exactly that reason.
+ *
+ * Requirement comes from the coverage manifest and pinning comes from the packs, so the two are read
+ * from different records on purpose: an agent can make CI green by deleting a requirement only through a
+ * reviewed coverage reduction, never by failing to publish bytes.
+ */
+export function withRequiredIdentities(
+  cells: readonly Readonly<OracleCellInput>[],
+  required: ReadonlySet<string>,
+): OracleCellInput[] {
+  const joined = cells.map((cell) => ({ ...cell, required: required.has(cell.identity) }));
+  const supplied = new Set(joined.map((cell) => cell.identity));
+  for (const identity of required) {
+    if (!supplied.has(identity)) joined.push({ comparison: null, identity, pinned: false, required: true });
+  }
+  return joined;
+}
+
+/**
  * Joins requirement, pinned bytes and outstanding requests into one verdict per cell, plus the run-level
  * gates. Pure: the caller supplies ages and comparison outcomes, so this is decidable in a unit test
  * without a network, a GPU, or a clock.
