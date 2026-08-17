@@ -14,6 +14,10 @@ on:
   pull_request:
   push:
     branches: [main, develop]
+  # Reference Image Check used to be a standalone manually-dispatchable workflow. Keep that operational
+  # escape hatch after folding it into CI; a manual CI run deliberately executes the full gate so its
+  # success means the same thing as a push-triggered success.
+  workflow_dispatch:
 
 # Electron's postinstall downloads a ~100MB prebuilt binary from GitHub releases on the critical path of
 # every `npm ci`. NOTHING IN CI LAUNCHES ELECTRON: the only scripts that do are electron:review*,
@@ -35,8 +39,8 @@ jobs:
     name: Detect changed areas
     runs-on: ubuntu-latest
     outputs:
-      code: ${{ steps.filter.outputs.code }}
-      docs: ${{ steps.filter.outputs.docs }}
+      code: ${{ steps.scope.outputs.code }}
+      docs: ${{ steps.scope.outputs.docs }}
     steps:
       # Full history: paths-filter needs the merge-base (PRs) or the pre-push commit
       # (pushes) present locally. A shallow clone makes it fetch --deepen in a loop, which
@@ -45,6 +49,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: dorny/paths-filter@v3
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         id: filter
         with:
           # Compare pushes against the pushed branch itself (= the commit before the push),
@@ -69,6 +74,24 @@ jobs:
             docs:
               - '**/*.md'
               - 'agents/**'
+
+      # There is no meaningful changed-file range on a manual dispatch. Treat it as an explicit request
+      # for the complete CI gate rather than allowing every path-filtered job to skip and reporting a
+      # misleading green run that Promote or Release could later mistake for a tested commit.
+      - id: scope
+        name: Resolve the areas to check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          FILTER_CODE: ${{ steps.filter.outputs.code }}
+          FILTER_DOCS: ${{ steps.filter.outputs.docs }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            echo 'code=true' >> "$GITHUB_OUTPUT"
+            echo 'docs=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "code=$FILTER_CODE" >> "$GITHUB_OUTPUT"
+            echo "docs=$FILTER_DOCS" >> "$GITHUB_OUTPUT"
+          fi
 
   # Runs on any docs change, including the docs-only commits that skip every code leg entirely.
   # It deliberately does NOT depend on `code` being false: a gate whose firing hinges on a
@@ -367,6 +390,86 @@ jobs:
         env:
           FLIGHT_CAPTURE_WORKER_COUNT: 2
           FLIGHT_CAPTURE_TIMEOUT_MS: 45000
+
+  # The blessed-image comparison belongs to the per-commit gate: it is the only tier that can detect a
+  # pixel regression against promoted reference bytes. Keeping it in a separate workflow allowed Promote
+  # to advance main as soon as tests.yml passed even when this comparison was red or still running.
+  #
+  # This job is safe on pull requests and forks. Reference packs are public HTTPS reads, the job holds no
+  # secret, and its token is explicitly read-only. A zero-comparison run is a failure rather than a green
+  # no-op; the lock bounds the capture scope to cells for which reference bytes actually exist.
+  reference-image-check:
+    name: Reference Images · Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # The pack manifest does not yet carry capture provenance, so this must match the frame that was
+      # blessed. State it once for scope resolution and comparison rather than allowing either to guess.
+      ORACLE_CAPTURE_FRAMES: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Fetch first: an unresolvable lock fails before the expensive build, and the fetched packs define
+      # the exact capture scope used below.
+      - name: Fetch and verify the pinned reference packs
+        run: npx tsx ./scripts/reference-image-check.ts fetch
+
+      - name: Resolve the capture scope
+        id: reference_scope
+        run: |
+          set -euo pipefail
+          scope=$(npx tsx ./scripts/reference-image-check.ts scope --frames "$ORACLE_CAPTURE_FRAMES")
+          echo "$scope"
+          {
+            echo 'lines<<SCOPE'
+            echo "$scope"
+            echo 'SCOPE'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build the harness
+        run: |
+          npm run build
+          npm run build:functional
+
+      - run: npx playwright install --with-deps chromium
+
+      # Echo the registered identity instead of recomputing it. The reference-image repository owns the
+      # identity; the observed browser is diagnostic evidence if the hosted runner later drifts from it.
+      - name: Echo the registered capture environment
+        run: |
+          echo "registered identity: $(node -p "require('./scripts/reference-image-capture-identity.json').environmentId")"
+          echo "observed playwright: $(npx playwright --version | tr -d ' ')"
+
+      - name: Capture the pinned cells
+        run: |
+          set -euo pipefail
+          printf '%s\n' "${{ steps.reference_scope.outputs.lines }}" | while read -r args; do
+            [ -n "$args" ] || continue
+            npx tsx ./packages/tool-capture/src/bin.ts capture $args
+          done
+
+      - name: Compare against the blessed references
+        run: npx tsx ./scripts/reference-image-check.ts check --frames "$ORACLE_CAPTURE_FRAMES"
+
+      # Green captures are disposable; on failure these bytes are the diagnosis.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-image-check-captures
+          path: |
+            .artifacts/functional/**/screenshot.png
+            .artifacts/reference-image-packs/**/*.png
+          include-hidden-files: true
+          if-no-files-found: warn
 
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to a release channel — the continuous
