@@ -49,6 +49,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.
 - [document audio resources](document-audio-resources.md) — a document carries audio bytes on the image lane's terms, never playback.
 - [draw order model](draw-order-model.md) — child order is the only order; the caller-owned `NodeOrderList`.
+- [bounded expected-image descriptions](functional-bounded-descriptions.md) — functional scenes whose expected picture is genuinely undecided, and therefore cannot be commissioned as a permanent reference.
 - [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
 - [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — color adjustment as a material feature.

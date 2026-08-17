@@ -51,6 +51,15 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x111522ff,
   kinds: [ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'An 800x600 field on a very dark blue-black background carrying one dark purple backing panel, and ' +
+    'on top of it a single bright cyan block roughly 176x99 whose top-left corner is near x 287, y 223. ' +
+    'The block is BLURRED, not sharp: its centre is solid cyan, but its edges fade outward, and just ' +
+    'beyond the left edge of the solid area the purple backing is visibly lightened toward cyan rather ' +
+    'than left at its plain tone. A crisp-edged rectangle with no spill at all is one failure. The other ' +
+    'is the opposite: the blur must NOT reach the far left of its own padding — a point a couple of ' +
+    'pixels inside x 287 is still plain purple backing, not cyan. Only one cyan block appears, the ' +
+    'backing is otherwise flat, and outside the panel the field is the dark blue-black background.',
 });
 if (target.kind !== 'canvas') throw new Error('per-node-effect-lane requires Canvas');
 const { render, state, width } = target;
