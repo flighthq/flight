@@ -40,7 +40,7 @@ const { render, width } = await createFunctionalTarget({
     'green at (600,500). The positions carry the whole claim — they are three points that were laid out ' +
     'in another coordinate space and must land exactly there, so a picture with the circles present but ' +
     'clustered, mirrored, or all near the middle fails even though every circle drew. The red one sits at ' +
-    'the exact centre of the image, and blue and green are diagonally opposite it at equal distances. ' +
+    'the exact centre of the field, and blue and green are diagonally opposite it at equal distances. ' +
     'Each circle is one flat colour with no gradient, they do not overlap or touch, and the space between ' +
     'them is pure black.',
 });
