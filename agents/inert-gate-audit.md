@@ -187,6 +187,50 @@ cells it examined — would have passed this case cleanly, because the populatio
 failures are independent, and a reader who has just internalised one is at their most likely to file the
 other underneath it.
 
+## 2026-08-16: no gate can tell whether a functional scene still LOADS
+
+A **Q2** instance at corpus scale — the bad state cannot reach any check — and the reason it is worth its
+own entry is that **the obvious remedy does not work, and the next reader will propose it.**
+
+**The instance.** A guard added to `createWgpuRenderEffectPipeline` rejected `sampleCount > 1`. **102 live
+call sites passed `sampleCount: 4`** — 91 functional scenes and 11 examples — every one at *module scope*,
+so each throw fired as its scene module executed. Those 102 scene modules became unloadable and **nothing
+in the repository said so**: `npm run check` was green across 29 stages and the whole-repo sweep was green
+at 1554 files / 18619 tests.
+
+**Why every gate missed it.** To `check`, `typecheck`, `lint` and the entire vitest surface, a functional
+scene is **data** — no gate imports one. Only a capture executes them. And `sampleCount: 4` is a perfectly
+valid `number`, so the type layer had nothing to object to. **The whole static surface can be green while
+the functional corpus is unloadable.**
+
+★ **THE OBVIOUS REMEDY WAS TESTED AND FAILS. Do not propose it again.** "A gate that merely *imports* every
+functional scene module would catch this cheaply, and needs no renderer" — plausible, and wrong:
+
+```
+plain node (tsx)   ->  IMPORT FAILED: window is not defined
+vitest jsdom       ->  FAILED: Failed to resolve entry for package "@flighthq/sdk"
+```
+
+Both are **environmental** and fire long before the module reaches the pipeline call, because scenes call
+`createWgpuCanvasElement(...)` and `createWgpuRenderState(...)` at module scope. Such a gate would report
+**~200 scenes broken on every run, forever** — as useless as one that never fires, and worse in one
+respect: it would be switched off within a week, and the hole would then carry a closed ticket.
+
+**What works, and it is what actually found the 102: a static ARGUMENT check.** Scanning for
+`createWgpuRenderEffectPipeline(…, { sampleCount: N })` with `N > 1` needs no runtime, no browser and no
+GPU, and completes in under a second. **The guard belongs at the argument, not at the execution** — a
+lint-shaped rule about values a backend cannot honour. It generalises to every backend-neutral options
+type where one backend accepts a field another cannot fulfil.
+
+**State the direction, because the instrument is one-way.** The static check **cannot tell you a scene
+runs**; it can only tell you a scene **cannot** run, for this one cause. That is fine — one-directional
+instruments are sound as long as the direction is declared. This one fails toward *stop* and yields only
+true positives, since a caller passing an unhonourable value is broken by construction.
+
+> **The general property — "does this scene still load?" — is capture-only and nothing cheap will answer
+> it. The specific property — "does any caller pass a value this backend cannot honour?" — is statically
+> decidable. Put the guard on the second and stop hunting for a cheap version of the first.**
+
 ## 2026-08-16: a gate can fire in its test and be unreachable in production
 
 Found at `866c7712d`, closed at `f8d13e12b` and `14b9788c4`. This entry is one worked instance and a
