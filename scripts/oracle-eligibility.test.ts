@@ -9,7 +9,6 @@ import {
   addReferenceImageCoverage,
   findParityWithholdings,
   findStaleCaptures,
-  groupOracleTargets,
   selectCommissionableCells,
   summarizeOracleBlocks,
 } from './oracle-eligibility';
@@ -153,19 +152,6 @@ describe('findParityWithholdings', () => {
     );
 
     expect(found).toEqual({ withheld: new Map([['functional/b/webgl', 'unevaluated']]) });
-  });
-});
-
-describe('groupOracleTargets', () => {
-  it('collapses renderers of one scene into a single request target', () => {
-    expect(groupOracleTargets(['functional/a/webgl', 'functional/a/canvas', 'functional/b/webgl'])).toEqual([
-      { entry: 'a', renderers: ['canvas', 'webgl'] },
-      { entry: 'b', renderers: ['webgl'] },
-    ]);
-  });
-
-  it('ignores an identity that carries no entry and renderer', () => {
-    expect(groupOracleTargets(['functional'])).toEqual([]);
   });
 });
 

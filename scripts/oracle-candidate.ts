@@ -2,22 +2,17 @@
 // (agents/render-oracle-repository.md §8). Flight produces and dispatches candidates; it never authors
 // the Oracle repository's history, so this writes an artifact and stops.
 //
-// ★ `pixelSha256` IS THE CAPTURE'S EXISTING `hash`, COPIED — NEVER RECOMPUTED. `captureEntry.ts` already
-// hashes decoded pixels, in the page, over `"<width>x<height>:"` + raw RGBA, and refuses a blank frame.
-// §4 wants a decoded-pixel hash for exactly the reason that field exists: to tell a changed render from
-// a changed PNG encoder. Recomputing it here with a second decoder and a second convention would produce
-// a value that disagrees with the one already stored beside it for the same image, and nothing
-// downstream could say which was right. One definition, one producer, copied forward.
+// ★ `pixelSha256` IS OVER THE PNG'S DECODED TOP-DOWN RGBA. Flight's capture `hash` prepends dimensions
+// and uses browser-decoded pixels, so it answers a different question and is not comparable. Requests,
+// locks, pack manifests and comparisons all use `getOraclePngPixelSha256`; one definition binds the image
+// selected for commissioning to the image the later workflow actually stages.
 //
 // ★ `artifactSha256` IS NEW AND IS OVER THE ENCODED FILE. That is the transport identity — what intake
 // verifies it received and what release promotes byte-for-byte. §4: "one field cannot truthfully answer
 // both questions."
 //
-// ★ `environmentId` IS RECORDED AS PROVENANCE, NOT USED AS A KEY. §10 is unruled: whether reference sets
-// are keyed per backend or per backend × environment is open, and no schema may presume it. Recording
-// WHAT PRODUCED an image is not the same as keying the set BY it — the first is provenance every record
-// needs regardless of the ruling, the second is the decision being deferred. When §10 lands, the keying
-// changes in the identity generator; this field does not move.
+// ★ `environmentId` IS RECORDED AS PROVENANCE, NOT USED AS A KEY. §10 ruled one canonical environment
+// and one column per backend. Recording WHAT PRODUCED an image remains distinct from keying the set BY it.
 //
 // ★ EVERY REQUESTED CELL GETS A ROW (§8). A capture that failed is `state: 'missing'` with a reason —
 // never absent from the bundle. An absent row is indistinguishable from a cell nobody asked for, which
@@ -26,7 +21,8 @@ import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import type { OracleRequest } from './oracle-records';
+import { getOraclePngPixelSha256 } from './oracle-png';
+import type { OracleRequest, OracleRequestCaptureIdentity, OracleRequestTarget } from './oracle-records';
 import { getOracleRequestCells } from './oracle-records';
 
 export interface OracleCandidateBundle {
@@ -78,6 +74,69 @@ export interface OracleCandidateInput {
   artifactsRoot: string;
   /** Repository root, for reading committed baselines. Defaults to the working directory. */
   repositoryRoot?: string;
+}
+
+export interface OracleRequestedPixelProblem {
+  identity: string;
+  kind: 'request-image-missing' | 'request-image-unreadable' | 'request-image-mismatch';
+  detail: string;
+}
+
+/** Reads the exact selected image and run identity into the v2 request target shape. */
+export function readBoundOracleRequestTarget(
+  root: string,
+  identity: string,
+  capture: OracleRequestCaptureIdentity,
+): OracleRequestTarget | { problem: string } {
+  const [subject, entry, renderer, extra] = identity.split('/');
+  if (subject === undefined || entry === undefined || renderer === undefined || extra !== undefined) {
+    return { problem: 'identity is not subject/entry/renderer' };
+  }
+  const screenshot = join(root, subject, entry, renderer, 'screenshot.png');
+  if (!existsSync(screenshot)) return { problem: `no screenshot.png at ${screenshot}` };
+  const pixels = getOraclePngPixelSha256(readFileSync(screenshot));
+  if ('refused' in pixels) return { problem: `screenshot.png could not be decoded (${pixels.refused})` };
+  return { capture, entry, pixelSha256: pixels.pixelSha256, renderer };
+}
+
+/**
+ * Proves the later workflow capture is the decoded image the requester selected, before any candidate
+ * bytes are staged. A request is authority over bytes, not merely over a cell name.
+ */
+export function verifyOracleRequestedPixels(
+  request: Readonly<OracleRequest>,
+  artifactsRoot: string,
+): OracleRequestedPixelProblem[] {
+  const problems: OracleRequestedPixelProblem[] = [];
+  for (const target of request.targets) {
+    const identity = `${request.subject}/${target.entry}/${target.renderer}`;
+    const path = join(artifactsRoot, identity, 'screenshot.png');
+    if (!existsSync(path)) {
+      problems.push({
+        detail: 'the commissioned capture produced no screenshot.png',
+        identity,
+        kind: 'request-image-missing',
+      });
+      continue;
+    }
+    const actual = getOraclePngPixelSha256(readFileSync(path));
+    if ('refused' in actual) {
+      problems.push({
+        detail: `the commissioned capture could not be decoded (${actual.refused})`,
+        identity,
+        kind: 'request-image-unreadable',
+      });
+      continue;
+    }
+    if (actual.pixelSha256 !== target.pixelSha256) {
+      problems.push({
+        detail: `request selected ${target.pixelSha256}, commissioned capture produced ${actual.pixelSha256}`,
+        identity,
+        kind: 'request-image-mismatch',
+      });
+    }
+  }
+  return problems;
 }
 
 /**

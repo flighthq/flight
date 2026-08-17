@@ -16,7 +16,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-import { buildOracleCandidateBundle, stageOracleCandidateImages } from './oracle-candidate';
+import {
+  buildOracleCandidateBundle,
+  stageOracleCandidateImages,
+  verifyOracleRequestedPixels,
+} from './oracle-candidate';
 import { getOracleRequestCells, readOracleRequest } from './oracle-records';
 
 const [subcommand, requestPath, ...rest] = process.argv.slice(2);
@@ -60,6 +64,14 @@ if (subcommand === 'scope') {
 }
 
 const artifactsRoot = readOption(rest, '--artifacts') ?? '.artifacts';
+const pixelProblems = verifyOracleRequestedPixels(request, artifactsRoot);
+if (pixelProblems.length > 0) {
+  for (const problem of pixelProblems) {
+    console.error(`  ${problem.kind}: ${problem.identity} — ${problem.detail}`);
+  }
+  console.error('oracle-commission: refusing to stage a capture that differs from the request');
+  process.exit(1);
+}
 // ★ THE IDENTITIES ARE READ FROM A COMMITTED RECORD, NEVER COMPUTED. They are registered in
 // `flight-oracles` and copied here verbatim; a value Flight derives would be a second producer of one
 // identity, and the two drift the moment either side changes. Overridable by env only for local probes.

@@ -442,29 +442,6 @@ export function findParityWithholdings(
   return { withheld };
 }
 
-/**
- * Groups eligible cells into the `targets` shape a request carries, one entry per scene.
- *
- * Identities are split here and NOWHERE ELSE in this file, because a request's `entry`/`renderers` fields
- * genuinely require the parts. The rest of the pipeline keeps them opaque so the §10 ruling changes only
- * whoever generates identities.
- */
-export function groupOracleTargets(identities: readonly string[]): { entry: string; renderers: string[] }[] {
-  const byEntry = new Map<string, Set<string>>();
-  for (const identity of identities) {
-    const parts = identity.split('/');
-    const entry = parts[1];
-    const renderer = parts[2];
-    if (entry === undefined || renderer === undefined) continue;
-    const renderers = byEntry.get(entry) ?? new Set<string>();
-    renderers.add(renderer);
-    byEntry.set(entry, renderers);
-  }
-  return [...byEntry.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([entry, renderers]) => ({ entry, renderers: [...renderers].sort() }));
-}
-
 /** How many backend columns each scene carries in the coverage manifest. */
 function countSceneColumns(identities: Iterable<string>): Map<string, number> {
   const columns = new Map<string, number>();

@@ -1,7 +1,6 @@
 // The two Flight-owned records of the render-oracle proposal (agents/render-oracle-repository.md §5):
 // the immutable consumer lock, and the outstanding-commission queue. Parsing and validation only —
-// the join that turns these into CI verdicts is `oracle-state.ts`, and the identity generator that
-// says what a reference-image identity IS remains unwritten pending the §10 environment ruling.
+// the join that turns these into CI verdicts is `oracle-state.ts`.
 //
 // ★ THREE RECORDS, THREE MEANINGS, AND THEY ARE NOT MERGEABLE (§5). The coverage manifest says which
 // identities OWE a referent; a request says which are being re-commissioned and why; the lock says
