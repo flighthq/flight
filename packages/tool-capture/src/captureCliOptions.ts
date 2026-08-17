@@ -56,6 +56,7 @@ export const CAPTURE_CLI_OPTION_GROUPS = {
     'regression-tolerance',
     'renderer',
     'report',
+    'retries',
     'sequential',
     'stability-epsilon',
     'update-coverage',
@@ -121,7 +122,7 @@ export function validateCaptureCliOptions(command: CaptureCliCommand, argv: read
   // have no consumer, so accepting them would recreate the exact silent-drop defect this audit closes.
   if (command === 'validate' && !hasOption(argv, 'update-fingerprints')) {
     for (const name of VALIDATION_CAPTURE_ONLY_OPTIONS) {
-      if (hasOption(argv, name)) throw new Error(`validate option --${name} requires --update-fingerprints`);
+      if (hasOption(argv, name)) throw new Error(`validate option --${name} has no consumer in this mode`);
     }
   }
 }

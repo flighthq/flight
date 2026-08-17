@@ -238,6 +238,7 @@ function validationOptions(
     stabilityEpsilon: parseNumber(flag(argv, 'stability-epsilon')),
     regressionTolerance: parseNumber(flag(argv, 'regression-tolerance')),
     parityTolerance: parseNumber(flag(argv, 'parity-tolerance')),
+    maxRetries: parseNonNegativeInteger(flag(argv, 'retries'), 1),
     sequential: hasFlag(argv, 'sequential'),
     workerCount: captureWorkerCount(argv),
     fingerprintSkip: manifest?.validation?.fingerprintSkip ?? (manifest === null ? preset.fingerprintSkip : []),
