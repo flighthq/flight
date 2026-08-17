@@ -39,7 +39,7 @@ const { render, width } = await createFunctionalTarget({
     'vertically, with a clear band of black between them, and no glyph extends past the right edge of ' +
     'the column at x 380 — the text is wrapped inside the width, not run off it or clipped mid-letter at ' +
     'the boundary. A single long line, or ink beyond x 380, is the failure. The text is one flat colour ' +
-    'with no box or border, and the rest of the image is pure black.',
+    'with no box or border, and the rest of the field is pure black.',
 });
 
 const root = createDisplayObject();
