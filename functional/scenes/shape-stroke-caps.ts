@@ -39,6 +39,15 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
+  expectedImageDescription:
+    'On an opaque black field, three identical horizontal white bars, each 20px thick and spanning ' +
+    'x 250-550, stacked well apart at y 160, y 320 and y 480 with clear black between them. They are ' +
+    'identical along their length and differ ONLY at their two ends. TOP bar (butt): stops flush — no ' +
+    'white past x 250 or x 550, and the end edge is a straight vertical line. MIDDLE bar (round): a ' +
+    'semicircular bulge past each end reaching about x 240 and x 560 on the centerline, but the square ' +
+    'bounding-box corners just past each end stay BLACK — the disc does not reach them. BOTTOM bar ' +
+    '(square): a rectangular extension past each end reaching x 240 and x 560 across the full 20px ' +
+    'thickness, so those same bounding-box corners ARE white. All three bars are pure white on black.',
   kinds: [ShapeKind],
 });
 

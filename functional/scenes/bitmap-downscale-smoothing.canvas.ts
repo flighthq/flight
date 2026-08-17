@@ -70,6 +70,16 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x808080ff, // opaque mid-gray, so off-image samples are distinguishable from content.
+  expectedImageDescription:
+    'On a flat opaque mid-gray field, two small squares of about 77x77 sit side by side at the same ' +
+    'height, near x 200 and x 520 at y 260. Both are the same 256x256 black/white checkerboard (8px ' +
+    'cells) scaled down to roughly 0.3x, so the difference between them is entirely in TONE, not in ' +
+    'position, size or placement. The LEFT square (smoothing off) is HARSH: hard black-and-white speckle ' +
+    'with essentially no intermediate tones, reading as high-contrast noise against the gray. The RIGHT ' +
+    'square (smoothing on) is SOFT: the checker averages away into mottled mid-tones with little or no ' +
+    'pure black or pure white, close enough in overall lightness to the background that it reads as a ' +
+    'low-contrast patch rather than a crisp square. Mid-tones present on the right and absent on the ' +
+    'left is the whole claim.',
   kinds: [SpriteKind],
 });
 
