@@ -32,12 +32,6 @@ const tools: Record<string, ToolConfig> = {
     title: 'Flight Gallery: Functional',
     env: { VITE_GALLERY_TOOL: 'functional' },
   },
-  'gallery:reference': {
-    workspace: 'tools/gallery',
-    port: 5174,
-    title: 'Flight Gallery: Reference',
-    env: { VITE_GALLERY_TOOL: 'reference' },
-  },
 };
 
 const toolName = process.argv[2];

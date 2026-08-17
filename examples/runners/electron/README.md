@@ -26,7 +26,6 @@ npm run examples:electron
 npm run electron:gallery
 npm run electron:gallery:examples
 npm run electron:gallery:functional
-npm run electron:gallery:reference
 ```
 
 These commands start the matching Vite tool, wait for its local URL, then launch the Electron runner with `FLIGHT_ELECTRON_URL` pointed at that server. The examples source stays in `examples/packages`; the gallery source stays in `tools/gallery`.

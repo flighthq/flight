@@ -1,6 +1,6 @@
 # SDK Issues Blocking AwayJS Example Parity
 
-Discovered during side-by-side comparison of all 26 AwayJS examples (Flight vs AwayJS original) in `flight-reference`.
+Discovered during side-by-side comparison of all 26 AwayJS examples (Flight vs AwayJS original).
 
 ## 1. AWD parser does not extract embedded textures/materials
 

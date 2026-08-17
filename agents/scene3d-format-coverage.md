@@ -12,10 +12,10 @@ records *what is true now*. When they disagree, this file is wrong and should be
 a consumer what happened to *their file*; a gap in our coverage that would fire on every well-formed file
 of the format belongs in this document instead, where it costs a shipped app nothing.
 
-## Verified against the reference corpus
+## Verified against the fixture corpus
 
 Where a claim below says "no fixture", it means the file was checked, not assumed. The corpus is
-`.cache/flight-reference/content/assets/public/openfl/awayjs/assets/` — `soldier_ant.3ds`,
+the locally acquired `flight-fixtures` set — `soldier_ant.3ds`,
 `shambler.awd`, `suzanne.awd`, `sponza.awd`, `MonsterHead.awd`. It is thin, and several gaps below stay
 open *because* nothing in it exercises the feature.
 

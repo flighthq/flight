@@ -150,7 +150,7 @@ The full `agents/` library — plans, reviews, breadth analyses, and every recor
 **Skills** (`.claude/skills/`) — procedures, _invoked to do_. Each `SKILL.md` doubles as a plain-markdown procedure for tools that do not load skills, so follow the link directly if needed.
 
 - [`functional-test`](.claude/skills/functional-test/SKILL.md) — author or modify a functional rendering test: the `createFunctionalTarget` single-`app.ts` pattern, the `kinds` declaration, and the capture→baseline loop.
-- [`visual-capture`](.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples, functional tests, and the external `flight-reference` examples.
+- [`visual-capture`](.claude/skills/visual-capture/SKILL.md) — capture screenshots and logs from examples and functional tests.
 
 ## Core Patterns
 

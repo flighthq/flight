@@ -157,8 +157,8 @@ export interface CaptureEntryOptions {
   displayLabel?: string;
   /**
    * Forces (true) or disables (false) the in-page render-verification wait + surface readback. Defaults
-   * by `isVerifiedCaptureTool(tool)`. An external subject (reference) sets it true once its pages register a
-   * functional target, so its WebGL captures read the fingerprinted surface instead of a black canvas.
+   * by `isVerifiedCaptureTool(tool)`. An external subject sets it true once its pages register a functional
+   * target, so its WebGL captures read the fingerprinted surface instead of a black canvas.
    */
   verify?: boolean;
   /** Receives fingerprints that completed every page-side assertion. Used to fuse capture + validation. */
@@ -304,7 +304,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
   const { displayLabel } = opts;
   // The in-page render verifier drives the surface readback (__ftRenderImage) that avoids Docker's
   // compositor-only black WebGL screenshots. It is implicit for the monorepo's own subjects; an external
-  // subject (reference) opts in via `verify` once its pages register a functional target.
+  // subject opts in via `verify` once its pages register a functional target.
   //
   // Examples are verified for the same reason functional scenes are, plus one specific to them: a
   // software WebGPU adapter cannot present to the swapchain, so a plain Playwright screenshot of an
@@ -526,7 +526,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       } else if (backend === 'webgl' && captureFrames > 0) {
         // launchBrowser forces preserveDrawingBuffer in deterministic frame mode, so read the canvas
         // itself instead of Chromium's compositor. Headless SwiftShader can display a WebGL canvas in
-        // an interactive browser while returning an entirely blank locator screenshot; reference pages
+        // an interactive browser while returning an entirely blank locator screenshot; external pages
         // that do not register a verifier otherwise produce a false-green white capture here.
         const canvasDataUrl = await getCanvasImageDataUrl(page);
         if (canvasDataUrl === null) throw new Error('WebGL canvas did not produce a capture image');
@@ -1317,7 +1317,7 @@ export interface CaptureUrlOptions {
 }
 
 // Subjects whose pages register an in-page render verifier, so a capture can read back the rendered
-// surface instead of trusting the compositor. `reference` is external and opts in explicitly via `verify`.
+// surface instead of trusting the compositor. External subjects opt in explicitly via `verify`.
 // Screenshot hashes that must never become a baseline, whatever produced them. This is a denylist of
 // frames observed to be content-free, kept as an explicit constant so the refusal survives a rewrite of
 // the surrounding logic and cannot be argued with at the call site.

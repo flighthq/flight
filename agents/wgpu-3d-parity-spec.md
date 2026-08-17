@@ -260,8 +260,8 @@ GLSL snippet and a uniform block, spliced into shared vertex (`vertexDisplace`) 
 (fresnel/emissive/envReflect/fog/dissolve/toon/normalPerturb) insertion points, with the define-key
 namespacing the compiled variant per active modifier set. The `shadedGlMeshMaterialRenderer` binds the
 per-modifier uniforms and any modifier maps (env cube for envReflect, dissolve map). Critically, GL also
-**fixed the previously-disabled normal map** here (flight-reference `basic-shading` "DIAG: normal map
-temporarily disabled") — the normalPerturb modifier is the home of working tangent-space normal mapping.
+**fixed the previously-disabled normal map** here — the normalPerturb modifier is the home of working
+tangent-space normal mapping.
 
 ### wgpu implementation
 

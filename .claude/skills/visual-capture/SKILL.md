@@ -1,11 +1,11 @@
 ---
 name: visual-capture
-description: Capture screenshots and structured logs from Flight examples, functional tests, and the external reference examples (the OpenFL/Starling/AwayJS ports in the flight-reference repo), then read them back to verify rendering. Use when you need to SEE what a renderer drew (debug a visual bug, confirm a change looks right across backends, "test/capture the <name> reference example"), set or update a screenshot baseline, or interpret the screenshot.png / logs.jsonl / status.json output files. Covers one-shot capture, reference-example capture (auto-clones flight-reference), watch mode, baselines, and emitting logs from a scene.
+description: Capture screenshots and structured logs from Flight examples and functional tests, then read them back to verify rendering. Use when you need to SEE what a renderer drew, set or update a screenshot baseline, or interpret the screenshot.png / logs.jsonl / status.json output files. Covers one-shot capture, watch mode, baselines, and emitting logs from a scene.
 ---
 
 # Visual capture and agent feedback
 
-These scripts turn examples, functional tests, and reference examples into screenshot + log output an agent can read directly. They run **in the agent sandbox** — Playwright installs and drives a headless browser here, no host needed; only _live_ viewing in a real browser (the `dev:*` servers) is for a human. They require Playwright Chromium (`npx playwright install chromium`, plus `sudo npx playwright install-deps chromium` on Linux) and a Vite server (auto-started unless `--url` is given). For the built-in tools the tool name is `examples` or `functional`; the external corpus is `reference` (below).
+These scripts turn examples and functional tests into screenshot + log output an agent can read directly. They run **in the agent sandbox** — Playwright installs and drives a headless browser here, no host needed; only _live_ viewing in a real browser (the `dev:*` servers) is for a human. They require Playwright Chromium (`npx playwright install chromium`, plus `sudo npx playwright install-deps chromium` on Linux) and a Vite server (auto-started unless `--url` is given). The tool name is `examples` or `functional`.
 
 ## One-shot capture
 
@@ -26,28 +26,11 @@ sudo npx playwright install-deps chromium
 
 After that, capture runs fully in-sandbox, **including WebGPU** (SwiftShader software Vulkan) — a `.webgpu.ts` scene reads back its frame the same as WebGL. If only the WebGPU leg then fails with "did not produce a render image" while an existing scene (e.g. `material-toon`) captures both legs, the fault is your scene's wgpu wiring, not the environment.
 
-## Reference examples (external OpenFL/Starling/AwayJS corpus)
-
-The reference examples live in a **separate** repo (`flight-reference`), not in this tree. When asked to "test/capture the `<name>` reference example" (e.g. `load-3ds`, `md5-animation`, `awd-suzanne`), use this — one command clones, builds against the local SDK, captures, and drops a PNG you read back:
-
-```
-npm run capture:reference -- --filter <name>   [--frames 2] [--fail-on-error] [--update-baseline] [--refresh]
-npm run list:reference                          # print the case names you can filter on
-```
-
-- **First run auto-clones + installs** `flight-reference` into `.cache/flight-reference` (needs network + a few minutes); later runs reuse it. Pass `--refresh` to pull latest and reinstall.
-- It starts flight-reference's Vite dev server pointed at **this** monorepo's source (`FLIGHT_REPO`), enumerates every framework/corpus/case with a Flight port, and captures the ones matching `--filter` (substring of `framework/corpus/case`, so `load-3ds` matches `awayjs/examples/basic-load-3ds`). Omit `--filter` to capture all.
-- **Prerequisite:** Playwright Chromium — `npx playwright install chromium` and, on Linux, `sudo npx playwright install-deps chromium`. If it's missing the command tells you and exits.
-- **Output** lands under `.artifacts/reference/{framework}/{corpus}/{case}/{renderer}/` (gitignored) — `screenshot.png` + `status.json`, same shape as below. Read the PNG with the `Read` tool.
-- **3D scenes** read back the WebGL frame in-page (via a registered functional target), which is why a headless/Docker capture isn't a black rectangle. If a 3D reference case _does_ come back black, that case likely hasn't registered a functional target yet (the shared `scene3d.ts` and the inline-GL apps each publish one) — that's a flight-reference-side gap, not a capture failure.
-- To view it live in a real browser instead (for a human — the agent uses capture): `npm run dev:reference -- <case>`.
-
 ## Eyes mode (`--observe`) — never "cannot capture"
 
-A normal capture **fails closed** on a blank WebGL/WebGPU readback: it throws `WebGL verifier did not produce a render image` and writes _no_ screenshot — so a review dead-ends with nothing to look at. Add `--observe` (works on `capture:examples`, `capture:functional`, `capture:reference`) to **fail open** instead: it always writes a `screenshot.png` (best-available frame, black if the render truly produced nothing) plus an `observe` diagnostics block in `status.json`, and never gates or touches baselines.
+A normal capture **fails closed** on a blank WebGL/WebGPU readback: it throws `WebGL verifier did not produce a render image` and writes _no_ screenshot — so a review dead-ends with nothing to look at. Add `--observe` (works on `capture:examples` and `capture:functional`) to **fail open** instead: it always writes a `screenshot.png` (best-available frame, black if the render truly produced nothing) plus an `observe` diagnostics block in `status.json`, and never gates or touches baselines.
 
 ```
-npm run capture:reference -- --observe --filter <case>
 npm run capture:functional -- --observe --filter <name>
 ```
 
@@ -59,7 +42,7 @@ Read the `observe` block to interpret what you're seeing without guessing:
 ```
 
 - `pageErrorCount > 0` → **broken code** (the page threw). Read `logs.jsonl` for the exception — this is a real bug to fix.
-- `blank: true` + `coverage ≈ 0` + `0` errors → **actually blank.** Common benign causes: no visual (audio-only), needs interaction/input, or captured before the scene warmed up. Heavy 3D is **not** intrinsically blank here — with warmup it renders (a full corpus sweep confirmed the awayjs 3D suite renders in-sandbox, e.g. `aircraft-demo` at 0.93 coverage). So treat a clean blank as "look closer at this scene," not "the environment can't."
+- `blank: true` + `coverage ≈ 0` + `0` errors → **actually blank.** Common benign causes: no visual (audio-only), needs interaction/input, or captured before the scene warmed up. Treat a clean blank as "look closer at this scene," not "the environment can't."
 - `blank: false` / `coverage > 0` → something drew; **read `screenshot.png`** — `coverage` is measured from the actual pixels, so it is the source of truth (a high `coverage` with `verifyPublished: false` still means it rendered; the verifier just didn't fingerprint it).
 
 Use `--observe` whenever a plain capture reports "did not produce a render image" — it converts that dead-end into an image plus a machine-readable reason.
@@ -72,14 +55,13 @@ This subsystem has several _distinct, silent_ failure modes; hitting a different
 | --- | --- | --- |
 | Capture prints `✓ ok` then the process **hangs** (never returns) | Was a real bug in the CLI exit path — **fixed** (`process.exit(0)` on success) | If it recurs, the dev-server child or a Playwright handle is keeping the loop alive; exit explicitly, don't `pkill` and call it broken |
 | `--observe` blank, `pageErrorCount > 0` | **Your code threw** at load/run | Read `logs.jsonl` for the exception — a real bug to fix (this is how a stale import / `__name`-in-init-script surfaces) |
-| `--observe` blank, `0` errors, `coverage ≈ 0` on a **heavy 3D scene** (skinning, IBL/cubemap, `rgba16f`) | **NOT a SwiftShader limit** — the awayjs 3D suite renders in-sandbox with warmup (`aircraft-demo` → 0.93). A clean blank means _this scene_ needs more warmup, needs interaction, or has a real bug | Look at the scene, not the environment: bump `--frames`, check whether it needs input, read `logs.jsonl`. Do not narrate it as "SwiftShader can't" |
+| `--observe` blank, `0` errors, `coverage ≈ 0` on a **heavy 3D scene** (skinning, IBL/cubemap, `rgba16f`) | A clean blank means _this scene_ needs more warmup, needs interaction, or has a real bug | Bump `--frames`, check whether it needs input, and read `logs.jsonl` before blaming the environment |
 | `blank: true` but `coverage` is **high** (e.g. 0.9) | **False positive — it rendered.** `coverage` is measured from real pixels and is authoritative; the `blank` flag now follows it, but old runs/notes may show the stale verify-publish flag | Trust `coverage`. Read `screenshot.png` — it drew |
 | `--observe` blank on a **2D / app-loop** scene at default frames, then fine with `--frames 5` | **Captured too early** (app-loop first tick hasn't drawn) — warmup **fixed** it | `observe.warmupFrames > 0` means it recovered on its own; nothing to fix |
 
 **Hard environment facts (proven — do not re-run these experiments):**
 
 - **You cannot move off SwiftShader in this sandbox.** Playwright's Chromium pins `SwiftShader Device … (ANGLE/Vulkan)` regardless of `--use-angle=gl`, `--use-gl=egl`, `--disable-features=Vulkan`, `GALLIUM_DRIVER=llvmpipe`, old headless, or `--in-process-gpu` (crashes). Mesa llvmpipe is installed but never selected. Swapping the GL backend is a dead end here.
-- **SwiftShader renders heavy 3D fine — the "wall" was a false alarm.** A full `--observe` corpus sweep shows the awayjs 3D suite renders in-sandbox with warmup: `aircraft-demo` (IBL sky + reflective ocean + textured jet) 0.93, `intermediate-md5-animation` (skeletal) 0.95, `basic-skybox` 0.92, `intermediate-globe` 0.82, etc. The `aircraft-demo`/`awd-viewer` blanks that once looked like a "SwiftShader can't do IBL/skinning" limit were **captured-too-early** (IBL bake / async upload needs many frames) — the same root as the 2D piratepig case, fixed by warmup, not by any GL change. The isolated primitive (vertex-shader `texelFetch` of `RGBA32F`) also works. Do not narrate heavy-3D blanks as a hardware limitation.
 - WebGPU, WebGL2, Canvas, DOM all render in-sandbox (SwiftShader; see `agents/maturity-gaps.md`). Simple 3D (`basic-view`) renders fine; only some advanced scenes blank — which is why "blank" alone is never proof the code is broken.
 
 ## Watch capture (long-running — requires Playwright)
