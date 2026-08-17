@@ -153,7 +153,7 @@ const lights = createScene3DLights({ ambient: createAmbientLight({ color: 0xffff
 
 render(scene, camera, lights);
 
-// Oracle: the four corner samples must be MUTUALLY DISTINCT, and each must carry its own corner's
+// Assertion: the four corner samples must be MUTUALLY DISTINCT, and each must carry its own corner's
 // channels above the ones it does not. Both halves matter. Distinctness is the property a surface driven
 // by a single flat color cannot have, so it fails exactly when per-vertex color stops reaching the
 // fragment — the failure this scene exists for. Per-corner channel ordering pins the interpolation to the

@@ -117,7 +117,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: not blank + orientation-varying color. Sample the center (normal facing the camera) and an
+// Assertion: not blank + orientation-varying color. Sample the center (normal facing the camera) and an
 // on-sphere offset point (a tilted normal); assert the center is not blank and that the two differ in
 // RGB — proof that color tracks the world normal rather than being a flat fill. Luminance alone is too
 // weak here because hue shifts in encoded normals can preserve nearly the same perceived brightness.

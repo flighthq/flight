@@ -106,7 +106,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: not blank + shows cone-limited shading. The cone covers the +x cap, so the screen-right
+// Assertion: not blank + shows cone-limited shading. The cone covers the +x cap, so the screen-right
 // point is inside the cone (bright) and the screen-left point is outside it (shadowed).
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);

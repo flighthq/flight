@@ -117,7 +117,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: not blank + a real depth gradient across the sphere. The near→far ramp is subtle near the
+// Assertion: not blank + a real depth gradient across the sphere. The near→far ramp is subtle near the
 // center (the surface is nearly fronto-parallel there) and only opens up toward the silhouette, so two
 // near-center samples are not enough. Scan outward along +x, collecting on-sphere luminance until the
 // scan crosses the silhouette into the dark background, then assert the on-sphere spread is non-flat —
