@@ -27,6 +27,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one short line of bold amber text reading Flight, inside a 420x120 ' +
+    'box whose top-left corner is at x 120, y 180. The glyphs are roughly 72 px tall, sit on a single ' +
+    'line, and do not wrap to a second. Nothing frames them: no filled box behind the text, no border ' +
+    'rectangle, no underline or strike line. The bottom of the field is empty — the strip across ' +
+    'y 540-590 carries no amber at all. Exact glyph outlines depend on the installed sans-serif face and ' +
+    'are not part of the claim; the position, the colour and the emptiness elsewhere are.',
 });
 
 const root = createDisplayObject();

@@ -54,6 +54,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one line of white text at about 56 px, reading the same word twice ' +
+    'side by side — WEIGHT WEIGHT — inside a 640-wide box at x 80-720, y 240-360. The two copies are the ' +
+    'same colour, the same size and on the same baseline; the ONLY visible difference is stroke ' +
+    'thickness. The left copy is noticeably heavier: its strokes are thicker, so it lays down visibly ' +
+    'more white than the right copy over an equal area. Two copies of identical weight is the failure. ' +
+    'The two words do not overlap, there is a clear gap of black between them, and no box, border, ' +
+    'underline or colour difference distinguishes them.',
 });
 
 const root = createDisplayObject();

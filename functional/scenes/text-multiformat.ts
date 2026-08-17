@@ -37,6 +37,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one line of text at about 56 px inside a 640-wide box at x 80-720, ' +
+    'y 220-340, reading REDSIDE BLUESIDE. It is two-coloured in one continuous line: the left word is ' +
+    'red and the right word is blue, with the change falling at the space between them. There is no red ' +
+    'in the right portion and no blue in the left, and no blended or purple region where they meet — the ' +
+    'two runs keep their own colours. Both words sit on the same baseline at the same size, so only ' +
+    'colour distinguishes them, and nothing is drawn outside that line.',
 });
 
 const root = createDisplayObject();

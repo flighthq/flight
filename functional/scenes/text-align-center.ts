@@ -35,6 +35,15 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field showing the same short word, FLIGHT, twice in bright amber at about ' +
+    '64 px, in two 480-wide boxes that both start at x 160 — the first at y 120-230, the second at ' +
+    'y 320-430. The two differ only in where the word sits across its box, and that difference is the ' +
+    'entire picture. The upper word starts at the left edge of its box, near x 160, with one wide empty ' +
+    'gap to its right. The lower word is centred: it has roughly EQUAL empty margins on both sides, so ' +
+    'its first glyph begins well right of x 160 and its last ends well left of x 640. Two words beginning ' +
+    'at the same x, or a lower word pushed to one side, is the failure. Both are amber on pure black with ' +
+    'no box, border or underline, and neither wraps to a second line.',
 });
 
 const root = createDisplayObject();

@@ -42,6 +42,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one line of bright yellow text reading Flight at about 72 px, ' +
+    'inside a 560x120 box at x 120-680, y 240-360. A horizontal yellow line runs BENEATH the glyphs, ' +
+    'below their baseline and clear of the letter bodies rather than crossing them, and it spans the ' +
+    'width of the word rather than the width of the box. The same text with no line under it, or with the ' +
+    'line struck across the middle of the letters, is the failure. The line is the same yellow as the ' +
+    'text, no box or border frames the field, and the rest of the canvas is pure black.',
 });
 
 const root = createDisplayObject();

@@ -51,6 +51,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one line of white text at about 72 px, reading four tall vertical ' +
+    'strokes twice side by side — IIII IIII — inside a 640-wide box at x 80-720, y 230-370. Both groups ' +
+    'are the same colour and size; the ONLY visible difference is lean. The left group SLANTS: the ink at ' +
+    'the top of each stroke sits several pixels to the RIGHT of the ink at its bottom. The right group is ' +
+    'upright, with top and bottom ink vertically aligned. Both groups upright, or both leaning, is the ' +
+    'failure. The two groups are separated by a clear gap of black, and there is no box, border or ' +
+    'underline anywhere.',
 });
 
 const root = createDisplayObject();

@@ -33,6 +33,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with a long sentence in bright cyan-blue at about 30 px, confined to a ' +
+    'narrow 260-wide column at x 120-380, y 120-480. The sentence BREAKS ONTO AT LEAST TWO LINES stacked ' +
+    'vertically, with a clear band of black between them, and no glyph extends past the right edge of ' +
+    'the column at x 380 — the text is wrapped inside the width, not run off it or clipped mid-letter at ' +
+    'the boundary. A single long line, or ink beyond x 380, is the failure. The text is one flat colour ' +
+    'with no box or border, and the rest of the canvas is pure black.',
 });
 
 const root = createDisplayObject();
