@@ -260,6 +260,39 @@ body {
   line-height: 1.6;
 }
 
+.commission-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: rgba(80, 140, 60, 0.2);
+  border: 1px solid rgba(80, 140, 60, 0.4);
+  border-radius: 4px;
+  color: #7ab870;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.1s,
+    color 0.1s;
+}
+
+.commission-btn:hover {
+  background: rgba(80, 140, 60, 0.35);
+  color: #a0d890;
+}
+
+.commission-feedback {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  z-index: 10;
+  pointer-events: none;
+}
+
 .expected-description {
   position: absolute;
   bottom: 0;
