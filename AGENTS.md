@@ -82,6 +82,7 @@ Flight is MIT, copyright as stated in the root `LICENSE.md` — the operative te
 - Keep _transient_ notes about the **work** out of the code. `TODO`, "half-done", "revisit after X", and known-incomplete threads rot inline; their home is the `## Open` section of the package's `status.md` — present tense, rewritten in place, under 6,000 characters, session narration left in git (see [packages](agents/packages/index.md)). Code carries meaning that survives; work-in-progress lives in status. Caller-facing warning comments ("must call X first", "do not release twice") are likewise banned inline — they become guard-layer runtime warnings (see [diagnostics](agents/conventions/diagnostics.md)).
 - Accessor and getter functions use the `get*` prefix. Boolean-returning functions use `has*` or `is*`.
 - Commit messages are single-line only — no body, no `Co-Authored-By` trailers. If a change needs more explanation, split it into smaller commits whose subjects are self-explanatory. See [commit messages](agents/conventions/commits.md) for the `type(scope): subject` format.
+- **A commit SHA is not a durable handle for whether work landed.** Rebasing rewrites it legitimately, so `git merge-base --is-ancestor` returning false is not evidence the work is absent, and a reported SHA may name no revision you can reach. Verify by **content** — grep a distinctive phrase from the change. See [commit messages](agents/conventions/commits.md).
 - Leave touched files cleaner than you found them.
 
 ## Bundle Size Discipline
