@@ -103,7 +103,6 @@ which is why they are not in the map.
 - [wgpu backlog](wgpu-backlog.md) — confirmed WebGPU defects and coverage surface, accumulated while
   WGPU work is deferred behind other work. Deferral is scheduling, not severity: read the per-entry
   severity, not the file's position in this list.
-- [reference todo](reference-todo.md) — Flight Reference tool-capture integration.
 - [depth review: codec formats](depth-codec-formats.md) — the codec-format cluster in depth.
 - [swf video import decision](swf-video-import-proposal.md) — Stage A is ratified and implemented as
   structural import through a sourceless `Sprite`; payload preservation and decode remain unratified.
