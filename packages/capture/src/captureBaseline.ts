@@ -13,8 +13,9 @@ export function createCaptureBaseline(): CaptureBaseline {
 
 /**
  * Serializes a baseline to its committed text form: JSON with columns in sorted key order, each
- * column's fields in canonical `fingerprint`, `sourceHash`, then `sha256` order, 2-space indent, and a trailing
- * newline. Matches the tooling's on-disk baseline store byte-for-byte, so a re-baseline of one column
+ * column's fields in canonical `fingerprint`, deprecated `sourceHash`, then `sha256` order, 2-space
+ * indent, and a trailing newline. Matches the tooling's on-disk baseline store byte-for-byte, so a
+ * re-baseline of one column
  * produces a minimal diff and the format gate stays green. Only defined fields are emitted.
  */
 export function formatCaptureBaseline(baseline: Readonly<CaptureBaseline>): string {
@@ -23,6 +24,8 @@ export function formatCaptureBaseline(baseline: Readonly<CaptureBaseline>): stri
     const entry = baseline[column];
     const out: CaptureColumnBaseline = {};
     if (entry.fingerprint !== undefined) out.fingerprint = entry.fingerprint;
+    // Preserve a legacy partial record on untouched columns. Writers remove it atomically when they
+    // install full fingerprintProvenance for this same column.
     if (entry.sourceHash !== undefined) out.sourceHash = entry.sourceHash;
     if (entry.sha256 !== undefined) out.sha256 = entry.sha256;
     // Provenance is emitted LAST so adding it to a column leaves every existing line in place and the

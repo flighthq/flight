@@ -1,12 +1,13 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   baselinePath,
   getBaselineField,
+  getBaselineLegacyFingerprintSourceHash,
   getBaselineProvenance,
   setBaselineCaptureEvidence,
   setBaselineField,
@@ -62,12 +63,12 @@ describe('setBaselineCaptureEvidence', () => {
 
     setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
       fingerprint: '2:000000ffffff',
-      sourceHash: 'source',
+      fingerprintProvenance: PROVENANCE,
       sha256: 'hash',
     });
 
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:000000ffffff');
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBe('source');
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toEqual(PROVENANCE);
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('hash');
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('webgl-hash');
   });
@@ -75,7 +76,7 @@ describe('setBaselineCaptureEvidence', () => {
   it('replaces the full evidence column instead of retaining stale optional fields', () => {
     setBaselineCaptureEvidence(root, 'functional', 'foo', 'canvas', {
       fingerprint: '2:000000ffffff',
-      sourceHash: 'old-source',
+      fingerprintProvenance: PROVENANCE,
       sha256: 'old-hash',
     });
 
@@ -85,7 +86,7 @@ describe('setBaselineCaptureEvidence', () => {
     });
 
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:111111eeeeee');
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBeNull();
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBeNull();
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sha256')).toBe('new-hash');
   });
 
@@ -138,13 +139,46 @@ describe('setBaselineCaptureEvidence', () => {
 
 describe('setBaselineField', () => {
   it('preserves unrelated fields and columns on a read-merge-write', () => {
-    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff');
-    setBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash', 'source');
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', PROVENANCE);
     setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'hash2');
 
     expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint')).toBe('2:000000ffffff');
-    expect(getBaselineField(root, 'functional', 'foo', 'canvas', 'sourceHash')).toBe('source');
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toEqual(PROVENANCE);
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('hash2');
+  });
+
+  it('keeps legacy fingerprint source evidence read-only until that column is rewritten', () => {
+    const path = baselinePath(root, 'functional', 'foo');
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      path,
+      JSON.stringify({ canvas: { fingerprint: '2:000000ffffff', sourceHash: 'legacy-source' } }, null, 2) + '\n',
+    );
+
+    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBe('legacy-source');
+    setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'other-column');
+    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBe('legacy-source');
+  });
+
+  it('removes a legacy source hash only when replacing that column fingerprint', () => {
+    const path = baselinePath(root, 'functional', 'foo');
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      path,
+      JSON.stringify(
+        {
+          canvas: { fingerprint: '2:000000ffffff', sourceHash: 'legacy-canvas' },
+          webgl: { fingerprint: '2:111111eeeeee', sourceHash: 'legacy-webgl' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', PROVENANCE);
+    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBeNull();
+    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toEqual(PROVENANCE);
+    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'webgl')).toBe('legacy-webgl');
   });
 
   it('allows the normal sha256-only stage and a legacy join with unknown provenance', () => {

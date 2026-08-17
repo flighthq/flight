@@ -29,7 +29,7 @@ export type CaptureWorkflowBenchmarkOptions = Omit<
 >;
 export type CaptureWorkflowValidationOptions = Omit<
   CaptureValidationOptions,
-  'browserSession' | 'entries' | 'fingerprints' | 'root' | 'server' | 'subject'
+  'browserSession' | 'entries' | 'fingerprints' | 'fingerprintProvenance' | 'root' | 'server' | 'subject'
 >;
 
 export interface CaptureWorkflowOptions {
@@ -159,6 +159,16 @@ export async function runCaptureWorkflow(options: Readonly<CaptureWorkflowOption
   const captureOptions = options.capture === false ? null : (options.capture ?? {});
   const validationOptions = options.validation === false ? null : (options.validation ?? {});
   const benchmarkOptions = options.benchmark === false || options.benchmark === undefined ? null : options.benchmark;
+  if (validationOptions?.updateFingerprints === true) {
+    if (captureOptions === null) {
+      options.server.kill();
+      throw new Error('Fingerprint updates require a paired verified capture pass');
+    }
+    if (captureOptions.verify === false) {
+      options.server.kill();
+      throw new Error('Fingerprint updates cannot run with capture verification disabled');
+    }
+  }
   if (captureOptions === null && validationOptions === null && benchmarkOptions === null) {
     options.server.kill();
     return {

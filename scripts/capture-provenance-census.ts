@@ -33,6 +33,7 @@ export type CaptureProvenanceSubject = 'examples' | 'functional';
 export interface CaptureProvenanceColumn {
   currentSourceHash: string | null;
   entry: string;
+  fingerprintProvenanceStatus: 'full' | 'partial' | 'missing';
   fingerprintSourceHash: string | null;
   renderer: string;
   sha256SourceHash: string | null;
@@ -49,6 +50,8 @@ export interface CaptureProvenanceAxisCensus {
 export interface CaptureProvenanceCensusRow {
   fingerprint: CaptureProvenanceAxisCensus;
   fingerprintColumns: number;
+  fingerprintProvenanceFull: number;
+  fingerprintProvenancePartial: number;
   freshnessGap: number;
   mismatchedScenes: number;
   sha256Provenance: CaptureProvenanceAxisCensus;
@@ -144,12 +147,19 @@ export function loadCaptureProvenanceColumns(
       const identity = captureProvenanceColumnKey(entryName, renderer);
       if (gatedIdentities !== undefined && !gatedIdentities.has(identity)) continue;
       found.add(identity);
+      const fingerprintProvenance = readFingerprintProvenance(value, path, renderer);
+      const legacySourceHash = nonEmptyString(value.sourceHash);
       columns.push({
         currentSourceHash: resolvesLiveTarget(entry, renderer)
           ? getCaptureSceneSourceHash(repositoryRoot, subject, entry, renderer)
           : null,
         entry: entryName,
-        fingerprintSourceHash: nonEmptyString(value.sourceHash),
+        // Mixed is the steady-state migration shape. Prefer the full record whenever present; the
+        // legacy field is a labelled partial fallback, never a peer value to merge with it.
+        fingerprintProvenanceStatus:
+          fingerprintProvenance !== null ? 'full' : legacySourceHash !== null ? 'partial' : 'missing',
+        fingerprintSourceHash:
+          fingerprintProvenance !== null ? nonEmptyString(fingerprintProvenance.sourceHash) : legacySourceHash,
         renderer,
         sha256SourceHash: isRecord(value.sha256Provenance) ? nonEmptyString(value.sha256Provenance.sourceHash) : null,
         subject,
@@ -209,7 +219,11 @@ function censusRow(
   const fingerprint = emptyAxis();
   const sha256Provenance = emptyAxis();
   const mismatchedScenes = new Set<string>();
+  let fingerprintProvenanceFull = 0;
+  let fingerprintProvenancePartial = 0;
   for (const column of columns) {
+    if (column.fingerprintProvenanceStatus === 'full') fingerprintProvenanceFull++;
+    else if (column.fingerprintProvenanceStatus === 'partial') fingerprintProvenancePartial++;
     const fingerprintState = addAxis(fingerprint, column.fingerprintSourceHash, column.currentSourceHash);
     addAxis(sha256Provenance, column.sha256SourceHash, column.currentSourceHash);
     if (fingerprintState === 'mismatched') mismatchedScenes.add(`${column.subject}/${column.entry}`);
@@ -217,6 +231,8 @@ function censusRow(
   return {
     fingerprint,
     fingerprintColumns: columns.length,
+    fingerprintProvenanceFull,
+    fingerprintProvenancePartial,
     freshnessGap: sha256Provenance.exact - fingerprint.exact,
     mismatchedScenes: mismatchedScenes.size,
     sha256Provenance,
@@ -252,9 +268,30 @@ function emptyAxis(): CaptureProvenanceAxisCensus {
 function formatRow(row: Readonly<CaptureProvenanceCensusRow>): string[] {
   return [
     `${row.subject} (${row.fingerprintColumns} fingerprint columns)`,
+    `  fingerprint provenance       full=${pad(row.fingerprintProvenanceFull)}  PROVENANCE-PARTIAL=${pad(row.fingerprintProvenancePartial)}  absent=${pad(row.fingerprintColumns - row.fingerprintProvenanceFull - row.fingerprintProvenancePartial)}`,
     `  fingerprint sourceHash       exact=${pad(row.fingerprint.exact)}  mismatch=${pad(row.fingerprint.mismatched)}  absent=${pad(row.fingerprint.missing)}  current-unavailable=${pad(row.fingerprint.currentUnavailable)}`,
     `  sha256Provenance.sourceHash  exact=${pad(row.sha256Provenance.exact)}  mismatch=${pad(row.sha256Provenance.mismatched)}  absent=${pad(row.sha256Provenance.missing)}  current-unavailable=${pad(row.sha256Provenance.currentUnavailable)}`,
   ];
+}
+
+function readFingerprintProvenance(
+  column: Readonly<Record<string, unknown>>,
+  path: string,
+  renderer: string,
+): Record<string, unknown> | null {
+  if (!Object.hasOwn(column, 'fingerprintProvenance')) return null;
+  const value = column.fingerprintProvenance;
+  if (
+    !isRecord(value) ||
+    typeof value.frames !== 'number' ||
+    (value.sourceHash !== null && typeof value.sourceHash !== 'string') ||
+    (value.targetKind !== null && typeof value.targetKind !== 'string') ||
+    typeof value.verifyPublished !== 'boolean' ||
+    typeof value.warmupFrames !== 'number'
+  ) {
+    throw new Error(`${path}:${renderer}: malformed fingerprintProvenance`);
+  }
+  return value;
 }
 
 function resolvesLiveTarget(entry: Entry | undefined, renderer: string): entry is Entry {

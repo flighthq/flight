@@ -5,7 +5,7 @@ import {
 } from './check-fingerprint-source-hashes';
 
 describe('fingerprint source-hash completeness', () => {
-  it('accepts a covered column while keeping its named allowance visible and ready', () => {
+  it('accepts a partial legacy column while labelling its named allowance and migration state', () => {
     const allowance = FINGERPRINT_SOURCE_HASH_ALLOWANCES[0];
     const report = checkFingerprintSourceHashes(
       [baseline(allowance.path, allowance.renderer, { fingerprint: 'coarse', sourceHash: 'scene' })],
@@ -13,15 +13,32 @@ describe('fingerprint source-hash completeness', () => {
     );
 
     expect(report).toMatchObject({
-      allowances: [{ state: 'covered' }],
-      covered: 1,
+      allowances: [{ state: 'partial' }],
       fingerprintColumns: 1,
+      full: 0,
+      partial: 1,
       unavailable: 0,
       violations: [],
     });
     expect(formatFingerprintSourceHashReport(report)).toContain(
-      `${allowance.path}:${allowance.renderer} [sourceHash currently recorded; allowance ready] — ${allowance.reason}`,
+      `${allowance.path}:${allowance.renderer} [PROVENANCE-PARTIAL sourceHash recorded; allowance ready] — ${allowance.reason}`,
     );
+  });
+
+  it('prefers full provenance over a disagreeing legacy sourceHash and counts the column once', () => {
+    const report = checkFingerprintSourceHashes(
+      [
+        baseline('functional/baselines/mixed.json', 'webgl', {
+          fingerprint: 'coarse',
+          sourceHash: 'legacy',
+          fingerprintProvenance: provenance('full'),
+        }),
+      ],
+      [],
+    );
+
+    expect(report).toMatchObject({ fingerprintColumns: 1, full: 1, partial: 0, violations: [] });
+    expect(formatFingerprintSourceHashReport(report)).toContain('full provenance 1; PROVENANCE-PARTIAL 0');
   });
 
   it('accepts EVERY named case, however many there are, only when both exact hashes are absent', () => {
@@ -34,14 +51,15 @@ describe('fingerprint source-hash completeness', () => {
     const report = checkFingerprintSourceHashes(inputs, FINGERPRINT_SOURCE_HASH_ALLOWANCES);
 
     expect(report).toMatchObject({
-      covered: 0,
       fingerprintColumns: named,
+      full: 0,
+      partial: 0,
       unavailable: named,
       violations: [],
     });
     expect(report.allowances.every((entry) => entry.state === 'unavailable')).toBe(true);
     expect(formatFingerprintSourceHashReport(report)).toContain(
-      `0/${named} fingerprint columns carry sourceHash; ${named} honest gaps`,
+      `full provenance 0; PROVENANCE-PARTIAL 0; ${named} honest gaps`,
     );
     // Non-vacuous: an empty list would satisfy every assertion above.
     expect(named).toBeGreaterThan(0);
@@ -108,9 +126,13 @@ describe('fingerprint source-hash completeness', () => {
 function baseline(
   path: string,
   renderer: string,
-  column: Readonly<Record<string, string>>,
+  column: Readonly<Record<string, unknown>>,
 ): { path: string; text: string } {
   return { path, text: JSON.stringify({ [renderer]: column }) };
+}
+
+function provenance(sourceHash: string) {
+  return { frames: 1, sourceHash, targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 };
 }
 
 function combineAllowances(

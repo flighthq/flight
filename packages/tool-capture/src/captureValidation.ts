@@ -31,7 +31,12 @@ import {
 import type { BrowserContext, Page } from '@playwright/test';
 import pc from 'picocolors';
 
-import { getBaselineField, setBaselineField } from './baselineStore.js';
+import {
+  getBaselineField,
+  getBaselineLegacyFingerprintSourceHash,
+  getBaselineProvenance,
+  setBaselineField,
+} from './baselineStore.js';
 import {
   diffCaptureBaselineCoverage,
   formatCaptureBaselineCoverageIdentity,
@@ -152,6 +157,8 @@ export interface CaptureValidationCheck {
   threshold?: number;
   /** Scene-source freshness classification for every gated fingerprint comparison. */
   sourceHashStatus?: 'changed' | 'unchanged' | 'unavailable';
+  /** Whether source freshness came from full five-field provenance or the deprecated partial fallback. */
+  fingerprintProvenanceStatus?: 'full' | 'partial' | 'unavailable';
   recordedSourceHash?: string | null;
   currentSourceHash?: string | null;
 }
@@ -684,17 +691,24 @@ async function processEntry(
         });
         continue;
       }
-      // ★ STAMP ONLY WHAT THIS PASS PRODUCED. The provenance is looked up by the SAME (entry, renderer)
-      // key the fingerprint came from, and is passed only when this pass actually captured that
-      // fingerprint. A fingerprint supplied from elsewhere, or already on disk, gets NO provenance:
-      // attaching today's conditions to a value produced by an earlier capture would manufacture an
-      // agreement nobody observed, and a wrong provenance is worse than the absent one it replaces.
+      // ★ STAMP ONLY WHAT THE PAIRED VERIFIED CAPTURE PRODUCED. A detached validation load can prove
+      // stability, but it cannot recover the capture branch, target kind, or warmup that produced the
+      // value. Refuse that write rather than taking baselineStore's honest unknown-provenance arm.
       const provenance = options.fingerprintProvenance[entry.name]?.[renderer];
-      setBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint', fingerprint, provenance);
-      const sourceHash = getCaptureSceneSourceHash(options.root, options.subject, entry, renderer);
-      if (sourceHash !== null) {
-        setBaselineField(options.root, options.subject, entry.name, renderer, 'sourceHash', sourceHash);
+      if (supplied === undefined || provenance === undefined) {
+        const note = 'baseline not written — fingerprint update requires matching verified-capture provenance';
+        result.output.push(statusLine('fail', renderer, note));
+        result.loadFailures++;
+        result.checks.push({
+          entry: entry.name,
+          renderers: [renderer],
+          kind: 'baseline',
+          status: 'failed',
+          message: note,
+        });
+        continue;
       }
+      setBaselineField(options.root, options.subject, entry.name, renderer, 'fingerprint', fingerprint, provenance);
       result.output.push(statusLine('pass', renderer, 'baseline written'));
       result.updated++;
       result.checks.push({
@@ -752,10 +766,23 @@ async function processEntry(
       });
     } else if (options.gateRegression) {
       const check = evaluateCaptureRegression(fingerprint, committed, options.regressionTolerance);
-      const recordedSourceHash = getBaselineField(options.root, options.subject, entry.name, renderer, 'sourceHash');
+      const fingerprintProvenance = getBaselineProvenance(
+        options.root,
+        options.subject,
+        entry.name,
+        renderer,
+        'fingerprint',
+      );
+      const legacySourceHash =
+        fingerprintProvenance === null
+          ? getBaselineLegacyFingerprintSourceHash(options.root, options.subject, entry.name, renderer)
+          : null;
+      const recordedSourceHash = fingerprintProvenance?.sourceHash ?? legacySourceHash;
+      const fingerprintProvenanceStatus =
+        fingerprintProvenance !== null ? 'full' : legacySourceHash !== null ? 'partial' : 'unavailable';
       const currentSourceHash = getCaptureSceneSourceHash(options.root, options.subject, entry, renderer);
       const freshness = classifyCaptureBaselineFreshness(recordedSourceHash, currentSourceHash);
-      const freshnessMessage = describeCaptureBaselineFreshness(freshness, check.pass);
+      const freshnessMessage = describeCaptureBaselineFreshness(freshness, check.pass, fingerprintProvenanceStatus);
       if (!check.pass) {
         const message = `regression ${dist.toFixed(2)} > ${options.regressionTolerance} — ${freshnessMessage}`;
         result.output.push(statusLine('fail', renderer, message));
@@ -769,6 +796,7 @@ async function processEntry(
           distance: dist,
           threshold: options.regressionTolerance,
           sourceHashStatus: freshness.status,
+          fingerprintProvenanceStatus,
           recordedSourceHash,
           currentSourceHash,
         });
@@ -785,6 +813,7 @@ async function processEntry(
           distance: dist,
           threshold: options.regressionTolerance,
           sourceHashStatus: freshness.status,
+          fingerprintProvenanceStatus,
           recordedSourceHash,
           currentSourceHash,
         });
@@ -953,12 +982,16 @@ function classifyCaptureBaselineFreshness(
 function describeCaptureBaselineFreshness(
   freshness: ReturnType<typeof classifyCaptureBaselineFreshness>,
   regressionPassed: boolean,
+  provenanceStatus: NonNullable<CaptureValidationCheck['fingerprintProvenanceStatus']>,
 ): string {
-  if (freshness.status === 'changed') return `${freshness.message} — recapture owed by the scene owner`;
-  if (freshness.status === 'unchanged' && !regressionPassed) {
-    return `${freshness.message} — environment drift; never rebaseline`;
+  const provenanceLabel = provenanceStatus === 'partial' ? 'PROVENANCE-PARTIAL (legacy sourceHash fallback) — ' : '';
+  if (freshness.status === 'changed') {
+    return `${provenanceLabel}${freshness.message} — recapture owed by the scene owner`;
   }
-  return freshness.message;
+  if (freshness.status === 'unchanged' && !regressionPassed) {
+    return `${provenanceLabel}${freshness.message} — environment drift; never rebaseline`;
+  }
+  return provenanceLabel + freshness.message;
 }
 
 export async function runCaptureValidation(
