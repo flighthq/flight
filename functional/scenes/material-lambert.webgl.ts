@@ -126,7 +126,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: not blank + shows directional shading. The sphere is centered; sample a pixel on the lit
+// Assertion: not blank + shows directional shading. The sphere is centered; sample a pixel on the lit
 // (screen-right) hemisphere and one on the shadowed (screen-left) hemisphere, both inset from center
 // so they land on the sphere surface, and assert the lit side is clearly brighter.
 export function assertRender(bitmap: Readonly<Bitmap>): void {

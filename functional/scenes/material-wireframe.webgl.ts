@@ -121,7 +121,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: edges render, but it is not a solid fill. Sample a small grid inside the sphere and count
+// Assertion: edges render, but it is not a solid fill. Sample a small grid inside the sphere and count
 // bright and dark samples. A single equator row can land on a dense run of meridian edges, so use a 2D
 // distribution instead: real wireframe has both bright edges and dark interiors; solid fill has no dark
 // interior samples; blank output has no bright samples.

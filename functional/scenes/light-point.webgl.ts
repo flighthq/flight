@@ -92,7 +92,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: not blank + shows point shading. The lit hemisphere faces the light at +x, so the
+// Assertion: not blank + shows point shading. The lit hemisphere faces the light at +x, so the
 // screen-right point is bright and the screen-left point is shadowed.
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);

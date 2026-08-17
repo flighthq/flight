@@ -89,7 +89,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: not blank + shows the sky/ground gradient. Sample above and below center (both inset so they
+// Assertion: not blank + shows the sky/ground gradient. Sample above and below center (both inset so they
 // land on the sphere); the top (sky) must be clearly brighter than the bottom (ground).
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);

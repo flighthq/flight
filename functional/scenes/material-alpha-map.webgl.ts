@@ -121,7 +121,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: the opaque (left) half shows the warm quad (high red) and the cut-out (right) half shows the
+// Assertion: the opaque (left) half shows the warm quad (high red) and the cut-out (right) half shows the
 // cool background (near-zero red), proving the alpha map drove coverage rather than a uniform fill.
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);
