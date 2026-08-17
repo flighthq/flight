@@ -48,7 +48,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;
