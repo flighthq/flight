@@ -401,10 +401,13 @@ const target = await createFunctionalTarget({
     'flat opaque red; the second is red at half strength over blue, reading as a muted purple that is ' +
     'clearly neither pure red nor pure blue; the third is plain blue, because the overlay above it ' +
     'contributes nothing at all — any red or pink in the third square is a failure. The fourth is a single ' +
-    'flat light colour, either white or green depending on the renderer, and never red or blue; its two ' +
-    'permitted values record behaviour that currently differs between renderers and is still under ' +
-    'design, while the first three squares look the same everywhere. Nothing is drawn outside the four ' +
-    'squares.',
+    'flat light colour: WHITE on Canvas and DOM, or GREEN on WebGL and WebGPU, and never red or blue. ' +
+    'That bound is deliberate and is not uncertainty about what this scene draws — the RGB-fold ' +
+    'divergence between the raster and GPU paths is an UNDECIDED DESIGN, not an error, and one file ' +
+    'covers all four backends, so no single value is the right one to write here. Until it is decided, ' +
+    'this cell cannot be blessed as a permanent reference: whichever value a capture happened to record ' +
+    'would silently settle the question. The first three squares look the same on every backend. Nothing ' +
+    'is drawn outside the four squares.',
 });
 backend = target.kind;
 targetWidth = target.width;

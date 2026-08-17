@@ -49,6 +49,16 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x111522ff,
   kinds: [ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'An 800x600 field on a very dark blue-black background with one dark purple backing panel spanning ' +
+    'x 125-645, y 190-410, and two bright cyan blocks of about 70x60 sitting on it, one near x 185 and ' +
+    'one near x 475, both around y 250. Each cyan block is surrounded differently, and the asymmetry is ' +
+    'the whole claim. The LEFT block has a pink halo on BOTH sides — a few pixels out from its left edge ' +
+    'and a few pixels out from its right edge are both pink, so the glow surrounds it evenly. The RIGHT ' +
+    'block instead throws a purple shadow to ONE SIDE ONLY: about a dozen pixels past its right edge is ' +
+    'purple, while just inside the left of its own area the backing is plain dark purple with no shadow ' +
+    'at all. A pink halo around the right block, a symmetric shadow, or a shadow falling on the left is ' +
+    'the failure. Both block centres are solid cyan.',
 });
 if (target.kind !== 'webgpu') throw new Error('per-node-effect-glow-shadow requires WebGPU');
 const { render, state, width } = target;

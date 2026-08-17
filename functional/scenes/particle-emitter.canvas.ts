@@ -63,6 +63,16 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x101018ff, // opaque dark (packed RGBA, low byte = alpha)
   kinds: [ParticleEmitter2DKind],
+  expectedImageDescription:
+    'An 800x450 opaque black field with six solid squares in two rows of three, centred at ' +
+    '(160,130), (400,130), (640,130), (160,320), (400,320) and (640,320). Reading across the top row they ' +
+    'are red, green and blue; across the bottom, yellow, magenta and cyan — six distinct saturated ' +
+    'colours, no two alike. Their sizes differ deliberately: the three top squares are about 48 px across, ' +
+    'the magenta one in the middle of the bottom row is the largest at about 72 px, and the yellow and ' +
+    'cyan ones are the smallest at about 34 px. Two of them are TURNED about a third of a right angle — ' +
+    'the green one and the yellow one — so they read as tilted diamonds while the other four sit square. ' +
+    'Six identical squares, or six upright ones, is the failure. The gaps between them are pure black, ' +
+    'each square is one flat colour with no gradient, and nothing is drawn outside them.',
 });
 
 function makeAtlasCanvas(): HTMLCanvasElement {

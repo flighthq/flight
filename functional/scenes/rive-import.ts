@@ -314,6 +314,19 @@ const { render, width } = await createFunctionalTarget({
   background: 0x111827ff,
   kinds: [DisplayObjectKind, ShapeKind],
   clip: true,
+  expectedImageDescription:
+    'An 800x480 field on a very dark blue-grey background with TWO cards that must look IDENTICAL to ' +
+    'each other, one centred near x 210 and one near x 590, both around y 240. Each card is filled with ' +
+    'a GRADIENT that changes markedly from its left side to its right — a point 70 px left of the card ' +
+    'centre and one 70 px right of it are clearly different colours, not one flat tone — and each carries ' +
+    'a bright stroke along its upper edge, about 79 px above the card centre. Each card also has pieces ' +
+    'REMOVED: about 100 px right and 70 px below the centre is background rather than card, and so is a ' +
+    'point 100 px directly right of the centre, so two separate cuts overlap rather than one covering ' +
+    'the other. Near the top of the field, around y 70, sit two small twin shapes at x 360 and x 440 that ' +
+    'differ only in one corner: the left one keeps ink 24 px in from its corner while the right one has ' +
+    'that same spot cut away to background. Twins that look alike there is a failure. The two big cards ' +
+    'matching each other is the strongest claim in the picture: they are built from different underlying ' +
+    'descriptions of the same drawing, so any visible difference between them is wrong.',
 });
 
 const imported = createScene2DFromRiveDocument(createRiveFixture());

@@ -34,6 +34,11 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with a single flat red square, 160x160, spanning x 320-480 and ' +
+    'y 220-380, with straight axis-aligned edges. The red is uniform across the whole square — no ' +
+    'gradient, no darker or lighter band at any edge, and no tint of any other hue. Everything outside ' +
+    'the square is pure black, and no second copy of it appears anywhere.',
 });
 
 // Solid RED source — Canvas has no fold, so the parity image is produced by an already-red source.
