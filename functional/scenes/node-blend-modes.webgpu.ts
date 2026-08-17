@@ -37,6 +37,14 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff,
   kinds: [ShapeKind],
   blend: true,
+  expectedImageDescription:
+    'On an opaque black field (800×600): a mid-gray (luma ~128) horizontal band spanning ' +
+    'x 100–700, y 200–400. Inside the band, two dark-gray (luma ~80) overlay rectangles ' +
+    '(180×120 each). The LEFT overlay at x 180, y 240 uses Normal blend — it paints opaquely, ' +
+    'appearing darker than the base gray (luma ~80). The RIGHT overlay at x 440, y 240 uses ' +
+    'Add blend — the overlay adds to the base, appearing brighter than the base gray ' +
+    '(luma ~208). The Add region is markedly brighter than both the Normal region and the ' +
+    'uncovered base. Both overlays use the same source color; only the blend equation differs.',
 });
 
 const root = createDisplayObject();

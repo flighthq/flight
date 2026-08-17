@@ -32,6 +32,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (400×300): three overlapping 120×120 filled squares, each offset ' +
+    '40 px right and 40 px down from the previous. RED at (50, 50), GREEN at (90, 90), BLUE ' +
+    'at (130, 130). Later children occlude earlier ones: at the three-way overlap near ' +
+    '(140, 140) BLUE is visible (last child wins). Red is visible only in its exclusive ' +
+    'top-left corner near (60, 60). Green is visible in the strip between red and blue. ' +
+    'No blending — each region is a single solid color.',
 });
 
 const root = createDisplayObject();

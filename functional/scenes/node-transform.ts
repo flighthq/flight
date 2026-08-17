@@ -37,6 +37,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (800×600): a blue (light azure) diamond centered at (400, 300). ' +
+    'The diamond is a 160×160 square rotated 45° about its center, so its vertices point up, ' +
+    'down, left, and right. The half-diagonal is ~113 px, so the diamond spans roughly ' +
+    '(287, 300) to (513, 300) horizontally and (400, 187) to (400, 413) vertically. The ' +
+    'interior is uniformly filled; the four axis-aligned corners of the original square ' +
+    '(e.g. near (320, 220)) are outside the diamond and show black background. No gradient, ' +
+    'no stroke.',
 });
 
 const root = createDisplayObject();

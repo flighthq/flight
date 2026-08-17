@@ -35,6 +35,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (800×600): two overlapping 200×200 squares. A fully opaque BLUE ' +
+    'square at (250, 200). A half-transparent RED square at (350, 300), overlapping the blue ' +
+    "square's bottom-right. In the overlap region (x 350–450, y 300–400) the half-alpha red " +
+    'composites over blue, producing a muted purple-red blend — not pure red, not pure blue. ' +
+    'The red square over bare background (outside the blue) shows a dimmed red (red channel ' +
+    'near half intensity, not full bright). The non-overlapped blue region remains pure blue. ' +
+    'Every other pixel is black.',
 });
 
 const root = createDisplayObject();

@@ -60,6 +60,15 @@ const { render } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (800×600): two cyan "Γ" glyphs (a 30 px-wide vertical bar 200 px ' +
+    'tall with a 120×40 arm along the top). The LEFT (control) glyph at (100, 300) runs ' +
+    'downward and rightward — the arm extends right along the top, the bar extends down from ' +
+    'the arm. The RIGHT (mirrored) glyph at x 500–620, y 300 is horizontally flipped — the ' +
+    'arm extends LEFT and the bar extends downward from its right edge. Critically, the ' +
+    'mirrored arm is BELOW the origin row (y > 300), proving a true horizontal mirror — not a ' +
+    '180° rotation, which would place the arm ABOVE the row. Both glyphs are uniform flat cyan ' +
+    'with no gradient or stroke.',
 });
 
 const root = createDisplayObject();
