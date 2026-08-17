@@ -172,6 +172,40 @@ Same act, opposite social cost. So the party who can state the standard cheaply 
 should state it, rather than relying on the other end to pay more for enforcing it. **An unstated evidence
 standard does not vanish; it relocates, onto whoever is worse placed to carry it.**
 
+**Where the sending rule and the instrument rules meet: a spec is a request, and it is silent about
+everything it does not mention.**
+
+> **A SPEC IS SILENT ABOUT EVERYTHING IT DOES NOT MENTION, AND THE GAPS BETWEEN TWO IMPLEMENTATIONS LIVE
+> PRECISELY THERE.** Both halves can conform perfectly and still disagree, because conformance is measured
+> against a document that has no opinion about the thing they disagree on.
+
+So when two components must agree, **compare them to each other, not each to the spec.** Each side checking
+itself against the written standard is exactly how two correct-looking halves ship a disagreement: the
+check they both pass cannot see the space the standard left empty.
+
+**The worked instance is the host-identity seam in this repository's own tooling.** A producer writes three
+provenance fields; a consumer parses them defensively by name, deliberately not importing the producer's
+types, so nothing fails at compile time if a spelling drifts. The spec named the three fields, the producer
+emitted all three, and the consumer conformed — while reading only *two* of them plus a fourth the spec
+never discussed. Spec-conformance passes both halves and reports nothing, because the spec has no opinion
+about which fields a reader must read, or about how a reader reaches them. Extracting both key sets from
+their own artifacts — the emitted names from a real captured file, the read names from the consumer's
+source — and diffing those two lists is what actually answers the question.
+
+**And the direction that matters is the one that prints nothing.** A name the consumer reads but the
+producer never emits does not throw; it reads as *absent*, and absent had been made a hard refusal — so the
+mismatch would have surfaced as "every root is missing host identity", which is indistinguishable from the
+refusal working correctly on an old corpus. The first extractor written for this check was itself
+incomplete: it matched one access shape and missed a second, and it happened to reveal that in the harmless
+direction, where a claim could be contradicted from knowledge of the code.
+
+> **An extractor that misses an access pattern under-reports in BOTH directions. Same defect, opposite
+> consequence, indistinguishable output — and the failure that prints nothing is the one you cannot
+> triage, because ABSENCE HAS NO SIGNATURE.**
+
+That is the argument for the belt-and-braces pass over patching the one access shape that was noticed. An
+instrument whose empty result and whose blind spot look identical has to be widened until they cannot.
+
 **An editorial rule for this document, because the tidying instinct destroys evidence here.**
 
 > **When two independent investigations reach the same finding but different remedies, the DIVERGENCE IS
