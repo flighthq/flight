@@ -45,6 +45,12 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field: a flat red square spanning x 120-360, y 120-360; a flat green square ' +
+    'spanning x 280-520, y 280-520, overlapping the red square at its bottom-right; and a separate flat ' +
+    'blue rectangle at x 580-760, y 120-300. The 80x80 overlap at x 280-360, y 280-360 is SOLID GREEN — ' +
+    'green is drawn second and paints over red, so no blend, no darkening, and no red shows through. ' +
+    'All three fills are uniform and fully opaque with hard edges; every other pixel is black.',
 });
 
 const root = createDisplayObject();

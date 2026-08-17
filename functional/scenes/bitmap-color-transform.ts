@@ -55,6 +55,12 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'On an opaque black field, two 200x200 squares sit side by side at the same height (y 200-400), ' +
+    'separated by a band of background. The LEFT square (x 140-340) is flat opaque WHITE — the untouched ' +
+    'source. The RIGHT square (x 460-660) is flat PURE RED (full red, zero green, zero blue) — the same ' +
+    'source after the per-channel scale. Both squares are uniform: no gradient, no tint on the white one, ' +
+    'and no orange or pink cast on the red one. Every other pixel is black.',
 });
 
 const root = createDisplayObject();
