@@ -80,7 +80,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // TAA applies temporal anti-aliasing with feedback 0.9. Shape 0 (white, 0xffffffff) at its center
 // should retain high luminance (> 200) after the TAA pass, verifying the pipeline processes content
 // correctly. Without the pipeline, the frame is blank.

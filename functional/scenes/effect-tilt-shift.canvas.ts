@@ -97,7 +97,6 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
   return pairs === 0 ? 0 : deltas / pairs;
 }
 
-// ORACLE-BLOCK
 // Tilt-shift (blur 6, width 0.25) selectively blurs the top and bottom of the frame while keeping
 // the center strip sharp. The blurred regions lose their sharp edges, reducing overall HF energy.
 // The unprocessed scene has HF ~3-4; after tilt-shift it drops below 2.5. Without the effect,

@@ -99,7 +99,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // God rays stream light outward from the center (0.5, 0.4). The bright core and shapes create
 // radial streaks that elevate background luminance along the ray directions. A pixel at the far
 // right edge of the frame (on the ray axis) should show luminance > 8 (above pure background ~5).

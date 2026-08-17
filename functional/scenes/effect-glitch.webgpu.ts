@@ -78,7 +78,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Glitch (intensity 0.7, seed 3) displaces horizontal blocks and shifts RGB channels. The 5 clean
 // color bars get torn — at least one bar's center row should show a color that differs from its
 // original fill by > 30 in at least one channel. Without the effect, all bar centers match their

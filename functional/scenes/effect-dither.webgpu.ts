@@ -78,7 +78,6 @@ for (let i = 0; i < 18; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Dithering (4 levels) adds a noise-like pattern to simulate smooth gradients from quantized levels.
 // Even within flat-filled shape regions, adjacent pixels alternate between quantization levels,
 // creating high-frequency content. Without the effect, flat fills have near-zero within-region

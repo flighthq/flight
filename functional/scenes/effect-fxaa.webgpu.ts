@@ -76,7 +76,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // FXAA smooths aliased edges through a full-frame post-process pass. Shape 0 (white, 0xffffffff)
 // at its center position should retain high luminance (> 200) after the FXAA pass, verifying the
 // pipeline processes content correctly. Without the effect pipeline or with a broken pass, the

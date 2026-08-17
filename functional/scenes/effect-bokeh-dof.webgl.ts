@@ -102,7 +102,6 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
   return pairs === 0 ? 0 : deltas / pairs;
 }
 
-// ORACLE-BLOCK
 // Bokeh depth-of-field (maxBlur 6, focusRange 0.15) blurs out-of-focus regions. The tight focus
 // range means most of the frame is blurred, significantly reducing HF energy from the original
 // ~3-4 to below 2. Without the effect, sharp edges keep HF above 2 and the check fails.

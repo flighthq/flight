@@ -75,7 +75,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Color grade with saturation 1.5 increases the channel spread. Cell 1 (green, 0x34c759ff,
 // R=52, G=199, B=89) has original spread 147. After 1.5x saturation, the spread should exceed 160.
 // Without the effect, spread is 147 < 160 and the assertion fails.

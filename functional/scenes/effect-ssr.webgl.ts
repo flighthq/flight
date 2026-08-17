@@ -79,7 +79,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // SSR (screen-space reflections) processes the scene through a reflection pass. Shape 0 (white,
 // 0xffffffff) at its center should retain high luminance (> 200) after the SSR pass, verifying
 // the pipeline produces valid output. Without the pipeline, the frame is blank.

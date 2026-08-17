@@ -97,7 +97,6 @@ setNode2DClip(shape, createClipRegionFromPath(clipPath));
 addNodeChild(root, shape);
 render(root);
 
-// ORACLE-BLOCK
 // A triangular contour clip masks a bright white square, rendered through an HDR (rgba16f) bloom
 // pipeline. The center of the frame (where the triangle's interior is) should show the white
 // content with luminance > 150, verifying both the stencil-based clip and the HDR bloom pipeline

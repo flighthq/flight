@@ -94,7 +94,6 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
   return pairs === 0 ? 0 : deltas / pairs;
 }
 
-// ORACLE-BLOCK
 // Directional blur (length 24) smears the entire frame along a fixed angle, softening all edges.
 // The unprocessed scene has 4 rotated shapes with sharp edges yielding HF energy ~3-4. After the
 // blur, HF drops below 1.5. Without the effect, sharp edges keep HF above 1.5 and the check fails.

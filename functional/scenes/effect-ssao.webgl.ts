@@ -82,7 +82,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // SSAO (intensity 1, 16 samples) applies screen-space ambient occlusion, which may darken areas
 // near depth edges. Shape 0 (white, 0xffffffff) at its center should retain high luminance (> 150)
 // — SSAO darkens edges, not centers. This verifies the SSAO pipeline produces valid output.

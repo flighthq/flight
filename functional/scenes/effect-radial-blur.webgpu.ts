@@ -97,7 +97,6 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
   return pairs === 0 ? 0 : deltas / pairs;
 }
 
-// ORACLE-BLOCK
 // Radial blur (strength 0.4) smears the frame radially from center, softening all edges. The
 // unprocessed scene with 4 rotated shapes has HF energy ~3-4. After radial blur, HF drops below
 // 1.5. Without the effect, sharp edges keep HF above 1.5 and the check fails.

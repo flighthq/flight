@@ -78,7 +78,6 @@ for (let i = 0; i < 18; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // CRT combines scanlines (intensity 0.5), barrel curvature (0.3), vignette (0.4), and chromatic
 // aberration (0.4). The scanlines alone produce periodic brightness variation across rows, raising
 // vertical high-frequency energy above 2. Without the effect, vertical HF stays near the base

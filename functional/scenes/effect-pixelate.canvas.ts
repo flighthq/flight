@@ -74,7 +74,6 @@ for (let i = 0; i < 18; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Pixelation (size 24) replaces fine detail with large uniform blocks. Adjacent pixels within a
 // block are identical, which dramatically reduces high-frequency energy. The unprocessed scene with
 // 18 rotated shapes has HF energy > 3; after pixelation it drops below 1.5. Without the effect,

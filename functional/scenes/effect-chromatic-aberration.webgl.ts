@@ -82,7 +82,6 @@ for (let i = 0; i < positions.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Radial chromatic aberration (intensity 4) separates RGB channels outward from center. Edge pixels
 // of shapes show channel fringing — the R, G, and B channels sample from slightly different positions.
 // A background pixel adjacent to a shape edge should show color fringing (channel imbalance > 15)

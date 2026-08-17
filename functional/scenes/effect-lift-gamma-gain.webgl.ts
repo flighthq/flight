@@ -81,7 +81,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // The grade's whole job is to move the frame's color balance, so the frame's mean channels are the direct
 // evidence. The cool gain pulls blue DOWN off its ungraded ceiling: measured with the grade applied vs the
 // same scene with the pipeline bypassed, mean blue is 160.0 vs 255.0 while red barely moves (124.5 vs
