@@ -6,7 +6,7 @@
 // BACKEND NOTE: all four RichText renderers (canvas, dom, gl, wgpu) draw the background fill when
 // data.background is true, so this test runs on all backends.
 //
-// Oracle (point samples): the field is at a known x/y with a known width/height and autoSize 'none', so the
+// Scene assertion (point samples): the field is at a known x/y with a known width/height and autoSize 'none', so the
 // box is exactly FIELD_X..FIELD_X+FIELD_W by FIELD_Y..FIELD_Y+FIELD_H. We sample a point INSIDE the box but
 // far from any glyph ink (the lower-right interior, below a short single line of text) and assert it is the
 // backgroundColor — proving the box painted. We then sample a point well OUTSIDE the box and assert it is

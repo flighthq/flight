@@ -120,7 +120,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: the surface is bright (the tint emits directly) AND uniform (lighting-independent). Sample the
+// Scene assertion: the surface is bright (the tint emits directly) AND uniform (lighting-independent). Sample the
 // center plus the two points material-standard-pbr uses for its lit/shadow split. For VertexColor all
 // three must be bright, and the "lit" and "shadow" samples must be close — a shaded material differs
 // sharply.

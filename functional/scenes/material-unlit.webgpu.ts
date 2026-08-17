@@ -113,7 +113,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: the surface is bright (the base color emits directly) AND uniform (lighting-independent).
+// Scene assertion: the surface is bright (the base color emits directly) AND uniform (lighting-independent).
 // Sample the center plus the two points material-standard-pbr uses for its lit/shadow split. For Unlit
 // all three must be bright, and the "lit" and "shadow" samples must be close — a shaded material differs
 // sharply.
