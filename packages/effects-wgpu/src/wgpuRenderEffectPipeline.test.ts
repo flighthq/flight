@@ -96,6 +96,14 @@ describe('createWgpuRenderEffectPipeline', () => {
     expect(pipeline.options.format).toBe('rgba16f');
   });
 
+  it('rejects a multisample request instead of silently dropping it', async () => {
+    const state = await createWgpuRenderStateForTest();
+
+    expect(() => createWgpuRenderEffectPipeline(state, { sampleCount: 4 })).toThrow(
+      'createWgpuRenderEffectPipeline: sampleCount 4 is unsupported; WebGPU effect targets are single-sample',
+    );
+  });
+
   it('gives each pipeline its own pool and caches', async () => {
     const state = await createWgpuRenderStateForTest();
 
