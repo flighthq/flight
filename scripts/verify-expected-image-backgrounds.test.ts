@@ -101,6 +101,39 @@ describe('readSceneBackgroundClaims', () => {
     expect(readSceneBackgroundClaims(directory)[0]).toMatchObject({ actual: 'near-black', claimed: 'near-black' });
   });
 
+  // ★ A SEGMENT SWITCHES TO DOUBLE QUOTES THE MOMENT ITS SENTENCE HAS AN APOSTROPHE. Five real scenes
+  // did, the single-quote-only reader failed to match the whole description, and they were dropped from
+  // the sweep — the report said "105 described scenes" over a population of 110 and looked complete.
+  it('reads a description whose segments are double-quoted', () => {
+    const directory = scenes({
+      'apostrophe.ts': [
+        'const { render } = await createFunctionalTarget({',
+        '  background: 0x000000ff,',
+        '  expectedImageDescription:',
+        `    'On an opaque black field: two squares, one overlapping ' +`,
+        `    "the other's bottom-right corner.",`,
+        '});',
+      ].join('\n'),
+    });
+
+    expect(readSceneBackgroundClaims(directory)[0]).toMatchObject({ actual: 'black', claimed: 'black' });
+  });
+
+  // A description that is PRESENT but unreadable is a hole in the sweep. Returning it as unverifiable
+  // keeps the report's population equal to the number of scenes carrying the field; dropping it silently
+  // is how a checker reports a clean run over a set it never covered.
+  it('reports an unparsable description rather than dropping it from the population', () => {
+    const directory = scenes({
+      'broken.ts': 'const x = { expectedImageDescription: someIdentifier };\n',
+    });
+
+    const claims = readSceneBackgroundClaims(directory);
+
+    expect(claims).toHaveLength(1);
+    expect(claims[0]).toMatchObject({ scene: 'broken', unparsed: true });
+    expect(formatBackgroundClaimReport(claims)).toContain('could not be parsed');
+  });
+
   it('skips files carrying no description rather than counting them as clean', () => {
     const directory = scenes({ 'bare.ts': 'const WIDTH = 800;\nawait createFunctionalTarget({ width: WIDTH });\n' });
 
