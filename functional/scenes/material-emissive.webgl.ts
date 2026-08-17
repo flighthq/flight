@@ -119,7 +119,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Oracle: the surface is bright (self-lit) AND uniform (lighting-independent). Sample the center plus
+// Assertion: the surface is bright (self-lit) AND uniform (lighting-independent). Sample the center plus
 // the two points material-standard-pbr uses for its lit/shadow split. For Emissive all three must be
 // bright, and the "lit" and "shadow" samples must be close — a shaded material would differ sharply.
 export function assertRender(bitmap: Readonly<Bitmap>): void {
