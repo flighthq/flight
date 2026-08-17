@@ -2,7 +2,13 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { compareCalibrationRuns, formatCalibrationReport } from './oracle-calibrate';
+import type { CalibrationRootIdentity } from './oracle-calibrate';
+import {
+  compareCalibrationRuns,
+  deriveCalibrationIdentityVerdict,
+  formatCalibrationReport,
+  readCaptureRootIdentity,
+} from './oracle-calibrate';
 
 describe('compareCalibrationRuns', () => {
   it('reports agreement when every run recorded the same pixel hash', () => {
@@ -86,18 +92,28 @@ describe('formatCalibrationReport', () => {
   });
 });
 
-function run(cells: Readonly<Record<string, string | null>>): string {
+/**
+ * A capture root on disk. `provenance` is written into every status, or omitted entirely — which is the
+ * real corpus's shape, since it predates the fields.
+ */
+function run(cells: Readonly<Record<string, string | null>>, provenance?: Readonly<Record<string, string>>): string {
   const root = mkdtempSync(join(tmpdir(), 'oracle-calib-'));
   for (const [identity, hash] of Object.entries(cells)) {
     const [subject, entry, renderer] = identity.split('/');
     const directory = join(root, subject!, entry!, renderer!);
     mkdirSync(directory, { recursive: true });
+    const status = hash === null ? { error: 'boom', state: 'error' } : { hash: hash.repeat(64), state: 'ready' };
     writeFileSync(
       join(directory, 'status.json'),
-      JSON.stringify(hash === null ? { error: 'boom', state: 'error' } : { hash: hash.repeat(64), state: 'ready' }),
+      JSON.stringify(provenance === undefined ? status : { ...status, provenance }),
     );
   }
   return root;
+}
+
+/** The identity a root with no recorded provenance produces — what `formatCalibrationReport` is handed. */
+function unrecorded(root: string, seen: number): CalibrationRootIdentity {
+  return { environmentId: null, hostInstanceId: null, mixedEnvironments: false, mixedHosts: false, root, seen };
 }
 
 describe('formatCalibrationReport, on the population it compared', () => {
@@ -111,6 +127,7 @@ describe('formatCalibrationReport, on the population it compared', () => {
       agreed: ['functional/shape-fill-solid/webgl'],
       cells: [{ hashes: ['a', 'a'], identity: 'functional/shape-fill-solid/webgl' }],
       disagreed: [],
+      identities: [unrecorded('run-a', 1), unrecorded('run-b', 1)],
       incomplete: [],
       runs: 2,
       seen: 1,
@@ -127,6 +144,7 @@ describe('formatCalibrationReport, on its own accounting', () => {
       agreed: ['functional/a/webgl'],
       cells: [{ hashes: ['a', 'a'], identity: 'functional/a/webgl' }],
       disagreed: [],
+      identities: [unrecorded('run-a', 1), unrecorded('run-b', 1)],
       incomplete: [],
       runs: 2,
       seen: 3,
@@ -179,3 +197,182 @@ describe('compareCalibrationRuns, on cells that never produced a hash', () => {
     expect(report.seen).toBe(3);
   });
 });
+
+describe('readCaptureRootIdentity', () => {
+  it('reads the host and environment the captures recorded', () => {
+    const root = run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-1' });
+
+    expect(readCaptureRootIdentity(root)).toMatchObject({
+      environmentId: 'env-1',
+      hostInstanceId: 'host-1',
+      mixedEnvironments: false,
+      mixedHosts: false,
+      seen: 1,
+    });
+  });
+
+  // ★ MIXED IS NOT MISSING. A root whose statuses disagree about their host must not report the same
+  // `null` as a root that recorded no host at all: "split these roots" and "re-capture with a tool that
+  // records identity" are different remedies, and a single collapsed field cannot ask for either.
+  it('reports a root whose statuses disagree as mixed, not as unrecorded', () => {
+    const root = run(
+      { 'functional/a/webgl': 'a', 'functional/b/webgl': 'a' },
+      { environmentId: 'env-1', hostInstanceId: 'host-1' },
+    );
+    writeFileSync(
+      join(root, 'functional', 'b', 'webgl', 'status.json'),
+      JSON.stringify({
+        hash: 'a'.repeat(64),
+        provenance: { environmentId: 'env-1', hostInstanceId: 'other' },
+        state: 'ready',
+      }),
+    );
+
+    const identity = readCaptureRootIdentity(root);
+
+    expect(identity.mixedHosts).toBe(true);
+    expect(identity.hostInstanceId).toBeNull();
+    expect(identity.mixedEnvironments).toBe(false);
+  });
+
+  it('reports no identity for captures that record none', () => {
+    const identity = readCaptureRootIdentity(run({ 'functional/a/webgl': 'a' }));
+
+    expect(identity).toMatchObject({ environmentId: null, hostInstanceId: null, mixedHosts: false, seen: 1 });
+  });
+
+  it('scopes the walk to one subject when asked', () => {
+    const root = run(
+      { 'functional/a/webgl': 'a', 'other/b/webgl': 'a' },
+      { environmentId: 'env-1', hostInstanceId: 'host-1' },
+    );
+
+    expect(readCaptureRootIdentity(root, 'functional').seen).toBe(1);
+    expect(readCaptureRootIdentity(root).seen).toBe(2);
+  });
+});
+
+describe('deriveCalibrationIdentityVerdict', () => {
+  // ★ THE TWO FIELDS CARRY OPPOSITE INVARIANTS. Distinct hosts is what makes the runs INDEPENDENT; a
+  // matching environment is what makes them COMPARABLE. A derivation that read the environment descriptor
+  // as the host identity would reject every correct two-leg run while looking like a check working.
+  it('calls distinct hosts under one environment independent and comparable', () => {
+    expect(deriveCalibrationIdentityVerdict([identity('host-1', 'env-1'), identity('host-2', 'env-1')])).toEqual({
+      environment: 'matching-environment',
+      hosts: 'independent-hosts',
+    });
+  });
+
+  it('calls a repeated host one-host, whatever the environment says', () => {
+    expect(deriveCalibrationIdentityVerdict([identity('host-1', 'env-1'), identity('host-1', 'env-1')]).hosts).toBe(
+      'one-host',
+    );
+  });
+
+  // ★ ABSENT IS ITS OWN STATE, NEVER A FALLBACK TO ONE-HOST. "The captures do not say which machine" and
+  // "the captures say one machine" have opposite remedies, and this is the corpus that predates the field.
+  it('calls an absent host identity unevaluated rather than one-host', () => {
+    expect(deriveCalibrationIdentityVerdict([identity(null, 'env-1'), identity('host-2', 'env-1')]).hosts).toBe(
+      'host-identity-missing',
+    );
+  });
+
+  it('reports a root that is not one host before it reports anything about the pair', () => {
+    const mixed = { ...identity(null, 'env-1'), mixedHosts: true };
+
+    expect(deriveCalibrationIdentityVerdict([mixed, identity('host-2', 'env-1')]).hosts).toBe(
+      'mixed-hosts-within-root',
+    );
+  });
+
+  it('reports differing declared environments as a mismatch', () => {
+    expect(
+      deriveCalibrationIdentityVerdict([identity('host-1', 'env-1'), identity('host-2', 'env-2')]).environment,
+    ).toBe('environment-mismatch');
+  });
+
+  it('distinguishes an unrecorded environment from a mismatching one', () => {
+    expect(deriveCalibrationIdentityVerdict([identity('host-1', null), identity('host-2', 'env-2')]).environment).toBe(
+      'environment-identity-missing',
+    );
+  });
+});
+
+describe('formatCalibrationReport, on what the runs actually were', () => {
+  // ★ THE FIRING TEST FOR THE DEFECT THIS REPLACED. `oracle-calibrate.yml` stamps a distinct
+  // FLIGHT_CAPTURE_HOST_ID per matrix leg and says "keep both in every status so the comparer can enforce
+  // both claims" — and the comparer read only the pixel hash, so it printed a both-branches disclaimer
+  // over data that already answered the question. A tool that disclaims what its input states is not being
+  // careful; it is not reading its input.
+  it('states that the runs were independent hosts instead of offering both branches', () => {
+    const text = formatCalibrationReport(
+      compareCalibrationRuns([
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-1' }),
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-2' }),
+      ]),
+    );
+
+    expect(text).toContain('hosts:       independent-hosts');
+    expect(text).toContain('environment: matching-environment');
+    expect(text).toContain('this IS the evidence a single canonical environment needs');
+    expect(text).not.toContain('cannot tell which');
+    // ★ Stability is not correctness, and the report must say so where the reader is most likely to
+    // over-read it: at its own strongest verdict.
+    expect(text).toContain('STABLE across hosts');
+    expect(text).toContain('says nothing about whether they are CORRECT');
+  });
+
+  it('keeps the cannot-tell disclaimer when the captures record no host', () => {
+    const text = formatCalibrationReport(
+      compareCalibrationRuns([run({ 'functional/a/webgl': 'a' }), run({ 'functional/a/webgl': 'a' })]),
+    );
+
+    expect(text).toContain('hosts:       host-identity-missing');
+    expect(text).toContain('cannot tell which');
+    expect(text).not.toContain('this IS the evidence');
+  });
+
+  it('names one-host as one host rather than leaving it to the reader', () => {
+    const text = formatCalibrationReport(
+      compareCalibrationRuns([
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-1' }),
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-1' }),
+      ]),
+    );
+
+    expect(text).toContain('hosts:       one-host');
+    expect(text).toContain('measured ONE machine reproducing itself');
+    expect(text).not.toContain('this IS the evidence');
+  });
+
+  // Agreement across two DIFFERENT declared environments is a real measurement of something else. The
+  // §10 question is whether ONE environment reproduces across hosts, and this shape cannot answer it.
+  it('refuses the canonical-environment reading when the roots declare different environments', () => {
+    const text = formatCalibrationReport(
+      compareCalibrationRuns([
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-1' }),
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-2', hostInstanceId: 'host-2' }),
+      ]),
+    );
+
+    expect(text).toContain('environment: environment-mismatch');
+    expect(text).toContain('does not answer the');
+    expect(text).not.toContain('this IS the evidence');
+  });
+
+  it('prints the identities it read, so the verdict can be checked against them', () => {
+    const text = formatCalibrationReport(
+      compareCalibrationRuns([
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-1' }),
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-2' }),
+      ]),
+    );
+
+    expect(text).toContain('run 1  host host-1  env env-1');
+    expect(text).toContain('run 2  host host-2  env env-1');
+  });
+});
+
+function identity(hostInstanceId: string | null, environmentId: string | null): CalibrationRootIdentity {
+  return { environmentId, hostInstanceId, mixedEnvironments: false, mixedHosts: false, root: 'root', seen: 1 };
+}

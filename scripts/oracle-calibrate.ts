@@ -24,9 +24,68 @@ export interface CalibrationCell {
   hashes: readonly (string | null)[];
 }
 
+/**
+ * What one capture root says about the machine and the declared environment that produced it, read from
+ * `provenance.hostInstanceId` and `provenance.environmentId` in the statuses the comparison already opens.
+ *
+ * ★ MIXED IS NOT MISSING, AND BOTH ARE TRACKED RATHER THAN COLLAPSED TO `null`. A root whose statuses
+ * disagree about their host is not one host; a root whose statuses carry no host is a root that never
+ * recorded one. Folding both into "no identity" would give two conditions with opposite remedies — split
+ * the roots vs. re-capture with a tool that records identity — a single indistinguishable line.
+ */
+export interface CalibrationRootIdentity {
+  root: string;
+  /** The single host instance every status in this root agrees on, or `null` if absent or disagreeing. */
+  hostInstanceId: string | null;
+  /** The single declared environment every status in this root agrees on, or `null` if absent/disagreeing. */
+  environmentId: string | null;
+  mixedHosts: boolean;
+  mixedEnvironments: boolean;
+  /** Statuses read while deriving the two identities above. */
+  seen: number;
+}
+
+/**
+ * Whether the roots were produced by DIFFERENT machines — the claim `flight-oracles` requires and the
+ * claim the calibrate workflow asserts by giving each matrix leg a distinct `FLIGHT_CAPTURE_HOST_ID`.
+ */
+export type CalibrationHostRelationship =
+  /** Every root carries a different `hostInstanceId`: the runs are independent. */
+  | 'independent-hosts'
+  /** Two or more roots carry the same `hostInstanceId`: this measured one machine reproducing itself. */
+  | 'one-host'
+  /** At least one root records no host at all, so independence is UNEVALUATED — not refuted. */
+  | 'host-identity-missing'
+  /** At least one root's statuses disagree about their host, so no single identity describes it. */
+  | 'mixed-hosts-within-root';
+
+/**
+ * Whether the roots were produced in the SAME declared environment — the opposite invariant, and the one
+ * that makes the comparison meaningful at all.
+ */
+export type CalibrationEnvironmentRelationship =
+  | 'matching-environment'
+  | 'environment-mismatch'
+  | 'environment-identity-missing'
+  /** At least one root's statuses disagree about their environment, so the root is not one environment. */
+  | 'mixed-environments-within-root';
+
+export interface CalibrationIdentityVerdict {
+  hosts: CalibrationHostRelationship;
+  environment: CalibrationEnvironmentRelationship;
+}
+
 export interface CalibrationReport {
   runs: number;
   cells: readonly CalibrationCell[];
+  /**
+   * One entry per root, in run order.
+   *
+   * ★ REQUIRED, NOT OPTIONAL, AND THAT IS THE ENFORCEMENT. If a caller could omit it, an assembled report
+   * that forgot the identity would print the same "cannot tell which host" disclaimer as captures that
+   * genuinely carry no identity — a tool defect and a real measurement collapsed into one line.
+   */
+  identities: readonly CalibrationRootIdentity[];
   /** Cells every run captured AND every run agreed on. */
   agreed: readonly string[];
   /** Cells every run captured and at least two runs disagreed on. */
@@ -81,7 +140,62 @@ export function compareCalibrationRuns(roots: readonly string[]): CalibrationRep
     else disagreed.push(identity);
   }
 
-  return { agreed, cells, disagreed, incomplete, runs: roots.length, seen: identities.size };
+  return {
+    agreed,
+    cells,
+    disagreed,
+    identities: perRun.map((run) => run.identity),
+    incomplete,
+    runs: roots.length,
+    seen: identities.size,
+  };
+}
+
+/**
+ * What one capture root says about the host and environment that produced it.
+ *
+ * Reads EVERY status rather than sampling one: a root whose files disagree is not one host, and a sampled
+ * read would pick an arbitrary winner and report a clean identity for an incoherent root. `subject` scopes
+ * the walk to one subject directory; omitted, every subject in the root is read.
+ */
+export function readCaptureRootIdentity(root: string, subject?: string): CalibrationRootIdentity {
+  return readRun(root, subject).identity;
+}
+
+/**
+ * The pair of claims the calibrate workflow asserts, derived from what the roots actually recorded.
+ *
+ * ★ THE TWO FIELDS HAVE OPPOSITE INVARIANTS AND ARE DERIVED AS A PAIR. `hostInstanceId` must DIFFER across
+ * roots (it asserts the runs are independent); `environmentId` must MATCH (it asserts they are comparable —
+ * it is built from the runner image and tool versions, so it is IDENTICAL across matrix legs by design).
+ * Reading the environment descriptor as the host identity inverts the rule and rejects every correct
+ * two-leg run, which would look exactly like a safety check working.
+ *
+ * ★ THIS IS THE ONE PLACE EITHER RELATIONSHIP IS DECIDED. The comparer and the commissioning CLI both call
+ * it, so the tool that measures agreement and the tool that files on the strength of it cannot come to
+ * different conclusions about the same two directories.
+ */
+export function deriveCalibrationIdentityVerdict(
+  identities: readonly Readonly<CalibrationRootIdentity>[],
+): CalibrationIdentityVerdict {
+  const hostIds = identities.map((identity) => identity.hostInstanceId);
+  const environmentIds = identities.map((identity) => identity.environmentId);
+  return {
+    environment: identities.some((identity) => identity.mixedEnvironments)
+      ? 'mixed-environments-within-root'
+      : environmentIds.some((id) => id === null)
+        ? 'environment-identity-missing'
+        : new Set(environmentIds).size === 1
+          ? 'matching-environment'
+          : 'environment-mismatch',
+    hosts: identities.some((identity) => identity.mixedHosts)
+      ? 'mixed-hosts-within-root'
+      : hostIds.some((id) => id === null)
+        ? 'host-identity-missing'
+        : new Set(hostIds).size === hostIds.length
+          ? 'independent-hosts'
+          : 'one-host',
+  };
 }
 
 /**
@@ -92,27 +206,53 @@ export function compareCalibrationRuns(roots: readonly string[]): CalibrationRep
  * question about the file's contents. Deriving the first from the second is what made failed cells
  * disappear instead of being labelled.
  */
-function readRun(root: string): { seen: Set<string>; hashes: Map<string, string> } {
+function readRun(
+  root: string,
+  subjectFilter?: string,
+): { seen: Set<string>; hashes: Map<string, string>; identity: CalibrationRootIdentity } {
   const seen = new Set<string>();
   const hashes = new Map<string, string>();
-  if (!existsSync(root)) return { hashes, seen };
-  for (const subject of directories(root)) {
+  const hostIds = new Set<string>();
+  const environmentIds = new Set<string>();
+  let statuses = 0;
+  const subjects = subjectFilter === undefined ? directories(root) : [subjectFilter];
+  for (const subject of subjects) {
     for (const entry of directories(join(root, subject))) {
       for (const renderer of directories(join(root, subject, entry))) {
         const path = join(root, subject, entry, renderer, 'status.json');
         if (!existsSync(path)) continue;
         const identity = `${subject}/${entry}/${renderer}`;
         seen.add(identity);
+        statuses += 1;
         try {
-          const status = JSON.parse(readFileSync(path, 'utf8')) as { hash?: unknown; state?: unknown };
+          const status = JSON.parse(readFileSync(path, 'utf8')) as {
+            hash?: unknown;
+            provenance?: unknown;
+            state?: unknown;
+          };
           if (status.state === 'ready' && typeof status.hash === 'string') hashes.set(identity, status.hash);
+          const provenance = (status.provenance ?? {}) as Record<string, unknown>;
+          if (typeof provenance['hostInstanceId'] === 'string') hostIds.add(provenance['hostInstanceId']);
+          if (typeof provenance['environmentId'] === 'string') environmentIds.add(provenance['environmentId']);
         } catch {
-          // Seen, with no usable hash — which is `incomplete`, not absent. The cell is already in `seen`.
+          // Seen, with no usable hash and no identity — which is `incomplete`, not absent. The cell is
+          // already in `seen`, and an unreadable status simply contributes no provenance either way.
         }
       }
     }
   }
-  return { hashes, seen };
+  return {
+    hashes,
+    identity: {
+      environmentId: environmentIds.size === 1 ? [...environmentIds][0]! : null,
+      hostInstanceId: hostIds.size === 1 ? [...hostIds][0]! : null,
+      mixedEnvironments: environmentIds.size > 1,
+      mixedHosts: hostIds.size > 1,
+      root,
+      seen: statuses,
+    },
+    seen,
+  };
 }
 
 function directories(path: string): string[] {
@@ -139,6 +279,21 @@ export function formatCalibrationReport(report: Readonly<CalibrationReport>): st
       : `accounting:        BROKEN — ${bucketed} bucketed vs ${report.seen} seen; ${report.seen - bucketed} cell(s) unaccounted for`,
     '',
   ];
+  // ★ THE IDENTITIES ARE PRINTED WHATEVER THE VERDICT, INCLUDING WHEN THEY ARE ABSENT. The verdict below
+  // states which case applies; these lines are what a reader checks that statement against, and
+  // `UNRECORDED` is a finding about the captures rather than a blank.
+  const verdict = deriveCalibrationIdentityVerdict(report.identities);
+  lines.push('identity, as recorded by the captures themselves:');
+  for (const [index, identity] of report.identities.entries()) {
+    lines.push(
+      `  run ${index + 1}  host ${describeIdentityField(identity.hostInstanceId, identity.mixedHosts)}` +
+        `  env ${describeIdentityField(identity.environmentId, identity.mixedEnvironments)}` +
+        `  (${identity.seen} status file(s), ${identity.root})`,
+    );
+  }
+  lines.push(`  hosts:       ${verdict.hosts} — ${HOST_RELATIONSHIP_MEANING[verdict.hosts]}`);
+  lines.push(`  environment: ${verdict.environment} — ${ENVIRONMENT_RELATIONSHIP_MEANING[verdict.environment]}`);
+  lines.push('');
   // ★ THE AGREED CELLS ARE NAMED, NOT COUNTED, AND THE OMISSION ALREADY COST SOMETHING. A cross-host run
   // established that two independent machines rendered byte-identical output, and the only durable record
   // of it was a count — "eight GPU-shaded cells". When the single locked reference image was later
@@ -165,20 +320,51 @@ export function formatCalibrationReport(report: Readonly<CalibrationReport>): st
         ' agreement in either direction — it is an unconfigured run, not a clean one.',
     );
   } else if (report.disagreed.length === 0) {
-    // ★ THIS TOOL CANNOT SEE WHETHER THE RUNS CAME FROM INDEPENDENT HOSTS, SO IT MUST NOT SAY THEY DID.
-    // It is handed directories. Two captures on ONE machine and two on separate machines produce
-    // identical input here and answer completely different questions — within-host determinism is
-    // necessary for a canonical environment and nowhere near sufficient for one. The first real run of
-    // this tool was within-host and it announced "a single canonical environment is viable", which is a
-    // conclusion the data could not support. State what was measured; let the caller supply what the
-    // runs were.
+    // ★ THE TOOL NOW READS WHAT THE RUNS WERE INSTEAD OF HANDING THE READER BOTH BRANCHES. It used to say
+    // "if independent hosts … if one host … this tool is given directories and cannot tell which", which
+    // was honest and useless in the same sentence: the captures had been carrying the answer since the
+    // calibrate workflow started stamping `hostInstanceId` per matrix leg, and the workflow's own comment
+    // claimed an enforcement that happened nowhere. The disclaimer is kept for the case that actually
+    // warrants it — captures with no identity — and only for that case.
     lines.push(
       'VERDICT: every compared cell was byte-identical across the runs given, so the noise floor ACROSS' +
         ' THESE RUNS is zero.',
-      '  If the runs were on INDEPENDENT HOSTS, this is the evidence a single canonical environment needs.',
-      '  If they were repeats on ONE host, it establishes only within-host determinism — necessary for a' +
-        ' canonical environment, and not sufficient. This tool is given directories and cannot tell which.',
     );
+    if (verdict.hosts === 'independent-hosts' && verdict.environment === 'matching-environment') {
+      lines.push(
+        '  The roots carry DISTINCT hostInstanceId values under a MATCHING environmentId, so these were' +
+          ' independent hosts in one declared environment: this IS the evidence a single canonical' +
+          ' environment needs.',
+        // ★ STABLE IS NOT CORRECT, AND THE STRONGEST VERDICT THIS TOOL CAN REACH IS STILL ONLY ABOUT
+        // STABILITY. Agreement across hosts says the pixels REPRODUCE; nothing here has looked at whether
+        // they are the RIGHT pixels. A cell is still commissioned on verified correctness, never on this.
+        '  It says the pixels are STABLE across hosts. It says nothing about whether they are CORRECT.',
+      );
+    } else if (verdict.hosts === 'independent-hosts') {
+      lines.push(
+        `  The roots carry DISTINCT hostInstanceId values, but their environment relationship is` +
+          ` ${verdict.environment}. Agreement across DIFFERENT declared environments does not answer the` +
+          ' canonical-environment question, which is about one environment reproducing across hosts.',
+      );
+    } else if (verdict.hosts === 'one-host') {
+      lines.push(
+        '  The roots carry the SAME hostInstanceId, so this measured ONE machine reproducing itself.' +
+          ' Within-host determinism is necessary for a canonical environment and nowhere near sufficient' +
+          ' for one. Capture on a second, independent host before reading this as a cross-host result.',
+      );
+    } else if (verdict.hosts === 'mixed-hosts-within-root') {
+      lines.push(
+        '  At least one root contains more than one hostInstanceId, so no single identity describes it and' +
+          ' the runs cannot be compared as hosts at all. Split the roots by host and re-compare.',
+      );
+    } else {
+      lines.push(
+        '  If the runs were on INDEPENDENT HOSTS, this is the evidence a single canonical environment needs.',
+        '  If they were repeats on ONE host, it establishes only within-host determinism — necessary for a' +
+          ' canonical environment, and not sufficient. These captures record no provenance.hostInstanceId,' +
+          ' so this tool cannot tell which.',
+      );
+    }
   } else {
     lines.push(
       'VERDICT: at least one cell differed across runs. A magnitude measurement is now required before a' +
@@ -187,6 +373,30 @@ export function formatCalibrationReport(report: Readonly<CalibrationReport>): st
   }
   return lines.join('\n');
 }
+
+/**
+ * One identity field as the report prints it. `MIXED` and `UNRECORDED` are different findings about the
+ * captures and never share a line — see `CalibrationRootIdentity`.
+ */
+function describeIdentityField(value: string | null, mixed: boolean): string {
+  if (mixed) return 'MIXED (this root records more than one)';
+  return value ?? 'UNRECORDED';
+}
+
+const HOST_RELATIONSHIP_MEANING: Readonly<Record<CalibrationHostRelationship, string>> = {
+  'host-identity-missing':
+    'at least one root records no provenance.hostInstanceId, so independence is UNEVALUATED (not refuted)',
+  'independent-hosts': 'every root records a different provenance.hostInstanceId',
+  'mixed-hosts-within-root': 'a root records more than one provenance.hostInstanceId, so it is not one host',
+  'one-host': 'two or more roots record the SAME provenance.hostInstanceId',
+};
+
+const ENVIRONMENT_RELATIONSHIP_MEANING: Readonly<Record<CalibrationEnvironmentRelationship, string>> = {
+  'environment-identity-missing': 'at least one root records no provenance.environmentId',
+  'environment-mismatch': 'the roots declare DIFFERENT environments, so they are not comparable runs',
+  'matching-environment': 'every root declares the same provenance.environmentId',
+  'mixed-environments-within-root': 'a root records more than one provenance.environmentId',
+};
 
 if (process.argv[1] !== undefined && import.meta.url.endsWith(process.argv[1].replace(/^.*?(?=scripts\/)/, ''))) {
   const roots = process.argv.slice(2);

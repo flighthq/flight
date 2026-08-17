@@ -20,7 +20,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { compareCalibrationRuns } from './oracle-calibrate';
+import { compareCalibrationRuns, deriveCalibrationIdentityVerdict, readCaptureRootIdentity } from './oracle-calibrate';
 import type {
   OracleDeterminismScope,
   OracleCaptureFact,
@@ -81,17 +81,31 @@ if (runs.length < 2) {
 // IDENTICAL across legs by design) and `hostInstanceId` must DIFFER (it asserts they are independent).
 // Reading the environment descriptor as the host identity inverts the rule and rejects every correct
 // two-leg run, which would look exactly like a safety check working.
-const hosts = runs.map((root) => readHostIdentity(root, subject));
-const hostIds = hosts.map((host) => host.hostInstanceId);
-const environmentIds = [...new Set(hosts.map((host) => host.environmentId).filter((id) => id !== null))];
+//
+// ★ THE READ AND THE DERIVATION BOTH LIVE IN `oracle-calibrate.ts`, WHICH IS NOT TIDINESS. That tool
+// measures agreement across the same roots and this one files on the strength of it; two copies of "what
+// do these two directories mean" could drift into a state where the comparer reports independent hosts and
+// the filer refuses, or worse, the reverse.
+const hosts = runs.map((root) => readCaptureRootIdentity(root, subject));
+const relationship = deriveCalibrationIdentityVerdict(hosts);
 
-const mixedRoot = hosts.findIndex((host) => host.mixed);
-if (mixedRoot >= 0) {
-  console.error(`oracle-commission-batch: ${runs[mixedRoot]} contains more than one hostInstanceId.`);
+const mixedHostRoot = hosts.findIndex((host) => host.mixedHosts);
+if (mixedHostRoot >= 0) {
+  console.error(`oracle-commission-batch: ${runs[mixedHostRoot]} contains more than one hostInstanceId.`);
   console.error('  That root is not one host, so no single identity describes it. Refusing.');
   process.exit(1);
 }
-if (environmentIds.length > 1) {
+// ★ MIXED WITHIN A ROOT USED TO READ AS ABSENT, WHICH IS THE WRONG END OF THE SAFE/UNSAFE ASYMMETRY. The
+// previous code collapsed "this root declares two environments" to `environmentId: null` and then filtered
+// nulls out of the cross-root comparison — so an incoherent root passed the mismatch check by having no
+// opinion. The host side already refused this shape; the environment side now does too.
+const mixedEnvironmentRoot = hosts.findIndex((host) => host.mixedEnvironments);
+if (mixedEnvironmentRoot >= 0) {
+  console.error(`oracle-commission-batch: ${runs[mixedEnvironmentRoot]} declares more than one environmentId.`);
+  console.error('  That root is not one declared environment, so no single identity describes it. Refusing.');
+  process.exit(1);
+}
+if (relationship.environment === 'environment-mismatch') {
   console.error('oracle-commission-batch: the roots report different environmentId values:');
   for (const host of hosts) console.error(`    ${host.environmentId ?? '(none)'}`);
   console.error('  These runs are not the same declared environment, so comparing them measures nothing.');
@@ -101,11 +115,9 @@ if (environmentIds.length > 1) {
 // ★ ABSENCE IS LOUD AND IS ITS OWN STATE. Falling back to `one-host` here would be safe in the sense that
 // nothing wrong gets commissioned, and wrong in the sense that matters: "the captures do not say which
 // machine made them" and "the captures say one machine" would print the same line, with opposite remedies.
-const scope: OracleDeterminismScope = hostIds.some((id) => id === null)
-  ? 'host-identity-missing'
-  : new Set(hostIds).size === hostIds.length
-    ? 'independent-hosts'
-    : 'one-host';
+// The two refusals above have already removed the mixed cases, so the remaining three are the scope.
+const scope: OracleDeterminismScope =
+  relationship.hosts === 'mixed-hosts-within-root' ? 'host-identity-missing' : relationship.hosts;
 
 // ★ NAME THE CONDITION, DO NOT LET THE GENERIC "nothing is eligible" STAND IN FOR IT. Both of these end
 // with an empty batch, so the batch-empty refusal below would fire and be technically true — and it would
@@ -266,45 +278,6 @@ function readCoverage(name: string): Map<string, readonly string[]> {
 }
 
 /** The capture facts of one run root, for the cells of one subject. */
-/**
- * The host identity a whole capture root was produced on, from `provenance.hostInstanceId`.
- *
- * Reads EVERY status file rather than sampling one: a root whose files disagree is not one host, and a
- * sampled read would pick an arbitrary winner and report a clean identity for an incoherent root.
- */
-function readHostIdentity(
-  root: string,
-  name: string,
-): { hostInstanceId: string | null; environmentId: string | null; mixed: boolean; seen: number } {
-  const hostIds = new Set<string>();
-  const environmentIds = new Set<string>();
-  let seen = 0;
-  const subjectRoot = join(root, name);
-  if (existsSync(subjectRoot)) {
-    for (const entry of directories(subjectRoot)) {
-      for (const renderer of directories(join(subjectRoot, entry))) {
-        const path = join(subjectRoot, entry, renderer, 'status.json');
-        if (!existsSync(path)) continue;
-        seen += 1;
-        try {
-          const status = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
-          const provenance = (status['provenance'] ?? {}) as Record<string, unknown>;
-          if (typeof provenance['hostInstanceId'] === 'string') hostIds.add(provenance['hostInstanceId']);
-          if (typeof provenance['environmentId'] === 'string') environmentIds.add(provenance['environmentId']);
-        } catch {
-          // An unreadable status contributes no identity; it is already counted as a capture fact failure.
-        }
-      }
-    }
-  }
-  return {
-    environmentId: environmentIds.size === 1 ? [...environmentIds][0]! : null,
-    hostInstanceId: hostIds.size === 1 ? [...hostIds][0]! : null,
-    mixed: hostIds.size > 1,
-    seen,
-  };
-}
-
 function readCaptureFacts(root: string, name: string): OracleCaptureFact[] {
   const facts: OracleCaptureFact[] = [];
   const subjectRoot = join(root, name);
