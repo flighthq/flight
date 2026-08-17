@@ -72,19 +72,86 @@ export function getBackgroundTone(rgba: number): BackgroundTone {
  * before the phrase it negates, or every honest near-black description reports as a false positive.
  */
 export function getClaimedTone(description: string): BackgroundTone | null {
-  const text = description.toLowerCase();
+  // Brackets are punctuation, not a boundary: "a near-black (dark blue-gray) field" is one noun
+  // phrase, and leaving the parens in truncates the window so the whole phrase reads as no claim.
+  const text = description.toLowerCase().replace(/[()[\]]/g, ' ');
+  // ★ THE WINDOW IS FOUR WORDS, NOT SIXTY CHARACTERS, BECAUSE ADJACENCY IS THE ONLY EVIDENCE THERE IS.
+  // "Two white squares sit on the field, which is mid-gray" put WHITE inside a sixty-character window and
+  // the tool called the field white — a colour modifying the CONTENT, read as modifying the field. An
+  // adjective four words from its noun is usually not modifying it, and the cases that fall outside the
+  // window report as no claim, which costs a human one read and cannot produce a false accusation.
   const phrases = [
-    ...[...text.matchAll(/([^.;]{0,60})\bfield\b/g)].map((m) => m[1]!),
-    ...[...text.matchAll(/([^.;]{0,60})\bbackground\b([^.;,]{0,40})/g)].map((m) => `${m[1]!} ${m[2]!}`),
+    ...[...text.matchAll(/((?:[\w-]+[ ]+){0,4})field\b/g)].map((m) => m[1]!),
+    ...[...text.matchAll(/((?:[\w-]+[ ]+){0,4})background\b(?:[ ]+(?:is|of|:)?[ ]*((?:[\w-]+[ ]*){0,3}))?/g)].map(
+      (m) => `${m[1]!} ${m[2] ?? ''}`,
+    ),
   ];
-  for (const phrase of phrases) {
-    if (/near-black|not pure black|very dark|dark navy|dark blue-gr[ae]y/.test(phrase)) return 'near-black';
-    if (/\bblack\b/.test(phrase)) return 'black';
-    if (/mid-gray|mid-grey/.test(phrase)) return 'mid-gray';
-    if (/\bwhite\b/.test(phrase)) return 'white';
-  }
-  return null;
+  // A window may not reach across a clause boundary: an adjective in the previous sentence is not
+  // modifying this noun, and letting it through is the wrong-referent failure by a longer route.
+  const bounded = phrases.map(
+    (phrase) =>
+      phrase
+        .slice(phrase.lastIndexOf(';') + 1)
+        .split(/[.:]/)
+        .pop() ?? phrase,
+  );
+  const found = new Set<BackgroundTone>();
+  for (const phrase of bounded) for (const tone of readPhraseTones(phrase)) found.add(tone);
+  // ★ TWO ANSWERS IS NO ANSWER. "A black-bordered field of mid-gray" names two tones, and picking the
+  // first is how a checker manufactures a contradiction out of its own reading order. Ambiguity reports
+  // as no claim, which sends a human to the sentence — the one outcome that cannot be a false accusation.
+  return found.size === 1 ? [...found][0]! : null;
 }
+
+/**
+ * Every tone named in one phrase, reading whole hyphenated tokens and skipping negated ones.
+ *
+ * ★ HYPHENATED COMPOUNDS ARE ONE WORD. `\bblack\b` matches inside "blue-black", because a hyphen is a
+ * word boundary — so a very dark blue-black field reported as claiming BLACK, and would have contradicted
+ * its own near-black constant. Tokens are split on whitespace only.
+ *
+ * ★ A NEGATED COLOUR NAMES NOTHING, RATHER THAN NAMING ITS OPPOSITE. "never black" and "no black
+ * anywhere" tell you what the field is not; they do not tell you what it is. The tone has to come from a
+ * positive statement elsewhere in the sentence — which is exactly how "a very dark navy background, not
+ * pure black" still resolves, from the "very dark navy" and not from the negation.
+ */
+function readPhraseTones(phrase: string): BackgroundTone[] {
+  const tokens = phrase.split(/\s+/).filter(Boolean);
+  const tones: BackgroundTone[] = [];
+  for (const [index, raw] of tokens.entries()) {
+    const token = raw.replace(/[^a-z-]/g, '');
+    const tone = TONE_BY_TOKEN[token];
+    if (tone === undefined) continue;
+    const window = tokens.slice(Math.max(0, index - 3), index).join(' ');
+    if (/\b(not|never|no|without|neither|nor)\b/.test(window)) continue;
+    // "very dark <anything>" and "dark navy" read as the backdrop being dark, not as the bare colour.
+    tones.push(/\bvery dark\b|\bdark\b/.test(window) && tone !== 'mid-gray' ? 'near-black' : tone);
+  }
+  return tones;
+}
+
+/**
+ * The tone words this corpus actually uses next to `field` or `background`, not a colour dictionary.
+ *
+ * ★ IT IS DERIVED FROM THE CORPUS RATHER THAN IMAGINED. Every entry here was found by extracting the
+ * words that appear within four tokens of a field/background anchor across every described scene; adding
+ * words nobody writes buys nothing, and missing one that eighteen scenes use turns them all into NO
+ * CLAIM — coverage that silently is not coverage. When a new word appears, add it, and let the report's
+ * NO CLAIM lines tell you which one.
+ */
+const TONE_BY_TOKEN: Readonly<Record<string, BackgroundTone>> = {
+  black: 'black',
+  'blue-black': 'near-black',
+  'blue-gray': 'near-black',
+  'blue-grey': 'near-black',
+  charcoal: 'near-black',
+  'mid-gray': 'mid-gray',
+  'mid-grey': 'mid-gray',
+  navy: 'near-black',
+  'near-black': 'near-black',
+  'pure-black': 'black',
+  white: 'white',
+};
 
 /** Every scene carrying a description, with its claimed and actual background tone. */
 export function readSceneBackgroundClaims(sceneDirectory: string): SceneBackgroundClaim[] {
