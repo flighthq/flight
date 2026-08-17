@@ -246,6 +246,50 @@ the expected VALUE, not the distance from the input. `svg-clip-path` does it (`k
 `clipped point is black`); `effect-lut-grade` did not. When an assertion's failure message says *"is within
 N of original"*, it is a difference assertion, and it will pass for any reason the pixels move.
 
+### Addendum — the ruling this produced, and one correction to how it was sharpened
+
+Filed as an addendum to the non-discriminating-threshold scan rather than as its own finding: same
+question — *does this assertion prove anything* — reached from the assertion's **message text** instead
+of from its **bound**. (That scan is not on this base at `f183929a7`; the cross-reference is by name and
+still needs wiring when it lands. Nothing below depends on it.)
+
+**The ruling.** Requiring a scene assertion is **necessary, not sufficient**. A second requirement sits
+beside it: the assertion must be **value-shaped** — stating what the output should BE, not that it differs
+from the input. A delta-shaped assertion satisfies the gate while proving nothing.
+
+**The cheap syntactic tell beat the clever metric.** Worth recording as a result about instrument design,
+not just about this scene. A static ranking of assertion strength was built, validated against twelve
+assertions already observed firing on real renders, and **deleted**: it spread those twelve across the
+23rd–71st percentile and put four of them below its own median, so it could not discriminate. What
+did work is a grep for the phrase *"is within N of original"* in the failure message. The failure message
+is where the author states, in prose, what they believed they were checking — so a difference assertion
+announces itself in the one place nobody thought to read. **The simpler instrument won, and it won because
+it read a channel the sophisticated one ignored.**
+
+**One correction to the sharpened form, because the flattering version is not what the evidence shows.**
+The upgrade offered was that the delta shape is blind to *each* of the two defects **independently** —
+that neither *no LUT supplied* nor *bad channel unpacking* would have been caught alone. That is not what
+this assertion does, and the arithmetic settles it. Pre-fix the scene passed
+`createLookupTableGradeAdjustment({ strength: 1 })` with **no LUT**, an identity grade, so the red cell
+renders its authored `0xff3030ff` unchanged:
+
+    maxChange = max(|255-255|, |48-48|, |48-48|) = 0,  and  0 < 15  ->  throws
+
+So *no LUT supplied*, alone, **is** caught by this assertion — which is precisely the mechanism already
+recorded above ("that should have failed this assertion from the day it was written"). Only the unpacking
+defect is invisible to it. Accepting the stronger phrasing would have contradicted the section it was
+strengthening.
+
+**The true stronger form, which does hold.** A delta-shaped assertion partitions every possible defect
+into two classes: those that leave the sampled pixel *identical* to the authored value, and those that
+*move* it. It catches the first class, which contains essentially one degenerate member — the total no-op.
+It is blind to the second, which is **unbounded**: every wrong grade, every wrong channel order, every
+partially-applied LUT, every unrelated effect that happens to tint the cell. So the shape is not a
+correctness check that happens to have a hole; it is a **no-op detector** being read as a correctness
+check. That is strictly stronger than "two defects cancelled" — it holds for one defect, for three, and
+for a tree with no defects at all — and unlike the version offered, it survives contact with the
+arithmetic.
+
 ## 2026-08-16: what the good version looks like — a guard that refuses to answer
 
 Every other instance in this document is an instrument that failed toward *proceed*: green while checking
