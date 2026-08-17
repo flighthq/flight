@@ -1,0 +1,36 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const scriptPath = fileURLToPath(import.meta.url);
+const root = resolve(dirname(scriptPath), '..');
+const scenesDir = join(root, 'functional', 'scenes');
+
+export function findScenesWithoutExpectedImageDescription(scenesDirectory: string): string[] {
+  return readdirSync(scenesDirectory)
+    .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+    .filter((f) => {
+      const content = readFileSync(join(scenesDirectory, f), 'utf8');
+      return content.includes('createFunctionalTarget') && !content.includes('expectedImageDescription');
+    })
+    .map((f) => f.replace(/\.ts$/, ''))
+    .sort();
+}
+
+function countScenesWithFunctionalTarget(scenesDirectory: string): number {
+  return readdirSync(scenesDirectory)
+    .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+    .filter((f) => readFileSync(join(scenesDirectory, f), 'utf8').includes('createFunctionalTarget')).length;
+}
+
+const missing = findScenesWithoutExpectedImageDescription(scenesDir);
+const targetScenes = countScenesWithFunctionalTarget(scenesDir);
+const described = targetScenes - missing.length;
+
+console.log(`expectedImageDescription: ${described}/${targetScenes} functional scenes have a description\n`);
+if (missing.length > 0) {
+  console.log(`${missing.length} scene(s) missing expectedImageDescription:`);
+  for (const name of missing) {
+    console.log(`  - ${name}`);
+  }
+}

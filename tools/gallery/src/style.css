@@ -259,3 +259,19 @@ body {
   padding: 2em;
   line-height: 1.6;
 }
+
+.expected-description {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.78);
+  color: #999;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 30%;
+  overflow-y: auto;
+}

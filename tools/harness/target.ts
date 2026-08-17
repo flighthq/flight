@@ -20,4 +20,5 @@ export interface FunctionalTargetOptions {
   cache?: boolean;
   blend?: boolean;
   strokePathTessellation?: boolean;
+  expectedImageDescription?: string;
 }

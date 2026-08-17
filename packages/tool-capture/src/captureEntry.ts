@@ -73,6 +73,8 @@ export interface CaptureStatus {
    * from "the page crashed" (pageErrorCount>0), instead of dead-ending on "cannot capture".
    */
   observe?: CaptureObserveDiagnostics;
+  /** Prose describing the expected visual result, sourced from the scene's own declaration. */
+  expectedImageDescription?: string;
 }
 
 /** What an observe-mode capture saw: the trustworthiness metadata beside the emitted screenshot. */
@@ -388,6 +390,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     // threw both ran and failed — and a binding scoped to the try would leave the error path with
     // nothing to write but null, which reads as "never invoked".
     let verification: RenderVerification | null = null;
+    let expectedImageDescription: string | null = null;
 
     try {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: getCaptureTimeoutMs() });
@@ -459,6 +462,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         verifiedFingerprint = verification.fingerprint;
       }
       const verificationTargetKind = waitsForVerification ? await getFunctionalTargetKind(page) : null;
+      expectedImageDescription = await getExpectedImageDescription(page);
 
       // Screenshot the render output only — not the full viewport — so all renderers produce the same
       // frame size and the gallery blink comparator has something meaningful to compare.
@@ -610,6 +614,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           changed: null,
           observe: diagnostics,
           provenance: statusProvenance,
+          ...(expectedImageDescription !== null ? { expectedImageDescription } : undefined),
         };
         writeFileSync(statusPath, JSON.stringify(observeStatus, null, 2));
         console.log(statusLine('pass', renderer, formatObserveDetail(diagnostics)));
@@ -667,6 +672,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         // The conditions these exact bytes were produced under — the fingerprint/sha256 provenance
         // extended only with the host facts that identify where this same capture ran.
         provenance: statusProvenance,
+        ...(expectedImageDescription !== null ? { expectedImageDescription } : undefined),
       };
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
 
@@ -720,6 +726,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         // filling required baseline-provenance fields with guesses would turn a failed measurement into
         // evidence it never produced.
         provenance: CAPTURE_HOST_PROVENANCE,
+        ...(expectedImageDescription !== null ? { expectedImageDescription } : undefined),
       };
       writeFileSync(statusPath, JSON.stringify(errorStatus, null, 2));
 
@@ -771,6 +778,14 @@ async function getCanvasImageDataUrl(page: Page): Promise<string | null> {
 async function getFunctionalTargetKind(page: Page): Promise<string | null> {
   return page
     .evaluate(() => (window as unknown as { __ftTarget?: { kind?: string } }).__ftTarget?.kind ?? null)
+    .catch(() => null);
+}
+
+async function getExpectedImageDescription(page: Page): Promise<string | null> {
+  return page
+    .evaluate(
+      () => (window as unknown as { __ftExpectedImageDescription?: string }).__ftExpectedImageDescription ?? null,
+    )
     .catch(() => null);
 }
 
