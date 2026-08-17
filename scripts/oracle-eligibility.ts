@@ -38,6 +38,11 @@ export interface OracleCaptureFact {
   hash: string | null;
   /** The committed sha256 baseline for this cell, or `null` when the repository has never pinned one. */
   baselineHash: string | null;
+  /**
+   * `provenance.sourceHash` — the scene source's sha256 AT CAPTURE TIME. Comparing it against the tree's
+   * current hash is what makes a stale capture mechanically detectable instead of archaeological.
+   */
+  sourceHash: string | null;
 }
 
 export type OracleDeterminismVerdict = 'agreed' | 'disagreed' | 'incomplete';
@@ -328,6 +333,33 @@ export function addReferenceImageCoverage(
     kinds.sort();
   }
   return { coverage };
+}
+
+/**
+ * Cells whose capture describes a DIFFERENT version of their scene than the tree currently holds.
+ *
+ * ★ A CENSUS COMPUTED FROM STALE CAPTURES IS CONFIDENTLY WRONG, AND IT WAS. Capture facts record the
+ * scene's source hash at capture time. When the tree moves under a capture root, every cell of a changed
+ * scene keeps describing the old source — and the failure is silent and BIDIRECTIONAL: a deleted scene
+ * over-reports (its stale error looks like a live defect) and an improved scene under-reports (a cell was
+ * filed as `no-scene-oracle` for a scene that had since gained one). Both happened here, a day apart, from
+ * the same root.
+ *
+ * Compares per-cell rather than per-repository on purpose: a commit sha tells a reader the whole census is
+ * suspect, while a source hash tells them exactly which cells are, which is the difference between "re-run
+ * everything" and "these eleven".
+ */
+export function findStaleCaptures(
+  captures: readonly Readonly<OracleCaptureFact>[],
+  currentSourceHash: (identity: string) => string | null,
+): string[] {
+  const stale: string[] = [];
+  for (const capture of captures) {
+    if (capture.sourceHash === null) continue;
+    const current = currentSourceHash(capture.identity);
+    if (current !== null && current !== capture.sourceHash) stale.push(capture.identity);
+  }
+  return stale.sort();
 }
 
 /** One `parity` row of a validation report: the scene it judged, and the verdict it reached. */
