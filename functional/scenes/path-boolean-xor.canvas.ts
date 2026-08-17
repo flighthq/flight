@@ -33,6 +33,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (300×300): two separate cyan L-shaped regions — the exclusive ' +
+    "parts of two 100×100 rectangles A at (50,50) and B at (100,100). Rectangle A's exclusive " +
+    "area (the top strip and left strip outside the overlap) is cyan. Rectangle B's exclusive " +
+    'area (the bottom strip and right strip outside the overlap) is cyan. The 50×50 overlap ' +
+    'zone (100,100)–(150,150) is black (XOR removes the intersection). No gradient, no stroke ' +
+    '— a single flat cyan fill in two disjoint regions.',
 });
 
 const pathA = createPath();

@@ -33,6 +33,11 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (250×250): a single magenta 50×50 square at (100,100)–(150,150) — ' +
+    "the overlap region of two 100×100 rectangles. Rectangle A's exclusive area " +
+    "(50,50)–(100,100) is black. Rectangle B's exclusive area (150,150)–(200,200) is black. " +
+    'No gradient, no stroke — a single flat magenta square on black.',
 });
 
 const pathA = createPath();
