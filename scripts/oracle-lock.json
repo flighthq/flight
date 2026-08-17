@@ -5,10 +5,15 @@
   "packs": {
     "functional-shapes": {
       "file": "functional-shapes-oracle-shape-fill-solid-webgl-2026-08-14-09943d495bc9.tgz",
+      "images": {
+        "functional/shape-fill-solid/webgl": {
+          "pixelSha256": "9bc1f4942c55075e2ec292a567d87b4f9569674ec0d7dbad09acdebc6e46d22d"
+        }
+      },
       "sha256": "afc4373f5d106822b34b74fc1b6ae663a8dc3f5490b6edf656a2730e2464a75e"
     }
   },
   "releaseTag": "oracle-shape-fill-solid-webgl-2026-08-14-09943d495bc9",
   "repository": "flighthq/flight-oracles",
-  "schemaVersion": 1
+  "schemaVersion": 2
 }

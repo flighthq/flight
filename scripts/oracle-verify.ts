@@ -24,6 +24,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { decodeOraclePng } from './oracle-png';
+import type { OracleLockImage } from './oracle-records';
 import type { OracleCellInput } from './oracle-state';
 
 export interface PackManifestImage {
@@ -45,6 +46,47 @@ export interface VerifyResult {
   problems: readonly VerifyProblem[];
 }
 
+export interface OracleLockImageProblem {
+  identity: string;
+  kind: 'lock-image-missing' | 'lock-image-mismatch' | 'lock-image-unlisted';
+  detail: string;
+}
+
+/** Proves the committed per-image identities describe exactly the already verified pack manifest. */
+export function verifyOracleLockImages(
+  lockedImages: Readonly<Record<string, Readonly<OracleLockImage>>>,
+  manifestImages: readonly Readonly<PackManifestImage>[],
+): OracleLockImageProblem[] {
+  const problems: OracleLockImageProblem[] = [];
+  const published = new Map(manifestImages.map((image) => [packManifestImageIdentity(image.path), image]));
+  for (const [identity, locked] of Object.entries(lockedImages)) {
+    const image = published.get(identity);
+    if (image === undefined) {
+      problems.push({
+        detail: 'the lock names this image but the pack manifest does not',
+        identity,
+        kind: 'lock-image-missing',
+      });
+    } else if (image.pixelSha256 !== locked.pixelSha256) {
+      problems.push({
+        detail: `lock pins ${locked.pixelSha256}, pack manifest publishes ${image.pixelSha256}`,
+        identity,
+        kind: 'lock-image-mismatch',
+      });
+    }
+  }
+  for (const identity of published.keys()) {
+    if (lockedImages[identity] === undefined) {
+      problems.push({
+        detail: 'the pack manifest publishes this image but the lock does not name it',
+        identity,
+        kind: 'lock-image-unlisted',
+      });
+    }
+  }
+  return problems;
+}
+
 /**
  * Turns an extracted pack plus a capture tree into the cell inputs `joinOracleState` decides on.
  *
@@ -60,7 +102,7 @@ export function verifyOracleCaptures(
   const problems: VerifyProblem[] = [];
 
   for (const image of manifestImages) {
-    const identity = image.path.replace(/^images\//, '').replace(/\.png$/, '');
+    const identity = packManifestImageIdentity(image.path);
     const blessedPath = join(packRoot, image.path);
 
     if (!existsSync(blessedPath)) {
@@ -167,4 +209,8 @@ export function readPackManifest(path: string): { images: PackManifestImage[] } 
     }
   }
   return { images: images as PackManifestImage[] };
+}
+
+function packManifestImageIdentity(path: string): string {
+  return path.replace(/^images\//, '').replace(/\.png$/, '');
 }

@@ -20,7 +20,7 @@
 import { readFileSync } from 'node:fs';
 
 export interface OracleLock {
-  schemaVersion: 1;
+  schemaVersion: 2;
   /** `owner/name` of the repository whose releases supply the blessed bytes. */
   repository: string;
   /** The 40-hex Oracle commit the release was cut from. */
@@ -28,13 +28,19 @@ export interface OracleLock {
   /** The immutable release tag. Never `latest` — see FIXTURE_RELEASE_TAG for the same argument. */
   releaseTag: string;
   manifestSha256: string;
-  /** Pack id → the asset that carries it. Packs, never individual image allowances (§5). */
+  /** Pack id → the asset and exact image identities it carries. */
   packs: Record<string, OracleLockPack>;
 }
 
 export interface OracleLockPack {
   file: string;
   sha256: string;
+  /** Opaque `subject/entry/renderer` identity → its decoded-pixel identity. */
+  images: Record<string, OracleLockImage>;
+}
+
+export interface OracleLockImage {
+  pixelSha256: string;
 }
 
 export interface OracleRequest {
@@ -67,6 +73,7 @@ export type OracleRecordProblemKind =
   | 'field-missing'
   | 'field-type'
   | 'field-empty'
+  | 'duplicate-image'
   | 'duplicate-target';
 
 const HEX_40 = /^[0-9a-f]{40}$/;
@@ -83,7 +90,7 @@ export function readOracleLock(path: string): OracleLockResult {
   const value = parsed.value;
   const problems: OracleRecordProblem[] = [];
 
-  requireSchemaVersion(problems, path, value, 1);
+  requireSchemaVersion(problems, path, value, 2);
   requireNonEmptyString(problems, path, value, 'repository');
   requirePattern(problems, path, value, 'oracleCommit', HEX_40, 'a 40-hex commit');
   requireNonEmptyString(problems, path, value, 'releaseTag');
@@ -94,6 +101,7 @@ export function readOracleLock(path: string): OracleLockResult {
   else if (!isPlainObject(packs)) problems.push(problem(path, 'field-type', 'packs must be an object'));
   else if (Object.keys(packs).length === 0) problems.push(problem(path, 'field-empty', 'packs is empty'));
   else {
+    const seenImages = new Set<string>();
     for (const [id, pack] of Object.entries(packs)) {
       if (!isPlainObject(pack)) {
         problems.push(problem(path, 'field-type', `packs.${id} must be an object`));
@@ -101,6 +109,35 @@ export function readOracleLock(path: string): OracleLockResult {
       }
       requireNonEmptyString(problems, path, pack, `packs.${id}.file`, pack['file']);
       requirePattern(problems, path, pack, `packs.${id}.sha256`, HEX_64, 'a 64-hex sha256', pack['sha256']);
+
+      const images = pack['images'];
+      if (images === undefined) problems.push(problem(path, 'field-missing', `packs.${id}.images is missing`));
+      else if (!isPlainObject(images)) {
+        problems.push(problem(path, 'field-type', `packs.${id}.images must be an object`));
+      } else if (Object.keys(images).length === 0) {
+        problems.push(problem(path, 'field-empty', `packs.${id}.images is empty`));
+      } else {
+        for (const [identity, image] of Object.entries(images)) {
+          if (identity.length === 0) problems.push(problem(path, 'field-empty', `packs.${id}.images has an empty key`));
+          if (seenImages.has(identity)) {
+            problems.push(problem(path, 'duplicate-image', `${identity} is named by more than one pack`));
+          }
+          seenImages.add(identity);
+          if (!isPlainObject(image)) {
+            problems.push(problem(path, 'field-type', `packs.${id}.images.${identity} must be an object`));
+            continue;
+          }
+          requirePattern(
+            problems,
+            path,
+            image,
+            `packs.${id}.images.${identity}.pixelSha256`,
+            HEX_64,
+            'a 64-hex sha256',
+            image['pixelSha256'],
+          );
+        }
+      }
     }
   }
 
@@ -108,6 +145,15 @@ export function readOracleLock(path: string): OracleLockResult {
 }
 
 export type OracleLockResult = { lock: OracleLock } | { problems: OracleRecordProblem[] };
+
+/** Every exact image the committed lock supplies, keyed for direct request and eligibility lookups. */
+export function getOracleLockImages(lock: Readonly<OracleLock>): ReadonlyMap<string, Readonly<OracleLockImage>> {
+  const images = new Map<string, Readonly<OracleLockImage>>();
+  for (const pack of Object.values(lock.packs)) {
+    for (const [identity, image] of Object.entries(pack.images)) images.set(identity, image);
+  }
+  return images;
+}
 
 /**
  * Reads and validates one outstanding commission. A request names live targets and a reason; it never

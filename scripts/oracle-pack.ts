@@ -117,9 +117,13 @@ export function verifyOracleRelease(
       problems.push({ detail: `lock pins pack ${id}, release does not publish it`, kind: 'pack-absent' });
       continue;
     }
-    if (published.sha256 !== pinned.sha256 || published.file !== pinned.file) {
+    if (
+      published.sha256 !== pinned.sha256 ||
+      published.file !== pinned.file ||
+      published.imageCount !== Object.keys(pinned.images).length
+    ) {
       problems.push({
-        detail: `pack ${id}: lock pins ${pinned.file}@${pinned.sha256}, release publishes ${published.file}@${published.sha256}`,
+        detail: `pack ${id}: lock pins ${pinned.file}@${pinned.sha256} with ${Object.keys(pinned.images).length} image(s), release publishes ${published.file}@${published.sha256} with ${published.imageCount}`,
         kind: 'pack-mismatch',
       });
       continue;

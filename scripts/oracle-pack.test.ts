@@ -73,6 +73,13 @@ describe('verifyOracleRelease', () => {
     expect('problems' in result && result.problems.map((p) => p.kind)).toEqual(['pack-mismatch']);
   });
 
+  it('rejects a release count that cannot describe the lock image set', () => {
+    const bytes = manifest({ packs: [pack({ imageCount: 2 })], releaseTag: 'tag-1' });
+    const result = verifyOracleRelease(bytes, lock({ manifestSha256: sha(bytes) }));
+
+    expect('problems' in result && result.problems.map((p) => p.kind)).toEqual(['pack-mismatch']);
+  });
+
   it('names a pack the lock pins and the release does not publish', () => {
     const bytes = manifest({ packs: [], releaseTag: 'tag-1' });
     const result = verifyOracleRelease(bytes, lock({ manifestSha256: sha(bytes) }));
@@ -101,10 +108,16 @@ function lock(overrides: Partial<OracleLock> = {}): OracleLock {
   return {
     manifestSha256: 'f'.repeat(64),
     oracleCommit: '0'.repeat(40),
-    packs: { 'functional-shapes': { file: 'pack.tgz', sha256: 'c'.repeat(64) } },
+    packs: {
+      'functional-shapes': {
+        file: 'pack.tgz',
+        images: { 'functional/shape-fill-solid/webgl': { pixelSha256: 'd'.repeat(64) } },
+        sha256: 'c'.repeat(64),
+      },
+    },
     releaseTag: 'tag-1',
     repository: 'flighthq/flight-oracles',
-    schemaVersion: 1,
+    schemaVersion: 2,
     ...overrides,
   };
 }
