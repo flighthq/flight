@@ -111,10 +111,10 @@ console.log(`subject ${subject} | ${coverage.size} live cell(s) | ${runs.length}
 console.log(`sourceCommit ${headCommit()}`);
 console.log(
   staleness.compared === 0
-    ? `stale UNKNOWN — 0 of ${captures.length} captures carried a comparable sourceHash; freshness is UNVERIFIED, not clean`
+    ? `stale UNKNOWN — 0 of ${captures.length} captures carried a comparable provenance.sourceHash; freshness is UNVERIFIED, not clean`
     : staleCells.length === 0
-      ? `stale 0 of ${staleness.compared} compared — every comparable capture describes the current scene source`
-      : `stale ${staleCells.length} of ${staleness.compared} compared — CAPTURES DESCRIBE A DIFFERENT TREE; re-capture first`,
+      ? `stale 0 of ${staleness.compared} compared (capture provenance.sourceHash vs scene file) — all current`
+      : `stale ${staleCells.length} of ${staleness.compared} compared (capture provenance.sourceHash vs scene file) — CAPTURES DESCRIBE A DIFFERENT TREE; re-capture first`,
 );
 // ★ PARITY CAME FROM A SEPARATE RUN, SAID IN THE OUTPUT RATHER THAN IN A NOTE. `validate` writes the parity
 // report but no status.json, so a census is assembled from the capture runs PLUS a third validate run. A
@@ -331,7 +331,16 @@ function headCommit(): string {
   }
 }
 
-/** `provenance.sourceHash` from a status record, when it recorded one. */
+/**
+ * `provenance.sourceHash` from a CAPTURE status record, when it recorded one.
+ *
+ * ★ NAME WHICH FIELD, ALWAYS. There are several identically-named `sourceHash` fields in this repository —
+ * a capture status's `provenance.sourceHash` (this one), a baseline column's vestigial top-level
+ * `sourceHash`, and that column's `sha256Provenance.sourceHash`. They attest different things and can
+ * disagree, and reading the wrong one has already produced three separate wrong results in a day —
+ * including a near-miss where the vestigial field made four correct baselines look stale, in the direction
+ * the reader was already expecting. The report says which field it compared for that reason.
+ */
 function readSourceHash(status: Record<string, unknown>): string | null {
   const provenance = status['provenance'];
   if (typeof provenance !== 'object' || provenance === null) return null;
