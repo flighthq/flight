@@ -18,6 +18,7 @@
 // 8-byte signature, then length/type/data/CRC chunks; IHDR carries width, height, bit depth, colour type,
 // compression, filter and interlace; IDAT data is a zlib stream of scanlines each prefixed by a filter
 // byte. No reference implementation was consulted or transcribed.
+import { createHash } from 'node:crypto';
 import { inflateSync } from 'node:zlib';
 
 export interface DecodedPng {
@@ -42,6 +43,19 @@ export type PngRefusal =
 export type PngResult = { png: DecodedPng } | { refused: PngRefusal };
 
 const SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** The one decoded-pixel identity shared by request, lock, pack manifest, and comparison. */
+export function getOraclePngPixelSha256(
+  bytes: Readonly<Uint8Array>,
+): { pixelSha256: string } | { refused: PngRefusal } {
+  const decoded = decodeOraclePng(bytes);
+  if ('refused' in decoded) return decoded;
+  return { pixelSha256: hashOraclePixelBytes(decoded.png.data) };
+}
+
+export function hashOraclePixelBytes(bytes: Readonly<Uint8Array>): string {
+  return createHash('sha256').update(bytes).digest('hex');
+}
 
 /**
  * Decodes a non-interlaced 8-bit RGBA PNG. Any other variant is refused by name rather than approximated.

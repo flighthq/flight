@@ -23,7 +23,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { decodeOraclePng } from './oracle-png';
+import { decodeOraclePng, hashOraclePixelBytes } from './oracle-png';
 import type { OracleLockImage } from './oracle-records';
 import type { OracleCellInput } from './oracle-state';
 
@@ -183,7 +183,7 @@ export function verifyOracleCaptures(
  * over both decoded images, which can answer that honestly.
  */
 export function comparePixels(decoded: Readonly<Uint8Array>, expectedPixelSha256: string) {
-  const actual = createHash('sha256').update(decoded).digest('hex');
+  const actual = hashOraclePixelBytes(decoded);
   const same = actual === expectedPixelSha256;
   return { dimensionMismatch: false, fraction: same ? 0 : 1, maxChannelDelta: same ? 0 : 255 };
 }

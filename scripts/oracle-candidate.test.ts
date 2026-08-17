@@ -1,12 +1,21 @@
 import { mkdirSync, mkdtempSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { deflateSync } from 'node:zlib';
 
-import { buildOracleCandidateBundle, readPngDimensions, stageOracleCandidateImages } from './oracle-candidate';
+import {
+  buildOracleCandidateBundle,
+  readBoundOracleRequestTarget,
+  readPngDimensions,
+  stageOracleCandidateImages,
+  verifyOracleRequestedPixels,
+} from './oracle-candidate';
 import type { OracleCandidateInput } from './oracle-candidate';
+import { hashOraclePixelBytes } from './oracle-png';
 import type { OracleRequest } from './oracle-records';
 
 const PIXEL_HASH = 'c'.repeat(64);
+const REQUEST_PIXEL_HASH = hashOraclePixelBytes(new Uint8Array(24));
 
 describe('buildOracleCandidateBundle', () => {
   it('emits the identity structured, not slash-joined, because the consumer keys on the parts', () => {
@@ -112,6 +121,57 @@ describe('stageOracleCandidateImages', () => {
   });
 });
 
+describe('verifyOracleRequestedPixels', () => {
+  it('accepts the later capture only when its decoded pixels are the image the request selected', () => {
+    const request = input(root({ hash: PIXEL_HASH })).request;
+    const artifacts = root({ hash: PIXEL_HASH });
+
+    expect(verifyOracleRequestedPixels(request, artifacts)).toEqual([]);
+  });
+
+  it('refuses a differing decoded image instead of blessing whatever a later capture produced', () => {
+    const artifacts = root({ hash: PIXEL_HASH });
+    const request = input(artifacts).request;
+    request.targets[0]!.pixelSha256 = 'f'.repeat(64);
+
+    expect(verifyOracleRequestedPixels(request, artifacts).map((problem) => problem.kind)).toEqual([
+      'request-image-mismatch',
+    ]);
+  });
+
+  it('refuses when no capture exists to prove the requested pixel identity', () => {
+    const request = input(root({ hash: PIXEL_HASH })).request;
+
+    expect(verifyOracleRequestedPixels(request, mkdtempSync(join(tmpdir(), 'oracle-empty-')))[0]?.kind).toBe(
+      'request-image-missing',
+    );
+  });
+});
+
+describe('readBoundOracleRequestTarget', () => {
+  it('records the selected PNG identity and capture run in the v2 target shape', () => {
+    const capture = { environmentId: 'environment', hostInstanceId: 'host' };
+
+    expect(readBoundOracleRequestTarget(root({ hash: PIXEL_HASH }), 'functional/shape/webgl', capture)).toEqual({
+      capture,
+      entry: 'shape',
+      pixelSha256: REQUEST_PIXEL_HASH,
+      renderer: 'webgl',
+    });
+  });
+
+  it('refuses to manufacture a target when the selected run has no image', () => {
+    const selected = mkdtempSync(join(tmpdir(), 'oracle-empty-'));
+
+    expect(
+      readBoundOracleRequestTarget(selected, 'functional/shape/webgl', {
+        environmentId: 'environment',
+        hostInstanceId: 'host',
+      }),
+    ).toHaveProperty('problem');
+  });
+});
+
 function input(directory: string): OracleCandidateInput {
   return {
     artifactsRoot: directory,
@@ -128,7 +188,7 @@ function input(directory: string): OracleCandidateInput {
         {
           capture: { environmentId: 'environment', hostInstanceId: 'host' },
           entry: 'shape',
-          pixelSha256: 'a'.repeat(64),
+          pixelSha256: REQUEST_PIXEL_HASH,
           renderer: 'webgl',
         },
       ],
@@ -159,14 +219,33 @@ function root(status: { hash: string | null; state?: string; error?: string; pro
   return directory;
 }
 
-/** A minimal 3×2 PNG header — signature, IHDR length, type, width, height. Format facts, not a fixture. */
+/** A minimal decodable 3×2 RGBA PNG. CRC bytes are present but not evaluated by the narrow decoder. */
 function png(): Uint8Array {
-  const bytes = new Uint8Array(32);
-  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
-  const view = new DataView(bytes.buffer);
-  view.setUint32(8, 13, false);
-  bytes.set([0x49, 0x48, 0x44, 0x52], 12);
-  view.setUint32(16, 3, false);
-  view.setUint32(20, 2, false);
+  const ihdr = new Uint8Array(13);
+  const view = new DataView(ihdr.buffer);
+  view.setUint32(0, 3, false);
+  view.setUint32(4, 2, false);
+  ihdr.set([8, 6, 0, 0, 0], 8);
+  const raw = new Uint8Array(26);
+  const parts = [
+    new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(raw)),
+    chunk('IEND', new Uint8Array()),
+  ];
+  const bytes = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    bytes.set(part, offset);
+    offset += part.length;
+  }
+  return bytes;
+}
+
+function chunk(type: string, data: Readonly<Uint8Array>): Uint8Array {
+  const bytes = new Uint8Array(12 + data.length);
+  new DataView(bytes.buffer).setUint32(0, data.length, false);
+  for (const [index, character] of [...type].entries()) bytes[4 + index] = character.charCodeAt(0);
+  bytes.set(data, 8);
   return bytes;
 }

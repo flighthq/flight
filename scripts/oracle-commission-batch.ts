@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { compareCalibrationRuns, deriveCalibrationIdentityVerdict, readCaptureRootIdentity } from './oracle-calibrate';
+import { readBoundOracleRequestTarget } from './oracle-candidate';
 import type {
   OracleDeterminismScope,
   OracleCaptureFact,
@@ -32,10 +33,10 @@ import {
   addReferenceImageCoverage,
   findParityWithholdings,
   findStaleCaptures,
-  groupOracleTargets,
   selectCommissionableCells,
   summarizeOracleBlocks,
 } from './oracle-eligibility';
+import type { OracleRequestCaptureIdentity, OracleRequestTarget } from './oracle-records';
 import { getOracleRequestCells, readOracleRequest } from './oracle-records';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -233,6 +234,27 @@ if (reason === undefined) {
   process.exit(2);
 }
 
+const selectedRoot = hosts[0];
+const selectedCapture: OracleRequestCaptureIdentity | null =
+  selectedRoot === undefined || selectedRoot.hostInstanceId === null || selectedRoot.environmentId === null
+    ? null
+    : { environmentId: selectedRoot.environmentId, hostInstanceId: selectedRoot.hostInstanceId };
+if (selectedCapture === null) {
+  console.error('oracle-commission-batch: the selected capture root has no complete host/environment identity');
+  console.error('  Refusing to file a request that cannot name which capture run supplied its pixels.');
+  process.exit(1);
+}
+const targets: OracleRequestTarget[] = [];
+for (const identity of batch) {
+  const target = readBoundOracleRequestTarget(runs[0]!, identity, selectedCapture);
+  if ('problem' in target) {
+    console.error(`oracle-commission-batch: ${identity}: ${target.problem}`);
+    console.error('  Refusing to file a request without the exact decoded-pixel identity.');
+    process.exit(1);
+  }
+  targets.push(target);
+}
+
 const queue = join(repoRoot, 'oracle-requests');
 mkdirSync(queue, { recursive: true });
 const requestPath = join(queue, `${id}.json`);
@@ -240,10 +262,7 @@ if (existsSync(requestPath)) {
   console.error(`oracle-commission-batch: ${requestPath} already exists; pick an id that is not already open`);
   process.exit(1);
 }
-writeFileSync(
-  requestPath,
-  `${JSON.stringify({ schemaVersion: 1, id, subject, targets: groupOracleTargets(batch), frames, reason }, null, 2)}\n`,
-);
+writeFileSync(requestPath, `${JSON.stringify({ schemaVersion: 2, id, subject, targets, frames, reason }, null, 2)}\n`);
 
 // ★ THE COVERAGE IDENTITY AND THE REQUEST ARE WRITTEN TOGETHER, IN ONE CHANGE (§5). The request says
 // which cells are moving; the coverage manifest says which cells OWE a referent at all. Filing only the

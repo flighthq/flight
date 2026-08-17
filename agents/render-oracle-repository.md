@@ -174,16 +174,31 @@ for a replacement image.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "shape-fill-solid-webgl-2026-08-14",
   "subject": "functional",
-  "targets": [{ "entry": "shape-fill-solid", "renderers": ["webgl"] }],
+  "targets": [
+    {
+      "entry": "shape-fill-solid",
+      "renderer": "webgl",
+      "pixelSha256": "<64-hex decoded-pixel sha256>",
+      "capture": {
+        "hostInstanceId": "<capture host identity>",
+        "environmentId": "<capture environment identity>"
+      }
+    }
+  ],
   "frames": 1,
   "reason": "add the first full-resolution reference for the solid-fill scene"
 }
 ```
 
-The request names the expected scope and why it should move. It deliberately does **not** contain the
+Each target names one exact selected image, not merely a cell that a later capture may replace. The
+commission workflow decodes the later PNG using the same `pixelSha256` definition and refuses to stage
+it when the hash differs or cannot be established. The capture identity records where the selection was
+made; it is provenance, not another dimension in the one-column-per-backend key.
+
+The request also names why the image should move. It deliberately does **not** contain the
 SHA of the commit that contains itself — that is a self-reference whose value cannot be known before
 the commit exists, and an agent-local SHA may be replaced when work lands. The trusted Flight workflow
 binds the request to the remotely reachable landed `github.sha` in its dispatch envelope.
@@ -198,7 +213,7 @@ oracle record carries its id, content hash, and landed Flight commit.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "repository": "flighthq/flight-oracles",
   "oracleCommit": "<40-hex commit>",
   "releaseTag": "<immutable release tag>",
@@ -206,14 +221,19 @@ oracle record carries its id, content hash, and landed Flight commit.
   "packs": {
     "functional-shapes": {
       "file": "functional-shapes-<tag>.tgz",
+      "images": {
+        "functional/shape-fill-solid/webgl": {
+          "pixelSha256": "<64-hex decoded-pixel sha256>"
+        }
+      },
       "sha256": "<64-hex sha256>"
     }
   }
 }
 ```
 
-The lock pins releases and packs, **not individual image allowances**. The coverage manifest selects
-the identities CI must compare; the lock says exactly which immutable bytes satisfy them. An agent
+The lock pins releases, packs, and the per-image decoded-pixel identity each verified pack must carry.
+The coverage manifest selects the identities CI must compare; the lock says exactly which immutable bytes satisfy them. An agent
 never removes an existing image from the lock to ask for its replacement — the prior blessed image
 stays pinned until a later lock update atomically selects the newly approved release.
 
