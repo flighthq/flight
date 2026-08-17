@@ -9,11 +9,9 @@
 // the thing CI was meant to require — the coverage manifest already carries that argument for its own
 // subject (`captureBaselineCoverageManifest.ts`) and it is the same argument here.
 //
-// ★ IDENTITIES ARE OPAQUE STRINGS ON PURPOSE. §10 is an open decision — whether a reference set has one
-// column per backend or one per backend × environment — and it determines the KEYING. Nothing in this
-// file or in `oracle-state.ts` parses an identity, so the ruling changes only whoever generates them.
-// Do not add an `environmentId` field here to "get ahead": committing the schema is exactly what the
-// document defers.
+// ★ IDENTITIES ARE OPAQUE STRINGS ON PURPOSE. §10 ruled one column per backend, while the environment and
+// host that produced a requested image remain provenance about that image rather than part of its key.
+// Nothing in this file or in `oracle-state.ts` parses an identity.
 //
 // Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
 // graph — the same reason `FixtureExtractionVerification` lives in `scripts/fixtures.ts`.
@@ -44,7 +42,7 @@ export interface OracleLockImage {
 }
 
 export interface OracleRequest {
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   subject: string;
   targets: readonly OracleRequestTarget[];
@@ -54,7 +52,16 @@ export interface OracleRequest {
 
 export interface OracleRequestTarget {
   entry: string;
-  renderers: readonly string[];
+  renderer: string;
+  /** Decoded top-down RGBA sha256, using the same identity as `OracleLockImage.pixelSha256`. */
+  pixelSha256: string;
+  /** The selected capture run, recorded as provenance rather than folded into the image key. */
+  capture: OracleRequestCaptureIdentity;
+}
+
+export interface OracleRequestCaptureIdentity {
+  hostInstanceId: string;
+  environmentId: string;
 }
 
 /** A record that did not parse, named so a caller can report it rather than throw over the corpus. */
@@ -166,7 +173,7 @@ export function readOracleRequest(path: string): OracleRequestResult {
   const value = parsed.value;
   const problems: OracleRecordProblem[] = [];
 
-  requireSchemaVersion(problems, path, value, 1);
+  requireSchemaVersion(problems, path, value, 2);
   requireNonEmptyString(problems, path, value, 'id');
   requireNonEmptyString(problems, path, value, 'subject');
   requireNonEmptyString(problems, path, value, 'reason');
@@ -189,22 +196,43 @@ export function readOracleRequest(path: string): OracleRequestResult {
         continue;
       }
       requireNonEmptyString(problems, path, target, `targets[${index}].entry`, target['entry']);
-      const renderers = target['renderers'];
-      if (!Array.isArray(renderers) || renderers.length === 0) {
-        problems.push(problem(path, 'field-empty', `targets[${index}].renderers must be a non-empty array`));
-        continue;
+      requireNonEmptyString(problems, path, target, `targets[${index}].renderer`, target['renderer']);
+      requirePattern(
+        problems,
+        path,
+        target,
+        `targets[${index}].pixelSha256`,
+        HEX_64,
+        'a 64-hex sha256',
+        target['pixelSha256'],
+      );
+
+      const capture = target['capture'];
+      if (capture === undefined) problems.push(problem(path, 'field-missing', `targets[${index}].capture is missing`));
+      else if (!isPlainObject(capture)) {
+        problems.push(problem(path, 'field-type', `targets[${index}].capture must be an object`));
+      } else {
+        requireNonEmptyString(
+          problems,
+          path,
+          capture,
+          `targets[${index}].capture.hostInstanceId`,
+          capture['hostInstanceId'],
+        );
+        requireNonEmptyString(
+          problems,
+          path,
+          capture,
+          `targets[${index}].capture.environmentId`,
+          capture['environmentId'],
+        );
       }
-      for (const renderer of renderers) {
-        if (typeof renderer !== 'string' || renderer.length === 0) {
-          problems.push(problem(path, 'field-type', `targets[${index}].renderers must be strings`));
-          continue;
-        }
-        // A request that names the same cell twice would let one entry be satisfied while the other
-        // silently keeps the cell pending, so it is rejected at the door rather than deduplicated.
-        const cell = `${String(target['entry'])}/${renderer}`;
-        if (seen.has(cell)) problems.push(problem(path, 'duplicate-target', `${cell} is named twice`));
-        seen.add(cell);
-      }
+
+      // A request that names the same cell twice would let one entry be satisfied while the other
+      // silently keeps the cell pending, so it is rejected at the door rather than deduplicated.
+      const cell = `${String(target['entry'])}/${String(target['renderer'])}`;
+      if (seen.has(cell)) problems.push(problem(path, 'duplicate-target', `${cell} is named twice`));
+      seen.add(cell);
     }
   }
 
@@ -218,11 +246,7 @@ export type OracleRequestResult = { request: OracleRequest } | { problems: Oracl
  * expanded, so "in scope" has exactly one definition for the pending allowance and the out-of-scope gate.
  */
 export function getOracleRequestCells(request: Readonly<OracleRequest>): string[] {
-  const cells: string[] = [];
-  for (const target of request.targets) {
-    for (const renderer of target.renderers) cells.push(`${request.subject}/${target.entry}/${renderer}`);
-  }
-  return cells;
+  return request.targets.map((target) => `${request.subject}/${target.entry}/${target.renderer}`);
 }
 
 function readJsonRecord(path: string): { value: Record<string, unknown> } | { problems: OracleRecordProblem[] } {

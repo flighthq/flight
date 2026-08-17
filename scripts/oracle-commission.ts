@@ -42,8 +42,8 @@ if ('problems' in parsed) {
 const request = parsed.request;
 
 if (subcommand === 'scope') {
-  // The capture tool is scoped by entry and renderer separately, so a multi-entry request prints one
-  // line per entry. Emitted as shell-ready arguments so the workflow never re-derives the scope itself —
+  // The capture tool is scoped by entry and renderer separately, so a multi-target request prints one
+  // line per cell. Emitted as shell-ready arguments so the workflow never re-derives the scope itself —
   // a second derivation is a second thing to keep in step with getOracleRequestCells.
   for (const target of request.targets) {
     // ★ `--frames` IS NOT OPTIONAL HERE. `bin.ts` defaults an omitted value to 0, so leaving it off
@@ -53,7 +53,7 @@ if (subcommand === 'scope') {
     // them, not just the ones that happen to have no default.
     console.log(
       `--tool=${request.subject} --filter-exact ${target.entry} ` +
-        `--renderer ${target.renderers.join(',')} --frames ${request.frames}`,
+        `--renderer ${target.renderer} --frames ${request.frames}`,
     );
   }
   process.exit(0);

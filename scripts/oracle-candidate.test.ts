@@ -122,9 +122,16 @@ function input(directory: string): OracleCandidateInput {
       frames: 1,
       id: 'seed-1',
       reason: 'seed',
-      schemaVersion: 1,
+      schemaVersion: 2,
       subject: 'functional',
-      targets: [{ entry: 'shape', renderers: ['webgl'] }],
+      targets: [
+        {
+          capture: { environmentId: 'environment', hostInstanceId: 'host' },
+          entry: 'shape',
+          pixelSha256: 'a'.repeat(64),
+          renderer: 'webgl',
+        },
+      ],
     } as OracleRequest,
   };
 }
