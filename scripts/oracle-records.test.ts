@@ -3,7 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import type { OracleRequest } from './oracle-records';
-import { getOracleLockImages, getOracleRequestCells, readOracleLock, readOracleRequest } from './oracle-records';
+import {
+  getOracleLockImages,
+  getOracleRequestCells,
+  readOracleLock,
+  readOracleLockPins,
+  readOracleRequest,
+} from './oracle-records';
 
 const COMMIT = 'a'.repeat(40);
 const SHA = 'b'.repeat(64);
@@ -120,6 +126,41 @@ describe('readOracleLock', () => {
     const result = readOracleLock(writeJson({ ...lock(), schemaVersion: 1 }));
 
     expect('problems' in result && result.problems[0]?.kind).toBe('schema-version');
+  });
+});
+
+describe('readOracleLockPins', () => {
+  it('returns the locked identities', () => {
+    const result = readOracleLockPins(writeJson({ ...lock() }));
+
+    expect('pinned' in result && [...result.pinned]).toEqual(['functional/shape-fill-solid/webgl']);
+  });
+
+  // ★ ABSENT AND UNREADABLE ARE DIFFERENT ANSWERS AND ONLY ONE OF THEM IS EMPTY. Before the first
+  // release there is no lock, and that genuinely means nothing is pinned. A lock that exists and does
+  // not parse means what is blessed is UNKNOWN — and empty fails toward "commission everything", which
+  // would re-bless cells that are already gating. These two cases are asserted together because the
+  // defect is returning the same value for both.
+  it('reports no pins for an absent lock, because nothing is blessed before the first release', () => {
+    const result = readOracleLockPins(join(mkdtempSync(join(tmpdir(), 'oracle-pins-')), 'absent.json'));
+
+    expect('pinned' in result && result.pinned.size).toBe(0);
+  });
+
+  it('refuses an unreadable lock rather than reporting nothing pinned', () => {
+    const result = readOracleLockPins(writeRaw('{not json'));
+
+    expect('problems' in result).toBe(true);
+    expect('pinned' in result).toBe(false);
+  });
+
+  it('refuses a lock whose schema does not validate, rather than salvaging what parsed', () => {
+    const broken = lock() as Record<string, unknown>;
+    delete broken['manifestSha256'];
+
+    const result = readOracleLockPins(writeJson(broken));
+
+    expect('problems' in result).toBe(true);
   });
 });
 
