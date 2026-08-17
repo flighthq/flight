@@ -12,6 +12,7 @@ interface GalleryTest {
   tool: string;
   name: string;
   cells: GalleryCell[];
+  expectedImageDescription?: string;
 }
 
 const STORAGE_KEY = 'gallery-selected';
@@ -162,6 +163,7 @@ function updatePreview(): void {
   activeImgs = [];
   preview.querySelector('.error-overlay')?.remove();
   preview.querySelector('.empty-state')?.remove();
+  preview.querySelector('.expected-description')?.remove();
 
   const t = currentTest();
   if (!t) {
@@ -180,6 +182,13 @@ function updatePreview(): void {
     img.className = 'preview-img';
     preview.appendChild(img);
   });
+
+  if (t.expectedImageDescription) {
+    const desc = document.createElement('div');
+    desc.className = 'expected-description';
+    desc.textContent = t.expectedImageDescription;
+    preview.appendChild(desc);
+  }
 
   // Pre-warm neighboring tests
   const visible = visibleTests();

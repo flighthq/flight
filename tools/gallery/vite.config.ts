@@ -27,6 +27,7 @@ interface GalleryTest {
   tool: string;
   name: string;
   cells: GalleryCell[];
+  expectedImageDescription?: string;
 }
 
 function discoverGallery(): GalleryTest[] {
@@ -57,6 +58,7 @@ function discoverGallery(): GalleryTest[] {
     for (const name of names) {
       const testPath = join(toolPath, name);
       const cells: GalleryCell[] = [];
+      let expectedImageDescription: string | undefined;
 
       const rendererDirs = readdirSync(testPath, { withFileTypes: true })
         .filter((d) => d.isDirectory())
@@ -79,6 +81,7 @@ function discoverGallery(): GalleryTest[] {
         let state: 'ready' | 'error' = 'ready';
         let error: string | null = null;
         let changed: boolean | null = null;
+        let cellDescription: string | undefined;
 
         if (existsSync(statusPath)) {
           try {
@@ -86,19 +89,28 @@ function discoverGallery(): GalleryTest[] {
               state?: string;
               error?: string;
               changed?: boolean;
+              expectedImageDescription?: string;
             };
             if (s.state === 'error') state = 'error';
             error = s.error ?? null;
             changed = s.changed ?? null;
+            cellDescription = s.expectedImageDescription;
           } catch {
             // ignore malformed status
           }
         }
 
+        if (cellDescription !== undefined && expectedImageDescription === undefined) {
+          expectedImageDescription = cellDescription;
+        }
         cells.push({ renderer, state, error, changed });
       }
 
-      if (cells.length > 0) results.push({ tool, name, cells });
+      if (cells.length > 0) {
+        const entry: GalleryTest = { tool, name, cells };
+        if (expectedImageDescription !== undefined) entry.expectedImageDescription = expectedImageDescription;
+        results.push(entry);
+      }
     }
   }
 
