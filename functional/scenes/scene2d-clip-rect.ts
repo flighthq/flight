@@ -44,6 +44,13 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [ShapeKind],
   clip: true,
+  expectedImageDescription:
+    'An 800x600 opaque black field with a single flat orange square, 160x160, spanning x 200-360 and ' +
+    'y 120-280, with straight axis-aligned edges. It is the surviving top-left corner of a much larger ' +
+    '400x400 orange square, and the rest of that square is absent: points well inside the larger area but ' +
+    'outside the visible one — near x 500, y 400, and near x 300, y 500 — are pure black, not orange and ' +
+    'not a dimmed orange. The orange is one flat tone with no gradient and no fading toward the right or ' +
+    'bottom edge.',
 });
 
 const root = createDisplayObject();

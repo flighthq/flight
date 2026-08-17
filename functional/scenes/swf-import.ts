@@ -898,6 +898,20 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: document.backgroundColor ?? BACKGROUND,
   kinds: [RichTextKind, ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'An 800x600 field on a very dark navy background — not pure black — carrying seven separate pieces. A ' +
+    'red 80x80 square sits at the TOP RIGHT, x 680-760, y 50-130, and the matching spot at the top left, ' +
+    'x 40-120, is empty background: the square has moved there, and finding it on the left instead is a ' +
+    'failure. Below it a 220x100 rectangle at x 60-280, y 170-270 is GRADED horizontally from red at its ' +
+    'left edge to cyan at its right — the one graded area in the picture. Beside it a 190x110 rectangle at ' +
+    'x 320-510, y 170-280 is a hollow yellow outline: its border is yellow and its middle is background, ' +
+    'not filled. To their right, x 560-740, y 170-290 holds a fine checkerboard of orange and cyan cells ' +
+    'about 8 px across, repeating evenly to the far edge of that box. Around y 370 sit two glyph blocks, ' +
+    'one magenta near x 140 and one green near x 360, and they are the SAME SIZE as each other to within ' +
+    'a pixel or two, roughly 100 px tall — one glyph twenty times the other is the defect this pair ' +
+    'exists to catch. Lower left, x 40-120, y 400-480, is a semi-transparent bitmap whose colour is ' +
+    'tinted by the background it sits on rather than darkened twice. Below that, near x 40, y 520, an ' +
+    'orange bitmap draws, and a block of red edit text sits within x 300-560, y 500-570.',
 });
 if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);

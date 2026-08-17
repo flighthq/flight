@@ -395,6 +395,16 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: document.backgroundColor ?? BACKGROUND,
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'A 640x220 opaque black field with four 100x100 squares in a row at y 60-160, at x 40-140, 190-290, ' +
+    '340-440 and 490-590, each sitting on a blue backdrop of its own size. Left to right: the first is ' +
+    'flat opaque red; the second is red at half strength over blue, reading as a muted purple that is ' +
+    'clearly neither pure red nor pure blue; the third is plain blue, because the overlay above it ' +
+    'contributes nothing at all — any red or pink in the third square is a failure. The fourth is a single ' +
+    'flat light colour, either white or green depending on the renderer, and never red or blue; its two ' +
+    'permitted values record behaviour that currently differs between renderers and is still under ' +
+    'design, while the first three squares look the same everywhere. Nothing is drawn outside the four ' +
+    'squares.',
 });
 backend = target.kind;
 targetWidth = target.width;

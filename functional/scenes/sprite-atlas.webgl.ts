@@ -40,6 +40,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with exactly two flat 64x64 squares: a red one spanning x 180-244, ' +
+    'y 200-264, and a green one spanning x 520-584, y 360-424. Both are cut from a single shared image ' +
+    'whose left half is red and right half is green, and each square shows only its own half — the red ' +
+    'square contains no green and the green square no red, with no sliver or seam of the other colour ' +
+    'along any edge. Neither square is graded or blended, and everything outside those two footprints, ' +
+    'including the whole span between them, is pure black.',
 });
 
 // Build one atlas image: left half solid red, right half solid green.

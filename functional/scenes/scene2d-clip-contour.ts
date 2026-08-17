@@ -49,6 +49,14 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [ShapeKind],
   clip: true,
+  expectedImageDescription:
+    'An 800x600 opaque black field showing a single flat cyan triangle: apex near x 400, y 150, with a ' +
+    'horizontal base running from about x 250 to x 550 at y 450, and two straight slanted sides. The ' +
+    'triangle is the only cyan in the picture, which is the whole point — the shape it was cut from is a ' +
+    'much larger square covering roughly x 150-610, y 100-560, so every part of that square outside the ' +
+    'three edges must be pure black. In particular the upper corners of the triangle bounding box, near ' +
+    'x 260, y 160 and x 540, y 160, are background even though the square covers them, and so is the band ' +
+    'below the base near x 400, y 500. The cyan is flat, with no gradient and no fade toward any edge.',
 });
 
 const root = createDisplayObject();

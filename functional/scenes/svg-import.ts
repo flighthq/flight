@@ -47,6 +47,14 @@ const { render } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with two flat rectangles, each 200x150, meeting at a single point: a ' +
+    'red one spanning x 200-400, y 150-300, and a green one spanning x 400-600, y 300-450. They occupy ' +
+    'diagonally opposite corners of a 400x300 box that runs x 200-600, y 150-450, and the other two ' +
+    'corners of that box are empty — near x 500, y 200 and near x 300, y 400 the field is pure black. The ' +
+    'diagonal placement is deliberate: a vertical or horizontal flip would move the fill to the other two ' +
+    'corners and fail. Both colours are flat, with no gradient, no outline around either rectangle, and ' +
+    'nothing drawn outside the two footprints.',
 });
 
 const root = createDisplayObject();

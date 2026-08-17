@@ -42,6 +42,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [TilemapKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with a 4-by-3 checkerboard of 64x64 cells filling x 200-456 and ' +
+    'y 120-312. Colours alternate red and green along both axes, starting red in the top-left cell, so no ' +
+    'two cells sharing an edge match and each row starts with the opposite colour to the row above. The ' +
+    'cells abut exactly — no gap, no overlap, and no line of background showing between them — and each is ' +
+    'one flat tone with no gradient and no blend where it meets its neighbour. Outside the block the field ' +
+    'is pure black.',
 });
 
 // Build the atlas image in a canvas: [red | green], side by side.

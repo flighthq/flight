@@ -316,6 +316,14 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: document.backgroundColor ?? BACKGROUND,
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'A 640x300 opaque black field with two flat 100x100 squares, both with their tops on y 100 and both ' +
+    'hanging BELOW it to y 200. The cyan one lies to the right of its placement point, spanning x 60-160; ' +
+    'the green one lies to the LEFT of its placement point, spanning x 320-420. Hanging below is the whole ' +
+    'claim: the mirrored square must fall on the same side of that line as the unmirrored one, so a green ' +
+    'square sitting ABOVE the line in y 0-100 — what a half turn produces instead of a mirror — is the ' +
+    'failure being watched for. Both colours are flat, with no gradient or blending, and the rest of the ' +
+    'field is pure black.',
 });
 targetWidth = target.width;
 target.render(root);

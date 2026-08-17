@@ -66,6 +66,16 @@ const { render } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with three flat L-shaped glyphs on one row starting at y 300, each a ' +
+    'different colour, each made of a long bar and a shorter arm meeting at a right angle. The cyan ' +
+    'control has its bar upright at x 80-100 running down to y 420, with its arm running RIGHT along the ' +
+    'top at x 100-170, y 300-330. The green one is its mirror image: bar upright at x 380-400, arm running ' +
+    'LEFT at x 310-380, y 300-330. The orange one is turned a quarter turn: its long bar lies HORIZONTAL ' +
+    'at x 530-650, y 300-320, with the arm hanging down at x 620-650, y 320-390. The three orientations ' +
+    'must differ from each other in exactly that way — three identical upright glyphs, or a mirror that ' +
+    'points the same way as the control, is the failure. All three are flat colour with no gradient, and ' +
+    'the field is otherwise pure black.',
 });
 
 const root = createDisplayObject();

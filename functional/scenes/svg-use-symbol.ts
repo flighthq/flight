@@ -82,6 +82,15 @@ const { render } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with three flat shapes. Two are the same cyan L-glyph at different ' +
+    'sizes: a large one whose upright bar spans x 60-100, y 150-300 with its arm running right at ' +
+    'x 100-220, y 150-200; and a small one, the same shape at two-fifths the size, whose bar spans ' +
+    'x 420-436, y 150-210 with its arm at x 436-484, y 150-170. Both are the SAME glyph, so their ' +
+    'proportions match exactly and only their scale differs. The third is an orange rectangle, 60x40, at ' +
+    'x 600-660, y 380-420 — a different shape and a different colour, drawn at its own natural size with ' +
+    'no scaling. Every shape is one flat tone with no gradient or outline, the three do not overlap, and ' +
+    'the rest of the field is pure black.',
 });
 
 const root = createDisplayObject();

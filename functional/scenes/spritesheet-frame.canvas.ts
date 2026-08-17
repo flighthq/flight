@@ -36,6 +36,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'A 400x200 opaque black field with four flat 64x64 squares in one row at y 60-124, evenly spaced with ' +
+    '20 px gaps: red at x 20-84, green at x 104-168, blue at x 188-252, yellow at x 272-336. The order is ' +
+    'part of the claim — each square shows a different quarter of one four-frame strip, so a picture where ' +
+    'two squares share a colour, or where the colours run in a different left-to-right order, is wrong. ' +
+    'Every square is one flat tone with no gradient and no blending, and the gaps and margins are pure ' +
+    'black.',
 });
 
 const stripCanvas = document.createElement('canvas');
