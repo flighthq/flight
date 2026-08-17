@@ -1,34 +1,34 @@
 // @ts-expect-error -- virtual module typed below
-import { tests as _tests } from 'virtual:gallery-manifest';
+import { tests as _tests } from 'virtual:review-manifest';
 
-interface GalleryCellProvenance {
+interface ReviewCellProvenance {
   hostInstanceId: string | null;
   environmentId: string | null;
 }
 
 type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
 
-interface GalleryCell {
+interface ReviewCell {
   renderer: string;
   state: 'ready' | 'error';
   error: string | null;
   changed: boolean | null;
   hash: string | null;
-  provenance: GalleryCellProvenance | null;
+  provenance: ReviewCellProvenance | null;
   commissionState: CommissionState;
   holdReason: string | null;
 }
 
-interface GalleryTest {
+interface ReviewTest {
   tool: string;
   name: string;
-  cells: GalleryCell[];
+  cells: ReviewCell[];
   expectedImageDescription?: string;
   sourceHasDescription: boolean;
 }
 
-const STORAGE_KEY = 'gallery-selected';
-const allTests = _tests as GalleryTest[];
+const STORAGE_KEY = 'review-selected';
+const allTests = _tests as ReviewTest[];
 
 let filterQuery = '';
 let selectedKey = ''; // `${tool}/${name}`
@@ -134,16 +134,16 @@ function computeDelta(
   };
 }
 
-function testKey(t: GalleryTest): string {
+function testKey(t: ReviewTest): string {
   return `${t.tool}/${t.name}`;
 }
 
-function visibleTests(): GalleryTest[] {
+function visibleTests(): ReviewTest[] {
   const q = filterQuery.toLowerCase().trim();
   return q ? allTests.filter((t) => t.name.includes(q) || t.tool.includes(q)) : allTests;
 }
 
-function currentTest(): GalleryTest | null {
+function currentTest(): ReviewTest | null {
   return visibleTests().find((t) => testKey(t) === selectedKey) ?? visibleTests()[0] ?? null;
 }
 
@@ -154,13 +154,13 @@ function currentCellIndex(): number {
   return i >= 0 ? i : 0;
 }
 
-function testStatus(t: GalleryTest): 'error' | 'changed' | 'pass' {
+function testStatus(t: ReviewTest): 'error' | 'changed' | 'pass' {
   if (t.cells.some((c) => c.state === 'error')) return 'error';
   if (t.cells.some((c) => c.changed)) return 'changed';
   return 'pass';
 }
 
-function ensureCached(t: GalleryTest): HTMLImageElement[] {
+function ensureCached(t: ReviewTest): HTMLImageElement[] {
   const key = testKey(t);
   if (!imgCache.has(key)) {
     imgCache.set(
@@ -261,7 +261,7 @@ async function commissionCurrentTest(): Promise<void> {
         tool: t.tool,
         entry: t.name,
         cells,
-        reason: 'Commissioned from gallery',
+        reason: 'Commissioned from review',
       }),
     });
     if (!res.ok) {
@@ -301,7 +301,7 @@ function commissionStateLabel(state: CommissionState): string {
   }
 }
 
-function testCommissionSummary(t: GalleryTest): { state: CommissionState; canCommission: boolean } {
+function testCommissionSummary(t: ReviewTest): { state: CommissionState; canCommission: boolean } {
   const hasIncluded = t.cells.some((c) => c.commissionState === 'included');
   const hasDiffers = t.cells.some((c) => c.commissionState === 'differs');
   const hasRequested = t.cells.some((c) => c.commissionState === 'requested');
@@ -458,7 +458,7 @@ function showRenderer(): void {
   }
 }
 
-async function showCompareView(t: GalleryTest, cell: GalleryCell): Promise<void> {
+async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   const container = document.createElement('div');
   container.className = 'compare-view';
 
@@ -624,7 +624,7 @@ function saveState(): void {
   history.replaceState({}, '', `#${path}`);
 }
 
-function selectTest(t: GalleryTest): void {
+function selectTest(t: ReviewTest): void {
   selectedKey = testKey(t);
   if (!t.cells.some((c) => c.renderer === selectedRenderer)) {
     selectedRenderer = t.cells[0]?.renderer ?? '';

@@ -9,7 +9,7 @@ import { workspacePackages } from '../../scripts/workspaces';
 
 const projectRoot = resolve(__dirname, '../..');
 const artifactsDir = resolve(projectRoot, '.artifacts');
-const galleryArtifactFiles = [
+const reviewArtifactFiles = [
   join(artifactsDir, '*', '*', '*', 'screenshot.png'),
   join(artifactsDir, '*', '*', '*', 'status.json'),
 ];
@@ -18,28 +18,28 @@ const TOOL_ORDER = ['functional', 'examples', 'reference'];
 const RENDERER_ORDER = ['dom', 'canvas', 'webgl', 'webgpu'];
 const EXCLUDE_TOOLS = new Set(['site']);
 
-interface GalleryCellProvenance {
+interface ReviewCellProvenance {
   hostInstanceId: string | null;
   environmentId: string | null;
 }
 
 type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
 
-interface GalleryCell {
+interface ReviewCell {
   renderer: string;
   state: 'ready' | 'error';
   error: string | null;
   changed: boolean | null;
   hash: string | null;
-  provenance: GalleryCellProvenance | null;
+  provenance: ReviewCellProvenance | null;
   commissionState: CommissionState;
   holdReason: string | null;
 }
 
-interface GalleryTest {
+interface ReviewTest {
   tool: string;
   name: string;
-  cells: GalleryCell[];
+  cells: ReviewCell[];
   expectedImageDescription?: string;
   sourceHasDescription: boolean;
 }
@@ -169,14 +169,14 @@ function resolveCommissionState(
   return 'not-commissioned';
 }
 
-function discoverGallery(): GalleryTest[] {
+function discoverReviewTests(): ReviewTest[] {
   if (!existsSync(artifactsDir)) return [];
 
   const locked = readLockedImages();
   const held = readHeldCells();
   const requested = readRequestedCells();
 
-  const toolFilter = process.env['VITE_GALLERY_TOOL'];
+  const toolFilter = process.env['VITE_REVIEW_TOOL'];
   const toolDirs = readdirSync(artifactsDir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && !EXCLUDE_TOOLS.has(d.name) && (!toolFilter || d.name === toolFilter))
     .sort((a, b) => {
@@ -187,7 +187,7 @@ function discoverGallery(): GalleryTest[] {
       return aRank !== bRank ? aRank - bRank : a.name.localeCompare(b.name);
     });
 
-  const results: GalleryTest[] = [];
+  const results: ReviewTest[] = [];
 
   for (const toolDir of toolDirs) {
     const tool = toolDir.name;
@@ -200,7 +200,7 @@ function discoverGallery(): GalleryTest[] {
 
     for (const name of names) {
       const testPath = join(toolPath, name);
-      const cells: GalleryCell[] = [];
+      const cells: ReviewCell[] = [];
       let expectedImageDescription: string | undefined;
 
       const rendererDirs = readdirSync(testPath, { withFileTypes: true })
@@ -225,7 +225,7 @@ function discoverGallery(): GalleryTest[] {
         let error: string | null = null;
         let changed: boolean | null = null;
         let hash: string | null = null;
-        let provenance: GalleryCellProvenance | null = null;
+        let provenance: ReviewCellProvenance | null = null;
         let cellDescription: string | undefined;
 
         if (existsSync(statusPath)) {
@@ -269,7 +269,7 @@ function discoverGallery(): GalleryTest[] {
           name,
           cells.map((c) => c.renderer),
         );
-        const entry: GalleryTest = { tool, name, cells, sourceHasDescription: hasDesc };
+        const entry: ReviewTest = { tool, name, cells, sourceHasDescription: hasDesc };
         if (expectedImageDescription !== undefined) entry.expectedImageDescription = expectedImageDescription;
         results.push(entry);
       }
@@ -279,28 +279,28 @@ function discoverGallery(): GalleryTest[] {
   return results;
 }
 
-function galleryPlugin(): Plugin[] {
+function reviewPlugin(): Plugin[] {
   return [
     {
-      name: 'gallery:manifest',
+      name: 'review:manifest',
 
       resolveId(source) {
-        if (source === 'virtual:gallery-manifest') return '\0virtual:gallery-manifest';
+        if (source === 'virtual:review-manifest') return '\0virtual:review-manifest';
       },
 
       load(id) {
-        if (id !== '\0virtual:gallery-manifest') return;
-        return `export const tests = ${JSON.stringify(discoverGallery())};`;
+        if (id !== '\0virtual:review-manifest') return;
+        return `export const tests = ${JSON.stringify(discoverReviewTests())};`;
       },
 
       configureServer(server) {
         if (existsSync(artifactsDir)) {
           // Capture output also contains logs and transient files. Watch only the two fixed-depth
           // files that can change the manifest instead of recursively subscribing to the artifact tree.
-          server.watcher.add(galleryArtifactFiles);
+          server.watcher.add(reviewArtifactFiles);
           const refresh = (file: string) => {
             if (!file.endsWith('screenshot.png') && !file.endsWith('status.json')) return;
-            const mod = server.moduleGraph.getModuleById('\0virtual:gallery-manifest');
+            const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
             if (mod) server.moduleGraph.invalidateModule(mod);
             server.ws.send({ type: 'full-reload' });
           };
@@ -364,7 +364,7 @@ function galleryPlugin(): Plugin[] {
                     },
                   })),
                   frames: 1,
-                  reason: payload.reason || 'Commissioned from gallery',
+                  reason: payload.reason || 'Commissioned from review',
                 };
 
                 const queueDir = join(projectRoot, 'reference-image-requests');
@@ -477,7 +477,7 @@ export default defineConfig(() => {
     root: __dirname,
     base: process.env.VITE_BASE ?? '/',
 
-    plugins: galleryPlugin(),
+    plugins: reviewPlugin(),
 
     resolve: { alias, preserveSymlinks: false },
 
