@@ -43,6 +43,14 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x101018ff,
   kinds: [ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'On a very dark blue-gray field (800×600): a teal backing rectangle at (160, 100), size ' +
+    '480×400. Inside the backing, a 360×280 render-texture region at (220, 160) with a near-' +
+    'black interior containing a 3D lit cube. The cube is blue with visible shading from a ' +
+    'directional light — brighter highlights on faces angled toward the light, darker where ' +
+    'angled away, with a specular glint. The cube sits roughly centered in the render texture. ' +
+    'In front of the backing, a yellow rectangle at (520, 400), size 120×50. The teal backing ' +
+    'is visible around the render texture.',
 });
 if (target.kind !== 'webgl') throw new Error('render-target-node-2d requires WebGL');
 const { render, state, width } = target;
