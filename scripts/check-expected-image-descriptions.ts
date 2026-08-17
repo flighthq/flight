@@ -1,3 +1,6 @@
+// Reporter only — NOT a gate. Exits 0 regardless of how many scenes lack a description. The field is
+// optional during rollout (500+ scenes exist); this becomes a gate once coverage reaches a threshold
+// worth enforcing, at which point add a process.exitCode and register it in scripts/check.ts.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
