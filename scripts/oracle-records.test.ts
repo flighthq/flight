@@ -14,11 +14,12 @@ describe('getOracleRequestCells', () => {
       frames: 1,
       id: 'r1',
       reason: 'test',
-      schemaVersion: 1,
+      schemaVersion: 2,
       subject: 'functional',
       targets: [
-        { entry: 'shape-fill-solid', renderers: ['webgl', 'webgpu'] },
-        { entry: 'text-strikethrough', renderers: ['dom'] },
+        target('shape-fill-solid', 'webgl'),
+        target('shape-fill-solid', 'webgpu'),
+        target('text-strikethrough', 'dom'),
       ],
     });
 
@@ -139,10 +140,7 @@ describe('readOracleRequest', () => {
     const result = readOracleRequest(
       writeJson({
         ...request(),
-        targets: [
-          { entry: 'a', renderers: ['webgl'] },
-          { entry: 'a', renderers: ['webgl'] },
-        ],
+        targets: [target('a', 'webgl'), target('a', 'webgl')],
       }),
     );
 
@@ -153,6 +151,24 @@ describe('readOracleRequest', () => {
     const result = readOracleRequest(writeJson({ ...request(), frames: 0 }));
 
     expect('problems' in result && result.problems.map((p) => p.kind)).toContain('field-type');
+  });
+
+  it('requires every target to bind one pixel identity to its capture run', () => {
+    const noPixel = readOracleRequest(writeJson({ ...request(), targets: [{ ...target(), pixelSha256: undefined }] }));
+    const noHost = readOracleRequest(
+      writeJson({ ...request(), targets: [{ ...target(), capture: { environmentId: 'environment' } }] }),
+    );
+
+    expect('problems' in noPixel && noPixel.problems[0]?.detail).toContain('pixelSha256');
+    expect('problems' in noHost && noHost.problems[0]?.detail).toContain('hostInstanceId');
+  });
+
+  it('rejects a v1 request instead of accepting its unbound target shape', () => {
+    const result = readOracleRequest(
+      writeJson({ ...request(), schemaVersion: 1, targets: [{ entry: 'shape-fill-solid', renderers: ['webgl'] }] }),
+    );
+
+    expect('problems' in result && result.problems.map((problem) => problem.kind)).toContain('schema-version');
   });
 
   it('accepts a request that carries no commit SHA, which is the documented shape', () => {
@@ -187,9 +203,18 @@ function request(): OracleRequest {
     frames: 1,
     id: 'shape-fill-solid-webgl-2026-08-14',
     reason: 'add the first full-resolution reference for the solid-fill scene',
-    schemaVersion: 1,
+    schemaVersion: 2,
     subject: 'functional',
-    targets: [{ entry: 'shape-fill-solid', renderers: ['webgl'] }],
+    targets: [target('shape-fill-solid', 'webgl')],
+  };
+}
+
+function target(entry = 'shape-fill-solid', renderer = 'webgl') {
+  return {
+    capture: { environmentId: 'environment', hostInstanceId: 'host' },
+    entry,
+    pixelSha256: SHA,
+    renderer,
   };
 }
 

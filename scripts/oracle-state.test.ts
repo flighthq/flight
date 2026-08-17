@@ -227,7 +227,19 @@ function record(request: OracleRequest, ageDays = 1): OracleRequestRecord {
 }
 
 function request(id: string, subject: string, entry: string, renderers: string[] = ['webgl']): OracleRequest {
-  return { frames: 1, id, reason: 'test', schemaVersion: 1, subject, targets: [{ entry, renderers }] };
+  return {
+    frames: 1,
+    id,
+    reason: 'test',
+    schemaVersion: 2,
+    subject,
+    targets: renderers.map((renderer) => ({
+      capture: { environmentId: 'environment', hostInstanceId: 'host' },
+      entry,
+      pixelSha256: 'a'.repeat(64),
+      renderer,
+    })),
+  };
 }
 
 function verdicts(result: { cells: readonly { identity: string; verdict: string }[] }): Record<string, string> {
@@ -299,10 +311,17 @@ describe('withRequiredIdentities', () => {
         {
           ageDays: 0,
           request: {
-            schemaVersion: 1,
+            schemaVersion: 2,
             id: 'a-webgl-2026-08-16',
             subject: 'functional',
-            targets: [{ entry: 'a', renderers: ['webgl'] }],
+            targets: [
+              {
+                capture: { environmentId: 'environment', hostInstanceId: 'host' },
+                entry: 'a',
+                pixelSha256: 'a'.repeat(64),
+                renderer: 'webgl',
+              },
+            ],
             frames: 1,
             reason: 'first reference',
           },
