@@ -114,6 +114,7 @@
     "mocks": "tsx ./scripts/mocks.ts",
     "mocks:check": "tsx ./scripts/mocks.ts --check",
     "mocks:json": "tsx ./scripts/mocks.ts --json",
+    "oracle:calibrate": "tsx ./scripts/oracle-calibrate.ts",
     "oracle:check": "tsx ./scripts/oracle-check.ts check",
     "oracle:commission": "tsx ./scripts/oracle-commission-batch.ts report",
     "oracle:commission:write": "tsx ./scripts/oracle-commission-batch.ts write",
