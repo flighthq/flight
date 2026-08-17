@@ -378,12 +378,18 @@ missing without request, orphan, corrupted pack, dimension mismatch, expired/ove
 out-of-scope movement must each be observed failing. This is not optional polish; it is what keeps the
 table honest.
 
-## 10. Canonical capture environment — RULED BY MEASUREMENT
+## 10. Canonical capture environment — RULED BY MEASUREMENT, CONTINGENTLY
 
 **Ruled: one canonical environment. The reference set has ONE COLUMN PER BACKEND, and per-environment
 sets are closed rather than deferred.** The measurement, its counts, and which of its fields are read
 versus inferred are in [render oracle calibration record](render-oracle-calibration-record.md) — read
 there rather than re-running `oracle-calibrate`, which is what that record exists to make unnecessary.
+
+**The precondition is live, and it is not decoration.** The ruling rests on the two capture roots having
+come from different machines, which is currently inferred from the workflow's matrix rather than read
+from the captures' own provenance. If reading those bytes refutes it, this measured within-host
+determinism and **§10 reopens** — it is not amended into a weaker version of the same answer. Build on
+one-column-per-backend knowing that; the record's §10 section carries the condition in full.
 
 The section below is kept as the question that was asked, because the ruling is only meaningful against
 it. It is history now, not an open decision.
