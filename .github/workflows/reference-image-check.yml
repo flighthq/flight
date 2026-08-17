@@ -1,5 +1,5 @@
 # Compares today's render against the blessed reference bytes the consumer lock pins.
-# agents/render-oracle-repository.md §6 and §9.
+# agents/render-reference-image-repository.md §6 and §9.
 #
 # ★ THIS IS THE ONLY PART OF THE SYSTEM THAT CAN CATCH A REGRESSION. Everything upstream — the request
 # queue, the capture, the bridge, the blessing — exists to make this job's answer mean something. If this
@@ -8,14 +8,14 @@
 # and reports green is worse than no gate, because it also removes the pressure to build one.
 #
 # ★ IT HOLDS NO CREDENTIAL AND NEEDS NONE. Release assets are public reads over HTTPS, so unlike
-# `oracle-capture.yml` this can run on a pull request, on a fork, and on untrusted code. `permissions` is
+# `reference-image-capture.yml` this can run on a pull request, on a fork, and on untrusted code. `permissions` is
 # read-only on contents and there is no secret in this file. The credential boundary §7 draws is between
 # capture and dispatch; this side of the loop sits entirely outside it.
 #
 # ★ IT RUNS ON EVERY PUSH AND PULL REQUEST, WHICH IS THE POINT. A reference image that is only consulted
 # on demand tells you a render changed at the moment someone thought to ask, not at the commit that
 # changed it. The cost is bounded by the lock: only cells the packs supply bytes for are captured.
-name: oracle-check
+name: reference-image-check
 
 on:
   push:
@@ -51,13 +51,13 @@ jobs:
       # Fetching FIRST means a lock that no longer resolves fails in seconds, before the expensive build.
       # It also decides the capture scope, so there is nothing to build when the lock pins no packs.
       - name: Fetch and verify the pinned reference packs
-        run: npx tsx ./scripts/oracle-check.ts fetch
+        run: npx tsx ./scripts/reference-image-check.ts fetch
 
       - name: Resolve the capture scope
         id: scope
         run: |
           set -euo pipefail
-          scope=$(npx tsx ./scripts/oracle-check.ts scope --frames "$ORACLE_CAPTURE_FRAMES")
+          scope=$(npx tsx ./scripts/reference-image-check.ts scope --frames "$ORACLE_CAPTURE_FRAMES")
           echo "$scope"
           {
             echo 'lines<<SCOPE'
@@ -73,12 +73,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
 
       # The registered identity is echoed, never recomputed: it is owned by the `flight-reference-images` record
-      # and copied verbatim into `scripts/oracle-capture-identity.json`. A run whose observed browser has
+      # and copied verbatim into `scripts/reference-image-capture-identity.json`. A run whose observed browser has
       # drifted out of that environment is then visible to a reader rather than silently compared under an
       # id that no longer describes it.
       - name: Echo the registered capture environment
         run: |
-          echo "registered identity: $(node -p "require('./scripts/oracle-capture-identity.json').environmentId")"
+          echo "registered identity: $(node -p "require('./scripts/reference-image-capture-identity.json').environmentId")"
           echo "observed playwright: $(npx playwright --version | tr -d ' ')"
 
       - name: Capture the pinned cells
@@ -92,7 +92,7 @@ jobs:
       # Sets the exit code, and appends the per-cell verdict table to the run summary so a failure is
       # readable without opening the log.
       - name: Compare against the blessed references
-        run: npx tsx ./scripts/oracle-check.ts check --frames "$ORACLE_CAPTURE_FRAMES"
+        run: npx tsx ./scripts/reference-image-check.ts check --frames "$ORACLE_CAPTURE_FRAMES"
 
       # ★ `if: failure()` IS DELIBERATE AND MUST NOT BECOME `always()`. On a green run these images are
       # bytes nobody will look at; on a red one they are the whole diagnosis — the render CI actually
@@ -100,9 +100,9 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: oracle-check-captures
+          name: reference-image-check-captures
           path: |
             .artifacts/functional/**/screenshot.png
-            .artifacts/oracle-packs/**/*.png
+            .artifacts/reference-image-packs/**/*.png
           include-hidden-files: true
           if-no-files-found: warn

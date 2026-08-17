@@ -18,7 +18,7 @@ The single index of every package and its decomposition state — the system ove
 
 Applied to every built-unblessed and recommended entry — full definition in [structural-forks.md](structural-forks.md#e-the-breadthdepth-system--bedrock--recommended-vs-blessed):
 
-1. **Substantial & irreducible** — oracle: does a dedicated upstream library exist?
+1. **Substantial & irreducible** — reference-image: does a dedicated upstream library exist?
 2. **Well-homed / no overlap** — no duplication, and the target type it produces is itself well-homed.
 3. **Honest naming** — the convention fits what it is.
 
@@ -196,20 +196,20 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 
 | Candidate | Subject · layer | Source | Verdict |
 | --- | --- | --- | --- |
-| `color` | color · primitive | [adjacent](../breadth-adjacent-content.md), [deepening](../breadth-domain-deepening.md) | **bedrock** — spaces sRGB↔linear/HSL/OKLab/LCH, ramps/schemes, contrast. Oracle: d3-color, chroma.js. Pure value-leaf, wasm-mixable |
+| `color` | color · primitive | [adjacent](../breadth-adjacent-content.md), [deepening](../breadth-domain-deepening.md) | **bedrock** — spaces sRGB↔linear/HSL/OKLab/LCH, ramps/schemes, contrast. ReferenceImage: d3-color, chroma.js. Pure value-leaf, wasm-mixable |
 | `scale` | scale · primitive | [adjacent](../breadth-adjacent-content.md) | **bedrock** — d3-scale tier: linear/log/time/ordinal/band, ticks, nice(), invert. **discuss** naming collision with transform-scale vocabulary |
 
 ### Platform primitives (now — two genuine gaps)
 
 | Candidate | Subject · layer | Source | Verdict |
 | --- | --- | --- | --- |
-| `focus` | focus · primitive | [platform](../breadth-platform-variance.md), [deepening](../breadth-domain-deepening.md) | **bedrock** — spatial dpad/LRUD focus nav over plain-data `{id, bounds}` regions. Oracle: BBC LRUD, Norigin. TV + console + gamepad + keyboard-a11y converge |
+| `focus` | focus · primitive | [platform](../breadth-platform-variance.md), [deepening](../breadth-domain-deepening.md) | **bedrock** — spatial dpad/LRUD focus nav over plain-data `{id, bounds}` regions. ReferenceImage: BBC LRUD, Norigin. TV + console + gamepad + keyboard-a11y converge |
 
 ### Gameplay tier (now/soon — one layer below gameplay)
 
 | Candidate | Subject · layer | Source | Verdict |
 | --- | --- | --- | --- |
-| `physics2d` | physics · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — rigid-body dynamics/constraints/joints over collision+spatial. Oracle: Box2D/planck.js. Prereq: collision phases 2-3. Constraint solver rust-intended-optional |
+| `physics2d` | physics · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — rigid-body dynamics/constraints/joints over collision+spatial. ReferenceImage: Box2D/planck.js. Prereq: collision phases 2-3. Constraint solver rust-intended-optional |
 | `pathfinding` | pathfinding · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — A\*/Dijkstra/JPS/flow fields. Charter must draw the path ≠ pathfinding line |
 | `steering` | steering · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — Reynolds seek/flee/arrive/flocking. Distinct from motionpath (authored) and spring (smoothing) |
 | `behaviortree` | ai · primitive | [deepening](../breadth-domain-deepening.md) | **bedrock** — plain-data BTs, open node-kind registry, explicit tick, caller-owned blackboard |
@@ -219,7 +219,7 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 
 | Candidate | Subject · layer | Source | Verdict |
 | --- | --- | --- | --- |
-| `serialize` | serialization · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — plain-data ↔ compact bytes with schema. Varint/float32 policy. Oracle: msgpack/FlatBuffers. Wasm-mixable. Unblocks ipc, socket binary, snapshot wire |
+| `serialize` | serialization · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — plain-data ↔ compact bytes with schema. Varint/float32 policy. ReferenceImage: msgpack/FlatBuffers. Wasm-mixable. Unblocks ipc, socket binary, snapshot wire |
 | `telemetry` | telemetry · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — event envelope, offline batch queue in storage, backoff flush over net, flush-on-lifecycle-hide. Log sink feeds it |
 | `flags` | config · primitive | [cloud](../breadth-cloud-distributed.md) | **bedrock** — typed remote-config seam, OpenFeature-shaped. Exposure events → telemetry |
 | `tool-assetpipeline` | assets · tool | [cloud](../breadth-cloud-distributed.md) | **bedrock** — build-time producer: binpack+image-codec+texture-formats → hashed manifest. Same package local or cloud-CI |

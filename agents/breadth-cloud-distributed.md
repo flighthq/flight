@@ -17,7 +17,7 @@ The transport + state floor is built and deliberately minimal: `net`, `socket`, 
 
 ### Soon (new cells)
 
-- **`serialize`** — plain-data ↔ compact bytes with schema. Varint/float32 policy. Oracle: msgpack/FlatBuffers. Wasm-mixable value leaf. The one codec that `ipc`'s unbuilt `IpcSerializer`, socket binary framing, snapshot wire format, and replay streams all want.
+- **`serialize`** — plain-data ↔ compact bytes with schema. Varint/float32 policy. ReferenceImage: msgpack/FlatBuffers. Wasm-mixable value leaf. The one codec that `ipc`'s unbuilt `IpcSerializer`, socket binary framing, snapshot wire format, and replay streams all want.
 - **`tool-assetpipeline`** — build-time producer: binpack + image-codec + texture-formats → hashed manifest. Same package runs local or cloud-CI.
 - **`telemetry`** — event envelope, offline batch queue in `storage`, backoff flush over `net`, flush-on-lifecycle-hide. A `log` sink feeds it. Resolves log's flagged neighbor-fork.
 - **`flags`** — typed remote-config seam, OpenFeature-shaped. Exposure events → telemetry. Soon/later boundary.

@@ -1,17 +1,17 @@
 import type {
-  OracleCaptureFact,
-  OracleDeterminismVerdict,
-  OracleDeterminismScope,
-  OracleEligibilityInput,
-  OracleParityWithholding,
-} from './oracle-eligibility';
+  ReferenceImageCaptureFact,
+  ReferenceImageDeterminismVerdict,
+  ReferenceImageDeterminismScope,
+  ReferenceImageEligibilityInput,
+  ReferenceImageParityWithholding,
+} from './reference-image-eligibility';
 import {
   addReferenceImageCoverage,
   findParityWithholdings,
   findStaleCaptures,
   selectCommissionableCells,
   summarizeOracleBlocks,
-} from './oracle-eligibility';
+} from './reference-image-eligibility';
 
 // ★ EVERY CONDITION IN THE BAR HAS A TEST THAT WATCHES IT WITHHOLD A CELL, because the bar is the only
 // thing between a bad capture and a permanent reference. A condition nobody has seen fire is a condition
@@ -520,27 +520,27 @@ describe('summarizeOracleBlocks', () => {
   });
 });
 
-function fact(identity: string, overrides: Partial<OracleCaptureFact> = {}): OracleCaptureFact {
+function fact(identity: string, overrides: Partial<ReferenceImageCaptureFact> = {}): ReferenceImageCaptureFact {
   return { baselineHash: 'h', hash: 'h', identity, oracle: 'invoked', sourceHash: null, state: 'ready', ...overrides };
 }
 
 /** Builds a one-cell input that is eligible by default, so a test breaks exactly what it names. */
 function select(options: {
-  capture?: Partial<OracleCaptureFact>;
-  captures?: readonly OracleCaptureFact[];
+  capture?: Partial<ReferenceImageCaptureFact>;
+  captures?: readonly ReferenceImageCaptureFact[];
   coverage?: readonly (readonly [string, readonly string[]])[];
-  determinism?: OracleDeterminismVerdict | null;
-  determinismScope?: OracleDeterminismScope;
-  determinismMap?: readonly (readonly [string, OracleDeterminismVerdict])[];
+  determinism?: ReferenceImageDeterminismVerdict | null;
+  determinismScope?: ReferenceImageDeterminismScope;
+  determinismMap?: readonly (readonly [string, ReferenceImageDeterminismVerdict])[];
   held?: readonly (readonly [string, string])[];
   outstanding?: readonly string[];
-  parityWithheld?: readonly (readonly [string, OracleParityWithholding])[];
+  parityWithheld?: readonly (readonly [string, ReferenceImageParityWithholding])[];
   pinned?: readonly string[];
 }) {
   const determinism =
     options.determinismMap ??
     (options.determinism === null ? [] : ([['functional/good/webgl', options.determinism ?? 'agreed']] as const));
-  const input: OracleEligibilityInput = {
+  const input: ReferenceImageEligibilityInput = {
     captures: options.captures ?? [fact('functional/good/webgl', options.capture)],
     coverage: new Map(options.coverage ?? [['functional/good/webgl', ['fingerprint', 'oracle']]]),
     determinism: new Map(determinism),

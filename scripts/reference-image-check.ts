@@ -1,7 +1,7 @@
 // The consumer gate: fetch the blessed reference bytes Flight pinned, compare today's render against
-// them, and fail the run when a required cell moved (agents/render-oracle-repository.md §6, §9).
+// them, and fail the run when a required cell moved (agents/render-reference-image-repository.md §6, §9).
 //
-// This is the second half of the loop. `oracle-commission.ts` asks for bytes and `oracle-bridge.yml`
+// This is the second half of the loop. `reference-image-commission.ts` asks for bytes and `reference-image-bridge.yml`
 // delivers the candidate; this decides whether the render still matches what came back blessed. It is the
 // only part that can actually catch a regression, and everything upstream exists to make its answer mean
 // something.
@@ -22,11 +22,16 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './oracle-pack';
-import { getOracleLockImages, getOracleRequestCells, readOracleLock, readOracleRequest } from './oracle-records';
-import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './oracle-state';
-import type { OracleCellInput, OracleRequestRecord } from './oracle-state';
-import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './oracle-verify';
+import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './reference-image-pack';
+import {
+  getOracleLockImages,
+  getOracleRequestCells,
+  readOracleLock,
+  readOracleRequest,
+} from './reference-image-records';
+import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state';
+import type { ReferenceImageCellInput, ReferenceImageRequestRecord } from './reference-image-state';
+import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './reference-image-verify';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -37,18 +42,18 @@ const MAX_PENDING_DAYS = 14;
 
 const [subcommand, ...rest] = process.argv.slice(2);
 if (subcommand !== 'fetch' && subcommand !== 'scope' && subcommand !== 'check') {
-  console.error('usage: oracle-check <fetch|scope|check> [--packs <dir>] [--artifacts <dir>] [--frames <n>]');
+  console.error('usage: reference-image-check <fetch|scope|check> [--packs <dir>] [--artifacts <dir>] [--frames <n>]');
   process.exit(2);
 }
 
-const packsRoot = readOption('--packs') ?? join(__dirname, '..', '.artifacts', 'oracle-packs');
+const packsRoot = readOption('--packs') ?? join(__dirname, '..', '.artifacts', 'reference-image-packs');
 const artifactsRoot = readOption('--artifacts') ?? join(__dirname, '..', '.artifacts');
 const repoRoot = join(__dirname, '..');
 
-const lockResult = readOracleLock(join(__dirname, 'oracle-lock.json'));
+const lockResult = readOracleLock(join(__dirname, 'reference-image-lock.json'));
 if ('problems' in lockResult) {
   for (const problem of lockResult.problems) console.error(`  ${problem.kind}: ${problem.detail}`);
-  console.error('oracle-check: the consumer lock is not valid');
+  console.error('reference-image-check: the consumer lock is not valid');
   process.exit(1);
 }
 const lock = lockResult.lock;
@@ -71,7 +76,7 @@ async function fetchPacks(): Promise<void> {
   const release = verifyOracleRelease(manifestBytes, lock);
   if ('problems' in release) {
     for (const problem of release.problems) console.error(`  ${problem.kind}: ${problem.detail}`);
-    console.error(`oracle-check: ${lock.repository}@${lock.releaseTag} does not match the lock`);
+    console.error(`reference-image-check: ${lock.repository}@${lock.releaseTag} does not match the lock`);
     process.exit(1);
   }
   console.log(`verified release manifest against the lock (${lock.releaseTag})`);
@@ -81,7 +86,7 @@ async function fetchPacks(): Promise<void> {
     const problem = verifyOraclePackBytes(bytes, lock.packs[pack.id]!);
     if (problem !== null) {
       console.error(`  ${problem.kind}: ${problem.detail}`);
-      console.error('oracle-check: a pinned pack did not match the lock');
+      console.error('reference-image-check: a pinned pack did not match the lock');
       process.exit(1);
     }
 
@@ -107,7 +112,9 @@ async function fetchPacks(): Promise<void> {
 function printScope(): void {
   const frames = readOption('--frames');
   if (frames === undefined) {
-    console.error('oracle-check scope: --frames is required; it is a capture condition the pack does not record');
+    console.error(
+      'reference-image-check scope: --frames is required; it is a capture condition the pack does not record',
+    );
     process.exit(2);
   }
 
@@ -132,7 +139,7 @@ function printScope(): void {
 /** Compares every pinned cell against a fresh capture, joins with the outstanding queue, and gates. */
 async function check(): Promise<void> {
   const frames = readOption('--frames') ?? 'unrecorded';
-  const cells: OracleCellInput[] = [];
+  const cells: ReferenceImageCellInput[] = [];
   const problems: string[] = [];
 
   for (const pack of Object.keys(lock.packs)) {
@@ -142,7 +149,7 @@ async function check(): Promise<void> {
       // Refusing here rather than proceeding with the packs that did parse: a partial corpus silently
       // verifies fewer cells than the lock requires, which is a pass that means less than it appears to.
       console.error(`  ${pack}: ${manifest.problem}`);
-      console.error('oracle-check: run `npm run oracle:fetch` first, or the extracted pack is damaged');
+      console.error('reference-image-check: run `npm run oracle:fetch` first, or the extracted pack is damaged');
       process.exit(1);
     }
     const identityProblems = verifyOracleLockImages(lock.packs[pack]!.images, manifest.images);
@@ -150,7 +157,7 @@ async function check(): Promise<void> {
       for (const problem of identityProblems) {
         console.error(`  ${problem.kind}: ${problem.identity} — ${problem.detail}`);
       }
-      console.error(`oracle-check: ${pack} does not carry the exact images named by the lock`);
+      console.error(`reference-image-check: ${pack} does not carry the exact images named by the lock`);
       process.exit(1);
     }
     const verified = verifyOracleCaptures(packRoot, manifest.images, artifactsRoot);
@@ -243,17 +250,17 @@ function readPinnedIdentities(): string[] {
  * every file today's mtime, so an mtime-derived age would silently report every request as new and no
  * request would ever expire.
  */
-function readOutstandingRequests(): OracleRequestRecord[] {
-  const queue = join(repoRoot, 'oracle-requests');
+function readOutstandingRequests(): ReferenceImageRequestRecord[] {
+  const queue = join(repoRoot, 'reference-image-requests');
   if (!existsSync(queue)) return [];
-  const records: OracleRequestRecord[] = [];
+  const records: ReferenceImageRequestRecord[] = [];
   const today = Date.parse(new Date().toISOString().slice(0, 10));
 
   for (const file of readdirSync(queue).filter((name) => name.endsWith('.json'))) {
     const parsed = readOracleRequest(join(queue, file));
     if ('problems' in parsed) {
       for (const problem of parsed.problems) console.error(`  ${problem.kind}: ${problem.detail}`);
-      console.error(`oracle-check: ${file} is not a valid request`);
+      console.error(`reference-image-check: ${file} is not a valid request`);
       process.exit(1);
     }
     const dated = /(\d{4}-\d{2}-\d{2})$/.exec(parsed.request.id);
@@ -265,7 +272,7 @@ function readOutstandingRequests(): OracleRequestRecord[] {
 }
 
 function readIdentity(): { comparisonPolicyId: string; environmentId: string } {
-  return JSON.parse(readFileSync(join(__dirname, 'oracle-capture-identity.json'), 'utf8'));
+  return JSON.parse(readFileSync(join(__dirname, 'reference-image-capture-identity.json'), 'utf8'));
 }
 
 function readOption(name: string): string | undefined {
@@ -276,7 +283,7 @@ function readOption(name: string): string | undefined {
 async function download(url: string): Promise<Uint8Array> {
   const response = await fetch(url);
   if (!response.ok) {
-    console.error(`oracle-check: ${url} returned ${response.status}`);
+    console.error(`reference-image-check: ${url} returned ${response.status}`);
     process.exit(1);
   }
   return new Uint8Array(await response.arrayBuffer());

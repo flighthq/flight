@@ -9,10 +9,10 @@ import {
   readPngDimensions,
   stageOracleCandidateImages,
   verifyOracleRequestedPixels,
-} from './oracle-candidate';
-import type { OracleCandidateInput } from './oracle-candidate';
-import { hashOraclePixelBytes } from './oracle-png';
-import type { OracleRequest } from './oracle-records';
+} from './reference-image-candidate';
+import type { ReferenceImageCandidateInput } from './reference-image-candidate';
+import { hashOraclePixelBytes } from './reference-image-png';
+import type { ReferenceImageRequest } from './reference-image-records';
 
 const PIXEL_HASH = 'c'.repeat(64);
 const REQUEST_PIXEL_HASH = hashOraclePixelBytes(new Uint8Array(24));
@@ -71,7 +71,7 @@ describe('buildOracleCandidateBundle', () => {
 
   // §8: every requested cell is represented; a failure is an explicit row with a reason.
   it('represents an uncaptured cell as an explicit missing row, never as an absence', () => {
-    const bundle = buildOracleCandidateBundle(input(mkdtempSync(join(tmpdir(), 'oracle-empty-'))));
+    const bundle = buildOracleCandidateBundle(input(mkdtempSync(join(tmpdir(), 'reference-image-empty-'))));
 
     expect(bundle.captures).toHaveLength(1);
     expect(bundle.captures[0]?.status).toBe('missing');
@@ -104,7 +104,7 @@ describe('stageOracleCandidateImages', () => {
   it('places every captured image at exactly the path its record names', () => {
     const directory = root({ hash: PIXEL_HASH });
     const bundle = buildOracleCandidateBundle(input(directory));
-    const stage = mkdtempSync(join(tmpdir(), 'oracle-stage-'));
+    const stage = mkdtempSync(join(tmpdir(), 'reference-image-stage-'));
 
     expect(stageOracleCandidateImages(bundle, directory, stage)).toBe(1);
     for (const capture of bundle.captures) {
@@ -114,10 +114,10 @@ describe('stageOracleCandidateImages', () => {
   });
 
   it('stages nothing for a missing cell rather than inventing a file', () => {
-    const empty = mkdtempSync(join(tmpdir(), 'oracle-empty-'));
+    const empty = mkdtempSync(join(tmpdir(), 'reference-image-empty-'));
     const bundle = buildOracleCandidateBundle(input(empty));
 
-    expect(stageOracleCandidateImages(bundle, empty, mkdtempSync(join(tmpdir(), 'oracle-stage-')))).toBe(0);
+    expect(stageOracleCandidateImages(bundle, empty, mkdtempSync(join(tmpdir(), 'reference-image-stage-')))).toBe(0);
   });
 });
 
@@ -142,7 +142,7 @@ describe('verifyOracleRequestedPixels', () => {
   it('refuses when no capture exists to prove the requested pixel identity', () => {
     const request = input(root({ hash: PIXEL_HASH })).request;
 
-    expect(verifyOracleRequestedPixels(request, mkdtempSync(join(tmpdir(), 'oracle-empty-')))[0]?.kind).toBe(
+    expect(verifyOracleRequestedPixels(request, mkdtempSync(join(tmpdir(), 'reference-image-empty-')))[0]?.kind).toBe(
       'request-image-missing',
     );
   });
@@ -161,7 +161,7 @@ describe('readBoundOracleRequestTarget', () => {
   });
 
   it('refuses to manufacture a target when the selected run has no image', () => {
-    const selected = mkdtempSync(join(tmpdir(), 'oracle-empty-'));
+    const selected = mkdtempSync(join(tmpdir(), 'reference-image-empty-'));
 
     expect(
       readBoundOracleRequestTarget(selected, 'functional/shape/webgl', {
@@ -172,7 +172,7 @@ describe('readBoundOracleRequestTarget', () => {
   });
 });
 
-function input(directory: string): OracleCandidateInput {
+function input(directory: string): ReferenceImageCandidateInput {
   return {
     artifactsRoot: directory,
     comparisonPolicyId: 'uncalibrated',
@@ -192,12 +192,12 @@ function input(directory: string): OracleCandidateInput {
           renderer: 'webgl',
         },
       ],
-    } as OracleRequest,
+    } as ReferenceImageRequest,
   };
 }
 
 function root(status: { hash: string | null; state?: string; error?: string; provenance?: boolean }): string {
-  const directory = mkdtempSync(join(tmpdir(), 'oracle-candidate-'));
+  const directory = mkdtempSync(join(tmpdir(), 'reference-image-candidate-'));
   const cell = join(directory, 'functional', 'shape', 'webgl');
   mkdirSync(cell, { recursive: true });
   writeFileSync(join(cell, 'screenshot.png'), png());

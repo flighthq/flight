@@ -1,6 +1,6 @@
 import { createBitmap } from '../packages/bitmap/src/bitmap.js';
 import { setBitmapPixel } from '../packages/bitmap/src/bitmapPixel.js';
-import { compareOracleReference } from './oracle-compare';
+import { compareOracleReference } from './reference-image-compare';
 
 describe('compareOracleReference', () => {
   it('reports a clean comparison for identical surfaces', () => {

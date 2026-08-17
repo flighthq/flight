@@ -1,5 +1,5 @@
 // The transport half of the consumer lock: proves that the bytes CI downloaded are the exact bytes Flight
-// pinned, before any of them are decoded or compared (agents/render-oracle-repository.md §5, §9).
+// pinned, before any of them are decoded or compared (agents/render-reference-image-repository.md §5, §9).
 //
 // ★ EVERY LINK IS CHECKED, AND THE ORDER IS THE POINT. Lock → release manifest → pack asset → image.
 // Each step verifies the NEXT step's expected hash against something already trusted, so there is no
@@ -17,9 +17,9 @@
 // in a unit test with no network. The CLI owns the downloads.
 import { createHash } from 'node:crypto';
 
-import type { OracleLock } from './oracle-records';
+import type { ReferenceImageLock } from './reference-image-records';
 
-export interface OracleReleasePack {
+export interface ReferenceImageReleasePack {
   id: string;
   file: string;
   sha256: string;
@@ -27,12 +27,12 @@ export interface OracleReleasePack {
   imageCount: number;
 }
 
-export interface OraclePackProblem {
-  kind: OraclePackProblemKind;
+export interface ReferenceImagePackProblem {
+  kind: ReferenceImagePackProblemKind;
   detail: string;
 }
 
-export type OraclePackProblemKind =
+export type ReferenceImagePackProblemKind =
   /** Downloaded bytes did not hash to what the trusted record said they would. */
   | 'checksum'
   | 'not-json'
@@ -45,7 +45,7 @@ export type OraclePackProblemKind =
   | 'tag-mismatch';
 
 /** The URL a release asset is fetched from. One definition, so the CLI and any workflow cannot drift. */
-export function getOracleAssetUrl(lock: Readonly<OracleLock>, file: string): string {
+export function getOracleAssetUrl(lock: Readonly<ReferenceImageLock>, file: string): string {
   return `https://github.com/${lock.repository}/releases/download/${lock.releaseTag}/${file}`;
 }
 
@@ -59,8 +59,8 @@ export function getOracleAssetUrl(lock: Readonly<OracleLock>, file: string): str
  */
 export function verifyOracleRelease(
   manifestBytes: Readonly<Uint8Array>,
-  lock: Readonly<OracleLock>,
-): { packs: OracleReleasePack[] } | { problems: OraclePackProblem[] } {
+  lock: Readonly<ReferenceImageLock>,
+): { packs: ReferenceImageReleasePack[] } | { problems: ReferenceImagePackProblem[] } {
   const actual = createHash('sha256').update(manifestBytes).digest('hex');
   if (actual !== lock.manifestSha256) {
     return {
@@ -84,7 +84,7 @@ export function verifyOracleRelease(
   if (!Array.isArray(record.packs)) {
     return { problems: [{ detail: 'release manifest has no packs array', kind: 'field-missing' }] };
   }
-  const problems: OraclePackProblem[] = [];
+  const problems: ReferenceImagePackProblem[] = [];
   // A tag mismatch is reported and does not stop the pack checks: naming only the first fault makes a
   // stale lock take several CI runs to diagnose, one problem at a time.
   if (record.releaseTag !== lock.releaseTag) {
@@ -94,9 +94,9 @@ export function verifyOracleRelease(
     });
   }
 
-  const byId = new Map<string, OracleReleasePack>();
+  const byId = new Map<string, ReferenceImageReleasePack>();
   for (const entry of record.packs) {
-    const pack = entry as Partial<OracleReleasePack>;
+    const pack = entry as Partial<ReferenceImageReleasePack>;
     if (typeof pack.id !== 'string' || typeof pack.file !== 'string' || typeof pack.sha256 !== 'string') {
       problems.push({ detail: 'release manifest pack is missing id/file/sha256', kind: 'field-missing' });
       continue;
@@ -110,7 +110,7 @@ export function verifyOracleRelease(
     });
   }
 
-  const packs: OracleReleasePack[] = [];
+  const packs: ReferenceImageReleasePack[] = [];
   for (const [id, pinned] of Object.entries(lock.packs)) {
     const published = byId.get(id);
     if (published === undefined) {
@@ -144,7 +144,7 @@ export function verifyOracleRelease(
 export function verifyOraclePackBytes(
   bytes: Readonly<Uint8Array>,
   pinned: Readonly<{ file: string; sha256: string }>,
-): OraclePackProblem | null {
+): ReferenceImagePackProblem | null {
   const actual = createHash('sha256').update(bytes).digest('hex');
   if (actual === pinned.sha256) return null;
   return {

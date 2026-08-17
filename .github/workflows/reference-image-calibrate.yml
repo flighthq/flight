@@ -16,7 +16,7 @@
 # tolerance clears it. If they did not, this cannot say how far apart they are — a magnitude needs an
 # in-page decode, because `createImageBitmap` is the only decoder in this repo. Do not read a tolerance
 # out of a disagreement reported here.
-name: oracle-calibrate
+name: reference-image-calibrate
 
 on:
   workflow_dispatch:
@@ -156,4 +156,4 @@ jobs:
           fi
           echo "first status file: $first_status"
           printf 'comparing: %s\n' "${roots[*]}"
-          npx tsx ./scripts/oracle-calibrate.ts "${roots[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+          npx tsx ./scripts/reference-image-calibrate.ts "${roots[@]}" | tee -a "$GITHUB_STEP_SUMMARY"

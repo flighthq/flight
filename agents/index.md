@@ -59,8 +59,8 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [read integrity](read-integrity.md) — the axes a format reader must hold.
 - [render architecture](render-architecture.md) — the render and scene architecture in full.
 - [render backend support](render-backend-support.md) — the narrative behind the generated [support matrix](support-matrix.md).
-- [render oracle calibration record](render-oracle-calibration-record.md) — the committed cross-host calibration result that rules §10 contingently, and which of its fields are measured rather than inferred.
-- [render oracle repository](render-oracle-repository.md) — **proposal.** blessed reference images for a full-resolution regression tier, and the measured reason they are not stored in git.
+- [render oracle calibration record](render-reference-image-calibration-record.md) — the committed cross-host calibration result that rules §10 contingently, and which of its fields are measured rather than inferred.
+- [render oracle repository](render-reference-image-repository.md) — **proposal.** blessed reference images for a full-resolution regression tier, and the measured reason they are not stored in git.
 - [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
 - [registration lifecycle](registration-lifecycle.md) — **unratified.** how a file's contents become the exact `register*` calls that draw it: requirement sets, the source-derived catalog, and the generated registries module.
 - [registry table model](registry-table-model.md) — **unratified.** the storage under the registration doors: three table shapes, and which tier owns a registry.

@@ -1,5 +1,5 @@
 // The CI adapter between `getBitmapMismatch` and the render-oracle join
-// (agents/render-oracle-repository.md §9, "Dimensions are a verdict, not a crash").
+// (agents/render-reference-image-repository.md §9, "Dimensions are a verdict, not a crash").
 //
 // ★ NO NEW COMPARISON ALGORITHM. `packages/bitmap/src/bitmapCompare.ts` already has it, it is tested,
 // and §2 is explicit that none is missing. This file adds exactly one thing: it turns the primitive's
@@ -21,7 +21,7 @@
 // chooses it is part of the work, not a default anyone can inherit by accident.
 import { getBitmapMismatch } from '../packages/bitmap/src/bitmapCompare.js';
 import type { Bitmap } from '../packages/types/src/Bitmap.js';
-import type { OracleCellComparison } from './oracle-state';
+import type { ReferenceImageCellComparison } from './reference-image-state';
 
 /**
  * Compares a candidate render against its blessed reference, returning a verdict-shaped result even when
@@ -32,7 +32,7 @@ export function compareOracleReference(
   reference: Readonly<Bitmap>,
   candidate: Readonly<Bitmap>,
   channelTolerance: number,
-): OracleCellComparison {
+): ReferenceImageCellComparison {
   if (reference.width !== candidate.width || reference.height !== candidate.height) {
     // Checked BEFORE calling rather than caught after: catching would also swallow a future unrelated
     // throw from the primitive and label it a dimension mismatch, which is a wrong verdict rather than a

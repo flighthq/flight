@@ -1,4 +1,4 @@
-# Render Oracle Repository — blessed reference images, and where they are stored
+# Render ReferenceImage Repository — blessed reference images, and where they are stored
 
 **Status: PROPOSAL, awaiting ruling.** Raised by the user 2026-08-14, drafted by principal and
 expanded after user review. One new repository, one cross-repository commissioning workflow, and one
@@ -123,7 +123,7 @@ manifest.json                                     ← pack → sha256
 Git stays permanently small, diffs are readable, and `git blame` on provenance is meaningful. Images
 are release assets — which they must be anyway for the consumer path, so this introduces no second
 permanent storage system. CI fetches previous images from the release pinned by Flight's
-`oracle-lock.json`, verifies every pack checksum, and computes the diff. This means **the consumer
+`reference-image-lock.json`, verifies every pack checksum, and computes the diff. This means **the consumer
 fetch path runs on every PR** rather than only at release.
 
 The per-image `sha256` must not be left ambiguous. The record carries both:
@@ -170,7 +170,7 @@ for a replacement image.
 
 ### Outstanding commissions
 
-`oracle-requests/<id>.json` contains one still-outstanding request. The minimum shape is:
+`reference-image-requests/<id>.json` contains one still-outstanding request. The minimum shape is:
 
 ```json
 {
@@ -209,7 +209,7 @@ oracle record carries its id, content hash, and landed Flight commit.
 
 ### The immutable consumer lock
 
-`scripts/oracle-lock.json` pins the blessed release Flight consumes:
+`scripts/reference-image-lock.json` pins the blessed release Flight consumes:
 
 ```json
 {
@@ -258,7 +258,7 @@ targets exactly, may not overlap another open request for the same cell, and can
 outside its declared scope. Repository policy must also bound how long a request may remain pending;
 otherwise the commissioning queue becomes a permanent skip list under a more reassuring name.
 
-When the release is ready, one Flight lock-bump PR updates `oracle-lock.json` and removes the fulfilled
+When the release is ready, one Flight lock-bump PR updates `reference-image-lock.json` and removes the fulfilled
 request. The `referenceImage` coverage identity remains in place throughout, so the state transition is
 visible and monotonic: **pending → locked and gating**, never required → absent → required again.
 
@@ -271,7 +271,7 @@ which remote automation can act.
 
 The end-to-end sequence is:
 
-1. **Flight agent** — changes the scene or renderer, writes `oracle-requests/<id>.json`, and adds any new
+1. **Flight agent** — changes the scene or renderer, writes `reference-image-requests/<id>.json`, and adds any new
    coverage identity. Normal CI validates the request and reports the exact pending cells.
 2. **Flight capture workflow** — on a trusted push containing a new request (or an explicit manual
    dispatch), checks out that exact Flight commit and captures only the requested cells in the canonical
@@ -279,32 +279,32 @@ The end-to-end sequence is:
    checksum manifest.
 3. **Flight bridge workflow** — sends `flight-reference-images` only the repository, landed Flight SHA, request
    path and hash, candidate artifact id, workflow run id, and artifact digest.
-4. **Oracle intake workflow** — downloads and verifies that bundle, creates the text metadata changes,
-   stages an Oracle-owned copy of the candidate, generates the review report, and opens the PR in
+4. **ReferenceImage intake workflow** — downloads and verifies that bundle, creates the text metadata changes,
+   stages an ReferenceImage-owned copy of the candidate, generates the review report, and opens the PR in
    `flight-reference-images`.
-5. **Oracle reviewer** — reviews old │ new │ delta, including missing and out-of-scope cells, then
+5. **ReferenceImage reviewer** — reviews old │ new │ delta, including missing and out-of-scope cells, then
    approves by merging. The merge is the blessing; no mutable `approved: true` field is invented.
-6. **Oracle release workflow** — promotes the exact reviewed candidate bytes into complete deterministic
+6. **ReferenceImage release workflow** — promotes the exact reviewed candidate bytes into complete deterministic
    release packs and publishes the immutable release.
-7. **Oracle completion workflow** — opens a Flight PR that updates `scripts/oracle-lock.json` and removes
+7. **ReferenceImage completion workflow** — opens a Flight PR that updates `scripts/reference-image-lock.json` and removes
    the fulfilled request. Flight CI downloads the new locked packs and proves the pending cells now
    compare normally before that PR merges.
 
-There are therefore two automated PRs in the asynchronous, land-first flow: the Oracle approval PR,
-opened by Oracle Actions, and the Flight lock-bump PR, opened after the Oracle release. Flight Actions
-produce and dispatch the candidate; they do not directly author the Oracle repository's history.
+There are therefore two automated PRs in the asynchronous, land-first flow: the ReferenceImage approval PR,
+opened by ReferenceImage Actions, and the Flight lock-bump PR, opened after the ReferenceImage release. Flight Actions
+produce and dispatch the candidate; they do not directly author the ReferenceImage repository's history.
 
 ### Credential boundary
 
 The job that checks out and executes a commissioned Flight commit is untrusted-code execution. It must
-have no Oracle contents, pull-request, release, or cross-repository write credential. It may upload an
+have no ReferenceImage contents, pull-request, release, or cross-repository write credential. It may upload an
 artifact to its own run with read-only repository permissions.
 
 The bridge is a separately triggered privileged workflow that does not execute the Flight checkout or
 extract candidate-controlled archives; it forwards only the fixed dispatch envelope and recorded
-digest. Oracle intake likewise separates unprivileged artifact extraction/report generation from the
+digest. ReferenceImage intake likewise separates unprivileged artifact extraction/report generation from the
 privileged PR writer, which accepts only schema-validated metadata and writes allowlisted paths. The
-Oracle intake and completion workflows use a narrowly-scoped GitHub App or bot installed on the two
+ReferenceImage intake and completion workflows use a narrowly-scoped GitHub App or bot installed on the two
 repositories. This split prevents a commissioned source commit from reading the credential that can
 rewrite the store it is being measured against.
 
@@ -312,8 +312,8 @@ rewrite the store it is being measured against.
 
 The generated PNG is neither committed to Git nor placed in the PR description. For the first
 implementation, the Flight capture workflow stores the candidate bundle as a GitHub Actions artifact,
-addressed by artifact id, workflow run id, and digest. After verifying it, Oracle intake copies the
-bundle into an Oracle-owned candidate artifact and the Oracle PR commit records that locator and digest.
+addressed by artifact id, workflow run id, and digest. After verifying it, ReferenceImage intake copies the
+bundle into an ReferenceImage-owned candidate artifact and the ReferenceImage PR commit records that locator and digest.
 The PR description links to the generated report; it is a review index, not authoritative storage.
 
 If Actions-artifact retention proves too short for real review times, the same role moves to a draft
@@ -340,10 +340,10 @@ The reviewer is **blessing an image**. Everything in the PR exists to make that 
 5. **Unchanged images are not regenerated.** Their prior encoded bytes are copied forward byte-for-byte.
 
 Release does not build a tgz from a text-only tree — that tree has no PNGs. PR CI downloads the
-corresponding prior complete pack named by the parent Oracle manifest, verifies it, overlays the exact
+corresponding prior complete pack named by the parent ReferenceImage manifest, verifies it, overlays the exact
 candidate bytes, and deterministically constructs the prospective complete pack whose hash is committed
 in `manifest.json`. Release repeats that construction from the approved candidate and requires the
-result to match the committed hash before upload. A new release is created at the merged Oracle commit;
+result to match the committed hash before upload. A new release is created at the merged ReferenceImage commit;
 an existing tag or asset is a hard failure, never a `--clobber` path. Thus the published PNG is the byte
 sequence the reviewer saw, not a later capture that happened to render similarly.
 
@@ -382,8 +382,8 @@ table honest.
 
 **Ruled: one canonical environment. The reference set has ONE COLUMN PER BACKEND, and per-environment
 sets are closed rather than deferred.** The measurement, its counts, and which of its fields are read
-versus inferred are in [render oracle calibration record](render-oracle-calibration-record.md) — read
-there rather than re-running `oracle-calibrate`, which is what that record exists to make unnecessary.
+versus inferred are in [render oracle calibration record](render-reference-image-calibration-record.md) — read
+there rather than re-running `reference-image-calibrate`, which is what that record exists to make unnecessary.
 
 **The precondition is live, and it is not decoration.** The ruling rests on the two capture roots having
 come from different machines, which is currently inferred from the workflow's matrix rather than read

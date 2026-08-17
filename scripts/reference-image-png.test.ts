@@ -1,6 +1,6 @@
 import { deflateSync } from 'node:zlib';
 
-import { decodeOraclePng } from './oracle-png';
+import { decodeOraclePng } from './reference-image-png';
 
 // ★ GROUND TRUTH IS THE PIXELS THE TEST ENCODED, NOT ANOTHER DECODER'S OPINION OF THEM. Each case builds
 // a PNG from known bytes under a chosen filter, so a passing decode means the original pixels came back —

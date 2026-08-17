@@ -1,6 +1,6 @@
 // CLI the Flight capture workflow calls: read one outstanding request, print the capture scope it needs,
 // and (after that capture has run) assemble the candidate bundle for dispatch.
-// agents/render-oracle-repository.md §7 step 2, §8.
+// agents/render-reference-image-repository.md §7 step 2, §8.
 //
 // ★ THIS PROCESS HOLDS NO CROSS-REPOSITORY CREDENTIAL AND MUST NEVER NEED ONE. It runs in the job that
 // checks out a commissioned Flight commit, which is untrusted-code execution: whoever can land a request
@@ -20,17 +20,17 @@ import {
   buildOracleCandidateBundle,
   stageOracleCandidateImages,
   verifyOracleRequestedPixels,
-} from './oracle-candidate';
-import { getOracleRequestCells, readOracleRequest } from './oracle-records';
+} from './reference-image-candidate';
+import { getOracleRequestCells, readOracleRequest } from './reference-image-records';
 
 const [subcommand, requestPath, ...rest] = process.argv.slice(2);
 
 if (subcommand !== 'scope' && subcommand !== 'bundle') {
-  console.error('usage: oracle-commission <scope|bundle> <request.json> [--artifacts <dir>] [--stage <dir>]');
+  console.error('usage: reference-image-commission <scope|bundle> <request.json> [--artifacts <dir>] [--stage <dir>]');
   process.exit(2);
 }
 if (requestPath === undefined) {
-  console.error('oracle-commission: a request path is required');
+  console.error('reference-image-commission: a request path is required');
   process.exit(2);
 }
 
@@ -40,7 +40,7 @@ if ('problems' in parsed) {
   // bundle and an unparsable request look identical to intake, and only one of them is a mistake anyone
   // can act on.
   for (const problem of parsed.problems) console.error(`  ${problem.kind}: ${problem.detail}`);
-  console.error(`oracle-commission: ${requestPath} is not a valid request`);
+  console.error(`reference-image-commission: ${requestPath} is not a valid request`);
   process.exit(1);
 }
 const request = parsed.request;
@@ -69,13 +69,13 @@ if (pixelProblems.length > 0) {
   for (const problem of pixelProblems) {
     console.error(`  ${problem.kind}: ${problem.identity} — ${problem.detail}`);
   }
-  console.error('oracle-commission: refusing to stage a capture that differs from the request');
+  console.error('reference-image-commission: refusing to stage a capture that differs from the request');
   process.exit(1);
 }
 // ★ THE IDENTITIES ARE READ FROM A COMMITTED RECORD, NEVER COMPUTED. They are registered in
 // `flight-reference-images` and copied here verbatim; a value Flight derives would be a second producer of one
 // identity, and the two drift the moment either side changes. Overridable by env only for local probes.
-const identity = JSON.parse(readFileSync(join(__dirname, 'oracle-capture-identity.json'), 'utf8')) as {
+const identity = JSON.parse(readFileSync(join(__dirname, 'reference-image-capture-identity.json'), 'utf8')) as {
   environmentId: string;
   comparisonPolicyId: string;
 };
@@ -98,7 +98,7 @@ const bundle = buildOracleCandidateBundle({
 });
 
 // ★ ONE DIRECTORY PER REQUEST, AND THE MANIFEST IS ALWAYS `candidate.json`.
-// The fixed name is the Oracle intake contract, and it FORCES the per-request split: two requests
+// The fixed name is the ReferenceImage intake contract, and it FORCES the per-request split: two requests
 // staged into one tree would collide on the filename, so "one artifact per request" is not a
 // preference here, it is the only shape a fixed manifest name admits.
 const requestStem = basename(requestPath, '.json');
@@ -117,11 +117,13 @@ for (const capture of missing) {
 }
 console.log(`staged ${staged} image(s) and wrote ${out}`);
 
-// ★ A BUNDLE WITH NOTHING IN IT IS A FAILURE, NOT AN EMPTY SUCCESS. Dispatching it would open an Oracle
+// ★ A BUNDLE WITH NOTHING IN IT IS A FAILURE, NOT AN EMPTY SUCCESS. Dispatching it would open an ReferenceImage
 // PR proposing to bless no images, which a reviewer can only reject — and the run that produced it would
 // have reported success. Every requested cell missing means the capture did not work.
 if (captured.length === 0) {
-  console.error(`oracle-commission: no requested cell captured (${getOracleRequestCells(request).length} asked for)`);
+  console.error(
+    `reference-image-commission: no requested cell captured (${getOracleRequestCells(request).length} asked for)`,
+  );
   process.exit(1);
 }
 

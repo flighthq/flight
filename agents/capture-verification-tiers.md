@@ -435,8 +435,8 @@ measuring instrument rather than to a stored artifact. Recorded because the inst
 **built, validated, and deleted** on 2026-08-16, and a deleted thing leaves no trace to warn the next
 person who has the same idea.
 
-**What it was for.** The commissioning bar in `scripts/oracle-eligibility.ts` treats a scene's
-`assertRender` as BINARY — `oracle: invoked` and nothing more. That is the only condition in the bar that
+**What it was for.** The commissioning bar in `scripts/reference-image-eligibility.ts` treats a scene's
+`assertRender` as BINARY — `reference-image: invoked` and nothing more. That is the only condition in the bar that
 speaks to a render being *right* rather than merely stable, so a weak oracle is the cheapest route by
 which a wrong picture reaches a permanent blessing, and the bar cannot see the difference between an
 oracle sampling both the kept and the clipped side of a clip path and one checking that coverage exceeds
@@ -445,7 +445,7 @@ cells the evidence census counts — by structural features of their assertion t
 — throw sites, specific-pixel reads, comparison count, and whether the body bounds a quantity from both
 sides — so the semantic review could be targeted instead of swept.
 
-**The ground truth it was validated against, before use.** Oracles observed *throwing on a real render*
+**The ground truth it was validated against, before use.** ReferenceImages observed *throwing on a real render*
 during two full capture sweeps. Those are demonstrably non-vacuous: whatever else is true of them, they
 catch something, so a ranking that cannot place them above the corpus median is measuring a different
 property than the one it claims.

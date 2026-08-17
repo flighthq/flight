@@ -1,5 +1,5 @@
 // Verifies a fresh capture against the blessed reference images Flight has pinned
-// (agents/render-oracle-repository.md §6 and §9). This is the consumer half: the producer commissions and
+// (agents/render-reference-image-repository.md §6 and §9). This is the consumer half: the producer commissions and
 // blesses, this decides whether today's render still matches what was blessed.
 //
 // ★ THE CHAIN IS VERIFIED LINK BY LINK, AND EACH LINK FAILS BY NAME (§9, "the consumer lock is
@@ -11,7 +11,7 @@
 // ★ IT COMPARES `sha256(decoded RGBA)`, NOT FLIGHT'S CAPTURE HASH. `captureScreenshotHash` prepends
 // `"<width>x<height>:"` and hashes pixels the browser decoded, which may carry colour conversion or alpha
 // premultiplication. `flight-reference-images` hashes the straight decoded bytes. The two are both correct and not
-// comparable, so this decodes the fresh PNG itself with `oracle-png` and hashes it their way. That
+// comparable, so this decodes the fresh PNG itself with `reference-image-png` and hashes it their way. That
 // decoder was validated against their independent implementation on the first blessed pack.
 //
 // ★ EXACT COMPARISON IS SUFFICIENT ONLY WHILE THE POLICY SAYS SO. The registered policy
@@ -23,9 +23,9 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { decodeOraclePng, hashOraclePixelBytes } from './oracle-png';
-import type { OracleLockImage } from './oracle-records';
-import type { OracleCellInput } from './oracle-state';
+import { decodeOraclePng, hashOraclePixelBytes } from './reference-image-png';
+import type { ReferenceImageLockImage } from './reference-image-records';
+import type { ReferenceImageCellInput } from './reference-image-state';
 
 export interface PackManifestImage {
   path: string;
@@ -42,11 +42,11 @@ export interface VerifyProblem {
 }
 
 export interface VerifyResult {
-  cells: readonly OracleCellInput[];
+  cells: readonly ReferenceImageCellInput[];
   problems: readonly VerifyProblem[];
 }
 
-export interface OracleLockImageProblem {
+export interface ReferenceImageLockImageProblem {
   identity: string;
   kind: 'lock-image-missing' | 'lock-image-mismatch' | 'lock-image-unlisted';
   detail: string;
@@ -54,10 +54,10 @@ export interface OracleLockImageProblem {
 
 /** Proves the committed per-image identities describe exactly the already verified pack manifest. */
 export function verifyOracleLockImages(
-  lockedImages: Readonly<Record<string, Readonly<OracleLockImage>>>,
+  lockedImages: Readonly<Record<string, Readonly<ReferenceImageLockImage>>>,
   manifestImages: readonly Readonly<PackManifestImage>[],
-): OracleLockImageProblem[] {
-  const problems: OracleLockImageProblem[] = [];
+): ReferenceImageLockImageProblem[] {
+  const problems: ReferenceImageLockImageProblem[] = [];
   const published = new Map(manifestImages.map((image) => [packManifestImageIdentity(image.path), image]));
   for (const [identity, locked] of Object.entries(lockedImages)) {
     const image = published.get(identity);
@@ -98,7 +98,7 @@ export function verifyOracleCaptures(
   manifestImages: readonly PackManifestImage[],
   artifactsRoot: string,
 ): VerifyResult {
-  const cells: OracleCellInput[] = [];
+  const cells: ReferenceImageCellInput[] = [];
   const problems: VerifyProblem[] = [];
 
   for (const image of manifestImages) {

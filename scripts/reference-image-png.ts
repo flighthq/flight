@@ -1,6 +1,6 @@
 // A PNG reader narrow enough to be trustworthy: it decodes exactly the shape Flight's captures produce
 // and REFUSES everything else. Used to verify a fresh capture against a blessed reference image
-// (agents/render-oracle-repository.md §2), where the comparison must happen in Node.
+// (agents/render-reference-image-repository.md §2), where the comparison must happen in Node.
 //
 // ★ WHY NOT THE BROWSER PATH. `captureScreenshotHash` decodes in-page via `createImageBitmap`, and its
 // digest is over `"<width>x<height>:"` + the browser's pixels — which may carry colour conversion or

@@ -55,7 +55,7 @@ describe('getCaptureHostProvenance', () => {
   });
 
   it('pins the calibration workflow to distinct host and shared environment evidence', () => {
-    const workflow = readFileSync(join(REPOSITORY_ROOT, '.github/workflows/oracle-calibrate.yml'), 'utf8');
+    const workflow = readFileSync(join(REPOSITORY_ROOT, '.github/workflows/reference-image-calibrate.yml'), 'utf8');
     expect(workflow).toContain(
       'FLIGHT_CAPTURE_HOST_ID: ${{ github.run_id }}-${{ github.run_attempt }}-leg-${{ matrix.host }}',
     );

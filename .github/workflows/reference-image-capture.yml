@@ -1,11 +1,11 @@
 # Captures the cells one outstanding oracle request names and uploads the candidate bundle.
-# agents/render-oracle-repository.md §7 step 2.
+# agents/render-reference-image-repository.md §7 step 2.
 #
 # ★★ THIS WORKFLOW IS UNTRUSTED-CODE EXECUTION AND HOLDS NO CROSS-REPOSITORY CREDENTIAL.
 # It checks out a commissioned Flight commit and runs its build, its browsers and its capture tool —
 # whoever can land a request can run arbitrary code in this job. `permissions` is therefore read-only on
 # contents and nothing else, and there is no secret in this file. The dispatch to `flight-reference-images` lives
-# in `oracle-bridge.yml`, which never executes this checkout. §7's credential boundary exists so that a
+# in `reference-image-bridge.yml`, which never executes this checkout. §7's credential boundary exists so that a
 # commissioned source commit cannot read the credential able to rewrite the store it is measured against;
 # splitting it across two workflows is what enforces it, not a convention anyone has to remember.
 #
@@ -13,7 +13,7 @@
 # SILENTLY MISSING COMMISSIONS. A path filter answers "did the queue change in this push"; the body
 # answers "what is outstanding now". Those are different questions, and three separate pushes ran no
 # capture because a fix landed under `scripts/` or under the sibling workflow file rather than under
-# `oracle-requests/`. Each miss looked like success: no run, no error, nothing in the run list.
+# `reference-image-requests/`. Each miss looked like success: no run, no error, nothing in the run list.
 # The body is the queue's only reader, so the trigger now simply asks it on every push. That is only
 # affordable because the build is gated on there being work (below) — an empty queue is a checkout and
 # an `npm ci`.
@@ -22,12 +22,12 @@
 # write scope on this repository. The trigger is a push to the trunk — work that has already landed — plus
 # a manual dispatch for re-running one request. That is the same boundary §7 names: "the user's normal
 # merge/push is the boundary at which remote automation can act."
-name: oracle-capture
+name: reference-image-capture
 
 # ★ THE TRIGGER AND THE BODY MUST AGREE ABOUT WHAT THE QUEUE IS. The body processes every OUTSTANDING
 # request (§5), so a request can be outstanding while nothing re-triggers a run for it — which is exactly
 # what happened once the queue-enumeration fix landed: the request was still pending, the workflow was
-# fixed, and no push touched `oracle-requests/**` again, so nothing ran. The workflow files are therefore
+# fixed, and no push touched `reference-image-requests/**` again, so nothing ran. The workflow files are therefore
 # part of the trigger too: a fix to this pipeline tests itself against the live queue. That is cheap by
 # construction — with an empty queue the job installs dependencies, finds nothing outstanding, and exits.
 on:
@@ -38,7 +38,7 @@ on:
       request:
         # Optional: omit it to process the whole outstanding queue, which is the manual equivalent of what
         # a push does. Requiring a path made "re-run the queue" impossible without inventing a commit.
-        description: 'One oracle-requests/<id>.json, or leave blank for every outstanding request'
+        description: 'One reference-image-requests/<id>.json, or leave blank for every outstanding request'
         required: false
         type: string
 
@@ -48,7 +48,7 @@ permissions:
 concurrency:
   # One capture per request at a time. Two concurrent runs of the same request would upload two bundles
   # with the same request hash and different artifact digests, and intake could not tell which was current.
-  group: oracle-capture-${{ github.event.inputs.request || github.sha }}
+  group: reference-image-capture-${{ github.event.inputs.request || github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -69,7 +69,7 @@ jobs:
           if [ -n "${{ github.event.inputs.request }}" ]; then
             stems="$(basename "${{ github.event.inputs.request }}" .json)"
           else
-            stems=$(ls oracle-requests/*.json 2>/dev/null | xargs -r -n1 basename | sed 's/\.json$//' | tr '\n' ' ')
+            stems=$(ls reference-image-requests/*.json 2>/dev/null | xargs -r -n1 basename | sed 's/\.json$//' | tr '\n' ' ')
           fi
           list=$(printf '%s' "$stems" | tr ' ' '\n' | grep -v '^$' | jq -R . | jq -s -c .)
           echo "list=$list" >> "$GITHUB_OUTPUT"
@@ -105,32 +105,32 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/oracle-capture-identity.json`, NOT COMPUTED HERE.
+      # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/reference-image-capture-identity.json`, NOT COMPUTED HERE.
       # It is registered in `flight-reference-images` and copied verbatim. This workflow previously derived its own
       # from a runner descriptor, which was wrong twice over: it hashed the runner OS image — measured on
       # 2026-08-15 not to affect output, so two hosts rendering identical pixels got DIFFERENT ids — and a
       # locally-derived value drifts from the registered record the moment either side changes.
-      # One producer of one identity. `oracle-commission` reads the file; nothing here needs to.
+      # One producer of one identity. `reference-image-commission` reads the file; nothing here needs to.
       #
       # The descriptor is still ECHOED for the log, so a run that drifts out of the registered environment
       # is visible to a reader rather than silently blessed under an id that no longer describes it.
       - id: environment
         run: |
           chrome=$(npx playwright --version | tr -d ' ')
-          echo "registered identity: $(node -p "require('./scripts/oracle-capture-identity.json').environmentId")"
+          echo "registered identity: $(node -p "require('./scripts/reference-image-capture-identity.json').environmentId")"
           echo "observed playwright: $chrome"
           echo "observed chromium:   $(find ~/.cache/ms-playwright -name chrome -type f 2>/dev/null | head -1 | xargs -r -I{} {} --version 2>/dev/null)"
 
       - name: Capture ${{ matrix.request }}
         run: |
           set -euo pipefail
-          request="oracle-requests/${{ matrix.request }}.json"
+          request="reference-image-requests/${{ matrix.request }}.json"
           # The scope comes from the request through one code path (getOracleRequestCells), so the
           # workflow never re-derives which cells are in scope.
-          npx tsx ./scripts/oracle-commission.ts scope "$request" | while read -r args; do
+          npx tsx ./scripts/reference-image-commission.ts scope "$request" | while read -r args; do
             npx tsx ./packages/tool-capture/src/bin.ts capture $args
           done
-          npx tsx ./scripts/oracle-commission.ts bundle "$request" --artifacts .artifacts --stage stage
+          npx tsx ./scripts/reference-image-commission.ts bundle "$request" --artifacts .artifacts --stage stage
 
       # ★ `candidate.json` SITS AT THE ARCHIVE ROOT. Intake opens `<extracted>/candidate.json` directly;
       # a subdirectory reads to it as a missing manifest, which is the failure this replaces. Pointing
@@ -146,7 +146,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: oracle-candidate-${{ matrix.request }}
+          name: reference-image-candidate-${{ matrix.request }}
           path: stage/${{ matrix.request }}
           if-no-files-found: error
           retention-days: 30

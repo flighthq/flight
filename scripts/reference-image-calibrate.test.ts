@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { CalibrationRootIdentity } from './oracle-calibrate';
+import type { CalibrationRootIdentity } from './reference-image-calibrate';
 import {
   buildCalibrationRecord,
   compareCalibrationRuns,
@@ -10,7 +10,7 @@ import {
   findDuplicateCalibrationRoot,
   formatCalibrationReport,
   readCaptureRootIdentity,
-} from './oracle-calibrate';
+} from './reference-image-calibrate';
 
 describe('compareCalibrationRuns', () => {
   it('reports agreement when every run recorded the same pixel hash', () => {
@@ -99,7 +99,7 @@ describe('formatCalibrationReport', () => {
  * real corpus's shape, since it predates the fields.
  */
 function run(cells: Readonly<Record<string, string | null>>, provenance?: Readonly<Record<string, string>>): string {
-  const root = mkdtempSync(join(tmpdir(), 'oracle-calib-'));
+  const root = mkdtempSync(join(tmpdir(), 'reference-image-calib-'));
   for (const [identity, hash] of Object.entries(cells)) {
     const [subject, entry, renderer] = identity.split('/');
     const directory = join(root, subject!, entry!, renderer!);
@@ -301,7 +301,7 @@ describe('deriveCalibrationIdentityVerdict', () => {
 });
 
 describe('formatCalibrationReport, on what the runs actually were', () => {
-  // ★ THE FIRING TEST FOR THE DEFECT THIS REPLACED. `oracle-calibrate.yml` stamps a distinct
+  // ★ THE FIRING TEST FOR THE DEFECT THIS REPLACED. `reference-image-calibrate.yml` stamps a distinct
   // FLIGHT_CAPTURE_HOST_ID per matrix leg and says "keep both in every status so the comparer can enforce
   // both claims" — and the comparer read only the pixel hash, so it printed a both-branches disclaimer
   // over data that already answered the question. A tool that disclaims what its input states is not being
@@ -409,7 +409,7 @@ describe('findDuplicateCalibrationRoot', () => {
 });
 
 describe('compareCalibrationRuns, on the shape a downloaded calibration artifact actually has', () => {
-  // ★ THE REHEARSAL FOR THE REAL ROOTS, RUN BEFORE THEY ARRIVE. `oracle-calibrate.yml` stages
+  // ★ THE REHEARSAL FOR THE REAL ROOTS, RUN BEFORE THEY ARRIVE. `reference-image-calibrate.yml` stages
   // `calibration/functional/<entry>/<renderer>/status.json` and uploads `calibration` as
   // `calibration-host-<n>`, so an extracted artifact root has `functional/` at its top level and the
   // host id is `<run>-<attempt>-leg-<n>`. Encoding that here means a layout or id-format surprise fails

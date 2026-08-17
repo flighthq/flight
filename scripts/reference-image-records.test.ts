@@ -2,14 +2,14 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { OracleRequest } from './oracle-records';
+import type { ReferenceImageRequest } from './reference-image-records';
 import {
   getOracleLockImages,
   getOracleRequestCells,
   readOracleLock,
   readOracleLockPins,
   readOracleRequest,
-} from './oracle-records';
+} from './reference-image-records';
 
 const COMMIT = 'a'.repeat(40);
 const SHA = 'b'.repeat(64);
@@ -50,7 +50,7 @@ describe('readOracleLock', () => {
   });
 
   it('reports unreadable and unparsable files rather than throwing', () => {
-    const missing = readOracleLock(join(mkdtempSync(join(tmpdir(), 'oracle-')), 'absent.json'));
+    const missing = readOracleLock(join(mkdtempSync(join(tmpdir(), 'reference-image-')), 'absent.json'));
     const garbage = readOracleLock(writeRaw('{not json'));
 
     expect('problems' in missing && missing.problems[0]?.kind).toBe('not-json');
@@ -142,7 +142,7 @@ describe('readOracleLockPins', () => {
   // would re-bless cells that are already gating. These two cases are asserted together because the
   // defect is returning the same value for both.
   it('reports no pins for an absent lock, because nothing is blessed before the first release', () => {
-    const result = readOracleLockPins(join(mkdtempSync(join(tmpdir(), 'oracle-pins-')), 'absent.json'));
+    const result = readOracleLockPins(join(mkdtempSync(join(tmpdir(), 'reference-image-pins-')), 'absent.json'));
 
     expect('pinned' in result && result.pinned.size).toBe(0);
   });
@@ -239,7 +239,7 @@ function lock() {
   };
 }
 
-function request(): OracleRequest {
+function request(): ReferenceImageRequest {
   return {
     frames: 1,
     id: 'shape-fill-solid-webgl-2026-08-14',
@@ -264,7 +264,7 @@ function writeJson(value: unknown): string {
 }
 
 function writeRaw(text: string): string {
-  const path = join(mkdtempSync(join(tmpdir(), 'oracle-records-')), 'record.json');
+  const path = join(mkdtempSync(join(tmpdir(), 'reference-image-records-')), 'record.json');
   writeFileSync(path, text);
   return path;
 }
