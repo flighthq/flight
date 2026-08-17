@@ -34,6 +34,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
+  expectedImageDescription:
+    'On a 300×300 pure-black field, a flat opaque pure-red quarter-disk starts at (150,150) and extends ' +
+    'right and down to x=250 and y=250 (150 center + 100-pixel radius). The other three quadrants remain ' +
+    'black; there is no outline or gradient.',
   kinds: [ShapeKind],
 });
 

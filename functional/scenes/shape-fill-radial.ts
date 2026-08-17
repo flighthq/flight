@@ -35,6 +35,11 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
+  expectedImageDescription:
+    'On an 800×600 pure-black field, two 280-pixel-diameter circles (2 × radius 140) sit at (250,300) ' +
+    'and (560,300), spanning x=110–390 and x=420–700 by center ± radius. Both grade smoothly from pure ' +
+    'white at their focus to pure black at the rim. The left focus is centered; the right focus is at ' +
+    '(658,300), shifted 98 pixels right (0.7 × 140). Neither circle has an outline or colored tint.',
   kinds: [ShapeKind],
 });
 

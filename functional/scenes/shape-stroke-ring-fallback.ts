@@ -33,6 +33,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
+  expectedImageDescription:
+    'On a 400×260 pure-black field, a hollow RGB(0,221,102) green 12-pixel outline is centered on a ' +
+    '120×130 rectangle from (45,65) to (165,195), with 6 pixels of stroke on each side of its centerline. ' +
+    'To its right, an RGB(255,51,68) red 12-pixel bow-tie centerline spans x=225–355 and y=65–195, crossing at (290,130), the midpoint of both ranges. Its triangular gaps remain black; neither figure has an interior fill or gradient.',
   kinds: [ShapeKind],
   strokePathTessellation: true,
 });

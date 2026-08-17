@@ -35,6 +35,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
+  expectedImageDescription:
+    'On a 400×300 pure-black field, a flat RGB(0,204,204) cyan 300×200 rounded rectangle starts at ' +
+    '(50,50), so its far edges are x=350 and y=250. Each corner has a 20-pixel radius (40-pixel ' +
+    'corner diameter ÷ 2), leaving the extreme bounding-box corners black. There is no outline or gradient.',
   kinds: [ShapeKind],
 });
 

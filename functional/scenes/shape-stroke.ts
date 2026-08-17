@@ -39,6 +39,11 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
+  expectedImageDescription:
+    'On an 800×600 pure-black field, a 24-pixel pure-white horizontal band has its centerline from ' +
+    '(150,200) to (650,200), so it occupies y=188–212 (200 ± 24/2). Below it, a 10-pixel pure-red ' +
+    'outline is centered on a rectangle from x=250–550 and y=320–500 (starts plus 300×180 size); its ' +
+    'large interior remains black. Neither mark has an extra fill or gradient.',
   kinds: [ShapeKind],
 });
 

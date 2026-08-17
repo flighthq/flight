@@ -50,6 +50,12 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
+  expectedImageDescription:
+    'On an 800×600 pure-black field, three pure-white 30-pixel V strokes have downward apices at ' +
+    '(400,200), (400,360), and (400,520). Each centerline extends 110 pixels left/right and 110 pixels ' +
+    'up from its apex, ending at x=290 and x=510. The round top reaches y=215 (200 + 30/2), the flat ' +
+    'middle reaches about y=371 (360 + (30/2)/√2), and the sharp bottom reaches about y=541 ' +
+    '(520 + (30/2)×√2). Their interiors and surroundings remain black, with no fill or gradient.',
   kinds: [ShapeKind],
 });
 

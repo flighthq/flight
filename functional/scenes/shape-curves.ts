@@ -37,6 +37,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
+  expectedImageDescription:
+    'On an 800×600 pure-black field, one solid RGB(255,136,0) orange closed blob spans approximately ' +
+    'x=250–550 and y=150–450 (center (400,300) ± the 150-pixel extent). Its left and lower boundary is ' +
+    'smoothly round, while the upper-right boundary bends inward before returning to the rightmost point. There is no outline or gradient.',
   kinds: [ShapeKind],
 });
 
