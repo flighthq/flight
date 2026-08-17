@@ -63,6 +63,15 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x808080ff, // opaque mid-gray, distinct from pure content
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'On an opaque mid-gray field: two 160×160 squares side by side, each a 4×4 black-and-white ' +
+    'checkerboard upscaled 40×. The LEFT square (x 140–300, y 220–380) uses nearest-neighbor ' +
+    'sampling — every cell boundary is a hard edge; the pixel at a black↔white boundary is pure ' +
+    'black or pure white, never gray. The RIGHT square (x 460–620, y 220–380) uses bilinear ' +
+    'sampling — the same boundary pixel blends to mid-gray. Cell centers on both copies are pure ' +
+    'black or pure white. The mid-gray background is visible around and between the two squares. ' +
+    'No mid-gray pixels appear within the left square; mid-gray appears only at cell edges on ' +
+    'the right.',
 });
 
 const root = createDisplayObject();

@@ -53,6 +53,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'On an opaque black field: two 160×160 squares side by side, each a 4×4 checkerboard ' +
+    'upscaled 40×. The LEFT square (x 120–280, y 200–360) uses nearest-neighbor sampling — every ' +
+    'cell is a crisp solid block of pure black or pure white with hard edges, no gray at cell ' +
+    'boundaries. The RIGHT square (x 480–640, y 200–360) uses bilinear sampling — cell centers ' +
+    'are still pure black or white, but the boundary between adjacent cells shows mid-gray ' +
+    'blending where black and white texels are averaged. No gray appears on the left; gray ' +
+    'appears only at cell edges on the right. Every other pixel is black.',
 });
 
 const root = createDisplayObject();
