@@ -32,7 +32,7 @@ describe('buildOracleCandidateBundle', () => {
 
   it('takes provenance from THIS capture, not from a committed baseline', () => {
     // ★ A stale record is as false as a fabricated one. Reading the baseline was the previous design and
-    // flight-oracles rejected a candidate over it: the baseline said frames 0 while the commission asked
+    // flight-reference-images rejected a candidate over it: the baseline said frames 0 while the commission asked
     // for 1, so the record described conditions those bytes were not produced under.
     const capture = buildOracleCandidateBundle(input(root({ hash: PIXEL_HASH }))).captures[0];
 

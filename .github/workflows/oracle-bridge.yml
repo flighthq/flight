@@ -1,4 +1,4 @@
-# Forwards a completed capture to `flight-oracles` as a fixed dispatch envelope.
+# Forwards a completed capture to `flight-reference-images` as a fixed dispatch envelope.
 # agents/render-oracle-repository.md §7 step 3.
 #
 # ★★ THIS IS THE PRIVILEGED HALF, AND IT NEVER EXECUTES THE COMMISSIONED CHECKOUT.
@@ -92,7 +92,7 @@ jobs:
           [ -z "$APP_PRIVATE_KEY" ] && missing="$missing ORACLE_APP_PRIVATE_KEY"
           if [ -n "$missing" ]; then
             echo "oracle-bridge: missing secret(s):$missing" >&2
-            echo "  This pipeline authenticates as a GitHub App installed on flighthq/flight-oracles." >&2
+            echo "  This pipeline authenticates as a GitHub App installed on flighthq/flight-reference-images." >&2
             echo "  It is deliberately not the automatic GITHUB_TOKEN, which cannot reach another repository." >&2
             echo "  Store the App's numeric id and its full .pem private key as those two Actions secrets." >&2
             echo "  See agents/render-oracle-repository.md §7." >&2
@@ -110,7 +110,7 @@ jobs:
           app-id: ${{ secrets.ORACLE_APP_ID }}
           private-key: ${{ secrets.ORACLE_APP_PRIVATE_KEY }}
           owner: flighthq
-          repositories: flight-oracles
+          repositories: flight-reference-images
 
       # ★ ONE ARTIFACT PER REQUEST, SO THE PAIRING IS THE ARTIFACT'S NAME. Each candidate archive holds
       # exactly one `candidate.json` at its root, which is what intake reads, so an envelope names one
@@ -164,7 +164,7 @@ jobs:
 
               await github.rest.repos.createDispatchEvent({
                 owner: 'flighthq',
-                repo: 'flight-oracles',
+                repo: 'flight-reference-images',
                 // ★ MUST MATCH THE ORACLE INTAKE TRIGGER EXACTLY. GitHub accepts an unmatched
                 // repository_dispatch with a 204 and creates no run and no warning — a silent success on
                 // both sides, which cost a full round when this said `flight-candidate`.

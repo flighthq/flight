@@ -211,7 +211,7 @@ Three arguments are refused rather than defaulted. **Fewer than two capture root
 determinism is measured and one run cannot measure it; accepting one root would silently downgrade every
 cell to unmeasured while still printing a report. **`--limit` is bounded by review throughput, not by how
 many cells clear the bar**: `MAX_PENDING_DAYS` in `scripts/oracle-check.ts` is 14, so every commissioned
-cell starts a clock, and a batch larger than `flight-oracles` can review and release inside that window
+cell starts a clock, and a batch larger than `flight-reference-images` can review and release inside that window
 turns CI red on day 15 for cells that were never wrong.
 
 Two pairs of reasons look alike and route to different people, so they are kept apart.

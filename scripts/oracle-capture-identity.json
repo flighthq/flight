@@ -1,6 +1,6 @@
 {
-  "$comment": "The environment and comparison-policy identities Flight captures under. These are OWNED BY flight-oracles and copied here verbatim; Flight must never compute or derive them. A computed environment id was the previous design and it was wrong in both directions: it hashed the runner OS image (measured not to affect output, so identical renders were given different ids) and it would have drifted from the registered record the moment either side changed. One producer, one identity.",
+  "$comment": "The environment and comparison-policy identities Flight captures under. These are OWNED BY flight-reference-images and copied here verbatim; Flight must never compute or derive them. A computed environment id was the previous design and it was wrong in both directions: it hashed the runner OS image (measured not to affect output, so identical renders were given different ids) and it would have drifted from the registered record the moment either side changed. One producer, one identity.",
   "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084",
   "comparisonPolicyId": "pixel-exact-swiftshader-pw-1-61-v1",
-  "registeredAt": "flighthq/flight-oracles@80725c2"
+  "registeredAt": "flighthq/flight-reference-images@80725c2"
 }

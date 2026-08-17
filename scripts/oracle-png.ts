@@ -4,7 +4,7 @@
 //
 // ★ WHY NOT THE BROWSER PATH. `captureScreenshotHash` decodes in-page via `createImageBitmap`, and its
 // digest is over `"<width>x<height>:"` + the browser's pixels — which may carry colour conversion or
-// alpha premultiplication applied by the decoder. `flight-oracles` computes `sha256(decoded top-down
+// alpha premultiplication applied by the decoder. `flight-reference-images` computes `sha256(decoded top-down
 // RGBA8)` with no prefix and no browser. THE TWO HASHES ARE NOT COMPARABLE, and neither is wrong: they
 // answer to different consumers. This module produces the second, so Flight can check its own capture
 // against a pack manifest without a browser in the loop.

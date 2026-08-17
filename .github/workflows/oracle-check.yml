@@ -72,7 +72,7 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      # The registered identity is echoed, never recomputed: it is owned by the `flight-oracles` record
+      # The registered identity is echoed, never recomputed: it is owned by the `flight-reference-images` record
       # and copied verbatim into `scripts/oracle-capture-identity.json`. A run whose observed browser has
       # drifted out of that environment is then visible to a reader rather than silently compared under an
       # id that no longer describes it.

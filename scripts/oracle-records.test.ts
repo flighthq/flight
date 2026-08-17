@@ -234,7 +234,7 @@ function lock() {
       },
     },
     releaseTag: 'v1',
-    repository: 'flighthq/flight-oracles',
+    repository: 'flighthq/flight-reference-images',
     schemaVersion: 2,
   };
 }

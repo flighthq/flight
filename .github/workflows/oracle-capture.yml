@@ -4,7 +4,7 @@
 # ★★ THIS WORKFLOW IS UNTRUSTED-CODE EXECUTION AND HOLDS NO CROSS-REPOSITORY CREDENTIAL.
 # It checks out a commissioned Flight commit and runs its build, its browsers and its capture tool —
 # whoever can land a request can run arbitrary code in this job. `permissions` is therefore read-only on
-# contents and nothing else, and there is no secret in this file. The dispatch to `flight-oracles` lives
+# contents and nothing else, and there is no secret in this file. The dispatch to `flight-reference-images` lives
 # in `oracle-bridge.yml`, which never executes this checkout. §7's credential boundary exists so that a
 # commissioned source commit cannot read the credential able to rewrite the store it is measured against;
 # splitting it across two workflows is what enforces it, not a convention anyone has to remember.
@@ -106,7 +106,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
 
       # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/oracle-capture-identity.json`, NOT COMPUTED HERE.
-      # It is registered in `flight-oracles` and copied verbatim. This workflow previously derived its own
+      # It is registered in `flight-reference-images` and copied verbatim. This workflow previously derived its own
       # from a runner descriptor, which was wrong twice over: it hashed the runner OS image — measured on
       # 2026-08-15 not to affect output, so two hosts rendering identical pixels got DIFFERENT ids — and a
       # locally-derived value drifts from the registered record the moment either side changes.

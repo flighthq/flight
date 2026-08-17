@@ -99,7 +99,7 @@ function collectExamples(): Record<string, CaptureBaselineEvidenceKind[]> {
 }
 
 // ★ THE KINDS A LOCAL RUN CAN SPEAK FOR, DECLARED ONCE AND USED BY BOTH PATHS.
-// `referenceImage` is deliberately absent: those bytes live in a `flight-oracles` release and are joined
+// `referenceImage` is deliberately absent: those bytes live in a `flight-reference-images` release and are joined
 // in through `scripts/oracle-lock.json`, so nothing this script inspects can confirm or deny one
 // (see CaptureBaselineEvidenceKind for the full argument).
 //
