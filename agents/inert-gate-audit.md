@@ -33,6 +33,34 @@ than quoted twice. The general form is there too — a differential oracle can o
 is blind by construction to anything upstream of the fork, and what settles a question the instrument
 cannot reach is a **discriminating input**, not more green.
 
+**Where Q3 and Q4 come apart, which is the failure this document keeps meeting without having had a name
+for it.** Q3 asks which way an instrument fails; Q4 asks what it actually says. An instrument can pass Q3
+completely — failing toward *stop*, refusing rather than proceeding, commissioning nothing, blessing
+nothing — and still be unusable, because **stopping without saying why sends the reader to the wrong
+remedy.**
+
+> **SAFE IS NOT THE SAME AS INFORMATIVE, AND CAUTION TENDS TO PRODUCE THE FIRST WHILE FEELING LIKE THE
+> SECOND.**
+
+The mechanism is why it survives review. A conservative choice cannot produce a *wrong answer*, so it
+satisfies the question the author is asking themselves, and the check feels finished. The question that
+goes unasked is whether it produces a *distinguishable* one. It is the collapsed-verdict failure reached
+from the direction of prudence rather than of carelessness, which is what makes it so hard to see in your
+own work: the impulse that produces it is the correct impulse.
+
+**The test, and it is one line:** *does the output distinguish the causes that have different remedies?*
+If two conditions print the same thing and are fixed by different people doing different work, the
+instrument has answered neither, however safely it refused.
+
+The worked instance is in this document's own tooling, written by the author of the rule while the rule
+was being written. A commissioning consumer was specified so that a missing host-identity field would
+*fall back* to the within-host scope, which blocks — safe, and unable to commission anything wrong. It
+also made "the captures do not record which machine made them" and "the captures record one machine" print
+one identical line, with opposite remedies: wire the producer, versus re-run on a second host. The
+correction was to give absence its own state and its own text. Nothing about the safety changed; the
+information did.
+
+
 A caution for anyone re-measuring that population: **a naive grep understates it badly.** Of the
 `appendShapeBeginFill` call sites in `functional/scenes/`, only 13 pass an inline 8-hex literal; **106
 pass `colors[i]` or `colors[i % colors.length]`**, and a further 34 pass a named identifier. A pattern
