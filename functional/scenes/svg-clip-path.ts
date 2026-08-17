@@ -69,6 +69,14 @@ const { render } = await createFunctionalTarget({
   // nodes but nothing honours them, and the scene reports the importer ignoring clip-path when in fact
   // the target was never asked to clip.
   clip: true,
+  expectedImageDescription:
+    'An 800x600 opaque black field with two flat rectangles, each 150 wide and 220 tall, at the same ' +
+    'height y 180-400: a cyan one spanning x 60-210 and a green one spanning x 590-740. Each is the ' +
+    'surviving half of a 300-wide rectangle, and the halves survive on OPPOSITE sides — the cyan one kept ' +
+    'its left half, so x 210-360 is pure black, and the green one kept its right half, so x 440-590 is ' +
+    'pure black. That opposition is the claim: a picture where both keep the same side, or where either ' +
+    'full 300-wide rectangle appears, is wrong. Both colours are flat, with no gradient and no partial ' +
+    'fade along the cut edge.',
 });
 
 const root = createDisplayObject();

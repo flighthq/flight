@@ -61,6 +61,15 @@ const { render } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one 240x240 square spanning x 180-420 and y 90-330, divided into ' +
+    'four equal 120x120 quadrants of flat colour: red top-left, green top-right, blue bottom-left, white ' +
+    'bottom-right. That exact arrangement is the claim — it distinguishes an upright picture from one ' +
+    'flipped vertically (blue and white on top), flipped horizontally (green and white on the left), or ' +
+    'transposed (green and blue swapped). The square is six times its source size and stays square, so ' +
+    'nothing is letterboxed and no band of background appears inside its box. The quadrants meet at x 300 ' +
+    'and y 210 with no blur or gradient across either seam, and outside the square the field is pure ' +
+    'black.',
 });
 
 const root = createDisplayObject();

@@ -34,6 +34,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one 200x120 rectangle spanning x 300-500 and y 240-360, split ' +
+    'vertically down its middle: the left half, x 300-400, is flat red and the right half, x 400-500, is ' +
+    'flat blue. The split is a straight vertical edge at x 400 with no gradient or blur across it, and ' +
+    'neither half is tinted toward the other. The rectangle keeps its source proportions at exactly 200 by ' +
+    '120 — stretched, shrunk, single-coloured or absent are all failures — and everything outside it is ' +
+    'pure black.',
 });
 
 // A canvas painted with a known frame (left half red, right half blue), standing in as the video element:

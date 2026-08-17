@@ -70,6 +70,15 @@ const { render } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with three 200x200 boxes in a row at y 60-260: x 40-240, x 280-480 and ' +
+    'x 520-720. Each holds the same four-quadrant picture — red, green, blue and white, in that ' +
+    'arrangement — but fitted differently, and WHERE THE EMPTY BANDS FALL is the claim. The first box is ' +
+    'filled corner to corner with no black band at all, its quadrants stretched to 100x100 each. The ' +
+    'second holds a 200x100 picture centred vertically, so equal 50 px black bands run above it (y 60-110) ' +
+    'and below it (y 210-260). The third holds the same 200x100 picture pushed to the top, so its black ' +
+    'band is entirely below (y 160-260) and there is none above. All three still read red, green, blue, ' +
+    'white in the same corner order — a flip or a crop would break that — and every colour is flat.',
 });
 
 const root = createDisplayObject();

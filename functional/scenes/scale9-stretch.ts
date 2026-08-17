@@ -51,6 +51,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [Scale9ShapeKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one square panel spanning x 120-600 and y 90-570. Its interior is ' +
+    'flat yellow, and a flat blue frame runs around all four edges. The thickness of that frame is what ' +
+    'the picture is for: the panel is drawn eight times larger than its authored size, so a uniformly ' +
+    'enlarged panel would carry a border roughly 96 px thick, and this one must stay near 12 px on every ' +
+    'side while only the yellow centre grows. The four sides are equally thick and the corners are square. ' +
+    'Neither colour is graded, neither blends with the background, and nothing else is drawn — the rest of ' +
+    'the field is pure black.',
 });
 
 const root = createDisplayObject();

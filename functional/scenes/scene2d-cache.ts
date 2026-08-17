@@ -54,6 +54,12 @@ const target = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [ShapeKind],
   cache: true,
+  expectedImageDescription:
+    'An 800x600 opaque black field with exactly two flat, opaque, axis-aligned squares, each 160x160. The ' +
+    'first is magenta and spans x 200-360, y 180-340; the second is green and spans x 440-600, y 320-480. ' +
+    'They neither touch nor overlap, and the diagonal gap between them near x 400, y 260 is pure black. ' +
+    'Both squares are one flat colour edge to edge — no gradient, no softened or feathered border, no ' +
+    'blending against the background, and no ghost or doubled copy offset from either one.',
 });
 const { render, width } = target;
 
