@@ -10,7 +10,7 @@ import type { OracleLock } from './oracle-records';
 describe('getOracleAssetUrl', () => {
   it('builds the asset URL from the pinned tag, never a floating one', () => {
     expect(getOracleAssetUrl(lock(), 'pack.tgz')).toBe(
-      'https://github.com/flighthq/flight-oracles/releases/download/tag-1/pack.tgz',
+      'https://github.com/flighthq/flight-reference-images/releases/download/tag-1/pack.tgz',
     );
   });
 });
@@ -116,7 +116,7 @@ function lock(overrides: Partial<OracleLock> = {}): OracleLock {
       },
     },
     releaseTag: 'tag-1',
-    repository: 'flighthq/flight-oracles',
+    repository: 'flighthq/flight-reference-images',
     schemaVersion: 2,
     ...overrides,
   };

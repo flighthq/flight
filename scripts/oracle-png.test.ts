@@ -6,7 +6,7 @@ import { decodeOraclePng } from './oracle-png';
 // a PNG from known bytes under a chosen filter, so a passing decode means the original pixels came back —
 // not that two implementations agree about something neither can check.
 //
-// The decoder was additionally validated against `flight-oracles`' own independent implementation: it
+// The decoder was additionally validated against `flight-reference-images`' own independent implementation: it
 // reproduced the published `pixelSha256` of the first blessed pack exactly. That is the check no
 // synthetic fixture can make, and it is why the two hashes in the pipeline can now be trusted to agree.
 

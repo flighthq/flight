@@ -140,7 +140,7 @@ export function verifyOracleRequestedPixels(
 }
 
 /**
- * Assembles the candidate for one request, in the shape `flight-oracles` validates
+ * Assembles the candidate for one request, in the shape `flight-reference-images` validates
  * (`schemas/candidate.schema.json`). Pure over the filesystem it is pointed at.
  *
  * ★ THE SCHEMA IS `additionalProperties: false`, SO EXTRA FIELDS ARE A HARD FAILURE, NOT SLACK.
@@ -212,7 +212,7 @@ function readCandidateCapture(artifactsRoot: string, repositoryRoot: string, cel
   // ★ PROVENANCE COMES FROM THIS CAPTURE, NOT FROM THE COMMITTED BASELINE.
   // Reading the baseline was the previous design and it was wrong for the same reason inventing values
   // would have been: the baseline describes SOME EARLIER capture, made under conditions that may differ
-  // from the one being blessed. flight-oracles rejected a candidate over precisely that gap — the record
+  // from the one being blessed. flight-reference-images rejected a candidate over precisely that gap — the record
   // said `frames: 0` from a stale baseline while the commission asked for 1. A stale record is as false
   // as a fabricated one; both assert conditions these bytes were not produced under.
   const provenance = readCaptureProvenance(status);

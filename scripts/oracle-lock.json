@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/flighthq/flight-oracles/main/schemas/oracle-lock.schema.json",
+  "$schema": "https://raw.githubusercontent.com/flighthq/flight-reference-images/main/schemas/oracle-lock.schema.json",
   "manifestSha256": "62d8cacba61569287988c7feedb3e2aa4bf280e39abb8b063b1728eafdd68ec9",
   "oracleCommit": "0782ec6416a3acc7bd7e0691eb60db039dd84c3c",
   "packs": {
@@ -14,6 +14,6 @@
     }
   },
   "releaseTag": "oracle-shape-fill-solid-webgl-2026-08-14-09943d495bc9",
-  "repository": "flighthq/flight-oracles",
+  "repository": "flighthq/flight-reference-images",
   "schemaVersion": 2
 }

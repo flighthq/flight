@@ -1,4 +1,4 @@
-// Measures whether repeated captures agree, which is the precondition `flight-oracles` requires before a
+// Measures whether repeated captures agree, which is the precondition `flight-reference-images` requires before a
 // first blessing: a canonical environment measured "across at least two independent clean hosts", and
 // pixel thresholds "calibrated from repeated captures".
 //
@@ -46,7 +46,7 @@ export interface CalibrationRootIdentity {
 }
 
 /**
- * Whether the roots were produced by DIFFERENT machines — the claim `flight-oracles` requires and the
+ * Whether the roots were produced by DIFFERENT machines — the claim `flight-reference-images` requires and the
  * claim the calibrate workflow asserts by giving each matrix leg a distinct `FLIGHT_CAPTURE_HOST_ID`.
  */
 export type CalibrationHostRelationship =

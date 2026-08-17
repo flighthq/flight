@@ -10,7 +10,7 @@
 //
 // ★ IT COMPARES `sha256(decoded RGBA)`, NOT FLIGHT'S CAPTURE HASH. `captureScreenshotHash` prepends
 // `"<width>x<height>:"` and hashes pixels the browser decoded, which may carry colour conversion or alpha
-// premultiplication. `flight-oracles` hashes the straight decoded bytes. The two are both correct and not
+// premultiplication. `flight-reference-images` hashes the straight decoded bytes. The two are both correct and not
 // comparable, so this decodes the fresh PNG itself with `oracle-png` and hashes it their way. That
 // decoder was validated against their independent implementation on the first blessed pack.
 //

@@ -1,10 +1,10 @@
-# Measures whether repeated captures agree across independent hosts — the precondition `flight-oracles`
+# Measures whether repeated captures agree across independent hosts — the precondition `flight-reference-images`
 # requires before a first blessing, and the measurement that settles §10 of the render-oracle proposal.
 #
 # ★ THIS IS AN EXPERIMENT, NOT A GATE. It gates nothing, blesses nothing, and dispatches nowhere. It is
 # run by hand when someone needs the number, and its whole output is a report.
 #
-# ★ EACH MATRIX LEG IS AN INDEPENDENT CLEAN HOST, WHICH IS THE POINT. `flight-oracles` asks for a
+# ★ EACH MATRIX LEG IS AN INDEPENDENT CLEAN HOST, WHICH IS THE POINT. `flight-reference-images` asks for a
 # canonical environment "measured across at least two independent clean hosts". Separate matrix legs are
 # separate runner VMs with the same image — same declared environment, different machine — which is
 # exactly the comparison that matters. Two captures in ONE job would measure determinism within a host

@@ -40,7 +40,7 @@ import { join } from 'node:path';
  *
  * ★ `referenceImage` IS NOT LOCALLY OBSERVABLE, AND THAT ASYMMETRY IS DELIBERATE. The other three are
  * produced by a capture run and can be seen on disk after it. A `referenceImage` is a blessed full-
- * resolution PNG living in a `flight-oracles` release, joined in through `scripts/oracle-lock.json`
+ * resolution PNG living in a `flight-reference-images` release, joined in through `scripts/oracle-lock.json`
  * (agents/render-oracle-repository.md §5) — no local run can confirm or deny one. So `scripts/capture-
  * evidence.ts` deliberately does NOT pass it in `observedKinds`, which makes `writeCaptureBaselineCoverage-
  * Manifest` carry every `referenceImage` pin forward untouched on every `--update`.

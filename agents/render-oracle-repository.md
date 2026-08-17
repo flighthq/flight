@@ -66,7 +66,7 @@ The prerequisite rename has happened: the former `flight-oracles` input-corpus r
 the organization-side rename and its release assets have also been verified; the source-side redirect
 hazard this proposal originally named is closed.
 
-The proposed **new `flight-oracles`** repository holds the blessed reference-image records and release
+The proposed **new `flight-reference-images`** repository holds the blessed reference-image records and release
 packs consumed by Flight's full-resolution pixel-regression oracle. The precise Flight evidence-kind
 name is **`referenceImage`**, not `oracle`: `oracle` already means the scene's in-page `assertRender`
 mechanism in `captureBaselineCoverageManifest.ts` and `agents/commands.md`. Keeping those names distinct
@@ -214,7 +214,7 @@ oracle record carries its id, content hash, and landed Flight commit.
 ```json
 {
   "schemaVersion": 2,
-  "repository": "flighthq/flight-oracles",
+  "repository": "flighthq/flight-reference-images",
   "oracleCommit": "<40-hex commit>",
   "releaseTag": "<immutable release tag>",
   "manifestSha256": "<64-hex sha256>",
@@ -265,7 +265,7 @@ visible and monotonic: **pending → locked and gating**, never required → abs
 ## 7. Commissioning and GitHub Actions ownership
 
 The local project agent commissions an image by committing the request and, for a new cell, its
-`referenceImage` coverage identity. It does not push into `flight-oracles`, hold cross-repository
+`referenceImage` coverage identity. It does not push into `flight-reference-images`, hold cross-repository
 credentials, or invent the eventual landed Flight SHA. The user's normal merge/push is the boundary at
 which remote automation can act.
 
@@ -277,11 +277,11 @@ The end-to-end sequence is:
    dispatch), checks out that exact Flight commit and captures only the requested cells in the canonical
    environment. It uploads a candidate bundle containing PNGs, capture status, provenance, and a
    checksum manifest.
-3. **Flight bridge workflow** — sends `flight-oracles` only the repository, landed Flight SHA, request
+3. **Flight bridge workflow** — sends `flight-reference-images` only the repository, landed Flight SHA, request
    path and hash, candidate artifact id, workflow run id, and artifact digest.
 4. **Oracle intake workflow** — downloads and verifies that bundle, creates the text metadata changes,
    stages an Oracle-owned copy of the candidate, generates the review report, and opens the PR in
-   `flight-oracles`.
+   `flight-reference-images`.
 5. **Oracle reviewer** — reviews old │ new │ delta, including missing and out-of-scope cells, then
    approves by merging. The merge is the blessing; no mutable `approved: true` field is invented.
 6. **Oracle release workflow** — promotes the exact reviewed candidate bytes into complete deterministic

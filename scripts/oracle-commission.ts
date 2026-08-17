@@ -52,7 +52,7 @@ if (subcommand === 'scope') {
   for (const target of request.targets) {
     // ★ `--frames` IS NOT OPTIONAL HERE. `bin.ts` defaults an omitted value to 0, so leaving it off
     // captures at a DIFFERENT frame count than the request commissioned, and the candidate then records
-    // conditions the commission did not ask for. flight-oracles rejected exactly that: request frames 1,
+    // conditions the commission did not ask for. flight-reference-images rejected exactly that: request frames 1,
     // capture frames 0. The request is the authority on capture conditions; the scope must carry all of
     // them, not just the ones that happen to have no default.
     console.log(
@@ -73,7 +73,7 @@ if (pixelProblems.length > 0) {
   process.exit(1);
 }
 // ★ THE IDENTITIES ARE READ FROM A COMMITTED RECORD, NEVER COMPUTED. They are registered in
-// `flight-oracles` and copied here verbatim; a value Flight derives would be a second producer of one
+// `flight-reference-images` and copied here verbatim; a value Flight derives would be a second producer of one
 // identity, and the two drift the moment either side changes. Overridable by env only for local probes.
 const identity = JSON.parse(readFileSync(join(__dirname, 'oracle-capture-identity.json'), 'utf8')) as {
   environmentId: string;

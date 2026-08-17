@@ -177,7 +177,7 @@ describe('diffCaptureBaselineCoverage', () => {
 });
 
 describe('diffCaptureBaselineCoverage · unobservable kinds', () => {
-  // ★ THE FIRING TEST FOR THE GATE THAT BLOCKED A MERGE. A `referenceImage` lives in a flight-oracles
+  // ★ THE FIRING TEST FOR THE GATE THAT BLOCKED A MERGE. A `referenceImage` lives in a flight-reference-images
   // release, so no local run carries one. The write path already carried such pins forward; the DIFF path
   // did not, and reported every pinned referenceImage as "pinned, no longer carried" — a coverage LOSS for
   // a kind nothing was ever able to carry. Both paths must be told the same thing about what a run settled.
@@ -345,7 +345,7 @@ describe('schema 1 migration', () => {
 });
 
 describe('writeCaptureBaselineCoverageManifest', () => {
-  // ★ THE FIRING TEST FOR THE referenceImage ASYMMETRY. A referenceImage lives in a flight-oracles
+  // ★ THE FIRING TEST FOR THE referenceImage ASYMMETRY. A referenceImage lives in a flight-reference-images
   // release, so no local capture run can observe one. If the routine `--update` could retire what it
   // cannot see, a single acceptance command would delete the whole full-resolution tier's requirements —
   // the "make CI green by deleting the requirement" failure the manifest exists to prevent. The carry-

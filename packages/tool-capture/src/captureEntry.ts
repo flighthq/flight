@@ -52,7 +52,7 @@ export interface CaptureStatus {
    *
    * ★ WITHOUT THIS, A CONSUMER HAS NO SOURCE FOR THE CAPTURE'S OWN CONDITIONS AND WILL REACH FOR THE
    * COMMITTED BASELINE'S. That is a different capture, made at a different time under conditions that may
-   * differ — `flight-oracles` rejected a candidate for exactly this: the record said `frames: 0`, copied
+   * differ — `flight-reference-images` rejected a candidate for exactly this: the record said `frames: 0`, copied
    * from a baseline, while the commission asked for 1. The same argument the fingerprint provenance makes
    * two hundred lines below applies here: attaching another capture's conditions to these bytes
    * manufactures an agreement that was never observed.

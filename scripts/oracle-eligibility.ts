@@ -18,7 +18,7 @@
 // committed capture baseline reproduced byte-for-byte, repeated captures agreed, the other backends
 // rendering the same scene agreed, and no peer holds it. That conjunction is the strongest evidence
 // available in-tree; it is still evidence, not proof, which is why the human review step in
-// `flight-oracles` (§7 step 5) is the actual blessing and cannot be skipped.
+// `flight-reference-images` (§7 step 5) is the actual blessing and cannot be skipped.
 //
 // Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
 // graph — the same reason `OracleLock` lives in `scripts/oracle-records.ts`.
