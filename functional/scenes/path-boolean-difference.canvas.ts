@@ -32,6 +32,12 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (250×250): an orange L-shaped region — rectangle A ' +
+    '(50,50)–(150,150) with its bottom-right 50×50 overlap against rectangle B removed. The ' +
+    'filled area covers the top strip (50,50)–(150,100) and the left strip (50,100)–(100,150). ' +
+    "The overlap zone (100,100)–(150,150) is black (subtracted). Rectangle B's exclusive area " +
+    '(150,100)–(200,200) is black (never in A). No gradient, no stroke — a single flat orange.',
 });
 
 const pathA = createPath();

@@ -36,6 +36,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (300×300): a green staircase-shaped region covering the combined ' +
+    'footprint of two 100×100 rectangles — A at (50,50) and B at (100,100). The filled area ' +
+    'spans (50,50)–(200,200) minus the two black corners: bottom-left (50,150)–(100,200) and ' +
+    'top-right (150,50)–(200,100) are black (outside both rects). The overlap zone ' +
+    '(100,100)–(150,150) is green, not doubled or darkened. No gradient, no stroke — a single ' +
+    'flat green fill.',
 });
 
 const pathA = createPath();
