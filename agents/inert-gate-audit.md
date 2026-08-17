@@ -91,6 +91,50 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+## 2026-08-16: a log with no failures in it is not a passing run
+
+The cheapest instrument failure in this document, and the only one where the instrument is *the reader*.
+
+**The instance.** A long capture was running in the background. I read its log, saw no `✗` lines, and
+reported the run clean. It was still executing. **An in-progress log and a clean log are byte-identical
+until the moment the run ends** — the failures that would have appeared had simply not been written yet.
+The run did finish clean, so the conclusion happened to be right and the method was worthless. I would have
+filed the same green for a run that was about to fail.
+
+> **Absence of failure in a log is not evidence of success until the run has TERMINATED.**
+
+**What makes it invisible.** Every other instrument here fails while looking like it is working. This one
+fails while *you* are looking like you are working: grepping a log for failure markers is exactly the
+motion of checking, and it returns the same empty result for "nothing went wrong" and "nothing has happened
+yet". There is no error to notice, and the check feels performed.
+
+**The rule, which takes two things and not one.** A run is judged by its **verdict token** and its
+**population line** together:
+
+    ✓ ok   491 captured   2 changed   0 failed        <- both present: a real verdict on a stated corpus
+    (no ✗ lines)                                      <- neither: an unfinished log, or a report-only mode
+
+Each alone is defeatable, and the two failure modes are mirror images:
+
+- **A population without a terminator** — rows that look like results, no statement that the run ended.
+  This entry's instance, and also the `--report` parity mode already recorded in the commissioning bar:
+  it emits result-shaped rows carrying no verdict, which is why that bar was changed to *refuse* a report
+  lacking an affirmative `passed`/`failed` rather than read it as agreement.
+- **A terminator without a population** — an exit status or `EXIT=` marker with nothing establishing what
+  was actually run. A green terminator over an empty corpus is the `capture --filter a,b,c` case from the
+  same day: a comma list where a substring was expected matched **zero** entries, and a suite that runs
+  nothing is not a suite that passes. (Integration recorded this side independently; that entry is not on
+  this base at `62971b495`, so the cross-reference is by name and still needs wiring.)
+
+**Operationally**, for anything backgrounded or long-running: make the script emit an explicit terminator
+of its own (`=== DONE ===`) and **poll for that token**, never for the absence of failure. Then read the
+tool's verdict and its counts, and require both. The cost is one `grep -q` on a string you control; the
+alternative is a green that means "not yet".
+
+**Q3, and why it is worth an entry at all.** This fails toward *proceed*, in the one place with no
+instrument behind it — a human or agent reading output. Every gate in this document can be fixed in code.
+This one is a habit, so it will recur exactly as often as it is not written down.
+
 ## 2026-08-16: every gate reads the functional scenes; nothing executes them
 
 Filed at manager's instruction as a standing gap, deliberately **not** as cleanup attached to the revert
@@ -137,10 +181,30 @@ its trigger. Here, no gate is even implicated: the trigger is well-formed input 
 is why it fails toward *proceed* (Q3) with nothing anomalous to notice — green is the correct output of
 each instrument individually, and the aggregate green is still false.
 
-**The cheapest closure is an executor, not a better reader.** Anything that imports every scene module and
-reports the ones that throw would have caught all 102 in seconds, with no browser, no adapter, and no
-pixels — the failure is at import, so it needs no rendering at all. That is a different shape from every
-existing functional gate, all of which are downstream of a successful load.
+**RETRACTED — the remedy I proposed here was tested and does not work.** This paragraph originally argued
+that the cheap closure is an *executor*: import every scene module, report the ones that throw, no browser
+or adapter needed. That was inference from "the failure is at import", and it is wrong. It was measured
+independently, and both forms die on environment long before a scene reaches the pipeline call:
+
+```
+plain node (tsx)   ->  IMPORT FAILED: window is not defined
+vitest jsdom       ->  FAILED: Failed to resolve entry for package "@flighthq/sdk"
+```
+
+Scenes call `createWgpuCanvasElement(...)` and `createWgpuRenderState(...)` at module scope, so such a gate
+would report ~200 scenes broken on every run, forever. **The working remedy is a static ARGUMENT check** —
+scan for callers passing a value a backend cannot honour — which needs no runtime and is what actually
+found the 102. It is set out in full, with the direction the instrument is valid in, at
+[no gate can tell whether a functional scene still LOADS](#2026-08-16-no-gate-can-tell-whether-a-functional-scene-still-loads).
+Read that entry as the authority on the fix; this one stands only for the *diagnosis* — that scenes are
+parsed by every gate and executed by none.
+
+**Why both entries exist.** They were written independently, hours apart, about the same gap, and the
+overlap is left rather than merged because the pair is itself evidence: two audits reached the same Q2
+finding from different directions, and only the one that *tested* its proposed remedy got the remedy right.
+The distinct contribution here is the static-surface half — that `functional/tsconfig.json` includes
+`scenes/**/*.ts`, so these scenes are fully typechecked, and a module-scope throw is well-typed and
+therefore invisible to every reader in the pipeline.
 
 **A measurement caution, since this doc already carries its sibling.** Sizing the population by grep
 undercounts it. `createWgpuRenderEffectPipeline(state, { sampleCount: 4 })` as a single-line pattern
