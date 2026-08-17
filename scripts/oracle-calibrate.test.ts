@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import type { CalibrationRootIdentity } from './oracle-calibrate';
 import {
+  buildCalibrationRecord,
   compareCalibrationRuns,
   deriveCalibrationIdentityVerdict,
   findDuplicateCalibrationRoot,
@@ -426,5 +427,51 @@ describe('compareCalibrationRuns, on the shape a downloaded calibration artifact
     });
     expect(report.agreed).toEqual(['functional/shape-fill-solid/webgl']);
     expect(formatCalibrationReport(report)).toContain('this IS the evidence a single canonical environment needs');
+  });
+});
+
+describe('buildCalibrationRecord', () => {
+  // ★ NAMES, NOT COUNTS. "493 cells agreed" and "there are 493 live cells" are equal numbers over
+  // possibly different sets, and a count-based join would grant determinism to a cell that was never
+  // in the comparison. The record exists to make the join possible by name; this is the test that
+  // fails if a future change ever reduces it to totals.
+  it('carries the agreed cells by name, not as a count', () => {
+    const record = buildCalibrationRecord(
+      compareCalibrationRuns([
+        run({ 'functional/a/webgl': 'a', 'functional/b/dom': 'b' }, { environmentId: 'e', hostInstanceId: 'h1' }),
+        run({ 'functional/a/webgl': 'a', 'functional/b/dom': 'b' }, { environmentId: 'e', hostInstanceId: 'h2' }),
+      ]),
+    );
+
+    expect(record.agreed).toEqual(['functional/a/webgl', 'functional/b/dom']);
+    expect(record.relationship).toEqual({ environment: 'matching-environment', hosts: 'independent-hosts' });
+  });
+
+  it('keeps the three buckets apart, so a cell nobody compared is never recorded as agreeing', () => {
+    const record = buildCalibrationRecord(
+      compareCalibrationRuns([
+        run({ 'functional/a/webgl': 'a', 'functional/b/dom': 'b', 'functional/c/dom': null }),
+        run({ 'functional/a/webgl': 'a', 'functional/b/dom': 'x', 'functional/c/dom': null }),
+      ]),
+    );
+
+    expect(record.agreed).toEqual(['functional/a/webgl']);
+    expect(record.disagreed).toEqual(['functional/b/dom']);
+    expect(record.incomplete).toEqual(['functional/c/dom']);
+  });
+
+  // The record must carry the identities it was measured under: a named list with no provenance would
+  // be a determinism claim with nothing behind it.
+  it('records the identities the comparison ran under', () => {
+    const record = buildCalibrationRecord(
+      compareCalibrationRuns([
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-1' }),
+        run({ 'functional/a/webgl': 'a' }, { environmentId: 'env-1', hostInstanceId: 'host-2' }),
+      ]),
+    );
+
+    expect(record.roots.map((root) => root.hostInstanceId)).toEqual(['host-1', 'host-2']);
+    expect(record.roots.every((root) => root.environmentId === 'env-1')).toBe(true);
+    expect(record.$comment).toContain('JOIN ON NAMES, NEVER ON COUNTS');
   });
 });
