@@ -46,6 +46,13 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
+  expectedImageDescription:
+    'On an opaque black field, four identical 48x48 solid blue squares sit in a widely spaced 2x2 ' +
+    'arrangement, with top-left corners at (150,150), (450,150), (150,400) and (450,400). All four are ' +
+    'the same flat blue with hard edges and no variation between them — they are ONE atlas region drawn ' +
+    'four times. The wide gaps between and around them are pure black: the batch draws four DISCRETE ' +
+    'quads at the array coordinates, NOT one filled span, so no blue appears anywhere between the ' +
+    'squares and none of them are stretched or joined. Every other pixel is black.',
   kinds: [QuadBatchKind],
 });
 
