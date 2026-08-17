@@ -29,7 +29,7 @@ import {
 // light-point — proves a POINT light shades the forward Gl mesh pass. A mid-gray sphere at the origin
 // is lit by one white point light placed up-front-right of it (+x/+y/+z). A point light illuminates
 // from a POSITION (not a parallel direction), so the hemisphere facing the light's position is bright
-// and the far side falls to the dim ambient fill. The oracle samples a screen-right (lit) and
+// and the far side falls to the dim ambient fill. The assertion samples a screen-right (lit) and
 // screen-left (shadowed) point and asserts the lit side is clearly brighter — the signature of real
 // per-pixel punctual shading, absent before point lights were wired into the forward pass.
 const pixelRatio = window.devicePixelRatio || 1;

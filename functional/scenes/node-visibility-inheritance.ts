@@ -6,7 +6,7 @@
 // local flag on the drawn node. Two containers each hold one opaque filled shape at a known world
 // position. Both shapes are individually `visible`, but one container has `.visible = false` (followed
 // by invalidateNodeAppearance, since visibility is an appearance field) — so the walk must prune that
-// whole subtree. The oracle samples (1) the visible container's child region (must read its color) and
+// whole subtree. Pixel sampling checks (1) the visible container's child region (must read its color) and
 // (2) the hidden container's child region (must read background). A pass proves visibility reaches
 // descendants, not just the node it is set on. jsdom unit tests cannot observe this gating because there
 // are no rendered pixels to suppress.

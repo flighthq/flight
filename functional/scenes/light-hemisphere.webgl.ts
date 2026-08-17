@@ -29,7 +29,7 @@ import {
 // the origin is lit by one hemisphere light with a BRIGHT sky (up, +y) and a DARK ground (down, -y).
 // Hemisphere shading blends sky↔ground by the surface normal's up-facing-ness (0.5 + 0.5·N·up), so the
 // top of the sphere (normals point up → sky) is bright and the bottom (normals point down → ground) is
-// dark. The oracle samples a point above center and below center and asserts the top is clearly
+// dark. The assertion samples a point above center and below center and checks the top is clearly
 // brighter — the sky/ground gradient signature of hemisphere lighting, absent before it was wired in.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

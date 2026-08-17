@@ -72,7 +72,7 @@ registerWgpuFunctionalTarget(state, scale);
 // remap lands mid-gradient and the sphere reads as a visible near→far ramp rather than being crushed
 // to a flat black or white fill.
 //
-// The signature this oracle checks: the center pixel (nearest surface) is clearly different in
+// The signature the assertion checks: the center pixel (nearest surface) is clearly different in
 // brightness from an on-sphere offset pixel (farther surface). A flat/uniform fill — the failure mode
 // if depth were not being written — would show no such difference.
 //

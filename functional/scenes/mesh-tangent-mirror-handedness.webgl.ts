@@ -17,20 +17,20 @@
 //   with the fix          +ty          +ty          -ty        → the Y-mirrored quad is the outlier
 //   without the fix       +ty          -ty          +ty        → the X-mirrored quad is the outlier
 //
-// The oracle demands that specific three-way shape: the first two agree AND the third differs from them.
+// The assertion demands that specific three-way shape: the first two agree AND the third differs from them.
 // Dropping the fix does not merely weaken it, it permutes which quad is the outlier, so both halves of
 // the assertion fail. A blank or uniformly-lit frame fails the "third differs" half, so the pattern
 // cannot be satisfied by nothing rendering.
 //
 // Sign-agnostic on purpose: whether computeMeshGeometryTangents yields w = +1 or -1 for this quad only
-// decides which quads are bright, never which one is the odd one out, so the oracle asserts the shape and
+// decides which quads are bright, never which one is the odd one out, so the assertion checks the shape and
 // not the polarity.
 //
 // The material is BlinnPhong with black specular — lighting-dependent (an unlit material cannot express
 // this defect) but pure diffuse, so each flat quad shades uniformly and a single sample per quad is the
 // whole signal.
 //
-// This oracle gates webgl only — it is a webgl-scoped target like its siblings — and note that on any
+// This scene gates webgl only — it is a webgl-scoped target like its siblings — and note that on any
 // backend-agnostic scene assertRender never runs on dom at all (the DOM verifier returns after checking
 // the target element has children). Nothing here speaks to WebGPU.
 import { createScene3D } from '@flighthq/scene3d';
@@ -89,7 +89,7 @@ export const width = 800;
 export const height = 600;
 
 // Quad centres in world X, and the screen fractions they project to under the camera below. Kept as
-// constants so the oracle samples where the geometry actually is rather than at guessed thirds.
+// constants so the assertion samples where the geometry actually is rather than at guessed thirds.
 const QUAD_OFFSET_X = 2.2;
 const SAMPLE_FRACTION_LEFT = 0.168;
 const SAMPLE_FRACTION_CENTRE = 0.5;

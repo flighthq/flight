@@ -1,6 +1,6 @@
 // bitmap-color-transform — validates ColorScaleBias applied to image pixels: a white source tinted with
 // red scale 1 and green/blue scales 0 renders pure red. The scene blits the
-// untinted white source and the tinted result side by side; the oracle proves the source is white and
+// untinted white source and the tinted result side by side; pixel sampling proves the source is white and
 // the transformed bitmap is red (high red, low green/blue) — i.e. the per-channel scales were applied.
 //
 // This is visual because color scale/bias is per-pixel channel math — confirming it means

@@ -74,7 +74,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // half (green = 0). With `alphaMode: 'mask'` (cutoff 0.5) the right half's fragments are discarded, so
 // the cool-blue background shows through exactly where the alpha map is zero — the signature of the
 // alpha map sampling into coverage (a material with no alpha map would render a uniform, fully-opaque
-// quad). The oracle compares the RED channel (warm quad vs cool background) so it is robust to each
+// quad). The assertion compares the RED channel (warm quad vs cool background) so it is robust to each
 // backend's HDR tone-mapping of absolute brightness.
 //
 // The alpha map's green channel is LINEAR data (colorSpace 'linear'), read raw and multiplied into

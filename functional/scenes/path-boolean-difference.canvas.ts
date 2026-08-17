@@ -2,7 +2,7 @@
 // rectangular paths renders correctly, covering only the part of A that does not overlap B.
 //
 // Rect A is 100x100 at (50,50), rect B is 100x100 at (100,100). The difference A−B removes the
-// overlap region (100,100)−(150,150) from A, leaving an L-shaped region. The oracle verifies:
+// overlap region (100,100)−(150,150) from A, leaving an L-shaped region. The scene assertion verifies:
 //   - a point exclusive to A (75,75) is orange (inside the difference),
 //   - the overlap center (125,125) is background black (subtracted out),
 //   - a point exclusive to B (175,175) is background black (not in A at all),

@@ -74,7 +74,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // Because the light travels toward -x / -y / -z, surfaces are lit from the OPPOSITE side
 // (+x / +y / +z) — so the screen-RIGHT hemisphere of the sphere faces the light and is bright, while
 // the screen-LEFT hemisphere falls into shadow (the toon ramp quantizes N·L into stepped bands, so
-// the lit side lands in a brighter band than the shadowed side). The oracle samples one pixel on each
+// the lit side lands in a brighter band than the shadowed side). The assertion samples one pixel on each
 // side and asserts the lit side is clearly brighter than the unlit side, which is the signature of
 // real per-pixel directional shading (a flat/unlit fill would be uniform).
 //

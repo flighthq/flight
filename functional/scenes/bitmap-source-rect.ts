@@ -2,7 +2,7 @@
 // image named by sourceRectangle, at that region's natural size, anchored at the bitmap origin. The
 // source image is a 4-quadrant swatch (TL red, TR green, BL blue, BR white). One bitmap draws the full
 // image (proving the quadrants are where we expect); a second sets sourceRectangle to the green TR
-// quadrant only, and the oracle proves the cropped bitmap is uniformly green with none of the other
+// quadrant only, and pixel sampling confirms the cropped bitmap is uniformly green with none of the other
 // three colors present.
 //
 // This is visual because cropping is a draw-time source-region selection — the only way to confirm it

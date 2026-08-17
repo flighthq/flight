@@ -31,7 +31,7 @@ import {
 // lit by one white spot placed up-front-right, aimed at the origin with a moderate cone. A spot is a
 // point light restricted to a cone, so it lights only the cap of the sphere inside the cone (the
 // screen-right hemisphere here); the opposite side is both facing away AND outside the cone, so it
-// falls to the dim ambient fill. The oracle asserts the in-cone side is clearly brighter than the
+// falls to the dim ambient fill. The assertion confirms the in-cone side is clearly brighter than the
 // out-of-cone side — the signature of the cone-limited punctual shading wired into the forward pass.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

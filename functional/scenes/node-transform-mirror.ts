@@ -11,14 +11,14 @@
 // symmetric across the mirror line renders identically whether it was mirrored or rotated, and the
 // scene would pass against the defect it exists to catch. The glyph here is an "Γ" — a tall bar with an
 // arm along its TOP — and the two candidate renderings put that arm on opposite sides of the pivot row.
-// The oracle samples both places, so it fails in each direction rather than only proving the arm is
+// The assertion samples both places, so it fails in each direction rather than only proving the arm is
 // somewhere.
 //
 // The control uses an identity-linear matrix (determinant +1) through the same setNodeLocalMatrix call,
 // so a failure that hits both copies indicts the scene rather than reflection handling.
 //
-// This oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back, so
-// it checks only that the target element has children and returns before any oracle runs
+// This scene gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back, so
+// it checks only that the target element has children and returns before any assertion runs
 // (functionalVerify.ts). DOM renders this scene's defect identically to the others; nothing here detects
 // it. Do not read a green dom tick on this scene as reflection coverage.
 import type { Bitmap } from '@flighthq/sdk';

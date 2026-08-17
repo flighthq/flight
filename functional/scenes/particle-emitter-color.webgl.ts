@@ -10,7 +10,7 @@
 // particle-emitter test; this one isolates the tint so it is tested honestly where it exists.
 //
 // Particle data is set explicitly — no simulation — for a deterministic frame. The texture is a single
-// solid-white region, so each particle's rendered center reads back its own tint. The oracle proves the
+// solid-white region, so each particle's rendered center reads back its own tint. Pixel sampling proves the
 // six particles show six distinct tint colors and the gaps between them stay background.
 import type { Bitmap } from '@flighthq/sdk';
 import {

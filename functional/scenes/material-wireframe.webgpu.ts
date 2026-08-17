@@ -72,7 +72,7 @@ registerWgpuFunctionalTarget(state, scale);
 // thickness > 1 is unsupported (the backends draw 1px lines), so the wireframe reads as thin bright
 // strokes separated by dark interior pixels.
 //
-// The signature this oracle checks: scanning a horizontal row across the sphere, SOME samples are bright
+// The signature the assertion checks: scanning a horizontal row across the sphere, SOME samples are bright
 // (lines render) but NOT ALL are bright (it is edges, not a solid fill). A solid fill — the failure mode
 // if the material drew filled triangles — would make every sample bright; a blank surface would make
 // none bright.
@@ -84,7 +84,7 @@ const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
 // A smooth unit sphere at the origin. Many segments so the wireframe shows many thin edges across the
-// row the oracle scans (dense bright lines separated by dark interiors).
+// row the assertion scans (dense bright lines separated by dark interiors).
 const geometry = createSphereMeshGeometry(0.5, 48, 32);
 
 // White edges, 1px thick (thickness > 1 is unsupported; the backends draw 1px lines). Lighting-independent.

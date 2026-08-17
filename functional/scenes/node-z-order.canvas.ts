@@ -2,7 +2,7 @@
 // occludes an earlier one at the same position.
 //
 // Three overlapping filled rectangles are added in order: red, green, blue. Each is offset 40px
-// right and 40px down. The oracle verifies:
+// right and 40px down. The scene assertion verifies:
 //   - the blue rect's exclusive region is blue (last child, on top),
 //   - the green rect's exclusive region is green (middle child),
 //   - the red rect's exclusive region is red (first child, on bottom),

@@ -27,7 +27,7 @@ import {
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // WebGPU parity column for the WebGL point-light scene. A mid-gray sphere is illuminated from a
-// position up-front-right; the oracle distinguishes positional punctual shading from a flat fill.
+// position up-front-right; the assertion distinguishes positional punctual shading from a flat fill.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

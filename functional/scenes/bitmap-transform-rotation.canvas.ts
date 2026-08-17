@@ -1,7 +1,7 @@
 // bitmap-transform-rotation — validates that a bitmap renders correctly after a rotation transform.
 //
 // Creates a 100x100 red procedural bitmap, positions it at (200,150), and rotates it 45 degrees.
-// The oracle verifies:
+// The scene assertion verifies:
 //   - the center of the rotated bitmap shows the red bitmap content,
 //   - a corner of the original unrotated bounding box (now outside due to rotation) is background
 //     black — proving the rotation actually occurred.

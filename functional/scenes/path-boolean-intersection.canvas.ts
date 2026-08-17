@@ -3,7 +3,7 @@
 //
 // Two axis-aligned rectangles are created as Paths: rect A (100x100 at 50,50) and rect B
 // (100x100 at 100,100), overlapping in a 50x50 region at (100,100)-(150,150). Their intersection
-// is rendered as a magenta filled shape. The oracle verifies:
+// is rendered as a magenta filled shape. The scene assertion verifies:
 //   - the overlap center (125,125) is magenta (inside the intersection),
 //   - a point exclusive to rect A (75,75) is background black (not in the intersection),
 //   - a point exclusive to rect B (175,175) is background black,

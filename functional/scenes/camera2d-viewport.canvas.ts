@@ -7,7 +7,7 @@
 //   blue  at world (100, 100) → screen (200, 100)
 //   green at world (300, 300) → screen (600, 500)
 //
-// The view matrix is: translate(400,300) · scale(2) · translate(-200,-200). The oracle verifies
+// The view matrix is: translate(400,300) · scale(2) · translate(-200,-200). Pixel sampling verifies
 // each circle lands at the expected screen position — a pure math unit test checks the matrix
 // values, but only a real render proves the camera→container→renderer chain maps pixels correctly.
 import type { Bitmap } from '@flighthq/sdk';

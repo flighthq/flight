@@ -3,7 +3,7 @@
 // data) is drawn via scene2d-gl → bindGlImageResourceTexture → uploadGlCompressedTextureContainer.
 //
 // Real BC1 opaque-blue and BC3 half-alpha-red blocks prove native upload plus the straight-to-premultiplied
-// display-shader bridge. The WebGPU twin uses the same blocks and pixel oracle.
+// display-shader bridge. The WebGPU twin uses the same blocks and pixel verification.
 //
 // This is not observable from jsdom: it needs the real GL bind/upload path and rasterization of the
 // resulting compressed texture.
