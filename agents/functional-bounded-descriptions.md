@@ -1,13 +1,20 @@
 # Bounded Expected-Image Descriptions
 
 The running list of functional scenes whose `expectedImageDescription` states a BOUND — two or more
-permitted pictures — rather than one. It exists because a bounded description is not a documentation
-wrinkle: it is a commissioning constraint, and this is the record the future eligibility rule reads.
+permitted pictures — rather than one.
 
-**A cell whose expected image is genuinely undecided cannot be commissioned as a permanent reference.**
-Blessing one of the permitted pictures would silently resolve an open design question, in whichever
-direction the capture happened to run, with no record that anyone made the call. The bound in the scene
-text is the read-before-capture signal for that; this file is the list.
+★ A BOUND IS NOT BY ITSELF A REASON TO WITHHOLD A CELL, AND READING IT THAT WAY WOULD BLOCK WORK THAT IS
+FINE. The question is not "does the text name more than one picture" but **is there a fact of the matter
+about which pixels are correct**. Two bounded scenes can sit either side of that line:
+
+| kind | what it means | commissioning |
+| --- | --- | --- |
+| **undecided design** | the product has not decided what the right pixels ARE, so no capture can be blessed without silently settling the question in whichever direction it happened to run | **ineligible** until the design is ruled |
+| **stable known per-backend difference** | each backend's output is correct FOR ITS OWN BACKEND; nothing is open, the bound exists only because one FILE covers several renderers | **eligible** |
+
+★ AND THE SECOND REASON IS CLEANER THAN THE FIRST: the description is per-FILE, the blessing is per-CELL.
+A shared file constrains the prose and nothing else, because commissioning does not operate on files. Any
+future eligibility rule must key on the KIND column below, never on the presence of a row.
 
 ## The two rules a bounded description must satisfy
 
@@ -30,9 +37,12 @@ here.
 
 ## The list
 
-| scene | the bound | why it is bounded |
-| --- | --- | --- |
-| `swf-alpha-transform` | the fourth square is white or green, never red or blue | One file covers all four backends. WebGL and WebGPU fold the RGB transform into their tessellated solid-shape path; Canvas and DOM leave it unapplied. The scene's own header records this as current behaviour while the representation of SWF alpha-add is **under design** — so no single value is the correct one to write, and neither may be blessed until the design is decided. |
+| scene | kind | the bound | why it is bounded |
+| --- | --- | --- | --- |
+| `swf-alpha-transform` | **undecided design — INELIGIBLE** | the fourth square is white or green, never red or blue | One file covers all four backends. WebGL and WebGPU fold the RGB transform into their tessellated solid-shape path; Canvas and DOM leave it unapplied. The scene's own header records this as current behaviour while the representation of SWF alpha-add is **under design** — so there is no fact of the matter yet about which is right, and blessing either would settle it by accident. |
+| `swf-import` | **stable known per-backend difference — ELIGIBLE** | the tenth piece, a 100x100 square at x 600-700, y 400-500, is flat white or a yellow-green of roughly R128 G255 B51, never any other colour | Two renderers register colour adjustment and fold the inherited transform; two do not, and must leave the imported cell untinted — the scene asserts both arms explicitly. Each output is correct for its own backend and nothing is undecided, so the bound describes the shared FILE, not a doubt about any cell. |
 
-Nothing else is bounded yet. Add a row when you write one, and remove it when the underlying design is
-decided and the description collapses to a single picture.
+Add a row when you write a bound, with its KIND. Remove a row when the bound goes away: an
+undecided-design row disappears when the design is ruled and the text collapses to one picture; a
+stable-known row disappears if the backends converge. **Changing a row's kind is a commissioning
+decision, not an edit** — `swf-import` moved from unlisted to eligible only after a ruling.

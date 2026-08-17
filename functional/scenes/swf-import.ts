@@ -913,9 +913,12 @@ const target = await createFunctionalTarget({
     'tinted by the background it sits on rather than darkened twice. Below that, near x 40, y 520, an ' +
     'orange bitmap draws, and a block of red edit text sits within x 300-560, y 500-570. Finally a ' +
     '100x100 nested square sits at x 600-700, y 400-500, filled from a bitmap and inheriting a colour ' +
-    'transform from the placement above it. Its FILL COLOUR IS DELIBERATELY LEFT UNSTATED HERE: it ' +
-    'differs by renderer, and whether that difference should be written as a bounded claim is an open ' +
-    'ruling. Its position, size and presence are the claim — an empty patch there is a failure.',
+    'transform from the placement above it. Its fill is EITHER flat white, on renderers that do not ' +
+    'register colour adjustment, OR a yellow-green of roughly R128 G255 B51, on those that fold the ' +
+    'transform into the draw — and never any other colour. That bound is a STABLE KNOWN DIFFERENCE ' +
+    'between backends, not an undecided design: each value is correct for its own backend, so a ' +
+    'reference blessed per cell resolves nothing that is still open. An empty patch there, or a ' +
+    'colour that is neither, is the failure.',
 });
 if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);
