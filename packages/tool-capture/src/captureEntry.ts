@@ -23,6 +23,8 @@ import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatStatusLine } from './captureFormat.js';
+import type { CaptureHostProvenance } from './captureHostProvenance.js';
+import { getCaptureHostProvenance } from './captureHostProvenance.js';
 import { isBrowserClosedError } from './captureInterrupt.js';
 import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
 import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.js';
@@ -32,6 +34,8 @@ import { hashCaptureScreenshotPixels } from './captureScreenshotHash.js';
 import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
 import type { FunctionalVerification } from './functionalVerify.js';
+
+export type CaptureStatusProvenance = Partial<CaptureBaselineProvenance> & CaptureHostProvenance;
 
 export interface CaptureStatus {
   protocolVersion: typeof CAPTURE_PROTOCOL_VERSION;
@@ -53,7 +57,7 @@ export interface CaptureStatus {
    * two hundred lines below applies here: attaching another capture's conditions to these bytes
    * manufactures an agreement that was never observed.
    */
-  provenance?: CaptureBaselineProvenance;
+  provenance?: CaptureStatusProvenance;
   /**
    * Whether this target's own pixel oracle was CALLED, straight from the verifier, or null when the
    * verifier published no answer. Recorded because existence and invocation are different claims: a
@@ -557,6 +561,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         verifyPublished: dataUrl !== null,
         warmupFrames: await getCaptureWarmupFrames(page),
       };
+      const statusProvenance = withCaptureHostProvenance(captureProvenance);
       // ★ PUBLISHED TOGETHER OR NOT AT ALL. The consumer stamps this provenance ONLY onto a fingerprint
       // it writes in the same act. Never backfill it onto a fingerprint already on disk: that value was
       // produced by some earlier capture under conditions nobody recorded, and attaching today's
@@ -604,6 +609,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           baselineHash: null,
           changed: null,
           observe: diagnostics,
+          provenance: statusProvenance,
         };
         writeFileSync(statusPath, JSON.stringify(observeStatus, null, 2));
         console.log(statusLine('pass', renderer, formatObserveDetail(diagnostics)));
@@ -658,9 +664,9 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         baselineHash,
         changed,
         oracle: verification?.oracle ?? null,
-        // The conditions these exact bytes were produced under — the same object the fingerprint
-        // provenance is built from, so the two can never describe different captures.
-        provenance: captureProvenance,
+        // The conditions these exact bytes were produced under — the fingerprint/sha256 provenance
+        // extended only with the host facts that identify where this same capture ran.
+        provenance: statusProvenance,
       };
       writeFileSync(statusPath, JSON.stringify(status, null, 2));
 
@@ -710,6 +716,10 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         baselineHash: null,
         changed: null,
         oracle: verification?.oracle ?? null,
+        // The host is known even when capture conditions were not reached. Record only that known fact:
+        // filling required baseline-provenance fields with guesses would turn a failed measurement into
+        // evidence it never produced.
+        provenance: CAPTURE_HOST_PROVENANCE,
       };
       writeFileSync(statusPath, JSON.stringify(errorStatus, null, 2));
 
@@ -1166,6 +1176,7 @@ async function captureUrlAttempt(
       changed: null,
       oracle: null,
       observe: diagnostics,
+      provenance: captureUrlStatusProvenance(captureFrames, diagnostics),
     };
     writeFileSync(join(outDir, 'status.json'), JSON.stringify(status, null, 2));
     return diagnostics;
@@ -1198,6 +1209,7 @@ async function captureUrlAttempt(
       changed: null,
       oracle: null,
       observe: diagnostics,
+      provenance: captureUrlStatusProvenance(captureFrames, diagnostics),
     };
     writeFileSync(join(outDir, 'status.json'), JSON.stringify(status, null, 2));
     return diagnostics;
@@ -1215,6 +1227,25 @@ function updateObserveStatus(outDir: string, diagnostics: CaptureObserveDiagnost
   } catch {
     // An unrecoverable browser-launch failure may leave no status file; the caller still receives diagnostics.
   }
+}
+
+const CAPTURE_HOST_PROVENANCE = getCaptureHostProvenance();
+
+function withCaptureHostProvenance(provenance: CaptureBaselineProvenance): CaptureStatusProvenance {
+  return { ...provenance, ...CAPTURE_HOST_PROVENANCE };
+}
+
+function captureUrlStatusProvenance(
+  captureFrames: number,
+  diagnostics: Readonly<CaptureObserveDiagnostics>,
+): CaptureStatusProvenance {
+  return withCaptureHostProvenance({
+    frames: captureFrames,
+    sourceHash: null,
+    targetKind: diagnostics.verifyTargetKind,
+    verifyPublished: diagnostics.verifyPublished,
+    warmupFrames: diagnostics.warmupFrames,
+  });
 }
 
 async function hasVisiblePageEvidence(page: Page): Promise<boolean> {

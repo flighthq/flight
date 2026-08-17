@@ -87,6 +87,11 @@ describe('capture eyes browser contract', () => {
     expect(diagnostics).toMatchObject({ blank: false, usable: true, timedOut: false, attempts: 1 });
     expect(performance.now() - startedAt).toBeLessThan(8_000);
     expect(readFileSync(join(outDir, 'screenshot.png')).byteLength).toBeGreaterThan(300);
+    const status = JSON.parse(readFileSync(join(outDir, 'status.json'), 'utf8')) as {
+      provenance?: { environmentId?: unknown; hostInstanceId?: unknown };
+    };
+    expect(status.provenance).toMatchObject({ environmentId: null });
+    expect(status.provenance?.hostInstanceId).toEqual(expect.any(String));
   }, 15_000);
 
   it('captures a static one-shot WebGL frame without page integration', async () => {
@@ -135,6 +140,10 @@ describe('capture eyes browser contract', () => {
           verify: false,
         });
         expect(result).toBe('ok');
+        const status = JSON.parse(
+          readFileSync(join(artifactRoot, 'examples', name, 'canvas', 'status.json'), 'utf8'),
+        ) as { provenance?: { hostInstanceId?: unknown } };
+        expect(status.provenance?.hostInstanceId).toEqual(expect.any(String));
       }
     } finally {
       await session.browser.close();

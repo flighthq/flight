@@ -92,6 +92,13 @@ jobs:
           else
             npx tsx ./packages/tool-capture/src/bin.ts capture $args
           fi
+        env:
+          # Opposite invariants: each matrix leg is a distinct host instance, while the declared
+          # environment must match. Keep both in every status so the comparer can enforce both claims.
+          FLIGHT_CAPTURE_HOST_ID: ${{ github.run_id }}-${{ github.run_attempt }}-leg-${{ matrix.host }}
+          FLIGHT_CAPTURE_MATRIX_LEG: ${{ matrix.host }}
+          FLIGHT_CAPTURE_ENVIRONMENT_ID: ${{ steps.environment.outputs.id }}
+          FLIGHT_CAPTURE_ENVIRONMENT_DESCRIPTOR: ${{ steps.environment.outputs.descriptor }}
 
       # Only the status files travel: the hashes are the measurement, and shipping every PNG would move
       # hundreds of megabytes to answer a question about equality.
