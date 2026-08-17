@@ -35,16 +35,12 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff,
   kinds: [ShapeKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with three solid circles, each about 120 px across — a 30 px radius ' +
-    'in the scene own coordinates, doubled by a 2x zoom, so 60 px of radius on screen — each a ' +
-    'different ' +
-    'colour and each at a specific screen position: red centred at (400,300), blue at (200,100), and ' +
-    'green at (600,500). The positions carry the whole claim — they are three points that were laid out ' +
-    'in another coordinate space and must land exactly there, so a picture with the circles present but ' +
-    'clustered, mirrored, or all near the middle fails even though every circle drew. The red one sits at ' +
-    'the exact centre of the field, and blue and green are diagonally opposite it at equal distances. ' +
-    'Each circle is one flat colour with no gradient, they do not overlap or touch, and the space between ' +
-    'them is pure black.',
+    'On an opaque black field (800×600): three filled circles, each with a radius of 60 px ' +
+    '(displayed at 2× zoom from a 30 px world radius). A RED circle centered at screen ' +
+    '(400, 300) — the viewport center. A BLUE circle centered at screen (200, 100) — upper ' +
+    'left. A GREEN circle centered at screen (600, 500) — lower right. The corners of the ' +
+    'viewport (e.g. (0, 0)) are black background. No overlap between any circles; each is a ' +
+    'uniform flat fill with no gradient or stroke.',
 });
 
 const camera = createCamera2D(WIDTH, HEIGHT);
