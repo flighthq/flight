@@ -105,14 +105,21 @@ const batch = eligible.slice(0, Math.max(0, limit));
 // by asking the author. `sourceCommit` says what the ANALYSIS ran on; `stale` says which cells' CAPTURES
 // describe a different tree — and those two differing is the defect this exists to surface, because it is
 // exactly what produced a census reporting cells as lacking oracles they had since gained.
-const staleCells = findStaleCaptures(captures, currentSceneSourceHash);
+const staleness = findStaleCaptures(captures, currentSceneSourceHash);
+const staleCells = staleness.stale;
 console.log(`subject ${subject} | ${coverage.size} live cell(s) | ${runs.length} run(s) on ${scope}`);
 console.log(`sourceCommit ${headCommit()}`);
 console.log(
-  staleCells.length === 0
-    ? 'stale 0 — every capture describes the current scene source'
-    : `stale ${staleCells.length} — CAPTURES DESCRIBE A DIFFERENT TREE; re-capture before trusting this census`,
+  staleness.compared === 0
+    ? `stale UNKNOWN — 0 of ${captures.length} captures carried a comparable sourceHash; freshness is UNVERIFIED, not clean`
+    : staleCells.length === 0
+      ? `stale 0 of ${staleness.compared} compared — every comparable capture describes the current scene source`
+      : `stale ${staleCells.length} of ${staleness.compared} compared — CAPTURES DESCRIBE A DIFFERENT TREE; re-capture first`,
 );
+// ★ PARITY CAME FROM A SEPARATE RUN, SAID IN THE OUTPUT RATHER THAN IN A NOTE. `validate` writes the parity
+// report but no status.json, so a census is assembled from the capture runs PLUS a third validate run. A
+// three-run census presenting as one is the provenance shape this arc has been burned by repeatedly.
+console.log('parity: from a separate validate run (validate writes no status.json), not from these capture roots');
 for (const identity of staleCells) console.log(`  STALE ${identity}`);
 console.log('');
 console.log(`eligible ${eligible.length}${eligible.length > batch.length ? ` (this batch: ${batch.length})` : ''}`);
@@ -139,6 +146,11 @@ if (subcommand === 'report') process.exit(0);
 // ★ REPORT MAY SHOW A STALE CENSUS; WRITE MAY NOT ACT ON ONE. Same read/write asymmetry as everything else
 // here — looking at a suspect number is how you find out it is suspect, and committing a cell on one is
 // how a wrong reference becomes permanent.
+if (staleness.compared === 0) {
+  console.error('oracle-commission-batch: no capture carried a comparable sourceHash, so freshness is');
+  console.error('  UNVERIFIED. Refusing to file: an unverifiable census is not a fresh one.');
+  process.exit(1);
+}
 if (staleCells.length > 0) {
   console.error(`oracle-commission-batch: ${staleCells.length} capture(s) describe a different tree than`);
   console.error('  the current source. Re-capture (npm run build:functional first) before filing.');

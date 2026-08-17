@@ -534,18 +534,34 @@ describe('findStaleCaptures', () => {
       current({ 'functional/moved/webgl': 'new', 'functional/same/webgl': 'a' }),
     );
 
-    expect(stale).toEqual(['functional/moved/webgl']);
+    expect(stale).toEqual({ compared: 2, stale: ['functional/moved/webgl'] });
   });
 
   it('ignores a capture that recorded no source hash, rather than guessing it moved', () => {
     expect(
       findStaleCaptures([fact('functional/a/webgl', { sourceHash: null })], current({ 'functional/a/webgl': 'x' })),
-    ).toEqual([]);
+    ).toEqual({ compared: 0, stale: [] });
+  });
+
+  it('reports compared:0 when the field it depends on has gone away, rather than an empty stale list', () => {
+    // ★ THE SILENT FLIP THIS PREVENTS. `sourceHash` lives on a record this does not own and is being
+    // migrated elsewhere. If it empties, every cell takes the null branch and the stale list is empty —
+    // which reads as "everything is fresh". `compared` is what separates "nothing drifted" from "I could
+    // not look", in the one instrument whose whole job is noticing drift.
+    const gone = findStaleCaptures(
+      [fact('functional/a/webgl', { sourceHash: null }), fact('functional/b/webgl', { sourceHash: null })],
+      current({ 'functional/a/webgl': 'x', 'functional/b/webgl': 'y' }),
+    );
+
+    expect(gone).toEqual({ compared: 0, stale: [] });
   });
 
   it('ignores a cell whose scene no longer exists — that is residue, not staleness', () => {
     // A missing scene resolves to null, and the coverage intersection already withholds those. Reporting
     // them here would file one defect under two names.
-    expect(findStaleCaptures([fact('functional/gone/webgl', { sourceHash: 'old' })], current({}))).toEqual([]);
+    expect(findStaleCaptures([fact('functional/gone/webgl', { sourceHash: 'old' })], current({}))).toEqual({
+      compared: 0,
+      stale: [],
+    });
   });
 });

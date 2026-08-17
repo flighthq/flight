@@ -348,18 +348,29 @@ export function addReferenceImageCoverage(
  * Compares per-cell rather than per-repository on purpose: a commit sha tells a reader the whole census is
  * suspect, while a source hash tells them exactly which cells are, which is the difference between "re-run
  * everything" and "these eleven".
+ *
+ * ★ IT RETURNS HOW MANY CELLS IT COULD COMPARE, AND THE CALLER MUST NOT IGNORE IT. `sourceHash` is a field
+ * on a record this does not own: it can be renamed, moved, or emptied by work elsewhere. If it goes away,
+ * every cell takes the `null` branch and the honest answer becomes "cannot tell" — but the STALE LIST
+ * WOULD STILL BE EMPTY, and an empty list reads as "everything is fresh". That is a silent flip from a
+ * gate to a rubber stamp, in the one instrument whose whole job is detecting that a record has drifted out
+ * from under a reader. `compared` is what makes the difference visible. Same rule as
+ * `compareCalibrationRuns` printing what it saw: a zero denominator is unconfigured, not clean.
  */
 export function findStaleCaptures(
   captures: readonly Readonly<OracleCaptureFact>[],
   currentSourceHash: (identity: string) => string | null,
-): string[] {
+): { stale: string[]; compared: number } {
   const stale: string[] = [];
+  let compared = 0;
   for (const capture of captures) {
     if (capture.sourceHash === null) continue;
     const current = currentSourceHash(capture.identity);
-    if (current !== null && current !== capture.sourceHash) stale.push(capture.identity);
+    if (current === null) continue;
+    compared += 1;
+    if (current !== capture.sourceHash) stale.push(capture.identity);
   }
-  return stale.sort();
+  return { compared, stale: stale.sort() };
 }
 
 /** One `parity` row of a validation report: the scene it judged, and the verdict it reached. */
