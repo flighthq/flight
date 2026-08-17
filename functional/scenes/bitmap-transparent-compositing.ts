@@ -62,6 +62,15 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x0000ffff, // opaque blue (packed RGBA, low byte = alpha)
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'On an opaque blue field: two 240×240 radial gradients, each a white-to-transparent ramp ' +
+    'composited over the blue background. The LEFT ramp (x 120–360, y 180–420) is drawn at ' +
+    'full opacity — its center is nearly white (opaque white fully covers blue), fading to ' +
+    'pure blue background at the edges where the source is transparent. The RIGHT ramp ' +
+    '(x 440–680, y 180–420) is drawn at half opacity — its center is light blue (white at ' +
+    '50% over blue), fading to pure blue at the edges. No dark fringe, no black halo, and no ' +
+    'darkening toward black at the center of the half-opacity copy — the red and green channels ' +
+    'at the right center are near mid-range, not near zero.',
 });
 
 const root = createDisplayObject();

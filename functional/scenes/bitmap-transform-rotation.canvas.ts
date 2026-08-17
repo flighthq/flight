@@ -31,6 +31,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'On an opaque black field: a flat red diamond (a 100×100 square rotated 45° around its ' +
+    'center) centered at (200, 150). The diamond spans roughly 70 px along each axis from ' +
+    'the center. The interior is uniformly red; the four axis-aligned corners of the original ' +
+    'unrotated bounding box (e.g. top-left near (150, 100)) are exposed as black background, ' +
+    'proving the rotation occurred. No other colors, no gradient, no anti-aliased fringe ' +
+    'beyond the rotated edges.',
 });
 
 const canvas = document.createElement('canvas');

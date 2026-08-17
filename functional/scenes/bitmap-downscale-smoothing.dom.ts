@@ -71,6 +71,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x808080ff, // opaque mid-gray, so off-image samples are distinguishable from content.
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'On an opaque mid-gray field: two small (~77×77 px) images side by side, each a dense ' +
+    '256×256 black-and-white checkerboard (8 px cells) downscaled to roughly 0.3×. The LEFT ' +
+    'image (x 200–277, y 260–337) uses nearest-neighbor sampling — every pixel is near-pure ' +
+    'black or near-pure white with no intermediate tones, producing high-contrast aliased noise. ' +
+    'The RIGHT image (x 520–597, y 260–337) uses bilinear sampling — the dense checker averages ' +
+    'toward gray, and many pixels carry mid-tones absent on the left. Mid-gray background is ' +
+    'visible around and between both images.',
 });
 
 const root = createDisplayObject();

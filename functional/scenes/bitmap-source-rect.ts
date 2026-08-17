@@ -59,6 +59,13 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [SpriteKind],
+  expectedImageDescription:
+    'On an opaque black field: two images. The LEFT image at (100, 80) is a 200×200 four-quadrant ' +
+    'swatch — top-left quadrant (100×100) is flat red, top-right is flat green, bottom-left is ' +
+    'flat blue, bottom-right is flat white. The RIGHT image at (420, 80) is a 100×100 square ' +
+    'showing ONLY the green quadrant — uniformly flat green with no red, blue, or white pixels ' +
+    'present. Both images have hard edges and uniform fills within each region. Every other pixel ' +
+    'is black.',
 });
 
 const root = createDisplayObject();
