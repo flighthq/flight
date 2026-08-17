@@ -147,38 +147,40 @@ describe('setBaselineField', () => {
     expect(getBaselineField(root, 'functional', 'foo', 'webgl', 'sha256')).toBe('hash2');
   });
 
-  it('keeps legacy fingerprint source evidence read-only until that column is rewritten', () => {
-    const path = baselinePath(root, 'functional', 'foo');
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(
-      path,
-      JSON.stringify({ canvas: { fingerprint: '2:000000ffffff', sourceHash: 'legacy-source' } }, null, 2) + '\n',
-    );
+  describe('getBaselineLegacyFingerprintSourceHash', () => {
+    it('keeps legacy fingerprint source evidence read-only until that column is rewritten', () => {
+      const path = baselinePath(root, 'functional', 'foo');
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(
+        path,
+        JSON.stringify({ canvas: { fingerprint: '2:000000ffffff', sourceHash: 'legacy-source' } }, null, 2) + '\n',
+      );
 
-    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBe('legacy-source');
-    setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'other-column');
-    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBe('legacy-source');
-  });
+      expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBe('legacy-source');
+      setBaselineField(root, 'functional', 'foo', 'webgl', 'sha256', 'other-column');
+      expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBe('legacy-source');
+    });
 
-  it('removes a legacy source hash only when replacing that column fingerprint', () => {
-    const path = baselinePath(root, 'functional', 'foo');
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(
-      path,
-      JSON.stringify(
-        {
-          canvas: { fingerprint: '2:000000ffffff', sourceHash: 'legacy-canvas' },
-          webgl: { fingerprint: '2:111111eeeeee', sourceHash: 'legacy-webgl' },
-        },
-        null,
-        2,
-      ) + '\n',
-    );
+    it('removes a legacy source hash only when replacing that column fingerprint', () => {
+      const path = baselinePath(root, 'functional', 'foo');
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(
+        path,
+        JSON.stringify(
+          {
+            canvas: { fingerprint: '2:000000ffffff', sourceHash: 'legacy-canvas' },
+            webgl: { fingerprint: '2:111111eeeeee', sourceHash: 'legacy-webgl' },
+          },
+          null,
+          2,
+        ) + '\n',
+      );
 
-    setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', PROVENANCE);
-    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBeNull();
-    expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toEqual(PROVENANCE);
-    expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'webgl')).toBe('legacy-webgl');
+      setBaselineField(root, 'functional', 'foo', 'canvas', 'fingerprint', '2:000000ffffff', PROVENANCE);
+      expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'canvas')).toBeNull();
+      expect(getBaselineProvenance(root, 'functional', 'foo', 'canvas', 'fingerprint')).toEqual(PROVENANCE);
+      expect(getBaselineLegacyFingerprintSourceHash(root, 'functional', 'foo', 'webgl')).toBe('legacy-webgl');
+    });
   });
 
   it('allows the normal sha256-only stage and a legacy join with unknown provenance', () => {
