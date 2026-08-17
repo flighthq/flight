@@ -379,6 +379,23 @@ function buildRendererBar(): void {
     holdBtn.addEventListener('click', () => void holdCurrentTest());
   }
   rendererBar.appendChild(holdBtn);
+
+  const sep = document.createElement('span');
+  sep.className = 'renderer-sep';
+  rendererBar.appendChild(sep);
+
+  for (const mode of ['off', 'side-by-side', 'onion-skin'] as CompareMode[]) {
+    const btn = document.createElement('button');
+    btn.className = 'compare-btn' + (compareMode === mode ? ' selected' : '');
+    btn.textContent = mode === 'off' ? 'Preview' : mode === 'side-by-side' ? 'Side-by-side' : 'Onion skin';
+    btn.title = mode === 'off' ? 'Normal preview' : `Compare: ${mode}`;
+    btn.addEventListener('click', () => {
+      compareMode = mode;
+      buildRendererBar();
+      showRenderer();
+    });
+    rendererBar.appendChild(btn);
+  }
 }
 
 function commissionStateMessage(state: CommissionState): string {
@@ -433,7 +450,7 @@ function showRenderer(): void {
   }
 
   preview.querySelector('.compare-view')?.remove();
-  if (compareMode !== 'off' && t && cell && (cell.commissionState === 'included' || cell.commissionState === 'differs')) {
+  if (compareMode !== 'off' && t && cell) {
     showCompareView(t, cell);
   }
 }
@@ -450,7 +467,11 @@ async function showCompareView(t: GalleryTest, cell: GalleryCell): Promise<void>
   try {
     [candidateImg, referenceImg] = await Promise.all([loadImage(candidateSrc), loadImage(referenceSrc)]);
   } catch {
-    container.innerHTML = '<div class="compare-message">No reference fetched yet — run npm run reference-image:fetch</div>';
+    const isCommissioned = cell.commissionState === 'included' || cell.commissionState === 'differs';
+    const msg = isCommissioned
+      ? 'No reference fetched yet — run npm run reference-image:fetch to extract the pack'
+      : 'No reference image — this cell is not commissioned';
+    container.innerHTML = `<div class="compare-message">${msg}</div>`;
     preview.appendChild(container);
     return;
   }
@@ -653,6 +674,12 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     filterInput.focus();
     filterInput.select();
+  } else if (e.key === 'c') {
+    e.preventDefault();
+    const modes: CompareMode[] = ['off', 'side-by-side', 'onion-skin'];
+    compareMode = modes[(modes.indexOf(compareMode) + 1) % modes.length];
+    buildRendererBar();
+    showRenderer();
   }
 });
 
