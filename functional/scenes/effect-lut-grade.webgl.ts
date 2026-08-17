@@ -91,7 +91,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // The warm-tone LUT crushes blues (γ=1.5): cell 0 (red, 0xff3030ff, R=255, G=48, B=48) has B=48
 // input → B≈21 graded (pow(48/255, 1.5)·255 ≈ 21). Without the LUT, B stays at 48. Checking the
 // graded VALUE (B ≤ 35), not just distance from input, so a coincidental perturbation cannot satisfy it.

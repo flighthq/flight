@@ -133,7 +133,6 @@ for (let i = 0; i < PARTICLE_COUNT; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Motion blur redistributes each particle's energy along its velocity: the bright cores vanish and a wide
 // dim smear takes their place. Both facts are invisible to the regression fingerprint, whose committed
 // grid scores 0.57 against a uniform frame of its own background — the whole picture is worth a ninth of

@@ -76,7 +76,6 @@ for (let i = 0; i < 18; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Kuwahara (radius 4) is an edge-preserving smoothing filter (oil-painting effect). It reduces
 // fine detail at shape edges and within textured regions while keeping broad color boundaries.
 // The unprocessed scene with 18 rotated shapes has horizontal HF energy around 2-4 from the many

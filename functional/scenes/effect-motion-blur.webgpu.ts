@@ -126,7 +126,6 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
   return pairs === 0 ? 0 : deltas / pairs;
 }
 
-// ORACLE-BLOCK
 // Motion blur (intensity 1, 16 samples) smears the scene along the motion vector. The 4 squares
 // have axis-aligned edges, but the blur spreads color across boundaries, reducing HF energy from
 // the sharp transitions. Without the effect, clean square edges keep HF above 1.5.

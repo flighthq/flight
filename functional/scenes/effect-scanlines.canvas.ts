@@ -75,7 +75,6 @@ for (let i = 0; i < 18; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Scanlines (count 240, intensity 0.5) overlay alternating dark horizontal bands on the frame.
 // Every ~2.5 rows (600/240), the brightness alternates, creating high vertical-frequency content.
 // Measuring vertical adjacent-pixel energy captures this periodic pattern. Without the effect,

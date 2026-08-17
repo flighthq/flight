@@ -84,7 +84,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Posterize quantizes each channel to 4 levels. The 6 input cells have 5 unique blue channel values
 // (48, 64, 255, 192, 208). After quantization to 4 levels, at most 4 unique B values remain —
 // verified in both sRGB and linear quantization paths. Without the effect, the original 5 unique B

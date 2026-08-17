@@ -76,7 +76,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Sepia maps every color to a warm brown scale whose channel ordering is R >= G >= B. The sepia
 // matrix's row coefficients are R-row > G-row > B-row in every column, so this ordering holds
 // regardless of whether the operation runs in sRGB or linear space. Without the effect, cell 1

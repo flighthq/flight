@@ -95,7 +95,6 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
   return pairs === 0 ? 0 : deltas / pairs;
 }
 
-// ORACLE-BLOCK
 // Camera motion blur (intensity 0.8) simulates camera movement, smearing the entire frame. The
 // unprocessed scene with 4 rotated shapes has HF energy ~3-4. After motion blur, HF drops below
 // 1.5. Without the effect, sharp edges keep HF above 1.5 and the check fails.

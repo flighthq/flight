@@ -78,7 +78,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Control column: canvas has no posterize runner, so the 6 input shapes render unquantized.
 // The 6 RGBA colors yield 5 distinct blue channels (48, 64, 255, 192, 208). Exactly 5 confirms the
 // shapes rendered with correct RGBA unpacking and no spurious quantization was applied.

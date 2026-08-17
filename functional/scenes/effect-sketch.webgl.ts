@@ -76,7 +76,6 @@ for (let i = 0; i < 18; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // The sketch pass renders the scene as pencil strokes, and its sharpest signature is that the result is
 // MONOCHROME: the six saturated fills collapse to gray. Measured with the effect applied vs the same
 // scene with the pipeline bypassed — mean chroma 0.000 vs 8.750, adjacent-pixel energy 1.75 vs 0.66. Both

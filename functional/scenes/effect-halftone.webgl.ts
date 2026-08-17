@@ -76,7 +76,6 @@ for (let i = 0; i < 18; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // Halftone replaces flat fills with a dot screen, and a dot screen is high-frequency structure — exactly
 // what the regression fingerprint averages away into the flat tone underneath (this target's whole
 // committed grid scores 1.17 against a uniform frame of its own background, against a gate threshold of

@@ -79,7 +79,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ORACLE-BLOCK
 // SMAA smooths aliased edges through a multi-pass morphological filter. Shape 0 (white, 0xffffffff)
 // at its center should retain high luminance (> 200) after the SMAA pass, verifying the pipeline
 // processes content correctly. Without the pipeline or with a broken pass, luminance drops below 200.
