@@ -96,12 +96,13 @@ describe('createWgpuRenderEffectPipeline', () => {
     expect(pipeline.options.format).toBe('rgba16f');
   });
 
-  it('rejects a multisample request instead of silently dropping it', async () => {
+  // Guards the revert: rejecting sampleCount broke 102 live module-scope callers, so the pipeline must
+  // ACCEPT an unsupported count and normalise it. If this starts throwing again, the callers were not
+  // migrated first.
+  it('accepts an unsupported multisample request instead of refusing to build', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    expect(() => createWgpuRenderEffectPipeline(state, { sampleCount: 4 })).toThrow(
-      'createWgpuRenderEffectPipeline: sampleCount 4 is unsupported; WebGPU effect targets are single-sample',
-    );
+    expect(() => createWgpuRenderEffectPipeline(state, { sampleCount: 4 })).not.toThrow();
   });
 
   it('gives each pipeline its own pool and caches', async () => {
