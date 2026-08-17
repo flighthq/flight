@@ -1,4 +1,6 @@
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { randomUUID } from 'node:crypto';
+
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
@@ -16,11 +18,18 @@ const TOOL_ORDER = ['functional', 'examples', 'reference'];
 const RENDERER_ORDER = ['dom', 'canvas', 'webgl', 'webgpu'];
 const EXCLUDE_TOOLS = new Set(['site']);
 
+interface GalleryCellProvenance {
+  hostInstanceId: string | null;
+  environmentId: string | null;
+}
+
 interface GalleryCell {
   renderer: string;
   state: 'ready' | 'error';
   error: string | null;
   changed: boolean | null;
+  hash: string | null;
+  provenance: GalleryCellProvenance | null;
 }
 
 interface GalleryTest {
@@ -81,6 +90,8 @@ function discoverGallery(): GalleryTest[] {
         let state: 'ready' | 'error' = 'ready';
         let error: string | null = null;
         let changed: boolean | null = null;
+        let hash: string | null = null;
+        let provenance: GalleryCellProvenance | null = null;
         let cellDescription: string | undefined;
 
         if (existsSync(statusPath)) {
@@ -89,11 +100,20 @@ function discoverGallery(): GalleryTest[] {
               state?: string;
               error?: string;
               changed?: boolean;
+              hash?: string;
+              provenance?: { hostInstanceId?: string; environmentId?: string };
               expectedImageDescription?: string;
             };
             if (s.state === 'error') state = 'error';
             error = s.error ?? null;
             changed = s.changed ?? null;
+            hash = s.hash ?? null;
+            if (s.provenance) {
+              provenance = {
+                hostInstanceId: s.provenance.hostInstanceId ?? null,
+                environmentId: s.provenance.environmentId ?? null,
+              };
+            }
             cellDescription = s.expectedImageDescription;
           } catch {
             // ignore malformed status
@@ -103,7 +123,7 @@ function discoverGallery(): GalleryTest[] {
         if (cellDescription !== undefined && expectedImageDescription === undefined) {
           expectedImageDescription = cellDescription;
         }
-        cells.push({ renderer, state, error, changed });
+        cells.push({ renderer, state, error, changed, hash, provenance });
       }
 
       if (cells.length > 0) {
@@ -148,6 +168,51 @@ function galleryPlugin(): Plugin[] {
 
         server.middlewares.use((req, res, next) => {
           const urlPath = (req.url ?? '/').split('?')[0];
+
+          if (req.method === 'POST' && urlPath === '/api/commission') {
+            let body = '';
+            req.on('data', (chunk: Buffer) => {
+              body += chunk.toString();
+            });
+            req.on('end', () => {
+              try {
+                const payload = JSON.parse(body) as {
+                  tool: string;
+                  entry: string;
+                  cells: readonly { renderer: string; pixelSha256: string | null }[];
+                  reason: string;
+                };
+                if (!payload.tool || !payload.entry || !payload.cells?.length) {
+                  res.statusCode = 400;
+                  res.end(JSON.stringify({ error: 'missing required fields: tool, entry, cells' }));
+                  return;
+                }
+
+                const id = randomUUID();
+                const request = {
+                  schemaVersion: 1,
+                  id,
+                  subject: payload.tool,
+                  targets: [{ entry: payload.entry, renderers: payload.cells.map((c) => c.renderer) }],
+                  frames: 1,
+                  reason: payload.reason || 'Commissioned from gallery',
+                };
+
+                const queueDir = join(projectRoot, 'oracle-requests');
+                mkdirSync(queueDir, { recursive: true });
+                const outPath = join(queueDir, `${id}.json`);
+                writeFileSync(outPath, JSON.stringify(request, null, 2) + '\n');
+
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ id, path: relative(projectRoot, outPath) }));
+              } catch {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: 'invalid JSON body' }));
+              }
+            });
+            return;
+          }
+
           if (!urlPath.startsWith('/artifacts/')) return next();
 
           const rel = urlPath.slice('/artifacts/'.length);

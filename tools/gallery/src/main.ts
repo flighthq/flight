@@ -1,11 +1,18 @@
 // @ts-expect-error -- virtual module typed below
 import { tests as _tests } from 'virtual:gallery-manifest';
 
+interface GalleryCellProvenance {
+  hostInstanceId: string | null;
+  environmentId: string | null;
+}
+
 interface GalleryCell {
   renderer: string;
   state: 'ready' | 'error';
   error: string | null;
   changed: boolean | null;
+  hash: string | null;
+  provenance: GalleryCellProvenance | null;
 }
 
 interface GalleryTest {
@@ -115,6 +122,47 @@ function buildSidebar(): void {
   testList.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
 }
 
+async function commissionCurrentTest(): Promise<void> {
+  const t = currentTest();
+  if (!t) return;
+
+  const cells = t.cells.map((c) => ({ renderer: c.renderer, pixelSha256: c.hash }));
+
+  try {
+    const res = await fetch('/api/commission', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tool: t.tool,
+        entry: t.name,
+        cells,
+        reason: 'Commissioned from gallery',
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      showCommissionFeedback(`Error: ${(err as { error: string }).error}`, true);
+      return;
+    }
+    const result = (await res.json()) as { id: string; path: string };
+    showCommissionFeedback(`Written: ${result.path}`, false);
+  } catch (e) {
+    showCommissionFeedback(`Network error: ${e}`, true);
+  }
+}
+
+function showCommissionFeedback(message: string, isError: boolean): void {
+  let el = document.querySelector<HTMLElement>('.commission-feedback');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'commission-feedback';
+    preview.appendChild(el);
+  }
+  el.textContent = message;
+  el.style.color = isError ? '#c05050' : '#50c050';
+  setTimeout(() => el?.remove(), 4000);
+}
+
 function buildRendererBar(): void {
   rendererBar.innerHTML = '';
   const t = currentTest();
@@ -135,6 +183,13 @@ function buildRendererBar(): void {
     });
     rendererBar.appendChild(btn);
   });
+
+  const commissionBtn = document.createElement('button');
+  commissionBtn.className = 'commission-btn';
+  commissionBtn.textContent = 'Commission';
+  commissionBtn.title = 'Write an oracle request for all renderers of this scene';
+  commissionBtn.addEventListener('click', () => void commissionCurrentTest());
+  rendererBar.appendChild(commissionBtn);
 }
 
 function showRenderer(): void {
