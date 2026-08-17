@@ -35,7 +35,9 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff,
   kinds: [ShapeKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with three solid circles of about 60 px diameter, each a different ' +
+    'An 800x600 opaque black field with three solid circles, each about 120 px across — a 30 px radius ' +
+    'in the scene own coordinates, doubled by a 2x zoom, so 60 px of radius on screen — each a ' +
+    'different ' +
     'colour and each at a specific screen position: red centred at (400,300), blue at (200,100), and ' +
     'green at (600,500). The positions carry the whole claim — they are three points that were laid out ' +
     'in another coordinate space and must land exactly there, so a picture with the circles present but ' +

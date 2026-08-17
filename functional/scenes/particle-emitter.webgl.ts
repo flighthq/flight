@@ -64,14 +64,17 @@ const { render, width } = await createFunctionalTarget({
   background: 0x101018ff, // opaque dark (packed RGBA, low byte = alpha)
   kinds: [ParticleEmitter2DKind],
   expectedImageDescription:
-    'An 800x450 opaque black field with six solid squares in two rows of three, centred at ' +
+    'An 800x450 field on a NEAR-BLACK dark blue-grey background (about R16 G16 B24), not pure black, ' +
+    'with six solid squares in two rows of three, centred at ' +
     '(160,130), (400,130), (640,130), (160,320), (400,320) and (640,320). Reading across the top row they ' +
     'are red, green and blue; across the bottom, yellow, magenta and cyan — six distinct saturated ' +
-    'colours, no two alike. Their sizes differ deliberately: the three top squares are about 48 px across, ' +
-    'the magenta one in the middle of the bottom row is the largest at about 72 px, and the yellow and ' +
-    'cyan ones are the smallest at about 34 px. Two of them are TURNED about a third of a right angle — ' +
+    'colours, no two alike. Their sizes differ deliberately, each a 24 px source square at its own ' +
+    'scale: the three top squares are 2x, about 48 px across; the magenta one in the middle of the ' +
+    'bottom row is the largest at 3x, about 72 px; the yellow and cyan ones are the smallest at ' +
+    '1.4x, about 34 px. Two of them are TURNED about a third of a right angle — ' +
     'the green one and the yellow one — so they read as tilted diamonds while the other four sit square. ' +
-    'Six identical squares, or six upright ones, is the failure. The gaps between them are pure black, ' +
+    'Six identical squares, or six upright ones, is the failure. The gaps between them are that same ' +
+    'near-black background rather than pure black, ' +
     'each square is one flat colour with no gradient, and nothing is drawn outside them.',
 });
 
