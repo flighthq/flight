@@ -187,9 +187,8 @@ describe('isVerifiedCaptureTool', () => {
   });
 
   it('leaves an external subject to opt in explicitly', () => {
-    // reference pages only register a target once their harness does; defaulting them on would fail
-    // every capture waiting for a verifier that never arrives.
-    expect(isVerifiedCaptureTool('reference')).toBe(false);
+    // External pages may not register a target; defaulting them on would fail every capture waiting for
+    // a verifier that never arrives.
     expect(isVerifiedCaptureTool('unknown-subject')).toBe(false);
   });
 });

@@ -18,4 +18,3 @@ export * from './captureValidation';
 export * from './captureWorkflow';
 export * from './functionalScene3Ds';
 export * from './functionalVerify';
-export * from './referenceCapture';

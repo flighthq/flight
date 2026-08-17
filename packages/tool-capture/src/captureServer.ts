@@ -163,13 +163,10 @@ function serveDirectory(directory: string): Promise<Server> {
   });
 }
 
-// The root npm script that starts each tool's dev server, used in the manual-start tip. 'reference'
-// runs its own dev server (flight-reference's Vite) via the reference-capture runner, not resolveServer,
-// so its entry is only here to satisfy the Tool map.
+// The root npm script that starts each tool's dev server, used in the manual-start tip.
 const DEV_SCRIPT: Record<Tool, string> = {
   examples: 'dev:examples',
   functional: 'dev:functional',
-  reference: 'dev:reference',
 };
 
 // Serve a pre-built tool dist from a lightweight Node.js HTTP server, bypassing the Vite dev

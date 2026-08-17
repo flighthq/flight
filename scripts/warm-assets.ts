@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { downloadConsumerAssets } from './asset-cache';
 
 // Warm the whole shared asset cache in one shot: download every consumer's manifest (all example
-// packages plus the functional/reference suites) into .cache/assets/<consumer>. This is the
+// packages plus the functional suite) into .cache/assets/<consumer>. This is the
 // top-level `npm run assets` escape hatch for CI and offline prep; the per-consumer predev/prebuild
 // hooks fetch only what a single project needs.
 const projectRoot = resolve(fileURLToPath(import.meta.url), '../..');
@@ -25,10 +25,8 @@ if (existsSync(examplesDir)) {
   }
 }
 
-for (const suite of ['functional', 'reference']) {
-  const dir = join(projectRoot, 'tools', suite);
-  if (hasManifest(dir)) consumers.push(dir);
-}
+const functionalDir = join(projectRoot, 'tools', 'functional');
+if (hasManifest(functionalDir)) consumers.push(functionalDir);
 
 for (const dir of consumers) {
   console.log(`\n${dir}`);

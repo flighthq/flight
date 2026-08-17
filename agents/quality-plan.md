@@ -2,14 +2,14 @@
 
 ## 1. New Example Set
 
-The 17 existing examples are OpenFL ports — they prove the Flash API equivalent works but do not exercise Flight's differentiating surface. The originals now live in `flight-reference` for side-by-side comparison. The examples in this repo should be wiped and replaced with a brand-new set designed specifically for Flight.
+The 17 existing examples are OpenFL ports — they prove the Flash API equivalent works but do not exercise Flight's differentiating surface. The examples in this repo should be wiped and replaced with a brand-new set designed specifically for Flight.
 
 New examples should:
 - Exercise features no current example touches: 3D scenes with PBR materials, particle systems, path boolean operations, collision + spatial indexing, spring animation, flow-state game loops, format loading (Tiled tilemap, spritesheet, glTF), text input, platform APIs.
 - Serve as both documentation and smoke tests — each example should illustrate a clear capability and be runnable as a functional verification.
 - Use current Flight API conventions (explicit registration, out-parameters, no hidden runtime behavior).
 
-The OpenFL-port examples are not deleted from existence — they remain in `flight-reference` — but they should not occupy this repo's example surface.
+The OpenFL-port examples should not occupy this repo's example surface.
 
 ## 2. Unit Test Depth Review
 

@@ -1,6 +1,6 @@
 # New Example Set Plan
 
-The existing 17 examples are OpenFL ports. They live on in `flight-reference` for side-by-side comparison but should be replaced in this repo with examples designed to exercise and illustrate Flight's actual feature surface.
+The existing 17 examples are OpenFL ports and should be replaced with examples designed to exercise and illustrate Flight's actual feature surface.
 
 ## Queued: loading-screen example (chief, 2026-07-30)
 

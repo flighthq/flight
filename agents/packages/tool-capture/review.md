@@ -33,7 +33,7 @@ Nine modules under `packages/tool-capture/src/` (judged as a `tool-*` package: N
 3. **Naming pass pending** — `Entry`, `Tool`, `Server`, `launchBrowser`, `formatDetailLine`, `baselinePath` are generic exports from a package root; the SDK's globally-self-identifying rule is relaxed for `tool-*` but the Decision itself notes the fully-qualified pass as a separate step.
 4. **Env-bound modules have existence-only tests** — `captureBrowser`, `captureRenderTarget`, `captureServer`, `captureEntry`/`captureParallel` assert only that the function exists (each documents why); the pure helpers (format, store, discovery, interrupt, entries) are tested for real. No harness-level integration test lives in the package itself (the `capture:*` scripts are the de-facto gate).
 5. **The undelivered capture-determinism items now live here** — clock pinning in `launchBrowser`'s init script and raw-RGBA hashing in `captureEntry` are 2026-07-03 items in **capture's** Approved ledger whose execution home is this package's source.
-6. **Charter-scoped later work** — flight-reference full-image baselines (OD 1), sibling `tool-*` cells (OD 2), CI verdict streaming (OD 3).
+6. **Charter-scoped later work** — sibling `tool-*` cells (OD 1), CI verdict streaming (OD 2).
 
 ## Charter contradictions
 

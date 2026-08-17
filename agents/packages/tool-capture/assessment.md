@@ -23,9 +23,8 @@ Sweep-safe, within `@flighthq/tool-capture`, no design fork:
 - **`{ rendered, blank }` verdict fields in status.json** — parked: a contract fork (move blank detection Node-side vs re-charter to the shipped shape); review.md candidate open direction 1. — review.md gap 2.
 - **Export naming pass** (`Entry`/`Tool`/`Server`/`launchBrowser` → fully-qualified) — parked: the Decision defers it and the `tool-*` naming policy question (candidate open direction 3) should be settled first; a rename sweep also touches four consuming scripts. — review.md gap 3.
 - **In-package integration smoke behind an env flag** — parked: needs a call on where the integration gate lives (candidate open direction 2) and CI cost. — review.md gap 4.
-- **flight-reference full-image baseline integration** — parked: charter Open direction 1; cross-repo.
-- **Sibling `tool-*` cells** (`tool-baseline`, `tool-fixtures`, `tool-diff`) — parked: new-package proposals; run the bedrock test at the register, not here (charter Open direction 2).
-- **CI verdict streaming / remote-inspector sink** — parked: charter Open direction 3; needs a consumer.
+- **Sibling `tool-*` cells** (`tool-baseline`, `tool-fixtures`, `tool-diff`) — parked: new-package proposals; run the bedrock test at the register, not here (charter Open direction 1).
+- **CI verdict streaming / remote-inspector sink** — parked: charter Open direction 2; needs a consumer.
 - **Create the cell's `status.md`** — parked: the ingest/host owns cell scaffolding; flagged as a docs-fit finding.
 
 ## Approved

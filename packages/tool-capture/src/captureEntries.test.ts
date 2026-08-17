@@ -60,11 +60,10 @@ describe('getCaptureEntryRoute', () => {
     ).toBe('custom/webgl');
   });
 
-  it('centralizes built-in and reference route conventions', () => {
+  it('centralizes built-in route conventions', () => {
     const entry = { name: 'home', renderers: ['flight:webgl'] };
     expect(getCaptureEntryRoute(entry, 'flight:webgl', 'examples')).toBe('examples/home/flight-webgl/');
     expect(getCaptureEntryRoute(entry, 'flight:webgl', 'functional')).toBe('tests/home/flight-webgl/');
-    expect(getCaptureEntryRoute(entry, 'flight:webgl', 'reference')).toBe('');
   });
 });
 

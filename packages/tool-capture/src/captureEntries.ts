@@ -7,10 +7,7 @@ import { join } from 'node:path';
 import { discoverFunctionalScene3Ds } from './functionalScene3Ds.js';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-// 'examples'/'functional' are the monorepo's own subjects (discoverEntries enumerates them). 'reference'
-// is an external subject (the flight-reference harness) whose entries are supplied by the caller with an
-// explicit `route`; it is a namespace for output/baseline paths, not something discoverEntries walks.
-export type Tool = 'examples' | 'functional' | 'reference';
+export type Tool = 'examples' | 'functional';
 
 export interface Entry {
   name: string;
@@ -19,8 +16,7 @@ export interface Entry {
   // relative to the suite base URL, keyed by renderer id.
   routes?: Readonly<Record<string, string>>;
   // When set, overrides the tool-based URL construction: captureEntry loads `${baseUrl}/${route(renderer)}`.
-  // This is what lets an external subject (flight-reference's framework/corpus/case routes) reuse the same
-  // hardened capture path as the monorepo's flat examples/functional routes.
+  // This lets a manifest reuse the hardened capture path with routes outside the built-in layouts.
   route?: (renderer: string) => string;
 }
 
@@ -35,9 +31,6 @@ export const BACKEND_UNAVAILABLE =
   /WebGPU adapter|WebGPU device|requestAdapter|requestDevice|GPUAdapter|WebGPU is not supported|external Instance reference no longer exists|device (was )?lost|device is lost/i;
 
 export function discoverEntries(tool: Tool, root: string): Entry[] {
-  // 'reference' entries come from the external flight-reference harness (the reference runner supplies
-  // them with routes), not from a directory walk here.
-  if (tool === 'reference') return [];
   // Functional scenes are flat files under functional/scenes/; the shared discovery is the single
   // source of truth (also used by tools/functional/vite.config.ts).
   if (tool === 'functional') return discoverFunctionalScene3Ds(join(root, 'functional', 'scenes'));
@@ -61,7 +54,6 @@ export function discoverEntries(tool: Tool, root: string): Entry[] {
 export function getCaptureEntryRoute(entry: Readonly<Entry>, renderer: string, subject: string): string {
   if (entry.routes?.[renderer] !== undefined) return entry.routes[renderer];
   if (entry.route !== undefined) return entry.route(renderer);
-  if (subject === 'reference') return '';
   const prefix = subject === 'examples' ? 'examples' : 'tests';
   return `${prefix}/${entry.name}/${routeSegment(renderer)}/`;
 }
