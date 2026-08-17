@@ -106,11 +106,24 @@ This is not hypothetical tidiness: the worked instance is the two scene-loading 
 unmerged on purpose, and what separated their authors was neither insight nor care nor who went first —
 it was whether the author **ran** the thing they recommended. Collapse them and that is unrecoverable.
 
-`manager` records this as the third occasion in one day where keeping a superseded thing *visible* was
-worth more than the correction that replaced it — alongside a contaminated figure retained beside its
-pruned replacement, and a withdrawn census retained as explicitly withdrawn rather than deleted. A record
-that shows only its final state cannot teach how it got there, and every one of these entries is about
-something that looked correct until someone checked.
+**Further instances exist and are deliberately not transcribed here.** `manager` records this as the third
+occasion in one day where keeping a superseded thing *visible* beat the correction that replaced it — the
+others being a contaminated figure retained beside its pruned replacement, and a withdrawn census retained
+as explicitly withdrawn rather than deleted. Their figures are omitted on purpose: each lives on a tree
+nobody involved in writing this section holds, and every account of them that reached here had passed
+through at least one relay.
+
+> **A pointer to unverified evidence is honest; a transcription of it is not.**
+
+A document whose subject is instruments that report confident wrong numbers is the last place to enter two
+numbers nobody present can check. The detail sits in the relevant agents' `status.md` records; if those
+figures are ever wired in here, it should be by whoever holds the tree each one lives on, entering their
+own number rather than relaying someone else's. **The principle above stands on the scene-loading pair
+alone**, which is on this tree and verified by content — the other instances tell you the pattern has more
+support than the one worked example shown, which is all a reader needs from them.
+
+A record that shows only its final state cannot teach how it got there, and every one of these entries is
+about something that looked correct until someone checked.
 
 ## 2026-08-16: a log with no failures in it is not a passing run
 
