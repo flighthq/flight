@@ -382,3 +382,47 @@ body {
   color: #7a9ad0;
   font-size: 9px;
 }
+
+.commission-state[data-commission='held'] {
+  color: #c05050;
+  max-width: 60%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.commission-btn[data-commission='held'] {
+  background: rgba(120, 50, 50, 0.15);
+  border-color: rgba(120, 50, 50, 0.3);
+  color: #a05050;
+}
+
+.hold-btn {
+  padding: 4px 12px;
+  background: rgba(140, 80, 40, 0.2);
+  border: 1px solid rgba(140, 80, 40, 0.4);
+  border-radius: 4px;
+  color: #b08050;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.1s,
+    color 0.1s;
+}
+
+.hold-btn:hover {
+  background: rgba(140, 80, 40, 0.35);
+  color: #d0a070;
+}
+
+.hold-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hold-btn[data-held='true'] {
+  background: rgba(120, 50, 50, 0.15);
+  border-color: rgba(120, 50, 50, 0.3);
+  color: #a05050;
+}
