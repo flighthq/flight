@@ -91,6 +91,57 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+## 2026-08-16: an assertion that the render CHANGED can be satisfied by the wrong change
+
+The differential-oracle blindness recorded above, one level down — inside a single scene's own assertion,
+where it is harder to see because the assertion looks specific. Diagnosed by builder; the bracket that
+forced the diagnosis is recorded here because the interpretation was wrong twice before it was right.
+
+**The instance.** `effect-lut-grade`'s scene assertion samples one cell and throws unless it differs from
+the authored colour:
+
+```ts
+const maxChange = Math.max(Math.abs(r - 255), Math.abs(g - 48), Math.abs(b - 48));
+if (maxChange < 15) throw new Error(`… is within 15 of original (255,48,48) — LUT grading not applied`);
+```
+
+It asserts **difference from the input**. It never states what the graded output should BE. So any
+perturbation satisfies it — including a perturbation produced by a defect.
+
+**Which is exactly what happened, and it took two bugs.** The scene never supplies a LUT to
+`createLookupTableGradeAdjustment`, so the grade has always been identity: no grading, ever. That should
+have failed this assertion from the day it was written. It did not, because the *old* renderer's
+signed-shift defect scrambled `0xff3030ff`'s channels into something that happened to differ from the
+authored value by ≥15. **Two defects cancelling into a passing assertion.** The RGBA migration corrected
+the unpacking, removed the accidental cancellation, and the assertion began correctly reporting what had
+been true all along.
+
+> **A passing scene assertion is not proof the render is right. It can be the product of two defects
+> whose errors happen to cancel — and the shape that makes this possible is asserting that something
+> CHANGED rather than what it changed TO.**
+
+**Why the interpretation was wrong twice first**, which is the part worth copying. A smoke report called it
+pre-existing, which closed the question. A same-host bracket then contradicted that: the cell captured
+`ready` and its assertion PASSED before the migration, and `error` after, with the earlier capture's
+recorded `sourceHash` proving it predated the change. That looked like the migration causing a regression.
+Both readings were half right and neither was the mechanism: the bug was pre-existing, AND something did
+change — **which of two defects was still masking the other.** Neither "pre-existing" nor "newly broken"
+was a category the truth fit in.
+
+**The consequence for the commissioning bar**, and it qualifies an argument this arc won rather than
+merely adding to it. The bar treats a passing scene assertion as its correctness condition, on the reasoning
+that it is the only place semantic intent enters the pipeline. That reasoning stands for a *missing*
+assertion. It does not stand for a *delta-shaped* one: an assertion that says only "something happened"
+encodes no intent about the output, so a cell can satisfy the bar's one semantic condition while nothing
+has ever stated what its pixels should be. The bar cannot see the difference — `oracle: invoked` is binary,
+and the static ranking attempt recorded in [capture verification tiers](capture-verification-tiers.md)
+could not separate strong assertions from weak ones either.
+
+**The review criterion this yields**, more useful than the ranking that failed: an assertion should state
+the expected VALUE, not the distance from the input. `svg-clip-path` does it (`kept point is #33ccff`,
+`clipped point is black`); `effect-lut-grade` did not. When an assertion's failure message says *"is within
+N of original"*, it is a difference assertion, and it will pass for any reason the pixels move.
+
 ## 2026-08-16: what the good version looks like — a guard that refuses to answer
 
 Every other instance in this document is an instrument that failed toward *proceed*: green while checking
