@@ -4,7 +4,7 @@
     "sourceHash": "6b314f943aa44edd246010b205304975315fa44dc583720547263f28a07e0c07",
     "sha256": "e78c5aee271ba18e757998621f762b4dcea82f447fe61a9c84d9da92a50b0736",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "a34dca163c9ca689253c2aed180eb66ba675765c9bfa9e784625c6fd09e48b0c",
       "targetKind": "canvas",
       "verifyPublished": true,
@@ -16,7 +16,7 @@
     "sourceHash": "6b314f943aa44edd246010b205304975315fa44dc583720547263f28a07e0c07",
     "sha256": "e78c5aee271ba18e757998621f762b4dcea82f447fe61a9c84d9da92a50b0736",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "a34dca163c9ca689253c2aed180eb66ba675765c9bfa9e784625c6fd09e48b0c",
       "targetKind": "webgl",
       "verifyPublished": true,
@@ -28,7 +28,7 @@
     "sourceHash": "6b314f943aa44edd246010b205304975315fa44dc583720547263f28a07e0c07",
     "sha256": "e78c5aee271ba18e757998621f762b4dcea82f447fe61a9c84d9da92a50b0736",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "a34dca163c9ca689253c2aed180eb66ba675765c9bfa9e784625c6fd09e48b0c",
       "targetKind": "webgpu",
       "verifyPublished": true,

@@ -4,8 +4,8 @@
     "sourceHash": "e909bd54d35e77d68b6316e6da1225fac5c48454795d7d74b970bb21ea10bcb5",
     "sha256": "8a0630aa998076d1d40df39d900b86aa1697881365bf32ec1196880abcedb31d",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "e909bd54d35e77d68b6316e6da1225fac5c48454795d7d74b970bb21ea10bcb5",
+      "frames": 1,
+      "sourceHash": "6b197b7113099346109bc1cc30f2a59867530afe85af9b8935c8fcc8f9ab4920",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0

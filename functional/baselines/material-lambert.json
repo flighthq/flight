@@ -4,7 +4,7 @@
     "sourceHash": "34a6b3a9dcc9815c7d3cc8891f505de76c9ce16c5847cfdef04bee7c2395b7ae",
     "sha256": "8105eac139f77ac54df317f494bf8e4b11ed90960ffeada5f8a77dfebfd283ac",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "34a6b3a9dcc9815c7d3cc8891f505de76c9ce16c5847cfdef04bee7c2395b7ae",
       "targetKind": null,
       "verifyPublished": true,
@@ -16,7 +16,7 @@
     "sourceHash": "b6475112e06c750c68a7db64e6d21b2ce654a7f1b5de40d307a4f106d979130f",
     "sha256": "3055abfcecc06eff2caad503e409fe3a1168ffca85bfa47435f981e23aa11cd1",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "b6475112e06c750c68a7db64e6d21b2ce654a7f1b5de40d307a4f106d979130f",
       "targetKind": "webgpu",
       "verifyPublished": true,

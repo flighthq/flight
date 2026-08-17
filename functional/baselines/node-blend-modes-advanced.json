@@ -4,8 +4,8 @@
     "sourceHash": "44e65c73374582f9e4dff231f8098ea13faa46907fa5dca5f9a718475d540afd",
     "sha256": "9f94143512432a3ee0f7bdd3a8882ef73fd2f528ef36bba6c9aa7098100d7003",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "e763e32673ac1fdda9a17df1b684e5596a9186c7efc7338cf62687beda585b39",
+      "frames": 1,
+      "sourceHash": "eda2fe23738fbd6cec88c0fae5541d755f19dd46fec328e79da41f1ed3bea50c",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -16,8 +16,8 @@
     "sourceHash": "e763e32673ac1fdda9a17df1b684e5596a9186c7efc7338cf62687beda585b39",
     "sha256": "9f94143512432a3ee0f7bdd3a8882ef73fd2f528ef36bba6c9aa7098100d7003",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "e763e32673ac1fdda9a17df1b684e5596a9186c7efc7338cf62687beda585b39",
+      "frames": 1,
+      "sourceHash": "eda2fe23738fbd6cec88c0fae5541d755f19dd46fec328e79da41f1ed3bea50c",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0
