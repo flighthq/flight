@@ -220,8 +220,13 @@ function createRegressionFixture(
   const scenes = join(root, 'functional', 'scenes');
   mkdirSync(scenes, { recursive: true });
   writeFileSync(join(scenes, 'sample.canvas.ts'), currentSource);
-  setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '2:000000000000000000ffffff');
-  setBaselineField(root, 'functional', 'sample', 'canvas', 'sourceHash', recordedSourceHash);
+  setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '2:000000000000000000ffffff', {
+    frames: 1,
+    sourceHash: recordedSourceHash,
+    targetKind: 'canvas',
+    verifyPublished: true,
+    warmupFrames: 0,
+  });
   return { root, kill: vi.fn() };
 }
 
@@ -410,6 +415,7 @@ describe('runCaptureValidation', () => {
         currentSourceHash: sha256('changed scene'),
         recordedSourceHash: sha256('captured scene'),
         sourceHashStatus: 'changed',
+        fingerprintProvenanceStatus: 'full',
       });
       expect(failure?.message).toContain('recapture owed by the scene owner');
     } finally {
@@ -429,8 +435,41 @@ describe('runCaptureValidation', () => {
         currentSourceHash: sha256(source),
         recordedSourceHash: sha256(source),
         sourceHashStatus: 'unchanged',
+        fingerprintProvenanceStatus: 'full',
       });
       expect(failure?.message).toContain('environment drift; never rebaseline');
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+
+  it('labels the deprecated sourceHash fallback as PROVENANCE-PARTIAL', async () => {
+    const source = 'legacy partial scene';
+    const fixture = createRegressionFixture(source, sha256(source));
+    try {
+      const baseline = join(fixture.root, 'functional', 'baselines', 'sample.json');
+      writeFileSync(
+        baseline,
+        JSON.stringify(
+          {
+            canvas: {
+              fingerprint: '2:000000000000000000ffffff',
+              sourceHash: sha256(source),
+            },
+          },
+          null,
+          2,
+        ) + '\n',
+      );
+      const result = await validateRegressionFixture(fixture.root, fixture.kill);
+      const failure = result.checks.find((check) => check.kind === 'regression');
+
+      expect(failure).toMatchObject({
+        fingerprintProvenanceStatus: 'partial',
+        recordedSourceHash: sha256(source),
+        sourceHashStatus: 'unchanged',
+      });
+      expect(failure?.message).toContain('PROVENANCE-PARTIAL (legacy sourceHash fallback)');
     } finally {
       rmSync(fixture.root, { recursive: true, force: true });
     }
@@ -450,6 +489,7 @@ describe('runCaptureValidation', () => {
         currentSourceHash: sha256('changed scene'),
         recordedSourceHash: sha256('captured scene'),
         sourceHashStatus: 'changed',
+        fingerprintProvenanceStatus: 'full',
         status: 'passed',
       });
       expect(passed?.message).toContain('recapture owed by the scene owner');

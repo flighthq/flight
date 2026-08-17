@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { runCaptureBatch, runCaptureWorkflow } from './captureWorkflow';
 
@@ -69,5 +69,35 @@ describe('runCaptureWorkflow', () => {
       durationMs: 0,
       reportPath: null,
     });
+  });
+
+  it('rejects a detached fingerprint update before launching browser work', async () => {
+    const kill = vi.fn();
+    await expect(
+      runCaptureWorkflow({
+        quiet: true,
+        subject: 'fixture',
+        entries: [],
+        server: { url: 'http://localhost:1', kill },
+        capture: false,
+        validation: { updateFingerprints: true },
+      }),
+    ).rejects.toThrow('Fingerprint updates require a paired verified capture pass');
+    expect(kill).toHaveBeenCalledOnce();
+  });
+
+  it('rejects an unverified fingerprint update before launching browser work', async () => {
+    const kill = vi.fn();
+    await expect(
+      runCaptureWorkflow({
+        quiet: true,
+        subject: 'fixture',
+        entries: [],
+        server: { url: 'http://localhost:1', kill },
+        capture: { verify: false },
+        validation: { updateFingerprints: true },
+      }),
+    ).rejects.toThrow('Fingerprint updates cannot run with capture verification disabled');
+    expect(kill).toHaveBeenCalledOnce();
   });
 });

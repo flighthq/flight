@@ -16,13 +16,14 @@ export interface FingerprintSourceHashAllowance {
 }
 
 export interface FingerprintSourceHashAllowanceResult extends FingerprintSourceHashAllowance {
-  state: 'covered' | 'invalid' | 'missing' | 'unavailable';
+  state: 'full' | 'partial' | 'invalid' | 'missing' | 'unavailable';
 }
 
 export interface FingerprintSourceHashReport {
   allowances: FingerprintSourceHashAllowanceResult[];
-  covered: number;
   fingerprintColumns: number;
+  full: number;
+  partial: number;
   unavailable: number;
   violations: FingerprintSourceHashViolation[];
 }
@@ -59,8 +60,9 @@ export function checkFingerprintSourceHashes(
   const states = new Map<string, FingerprintSourceHashAllowanceResult['state']>(
     allowances.map((entry) => [allowanceKey(entry.path, entry.renderer), 'missing']),
   );
-  let covered = 0;
+  let full = 0;
   let fingerprintColumns = 0;
+  let partial = 0;
   let unavailable = 0;
 
   for (const input of inputs) {
@@ -81,14 +83,26 @@ export function checkFingerprintSourceHashes(
       fingerprintColumns++;
       const key = allowanceKey(input.path, renderer);
       const namedAllowance = allowances.find((entry) => allowanceKey(entry.path, entry.renderer) === key);
-      const sourceHashPresent = typeof value.sourceHash === 'string' && value.sourceHash.trim() !== '';
+      const fingerprintProvenance = readFingerprintProvenance(value);
+      if (fingerprintProvenance === 'malformed') {
+        if (namedAllowance) states.set(key, 'invalid');
+        violations.push({ detail: 'fingerprintProvenance is malformed', path: input.path, renderer });
+        continue;
+      }
+      const fullProvenance = fingerprintProvenance !== null;
+      const sourceHashPresent = fullProvenance
+        ? typeof fingerprintProvenance.sourceHash === 'string' && fingerprintProvenance.sourceHash.trim() !== ''
+        : typeof value.sourceHash === 'string' && value.sourceHash.trim() !== '';
+      if (fullProvenance) full++;
       if (sourceHashPresent) {
-        covered++;
-        if (namedAllowance) states.set(key, 'covered');
+        if (!fullProvenance) partial++;
+        if (namedAllowance) states.set(key, fullProvenance ? 'full' : 'partial');
         continue;
       }
 
-      const sourceHashAbsent = !Object.hasOwn(value, 'sourceHash');
+      const sourceHashAbsent = fullProvenance
+        ? fingerprintProvenance.sourceHash === null
+        : !Object.hasOwn(value, 'sourceHash');
       const sha256Absent = !Object.hasOwn(value, 'sha256');
       if (namedAllowance && sourceHashAbsent && sha256Absent) {
         unavailable++;
@@ -121,12 +135,12 @@ export function checkFingerprintSourceHashes(
     }
   }
 
-  return { allowances: allowanceResults, covered, fingerprintColumns, unavailable, violations };
+  return { allowances: allowanceResults, fingerprintColumns, full, partial, unavailable, violations };
 }
 
 export function formatFingerprintSourceHashReport(report: Readonly<FingerprintSourceHashReport>): string {
   const passed = report.violations.length === 0;
-  const summary = `${report.covered}/${report.fingerprintColumns} fingerprint columns carry sourceHash; ${report.unavailable} honest gap${report.unavailable === 1 ? '' : 's'}`;
+  const summary = `full provenance ${report.full}; PROVENANCE-PARTIAL ${report.partial}; ${report.unavailable} honest gap${report.unavailable === 1 ? '' : 's'}`;
   const lines = [
     `${passed ? pc.green('OK') : pc.yellow('!')} ${pc.bold('Fingerprint scene-source evidence')} ${pc.dim(`(${summary})`)}`,
     '',
@@ -155,8 +169,10 @@ function allowanceKey(path: string, renderer: string): string {
 
 function allowanceStateLabel(state: FingerprintSourceHashAllowanceResult['state']): string {
   switch (state) {
-    case 'covered':
-      return 'sourceHash currently recorded; allowance ready';
+    case 'full':
+      return 'full provenance recorded; allowance ready';
+    case 'partial':
+      return 'PROVENANCE-PARTIAL sourceHash recorded; allowance ready';
     case 'unavailable':
       return 'unavailable by design';
     case 'invalid':
@@ -164,6 +180,24 @@ function allowanceStateLabel(state: FingerprintSourceHashAllowanceResult['state'
     case 'missing':
       return 'allowance target missing';
   }
+}
+
+function readFingerprintProvenance(
+  column: Readonly<Record<string, unknown>>,
+): Record<string, unknown> | 'malformed' | null {
+  if (!Object.hasOwn(column, 'fingerprintProvenance')) return null;
+  const value = column.fingerprintProvenance;
+  if (
+    !isRecord(value) ||
+    typeof value.frames !== 'number' ||
+    (value.sourceHash !== null && typeof value.sourceHash !== 'string') ||
+    (value.targetKind !== null && typeof value.targetKind !== 'string') ||
+    typeof value.verifyPublished !== 'boolean' ||
+    typeof value.warmupFrames !== 'number'
+  ) {
+    return 'malformed';
+  }
+  return value;
 }
 
 function describeError(error: unknown): string {

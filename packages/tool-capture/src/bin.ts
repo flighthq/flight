@@ -28,7 +28,7 @@ import type {
   CaptureWorkflowOptions,
   CaptureWorkflowValidationOptions,
 } from './captureWorkflow.js';
-import { runCaptureBatch } from './captureWorkflow.js';
+import { runCaptureBatch, runCaptureWorkflow } from './captureWorkflow.js';
 
 const USAGE = `usage:
   tool-capture observe <url> [--out <dir>] [--wait <ms>] [--frames <n>] [--retries <n>]
@@ -193,13 +193,21 @@ async function capture(argv: readonly string[]): Promise<number> {
 
 async function validate(argv: readonly string[]): Promise<number> {
   const { subject, entries, server, root, manifest } = await resolveCaptureCliSuite(argv);
-  const result = await runCaptureValidation({
-    ...validationOptions(argv, subject, manifest),
-    subject,
-    entries,
-    server,
-    root,
-  });
+  const validation = validationOptions(argv, subject, manifest);
+  if (validation.updateFingerprints) {
+    const result = await runCaptureWorkflow({
+      subject,
+      entries,
+      server,
+      root,
+      capture: captureOptions(argv),
+      validation,
+      benchmark: false,
+    });
+    if (result.aborted) return 130;
+    return result.shouldFail ? 1 : 0;
+  }
+  const result = await runCaptureValidation({ ...validation, subject, entries, server, root });
   if (result.aborted) return 130;
   return result.shouldFail ? 1 : 0;
 }
@@ -312,15 +320,22 @@ async function batch(argv: readonly string[]): Promise<number> {
         const subjectArgv = [...globalArgs, ...subject.args];
         const suite = await resolveCaptureCliSuite(subjectArgv);
         const operations = new Set(subject.operations ?? ['capture', 'validate']);
+        const validation = operations.has('validate')
+          ? validationOptions(subjectArgv, suite.subject, suite.manifest)
+          : false;
         return {
           subject: suite.subject,
           entries: suite.entries,
           server: suite.server,
           root: suite.root,
-          capture: operations.has('capture') ? captureOptions(subjectArgv) : false,
-          validation: operations.has('validate')
-            ? validationOptions(subjectArgv, suite.subject, suite.manifest)
-            : false,
+          // A fingerprint update is a capture operation even when a batch manifest used to call it
+          // validation-only: the verified capture is the only producer of the matching five-field
+          // provenance record. Read-only validation remains legitimately detached.
+          capture:
+            operations.has('capture') || (validation !== false && validation.updateFingerprints)
+              ? captureOptions(subjectArgv)
+              : false,
+          validation,
           benchmark: operations.has('benchmark') ? benchmarkOptions(subjectArgv, suite.manifest) : false,
         };
       },

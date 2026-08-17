@@ -28,8 +28,8 @@ import type {
 
 import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity.js';
 
-export type BaselineField = 'fingerprint' | 'sourceHash' | 'sha256';
-export type CaptureBaselineEvidence = Readonly<CaptureColumnBaseline> &
+export type BaselineField = 'fingerprint' | 'sha256';
+export type CaptureBaselineEvidence = Readonly<Omit<CaptureColumnBaseline, 'sourceHash'>> &
   Required<Pick<CaptureColumnBaseline, 'fingerprint' | 'sha256'>>;
 
 // Per-subject baseline root: baselines colocate with their suite (functional/examples are
@@ -54,6 +54,19 @@ export function getBaselineField(
   return getCaptureBaselineField(readBaseline(baselinePath(root, subject, name)), column, field);
 }
 
+/**
+ * The deprecated source-only fingerprint record, or null. This is deliberately read-only and separate
+ * from BaselineField so no generic accessor can turn the legacy field back into a writable API.
+ */
+export function getBaselineLegacyFingerprintSourceHash(
+  root: string,
+  subject: string,
+  name: string,
+  column: string,
+): string | null {
+  return readBaseline(baselinePath(root, subject, name))[column]?.sourceHash ?? null;
+}
+
 // What produced ONE of a column's committed values — `field` names which — or null when that value
 // predates provenance recording. Reads as UNKNOWN, never as agreement.
 export function getBaselineProvenance(
@@ -69,8 +82,8 @@ export function getBaselineProvenance(
 /**
  * Replaces one column's captured evidence in a single read/write transaction. Fingerprint and exact
  * screenshot hash are required together so the store cannot attribute two independent capture passes to
- * one record. Optional evidence such as source/provenance is copied from the same value rather than
- * preserved from an older column.
+ * one record. Optional provenance is copied from the same value rather than preserved from an older
+ * column; the deprecated source-only field has no writer here.
  */
 export function setBaselineCaptureEvidence(
   root: string,
@@ -90,6 +103,9 @@ export function setBaselineCaptureEvidence(
   const path = baselinePath(root, subject, name);
   const data = readBaseline(path);
   data[column] = { ...evidence };
+  // This operation replaces the fingerprint, so the legacy source-only record can no longer describe
+  // it. It is never deleted corpus-wide: cold columns retain their true partial evidence until recaptured.
+  delete data[column].sourceHash;
   writeBaseline(path, data);
 }
 
@@ -115,6 +131,10 @@ export function setBaselineField(
     );
   }
   setCaptureBaselineField(data, column, field, value);
+  // A new fingerprint can never inherit a source hash recorded for the value it replaces. Normal
+  // baseline-writing callers always provide full provenance; this also keeps a lower-level unstamped
+  // write honest instead of leaving a now-false partial record behind.
+  if (field === 'fingerprint') delete data[column]?.sourceHash;
   if (field === 'fingerprint' || field === 'sha256') {
     if (provenance === undefined) {
       clearCaptureBaselineProvenance(data, column, field);
@@ -145,6 +165,7 @@ export function setBaselineProvenance(
     field === 'sha256' ? provenance : getCaptureBaselineProvenance(data, column, 'sha256'),
   );
   setCaptureBaselineProvenance(data, column, field, provenance);
+  if (field === 'fingerprint') delete data[column]?.sourceHash;
   writeBaseline(path, data);
 }
 
