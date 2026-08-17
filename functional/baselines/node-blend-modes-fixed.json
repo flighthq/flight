@@ -2,8 +2,8 @@
   "webgpu": {
     "sha256": "f17cef7257cdd98473f7175bddfe31717b95ec5cb9e024fb6b176133034cf4ac",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "dbb3acc767b2fdbd439d739dc2bb33787cce01621f82ad2fc90cb20d176059a6",
+      "frames": 1,
+      "sourceHash": "619b531be1ef170f9f58efcb004681019be7abc8b0dad4091f3f5219eff76119",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0

@@ -2,8 +2,8 @@
   "canvas": {
     "sha256": "13a7195f610117ec541295a1b2f394e8b840190dfe21eb50aadae5bdf808b1af",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "8bcdad5aaea6c80c5f7594d3f81a87cb5fa0ddf2ea5fa758fdd702ecf757e412",
+      "frames": 1,
+      "sourceHash": "acfb9b3ac9588b9e1738950814fbe7e334505d513183d88ed57af002c3a3ad8e",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0

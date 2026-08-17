@@ -4,8 +4,8 @@
     "sourceHash": "c3c11402b5e7d45ba3d8b067eb432e13584a2b5251ced4ae8c56f28bdcdc0189",
     "sha256": "f8c72661a5f937f3c1495e263da33e1c3493bd61363c138b340c8fb214f1d58a",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "d6866ca76e05c660c3e62db4400b0b114701f1922f01a366b9a9bfb9816890c6",
+      "frames": 1,
+      "sourceHash": "9d35100b392435c538005513e61b27f6e95bcea29373fc6dfd2866fac2666a57",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -16,8 +16,8 @@
     "sourceHash": "d6866ca76e05c660c3e62db4400b0b114701f1922f01a366b9a9bfb9816890c6",
     "sha256": "f8c72661a5f937f3c1495e263da33e1c3493bd61363c138b340c8fb214f1d58a",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "d6866ca76e05c660c3e62db4400b0b114701f1922f01a366b9a9bfb9816890c6",
+      "frames": 1,
+      "sourceHash": "9d35100b392435c538005513e61b27f6e95bcea29373fc6dfd2866fac2666a57",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0
@@ -28,8 +28,8 @@
     "sourceHash": "c3c11402b5e7d45ba3d8b067eb432e13584a2b5251ced4ae8c56f28bdcdc0189",
     "sha256": "f8c72661a5f937f3c1495e263da33e1c3493bd61363c138b340c8fb214f1d58a",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "d6866ca76e05c660c3e62db4400b0b114701f1922f01a366b9a9bfb9816890c6",
+      "frames": 1,
+      "sourceHash": "9d35100b392435c538005513e61b27f6e95bcea29373fc6dfd2866fac2666a57",
       "targetKind": "webgl",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -40,8 +40,8 @@
     "sourceHash": "c3c11402b5e7d45ba3d8b067eb432e13584a2b5251ced4ae8c56f28bdcdc0189",
     "sha256": "f8c72661a5f937f3c1495e263da33e1c3493bd61363c138b340c8fb214f1d58a",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "d6866ca76e05c660c3e62db4400b0b114701f1922f01a366b9a9bfb9816890c6",
+      "frames": 1,
+      "sourceHash": "9d35100b392435c538005513e61b27f6e95bcea29373fc6dfd2866fac2666a57",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0

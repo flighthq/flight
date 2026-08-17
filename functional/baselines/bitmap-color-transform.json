@@ -4,7 +4,7 @@
     "sourceHash": "335526b6135d706724a120df0fd82074ad4d2f17f668e92b4f38b0951da740e1",
     "sha256": "e7e098400b88c3c1c6eab9a6d0df9432477561af3f85a7bfcce5d0fefde96e7a",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "3a6dff4b306e35492877e1fa63c44dca264dd85ee5376dcd2b3dc1fc3ea3e91a",
       "targetKind": "canvas",
       "verifyPublished": true,
@@ -16,7 +16,7 @@
     "sourceHash": "3a6dff4b306e35492877e1fa63c44dca264dd85ee5376dcd2b3dc1fc3ea3e91a",
     "sha256": "e7e098400b88c3c1c6eab9a6d0df9432477561af3f85a7bfcce5d0fefde96e7a",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "3a6dff4b306e35492877e1fa63c44dca264dd85ee5376dcd2b3dc1fc3ea3e91a",
       "targetKind": "dom",
       "verifyPublished": false,
@@ -28,7 +28,7 @@
     "sourceHash": "335526b6135d706724a120df0fd82074ad4d2f17f668e92b4f38b0951da740e1",
     "sha256": "e7e098400b88c3c1c6eab9a6d0df9432477561af3f85a7bfcce5d0fefde96e7a",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "3a6dff4b306e35492877e1fa63c44dca264dd85ee5376dcd2b3dc1fc3ea3e91a",
       "targetKind": "webgl",
       "verifyPublished": true,
@@ -40,7 +40,7 @@
     "sourceHash": "b7627e37f172a9a8c40b38274b9fb21c9d70da2d6bc27c680c857e9ccbf306ab",
     "sha256": "e7e098400b88c3c1c6eab9a6d0df9432477561af3f85a7bfcce5d0fefde96e7a",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "3a6dff4b306e35492877e1fa63c44dca264dd85ee5376dcd2b3dc1fc3ea3e91a",
       "targetKind": "webgpu",
       "verifyPublished": true,

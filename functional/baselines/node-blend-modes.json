@@ -4,8 +4,8 @@
     "sourceHash": "428917966bf52e871d4cfca82427864d620db379e278b23a24ff32b3d5b8eabc",
     "sha256": "27bdf457cc03d7d1ff38c11af0943cfe530806dd3859afa762b19353fe3c8926",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "c2e5ad0bd93dab2ef38dc80b7636f28f43edc6e107abbbf3c20a1740da4acfa4",
+      "frames": 1,
+      "sourceHash": "32e3f81240d9f75366983f5a48e6915d0fc4e62748aac0cc2f6f16b352ce5e17",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -16,8 +16,8 @@
     "sourceHash": "c2e5ad0bd93dab2ef38dc80b7636f28f43edc6e107abbbf3c20a1740da4acfa4",
     "sha256": "80486bc2c5b567dc755d671eb28bbfd1a4fccb6d62c183f132e9baffb15f7160",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "c2e5ad0bd93dab2ef38dc80b7636f28f43edc6e107abbbf3c20a1740da4acfa4",
+      "frames": 1,
+      "sourceHash": "32e3f81240d9f75366983f5a48e6915d0fc4e62748aac0cc2f6f16b352ce5e17",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0
@@ -28,8 +28,8 @@
     "sourceHash": "428917966bf52e871d4cfca82427864d620db379e278b23a24ff32b3d5b8eabc",
     "sha256": "27bdf457cc03d7d1ff38c11af0943cfe530806dd3859afa762b19353fe3c8926",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "c2e5ad0bd93dab2ef38dc80b7636f28f43edc6e107abbbf3c20a1740da4acfa4",
+      "frames": 1,
+      "sourceHash": "32e3f81240d9f75366983f5a48e6915d0fc4e62748aac0cc2f6f16b352ce5e17",
       "targetKind": "webgl",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -38,8 +38,8 @@
   "webgpu": {
     "sha256": "27bdf457cc03d7d1ff38c11af0943cfe530806dd3859afa762b19353fe3c8926",
     "sha256Provenance": {
-      "frames": 0,
-      "sourceHash": "4e9ae0919391541a73eb25854e2367925e61968560e50925549742090d53d430",
+      "frames": 1,
+      "sourceHash": "80de0d062779d2516e1657bab1b66fdaf082f81a007900cf2350dc427271afd1",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0

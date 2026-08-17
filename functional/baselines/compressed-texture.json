@@ -2,7 +2,7 @@
   "webgl": {
     "sha256": "a60e2596e236bf47d8180f49507f3eaa9bc7c284814a2445a0a1658ef75dfbbe",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "7d1bce095174d53f2f1e9e0abbb6e0d8a6b3ff90504df1bb8d3dc23e368d9cb7",
       "targetKind": "webgl",
       "verifyPublished": true,
@@ -12,7 +12,7 @@
   "webgpu": {
     "sha256": "a60e2596e236bf47d8180f49507f3eaa9bc7c284814a2445a0a1658ef75dfbbe",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "996f677b16eb3425dfeb98fd9f4066a4f80026cdc36632388c034aaffaa8b1bb",
       "targetKind": "webgpu",
       "verifyPublished": true,

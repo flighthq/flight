@@ -2,7 +2,7 @@
   "webgl": {
     "sha256": "bbc444177437c85af12c9e60a5b0171e8c722a95607f5662b09dd4187106c089",
     "sha256Provenance": {
-      "frames": 0,
+      "frames": 1,
       "sourceHash": "332a103d88009b13092d50b5b44cced18c69677ed618151e11dfc7c365f58279",
       "targetKind": null,
       "verifyPublished": true,
