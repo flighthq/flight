@@ -91,6 +91,51 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+## 2026-08-16: a check that starts failing after an unrelated fix may have been passing for the wrong reason
+
+The dangerous instinct this exists to name: a green check turns red immediately after a fix lands, and the
+obvious reading — *the fix broke it, revert* — is exactly backwards when the check was only ever passing
+because two errors cancelled. Reverting restores the false pass by re-breaking the thing that was fixed.
+
+**The instance.** `effect-lut-grade`'s scene never supplied a LUT, so its grade had always been identity —
+a defect present from the day the scene was written. Its assertion should have failed from that day. It did
+not, because the renderer's signed-shift unpacking scrambled the channels into something that happened to
+clear the assertion's threshold. The RGBA migration corrected the unpacking, the cancellation disappeared,
+and the assertion began reporting what had been true all along.
+
+> **A passing check can be the product of two errors cancelling. Fixing either one alone makes it fail —
+> so a check that goes red beside an unrelated fix is evidence about the CHECK's history, not necessarily
+> about the fix.**
+
+**Two accounts were both right, and neither was the mechanism.** "Pre-existing" was true of the DEFECT.
+A same-host before/after bracket — the cell captured `ready` with its assertion passing before the
+migration, `error` after, with the earlier capture's recorded `sourceHash` proving it predated the change —
+was true of the OBSERVATION. They were answering different questions and appeared to contradict each other.
+The reconciliation was a third thing: which of two defects was still masking the other. **When two careful
+accounts conflict, check whether they are answering the same question before adjudicating between them.**
+
+**The scan this demanded, and its result.** If one assertion was clearing its threshold on wrongly-unpacked
+channels, others might have been. That is answerable rather than speculative when both sides of the fix
+have been captured on one host: diff every cell's assertion outcome across the renderer change.
+
+| | count | cells |
+| --- | ---: | --- |
+| cells present in both roots | 493 | the whole corpus |
+| **passed under the old renderer → fails after the fix** | **2** | `effect-lut-grade` webgl + webgpu |
+| failed under the old renderer → passes after | 2 | `env-ibl/webgpu`, `material-alpha-map-pbr/webgpu` — both WebGPU buffer-map timeouts, i.e. flaky capture recovering, not a masked defect |
+
+**Lut-grade was the only one.** That is a measured answer over the full corpus with both sides present, not
+an absence of evidence.
+
+**What the scan does not answer, stated so it is not over-read:** it detects assertions whose verdict
+FLIPPED. An assertion that passed before for a wrong reason and still passes now — on correct pixels — is
+invisible to it. That is a different question, and its criterion is the delta-versus-expected-value shape
+recorded in the entry below, not this one.
+
+**And the assertion is not the thing to fix.** The fix belongs in the scene that never supplied a LUT. The
+assertion is now doing exactly its job and is the only reason anyone knows; loosening its threshold to make
+the red go away would restore the silence it just broke.
+
 ## 2026-08-16: an assertion that the render CHANGED can be satisfied by the wrong change
 
 The differential-oracle blindness recorded above, one level down — inside a single scene's own assertion,
