@@ -37,10 +37,9 @@ const target = await createFunctionalTarget({
   background: 0x000000ff, // opaque black
   kinds: [SpriteKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with a single flat red square, 160x160, spanning x 320-480 and ' +
-    'y 220-380, with straight axis-aligned edges. The red is uniform across the whole square — no ' +
-    'gradient, no darker or lighter band at any edge, and no tint of any other hue. Everything outside ' +
-    'the square is pure black, and no second copy of it appears anywhere.',
+    'On an opaque black field (800×600): a single flat red 160×160 square at (320, 220). ' +
+    'The red is uniform and fully opaque — pure red channel, zero green, zero blue. No ' +
+    'gradient, no tint variation, no other colors. Every other pixel is black.',
 });
 // Opt into the inline color-adjustment fold on this WGPU state (the tint would be skipped otherwise).
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);
