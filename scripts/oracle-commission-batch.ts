@@ -107,6 +107,16 @@ const scope: OracleDeterminismScope = hostIds.some((id) => id === null)
     ? 'independent-hosts'
     : 'one-host';
 
+// ★ NAME THE CONDITION, DO NOT LET THE GENERIC "nothing is eligible" STAND IN FOR IT. Both of these end
+// with an empty batch, so the batch-empty refusal below would fire and be technically true — and it would
+// send the reader to look for eligible cells when the actual remedy is to capture on a second machine, or
+// to wire the producer. Safe is not the same as informative.
+if (subcommand === 'write' && scope === 'one-host') {
+  console.error('oracle-commission-batch: both roots report the same hostInstanceId, so this measured ONE');
+  console.error('  host reproducing itself. That is stage one, and it never completes the condition.');
+  console.error('  Capture on a second, independent host and file from those roots.');
+  process.exit(1);
+}
 if (subcommand === 'write' && scope === 'host-identity-missing') {
   console.error('oracle-commission-batch: the captures carry no provenance.hostInstanceId, so independence');
   console.error('  could not be evaluated. Refusing to file: this is UNEVALUATED, not measured-as-one-host.');
