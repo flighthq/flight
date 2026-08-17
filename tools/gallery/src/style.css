@@ -308,3 +308,77 @@ body {
   max-height: 30%;
   overflow-y: auto;
 }
+
+.expected-description-stale {
+  color: #a08040;
+  font-style: italic;
+}
+
+.expected-description-absent {
+  color: #555;
+  font-style: italic;
+}
+
+.commission-state {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  color: #666;
+  pointer-events: none;
+}
+
+.commission-state[data-commission='included'] {
+  color: #4aaa4a;
+}
+
+.commission-state[data-commission='differs'] {
+  color: #d0a040;
+}
+
+.commission-state[data-commission='requested'] {
+  color: #7a9ad0;
+}
+
+.commission-state[data-commission='not-commissioned'] {
+  color: #555;
+}
+
+.commission-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.commission-btn[data-commission='included'] {
+  background: rgba(60, 100, 60, 0.15);
+  border-color: rgba(60, 100, 60, 0.3);
+  color: #4a8a4a;
+}
+
+.commission-btn[data-commission='requested'] {
+  background: rgba(60, 80, 120, 0.15);
+  border-color: rgba(60, 80, 120, 0.3);
+  color: #6a8ab0;
+}
+
+.renderer-btn[data-commission='included']::after {
+  content: ' \2713';
+  color: #4aaa4a;
+  font-size: 9px;
+}
+
+.renderer-btn[data-commission='differs']::after {
+  content: ' \2260';
+  color: #d0a040;
+  font-size: 9px;
+}
+
+.renderer-btn[data-commission='requested']::after {
+  content: ' \2026';
+  color: #7a9ad0;
+  font-size: 9px;
+}

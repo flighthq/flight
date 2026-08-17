@@ -6,6 +6,8 @@ interface GalleryCellProvenance {
   environmentId: string | null;
 }
 
+type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
+
 interface GalleryCell {
   renderer: string;
   state: 'ready' | 'error';
@@ -13,6 +15,7 @@ interface GalleryCell {
   changed: boolean | null;
   hash: string | null;
   provenance: GalleryCellProvenance | null;
+  commissionState: CommissionState;
 }
 
 interface GalleryTest {
@@ -20,6 +23,7 @@ interface GalleryTest {
   name: string;
   cells: GalleryCell[];
   expectedImageDescription?: string;
+  sourceHasDescription: boolean;
 }
 
 const STORAGE_KEY = 'gallery-selected';
@@ -168,6 +172,30 @@ function showCommissionFeedback(message: string, isError: boolean): void {
   setTimeout(() => el?.remove(), 4000);
 }
 
+function commissionStateLabel(state: CommissionState): string {
+  switch (state) {
+    case 'included':
+      return 'included';
+    case 'differs':
+      return 'differs';
+    case 'requested':
+      return 'requested';
+    case 'not-commissioned':
+      return '';
+  }
+}
+
+function testCommissionSummary(t: GalleryTest): { state: CommissionState; canCommission: boolean } {
+  const hasIncluded = t.cells.some((c) => c.commissionState === 'included');
+  const hasDiffers = t.cells.some((c) => c.commissionState === 'differs');
+  const hasRequested = t.cells.some((c) => c.commissionState === 'requested');
+
+  if (hasRequested) return { state: 'requested', canCommission: false };
+  if (hasIncluded && !hasDiffers) return { state: 'included', canCommission: false };
+  if (hasDiffers) return { state: 'differs', canCommission: true };
+  return { state: 'not-commissioned', canCommission: true };
+}
+
 function buildRendererBar(): void {
   rendererBar.innerHTML = '';
   const t = currentTest();
@@ -179,6 +207,9 @@ function buildRendererBar(): void {
     btn.className = 'renderer-btn' + (i === ci ? ' selected' : '');
     if (cell.state === 'error') btn.setAttribute('data-status', 'error');
     else if (cell.changed) btn.setAttribute('data-status', 'changed');
+
+    const label = commissionStateLabel(cell.commissionState);
+    if (label) btn.setAttribute('data-commission', cell.commissionState);
     btn.textContent = cell.renderer;
     btn.addEventListener('click', () => {
       selectedRenderer = cell.renderer;
@@ -189,12 +220,44 @@ function buildRendererBar(): void {
     rendererBar.appendChild(btn);
   });
 
+  const summary = testCommissionSummary(t);
   const commissionBtn = document.createElement('button');
   commissionBtn.className = 'commission-btn';
-  commissionBtn.textContent = 'Commission';
-  commissionBtn.title = 'Write an oracle request for all renderers of this scene';
-  commissionBtn.addEventListener('click', () => void commissionCurrentTest());
+
+  if (summary.state === 'included') {
+    commissionBtn.textContent = 'Already included';
+    commissionBtn.title = 'All cells match their locked reference images';
+    commissionBtn.disabled = true;
+    commissionBtn.setAttribute('data-commission', 'included');
+  } else if (summary.state === 'requested') {
+    commissionBtn.textContent = 'Request pending';
+    commissionBtn.title = 'A commission request is already queued for this scene';
+    commissionBtn.disabled = true;
+    commissionBtn.setAttribute('data-commission', 'requested');
+  } else if (summary.state === 'differs') {
+    commissionBtn.textContent = 'Commission (differs)';
+    commissionBtn.title = 'This capture differs from the locked reference — commission to update';
+    commissionBtn.addEventListener('click', () => void commissionCurrentTest());
+  } else {
+    commissionBtn.textContent = 'Commission';
+    commissionBtn.title = 'Write a reference image request for all renderers of this scene';
+    commissionBtn.addEventListener('click', () => void commissionCurrentTest());
+  }
+
   rendererBar.appendChild(commissionBtn);
+}
+
+function commissionStateMessage(state: CommissionState): string {
+  switch (state) {
+    case 'included':
+      return 'Already included — this capture matches the locked reference image.';
+    case 'differs':
+      return 'Commissioned — this capture DIFFERS from the locked reference image.';
+    case 'requested':
+      return 'Request pending — a commission request is already queued for this cell.';
+    case 'not-commissioned':
+      return 'Not commissioned — no reference image entry for this cell.';
+  }
 }
 
 function showRenderer(): void {
@@ -216,6 +279,19 @@ function showRenderer(): void {
   } else {
     errorEl?.remove();
   }
+
+  let stateEl = preview.querySelector<HTMLElement>('.commission-state');
+  if (cell) {
+    if (!stateEl) {
+      stateEl = document.createElement('div');
+      stateEl.className = 'commission-state';
+      preview.appendChild(stateEl);
+    }
+    stateEl.textContent = commissionStateMessage(cell.commissionState);
+    stateEl.setAttribute('data-commission', cell.commissionState);
+  } else {
+    stateEl?.remove();
+  }
 }
 
 function updatePreview(): void {
@@ -224,6 +300,7 @@ function updatePreview(): void {
   preview.querySelector('.error-overlay')?.remove();
   preview.querySelector('.empty-state')?.remove();
   preview.querySelector('.expected-description')?.remove();
+  preview.querySelector('.commission-state')?.remove();
 
   const t = currentTest();
   if (!t) {
@@ -243,12 +320,18 @@ function updatePreview(): void {
     preview.appendChild(img);
   });
 
+  const desc = document.createElement('div');
+  desc.className = 'expected-description';
   if (t.expectedImageDescription) {
-    const desc = document.createElement('div');
-    desc.className = 'expected-description';
     desc.textContent = t.expectedImageDescription;
-    preview.appendChild(desc);
+  } else if (t.sourceHasDescription) {
+    desc.textContent = 'No description recorded in this capture — re-capture to populate.';
+    desc.classList.add('expected-description-stale');
+  } else {
+    desc.textContent = 'This scene has no expectedImageDescription.';
+    desc.classList.add('expected-description-absent');
   }
+  preview.appendChild(desc);
 
   // Pre-warm neighboring tests
   const visible = visibleTests();
