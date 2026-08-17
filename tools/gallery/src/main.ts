@@ -71,7 +71,10 @@ function computeDelta(
   referenceImg: HTMLImageElement,
   tolerance: number,
 ): { canvas: HTMLCanvasElement; fraction: string; maxDelta: number; dimMismatch: string | null } {
-  if (candidateImg.naturalWidth !== referenceImg.naturalWidth || candidateImg.naturalHeight !== referenceImg.naturalHeight) {
+  if (
+    candidateImg.naturalWidth !== referenceImg.naturalWidth ||
+    candidateImg.naturalHeight !== referenceImg.naturalHeight
+  ) {
     return {
       canvas: document.createElement('canvas'),
       dimMismatch: `Cannot compare: ${candidateImg.naturalWidth}×${candidateImg.naturalHeight} vs ${referenceImg.naturalWidth}×${referenceImg.naturalHeight}`,
