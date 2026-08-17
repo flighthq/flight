@@ -180,7 +180,7 @@ describe('runRenderVerification', () => {
     stubNeverFiringAnimationFrames();
 
     // No injected budget: the wait falls back to the runner's default ceiling and takes its share of it.
-    await expectFrameWaitTimeout(4_000);
+    await expectFrameWaitTimeout(12_000);
 
     // The failure is terminal and carries its location — the runner's outer wait would otherwise have
     // reported the bare `state: pending` this replaces.
@@ -200,7 +200,7 @@ describe('runRenderVerification', () => {
     stubNeverFiringAnimationFrames();
     (window as unknown as VerificationWindowLike).__ftCaptureTimeoutMs = 0;
 
-    await expectFrameWaitTimeout(4_000);
+    await expectFrameWaitTimeout(12_000);
   });
 });
 

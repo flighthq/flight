@@ -37,7 +37,7 @@ const FINGERPRINT_GRID = 16;
 // governs all of them, and moving it moves them together.
 const PRESENTED_FRAME_BUDGET_SHARE = 4 / 15;
 const READBACK_BUDGET_SHARE = 8 / 15;
-const FALLBACK_CAPTURE_TIMEOUT_MS = 15_000;
+const FALLBACK_CAPTURE_TIMEOUT_MS = 45_000;
 
 interface FunctionalDomReadback {
   data: Uint8ClampedArray;

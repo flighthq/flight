@@ -40,6 +40,9 @@ function parseCaptureTimeoutMs(value: string | undefined): number | null {
 
 let captureTimeoutMs: number | null = null;
 
-// Unchanged from the constant this replaced, so a run that sets neither flag nor environment behaves
-// exactly as before.
-const DEFAULT_CAPTURE_TIMEOUT_MS = 15_000;
+// Evidence basis, deliberately stated as a bound rather than folklore: on 2026-08-16, two full-suite
+// runs at 15s produced a moving tail of capture timeouts on one contended SwiftShader host; the same
+// full suite at 45s completed 491 captures with zero timeout signatures. No intermediate value and no
+// second host were measured, so 45s is the only observed-safe default, NOT a calibrated failure cliff.
+// The flag/environment override remains the right tool when another host needs a different budget.
+const DEFAULT_CAPTURE_TIMEOUT_MS = 45_000;

@@ -74,10 +74,10 @@ describe('explainCaptureVerificationStall', () => {
   });
 
   it('reports what it waited AGAINST the budget, the number that decides if cost is the cause', () => {
-    const reason = explainCaptureVerificationStall({ state: 'running' }, 15_000);
-    expect(reason).toContain('15000ms of 15000ms');
+    const reason = explainCaptureVerificationStall({ state: 'running' }, 45_000);
+    expect(reason).toContain('45000ms of 45000ms');
     // A short wait is a different story from one that burned the whole budget, and the reason shows it.
-    expect(explainCaptureVerificationStall({ state: 'running' }, 900)).toContain('900ms of 15000ms');
+    expect(explainCaptureVerificationStall({ state: 'running' }, 900)).toContain('900ms of 45000ms');
   });
 
   // The reason and the wait must never disagree about what the budget was — a message that names a
