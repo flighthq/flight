@@ -96,6 +96,22 @@ describe('oracle-commission-batch', () => {
     SPAWN_BUDGET_MS,
   );
 
+  // ★ THE SAME ROOT TWICE SATISFIES THE COUNT ABOVE WITHOUT SATISFYING THE CONDITION IT STANDS FOR. Two
+  // paths were given, so "at least two capture roots" passes — and a directory compared with itself
+  // agrees with itself, which is the strongest-looking result the tool can print over no comparison.
+  it(
+    'refuses the same root given twice, which passes the count and fails the condition',
+    () => {
+      const a = captureRoot({ 'entry-a/webgl': 'host-1' });
+
+      const run = runBatch(['report', '--runs', `${a},${a}`]);
+
+      expect(run.status).toBe(2);
+      expect(run.stderr).toContain('was given more than once');
+    },
+    SPAWN_BUDGET_MS,
+  );
+
   it(
     'refuses an unknown subcommand instead of defaulting to a write',
     () => {

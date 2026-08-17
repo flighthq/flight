@@ -20,7 +20,12 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { compareCalibrationRuns, deriveCalibrationIdentityVerdict, readCaptureRootIdentity } from './oracle-calibrate';
+import {
+  compareCalibrationRuns,
+  deriveCalibrationIdentityVerdict,
+  findDuplicateCalibrationRoot,
+  readCaptureRootIdentity,
+} from './oracle-calibrate';
 import { readBoundOracleRequestTarget } from './oracle-candidate';
 import type {
   OracleDeterminismScope,
@@ -69,6 +74,17 @@ if (runs.length < 2) {
     'oracle-commission-batch: --runs needs at least two capture roots; determinism is measured, not assumed',
   );
   console.error('  each root is a capture output directory (<subject>/<entry>/<renderer>/status.json)');
+  process.exit(2);
+}
+
+// ★ TWO OF THE SAME ROOT IS ONE ROOT, AND IT SATISFIES THE COUNT ABOVE WITHOUT SATISFYING THE CONDITION.
+// The check that matters is "were these produced independently", and a path typed twice answers it with a
+// directory reproducing itself perfectly. The `write` path would refuse it later as `one-host` once the
+// identities are read — but only once they exist, and the whole current corpus has none.
+const duplicateRoot = findDuplicateCalibrationRoot(runs);
+if (duplicateRoot !== null) {
+  console.error(`oracle-commission-batch: ${duplicateRoot} was given more than once in --runs.`);
+  console.error('  The same root twice is one run, and it agrees with itself. Refusing.');
   process.exit(2);
 }
 
