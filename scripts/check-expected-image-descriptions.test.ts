@@ -4,7 +4,11 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { findExpectedImageDescriptionCellScope } from './check-expected-image-descriptions';
+import {
+  describeExcludedPopulation,
+  findExpectedImageDescriptionCellScope,
+  findScenesWithoutExpectedImageDescription,
+} from './check-expected-image-descriptions';
 
 let root: string;
 
@@ -15,6 +19,31 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(root, { force: true, recursive: true });
+});
+
+describe('describeExcludedPopulation', () => {
+  it('returns a zero message for an empty population', () => {
+    expect(describeExcludedPopulation([])).toBe('0 structurally unable');
+  });
+
+  it('names a single dominant group', () => {
+    expect(describeExcludedPopulation(['effect-blur/webgl', 'effect-bloom/webgl'])).toBe(
+      '2 structurally unable — all effect scenes',
+    );
+  });
+
+  it('breaks down the top three groups with a remainder', () => {
+    const cells = [
+      'effect-blur/webgl',
+      'effect-bloom/webgl',
+      'effect-bloom/webgpu',
+      'material-basic/webgl',
+      'material-basic/webgpu',
+      'mesh-cube/webgl',
+      'shadow-spot/webgl',
+    ];
+    expect(describeExcludedPopulation(cells)).toBe('7 structurally unable (3 effect, 2 material, 1 mesh, 1 other)');
+  });
 });
 
 describe('findExpectedImageDescriptionCellScope', () => {
@@ -42,5 +71,27 @@ describe('findExpectedImageDescriptionCellScope', () => {
       ],
       structurallyUnableCells: ['overridden/webgl', 'specific/webgl', 'unreachable/dom'],
     });
+  });
+});
+
+describe('findScenesWithoutExpectedImageDescription', () => {
+  it('reports scenes that use createFunctionalTarget but lack the field', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'has-description.ts'),
+      'createFunctionalTarget({ expectedImageDescription: "test" });',
+    );
+    writeFileSync(join(scenesDir, 'missing-description.ts'), 'createFunctionalTarget({});');
+    writeFileSync(join(scenesDir, 'not-functional.ts'), 'createGlRenderTarget({});');
+
+    const missing = findScenesWithoutExpectedImageDescription(scenesDir);
+    expect(missing).toEqual(['missing-description']);
+  });
+
+  it('returns empty when all functional scenes have descriptions', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(join(scenesDir, 'complete.ts'), 'createFunctionalTarget({ expectedImageDescription: "done" });');
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
   });
 });

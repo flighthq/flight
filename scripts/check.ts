@@ -104,6 +104,8 @@ if (!scoped) {
   // INTENT: proximity, not identity, is what git checks.
   add('evidence:check', 'tsx', ['scripts/capture-evidence.ts', '--check']);
 
+  add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
+
   // Advisory, and deliberately not a gate: `scripts/size.ts` always exits 0, so this reports which
   // bundles moved against the unminified baseline without ever failing the sweep. A red here would
   // push an agent to rewrite the baseline to clear it, and the shipping pins sit one command away —

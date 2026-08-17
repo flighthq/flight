@@ -1,7 +1,7 @@
-// Reporter only — NOT a gate. Exits 0 regardless of how many scenes lack a description. The field is
-// optional during rollout (110 functional scenes using createFunctionalTarget); this becomes a gate once
-// coverage reaches a threshold worth enforcing, at which point add a process.exitCode and register it in
-// scripts/check.ts.
+// Gate: every createFunctionalTarget scene must carry an expectedImageDescription field. Exits nonzero
+// when any reachable scene is missing the field. The excluded population (scenes that do not use
+// createFunctionalTarget) is described informatively at runtime so the reader can tell whether the
+// gate's scope is correct without counting manually.
 //
 // The unit is load-bearing and is why it is spelled out. An earlier revision of this line read "500+
 // scenes", which was the scene-times-renderer CELL count wearing the word "scenes" — the two are 4.5x
@@ -12,6 +12,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import pc from 'picocolors';
 import ts from 'typescript';
 
 import { discoverEntries } from '../packages/tool-capture/src/captureEntries';
@@ -49,10 +50,30 @@ export function findScenesWithoutExpectedImageDescription(scenesDirectory: strin
     .sort();
 }
 
-function countScenesWithFunctionalTarget(scenesDirectory: string): number {
-  return readdirSync(scenesDirectory)
-    .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
-    .filter((f) => hasFunctionalTargetCall(readFileSync(join(scenesDirectory, f), 'utf8'))).length;
+export function describeExcludedPopulation(cells: readonly string[]): string {
+  if (cells.length === 0) return '0 structurally unable';
+
+  const prefixCounts = new Map<string, number>();
+  for (const cell of cells) {
+    const name = cell.split('/')[0] ?? '';
+    const prefix = name.split('-')[0] ?? '';
+    prefixCounts.set(prefix, (prefixCounts.get(prefix) ?? 0) + 1);
+  }
+
+  const sorted = [...prefixCounts.entries()].sort((a, b) => b[1] - a[1]);
+  const dominant = sorted[0];
+
+  if (sorted.length === 1) {
+    return `${cells.length} structurally unable — all ${dominant![0]} scenes`;
+  }
+
+  const top3 = sorted.slice(0, 3);
+  const top3Total = top3.reduce((sum, [, count]) => sum + count, 0);
+  const remainder = cells.length - top3Total;
+  const parts = top3.map(([prefix, count]) => `${count} ${prefix}`);
+  if (remainder > 0) parts.push(`${remainder} other`);
+
+  return `${cells.length} structurally unable (${parts.join(', ')})`;
 }
 
 function hasFunctionalTargetCall(source: string): boolean {
@@ -75,30 +96,25 @@ function hasFunctionalTargetCall(source: string): boolean {
 }
 
 function main(): void {
+  const isGate = process.argv.includes('--check');
   const root = resolve(dirname(scriptPath), '..');
   const scenesDir = join(root, 'functional', 'scenes');
   const missing = findScenesWithoutExpectedImageDescription(scenesDir);
-  const targetScenes = countScenesWithFunctionalTarget(scenesDir);
-  const described = targetScenes - missing.length;
   const { reachableCells, structurallyUnableCells } = findExpectedImageDescriptionCellScope(root);
   const totalCells = reachableCells.length + structurallyUnableCells.length;
 
-  console.log(
-    `expectedImageDescription field reachability: ${reachableCells.length}/${totalCells} live cells reachable; ` +
-      `${structurallyUnableCells.length}/${totalCells} structurally unable\n`,
-  );
-  if (structurallyUnableCells.length > 0) {
-    console.log(`${structurallyUnableCells.length} structurally unable cell(s):`);
-    for (const cell of structurallyUnableCells) console.log(`  - ${cell}`);
-    console.log('');
-  }
+  const excludedDescription = describeExcludedPopulation(structurallyUnableCells);
 
   console.log(
-    `expectedImageDescription: ${described}/${targetScenes} createFunctionalTarget scenes have a description\n`,
+    `expectedImageDescription: ${reachableCells.length}/${totalCells} cells reachable, ` + `${excludedDescription}\n`,
   );
-  if (missing.length > 0) {
-    console.log(`${missing.length} scene(s) missing expectedImageDescription:`);
-    for (const name of missing) console.log(`  - ${name}`);
+
+  if (missing.length === 0) {
+    console.log(pc.green(`✓ all ${reachableCells.length} reachable cells covered`));
+  } else {
+    console.log(pc.red(`${missing.length} scene(s) missing expectedImageDescription:`));
+    for (const name of missing) console.log(`  ${pc.red('✗')} ${name}`);
+    if (isGate) process.exitCode = 1;
   }
 }
 
