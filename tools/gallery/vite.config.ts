@@ -23,6 +23,8 @@ interface GalleryCellProvenance {
   environmentId: string | null;
 }
 
+type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
+
 interface GalleryCell {
   renderer: string;
   state: 'ready' | 'error';
@@ -30,6 +32,7 @@ interface GalleryCell {
   changed: boolean | null;
   hash: string | null;
   provenance: GalleryCellProvenance | null;
+  commissionState: CommissionState;
 }
 
 interface GalleryTest {
@@ -37,10 +40,97 @@ interface GalleryTest {
   name: string;
   cells: GalleryCell[];
   expectedImageDescription?: string;
+  sourceHasDescription: boolean;
+}
+
+const lockPath = join(projectRoot, 'scripts', 'reference-image-lock.json');
+const requestsDir = join(projectRoot, 'reference-image-requests');
+
+const SCENE_DIRS: Record<string, string> = {
+  functional: join(projectRoot, 'functional', 'scenes'),
+};
+
+function readLockedImages(): Map<string, string> {
+  const locked = new Map<string, string>();
+  if (!existsSync(lockPath)) return locked;
+  try {
+    const lock = JSON.parse(readFileSync(lockPath, 'utf8')) as {
+      packs?: Record<string, { images?: Record<string, { pixelSha256?: string }> }>;
+    };
+    if (lock.packs) {
+      for (const pack of Object.values(lock.packs)) {
+        if (!pack.images) continue;
+        for (const [key, img] of Object.entries(pack.images)) {
+          if (img.pixelSha256) locked.set(key, img.pixelSha256);
+        }
+      }
+    }
+  } catch {
+    // ignore malformed lock
+  }
+  return locked;
+}
+
+function readRequestedCells(): Set<string> {
+  const requested = new Set<string>();
+  if (!existsSync(requestsDir)) return requested;
+  try {
+    for (const file of readdirSync(requestsDir).filter((f) => f.endsWith('.json'))) {
+      const content = JSON.parse(readFileSync(join(requestsDir, file), 'utf8')) as {
+        subject?: string;
+        targets?: readonly { entry?: string; renderer?: string }[];
+      };
+      if (!content.targets) continue;
+      for (const target of content.targets) {
+        if (target.entry && target.renderer) {
+          requested.add(`${content.subject ?? 'functional'}/${target.entry}/${target.renderer}`);
+        }
+      }
+    }
+  } catch {
+    // ignore malformed requests
+  }
+  return requested;
+}
+
+function sourceHasExpectedDescription(tool: string, name: string, renderers: readonly string[]): boolean {
+  const sceneDir = SCENE_DIRS[tool];
+  if (!sceneDir) return false;
+  const candidates = [`${name}.ts`, ...renderers.map((r) => `${name}.${r}.ts`)];
+  for (const candidate of candidates) {
+    const filePath = join(sceneDir, candidate);
+    if (!existsSync(filePath)) continue;
+    try {
+      if (readFileSync(filePath, 'utf8').includes('expectedImageDescription')) return true;
+    } catch {
+      continue;
+    }
+  }
+  return false;
+}
+
+function resolveCommissionState(
+  tool: string,
+  name: string,
+  renderer: string,
+  hash: string | null,
+  locked: ReadonlyMap<string, string>,
+  requested: ReadonlySet<string>,
+): CommissionState {
+  const imageKey = `${tool}/${name}/${renderer}`;
+  const lockedHash = locked.get(imageKey);
+  if (lockedHash !== undefined) {
+    return hash !== null && hash === lockedHash ? 'included' : 'differs';
+  }
+  if (requested.has(imageKey)) return 'requested';
+  return 'not-commissioned';
 }
 
 function discoverGallery(): GalleryTest[] {
   if (!existsSync(artifactsDir)) return [];
+
+  const locked = readLockedImages();
+  const requested = readRequestedCells();
 
   const toolFilter = process.env['VITE_GALLERY_TOOL'];
   const toolDirs = readdirSync(artifactsDir, { withFileTypes: true })
@@ -123,11 +213,17 @@ function discoverGallery(): GalleryTest[] {
         if (cellDescription !== undefined && expectedImageDescription === undefined) {
           expectedImageDescription = cellDescription;
         }
-        cells.push({ renderer, state, error, changed, hash, provenance });
+        const commissionState = resolveCommissionState(tool, name, renderer, hash, locked, requested);
+        cells.push({ renderer, state, error, changed, hash, provenance, commissionState });
       }
 
       if (cells.length > 0) {
-        const entry: GalleryTest = { tool, name, cells };
+        const hasDesc = sourceHasExpectedDescription(
+          tool,
+          name,
+          cells.map((c) => c.renderer),
+        );
+        const entry: GalleryTest = { tool, name, cells, sourceHasDescription: hasDesc };
         if (expectedImageDescription !== undefined) entry.expectedImageDescription = expectedImageDescription;
         results.push(entry);
       }
