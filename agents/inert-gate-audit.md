@@ -91,6 +91,46 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+## 2026-08-16: what the good version looks like — a guard that refuses to answer
+
+Every other instance in this document is an instrument that failed toward *proceed*: green while checking
+the wrong proposition, or silently dropping what would have contradicted it. This one is the counterexample,
+recorded because the document had no worked example of the shape it keeps asking for, and because it caught
+a live instance of the very failure the entry above describes.
+
+**The instance.** After the base moved, a capture was re-run to refresh a census whose facts were known to
+be stale. It produced **zero cells** — not a crash, a refusal, from `resolveStaticServer`
+(`packages/tool-capture/src/captureServer.ts:217-222`):
+
+> The static build is older than the current source. This capture measures the PREVIOUS code, so a change
+> under test will look like it had no effect. Run `npm run build:functional` and retry.
+
+**Three properties worth copying, in the order they matter.**
+
+**It names the consequence, not the symptom.** "Dist is older than source" is a fact about timestamps and
+means nothing to a reader in a hurry. *"A change under test will look like it had no effect"* is what
+happens next, and it is the sentence that makes someone stop. Compare the collapsed verdict recorded
+elsewhere in this document — one message covering two causes with opposite remedies — which named a
+symptom and sent the investigation the wrong way.
+
+**It refuses rather than degrading.** There is no partial answer, no warning-and-continue, no count that
+would have to be caveated. A stale capture's output is *the most persuasive wrong answer available*: it
+reports the pre-change result, which reads as **"the change had no effect"** rather than as a failure to
+observe it. A number that plausible must not be produced at all.
+
+**It is deliberately wide, and the source says so.** It fires on any capture-source edit, including ones
+that cannot reach the bundle, and pays an unnecessary rebuild when it does. Its own comment records why the
+narrowing was rejected: *"a stale dist silently served 22 missing routes and cost the fleet most of a day,
+and every narrowing is a new chance to mis-classify one source as irrelevant. Pay the rebuild."* A gate
+whose false-positive cost is a rebuild and whose false-negative cost is a day of wrong answers should be
+tuned toward the rebuild — and the reasoning is recorded at the gate rather than in someone's memory.
+
+**Why it belongs in this document rather than in a praise file.** It answers Q3 — *which way does it fail
+when it is wrong* — with **stop**, on an instrument where failing toward *proceed* would have been
+invisible. And it caught a real instance: the census being refreshed was stale in exactly the way the
+message predicts, four scenes had gained oracles the old capture facts could not see, and one cell was
+being reported as lacking the very thing it had. **The guard was the only thing in the loop that knew.**
+
 ## 2026-08-16: a silent omission makes the data you DO see unfalsifiable
 
 `scripts/oracle-calibrate.ts` built its identity set from the cells that parsed AND reported `ready`. A
