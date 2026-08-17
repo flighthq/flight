@@ -76,6 +76,12 @@ export function createWgpuRenderEffectPipeline(
   _state: WgpuRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): WgpuRenderEffectPipeline {
+  const sampleCount = Math.max(1, Math.ceil(options.sampleCount ?? 1));
+  if (sampleCount > 1) {
+    throw new Error(
+      `createWgpuRenderEffectPipeline: sampleCount ${sampleCount} is unsupported; WebGPU effect targets are single-sample`,
+    );
+  }
   return {
     options: { ...options },
     sceneTarget: null,
