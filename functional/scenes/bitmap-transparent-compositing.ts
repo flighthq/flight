@@ -3,7 +3,7 @@
 // alpha ramp: opaque white at the center fading to fully transparent at the edges. It is drawn twice over
 // an opaque BLUE background — once at node.alpha = 1, once at node.alpha = 0.5.
 //
-// The oracle pins down the two ways a compositing bug shows up:
+// The scene assertion pins down the two ways a compositing bug shows up:
 //   • The transparent EDGE of both copies must read as the blue background, proving alpha=0 source pixels
 //     contribute nothing (no opaque-white halo, no black box from ignored alpha).
 //   • The opaque CENTER must blend white over blue. At node.alpha = 1 the center is ~white. At

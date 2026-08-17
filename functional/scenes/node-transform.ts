@@ -6,7 +6,7 @@
 // render proves the renderer rasterizes the rotated geometry. At 45° the square becomes a diamond whose
 // footprint is the L1 ball |x-cx|+|y-cy| ≤ halfDiagonal: the four corners of the *axis-aligned* square
 // fall OUTSIDE it, and four points just beyond the square's edges (which the axis-aligned square never
-// covered) fall INSIDE it. The oracle checks all of these, so it can only pass for a genuine ~45°
+// covered) fall INSIDE it. The assertion checks all of these, so it can only pass for a genuine ~45°
 // rotation about the pivot — a near-zero or wrong angle fails.
 import type { Bitmap } from '@flighthq/sdk';
 import {

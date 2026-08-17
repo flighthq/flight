@@ -81,7 +81,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // widths and asserting they are approximately equal is the signature that distinguishes ortho from
 // perspective.
 //
-// This is a property jsdom cannot check: it needs real projection + rasterization. The oracle scans a
+// This is a property jsdom cannot check: it needs real projection + rasterization. The assertion scans a
 // horizontal line through the boxes, counts each box's contiguous lit-column run (its on-screen width),
 // and asserts the two are within ~15% of each other. If the projection silently fell back to perspective
 // (or ortho half-extents were mis-wired), the far box would shrink and the widths would diverge.

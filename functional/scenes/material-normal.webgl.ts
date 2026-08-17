@@ -74,7 +74,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // front-center normal points straight at the camera (+z), while off-center normals tilt toward +x / +y,
 // so the encoded color (and its luminance) changes across the surface.
 //
-// The signature this oracle checks: the center pixel and an on-sphere offset pixel encode different
+// The signature the assertion checks: the center pixel and an on-sphere offset pixel encode different
 // normals, so they differ in color/luminance. A flat/uniform fill — the failure mode if the normal were
 // not being written — would show no such difference. Normals are WORLD-space, so the encoding is fixed
 // by sphere orientation, not by the camera.

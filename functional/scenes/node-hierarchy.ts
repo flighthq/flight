@@ -4,7 +4,7 @@
 //
 // This needs a real render because both behaviours are emergent from the scene-graph walk: the shape has
 // no transform of its own, yet must land at outer+inner+local, and it is fully opaque yet must render at
-// half strength because the OUTER container's alpha (0.5) propagates down. The oracle samples the
+// half strength because the OUTER container's alpha (0.5) propagates down. Pixel sampling checks the
 // compounded location (a green blended ~50% over black) and a far point (background), so it fails unless
 // both the transform composition and the alpha inheritance reached the drawn pixels.
 import type { Bitmap } from '@flighthq/sdk';

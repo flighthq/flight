@@ -59,7 +59,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 
 registerWgpuFunctionalTarget(state, scale);
 
-// WebGPU leg of mesh-normal-position-groups.webgl.ts. The geometry and oracle are deliberately
+// WebGPU leg of mesh-normal-position-groups.webgl.ts. The geometry and assertion are deliberately
 // repeated so each backend scene stays self-contained and proves its own lighting path.
 const vertices = new Float32Array(6 * 12);
 setVertex(vertices, 0, 0, -1.2, 0, 0, 0);

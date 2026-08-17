@@ -3,7 +3,7 @@
 // on top, partially overlapping it and partially extending over the bare background.
 //
 // Only a real render exercises the per-pixel blend: the red square's pixels are 50% red composited over
-// whatever is beneath them. The oracle samples the bottom-only region (pure blue, untouched), the region
+// whatever is beneath them. Pixel sampling checks the bottom-only region (pure blue, untouched), the region
 // where the half-alpha red sits over the black background (red channel ~half of 255), and an empty area
 // (background). Passing requires the renderer to honour node alpha during compositing, not just paint a
 // flat color.

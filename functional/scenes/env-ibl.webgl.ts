@@ -87,7 +87,7 @@ export function render(
 // baked (bakeGlEnvironmentIbl) into a diffuse irradiance cubemap + prefiltered specular cubemap + BRDF
 // LUT, and two PBR spheres are lit *purely* by that environment (no punctual lights). The left sphere
 // is a smooth metal — specular IBL, so it mirrors the surrounding face colors; the right sphere is a
-// rough dielectric — diffuse IBL, so it takes on a soft tint of the environment. The oracle asserts
+// rough dielectric — diffuse IBL, so it takes on a soft tint of the environment. The assertion confirms
 // both spheres are lit (not black, which is what an unbaked / unbound IBL would leave them) and that
 // the mirror metal shows color variation from the reflected faces.
 

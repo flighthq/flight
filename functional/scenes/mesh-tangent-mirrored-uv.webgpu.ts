@@ -61,7 +61,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 
 registerWgpuFunctionalTarget(state, scale);
 
-// WebGPU leg of mesh-tangent-mirrored-uv.webgl.ts. The geometry and oracle are deliberately repeated:
+// WebGPU leg of mesh-tangent-mirrored-uv.webgl.ts. The geometry and assertion are deliberately repeated:
 // functional backend files are self-contained, and matching fingerprints additionally prove the two
 // shader families consume Flight's repaired tangent records the same way.
 const vertices = new Float32Array(4 * 12);

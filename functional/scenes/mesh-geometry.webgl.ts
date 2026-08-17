@@ -70,7 +70,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // mesh-geometry — proves the 3D mesh GEOMETRY pipeline (vertex positions + index topology → view/
 // projection transform → rasterization) on the Gl and Wgpu scene renderers, independent of shading. A
 // unit BOX is rendered with an UnlitMaterial (flat color, lighting-independent) viewed from a 3/4 angle,
-// so what the oracle checks is purely WHERE the geometry lands on screen: the cube projects to a compact
+// so what the assertion checks is purely WHERE the geometry lands on screen: the cube projects to a compact
 // convex silhouette centered in the frame, covering the middle while leaving the corners as background.
 //
 // This complements the material-* tests (which shade a sphere) by exercising a different primitive

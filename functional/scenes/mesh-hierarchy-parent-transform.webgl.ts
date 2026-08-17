@@ -79,7 +79,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 //
 // This is the visual signature of correct hierarchy composition: with the parent transform applied the
 // child is up-and-right and the center is background; if parent transforms were IGNORED the child would
-// render dead-center instead. The oracle asserts exactly that split (center = background, upper-right =
+// render dead-center instead. The assertion confirms exactly that split (center = background, upper-right =
 // child color), so it fails loudly if hierarchy composition regresses.
 //
 // Camera3D model (RH view, eye on +z looking at origin): +x is screen-right, +y is screen-up.

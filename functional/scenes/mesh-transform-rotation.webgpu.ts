@@ -69,7 +69,7 @@ registerWgpuFunctionalTarget(state, scale);
 
 // mesh-transform-rotation — proves a Mesh's `localMatrix` ROTATION reorients the rendered geometry, using
 // an ELONGATED box (a bar along the X axis) so orientation is visually unmistakable. Unrotated, the bar is
-// WIDE (horizontal); rotated 90° about Z it becomes TALL (vertical). The oracle asserts the silhouette now
+// WIDE (horizontal); rotated 90° about Z it becomes TALL (vertical). The assertion confirms the silhouette now
 // extends vertically and no longer horizontally — a result only a correctly-applied Z rotation can produce.
 //
 // Camera3D is head-on (eye at (0,0,4), looking at the origin), so the X bar lies flat in the screen plane and

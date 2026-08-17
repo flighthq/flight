@@ -66,7 +66,7 @@ registerWgpuFunctionalTarget(state, scale);
 //
 // A built-in material's fragment tail emits PREMULTIPLIED color (rgb scaled by the coverage it writes
 // to a — see WGPU_MESH_FRAGMENT_TAIL), matching every equation in the premultiplied blend table. The
-// scene is built so that mismatch is visible rather than subtle, and the oracle asserts the three
+// scene is built so that mismatch is visible rather than subtle, and the assertion checks the three
 // columns where correct and incorrect are unambiguous and survive tone-mapping:
 //
 //   COVERAGE (Normal, Add, Screen, Lighten) — a quarter-alpha patch cannot land on the same value as
@@ -94,11 +94,11 @@ registerWgpuFunctionalTarget(state, scale);
 // spelled — or whether it exists on SurfaceMaterial at all.
 
 // Orthographic so world coordinates map linearly to the frame and the sample points below are exact
-// fractions of the image rather than a perspective divide the oracle would have to re-derive.
+// fractions of the image rather than a perspective divide the assertion would have to re-derive.
 const HALF_WIDTH = 4;
 const HALF_HEIGHT = 3;
 
-// Column order is the reading order of the oracle, not the enum's.
+// Column order is the reading order of the assertion, not the enum's.
 const COLUMNS: readonly BlendMode[] = [
   BlendMode.Normal,
   BlendMode.Add,
@@ -128,7 +128,7 @@ const ZERO_COVERAGE_COLUMNS: readonly number[] = [COLUMN_NORMAL, COLUMN_ADD, COL
 // post-fix differences are an order of magnitude larger; today they are exactly zero.
 const COVERAGE_MARGIN = 12;
 
-// Patch RGB. Red is full-scale so the red channel the oracle samples carries the cleanest signal;
+// Patch RGB. Red is full-scale so the red channel the assertion samples carries the cleanest signal;
 // green/blue only make the columns legible in the screenshot.
 const PATCH_RGB = 0xff8040;
 const FULL_ALPHA = 0xff;
@@ -177,7 +177,7 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
   assertBlendModeCoverage(bitmap, '[material-blend-modes/webgpu]');
 }
 
-// Shared, backend-independent oracle body. Duplicated verbatim in the .webgl.ts sibling because
+// Shared, backend-independent assertion body. Duplicated verbatim in the .webgl.ts sibling because
 // functional scenes are self-contained per backend by design.
 function assertBlendModeCoverage(bitmap: Readonly<Bitmap>, tag: string): void {
   const backdrop = sampleRed(bitmap, 0.5, backdropRowFraction());

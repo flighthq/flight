@@ -5,7 +5,7 @@
 // pass: both shapes carry an identical opaque fill, but only the visible one may produce pixels. The
 // scene draws two separate, non-overlapping filled rectangles in distinct colors. One is left visible;
 // the other has `.visible = false` (followed by invalidateNodeAppearance, since visibility is an
-// appearance field). The oracle samples (1) the visible shape's region (must read its color), (2) the
+// appearance field). Pixel sampling checks (1) the visible shape's region (must read its color), (2) the
 // hidden shape's region (must read background — proof it did not draw), and (3) an untouched area (must
 // read background). jsdom unit tests cannot exercise this because there are no rendered pixels to gate.
 import type { Bitmap } from '@flighthq/sdk';

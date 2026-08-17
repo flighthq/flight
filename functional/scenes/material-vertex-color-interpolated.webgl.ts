@@ -92,7 +92,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 // separates those two, which is why this scene sits next to that one rather than replacing it.
 //
 // The unlit shader computes `color = u_color * v_color0`, so the material tint stays at its default
-// white: any other tint would multiply into every sample and mute the corner hues the oracle reads.
+// white: any other tint would multiply into every sample and mute the corner hues the assertion reads.
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 

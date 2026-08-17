@@ -79,13 +79,13 @@ export function render(
 // behind opaque geometry (depth ordering). The cube faces are generated procedurally (solid-color
 // canvases) so the test needs no image assets. drawGlEnvironmentSkybox reconstructs each pixel's world
 // ray from the inverse view-projection and samples the cube, so different screen regions show
-// different faces — the oracle asserts that face variation plus a non-blank backdrop.
+// different faces — the assertion checks for face variation plus a non-blank backdrop.
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
 // Six solid-color faces in canonical +X, -X, +Y, -Y, +Z, -Z order — each visually distinct so the
-// oracle can tell which face a view ray landed on.
+// sampling can tell which face a view ray landed on.
 const FACE_COLORS: readonly string[] = [
   '#ff3030', // +X right  — red
   '#30ff30', // -X left   — green

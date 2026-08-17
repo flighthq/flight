@@ -36,7 +36,7 @@ import {
 // output is their absolute difference — neither of which a source-over passthrough would produce.
 //
 // The backdrop is rendered once into a standalone GL target and registered under a key; the foreground is
-// rendered into the pipeline; end() runs the BlendEffect over both. The oracle samples three regions:
+// rendered into the pipeline; end() runs the BlendEffect over both. The assertion samples three regions:
 //   - overlap of equal colours (white-over-white) → ~black (the Difference signature),
 //   - layer-only over black backdrop → the layer colour unchanged (|c - 0| = c),
 //   - backdrop-only region → passes through as the layer is transparent there, reading ~backdrop colour.
