@@ -14,7 +14,7 @@
 //
 // Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
 // graph — the same reason `FixtureExtractionVerification` lives in `scripts/fixtures.ts`.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 export interface OracleLock {
   schemaVersion: 2;
@@ -151,6 +151,25 @@ export function readOracleLock(path: string): OracleLockResult {
 }
 
 export type OracleLockResult = { lock: OracleLock } | { problems: OracleRecordProblem[] };
+
+/**
+ * The identities the committed lock already supplies blessed bytes for — the ONLY source for "is this
+ * cell pinned".
+ *
+ * ★ ABSENT AND UNREADABLE ARE DIFFERENT ANSWERS, AND ONLY ONE OF THEM IS EMPTY. Before the first
+ * release there is no lock file, and that genuinely means no cell is pinned. A lock that EXISTS and
+ * does not parse means what is already blessed is UNKNOWN — and the safe reading of "unknown" is never
+ * "nothing is", because empty fails toward commissioning everything, and re-blessing a cell that is
+ * already gating is a separate decision nobody made. The caller gets the problems and refuses.
+ */
+export function readOracleLockPins(
+  path: string,
+): { pinned: ReadonlySet<string> } | { problems: OracleRecordProblem[] } {
+  if (!existsSync(path)) return { pinned: new Set() };
+  const result = readOracleLock(path);
+  if ('problems' in result) return result;
+  return { pinned: new Set(getOracleLockImages(result.lock).keys()) };
+}
 
 /** Every exact image the committed lock supplies, keyed for direct request and eligibility lookups. */
 export function getOracleLockImages(lock: Readonly<OracleLock>): ReadonlyMap<string, Readonly<OracleLockImage>> {

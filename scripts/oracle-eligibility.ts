@@ -119,6 +119,19 @@ export type OracleBlockReason =
   | 'already-commissioned'
   /** Already blessed and gating. Re-commissioning is a re-bless, which is a separate decision. */
   | 'already-pinned'
+  /**
+   * The coverage manifest DECLARES this cell owes a `referenceImage`, and the locked release carries no
+   * bytes for it.
+   *
+   * ★ THIS IS NOT A SYNONYM FOR `already-pinned`, AND CONFLATING THEM IS THE DEFECT THIS STATE REPLACES.
+   * The two say opposite things about whether the bytes exist. `already-pinned` means the reference
+   * arrived and now gates; this means somebody ASKED for one and it never arrived — a commission that
+   * expired, a release that never landed, a coverage line added ahead of its request. Reading the
+   * declaration as the blessing made the second case invisible: the cell was withheld with the reason
+   * given for cells that are DONE, so the one state that needed chasing was the one that looked
+   * finished. It is blocked either way; only one of them is somebody's outstanding work.
+   */
+  | 'reference-declared-not-locked'
   /** Everything else agreed, and the repeats were on ONE host. Stage one clear, cross-host unmeasured. */
   | 'determinism-within-host-only';
 
@@ -170,8 +183,21 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
 
   for (const identity of [...input.coverage.keys()].sort()) {
     const kinds = input.coverage.get(identity) ?? [];
-    if (input.pinned.has(identity) || kinds.includes('referenceImage')) {
+    // ★ PINNED IS DECIDED BY THE LOCK ALONE. This used to be `pinned.has(identity) ||
+    // kinds.includes('referenceImage')`, an OR in which the second arm carried every decision: `pinned`
+    // was always an empty Set (its only caller passed `new Set()` literally), so the coverage manifest's
+    // DECLARATION was standing in for the release's BYTES. A declaration is a request for a reference,
+    // not the reference — it is written when the cell is commissioned, long before anything is blessed.
+    if (input.pinned.has(identity)) {
       blocked.push({ detail: 'already blessed and gating', identity, reason: 'already-pinned' });
+      continue;
+    }
+    if (kinds.includes('referenceImage')) {
+      blocked.push({
+        detail: 'coverage declares a referenceImage and the locked release carries none for it',
+        identity,
+        reason: 'reference-declared-not-locked',
+      });
       continue;
     }
     if (input.outstanding.has(identity)) {
@@ -531,6 +557,10 @@ const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'baseline-unreproduced-here',
   'held',
   'already-commissioned',
+  // Worst-first puts the declaration-only state ABOVE `already-pinned`: it is somebody's outstanding
+  // work — a reference that was asked for and never arrived — while a pinned cell is finished and needs
+  // nobody. They were one reason until C split them, and the summary is where that difference is read.
+  'reference-declared-not-locked',
   'already-pinned',
   // Last on purpose: it is the only reason that names no defect, and it is true of every cell at once.
   'determinism-within-host-only',

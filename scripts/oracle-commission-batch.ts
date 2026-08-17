@@ -42,7 +42,7 @@ import {
   summarizeOracleBlocks,
 } from './oracle-eligibility';
 import type { OracleRequestCaptureIdentity, OracleRequestTarget } from './oracle-records';
-import { getOracleRequestCells, readOracleRequest } from './oracle-records';
+import { getOracleRequestCells, readOracleLockPins, readOracleRequest } from './oracle-records';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -163,7 +163,7 @@ const report = selectCommissionableCells({
   held: readHeld(),
   outstanding: readOutstanding(),
   parityWithheld: readParityWithholdings(runs[0]!, subject),
-  pinned: new Set(),
+  pinned: readPinned(),
 });
 
 const eligible = report.eligible.filter((identity) => only.size === 0 || only.has(identity.split('/')[1] ?? ''));
@@ -369,6 +369,31 @@ function readHeld(): Map<string, string> {
   if (!existsSync(path)) return new Map();
   const held = (JSON.parse(readFileSync(path, 'utf8')) as { held?: Record<string, string> }).held ?? {};
   return new Map(Object.entries(held));
+}
+
+/**
+ * Cells the locked release already supplies blessed bytes for, read from `scripts/oracle-lock.json`.
+ *
+ * ★ IT REFUSES ON AN UNREADABLE LOCK RATHER THAN RETURNING AN EMPTY SET, BECAUSE EMPTY FAILS TOWARD
+ * "COMMISSION EVERYTHING". A missing or malformed lock is a state where nothing is known about what is
+ * already blessed — and the safe reading of "I don't know" is not "nothing is". Defaulting to empty
+ * would re-commission every already-blessed cell, and re-blessing is a separate decision nobody made.
+ *
+ * ★ AN ABSENT LOCK FILE IS THE ONE EMPTY THAT IS REAL. Before the first release there is no lock, and
+ * that genuinely means no cell is pinned. That is why it is distinguished from a lock that exists and
+ * cannot be read, which is a defect.
+ */
+function readPinned(): ReadonlySet<string> {
+  const path = join(repoRoot, 'scripts', 'oracle-lock.json');
+  const parsed = readOracleLockPins(path);
+  if ('problems' in parsed) {
+    for (const problem of parsed.problems) console.error(`  ${problem.kind}: ${problem.detail}`);
+    console.error(`oracle-commission-batch: ${path} could not be read, so what is already blessed is`);
+    console.error('  UNKNOWN. Refusing: treating that as "nothing is pinned" would re-commission every');
+    console.error('  blessed cell, and a re-bless is a separate decision.');
+    process.exit(1);
+  }
+  return parsed.pinned;
 }
 
 /** Cells already claimed by an open request. */

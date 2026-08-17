@@ -449,12 +449,39 @@ describe('selectCommissionableCells', () => {
     ]);
   });
 
-  it('withholds a cell whose coverage identity already carries referenceImage', () => {
-    // The coverage manifest and the lock are separate records (§5); either one claiming the cell is
-    // enough to make a fresh commission a re-bless rather than a first blessing.
+  // ★ THE DEFEATING TEST FOR THE OR THIS REPLACED. The rule was `pinned.has(identity) ||
+  // kinds.includes('referenceImage')`, and the second arm carried every decision because `pinned` was
+  // always an empty Set — so a cell whose coverage DECLARED a reference reported as `already-pinned`,
+  // the reason given for cells that are finished. The declaration is written when a cell is
+  // COMMISSIONED, which is the moment before anything is blessed: the very first `write` would have
+  // marked ten cells "already blessed and gating" while the release carrying their bytes did not exist.
+  it('reports a declared-but-unlocked reference as its own state, not as already-pinned', () => {
     expect(
       blockOf(select({ coverage: [['functional/good/webgl', ['fingerprint', 'oracle', 'referenceImage']]] })),
+    ).toEqual([
+      'reference-declared-not-locked',
+      'coverage declares a referenceImage and the locked release carries none for it',
+    ]);
+  });
+
+  it('reports a cell that is both declared and locked as already-pinned, because the bytes exist', () => {
+    expect(
+      blockOf(
+        select({
+          coverage: [['functional/good/webgl', ['fingerprint', 'oracle', 'referenceImage']]],
+          pinned: ['functional/good/webgl'],
+        }),
+      ),
     ).toEqual(['already-pinned', 'already blessed and gating']);
+  });
+
+  // The lock is the only source for pinned now, so a lock entry with no coverage declaration still
+  // blocks: the bytes gate whatever the manifest happens to say.
+  it('pins from the lock even when coverage declares no referenceImage', () => {
+    expect(blockOf(select({ pinned: ['functional/good/webgl'] }))).toEqual([
+      'already-pinned',
+      'already blessed and gating',
+    ]);
   });
 
   it('reports the first failed condition when several are tripped at once', () => {
