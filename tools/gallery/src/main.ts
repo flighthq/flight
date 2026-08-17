@@ -16,6 +16,7 @@ interface GalleryCell {
   hash: string | null;
   provenance: GalleryCellProvenance | null;
   commissionState: CommissionState;
+  holdReason: string | null;
 }
 
 interface GalleryTest {
@@ -126,6 +127,36 @@ function buildSidebar(): void {
   testList.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
 }
 
+async function holdCurrentTest(): Promise<void> {
+  const t = currentTest();
+  if (!t) return;
+
+  const reason = prompt('Hold reason (mandatory — explain what is wrong with this render):');
+  if (!reason || reason.trim().length === 0) return;
+
+  try {
+    const res = await fetch('/api/hold', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tool: t.tool,
+        entry: t.name,
+        renderers: t.cells.map((c) => c.renderer),
+        reason: reason.trim(),
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      showCommissionFeedback(`Error: ${(err as { error: string }).error}`, true);
+      return;
+    }
+    const result = (await res.json()) as { keys: string[]; path: string };
+    showCommissionFeedback(`Held ${result.keys.length} cell(s) in ${result.path}`, false);
+  } catch (e) {
+    showCommissionFeedback(`Network error: ${e}`, true);
+  }
+}
+
 async function commissionCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
@@ -221,10 +252,16 @@ function buildRendererBar(): void {
   });
 
   const summary = testCommissionSummary(t);
+  const isHeld = t.cells.some((c) => c.holdReason !== null);
   const commissionBtn = document.createElement('button');
   commissionBtn.className = 'commission-btn';
 
-  if (summary.state === 'included') {
+  if (isHeld) {
+    commissionBtn.textContent = 'Held — cannot commission';
+    commissionBtn.title = 'One or more cells are held — resolve the hold before commissioning';
+    commissionBtn.disabled = true;
+    commissionBtn.setAttribute('data-commission', 'held');
+  } else if (summary.state === 'included') {
     commissionBtn.textContent = 'Already included';
     commissionBtn.title = 'All cells match their locked reference images';
     commissionBtn.disabled = true;
@@ -245,6 +282,21 @@ function buildRendererBar(): void {
   }
 
   rendererBar.appendChild(commissionBtn);
+
+  const anyHeld = t.cells.some((c) => c.holdReason !== null);
+  const holdBtn = document.createElement('button');
+  holdBtn.className = 'hold-btn';
+  if (anyHeld) {
+    holdBtn.textContent = 'Held';
+    holdBtn.title = 'One or more cells are held — see the status overlay for the reason';
+    holdBtn.disabled = true;
+    holdBtn.setAttribute('data-held', 'true');
+  } else {
+    holdBtn.textContent = 'Hold';
+    holdBtn.title = 'Hold this render — marks all cells as not ready for commissioning (requires a reason)';
+    holdBtn.addEventListener('click', () => void holdCurrentTest());
+  }
+  rendererBar.appendChild(holdBtn);
 }
 
 function commissionStateMessage(state: CommissionState): string {
@@ -287,8 +339,13 @@ function showRenderer(): void {
       stateEl.className = 'commission-state';
       preview.appendChild(stateEl);
     }
-    stateEl.textContent = commissionStateMessage(cell.commissionState);
-    stateEl.setAttribute('data-commission', cell.commissionState);
+    if (cell.holdReason) {
+      stateEl.textContent = `HELD — ${cell.holdReason}`;
+      stateEl.setAttribute('data-commission', 'held');
+    } else {
+      stateEl.textContent = commissionStateMessage(cell.commissionState);
+      stateEl.setAttribute('data-commission', cell.commissionState);
+    }
   } else {
     stateEl?.remove();
   }

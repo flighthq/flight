@@ -33,6 +33,7 @@ interface GalleryCell {
   hash: string | null;
   provenance: GalleryCellProvenance | null;
   commissionState: CommissionState;
+  holdReason: string | null;
 }
 
 interface GalleryTest {
@@ -44,6 +45,7 @@ interface GalleryTest {
 }
 
 const lockPath = join(projectRoot, 'scripts', 'reference-image-lock.json');
+const heldPath = join(projectRoot, 'scripts', 'reference-image-held.json');
 const requestsDir = join(projectRoot, 'reference-image-requests');
 
 const SCENE_DIRS: Record<string, string> = {
@@ -69,6 +71,24 @@ function readLockedImages(): Map<string, string> {
     // ignore malformed lock
   }
   return locked;
+}
+
+function readHeldCells(): Map<string, string> {
+  const held = new Map<string, string>();
+  if (!existsSync(heldPath)) return held;
+  try {
+    const data = JSON.parse(readFileSync(heldPath, 'utf8')) as {
+      held?: Record<string, string>;
+    };
+    if (data.held) {
+      for (const [key, reason] of Object.entries(data.held)) {
+        held.set(key, reason);
+      }
+    }
+  } catch {
+    // ignore malformed held file
+  }
+  return held;
 }
 
 function readRequestedCells(): Set<string> {
@@ -130,6 +150,7 @@ function discoverGallery(): GalleryTest[] {
   if (!existsSync(artifactsDir)) return [];
 
   const locked = readLockedImages();
+  const held = readHeldCells();
   const requested = readRequestedCells();
 
   const toolFilter = process.env['VITE_GALLERY_TOOL'];
@@ -214,7 +235,9 @@ function discoverGallery(): GalleryTest[] {
           expectedImageDescription = cellDescription;
         }
         const commissionState = resolveCommissionState(tool, name, renderer, hash, locked, requested);
-        cells.push({ renderer, state, error, changed, hash, provenance, commissionState });
+        const imageKey = `${tool}/${name}/${renderer}`;
+        const holdReason = held.get(imageKey) ?? null;
+        cells.push({ renderer, state, error, changed, hash, provenance, commissionState, holdReason });
       }
 
       if (cells.length > 0) {
@@ -328,6 +351,56 @@ function galleryPlugin(): Plugin[] {
 
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ id, path: relative(projectRoot, outPath) }));
+              } catch {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: 'invalid JSON body' }));
+              }
+            });
+            return;
+          }
+
+          if (req.method === 'POST' && urlPath === '/api/hold') {
+            let body = '';
+            req.on('data', (chunk: Buffer) => {
+              body += chunk.toString();
+            });
+            req.on('end', () => {
+              try {
+                const payload = JSON.parse(body) as {
+                  tool: string;
+                  entry: string;
+                  renderers: readonly string[];
+                  reason: string;
+                };
+                if (!payload.tool || !payload.entry || !payload.renderers?.length) {
+                  res.statusCode = 400;
+                  res.end(JSON.stringify({ error: 'missing required fields: tool, entry, renderers' }));
+                  return;
+                }
+                if (!payload.reason || payload.reason.trim().length === 0) {
+                  res.statusCode = 400;
+                  res.end(JSON.stringify({ error: 'a hold requires a reason' }));
+                  return;
+                }
+
+                let heldData: { $comment?: string; schemaVersion?: number; held: Record<string, string> };
+                if (existsSync(heldPath)) {
+                  heldData = JSON.parse(readFileSync(heldPath, 'utf8')) as typeof heldData;
+                } else {
+                  heldData = { schemaVersion: 1, held: {} };
+                }
+
+                const keys: string[] = [];
+                for (const renderer of payload.renderers) {
+                  const key = `${payload.tool}/${payload.entry}/${renderer}`;
+                  heldData.held[key] = payload.reason.trim();
+                  keys.push(key);
+                }
+
+                writeFileSync(heldPath, JSON.stringify(heldData, null, 2) + '\n');
+
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ keys, path: relative(projectRoot, heldPath) }));
               } catch {
                 res.statusCode = 400;
                 res.end(JSON.stringify({ error: 'invalid JSON body' }));
