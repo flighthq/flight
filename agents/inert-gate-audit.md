@@ -246,6 +246,46 @@ the expected VALUE, not the distance from the input. `svg-clip-path` does it (`k
 `clipped point is black`); `effect-lut-grade` did not. When an assertion's failure message says *"is within
 N of original"*, it is a difference assertion, and it will pass for any reason the pixels move.
 
+### Addendum — the same error with the polarity reversed: suspecting the change you are holding
+
+Filed beside the masking entry deliberately, because the two are one pattern seen from opposite sides and a
+reader who meets only one will not recognise the other.
+
+> **When something breaks, the change you are holding is the most AVAILABLE explanation and therefore the
+> LEAST INTERROGATED.**
+
+**The masking case above is the inverse form.** A check went red next to an *unrelated* fix (the RGBA
+migration), and the instinct was to suspect the fix. It was innocent — it had removed a cancellation, and
+the red was correct and overdue.
+
+**This is the direct form, and it is mine.** `effect-lut-grade/webgpu` failed a recapture immediately after
+*my own* work supplied a real LUT to that scene. I wrote down that supplying the LUT had reached a path
+WebGPU could not build. It is a coherent mechanism, it fits every symptom, and it is wrong. A guard landed
+in the four minutes between my last known-good observation and the failing one:
+
+    17:22  same cell captured `ready`          (my own earlier run)
+    19:40  cc3d61ed3 lands — sampleCount > 1 now throws at module scope
+    19:44  recapture fails
+
+**The ordering settles it without a single hypothesis about MSAA, LUTs, or pipelines.** That is the whole
+method, and it is cheaper than the reasoning it replaces:
+
+> **Timestamp the last known-good observation and the change, then compare. Do this BEFORE proposing a
+> mechanism, because a mechanism is exactly what makes the comparison feel unnecessary.**
+
+Both faces share a root: proximity is not causation, but it is *availability*, and availability is what
+gets an explanation adopted without being checked. The change you are holding is the most available thing
+in the room. It is also the one you understand best, which is why the story you build around it will be
+detailed, plausible, and unfalsifiable by inspection — the plausibility is supplied by your familiarity
+with the change, not by evidence about the failure.
+
+**The scale error this hides.** Attributing the failure to my own scene edit implied a one-cell problem.
+The actual population was measured immediately afterwards at **42 failing cells**, all carrying an
+identical error string, out of 52 captured. An available explanation is usually scoped to whatever you
+were touching, so it does not merely misattribute the cause — it silently right-sizes the incident to your
+own diff. Ask the population question early: *what else is red right now, and does my story explain that
+too?* Here it explained none of the other 41.
+
 ### Addendum — the ruling this produced, and one correction to how it was sharpened
 
 Filed as an addendum to the non-discriminating-threshold scan rather than as its own finding: same
