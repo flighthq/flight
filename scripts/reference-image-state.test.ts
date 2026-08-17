@@ -1,6 +1,11 @@
-import type { OracleRequest } from './oracle-records';
-import type { OracleCellComparison, OracleCellInput, OracleJoinFailureKind, OracleRequestRecord } from './oracle-state';
-import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './oracle-state';
+import type { ReferenceImageRequest } from './reference-image-records';
+import type {
+  ReferenceImageCellComparison,
+  ReferenceImageCellInput,
+  ReferenceImageJoinFailureKind,
+  ReferenceImageRequestRecord,
+} from './reference-image-state';
+import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state';
 
 // ★ EVERY GATE IN §9 HAS A FIRING TEST HERE, per the capture-verification-tiers rule that a gate row and
 // its defeating test are added together. A gate nobody has watched fail is a gate nobody knows fires —
@@ -187,7 +192,7 @@ describe('joinOracleState', () => {
   });
 
   it('gates on maxChannelDelta only when the policy says to', () => {
-    const spike: OracleCellComparison = { dimensionMismatch: false, fraction: 0, maxChannelDelta: 200 };
+    const spike: ReferenceImageCellComparison = { dimensionMismatch: false, fraction: 0, maxChannelDelta: 200 };
 
     const gating = join([cell('functional/a/webgl', { comparison: spike })], []);
     const reporting = joinOracleState({
@@ -202,31 +207,33 @@ describe('joinOracleState', () => {
   });
 });
 
-function cell(identity: string, overrides: Partial<OracleCellInput> = {}): OracleCellInput {
+function cell(identity: string, overrides: Partial<ReferenceImageCellInput> = {}): ReferenceImageCellInput {
   return { comparison: null, identity, pinned: true, required: true, ...overrides };
 }
 
-function clean(): OracleCellComparison {
+function clean(): ReferenceImageCellComparison {
   return { dimensionMismatch: false, fraction: 0, maxChannelDelta: 1 };
 }
 
-function join(cells: readonly OracleCellInput[], requests: readonly OracleRequestRecord[]) {
+function join(cells: readonly ReferenceImageCellInput[], requests: readonly ReferenceImageRequestRecord[]) {
   return joinOracleState({ cells, maxPendingDays: 30, policy: POLICY, requests });
 }
 
-function kinds(result: { failures: readonly { kind: OracleJoinFailureKind }[] }): OracleJoinFailureKind[] {
+function kinds(result: {
+  failures: readonly { kind: ReferenceImageJoinFailureKind }[];
+}): ReferenceImageJoinFailureKind[] {
   return result.failures.map((failure) => failure.kind);
 }
 
-function moved(): OracleCellComparison {
+function moved(): ReferenceImageCellComparison {
   return { dimensionMismatch: false, fraction: 0.04, maxChannelDelta: 90 };
 }
 
-function record(request: OracleRequest, ageDays = 1): OracleRequestRecord {
+function record(request: ReferenceImageRequest, ageDays = 1): ReferenceImageRequestRecord {
   return { ageDays, request };
 }
 
-function request(id: string, subject: string, entry: string, renderers: string[] = ['webgl']): OracleRequest {
+function request(id: string, subject: string, entry: string, renderers: string[] = ['webgl']): ReferenceImageRequest {
   return {
     frames: 1,
     id,

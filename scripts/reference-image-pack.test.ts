@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
-import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './oracle-pack';
-import type { OracleLock } from './oracle-records';
+import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './reference-image-pack';
+import type { ReferenceImageLock } from './reference-image-records';
 
 // ★ EVERY CASE HERE IS A SUPPLY-CHAIN FAULT WEARING A RENDER REGRESSION'S CLOTHES. Each asserts that the
 // fault is named for what actually broke, because the failure mode this module exists to prevent is a
@@ -104,7 +104,7 @@ describe('verifyOracleRelease', () => {
   });
 });
 
-function lock(overrides: Partial<OracleLock> = {}): OracleLock {
+function lock(overrides: Partial<ReferenceImageLock> = {}): ReferenceImageLock {
   return {
     manifestSha256: 'f'.repeat(64),
     oracleCommit: '0'.repeat(40),

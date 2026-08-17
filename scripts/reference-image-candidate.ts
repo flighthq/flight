@@ -1,6 +1,6 @@
-// Builds the candidate bundle a commissioned Flight capture hands to Oracle intake
-// (agents/render-oracle-repository.md §8). Flight produces and dispatches candidates; it never authors
-// the Oracle repository's history, so this writes an artifact and stops.
+// Builds the candidate bundle a commissioned Flight capture hands to ReferenceImage intake
+// (agents/render-reference-image-repository.md §8). Flight produces and dispatches candidates; it never authors
+// the ReferenceImage repository's history, so this writes an artifact and stops.
 //
 // ★ `pixelSha256` IS OVER THE PNG'S DECODED TOP-DOWN RGBA. Flight's capture `hash` prepends dimensions
 // and uses browser-decoded pixels, so it answers a different question and is not comparable. Requests,
@@ -21,38 +21,42 @@ import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { getOraclePngPixelSha256 } from './oracle-png';
-import type { OracleRequest, OracleRequestCaptureIdentity, OracleRequestTarget } from './oracle-records';
-import { getOracleRequestCells } from './oracle-records';
+import { getOraclePngPixelSha256 } from './reference-image-png';
+import type {
+  ReferenceImageRequest,
+  ReferenceImageRequestCaptureIdentity,
+  ReferenceImageRequestTarget,
+} from './reference-image-records';
+import { getOracleRequestCells } from './reference-image-records';
 
-export interface OracleCandidateBundle {
+export interface ReferenceImageCandidateBundle {
   schemaVersion: 1;
   requestId: string;
-  /** `sha256-<64hex>` — the Oracle schema requires the algorithm prefix, not a bare digest. */
+  /** `sha256-<64hex>` — the ReferenceImage schema requires the algorithm prefix, not a bare digest. */
   environmentId: string;
   comparisonPolicyId: string;
-  captures: readonly OracleCandidateCapture[];
+  captures: readonly ReferenceImageCandidateCapture[];
 }
 
-export type OracleCandidateCapture = OracleCandidateCaptured | OracleCandidateMissing;
+export type ReferenceImageCandidateCapture = ReferenceImageCandidateCaptured | ReferenceImageCandidateMissing;
 
-export interface OracleCandidateIdentity {
+export interface ReferenceImageCandidateIdentity {
   subject: string;
   entry: string;
   renderer: string;
 }
 
-export interface OracleCandidateCaptured {
+export interface ReferenceImageCandidateCaptured {
   status: 'captured';
   /** Structured, not a slash-joined string: the consumer keys on the parts. */
-  identity: OracleCandidateIdentity;
+  identity: ReferenceImageCandidateIdentity;
   /** `images/<subject>/<entry>/<renderer>.png`, relative to candidate.json beside it. */
   file: string;
-  provenance: OracleCandidateProvenance;
+  provenance: ReferenceImageCandidateProvenance;
 }
 
 /** The capture-condition subrecord, copied verbatim from the committed baseline's `sha256Provenance`. */
-export interface OracleCandidateProvenance {
+export interface ReferenceImageCandidateProvenance {
   frames: number;
   sourceHash: string | null;
   targetKind: string | null;
@@ -60,14 +64,14 @@ export interface OracleCandidateProvenance {
   warmupFrames: number;
 }
 
-export interface OracleCandidateMissing {
+export interface ReferenceImageCandidateMissing {
   status: 'missing';
-  identity: OracleCandidateIdentity;
+  identity: ReferenceImageCandidateIdentity;
   error: string;
 }
 
-export interface OracleCandidateInput {
-  request: Readonly<OracleRequest>;
+export interface ReferenceImageCandidateInput {
+  request: Readonly<ReferenceImageRequest>;
   /** Already `sha256-`prefixed by the caller, or a bare digest this will prefix. */
   environmentId: string;
   comparisonPolicyId: string;
@@ -76,7 +80,7 @@ export interface OracleCandidateInput {
   repositoryRoot?: string;
 }
 
-export interface OracleRequestedPixelProblem {
+export interface ReferenceImageRequestedPixelProblem {
   identity: string;
   kind: 'request-image-missing' | 'request-image-unreadable' | 'request-image-mismatch';
   detail: string;
@@ -86,8 +90,8 @@ export interface OracleRequestedPixelProblem {
 export function readBoundOracleRequestTarget(
   root: string,
   identity: string,
-  capture: OracleRequestCaptureIdentity,
-): OracleRequestTarget | { problem: string } {
+  capture: ReferenceImageRequestCaptureIdentity,
+): ReferenceImageRequestTarget | { problem: string } {
   const [subject, entry, renderer, extra] = identity.split('/');
   if (subject === undefined || entry === undefined || renderer === undefined || extra !== undefined) {
     return { problem: 'identity is not subject/entry/renderer' };
@@ -104,10 +108,10 @@ export function readBoundOracleRequestTarget(
  * bytes are staged. A request is authority over bytes, not merely over a cell name.
  */
 export function verifyOracleRequestedPixels(
-  request: Readonly<OracleRequest>,
+  request: Readonly<ReferenceImageRequest>,
   artifactsRoot: string,
-): OracleRequestedPixelProblem[] {
-  const problems: OracleRequestedPixelProblem[] = [];
+): ReferenceImageRequestedPixelProblem[] {
+  const problems: ReferenceImageRequestedPixelProblem[] = [];
   for (const target of request.targets) {
     const identity = `${request.subject}/${target.entry}/${target.renderer}`;
     const path = join(artifactsRoot, identity, 'screenshot.png');
@@ -145,12 +149,14 @@ export function verifyOracleRequestedPixels(
  *
  * ★ THE SCHEMA IS `additionalProperties: false`, SO EXTRA FIELDS ARE A HARD FAILURE, NOT SLACK.
  * Flight's own `artifactSha256`/`pixelSha256`, the landed commit, and the request hash have no home in
- * it — they belong to the dispatch envelope and to Oracle's own records, not to the candidate. Adding
+ * it — they belong to the dispatch envelope and to ReferenceImage's own records, not to the candidate. Adding
  * them "for completeness" would fail validation at intake, one repository away from the edit.
  */
-export function buildOracleCandidateBundle(input: Readonly<OracleCandidateInput>): OracleCandidateBundle {
+export function buildOracleCandidateBundle(
+  input: Readonly<ReferenceImageCandidateInput>,
+): ReferenceImageCandidateBundle {
   const root = input.repositoryRoot ?? process.cwd();
-  const captures: OracleCandidateCapture[] = [];
+  const captures: ReferenceImageCandidateCapture[] = [];
   for (const identity of getOracleRequestCells(input.request)) {
     captures.push(readCandidateCapture(input.artifactsRoot, root, identity));
   }
@@ -182,14 +188,18 @@ export function readPngDimensions(bytes: Readonly<Uint8Array>): { width: number;
   return { height: view.getUint32(20, false), width: view.getUint32(16, false) };
 }
 
-function readCandidateCapture(artifactsRoot: string, repositoryRoot: string, cell: string): OracleCandidateCapture {
+function readCandidateCapture(
+  artifactsRoot: string,
+  repositoryRoot: string,
+  cell: string,
+): ReferenceImageCandidateCapture {
   const parts = cell.split('/');
-  const identity: OracleCandidateIdentity = {
+  const identity: ReferenceImageCandidateIdentity = {
     entry: parts[1] ?? '',
     renderer: parts[2] ?? '',
     subject: parts[0] ?? '',
   };
-  const miss = (error: string): OracleCandidateMissing => ({ error, identity, status: 'missing' });
+  const miss = (error: string): ReferenceImageCandidateMissing => ({ error, identity, status: 'missing' });
   if (parts.length !== 3) return miss(`unrecognised identity shape: ${cell}`);
 
   const directory = join(artifactsRoot, parts[0]!, parts[1]!, parts[2]!);
@@ -223,7 +233,7 @@ function readCandidateCapture(artifactsRoot: string, repositoryRoot: string, cel
   return { file: `images/${cell}.png`, identity, provenance, status: 'captured' };
 }
 
-function readCaptureProvenance(status: { provenance?: unknown }): OracleCandidateProvenance | null {
+function readCaptureProvenance(status: { provenance?: unknown }): ReferenceImageCandidateProvenance | null {
   const p = status.provenance;
   if (p === undefined || p === null || typeof p !== 'object') return null;
   const r = p as Record<string, unknown>;
@@ -247,7 +257,7 @@ function readCaptureProvenance(status: { provenance?: unknown }): OracleCandidat
  * an archive holding another, which intake reads as every image missing while the run reports success.
  */
 export function stageOracleCandidateImages(
-  bundle: Readonly<OracleCandidateBundle>,
+  bundle: Readonly<ReferenceImageCandidateBundle>,
   artifactsRoot: string,
   stageRoot: string,
 ): number {

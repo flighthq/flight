@@ -1,5 +1,5 @@
 # Forwards a completed capture to `flight-reference-images` as a fixed dispatch envelope.
-# agents/render-oracle-repository.md §7 step 3.
+# agents/render-reference-image-repository.md §7 step 3.
 #
 # ★★ THIS IS THE PRIVILEGED HALF, AND IT NEVER EXECUTES THE COMMISSIONED CHECKOUT.
 # It holds the credential that can open a pull request in another repository, so §7 requires it to be a
@@ -8,7 +8,7 @@
 #
 # `workflow_run` is what enforces that. A `workflow_run` job runs the workflow file from the DEFAULT
 # BRANCH, with a fresh context — not the commissioned commit's copy of it. So a request that lands
-# malicious code changes what `oracle-capture` runs, and changes nothing about this file, this token, or
+# malicious code changes what `reference-image-capture` runs, and changes nothing about this file, this token, or
 # this envelope. There is deliberately NO checkout step here, and deliberately no artifact download: this
 # workflow never reads a byte the capture produced. It reads the run's metadata through the API and sends
 # identifiers onward. Intake downloads and verifies the bytes itself, with its own separation of
@@ -29,7 +29,7 @@
 # default branch's copy executes, so the OLD code runs again and fails identically, which reads as "my
 # fix did not work" rather than "my fix is not deployed". That cost a full debugging round: a broken
 # `steps.` reference was fixed on develop and the very next run reproduced the same stack trace.
-# Its sibling `oracle-capture.yml` is a `push` workflow and runs the PUSHED branch's copy, so the two
+# Its sibling `reference-image-capture.yml` is a `push` workflow and runs the PUSHED branch's copy, so the two
 # iterate at different speeds. When changing this file, expect: push -> CI green -> promote -> then test.
 #
 # ★ THIS DOES NOT MAKE COMMISSIONING WAIT FOR A PROMOTION. Where this FILE lives and which branch the
@@ -37,11 +37,11 @@
 # `main` once; from then on a capture running on `develop` dispatches immediately. `main` advances
 # automatically whenever develop's CI concludes green (promote.yml), so the one-time cost is seconds,
 # not a manual gate, and it is the same one every workflow here already paid.
-name: oracle-bridge
+name: reference-image-bridge
 
 on:
   workflow_run:
-    workflows: [oracle-capture]
+    workflows: [reference-image-capture]
     types: [completed]
 
 permissions:
@@ -91,11 +91,11 @@ jobs:
           [ -z "$APP_ID" ] && missing="$missing ORACLE_APP_ID"
           [ -z "$APP_PRIVATE_KEY" ] && missing="$missing ORACLE_APP_PRIVATE_KEY"
           if [ -n "$missing" ]; then
-            echo "oracle-bridge: missing secret(s):$missing" >&2
+            echo "reference-image-bridge: missing secret(s):$missing" >&2
             echo "  This pipeline authenticates as a GitHub App installed on flighthq/flight-reference-images." >&2
             echo "  It is deliberately not the automatic GITHUB_TOKEN, which cannot reach another repository." >&2
             echo "  Store the App's numeric id and its full .pem private key as those two Actions secrets." >&2
-            echo "  See agents/render-oracle-repository.md §7." >&2
+            echo "  See agents/render-reference-image-repository.md §7." >&2
             exit 1
           fi
 
@@ -127,13 +127,13 @@ jobs:
             const run = context.payload.workflow_run;
 
             // Artifact metadata only — this job never downloads or extracts a candidate archive, because
-            // it holds the credential that can write to the Oracle repository (§7).
+            // it holds the credential that can write to the ReferenceImage repository (§7).
             const { data } = await github.rest.actions.listWorkflowRunArtifacts({
               owner: context.repo.owner,
               repo: context.repo.repo,
               run_id: run.id,
             });
-            const candidates = data.artifacts.filter((a) => a.name.startsWith('oracle-candidate-'));
+            const candidates = data.artifacts.filter((a) => a.name.startsWith('reference-image-candidate-'));
             if (candidates.length === 0) {
               core.info('no candidate artifact on this run — nothing was commissioned');
               return;
@@ -141,8 +141,8 @@ jobs:
 
             let sent = 0;
             for (const artifact of candidates) {
-              const stem = artifact.name.replace(/^oracle-candidate-/, '');
-              const requestPath = `oracle-requests/${stem}.json`;
+              const stem = artifact.name.replace(/^reference-image-candidate-/, '');
+              const requestPath = `reference-image-requests/${stem}.json`;
 
               // The request binding is read from the REPOSITORY at the landed commit, never from the
               // candidate: the hash then describes what is actually committed, so a candidate cannot
@@ -168,7 +168,7 @@ jobs:
                 // ★ MUST MATCH THE ORACLE INTAKE TRIGGER EXACTLY. GitHub accepts an unmatched
                 // repository_dispatch with a 204 and creates no run and no warning — a silent success on
                 // both sides, which cost a full round when this said `flight-candidate`.
-                event_type: 'flight-oracle-candidate',
+                event_type: 'flight-reference-image-candidate',
                 client_payload: {
                   repository: `${context.repo.owner}/${context.repo.repo}`,
                   flightCommit: run.head_sha,

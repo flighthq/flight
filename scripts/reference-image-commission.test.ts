@@ -5,13 +5,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateSync } from 'node:zlib';
 
-import { hashOraclePixelBytes } from './oracle-png';
+import { hashOraclePixelBytes } from './reference-image-png';
 
-const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'oracle-commission.ts');
+const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'reference-image-commission.ts');
 const TSX = join(dirname(fileURLToPath(import.meta.url)), '..', 'node_modules', '.bin', 'tsx');
 const PIXEL_SHA256 = hashOraclePixelBytes(new Uint8Array(4));
 
-describe('oracle-commission request binding', () => {
+describe('reference-image-commission request binding', () => {
   it('stages the capture only when its decoded pixels match the request', () => {
     const fixture = commissionedCapture(PIXEL_SHA256);
 
@@ -34,7 +34,7 @@ describe('oracle-commission request binding', () => {
 });
 
 function commissionedCapture(pixelSha256: string): { artifacts: string; request: string; stage: string } {
-  const root = mkdtempSync(join(tmpdir(), 'oracle-commission-'));
+  const root = mkdtempSync(join(tmpdir(), 'reference-image-commission-'));
   const artifacts = join(root, 'artifacts');
   const cell = join(artifacts, 'functional', 'shape', 'webgl');
   mkdirSync(cell, { recursive: true });

@@ -60,7 +60,7 @@ A system over the breadth and depth reviews that (1) determines **bedrock** — 
 
 **The bedrock test** (the gate every built-unblessed / recommended package passes):
 
-1. **Substantial & irreducible** — not blood-from-a-stone. Oracle: does a dedicated upstream library exist?
+1. **Substantial & irreducible** — not blood-from-a-stone. ReferenceImage: does a dedicated upstream library exist?
 2. **Well-homed / no overlap** — it does not duplicate an existing package, _and_ the target type it produces is itself well-homed. (The `resource-formats` lesson: the duplication was a symptom of `TextureAtlas` being mis-homed in `resources`.)
 3. **Honest naming** — the convention fits what it is (a UA string is not a `-format`).
 

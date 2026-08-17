@@ -225,7 +225,7 @@ function galleryPlugin(): Plugin[] {
                   reason: payload.reason || 'Commissioned from gallery',
                 };
 
-                const queueDir = join(projectRoot, 'oracle-requests');
+                const queueDir = join(projectRoot, 'reference-image-requests');
                 mkdirSync(queueDir, { recursive: true });
                 const outPath = join(queueDir, `${id}.json`);
                 writeFileSync(outPath, JSON.stringify(request, null, 2) + '\n');

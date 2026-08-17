@@ -1,4 +1,4 @@
-// Decides which cells MAY be commissioned (agents/render-oracle-repository.md §5, §7).
+// Decides which cells MAY be commissioned (agents/render-reference-image-repository.md §5, §7).
 //
 // ★ COMMISSIONING BLESSES WHATEVER THE CAPTURE SHOWS, PERMANENTLY. That is the whole hazard this file
 // exists to manage. A wrong pixel blessed here does not merely fail to catch a bug — it becomes the
@@ -21,10 +21,10 @@
 // `flight-reference-images` (§7 step 5) is the actual blessing and cannot be skipped.
 //
 // Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
-// graph — the same reason `OracleLock` lives in `scripts/oracle-records.ts`.
+// graph — the same reason `ReferenceImageLock` lives in `scripts/reference-image-records.ts`.
 
 /** One cell's fresh-capture facts, read from `<root>/<subject>/<entry>/<renderer>/status.json`. */
-export interface OracleCaptureFact {
+export interface ReferenceImageCaptureFact {
   /** `subject/entry/renderer`. Opaque here — §10 may add an environment column and this file will not care. */
   identity: string;
   /** `ready` means the capture completed; anything else means the render never got as far as being judged. */
@@ -45,7 +45,7 @@ export interface OracleCaptureFact {
   sourceHash: string | null;
 }
 
-export type OracleDeterminismVerdict = 'agreed' | 'disagreed' | 'incomplete';
+export type ReferenceImageDeterminismVerdict = 'agreed' | 'disagreed' | 'incomplete';
 
 /** Whether the compared capture roots came from separate machines or repeats on one. */
 /**
@@ -56,10 +56,10 @@ export type OracleDeterminismVerdict = 'agreed' | 'disagreed' | 'incomplete';
  * remedies — wire the producer, versus re-run on a second host — and collapsing them into one bucket is
  * how a reader concludes a measurement was taken that never was.
  */
-export type OracleDeterminismScope = 'independent-hosts' | 'one-host' | 'host-identity-missing';
+export type ReferenceImageDeterminismScope = 'independent-hosts' | 'one-host' | 'host-identity-missing';
 
-export interface OracleEligibilityInput {
-  captures: readonly OracleCaptureFact[];
+export interface ReferenceImageEligibilityInput {
+  captures: readonly ReferenceImageCaptureFact[];
   /** Every `subject/entry/renderer` the coverage manifest lists, with the evidence kinds it requires. */
   coverage: ReadonlyMap<string, readonly string[]>;
   /** Identities the lock already supplies blessed bytes for. */
@@ -67,11 +67,11 @@ export interface OracleEligibilityInput {
   /** Identities an open request already claims. Re-commissioning one would be a `request-overlap` failure. */
   outstanding: ReadonlySet<string>;
   /** Identities the parity leg withholds, and whether it judged them or could not judge them at all. */
-  parityWithheld: ReadonlyMap<string, OracleParityWithholding>;
+  parityWithheld: ReadonlyMap<string, ReferenceImageParityWithholding>;
   /** Identities a peer has claimed for repair, or a ruling has held. Never overridden by local evidence. */
   held: ReadonlyMap<string, string>;
   /** Per-identity verdict from `compareCalibrationRuns`. A cell absent from this map is unmeasured. */
-  determinism: ReadonlyMap<string, OracleDeterminismVerdict>;
+  determinism: ReadonlyMap<string, ReferenceImageDeterminismVerdict>;
   /**
    * Where the compared capture roots came from. The caller declares it; NOTHING can derive it.
    *
@@ -80,14 +80,14 @@ export interface OracleEligibilityInput {
    * questions, and its own header records that its first real run was within-host while announcing a
    * conclusion only cross-host data could support. So the scope is an input here, not an inference.
    */
-  determinismScope: OracleDeterminismScope;
+  determinismScope: ReferenceImageDeterminismScope;
 }
 
 /**
  * Why a cell may not be commissioned. Ordered worst-first: a cell that trips several is reported under
  * the first, so the report names the condition that must be fixed FIRST rather than the last one checked.
  */
-export type OracleBlockReason =
+export type ReferenceImageBlockReason =
   /** The captures carry no host identity, so independence could not be evaluated at all. */
   | 'host-identity-missing'
   /** The capture errored. Its scene oracle may not even have run, so nothing was verified. */
@@ -135,25 +135,25 @@ export type OracleBlockReason =
   /** Everything else agreed, and the repeats were on ONE host. Stage one clear, cross-host unmeasured. */
   | 'determinism-within-host-only';
 
-export interface OracleBlockedCell {
+export interface ReferenceImageBlockedCell {
   identity: string;
-  reason: OracleBlockReason;
+  reason: ReferenceImageBlockReason;
   detail: string;
 }
 
-export interface OracleEligibilityReport {
+export interface ReferenceImageEligibilityReport {
   /** Cells that cleared every condition, sorted, ready to be named by a request. */
   eligible: readonly string[];
   /** Every other live cell, with the first condition it failed. */
-  blocked: readonly OracleBlockedCell[];
+  blocked: readonly ReferenceImageBlockedCell[];
   /**
    * Cells whose capture is byte-identical to a sibling backend's. REPORTED, NEVER BLOCKING — see
    * `findBackendCollisions` for the measurement that took this out of the bar.
    */
-  collisions: readonly OracleBackendCollision[];
+  collisions: readonly ReferenceImageBackendCollision[];
 }
 
-export interface OracleBackendCollision {
+export interface ReferenceImageBackendCollision {
   identity: string;
   twin: string;
 }
@@ -165,7 +165,9 @@ export interface OracleBackendCollision {
  * which matters because the bar is the only thing standing between a bad capture and a permanent
  * reference, and a rule nobody can test is a rule nobody can trust.
  */
-export function selectCommissionableCells(input: Readonly<OracleEligibilityInput>): OracleEligibilityReport {
+export function selectCommissionableCells(
+  input: Readonly<ReferenceImageEligibilityInput>,
+): ReferenceImageEligibilityReport {
   const byIdentity = new Map(input.captures.map((capture) => [capture.identity, capture]));
   const collided = findBackendCollisions(input.captures.filter((capture) => input.coverage.has(capture.identity)));
   // ★ ONLY LIVE CELLS COUNT AS SIBLINGS, AND A REAL RUN PROVED WHY. A capture root is a directory that
@@ -179,7 +181,7 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
   const columns = countSceneColumns(input.coverage.keys());
 
   const eligible: string[] = [];
-  const blocked: OracleBlockedCell[] = [];
+  const blocked: ReferenceImageBlockedCell[] = [];
 
   for (const identity of [...input.coverage.keys()].sort()) {
     const kinds = input.coverage.get(identity) ?? [];
@@ -404,7 +406,7 @@ export function addReferenceImageCoverage(
  * `compareCalibrationRuns` printing what it saw: a zero denominator is unconfigured, not clean.
  */
 export function findStaleCaptures(
-  captures: readonly Readonly<OracleCaptureFact>[],
+  captures: readonly Readonly<ReferenceImageCaptureFact>[],
   currentSourceHash: (identity: string) => string | null,
 ): { stale: string[]; compared: number } {
   const stale: string[] = [];
@@ -420,14 +422,14 @@ export function findStaleCaptures(
 }
 
 /** One `parity` row of a validation report: the scene it judged, and the verdict it reached. */
-export interface OracleParityCheck {
+export interface ReferenceImageParityCheck {
   entry?: string;
   kind?: string;
   status?: string;
 }
 
 /** Why the parity leg withholds a cell: it judged the scene and it differed, or it could not judge it. */
-export type OracleParityWithholding = 'disagreement' | 'unevaluated';
+export type ReferenceImageParityWithholding = 'disagreement' | 'unevaluated';
 
 /**
  * Expands the parity leg's verdicts into the cells they withhold and why, or refuses the report.
@@ -443,15 +445,15 @@ export type OracleParityWithholding = 'disagreement' | 'unevaluated';
  * possible parity pass, and every cell in the corpus would clear a condition nothing had evaluated.
  */
 export function findParityWithholdings(
-  checks: readonly Readonly<OracleParityCheck>[],
+  checks: readonly Readonly<ReferenceImageParityCheck>[],
   identities: Iterable<string>,
-): { withheld: Map<string, OracleParityWithholding> } | { refused: string } {
+): { withheld: Map<string, ReferenceImageParityWithholding> } | { refused: string } {
   const parity = checks.filter((check) => check.kind === 'parity');
   if (!parity.some((check) => check.status === 'passed' || check.status === 'failed')) {
     return { refused: 'the report carries no gated parity verdict, so it cannot say any scene agreed' };
   }
 
-  const scenes = new Map<string, OracleParityWithholding>();
+  const scenes = new Map<string, ReferenceImageParityWithholding>();
   for (const check of parity) {
     if (check.entry === undefined || check.status === 'passed') continue;
     // A scene with several rows takes the worse one: one failed pair is a disagreement even if another
@@ -460,7 +462,7 @@ export function findParityWithholdings(
     else if (!scenes.has(check.entry)) scenes.set(check.entry, 'unevaluated');
   }
 
-  const withheld = new Map<string, OracleParityWithholding>();
+  const withheld = new Map<string, ReferenceImageParityWithholding>();
   for (const identity of identities) {
     const verdict = scenes.get(identity.split('/')[1] ?? '');
     if (verdict !== undefined) withheld.set(identity, verdict);
@@ -479,7 +481,7 @@ function countSceneColumns(identities: Iterable<string>): Map<string, number> {
 }
 
 /** Scenes with at least one failed column, mapped to the identity of one that failed. */
-function findScenesWithAFailedColumn(captures: readonly OracleCaptureFact[]): Map<string, string> {
+function findScenesWithAFailedColumn(captures: readonly ReferenceImageCaptureFact[]): Map<string, string> {
   const broken = new Map<string, string>();
   for (const capture of captures) {
     if (capture.state !== 'ready' && !broken.has(sceneOf(capture.identity))) {
@@ -516,8 +518,8 @@ function sceneOf(identity: string): string {
  * antialiased curve — is still worth a human look, which is why the census is printed rather than
  * dropped.
  */
-function findBackendCollisions(captures: readonly OracleCaptureFact[]): Map<string, string> {
-  const byScene = new Map<string, OracleCaptureFact[]>();
+function findBackendCollisions(captures: readonly ReferenceImageCaptureFact[]): Map<string, string> {
+  const byScene = new Map<string, ReferenceImageCaptureFact[]>();
   for (const capture of captures) {
     if (capture.hash === null || capture.state !== 'ready') continue;
     const scene = sceneOf(capture.identity);
@@ -535,8 +537,10 @@ function findBackendCollisions(captures: readonly OracleCaptureFact[]): Map<stri
 }
 
 /** Groups blocked cells by reason, worst-first, so the report routes work rather than listing it. */
-export function summarizeOracleBlocks(blocked: readonly OracleBlockedCell[]): { reason: string; count: number }[] {
-  const counts = new Map<OracleBlockReason, number>();
+export function summarizeOracleBlocks(
+  blocked: readonly ReferenceImageBlockedCell[],
+): { reason: string; count: number }[] {
+  const counts = new Map<ReferenceImageBlockReason, number>();
   for (const cell of blocked) counts.set(cell.reason, (counts.get(cell.reason) ?? 0) + 1);
   return BLOCK_REASON_ORDER.filter((reason) => counts.has(reason)).map((reason) => ({
     count: counts.get(reason)!,
@@ -544,7 +548,7 @@ export function summarizeOracleBlocks(blocked: readonly OracleBlockedCell[]): { 
   }));
 }
 
-const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
+const BLOCK_REASON_ORDER: readonly ReferenceImageBlockReason[] = [
   'capture-failed',
   'sibling-column-failed',
   'no-scene-oracle',

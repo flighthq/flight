@@ -109,6 +109,6 @@ Logs land in `logs.jsonl` after capture; the harness installs the capture sink b
 5. Run `npm run support` and `npm run evidence:check`. Accept only the intended evidence rows, one exact renderer target at a time: `npm run evidence:baseline -- --target functional/{name}/{renderer}`. Never use a blanket evidence-manifest update.
 6. Commit `functional/baselines/{name}.json`, `agents/support-matrix.{json,md}`, and `scripts/capture-baseline-coverage-manifest.json` when they changed.
 
-A full-resolution reference PNG is a separate, explicit commissioning act rather than a side effect of the fingerprint/screenshot-hash baseline. Follow [render-oracle-repository.md](../../../agents/render-oracle-repository.md) for that review and release flow; do not treat a clean `evidence:check` as a reference-image blessing.
+A full-resolution reference PNG is a separate, explicit commissioning act rather than a side effect of the fingerprint/screenshot-hash baseline. Follow [render-reference-image-repository.md](../../../agents/render-reference-image-repository.md) for that review and release flow; do not treat a clean `evidence:check` as a reference-image blessing.
 
 The headless pass/fail gate CI runs is `npm run test:functional` (its `smoke` / `parity` / `regression` legs) — your new scene is discovered automatically. See `agents/conventions/npm-scripts.md` for that vocabulary, and the `visual-capture` skill for capture/watch detail.

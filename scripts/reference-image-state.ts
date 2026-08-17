@@ -1,4 +1,4 @@
-// The Flight-side join of the render-oracle proposal (agents/render-oracle-repository.md §6 and §9):
+// The Flight-side join of the render-oracle proposal (agents/render-reference-image-repository.md §6 and §9):
 // given what the coverage manifest REQUIRES, what the lock PINS, and what the request queue has
 // OUTSTANDING, decide each cell's verdict — and decide it in one place so "pending" cannot mean two
 // things in two reports.
@@ -16,11 +16,11 @@
 //
 // ★ IDENTITIES ARE OPAQUE. Nothing here parses `subject/entry/renderer`. §10 has not been ruled, so the
 // keying may gain an environment column; when it does, the generator changes and this file does not.
-import type { OracleRequest } from './oracle-records';
-import { getOracleRequestCells } from './oracle-records';
+import type { ReferenceImageRequest } from './reference-image-records';
+import { getOracleRequestCells } from './reference-image-records';
 
 /** What CI may claim about one required cell. Ordered worst-first for stable reporting. */
-export type OracleCellVerdict =
+export type ReferenceImageCellVerdict =
   /** Required, no pinned bytes, and nothing outstanding asked for them. §6 row 4. */
   | 'missing'
   /** Pinned bytes exist for a cell nothing requires — evidence with no live referent. */
@@ -36,7 +36,7 @@ export type OracleCellVerdict =
   /** Compared against the pinned bytes and within tolerance. The only verdict that is a pass. */
   | 'compared';
 
-export interface OracleCellInput {
+export interface ReferenceImageCellInput {
   identity: string;
   /** Does the coverage manifest require a referenceImage for this cell? */
   required: boolean;
@@ -46,10 +46,10 @@ export interface OracleCellInput {
    * The comparison outcome, when one was actually performed. `null` when no comparison was attempted —
    * which is not the same as a comparison that found nothing, and is why this is not a boolean.
    */
-  comparison: OracleCellComparison | null;
+  comparison: ReferenceImageCellComparison | null;
 }
 
-export interface OracleCellComparison {
+export interface ReferenceImageCellComparison {
   /** From getBitmapMismatch. Do NOT inherit the fingerprint-space tolerances (§2). */
   fraction: number;
   maxChannelDelta: number;
@@ -57,7 +57,7 @@ export interface OracleCellComparison {
   dimensionMismatch: boolean;
 }
 
-export interface OracleComparisonPolicy {
+export interface ReferenceImageComparisonPolicy {
   /** Versioned so a threshold change is a visible record change, not a silent re-tune (§8). */
   comparisonPolicyId: string;
   maxFraction: number;
@@ -66,44 +66,44 @@ export interface OracleComparisonPolicy {
   maxChannelDelta: number;
 }
 
-export interface OracleRequestRecord {
-  request: OracleRequest;
+export interface ReferenceImageRequestRecord {
+  request: ReferenceImageRequest;
   /** Age in days at evaluation time, supplied by the caller so this stays a pure function. */
   ageDays: number;
 }
 
-export interface OracleJoinInput {
-  cells: readonly OracleCellInput[];
-  requests: readonly OracleRequestRecord[];
-  policy: Readonly<OracleComparisonPolicy>;
+export interface ReferenceImageJoinInput {
+  cells: readonly ReferenceImageCellInput[];
+  requests: readonly ReferenceImageRequestRecord[];
+  policy: Readonly<ReferenceImageComparisonPolicy>;
   /** §6: repository policy must bound how long a request may remain pending. No default is offered. */
   maxPendingDays: number;
 }
 
-export interface OracleCellResult {
+export interface ReferenceImageCellResult {
   identity: string;
-  verdict: OracleCellVerdict;
+  verdict: ReferenceImageCellVerdict;
   /** The request id that demoted this cell, when one did. */
   requestId: string | null;
   detail: string;
 }
 
-export interface OracleJoinResult {
-  cells: readonly OracleCellResult[];
+export interface ReferenceImageJoinResult {
+  cells: readonly ReferenceImageCellResult[];
   /** Every failure the run must surface, worst-first. Empty means the run may pass. */
-  failures: readonly OracleJoinFailure[];
+  failures: readonly ReferenceImageJoinFailure[];
   /** Cells that compared and passed. Zero of these with work outstanding is itself a failure. */
   comparedCount: number;
   pendingCount: number;
 }
 
-export interface OracleJoinFailure {
-  kind: OracleJoinFailureKind;
+export interface ReferenceImageJoinFailure {
+  kind: ReferenceImageJoinFailureKind;
   identity: string | null;
   detail: string;
 }
 
-export type OracleJoinFailureKind =
+export type ReferenceImageJoinFailureKind =
   | 'missing-reference-image'
   | 'orphaned-reference-image'
   | 'regression'
@@ -127,9 +127,9 @@ export type OracleJoinFailureKind =
  * reviewed coverage reduction, never by failing to publish bytes.
  */
 export function withRequiredIdentities(
-  cells: readonly Readonly<OracleCellInput>[],
+  cells: readonly Readonly<ReferenceImageCellInput>[],
   required: ReadonlySet<string>,
-): OracleCellInput[] {
+): ReferenceImageCellInput[] {
   const joined = cells.map((cell) => ({ ...cell, required: required.has(cell.identity) }));
   const supplied = new Set(joined.map((cell) => cell.identity));
   for (const identity of required) {
@@ -143,8 +143,8 @@ export function withRequiredIdentities(
  * gates. Pure: the caller supplies ages and comparison outcomes, so this is decidable in a unit test
  * without a network, a GPU, or a clock.
  */
-export function joinOracleState(input: Readonly<OracleJoinInput>): OracleJoinResult {
-  const failures: OracleJoinFailure[] = [];
+export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): ReferenceImageJoinResult {
+  const failures: ReferenceImageJoinFailure[] = [];
   const required = new Set(input.cells.filter((cell) => cell.required).map((cell) => cell.identity));
   const live = new Set(input.cells.map((cell) => cell.identity));
 
@@ -187,7 +187,7 @@ export function joinOracleState(input: Readonly<OracleJoinInput>): OracleJoinRes
     }
   }
 
-  const cells: OracleCellResult[] = [];
+  const cells: ReferenceImageCellResult[] = [];
   let comparedCount = 0;
   let pendingCount = 0;
 
@@ -311,11 +311,11 @@ export function joinOracleState(input: Readonly<OracleJoinInput>): OracleJoinRes
 }
 
 /** Stable one-line summary of a comparison, so a report row and a failure detail cannot disagree. */
-export function describeOracleComparison(comparison: Readonly<OracleCellComparison>): string {
+export function describeOracleComparison(comparison: Readonly<ReferenceImageCellComparison>): string {
   return describe(comparison);
 }
 
-function describe(comparison: Readonly<OracleCellComparison>): string {
+function describe(comparison: Readonly<ReferenceImageCellComparison>): string {
   if (comparison.dimensionMismatch) return 'dimension mismatch';
   return `fraction ${comparison.fraction.toFixed(6)}, maxChannelDelta ${comparison.maxChannelDelta}`;
 }

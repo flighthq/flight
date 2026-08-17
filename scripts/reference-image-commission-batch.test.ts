@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // ★ THE REFUSALS ARE THE ONLY LOGIC LEFT IN THIS CLI, AND THEY ARE THE PART THAT MUST NOT REGRESS
-// QUIETLY. Everything this script decides lives in `oracle-eligibility.ts`; what is left is argument
+// QUIETLY. Everything this script decides lives in `reference-image-eligibility.ts`; what is left is argument
 // handling, file reading, and the refusals that exist because a DEFAULT would let a weaker claim pass as
 // a stronger one silently. A default is invisible in the output — the report still prints, and the reader
 // has to notice that a whole condition went missing — so these are exercised against the real script
@@ -14,13 +14,13 @@ import { fileURLToPath } from 'node:url';
 // The argument refusals fire before any file is read; the identity refusals read the capture roots, so
 // those build a fixture tree carrying exactly the provenance under test.
 
-const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'oracle-commission-batch.ts');
+const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'reference-image-commission-batch.ts');
 // The local binary rather than `npx`, whose resolution alone costs more than the script run, and an
 // explicit budget because a subprocess test is honestly slow — not because it is flaky.
 const TSX = join(dirname(fileURLToPath(import.meta.url)), '..', 'node_modules', '.bin', 'tsx');
 const SPAWN_BUDGET_MS = 30_000;
 
-describe('oracle-commission-batch', () => {
+describe('reference-image-commission-batch', () => {
   it(
     'refuses a single capture root, because one run cannot measure determinism',
     () => {
@@ -118,7 +118,7 @@ describe('oracle-commission-batch', () => {
       const run = runBatch(['commission', '--runs', 'a,b']);
 
       expect(run.status).toBe(2);
-      expect(run.stderr).toContain('usage: oracle-commission-batch');
+      expect(run.stderr).toContain('usage: reference-image-commission-batch');
     },
     SPAWN_BUDGET_MS,
   );
@@ -129,7 +129,7 @@ describe('oracle-commission-batch', () => {
  * host identity — or none, which is the real corpus's shape since it predates the field.
  */
 function captureRoot(cells: Readonly<Record<string, string | null>>, environmentId = 'env-1'): string {
-  const root = mkdtempSync(join(tmpdir(), 'oracle-batch-'));
+  const root = mkdtempSync(join(tmpdir(), 'reference-image-batch-'));
   for (const [cell, hostInstanceId] of Object.entries(cells)) {
     const [entry, renderer] = cell.split('/');
     const directory = join(root, 'functional', entry!, renderer!);

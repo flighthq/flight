@@ -1,6 +1,6 @@
-// The two Flight-owned records of the render-oracle proposal (agents/render-oracle-repository.md §5):
+// The two Flight-owned records of the render-oracle proposal (agents/render-reference-image-repository.md §5):
 // the immutable consumer lock, and the outstanding-commission queue. Parsing and validation only —
-// the join that turns these into CI verdicts is `oracle-state.ts`.
+// the join that turns these into CI verdicts is `reference-image-state.ts`.
 //
 // ★ THREE RECORDS, THREE MEANINGS, AND THEY ARE NOT MERGEABLE (§5). The coverage manifest says which
 // identities OWE a referent; a request says which are being re-commissioned and why; the lock says
@@ -10,69 +10,69 @@
 //
 // ★ IDENTITIES ARE OPAQUE STRINGS ON PURPOSE. §10 ruled one column per backend, while the environment and
 // host that produced a requested image remain provenance about that image rather than part of its key.
-// Nothing in this file or in `oracle-state.ts` parses an identity.
+// Nothing in this file or in `reference-image-state.ts` parses an identity.
 //
 // Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
 // graph — the same reason `FixtureExtractionVerification` lives in `scripts/fixtures.ts`.
 import { existsSync, readFileSync } from 'node:fs';
 
-export interface OracleLock {
+export interface ReferenceImageLock {
   schemaVersion: 2;
   /** `owner/name` of the repository whose releases supply the blessed bytes. */
   repository: string;
-  /** The 40-hex Oracle commit the release was cut from. */
+  /** The 40-hex ReferenceImage commit the release was cut from. */
   oracleCommit: string;
   /** The immutable release tag. Never `latest` — see FIXTURE_RELEASE_TAG for the same argument. */
   releaseTag: string;
   manifestSha256: string;
   /** Pack id → the asset and exact image identities it carries. */
-  packs: Record<string, OracleLockPack>;
+  packs: Record<string, ReferenceImageLockPack>;
 }
 
-export interface OracleLockPack {
+export interface ReferenceImageLockPack {
   file: string;
   sha256: string;
   /** Opaque `subject/entry/renderer` identity → its decoded-pixel identity. */
-  images: Record<string, OracleLockImage>;
+  images: Record<string, ReferenceImageLockImage>;
 }
 
-export interface OracleLockImage {
+export interface ReferenceImageLockImage {
   pixelSha256: string;
 }
 
-export interface OracleRequest {
+export interface ReferenceImageRequest {
   schemaVersion: 2;
   id: string;
   subject: string;
-  targets: readonly OracleRequestTarget[];
+  targets: readonly ReferenceImageRequestTarget[];
   frames: number;
   reason: string;
 }
 
-export interface OracleRequestTarget {
+export interface ReferenceImageRequestTarget {
   entry: string;
   renderer: string;
-  /** Decoded top-down RGBA sha256, using the same identity as `OracleLockImage.pixelSha256`. */
+  /** Decoded top-down RGBA sha256, using the same identity as `ReferenceImageLockImage.pixelSha256`. */
   pixelSha256: string;
   /** The selected capture run, recorded as provenance rather than folded into the image key. */
-  capture: OracleRequestCaptureIdentity;
+  capture: ReferenceImageRequestCaptureIdentity;
 }
 
-export interface OracleRequestCaptureIdentity {
+export interface ReferenceImageRequestCaptureIdentity {
   hostInstanceId: string;
   environmentId: string;
 }
 
 /** A record that did not parse, named so a caller can report it rather than throw over the corpus. */
-export interface OracleRecordProblem {
+export interface ReferenceImageRecordProblem {
   /** The file the problem was found in, as given to the reader. */
   source: string;
   /** Machine-readable, and stable enough to assert on in a firing test. */
-  kind: OracleRecordProblemKind;
+  kind: ReferenceImageRecordProblemKind;
   detail: string;
 }
 
-export type OracleRecordProblemKind =
+export type ReferenceImageRecordProblemKind =
   | 'not-json'
   | 'not-an-object'
   | 'schema-version'
@@ -90,11 +90,11 @@ const HEX_64 = /^[0-9a-f]{64}$/;
  * reportable condition, not a crash, because CI must name it in the summary alongside the cells it
  * could not verify.
  */
-export function readOracleLock(path: string): OracleLockResult {
+export function readOracleLock(path: string): ReferenceImageLockResult {
   const parsed = readJsonRecord(path);
   if ('problems' in parsed) return parsed;
   const value = parsed.value;
-  const problems: OracleRecordProblem[] = [];
+  const problems: ReferenceImageRecordProblem[] = [];
 
   requireSchemaVersion(problems, path, value, 2);
   requireNonEmptyString(problems, path, value, 'repository');
@@ -147,10 +147,10 @@ export function readOracleLock(path: string): OracleLockResult {
     }
   }
 
-  return problems.length > 0 ? { problems } : { lock: value as unknown as OracleLock };
+  return problems.length > 0 ? { problems } : { lock: value as unknown as ReferenceImageLock };
 }
 
-export type OracleLockResult = { lock: OracleLock } | { problems: OracleRecordProblem[] };
+export type ReferenceImageLockResult = { lock: ReferenceImageLock } | { problems: ReferenceImageRecordProblem[] };
 
 /**
  * The identities the committed lock already supplies blessed bytes for — the ONLY source for "is this
@@ -164,7 +164,7 @@ export type OracleLockResult = { lock: OracleLock } | { problems: OracleRecordPr
  */
 export function readOracleLockPins(
   path: string,
-): { pinned: ReadonlySet<string> } | { problems: OracleRecordProblem[] } {
+): { pinned: ReadonlySet<string> } | { problems: ReferenceImageRecordProblem[] } {
   if (!existsSync(path)) return { pinned: new Set() };
   const result = readOracleLock(path);
   if ('problems' in result) return result;
@@ -172,8 +172,10 @@ export function readOracleLockPins(
 }
 
 /** Every exact image the committed lock supplies, keyed for direct request and eligibility lookups. */
-export function getOracleLockImages(lock: Readonly<OracleLock>): ReadonlyMap<string, Readonly<OracleLockImage>> {
-  const images = new Map<string, Readonly<OracleLockImage>>();
+export function getOracleLockImages(
+  lock: Readonly<ReferenceImageLock>,
+): ReadonlyMap<string, Readonly<ReferenceImageLockImage>> {
+  const images = new Map<string, Readonly<ReferenceImageLockImage>>();
   for (const pack of Object.values(lock.packs)) {
     for (const [identity, image] of Object.entries(pack.images)) images.set(identity, image);
   }
@@ -185,11 +187,11 @@ export function getOracleLockImages(lock: Readonly<OracleLock>): ReadonlyMap<str
  * carries the SHA of the commit containing it (§5) — that self-reference cannot be known before the
  * commit exists, and the trusted workflow binds the request to the landed `github.sha` instead.
  */
-export function readOracleRequest(path: string): OracleRequestResult {
+export function readOracleRequest(path: string): ReferenceImageRequestResult {
   const parsed = readJsonRecord(path);
   if ('problems' in parsed) return parsed;
   const value = parsed.value;
-  const problems: OracleRecordProblem[] = [];
+  const problems: ReferenceImageRecordProblem[] = [];
 
   requireSchemaVersion(problems, path, value, 2);
   requireNonEmptyString(problems, path, value, 'id');
@@ -254,20 +256,24 @@ export function readOracleRequest(path: string): OracleRequestResult {
     }
   }
 
-  return problems.length > 0 ? { problems } : { request: value as unknown as OracleRequest };
+  return problems.length > 0 ? { problems } : { request: value as unknown as ReferenceImageRequest };
 }
 
-export type OracleRequestResult = { request: OracleRequest } | { problems: OracleRecordProblem[] };
+export type ReferenceImageRequestResult =
+  | { request: ReferenceImageRequest }
+  | { problems: ReferenceImageRecordProblem[] };
 
 /**
  * The cells one request claims, as `subject/entry/renderer`. This is the ONLY place a request's scope is
  * expanded, so "in scope" has exactly one definition for the pending allowance and the out-of-scope gate.
  */
-export function getOracleRequestCells(request: Readonly<OracleRequest>): string[] {
+export function getOracleRequestCells(request: Readonly<ReferenceImageRequest>): string[] {
   return request.targets.map((target) => `${request.subject}/${target.entry}/${target.renderer}`);
 }
 
-function readJsonRecord(path: string): { value: Record<string, unknown> } | { problems: OracleRecordProblem[] } {
+function readJsonRecord(
+  path: string,
+): { value: Record<string, unknown> } | { problems: ReferenceImageRecordProblem[] } {
   let text: string;
   try {
     text = readFileSync(path, 'utf8');
@@ -288,12 +294,12 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function problem(source: string, kind: OracleRecordProblemKind, detail: string): OracleRecordProblem {
+function problem(source: string, kind: ReferenceImageRecordProblemKind, detail: string): ReferenceImageRecordProblem {
   return { source, kind, detail };
 }
 
 function requireNonEmptyString(
-  problems: OracleRecordProblem[],
+  problems: ReferenceImageRecordProblem[],
   source: string,
   holder: Record<string, unknown>,
   field: string,
@@ -305,7 +311,7 @@ function requireNonEmptyString(
 }
 
 function requirePattern(
-  problems: OracleRecordProblem[],
+  problems: ReferenceImageRecordProblem[],
   source: string,
   holder: Record<string, unknown>,
   field: string,
@@ -319,7 +325,7 @@ function requirePattern(
 }
 
 function requireSchemaVersion(
-  problems: OracleRecordProblem[],
+  problems: ReferenceImageRecordProblem[],
   source: string,
   value: Record<string, unknown>,
   expected: number,

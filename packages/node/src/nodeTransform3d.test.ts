@@ -268,7 +268,7 @@ describe('getNodeWorldMatrix4', () => {
     setNodeTranslation(child, 0, 5, 0);
     setNodeScale(child, 3, 1, 1);
 
-    // Oracle: world = local(root) × local(parent) × local(child), built from the same geometry
+    // ReferenceImage: world = local(root) × local(parent) × local(child), built from the same geometry
     // primitives the implementation composes, so the test pins the wiring and order, not the math.
     const localRoot = createMatrix4();
     composeMatrix4(localRoot, root.position, root.rotation, root.scale);

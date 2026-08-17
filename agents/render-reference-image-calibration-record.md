@@ -1,11 +1,11 @@
-# Render Oracle Calibration Record
+# Render ReferenceImage Calibration Record
 
 **Status: the measurement is taken and §10 is ruled. Every field below is now read from the captures'
 own provenance. The two host ids and the environment id were written here as predictions while they were
 still inferred, and reading the bytes CONFIRMED all three exactly — the contingency they carried is
 discharged.**
 
-This file exists so nobody has to run the workflow again to know what it found. `oracle-calibrate` is a
+This file exists so nobody has to run the workflow again to know what it found. `reference-image-calibrate` is a
 `workflow_dispatch` experiment: it gates nothing, dispatches nowhere, and its whole output is a report
 that lives in a run's logs and its artifacts, both of which expire. A measurement whose only record
 expires is one that has to be re-taken to be relied on, and re-taking this one is explicitly ruled out.
@@ -19,7 +19,7 @@ that has fewer fields.
 
 | field | value | source |
 | --- | --- | --- |
-| workflow | [`.github/workflows/oracle-calibrate.yml`](../.github/workflows/oracle-calibrate.yml) | in tree |
+| workflow | [`.github/workflows/reference-image-calibrate.yml`](../.github/workflows/reference-image-calibrate.yml) | in tree |
 | run | `flighthq/flight` Actions run `32050363125`, `run_attempt` 1, `workflow_dispatch` | **read** from the public Actions API |
 | head sha | `e999f6c5b` — the commit the captures were taken at | **read** from the public Actions API |
 | artifacts | `calibration-host-1` (`9294568582`), `calibration-host-2` (`9294552873`), delivered as files | **measured** — both extracted and read |
@@ -74,7 +74,7 @@ before it was confirmed, which is the property that made it worth trusting.
 
 ## §10 is ruled, and the precondition it rested on is now discharged
 
-[render oracle repository](render-oracle-repository.md) §10 presented two options and said the schema
+[render oracle repository](render-reference-image-repository.md) §10 presented two options and said the schema
 waited on the ruling. It is decided by this measurement:
 
 - **One canonical environment is viable.** The reference set is **one column per backend**.
@@ -91,12 +91,12 @@ is discharged and the ruling stands on measurement, not on inference from the wo
 
 The one bar that has NOT moved is below: stable is not correct.
 
-## The cells are named, in `scripts/oracle-calibration.json`
+## The cells are named, in `scripts/reference-image-calibration.json`
 
 The counts above are a summary; the record of record is the generated
-[`scripts/oracle-calibration.json`](../scripts/oracle-calibration.json), which lists all 493 agreed cells
+[`scripts/reference-image-calibration.json`](../scripts/reference-image-calibration.json), which lists all 493 agreed cells
 BY NAME alongside the identities they were measured under. Regenerate it with
-`npm run oracle:calibrate -- <rootA> <rootB> --record scripts/oracle-calibration.json`.
+`npm run reference-image:calibrate -- <rootA> <rootB> --record scripts/reference-image-calibration.json`.
 
 ★ NOTHING MAY JOIN THIS TO THE COVERAGE MANIFEST BY COUNT. "493 agreed" and "493 live cells" are equal
 numbers, and equality of counts is not identity of sets — a corpus can gain and lose cells and still
@@ -125,7 +125,7 @@ Given the two artifact roots, the comparer derives both relationships from `prov
 and `provenance.environmentId` in the statuses it already opens:
 
 ```
-npm run oracle:calibrate -- runs/calibration-host-1 runs/calibration-host-2
+npm run reference-image:calibrate -- runs/calibration-host-1 runs/calibration-host-2
 ```
 
 Each root is the directory that CONTAINS `functional/` — an extracted `calibration-host-<n>` artifact,

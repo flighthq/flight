@@ -70,8 +70,8 @@ mapping is the contract; the severity alone is not enough for two of the four ro
 | --- | --- | --- |
 | `Skip` | A recognised-but-unsupported feature was ignored | **Unsupported, cleanly reported — correct behaviour, not a failure.** Never weight it as a miss |
 | `Reject` | The whole input was refused and a sentinel returned | Usually a real refusal — **with one standing exception, below** |
-| `Drop` | Data was lost | Needs the oracle: the import succeeded but is missing something |
-| `Recover` | Degraded but continued with a substitute | Needs the oracle: the import succeeded and differs from the source |
+| `Drop` | Data was lost | Needs the reference-image: the import succeeded but is missing something |
+| `Recover` | Degraded but continued with a substitute | Needs the reference-image: the import succeeded and differs from the source |
 
 **The standing exception: `swf.no-decompressor-registered` is `Reject` and reads as *unsupported, cleanly
 reported*.** The severity is correct — the input genuinely was refused — but the missing capability is the

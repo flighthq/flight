@@ -226,13 +226,13 @@ the running total lives so the next instance does not have to re-derive it.
 
 **Row 26's fix was briefly cited as landed, and the citation resolved — to real code, at the wrong
 site, which is worse than a citation that resolves to nothing.** builder2's oracle-liveness measurement
-is a per-target status field, `oracle: 'absent' | 'invoked' | null`; the catch-path status in
+is a per-target status field, `reference-image: 'absent' | 'invoked' | null`; the catch-path status in
 `captureEntry.ts` writes a hardcoded `null` regardless of outcome, while the actual verification
 result — computed inside the corresponding `try` — is never in scope on that error path. So an oracle
 that ran and **threw an assertion failure** is recorded identically to one that never ran at all:
 exactly the distinction the field exists to draw, missing on the one path where it mattered. **The tell
 was the artifact contradicting itself, not a bisect or an external check**: the failing record read
-`oracle: null` sitting beside `error: "[text-strikethrough/dom] no wide continuous ink run found in the
+`reference-image: null` sitting beside `error: "[text-strikethrough/dom] no wide continuous ink run found in the
 native CSS line-through band (widest run 0px…)"` — a message only that oracle's own body can produce. A
 record cannot truthfully claim "never ran" while carrying an error only a run emits.
 
@@ -242,7 +242,7 @@ into `quimby/base` by the time this row first named it as done. The row original
 and a new test file; neither resolves anywhere in the landed history (`git log --all` finds no such
 commit; the test file does not exist on any ref). Worse, the row's line-number citation for the fix site
 pointed at real, current, plausible-looking code — `captureEntry.ts:585` and `:644` do read
-`oracle: verification?.oracle ?? null` — but `git blame` shows all three lines, including the still-broken
+`reference-image: verification?.oracle ?? null` — but `git blame` shows all three lines, including the still-broken
 one, belong to the **same commit**: `:585`, `:644`, and the catch-path `:693` (49 lines away, not two) are
 all `0f93278033`. That commit's own diff introduced the two correct success-path writes and the hardcoded
 error-path `null` together, in one change — it is not an unrelated lookalike the citation stumbled onto,

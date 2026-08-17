@@ -167,16 +167,16 @@ today's tree matches that inherited manifest shape, not that someone deliberatel
 or pinless target. Exact `--target` acceptance prevents a future decision nobody made from becoming
 precedent merely because an unrelated whole-repository census was refreshed.
 
-### `npm run oracle:commission` — which cells may be commissioned, and why the rest may not
+### `npm run reference-image:commission` — which cells may be commissioned, and why the rest may not
 
 Commissioning a reference image blesses whatever the capture shows, permanently: every later regression
 check agrees with it, so a wrong pixel blessed here does not fail to catch a defect, it makes the defect
 undetectable. This command is the bar that stands in front of that, and its default is a **report** —
 writing is a separate word.
 
-    npm run oracle:commission -- --runs .artifacts,/tmp/run2          # report; writes nothing
-    npm run oracle:commission -- --runs …,… --verbose                 # every blocked cell, with its reason
-    npm run oracle:commission:write -- --runs …,… --id <id> --reason "…" --limit 8
+    npm run reference-image:commission -- --runs .artifacts,/tmp/run2          # report; writes nothing
+    npm run reference-image:commission -- --runs …,… --verbose                 # every blocked cell, with its reason
+    npm run reference-image:commission:write -- --runs …,… --id <id> --reason "…" --limit 8
 
 It withholds a cell unless **every** independent statement about it agrees: the capture reached `ready`,
 the scene's own `assertRender` was invoked and did not throw, repeated captures were byte-identical, the
@@ -210,7 +210,7 @@ otherwise.
 Three arguments are refused rather than defaulted. **Fewer than two capture roots** is refused because
 determinism is measured and one run cannot measure it; accepting one root would silently downgrade every
 cell to unmeasured while still printing a report. **`--limit` is bounded by review throughput, not by how
-many cells clear the bar**: `MAX_PENDING_DAYS` in `scripts/oracle-check.ts` is 14, so every commissioned
+many cells clear the bar**: `MAX_PENDING_DAYS` in `scripts/reference-image-check.ts` is 14, so every commissioned
 cell starts a clock, and a batch larger than `flight-reference-images` can review and release inside that window
 turns CI red on day 15 for cells that were never wrong.
 
@@ -229,7 +229,7 @@ two, so the cell is out and no further measurement is owed. AGREEMENT is not: re
 that host reproduces itself, while the lock is verified on a *different* machine at `maxChannelDelta 0`,
 and `tests.yml` records SwiftShader pinning already failing to survive a machine change once. So
 a one-host pair clears a cell to `determinism-within-host-only` — stage one done, never commissionable —
-and only `.github/workflows/oracle-calibrate.yml`, dispatched with real Actions credentials, supplies the
+and only `.github/workflows/reference-image-calibrate.yml`, dispatched with real Actions credentials, supplies the
 independent-host roots that finish it.
 
 **The host relationship is DERIVED from the captures, never declared.** There was a `--hosts` flag; it is
@@ -251,7 +251,7 @@ commissionable from a census whose independence precondition could not be evalua
 That reason is checked **last**, after every condition that names work somebody can do. Checked earlier it
 swallowed all 341 otherwise-clean cells under one heading and every actionable list went empty.
 
-`scripts/oracle-held.json` names cells that must not be commissioned whatever today's capture says. A
+`scripts/reference-image-held.json` names cells that must not be commissioned whatever today's capture says. A
 hold is read **before** any capture fact, because the holder knows something a capture run cannot see;
 releasing one is a reviewed deletion with a name on it.
 

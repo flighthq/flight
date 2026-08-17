@@ -44,7 +44,7 @@ Mostly covered by existing platform suite. Service Worker registration is margin
 
 | Candidate | Priority | Notes |
 |-----------|----------|-------|
-| **`focus`** | **now** | Spatial dpad/LRUD focus navigation over plain-data `{id, bounds}` regions. Oracle: BBC LRUD / Norigin. TV + console + gamepad + keyboard-a11y all converge on this one missing primitive |
+| **`focus`** | **now** | Spatial dpad/LRUD focus navigation over plain-data `{id, bounds}` regions. ReferenceImage: BBC LRUD / Norigin. TV + console + gamepad + keyboard-a11y all converge on this one missing primitive |
 | **`host-node`** | soon | Node/Deno/Bun host: timer `LoopBackend`, fs storage/filesystem, file log sink. Unlocks the headless chain |
 | **`worker`** | soon (after) | Typed cross-context channel with explicit transferables. comlink-minus-proxy-magic. Lean distinct from `ipc`: transferables don't exist in process IPC |
 | `xr` | later | Session/reference-space/input-source data + `XrBackend`. Gated on 3D maturity |

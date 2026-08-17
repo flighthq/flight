@@ -14,7 +14,7 @@ _2026-07-13. Raw breadth analysis — what new bedrock primitives are missing wi
 
 ### Now (largest gaps)
 
-- **`physics2d`** — the single largest gap in the SDK. Rigid-body dynamics, constraints, joints over `collision` + `spatial`. Oracle: Box2D / planck.js. TS-feasible core; constraint solver is rust-intended-optional. Prereq: collision's chartered swept/TOI + contact phases (phases 2-3).
+- **`physics2d`** — the single largest gap in the SDK. Rigid-body dynamics, constraints, joints over `collision` + `spatial`. ReferenceImage: Box2D / planck.js. TS-feasible core; constraint solver is rust-intended-optional. Prereq: collision's chartered swept/TOI + contact phases (phases 2-3).
 
 ### Soon
 

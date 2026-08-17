@@ -4,7 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
-import { comparePixels, readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './oracle-verify';
+import {
+  comparePixels,
+  readPackManifest,
+  verifyOracleCaptures,
+  verifyOracleLockImages,
+} from './reference-image-verify';
 
 // ★ EACH CASE ASSERTS A DIFFERENT CAUSE PRODUCES A DIFFERENT NAME. The whole value of this layer is that
 // a corrupt pack, an absent capture, an undecodable file and a genuine render change do not collapse into
@@ -36,7 +41,7 @@ describe('readPackManifest', () => {
   });
 
   it('names a manifest that is absent rather than treating it as empty', () => {
-    expect(readPackManifest(join(mkdtempSync(join(tmpdir(), 'oracle-')), 'nope.json'))).toMatchObject({
+    expect(readPackManifest(join(mkdtempSync(join(tmpdir(), 'reference-image-')), 'nope.json'))).toMatchObject({
       problem: expect.stringContaining('no pack manifest'),
     });
   });
@@ -124,7 +129,7 @@ describe('verifyOracleCaptures', () => {
   it('names a missing fresh capture without claiming the reference is absent', () => {
     const pixels = new Uint8Array(16);
     const { packRoot, images } = fixture(pixels, pixels);
-    const result = verifyOracleCaptures(packRoot, images, mkdtempSync(join(tmpdir(), 'oracle-empty-')));
+    const result = verifyOracleCaptures(packRoot, images, mkdtempSync(join(tmpdir(), 'reference-image-empty-')));
 
     expect(result.problems.map((p) => p.kind)).toEqual(['capture-missing']);
     expect(result.cells[0]).toMatchObject({ comparison: null, pinned: true, required: true });
@@ -179,8 +184,8 @@ describe('verifyOracleLockImages', () => {
 
 /** Builds an extracted pack and a capture tree for one cell, from the two sets of pixels given. */
 function fixture(blessedPixels: Readonly<Uint8Array>, capturedPixels: Readonly<Uint8Array>) {
-  const packRoot = mkdtempSync(join(tmpdir(), 'oracle-pack-'));
-  const artifactsRoot = mkdtempSync(join(tmpdir(), 'oracle-art-'));
+  const packRoot = mkdtempSync(join(tmpdir(), 'reference-image-pack-'));
+  const artifactsRoot = mkdtempSync(join(tmpdir(), 'reference-image-art-'));
   const blessed = png(2, 2, blessedPixels);
   const captured = png(2, 2, capturedPixels);
 
@@ -215,7 +220,7 @@ function image() {
 }
 
 function write(name: string, content: string): string {
-  const path = join(mkdtempSync(join(tmpdir(), 'oracle-')), name);
+  const path = join(mkdtempSync(join(tmpdir(), 'reference-image-')), name);
   writeFileSync(path, content);
   return path;
 }
@@ -224,7 +229,7 @@ function sha(bytes: Readonly<Uint8Array>): string {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
-/** An unfiltered 8-bit RGBA PNG. Format facts only; the same shape `oracle-png.test.ts` builds. */
+/** An unfiltered 8-bit RGBA PNG. Format facts only; the same shape `reference-image-png.test.ts` builds. */
 function png(width: number, height: number, pixels: Readonly<Uint8Array>): Uint8Array {
   const stride = width * 4;
   const raw = new Uint8Array(height * (stride + 1));

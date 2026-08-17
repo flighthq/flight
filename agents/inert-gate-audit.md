@@ -457,7 +457,7 @@ merely adding to it. The bar treats a passing scene assertion as its correctness
 that it is the only place semantic intent enters the pipeline. That reasoning stands for a *missing*
 assertion. It does not stand for a *delta-shaped* one: an assertion that says only "something happened"
 encodes no intent about the output, so a cell can satisfy the bar's one semantic condition while nothing
-has ever stated what its pixels should be. The bar cannot see the difference — `oracle: invoked` is binary,
+has ever stated what its pixels should be. The bar cannot see the difference — `reference-image: invoked` is binary,
 and the static ranking attempt recorded in [capture verification tiers](capture-verification-tiers.md)
 could not separate strong assertions from weak ones either.
 
@@ -594,7 +594,7 @@ being reported as lacking the very thing it had. **The guard was the only thing 
 
 ## 2026-08-16: a silent omission makes the data you DO see unfalsifiable
 
-`scripts/oracle-calibrate.ts` built its identity set from the cells that parsed AND reported `ready`. A
+`scripts/reference-image-calibrate.ts` built its identity set from the cells that parsed AND reported `ready`. A
 cell that failed on **every** run therefore entered no map, no identity set, and no bucket: it did not
 report as `incomplete`, it **vanished**, and the totals still looked complete without it. Fixed at
 `53ae51767`; `readRun` now tracks `seen` — every identity with a `status.json` present, whatever the file
@@ -633,7 +633,7 @@ scene files exist, and it failed in **both** runs, same day, with
 not flaky — and it had been mislabelled as environment flakiness on the belief it had captured in one run.
 
 **The sharpest part is a cross-instrument disagreement.** The commissioning bar in
-`scripts/oracle-eligibility.ts` reads the same capture tree and reported `env-ibl/webgpu` correctly as
+`scripts/reference-image-eligibility.ts` reads the same capture tree and reported `env-ibl/webgpu` correctly as
 `capture-failed`, and withheld its sibling `env-ibl/webgl` as `sibling-column-failed`. So one instrument
 dropped the cell while another named it, over identical input, and nobody noticed the first was wrong
 **because the second was right**. A spot-check for the cell would have found it present. That is what makes
@@ -672,7 +672,7 @@ carries it.**
 
 The limit that remains, stated rather than implied: a cell with **no** `status.json` in **any** run is
 still invisible here, because nothing on disk distinguishes "never attempted" from "does not exist". That
-needs the coverage manifest — the same requirement join `oracle-check.ts` uses for the same gap.
+needs the coverage manifest — the same requirement join `reference-image-check.ts` uses for the same gap.
 
 ## 2026-08-16: a differential oracle is blind upstream of the fork
 
@@ -719,7 +719,7 @@ is capable of distinguishing.
 This is why a **discriminating input** settled it and no amount of parity green ever could have. The two
 are not the same kind of evidence at different strengths; the differential gate has no sensitivity to this
 class at all, and running it a thousand more times adds nothing. It is the same shape as the commissioning
-bar's `oracle: invoked` blindness recorded elsewhere in this arc: agreement and stability are not
+bar's `reference-image: invoked` blindness recorded elsewhere in this arc: agreement and stability are not
 correctness, and only something that states what the pixels should MEAN can tell the difference.
 
 **Question 3, at a scale not seen before in this arc.** The audit's standing question is whether a check
@@ -819,10 +819,10 @@ true positives, since a caller passing an unhonourable value is broken by constr
 Found at `866c7712d`, closed at `f8d13e12b` and `14b9788c4`. This entry is one worked instance and a
 resulting amendment to the method above; it is not a new population sweep.
 
-**The instance.** `scripts/oracle-check.ts` implements the four-state table in
-[render oracle repository](render-oracle-repository.md) §6 through the pure `joinOracleState`, and three
+**The instance.** `scripts/reference-image-check.ts` implements the four-state table in
+[render oracle repository](render-reference-image-repository.md) §6 through the pure `joinOracleState`, and three
 of those states — `missing`, `pending-uncaptured`, and `orphan` — each had a firing test in
-`scripts/oracle-state.test.ts` that **passed**. Two are hard failures (`missing-reference-image`,
+`scripts/reference-image-state.test.ts` that **passed**. Two are hard failures (`missing-reference-image`,
 `orphaned-reference-image`) and one is the narrow allowance that lets a commissioned run stay green.
 All three were unreachable from the running gate.
 
@@ -872,8 +872,8 @@ instances — this gate, the capture-analysis read that produced seven retracted
 directory listing, an artifacts root, and a pack manifest are all statements about what once happened,
 never about what is live now.
 
-**Why the coverage landed where it did.** `oracle-eligibility.ts` (442 lines) had 37 tests while
-`oracle-check.ts` and `oracle-commission-batch.ts`, which touch the real tree and the real workflow, had
+**Why the coverage landed where it did.** `reference-image-eligibility.ts` (442 lines) had 37 tests while
+`reference-image-check.ts` and `reference-image-commission-batch.ts`, which touch the real tree and the real workflow, had
 none. That distribution is not an accident of effort:
 
 > A pure function is cheap to test **and** cheap to get wrong, because it cannot be wired to the wrong
@@ -884,7 +884,7 @@ Whether the pieces connect is not testable by the instrument that tests the piec
 that answers it is running the real process and diffing its output and exit codes against the same run
 before the change; that is what established the closure here, on the real tree rather than in fixtures.
 
-**Closure.** The requirement join was extracted to `withRequiredIdentities` in `scripts/oracle-state.ts`
+**Closure.** The requirement join was extracted to `withRequiredIdentities` in `scripts/reference-image-state.ts`
 and covered by seven tests, three of which drive it end to end through `joinOracleState` to assert the
 three formerly unreachable states. Before that, all three were observed firing against the real tree and
 then reverted: required-and-unpinned with no request → `missing`, exit 1; the same cell with an open
@@ -1243,7 +1243,7 @@ declares what ought to be there.
 | 1 | Fingerprint regression | one target's fingerprint deleted while others still compare | run stays **green**: the zero-floor is satisfied by any single comparison |
 | 2 | Screenshot hash (`capture:check`) | `node-alpha/canvas` sha256 **wrong** vs **absent** | wrong → `±`, **exit 1**. absent → `✓`, **exit 0**. Deleting a baseline is safer than breaking one. |
 | 3 | Tier-4 oracle (`functionalVerify.ts`) | `node-alpha` fill broken, oracle intact vs export misspelled | intact → **exit 1** named on canvas/webgl/webgpu. misspelled → **exit 0**. |
-| 4 | Oracle outcome not recorded anywhere | tried to confirm one target's oracle result from its own artifacts | `status.json` and `logs.jsonl` carry **no** oracle record; the outcome is only inferable from control flow (a failure writes `state: 'error'`). Observed, not mutated. |
+| 4 | ReferenceImage outcome not recorded anywhere | tried to confirm one target's oracle result from its own artifacts | `status.json` and `logs.jsonl` carry **no** oracle record; the outcome is only inferable from control flow (a failure writes `state: 'error'`). Observed, not mutated. |
 
 Manifestation 2 was found independently and landed as rank 1 of the `2026-08-13` table above; this row is
 corroboration by a second method, not a separate finding.
@@ -1261,7 +1261,7 @@ Falsified after wiring: dropping one pin from the manifest makes the whole sweep
 `material-subsurface/webgl#oracle`, not merely the standalone script.
 
 **Manifestation 4 is closed, and its first fix had a hole worth keeping on the record.** The verifier now
-records `oracle: 'invoked' | 'absent'` from the branch that calls, and `captureEntry` carries it into
+records `reference-image: 'invoked' | 'absent'` from the branch that calls, and `captureEntry` carries it into
 `status.json`. But the error-path status wrote a hardcoded `null`, with the `verification` binding scoped
 inside the `try` — so the record was dropped on exactly the path that motivated the field. An oracle that
 runs and rejects a frame both ran and failed, and the artifact said it never ran while carrying an error
