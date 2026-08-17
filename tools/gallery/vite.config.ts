@@ -179,7 +179,12 @@ function galleryPlugin(): Plugin[] {
                 const payload = JSON.parse(body) as {
                   tool: string;
                   entry: string;
-                  cells: readonly { renderer: string; pixelSha256: string | null }[];
+                  cells: readonly {
+                    renderer: string;
+                    pixelSha256: string | null;
+                    hostInstanceId: string | null;
+                    environmentId: string | null;
+                  }[];
                   reason: string;
                 };
                 if (!payload.tool || !payload.entry || !payload.cells?.length) {
@@ -188,12 +193,34 @@ function galleryPlugin(): Plugin[] {
                   return;
                 }
 
+                const eligible = payload.cells.filter(
+                  (c): c is typeof c & { pixelSha256: string; hostInstanceId: string; environmentId: string } =>
+                    c.pixelSha256 !== null && c.hostInstanceId !== null && c.environmentId !== null,
+                );
+                if (eligible.length === 0) {
+                  res.statusCode = 400;
+                  res.end(
+                    JSON.stringify({
+                      error: 'no eligible cells: every cell needs pixelSha256, hostInstanceId, and environmentId',
+                    }),
+                  );
+                  return;
+                }
+
                 const id = randomUUID();
                 const request = {
-                  schemaVersion: 1,
+                  schemaVersion: 2,
                   id,
                   subject: payload.tool,
-                  targets: [{ entry: payload.entry, renderers: payload.cells.map((c) => c.renderer) }],
+                  targets: eligible.map((c) => ({
+                    entry: payload.entry,
+                    renderer: c.renderer,
+                    pixelSha256: c.pixelSha256,
+                    capture: {
+                      hostInstanceId: c.hostInstanceId,
+                      environmentId: c.environmentId,
+                    },
+                  })),
                   frames: 1,
                   reason: payload.reason || 'Commissioned from gallery',
                 };

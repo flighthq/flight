@@ -126,7 +126,12 @@ async function commissionCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
 
-  const cells = t.cells.map((c) => ({ renderer: c.renderer, pixelSha256: c.hash }));
+  const cells = t.cells.map((c) => ({
+    renderer: c.renderer,
+    pixelSha256: c.hash,
+    hostInstanceId: c.provenance?.hostInstanceId ?? null,
+    environmentId: c.provenance?.environmentId ?? null,
+  }));
 
   try {
     const res = await fetch('/api/commission', {
