@@ -358,9 +358,15 @@ missing without request, orphan, corrupted pack, dimension mismatch, expired/ove
 out-of-scope movement must each be observed failing. This is not optional polish; it is what keeps the
 table honest.
 
-## 10. Open decision — canonical capture environment
+## 10. Canonical capture environment — RULED BY MEASUREMENT
 
-**This is the ruling the schema waits on, and it is deliberately not answered here.**
+**Ruled: one canonical environment. The reference set has ONE COLUMN PER BACKEND, and per-environment
+sets are closed rather than deferred.** The measurement, its counts, and which of its fields are read
+versus inferred are in [render oracle calibration record](render-oracle-calibration-record.md) — read
+there rather than re-running `oracle-calibrate`, which is what that record exists to make unnecessary.
+
+The section below is kept as the question that was asked, because the ruling is only meaningful against
+it. It is history now, not an open decision.
 
 Fuzzy comparison narrows driver variance; it does not erase it. [commands](commands.md) records that
 regression today is "coupled to where its baselines were captured," which is why it cannot gate PRs. A
@@ -382,7 +388,8 @@ problem is already solved.
 
 The choice determines whether the reference set has one column per backend or one per backend ×
 environment — that is, it determines the schema, which is why no schema is committed until it is ruled
-on.
+on. It has since been ruled: one canonical environment, one column per backend. See the record linked
+at the top of this section.
 
 ## 11. Scope
 
