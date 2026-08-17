@@ -31,6 +31,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
+  expectedImageDescription:
+    'On a 400×300 pure-black field, one flat RGB(0,204,0) green regular pentagon is centered at ' +
+    '(200,150). Its five vertices lie 100 pixels from that center at 72-degree intervals: the top is ' +
+    '(200,50), the widest pair is near x=105 and x=295, and the lower pair is near y=231. It has no outline, gradient, or second shape.',
   kinds: [ShapeKind],
 });
 

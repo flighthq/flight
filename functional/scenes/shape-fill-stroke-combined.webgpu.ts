@@ -29,6 +29,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
+  expectedImageDescription:
+    'On a 400×300 pure-black field, a flat RGB(0,204,0) green 200×150 rectangle starts at (80,80), ' +
+    'so its far edges are x=280 and y=230. A separate 8-pixel pure-red band runs across x=80–280 and ' +
+    'y=72–80: its center is y=76 (80 − 8/2), with 4 pixels on each side. The other three rectangle edges have no outline, and there is no gradient or blend.',
   kinds: [ShapeKind],
 });
 

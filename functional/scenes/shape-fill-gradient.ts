@@ -34,6 +34,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
+  expectedImageDescription:
+    'On an 800×600 pure-black field, a 500×240 rectangle starts at (150,180), so its far edges are ' +
+    'x=650 and y=420 (start + size). Its interior is a smooth grayscale ramp from pure black at the left ' +
+    'edge to pure white at the right, with the same tone down each vertical slice. There is no outline, color tint, or abrupt band.',
   kinds: [ShapeKind],
 });
 

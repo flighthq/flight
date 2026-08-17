@@ -30,6 +30,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
+  expectedImageDescription:
+    'On a 500×300 pure-black field, a flat pure-red disk of radius 80 is centered at (150,150), spanning ' +
+    'x=70–230 and y=70–230 (center ± radius). A separate flat pure-blue disk of radius 60 is centered at ' +
+    '(350,150), spanning x=290–410 and y=90–210 by the same calculation. Neither disk has an outline or gradient, and they do not overlap.',
   kinds: [ShapeKind],
 });
 

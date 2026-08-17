@@ -36,6 +36,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
+  expectedImageDescription:
+    'On a 400×300 pure-black field, one flat RGB(204,204,0) yellow ellipse is 200×100 pixels and spans ' +
+    'x=100–300 and y=100–200. Its center is (200,150), derived as each starting coordinate plus half ' +
+    'its dimension. It has no outline, gradient, or marks outside the smooth oval.',
   kinds: [ShapeKind],
 });
 

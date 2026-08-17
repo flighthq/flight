@@ -53,6 +53,10 @@ const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
+  expectedImageDescription:
+    'On an 800×600 pure-black field, a 256×256 square starts at (200,160), placing its far edges at ' +
+    'x=456 and y=416 (start + 256). It is covered by a repeating pure-black-and-pure-white checkerboard ' +
+    'of 8×8-pixel cells. Adjacent cells alternate across both axes, with no gray blending, outline, or gradient.',
   kinds: [ShapeKind],
 });
 
