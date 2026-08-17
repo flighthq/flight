@@ -116,6 +116,34 @@ explained lets a reviewer audit the *reasoning*; the same deviation applied quie
 the *work*, which is enormously more expensive and usually happens too late. This is why the rule ends in
 an obligation to speak rather than in permission to act.
 
+**And its twin on the sending side, because the two failures are one failure seen from either end.** The
+rule above governs receiving an instruction; this one governs issuing a request.
+
+> **State what will count as an answer, or expect to get one that does not.**
+
+A request that names only its subject — *get me X* — leaves the evidence standard implicit, and the sender
+is the only party who knows it. The recipient then supplies something defensible that answers a different
+question: a **category** where an enumeration was wanted, a **sample** where a census was, a **recollection**
+where a verified figure was. Nothing looks wrong at either end. The work is simply redone.
+
+**Both halves are cheap and both fail closed**, which is what makes them a usable pair rather than advice:
+
+| | the check | what it costs |
+|---|---|---|
+| **Receiving** | state the failure the instruction targets, and show the given form misses it — or follow it as written | one sentence, before acting |
+| **Sending** | state what will count as an answer | one clause, before asking |
+
+**The worked instance is a request made in this thread.** Figures were asked for to support a section of
+this document. The ask did not say *"only if you hold the tree they live on"* — so what came back was an
+offer to supply them from memory, which was then declined, and both ends spent effort on a refusal the
+missing clause would have made unnecessary. The unstated standard was the whole defect.
+
+**The burden sits with the sender, and the asymmetry is the reason.** A recipient who declines an
+underspecified request reads as unhelpful; a sender who withholds an unverifiable answer reads as careful.
+Same act, opposite social cost. So the party who can state the standard cheaply — the one who knows it —
+should state it, rather than relying on the other end to pay more for enforcing it. **An unstated evidence
+standard does not vanish; it relocates, onto whoever is worse placed to carry it.**
+
 **An editorial rule for this document, because the tidying instinct destroys evidence here.**
 
 > **When two independent investigations reach the same finding but different remedies, the DIVERGENCE IS
