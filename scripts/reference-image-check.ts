@@ -149,7 +149,9 @@ async function check(): Promise<void> {
       // Refusing here rather than proceeding with the packs that did parse: a partial corpus silently
       // verifies fewer cells than the lock requires, which is a pass that means less than it appears to.
       console.error(`  ${pack}: ${manifest.problem}`);
-      console.error('reference-image-check: run `npm run oracle:fetch` first, or the extracted pack is damaged');
+      console.error(
+        'reference-image-check: run `npm run reference-image:fetch` first, or the extracted pack is damaged',
+      );
       process.exit(1);
     }
     const identityProblems = verifyOracleLockImages(lock.packs[pack]!.images, manifest.images);
@@ -190,7 +192,7 @@ async function check(): Promise<void> {
   // regression here is a capture taken under conditions the blessing did not use, and that is invisible
   // unless the report says which ones it used.
   const lines = [
-    `oracle: ${lock.repository}@${lock.releaseTag}`,
+    `reference image: ${lock.repository}@${lock.releaseTag}`,
     `policy: ${readIdentity().comparisonPolicyId} | environment: ${readIdentity().environmentId}`,
     `captured at frames=${frames}`,
     '',
