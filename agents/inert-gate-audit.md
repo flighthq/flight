@@ -91,6 +91,65 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+## 2026-08-16: every gate reads the functional scenes; nothing executes them
+
+Filed at manager's instruction as a standing gap, deliberately **not** as cleanup attached to the revert
+that exposed it. The revert closes one bad guard. The gap it revealed is permanent and was here before
+that guard existed.
+
+**The instance.** A guard added to `createWgpuRenderEffectPipeline`
+(`packages/effects-wgpu/src/wgpuRenderEffectPipeline.ts`, `cc3d61ed3`) threw on any `sampleCount > 1`.
+Functional scenes call that constructor at **module scope**, so the throw fired on import: the affected
+scenes could not be loaded at all, never mind rendered. Integration reports **102 scenes** unable to
+execute, with **every gate green** at the point it reached them. That count and the green are theirs, not
+mine, and are recorded here as relayed.
+
+What is measured here is the consequence, on this clone, at `cc3d61ed3`: a capture of the `effect-`
+scenes on `webgpu` returned **42 failed, 10 captured**, and **42 of 42** failures carried the identical
+string `sampleCount 4 is unsupported`. Not one had any other cause. The same cells were `ready` in a
+capture taken 2h18m earlier, before the guard landed — so the population is not merely broken, it is
+newly broken, and the only instrument that noticed was a real browser.
+
+**Q2 in its purest form to date.** Ask what has to be true for a check to catch an unloadable scene: the
+check must *load the scene*. Measured on this tree, nothing does.
+
+- **Typecheck reads them.** `functional/tsconfig.json` sets `"include": ["scenes/**/*.ts"]`, so every
+  scene is fully typechecked. `createWgpuRenderEffectPipeline(state, { sampleCount: 4 })` is a
+  well-typed call expression. It always was. A `throw` reachable at module scope is not a type error and
+  no amount of static strictness makes it one.
+- **The tooling enumerates them as paths.** `packages/tool-capture/src/captureEntries.ts` and
+  `scripts/watch-capture.ts` are the only non-test files naming `functional/scenes`, and they treat it as
+  a directory of *routes*, not modules to import.
+- **No test imports one.** `git grep -l "from '.*functional/scenes" -- '*.test.ts'` returns nothing, and
+  `functional/` appears in no Vitest project.
+
+So the bad state — a scene module that throws on import — has **no path to any check between commit and
+capture**. It is not that the gates are weak on this; it is that the class of defect and the class of
+instrument do not intersect. Every gate is a reader; the defect is only visible to an executor.
+
+> **A scene is source that every gate parses and no gate runs. Static-clean is the strongest claim the
+> check surface can make about it, and the check surface does not say so.**
+
+This is the reachability question from
+[a gate can fire in its test and be unreachable in production](#2026-08-16-a-gate-can-fire-in-its-test-and-be-unreachable-in-production)
+with the polarity flipped once more. There, a gate could not fire because its input list could not contain
+its trigger. Here, no gate is even implicated: the trigger is well-formed input to every one of them. That
+is why it fails toward *proceed* (Q3) with nothing anomalous to notice — green is the correct output of
+each instrument individually, and the aggregate green is still false.
+
+**The cheapest closure is an executor, not a better reader.** Anything that imports every scene module and
+reports the ones that throw would have caught all 102 in seconds, with no browser, no adapter, and no
+pixels — the failure is at import, so it needs no rendering at all. That is a different shape from every
+existing functional gate, all of which are downstream of a successful load.
+
+**A measurement caution, since this doc already carries its sibling.** Sizing the population by grep
+undercounts it. `createWgpuRenderEffectPipeline(state, { sampleCount: 4 })` as a single-line pattern
+matches **29** scene files; the capture that actually executed them failed **42**. The remaining 13 pass
+the same value through a binding or a differently-formatted argument. The grep is not wrong about what it
+matched — it is wrong about what a reader takes the number to mean, which is Q4 pointed at your own
+search, exactly as recorded for the `appendShapeBeginFill` sweep at the top of this file. **Both times the
+undercount ran in the direction that made the problem look smaller.**
+
 ## 2026-08-16: a check that starts failing after an unrelated fix may have been passing for the wrong reason
 
 The dangerous instinct this exists to name: a green check turns red immediately after a fix lands, and the
