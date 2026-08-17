@@ -91,6 +91,23 @@ is discharged and the ruling stands on measurement, not on inference from the wo
 
 The one bar that has NOT moved is below: stable is not correct.
 
+## The cells are named, in `scripts/oracle-calibration.json`
+
+The counts above are a summary; the record of record is the generated
+[`scripts/oracle-calibration.json`](../scripts/oracle-calibration.json), which lists all 493 agreed cells
+BY NAME alongside the identities they were measured under. Regenerate it with
+`npm run oracle:calibrate -- <rootA> <rootB> --record scripts/oracle-calibration.json`.
+
+★ NOTHING MAY JOIN THIS TO THE COVERAGE MANIFEST BY COUNT. "493 agreed" and "493 live cells" are equal
+numbers, and equality of counts is not identity of sets — a corpus can gain and lose cells and still
+total 493, and a count-based join would grant a cell determinism it was never measured for. Verified by
+NAME on 2026-08-17 at `f92daaf27`: the two sets are identical, 0 cells on either side only. That check
+was possible only because the list exists; it does not retroactively license the count argument.
+
+★ ONE COMPARISON PER CELL, NOT REPEATED SAMPLING. Each cell was captured once per host and the two
+hashes matched. That is strong evidence — genuine nondeterminism would have to correlate perfectly
+across two machines to hide — but it is a single sample per cell, and it must be described that way.
+
 ## What zero disagreement does not establish
 
 **Stable is not correct.** Byte-identical output across hosts says the pixels REPRODUCE. Nothing here
