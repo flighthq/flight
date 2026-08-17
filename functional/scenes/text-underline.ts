@@ -48,7 +48,7 @@ const { render, width } = await createFunctionalTarget({
     'below their baseline and clear of the letter bodies rather than crossing them, and it spans the ' +
     'width of the word rather than the width of the box. The same text with no line under it, or with the ' +
     'line struck across the middle of the letters, is the failure. The line is the same yellow as the ' +
-    'text, no box or border frames the field, and the rest of the canvas is pure black.',
+    'text, no box or border frames the field, and the rest of the image is pure black.',
 });
 
 const root = createDisplayObject();
