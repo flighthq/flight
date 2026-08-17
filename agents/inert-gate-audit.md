@@ -330,6 +330,8 @@ check. That is strictly stronger than "two defects cancelled" — it holds for o
 for a tree with no defects at all — and unlike the version offered, it survives contact with the
 arithmetic.
 
+**How the two statements relate**, recorded so the weaker one is not later reconstructed as an improvement on this: *the cancelling story is how we found it; the partition is what it is.* The cancellation is a claim about one incident and depends on a coincidence between two particular defects. The partition is a claim about the SHAPE, and holds for one defect, for three, and for a tree with none. This section supersedes the cancelling account as the general statement; that account stays above because it is the evidence trail, not because it is the weaker phrasing of the same rule.
+
 ## 2026-08-16: what the good version looks like — a guard that refuses to answer
 
 Every other instance in this document is an instrument that failed toward *proceed*: green while checking
