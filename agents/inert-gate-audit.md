@@ -91,6 +91,27 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+**An editorial rule for this document, because the tidying instinct destroys evidence here.**
+
+> **When two independent investigations reach the same finding but different remedies, the DIVERGENCE IS
+> THE DATA.** Do not resolve it by keeping the better remedy and discarding the other. Record both, and
+> record what distinguished them — the distinguishing property generalises further than either remedy.
+
+A merged entry says *here is the finding and here is the remedy*. A preserved pair says *two competent
+people found this independently, one prescribed something that does not work, and here is what separated
+them* — which is worth more and is **only visible as a pair**. Merging yields a better-looking document
+that deletes the sole evidence for the actual lesson.
+
+This is not hypothetical tidiness: the worked instance is the two scene-loading entries below, kept
+unmerged on purpose, and what separated their authors was neither insight nor care nor who went first —
+it was whether the author **ran** the thing they recommended. Collapse them and that is unrecoverable.
+
+`manager` records this as the third occasion in one day where keeping a superseded thing *visible* was
+worth more than the correction that replaced it — alongside a contaminated figure retained beside its
+pruned replacement, and a withdrawn census retained as explicitly withdrawn rather than deleted. A record
+that shows only its final state cannot teach how it got there, and every one of these entries is about
+something that looked correct until someone checked.
+
 ## 2026-08-16: a log with no failures in it is not a passing run
 
 The cheapest instrument failure in this document, and the only one where the instrument is *the reader*.
@@ -199,9 +220,16 @@ found the 102. It is set out in full, with the direction the instrument is valid
 Read that entry as the authority on the fix; this one stands only for the *diagnosis* — that scenes are
 parsed by every gate and executed by none.
 
-**Why both entries exist.** They were written independently, hours apart, about the same gap, and the
-overlap is left rather than merged because the pair is itself evidence: two audits reached the same Q2
-finding from different directions, and only the one that *tested* its proposed remedy got the remedy right.
+**Why both entries exist — DELIBERATELY NOT MERGED. Read this before "cleaning up" the overlap.** They
+were written independently, hours apart, about the same gap. The duplication is not an accident awaiting a
+tidy-up; it is the evidence, and merging destroys it. Both authors reached the same Q2 finding by different
+routes and were equally competent, equally careful, and equally thorough. What separated them was one
+thing: **one of them ran the remedy they proposed, and the other did not.** That is the transferable
+lesson, and it is *only* legible as a pair — a merged entry can state the finding and the working remedy,
+but it cannot show that a plausible remedy from a careful author survived until someone executed it. If you
+are considering collapsing these two sections, you would be trading the document's only demonstration of
+that for a shorter table of contents. See the editorial rule in the preamble.
+
 The distinct contribution here is the static-surface half — that `functional/tsconfig.json` includes
 `scenes/**/*.ts`, so these scenes are fully typechecked, and a module-scope throw is well-typed and
 therefore invisible to every reader in the pipeline.
