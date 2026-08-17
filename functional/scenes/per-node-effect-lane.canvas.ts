@@ -53,7 +53,8 @@ const target = await createFunctionalTarget({
   kinds: [ShapeKind, SpriteKind],
   expectedImageDescription:
     'An 800x600 field on a very dark blue-black background carrying one dark purple backing panel, and ' +
-    'on top of it a single bright cyan block roughly 176x99 whose top-left corner is near x 287, y 223. ' +
+    'on top of it a single bright cyan block whose top-left corner is near x 287, y 223 and which is ' +
+    'roughly 176x99 — a 104x68 source scaled by about 1.7 across and 1.45 down. ' +
     'The block is BLURRED, not sharp: its centre is solid cyan, but its edges fade outward, and just ' +
     'beyond the left edge of the solid area the purple backing is visibly lightened toward cyan rather ' +
     'than left at its plain tone. A crisp-edged rectangle with no spill at all is one failure. The other ' +
