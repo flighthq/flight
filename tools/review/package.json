@@ -1,5 +1,5 @@
 {
-  "name": "@flighthq/review",
+  "name": "@flighthq/tool-review",
   "version": "0.0.1",
   "private": true,
   "type": "module",
