@@ -46,6 +46,11 @@ const pages: Record<string, string> = {
 interface CaptureEntryStatus {
   error: string | null;
   oracle: 'absent' | 'invoked' | null;
+  provenance: {
+    environmentDescriptor: string | null;
+    environmentId: string | null;
+    hostInstanceId: string | null;
+  };
   state: string;
 }
 
@@ -97,6 +102,9 @@ describe('captureEntry browser contract', () => {
     // and threw was indistinguishable in the artifact from one that never called an oracle at all —
     // and the artifact then said "never invoked" while carrying an error only the oracle can produce.
     expect(status.oracle).toBe('invoked');
+    expect(status.provenance.hostInstanceId).toBeTruthy();
+    expect(status.provenance.environmentId).toBeNull();
+    expect(status.provenance.environmentDescriptor).toBeNull();
   }, 30_000);
 
   it('leaves the oracle unrecorded when the run failed before reaching the assert step', async () => {
