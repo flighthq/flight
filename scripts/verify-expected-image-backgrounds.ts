@@ -54,17 +54,35 @@ export function getBackgroundTone(rgba: number): BackgroundTone {
 }
 
 /**
- * What the description claims the field is.
+ * What the description claims the FIELD is — read only from the phrase that names the field or the
+ * background, never from the description as a whole.
+ *
+ * ★ THIS NEARLY ACCUSED THREE OF A PEER'S CORRECT DESCRIPTIONS. The first version matched colour words
+ * anywhere in the text, so "every pixel is near-pure black or near-pure white" — a claim about the
+ * CONTENT of a checkerboard — was read as a claim that the field is black, and contradicted the scene's
+ * genuinely mid-gray background. Three false accusations out of forty, all against texts that were
+ * right. A checker that reports a correct description as wrong is worse than no checker: it spends the
+ * reader's trust and then costs them the argument.
+ *
+ * So the tone is read from a window around the words `field` or `background` and from nowhere else. A
+ * description that names no field colour returns `null`, which the report prints as NO CLAIM rather
+ * than as agreement.
  *
  * A text that says "not pure black" is claiming near-black, not black — the negation has to be read
  * before the phrase it negates, or every honest near-black description reports as a false positive.
  */
 export function getClaimedTone(description: string): BackgroundTone | null {
   const text = description.toLowerCase();
-  if (/near-black|not pure black|very dark/.test(text)) return 'near-black';
-  if (/opaque black|pure black|black field/.test(text)) return 'black';
-  if (/mid-gray|mid-grey/.test(text)) return 'mid-gray';
-  if (/white field|opaque white/.test(text)) return 'white';
+  const phrases = [
+    ...[...text.matchAll(/([^.;]{0,60})\bfield\b/g)].map((m) => m[1]!),
+    ...[...text.matchAll(/([^.;]{0,60})\bbackground\b([^.;,]{0,40})/g)].map((m) => `${m[1]!} ${m[2]!}`),
+  ];
+  for (const phrase of phrases) {
+    if (/near-black|not pure black|very dark|dark navy|dark blue-gr[ae]y/.test(phrase)) return 'near-black';
+    if (/\bblack\b/.test(phrase)) return 'black';
+    if (/mid-gray|mid-grey/.test(phrase)) return 'mid-gray';
+    if (/\bwhite\b/.test(phrase)) return 'white';
+  }
   return null;
 }
 

@@ -40,6 +40,11 @@ describe('getClaimedTone', () => {
       'near-black',
     );
     expect(getClaimedTone('An 800x600 field on a very dark navy background — not pure black.')).toBe('near-black');
+    // A description may name the tone rather than negate it: "dark navy" and "dark blue-gray" are what
+    // a reader calls the near-black backdrops in this corpus, and a tool that does not know them
+    // reports honest descriptions as making NO CLAIM — a silent gap that looks like coverage.
+    expect(getClaimedTone('On a dark navy field, a small rectangle.')).toBe('near-black');
+    expect(getClaimedTone('On a near-black (dark blue-gray) field, six squares.')).toBe('near-black');
   });
 });
 
