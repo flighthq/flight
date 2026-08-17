@@ -10,7 +10,7 @@
 // So the glyph is asymmetric on BOTH axes. A shape symmetric across the mirror line renders identically
 // whether it was mirrored or rotated, and this scene would pass against the very defect it exists to
 // catch. The two candidate renderings put the arm on opposite sides of the glyph's origin row, and the
-// oracle samples both — it fails in each direction rather than merely proving the arm is somewhere.
+// scene assertion samples both — it fails in each direction rather than merely proving the arm is somewhere.
 //
 // The third glyph carries translate + rotate to cover ordinary composed transforms, and each glyph has
 // its own fill so a mix-up between them cannot read as a pass.
@@ -20,8 +20,8 @@
 // exercises. Read a pass as "group transforms reach the rasterizer, and mirroring survives," never as
 // "SVG transforms are covered."
 //
-// The oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
-// returns after checking the target element has children, before any oracle runs (functionalVerify.ts).
+// The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
+// returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 import type { Bitmap, ImportDiagnostic } from '@flighthq/sdk';
 import {
   addNodeChild,

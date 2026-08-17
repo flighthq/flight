@@ -5,7 +5,7 @@
 //
 // Render caching is invisible to unit tests: only a real render can show that the composited cache produces
 // the same pixels the live subtree would. The subtree here is a container holding two filled rectangles (a
-// magenta one and a green one). The oracle samples each rectangle's center (expecting its color) and an
+// magenta one and a green one). The scene assertion samples each rectangle's center (expecting its color) and an
 // empty gap (expecting background), so a cache that bakes nothing, mis-places, or mis-colors the result
 // fails.
 //

@@ -4,7 +4,7 @@
 // but, until now, not TextLabel — this test exercises the newly-registered TextLabelKind renderer on
 // canvas/dom/webgl/webgpu.
 //
-// Text rasterization is font-dependent, so the oracle is a lenient coverage check: the label's box must
+// Text rasterization is font-dependent, so the scene assertion is a lenient coverage check: the label's box must
 // contain a healthy number of amber "ink" pixels (glyphs drew), and a region outside the label stays
 // background. A renderer that didn't draw the label, or a missing registration, leaves the box empty.
 import type { Bitmap } from '@flighthq/sdk';

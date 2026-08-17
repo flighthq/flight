@@ -2,7 +2,7 @@
 // renders both layers correctly.
 //
 // Draws a green rectangle and then a thick open red line in the same Shape. Keeping the stroke open
-// isolates fill+stroke region composition from closed-ring tessellation. The oracle
+// isolates fill+stroke region composition from closed-ring tessellation. The scene assertion
 // verifies:
 //   - the interior center is green (fill present),
 //   - a point on the open stroke above the fill is red,

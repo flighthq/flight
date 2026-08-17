@@ -1,7 +1,7 @@
 // shape-round-rect — validates round-rectangle fill rendering via appendShapeRoundRectangle.
 //
 // Draws a cyan-filled round rectangle at (50,50) with width 300, height 200, and ellipse
-// dimensions 40x40. The oracle verifies:
+// dimensions 40x40. The scene assertion verifies:
 //   - the center of the round rect is cyan,
 //   - a point near the flat top edge (inside) is cyan,
 //   - a point in the corner region (outside the rounded corner, inside the bounding box) is

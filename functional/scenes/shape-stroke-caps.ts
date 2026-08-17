@@ -7,7 +7,7 @@
 //               bounding-box corner falls outside the disc.
 //
 // This is visual: caps are extra geometry generated only at stroke ends by a real rasterizer. The
-// oracle separates all three by sampling just past the endpoint on the centerline (none=bg, square &
+// scene assertion separates all three by sampling just past the endpoint on the centerline (none=bg, square &
 // round=white) and at the bbox corner just past the end (square=white, round=bg).
 import type { Bitmap } from '@flighthq/sdk';
 import type { CapsStyle } from '@flighthq/sdk';

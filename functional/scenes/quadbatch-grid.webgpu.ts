@@ -4,7 +4,7 @@
 // object per quad, it stores parallel arrays — `ids` (which atlas region each quad uses) and `transforms`
 // (where each quad goes) — and the renderer issues all of them under one node. This test exercises the
 // `vector2` transform layout (stride 2: [x0,y0, x1,y1, ...]) with FOUR quads at four distinct local offsets,
-// all referencing a single solid-blue region. It is visual on purpose: the oracle proves each of the four
+// all referencing a single solid-blue region. It is visual on purpose: the scene assertion proves each of the four
 // transform entries lands a quad at its expected position (blue), and that the spaces between them stay
 // background — i.e. the batch draws discrete quads at the array's coordinates, not one filled span.
 import type { Bitmap } from '@flighthq/sdk';

@@ -32,7 +32,7 @@ import {
 // each frame and the non-skinned GL upload re-uploads the deformed vertices (CPU-blend-then-upload; no
 // HAS_MORPH shader permutation). A square quad's four corners carry a morph target that pushes them diagonally outward, so
 // at full weight the quad grows into a larger diamond. Driving the `weights` array to 1 is the manual
-// analogue of a glTF/MD2 `Weights` animation channel. The oracle asserts DEFORMATION vs the bind pose: a
+// analogue of a glTF/MD2 `Weights` animation channel. The scene assertion checks DEFORMATION vs the bind pose: a
 // probe just outside the bind-pose quad silhouette (background at weight 0) is covered at weight 1. A morph
 // path that failed to blend or re-upload would draw the bind-pose quad and the probe would stay background.
 //

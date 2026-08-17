@@ -1,7 +1,7 @@
 // shape-circle-fill — validates circle fill rendering via appendShapeCircle.
 //
 // Draws two filled circles: a red circle centered at (150,150) with radius 80, and a blue circle
-// centered at (350,150) with radius 60. The oracle verifies:
+// centered at (350,150) with radius 60. The scene assertion verifies:
 //   - the center of the red circle is red,
 //   - the center of the blue circle is blue,
 //   - a point outside both circles is background black,

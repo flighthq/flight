@@ -5,10 +5,10 @@
 // other QuadTransformType, `matrix3x2` (stride 6: [a,b,c,d,tx,ty]), where each quad carries a full 2D
 // affine matrix that maps the region's local rect (0,0)-(W,W) onto the screen. A renderer that only honored
 // translation, mis-ordered the matrix slots, or dropped the rotate/scale terms would draw both quads as
-// plain axis-aligned squares — a difference only a visual/pixel oracle can catch. The scene draws ONE batch
+// plain axis-aligned squares — a difference only a pixel-level scene assertion can catch. The scene draws ONE batch
 // of TWO quads sharing a single solid-red region: quad A rotated 45° about its own center (it should render
 // as a diamond, with its un-rotated corners now outside the footprint), and quad B scaled 2× (it should
-// cover a footprint twice as wide/tall as the source region). The oracle samples each quad's center, an
+// cover a footprint twice as wide/tall as the source region). The scene assertion samples each quad's center, an
 // interior point only reachable if the affine term was applied, and an exterior point that must stay
 // background.
 import type { Bitmap } from '@flighthq/sdk';

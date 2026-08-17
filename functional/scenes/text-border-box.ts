@@ -6,11 +6,11 @@
 // BACKEND NOTE: all four RichText renderers (canvas, dom, gl, wgpu) draw the border when data.border is
 // true, so this test runs on all backends. The stroke geometry differs slightly per backend — canvas/gl/
 // wgpu use a 1px strokeRect centered on the box path; dom uses a CSS `1px solid` border on the inside edge
-// — so the oracle scans a small BAND straddling the top edge rather than a single exact scanline, and uses
+// — so the scene assertion scans a small BAND straddling the top edge rather than a single exact scanline, and uses
 // a lenient color test (a thin anti-aliased stroke blends toward black). Background fill is left OFF so the
 // border color is the only non-black thing along the edge.
 //
-// Oracle (band scan + gap/exterior checks): autoSize is 'none', so the box is exactly FIELD_X..FIELD_X+
+// Scene assertion (band scan + gap/exterior checks): autoSize is 'none', so the box is exactly FIELD_X..FIELD_X+
 // FIELD_W by FIELD_Y..FIELD_Y+FIELD_H. We scan a few-px band around the TOP edge (y = FIELD_Y) across the
 // field width and require a meaningful count of border-colored pixels — the top stroke. We then assert the
 // INTERIOR (a glyph-free point well inside the box) and the EXTERIOR (a point well outside) are NOT the

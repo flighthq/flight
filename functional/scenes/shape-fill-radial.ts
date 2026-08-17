@@ -4,7 +4,7 @@
 // pushed toward one side (focalPointRatio 0.7).
 //
 // This is visual: it depends on the radial gradient-to-geometry mapping and per-pixel interpolation
-// that only a real rasterizer produces. The oracle proves (1) circle A is radially symmetric — the
+// that only a real rasterizer produces. The scene assertion proves (1) circle A is radially symmetric — the
 // four cardinal samples at half-radius have ~equal luma — and (2) circle B is asymmetric — the focal
 // shift makes one side measurably brighter, so the same four samples are NOT all equal.
 import type { Bitmap } from '@flighthq/sdk';

@@ -66,7 +66,7 @@ export const height = 600;
 registerWgpuFunctionalTarget(state, scale);
 
 // Specular is black and shininess minimal so sampled luminance tracks the diffuse term monotonically —
-// the oracle compares an ORDER, which only survives if a highlight cannot outrank the Lambert result.
+// the scene assertion compares an ORDER, which only survives if a highlight cannot outrank the Lambert result.
 const material = createBlinnPhongMaterial({ diffuse: 0xc8ccd4ff, shininess: 1, specular: 0x000000ff });
 const scene = createScene3D().root;
 
@@ -118,7 +118,7 @@ mesh.skin = { skeleton };
 addNodeChild(scene, mesh);
 
 // Orthographic so a world x maps to a pixel column by a fixed ratio, with no perspective term to
-// re-derive in the oracle. halfWidth/halfHeight hold the 4:3 canvas aspect.
+// re-derive in the scene assertion. halfWidth/halfHeight hold the 4:3 canvas aspect.
 const halfWidth = 3.2;
 const halfHeight = 2.4;
 const camera = createCamera3D({
@@ -129,7 +129,7 @@ const camera = createCamera3D({
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 6), createVector3(0, 0, 0), createVector3(0, 1, 0));
 
 // The sun travels toward -x/-z, so the direction TOWARD the light is (+0.707, 0, +0.707) — the vector
-// the oracle dots its CPU-predicted normals against.
+// the scene assertion dots its CPU-predicted normals against.
 const lightTravel = createVector3(-Math.SQRT1_2, 0, -Math.SQRT1_2);
 const lights = {
   ambient: createAmbientLight({ color: 0x404858ff, intensity: 0.1 }),

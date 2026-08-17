@@ -3,7 +3,7 @@
 // This scene builds a smooth closed blob from Bézier curves: a circle approximated by four cubic
 // segments (appendShapeCubicCurveTo), then dimpled at the top with a quadratic segment
 // (appendShapeCurveTo) so both curve commands are exercised. It is filled with a solid color. The
-// oracle proves the curved outline encloses a filled interior: the center samples the fill color,
+// scene assertion proves the curved outline encloses a filled interior: the center samples the fill color,
 // while a canvas corner well outside the blob stays background. This is visual — it depends on curve
 // flattening and scan-fill of a non-rectangular region, which jsdom cannot rasterize.
 import type { Bitmap } from '@flighthq/sdk';

@@ -5,7 +5,7 @@
 // Clipping is a core compositional primitive (the substrate of scroll rects and viewports) and is the kind
 // of thing only a pixel render can prove: jsdom cannot show that geometry outside the clip window is gone.
 // The scene draws one 400x400 orange rectangle and clips it to a 160x160 window inset from the shape's
-// top-left. The oracle proves (1) a point inside both the shape and the clip window is the shape color;
+// top-left. The scene assertion proves (1) a point inside both the shape and the clip window is the shape color;
 // (2) a point inside the SHAPE but OUTSIDE the clip window is background — i.e. clipped away, not painted;
 // (3) a point outside both is background.
 import type { Bitmap } from '@flighthq/sdk';

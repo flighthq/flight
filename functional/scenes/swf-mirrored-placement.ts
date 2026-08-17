@@ -9,7 +9,7 @@
 // both negate X, so a left/right feature cannot tell them apart — only the Y behaviour separates them.
 // A SWF shape is drawn from its own origin, so a plain square already sits entirely below-and-right of
 // the point its matrix places, and that is enough: under the correct mirror the square hangs BELOW the
-// placement row, under the defect it hangs ABOVE it. The oracle samples both sides, so it fails in
+// placement row, under the defect it hangs ABOVE it. The scene assertion samples both sides, so it fails in
 // either direction rather than merely proving the square is somewhere.
 //
 // SCOPE, STATED NARROWLY: one mirrored PlaceObject2 matrix against an unmirrored control, on solid
@@ -17,8 +17,8 @@
 // bitmaps and text. Read a pass as "a mirrored placement survives import and renders mirrored," never
 // as "SWF transforms are covered."
 //
-// The oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
-// returns after checking the target element has children, before any oracle runs (functionalVerify.ts).
+// The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
+// returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 import type { Bitmap, MovieClip } from '@flighthq/sdk';
 import { createScene2DFromSwf, getBitmapPixelRgb, getNodeChildren, MovieClipKind, ShapeKind } from '@flighthq/sdk';
 import { createFunctionalTarget } from '@ft/render';

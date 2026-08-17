@@ -32,7 +32,7 @@ import {
 
 // A large 80×60 architectural ground and three 12-unit occluders exercise an explicit tight
 // light-space shadow fit. A top-down camera and angled sun separate each occluder from its cast
-// shadow, giving the oracle stable lit/shadow regions at scene scale.
+// shadow, giving the scene assertion stable lit/shadow regions at scene scale.
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

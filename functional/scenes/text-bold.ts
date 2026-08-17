@@ -4,7 +4,7 @@
 // the regular word over an equal-area box.
 //
 // Font weight is a render concern (heavier strokes) that jsdom cannot exercise — only a real glyph render
-// produces the extra coverage. The oracle is FUZZY about exact glyph positions: the two words are placed
+// produces the extra coverage. The scene assertion is FUZZY about exact glyph positions: the two words are placed
 // at known, non-overlapping x ranges, so a box can be drawn around each. It COUNTS ink (non-background)
 // pixels in the bold box and in the regular box and asserts the bold box has at least 15% more ink. No
 // exact glyph pixel is asserted; only the relative coverage of the two boxes matters.

@@ -1,11 +1,11 @@
 // DOM variant of text-strikethrough. The scene is intentionally identical to the shared
-// Canvas/WebGL/WebGPU target; only its oracle differs. Native CSS font metrics put DOM's line-through below
+// Canvas/WebGL/WebGPU target; only its scene assertion differs. Native CSS font metrics put DOM's line-through below
 // the tighter raster-backend band, so DOM keeps the wider band that its captured render has demonstrated it
 // needs.
 //
 // This looseness is deliberate and isolated. The bottom edge reaches the estimated baseline, so a decoration
 // incorrectly drawn at the baseline could satisfy the continuity check. That risk belongs only to DOM's
-// native-metrics oracle; it is not a reason to weaken the three raster backends whose strike stays well clear
+// native-metrics scene assertion; it is not a reason to weaken the three raster backends whose strike stays well clear
 // of the baseline.
 import type { Bitmap } from '@flighthq/sdk';
 import {

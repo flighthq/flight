@@ -4,7 +4,7 @@
 //
 // Text rendering is a distinct pipeline from shapes (glyph layout + per-glyph raster) and is inherently
 // visual — jsdom cannot measure or paint glyphs, so only a real render proves the field draws. Glyph
-// positions depend on font metrics, so the oracle is deliberately FUZZY: it scans the field's bounding
+// positions depend on font metrics, so the scene assertion is deliberately FUZZY: it scans the field's bounding
 // region and asserts that several pixels land near the text color (text was drawn), and that a region
 // well outside the field has none (the field did not flood the screen).
 import type { Bitmap } from '@flighthq/sdk';

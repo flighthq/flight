@@ -3,7 +3,7 @@
 // overlapping region is empty.
 //
 // Two 100x100 rectangles overlap in a 50x50 region. XOR keeps only the parts exclusive to each
-// input. The oracle verifies:
+// input. The scene assertion verifies:
 //   - a point exclusive to rect A (75,75) is filled (cyan),
 //   - a point exclusive to rect B (175,175) is filled (cyan),
 //   - the overlapping center (125,125) is background (XOR removes the intersection),

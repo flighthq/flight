@@ -3,7 +3,7 @@
 // separate horizontal bands stacked vertically.
 //
 // Wrapping is a layout decision (where line breaks fall given a width constraint) that jsdom cannot
-// exercise — only a real glyph render reveals it. The oracle is FUZZY about exact glyph positions: it
+// exercise — only a real glyph render reveals it. The scene assertion is FUZZY about exact glyph positions: it
 // counts text-colored pixels in a band near the FIRST line's baseline area and in a second band well
 // BELOW it. Hits in both bands prove the text occupied two lines, i.e. it wrapped. The vertical gap
 // between the bands is wide enough that a single line of this font size could not span both.

@@ -4,7 +4,7 @@
 // at the field's left edge.
 //
 // Alignment is a layout decision (where the text run is placed within the field's width box) that jsdom
-// cannot exercise — only a real glyph render reveals where the ink lands. The oracle is FUZZY about exact
+// cannot exercise — only a real glyph render reveals where the ink lands. The scene assertion is FUZZY about exact
 // glyph positions: it scans each field for the rightmost and leftmost ink (text-colored) columns and
 // counts ink in the left third. For the right-aligned field it asserts the rightmost ink is near the
 // field's right edge AND the left third is empty (background). For the control it asserts ink starts at

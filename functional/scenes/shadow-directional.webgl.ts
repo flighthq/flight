@@ -84,7 +84,7 @@ export function render(
 // recipe is two passes (render.webgl.ts): drawGlScene3DShadowMap renders scene depth from the light into a
 // shadow map, then drawGlScene3D's lit shaders PCF-sample it so the plane under the sphere is darkened.
 //
-// The oracle samples the ground in the foreground (lit) and the ground directly under the sphere
+// The scene assertion samples the ground in the foreground (lit) and the ground directly under the sphere
 // (shadowed) and asserts the under-sphere ground is clearly darker — the signature of a real shadow (an
 // unshadowed scene would light the whole plane uniformly). The WebGPU twin exercises the same recipe.
 //

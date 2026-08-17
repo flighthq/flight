@@ -2,7 +2,7 @@
 //
 // Draws a filled red quarter-circle arc (0 to PI/2) centered at (150,150) with radius 100.
 // The arc is drawn as a pie slice by beginning at the center, arcing, then ending the fill.
-// The oracle verifies:
+// The scene assertion verifies:
 //   - the center of the arc (where the pie meets) is red,
 //   - a point along the arc's sweep (inside the filled region) is red,
 //   - a point outside the arc sweep (in the opposite quadrant) is background black.

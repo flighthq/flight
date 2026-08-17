@@ -4,7 +4,7 @@ import { getRenderProxy2D } from '@flighthq/render/contract';
 // a linear gradient, a stroke, static text, a lossless bitmap fill, and a parent placement colour
 // transform inherited by a nested bitmap-filled shape. Frame 2 moves the solid shape.
 //
-// The font pair is a deliberately disagreeing oracle. DefineFont stores a 512-unit square on a 1024-unit
+// The font pair deliberately disagrees in source units to drive the scene assertion. DefineFont stores a 512-unit
 // EM grid; DefineFont3 stores the same square as 10240 units on its twenty-times-finer grid. Both text
 // records author the same height, so their rendered extents must match. A wrong SWF EM-square conversion
 // makes the modern glyph twenty times too large instead of merely leaving a non-blank frame.

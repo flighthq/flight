@@ -2,7 +2,7 @@
 // color at full thickness, and an unfilled stroked rectangle draws its outline only (hollow interior).
 //
 // Strokes are a core Shape pipeline path with NO prior functional coverage. The scene draws two stroked
-// shapes on an opaque background; the oracle proves (1) the thick line is its color at the centerline and
+// shapes on an opaque background; the scene assertion proves (1) the thick line is its color at the centerline and
 // background a thickness away — i.e. the stroke has real width — and (2) the rectangle's edge is its
 // color while its interior is background — i.e. lineStyle strokes the outline without filling it.
 import type { Bitmap } from '@flighthq/sdk';

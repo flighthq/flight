@@ -6,7 +6,7 @@
 // test exercises is Flight's pipeline: the frame source is a canvas painted with two known halves (red |
 // blue) and given the videoWidth/videoHeight/readyState a video element exposes, so every backend uploads
 // and draws a deterministic, known frame. (This mirrors how video.test.ts stands in a fake element.) The
-// oracle samples each half — a renderer that ignored the source, mis-sized it, or skipped the frame fails.
+// scene assertion samples each half — a renderer that ignored the source, mis-sized it, or skipped the frame fails.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
