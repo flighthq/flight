@@ -899,7 +899,7 @@ const target = await createFunctionalTarget({
   background: document.backgroundColor ?? BACKGROUND,
   kinds: [RichTextKind, ShapeKind, SpriteKind],
   expectedImageDescription:
-    'An 800x600 field on a very dark navy background — not pure black — carrying seven separate pieces. A ' +
+    'An 800x600 field on a very dark navy background — not pure black — carrying TEN separate pieces. A ' +
     'red 80x80 square sits at the TOP RIGHT, x 680-760, y 50-130, and the matching spot at the top left, ' +
     'x 40-120, is empty background: the square has moved there, and finding it on the left instead is a ' +
     'failure. Below it a 220x100 rectangle at x 60-280, y 170-270 is GRADED horizontally from red at its ' +
@@ -911,7 +911,11 @@ const target = await createFunctionalTarget({
     'a pixel or two, roughly 100 px tall — one glyph twenty times the other is the defect this pair ' +
     'exists to catch. Lower left, x 40-120, y 400-480, is a semi-transparent bitmap whose colour is ' +
     'tinted by the background it sits on rather than darkened twice. Below that, near x 40, y 520, an ' +
-    'orange bitmap draws, and a block of red edit text sits within x 300-560, y 500-570.',
+    'orange bitmap draws, and a block of red edit text sits within x 300-560, y 500-570. Finally a ' +
+    '100x100 nested square sits at x 600-700, y 400-500, filled from a bitmap and inheriting a colour ' +
+    'transform from the placement above it. Its FILL COLOUR IS DELIBERATELY LEFT UNSTATED HERE: it ' +
+    'differs by renderer, and whether that difference should be written as a bounded claim is an open ' +
+    'ruling. Its position, size and presence are the claim — an empty patch there is a failure.',
 });
 if (target.kind === 'webgl') registerGlColorAdjustmentMaterialFeature(target.state);
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);

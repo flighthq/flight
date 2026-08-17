@@ -41,8 +41,9 @@ const { render, width } = await createFunctionalTarget({
     'An 800x600 opaque black field with one hollow light-blue rectangle outline, 400x240, spanning ' +
     'x 200-600 and y 180-420. The outline is thin and follows all four edges; the inside of the ' +
     'rectangle is NOT filled — a point in its middle, near x 400, y 300, is pure black, not light blue. ' +
-    'That emptiness is what separates a border from a background fill. Small text sits inside the box ' +
-    'near its upper left at about 40 px. Outside the rectangle the field is pure black, and no part of ' +
+    'That emptiness is what separates a border from a background fill. There is NO TEXT anywhere in the ' +
+    'box — the field is deliberately empty, so any glyph ink inside the outline is a failure. Outside ' +
+    'the rectangle the field is pure black, and no part of ' +
     'the outline is graded or blurred into the background.',
 });
 
