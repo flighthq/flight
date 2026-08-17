@@ -23,10 +23,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './oracle-pack';
-import { getOracleRequestCells, readOracleLock, readOracleRequest } from './oracle-records';
+import { getOracleLockImages, getOracleRequestCells, readOracleLock, readOracleRequest } from './oracle-records';
 import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './oracle-state';
 import type { OracleCellInput, OracleRequestRecord } from './oracle-state';
-import { readPackManifest, verifyOracleCaptures } from './oracle-verify';
+import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './oracle-verify';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -145,6 +145,14 @@ async function check(): Promise<void> {
       console.error('oracle-check: run `npm run oracle:fetch` first, or the extracted pack is damaged');
       process.exit(1);
     }
+    const identityProblems = verifyOracleLockImages(lock.packs[pack]!.images, manifest.images);
+    if (identityProblems.length > 0) {
+      for (const problem of identityProblems) {
+        console.error(`  ${problem.kind}: ${problem.identity} — ${problem.detail}`);
+      }
+      console.error(`oracle-check: ${pack} does not carry the exact images named by the lock`);
+      process.exit(1);
+    }
     const verified = verifyOracleCaptures(packRoot, manifest.images, artifactsRoot);
     cells.push(...verified.cells);
     for (const problem of verified.problems) problems.push(`${problem.kind}: ${problem.identity} — ${problem.detail}`);
@@ -223,20 +231,9 @@ function readRequiredIdentities(): Set<string> {
   return required;
 }
 
-/** The cells the extracted packs supply bytes for, as `subject/entry/renderer`. */
+/** The cells the committed lock says its verified packs supply, as `subject/entry/renderer`. */
 function readPinnedIdentities(): string[] {
-  const identities: string[] = [];
-  for (const pack of Object.keys(lock.packs)) {
-    const manifest = readPackManifest(join(packsRoot, pack, 'pack-manifest.json'));
-    if ('problem' in manifest) {
-      console.error(`oracle-check: ${pack}: ${manifest.problem}`);
-      process.exit(1);
-    }
-    for (const image of manifest.images) {
-      identities.push(image.path.replace(/^images\//, '').replace(/\.png$/, ''));
-    }
-  }
-  return identities;
+  return [...getOracleLockImages(lock).keys()];
 }
 
 /**

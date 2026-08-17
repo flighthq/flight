@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
-import { comparePixels, readPackManifest, verifyOracleCaptures } from './oracle-verify';
+import { comparePixels, readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './oracle-verify';
 
 // ★ EACH CASE ASSERTS A DIFFERENT CAUSE PRODUCES A DIFFERENT NAME. The whole value of this layer is that
 // a corrupt pack, an absent capture, an undecodable file and a genuine render change do not collapse into
@@ -150,6 +150,30 @@ describe('verifyOracleCaptures', () => {
     expect(result.problems.map((p) => p.kind)).toEqual(['dimensions']);
     expect(result.cells[0]?.comparison?.dimensionMismatch).toBe(true);
     expect(result.problems[0]?.detail).toContain('2x2');
+  });
+});
+
+describe('verifyOracleLockImages', () => {
+  it('accepts the same identity and pixel hash at both ends of the verified pack link', () => {
+    expect(
+      verifyOracleLockImages({ 'functional/shape-fill-solid/webgl': { pixelSha256: 'b'.repeat(64) } }, [image()]),
+    ).toEqual([]);
+  });
+
+  it('reports a changed pixel identity and omissions in both directions', () => {
+    const problems = verifyOracleLockImages(
+      {
+        'functional/absent/webgl': { pixelSha256: 'b'.repeat(64) },
+        'functional/shape-fill-solid/webgl': { pixelSha256: 'c'.repeat(64) },
+      },
+      [image(), { ...image(), path: 'images/functional/unlisted/webgl.png' }],
+    );
+
+    expect(problems.map((problem) => problem.kind)).toEqual([
+      'lock-image-missing',
+      'lock-image-mismatch',
+      'lock-image-unlisted',
+    ]);
   });
 });
 

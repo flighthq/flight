@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import type { OracleRequest } from './oracle-records';
-import { getOracleRequestCells, readOracleLock, readOracleRequest } from './oracle-records';
+import { getOracleLockImages, getOracleRequestCells, readOracleLock, readOracleRequest } from './oracle-records';
 
 const COMMIT = 'a'.repeat(40);
 const SHA = 'b'.repeat(64);
@@ -37,6 +37,9 @@ describe('readOracleLock', () => {
     const result = readOracleLock(writeJson({ ...lock() }));
 
     expect('lock' in result && result.lock.packs['functional-shapes']?.sha256).toBe(SHA);
+    expect('lock' in result && getOracleLockImages(result.lock).get('functional/shape-fill-solid/webgl')).toEqual({
+      pixelSha256: SHA,
+    });
   });
 
   it('reports unreadable and unparsable files rather than throwing', () => {
@@ -69,8 +72,51 @@ describe('readOracleLock', () => {
     expect('problems' in result && result.problems[0]?.detail).toContain('packs.functional-shapes.sha256');
   });
 
+  it('rejects a pack with no readable per-image identity set', () => {
+    const missing = readOracleLock(
+      writeJson({ ...lock(), packs: { 'functional-shapes': { file: 'x.tgz', sha256: SHA } } }),
+    );
+    const empty = readOracleLock(
+      writeJson({ ...lock(), packs: { 'functional-shapes': { file: 'x.tgz', images: {}, sha256: SHA } } }),
+    );
+
+    expect('problems' in missing && missing.problems[0]?.detail).toContain('packs.functional-shapes.images');
+    expect('problems' in empty && empty.problems.map((p) => p.kind)).toContain('field-empty');
+  });
+
+  it('rejects a malformed pixel identity and one image named by two packs', () => {
+    const malformed = readOracleLock(
+      writeJson({
+        ...lock(),
+        packs: {
+          'functional-shapes': {
+            file: 'x.tgz',
+            images: { 'functional/shape-fill-solid/webgl': { pixelSha256: 'short' } },
+            sha256: SHA,
+          },
+        },
+      }),
+    );
+    const duplicate = readOracleLock(
+      writeJson({
+        ...lock(),
+        packs: {
+          ...lock().packs,
+          duplicate: {
+            file: 'duplicate.tgz',
+            images: { 'functional/shape-fill-solid/webgl': { pixelSha256: SHA } },
+            sha256: SHA,
+          },
+        },
+      }),
+    );
+
+    expect('problems' in malformed && malformed.problems.map((p) => p.kind)).toContain('field-type');
+    expect('problems' in duplicate && duplicate.problems.map((p) => p.kind)).toContain('duplicate-image');
+  });
+
   it('rejects a schemaVersion it does not implement', () => {
-    const result = readOracleLock(writeJson({ ...lock(), schemaVersion: 2 }));
+    const result = readOracleLock(writeJson({ ...lock(), schemaVersion: 1 }));
 
     expect('problems' in result && result.problems[0]?.kind).toBe('schema-version');
   });
@@ -119,14 +165,20 @@ describe('readOracleRequest', () => {
   });
 });
 
-function lock(): Record<string, unknown> {
+function lock() {
   return {
     manifestSha256: SHA,
     oracleCommit: COMMIT,
-    packs: { 'functional-shapes': { file: 'functional-shapes-v1.tgz', sha256: SHA } },
+    packs: {
+      'functional-shapes': {
+        file: 'functional-shapes-v1.tgz',
+        images: { 'functional/shape-fill-solid/webgl': { pixelSha256: SHA } },
+        sha256: SHA,
+      },
+    },
     releaseTag: 'v1',
     repository: 'flighthq/flight-oracles',
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
