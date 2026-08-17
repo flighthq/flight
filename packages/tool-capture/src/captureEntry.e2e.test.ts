@@ -1,4 +1,4 @@
-// The entry-side half of the reference-image-invocation record. functionalVerify owns SETTING it (two-armed
+// The entry-side half of the oracle-invocation record. functionalVerify owns SETTING it (two-armed
 // there: invoked vs absent); this file owns CARRYING it into status.json, and specifically on the
 // path where the oracle threw. That path is the whole point of the field — an oracle that ran and
 // rejected the frame is the case an agent most needs to distinguish from one that never ran — and it
@@ -39,7 +39,7 @@ const ORACLE_ERROR = '[scene/canvas] no wide continuous ink run found — the st
 const READBACK_ERROR = '[verify:canvas] blank render: no readable render bitmap';
 
 const pages: Record<string, string> = {
-  '/reference-image-rejected': verificationPage('asserting', 'invoked', ORACLE_ERROR),
+  '/oracle-rejected': verificationPage('asserting', 'invoked', ORACLE_ERROR),
   '/failed-before-asserting': verificationPage('readingBack', null, READBACK_ERROR),
 };
 
@@ -95,7 +95,7 @@ describe('captureEntry browser contract', () => {
   });
 
   it('records the oracle as invoked when the oracle itself rejected the frame', async () => {
-    const status = await captureStatus('reference-image-rejected');
+    const status = await captureStatus('oracle-rejected');
     expect(status.state).toBe('error');
     expect(status.error).toContain('no wide continuous ink run');
     // The defect this pins: the error status used to hardcode null here, so a target whose oracle ran
