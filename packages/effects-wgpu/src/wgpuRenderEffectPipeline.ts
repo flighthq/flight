@@ -76,12 +76,14 @@ export function createWgpuRenderEffectPipeline(
   _state: WgpuRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): WgpuRenderEffectPipeline {
-  const sampleCount = Math.max(1, Math.ceil(options.sampleCount ?? 1));
-  if (sampleCount > 1) {
-    throw new Error(
-      `createWgpuRenderEffectPipeline: sampleCount ${sampleCount} is unsupported; WebGPU effect targets are single-sample`,
-    );
-  }
+  // WebGPU effect targets are single-sample: a requested sampleCount above 1 cannot be honoured here and
+  // is normalised away. This ACCEPTS rather than rejects, deliberately. An earlier revision threw, which
+  // was authorised by a ruling that omitted the caller-migration constraint — 102 live call sites pass
+  // sampleCount 4, all at module scope, so the throw made those scene modules unloadable. Rejecting an
+  // argument a live population passes is a breaking change wearing the clothes of strictness; the fault in
+  // accept-and-drop was that it is SILENT, not that it is permissive. Do not restore the throw until
+  // sampleCount is genuinely forwarded or every caller has been migrated. The caller-facing warning
+  // belongs in a separately-importable guard module per the diagnostics inversion, not inline here.
   return {
     options: { ...options },
     sceneTarget: null,
