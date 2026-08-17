@@ -5,6 +5,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
+  bakeColorLut,
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
   getBitmapPixelRgb,
@@ -24,10 +25,21 @@ import {
 } from '@flighthq/sdk';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column for the same full-frame lutGrade grade as render.webgl.ts: applies a 32^3 lookup-table grade at full strength.
-// Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline
-// runs between renderWgpuBackground (opens the encoder + canvas pass) and submitWgpuRenderPass
-// (flushes it), grading the rgba8 scene target.
+// Wgpu parity column for the same full-frame lutGrade grade as render.webgl.ts: applies a baked 32^3
+// warm-tone LUT at full strength. The grade lifts reds (γ=0.8), slightly compresses greens (γ=1.1),
+// and crushes blues (γ=1.5). Wgpu render-state init is async (createWgpuRenderState returns a Promise).
+// The effect pipeline runs between renderWgpuBackground (opens the encoder + canvas pass) and
+// submitWgpuRenderPass (flushes it), grading the rgba8 scene target.
+const warmGradeLut = bakeColorLut(
+  [
+    (out, r, g, b) => {
+      out[0] = r ** 0.8;
+      out[1] = g ** 1.1;
+      out[2] = b ** 1.5;
+    },
+  ],
+  32,
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -47,7 +59,7 @@ export function render(root: Node2D): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ strength: 1 })]);
+  endWgpuRenderEffectPipeline(state, pipeline, [createLookupTableGradeAdjustment({ lut: warmGradeLut, strength: 1 })]);
   submitWgpuRenderPass(state);
 }
 
@@ -83,9 +95,9 @@ for (let i = 0; i < colors.length; i++) {
 render(root);
 
 // ORACLE-BLOCK
-// LUT color grading remaps every pixel through a lookup table at strength 1. Cell 0 (red,
-// 0xff3030ff, R=255, G=48, B=48) should have at least one channel differ by >= 15 from its original
-// value. Without the effect, all channels match the input and the maximum change is 0.
+// The warm-tone LUT crushes blues (γ=1.5): cell 0 (red, 0xff3030ff, R=255, G=48, B=48) has B=48
+// input → B≈21 graded (pow(48/255, 1.5)·255 ≈ 21). Without the LUT, B stays at 48. Checking the
+// graded VALUE (B ≤ 35), not just distance from input, so a coincidental perturbation cannot satisfy it.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;
   const rows = 2;
@@ -95,12 +107,11 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   const r = (rgb >> 16) & 0xff;
   const g = (rgb >> 8) & 0xff;
   const b = rgb & 0xff;
-  const maxChange = Math.max(Math.abs(r - 255), Math.abs(g - 48), Math.abs(b - 48));
 
-  if (maxChange < 15) {
+  if (b > 35) {
     throw new Error(
-      `[effect-lut-grade] red cell rgb(${r},${g},${b}) is within 15 of original (255,48,48) — ` +
-        `LUT grading not applied`,
+      `[effect-lut-grade] red cell blue channel is ${b} (expected ≤35 after γ=1.5 blue crush; ` +
+        `ungraded would be 48) — LUT grading not applied; rgb(${r},${g},${b})`,
     );
   }
 }
