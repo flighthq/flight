@@ -20,6 +20,8 @@ import { fileURLToPath } from 'node:url';
 
 export interface SceneBackgroundClaim {
   scene: string;
+  /** The field is present but its text could not be read — reported, never skipped. */
+  unparsed?: boolean;
   /** The packed RGBA the scene actually renders on, or `null` if none could be resolved. */
   background: number | null;
   /** What the description says the field is, or `null` where it makes no field-colour claim. */
@@ -160,8 +162,15 @@ export function readSceneBackgroundClaims(sceneDirectory: string): SceneBackgrou
     .filter((name) => name.endsWith('.ts'))
     .sort()) {
     const source = readFileSync(join(sceneDirectory, file), 'utf8');
+    if (!source.includes('expectedImageDescription')) continue;
     const description = readDescription(source);
-    if (description === null) continue;
+    // ★ PRESENT BUT UNREADABLE IS REPORTED, NEVER SKIPPED. Dropping it would shrink the report's
+    // population to the scenes the parser happened to cope with, and a sweep over a set it never covered
+    // still prints as clean. The count must equal the number of scenes carrying the field.
+    if (description === null) {
+      claims.push({ actual: null, background: null, claimed: null, scene: file.slice(0, -3), unparsed: true });
+      continue;
+    }
     const background = readBackground(source);
     claims.push({
       actual: background === null ? null : getBackgroundTone(background),
@@ -185,6 +194,7 @@ export function readSceneBackgroundClaims(sceneDirectory: string): SceneBackgrou
 export function classifyBackgroundClaim(
   claim: Readonly<SceneBackgroundClaim>,
 ): 'unverifiable' | 'no-claim' | 'contradicts' | 'agrees' {
+  if (claim.unparsed === true) return 'unverifiable';
   if (claim.background === null || claim.actual === 'other') return 'unverifiable';
   if (claim.claimed === null) return 'no-claim';
   return claim.claimed === claim.actual ? 'agrees' : 'contradicts';
@@ -209,7 +219,9 @@ export function formatBackgroundClaimReport(claims: readonly Readonly<SceneBackg
   // scene needs a human, not a green tick.
   for (const claim of unverifiable) {
     lines.push(
-      `  UNVERIFIABLE ${claim.scene}: background ${claim.background === null ? 'not resolved' : `${hex(claim.background)} is outside the named tones`}`,
+      claim.unparsed === true
+        ? `  UNVERIFIABLE ${claim.scene}: the description is present but could not be parsed`
+        : `  UNVERIFIABLE ${claim.scene}: background ${claim.background === null ? 'not resolved' : `${hex(claim.background)} is outside the named tones`}`,
     );
   }
   for (const claim of silent) lines.push(`  NO CLAIM     ${claim.scene}: the description names no field colour`);
@@ -227,10 +239,19 @@ export function formatBackgroundClaimReport(claims: readonly Readonly<SceneBackg
   return lines.join('\n');
 }
 
+/**
+ * The description text, however its segments are quoted.
+ *
+ * ★ IT MUST ACCEPT DOUBLE QUOTES, AND THE COST OF NOT DOING SO WAS INVISIBLE. A segment switches to
+ * double quotes the moment its sentence contains an apostrophe — "the square's bottom-right" — and the
+ * single-quote-only reader failed to match the WHOLE description, so five scenes were skipped entirely
+ * and the report announced a population of 105 out of 110 as though 105 were the population. A hole in a
+ * swept set never reports itself; it returns a smaller number that looks like an answer.
+ */
 function readDescription(source: string): string | null {
-  const match = /expectedImageDescription:\s*\n((?:\s*'.*?' \+\n)*\s*'.*?',)/.exec(source);
+  const match = /expectedImageDescription:\s*\n((?:\s*(?:'.*?'|".*?") \+\n)*\s*(?:'.*?'|".*?"),)/.exec(source);
   if (match === null) return null;
-  return [...match[1]!.matchAll(/'(.*?)'/g)].map((m) => m[1]).join(' ');
+  return [...match[1]!.matchAll(/'(.*?)'|"(.*?)"/g)].map((m) => m[1] ?? m[2]).join(' ');
 }
 
 /**
