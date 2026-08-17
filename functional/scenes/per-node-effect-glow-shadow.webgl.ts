@@ -49,8 +49,12 @@ const target = await createFunctionalTarget({
   kinds: [ShapeKind, SpriteKind],
   expectedImageDescription:
     'An 800x600 field on a very dark blue-black background with one dark purple backing panel spanning ' +
-    'x 125-645, y 190-410, and two bright cyan blocks of about 70x60 sitting on it, one near x 185 and ' +
-    'one near x 475, both around y 250. Each cyan block is surrounded differently, and the asymmetry is ' +
+    'x 125-645, y 190-410, and two bright cyan blocks of 70x60 sitting on it. Their positions are set ' +
+    'by the blur padding around each result, not by the result origins: the left block spans ' +
+    'x 209-279, y 274-334 (origin 185,250 plus 24 px of three-sigma padding on every side from an ' +
+    '8 px blur), and the right block spans x 487-557, y 262-322 (origin 475,250 plus 12 px from a ' +
+    '4 px blur, with its right padding widened to 30 by an 18 px shadow offset). Each cyan block is ' +
+    'surrounded differently, and the asymmetry is ' +
     'the whole claim. The LEFT block has a pink halo on BOTH sides — a few pixels out from its left edge ' +
     'and a few pixels out from its right edge are both pink, so the glow surrounds it evenly. The RIGHT ' +
     'block instead throws a purple shadow to ONE SIDE ONLY: about a dozen pixels past its right edge is ' +

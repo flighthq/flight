@@ -42,7 +42,10 @@ const { render, width } = await createFunctionalTarget({
   kinds: [SpriteKind],
   expectedImageDescription:
     'An 800x600 opaque black field with exactly two flat 64x64 squares: a red one spanning x 180-244, ' +
-    'y 200-264, and a green one spanning x 520-584, y 360-424. Both are cut from a single shared image ' +
+    'y 200-264, and a green one spanning x 488-552, y 328-392. The two are placed by different ' +
+    'anchors — the red square is positioned by its top-left corner at (180,200), while the green one ' +
+    'is positioned by its CENTRE at (520,360), so it sits half a square up and to the left of that ' +
+    'point. Both are cut from a single shared image ' +
     'whose left half is red and right half is green, and each square shows only its own half — the red ' +
     'square contains no green and the green square no red, with no sliver or seam of the other colour ' +
     'along any edge. Neither square is graded or blended, and everything outside those two footprints, ' +
