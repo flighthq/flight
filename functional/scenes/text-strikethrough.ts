@@ -41,6 +41,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one line of bright cyan text reading Flight at about 72 px, ' +
+    'inside a 560x120 box at x 120-680, y 240-360. A horizontal cyan line runs THROUGH the glyph bodies at ' +
+    'roughly their mid height — crossing the letters, not sitting under them — and it spans the width of ' +
+    'the word rather than the width of the box, so it starts and ends near the first and last glyph. ' +
+    'A picture with the same text and no line through it, or with the line below the letters instead of ' +
+    'across them, is the failure. The line is the same cyan as the text, there is no box or border around ' +
+    'the field, and the rest of the canvas is pure black.',
 });
 
 const root = createDisplayObject();

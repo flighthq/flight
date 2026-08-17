@@ -44,6 +44,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff,
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with one solid mid-blue rectangle, 400x240, spanning x 200-600 and ' +
+    'y 180-420, filled corner to corner in a single flat tone. Short white bold text reading BG sits on ' +
+    'top of it near the upper left of that rectangle, at about 40 px. The fill is the claim: it covers ' +
+    'the whole box, not just a strip behind the glyphs, so a point far from the text — near x 550, y 390 ' +
+    '— is blue rather than black. The blue is flat with no gradient and does not extend past the box ' +
+    'edges; outside x 200-600, y 180-420 the field is pure black, and there is no outline drawn around ' +
+    'the rectangle.',
 });
 
 const root = createDisplayObject();

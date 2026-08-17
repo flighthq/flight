@@ -63,6 +63,14 @@ const { render } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x400 opaque black field with two lines of text at about 44 px, both starting at x 40: an upper ' +
+    'line near y 60-124 and a lower one near y 220-284. The upper line is TWO-COLOURED in one continuous ' +
+    'run of letters — its first half, reading PLAIN, is light blue, and its second half, reading TAGGED, ' +
+    'is orange, with the colour changing at the boundary between the two words and nowhere else. The ' +
+    'lower line, reading UNTAGGED, is entirely light blue with no orange anywhere in it. Both colours ' +
+    'present but confined to their own runs is the claim: a single-coloured upper line, or orange ' +
+    'leaking into the lower line, is the failure. No box, border or underline anywhere.',
 });
 
 const root = createDisplayObject();

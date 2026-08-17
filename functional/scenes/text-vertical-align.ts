@@ -37,6 +37,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field with the same short amber word, FLIGHT, at about 44 px, drawn three ' +
+    'times in three 600x150 boxes that all start at x 100: y 30-180, y 220-370 and y 410-560. The word is ' +
+    'far shorter than each box is tall, so every box has vertical slack, and WHERE THE WORD SITS IN THAT ' +
+    'SLACK is the whole picture. In the first box it hugs the top edge; in the second it sits around the ' +
+    'vertical middle, with roughly equal empty space above and below; in the third it drops to the bottom ' +
+    'edge. Three words at the same height within their boxes is the failure. All three are the same amber ' +
+    'on pure black, at the same size, with no box, border or underline.',
 });
 
 const root = createDisplayObject();

@@ -35,6 +35,14 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
+  expectedImageDescription:
+    'An 800x600 opaque black field showing the same short word, FLIGHT, twice in bright green at about ' +
+    '64 px, in two 480-wide boxes that both start at x 160 — the first at y 120-230, the second at ' +
+    'y 320-430. The words sit on OPPOSITE sides of their boxes. The upper one is pushed right: its last ' +
+    'glyph ends near x 640 and the wide empty gap is to its LEFT. The lower one is the control at the ' +
+    'left edge: it begins near x 160 and its gap is to its RIGHT. Both words flush to the same side is ' +
+    'the failure this is watching for. Both are green on pure black with no box, border or underline, and ' +
+    'neither wraps to a second line.',
 });
 
 const root = createDisplayObject();
