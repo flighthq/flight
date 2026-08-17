@@ -158,7 +158,7 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Scene assertion: the globe renders lit AND the facing-gated emissive fires on the night side. The sun faces
+// Assertion: the globe renders lit AND the facing-gated emissive fires on the night side. The sun faces
 // the screen-right hemisphere, so a screen-right pixel is the lit day side (base shading, bright) and a
 // screen-left pixel is the night side — dark under lighting alone, but lifted by the AwayFromLight
 // EmissiveModifier's city lights. Both being clearly non-black is the signature that the base shading
