@@ -100,8 +100,12 @@ the comparer now derives both relationships from `provenance.hostInstanceId` and
 `provenance.environmentId` in the statuses it already opens:
 
 ```
-npx tsx ./scripts/oracle-calibrate.ts runs/calibration-host-1 runs/calibration-host-2
+npm run oracle:calibrate -- runs/calibration-host-1 runs/calibration-host-2
 ```
+
+Each root is the directory that CONTAINS `functional/` — an extracted `calibration-host-<n>` artifact,
+not the `functional/` inside it (which compares nothing and says so) and not their shared parent (which
+is one root given twice, and is refused).
 
 Its `identity, as recorded by the captures themselves:` block prints one line per root and then names
 the relationship — `independent-hosts` / `one-host` / `host-identity-missing` /
