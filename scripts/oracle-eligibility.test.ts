@@ -273,6 +273,32 @@ describe('selectCommissionableCells', () => {
     ]);
   });
 
+  it('reports UNEVALUATED independence as its own reason, never as measured-one-host', () => {
+    // ★ THE WHOLE POINT OF THE THIRD STATE. "The captures do not record which machine made them" and "the
+    // captures record one machine" have opposite remedies — wire the producer, versus re-run elsewhere.
+    // Collapsing them lets a reader conclude a measurement was taken that never was, and the earlier
+    // version of this consumer did exactly that by falling back to `one-host`.
+    expect(blockOf(select({ determinismScope: 'host-identity-missing' }))).toEqual([
+      'host-identity-missing',
+      'captures record no host identity, so independence is UNEVALUATED — not measured as one host',
+    ]);
+  });
+
+  it('distinguishes the two states from each other, which is the property that matters', () => {
+    const missing = blockOf(select({ determinismScope: 'host-identity-missing' }))[0];
+    const oneHost = blockOf(select({ determinismScope: 'one-host' }))[0];
+    expect(missing).not.toEqual(oneHost);
+  });
+
+  it('still reports an actionable defect ahead of unevaluated independence', () => {
+    // Ranked like every other all-cells-at-once condition: a cell that ALSO has something someone can fix
+    // must name the fixable thing, or the repair track loses its list behind one global heading.
+    expect(blockOf(select({ capture: { state: 'error' }, determinismScope: 'host-identity-missing' }))).toEqual([
+      'capture-failed',
+      'capture state is error',
+    ]);
+  });
+
   it('withholds a locally-agreeing cell until an independent host has agreed too', () => {
     // ★ STAGE ONE IS NOT STAGE TWO. Repeats on one machine prove that machine reproduces itself. The lock
     // is verified on a DIFFERENT machine at maxChannelDelta 0, and `tests.yml` records SwiftShader pinning

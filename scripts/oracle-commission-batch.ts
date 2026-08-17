@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 import { compareCalibrationRuns } from './oracle-calibrate';
 import type {
+  OracleDeterminismScope,
   OracleCaptureFact,
   OracleDeterminismVerdict,
   OracleParityCheck,
@@ -42,7 +43,7 @@ const repoRoot = join(__dirname, '..');
 
 const [subcommand = 'report', ...rest] = process.argv.slice(2);
 if (subcommand !== 'report' && subcommand !== 'write') {
-  console.error('usage: oracle-commission-batch <report|write> --runs <dir,dir> --hosts <independent-hosts|one-host>');
+  console.error('usage: oracle-commission-batch <report|write> --runs <dir,dir>');
   console.error('       [--subject <name>] [--limit <n>] [--id <request-id>] [--reason <text>] [--frames <n>]');
   console.error('       [--only <entry,entry>] [--verbose]');
   process.exit(2);
@@ -70,18 +71,47 @@ if (runs.length < 2) {
   process.exit(2);
 }
 
-// ★ AND THE CALLER MUST SAY WHERE THE ROOTS CAME FROM, BECAUSE NOTHING HERE CAN FIND OUT. Two runs in one
-// sandbox and two runs on separate machines are indistinguishable from a directory listing, and they
-// answer different questions: one host reproducing itself is necessary for a pixel-exact lock; two
-// independent hosts agreeing is what the lock actually rests on, since the blessing machine and the
-// verifying machine are never the same one. Defaulting this would let the weaker claim pass as the
-// stronger one silently — which is the exact substitution the standing rule forbids.
-const scope = readOption('--hosts');
-if (scope !== 'independent-hosts' && scope !== 'one-host') {
-  console.error('oracle-commission-batch: --hosts must be `independent-hosts` or `one-host`');
-  console.error('  Nothing here can derive it: two runs in one sandbox and two runs on separate machines');
-  console.error('  produce identical input. Only independent hosts can complete the determinism condition.');
-  process.exit(2);
+// ★ THE HOST CLAIM IS DERIVED, NEVER DECLARED. This used to be a `--hosts` flag the caller asserted, and
+// nothing could contradict it: passing `independent-hosts` for two runs from one machine would have made
+// every otherwise-clean cell eligible with no objection raised. A flag that can disagree with the data is a
+// second source that goes stale, so it is gone rather than kept as a cross-check.
+//
+// ★ THE TWO FIELDS HAVE OPPOSITE INVARIANTS AND ARE CHECKED AS A PAIR. `environmentId` must MATCH across
+// roots (it asserts the runs are comparable — it is built from the runner image and tool versions, so it is
+// IDENTICAL across legs by design) and `hostInstanceId` must DIFFER (it asserts they are independent).
+// Reading the environment descriptor as the host identity inverts the rule and rejects every correct
+// two-leg run, which would look exactly like a safety check working.
+const hosts = runs.map((root) => readHostIdentity(root, subject));
+const hostIds = hosts.map((host) => host.hostInstanceId);
+const environmentIds = [...new Set(hosts.map((host) => host.environmentId).filter((id) => id !== null))];
+
+const mixedRoot = hosts.findIndex((host) => host.mixed);
+if (mixedRoot >= 0) {
+  console.error(`oracle-commission-batch: ${runs[mixedRoot]} contains more than one hostInstanceId.`);
+  console.error('  That root is not one host, so no single identity describes it. Refusing.');
+  process.exit(1);
+}
+if (environmentIds.length > 1) {
+  console.error('oracle-commission-batch: the roots report different environmentId values:');
+  for (const host of hosts) console.error(`    ${host.environmentId ?? '(none)'}`);
+  console.error('  These runs are not the same declared environment, so comparing them measures nothing.');
+  process.exit(1);
+}
+
+// ★ ABSENCE IS LOUD AND IS ITS OWN STATE. Falling back to `one-host` here would be safe in the sense that
+// nothing wrong gets commissioned, and wrong in the sense that matters: "the captures do not say which
+// machine made them" and "the captures say one machine" would print the same line, with opposite remedies.
+const scope: OracleDeterminismScope = hostIds.some((id) => id === null)
+  ? 'host-identity-missing'
+  : new Set(hostIds).size === hostIds.length
+    ? 'independent-hosts'
+    : 'one-host';
+
+if (subcommand === 'write' && scope === 'host-identity-missing') {
+  console.error('oracle-commission-batch: the captures carry no provenance.hostInstanceId, so independence');
+  console.error('  could not be evaluated. Refusing to file: this is UNEVALUATED, not measured-as-one-host.');
+  console.error('  Re-capture with a tool-capture that records host identity, then file.');
+  process.exit(1);
 }
 
 const coverage = readCoverage(subject);
@@ -107,7 +137,12 @@ const batch = eligible.slice(0, Math.max(0, limit));
 // exactly what produced a census reporting cells as lacking oracles they had since gained.
 const staleness = findStaleCaptures(captures, currentSceneSourceHash);
 const staleCells = staleness.stale;
-console.log(`subject ${subject} | ${coverage.size} live cell(s) | ${runs.length} run(s) on ${scope}`);
+console.log(`subject ${subject} | ${coverage.size} live cell(s) | ${runs.length} run(s) on ${scope} (derived)`);
+for (const [index, host] of hosts.entries()) {
+  console.log(
+    `  run ${index + 1} host ${host.hostInstanceId ?? 'UNRECORDED'} env ${host.environmentId ?? 'UNRECORDED'}`,
+  );
+}
 console.log(`sourceCommit ${headCommit()}`);
 console.log(
   staleness.compared === 0
@@ -221,6 +256,45 @@ function readCoverage(name: string): Map<string, readonly string[]> {
 }
 
 /** The capture facts of one run root, for the cells of one subject. */
+/**
+ * The host identity a whole capture root was produced on, from `provenance.hostInstanceId`.
+ *
+ * Reads EVERY status file rather than sampling one: a root whose files disagree is not one host, and a
+ * sampled read would pick an arbitrary winner and report a clean identity for an incoherent root.
+ */
+function readHostIdentity(
+  root: string,
+  name: string,
+): { hostInstanceId: string | null; environmentId: string | null; mixed: boolean; seen: number } {
+  const hostIds = new Set<string>();
+  const environmentIds = new Set<string>();
+  let seen = 0;
+  const subjectRoot = join(root, name);
+  if (existsSync(subjectRoot)) {
+    for (const entry of directories(subjectRoot)) {
+      for (const renderer of directories(join(subjectRoot, entry))) {
+        const path = join(subjectRoot, entry, renderer, 'status.json');
+        if (!existsSync(path)) continue;
+        seen += 1;
+        try {
+          const status = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+          const provenance = (status['provenance'] ?? {}) as Record<string, unknown>;
+          if (typeof provenance['hostInstanceId'] === 'string') hostIds.add(provenance['hostInstanceId']);
+          if (typeof provenance['environmentId'] === 'string') environmentIds.add(provenance['environmentId']);
+        } catch {
+          // An unreadable status contributes no identity; it is already counted as a capture fact failure.
+        }
+      }
+    }
+  }
+  return {
+    environmentId: environmentIds.size === 1 ? [...environmentIds][0]! : null,
+    hostInstanceId: hostIds.size === 1 ? [...hostIds][0]! : null,
+    mixed: hostIds.size > 1,
+    seen,
+  };
+}
+
 function readCaptureFacts(root: string, name: string): OracleCaptureFact[] {
   const facts: OracleCaptureFact[] = [];
   const subjectRoot = join(root, name);

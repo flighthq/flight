@@ -48,7 +48,15 @@ export interface OracleCaptureFact {
 export type OracleDeterminismVerdict = 'agreed' | 'disagreed' | 'incomplete';
 
 /** Whether the compared capture roots came from separate machines or repeats on one. */
-export type OracleDeterminismScope = 'independent-hosts' | 'one-host';
+/**
+ * How the capture roots relate, DERIVED from recorded host identity — never declared by the caller.
+ *
+ * ★ `host-identity-missing` is a THIRD state and not a synonym for `one-host`. "The captures do not record
+ * which machine made them" and "the captures record one machine" are opposite conditions with opposite
+ * remedies — wire the producer, versus re-run on a second host — and collapsing them into one bucket is
+ * how a reader concludes a measurement was taken that never was.
+ */
+export type OracleDeterminismScope = 'independent-hosts' | 'one-host' | 'host-identity-missing';
 
 export interface OracleEligibilityInput {
   captures: readonly OracleCaptureFact[];
@@ -80,6 +88,8 @@ export interface OracleEligibilityInput {
  * the first, so the report names the condition that must be fixed FIRST rather than the last one checked.
  */
 export type OracleBlockReason =
+  /** The captures carry no host identity, so independence could not be evaluated at all. */
+  | 'host-identity-missing'
   /** The capture errored. Its scene oracle may not even have run, so nothing was verified. */
   | 'capture-failed'
   /** A sibling backend of the same scene failed, so the scene is under repair and this column with it. */
@@ -287,6 +297,16 @@ export function selectCommissionableCells(input: Readonly<OracleEligibilityInput
     // only a cross-host workflow run can supply, and it is true of every cell at once. Checked earlier it
     // swallowed all 445 otherwise-clean cells under one heading and the repair track lost its list; a
     // cell that ALSO lacks an oracle should report the oracle, which is the thing anyone can act on.
+    // Checked BEFORE the one-host arm, because an unevaluable precondition is worse news than a measured
+    // one and must never be reported as it. The remedy differs: this one is fixed in the capture producer.
+    if (input.determinismScope === 'host-identity-missing') {
+      blocked.push({
+        detail: 'captures record no host identity, so independence is UNEVALUATED — not measured as one host',
+        identity,
+        reason: 'host-identity-missing',
+      });
+      continue;
+    }
     if (input.determinismScope === 'one-host') {
       blocked.push({
         detail: 'stage one clear; cross-host portability is unmeasured',
@@ -525,6 +545,7 @@ const BLOCK_REASON_ORDER: readonly OracleBlockReason[] = [
   'capture-failed',
   'sibling-column-failed',
   'no-scene-oracle',
+  'host-identity-missing',
   'nondeterministic',
   'determinism-unmeasured',
   'parity-disagreement',
