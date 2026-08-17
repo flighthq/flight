@@ -209,9 +209,7 @@ otherwise.
 
 Three arguments are refused rather than defaulted. **Fewer than two capture roots** is refused because
 determinism is measured and one run cannot measure it; accepting one root would silently downgrade every
-cell to unmeasured while still printing a report. **`--hosts`** is refused because nothing can derive it:
-two runs in one sandbox and two runs on separate machines are indistinguishable from a directory listing.
-That distinction decides what the run proved — see below. **`--limit` is bounded by review throughput, not by how
+cell to unmeasured while still printing a report. **`--limit` is bounded by review throughput, not by how
 many cells clear the bar**: `MAX_PENDING_DAYS` in `scripts/oracle-check.ts` is 14, so every commissioned
 cell starts a clock, and a batch larger than `flight-oracles` can review and release inside that window
 turns CI red on day 15 for cells that were never wrong.
@@ -230,9 +228,25 @@ conclusive at either scope: a cell that cannot reproduce itself on one machine w
 two, so the cell is out and no further measurement is owed. AGREEMENT is not: repeats on one host prove
 that host reproduces itself, while the lock is verified on a *different* machine at `maxChannelDelta 0`,
 and `tests.yml` records SwiftShader pinning already failing to survive a machine change once. So
-`--hosts one-host` clears a cell to `determinism-within-host-only` — stage one done, never commissionable —
+a one-host pair clears a cell to `determinism-within-host-only` — stage one done, never commissionable —
 and only `.github/workflows/oracle-calibrate.yml`, dispatched with real Actions credentials, supplies the
 independent-host roots that finish it.
+
+**The host relationship is DERIVED from the captures, never declared.** There was a `--hosts` flag; it is
+gone. It could not be contradicted by anything, so asserting `independent-hosts` over two runs from one
+machine would have made every otherwise-clean cell eligible in silence — and a flag that can disagree with
+the data is a second source that goes stale. The tool now reads two provenance fields with **opposite**
+invariants and checks them as a pair: `environmentId` must **match** across roots (the runs are comparable)
+and `hostInstanceId` must **differ** (the runs are independent). Confusing them inverts the rule — the
+environment descriptor is built from the runner image and tool versions and is identical across matrix legs
+*by design*, so reading it as the host identity would reject every correct two-leg run while looking like a
+safety check working.
+
+**A missing `hostInstanceId` is `host-identity-missing`, which is NOT `one-host`.** "The captures do not
+record which machine made them" and "the captures record one machine" have opposite remedies — wire the
+producer versus re-run elsewhere — so they get different reasons and different text. `report` prints the
+state with each root's recorded identity beside it; `write` refuses outright, because nothing is
+commissionable from a census whose independence precondition could not be evaluated at all.
 
 That reason is checked **last**, after every condition that names work somebody can do. Checked earlier it
 swallowed all 341 otherwise-clean cells under one heading and every actionable list went empty.
