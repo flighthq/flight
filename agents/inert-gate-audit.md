@@ -91,6 +91,31 @@ ordinal-free — numbering then would have asserted the contents of a document t
 and two sections both claiming to be third is worse than none claiming it. This pass was made once every
 2026-08-16 entry was on one tree and all three were verified present by content, each exactly once.
 
+**A rule for receiving an instruction, which belongs here because the preamble is where a reader is
+standing before they act.** Several entries below exist because an instruction was followed exactly and
+the failure it was written to prevent happened anyway.
+
+> **Read the instruction for the FAILURE IT EXISTS TO PREVENT, then check whether the instruction as given
+> actually prevents it.** If it does not, do the thing that does — and say what you changed and why.
+
+Two worked instances, both in this document. *"Note in the entry why it is not merged"* is meant to stop a
+future editor merging it — but a note inside the entry is read *after* someone has decided to tidy, so it
+never reaches the moment it exists for; the preamble does, which is why the not-merged rule is stated
+above rather than only below. *"Refresh the provenance"* is meant to stop stale records — but a blanket
+refresh also sweeps genuinely-moved pixels into the same bucket, destroying the very distinction the
+instruction was protecting.
+
+**The reason this is a test and not a disposition is that it can fail, in the moment, and it fails closed.**
+The two halves are the check: can you state the failure the instruction targets, *and* show that the given
+form misses it? If you cannot do both, you are not improving the instruction — you are overriding it, and
+the correct move is to follow it as written. That asymmetry is deliberate: the cost of following a
+slightly-wrong instruction is bounded, and the cost of an unexamined deviation is not.
+
+**Say what you changed. The explanation is the test being passed in public.** A deviation that arrives
+explained lets a reviewer audit the *reasoning*; the same deviation applied quietly forces them to audit
+the *work*, which is enormously more expensive and usually happens too late. This is why the rule ends in
+an obligation to speak rather than in permission to act.
+
 **An editorial rule for this document, because the tidying instinct destroys evidence here.**
 
 > **When two independent investigations reach the same finding but different remedies, the DIVERGENCE IS
