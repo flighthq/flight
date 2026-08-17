@@ -11,6 +11,8 @@ import { resolve } from 'node:path';
 import { readCaptureBatchManifest } from './captureBatchManifest.js';
 import type { CaptureBenchmarkOptions } from './captureBenchmark.js';
 import { runCaptureBenchmark } from './captureBenchmark.js';
+import { CAPTURE_CLI_COMMANDS, resolveCaptureCliReportPath, validateCaptureCliOptions } from './captureCliOptions.js';
+import type { CaptureCliCommand } from './captureCliOptions.js';
 import { discoverEntries } from './captureEntries.js';
 import type { Entry } from './captureEntries.js';
 import { captureUrl } from './captureEntry.js';
@@ -53,7 +55,12 @@ validation options:
 
 FLIGHT_CAPTURE_WORKER_COUNT pins worker concurrency when --parallel is omitted.
 FLIGHT_CAPTURE_TIMEOUT_MS pins the per-wait budget (page load, frame poll, verification) when
-  --capture-timeout is omitted; default 15000. Raise it on contended or software-adapter machines.
+  --capture-timeout is omitted; default 45000. Evidence is one contended SwiftShader host: 15000
+  timed out in two full-suite runs and 45000 cleared the same suite. The intermediate cliff and other
+  hosts are unmeasured; override this budget when host evidence requires it.
+The measured direct-timeout tail is four cells: env-ibl/webgpu (both 15000ms runs),
+  env-skybox/webgpu and material-blend-modes/webgl (first run), effect-chain/webgpu (second run).
+  Three same-scene siblings were healthy and merely withheld; do not count them as timeouts.
 
 benchmark options:
   --warmup <n> --iterations <n> --samples <n> --sample-duration <ms> --benchmark-reference <renderer>
@@ -64,53 +71,6 @@ batch options:
 
 Manifest: { "subject": "app", "entries": [{ "name": "home", "renderers": ["webgl"],
   "routes": { "webgl": "pages/home/" } }] }`;
-
-const CAPTURE_CLI_COMMANDS: ReadonlySet<string> = new Set(['batch', 'benchmark', 'capture', 'observe', 'validate']);
-const CAPTURE_CLI_OPTIONS: ReadonlySet<string> = new Set([
-  'benchmark-reference',
-  'build',
-  'capture-timeout',
-  'config',
-  'dev',
-  'dir',
-  'fail-on-changed',
-  'fail-on-error',
-  'filter',
-  'filter-exact',
-  'frames',
-  'iterations',
-  'manifest',
-  'no-parity',
-  'no-regression',
-  'no-verify',
-  'observe',
-  'only',
-  'out',
-  'parallel',
-  'parity-tolerance',
-  'performance-tolerance',
-  'regression-tolerance',
-  'renderer',
-  'report',
-  'retries',
-  'root',
-  'sample-duration',
-  'samples',
-  'sequential',
-  'stability-epsilon',
-  'stability-tolerance',
-  'subject',
-  'subjects-parallel',
-  'tool',
-  'update-baseline',
-  'update-benchmarks',
-  'update-coverage',
-  'update-fingerprints',
-  'url',
-  'verify',
-  'wait',
-  'warmup',
-]);
 
 function flag(argv: readonly string[], key: string): string | undefined {
   const equals = argv.find((arg) => arg.startsWith(`--${key}=`));
@@ -193,7 +153,7 @@ async function capture(argv: readonly string[]): Promise<number> {
 
 async function validate(argv: readonly string[]): Promise<number> {
   const { subject, entries, server, root, manifest } = await resolveCaptureCliSuite(argv);
-  const validation = validationOptions(argv, subject, manifest);
+  const validation = validationOptions(argv, subject, manifest, root);
   if (validation.updateFingerprints) {
     const result = await runCaptureWorkflow({
       subject,
@@ -203,6 +163,7 @@ async function validate(argv: readonly string[]): Promise<number> {
       capture: captureOptions(argv),
       validation,
       benchmark: false,
+      reportPath: resolveCaptureCliReportPath(root, flag(argv, 'out'), subject, 'workflow-report.json'),
     });
     if (result.aborted) return 130;
     return result.shouldFail ? 1 : 0;
@@ -215,7 +176,7 @@ async function validate(argv: readonly string[]): Promise<number> {
 async function benchmark(argv: readonly string[]): Promise<number> {
   const { subject, entries, server, root, manifest } = await resolveCaptureCliSuite(argv);
   const result = await runCaptureBenchmark({
-    ...benchmarkOptions(argv, manifest),
+    ...benchmarkOptions(argv, manifest, root, subject),
     subject,
     entries,
     server,
@@ -249,6 +210,7 @@ function validationOptions(
   argv: readonly string[],
   subject: string,
   manifest: CaptureManifest | null,
+  root: string,
 ): CaptureWorkflowValidationOptions {
   const preset = getFlightCaptureValidationPreset(subject);
   const updateCoverage = hasFlag(argv, 'update-coverage');
@@ -281,12 +243,15 @@ function validationOptions(
     fingerprintSkip: manifest?.validation?.fingerprintSkip ?? (manifest === null ? preset.fingerprintSkip : []),
     paritySkip: manifest?.validation?.paritySkip ?? (manifest === null ? preset.paritySkip : {}),
     parityGroups: manifest?.validation?.parityGroups ?? (manifest === null ? preset.parityGroups : undefined),
+    reportPath: resolveCaptureCliReportPath(root, flag(argv, 'out'), subject, 'validation-report.json'),
   };
 }
 
 function benchmarkOptions(
   argv: readonly string[],
   manifest: CaptureManifest | null,
+  root: string,
+  subject: string,
 ): Omit<CaptureBenchmarkOptions, 'entries' | 'root' | 'server' | 'subject'> {
   const configured = manifest?.benchmark;
   return {
@@ -301,6 +266,7 @@ function benchmarkOptions(
     regressionTolerance: parseNumber(flag(argv, 'performance-tolerance')) ?? configured?.regressionTolerance,
     stabilityTolerance: parseNumber(flag(argv, 'stability-tolerance')) ?? configured?.stabilityTolerance,
     updateBaselines: hasFlag(argv, 'update-benchmarks'),
+    reportPath: resolveCaptureCliReportPath(root, flag(argv, 'out'), subject, 'benchmark-report.json'),
   };
 }
 
@@ -321,7 +287,7 @@ async function batch(argv: readonly string[]): Promise<number> {
         const suite = await resolveCaptureCliSuite(subjectArgv);
         const operations = new Set(subject.operations ?? ['capture', 'validate']);
         const validation = operations.has('validate')
-          ? validationOptions(subjectArgv, suite.subject, suite.manifest)
+          ? validationOptions(subjectArgv, suite.subject, suite.manifest, suite.root)
           : false;
         return {
           subject: suite.subject,
@@ -336,7 +302,15 @@ async function batch(argv: readonly string[]): Promise<number> {
               ? captureOptions(subjectArgv)
               : false,
           validation,
-          benchmark: operations.has('benchmark') ? benchmarkOptions(subjectArgv, suite.manifest) : false,
+          benchmark: operations.has('benchmark')
+            ? benchmarkOptions(subjectArgv, suite.manifest, suite.root, suite.subject)
+            : false,
+          reportPath: resolveCaptureCliReportPath(
+            suite.root,
+            flag(subjectArgv, 'out'),
+            suite.subject,
+            'workflow-report.json',
+          ),
         };
       },
     }));
@@ -344,7 +318,7 @@ async function batch(argv: readonly string[]): Promise<number> {
   const result = await runCaptureBatch({
     subjects,
     subjectWorkerCount: Math.max(1, parseNonNegativeInteger(flag(argv, 'subjects-parallel'), 1)),
-    reportPath: resolve(root, '.artifacts', 'capture-batch-report.json'),
+    reportPath: resolve(root, flag(argv, 'out') ?? '.artifacts', 'capture-batch-report.json'),
   });
   if (result.aborted) return 130;
   return result.shouldFail ? 1 : 0;
@@ -352,34 +326,37 @@ async function batch(argv: readonly string[]): Promise<number> {
 
 async function main(): Promise<void> {
   const [command, ...argv] = process.argv.slice(2);
-  if (command === undefined || !CAPTURE_CLI_COMMANDS.has(command)) {
+  if (command === undefined || !CAPTURE_CLI_COMMANDS.includes(command as CaptureCliCommand)) {
     console.error(USAGE);
     process.exit(2);
   }
-  validateCaptureCliOptions(argv);
+  const captureCommand = command as CaptureCliCommand;
+  validateCaptureCliOptions(captureCommand, argv);
   // Pinned once for the process rather than threaded through every option bag: the budget governs
   // waits in the capture core, the validation loader and the stall reason alike, and those are reached
   // from three different call shapes. One resolution point is also what keeps `--capture-timeout` and
   // FLIGHT_CAPTURE_TIMEOUT_MS from being able to mean different things in different waits.
   setCaptureTimeoutMs(resolveCaptureTimeoutMs(flag(argv, 'capture-timeout'), process.env['FLIGHT_CAPTURE_TIMEOUT_MS']));
-  if (command === 'observe') {
-    const url = argv[0];
-    if (url === undefined || url.startsWith('--')) throw new Error(`observe requires a <url>\n${USAGE}`);
-    const outDir = resolve(flag(argv, 'out') ?? './capture');
-    const diagnostics = await captureUrl(url, {
-      outDir,
-      wait: parseNonNegativeInteger(flag(argv, 'wait'), 0),
-      captureFrames: parseNonNegativeInteger(flag(argv, 'frames'), 1) || 1,
-      maxRetries: parseNonNegativeInteger(flag(argv, 'retries'), 2),
-    });
-    console.log(`captured → ${resolve(outDir, 'screenshot.png')}`);
-    console.log(`observe   ${JSON.stringify(diagnostics)}`);
-    process.exit(diagnostics.blank || !diagnostics.usable ? 1 : 0);
-  }
+  if (command === 'observe') process.exit(await observe(argv));
   if (command === 'capture') process.exit(await capture(argv));
   if (command === 'validate') process.exit(await validate(argv));
   if (command === 'benchmark') process.exit(await benchmark(argv));
   if (command === 'batch') process.exit(await batch(argv));
+}
+
+async function observe(argv: readonly string[]): Promise<number> {
+  const url = argv[0];
+  if (url === undefined || url.startsWith('--')) throw new Error(`observe requires a <url>\n${USAGE}`);
+  const outDir = resolve(flag(argv, 'out') ?? './capture');
+  const diagnostics = await captureUrl(url, {
+    outDir,
+    wait: parseNonNegativeInteger(flag(argv, 'wait'), 0),
+    captureFrames: parseNonNegativeInteger(flag(argv, 'frames'), 1) || 1,
+    maxRetries: parseNonNegativeInteger(flag(argv, 'retries'), 2),
+  });
+  console.log(`captured → ${resolve(outDir, 'screenshot.png')}`);
+  console.log(`observe   ${JSON.stringify(diagnostics)}`);
+  return diagnostics.blank || !diagnostics.usable ? 1 : 0;
 }
 
 function captureWorkerCount(argv: readonly string[]): number {
@@ -411,15 +388,6 @@ function removeBatchOptions(argv: readonly string[]): string[] {
     else if (argument === `--${key}`) index++;
   }
   return result;
-}
-
-function validateCaptureCliOptions(argv: readonly string[]): void {
-  for (const argument of argv) {
-    if (!argument.startsWith('--')) continue;
-    const equalsIndex = argument.indexOf('=');
-    const name = argument.slice(2, equalsIndex < 0 ? undefined : equalsIndex);
-    if (!CAPTURE_CLI_OPTIONS.has(name)) throw new Error(`unknown option --${name}`);
-  }
 }
 
 main().catch((err: unknown) => {
