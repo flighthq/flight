@@ -15,22 +15,22 @@ const tools: Record<string, ToolConfig> = {
     port: 5173,
     title: 'Flight Examples',
   },
-  gallery: {
-    workspace: 'tools/gallery',
+  review: {
+    workspace: 'tools/review',
     port: 5174,
-    title: 'Flight Gallery',
+    title: 'Flight Review',
   },
-  'gallery:examples': {
-    workspace: 'tools/gallery',
+  'review:examples': {
+    workspace: 'tools/review',
     port: 5174,
-    title: 'Flight Gallery: Examples',
-    env: { VITE_GALLERY_TOOL: 'examples' },
+    title: 'Flight Review: Examples',
+    env: { VITE_REVIEW_TOOL: 'examples' },
   },
-  'gallery:functional': {
-    workspace: 'tools/gallery',
+  'review:functional': {
+    workspace: 'tools/review',
     port: 5174,
-    title: 'Flight Gallery: Functional',
-    env: { VITE_GALLERY_TOOL: 'functional' },
+    title: 'Flight Review: Functional',
+    env: { VITE_REVIEW_TOOL: 'functional' },
   },
 };
 
