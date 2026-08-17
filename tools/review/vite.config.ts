@@ -5,6 +5,7 @@ import { join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import { workspacePackages } from '../../scripts/workspaces';
 
 const projectRoot = resolve(__dirname, '../..');
@@ -117,21 +118,13 @@ function readHeldCells(): Map<string, string> {
 function readRequestedCells(): Set<string> {
   const requested = new Set<string>();
   if (!existsSync(requestsDir)) return requested;
-  try {
-    for (const file of readdirSync(requestsDir).filter((f) => f.endsWith('.json'))) {
-      const content = JSON.parse(readFileSync(join(requestsDir, file), 'utf8')) as {
-        subject?: string;
-        targets?: readonly { entry?: string; renderer?: string }[];
-      };
-      if (!content.targets) continue;
-      for (const target of content.targets) {
-        if (target.entry && target.renderer) {
-          requested.add(`${content.subject ?? 'functional'}/${target.entry}/${target.renderer}`);
-        }
+  for (const file of readdirSync(requestsDir).filter((f) => f.endsWith('.json'))) {
+    const result = readOracleRequest(join(requestsDir, file));
+    if ('request' in result) {
+      for (const cell of getOracleRequestCells(result.request)) {
+        requested.add(cell);
       }
     }
-  } catch {
-    // ignore malformed requests
   }
   return requested;
 }
