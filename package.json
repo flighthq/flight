@@ -185,6 +185,7 @@
     "unchecked": "tsx ./scripts/unchecked.ts",
     "unchecked:json": "tsx ./scripts/unchecked.ts --json",
     "untested": "tsx ./scripts/untested.ts",
+    "verify:backgrounds": "tsx ./scripts/verify-expected-image-backgrounds.ts",
     "version:packages": "tsx ./scripts/version-packages.ts"
   },
   "devDependencies": {
