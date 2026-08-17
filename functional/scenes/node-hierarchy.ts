@@ -42,6 +42,12 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (800×600): a single 120×120 green square at compounded position ' +
+    '(320, 240) — the sum of two nested container translations (200+120, 150+90). The green ' +
+    'is rendered at half opacity (inherited from the outer container), so it appears as a ' +
+    'dimmed green blended over black — green channel near half intensity (~80–130), not full ' +
+    'bright. No other objects. Every other pixel is black.',
 });
 
 const root = createDisplayObject();

@@ -44,6 +44,15 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff,
   kinds: [SpriteKind, ShapeKind],
   blend: true,
+  expectedImageDescription:
+    'On an opaque black field (800×600): a mid-gray (luma ~128) rectangle spanning x 40–760, ' +
+    'y 50–550. Inside it, six 140×80 overlay rectangles arranged in a 3×2 grid plus one ' +
+    'bitmap probe below. Top row (y 100): Normal at x 100 (luma ~80, darker than base), ' +
+    'Add at x 330 (luma ~208, brighter), Multiply at x 560 (luma ~64, darker). Bottom row ' +
+    '(y 260): Screen at x 100 (luma ~192, brighter), Darken at x 330 (luma ~64, darker), ' +
+    'Lighten at x 560 (luma ~192, brighter). A seventh Multiply-blended bitmap rectangle ' +
+    '(140×80) at x 100, y 420 also reads luma ~64. Each overlay region is visibly distinct ' +
+    'from the surrounding mid-gray base.',
 });
 
 const root = createDisplayObject();

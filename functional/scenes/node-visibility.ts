@@ -44,6 +44,11 @@ const { render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind],
+  expectedImageDescription:
+    'On an opaque black field (800×600): a single flat RED 200×200 square at (120, 200). ' +
+    'The region at (480, 200) where a green square would appear is BLACK — the green square ' +
+    'is hidden and must not produce any pixels. No green anywhere in the image. Every pixel ' +
+    'outside the red square is black.',
 });
 
 const root = createDisplayObject();
