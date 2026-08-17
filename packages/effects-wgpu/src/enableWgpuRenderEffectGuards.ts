@@ -2,7 +2,10 @@ import { logOnce } from '@flighthq/log/contract';
 import type { WgpuRenderEffectApplicationExplanation, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setWgpuRenderEffectPipelineSkipGuard } from './wgpuRenderEffectPipeline';
+import {
+  setWgpuRenderEffectPipelineSampleCountGuard,
+  setWgpuRenderEffectPipelineSkipGuard,
+} from './wgpuRenderEffectPipeline';
 import { setWgpuRenderEffectApplicationGuard } from './wgpuRenderTextureEffect';
 
 export function areWgpuRenderEffectGuardsEnabled(state: WgpuRenderState): boolean {
@@ -11,6 +14,7 @@ export function areWgpuRenderEffectGuardsEnabled(state: WgpuRenderState): boolea
 
 export function disableWgpuRenderEffectGuards(state: WgpuRenderState): void {
   setWgpuRenderEffectApplicationGuard(state, null);
+  setWgpuRenderEffectPipelineSampleCountGuard(state, null);
   setWgpuRenderEffectPipelineSkipGuard(state, null);
   _guardedStates.delete(state);
 }
@@ -26,8 +30,29 @@ export function disableWgpuRenderEffectGuards(state: WgpuRenderState): void {
 // warning that can never fire, so the absence is the honest shape rather than an oversight.
 export function enableWgpuRenderEffectGuards(state: WgpuRenderState): void {
   setWgpuRenderEffectApplicationGuard(state, warnWgpuRenderEffectApplication);
+  setWgpuRenderEffectPipelineSampleCountGuard(state, warnWgpuRenderEffectPipelineSampleCount);
   setWgpuRenderEffectPipelineSkipGuard(state, warnWgpuRenderEffectPipelineSkip);
   _guardedStates.add(state);
+}
+
+// WGPU effect targets are single-sample today, but 102 live scene/example callers request 4 samples.
+// Rejecting made every one of those module-scope callers unloadable; accepting without this observation
+// hid that the requested capability was absent. Warn once per requested count and continue with 1.
+function warnWgpuRenderEffectPipelineSampleCount(
+  _state: WgpuRenderState,
+  requestedSampleCount: number,
+  appliedSampleCount: number,
+): void {
+  logOnce(
+    `effects-wgpu:pipeline-sample-count-degraded:${requestedSampleCount}`,
+    LogLevel.Warn,
+    {
+      appliedSampleCount,
+      message: `createWgpuRenderEffectPipeline: sampleCount ${requestedSampleCount} requested, but WGPU effect targets currently support only ${appliedSampleCount} — continuing with sampleCount ${appliedSampleCount}; multisampling was NOT applied`,
+      requestedSampleCount,
+    },
+    'effects-wgpu',
+  );
 }
 
 function getWgpuRenderEffectApplicationMessage(explanation: Readonly<WgpuRenderEffectApplicationExplanation>): string {

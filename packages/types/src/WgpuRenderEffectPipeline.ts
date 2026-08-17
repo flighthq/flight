@@ -71,6 +71,15 @@ export interface WgpuRenderEffectApplicationExplanation {
 // downstream can tell a skipped effect from one that ran and had no visible result.
 export type WgpuRenderEffectPipelineSkipGuard = (state: WgpuRenderState, kind: string) => void;
 
+// Observed when the WGPU effect pipeline accepts a multisample request it cannot currently honour and
+// degrades it to the supported single-sample target. Both values are explicit so a diagnostic cannot
+// accidentally report the request as the applied configuration.
+export type WgpuRenderEffectPipelineSampleCountGuard = (
+  state: WgpuRenderState,
+  requestedSampleCount: number,
+  appliedSampleCount: number,
+) => void;
+
 export type WgpuRenderEffectApplicationGuard = (
   state: WgpuRenderState,
   explanation: Readonly<WgpuRenderEffectApplicationExplanation>,

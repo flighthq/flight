@@ -1,3 +1,4 @@
+export * from './enableWgpuRenderEffectGuards';
 export * from './wgpuColorMatrixPass';
 export * from './wgpuCompositeEffect';
 export * from './wgpuContactShadowsEffect';

@@ -2,6 +2,8 @@ export {
   applyWgpuRenderEffectsToRenderTexture,
   beginWgpuRenderEffectPipeline,
   createWgpuRenderEffectPipeline,
+  disableWgpuRenderEffectGuards,
+  enableWgpuRenderEffectGuards,
   defaultWgpuBevelEffectRunner,
   defaultWgpuBlendEffectRunner,
   defaultWgpuBloomEffectRunner,

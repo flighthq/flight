@@ -7,6 +7,7 @@ import {
   destroyWgpuRenderEffectPipeline,
   endWgpuRenderEffectPipeline,
   setWgpuRenderEffectPipelineSkipGuard,
+  setWgpuRenderEffectPipelineSampleCountGuard,
   setWgpuRenderEffectVelocityTexture,
 } from './wgpuRenderEffectPipeline';
 
@@ -102,7 +103,26 @@ describe('createWgpuRenderEffectPipeline', () => {
   it('accepts an unsupported multisample request instead of refusing to build', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    expect(() => createWgpuRenderEffectPipeline(state, { sampleCount: 4 })).not.toThrow();
+    const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+
+    expect(pipeline.options.sampleCount).toBe(1);
+  });
+
+  describe('setWgpuRenderEffectPipelineSampleCountGuard', () => {
+    it('reports the requested and applied sample counts through the optional diagnostics seam', async () => {
+      const state = await createWgpuRenderStateForTest();
+      const degraded: Array<[number, number]> = [];
+      setWgpuRenderEffectPipelineSampleCountGuard(state, (_state, requested, applied) => {
+        degraded.push([requested, applied]);
+      });
+
+      createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+      expect(degraded).toEqual([[4, 1]]);
+
+      setWgpuRenderEffectPipelineSampleCountGuard(state, null);
+      createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
+      expect(degraded).toEqual([[4, 1]]);
+    });
   });
 
   it('gives each pipeline its own pool and caches', async () => {
