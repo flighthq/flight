@@ -29,6 +29,14 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x101018ff,
   kinds: [ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'On a very dark blue-gray field (800×600): a teal backing rectangle at (160, 100), size ' +
+    '480×400. Inside the backing, a 360×280 render-texture region at (220, 160) with a near-' +
+    'black interior containing an isometric cube drawn with three flat-shaded faces — a light ' +
+    'blue diamond-shaped top face, a medium-blue left face, and a brighter-blue right face. The ' +
+    'cube sits roughly centered in the render texture. In front of the backing, a yellow ' +
+    'rectangle at (520, 400), size 120×50. The teal backing is visible around the render ' +
+    'texture. No gradient within individual faces — each face is a single flat blue tone.',
 });
 if (target.kind !== 'canvas') throw new Error('render-target-node-2d requires Canvas');
 const { render, state, width } = target;

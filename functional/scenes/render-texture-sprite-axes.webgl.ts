@@ -38,6 +38,13 @@ const target = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x111522ff,
   kinds: [ShapeKind, SpriteKind],
+  expectedImageDescription:
+    'On a dark navy field (800×600): a small 100×80 rectangle at (340, 250) divided into four ' +
+    'solid-colored quadrants — top-left red, top-right green, bottom-left blue, bottom-right ' +
+    'yellow. Behind it, a dark purple backing rectangle (130×110 at 325, 235) is visible as a ' +
+    '~15 px border around the four-quadrant sprite. Outside the backing, the field is dark ' +
+    'navy. The sprite is exactly 100×80 — no spill beyond its edges into the backing area. No ' +
+    'gradient or blending within any quadrant.',
 });
 if (target.kind !== 'webgl') throw new Error('render-texture-sprite-axes requires WebGL');
 const { render, state, width } = target;

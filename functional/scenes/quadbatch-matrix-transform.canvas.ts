@@ -54,6 +54,12 @@ const { height, render, width } = await createFunctionalTarget({
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [QuadBatchKind],
+  expectedImageDescription:
+    'On an opaque black field (800×600): two red shapes from a single instanced batch. LEFT: a ' +
+    'red diamond centered at (200, 200) — a 60×60 square rotated 45°, so its vertices extend ' +
+    '~42 px along each axis from center (tips near x 158/242, y 158/242). RIGHT: a solid red ' +
+    '120×120 square (2× scaled) with its top-left at (500, 150). Both shapes are flat solid ' +
+    'red with no gradient or stroke. Large black gaps separate them.',
 });
 
 // Build a single solid-red atlas region.
