@@ -87,12 +87,25 @@ describe('validateCaptureCliOptions', () => {
     );
     for (const name of captureOnly) {
       expect(() => validateCaptureCliOptions('validate', [asArgument(name)])).toThrow(
-        `validate option --${name} requires --update-fingerprints`,
+        `validate option --${name} has no consumer in this mode`,
       );
     }
     expect(() =>
       validateCaptureCliOptions('validate', ['--update-fingerprints', ...captureOnly.map(asArgument)]),
     ).not.toThrow();
+  });
+
+  it('never recommends a baseline-writing flag for an option this mode cannot consume', () => {
+    for (const name of ['fail-on-changed', 'update-baseline']) {
+      try {
+        validateCaptureCliOptions('validate', [asArgument(name)]);
+        expect.unreachable(`--${name} should be refused`);
+      } catch (error) {
+        expect(String(error)).toContain(`validate option --${name} has no consumer in this mode`);
+        expect(String(error)).not.toContain('--update-fingerprints');
+        expect(String(error)).not.toContain('requires');
+      }
+    }
   });
 });
 

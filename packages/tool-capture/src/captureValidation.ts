@@ -50,6 +50,7 @@ import type { CaptureBrowserSession } from './captureBrowser.js';
 import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
+import { isTransientCaptureError } from './captureEntry.js';
 import { selectCaptureEntriesByName } from './captureEntryFilter.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
@@ -73,6 +74,8 @@ export interface CaptureValidationOptions {
   filterExact?: string;
   rendererFilter?: Readonly<string[]>;
   captureFrames?: number;
+  /** Fresh-page retries for transient navigation/protocol failures. Default: 1. */
+  maxRetries?: number;
   report?: boolean;
   updateFingerprints?: boolean;
   /** Accept the observed coverage as the new capture baseline coverage manifest instead of gating on it. */
@@ -169,6 +172,7 @@ interface ResolvedCaptureValidationOptions {
   root: string;
   rendererFilter: readonly string[];
   captureFrames: number;
+  maxRetries: number;
   report: boolean;
   updateFingerprints: boolean;
   updateCoverage: boolean;
@@ -255,6 +259,30 @@ export function explainCaptureParityUncovered(
 }
 
 async function loadFingerprint(
+  context: BrowserContext,
+  baseUrl: string,
+  entry: Readonly<Entry>,
+  renderer: string,
+  subject: string,
+  maxRetries: number,
+): Promise<{ fingerprint: string | null; reason: string; unavailable: boolean; aborted: boolean }> {
+  let retries = 0;
+  while (true) {
+    const result = await loadFingerprintAttempt(context, baseUrl, entry, renderer, subject);
+    if (
+      result.fingerprint !== null ||
+      result.unavailable ||
+      result.aborted ||
+      retries >= maxRetries ||
+      !isTransientCaptureError(result.reason)
+    ) {
+      return result;
+    }
+    retries++;
+  }
+}
+
+async function loadFingerprintAttempt(
   context: BrowserContext,
   baseUrl: string,
   entry: Readonly<Entry>,
@@ -1008,6 +1036,7 @@ export async function runCaptureValidation(
     root: resolve(input.root ?? process.cwd()),
     rendererFilter: input.rendererFilter ?? [],
     captureFrames: Math.max(1, input.captureFrames ?? 1),
+    maxRetries: Math.max(0, input.maxRetries ?? 1),
     report: input.report ?? false,
     quiet: input.quiet ?? false,
     updateFingerprints: input.updateFingerprints ?? false,
@@ -1073,10 +1102,24 @@ export async function runCaptureValidation(
           const job = fingerprintJobs.shift();
           if (job === undefined) return;
           const supplied = options.fingerprints[job.entry.name]?.[job.renderer];
-          const first = await loadFingerprint(context, input.server.url, job.entry, job.renderer, options.subject);
+          const first = await loadFingerprint(
+            context,
+            input.server.url,
+            job.entry,
+            job.renderer,
+            options.subject,
+            options.maxRetries,
+          );
           let second: FingerprintLoad | undefined;
           if (options.updateFingerprints && supplied === undefined && first.fingerprint !== null && !first.aborted) {
-            second = await loadFingerprint(context, input.server.url, job.entry, job.renderer, options.subject);
+            second = await loadFingerprint(
+              context,
+              input.server.url,
+              job.entry,
+              job.renderer,
+              options.subject,
+              options.maxRetries,
+            );
           } else if (options.updateFingerprints && supplied !== undefined) {
             second = first;
           }

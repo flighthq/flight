@@ -273,6 +273,46 @@ async function validateParityFixture(input: Readonly<Record<string, unknown>>) {
 }
 
 describe('runCaptureValidation', () => {
+  it('retries transient fingerprint-load failures up to the validation budget', async () => {
+    const newPage = vi.fn().mockRejectedValue(new Error('page.goto: Timeout 45000ms exceeded'));
+    const result = await runCaptureValidation({
+      subject: 'functional',
+      entries: [{ name: 'sample', renderers: ['canvas'] }],
+      server: { url: 'http://unused.invalid', kill: vi.fn() },
+      root: join(tmpdir(), 'tool-capture-validation-retry-fixture'),
+      gateParity: false,
+      quiet: true,
+      maxRetries: 2,
+      browserSession: {
+        browser: { close: vi.fn() } as never,
+        context: { newPage } as never,
+      },
+    });
+
+    expect(newPage).toHaveBeenCalledTimes(3);
+    expect(result.loadFailures).toBe(1);
+  });
+
+  it('does not retry a deterministic render assertion failure', async () => {
+    const newPage = vi.fn().mockRejectedValue(new Error('[mesh] expected red, got blue'));
+    const result = await runCaptureValidation({
+      subject: 'functional',
+      entries: [{ name: 'sample', renderers: ['canvas'] }],
+      server: { url: 'http://unused.invalid', kill: vi.fn() },
+      root: join(tmpdir(), 'tool-capture-validation-no-retry-fixture'),
+      gateParity: false,
+      quiet: true,
+      maxRetries: 2,
+      browserSession: {
+        browser: { close: vi.fn() } as never,
+        context: { newPage } as never,
+      },
+    });
+
+    expect(newPage).toHaveBeenCalledOnce();
+    expect(result.loadFailures).toBe(1);
+  });
+
   // The acceptance path must not become the hole. Writing the manifest from an early return reported
   // exit 0 over a leg with real regression failures — the same "reports green" defect the manifest
   // exists to close, one level up. Coverage is accepted; the run's own verdict still stands.
