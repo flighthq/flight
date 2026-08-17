@@ -6,6 +6,7 @@ import type { CalibrationRootIdentity } from './oracle-calibrate';
 import {
   compareCalibrationRuns,
   deriveCalibrationIdentityVerdict,
+  findDuplicateCalibrationRoot,
   formatCalibrationReport,
   readCaptureRootIdentity,
 } from './oracle-calibrate';
@@ -376,3 +377,54 @@ describe('formatCalibrationReport, on what the runs actually were', () => {
 function identity(hostInstanceId: string | null, environmentId: string | null): CalibrationRootIdentity {
   return { environmentId, hostInstanceId, mixedEnvironments: false, mixedHosts: false, root: 'root', seen: 1 };
 }
+
+describe('findDuplicateCalibrationRoot', () => {
+  // ★ A ROOT COMPARED WITH ITSELF AGREES WITH ITSELF, AND THE REPORT LOOKS PERFECT. This is the one
+  // misuse that produces the STRONGEST verdict the tool has over a comparison that never happened, and
+  // it is a realistic slip: two long artifact paths differing in one character, typed by hand.
+  it('finds a root given twice', () => {
+    const root = run({ 'functional/a/webgl': 'a' });
+
+    expect(findDuplicateCalibrationRoot([root, root])).toBe(root);
+  });
+
+  it('sees through a path spelled differently', () => {
+    const root = run({ 'functional/a/webgl': 'a' });
+
+    expect(findDuplicateCalibrationRoot([root, `${root}/.`])).toBe(`${root}/.`);
+  });
+
+  it('passes distinct roots', () => {
+    expect(
+      findDuplicateCalibrationRoot([run({ 'functional/a/webgl': 'a' }), run({ 'functional/a/webgl': 'a' })]),
+    ).toBeNull();
+  });
+
+  // A root that does not exist is still comparable BY PATH: refusing the duplicate is more useful than
+  // letting a typo through to a later "nothing was compared", which names the wrong problem.
+  it('compares roots that do not exist yet by resolved path', () => {
+    expect(findDuplicateCalibrationRoot(['./missing-root', 'missing-root'])).toBe('missing-root');
+  });
+});
+
+describe('compareCalibrationRuns, on the shape a downloaded calibration artifact actually has', () => {
+  // ★ THE REHEARSAL FOR THE REAL ROOTS, RUN BEFORE THEY ARRIVE. `oracle-calibrate.yml` stages
+  // `calibration/functional/<entry>/<renderer>/status.json` and uploads `calibration` as
+  // `calibration-host-<n>`, so an extracted artifact root has `functional/` at its top level and the
+  // host id is `<run>-<attempt>-leg-<n>`. Encoding that here means a layout or id-format surprise fails
+  // in a test rather than in the one run that matters.
+  it('derives independent hosts in one environment from two extracted artifact roots', () => {
+    const environmentId = 'sha256-0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0';
+    const report = compareCalibrationRuns([
+      run({ 'functional/shape-fill-solid/webgl': 'a' }, { environmentId, hostInstanceId: '32050363125-1-leg-1' }),
+      run({ 'functional/shape-fill-solid/webgl': 'a' }, { environmentId, hostInstanceId: '32050363125-1-leg-2' }),
+    ]);
+
+    expect(deriveCalibrationIdentityVerdict(report.identities)).toEqual({
+      environment: 'matching-environment',
+      hosts: 'independent-hosts',
+    });
+    expect(report.agreed).toEqual(['functional/shape-fill-solid/webgl']);
+    expect(formatCalibrationReport(report)).toContain('this IS the evidence a single canonical environment needs');
+  });
+});

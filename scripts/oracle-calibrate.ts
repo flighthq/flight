@@ -15,8 +15,8 @@
 // in the document; it is a measurement, and this is the measurement.
 //
 // Reads only. Prints a report; the caller decides what to do with it.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 export interface CalibrationCell {
   identity: string;
@@ -375,6 +375,25 @@ export function formatCalibrationReport(report: Readonly<CalibrationReport>): st
 }
 
 /**
+ * The first root given twice, or `null` if every root is distinct.
+ *
+ * ★ A ROOT COMPARED WITH ITSELF AGREES WITH ITSELF, AND THE REPORT LOOKS PERFECT. Every cell is
+ * byte-identical to itself by construction, so a duplicated path prints the strongest verdict this tool
+ * has over a comparison that never happened. It is a realistic slip rather than a contrived one: the two
+ * roots are typed by hand from two artifact directories with names differing in one character, and the
+ * paths are long. Compared by resolved path, so `x`, `./x` and `x/` are one root.
+ */
+export function findDuplicateCalibrationRoot(roots: readonly string[]): string | null {
+  const seen = new Set<string>();
+  for (const root of roots) {
+    const key = existsSync(root) ? realpathSync(root) : resolve(root);
+    if (seen.has(key)) return root;
+    seen.add(key);
+  }
+  return null;
+}
+
+/**
  * One identity field as the report prints it. `MIXED` and `UNRECORDED` are different findings about the
  * captures and never share a line — see `CalibrationRootIdentity`.
  */
@@ -403,6 +422,13 @@ if (process.argv[1] !== undefined && import.meta.url.endsWith(process.argv[1].re
   if (roots.length < 2) {
     console.error('usage: oracle-calibrate <run-root> <run-root> [more…]');
     console.error('  each root is a capture output directory (<subject>/<entry>/<renderer>/status.json)');
+    process.exit(2);
+  }
+  const duplicate = findDuplicateCalibrationRoot(roots);
+  if (duplicate !== null) {
+    console.error(`oracle-calibrate: ${duplicate} was given more than once.`);
+    console.error('  A root compared with itself agrees with itself, so this would print the strongest');
+    console.error('  verdict this tool has over a comparison that never happened. Refusing.');
     process.exit(2);
   }
   const report = compareCalibrationRuns(roots);
