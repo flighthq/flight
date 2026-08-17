@@ -45,8 +45,90 @@ let activeImgs: HTMLImageElement[] = [];
 // Off-DOM image cache: key = `${tool}/${name}`, pre-loads neighboring tests
 const imgCache = new Map<string, HTMLImageElement[]>();
 
+type CompareMode = 'off' | 'side-by-side' | 'onion-skin';
+let compareMode: CompareMode = 'off';
+let onionOpacity = 0.5;
+
 function screenshotUrl(tool: string, name: string, renderer: string): string {
   return `/artifacts/${tool}/${name}/${renderer}/screenshot.png`;
+}
+
+function referenceUrl(tool: string, name: string, renderer: string): string {
+  return `/reference/${tool}/${name}/${renderer}.png`;
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load: ${src}`));
+    img.src = src;
+  });
+}
+
+function computeDelta(
+  candidateImg: HTMLImageElement,
+  referenceImg: HTMLImageElement,
+  tolerance: number,
+): { canvas: HTMLCanvasElement; fraction: string; maxDelta: number; dimMismatch: string | null } {
+  if (candidateImg.naturalWidth !== referenceImg.naturalWidth || candidateImg.naturalHeight !== referenceImg.naturalHeight) {
+    return {
+      canvas: document.createElement('canvas'),
+      dimMismatch: `Cannot compare: ${candidateImg.naturalWidth}×${candidateImg.naturalHeight} vs ${referenceImg.naturalWidth}×${referenceImg.naturalHeight}`,
+      fraction: 'N/A',
+      maxDelta: 0,
+    };
+  }
+  const w = candidateImg.naturalWidth;
+  const h = candidateImg.naturalHeight;
+
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = w;
+  tmpCanvas.height = h;
+  const ctx = tmpCanvas.getContext('2d')!;
+
+  ctx.drawImage(candidateImg, 0, 0);
+  const candidateData = ctx.getImageData(0, 0, w, h).data;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(referenceImg, 0, 0);
+  const referenceData = ctx.getImageData(0, 0, w, h).data;
+
+  const deltaCanvas = document.createElement('canvas');
+  deltaCanvas.width = w;
+  deltaCanvas.height = h;
+  const deltaCtx = deltaCanvas.getContext('2d')!;
+  const deltaImage = deltaCtx.createImageData(w, h);
+  const dd = deltaImage.data;
+
+  let mismatchedPixels = 0;
+  let maxChannelDelta = 0;
+  const totalPixels = w * h;
+
+  for (let i = 0; i < candidateData.length; i += 4) {
+    const dr = Math.abs(candidateData[i] - referenceData[i]);
+    const dg = Math.abs(candidateData[i + 1] - referenceData[i + 1]);
+    const db = Math.abs(candidateData[i + 2] - referenceData[i + 2]);
+    const da = Math.abs(candidateData[i + 3] - referenceData[i + 3]);
+    const pixelDelta = Math.max(dr, dg, db, da);
+    if (pixelDelta > maxChannelDelta) maxChannelDelta = pixelDelta;
+    if (pixelDelta > tolerance) mismatchedPixels++;
+    if (dr !== 0 || dg !== 0 || db !== 0 || da !== 0) {
+      dd[i] = dr;
+      dd[i + 1] = dg;
+      dd[i + 2] = db;
+      dd[i + 3] = 255;
+    }
+  }
+
+  deltaCtx.putImageData(deltaImage, 0, 0);
+  const frac = totalPixels === 0 ? 0 : mismatchedPixels / totalPixels;
+  return {
+    canvas: deltaCanvas,
+    dimMismatch: null,
+    fraction: `${(frac * 100).toFixed(4)}% (${mismatchedPixels}/${totalPixels})`,
+    maxDelta: maxChannelDelta,
+  };
 }
 
 function testKey(t: GalleryTest): string {
@@ -349,6 +431,108 @@ function showRenderer(): void {
   } else {
     stateEl?.remove();
   }
+
+  preview.querySelector('.compare-view')?.remove();
+  if (compareMode !== 'off' && t && cell && (cell.commissionState === 'included' || cell.commissionState === 'differs')) {
+    showCompareView(t, cell);
+  }
+}
+
+async function showCompareView(t: GalleryTest, cell: GalleryCell): Promise<void> {
+  const container = document.createElement('div');
+  container.className = 'compare-view';
+
+  const candidateSrc = screenshotUrl(t.tool, t.name, cell.renderer);
+  const referenceSrc = referenceUrl(t.tool, t.name, cell.renderer);
+
+  let candidateImg: HTMLImageElement;
+  let referenceImg: HTMLImageElement;
+  try {
+    [candidateImg, referenceImg] = await Promise.all([loadImage(candidateSrc), loadImage(referenceSrc)]);
+  } catch {
+    container.innerHTML = '<div class="compare-message">No reference fetched yet — run npm run reference-image:fetch</div>';
+    preview.appendChild(container);
+    return;
+  }
+
+  if (compareMode === 'side-by-side') {
+    const delta = computeDelta(candidateImg, referenceImg, 0);
+
+    if (delta.dimMismatch) {
+      container.innerHTML = `<div class="compare-message">${delta.dimMismatch}</div>`;
+      preview.appendChild(container);
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'compare-grid';
+
+    const makePanel = (title: string, element: HTMLElement): HTMLElement => {
+      const panel = document.createElement('div');
+      panel.className = 'compare-panel';
+      const label = document.createElement('div');
+      label.className = 'compare-label';
+      label.textContent = title;
+      element.className = 'compare-img';
+      panel.appendChild(label);
+      panel.appendChild(element);
+      return panel;
+    };
+
+    grid.appendChild(makePanel('Candidate', candidateImg));
+    const refClone = referenceImg.cloneNode(true) as HTMLImageElement;
+    grid.appendChild(makePanel('Reference', refClone));
+    grid.appendChild(makePanel('Delta', delta.canvas));
+
+    container.appendChild(grid);
+
+    const stats = document.createElement('div');
+    stats.className = 'compare-stats';
+    stats.textContent = `Mismatch: ${delta.fraction} | Max channel delta: ${delta.maxDelta} | Tolerance: 0`;
+    container.appendChild(stats);
+  } else if (compareMode === 'onion-skin') {
+    const delta = computeDelta(candidateImg, referenceImg, 0);
+
+    if (delta.dimMismatch) {
+      container.innerHTML = `<div class="compare-message">${delta.dimMismatch}</div>`;
+      preview.appendChild(container);
+      return;
+    }
+
+    const onionWrap = document.createElement('div');
+    onionWrap.className = 'onion-wrap';
+    candidateImg.className = 'onion-layer onion-candidate';
+    referenceImg.className = 'onion-layer onion-reference';
+    referenceImg.style.opacity = String(onionOpacity);
+    onionWrap.appendChild(candidateImg);
+    onionWrap.appendChild(referenceImg);
+    container.appendChild(onionWrap);
+
+    const controls = document.createElement('div');
+    controls.className = 'onion-controls';
+    const label = document.createElement('span');
+    label.textContent = 'Reference opacity: ';
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '0';
+    slider.max = '1';
+    slider.step = '0.01';
+    slider.value = String(onionOpacity);
+    slider.addEventListener('input', () => {
+      onionOpacity = Number(slider.value);
+      referenceImg.style.opacity = String(onionOpacity);
+    });
+    controls.appendChild(label);
+    controls.appendChild(slider);
+    container.appendChild(controls);
+
+    const stats = document.createElement('div');
+    stats.className = 'compare-stats';
+    stats.textContent = `Mismatch: ${delta.fraction} | Max channel delta: ${delta.maxDelta} | Tolerance: 0`;
+    container.appendChild(stats);
+  }
+
+  preview.appendChild(container);
 }
 
 function updatePreview(): void {

@@ -52,6 +52,8 @@ const SCENE_DIRS: Record<string, string> = {
   functional: join(projectRoot, 'functional', 'scenes'),
 };
 
+const packsRoot = join(artifactsDir, 'reference-image-packs');
+
 function readLockedImages(): Map<string, string> {
   const locked = new Map<string, string>();
   if (!existsSync(lockPath)) return locked;
@@ -71,6 +73,27 @@ function readLockedImages(): Map<string, string> {
     // ignore malformed lock
   }
   return locked;
+}
+
+function resolveReferenceImagePath(imageKey: string): string | null {
+  if (!existsSync(lockPath)) return null;
+  try {
+    const lock = JSON.parse(readFileSync(lockPath, 'utf8')) as {
+      packs?: Record<string, { images?: Record<string, unknown> }>;
+    };
+    if (!lock.packs) return null;
+    for (const [packId, pack] of Object.entries(lock.packs)) {
+      if (!pack.images) continue;
+      if (imageKey in pack.images) {
+        const imgPath = join(packsRoot, packId, 'images', `${imageKey}.png`);
+        if (existsSync(imgPath)) return imgPath;
+        return null;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 function readHeldCells(): Map<string, string> {
@@ -406,6 +429,20 @@ function galleryPlugin(): Plugin[] {
                 res.end(JSON.stringify({ error: 'invalid JSON body' }));
               }
             });
+            return;
+          }
+
+          if (urlPath.startsWith('/reference/')) {
+            const imageKey = urlPath.slice('/reference/'.length).replace(/\.png$/, '');
+            const fsPath = resolveReferenceImagePath(imageKey);
+            if (fsPath) {
+              res.setHeader('Content-Type', 'image/png');
+              res.end(readFileSync(fsPath));
+            } else {
+              res.statusCode = 404;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'reference image not found — run npm run reference-image:fetch' }));
+            }
             return;
           }
 
