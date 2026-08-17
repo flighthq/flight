@@ -1,7 +1,8 @@
 # Render Oracle Calibration Record
 
-**Status: the measurement is taken and §10 is ruled. Two fields are still inferred rather than read —
-they are marked, and the section that upgrades them is at the bottom.**
+**Status: the measurement is taken, and §10 is ruled CONTINGENTLY. Two fields are still inferred rather
+than read, and the §10 ruling rests entirely on them — if reading the bytes refutes them, §10 reopens.
+The section that upgrades them is at the bottom.**
 
 This file exists so nobody has to run the workflow again to know what it found. `oracle-calibrate` is a
 `workflow_dispatch` experiment: it gates nothing, dispatches nowhere, and its whole output is a report
@@ -59,7 +60,7 @@ cannot be refuted is not evidence.
 Say it that way anywhere this is relayed. "Two independent hosts agreed" and "the workflow assigns each
 leg a distinct host id, and the comparer was not given the bytes to check it" are different sentences.
 
-## §10 is ruled: one canonical environment
+## §10 is ruled, and the ruling is contingent on the two inferred host ids
 
 [render oracle repository](render-oracle-repository.md) §10 presented two options and said the schema
 waited on the ruling. It is decided by this measurement:
@@ -67,6 +68,20 @@ waited on the ruling. It is decided by this measurement:
 - **One canonical environment is viable.** The reference set is **one column per backend**.
 - **Per-environment reference sets must not be built.** The combinatorial keyed-by-GPU/driver option is
   closed, not deferred.
+
+**What this rests on, stated where the ruling is made rather than in the section above.** Agreement is
+only evidence for a canonical environment if the two roots came from DIFFERENT machines, and that is
+precisely the pair of fields this record has not read. So:
+
+- If the legs are confirmed distinct hosts, the ruling stands as written and this paragraph goes away.
+- **If reading the bytes refutes the predicted host ids — if the two roots turn out to carry the same
+  host, or none — this measured WITHIN-HOST determinism and §10 IS NOT DECIDED. It REOPENS.** It does
+  not get quietly amended into a weaker version of the same conclusion, and the one-column-per-backend
+  schema does not survive on the strength of a run that never compared two machines.
+
+The rule this file states about itself applies hardest here: every field says how it is known, and the
+§10 answer is known no more strongly than the weakest field it stands on. Anyone building
+one-column-per-backend on this should read that as a ruling with a live precondition, not a closed one.
 
 ## What zero disagreement does not establish
 
@@ -91,5 +106,8 @@ npx tsx ./scripts/oracle-calibrate.ts runs/calibration-host-1 runs/calibration-h
 Its `identity, as recorded by the captures themselves:` block prints one line per root and then names
 the relationship — `independent-hosts` / `one-host` / `host-identity-missing` /
 `mixed-hosts-within-root`, and `matching-environment` / `environment-mismatch`. Copy those values into
-the table above and change their `source` to `measured`. If they contradict the predictions, the
-contradiction is the finding: say so here rather than editing the prediction away.
+the table above and change their `source` to `measured`.
+
+If they contradict the predictions, the contradiction is the finding: say so here rather than editing
+the prediction away, and reopen §10 per the section above rather than restating the ruling in softer
+words. Anything other than `independent-hosts` + `matching-environment` reopens it.
