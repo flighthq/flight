@@ -16,7 +16,7 @@
 # tolerance clears it. If they did not, this cannot say how far apart they are — a magnitude needs an
 # in-page decode, because `createImageBitmap` is the only decoder in this repo. Do not read a tolerance
 # out of a disagreement reported here.
-name: reference-image-calibrate
+name: Reference Images · Calibration
 
 on:
   workflow_dispatch:
@@ -41,6 +41,7 @@ permissions:
 
 jobs:
   capture:
+    name: Reference Images · Calibration · Host ${{ matrix.host }}
     strategy:
       fail-fast: false
       matrix:
@@ -126,6 +127,7 @@ jobs:
           echo "- host ${{ matrix.host }}: ${{ steps.environment.outputs.id }}" >> "$GITHUB_STEP_SUMMARY"
 
   compare:
+    name: Reference Images · Calibration · Compare
     needs: capture
     if: always()
     runs-on: ubuntu-latest

@@ -22,7 +22,7 @@
 # write scope on this repository. The trigger is a push to the trunk — work that has already landed — plus
 # a manual dispatch for re-running one request. That is the same boundary §7 names: "the user's normal
 # merge/push is the boundary at which remote automation can act."
-name: reference-image-capture
+name: Reference Images · Capture
 
 # ★ THE TRIGGER AND THE BODY MUST AGREE ABOUT WHAT THE QUEUE IS. The body processes every OUTSTANDING
 # request (§5), so a request can be outstanding while nothing re-triggers a run for it — which is exactly
@@ -58,6 +58,7 @@ jobs:
   # preference — and a matrix additionally isolates a failing capture to its own request rather than
   # letting it block a sibling's PR.
   requests:
+    name: Reference Images · Requests
     runs-on: ubuntu-latest
     outputs:
       list: ${{ steps.queue.outputs.list }}
@@ -77,6 +78,7 @@ jobs:
           echo "outstanding: $list"
 
   capture:
+    name: Reference Images · Capture · ${{ matrix.request }}
     needs: requests
     if: needs.requests.outputs.any == 'true'
     runs-on: ubuntu-latest

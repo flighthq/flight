@@ -1,4 +1,4 @@
-name: Nightly quality
+name: Nightly Quality
 
 # Per-PR CI (tests.yml) already gates the TypeScript build/test/quality and render smoke/parity
 # legs on every PR — so nightly does NOT repeat them. Nightly holds only work that does not belong
