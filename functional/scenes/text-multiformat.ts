@@ -3,7 +3,7 @@
 // RGB-only syntax to visible packed RGBA and the layout/raster path honors the resulting ranges.
 //
 // Multi-format runs are the core of rich text and are purely visual — only a real render shows the two
-// colors side by side. The oracle is FUZZY about glyph positions: the red half is the LEFT portion of the
+// colors side by side. The scene assertion is FUZZY about glyph positions: the red half is the LEFT portion of the
 // string and the blue half the RIGHT portion, so it scans the field's LEFT third for red pixels and its
 // RIGHT third for blue pixels, leaving the middle as an unscanned buffer (the exact split pixel depends
 // on glyph metrics). Both colors appearing in their expected halves proves the ranges took effect.

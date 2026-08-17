@@ -22,8 +22,8 @@
 // <symbol> viewport or a nested <svg>, or the interaction with a viewBox. Read a pass as "fit mode and
 // alignment reach the rasterizer," never as "preserveAspectRatio is covered."
 //
-// The oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
-// returns after checking the target element has children, before any oracle runs (functionalVerify.ts).
+// The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
+// returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 import type { Bitmap, ImportDiagnostic } from '@flighthq/sdk';
 import {
   addNodeChild,

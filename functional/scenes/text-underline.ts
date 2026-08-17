@@ -6,10 +6,10 @@
 // BACKEND CAVEAT: underline is drawn by ALL FOUR RichText renderers (canvasRichText, domRichText,
 // glRichText, wgpuRichText each handle `format.underline`), so this test runs on all backends — as does
 // its sibling text-strikethrough (the GPU renderers now draw `format.strikethrough` too). If a future
-// change drops underline from the GPU RichText renderers, this oracle will fail on webgl/webgpu and the
+// change drops underline from the GPU RichText renderers, this scene assertion will fail on webgl/webgpu and the
 // test should be narrowed to "renderers":["canvas","dom"] at that point.
 //
-// Oracle (coverage-based, lenient): the underline stroke is drawn at roughly the bottom of the line box
+// Scene assertion (coverage-based, lenient): the underline stroke is drawn at roughly the bottom of the line box
 // (canvasRichText draws it at baseline + descent). We scan a horizontal BAND in the lower portion of the
 // text line for a wide CONTINUOUS run of ink (text-colored) pixels — that horizontal extent is the
 // underline. Native DOM text decoration normally skips descender ink, but the Flight DOM renderer disables

@@ -5,7 +5,7 @@
 //
 // Contour clipping is purely visual: only a real render can prove a pixel inside the shape's bounding box
 // but OUTSIDE the polygon is removed, while a pixel inside the polygon survives. The scene draws one large
-// cyan rectangle and clips it to a triangle (apex top-center, base along the bottom). The oracle proves
+// cyan rectangle and clips it to a triangle (apex top-center, base along the bottom). The scene assertion proves
 // (1) a point near the triangle's centroid (well inside the polygon AND the shape) is the shape color; and
 // (2) a corner of the triangle's bounding box that the triangle does not cover — but which IS inside the
 // rectangle — is clipped to background.

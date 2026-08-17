@@ -4,7 +4,7 @@
 // blits that region's source rectangle from the atlas image. This is the foundational atlas-batch path and
 // the recipe every sprite/tilemap/particle feature builds on. The scene builds ONE atlas image whose left
 // half is red (region 0) and right half is green (region 1), then places two Sprites at different screen
-// positions — one bound to region 0, one to region 1. The oracle is visual on purpose: it proves the same
+// positions — one bound to region 0, one to region 1. The scene assertion is visual on purpose: it proves the same
 // atlas, addressed by two different region ids, produces two differently-colored sprites at two locations,
 // and that a Sprite draws its region's footprint and nothing outside it (empty area stays background).
 import type { Bitmap } from '@flighthq/sdk';

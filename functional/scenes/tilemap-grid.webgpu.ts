@@ -4,7 +4,7 @@
 // Tilemaps are the atlas-based batch renderer (one image, many sub-rect blits per frame) with no prior
 // functional coverage. The scene builds a procedural 2-tile atlas (tile 0 = red, tile 1 = green) entirely
 // in a canvas — no external assets — slices it into a Tileset, lays out a red/green checkerboard across a
-// COLS×ROWS Tilemap, and positions it. The oracle samples the center of several cells and proves each
+// COLS×ROWS Tilemap, and positions it. The scene assertion samples the center of several cells and proves each
 // carries the color of the tile id it was assigned: tile 0 cells are red, tile 1 cells are green. This is
 // inherently visual — it exercises per-tile source-rect selection and destination placement that jsdom
 // cannot confirm.

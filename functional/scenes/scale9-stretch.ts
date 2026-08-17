@@ -9,7 +9,7 @@
 //
 // The scene authors a bordered panel: an outer filled rect in the border color (blue) and an inner filled
 // rect in the fill color (yellow), inset by BORDER. Natural size is NATURAL×NATURAL with the grid inset
-// BORDER on every side, then the node is scaled up large. The oracle proves the nine-slice rendered and
+// BORDER on every side, then the node is scaled up large. The scene assertion proves the nine-slice rendered and
 // stretched: a wide band of interior sample points are all the fill color (the center grew), and the
 // border color is present just inside each of the four edges (the frame survived the stretch). This is
 // inherently visual — coordinate remapping per slice cannot be confirmed in jsdom.

@@ -4,7 +4,7 @@
 // ORIENTATION IS THE POINT, AND IT NEEDS A FOUR-COLOUR SOURCE TO TEST. A single-colour or symmetric
 // image renders identically whether it was drawn upright, flipped, or transposed, so a scene using one
 // would pass against a V-flip — the classic image-import defect, since bitmap origins differ between
-// conventions. The source here is four distinctly-coloured quadrants, and the oracle samples all four
+// conventions. The source here is four distinctly-coloured quadrants, and the scene assertion samples all four
 // in the destination box, so every one of those transforms produces a different quadrant somewhere and
 // fails.
 //
@@ -22,8 +22,8 @@
 // symbol, clipped or transformed images, or href forms the hook does not serve. Read a pass as "a
 // resolved image draws where and how the element says," never as "SVG images are covered."
 //
-// The oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
-// returns after checking the target element has children, before any oracle runs (functionalVerify.ts).
+// The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
+// returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 import type { Bitmap, ImportDiagnostic } from '@flighthq/sdk';
 import {
   addNodeChild,

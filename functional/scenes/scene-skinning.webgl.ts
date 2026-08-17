@@ -38,7 +38,7 @@ import {
 // layout (joints0/weights0 channels) bound to a two-joint Skeleton3D, deformed on the GPU through the
 // bone-palette DATA TEXTURE read via texelFetch (the HAS_SKIN vertex variant), NOT a uniform mat4[] array.
 // The lower half of a vertical bar is weighted to a stationary root joint; the upper half to a mid-height
-// bend joint that is rotated 75° about +Z, so the posed bar leans hard to one side. The oracle asserts
+// bend joint that is rotated 75° about +Z, so the posed bar leans hard to one side. The scene assertion checks
 // the POSED silhouette differs from the BIND-POSE silhouette (the same scene drawn with the bend joint at
 // identity): a probe column that is background at bind pose becomes covered when posed, and the straight-up
 // bind silhouette clears at the top where the leaned bar no longer reaches. A skin that failed to upload

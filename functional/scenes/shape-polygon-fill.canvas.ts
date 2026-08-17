@@ -1,6 +1,6 @@
 // shape-polygon-fill — validates polygon fill rendering via appendShapePolygon.
 //
-// Draws a filled green pentagon (five vertices) centered at (200,150). The oracle verifies:
+// Draws a filled green pentagon (five vertices) centered at (200,150). The scene assertion verifies:
 //   - the center of the pentagon is green (interior is correctly filled),
 //   - a vertex-adjacent interior point is green,
 //   - a point well outside the polygon is background black.

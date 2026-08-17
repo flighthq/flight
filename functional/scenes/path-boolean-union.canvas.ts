@@ -3,7 +3,7 @@
 //
 // Two axis-aligned rectangles are created as Paths: a red square (100x100 at 50,50) and a blue
 // square (100x100 at 100,100), overlapping in a 50x50 region. Their union is rendered as a green
-// filled shape. The oracle verifies:
+// filled shape. The scene assertion verifies:
 //   - the overlapping center (125,125) is green (inside the union),
 //   - a point exclusive to the first rect (75,75) is green (inside the union),
 //   - a point exclusive to the second rect (175,175) is green (inside the union),

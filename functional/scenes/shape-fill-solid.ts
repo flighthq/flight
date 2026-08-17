@@ -1,7 +1,7 @@
 // shape-fill-solid — validates solid-fill rasterization and z-order compositing of overlapping Shapes.
 //
 // Solid fills are the most fundamental Shape rendering path. This scene draws three opaque filled
-// rectangles: a red and a green that overlap, and a separate blue. The oracle proves (1) each shape's
+// rectangles: a red and a green that overlap, and a separate blue. The scene assertion proves (1) each shape's
 // non-overlapping interior renders its own color, (2) the overlap region shows the TOP shape's color
 // (added last in z-order), and (3) untouched canvas remains the opaque-black background. This is
 // inherently visual — it depends on fill coverage and the painter's-algorithm draw order, which jsdom

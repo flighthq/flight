@@ -5,10 +5,10 @@
 //
 // All four backends draw strikethrough: canvas/dom natively, and gl/wgpu through their canvas-raster
 // RichText path (glRichText/wgpuRichText draw the strike at baseline - ascent*0.35, mirroring
-// scene2d-canvas). Canvas/WebGL/WebGPU share this tight oracle. DOM uses the otherwise-identical
+// scene2d-canvas). Canvas/WebGL/WebGPU share this tight scene assertion. DOM uses the otherwise-identical
 // text-strikethrough.dom.ts variant because native CSS font metrics put its strike below this band.
 //
-// Oracle (coverage-based, lenient): the strike sits at baseline - ascent*0.35, i.e. through the
+// Scene assertion (coverage-based, lenient): the strike sits at baseline - ascent*0.35, i.e. through the
 // upper-middle of the glyph bodies. A scanline through that mid-height carries BOTH glyph ink and the
 // continuous strike, so a struck word shows a much wider continuous ink run across the mid-band than the
 // glyphs alone would (the strike bridges the inter-glyph gaps). The narrow mid-height band deliberately

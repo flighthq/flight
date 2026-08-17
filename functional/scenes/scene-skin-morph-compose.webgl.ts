@@ -46,7 +46,7 @@ import {
 // +Z, lower half to a stationary root), PLUS a morph target that EXTENDS the bar DOWNWARD (the bottom
 // ring pushed to y=-1.5). The two deforms are deliberately ORTHOGONAL screen axes: skin LEANS the top
 // sideways (horizontal), morph EXTENDS the base down (vertical), so each has a probe the other cannot
-// reach. The oracle discriminates all three failure modes:
+// reach. The scene assertion discriminates all three failure modes:
 //   - morph discarded (the freeze bug): the base stops at y=0 — the deep vertical-extension probe is background.
 //   - skin discarded: a straight-up bar — the sideways leaned-arm probe is background.
 //   - either deform missing entirely: the bar is blank or bind-pose.

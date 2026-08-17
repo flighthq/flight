@@ -16,7 +16,7 @@ import type { Bitmap } from '@flighthq/types';
 export const width = 320;
 export const height = 240;
 export const scale = window.devicePixelRatio || 1;
-// This is intentionally a full-canvas solid-color oracle. The generic foreground/background
+// This scene assertion intentionally uses a full-canvas solid color. The generic foreground/background
 // heuristic has no split to measure, so assertRender below checks the actual attachment color.
 export const minCoverage = 0;
 

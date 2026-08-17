@@ -5,8 +5,8 @@
 // vertically aligned.
 //
 // Slant is a render/transform concern (a shear applied to glyph outlines) that jsdom cannot exercise —
-// only a real glyph render produces the lean. The oracle is FUZZY about exact glyph positions: each word
-// occupies a known, non-overlapping x box. Within each box the oracle finds the ink's vertical extent,
+// only a real glyph render produces the lean. The scene assertion is FUZZY about exact glyph positions: each word
+// occupies a known, non-overlapping x box. Within each box the scene assertion finds the ink's vertical extent,
 // then measures the mean x of ink in the TOP scanline band vs the BOTTOM scanline band. For the italic
 // box, top-band ink must be shifted RIGHT of bottom-band ink by a clear margin; for the non-italic box,
 // top and bottom must stay roughly aligned. Fallback (noted, in case isolating top/bottom of a single

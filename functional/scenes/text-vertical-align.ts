@@ -6,7 +6,7 @@
 //
 // Vertical alignment is a layout decision (where the whole text block is placed within the field's
 // height box) that jsdom cannot exercise — only a real glyph render reveals where the ink lands. The
-// oracle is FUZZY about exact glyph positions: per field it scans every sampled column for ink
+// scene assertion is FUZZY about exact glyph positions: per field it scans every sampled column for ink
 // (text-colored) rows, accumulates them, and computes the ink VERTICAL centroid relative to the field's
 // top. It then asserts top < middle < bottom (clearly separated), with the top block near the box top,
 // the middle block near the box center, and the bottom block near the box bottom. No exact pixel is asserted.

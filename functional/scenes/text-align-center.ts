@@ -4,7 +4,7 @@
 // left-aligned text hugs the field's left edge.
 //
 // Alignment is a layout decision (where the text run is placed within the field's width box) that jsdom
-// cannot exercise — only a real glyph render reveals where the ink lands. The oracle is FUZZY about exact
+// cannot exercise — only a real glyph render reveals where the ink lands. The scene assertion is FUZZY about exact
 // glyph positions: per field it scans every sampled row for the leftmost and rightmost "ink"
 // (text-colored) columns, accumulates them, and computes the ink horizontal CENTROID. It then asserts the
 // centered field's centroid is clearly RIGHT of the left field's centroid AND near the field's horizontal

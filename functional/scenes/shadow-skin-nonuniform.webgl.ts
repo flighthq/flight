@@ -117,7 +117,7 @@ mesh.skin = { skeleton };
 addNodeChild(scene, mesh);
 
 // Orthographic, with the eye in the YZ plane so the camera's right axis is world +x — that is what
-// makes a world width and a pixel width proportional by one constant the oracle can re-derive.
+// makes a world width and a pixel width proportional by one constant the scene assertion can re-derive.
 // The ground plane is 8 wide and the view only 7, so the plane overhangs the frame on both sides and
 // every scanned row is ground edge to edge — no frame boundary can masquerade as a silhouette edge.
 const halfWidth = 3.5;

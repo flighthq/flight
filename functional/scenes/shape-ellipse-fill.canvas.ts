@@ -1,7 +1,7 @@
 // shape-ellipse-fill — validates ellipse fill rendering via appendShapeEllipse.
 //
 // Draws a yellow-filled ellipse with top-left at (100,100), width 200, height 100. The ellipse
-// center is at (200,150). The oracle verifies:
+// center is at (200,150). The scene assertion verifies:
 //   - the center of the ellipse is yellow,
 //   - a point near the horizontal edge (inside) is yellow,
 //   - a point near the vertical edge (inside) is yellow,

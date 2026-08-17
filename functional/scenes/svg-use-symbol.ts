@@ -8,7 +8,7 @@
 // fails somewhere.
 //
 // The glyph is an asymmetric bar-and-arm, so scaling errors show as shape errors and not just as size:
-// the oracle samples the arm, the bar, and the notch BETWEEN them. A uniformly-scaled solid block would
+// the scene assertion samples the arm, the bar, and the notch BETWEEN them. A uniformly-scaled solid block would
 // fill the notch, and a mirrored or transposed instantiation would move it.
 //
 // Both uses are deliberately UNIFORM scales (40x30 viewBox into 200x150 and 80x60), so the default
@@ -25,8 +25,8 @@
 // transform, or style inheritance through a use. Read a pass as "a use instantiates its reference at
 // the right place and scale," never as "SVG use is covered."
 //
-// The oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
-// returns after checking the target element has children, before any oracle runs (functionalVerify.ts).
+// The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
+// returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 import type { Bitmap, ImportDiagnostic } from '@flighthq/sdk';
 import {
   addNodeChild,

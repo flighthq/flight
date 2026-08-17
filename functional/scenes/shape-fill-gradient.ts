@@ -2,7 +2,7 @@
 //
 // A gradient fill samples a color ramp across a region defined by a Matrix. This scene fills a single
 // rectangle with a horizontal black→white linear gradient, with a transform that stretches the unit
-// gradient box to span the rectangle's width (left = black, right = white). The oracle proves the ramp
+// gradient box to span the rectangle's width (left = black, right = white). The scene assertion proves the ramp
 // is oriented and monotonic: a sample near the left interior edge is dark (low luma), a sample near the
 // right interior edge is bright (high luma), and right luma exceeds left luma by a wide margin. This is
 // visual: it depends on the gradient-to-geometry mapping and per-pixel interpolation that only a real

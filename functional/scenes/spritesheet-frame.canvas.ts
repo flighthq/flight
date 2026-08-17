@@ -3,7 +3,7 @@
 //
 // Builds a 4-frame horizontal strip (red, green, blue, yellow, each 64x64) in a canvas, slices it
 // via createSpritesheetFromGrid, then renders each frame as a separate Bitmap positioned side by
-// side. The oracle samples the center of each bitmap and verifies the expected solid color. This is
+// side. The scene assertion samples the center of each bitmap and verifies the expected solid color. This is
 // inherently visual — it exercises per-frame atlas region selection and bitmap source-rect rendering
 // that jsdom cannot confirm.
 import type { Bitmap } from '@flighthq/sdk';

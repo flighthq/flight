@@ -24,8 +24,8 @@
 // fonts. Read a pass as "a markup colour tag reaches the rasterizer and stays in its own run," never as
 // "text markup is covered."
 //
-// The oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
-// returns after checking the target element has children, before any oracle runs (functionalVerify.ts).
+// The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
+// returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,

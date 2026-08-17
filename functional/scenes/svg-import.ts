@@ -8,12 +8,12 @@
 // text, or images, all of which the importer supports and none of which are checked here. Read a pass as
 // "the importer's output reaches the rasterizer," never as "SVG is covered."
 //
-// The two rects sit in OPPOSITE corners of the document box rather than side by side, so the oracle
+// The two rects sit in OPPOSITE corners of the document box rather than side by side, so the scene assertion
 // checks placement and not just presence: it samples both filled corners and both empty ones, which an
 // axis flip or a collapsed transform would fail. Each is a distinct colour so a swap is caught too.
 //
-// The oracle gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
-// returns after checking the target element has children, before any oracle runs (functionalVerify.ts).
+// The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
+// returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 // So the importer's DOM output is asserted only to be non-empty.
 import type { Bitmap, ImportDiagnostic } from '@flighthq/sdk';
 import {

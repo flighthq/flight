@@ -43,7 +43,7 @@ const SOURCE_HALF_HEIGHT = 34;
 const FINAL_SCALE_X = 1.7;
 const FINAL_SCALE_Y = 1.45;
 
-// The precise oracle below distinguishes the composed texture, its padding glow, and the backing.
+// The precise scene assertion below distinguishes the composed texture, its padding glow, and the backing.
 // Keep the generic foreground-vs-background heuristic out of this single-composite target.
 export const minCoverage = 0;
 

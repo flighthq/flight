@@ -12,7 +12,7 @@
 //   - 'bevel': the outer corner is cut flat by a chord across the two edge endpoints — no point.
 //   - 'round': the outer corner is filled by a circular arc of radius half-thickness around the apex.
 //
-// This is visual: joins are extra geometry generated only at corners by a real rasterizer. The oracle
+// This is visual: joins are extra geometry generated only at corners by a real rasterizer. The scene assertion
 // reads two depths straight below the apex along the corner's bisector. The 90° corner with thickness 30
 // (half = 15) yields: bevel chord ends ~10.6px past the apex, the round arc ~15px, and the miter point
 // ~21px. A shallow sample (apex.y + 12.5) separates round (white) from bevel (background); a deeper

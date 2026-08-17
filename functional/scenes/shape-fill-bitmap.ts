@@ -2,7 +2,7 @@
 // small 16×16 high-contrast checkerboard (8px black/white cells) and repeats across a 256×256 region.
 //
 // This is visual: it depends on the image-to-geometry mapping, the tiling/repeat behavior, and the
-// nearest-neighbor (smooth=false) sampling that only a real rasterizer produces. The oracle proves
+// nearest-neighbor (smooth=false) sampling that only a real rasterizer produces. The scene assertion proves
 // (1) tiling — cell centers across more than two 8px periods alternate pure black/white at the 8px
 // pitch (a single un-tiled image could not cover 256px with that pitch) and (2) nearest sampling — a
 // sample on a cell boundary is still pure black or white, with no bilinear blend to gray.

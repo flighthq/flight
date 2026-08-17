@@ -14,7 +14,7 @@ import type { Bitmap } from '@flighthq/types';
 export const width = 320;
 export const height = 240;
 export const scale = window.devicePixelRatio || 1;
-// The scene is intentionally a full-canvas solid-color oracle. Its behavior check is the negotiated
+// The scene assertion intentionally uses a full-canvas solid color. Its behavior check is the negotiated
 // storage and sentinel path below; assertRender verifies that whichever path the device supports
 // produced a usable target rather than a blank/incomplete framebuffer.
 export const minCoverage = 0;
