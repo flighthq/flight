@@ -48,6 +48,36 @@ describe('getClaimedTone', () => {
   });
 });
 
+describe('getClaimedTone, on the three ways a substring match produces a false accusation', () => {
+  // These are the modes an independent naive reimplementation was measured to fail on. Each one here
+  // resolves either to the RIGHT tone or to null — never to a confident wrong tone, because the cost of
+  // this tool being wrong is a correction sent to someone whose text was right.
+  it('does not read a negated colour as a claim, in any of its phrasings', () => {
+    expect(getClaimedTone('The background is never black; it is elsewhere described.')).toBeNull();
+    expect(getClaimedTone('A field with no black anywhere; the background is mid-gray.')).toBe('mid-gray');
+  });
+
+  // A hyphen is a word boundary, so /\bblack\b/ matches inside "blue-black" — and a very dark
+  // blue-black field then contradicts its own near-black constant.
+  it('reads a hyphenated compound as one word rather than as its last part', () => {
+    expect(getClaimedTone('An 800x600 very dark blue-black field with one square.')).toBe('near-black');
+    expect(getClaimedTone('An 800x600 blue-black field with one square.')).toBe('near-black');
+    expect(getClaimedTone('On a 300x300 pure-black field, a quarter-disk.')).toBe('black');
+  });
+
+  it('refuses a colour that modifies the content rather than the field', () => {
+    expect(getClaimedTone('Two white squares sit on the field, which is described elsewhere.')).toBeNull();
+    expect(getClaimedTone('A black-bordered field of mid-gray.')).toBeNull();
+  });
+
+  // Not every second colour word is an ambiguity. Here the field IS black and the white belongs to a
+  // square's own background in a later clause — so the right answer is black, reached because the window
+  // stops at the clause boundary rather than because the tool guessed well.
+  it('reads the field colour when a later clause describes a sub-element', () => {
+    expect(getClaimedTone('An opaque black field; the background of the left square is white.')).toBe('black');
+  });
+});
+
 describe('readSceneBackgroundClaims', () => {
   it('reports a description whose claim contradicts its own scene background', () => {
     const directory = scenes({
