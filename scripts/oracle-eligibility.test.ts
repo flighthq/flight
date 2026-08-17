@@ -8,6 +8,7 @@ import type {
 import {
   addReferenceImageCoverage,
   findParityWithholdings,
+  findStaleCaptures,
   groupOracleTargets,
   selectCommissionableCells,
   summarizeOracleBlocks,
@@ -481,7 +482,7 @@ describe('summarizeOracleBlocks', () => {
 });
 
 function fact(identity: string, overrides: Partial<OracleCaptureFact> = {}): OracleCaptureFact {
-  return { baselineHash: 'h', hash: 'h', identity, oracle: 'invoked', state: 'ready', ...overrides };
+  return { baselineHash: 'h', hash: 'h', identity, oracle: 'invoked', sourceHash: null, state: 'ready', ...overrides };
 }
 
 /** Builds a one-cell input that is eligible by default, so a test breaks exactly what it names. */
@@ -519,3 +520,32 @@ function blockOf(report: ReturnType<typeof selectCommissionableCells>): [string,
   expect(report.blocked).toHaveLength(1);
   return [report.blocked[0]!.reason, report.blocked[0]!.detail];
 }
+
+describe('findStaleCaptures', () => {
+  // ★ THE DEFECT THIS MAKES MECHANICAL. A census was computed from capture roots taken before the tree
+  // moved, and reported cells as lacking oracles those scenes had since gained. The failure was silent
+  // and bidirectional — a deleted scene's stale error reads as a live defect, an improved scene's stale
+  // facts read as a missing feature — and it took manual archaeology to notice either time.
+  const current = (map: Readonly<Record<string, string>>) => (id: string) => map[id] ?? null;
+
+  it('names a cell whose capture recorded a different source hash than the tree holds now', () => {
+    const stale = findStaleCaptures(
+      [fact('functional/moved/webgl', { sourceHash: 'old' }), fact('functional/same/webgl', { sourceHash: 'a' })],
+      current({ 'functional/moved/webgl': 'new', 'functional/same/webgl': 'a' }),
+    );
+
+    expect(stale).toEqual(['functional/moved/webgl']);
+  });
+
+  it('ignores a capture that recorded no source hash, rather than guessing it moved', () => {
+    expect(
+      findStaleCaptures([fact('functional/a/webgl', { sourceHash: null })], current({ 'functional/a/webgl': 'x' })),
+    ).toEqual([]);
+  });
+
+  it('ignores a cell whose scene no longer exists — that is residue, not staleness', () => {
+    // A missing scene resolves to null, and the coverage intersection already withholds those. Reporting
+    // them here would file one defect under two names.
+    expect(findStaleCaptures([fact('functional/gone/webgl', { sourceHash: 'old' })], current({}))).toEqual([]);
+  });
+});

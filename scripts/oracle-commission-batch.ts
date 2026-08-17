@@ -14,6 +14,8 @@
 //
 //   report  → print eligible and blocked cells, grouped by why  (default; writes nothing)
 //   write   → additionally file oracle-requests/<id>.json and add the referenceImage coverage identities
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +30,7 @@ import type {
 import {
   addReferenceImageCoverage,
   findParityWithholdings,
+  findStaleCaptures,
   groupOracleTargets,
   selectCommissionableCells,
   summarizeOracleBlocks,
@@ -82,8 +85,9 @@ if (scope !== 'independent-hosts' && scope !== 'one-host') {
 }
 
 const coverage = readCoverage(subject);
+const captures = readCaptureFacts(runs[0]!, subject);
 const report = selectCommissionableCells({
-  captures: readCaptureFacts(runs[0]!, subject),
+  captures,
   coverage,
   determinism: readDeterminism(runs),
   determinismScope: scope,
@@ -96,7 +100,20 @@ const report = selectCommissionableCells({
 const eligible = report.eligible.filter((identity) => only.size === 0 || only.has(identity.split('/')[1] ?? ''));
 const batch = eligible.slice(0, Math.max(0, limit));
 
+// ★ THE COMMIT AND THE STALE-CELL LIST ARE FIELDS, NOT PROSE. A census is quoted long after the note that
+// carried it, and "which tree was this measured against" has to be answerable by the consumer rather than
+// by asking the author. `sourceCommit` says what the ANALYSIS ran on; `stale` says which cells' CAPTURES
+// describe a different tree — and those two differing is the defect this exists to surface, because it is
+// exactly what produced a census reporting cells as lacking oracles they had since gained.
+const staleCells = findStaleCaptures(captures, currentSceneSourceHash);
 console.log(`subject ${subject} | ${coverage.size} live cell(s) | ${runs.length} run(s) on ${scope}`);
+console.log(`sourceCommit ${headCommit()}`);
+console.log(
+  staleCells.length === 0
+    ? 'stale 0 — every capture describes the current scene source'
+    : `stale ${staleCells.length} — CAPTURES DESCRIBE A DIFFERENT TREE; re-capture before trusting this census`,
+);
+for (const identity of staleCells) console.log(`  STALE ${identity}`);
 console.log('');
 console.log(`eligible ${eligible.length}${eligible.length > batch.length ? ` (this batch: ${batch.length})` : ''}`);
 for (const identity of batch) console.log(`  COMMISSION ${identity}`);
@@ -118,6 +135,15 @@ if (readOption('--verbose') !== undefined || rest.includes('--verbose')) {
 }
 
 if (subcommand === 'report') process.exit(0);
+
+// ★ REPORT MAY SHOW A STALE CENSUS; WRITE MAY NOT ACT ON ONE. Same read/write asymmetry as everything else
+// here — looking at a suspect number is how you find out it is suspect, and committing a cell on one is
+// how a wrong reference becomes permanent.
+if (staleCells.length > 0) {
+  console.error(`oracle-commission-batch: ${staleCells.length} capture(s) describe a different tree than`);
+  console.error('  the current source. Re-capture (npm run build:functional first) before filing.');
+  process.exit(1);
+}
 
 if (batch.length === 0) {
   // Filing a request that names nothing would open a commission the capture workflow answers with an
@@ -198,6 +224,7 @@ function readCaptureFacts(root: string, name: string): OracleCaptureFact[] {
           hash: typeof status['hash'] === 'string' ? status['hash'] : null,
           identity: `${name}/${entry}/${renderer}`,
           oracle: typeof status['oracle'] === 'string' ? status['oracle'] : null,
+          sourceHash: readSourceHash(status),
           state: typeof status['state'] === 'string' ? status['state'] : 'unreadable',
         });
       } catch {
@@ -206,6 +233,7 @@ function readCaptureFacts(root: string, name: string): OracleCaptureFact[] {
           hash: null,
           identity: `${name}/${entry}/${renderer}`,
           oracle: null,
+          sourceHash: null,
           state: 'unreadable',
         });
       }
@@ -280,6 +308,40 @@ function directories(path: string): string[] {
   return readdirSync(path, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
+}
+
+/** The commit the ANALYSIS ran against — not the commit the captures describe. See the stale check. */
+function headCommit(): string {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
+/** `provenance.sourceHash` from a status record, when it recorded one. */
+function readSourceHash(status: Record<string, unknown>): string | null {
+  const provenance = status['provenance'];
+  if (typeof provenance !== 'object' || provenance === null) return null;
+  const hash = (provenance as Record<string, unknown>)['sourceHash'];
+  return typeof hash === 'string' ? hash : null;
+}
+
+/**
+ * The scene source's current sha256 for a cell, matching what the capture recorded.
+ *
+ * Resolution mirrors the capture tool's own: a renderer-specific `<entry>.<renderer>.ts` when present,
+ * otherwise the backend-agnostic `<entry>.ts` that serves every backend. Missing means the scene is gone,
+ * which is residue rather than staleness and is handled by the coverage intersection, not here.
+ */
+function currentSceneSourceHash(identity: string): string | null {
+  const [, entry, renderer] = identity.split('/');
+  if (entry === undefined || renderer === undefined) return null;
+  for (const candidate of [`${entry}.${renderer}.ts`, `${entry}.ts`]) {
+    const path = join(repoRoot, 'functional', 'scenes', candidate);
+    if (existsSync(path)) return createHash('sha256').update(readFileSync(path)).digest('hex');
+  }
+  return null;
 }
 
 function readOption(name: string): string | undefined {
