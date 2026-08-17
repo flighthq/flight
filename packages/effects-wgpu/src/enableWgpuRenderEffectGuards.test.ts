@@ -115,6 +115,34 @@ describe('enableWgpuRenderEffectGuards', () => {
     expect(again).toHaveLength(0);
   });
 
+  it('WARNS once when a multisample request is accepted but degraded to one sample', async () => {
+    const state = await createWgpuRenderStateForTest();
+    enableWgpuRenderEffectGuards(state);
+
+    let pipeline = createWgpuRenderEffectPipeline(state);
+    const entries = captureLog(() => {
+      pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+      createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+    });
+
+    expect(pipeline.options.sampleCount).toBe(1);
+    expect(entries).toHaveLength(1);
+    expect(messageOf(entries[0])).toContain('sampleCount 4 requested');
+    expect(messageOf(entries[0])).toContain('multisampling was NOT applied');
+    expect(entries[0]?.data).toMatchObject({ appliedSampleCount: 1, requestedSampleCount: 4 });
+  });
+
+  it('stays SILENT when the requested sample count is supported', async () => {
+    const state = await createWgpuRenderStateForTest();
+    enableWgpuRenderEffectGuards(state);
+
+    const entries = captureLog(() => {
+      expect(createWgpuRenderEffectPipeline(state, { sampleCount: 1 }).options.sampleCount).toBe(1);
+    });
+
+    expect(entries).toHaveLength(0);
+  });
+
   it('stays SILENT for an empty chain, which is a no-op the caller asked for rather than a miss', async () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuRenderEffectGuards(state);

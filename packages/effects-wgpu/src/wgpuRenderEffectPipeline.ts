@@ -23,6 +23,7 @@ import type {
   RenderEffectPipelineOptions,
   RenderTargetColorSpace,
   WgpuRenderEffectPipeline,
+  WgpuRenderEffectPipelineSampleCountGuard,
   WgpuRenderEffectPipelineSkipGuard,
   WgpuRenderState,
   WgpuRenderTarget,
@@ -73,7 +74,7 @@ export function beginWgpuRenderEffectPipeline(
 }
 
 export function createWgpuRenderEffectPipeline(
-  _state: WgpuRenderState,
+  state: WgpuRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): WgpuRenderEffectPipeline {
   // WebGPU effect targets are single-sample: a requested sampleCount above 1 cannot be honoured here and
@@ -82,10 +83,18 @@ export function createWgpuRenderEffectPipeline(
   // sampleCount 4, all at module scope, so the throw made those scene modules unloadable. Rejecting an
   // argument a live population passes is a breaking change wearing the clothes of strictness; the fault in
   // accept-and-drop was that it is SILENT, not that it is permissive. Do not restore the throw until
-  // sampleCount is genuinely forwarded or every caller has been migrated. The caller-facing warning
-  // belongs in a separately-importable guard module per the diagnostics inversion, not inline here.
+  // sampleCount is genuinely forwarded or every caller has been migrated. The core reports through a
+  // message-free seam; enableWgpuRenderEffectGuards owns the caller-facing warning and logging dependency.
+  const requestedSampleCount = options.sampleCount ?? 1;
+  const appliedSampleCount = requestedSampleCount > 1 ? 1 : requestedSampleCount;
+  if (requestedSampleCount !== appliedSampleCount) {
+    _sampleCountGuards.get(state)?.(state, requestedSampleCount, appliedSampleCount);
+  }
   return {
-    options: { ...options },
+    options: {
+      ...options,
+      ...(options.sampleCount === undefined ? {} : { sampleCount: appliedSampleCount }),
+    },
     sceneTarget: null,
     pool: createWgpuRenderTargetPool(),
     lutCache: createColorLutCache(),
@@ -189,6 +198,16 @@ export function endWgpuRenderEffectPipeline(
   if (scratchB !== null) releaseWgpuRenderTarget(pipeline.pool, scratchB);
 }
 
+// The diagnostics seam for accepted-but-degraded multisampling requests. Core stays free of warning
+// strings and @flighthq/log; the separately-importable guard module installs the reporter when wanted.
+export function setWgpuRenderEffectPipelineSampleCountGuard(
+  state: WgpuRenderState,
+  guard: WgpuRenderEffectPipelineSampleCountGuard | null,
+): void {
+  if (guard === null) _sampleCountGuards.delete(state);
+  else _sampleCountGuards.set(state, guard);
+}
+
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame, or null to
 // clear it. The Wgpu mirror of setGlRenderEffectVelocityTexture.
 // The diagnostics seam. Core stays message-free; enableWgpuRenderEffectGuards installs the reporter that
@@ -268,3 +287,4 @@ function reportWgpuRenderEffectPipelineSkip(state: WgpuRenderState, kind: string
 }
 
 const _skipGuards = new WeakMap<WgpuRenderState, WgpuRenderEffectPipelineSkipGuard>();
+const _sampleCountGuards = new WeakMap<WgpuRenderState, WgpuRenderEffectPipelineSampleCountGuard>();
