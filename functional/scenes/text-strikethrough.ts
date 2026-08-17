@@ -48,7 +48,7 @@ const { render, width } = await createFunctionalTarget({
     'the word rather than the width of the box, so it starts and ends near the first and last glyph. ' +
     'A picture with the same text and no line through it, or with the line below the letters instead of ' +
     'across them, is the failure. The line is the same cyan as the text, there is no box or border around ' +
-    'the field, and the rest of the canvas is pure black.',
+    'the field, and the rest of the image is pure black.',
 });
 
 const root = createDisplayObject();

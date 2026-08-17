@@ -58,7 +58,7 @@ const target = await createFunctionalTarget({
     'each — no gradient, no block-shaped patchiness, and no softening at the edges even though each is ' +
     'magnified forty times from a tiny source. Everything outside the two squares is pure black, ' +
     'including the area up and to the left of them near x 260, y 160 — the squares are bounded quads, ' +
-    'not a wash across the canvas.',
+    'not a wash across the whole image.',
 });
 
 // The compressed upload path is an opt-in seam (so a plain-bitmap GL bundle never carries its
