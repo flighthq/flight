@@ -29,6 +29,16 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black sky frames a light-grey ground plane receding toward mid-field and a ' +
+    'light-grey sphere hovering at the upper centre. A clearly dark, coarsely sampled shadow lies on ' +
+    'the plane directly beneath the sphere around 56% of the field height, while the foreground ' +
+    'around 90% height remains broadly lit. The shadow is not absent or replaced by uniform ground ' +
+    'illumination, the sphere remains visible above it, and the rest of the field does not turn into ' +
+    'a full-screen dark clear.',
+);
 
 // A deliberately coarse light projection makes radius-1 PCF and a small negative depth bias visible at
 // capture resolution. Keeping this synthetic witness separate lets shadow-classic exercise the normal

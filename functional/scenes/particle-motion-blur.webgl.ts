@@ -32,6 +32,16 @@ import {
   setGlRenderEffectVelocityTexture,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black blue-grey field (about R16 G16 B20), eight pale blue-white glows form a ' +
+    'ring of 110 px radius around (400,300), at the cardinal and diagonal positions. Each 32 px ' +
+    'source glow is spread outward from the ring into a broad dim radial streak, so the eight streaks ' +
+    'read as a small starburst and the original fully bright cores are absent. The ring radius and ' +
+    'the 45-degree spacing remain clear; the result is not one shared-direction smear, a solid halo ' +
+    'or eight crisp dots, and the field outside the starburst stays near-black.',
+);
 
 // The particle emitter writes per-particle velocity into the G-buffer (registerGlVelocityWriter with
 // the particle writer); the motion-blur effect then smears each particle along its own ring-radial vector.

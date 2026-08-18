@@ -27,7 +27,17 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R10 G12 B16), one flat orange, screen-aligned ' +
+    'quadrilateral is centred in view. Its four corners have moved from ±0.5 to ±1.1 world units, so ' +
+    'it is much larger than the bind-pose quad: it covers the centre and the probe at 80% width, 80% ' +
+    'height, but remains bounded and leaves the extreme frame corners near-black. The silhouette is a ' +
+    'solid convex four-corner shape with no small inner square, missing corner, outline or second ' +
+    'copy.',
+);
 
 // WebGPU mirror of scene-morph.webgl: the outer probe is reachable only when the CPU morph blend
 // increments geometry.version and the WebGPU upload refreshes the deformed vertex buffer.

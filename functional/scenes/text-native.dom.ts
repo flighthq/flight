@@ -12,7 +12,18 @@ import {
   renderDomBackground,
   renderDomScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On a pure white 800×600 field, three text blocks begin at x=60. Near y=56 is a bold 32 px dark ' +
+    'sans-serif heading reading “NativeText — platform/DOM text”. Beginning near y=130, a 680×180 box ' +
+    'contains a wrapped 20 px dark-grey serif paragraph about the platform text engine, layout and ' +
+    'NativeText. Near y=340 is the 24 px italic dark-red phrase “italic, colored, right-aligned ' +
+    'style”. The red run is red-dominant, never blue or faint; the heading and paragraph are visibly ' +
+    'near-black. Exact glyph outlines and line breaks are host-font dependent and are not part of the ' +
+    'claim. No text appears outside these three blocks and all remaining field area stays white.',
+);
 
 // NativeText is platform/DOM-backed, so this test runs on the DOM backend only — there is no canvas or
 // webgl render.*.ts, which restricts discovery to DOM.

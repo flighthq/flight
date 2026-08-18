@@ -25,7 +25,16 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, three aligned shallow boxes overlap at the centre: opaque green ' +
+    'at the back, then a half-transparent blue layer, then a half-transparent red layer nearest the ' +
+    'viewer. Their common silhouette reads as one mixed-colour square in which red is dominant but ' +
+    'red, green and blue are all visibly present. It is not pure green, pure blue or a set of three ' +
+    'offset boxes, and the area outside the bounded square remains near-black.',
+);
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

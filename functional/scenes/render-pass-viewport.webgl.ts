@@ -25,6 +25,19 @@ import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import type { Bitmap, GlRenderState, Viewport } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 dark navy field contains four separated proof areas. At top left, a green 300×220 ' +
+    'panel beginning at (40,40) contains a blue 100×100 square from (140,100) to (240,200). At top ' +
+    'right, a magenta 320×220 panel beginning at (420,40) contains a yellow 100×80 inset at (500,100) ' +
+    'and a cyan rectangle on its right; navy remains immediately outside that panel. Near the lower ' +
+    'left edge is one orange rectangle clipped to a smaller local window, with navy around it rather ' +
+    'than orange filling the whole requested area. At lower right, a tall 150×220 viewport and a wide ' +
+    '250×120 viewport each contain the same cyan box as an approximately square silhouette — neither ' +
+    'box stretches to its viewport. All four areas remain isolated by navy gaps; nested colours do ' +
+    'not escape into neighbouring regions.',
+);
 
 // One target, several actual draw paths:
 // - top-left: a partial depth clear revealed by a later behind-depth draw;

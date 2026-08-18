@@ -36,6 +36,16 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 almost-black navy field (about R5 G7 B12), a single large circular blue globe is ' +
+    'centred near (400,300). Its screen-right day hemisphere is brightly lit; the screen-left night ' +
+    'hemisphere remains visible and contains scattered warm yellow city-light clusters instead of ' +
+    'falling to black. Subtle normal-map variation breaks up the blue surface, and a cool cyan ' +
+    'atmospheric rim is strongest near the silhouette. The globe stays circular and bounded, with no ' +
+    'second sphere, flat unshaded disk or city lights on the surrounding field.',
+);
 
 // drawGlScene3D / setGlScene3DTime / the ShadedMaterial registrations exist only on scene-gl; drawGlScene3D
 // also collides in the @flighthq/sdk barrel (re-exported from scene-wgpu too), so the whole shading-GL

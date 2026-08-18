@@ -10,6 +10,13 @@ import {
   presentGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type { Bitmap } from '@flighthq/types';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'The entire 320×240 field is a single opaque green, approximately R33 G196 B90. The colour is ' +
+    'uniform at the centre, edges and corners. There is no black or transparent area, ' +
+    'incomplete-frame stripe, geometry, border or second colour.',
+);
 
 export const width = 320;
 export const height = 240;

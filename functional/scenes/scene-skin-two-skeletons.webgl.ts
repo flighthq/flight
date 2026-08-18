@@ -29,6 +29,15 @@ import {
   setVector3,
   skinVertices,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R10 G12 B16), two separate bright horizontal bars are ' +
+    "centred one above the other. The upper bar is three times the lower bar's width: approximately " +
+    '343 px versus 114 px, derived from world widths 3 and 1 across a 7-world-unit orthographic view ' +
+    'mapped to 800 px. Their heights remain similar and a broad dark gap separates them. The bars do ' +
+    'not share one width, overlap, join vertically or extend to the field edges.',
+);
 
 // scene-skin-two-skeletons — TWO skinned meshes with SEPARATE skeletons in ONE frame. The upper bar's
 // joint scales x by 3 and the lower bar's does not, so a correct frame draws one wide bar and one narrow

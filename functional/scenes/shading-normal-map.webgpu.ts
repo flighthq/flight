@@ -37,7 +37,17 @@ import {
   submitWgpuRenderPass,
   VertexDisplaceModifierSource,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black navy field (about R8 G11 B18), one large pale blue, shallow box faces ' +
+    'the viewer at the centre. Its front is split vertically by two authored tangent-space normals: ' +
+    'the LEFT half is clearly brighter than the right by more than 25 luminance levels, while both ' +
+    'halves retain stepped blue-grey shading. The split is a lighting change rather than a gap or ' +
+    'colour bar; the box remains one continuous square silhouette. No uniform single shade, reversed ' +
+    'brightness order, extra geometry or full-field clear is present.',
+);
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

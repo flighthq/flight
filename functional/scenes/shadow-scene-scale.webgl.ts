@@ -29,6 +29,16 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'A top-down 800×600 view is filled edge to edge by a large light-grey ground plane. Three similar ' +
+    'grey rectangular occluders are evenly spaced left, centre and right in an upper-middle row, ' +
+    'corresponding to world x positions -22, 0 and 22 on the 80×60 ground. Each casts a separate dark ' +
+    'shadow displaced down and to the right by the angled light; for the centre object the dark patch ' +
+    'near world (5,-5) is plainly darker than lit ground at (13,-5) on the same row. The three ' +
+    'shadows do not merge, vanish, cling directly under the boxes or spill beyond the bounded ground.',
+);
 
 // A large 80×60 architectural ground and three 12-unit occluders exercise an explicit tight
 // light-space shadow fit. A top-down camera and angled sun separate each occluder from its cast

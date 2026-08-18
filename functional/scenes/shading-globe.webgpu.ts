@@ -38,7 +38,17 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 almost-black navy field (about R5 G7 B12), a single large circular blue globe is ' +
+    'centred near (400,300). Its screen-right day hemisphere is brightly lit; the screen-left night ' +
+    'hemisphere remains visible and contains scattered warm yellow city-light clusters instead of ' +
+    'falling to black. Subtle normal-map variation breaks up the blue surface, and a cool cyan ' +
+    'atmospheric rim is strongest near the silhouette. The globe stays circular and bounded, with no ' +
+    'second sphere, flat unshaded disk or city lights on the surrounding field.',
+);
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

@@ -29,7 +29,12 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Three equally spaced translucent warm-orange squares centered vertically on a dark background (0x101018). Each square uses a 64×64 atlas filled with rgba(224,96,48,0.5) at particle alpha 0.5, compositing to approximately #793320 (muted brown-orange) over the background. The three quads are positioned at x = -1.2, 0, +1.2 with slight depth stagger. Gaps between the squares and all frame edges show the dark background. No lighting (ambient and directional are null). Camera at (0,0,5), fovY π/3.',
+  'On an 800×600 near-black blue-grey field (about R16 G16 B24), three separate translucent ' +
+    'burnt-orange square particles are centred near 34.4%, 50% and 65.6% of the width at mid-height. ' +
+    'They use the same 64×64 source, about 0.9 scale, with turns of 0, 0.35 and 0.70 radians. Over ' +
+    'the dark field their centres composite near R121 G51 B32: distinctly orange-brown, neither much ' +
+    'darker brown nor bright opaque orange. The gaps and all space outside the three squares remain ' +
+    'near-black; no white particle or fourth copy appears.',
 );
 
 // Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene3D invokes automatically. The

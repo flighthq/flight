@@ -11,6 +11,13 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
 import type { Bitmap } from '@flighthq/types';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'The entire 320×240 field is a single opaque bright red, approximately R230 G20 B20. It is ' +
+    'uniform from edge to edge, including the centre and all four corners: no green control colour, ' +
+    'black clear, rectangle, border or second region remains visible.',
+);
 
 export const width = 320;
 export const height = 240;

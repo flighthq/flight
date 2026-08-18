@@ -29,7 +29,16 @@ import {
   setNode2DClip,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, a bright pale-cyan triangle is centred with apex at (400,150) ' +
+    'and a horizontal base from (250,450) to (550,450). The interior, including the field centre, is ' +
+    'luminous and a soft bloom extends just beyond the three edges. The original 300×300 square does ' +
+    'not appear: its top corners and all pixels outside the triangular contour remain background ' +
+    'apart from the narrow glow. The triangle is neither blank nor replaced by a rectangle.',
+);
 
 // The contour clip's stencil pipeline runs inside the rgba16float scene target, so its color-target format
 // must match — this exercises the per-format clip-contour pipeline keying on Wgpu.
