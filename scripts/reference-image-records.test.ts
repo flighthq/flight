@@ -6,8 +6,8 @@ import type { ReferenceImageRequest } from './reference-image-records';
 import {
   getOracleLockImages,
   getOracleRequestCells,
-  readOracleLock,
-  readOracleLockPins,
+  readReferenceImageLock,
+  readReferenceImageLockPins,
   readOracleRequest,
 } from './reference-image-records';
 
@@ -39,9 +39,9 @@ describe('getOracleRequestCells', () => {
   });
 });
 
-describe('readOracleLock', () => {
+describe('readReferenceImageLock', () => {
   it('accepts a well-formed lock', () => {
-    const result = readOracleLock(writeJson({ ...lock() }));
+    const result = readReferenceImageLock(writeJson({ ...lock() }));
 
     expect('lock' in result && result.lock.packs['functional-shapes']?.sha256).toBe(SHA);
     expect('lock' in result && getOracleLockImages(result.lock).get('functional/shape-fill-solid/webgl')).toEqual({
@@ -50,8 +50,8 @@ describe('readOracleLock', () => {
   });
 
   it('reports unreadable and unparsable files rather than throwing', () => {
-    const missing = readOracleLock(join(mkdtempSync(join(tmpdir(), 'reference-image-')), 'absent.json'));
-    const garbage = readOracleLock(writeRaw('{not json'));
+    const missing = readReferenceImageLock(join(mkdtempSync(join(tmpdir(), 'reference-image-')), 'absent.json'));
+    const garbage = readReferenceImageLock(writeRaw('{not json'));
 
     expect('problems' in missing && missing.problems[0]?.kind).toBe('not-json');
     expect('problems' in garbage && garbage.problems[0]?.kind).toBe('not-json');
@@ -60,30 +60,30 @@ describe('readOracleLock', () => {
   it('rejects a commit or sha256 that is not the right shape', () => {
     // A truncated or uppercase hash is the shape a hand-edited lock takes, and it must not be accepted
     // and then fail later against a fetched artifact with a confusing message.
-    const shortCommit = readOracleLock(writeJson({ ...lock(), oracleCommit: 'abc123' }));
-    const upperSha = readOracleLock(writeJson({ ...lock(), manifestSha256: SHA.toUpperCase() }));
+    const shortCommit = readReferenceImageLock(writeJson({ ...lock(), oracleCommit: 'abc123' }));
+    const upperSha = readReferenceImageLock(writeJson({ ...lock(), manifestSha256: SHA.toUpperCase() }));
 
     expect('problems' in shortCommit && shortCommit.problems.map((p) => p.kind)).toContain('field-type');
     expect('problems' in upperSha && upperSha.problems.map((p) => p.kind)).toContain('field-type');
   });
 
   it('rejects an empty packs map, which would pin a release supplying nothing', () => {
-    const result = readOracleLock(writeJson({ ...lock(), packs: {} }));
+    const result = readReferenceImageLock(writeJson({ ...lock(), packs: {} }));
 
     expect('problems' in result && result.problems.map((p) => p.kind)).toContain('field-empty');
   });
 
   it('names the offending pack rather than reporting a bare type error', () => {
-    const result = readOracleLock(writeJson({ ...lock(), packs: { 'functional-shapes': { file: 'x.tgz' } } }));
+    const result = readReferenceImageLock(writeJson({ ...lock(), packs: { 'functional-shapes': { file: 'x.tgz' } } }));
 
     expect('problems' in result && result.problems[0]?.detail).toContain('packs.functional-shapes.sha256');
   });
 
   it('rejects a pack with no readable per-image identity set', () => {
-    const missing = readOracleLock(
+    const missing = readReferenceImageLock(
       writeJson({ ...lock(), packs: { 'functional-shapes': { file: 'x.tgz', sha256: SHA } } }),
     );
-    const empty = readOracleLock(
+    const empty = readReferenceImageLock(
       writeJson({ ...lock(), packs: { 'functional-shapes': { file: 'x.tgz', images: {}, sha256: SHA } } }),
     );
 
@@ -92,7 +92,7 @@ describe('readOracleLock', () => {
   });
 
   it('rejects a malformed pixel identity and one image named by two packs', () => {
-    const malformed = readOracleLock(
+    const malformed = readReferenceImageLock(
       writeJson({
         ...lock(),
         packs: {
@@ -104,7 +104,7 @@ describe('readOracleLock', () => {
         },
       }),
     );
-    const duplicate = readOracleLock(
+    const duplicate = readReferenceImageLock(
       writeJson({
         ...lock(),
         packs: {
@@ -123,15 +123,15 @@ describe('readOracleLock', () => {
   });
 
   it('rejects a schemaVersion it does not implement', () => {
-    const result = readOracleLock(writeJson({ ...lock(), schemaVersion: 1 }));
+    const result = readReferenceImageLock(writeJson({ ...lock(), schemaVersion: 1 }));
 
     expect('problems' in result && result.problems[0]?.kind).toBe('schema-version');
   });
 });
 
-describe('readOracleLockPins', () => {
+describe('readReferenceImageLockPins', () => {
   it('returns the locked identities', () => {
-    const result = readOracleLockPins(writeJson({ ...lock() }));
+    const result = readReferenceImageLockPins(writeJson({ ...lock() }));
 
     expect('pinned' in result && [...result.pinned]).toEqual(['functional/shape-fill-solid/webgl']);
   });
@@ -142,13 +142,15 @@ describe('readOracleLockPins', () => {
   // would re-bless cells that are already gating. These two cases are asserted together because the
   // defect is returning the same value for both.
   it('reports no pins for an absent lock, because nothing is blessed before the first release', () => {
-    const result = readOracleLockPins(join(mkdtempSync(join(tmpdir(), 'reference-image-pins-')), 'absent.json'));
+    const result = readReferenceImageLockPins(
+      join(mkdtempSync(join(tmpdir(), 'reference-image-pins-')), 'absent.json'),
+    );
 
     expect('pinned' in result && result.pinned.size).toBe(0);
   });
 
   it('refuses an unreadable lock rather than reporting nothing pinned', () => {
-    const result = readOracleLockPins(writeRaw('{not json'));
+    const result = readReferenceImageLockPins(writeRaw('{not json'));
 
     expect('problems' in result).toBe(true);
     expect('pinned' in result).toBe(false);
@@ -158,7 +160,7 @@ describe('readOracleLockPins', () => {
     const broken = lock() as Record<string, unknown>;
     delete broken['manifestSha256'];
 
-    const result = readOracleLockPins(writeJson(broken));
+    const result = readReferenceImageLockPins(writeJson(broken));
 
     expect('problems' in result).toBe(true);
   });

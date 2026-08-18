@@ -99,7 +99,7 @@ const HEX_64 = /^[0-9a-f]{64}$/;
  * reportable condition, not a crash, because CI must name it in the summary alongside the cells it
  * could not verify.
  */
-export function readOracleLock(path: string): ReferenceImageLockResult {
+export function readReferenceImageLock(path: string): ReferenceImageLockResult {
   const parsed = readJsonRecord(path);
   if ('problems' in parsed) return parsed;
   const value = parsed.value;
@@ -171,11 +171,11 @@ export type ReferenceImageLockResult = { lock: ReferenceImageLock } | { problems
  * "nothing is", because empty fails toward commissioning everything, and re-blessing a cell that is
  * already gating is a separate decision nobody made. The caller gets the problems and refuses.
  */
-export function readOracleLockPins(
+export function readReferenceImageLockPins(
   path: string,
 ): { pinned: ReadonlySet<string> } | { problems: ReferenceImageRecordProblem[] } {
   if (!existsSync(path)) return { pinned: new Set() };
-  const result = readOracleLock(path);
+  const result = readReferenceImageLock(path);
   if ('problems' in result) return result;
   return { pinned: new Set(getOracleLockImages(result.lock).keys()) };
 }

@@ -45,7 +45,7 @@ import type { ReferenceImageRequestCaptureIdentity, ReferenceImageRequestTarget 
 import {
   getOracleRequestBuild,
   getOracleRequestCells,
-  readOracleLockPins,
+  readReferenceImageLockPins,
   readOracleRequest,
 } from './reference-image-records';
 
@@ -404,7 +404,7 @@ function readHeld(): Map<string, string> {
  */
 function readPinned(): ReadonlySet<string> {
   const path = join(repoRoot, 'scripts', 'reference-image-lock.json');
-  const parsed = readOracleLockPins(path);
+  const parsed = readReferenceImageLockPins(path);
   if ('problems' in parsed) {
     for (const problem of parsed.problems) console.error(`  ${problem.kind}: ${problem.detail}`);
     console.error(`reference-image-commission-batch: ${path} could not be read, so what is already blessed is`);
