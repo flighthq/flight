@@ -48,11 +48,29 @@ Two consequences follow. A **new** withheld cell takes the same non-author sign-
 the withheld count **rising** is an event, not a status line: the number is meant to fall to zero, so
 growth is the signal that the hatch is being used as a shortcut.
 
-Note honestly what tier this guard sits at. The gate can require a reason to *exist* and be non-empty —
-that is executable, and it is enforced. It cannot judge whether the reason names a real external blocker,
-because that is a semantic claim about the world. So this paragraph is the weakest kind of rule: one that
-depends on being read. It is written here rather than in a thread for that reason, and the count on the
-pass line is what gives a reader somewhere to start looking.
+Note honestly which half of this is load-bearing, because the three parts sit at different strengths:
+
+| the reason exists and is non-empty | executable | enforced by the gate, watched failing |
+| a new withheld cell takes non-author sign-off | reviewable | a second party must act |
+| the reason names a *real* blocker | stated | a semantic claim, unenforceable |
+
+Only the content judgement is at the bottom; what gates **entry** to the category is stronger than that.
+Still, say the limit plainly: **the escape hatch is enforced and the limit on the escape hatch is not.** A
+reader knows which half to distrust, which is the thing most guards never write down.
+
+**If the withheld count grows past a handful, the upgrade is this** — recorded now so the analysis is not
+re-derived under pressure. Require the reason to contain **at least one resolvable reference**: a repo path
+or a symbol that exists. Kuwahara's already satisfies it, naming `computeKuwaharaSectorOffsets` and its
+shader files; "hard to derive", "the scene is confusing" and "unclear what it should look like" contain
+none and would not acquire one by accident. Not airtight — an irrelevant path would pass — but it lifts the
+floor from *stated* to *partially executable*.
+
+**What was rejected, and why, so it is not re-proposed:** pinning the withheld count and failing the gate
+when it rises. It looks like the stronger control and is not. Its normal operation is to be overridden, so
+the bump becomes reflex — the same decay this repo already documents for size baselines. *A number everyone
+learns to increment is the same failure as a red everyone learns to route around*, and it is worse than no
+control because it consumes the attention that would otherwise notice. The resolvable-reference rule adds
+no number to increment, which is why it is the upgrade path and the pin is not.
 
 The number cannot stand alone because of what it measures. The gate asks only whether a cell carries
 non-empty static text — it cannot ask whether that text describes the picture, since the referent is an
