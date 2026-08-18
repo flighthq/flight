@@ -28,7 +28,6 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
 } from '@flighthq/sdk';
-
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
