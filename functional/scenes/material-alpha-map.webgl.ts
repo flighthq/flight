@@ -28,7 +28,17 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a deep blue background with a single flat quad centred in it, split down the ' +
+    'middle into two halves that differ ONLY IN OPACITY. The left half is solidly present and reads ' +
+    'strongly red; the right half is cut away by an alpha map, so the deep blue background shows through ' +
+    'it and almost no red remains there. The difference between the two halves is the whole claim — a ' +
+    'quad that is uniformly solid across its width means the alpha map never reached the material, and ' +
+    'a quad that is entirely cut away means it was applied everywhere. The boundary between the halves ' +
+    'runs vertically down the middle of the quad.',
+);
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl one directly from its package.
 
