@@ -26,7 +26,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A cylinder (radius 0.6, height 1.4) at the origin rendered with unlit material (violet 0x9050e0) on a dark background (0x0a0c10). Viewed from a slight side angle (eye at 1.6, 0.4, 2.6), the cylinder reads as a tall vertically-extended silhouette with straight sides and no taper — both top and bottom are full-width. No shading gradient — unlit material. Frame corners are background.',
+);
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

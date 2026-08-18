@@ -66,6 +66,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Three flat quads side by side on dark background (0x080b12), each carrying a constant bitangent-tilted normal map. Left: plain. Center: mirrored in X (scale.x = -1). Right: mirrored in Y (scale.y = -1). Under a Y-dominant directional light (0,-1,-1.2), the plain and X-mirrored quads shade the same brightness while the Y-mirrored quad shades differently — that three-way pattern gates correct tangent.w handedness from the model determinant. BlinnPhong material (diffuse 0xd8dde8, no specular). Camera at (0,0,6) looking at origin.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

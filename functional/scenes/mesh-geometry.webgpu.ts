@@ -26,7 +26,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A unit cube at the origin rendered with unlit material (orange 0xff8030) on a dark background (0x0a0c10). Viewed from a 3/4 angle (eye at 2, 1.6, 2.6), the cube reads as a convex hexagonal silhouette covering the frame center. No shading gradient — unlit material. Frame corners are background.',
+);
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

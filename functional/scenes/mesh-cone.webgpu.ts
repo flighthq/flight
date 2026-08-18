@@ -26,7 +26,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A cone (radius 0.7, height 1.4) at the origin rendered with unlit material (amber 0xf0a020) on a dark background (0x0a0c10). Viewed from a slight side angle (eye at 1.4, 0.8, 2.6), the cone reads as a tapered silhouette: wide at the base, narrowing to a pointed apex at the top. No shading gradient — unlit material. Frame corners are background.',
+);
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

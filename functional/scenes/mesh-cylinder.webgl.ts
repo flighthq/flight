@@ -26,12 +26,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Gl 3D column (wiring copied from material-unlit). The Unlit renderer writes into the effect pipeline's
-// rgba16f + depth scene target (depth-test ON so the cube occludes itself correctly), then ends with an
-// empty effect list to tone-present the scene straight to the canvas.
+declareExpectedImageDescription(
+  'A cylinder (radius 0.6, height 1.4) at the origin rendered with unlit material (violet 0x9050e0) on a black background (0x000000). Viewed from a slight side angle (eye at 1.6, 0.4, 2.6), the cylinder reads as a tall vertically-extended silhouette with straight sides and no taper — both top and bottom are full-width. No shading gradient — unlit material. Frame corners are background.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

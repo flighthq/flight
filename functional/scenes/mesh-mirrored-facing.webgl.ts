@@ -31,6 +31,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Two side-by-side flat quads on dark background (0x080b12), each carrying a constant normal map that tilts the shading normal. The left quad is plain; the right quad is mirrored (scale.x = -1). Both quads are visible (neither is culled by the mirror), but they shade on opposite sides — one bright where the other is dark — because the model determinant reverses the tangent frame handedness. BlinnPhong material (diffuse 0xd8dde8, no specular). Light from screen-right direction (1,0,-1). Camera at (0,0,6) looking at origin.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

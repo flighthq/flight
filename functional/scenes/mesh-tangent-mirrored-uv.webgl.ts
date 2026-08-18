@@ -30,6 +30,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Two triangles forming a diamond shape sharing a vertical edge on dark background (0x080b12). The right triangle has a positive UV determinant; the left has a mirrored (negative) UV determinant. A constant +tangent-space-X normal map tilts shading rightward on the right face and leftward on the mirrored face. A directional light from screen-right makes the right half bright and the left half dark. BlinnPhong material (diffuse 0xd8dde8, no specular). Camera at (0,0,3) looking at origin.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

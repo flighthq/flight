@@ -28,7 +28,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'Two perpendicular triangles forming a V-shape sharing a vertical edge with duplicated vertices for distinct UVs, on dark background (0x080b12). Position-group normal computation gives both copies of the shared edge the same diagonal normal, so lighting transitions smoothly across the seam. A directional light from +Z brightens the right face away from the seam and darkens the left face away from the seam. BlinnPhong material (diffuse 0xd8dde8, no specular). Camera at (3,0,3) looking at origin.',
+);
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
