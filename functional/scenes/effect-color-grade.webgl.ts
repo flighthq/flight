@@ -21,9 +21,21 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
 // Color grade: a single grade pass pushes saturation, contrast, and a warm temperature shift across
 // the whole frame. Colorful source shapes make the saturation and contrast changes easy to read.
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark background with six upright rectangles of about 120 x 160, in ' +
+    'two rows of three: centred near (144,192), (400,192) and (656,192) across the top, and (144,432), ' +
+    '(400,432) and (656,432) across the bottom. Reading across the top row they are red, green and ' +
+    'blue; across the bottom, amber, purple and orange. Every one is MORE SATURATED and higher in ' +
+    'contrast than its raw fill, and the whole picture is pushed WARM — reds and ambers gain, and the ' +
+    'blue rectangle in the top right is visibly less cold than a pure blue would be. A picture whose ' +
+    'colours match their raw fills, or one pushed toward the cool end, is the failure. Each rectangle ' +
+    'is flat inside with hard straight edges, they do not touch or overlap, and the very dark ' +
+    'background is visible between and around all six.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

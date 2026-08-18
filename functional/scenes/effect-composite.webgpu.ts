@@ -28,8 +28,19 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 opaque black field with a single white rectangle occupying the TOP-LEFT quadrant — ' +
+    'x 0-400, y 0-300 — and nothing else drawn anywhere. The rest of the field is pure black. The ' +
+    'picture is the intersection of two white blocks: one covering the left half and one covering the ' +
+    'top half, kept only where they overlap. The two regions where just ONE of them lay must be black: ' +
+    'the top-right quadrant around x 600, y 150 is black even though a white block covered it, and so ' +
+    'is the bottom-left. A picture showing an L-shape, or the full top half or left half in white, ' +
+    'means the intersection was not taken. The white area has hard straight edges meeting at (400,300) ' +
+    'with no gradient or grey fringe.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
