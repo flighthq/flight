@@ -89,14 +89,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # The exact commissioned commit. `github.sha` on a push to the trunk IS the landed commit, which
-          # is the value §5 says binds a request — the request itself deliberately does not name it.
+          # First read the trusted request from the push that triggered this CURRENT workflow recipe.
+          # Full history is required to prove its commissioned commit is reachable from this push before
+          # asking checkout to move; otherwise an unreachable branch-only SHA becomes a generic checkout
+          # failure and hides the actual remedy.
           ref: ${{ github.sha }}
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
+
+      - name: Resolve the reviewed build
+        id: reviewed-build
+        run: |
+          set -euo pipefail
+          request="reference-image-requests/${{ matrix.request }}.json"
+          commit=$(node -e '
+            const request = require("./" + process.argv[1]);
+            const commits = [...new Set(request.targets?.map((target) => target.build?.commit))];
+            if (request.schemaVersion !== 3 || commits.length !== 1 || !/^[0-9a-f]{40}$/.test(commits[0] ?? "")) {
+              console.error("the request does not name one reproducible build commit");
+              process.exit(1);
+            }
+            console.log(commits[0]);
+          ' "$request")
+          if ! git merge-base --is-ancestor "$commit" "${{ github.sha }}"; then
+            echo "the request names commit $commit, which is not reachable from this push" >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/reference-image-requests"
+          cp "$request" "$RUNNER_TEMP/reference-image-requests/${{ matrix.request }}.json"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+      # ★ WORKFLOW FROM TRUNK, CODE FROM THE REQUEST IS INTENTIONAL. The workflow definition and its
+      # capture recipe remain the current trusted version that this push triggered; this checkout changes
+      # the repository bytes under test to the commit whose static build the requester actually reviewed.
+      # Replacing this ref with github.sha would silently reintroduce code drift between review and CI.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.reviewed-build.outputs.commit }}
 
       - run: npm ci
 
@@ -126,7 +159,7 @@ jobs:
       - name: Capture ${{ matrix.request }}
         run: |
           set -euo pipefail
-          request="reference-image-requests/${{ matrix.request }}.json"
+          request="$RUNNER_TEMP/reference-image-requests/${{ matrix.request }}.json"
           # The scope comes from the request through one code path (getOracleRequestCells), so the
           # workflow never re-derives which cells are in scope.
           npx tsx ./scripts/reference-image-commission.ts scope "$request" | while read -r args; do

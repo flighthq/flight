@@ -21,12 +21,14 @@ import {
   stageOracleCandidateImages,
   verifyOracleRequestedPixels,
 } from './reference-image-candidate';
-import { getOracleRequestCells, readOracleRequest } from './reference-image-records';
+import { getOracleRequestBuild, getOracleRequestCells, readOracleRequest } from './reference-image-records';
 
 const [subcommand, requestPath, ...rest] = process.argv.slice(2);
 
-if (subcommand !== 'scope' && subcommand !== 'bundle') {
-  console.error('usage: reference-image-commission <scope|bundle> <request.json> [--artifacts <dir>] [--stage <dir>]');
+if (subcommand !== 'scope' && subcommand !== 'build-commit' && subcommand !== 'bundle') {
+  console.error(
+    'usage: reference-image-commission <scope|build-commit|bundle> <request.json> [--artifacts <dir>] [--stage <dir>]',
+  );
   process.exit(2);
 }
 if (requestPath === undefined) {
@@ -44,6 +46,16 @@ if ('problems' in parsed) {
   process.exit(1);
 }
 const request = parsed.request;
+
+if (subcommand === 'build-commit') {
+  const build = getOracleRequestBuild(request);
+  if (build?.commit === null || build === null) {
+    console.error('reference-image-commission: request does not name one reproducible build commit');
+    process.exit(1);
+  }
+  console.log(build.commit);
+  process.exit(0);
+}
 
 if (subcommand === 'scope') {
   // The capture tool is scoped by entry and renderer separately, so a multi-target request prints one

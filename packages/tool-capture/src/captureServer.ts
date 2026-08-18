@@ -8,11 +8,15 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { basename, extname, join, relative } from 'node:path';
 
+import type { CaptureBuildIdentity } from './captureBuildIdentity.js';
+import { readCaptureBuildIdentity } from './captureBuildIdentity.js';
 import type { Tool } from './captureEntries.js';
 import { discoverFunctionalScene3Ds } from './functionalScene3Ds.js';
 
 export interface Server {
   url: string;
+  /** Identity stamped by the build whose directory this server exposes; absent for dev/external servers. */
+  build?: CaptureBuildIdentity | null;
   kill(): void;
 }
 
@@ -41,7 +45,7 @@ export function resolveServer(opts: { tool?: Tool; root: string; externalUrl?: s
 
   if (externalUrl) {
     const url = externalUrl.replace(/\/$/, '');
-    return Promise.resolve({ url, kill: () => {} });
+    return Promise.resolve({ build: null, url, kill: () => {} });
   }
 
   if (tool === undefined) return Promise.reject(new Error('A built-in tool is required when no external URL is set'));
@@ -90,7 +94,7 @@ export function resolveServer(opts: { tool?: Tool; root: string; externalUrl?: s
       if (match && !done) {
         done = true;
         clearTimeout(timeout);
-        resolve({ url: `http://localhost:${match[1]}`, kill: () => proc.kill('SIGTERM') });
+        resolve({ build: null, url: `http://localhost:${match[1]}`, kill: () => proc.kill('SIGTERM') });
       }
     };
 
@@ -111,6 +115,9 @@ function runNpm(args: readonly string[], cwd: string) {
 }
 
 function serveDirectory(directory: string): Promise<Server> {
+  // This is the only capture-time read of build identity. It comes from the directory being served,
+  // never from the capture process's HEAD, which may have moved since these static bytes were built.
+  const build = readCaptureBuildIdentity(directory);
   const MIME: Record<string, string> = {
     '.css': 'text/css',
     '.gif': 'image/gif',
@@ -158,7 +165,7 @@ function serveDirectory(directory: string): Promise<Server> {
     server.on('error', reject);
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address() as AddressInfo;
-      resolve({ url: `http://localhost:${port}`, kill: () => server.close() });
+      resolve({ build, url: `http://localhost:${port}`, kill: () => server.close() });
     });
   });
 }

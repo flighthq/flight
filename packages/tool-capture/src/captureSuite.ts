@@ -121,6 +121,8 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
       tool: options.subject,
       outBase,
       root,
+      // The server read this from the dist it serves. Do not substitute the capture checkout's HEAD.
+      build: options.server.build ?? null,
       updateBaseline: options.updateBaseline,
       extraWait: options.extraWait,
       captureFrames,

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,8 +8,16 @@ import { deflateSync } from 'node:zlib';
 import { hashOraclePixelBytes } from './reference-image-png';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'reference-image-commission.ts');
+const WORKFLOW = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '.github',
+  'workflows',
+  'reference-image-capture.yml',
+);
 const TSX = join(dirname(fileURLToPath(import.meta.url)), '..', 'node_modules', '.bin', 'tsx');
 const PIXEL_SHA256 = hashOraclePixelBytes(new Uint8Array(4));
+const BUILD_COMMIT = 'b'.repeat(40);
 
 describe('reference-image-commission request binding', () => {
   it('stages the capture only when its decoded pixels match the request', () => {
@@ -31,6 +39,24 @@ describe('reference-image-commission request binding', () => {
     expect(run.stderr).toContain('refusing to stage');
     expect(existsSync(join(fixture.stage, 'request', 'candidate.json'))).toBe(false);
   });
+
+  it('resolves the request build commit rather than the current push commit', () => {
+    const fixture = commissionedCapture(PIXEL_SHA256);
+
+    const run = command('build-commit', fixture);
+
+    expect(run.status).toBe(0);
+    expect(run.stdout.trim()).toBe(BUILD_COMMIT);
+    expect(run.stdout.trim()).not.toBe(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim());
+  });
+
+  it('checks out the resolved request commit and names an unreachable commit before checkout', () => {
+    const workflow = readFileSync(WORKFLOW, 'utf8');
+
+    expect(workflow).toContain('ref: ${{ steps.reviewed-build.outputs.commit }}');
+    expect(workflow).toContain('the request names commit $commit, which is not reachable from this push');
+    expect(workflow).toContain('WORKFLOW FROM TRUNK, CODE FROM THE REQUEST IS INTENTIONAL');
+  });
 });
 
 function commissionedCapture(pixelSha256: string): { artifacts: string; request: string; stage: string } {
@@ -42,6 +68,7 @@ function commissionedCapture(pixelSha256: string): { artifacts: string; request:
   writeFileSync(
     join(cell, 'status.json'),
     JSON.stringify({
+      build: { commit: BUILD_COMMIT, dirty: ['README.md'], dirtyOmitted: 47 },
       hash: 'browser-capture-hash',
       provenance: { frames: 1, sourceHash: null, targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 },
       state: 'ready',
@@ -54,10 +81,11 @@ function commissionedCapture(pixelSha256: string): { artifacts: string; request:
       frames: 1,
       id: 'request',
       reason: 'test',
-      schemaVersion: 2,
+      schemaVersion: 3,
       subject: 'functional',
       targets: [
         {
+          build: { commit: BUILD_COMMIT, dirty: ['README.md'], dirtyOmitted: 47 },
           capture: { environmentId: 'environment', hostInstanceId: 'host' },
           entry: 'shape',
           pixelSha256,
@@ -69,16 +97,30 @@ function commissionedCapture(pixelSha256: string): { artifacts: string; request:
   return { artifacts, request, stage: join(root, 'stage') };
 }
 
-function bundle(fixture: { artifacts: string; request: string; stage: string }): { status: number; stderr: string } {
+function bundle(fixture: { artifacts: string; request: string; stage: string }): CommandResult {
+  return command('bundle', fixture, ['--artifacts', fixture.artifacts, '--stage', fixture.stage]);
+}
+
+interface CommandResult {
+  status: number;
+  stderr: string;
+  stdout: string;
+}
+
+function command(
+  subcommand: string,
+  fixture: { artifacts: string; request: string; stage: string },
+  rest: readonly string[] = [],
+): CommandResult {
   try {
-    execFileSync(TSX, [SCRIPT, 'bundle', fixture.request, '--artifacts', fixture.artifacts, '--stage', fixture.stage], {
+    const stdout = execFileSync(TSX, [SCRIPT, subcommand, fixture.request, ...rest], {
       encoding: 'utf8',
       stdio: 'pipe',
     });
-    return { status: 0, stderr: '' };
+    return { status: 0, stderr: '', stdout };
   } catch (error) {
-    const failure = error as { status?: number; stderr?: string };
-    return { status: failure.status ?? -1, stderr: failure.stderr ?? '' };
+    const failure = error as { status?: number; stderr?: string; stdout?: string };
+    return { status: failure.status ?? -1, stderr: failure.stderr ?? '', stdout: failure.stdout ?? '' };
   }
 }
 

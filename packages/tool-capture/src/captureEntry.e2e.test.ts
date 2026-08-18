@@ -44,6 +44,11 @@ const pages: Record<string, string> = {
 };
 
 interface CaptureEntryStatus {
+  build: {
+    commit: string | null;
+    dirty: string[];
+    dirtyOmitted: number;
+  };
   error: string | null;
   oracle: 'absent' | 'invoked' | null;
   provenance: {
@@ -55,6 +60,11 @@ interface CaptureEntryStatus {
 }
 
 describe('captureEntry browser contract', () => {
+  const reviewedBuild = {
+    commit: 'a'.repeat(40),
+    dirty: ['README.md', 'packages/effects/src/glBloomPass.ts'],
+    dirtyOmitted: 47,
+  } as const;
   const artifactRoot = mkdtempSync(join(tmpdir(), 'tool-capture-entry-'));
   const server = createServer((request, response) => {
     response.setHeader('content-type', 'text/html');
@@ -67,6 +77,7 @@ describe('captureEntry browser contract', () => {
     try {
       await captureEntry({
         baseUrl,
+        build: reviewedBuild,
         context: session.context,
         entry: { name, renderers: ['canvas'], route: () => name },
         outBase: artifactRoot,
@@ -102,6 +113,9 @@ describe('captureEntry browser contract', () => {
     // and threw was indistinguishable in the artifact from one that never called an oracle at all —
     // and the artifact then said "never invoked" while carrying an error only the oracle can produce.
     expect(status.oracle).toBe('invoked');
+    // The list crosses from the dist reader through capture unchanged; it is evidence a reviewer can
+    // judge, so it must not collapse to a dirty boolean/count when status.json is written.
+    expect(status.build).toEqual(reviewedBuild);
     expect(status.provenance.hostInstanceId).toBeTruthy();
     expect(status.provenance.environmentId).toBeNull();
     expect(status.provenance.environmentDescriptor).toBeNull();

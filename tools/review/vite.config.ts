@@ -24,6 +24,12 @@ interface ReviewCellProvenance {
   environmentId: string | null;
 }
 
+interface ReviewBuildProvenance {
+  commit: string | null;
+  dirty: string[];
+  dirtyOmitted: number;
+}
+
 type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
 type ParityStatus = 'passed' | 'failed' | 'no-data';
 
@@ -34,6 +40,7 @@ interface ReviewCell {
   changed: boolean | null;
   hash: string | null;
   provenance: ReviewCellProvenance | null;
+  build: ReviewBuildProvenance | null;
   commissionState: CommissionState;
   holdReason: string | null;
   parityStatus: ParityStatus;
@@ -302,6 +309,7 @@ function discoverReviewTests(): ReviewTest[] {
         let changed: boolean | null = null;
         let hash: string | null = null;
         let provenance: ReviewCellProvenance | null = null;
+        let build: ReviewBuildProvenance | null = null;
         let cellDescription: string | undefined;
 
         if (existsSync(statusPath)) {
@@ -312,6 +320,7 @@ function discoverReviewTests(): ReviewTest[] {
               changed?: boolean;
               hash?: string;
               provenance?: { hostInstanceId?: string; environmentId?: string };
+              build?: { commit?: string | null; dirty?: unknown; dirtyOmitted?: number };
               expectedImageDescription?: string;
             };
             if (s.state === 'error') state = 'error';
@@ -323,6 +332,17 @@ function discoverReviewTests(): ReviewTest[] {
                 hostInstanceId: s.provenance.hostInstanceId ?? null,
                 environmentId: s.provenance.environmentId ?? null,
               };
+            }
+            if (
+              (s.build?.commit === null ||
+                (typeof s.build?.commit === 'string' && /^[0-9a-f]{40}$/.test(s.build.commit))) &&
+              Array.isArray(s.build?.dirty) &&
+              s.build.dirty.every((path) => typeof path === 'string') &&
+              typeof s.build.dirtyOmitted === 'number' &&
+              Number.isInteger(s.build.dirtyOmitted) &&
+              s.build.dirtyOmitted >= 0
+            ) {
+              build = { commit: s.build.commit, dirty: [...s.build.dirty], dirtyOmitted: s.build.dirtyOmitted };
             }
             cellDescription = s.expectedImageDescription;
           } catch {
@@ -337,7 +357,18 @@ function discoverReviewTests(): ReviewTest[] {
         const imageKey = `${tool}/${name}/${renderer}`;
         const holdReason = held.get(imageKey) ?? null;
         const parityStatus: ParityStatus = parity.get(imageKey) ?? 'no-data';
-        cells.push({ renderer, state, error, changed, hash, provenance, commissionState, holdReason, parityStatus });
+        cells.push({
+          renderer,
+          state,
+          error,
+          changed,
+          hash,
+          provenance,
+          build,
+          commissionState,
+          holdReason,
+          parityStatus,
+        });
       }
 
       if (cells.length > 0) {
@@ -414,6 +445,7 @@ function reviewPlugin(): Plugin[] {
                     pixelSha256: string | null;
                     hostInstanceId: string | null;
                     environmentId: string | null;
+                    build: ReviewBuildProvenance | null;
                   }[];
                   reason: string;
                 };
@@ -428,9 +460,26 @@ function reviewPlugin(): Plugin[] {
                 // has no FLIGHT_CAPTURE_ENVIRONMENT_ID, so reading it from provenance rejected every
                 // locally-captured cell — the workflow reads the file for the same reason.
                 const registeredEnvironmentId = readRegisteredEnvironmentId();
+                const noBuild = payload.cells.filter((c) => c.build === null).length;
+                const unstamped = payload.cells.filter((c) => c.build?.commit === null).length;
+                if (noBuild + unstamped > 0) {
+                  res.statusCode = 400;
+                  res.end(
+                    JSON.stringify({
+                      error: `no usable build commit for ${noBuild + unstamped} selected cell(s) of ${payload.entry} — rebuild and recapture before commissioning`,
+                    }),
+                  );
+                  return;
+                }
                 const eligible = payload.cells.filter(
-                  (c): c is typeof c & { pixelSha256: string; hostInstanceId: string } =>
-                    c.pixelSha256 !== null && c.hostInstanceId !== null,
+                  (
+                    c,
+                  ): c is typeof c & {
+                    pixelSha256: string;
+                    hostInstanceId: string;
+                    build: ReviewBuildProvenance & { commit: string };
+                  } =>
+                    c.pixelSha256 !== null && c.hostInstanceId !== null && c.build !== null && c.build.commit !== null,
                 );
                 if (eligible.length === 0) {
                   const noHash = payload.cells.filter((c) => c.pixelSha256 === null).length;
@@ -446,15 +495,33 @@ function reviewPlugin(): Plugin[] {
                   return;
                 }
 
+                const build = eligible[0]!.build;
+                const mixedBuild = eligible.some(
+                  (cell) =>
+                    cell.build.commit !== build.commit ||
+                    cell.build.dirtyOmitted !== build.dirtyOmitted ||
+                    JSON.stringify(cell.build.dirty) !== JSON.stringify(build.dirty),
+                );
+                if (mixedBuild) {
+                  res.statusCode = 400;
+                  res.end(
+                    JSON.stringify({
+                      error: 'selected cells came from different static builds — rebuild and recapture them together',
+                    }),
+                  );
+                  return;
+                }
+
                 const id = randomUUID();
                 const request = {
-                  schemaVersion: 2,
+                  schemaVersion: 3,
                   id,
                   subject: payload.tool,
                   targets: eligible.map((c) => ({
                     entry: payload.entry,
                     renderer: c.renderer,
                     pixelSha256: c.pixelSha256,
+                    build: c.build,
                     capture: {
                       hostInstanceId: c.hostInstanceId,
                       environmentId: registeredEnvironmentId,
@@ -500,6 +567,9 @@ function reviewPlugin(): Plugin[] {
                     coverageAdded,
                     total: payload.cells.length,
                     skipped: payload.cells.filter((c) => c.pixelSha256 === null).map((c) => c.renderer),
+                    buildCommit: build.commit,
+                    dirty: build.dirty,
+                    dirtyOmitted: build.dirtyOmitted,
                   }),
                 );
               } catch {

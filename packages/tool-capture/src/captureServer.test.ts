@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { CAPTURE_BUILD_IDENTITY_FILE } from './captureBuildIdentity';
 import {
   explainCaptureDistStaleness,
   resolveCaptureDirectoryServer,
@@ -40,9 +41,16 @@ describe('resolveCaptureDirectoryServer', () => {
   it('serves an already-built directory and shuts down', async () => {
     const directory = mkdtempSync(join(tmpdir(), 'capture-directory-'));
     writeFileSync(join(directory, 'index.html'), '<h1>capturable</h1>');
+    const build = {
+      commit: 'a'.repeat(40),
+      dirty: ['functional/scenes/changed.ts'],
+      dirtyOmitted: 0,
+    } as const;
+    writeFileSync(join(directory, CAPTURE_BUILD_IDENTITY_FILE), JSON.stringify(build));
     const server = await resolveCaptureDirectoryServer(directory);
     try {
       expect(await (await fetch(server.url)).text()).toContain('capturable');
+      expect(server.build).toEqual(build);
     } finally {
       server.kill();
       rmSync(directory, { recursive: true, force: true });

@@ -18,6 +18,8 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { getBaselineField, setBaselineField } from './baselineStore.js';
 import { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
+import type { CaptureBuildIdentity } from './captureBuildIdentity.js';
+import { UNSTAMPED_CAPTURE_BUILD } from './captureBuildIdentity.js';
 import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
@@ -47,6 +49,8 @@ export interface CaptureStatus {
   baselineHash: string | null;
   /** null = no baseline exists yet; false = hash matches baseline; true = hash differs from baseline */
   changed: boolean | null;
+  /** The commit and dirty paths stamped into the static build that produced this capture. */
+  build: CaptureBuildIdentity;
   /**
    * The conditions THIS capture ran under, recorded beside the hash it produced.
    *
@@ -120,6 +124,8 @@ export interface CaptureEntryOptions {
   outBase: string;
   /** Repo root — committed baselines live at tests/<tool>/baselines/<name>.json. */
   root: string;
+  /** Copied from the served dist stamp. Null for a dev/external server whose build is not reproducible. */
+  build?: Readonly<CaptureBuildIdentity> | null;
   /** When true, writes the current screenshot hash as the new baseline instead of comparing. */
   updateBaseline?: boolean;
   extraWait?: number;
@@ -180,6 +186,7 @@ export interface ParallelCaptureOptions {
   tool: string;
   outBase: string;
   root: string;
+  build?: Readonly<CaptureBuildIdentity> | null;
   updateBaseline?: boolean;
   extraWait?: number;
   captureFrames?: number;
@@ -604,6 +611,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           timedOut: observeTimedOut,
         });
         const observeStatus: CaptureStatus = {
+          build: opts.build ?? UNSTAMPED_CAPTURE_BUILD,
           protocolVersion: CAPTURE_PROTOCOL_VERSION,
           state: 'ready',
           capturedAt: Date.now(),
@@ -661,6 +669,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       );
 
       const status: CaptureStatus = {
+        build: opts.build ?? UNSTAMPED_CAPTURE_BUILD,
         protocolVersion: CAPTURE_PROTOCOL_VERSION,
         state: 'ready',
         capturedAt: Date.now(),
@@ -714,6 +723,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       writeFileSync(finalLogs, logs.map((l) => JSON.stringify(l)).join('\n'));
 
       const errorStatus: CaptureStatus = {
+        build: opts.build ?? UNSTAMPED_CAPTURE_BUILD,
         protocolVersion: CAPTURE_PROTOCOL_VERSION,
         state: 'error',
         capturedAt: Date.now(),
@@ -984,6 +994,7 @@ export async function captureParallel(opts: ParallelCaptureOptions): Promise<Par
           tool: opts.tool,
           outBase: opts.outBase,
           root: opts.root,
+          build: opts.build,
           updateBaseline: opts.updateBaseline,
           extraWait: opts.extraWait,
           captureFrames: opts.captureFrames,
@@ -1182,6 +1193,7 @@ async function captureUrlAttempt(
     writeFileSync(join(outDir, 'screenshot.png'), screenshotBuffer);
     writeFileSync(join(outDir, 'logs.jsonl'), logs.map((l) => JSON.stringify(l)).join('\n'));
     const status: CaptureStatus = {
+      build: UNSTAMPED_CAPTURE_BUILD,
       protocolVersion: CAPTURE_PROTOCOL_VERSION,
       state: 'ready',
       capturedAt: Date.now(),
@@ -1215,6 +1227,7 @@ async function captureUrlAttempt(
     if (screenshotBuffer !== null) writeFileSync(join(outDir, 'screenshot.png'), screenshotBuffer);
     writeFileSync(join(outDir, 'logs.jsonl'), logs.map((entry) => JSON.stringify(entry)).join('\n'));
     const status: CaptureStatus = {
+      build: UNSTAMPED_CAPTURE_BUILD,
       protocolVersion: CAPTURE_PROTOCOL_VERSION,
       state: 'error',
       capturedAt: Date.now(),

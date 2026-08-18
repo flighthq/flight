@@ -194,31 +194,36 @@ describe('readOracleRequest', () => {
     expect('problems' in result && result.problems.map((p) => p.kind)).toContain('field-type');
   });
 
-  it('requires every target to bind one pixel identity to its capture run', () => {
+  it('requires every v3 target to bind pixels, capture identity, and the reviewed build', () => {
     const noPixel = readOracleRequest(writeJson({ ...request(), targets: [{ ...target(), pixelSha256: undefined }] }));
     const noHost = readOracleRequest(
       writeJson({ ...request(), targets: [{ ...target(), capture: { environmentId: 'environment' } }] }),
     );
+    const noBuild = readOracleRequest(writeJson({ ...request(), targets: [{ ...target(), build: undefined }] }));
 
     expect('problems' in noPixel && noPixel.problems[0]?.detail).toContain('pixelSha256');
     expect('problems' in noHost && noHost.problems[0]?.detail).toContain('hostInstanceId');
+    expect('problems' in noBuild && noBuild.problems[0]?.detail).toContain('build');
   });
 
-  it('rejects a v1 request instead of accepting its unbound target shape', () => {
+  it('rejects request schemas outside the supported v2/v3 transition', () => {
     const result = readOracleRequest(
       writeJson({ ...request(), schemaVersion: 1, targets: [{ entry: 'shape-fill-solid', renderers: ['webgl'] }] }),
     );
+    const newer = readOracleRequest(writeJson({ ...request(), schemaVersion: 4 }));
 
     expect('problems' in result && result.problems.map((problem) => problem.kind)).toContain('schema-version');
+    expect('problems' in newer && newer.problems.map((problem) => problem.kind)).toContain('schema-version');
   });
 
-  it('accepts a request that carries no commit SHA, which is the documented shape', () => {
-    // §5 is explicit that a request must NOT name the commit containing it — a self-reference whose
-    // value cannot exist before the commit does. Asserted so a later "helpful" required field is caught.
-    const result = readOracleRequest(writeJson({ ...request() }));
+  it('keeps legacy v2 requests readable while new v3 writers bind each target to its build', () => {
+    const legacy = readOracleRequest(
+      writeJson({ ...request(), schemaVersion: 2, targets: [{ ...target(), build: undefined }] }),
+    );
+    const current = readOracleRequest(writeJson({ ...request() }));
 
-    expect('request' in result).toBe(true);
-    expect(Object.keys(('request' in result ? result.request : {}) as object)).not.toContain('commit');
+    expect('request' in legacy).toBe(true);
+    expect('request' in current && current.request.targets[0]?.build?.commit).toBe(COMMIT);
   });
 });
 
@@ -244,7 +249,7 @@ function request(): ReferenceImageRequest {
     frames: 1,
     id: 'shape-fill-solid-webgl-2026-08-14',
     reason: 'add the first full-resolution reference for the solid-fill scene',
-    schemaVersion: 2,
+    schemaVersion: 3,
     subject: 'functional',
     targets: [target('shape-fill-solid', 'webgl')],
   };
@@ -252,6 +257,7 @@ function request(): ReferenceImageRequest {
 
 function target(entry = 'shape-fill-solid', renderer = 'webgl') {
   return {
+    build: { commit: COMMIT, dirty: ['packages/effects/src/drop-shadow.ts'], dirtyOmitted: 0 },
     capture: { environmentId: 'environment', hostInstanceId: 'host' },
     entry,
     pixelSha256: SHA,

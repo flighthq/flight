@@ -86,7 +86,7 @@ export interface ReferenceImageRequestedPixelProblem {
   detail: string;
 }
 
-/** Reads the exact selected image and run identity into the v2 request target shape. */
+/** Reads the exact selected image, capture run, and served-build stamp into the v3 target shape. */
 export function readBoundOracleRequestTarget(
   root: string,
   identity: string,
@@ -98,9 +98,37 @@ export function readBoundOracleRequestTarget(
   }
   const screenshot = join(root, subject, entry, renderer, 'screenshot.png');
   if (!existsSync(screenshot)) return { problem: `no screenshot.png at ${screenshot}` };
+  const statusPath = join(root, subject, entry, renderer, 'status.json');
+  if (!existsSync(statusPath)) return { problem: `no status.json at ${statusPath}` };
   const pixels = getOraclePngPixelSha256(readFileSync(screenshot));
   if ('refused' in pixels) return { problem: `screenshot.png could not be decoded (${pixels.refused})` };
-  return { capture, entry, pixelSha256: pixels.pixelSha256, renderer };
+  let build: NonNullable<ReferenceImageRequestTarget['build']> | null;
+  try {
+    build = readStatusBuild(JSON.parse(readFileSync(statusPath, 'utf8')) as Record<string, unknown>);
+  } catch {
+    return { problem: `status.json could not be read at ${statusPath}` };
+  }
+  if (build === null) {
+    return { problem: 'status.json records no valid build stamp; rebuild and recapture before commissioning' };
+  }
+  return { build, capture, entry, pixelSha256: pixels.pixelSha256, renderer };
+}
+
+function readStatusBuild(status: Record<string, unknown>): NonNullable<ReferenceImageRequestTarget['build']> | null {
+  const build = status['build'];
+  if (typeof build !== 'object' || build === null) return null;
+  const value = build as Record<string, unknown>;
+  if (value['commit'] !== null && (typeof value['commit'] !== 'string' || !/^[0-9a-f]{40}$/.test(value['commit'])))
+    return null;
+  if (!Array.isArray(value['dirty'])) return null;
+  if (!value['dirty'].every((path) => typeof path === 'string' && path.length > 0)) return null;
+  if (
+    typeof value['dirtyOmitted'] !== 'number' ||
+    !Number.isInteger(value['dirtyOmitted']) ||
+    value['dirtyOmitted'] < 0
+  )
+    return null;
+  return value as unknown as NonNullable<ReferenceImageRequestTarget['build']>;
 }
 
 /**
