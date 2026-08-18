@@ -21,9 +21,11 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Bloom: bright shapes on a dark background bleed glow through an HDR (rgba16f) pipeline. Pixels above
-// the bright-pass threshold blur and add back, so the lit shapes gain a soft halo.
+declareExpectedImageDescription(
+  'Four bright, saturated rectangles (white, yellow, cyan, magenta) rotated at varying angles on a near-black background. Each rectangle has a soft glowing halo bleeding outward from its edges — the bloom effect applied through an HDR rgba16f pipeline with a 0.6 luminance threshold.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -53,9 +55,6 @@ export function render(root: Node2D): void {
   renderGlScene2D(state, root);
   endGlRenderEffectPipeline(state, pipeline, [createBloomEffect({ threshold: 0.6, intensity: 1.4 })]);
 }
-
-// Bright, saturated shapes on a near-black field. Their high luminance crosses the bloom threshold,
-// so each shape should pick up a soft glowing halo.
 
 const root = createDisplayObject();
 root.scaleX = scale;

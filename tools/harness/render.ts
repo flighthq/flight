@@ -16,11 +16,15 @@ export type { FunctionalTargetOptions };
 
 type BackendWindow = typeof window & { __ftBackend?: string; __ftExpectedImageDescription?: string };
 
+export function declareExpectedImageDescription(description: string): void {
+  (window as BackendWindow).__ftExpectedImageDescription = description;
+}
+
 // Each backend is dynamically imported so a scene's per-backend bundle pulls in only the one backend
 // it renders on, not all four.
 export async function createFunctionalTarget(options: FunctionalTargetOptions): Promise<FunctionalTarget> {
   if (options.expectedImageDescription !== undefined) {
-    (window as BackendWindow).__ftExpectedImageDescription = options.expectedImageDescription;
+    declareExpectedImageDescription(options.expectedImageDescription);
   }
   const backend = (window as BackendWindow).__ftBackend ?? 'webgl';
   switch (backend) {
