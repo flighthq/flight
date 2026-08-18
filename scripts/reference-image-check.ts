@@ -26,7 +26,7 @@ import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from '.
 import {
   getOracleLockImages,
   getOracleRequestCells,
-  readOracleLock,
+  readReferenceImageLock,
   readOracleRequest,
 } from './reference-image-records';
 import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state';
@@ -50,7 +50,7 @@ const packsRoot = readOption('--packs') ?? join(__dirname, '..', '.artifacts', '
 const artifactsRoot = readOption('--artifacts') ?? join(__dirname, '..', '.artifacts');
 const repoRoot = join(__dirname, '..');
 
-const lockResult = readOracleLock(join(__dirname, 'reference-image-lock.json'));
+const lockResult = readReferenceImageLock(join(__dirname, 'reference-image-lock.json'));
 if ('problems' in lockResult) {
   for (const problem of lockResult.problems) console.error(`  ${problem.kind}: ${problem.detail}`);
   console.error('reference-image-check: the consumer lock is not valid');
