@@ -23,8 +23,17 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single grey sphere centred in it, about a fifth ' +
+    'of the frame height across, lit FROM ABOVE AND BELOW BY DIFFERENT LIGHT: its upper half is warm ' +
+    'and clearly brighter, its lower half is much darker and cooler, with a smooth gradient between the ' +
+    'two rather than a hard line. The top-versus-bottom difference is the claim — a sphere lit evenly, ' +
+    'or one brighter at the bottom, is the failure. There is no single hard-edged highlight of the kind ' +
+    'a lamp makes; the shading is broad and soft. The background stays near-black.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

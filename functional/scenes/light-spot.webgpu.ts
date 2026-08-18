@@ -25,8 +25,18 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single grey sphere centred in it, about a fifth ' +
+    'of the frame height across, lit by a NARROW CONE from the upper right: a bright pool falls on the ' +
+    'right of the sphere and fades off within a short distance, leaving the left side dark. The cone is ' +
+    'tight rather than broad — the transition from lit to unlit happens over a small part of the ' +
+    'surface, not gradually across the whole sphere. A uniformly lit sphere, or one whose left side is ' +
+    'brighter, is the failure. The background stays near-black and shows no visible cone or beam in the ' +
+    'air.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
