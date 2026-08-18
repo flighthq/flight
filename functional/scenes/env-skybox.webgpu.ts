@@ -41,19 +41,19 @@ declareExpectedImageDescription(
     'the optical axis and t = fovY/2 = pi/4.4. Top and bottom stay yellow at the sampled heights: the near-white ' +
     '+Y and dark-grey -Y faces are much further from dominance vertically than the side faces are horizontally. ' +
     'So the picture reads left to right as green, then a broad yellow field across the middle, then red — NOT a ' +
-    'uniform fill, which would mean the per-ray reconstruction collapsed. BOUNDED, and the reason is that the ' +
-    'derivation runs out here: the boundary sharpness is INDETERMINATE FROM SOURCE. The scene configures each ' +
-    'cube face as an 8x8 solid-colour canvas and sets no filtering parameters at all — no minFilter, no ' +
-    'magFilter, no seamless flag anywhere in the scene file — so whether a transition renders as a hard edge or ' +
-    'as a blend depends on the default texture filter mode and on whether GL_TEXTURE_CUBE_MAP_SEAMLESS (or the ' +
-    'WebGPU sampler equivalent) is enabled. Neither is a scene-file parameter; both are texture and ' +
-    'rendering-infrastructure defaults invisible from source. Source alone therefore cannot determine this, so ' +
-    'this description claims the ORDER and the DOMINANT face only: it predicts neither a sharp boundary at ' +
-    'exactly 55 px nor any particular blend width. In front of the backdrop sits a single matte grey sphere ' +
-    '(baseColor 0x808080, metallic 0, roughness 0.5), horizontally centred but sitting ABOVE the centre of the ' +
-    'field because the camera is tilted down by b = 5.71 deg: its centre is at (0.5*W, 0.5*H - ' +
-    'H*tan(b)/(2*tan(t))) = (0.5*W, 0.4423*H) = (400, 265.4). Writing a = asin(0.8/4) = 11.54 deg for its angular ' +
-    'radius, it measures H*(tan(b+a) - tan(b-a))/(2*tan(t)) = 0.2380*H = 142.8 px vertically and ' +
+    'uniform fill, which would mean the per-ray reconstruction collapsed. Source does not determine how sharp the ' +
+    'boundaries between faces are; it depends on the texture filtering the runtime applies, which no scene file ' +
+    'sets. The scene configures each cube face as an 8x8 solid-colour canvas and sets no filtering parameters at ' +
+    'all — no minFilter, no magFilter, no seamless flag anywhere in the scene file — so whether a transition ' +
+    'renders as a hard edge or as a blend depends on the default texture filter mode and on whether ' +
+    'GL_TEXTURE_CUBE_MAP_SEAMLESS (or the WebGPU sampler equivalent) is enabled. Neither is a scene-file ' +
+    'parameter; both are texture and rendering-infrastructure defaults invisible from source. Source alone ' +
+    'therefore cannot determine this, so this description claims the ORDER and the DOMINANT face only: it ' +
+    'predicts neither a sharp boundary at exactly 55 px nor any particular blend width. In front of the backdrop ' +
+    'sits a single matte grey sphere (baseColor 0x808080, metallic 0, roughness 0.5), horizontally centred but ' +
+    'sitting ABOVE the centre of the field because the camera is tilted down by b = 5.71 deg: its centre is at ' +
+    '(0.5*W, 0.5*H - H*tan(b)/(2*tan(t))) = (0.5*W, 0.4423*H) = (400, 265.4). Writing a = asin(0.8/4) = 11.54 deg ' +
+    'for its angular radius, it measures H*(tan(b+a) - tan(b-a))/(2*tan(t)) = 0.2380*H = 142.8 px vertically and ' +
     'W*tan(a)/((W/H)*tan(t)) = 0.1767*W = 141.3 px horizontally — a circle to the eye, about 142 px across. It is ' +
     'lit from above and slightly from the right by one directional light travelling along (-0.4,-1,-0.3), so its ' +
     'upper surface is clearly brighter than its lower — and it carries NO mirror-like reflection of the cube ' +
