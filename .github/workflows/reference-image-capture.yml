@@ -67,19 +67,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: queue
+        env:
+          REQUEST_PATH: ${{ github.event.inputs.request }}
         run: |
-          if [ -n "${{ github.event.inputs.request }}" ]; then
-            stems="$(basename "${{ github.event.inputs.request }}" .json)"
-          else
-            stems=$(ls reference-image-requests/*.json 2>/dev/null | xargs -r -n1 basename | sed 's/\.json$//' | tr '\n' ' ')
-          fi
-          list=$(printf '%s' "$stems" | tr ' ' '\n' | grep -v '^$' | jq -R . | jq -s -c .)
+          set -euo pipefail
+          # One derivation feeds every presentation surface below. The UUID remains `id` and therefore
+          # remains the only value used in paths; `label` and its parts are display metadata only.
+          list=$(node ./scripts/reference-image-request-label.mjs "$REQUEST_PATH")
           echo "list=$list" >> "$GITHUB_OUTPUT"
           echo "any=$([ "$list" = '[]' ] && echo false || echo true)" >> "$GITHUB_OUTPUT"
           echo "outstanding: $list"
 
   capture:
-    name: Reference Images · Capture · ${{ matrix.request }}
+    name: Reference Images · Capture · ${{ matrix.request.label }} · ${{ matrix.request.id }}
     needs: requests
     if: needs.requests.outputs.any == 'true'
     runs-on: ubuntu-latest
@@ -105,9 +105,11 @@ jobs:
 
       - name: Resolve the reviewed build
         id: reviewed-build
+        env:
+          REQUEST_ID: ${{ matrix.request.id }}
         run: |
           set -euo pipefail
-          request="reference-image-requests/${{ matrix.request }}.json"
+          request="reference-image-requests/$REQUEST_ID.json"
           commit=$(node -e '
             const request = require("./" + process.argv[1]);
             const commits = [...new Set(request.targets?.map((target) => target.build?.commit))];
@@ -122,7 +124,7 @@ jobs:
             exit 1
           fi
           mkdir -p "$RUNNER_TEMP/reference-image-requests"
-          cp "$request" "$RUNNER_TEMP/reference-image-requests/${{ matrix.request }}.json"
+          cp "$request" "$RUNNER_TEMP/reference-image-requests/$REQUEST_ID.json"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
 
       # ★ TODAY'S INSTRUMENT ON AN OLD SUBJECT. Root remains at github.sha so scope, capture and bundle use
@@ -169,10 +171,12 @@ jobs:
           echo "observed playwright: $chrome"
           echo "observed chromium:   $(find ~/.cache/ms-playwright -name chrome -type f 2>/dev/null | head -1 | xargs -r -I{} {} --version 2>/dev/null)"
 
-      - name: Capture ${{ matrix.request }}
+      - name: Capture ${{ matrix.request.id }}
+        env:
+          REQUEST_ID: ${{ matrix.request.id }}
         run: |
           set -euo pipefail
-          request="$RUNNER_TEMP/reference-image-requests/${{ matrix.request }}.json"
+          request="$RUNNER_TEMP/reference-image-requests/$REQUEST_ID.json"
           # The scope comes from the request through one code path (getOracleRequestCells), so the
           # workflow never re-derives which cells are in scope.
           npx tsx ./scripts/reference-image-commission.ts scope "$request" | while read -r args; do
@@ -185,37 +189,45 @@ jobs:
       # the failure this replaces. The sidecar preserves review evidence without adding a field to the
       # candidate schema, whose `additionalProperties: false` contract belongs to another repository.
       - name: Assert the archive shape before uploading
+        env:
+          REQUEST_ID: ${{ matrix.request.id }}
         run: |
-          dir="stage/${{ matrix.request }}"
+          dir="stage/$REQUEST_ID"
           test -f "$dir/candidate.json" || { echo "no candidate.json in $dir" >&2; exit 1; }
           test -f "$dir/request-image-differences.json" || { echo "no request-image-differences.json in $dir" >&2; exit 1; }
           pngs=$(find "$dir/images" -name '*.png' 2>/dev/null | wc -l)
           echo "candidate.json + request-image-differences.json + $pngs image(s):"
           find "$dir" -type f | sed 's/^/  /'
-          [ "$pngs" -gt 0 ] || { echo "no image staged for ${{ matrix.request }}" >&2; exit 1; }
+          [ "$pngs" -gt 0 ] || { echo "no image staged for $REQUEST_ID" >&2; exit 1; }
 
       - uses: actions/upload-artifact@v4
         with:
-          name: reference-image-candidate-${{ matrix.request }}
-          path: stage/${{ matrix.request }}
+          # The readable prefix is additive. The trailing UUID remains the artifact/request identity,
+          # which the bridge extracts without ever folding this label into `requestPath`.
+          name: reference-image-candidate-${{ matrix.request.entryLabel }}-${{ matrix.request.id }}
+          path: stage/${{ matrix.request.id }}
           if-no-files-found: error
           retention-days: 30
 
-      - run: |
+      - env:
+          REQUEST_ID: ${{ matrix.request.id }}
+          REQUEST_LABEL: ${{ matrix.request.label }}
+          REQUEST_RENDERERS: ${{ matrix.request.rendererLabel }}
+        run: |
           {
-            echo "### oracle candidate · ${{ matrix.request }}"
+            printf '### oracle candidate · %s · renderers: %s · %s\n' "$REQUEST_LABEL" "$REQUEST_RENDERERS" "$REQUEST_ID"
             echo ""
             echo "- reviewed build commit: \`${{ steps.reviewed-build.outputs.commit }}\`"
             echo ""
             echo "#### Candidate"
             echo ""
             echo '```json'
-            cat "stage/${{ matrix.request }}/candidate.json"
+            cat "stage/$REQUEST_ID/candidate.json"
             echo '```'
             echo ""
             echo "#### Requested-vs-captured pixel evidence"
             echo ""
             echo '```json'
-            cat "stage/${{ matrix.request }}/request-image-differences.json"
+            cat "stage/$REQUEST_ID/request-image-differences.json"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
