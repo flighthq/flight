@@ -47,7 +47,6 @@ jobs:
         uses: ./.github/actions/setup-playwright
         with:
           cache: 'false'
-          install-deps: 'false'
       - name: Launch Chromium and load a page
         run: |
           node --input-type=module <<'NODE'
