@@ -27,7 +27,20 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   BlendMode,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark background showing SIX COLUMNS of coloured patches drawn over one ' +
+    'opaque backdrop, each column using a different compositing rule, in this reading order: normal, ' +
+    'add, multiply, screen, darken, lighten. Every column holds the SAME patch colour twice — once at ' +
+    'full opacity in the upper row and once at quarter opacity in the lower row — so within a column the ' +
+    'only difference between the two rows is coverage. In the normal, add, screen and lighten columns ' +
+    'the two rows must look CLEARLY DIFFERENT from each other: a quarter-opacity patch that matches its ' +
+    'full-opacity twin is the failure this scene exists to catch, because identical rows are exactly ' +
+    'what happens when coverage never reaches the composite. The multiply and darken columns may look ' +
+    'alike between rows at this patch colour and that is expected, not a defect. Columns differ from ' +
+    'each other too: add and screen are lighter than the backdrop, multiply and darken are darker.',
+);
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl one directly from its package.
 
