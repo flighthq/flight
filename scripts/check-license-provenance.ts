@@ -102,6 +102,11 @@ const LICENSE_VOCABULARY_PATTERN = new RegExp(
   `(?<![A-Za-z0-9])(?:${LICENSE_VOCABULARY.map(escapeRegExp).join('|')})(?![A-Za-z0-9])`,
   'gi',
 );
+const MARKER_PATTERN = new RegExp(
+  `(?<![A-Za-z0-9])(?:${MARKERS.map((r) => escapeRegExp(r.phrase)).join('|')})(?![A-Za-z0-9])`,
+  'gi',
+);
+const MARKER_PHRASE_TO_RULE = new Map(MARKERS.map((r) => [r.phrase.toLowerCase(), r]));
 const NEGATION_PATTERN = /\b(?:never|neither|no|not|nothing|without)\b/i;
 const MANIFEST_LICENSE_LINE = /^\s*"license"\s*:\s*"[^"]+"\s*,?\s*$/;
 const MAX_GIT_OUTPUT_BYTES = 64 * 1024 * 1024;
@@ -150,22 +155,21 @@ export function checkLicenseProvenance(inputs: readonly LicenseProvenanceInput[]
         }
       }
 
-      for (const rule of MARKERS) {
-        const pattern = markerPattern(rule.phrase);
-        for (const match of line.matchAll(pattern)) {
-          if (isNegated(line, match.index ?? 0)) continue;
-          if (isPermittedDerivationObject(line, match, flightPackages)) continue;
-          if (!isImplementationDerivationObject(line, match, lines[index - 1] ?? '')) continue;
-          const disposition = dispositionOf(path, line, index, escapeLines, {
-            index: match.index ?? 0,
-            match: match[0],
-            rule: rule.name,
-          });
-          if (disposition === 'structural') {
-            structuralMatches.add(`${path}:${index + 1}:${match[0]}`);
-          } else if (disposition === 'violation') {
-            violations.push({ line: index + 1, match: match[0], path, rule: rule.name });
-          }
+      for (const match of line.matchAll(combinedMarkerPattern())) {
+        const rule = MARKER_PHRASE_TO_RULE.get(match[0].toLowerCase());
+        if (!rule) continue;
+        if (isNegated(line, match.index ?? 0)) continue;
+        if (isPermittedDerivationObject(line, match, flightPackages)) continue;
+        if (!isImplementationDerivationObject(line, match, lines[index - 1] ?? '')) continue;
+        const disposition = dispositionOf(path, line, index, escapeLines, {
+          index: match.index ?? 0,
+          match: match[0],
+          rule: rule.name,
+        });
+        if (disposition === 'structural') {
+          structuralMatches.add(`${path}:${index + 1}:${match[0]}`);
+        } else if (disposition === 'violation') {
+          violations.push({ line: index + 1, match: match[0], path, rule: rule.name });
         }
       }
     }
@@ -401,8 +405,8 @@ function marker(name: string, ...phrase: string[]): MarkerRule {
   return { name, phrase: words(...phrase) };
 }
 
-function markerPattern(phrase: string): RegExp {
-  return new RegExp(`(?<![A-Za-z0-9])${escapeRegExp(phrase)}(?![A-Za-z0-9])`, 'gi');
+function combinedMarkerPattern(): RegExp {
+  return new RegExp(MARKER_PATTERN.source, MARKER_PATTERN.flags);
 }
 
 function normalizePath(path: string): string {
