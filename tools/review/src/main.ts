@@ -1,6 +1,13 @@
 // @ts-expect-error -- virtual module typed below
 import { tests as _tests } from 'virtual:review-manifest';
 
+import {
+  isReviewCommissionEligible,
+  reviewCommissionIneligibility,
+  reviewCommissionIneligibilityMessage,
+  selectReviewCommissionCells,
+} from './commissionEligibility';
+
 interface ReviewCellProvenance {
   hostInstanceId: string | null;
   environmentId: string | null;
@@ -324,10 +331,14 @@ async function commissionCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
 
-  const hasMarks = t.cells.some((c) => approvedCells.has(approvalKey(t, c.renderer)));
-  const selectedCells = hasMarks
-    ? t.cells.filter((c) => approvedCells.get(approvalKey(t, c.renderer)) === true)
-    : t.cells;
+  const selectedCells = selectReviewCommissionCells(t.cells, (cell) =>
+    approvedCells.get(approvalKey(t, cell.renderer)),
+  );
+
+  if (selectedCells.length === 0) {
+    showCommissionFeedback('Cannot commission: no eligible captured cells', true);
+    return;
+  }
 
   const cells = selectedCells.map((c) => ({
     build: c.build,
@@ -515,12 +526,29 @@ function buildRendererBar(): void {
       commissionBtn.title += ` — WARNING: Built with uncommitted changes: ${formatDirtyPaths(dirtyPaths, dirtyOmitted)}`;
       commissionBtn.setAttribute('data-build-dirty', 'true');
     }
-    const buildUnavailable = t.cells.some((cell) => cell.build === null || cell.build.commit === null);
-    if (buildUnavailable) {
-      commissionBtn.title += ' — Build commit unavailable: rebuild and recapture before commissioning';
-    } else {
+    const missingCaptures = t.cells.filter((cell) => reviewCommissionIneligibility(cell) === 'missing-capture').length;
+    const missingBuildStamps = t.cells.filter(
+      (cell) => reviewCommissionIneligibility(cell) === 'missing-build-stamp',
+    ).length;
+    const missingHostIdentities = t.cells.filter(
+      (cell) => reviewCommissionIneligibility(cell) === 'missing-host-identity',
+    ).length;
+    if (missingCaptures > 0) {
+      commissionBtn.title += ` — ${missingCaptures} cell(s) have no capture and will be skipped; capture them before commissioning`;
+    }
+    if (missingBuildStamps > 0) {
+      commissionBtn.title += ` — ${missingBuildStamps} captured cell(s) have no build stamp and will be skipped; re-capture now that the build is complete`;
+    }
+    if (missingHostIdentities > 0) {
+      commissionBtn.title += ` — ${missingHostIdentities} captured cell(s) have no host identity and will be skipped; re-capture them so the machine identity is recorded`;
+    }
+    if (t.cells.every((cell) => isReviewCommissionEligible(cell))) {
       commissionBtn.title +=
         ' — selected pixel hashes record what you reviewed; CI recreates the recorded build commit, and any decoded-pixel difference is preserved in request-image-differences.json for review';
+    }
+    if (!hasMarks && !t.cells.some((cell) => isReviewCommissionEligible(cell))) {
+      commissionBtn.textContent = 'Commission (no eligible captures)';
+      commissionBtn.disabled = true;
     }
     commissionBtn.addEventListener('click', () => void commissionCurrentTest());
   }
@@ -615,17 +643,17 @@ function showRenderer(): void {
   }
 
   let buildEl = preview.querySelector<HTMLElement>('.build-warning');
+  const commissionIneligibility = cell ? reviewCommissionIneligibility(cell) : null;
   const buildDirty = (cell?.build?.dirty.length ?? 0) > 0 || (cell?.build?.dirtyOmitted ?? 0) > 0;
-  if (cell && (cell.build?.commit === null || cell.build === null || buildDirty)) {
+  if (cell && (commissionIneligibility !== null || buildDirty)) {
     if (!buildEl) {
       buildEl = document.createElement('div');
       buildEl.className = 'build-warning';
       preview.appendChild(buildEl);
     }
-    buildEl.textContent =
-      cell.build?.commit === null || cell.build === null
-        ? 'Build commit unavailable — rebuild and recapture before commissioning.'
-        : `Built with uncommitted changes: ${formatDirtyPaths(cell.build.dirty, cell.build.dirtyOmitted)}`;
+    buildEl.textContent = commissionIneligibility
+      ? reviewCommissionIneligibilityMessage(commissionIneligibility)
+      : `Built with uncommitted changes: ${formatDirtyPaths(cell.build!.dirty, cell.build!.dirtyOmitted)}`;
   } else {
     buildEl?.remove();
   }
@@ -683,7 +711,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   ]);
 
   if (candidateImg === null) {
-    container.innerHTML = `<div class="compare-message">No capture for this cell — re-capture with npm run review:functional:fresh</div>`;
+    container.innerHTML = `<div class="compare-message">No capture for this cell — capture it before commissioning</div>`;
     appendCompareDescription(container, t);
     preview.appendChild(container);
     return;
@@ -960,9 +988,10 @@ function approveCurrentCell(): void {
   const cell = t.cells[ci];
   if (!cell) return;
 
-  if (!cell.hash || !cell.provenance?.hostInstanceId || !cell.provenance?.environmentId) {
+  const commissionIneligibility = reviewCommissionIneligibility(cell);
+  if (commissionIneligibility !== null) {
     showCommissionFeedback(
-      `Cannot approve ${cell.renderer}: missing capture hash or provenance (re-capture first)`,
+      `Cannot approve ${cell.renderer}: ${reviewCommissionIneligibilityMessage(commissionIneligibility)}`,
       true,
     );
     return;
