@@ -225,6 +225,7 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       # Every shard runs even when one fails: they test disjoint packages, so a failure in one says
       # nothing about the others and cancelling them costs a whole extra CI round to learn the rest.
@@ -241,8 +242,7 @@ jobs:
       # Only the shard holding tool-capture needs a browser, but which shard that is depends on the
       # split, so every shard installs. Chromium is cached by the runner image and this is well off
       # the critical path of the shard that actually uses it.
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - uses: ./.github/actions/setup-playwright
       - run: npm run test:unit -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
   test-fast:
@@ -319,6 +319,7 @@ jobs:
     needs: [changes, build]
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -367,7 +368,7 @@ jobs:
           name: dist-${{ github.sha }}
       - name: Restore dist from the build job
         run: tar -xzf dist.tgz
-      - run: npx playwright install --with-deps chromium
+      - uses: ./.github/actions/setup-playwright
       # Two knobs, both environment properties rather than code changes, both sized for THIS runner.
       #
       # Worker count: the runner has one SwiftShader adapter, so the default (available parallelism
@@ -401,6 +402,7 @@ jobs:
   reference-image-check:
     name: Reference Images · Check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     env:
@@ -440,7 +442,7 @@ jobs:
           npm run build
           npm run build:functional
 
-      - run: npx playwright install --with-deps chromium
+      - uses: ./.github/actions/setup-playwright
 
       # Echo the registered identity instead of recomputing it. The reference-image repository owns the
       # identity; the observed browser is diagnostic evidence if the hosted runner later drifts from it.

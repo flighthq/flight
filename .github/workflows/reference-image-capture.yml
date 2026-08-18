@@ -82,6 +82,7 @@ jobs:
     needs: requests
     if: needs.requests.outputs.any == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -138,7 +139,7 @@ jobs:
           npm run build
           npm run build:functional
 
-      - run: npx playwright install --with-deps chromium
+      - uses: ./.github/actions/setup-playwright
 
       # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/reference-image-capture-identity.json`, NOT COMPUTED HERE.
       # It is registered in `flight-reference-images` and copied verbatim. This workflow previously derived its own

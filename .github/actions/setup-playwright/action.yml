@@ -1,0 +1,42 @@
+name: Setup Playwright
+description: Install Playwright browser with caching and split deps/download steps
+
+inputs:
+  browser:
+    description: Browser to install
+    required: false
+    default: chromium
+
+runs:
+  using: composite
+  steps:
+    - name: Read Playwright version from lockfile
+      id: pw-version
+      shell: bash
+      run: |
+        version=$(node -e "
+          const lock = require('./package-lock.json');
+          const pw = lock.packages?.['node_modules/playwright-core']
+                  || lock.dependencies?.['playwright-core'];
+          console.log(pw?.version ?? 'unknown');
+        ")
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Playwright browser cache
+      id: pw-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.pw-version.outputs.version }}-${{ inputs.browser }}
+
+    - name: Install system dependencies
+      if: steps.pw-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npx playwright install-deps ${{ inputs.browser }}
+      timeout-minutes: 5
+
+    - name: Install Playwright browser
+      if: steps.pw-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npx playwright install ${{ inputs.browser }}
+      timeout-minutes: 5
