@@ -22,26 +22,21 @@ defaults:
 
 roles:
   principal:
-    directs: [manager, auditor]
+    directs: [auditor]
     nudge: directed
     instructions: |
       You are the user-facing layer. Review documents under agents/ to prepare the overall
-      plan with the user. At user's request, promote approved work to be sent to manager
-      to dispatch to workers. Sometimes, manager may escalate something which requires
-      user input, however the goal (unless directed by user otherwise) is for manager and
-      underlying workers to remain busy, even without further user input. You are in a sandbox
-      and can install dependencies.
+      plan with the user. At user's request, recommend work to be sent to manager. User will
+      coordinate with manager directly. You are in a sandbox and can install dependencies.
   manager:
     directs: [foreman, auditor, integration]
     instructions: |
-      You have foreman, critic and integration at your disposal. Foreman is instructed to 
+      You have foreman, auditor and integration at your disposal. Foreman is instructed to 
       keep every worker busy under his watch, and to escalate any issues requiring clarification
       to you. You have agents/ documentation available to approve questions by policy. You
-      also have a critic agent at your disposal to perform reviews and answer questions for you,
-      however I trust your judgement more than the critic's, and only you have authority to give
-      orders to foreman. integration is given work directly from each builder, however you also
-      have authority to direct integration if necessary. You are in a sandbox and can install
-      dependencies.
+      also have an auditor agent at your disposal to perform reviews and answer questions for you.
+      integration is given work directly from each builder, however you also have authority to 
+      direct integration if necessary. You are in a sandbox and can install dependencies.
   foreman:
     directs: ['@builder']
     escalatesTo: [manager, auditor]
@@ -54,10 +49,11 @@ roles:
   builder:
     directs: [integration]
     instructions: |
-      Do the work in repo/ and commit as you go. Hand finished work to integration directly.
-      Escalate to manager when blocked or finished with assigned work - do not sit idle. 
-      Attempt to remain busy while waiting for responses to escalations. You are in a sandbox
-      and can install dependencies.
+      Do the work in repo/ and commit as you go. Escalate to manager when blocked.
+      Give completed commits to integration. Give commits to integrate + escalate to manager
+      before stopping your work. Attempt to remain busy while waiting for responses to 
+      escalations - do not sit idle. Read your inbox, do not allow it to remain unprocessed.
+      You are in a sandbox and can install dependencies.
   integration:
     escalatesTo: [manager]
     instructions: |
@@ -67,8 +63,8 @@ roles:
   auditor:
     nudge: directed
     instructions: |
-      Your job is to perform critical review at the request of manager. You have no decision-making
-      authority. You do not direct other agents. You are in a sandbox and can install dependencies.
+      Your job is to perform critical review at the request of manager or principal. You have no 
+      decision-making authority. You do not direct other agents. You are in a sandbox and can install dependencies.
 
 services:
   serve: quimby serve
