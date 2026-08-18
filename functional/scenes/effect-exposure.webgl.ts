@@ -27,7 +27,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 // whole frame uniformly before display.
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles of about 140 px, each turned by ' +
-    'a different small angle: white centred near (224,180), warm yellow near (576,180), cyan near ' +
+    'a different angle from about 12 up to about 72 degrees: white centred near (224,180), warm yellow near (576,180), cyan near ' +
     '(224,420) and pink near (576,420). The whole picture is BRIGHTENED — every tile reads lighter than ' +
     'its raw fill and the three coloured tiles are visibly washed toward white, while the background ' +
     'stays dark. A picture whose tiles match their raw fills is the failure. The tiles keep their ' +
