@@ -47,6 +47,23 @@ and the render alone cannot say which — the second case is the entire reason t
 Adjudicate by returning to the source. "Correcting" a description against a capture silently converts a
 renderer-bug detector into a renderer-bug concealer, and nothing downstream can detect that it happened.
 
+## Derived values carry their symbolic form, including the dimension
+
+Write `y = 0.4*H + sin(a)*0.28*H = 408`, not `y = 408`. Every derived number keeps the expression it came
+from, and every factor keeps the dimension it was taken from — `H` where the source uses height, `W` where
+it uses width.
+
+This is not a formatting preference and must not be simplified back to the bare number. On 2026-08-18 a
+verifier reviewing cold, with no access to the original author's reasoning, made the *same* wrong-dimension
+error as the authors on the same scene: a width-based radius applied to the y axis. Two people failing
+independently in one direction is a property of the task, not of either of them — the dimension is the
+thing this work is easiest to get wrong, and swapping in a fresh reader does not fix it.
+
+The symbolic form is what changes the cost of catching it. `y = 408` can only be checked by redoing the
+derivation, which is the very step that goes wrong; `0.28*W` sitting in text where the source says `H` is
+visible by comparison. Make the wrong thing visibly wrong rather than requiring the reader to recompute
+it — the same reason the completion condition above names a checkable property instead of a commit hash.
+
 Check the command can still fail before quoting its output as done: `package.json` must pass `--check`,
 which is what reaches the only `process.exitCode = 1` in the script. An earlier revision of this line
 named the same command while `--check` was absent, so the finish condition was unfalsifiable — the
