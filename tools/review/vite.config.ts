@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import { workspacePackages } from '../../scripts/workspaces';
+import { sourceContainsExpectedDescription } from './src/sourceExpectedDescription';
 
 const projectRoot = resolve(__dirname, '../..');
 const artifactsDir = resolve(projectRoot, '.artifacts');
@@ -226,7 +227,7 @@ function sourceHasExpectedDescription(tool: string, name: string, renderers: rea
     const filePath = join(sceneDir, candidate);
     if (!existsSync(filePath)) continue;
     try {
-      if (readFileSync(filePath, 'utf8').includes('expectedImageDescription')) return true;
+      if (sourceContainsExpectedDescription(readFileSync(filePath, 'utf8'))) return true;
     } catch {
       continue;
     }
