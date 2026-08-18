@@ -6,6 +6,12 @@ interface ReviewCellProvenance {
   environmentId: string | null;
 }
 
+interface ReviewBuildProvenance {
+  commit: string | null;
+  dirty: string[];
+  dirtyOmitted: number;
+}
+
 type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
 type ParityStatus = 'passed' | 'failed' | 'no-data';
 type AttentionGroup = 'differs' | 'changed' | 'not-commissioned' | 'requested' | 'included';
@@ -17,6 +23,7 @@ interface ReviewCell {
   changed: boolean | null;
   hash: string | null;
   provenance: ReviewCellProvenance | null;
+  build: ReviewBuildProvenance | null;
   commissionState: CommissionState;
   holdReason: string | null;
   parityStatus: ParityStatus;
@@ -322,6 +329,7 @@ async function commissionCurrentTest(): Promise<void> {
     : t.cells;
 
   const cells = selectedCells.map((c) => ({
+    build: c.build,
     renderer: c.renderer,
     pixelSha256: c.hash,
     hostInstanceId: c.provenance?.hostInstanceId ?? null,
@@ -351,18 +359,35 @@ async function commissionCurrentTest(): Promise<void> {
       total: number;
       skipped: string[];
       coverageAdded: number;
+      buildCommit: string | null;
+      dirty: string[];
+      dirtyOmitted: number;
     };
     const scope =
       result.committed === result.total
         ? `all ${result.total} renderer(s)`
         : `${result.committed} of ${result.total} renderer(s) — skipped ${result.skipped.join(', ')} (no capture hash)`;
     const coverage = result.coverageAdded > 0 ? `, ${result.coverageAdded} coverage entr(y/ies) declared` : '';
-    showCommissionFeedback(`Requested ${scope}${coverage} → ${result.path}`, result.committed !== result.total);
+    const build = ` from reviewed build ${result.buildCommit?.slice(0, 12) ?? 'UNSTAMPED'}`;
+    const dirty =
+      result.dirty.length === 0 && result.dirtyOmitted === 0
+        ? ''
+        : ` — WARNING: Built with uncommitted changes: ${formatDirtyPaths(result.dirty, result.dirtyOmitted)}`;
+    showCommissionFeedback(
+      `Requested ${scope}${coverage}${build}${dirty} → ${result.path}`,
+      result.committed !== result.total || result.dirty.length > 0 || result.dirtyOmitted > 0,
+    );
     clearApprovals();
     showCurrent();
   } catch (e) {
     showCommissionFeedback(`Network error: ${e}`, true);
   }
+}
+
+function formatDirtyPaths(paths: readonly string[], alreadyOmitted = 0, limit = 5): string {
+  const visible = paths.slice(0, limit).join(', ');
+  const remaining = paths.length - Math.min(paths.length, limit) + alreadyOmitted;
+  return remaining === 0 ? visible : `${visible}${visible === '' ? '' : ', '}… ${remaining} more`;
 }
 
 function showCommissionFeedback(message: string, isError: boolean): void {
@@ -474,6 +499,15 @@ function buildRendererBar(): void {
       commissionBtn.textContent = 'Commission';
       commissionBtn.title = 'Write a reference image request for all renderers of this scene';
     }
+    const dirtyPaths = [...new Set(t.cells.flatMap((cell) => cell.build?.dirty ?? []))];
+    const dirtyOmitted = Math.max(0, ...t.cells.map((cell) => cell.build?.dirtyOmitted ?? 0));
+    if (dirtyPaths.length > 0 || dirtyOmitted > 0) {
+      commissionBtn.title += ` — WARNING: Built with uncommitted changes: ${formatDirtyPaths(dirtyPaths, dirtyOmitted)}`;
+      commissionBtn.setAttribute('data-build-dirty', 'true');
+    } else {
+      commissionBtn.title +=
+        ' — selected pixel hashes record what you reviewed; CI recreates the recorded build commit and may render environment-specific pixels';
+    }
     commissionBtn.addEventListener('click', () => void commissionCurrentTest());
   }
 
@@ -564,6 +598,22 @@ function showRenderer(): void {
     }
   } else {
     stateEl?.remove();
+  }
+
+  let buildEl = preview.querySelector<HTMLElement>('.build-warning');
+  const buildDirty = (cell?.build?.dirty.length ?? 0) > 0 || (cell?.build?.dirtyOmitted ?? 0) > 0;
+  if (cell && (cell.build?.commit === null || cell.build === null || buildDirty)) {
+    if (!buildEl) {
+      buildEl = document.createElement('div');
+      buildEl.className = 'build-warning';
+      preview.appendChild(buildEl);
+    }
+    buildEl.textContent =
+      cell.build?.commit === null || cell.build === null
+        ? 'Build commit unavailable — rebuild and recapture before commissioning.'
+        : `Built with uncommitted changes: ${formatDirtyPaths(cell.build.dirty, cell.build.dirtyOmitted)}`;
+  } else {
+    buildEl?.remove();
   }
 
   let parityEl = preview.querySelector<HTMLElement>('.parity-state');

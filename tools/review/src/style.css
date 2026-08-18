@@ -375,6 +375,25 @@ body {
   color: #555;
 }
 
+.build-warning {
+  position: absolute;
+  top: 38px;
+  left: 8px;
+  max-width: min(80%, 900px);
+  padding: 4px 10px;
+  background: rgba(55, 35, 0, 0.9);
+  border: 1px solid rgba(208, 160, 64, 0.45);
+  border-radius: 4px;
+  color: #d0a040;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  line-height: 1.4;
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  z-index: 9;
+}
+
 .commission-btn:disabled {
   opacity: 0.4;
   cursor: default;

@@ -41,12 +41,19 @@ export interface ReferenceImageLockImage {
 }
 
 export interface ReferenceImageRequest {
-  schemaVersion: 2;
+  /** v2 is readable for the existing queue; every new writer emits v3 with a reproducible build. */
+  schemaVersion: 2 | 3;
   id: string;
   subject: string;
   targets: readonly ReferenceImageRequestTarget[];
   frames: number;
   reason: string;
+}
+
+export interface ReferenceImageRequestBuildIdentity {
+  commit: string | null;
+  dirty: readonly string[];
+  dirtyOmitted: number;
 }
 
 export interface ReferenceImageRequestTarget {
@@ -56,6 +63,8 @@ export interface ReferenceImageRequestTarget {
   pixelSha256: string;
   /** The selected capture run, recorded as provenance rather than folded into the image key. */
   capture: ReferenceImageRequestCaptureIdentity;
+  /** The exact static build that produced the pixels the requester reviewed. Required by schema v3. */
+  build?: ReferenceImageRequestBuildIdentity;
 }
 
 export interface ReferenceImageRequestCaptureIdentity {
@@ -184,8 +193,9 @@ export function getOracleLockImages(
 
 /**
  * Reads and validates one outstanding commission. A request names live targets and a reason; it never
- * carries the SHA of the commit containing it (§5) — that self-reference cannot be known before the
- * commit exists, and the trusted workflow binds the request to the landed `github.sha` instead.
+ * carries the SHA of the commit containing the reviewed BUILD, which is deliberately not the later
+ * commit that files the request. CI can therefore recreate the reviewed code without pinning unrelated
+ * landing changes, while the workflow trigger remains the trusted landed request.
  */
 export function readOracleRequest(path: string): ReferenceImageRequestResult {
   const parsed = readJsonRecord(path);
@@ -193,7 +203,11 @@ export function readOracleRequest(path: string): ReferenceImageRequestResult {
   const value = parsed.value;
   const problems: ReferenceImageRecordProblem[] = [];
 
-  requireSchemaVersion(problems, path, value, 2);
+  const schemaVersion = value['schemaVersion'];
+  if (schemaVersion === undefined) problems.push(problem(path, 'field-missing', 'schemaVersion is missing'));
+  else if (schemaVersion !== 2 && schemaVersion !== 3) {
+    problems.push(problem(path, 'schema-version', `schemaVersion ${String(schemaVersion)} is not 2 or 3`));
+  }
   requireNonEmptyString(problems, path, value, 'id');
   requireNonEmptyString(problems, path, value, 'subject');
   requireNonEmptyString(problems, path, value, 'reason');
@@ -226,6 +240,7 @@ export function readOracleRequest(path: string): ReferenceImageRequestResult {
         'a 64-hex sha256',
         target['pixelSha256'],
       );
+      if (schemaVersion === 3) validateRequestBuild(problems, path, target['build'], `targets[${index}].build`);
 
       const capture = target['capture'];
       if (capture === undefined) problems.push(problem(path, 'field-missing', `targets[${index}].capture is missing`));
@@ -269,6 +284,64 @@ export type ReferenceImageRequestResult =
  */
 export function getOracleRequestCells(request: Readonly<ReferenceImageRequest>): string[] {
   return request.targets.map((target) => `${request.subject}/${target.entry}/${target.renderer}`);
+}
+
+/** The reviewed build bound by a v3 request; legacy v2 requests have no reproducible build identity. */
+export function getOracleRequestBuild(
+  request: Readonly<ReferenceImageRequest>,
+): ReferenceImageRequestBuildIdentity | null {
+  if (request.schemaVersion !== 3 || request.targets.length === 0) return null;
+  const first = request.targets[0]?.build;
+  if (first === undefined) return null;
+  return request.targets.every(
+    (target) =>
+      target.build?.commit === first.commit &&
+      target.build.dirtyOmitted === first.dirtyOmitted &&
+      arraysEqual(target.build.dirty, first.dirty),
+  )
+    ? first
+    : null;
+}
+
+function validateRequestBuild(
+  problems: ReferenceImageRecordProblem[],
+  source: string,
+  value: unknown,
+  field: string,
+): void {
+  if (value === undefined) {
+    problems.push(problem(source, 'field-missing', `${field} is missing`));
+    return;
+  }
+  if (!isPlainObject(value)) {
+    problems.push(problem(source, 'field-type', `${field} must be an object`));
+    return;
+  }
+  if (value['commit'] !== null) {
+    requirePattern(problems, source, value, `${field}.commit`, HEX_40, 'a 40-hex commit or null', value['commit']);
+  }
+  const dirty = value['dirty'];
+  if (dirty === undefined) problems.push(problem(source, 'field-missing', `${field}.dirty is missing`));
+  else if (!Array.isArray(dirty)) {
+    problems.push(problem(source, 'field-type', `${field}.dirty must be an array`));
+  } else {
+    for (const [index, dirtyPath] of dirty.entries()) {
+      if (typeof dirtyPath !== 'string') {
+        problems.push(problem(source, 'field-type', `${field}.dirty[${index}] must be a string`));
+      } else if (dirtyPath.length === 0) {
+        problems.push(problem(source, 'field-empty', `${field}.dirty[${index}] is empty`));
+      }
+    }
+  }
+  const omitted = value['dirtyOmitted'];
+  if (omitted === undefined) problems.push(problem(source, 'field-missing', `${field}.dirtyOmitted is missing`));
+  else if (typeof omitted !== 'number' || !Number.isInteger(omitted) || omitted < 0) {
+    problems.push(problem(source, 'field-type', `${field}.dirtyOmitted must be a non-negative integer`));
+  }
+}
+
+function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
 function readJsonRecord(

@@ -3,6 +3,10 @@ import { dirname, extname, join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import {
+  CAPTURE_BUILD_IDENTITY_FILE,
+  getCaptureBuildIdentity,
+} from '../../../packages/tool-capture/src/captureBuildIdentity';
 import { resolveAssetTarget } from '../../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../../scripts/copy-dir';
 import { buildExamplesWebEntryHtml } from '../../../scripts/examples-web-entry-html';
@@ -128,6 +132,7 @@ const MIME: Record<string, string> = {
 function examplesPlugin(examples: Example[]): Plugin[] {
   let viteBase = '/';
   let outDir = resolve(__dirname, 'dist');
+  let buildIdentity: ReturnType<typeof getCaptureBuildIdentity> | null = null;
 
   return [
     {
@@ -136,6 +141,10 @@ function examplesPlugin(examples: Example[]): Plugin[] {
 
       config(_, { command }) {
         if (command !== 'build') return;
+
+        // This stamp describes the static bytes about to be built. Capture copies it from dist rather
+        // than re-deriving HEAD later, when the checkout may no longer match the served bundle.
+        buildIdentity = getCaptureBuildIdentity(projectRoot);
 
         const input: Record<string, string> = {
           main: resolve(__dirname, 'index.html'),
@@ -214,6 +223,13 @@ function examplesPlugin(examples: Example[]): Plugin[] {
       },
 
       generateBundle(_, bundle) {
+        if (buildIdentity !== null) {
+          this.emitFile({
+            fileName: CAPTURE_BUILD_IDENTITY_FILE,
+            source: `${JSON.stringify(buildIdentity, null, 2)}\n`,
+            type: 'asset',
+          });
+        }
         for (const example of examples) {
           for (const render of example.renderers) {
             const entryId = `\0virtual-build-entry:${example.name}:${render}`;

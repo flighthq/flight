@@ -149,10 +149,11 @@ describe('verifyOracleRequestedPixels', () => {
 });
 
 describe('readBoundOracleRequestTarget', () => {
-  it('records the selected PNG identity and capture run in the v2 target shape', () => {
+  it('records the selected PNG, capture run, and served build in the v3 target shape', () => {
     const capture = { environmentId: 'environment', hostInstanceId: 'host' };
 
     expect(readBoundOracleRequestTarget(root({ hash: PIXEL_HASH }), 'functional/shape/webgl', capture)).toEqual({
+      build: { commit: 'a'.repeat(40), dirty: ['packages/effects/src/drop-shadow.ts'], dirtyOmitted: 0 },
       capture,
       entry: 'shape',
       pixelSha256: REQUEST_PIXEL_HASH,
@@ -202,6 +203,7 @@ function root(status: { hash: string | null; state?: string; error?: string; pro
   mkdirSync(cell, { recursive: true });
   writeFileSync(join(cell, 'screenshot.png'), png());
   const record: Record<string, unknown> = {
+    build: { commit: 'a'.repeat(40), dirty: ['packages/effects/src/drop-shadow.ts'], dirtyOmitted: 0 },
     error: status.error ?? null,
     hash: status.hash,
     state: status.state ?? 'ready',

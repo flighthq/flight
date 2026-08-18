@@ -3,6 +3,10 @@ import { extname, join, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import {
+  CAPTURE_BUILD_IDENTITY_FILE,
+  getCaptureBuildIdentity,
+} from '../../packages/tool-capture/src/captureBuildIdentity';
 // Imported from the package source (not the built barrel) so `vite --config` resolves it before
 // @flighthq/tool-capture is built; it is the same single source the capture scripts consume.
 import { discoverFunctionalScene3Ds, functionalScene3DFile } from '../../packages/tool-capture/src/functionalScene3Ds';
@@ -105,6 +109,7 @@ function functionalTestsPlugin(tests: FunctionalScene3D[]): Plugin[] {
 
   let viteBase = '/';
   let outDir = resolve(__dirname, 'dist');
+  let buildIdentity: ReturnType<typeof getCaptureBuildIdentity> | null = null;
 
   return [
     {
@@ -113,6 +118,11 @@ function functionalTestsPlugin(tests: FunctionalScene3D[]): Plugin[] {
 
       config(_, { command }) {
         if (command !== 'build') return;
+
+        // Read git BEFORE the bundle is made and stamp that result into the bundle. Capture must never
+        // re-derive this from its later checkout: dist can be stale, and HEAD would then describe bytes
+        // that are not being served. Dirty paths are retained because no commit can reproduce them.
+        buildIdentity = getCaptureBuildIdentity(projectRoot);
 
         const input: Record<string, string> = {
           main: resolve(__dirname, 'index.html'),
@@ -172,6 +182,13 @@ function functionalTestsPlugin(tests: FunctionalScene3D[]): Plugin[] {
       },
 
       generateBundle(_, bundle) {
+        if (buildIdentity !== null) {
+          this.emitFile({
+            fileName: CAPTURE_BUILD_IDENTITY_FILE,
+            source: `${JSON.stringify(buildIdentity, null, 2)}\n`,
+            type: 'asset',
+          });
+        }
         for (const test of buildTests) {
           for (const render of test.renderers) {
             const entryId = `\0virtual:ft-entry:${test.name}:${render}`;

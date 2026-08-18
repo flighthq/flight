@@ -42,7 +42,12 @@ import {
   summarizeOracleBlocks,
 } from './reference-image-eligibility';
 import type { ReferenceImageRequestCaptureIdentity, ReferenceImageRequestTarget } from './reference-image-records';
-import { getOracleRequestCells, readOracleLockPins, readOracleRequest } from './reference-image-records';
+import {
+  getOracleRequestBuild,
+  getOracleRequestCells,
+  readOracleLockPins,
+  readOracleRequest,
+} from './reference-image-records';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
@@ -219,19 +224,9 @@ if (readOption('--verbose') !== undefined || rest.includes('--verbose')) {
 
 if (subcommand === 'report') process.exit(0);
 
-// ★ REPORT MAY SHOW A STALE CENSUS; WRITE MAY NOT ACT ON ONE. Same read/write asymmetry as everything else
-// here — looking at a suspect number is how you find out it is suspect, and committing a cell on one is
-// how a wrong reference becomes permanent.
-if (staleness.compared === 0) {
-  console.error('reference-image-commission-batch: no capture carried a comparable sourceHash, so freshness is');
-  console.error('  UNVERIFIED. Refusing to file: an unverifiable census is not a fresh one.');
-  process.exit(1);
-}
-if (staleCells.length > 0) {
-  console.error(`reference-image-commission-batch: ${staleCells.length} capture(s) describe a different tree than`);
-  console.error('  the current source. Re-capture (npm run build:functional first) before filing.');
-  process.exit(1);
-}
+// sourceHash remains useful secondary provenance, but it hashes only the scene harness file. It cannot
+// bind the effect/renderer/shader code that actually contributes pixels, so the report above keeps it
+// visible while the write path binds the complete reviewed BUILD instead of refusing on this weak axis.
 
 if (batch.length === 0) {
   // Filing a request that names nothing would open a commission the capture workflow answers with an
@@ -276,6 +271,24 @@ for (const identity of batch) {
   }
   targets.push(target);
 }
+const request = { schemaVersion: 3 as const, id, subject, targets, frames, reason };
+const selectedBuild = getOracleRequestBuild(request);
+if (selectedBuild === null) {
+  console.error('reference-image-commission-batch: selected captures do not name one reproducible build commit.');
+  console.error('  Rebuild and recapture all selected cells from the same static dist before filing.');
+  process.exit(1);
+}
+if (selectedBuild.commit === null) {
+  console.error('reference-image-commission-batch: selected captures came from an unstamped build.');
+  console.error('  Rebuild and recapture before filing so CI has a commit it can reproduce.');
+  process.exit(1);
+}
+if (selectedBuild.dirty.length > 0 || selectedBuild.dirtyOmitted > 0) {
+  console.warn(
+    `reference-image-commission-batch: WARNING: reviewed build ${selectedBuild.commit} included uncommitted paths:`,
+  );
+  console.warn(`  ${formatDirtyPaths(selectedBuild.dirty, selectedBuild.dirtyOmitted)}`);
+}
 
 const queue = join(repoRoot, 'reference-image-requests');
 mkdirSync(queue, { recursive: true });
@@ -284,7 +297,7 @@ if (existsSync(requestPath)) {
   console.error(`reference-image-commission-batch: ${requestPath} already exists; pick an id that is not already open`);
   process.exit(1);
 }
-writeFileSync(requestPath, `${JSON.stringify({ schemaVersion: 2, id, subject, targets, frames, reason }, null, 2)}\n`);
+writeFileSync(requestPath, `${JSON.stringify(request, null, 2)}\n`);
 
 // ★ THE COVERAGE IDENTITY AND THE REQUEST ARE WRITTEN TOGETHER, IN ONE CHANGE (§5). The request says
 // which cells are moving; the coverage manifest says which cells OWE a referent at all. Filing only the
@@ -445,6 +458,12 @@ function directories(path: string): string[] {
   return readdirSync(path, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
+}
+
+function formatDirtyPaths(paths: readonly string[], alreadyOmitted = 0, limit = 8): string {
+  const visible = paths.slice(0, limit).join(', ');
+  const remaining = paths.length - Math.min(paths.length, limit) + alreadyOmitted;
+  return remaining === 0 ? visible : `${visible}${visible === '' ? '' : ', '}… ${remaining} more`;
 }
 
 /** The commit the ANALYSIS ran against — not the commit the captures describe. See the stale check. */
