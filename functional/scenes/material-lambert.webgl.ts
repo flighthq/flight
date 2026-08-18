@@ -24,7 +24,16 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single matte grey sphere centred in it, about a ' +
+    'fifth of the frame height across. It is lit from the right: the right side is clearly brighter than ' +
+    'the left, with a smooth gradient between them. The shading is PURELY DIFFUSE — there is no bright ' +
+    'specular highlight anywhere on the surface, no small concentrated hotspot, just a broad falloff ' +
+    'from lit side to shadowed side. A visible highlight is the failure here, as is a uniformly lit ' +
+    'sphere or one brighter on the left. The background stays near-black.',
+);
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
 
