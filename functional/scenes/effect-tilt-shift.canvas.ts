@@ -25,11 +25,14 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'On an 800×600 near-black field (about R5 G6 B10), four sharp 160×160 squares sit near the ' +
-    'corners: white centred at (128,108), yellow at (672,120), cyan at (144,492) and magenta at ' +
-    '(656,480), turned by 8, 22, 36 and 50 degrees. Every diagonal edge remains crisp from top to ' +
-    'bottom; there is no softened upper or lower band, no central haze and no colour outside the four ' +
-    'silhouettes. The wide middle gap and extreme corners stay near-black.',
+  'On an 800×600 near-black field (about R5 G6 B10), four sharp 160×160 squares sit near the corners: white ' +
+    'centred at (128,108), yellow at (672,120), cyan at (144,492) and magenta at (656,480), turned by 8, 22, 36 ' +
+    'and 50 degrees. Every diagonal edge remains crisp from top to bottom; there is no softened upper or lower ' +
+    'band, no central haze and no colour outside the four silhouettes. The wide middle gap and extreme corners ' +
+    'stay near-black. THE CRISPNESS IS THE POINT and this cell is the canvas CONTROL: the tilt-shift effect is ' +
+    'not registered on this backend, so the pipeline treats it as an identity pass and copies the scene through ' +
+    'unchanged. A softened band anywhere here would mean an unregistered effect had run. The realized tilt-shift ' +
+    'belongs to the webgl and wgpu siblings.',
 );
 
 // Canvas has no realized tilt-shift capability. The unregistered operation is intentionally skipped

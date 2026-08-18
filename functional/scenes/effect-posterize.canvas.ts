@@ -25,12 +25,15 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat, ungraded colour panels, ' +
-    'each one third of the width and one half of the height. From left to right the top row is red ' +
-    '(about R255 G48 B48), green (R48 G192 B64) and blue (R48 G96 B255); the bottom row is yellow ' +
-    '(R255 G208 B48), magenta (R255 G48 B192) and cyan (R48 G208 B208). All five authored ' +
-    'blue-channel values remain distinct. There is no visible background, border, gradient, outline ' +
-    'or spacing between panels.',
+  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat, ungraded colour panels, each one ' +
+    'third of the width and one half of the height. From left to right the top row is red (about R255 G48 B48), ' +
+    'green (R48 G192 B64) and blue (R48 G96 B255); the bottom row is yellow (R255 G208 B48), magenta (R255 G48 ' +
+    'B192) and cyan (R48 G208 B208). All five authored blue-channel values remain distinct. There is no visible ' +
+    'background, border, gradient, outline or spacing between panels. THE PANELS ARE UNPOSTERISED ON PURPOSE and ' +
+    'this cell is the canvas CONTROL: the posterize effect is not registered on this backend, so the pipeline ' +
+    'treats it as an identity pass and copies the scene through unchanged. A picture with quantised or banded ' +
+    'panels here would mean an unregistered effect had run. The realized posterisation belongs to the webgl and ' +
+    'wgpu siblings.',
 );
 
 // Canvas has no realized posterize capability. The unregistered operation is intentionally skipped so
