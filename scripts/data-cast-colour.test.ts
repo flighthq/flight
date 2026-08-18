@@ -1,3 +1,5 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -5,8 +7,43 @@ import { describe, expect, it } from 'vitest';
 import { findDataCastColourViolations, findDataCastTargets } from './data-cast-colour';
 
 describe('findDataCastColourViolations', () => {
-  it('reports no colour-carrying cast target in the repository', () => {
-    expect(findDataCastColourViolations(REPO_ROOT)).toEqual([]);
+  // The repo-wide invariant that used to live here is now `npm run check:data-cast-colour`. It scanned
+  // five trees inside a fixed per-test deadline and timed out as the repo grew; a gate has no deadline.
+  // These two cases keep the function itself tested against a fixture tree, which is bounded — moving the
+  // invariant out must not take the function's only direct coverage with it.
+  it('reports a colour-carrying cast target found in a scanned tree', () => {
+    const root = mkdtempSync(join(tmpdir(), 'data-cast-colour-'));
+    mkdirSync(join(root, 'packages'), { recursive: true });
+    writeFileSync(
+      join(root, 'packages', 'tinted.ts'),
+      ['interface AcmeTintedData {', '  tint: number;', '}', 'const d = shape.data as unknown as AcmeTintedData;'].join(
+        '\n',
+      ),
+    );
+
+    expect(findDataCastColourViolations(root)).toEqual([
+      { field: 'tint', file: join(root, 'packages', 'tinted.ts'), typeName: 'AcmeTintedData' },
+    ]);
+
+    rmSync(root, { force: true, recursive: true });
+  });
+
+  it('reports nothing for a scanned tree whose cast target carries only geometry', () => {
+    const root = mkdtempSync(join(tmpdir(), 'data-cast-colour-clean-'));
+    mkdirSync(join(root, 'packages'), { recursive: true });
+    writeFileSync(
+      join(root, 'packages', 'plain.ts'),
+      [
+        'interface AcmePlainData {',
+        '  readonly authoredBounds: Rectangle;',
+        '}',
+        'const d = shape.data as unknown as AcmePlainData;',
+      ].join('\n'),
+    );
+
+    expect(findDataCastColourViolations(root)).toEqual([]);
+
+    rmSync(root, { force: true, recursive: true });
   });
 
   it('finds a colour field introduced by a new cast target', () => {
@@ -154,5 +191,3 @@ function findColourFieldsIn(text: string): { field: string; typeName: string }[]
   }
   return found;
 }
-
-const REPO_ROOT = join(import.meta.dirname, '..');
