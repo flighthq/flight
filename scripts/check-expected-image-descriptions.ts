@@ -97,11 +97,32 @@ function hasDescriptionCapableCall(source: string): boolean {
   return found;
 }
 
-function isNonEmptyStringLiteral(node: ts.Node): boolean {
+// The property is STATICALLY-KNOWN NON-EMPTY CONTENT, not a syntax. An earlier revision asserted "a
+// non-empty string literal", which names a representation instead — and every description in this repo
+// is a `'…' + '…'` concatenation, because describing a picture with coordinate ranges and explicit
+// negatives cannot fit the line-width limit any other way. That gate had a 0% true-positive rate: it
+// failed all 110 real descriptions and caught no empty one. Ask what the string IS, never how it is spelled.
+function getStaticStringLength(node: ts.Node): number {
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
-    return node.text.trim().length > 0;
+    return node.text.trim().length;
   }
-  return false;
+  // `a + b` — sum both sides, so a description split across any number of lines reads as its total.
+  if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+    return getStaticStringLength(node.left) + getStaticStringLength(node.right);
+  }
+  // A template with substitutions: only the static spans are knowable here. Interpolated values are
+  // deliberately NOT credited — `${x}` could be empty at runtime, and this gate never executes a scene.
+  if (ts.isTemplateExpression(node)) {
+    let length = node.head.text.trim().length;
+    for (const span of node.templateSpans) length += span.literal.text.trim().length;
+    return length;
+  }
+  if (ts.isParenthesizedExpression(node)) return getStaticStringLength(node.expression);
+  return 0;
+}
+
+function hasNonEmptyStaticString(node: ts.Node): boolean {
+  return getStaticStringLength(node) > 0;
 }
 
 function hasNonEmptyDescription(source: string): boolean {
@@ -113,7 +134,7 @@ function hasNonEmptyDescription(source: string): boolean {
       if (
         node.expression.text === 'declareExpectedImageDescription' &&
         node.arguments.length >= 1 &&
-        isNonEmptyStringLiteral(node.arguments[0])
+        hasNonEmptyStaticString(node.arguments[0])
       ) {
         found = true;
         return;
@@ -126,7 +147,7 @@ function hasNonEmptyDescription(source: string): boolean {
               ts.isPropertyAssignment(prop) &&
               ts.isIdentifier(prop.name) &&
               prop.name.text === 'expectedImageDescription' &&
-              isNonEmptyStringLiteral(prop.initializer)
+              hasNonEmptyStaticString(prop.initializer)
             ) {
               found = true;
               return;

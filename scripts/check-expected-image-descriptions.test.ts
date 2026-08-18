@@ -142,4 +142,52 @@ describe('findScenesWithoutExpectedImageDescription', () => {
 
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['empty-field']);
   });
+
+  // Every description in this repo is a `'…' + '…'` concatenation — the accepting fixtures above are
+  // single literals, a form no real scene uses, so they could all pass while the gate failed all 110
+  // real descriptions. That is exactly what happened. These sample the form the population is in.
+  it('accepts a concatenated expectedImageDescription, the form every real scene uses', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'concatenated-field.ts'),
+      'createFunctionalTarget({ expectedImageDescription: "An 800x600 black field " + "with a red square at x 100-200." });',
+    );
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
+  });
+
+  it('accepts a concatenated declareExpectedImageDescription split across several operands', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'concatenated-declare.webgl.ts'),
+      'declareExpectedImageDescription("a " + "bloom " + "halo"); beginGlRenderEffectPipeline(state, pipeline);',
+    );
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
+  });
+
+  it('rejects a concatenation whose operands are all empty', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(join(scenesDir, 'empty-concat.ts'), 'createFunctionalTarget({ expectedImageDescription: "" + "" });');
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['empty-concat']);
+  });
+
+  it('accepts a template literal carrying non-empty static text', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'template-field.ts'),
+      'createFunctionalTarget({ expectedImageDescription: `a square at x ${x} of the frame` });',
+    );
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
+  });
+
+  // A substitution is not credited: the gate never executes a scene, so `${x}` could be empty at runtime.
+  it('rejects a template literal that is nothing but a substitution', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(join(scenesDir, 'template-only.ts'), 'createFunctionalTarget({ expectedImageDescription: `${x}` });');
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['template-only']);
+  });
 });
