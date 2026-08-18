@@ -8,6 +8,7 @@ import {
   describeExcludedPopulation,
   findExpectedImageDescriptionCellScope,
   findScenesWithoutExpectedImageDescription,
+  findScenesWithWithheldExpectedImageDescription,
 } from './check-expected-image-descriptions';
 
 let root: string;
@@ -189,5 +190,34 @@ describe('findScenesWithoutExpectedImageDescription', () => {
     writeFileSync(join(scenesDir, 'template-only.ts'), 'createFunctionalTarget({ expectedImageDescription: `${x}` });');
 
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['template-only']);
+  });
+});
+
+describe('findScenesWithWithheldExpectedImageDescription', () => {
+  // Withheld is a POLICY state — the scene can carry a description and we are choosing not to write one.
+  // It is deliberately not the structurally-unable set, which is a claim about capability; filing a
+  // "will not" as a "cannot" makes the finish line unreachable and hides why, because nothing goes red.
+  it('lists a scene that withholds its description with a stated reason', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'withheld.webgl.ts'),
+      'declareExpectedImageDescriptionWithheld("shader bug: sectors degenerate"); beginGlRenderEffectPipeline(s, p);',
+    );
+
+    expect(findScenesWithWithheldExpectedImageDescription(scenesDir)).toEqual(['withheld.webgl']);
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
+  });
+
+  // The whole point of requiring a reason: without one, a parked cell is indistinguishable from a
+  // forgotten one six weeks later, so it must stay a failure rather than quietly counting as accounted for.
+  it('rejects a withheld declaration carrying no reason, counting it as missing instead', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'unexplained.webgl.ts'),
+      'declareExpectedImageDescriptionWithheld(""); beginGlRenderEffectPipeline(s, p);',
+    );
+
+    expect(findScenesWithWithheldExpectedImageDescription(scenesDir)).toEqual([]);
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['unexplained.webgl']);
   });
 });

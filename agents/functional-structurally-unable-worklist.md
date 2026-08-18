@@ -20,8 +20,23 @@ The 243 rows comprise 219 GL/WebGPU render-target or effect-pipeline cells, 18 C
 `beginCanvasRenderEffectPipeline` cells, and six direct-registration tail cells. The six are marked
 `DIRECT` below because a constructor-family sweep can silently omit them; CC-2 must use this explicit
 cell list as its population. The completion condition has **two** parts and the number alone is not one
-of them: `npm run check:expected-image-descriptions` reporting 493/493 reachable and zero structurally
-unable, **and** cross-verification sign-off by an agent other than the batch's author.
+of them: `npm run check:expected-image-descriptions` reporting every cell **accounted for** — described,
+or withheld with a reason, or structurally unable — **and** cross-verification sign-off by an agent other
+than the batch's author.
+
+A withheld cell does not block completion; an **unexplained** one does. A scene that can carry a
+description and deliberately does not declares
+`declareExpectedImageDescriptionWithheld('<reason>')`, and the gate requires that reason on the same
+predicate as a description, so a withheld cell with an empty reason stays a failure. The withheld count
+appears on the pass line every time, so a parked cell cannot quietly become permanent by going unmentioned.
+
+Withholding is a **policy** state and is deliberately not the structurally-unable set, which is a claim
+about **capability**. Filing a *will not* as a *cannot* was the original defect here: it made the finish
+line unreachable while nothing ever went red to say so. It also clears itself — fixing the underlying
+defect means replacing the withheld declaration with a real description, and the counts move with no
+register to remember. A cross-package defect nobody is authorised to fix must not hold the arc hostage,
+because the pressure that creates is exactly "just describe the broken output", which is the thing the
+source-only rule below refuses.
 
 The number cannot stand alone because of what it measures. The gate asks only whether a cell carries
 non-empty static text — it cannot ask whether that text describes the picture, since the referent is an
