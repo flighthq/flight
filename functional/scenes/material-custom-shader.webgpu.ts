@@ -28,12 +28,22 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single mesh centred in it, coloured by a ' +
-    'hand-written shader rather than by any built-in material, so its surface is clearly not blank and ' +
-    'not the background colour. The BACKGROUND ITSELF is the second claim: it stays the same near-black ' +
-    'it was cleared to, neither lifted nor washed out — a visibly lighter or greyer field around the ' +
-    'mesh means the frame was gamma-shifted on its way to the screen, which is the failure this watches ' +
-    'for alongside a blank mesh.',
+  'An 800x600 field on a near-black background (0x0a0c10) with a single sphere centred at (400,300), about 245 ' +
+    'px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H. The scene has NO LIGHTS at all; the sphere is ' +
+    'coloured entirely by a hand-written shader whose whole body is rgb = abs(normalize(worldNormal))*0.45 + ' +
+    '(0.08, 0.16, 0.30), so the picture is a normal-direction map that is BLUE-DOMINANT: at the forward-facing ' +
+    'centre the normal is (0,0,1) and the colour is (0.08, 0.16, 0.75), the most saturated blue in the frame; ' +
+    'toward the left and the right silhouette the normal turns to (1,0,0) or (-1,0,0) and the colour goes to ' +
+    '(0.53, 0.16, 0.30), a dull red; toward the top and the bottom silhouette it turns to (0,1,0) or (0,-1,0) and ' +
+    'the colour goes to (0.08, 0.61, 0.30), a dull green. The variation is smooth in every direction and ' +
+    'SYMMETRIC about both axes, because the shader takes the absolute value of the normal: the left rim matches ' +
+    'the right rim and the top rim matches the bottom rim. A sphere of one flat colour means the normal never ' +
+    'varied; a sphere whose left and right rims differ means the absolute value was dropped. The BACKGROUND is ' +
+    'the second claim: it stays the near-black it was cleared to, neither lifted nor washed out — a visibly ' +
+    'lighter or greyer field around the sphere means the frame was gamma-shifted on its way to the screen, which ' +
+    'is the failure this watches for alongside a blank sphere. The three colours above are linear shader outputs ' +
+    'presented through the linear present path, so the encoded levels are backend-dependent while the hue pattern ' +
+    'is not.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
