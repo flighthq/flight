@@ -22,12 +22,23 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same bloom intent as render.webgl.ts. Wgpu render-state init is
 // async (createWgpuRenderState returns a Promise). The effect pipeline runs between
 // renderWgpuBackground (opens the command encoder + canvas pass) and submitWgpuRenderPass
 // (flushes it); the HDR rgba16f scene target is bright-passed, blurred, and added back.
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with four square tiles of about 140 px, each turned by ' +
+    'a different small angle so none sits square to the edges: white centred near (224,180), warm ' +
+    'yellow near (576,180), cyan near (224,420) and pink near (576,420). Each tile is bright and ' +
+    'saturated at its core and carries a SOFT GLOW spilling outward past its edges into the dark ' +
+    'background — the halo is the point, so four crisp-edged tiles with the background pure and unlit ' +
+    'right up to each edge is the failure. The glow falls off gradually rather than stopping at a line, ' +
+    'it is the tile own colour rather than white, and it does not fill the field: the middle of the ' +
+    'picture between the four tiles stays dark. The tiles do not overlap each other.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
