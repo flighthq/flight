@@ -1,10 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/flighthq/flight-reference-images/main/schemas/reference-image-lock.schema.json",
-  "manifestSha256": "846456a5ee886538be293ff2ba70a7f11c028bd34f884186cd7912dff39e4abf",
-  "oracleCommit": "6637a004457cbe57572a7bafcf75059d0b3158b4",
+  "manifestSha256": "45de62928bb51ca44f132d43e9b0c324b76654b35bf049eecbd096f04bab43a6",
+  "oracleCommit": "8620be8dcf86c6569e7a6afc4b11e73db23e06d6",
   "packs": {
     "functional-images": {
-      "file": "functional-images-oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7.tgz",
+      "file": "functional-images-oracle-38b2f8d9-0f18-49d9-8da0-f58cb7bf3855-c0756162049b.tgz",
       "images": {
         "functional/bitmap-color-transform/canvas": {
           "pixelSha256": "ce02534c3dc19aded24b2ee53f572356d5b4f08d7757f5bcda40df4ee3d99470"
@@ -31,16 +31,22 @@
       "sha256": "eb1591ad481f0359886c2af37b94a8b318439d9ab150fb0ea74bcc83c059e86e"
     },
     "functional-other": {
-      "file": "functional-other-oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7.tgz",
+      "file": "functional-other-oracle-38b2f8d9-0f18-49d9-8da0-f58cb7bf3855-c0756162049b.tgz",
       "images": {
         "functional/application-render-view/webgl": {
           "pixelSha256": "7bcb04262948136293f73fc5b0c3d3d4240128517e4fe8ca61ee4614bcd5dc4b"
+        },
+        "functional/camera-orthographic/webgl": {
+          "pixelSha256": "76d4a3bbd52c496661468c6be9a04779baa1f5179790b9cbfc9dc062e69ca8bd"
+        },
+        "functional/camera-orthographic/webgpu": {
+          "pixelSha256": "4739a36b8538de3a4c1156f9e85c5d2b33a5155323d1a4a9215a52074dbc64d3"
         }
       },
-      "sha256": "cfa4a964006c580c59e6fc924df687459f24ff234cb3882783a9468a8e8c397d"
+      "sha256": "750e09815a93c6335093a1a522b495dac68a75f50cef09241550ea1a80e6e9e4"
     },
     "functional-shapes": {
-      "file": "functional-shapes-oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7.tgz",
+      "file": "functional-shapes-oracle-38b2f8d9-0f18-49d9-8da0-f58cb7bf3855-c0756162049b.tgz",
       "images": {
         "functional/shape-fill-solid/webgl": {
           "pixelSha256": "9bc1f4942c55075e2ec292a567d87b4f9569674ec0d7dbad09acdebc6e46d22d"
@@ -49,7 +55,7 @@
       "sha256": "afc4373f5d106822b34b74fc1b6ae663a8dc3f5490b6edf656a2730e2464a75e"
     }
   },
-  "releaseTag": "oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7",
+  "releaseTag": "oracle-38b2f8d9-0f18-49d9-8da0-f58cb7bf3855-c0756162049b",
   "repository": "flighthq/flight-reference-images",
   "schemaVersion": 2
 }
