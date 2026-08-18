@@ -27,13 +27,22 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single grey sphere centred in it, about a fifth ' +
-    'of the frame height across, lit by a NARROW CONE from the upper right: a bright pool falls on the ' +
-    'right of the sphere and fades off within a short distance, leaving the left side dark. The cone is ' +
-    'tight rather than broad — the transition from lit to unlit happens over a small part of the ' +
-    'surface, not gradually across the whole sphere. A uniformly lit sphere, or one whose left side is ' +
-    'brighter, is the failure. The background stays near-black and shows no visible cone or beam in the ' +
-    'air.',
+  'An 800x600 field on a near-black background (0x0a0c10) with a single grey sphere centred at (400,300), about ' +
+    '245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H. The sphere is lit from the upper right and ' +
+    'toward the viewer by one white spot at (1.3,0.5,1.6) aimed back at the origin: the screen-right side is ' +
+    'clearly brighter and the screen-left side falls away to the dim blue-grey ambient fill. IMPORTANT — despite ' +
+    'the name of this scene and its own header comment, NO CONE EDGE is visible anywhere in this picture, and a ' +
+    'visible cone boundary cutting across the sphere would be wrong. The spot sits at distance ' +
+    'sqrt(1.3^2+0.5^2+1.6^2) = 2.1213, and a sphere of radius 0.5 subtends a half-angle of asin(0.5/2.1213) = ' +
+    '13.633 deg about the cone axis, entirely inside the 24 deg outer half-angle, so no part of the surface is ' +
+    'cone-excluded. Only a thin ring at the extreme light-facing silhouette lies past the 12 deg inner ' +
+    'half-angle, and there smoothstep(cos 24 deg, cos 12 deg, cos 13.633 deg) = 0.973 dims it by under 3 per cent ' +
+    '— invisible in practice, since N.L is already near zero at that terminator. The screen-left to screen-right ' +
+    'variation therefore comes from ordinary N.L falloff, the same mechanism as the point-light scene, and not ' +
+    'from cone limiting. That gap belongs to the scene, not to the renderer: tightening the cone is filed ' +
+    'separately as task #49 and deliberately not done here, because changing the light parameters would ' +
+    'invalidate fingerprints, baselines and the support matrix. The background stays near-black and shows no beam ' +
+    'or cone in the air.',
 );
 // drawGlScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu) — import the Gl one directly.
 

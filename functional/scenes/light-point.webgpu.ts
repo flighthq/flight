@@ -28,8 +28,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single grey sphere centred in it, about a fifth ' +
-    'of the frame height across. It is lit FROM ONE SIDE BY A NEARBY LAMP: the right of the sphere is ' +
+  'An 800x600 field on a near-black background with a single grey sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300). It is lit FROM ONE SIDE BY A NEARBY LAMP: the right of the sphere is ' +
     'clearly brighter than the left, with a smooth falloff between them and a small bright highlight on ' +
     'the lit side. A uniformly lit sphere, or one whose left side is the brighter, is the failure — the ' +
     'lit half must be measurably lighter than the shadowed half, not merely different. The background ' +

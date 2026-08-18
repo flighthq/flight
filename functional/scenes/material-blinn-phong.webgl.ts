@@ -27,12 +27,24 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single grey sphere centred in it, about a fifth ' +
-    'of the frame height across, lit from the right so the right side is clearly brighter than the left. ' +
-    'Unlike a purely diffuse surface it carries a SMALL BRIGHT SPECULAR HIGHLIGHT on the lit side — a ' +
-    'concentrated hotspot noticeably lighter than the surrounding lit area, not a broad even wash. A ' +
-    'sphere with no highlight at all is the failure, as is one lit uniformly or brighter on the left. ' +
-    'The background stays near-black.',
+  'An 800x600 field on a near-black background (0x0a0c10) with a single grey sphere centred at (400,300), about ' +
+    '245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H. One white directional light travels along ' +
+    '(-1,-0.35,-0.55), so it arrives from the upper right and slightly toward the viewer: the screen-right side ' +
+    'of the sphere is clearly brighter than the screen-left, which falls away to the dim blue-grey ambient fill ' +
+    'alone. On the lit cap sits a SPECULAR HIGHLIGHT, centred where the surface normal meets the halfway vector H ' +
+    '= normalize(L + V); that fixed point projects to about (463,278), up and to the right of the sphere centre, ' +
+    'and it is the same point in both members of this pair. What must distinguish them is the WIDTH of that ' +
+    'highlight. This is the BLINN-PHONG cell: its specular term is pow(dot(N,H), 32), a falloff in the ' +
+    'HALF-VECTOR angle, which runs at half the rate in surface-normal terms that the Phong sibling ' +
+    'pow(dot(reflect(-L,N), V), 32) does (exactly half where L, N and V are coplanar). At shininess 32 the ' +
+    'half-power half-angle is therefore 11.86 deg here against 5.93 deg there, so this hotspot must read as the ' +
+    'BROADER, softer, more spread out of the two. A tight pinpoint highlight here is a Phong shader substituted ' +
+    'by mistake, which is the discrimination this pair exists to make. Bounded deliberately: no pixel width for ' +
+    'the hotspot is derivable without a capture and none is claimed here, only the relative narrowness. The ' +
+    'sphere renders into an HDR rgba16f target and is tone-presented, so the highlight is a visible brightening ' +
+    'over the surrounding lit cap rather than a hard white dot, and absolute levels are backend-dependent while ' +
+    'the orderings (lit brighter than shadow, hotspot brighter than the lit cap around it) are not. The ' +
+    'background stays near-black and is not lit.',
 );
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.

@@ -30,8 +30,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
-    'the frame height across, lit from the right so the right side is clearly brighter than the left. ' +
+  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), lit from the right so the right side is clearly brighter than the left. ' +
     'It reads as a CLOTH-LIKE surface: a soft pale bloom gathers toward the sphere silhouette edges ' +
     'rather than a tight highlight at the centre of the lit region, the way velvet or satin catches ' +
     'light around its rim. A sphere with a hard compact highlight and dark edges is the failure, as is ' +

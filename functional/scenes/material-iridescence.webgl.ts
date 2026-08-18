@@ -30,8 +30,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
-    'the frame height across, lit from the right so the right side is clearly brighter than the left. ' +
+  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), lit from the right so the right side is clearly brighter than the left. ' +
     'Its surface carries a faint SHIFTING COLOUR CAST that varies across the sphere — a soap-bubble or ' +
     'oil-film tint, so the lit region is not one neutral grey but picks up different hues at different ' +
     'angles. A completely neutral grey sphere is the failure here, as is one lit uniformly or brighter ' +

@@ -27,8 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single GREEN sphere centred in it, about a fifth ' +
-    'of the frame height across. The sphere glows with its own colour and is NOT SHADED BY ANY LIGHT: ' +
+  'An 800x600 field on a near-black background with a single GREEN sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300). The sphere glows with its own colour and is NOT SHADED BY ANY LIGHT: ' +
     'its left and right sides are the same brightness, with no lit-versus-shadowed gradient and no ' +
     'specular highlight anywhere. A sphere whose one side is brighter than the other is the failure — ' +
     'that would mean scene lighting reached a surface that emits rather than reflects. It is a flat, ' +

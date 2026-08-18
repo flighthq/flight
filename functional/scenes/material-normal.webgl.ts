@@ -28,8 +28,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
-    'the frame height across, coloured NOT by a light but by the direction each part of its surface ' +
+  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), coloured NOT by a light but by the direction each part of its surface ' +
     'faces. The result is a smooth multi-coloured shading that changes across the sphere — the centre ' +
     'and a point a short way to its right are visibly DIFFERENT colours, not merely different ' +
     'brightnesses of one colour. A flat, evenly coloured disc is the failure this exists to catch: it ' +

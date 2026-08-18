@@ -27,8 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
-    'the frame height across, lit from the right so the right side is clearly brighter than the left, ' +
+  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), lit from the right so the right side is clearly brighter than the left, ' +
     'with a moderately soft highlight on the lit side — neither a mirror-sharp point nor a completely ' +
     'matte wash. A sphere lit uniformly, or one brighter on the left, is the failure. The background ' +
     'stays near-black.',

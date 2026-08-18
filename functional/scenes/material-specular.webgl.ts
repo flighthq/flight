@@ -30,11 +30,20 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
-    'the frame height across, lit from the right so the right side is clearly brighter than the left. ' +
-    'Its surface carries a visible SPECULAR SHEEN on the lit side — a brighter concentrated region ' +
-    'rather than a uniform matte wash. A sphere lit uniformly, or one brighter on the left, is the ' +
-    'failure. The background stays near-black and is not lit.',
+  'An 800x600 field on a near-black background (0x0a0c10) with a single grey sphere centred at (400,300), about ' +
+    '245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H. It is a PBR sphere (baseColor 0x808080, metallic ' +
+    '0, roughness 0.5) under one white directional light travelling along (-1,-0.35,-0.55), so the screen-right ' +
+    'side is clearly brighter than the screen-left, carrying a broad soft sheen over the lit cap rather than a ' +
+    'tight dot, as roughness 0.5 requires. IMPORTANT — the specular extension this cell is named for makes NO ' +
+    'visible difference at these parameters, and a picture that departs from plain PBR would be wrong. The ' +
+    'extension computes f0 = mix(min(0.04*specularColor, 1)*specular, albedo, metallic); at specular = 1, ' +
+    'specularColor = white and metallic = 0 that is 0.04, exactly the base dielectric f0 = mix(vec3(0.04), ' +
+    'albedo, metallic) the prelude already uses, so enabling or removing the extension produces the same image. ' +
+    'This cell therefore shows that the extension composes without disturbing the base shading, not that it ' +
+    'changes it. Making it discriminating is filed separately as task #50 and deliberately not done here, because ' +
+    'changing the material parameters would invalidate fingerprints, baselines and the support matrix. The sphere ' +
+    'renders into an HDR rgba16f target and is tone-presented, so absolute levels are backend-dependent while the ' +
+    'lit-brighter-than-shadow ordering is not. The background stays near-black and is not lit.',
 );
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
