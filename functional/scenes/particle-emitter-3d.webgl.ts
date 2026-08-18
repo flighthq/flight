@@ -27,7 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x101018) with three equally spaced translucent warm-orange squares centered vertically at 0.5*H = 300. The assertion probes at x fractions 0.344, 0.5, 0.656 give centers near 0.344*W = 275, 0.5*W = 400, 0.656*W = 525, each roughly 93 px wide. Each square composites to approximately a muted brown-orange over the dark background due to half-opacity orange fill (rgba 224, 96, 48, 0.5) over the dark field. Gaps between the squares and all frame edges show the dark background. No lighting is applied.',
+  'An 800×600 dark field (0x101018) with three equally spaced translucent warm-orange squares centered vertically at y 300. The left square is centered near x 275, the middle near x 400, and the right near x 545, each roughly 93 px wide. Each square composites to approximately a muted brown-orange over the dark background due to half-opacity orange fill (rgba 224, 96, 48, 0.5) over the dark field. Gaps between the squares and all frame edges show the dark background. No lighting is applied.',
 );
 
 // Real-WebGL proof for the ParticleEmitter3D path that drawGlScene3D invokes automatically. The

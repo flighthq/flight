@@ -31,7 +31,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 black field (0x000000) with an unlit violet (0x8040d0) cube scaled 2× uniformly. The front face at depth 3, scale s = H/(6*tan(PI/8)) ≈ 241 px/unit, spans x W/2 ± s ≈ 159–641, y H/2 ± s ≈ 59–541, filling most of the frame but leaving the corners as background.',
+  'An 800×600 black field (0x000000) with an unlit violet (0x8040d0) cube scaled 2× uniformly. The front face spans roughly x 159–641, y 59–541, filling most of the frame but leaving the corners as background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

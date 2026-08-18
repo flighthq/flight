@@ -27,7 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 black field (0x000000) with a white (0xffffff) wireframe sphere centered at (0.5*W, 0.5*H) = (400, 300), tangent-silhouette radius H*tan(asin(0.5/3))/(2*tan(PI/8)) ≈ 122 px (spanning x 278–522, y 178–422). Only the triangle edges are visible as thin white lines against the black background — no filled faces, no shading gradient. The wireframe reveals the spherical tessellation pattern. Frame corners are black background.',
+  'An 800×600 black field (0x000000) with a white (0xffffff) wireframe sphere centered at (400, 300), roughly 121 px radius (spanning about x 279–521, y 179–421). Only the triangle edges are visible as thin white lines against the black background — no filled faces, no shading gradient. The wireframe reveals the spherical tessellation pattern. Frame corners are black background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
