@@ -23,12 +23,12 @@ The harness can also act as an Electron shell for existing Vite tools:
 
 ```bash
 npm run examples:electron
-npm run electron:gallery
-npm run electron:gallery:examples
-npm run electron:gallery:functional
+npm run electron:review
+npm run electron:review:examples
+npm run electron:review:functional
 ```
 
-These commands start the matching Vite tool, wait for its local URL, then launch the Electron runner with `FLIGHT_ELECTRON_URL` pointed at that server. The examples source stays in `examples/packages`; the gallery source stays in `tools/gallery`.
+These commands start the matching Vite tool, wait for its local URL, then launch the Electron runner with `FLIGHT_ELECTRON_URL` pointed at that server. The examples source stays in `examples/packages`; the review tool source stays in `tools/review`.
 
 ## What it demonstrates
 
