@@ -26,12 +26,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Gl 3D column (wiring copied from material-unlit). The Unlit renderer writes into the effect pipeline's
-// rgba16f + depth scene target (depth-test ON so the cube occludes itself correctly), then ends with an
-// empty effect list to tone-present the scene straight to the canvas.
+declareExpectedImageDescription(
+  'A unit cube at the origin rendered with unlit material (orange 0xff8030) on a black background (0x000000). Viewed from a 3/4 angle (eye at 2, 1.6, 2.6), the cube reads as a convex hexagonal silhouette covering the frame center. No shading gradient — unlit material. Frame corners are background.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

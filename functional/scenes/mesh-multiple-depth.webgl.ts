@@ -29,12 +29,12 @@ import {
   translateMatrix4,
 } from '@flighthq/sdk';
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Gl 3D column (wiring copied from material-unlit). The Unlit renderer writes into the effect pipeline's
-// rgba16f + depth scene target (depth-test ON so the cube occludes itself correctly), then ends with an
-// empty effect list to tone-present the scene straight to the canvas.
+declareExpectedImageDescription(
+  'Two overlapping unit cubes on a black background (0x000000): a near red box (unlit 0xff3030, at +0.35x +0.6z) and a far blue box (unlit 0x3060ff, at -0.35x -0.6z). The near red box occludes the far blue box where their projections overlap at screen center. Red is visible at center and on the right flank; blue is visible only on the left flank where the near box does not cover it. Frame corners are background. Camera at (0,0,4).',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
