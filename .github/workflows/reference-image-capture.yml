@@ -102,6 +102,8 @@ jobs:
           node-version: 20
           cache: 'npm'
 
+      - uses: ./.github/actions/setup-playwright
+
       - name: Resolve the reviewed build
         id: reviewed-build
         run: |
@@ -138,8 +140,6 @@ jobs:
         run: |
           npm run build
           npm run build:functional
-
-      - uses: ./.github/actions/setup-playwright
 
       # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/reference-image-capture-identity.json`, NOT COMPUTED HERE.
       # It is registered in `flight-reference-images` and copied verbatim. This workflow previously derived its own
