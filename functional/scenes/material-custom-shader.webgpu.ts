@@ -24,8 +24,17 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single mesh centred in it, coloured by a ' +
+    'hand-written shader rather than by any built-in material, so its surface is clearly not blank and ' +
+    'not the background colour. The BACKGROUND ITSELF is the second claim: it stays the same near-black ' +
+    'it was cleared to, neither lifted nor washed out — a visibly lighter or greyer field around the ' +
+    'mesh means the frame was gamma-shifted on its way to the screen, which is the failure this watches ' +
+    'for alongside a blank mesh.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

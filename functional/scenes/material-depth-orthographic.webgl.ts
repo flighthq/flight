@@ -21,7 +21,16 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark blue background with a single sphere centred in it, shaded by ' +
+    'DISTANCE rather than by light — a grey gradient with no colour tint and no highlight. Under this ' +
+    'projection the gradient runs the opposite way to intuition: a point out toward the sphere edge is ' +
+    'BRIGHTER than the centre, not darker. Centre and edge reading the same, or the centre reading ' +
+    'brighter, is the failure — that pattern is what appears when the wrong depth term is used. Both ' +
+    'points are clearly lit rather than blank, and the background stays very dark blue.',
+);
 // Orthographic regression for DepthMaterial's linear view-axis depth. A perspective camera makes
 // clip-space w equal positive eye depth, which lets an illicit `1 / gl_FragCoord.w` implementation
 // look correct. Orthographic clip w is constant, so only a real world->view transform preserves the

@@ -26,7 +26,16 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background covered by a GRID OF SEPARATE LIT POOLS rather than ' +
+    'one broad wash: twelve bright patches in four columns and three rows, spread across the frame, each ' +
+    'falling off into darkness before it reaches its neighbours so the dark background remains visible ' +
+    'between them. At least ten of the twelve must be clearly lit — a picture with only a few bright ' +
+    'spots, or one evenly lit corner to corner with no dark gaps, is the failure. The lit pools sit on a ' +
+    'flat surface and are roughly evenly spaced.',
+);
 // Twelve independently lit meshes demonstrate per-object selection. Four finite-range decoy lights
 // are intentionally first in input order and far outside the field; the twelve useful lights come
 // last. The old scene-global first-four pack therefore leaves the field dark, while the explicit

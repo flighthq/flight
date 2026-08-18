@@ -29,7 +29,16 @@ import {
   setTextureUvScale,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a deep blue background with a single flat quad centred in it, split into two ' +
+    'halves that differ ONLY IN OPACITY. The left half is solidly present and reads strongly red; the ' +
+    'right half is cut away by an alpha map so the deep blue background shows through it and almost no ' +
+    'red remains. A quad solid across its whole width means the alpha map never reached the material; a ' +
+    'quad cut away everywhere means it was applied to all of it. The boundary runs vertically down the ' +
+    'middle of the quad.',
+);
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl one directly from its package.
 
