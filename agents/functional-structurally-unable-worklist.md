@@ -150,6 +150,30 @@ The left clause positively asserts a blended rather than hard transition; the ca
 evidence for it. The right clause states only where the source derivation stops. The correction must
 withhold both possible outcomes, not turn the observed capture into a negated sentence.
 
+### Source-indeterminate phrasing and future capture priority
+
+A limit of source-only derivation is a limit in the audit instrument, not a `Bounded` description.
+`Bounded` is reserved for a limit in the subject: backends genuinely render different correct
+pictures, the design has not selected one, and only a design ruling can clear the register entry. When
+source alone cannot reach a claim that another concrete observation could settle, use the consistent,
+greppable form:
+
+`Source does not determine <claim>; it depends on <what would settle it>.`
+
+This is operational metadata, not merely a prose preference. Each such description records a question
+already known to be answerable by an additional observation. If a capture-backed disagreement pass is
+authorized later, these cells are its priority worklist ahead of otherwise-untriaged captures:
+
+- `env-skybox/webgl` and `env-skybox/webgpu`: boundary sharpness depends on cubemap filtering, mip
+  selection, and texture/sampler defaults;
+- `material-blinn-phong/webgl` and `material-blinn-phong/webgpu`: absolute highlight width in pixels
+  depends on observing the rendered sampling and tone-presentation result; and
+- `material-phong/webgl` and `material-phong/webgpu`: absolute highlight width in pixels depends on the
+  same rendered sampling and tone-presentation result.
+
+New source-indeterminate claims belong in this priority list with the observation that would settle
+them. They do not belong in the bounded register unless the subject itself is genuinely undecided.
+
 Derived values retain their symbolic form and dimension — stated once above, under "Derived values carry
 their symbolic form". It is not restated here on purpose: a rule written in two places is a rule that will
 be updated in one.
