@@ -27,6 +27,16 @@ import {
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black navy field (about R8 G11 B18), a large perspective box is centred in ' +
+    'view. Its front-facing texture is upright: a flat coral-red horizontal slab occupies the upper ' +
+    'half and a flat strong-blue slab the lower half, with the dividing line horizontal. The angled ' +
+    'side of the box preserves the same top-over-bottom orientation. The colours are not vertically ' +
+    'flipped, swapped, stretched into one solid colour or replaced by black, and the field remains ' +
+    'visible around the bounded cube silhouette.',
+);
 
 const WIDTH = 800;
 const HEIGHT = 600;

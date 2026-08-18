@@ -33,6 +33,16 @@ import {
   setVector3,
   skinVertices,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 view of a medium-grey ground plane, a bright horizontal bar floats above the ' +
+    'horizon and casts a centred dark horizontal shadow directly below it. A threefold joint scale ' +
+    'makes both bar and shadow approximately 617 px wide, derived from the 5.4-world-unit bar across ' +
+    'a 7-world-unit orthographic view mapped to 800 px; their widths agree within edge filtering. ' +
+    'Neither silhouette is the 206 px bind-pose width or the 69 px inverse-scale width. Lit ground ' +
+    'remains visible at both ends of the shadow, and the bar and shadow stay vertically separate.',
+);
 
 // shadow-skin-nonuniform — does the SHADOW pass skin positions with the same palette the MESH pass
 // uses? The two passes reach the palette by different routes (on WebGPU, two separate bind groups and

@@ -29,6 +29,17 @@ import {
   setVector3,
   skinVertices,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R10 G12 B16), two broad light-grey rectangular facets sit ' +
+    'side by side across the middle, separated by a narrow central gap. A threefold horizontal scale ' +
+    'makes each facet span roughly 300 px, with the left covering about x=63–363 and the right ' +
+    'x=438–738; both extend about y=200–400. Directional shading makes the RIGHT facet clearly ' +
+    'brighter than the left by at least a visible step, while both remain lit. The facets are not ' +
+    'equal in brightness, the left does not outrank the right, and neither rectangle collapses to a ' +
+    'narrow or black strip.',
+);
 
 // scene-skin-nonuniform-normals — a CPU/GPU AGREEMENT check on the skinned-normal covector path.
 //

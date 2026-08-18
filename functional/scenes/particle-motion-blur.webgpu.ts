@@ -33,7 +33,17 @@ import {
   submitWgpuRenderPass,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black blue-grey field (about R16 G16 B20), eight pale blue-white glows form a ' +
+    'ring of 110 px radius around (400,300), at the cardinal and diagonal positions. Each 32 px ' +
+    'source glow is spread outward from the ring into a broad dim radial streak, so the eight streaks ' +
+    'read as a small starburst and the original fully bright cores are absent. The ring radius and ' +
+    'the 45-degree spacing remain clear; the result is not one shared-direction smear, a solid halo ' +
+    'or eight crisp dots, and the field outside the starburst stays near-black.',
+);
 
 // Wgpu parity column for per-particle motion blur: the particle velocity writer rasterizes each
 // particle's own velocity into the G-buffer, which the motion-blur runner smears along — a radial star.

@@ -24,6 +24,15 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, two aligned half-transparent square boxes overlap at the centre. ' +
+    'The farther blue layer remains visible through the nearer red layer, producing one red-dominant ' +
+    'purple rectangle with red at least visibly stronger than blue and almost no green. Both colours ' +
+    'are present throughout the shared centre; the result is not pure red, pure blue or two ' +
+    'side-by-side boxes. The area outside the bounded overlap remains near-black.',
+);
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

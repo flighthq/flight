@@ -30,6 +30,16 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black sky frames a light-grey ground plane receding toward mid-field and a ' +
+    'light-grey sphere hovering at the upper centre. A dark elliptical shadow lies on the plane ' +
+    'directly beneath the sphere around 56% of the field height, while the near foreground around 90% ' +
+    'height remains broadly and clearly lit. The ground is not uniformly bright, the under-sphere ' +
+    'patch is more than 32 luminance levels darker than the foreground, and neither the sphere nor ' +
+    'its shadow is missing or detached sideways.',
+);
 
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl scene functions directly. drawGlScene3DShadowMap renders scene depth from the light into

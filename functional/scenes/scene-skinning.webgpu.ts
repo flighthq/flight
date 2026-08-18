@@ -34,7 +34,17 @@ import {
   setVector3,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, one flat orange bar rises from a stationary vertical base near ' +
+    'the lower centre, then bends about 75 degrees toward screen-left above its midpoint. The leaned ' +
+    'upper arm covers roughly (38%,43%), while the straight bind-pose location near top-centre ' +
+    '(50%,20%) is empty and the lower base remains present near (53%,65%). The bar is one continuous ' +
+    'solid silhouette: it is not straight upright, detached at the joint, missing its base or ' +
+    'duplicated.',
+);
 
 // WebGPU mirror of scene-skinning.webgl: the posed silhouette can only reach the leaned-arm probe
 // when the rgba32float joint palette is uploaded and sampled by the HAS_SKIN vertex variant.

@@ -39,7 +39,17 @@ import {
   setVector3,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'An 800×600 view shows a light-grey ground plane and a narrow light-grey bar rising near the ' +
+    'centre with its upper half bent about 70 degrees sideways. An angled light casts a matching dark ' +
+    'posed silhouette onto the ground: the shadow extends laterally through roughly (57%,59%), while ' +
+    'adjacent ground near (66%,59%) stays much brighter. The shadow is not the compact straight ' +
+    'bind-pose patch at the root, the bent bar is not missing, and the foreground remains lit rather ' +
+    'than becoming uniformly dark.',
+);
 
 // WebGPU mirror of shadow-skinning.webgl. Its shadow pass must select the optional skin depth pipeline,
 // upload the prepared palette, and deform the bind-pose vertices before recording depth.

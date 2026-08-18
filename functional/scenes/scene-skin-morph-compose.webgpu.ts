@@ -35,7 +35,18 @@ import {
   setVector3,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, a single flat orange bar is centred in view and shows two ' +
+    'independent deformations at once. Its root-weighted base extends far downward, covering the ' +
+    'centre column near 82% of the field height, while its upper arm bends about 75 degrees toward ' +
+    'screen-left and covers roughly (36%,42%). The lower extension remains vertical and the upper ' +
+    'lean remains attached through the middle. It is not the short bind-pose bar, not a straight ' +
+    'extended bar, and not merely a bent bar whose base stops near the centre. No second shape ' +
+    'appears.',
+);
 
 // WebGPU compose proof: morph extends the root-weighted base vertically while skinning bends the
 // joint-weighted top horizontally. Separate probes require both deformation paths in one draw.

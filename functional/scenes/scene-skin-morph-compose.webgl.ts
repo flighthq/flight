@@ -34,6 +34,17 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, a single flat orange bar is centred in view and shows two ' +
+    'independent deformations at once. Its root-weighted base extends far downward, covering the ' +
+    'centre column near 82% of the field height, while its upper arm bends about 75 degrees toward ' +
+    'screen-left and covers roughly (36%,42%). The lower extension remains vertical and the upper ' +
+    'lean remains attached through the middle. It is not the short bind-pose bar, not a straight ' +
+    'extended bar, and not merely a bent bar whose base stops near the centre. No second shape ' +
+    'appears.',
+);
 
 // scene-skin-morph-compose — the end-to-end compose proof for Part-1 #3: a single Mesh that is BOTH
 // GPU-skinned and morphed rendering both deforms together on the GPU, driven through the real app path

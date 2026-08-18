@@ -31,7 +31,17 @@ import {
   setVector3,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A top-down 800×600 view is filled edge to edge by a large light-grey ground plane. Three similar ' +
+    'grey rectangular occluders are evenly spaced left, centre and right in an upper-middle row, ' +
+    'corresponding to world x positions -22, 0 and 22 on the 80×60 ground. Each casts a separate dark ' +
+    'shadow displaced down and to the right by the angled light; for the centre object the dark patch ' +
+    'near world (5,-5) is plainly darker than lit ground at (13,-5) on the same row. The three ' +
+    'shadows do not merge, vanish, cling directly under the boxes or spill beyond the bounded ground.',
+);
 
 // WebGPU twin of the large-scene GL fixture. A tight light-space fit and one authored texel of normal
 // bias prove that both backends derive the same scale-relative receiver offset.

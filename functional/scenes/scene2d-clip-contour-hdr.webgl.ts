@@ -28,6 +28,15 @@ import {
   renderGlScene2D,
   setNode2DClip,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, a bright pale-cyan triangle is centred with apex at (400,150) ' +
+    'and a horizontal base from (250,450) to (550,450). The interior, including the field centre, is ' +
+    'luminous and a soft bloom extends just beyond the three edges. The original 300×300 square does ' +
+    'not appear: its top corners and all pixels outside the triangular contour remain background ' +
+    'apart from the narrow glow. The triangle is neither blank nor replaced by a rectangle.',
+);
 
 // Gl parity column: the same triangular contour clip inside an HDR (rgba16f) bloom pipeline. The
 // contour clip is realized by a stencil pass, so the effect pipeline's scene target is created with a

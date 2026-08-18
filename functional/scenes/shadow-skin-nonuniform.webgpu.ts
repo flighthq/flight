@@ -35,7 +35,17 @@ import {
   skinVertices,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 view of a medium-grey ground plane, a bright horizontal bar floats above the ' +
+    'horizon and casts a centred dark horizontal shadow directly below it. A threefold joint scale ' +
+    'makes both bar and shadow approximately 617 px wide, derived from the 5.4-world-unit bar across ' +
+    'a 7-world-unit orthographic view mapped to 800 px; their widths agree within edge filtering. ' +
+    'Neither silhouette is the 206 px bind-pose width or the 69 px inverse-scale width. Lit ground ' +
+    'remains visible at both ends of the shadow, and the bar and shadow stay vertically separate.',
+);
 
 // WebGPU mirror of shadow-skin-nonuniform.webgl, and the backend the check exists for: here the mesh
 // draw and the shadow depth draw reach the palette through SEPARATE bind groups and layouts, so the

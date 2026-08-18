@@ -33,6 +33,16 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, one flat orange bar rises from a stationary vertical base near ' +
+    'the lower centre, then bends about 75 degrees toward screen-left above its midpoint. The leaned ' +
+    'upper arm covers roughly (38%,43%), while the straight bind-pose location near top-centre ' +
+    '(50%,20%) is empty and the lower base remains present near (53%,65%). The bar is one continuous ' +
+    'solid silhouette: it is not straight upright, detached at the joint, missing its base or ' +
+    'duplicated.',
+);
 
 // scene-skinning — exercises the GL GPU-skinning draw path end to end: a Mesh in the canonical skinned
 // layout (joints0/weights0 channels) bound to a two-joint Skeleton3D, deformed on the GPU through the

@@ -38,6 +38,16 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, four separate slender bars stand in columns centred near x=127, ' +
+    '309, 491 and 673. Every bar has a vertical lower half and an upper arm bent about 75 degrees ' +
+    'toward screen-left; none remains a straight upright column. From left to right the same posed ' +
+    'silhouette appears as a filled mid-grey depth shade, a direction-encoded normal colour, a ' +
+    'cyan-blue matcap shade and a thin white wireframe. The four treatments remain distinct, the ' +
+    "leaned arms stay attached to their bases, and no bar crosses into its neighbour's column.",
+);
 
 // GL-only family regression for GPU skinning. Each bar uses the same two-joint, 75-degree pose but a
 // different built-in material whose vertex path used to stay rigid: Depth, Normal, Matcap, and

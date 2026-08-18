@@ -26,6 +26,16 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field, two large half-transparent quads cross in depth over the central ' +
+    'area: a blue layer is underneath and a red layer composites last. Across the left, centre and ' +
+    'right portions of their overlap, both red and blue remain visible but red is clearly dominant, ' +
+    'producing a consistent red-purple mixture with almost no green. No part of the right overlap ' +
+    'turns pure blue, neither layer punches a depth-shaped hole in the other, and the bounded area ' +
+    'outside the quads remains near-black.',
+);
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
