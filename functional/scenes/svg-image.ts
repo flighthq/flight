@@ -62,14 +62,18 @@ const { render } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [ShapeKind, SpriteKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with one 240x240 square spanning x 180-420 and y 90-330, divided into ' +
-    'four equal 120x120 quadrants of flat colour: red top-left, green top-right, blue bottom-left, white ' +
-    'bottom-right. That exact arrangement is the claim — it distinguishes an upright picture from one ' +
-    'flipped vertically (blue and white on top), flipped horizontally (green and white on the left), or ' +
-    'transposed (green and blue swapped). The square is six times its source size and stays square, so ' +
-    'nothing is letterboxed and no band of background appears inside its box. The quadrants meet at x 300 ' +
-    'and y 210 with no blur or gradient across either seam, and outside the square the field is pure ' +
-    'black.',
+    'An 800x600 opaque black field with one 240x240 square spanning x 180-420 and y 90-330, divided into four ' +
+    'equal 120x120 quadrants of flat colour: red top-left, green top-right, blue bottom-left, white bottom-right. ' +
+    'That exact arrangement is the claim — it distinguishes an upright picture from one flipped vertically (blue ' +
+    'and white on top), flipped horizontally (green and white on the left), or transposed (green and blue ' +
+    'swapped). The square is six times its source size and stays square, so nothing is letterboxed and no band of ' +
+    'background appears inside its box. The quadrants meet at x 300 and y 210, and those seams are NOT hard ' +
+    'edges: the source is 40x40 drawn into 240x240, a 6x magnification, and neither the scene nor the importer ' +
+    'overrides the sampler, so the default linear magnification filter (magFilter linear) blends across about one ' +
+    'source texel — roughly 6 px — centred on each seam. Source does not determine the exact width or profile of ' +
+    'that transition; it depends on how each backend resamples the magnified image, which no scene parameter ' +
+    'pins. The assertion samples only the four quadrant centres, well clear of the seams, so it gates the colours ' +
+    'and the orientation and never the seam itself. Outside the square the field is pure black.',
 });
 
 const root = createDisplayObject();
