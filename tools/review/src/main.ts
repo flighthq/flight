@@ -336,6 +336,7 @@ async function commissionCurrentTest(): Promise<void> {
     environmentId: c.provenance?.environmentId ?? null,
   }));
 
+  const totalCells = t.cells.length;
   try {
     const res = await fetch('/api/commission', {
       method: 'POST',
@@ -363,10 +364,20 @@ async function commissionCurrentTest(): Promise<void> {
       dirty: string[];
       dirtyOmitted: number;
     };
+    const notApproved = t.cells
+      .filter((c) => !selectedCells.includes(c))
+      .map((c) => c.renderer);
+    const parts: string[] = [];
+    if (notApproved.length > 0) {
+      parts.push(`${notApproved.length} not approved`);
+    }
+    if (result.skipped.length > 0) {
+      parts.push(`skipped ${result.skipped.join(', ')} (no capture hash)`);
+    }
     const scope =
-      result.committed === result.total
-        ? `all ${result.total} renderer(s)`
-        : `${result.committed} of ${result.total} renderer(s) — skipped ${result.skipped.join(', ')} (no capture hash)`;
+      parts.length === 0
+        ? `all ${totalCells} renderer(s)`
+        : `${result.committed} of ${totalCells} renderer(s) — ${parts.join(', ')}`;
     const coverage = result.coverageAdded > 0 ? `, ${result.coverageAdded} coverage entr(y/ies) declared` : '';
     const build = ` from reviewed build ${result.buildCommit?.slice(0, 12) ?? 'UNSTAMPED'}`;
     const dirty =
@@ -375,7 +386,7 @@ async function commissionCurrentTest(): Promise<void> {
         : ` — WARNING: Built with uncommitted changes: ${formatDirtyPaths(result.dirty, result.dirtyOmitted)}`;
     showCommissionFeedback(
       `Requested ${scope}${coverage}${build}${dirty} → ${result.path}`,
-      result.committed !== result.total || result.dirty.length > 0 || result.dirtyOmitted > 0,
+      result.skipped.length > 0 || result.dirty.length > 0 || result.dirtyOmitted > 0,
     );
     clearApprovals();
     showCurrent();
