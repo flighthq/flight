@@ -30,13 +30,26 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field whose BACKDROP IS NOT FLAT: the area behind the subject varies from top to left ' +
-    'to right rather than being one uniform colour, so the frame reads as an environment surrounding ' +
-    'the scene instead of a plain fill. A uniform backdrop of a single colour anywhere across those ' +
-    'three regions is the failure, and a blank backdrop is a worse one. In front of it sits a single ' +
-    'matte grey sphere, centred, of moderate size — about a quarter of the frame height across — shaded ' +
-    'so one side is clearly brighter than the other rather than flat. The sphere has no mirror-like ' +
-    'reflection of its surroundings: it is rough, not polished.',
+  'An 800x600 frame whose entire backdrop is the inside of a six-colour environment cube, with a matte grey ' +
+    'sphere in front of it. The backdrop is DOMINATED BY THE YELLOW -Z FACE (0xffe030): the camera sits at ' +
+    '(0,0,4) looking at (0,-0.4,0) with a wide fovY of pi/2.2, so -Z is the dominant axis of the view ray over ' +
+    'the great majority of the frame, and the green -X face (0x30ff30) and the red +X face (0xff3030) take over ' +
+    'only past the points where |x| = |z| on the ray, at 0.0694*W = 55 px in from the left edge and the same ' +
+    'distance in from the right. Top and bottom stay yellow at the sampled heights: the near-white +Y and ' +
+    'dark-grey -Y faces are much further from dominance vertically than the side faces are horizontally. So the ' +
+    'picture reads left to right as green, then a broad yellow field across the middle, then red — NOT a uniform ' +
+    'fill, which would mean the per-ray reconstruction collapsed. BOUNDED, and the reason is that the derivation ' +
+    'runs out here: each cube face is only an 8x8 solid canvas, sampled with filtering, so the changes between ' +
+    'faces are NOT hard-edged bands. How wide each transition is depends on filtering and mip selection, which ' +
+    'source does not fix, and this description therefore claims the ORDER and the DOMINANT face only — a sharp ' +
+    'boundary at exactly 55 px is not predicted, and neither is any particular blend width. In front of the ' +
+    'backdrop sits a single matte grey sphere (baseColor 0x808080, metallic 0, roughness 0.5), horizontally ' +
+    'centred but sitting ABOVE the frame centre because the camera is tilted down by atan(0.4/4) = 5.71 deg: its ' +
+    'centre is at (400, 265.4) and it is about 142 px across (141.3 px horizontally by 142.8 px vertically, so a ' +
+    'circle to the eye). It is lit from above and slightly from the right by one directional light travelling ' +
+    'along (-0.4,-1,-0.3), so its upper surface is clearly brighter than its lower — and it carries NO ' +
+    'mirror-like reflection of the cube around it, because nothing feeds the environment into the material: it is ' +
+    'a rough, ordinary grey ball in front of a coloured backdrop.',
 );
 // drawGlEnvironmentSkybox + drawGlScene3D collide with the wgpu backend in the @flighthq/sdk barrel, so
 // import the Gl scene functions directly. The skybox draws the environment cubemap as the backdrop
