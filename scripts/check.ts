@@ -104,6 +104,7 @@ if (!scoped) {
   // INTENT: proximity, not identity, is what git checks.
   add('evidence:check', 'tsx', ['scripts/capture-evidence.ts', '--check']);
 
+  add('data-cast-colour:check', 'tsx', ['scripts/check-data-cast-colour.ts']);
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
 
   // Advisory, and deliberately not a gate: `scripts/size.ts` always exits 0, so this reports which
