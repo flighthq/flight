@@ -1,0 +1,68 @@
+name: Playwright · Cold Cache
+
+# A cache whose hit path skips setup must have its miss path exercised, not merely reviewed. Changes to
+# CI configuration get immediate feedback, while the schedule catches ubuntu-latest image drift within
+# a day. Running on every unrelated source push would spend one or two runner minutes to remeasure two
+# inputs that did not change. This workflow is not a required check, so its path filters do not strand
+# branch protection in an "Expected" state on commits that correctly do not start it.
+on:
+  push:
+    paths:
+      - '.github/**'
+  pull_request:
+    paths:
+      - '.github/**'
+  schedule:
+    - cron: '15 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+jobs:
+  launch:
+    name: Download and launch without system dependency setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Opting out of actions/cache is not enough if a runner image ever gains a populated default
+      # browser directory. The run-unique path makes the cold-cache claim true by construction.
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/playwright-cold-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Scheduled workflows start from the default branch, while nightly quality measures develop.
+          # Exercise the same integration tip so runner drift is tested against the config headed to users.
+          ref: ${{ github.event_name == 'schedule' && 'develop' || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Chromium from a deliberately cold cache without system dependencies
+        uses: ./.github/actions/setup-playwright
+        with:
+          cache: 'false'
+          install-deps: 'false'
+      - name: Launch Chromium and load a page
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from '@playwright/test';
+
+          const browser = await chromium.launch({ headless: true });
+          try {
+            const page = await browser.newPage();
+            await page.setContent('<title>playwright-cold-cache-ok</title>');
+            const title = await page.title();
+            if (title !== 'playwright-cold-cache-ok') {
+              throw new Error(`Chromium returned unexpected title: ${title}`);
+            }
+            console.log('Chromium launched successfully from a cold browser cache without install-deps.');
+          } finally {
+            await browser.close();
+          }
+          NODE
