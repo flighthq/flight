@@ -182,6 +182,7 @@
     "unchecked:json": "tsx ./scripts/unchecked.ts --json",
     "untested": "tsx ./scripts/untested.ts",
     "verify:backgrounds": "tsx ./scripts/verify-expected-image-backgrounds.ts",
+    "verify:size-claims": "tsx ./scripts/verify-expected-image-size-claims.ts",
     "version:packages": "tsx ./scripts/version-packages.ts"
   },
   "devDependencies": {
