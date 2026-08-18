@@ -26,16 +26,15 @@ import { declareExpectedImageDescription } from '@ft/render';
 
 // crt: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
 declareExpectedImageDescription(
-  'An 800x600 field on a very dark background carrying EIGHTEEN small bars of about 56 x 20, each ' +
-    'turned by a different angle, laid out in five columns near x 96, 240, 384, 528 and 672 across four ' +
-    'rows near y 108, 228, 348 and 468 — the first three rows hold five bars each and the last holds ' +
-    'only three, so the bottom row is visibly short. ' +
-    'The whole picture is treated to look like an old tube display, and three things must all be ' +
-    'visible at once: fine horizontal SCANLINES banding the image, a BARREL CURVATURE that bows the ' +
-    'picture outward so the bars near the edges are displaced from where they were drawn, and DARKENED ' +
-    'CORNERS relative to the centre. Any of the three missing is a failure — flat even brightness, ' +
-    'straight unbowed geometry, or a clean unbanded image each mean part of the treatment did not run. ' +
-    'The bars keep their individual colours.',
+  'An 800x600 field on a very dark background carrying EIGHTEEN small bars of about 56 x 20, each turned by a ' +
+    'different angle, laid out in five columns at x = W*(0.12 + 0.18*c) = 96, 240, 384, 528 and 672 across four ' +
+    'rows at y = H*(0.18 + 0.2*r) = 108, 228, 348 and 468 — the first three rows hold five bars each and the last ' +
+    'holds only three, so the bottom row is visibly short. The whole picture is treated to look like an old tube ' +
+    'display, and three things must all be visible at once: fine horizontal SCANLINES banding the image, a BARREL ' +
+    'CURVATURE that bows the picture outward so the bars near the edges are displaced from where they were drawn, ' +
+    'and DARKENED CORNERS relative to the centre. Any of the three missing is a failure — flat even brightness, ' +
+    'straight unbowed geometry, or a clean unbanded image each mean part of the treatment did not run. The bars ' +
+    'keep their individual colours.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

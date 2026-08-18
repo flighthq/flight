@@ -27,12 +27,13 @@ import { declareExpectedImageDescription } from '@ft/render';
 // Directional blur: the full frame is smeared along a fixed angle, so the mid-screen shapes
 // streak uniformly in the configured direction.
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with four square tiles of about 110 px, each turned by ' +
-    'a different angle from about 10 up to about 64 degrees, marching left to right across the middle ' +
-    'at roughly x 160, 320, 480 and 640, the second and fourth sitting slightly lower than the first and third: white, warm yellow, ' +
-    'cyan and pink in that order. Every tile is SMEARED ALONG ONE SHARED DIAGONAL — the streaks run the ' +
-    'same direction on all four, slightly off horizontal, rather than radiating outward or differing ' +
-    'per tile. Crisp-edged tiles, or smears running different ways, are both failures. The tiles keep ' +
+  'An 800x600 field on a near-black background with four square tiles 110 px on a side, turned 10, 28, 46 and ' +
+    '64 degrees so they span 127, 149, 156 and 147 px corner to corner (side*(cos a + sin a)), marching left to ' +
+    'right across the middle at x = W*(0.2 + 0.2*i) = 160, 320, 480 and 640 with y = H*(0.4 + 0.12*(i mod 2)) ' +
+    'alternating between 240 and 312, the second and fourth sitting slightly lower than the first and third: ' +
+    'white, warm yellow, cyan and pink in that order. Every tile is SMEARED ALONG ONE SHARED DIAGONAL — the ' +
+    'streaks run the same direction on all four, slightly off horizontal, rather than radiating outward or ' +
+    'differing per tile. Crisp-edged tiles, or smears running different ways, are both failures. The tiles keep ' +
     'their positions and their colours; only their edges are drawn out.',
 );
 const pixelRatio = window.devicePixelRatio || 1;

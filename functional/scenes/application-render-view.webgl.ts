@@ -17,13 +17,15 @@ import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a very dark blue background — not black — filled edge to edge, with a single ' +
-    'solid cyan cube centred in it, seen in perspective from above, to its right and in front, so THREE ' +
-    'faces are visible at once — its front, its right side and its top. All three are the SAME flat ' +
-    'cyan with no brightness difference between them: the cube ignores scene lighting entirely, so any ' +
-    'face darker than another is wrong. It occupies roughly the middle third of the field. Everything ' +
-    'outside it is the dark blue background, in particular near (32,32) — the window is resized after the view is attached, and the ' +
-    'background must still reach that corner rather than leaving the pre-resize extent visible.',
+  'An 800x600 field on a very dark blue background — not black — filled edge to edge, with a single solid cyan ' +
+    'cube centred in it, seen in perspective from above, to its right and in front, so THREE faces are visible at ' +
+    'once — its front, its right side and its top. All three are the SAME flat cyan with no brightness difference ' +
+    'between them: the cube ignores scene lighting entirely, so any face darker than another is wrong. Its ' +
+    'silhouette spans x 217-562 and y 159-496 — 345 px across and 337 px tall, which is 0.43*W by 0.56*H, so it ' +
+    'covers rather more than a third of the width and over half the height; the eight corners of the 1.6-unit ' +
+    'cube project through the camera at (2.3,1.5,4) with fovY = pi/4, and those are their extremes. Everything ' +
+    'outside it is the dark blue background, in particular near (32,32) — the window is resized after the view is ' +
+    'attached, and the background must still reach that corner rather than leaving the pre-resize extent visible.',
 );
 export const width = 800;
 export const height = 600;

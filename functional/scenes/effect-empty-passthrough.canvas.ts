@@ -26,13 +26,13 @@ import { declareExpectedImageDescription } from '@ft/render';
 // pipeline with an EMPTY effect list; begin -> render -> end with no stages must present the scene
 // unchanged, proving the Canvas pipeline's present path is an identity composite.
 declareExpectedImageDescription(
-  'An 800x600 field on a very dark background with four AXIS-ALIGNED square tiles of about 140 px — ' +
-    'none of them rotated, all sitting square to the frame edges: red centred near (224,180), green near ' +
-    '(576,180), blue near (224,420) and yellow near (576,420). The picture is COMPLETELY UNTREATED — the tiles have hard clean edges, flat ' +
-    'unmodified fill colours, no glow or spill past any edge, no darkening toward the corners, no ' +
-    'banding and no blur. It must look exactly as the same four tiles would look drawn straight to the ' +
-    'screen: any visible processing at all is the failure, because an empty effect list must change ' +
-    'nothing. The very dark background is visible between and around all four.',
+  'An 800x600 field on a very dark background with four AXIS-ALIGNED square tiles of about 140 px — none of ' +
+    'them rotated, all sitting square to the edges of the field: red centred near (224,180), green near ' +
+    '(576,180), blue near (224,420) and yellow near (576,420). The picture is COMPLETELY UNTREATED — the tiles ' +
+    'have hard clean edges, flat unmodified fill colours, no glow or spill past any edge, no darkening toward the ' +
+    'corners, no banding and no blur. It must look exactly as the same four tiles would look drawn straight to ' +
+    'the screen: any visible processing at all is the failure, because an empty effect list must change nothing. ' +
+    'The very dark background is visible between and around all four.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);

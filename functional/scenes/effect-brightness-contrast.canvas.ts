@@ -25,14 +25,15 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks, each about 267 x ' +
-    '300, with no background visible anywhere: red, green and blue across the top row, then amber, ' +
-    'magenta and cyan across the bottom. Every block is BRIGHTER BUT LESS SATURATED than its plain fill ' +
-    'colour — the whole grid is lifted and washed toward a pale mid-tone, so the six blocks sit closer ' +
-    'to one another in tone than their raw fills do, and the blue block in the top right reads as a ' +
-    'clearly light, muted blue rather than a deep one. A grid whose colours match their raw fills, the ' +
-    'blue block reading dark, is the failure; so is a grid whose colours are MORE vivid than their fills. The blocks tile edge to edge with hard straight ' +
-    'boundaries, each one flat with no gradient inside it and no blending where two meet.',
+  'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks, each W/3 x H/2 = 266.7 x 300 ' +
+    'px with no background visible anywhere — block centres at x = 133.3, 400 and 666.7 and y = 150 and 450: red, ' +
+    'green and blue across the top row, then amber, magenta and cyan across the bottom. Every block is BRIGHTER ' +
+    'BUT LESS SATURATED than its plain fill colour — the whole grid is lifted and washed toward a pale mid-tone, ' +
+    'so the six blocks sit closer to one another in tone than their raw fills do, and the blue block in the top ' +
+    'right reads as a clearly light, muted blue rather than a deep one. A grid whose colours match their raw ' +
+    'fills, the blue block reading dark, is the failure; so is a grid whose colours are MORE vivid than their ' +
+    'fills. The blocks tile edge to edge with hard straight boundaries, each one flat with no gradient inside it ' +
+    'and no blending where two meet.',
 );
 // Canvas parity column for the same full-frame brightnessContrast grade as render.webgl.ts: lifts brightness and adds contrast across the whole frame,
 // realized through Canvas 2D compositing.

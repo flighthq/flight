@@ -27,16 +27,16 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with four square tiles of about 110 px, each turned by ' +
-    'a different small angle, marching left to right across the middle of the field at roughly x 160, ' +
-    '320, 480 and 640, with the second and fourth sitting slightly lower than the first and third: ' +
-    'white, warm yellow, cyan and pink in that order. Every tile is SMEARED — its edges are directional ' +
-    'streaks rather than clean lines, and every streak points TOWARD THE CENTRE OF THE FRAME — the smear ' +
-    'direction therefore differs per tile rather than running the same way on all four, and the tiles ' +
-    'farthest from the centre smear the most. A picture with four ' +
-    'crisp-edged tiles is the failure. The frame carries much less fine detail than the same tiles drawn ' +
-    'without the effect, but the tiles keep their positions and their colours: nothing is displaced from ' +
-    'where it was drawn, and no tile takes on another hue.',
+  'An 800x600 field on a near-black background with four square tiles 110 px on a side, turned 10, 28, 46 and ' +
+    '64 degrees so they span 127, 149, 156 and 147 px corner to corner (side*(cos a + sin a)), marching left to ' +
+    'right across the middle of the field at x = W*(0.2 + 0.2*i) = 160, 320, 480 and 640 with y = H*(0.4 + ' +
+    '0.12*(i mod 2)) alternating between 240 and 312, with the second and fourth sitting slightly lower than the ' +
+    'first and third: white, warm yellow, cyan and pink in that order. Every tile is SMEARED — its edges are ' +
+    'directional streaks rather than clean lines, and every streak points TOWARD THE CENTRE OF THE FRAME — the ' +
+    'smear direction therefore differs per tile rather than running the same way on all four, and the tiles ' +
+    'farthest from the centre smear the most. A picture with four crisp-edged tiles is the failure. The field ' +
+    'carries much less fine detail than the same tiles drawn without the effect, but the tiles keep their ' +
+    'positions and their colours: nothing is displaced from where it was drawn, and no tile takes on another hue.',
 );
 // Wgpu parity column. Wgpu has no velocity G-buffer here, so the effect is color-only/uniform:
 // it applies a uniform full-frame blur rather than a motion-vector-driven smear.

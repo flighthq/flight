@@ -27,15 +27,16 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a very dark background with five square tiles of about 100 px: four near the ' +
-    'corners at roughly (128,120), (672,120), (128,480) and (672,480), and one centred at (400,300). ' +
-    'They are turned by increasing angles in that order, so the FIRST CORNER tile at (128,120) sits ' +
-    'square to the frame, unrotated, and the CENTRE tile is the most turned of the five. Each tile edge shows COLOUR FRINGING — a thin red-ish edge on one side and a ' +
-    'blue-ish edge on the other, rather than a clean boundary between tile and background. The fringing ' +
-    'is RADIAL: it grows with distance from the centre of the field, so the four corner tiles fringe ' +
-    'noticeably while the centre tile is nearly clean. A picture where every tile fringes equally, or ' +
-    'where the centre tile fringes as strongly as the corners, is wrong. The tiles themselves stay in ' +
-    'place and keep their fill colours in their interiors.',
+  'An 800x600 field on a very dark background with five square tiles 100 px on a side, turned 0, 15, 30, 45 and ' +
+    '60 degrees so they span 100, 122, 137, 141 and 137 px corner to corner (side*(cos a + sin a)): four near the ' +
+    'corners at roughly (128,120), (672,120), (128,480) and (672,480), and one centred at (400,300). They are ' +
+    'turned by increasing angles in that order, so the FIRST CORNER tile at (128,120) sits square to the field, ' +
+    'unrotated, and the CENTRE tile is the most turned of the five. Each tile edge shows COLOUR FRINGING — a thin ' +
+    'red-ish edge on one side and a blue-ish edge on the other, rather than a clean boundary between tile and ' +
+    'background. The fringing is RADIAL: it grows with distance from the centre of the field, so the four corner ' +
+    'tiles fringe noticeably while the centre tile is nearly clean. A picture where every tile fringes equally, ' +
+    'or where the centre tile fringes as strongly as the corners, is wrong. The tiles themselves stay in place ' +
+    'and keep their fill colours in their interiors.',
 );
 // Wgpu parity column for the same chromatic-aberration intent as render.webgl.ts. Unlike Canvas
 // (passthrough), chromatic aberration is a real effect on Wgpu: the R/G/B channels are sampled
