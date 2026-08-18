@@ -19,7 +19,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export interface SceneBackgroundClaim {
-  scene: string;
+  /** Whatever names this descriptor's subject — a scene file today, a cell id under a later shape. */
+  subject: string;
   /** The field is present but its text could not be read — reported, never skipped. */
   unparsed?: boolean;
   /** The packed RGBA the scene actually renders on, or `null` if none could be resolved. */
@@ -155,31 +156,70 @@ const TONE_BY_TOKEN: Readonly<Record<string, BackgroundTone>> = {
   white: 'white',
 };
 
-/** Every scene carrying a description, with its claimed and actual background tone. */
-export function readSceneBackgroundClaims(sceneDirectory: string): SceneBackgroundClaim[] {
-  const claims: SceneBackgroundClaim[] = [];
+/**
+ * One descriptor as some reader extracted it, before any analysis.
+ *
+ * ★ THE ANALYSIS MUST NOT KNOW WHERE THE DESCRIPTOR CAME FROM. Today they are `expectedImageDescription`
+ * fields in scene files; the next population is cells under a different primitive. Everything this tool
+ * learned the hard way — a claim is read only from the field/background phrase, a hyphenated compound is
+ * one token, a negated colour names nothing, two tones in range means no answer, and a descriptor that is
+ * PRESENT but unreadable is reported rather than dropped — belongs to the analysis and must survive the
+ * change of source. A second tool re-deriving those rules against a new shape is how they get relearned
+ * one false accusation at a time.
+ */
+export interface DescriptorRecord {
+  /** Whatever names the subject: a scene filename, a cell id, anything stable. */
+  subject: string;
+  /** The description text, or `null` when the descriptor exists and could not be read. */
+  description: string | null;
+  /** The packed RGBA the subject renders on, or `null` when it could not be resolved. */
+  background: number | null;
+}
+
+/**
+ * The source-agnostic half: descriptors in, claims out.
+ *
+ * A reader's only job is to produce `DescriptorRecord`s — including one with `description: null` for a
+ * descriptor it could not parse, which is what keeps the reported population equal to the real one.
+ */
+export function analyzeDescriptorBackgrounds(records: readonly Readonly<DescriptorRecord>[]): SceneBackgroundClaim[] {
+  return records.map((record) =>
+    record.description === null
+      ? { actual: null, background: null, claimed: null, subject: record.subject, unparsed: true }
+      : {
+          actual: record.background === null ? null : getBackgroundTone(record.background),
+          background: record.background,
+          claimed: getClaimedTone(record.description),
+          subject: record.subject,
+        },
+  );
+}
+
+/** Every scene carrying a description, as `DescriptorRecord`s — the scene-shaped reader. */
+export function readSceneDescriptors(sceneDirectory: string): DescriptorRecord[] {
+  const records: DescriptorRecord[] = [];
   for (const file of readdirSync(sceneDirectory)
     .filter((name) => name.endsWith('.ts'))
     .sort()) {
     const source = readFileSync(join(sceneDirectory, file), 'utf8');
     if (!source.includes('expectedImageDescription')) continue;
     const description = readDescription(source);
-    // ★ PRESENT BUT UNREADABLE IS REPORTED, NEVER SKIPPED. Dropping it would shrink the report's
-    // population to the scenes the parser happened to cope with, and a sweep over a set it never covered
-    // still prints as clean. The count must equal the number of scenes carrying the field.
-    if (description === null) {
-      claims.push({ actual: null, background: null, claimed: null, scene: file.slice(0, -3), unparsed: true });
-      continue;
-    }
-    const background = readBackground(source);
-    claims.push({
-      actual: background === null ? null : getBackgroundTone(background),
-      background,
-      claimed: getClaimedTone(description),
-      scene: file.slice(0, -3),
+    records.push({
+      background: description === null ? null : readBackground(source),
+      description,
+      subject: file.slice(0, -3),
     });
   }
-  return claims;
+  return records;
+}
+
+/** Every scene carrying a description, with its claimed and actual background tone. */
+export function readSceneBackgroundClaims(sceneDirectory: string): SceneBackgroundClaim[] {
+  // ★ PRESENT BUT UNREADABLE IS REPORTED, NEVER SKIPPED, and that rule now lives in the ANALYSIS rather
+  // than in this reader — so a reader for a different descriptor shape inherits it instead of having to
+  // remember it. Dropping an unparsable descriptor shrinks the population to whatever the parser coped
+  // with, and a sweep over a set it never covered still prints as clean.
+  return analyzeDescriptorBackgrounds(readSceneDescriptors(sceneDirectory));
 }
 
 /**
@@ -211,7 +251,7 @@ export function formatBackgroundClaimReport(claims: readonly Readonly<SceneBackg
 
   for (const claim of contradictions) {
     lines.push(
-      `  CONTRADICTS  ${claim.scene}: text says ${claim.claimed}, background ${hex(claim.background)} is ${claim.actual}`,
+      `  CONTRADICTS  ${claim.subject}: text says ${claim.claimed}, background ${hex(claim.background)} is ${claim.actual}`,
     );
   }
   // ★ THE POPULATION IS PRINTED WHOLE, NOT JUST ITS FAILURES. A report that lists only contradictions
@@ -220,11 +260,11 @@ export function formatBackgroundClaimReport(claims: readonly Readonly<SceneBackg
   for (const claim of unverifiable) {
     lines.push(
       claim.unparsed === true
-        ? `  UNVERIFIABLE ${claim.scene}: the description is present but could not be parsed`
-        : `  UNVERIFIABLE ${claim.scene}: background ${claim.background === null ? 'not resolved' : `${hex(claim.background)} is outside the named tones`}`,
+        ? `  UNVERIFIABLE ${claim.subject}: the description is present but could not be parsed`
+        : `  UNVERIFIABLE ${claim.subject}: background ${claim.background === null ? 'not resolved' : `${hex(claim.background)} is outside the named tones`}`,
     );
   }
-  for (const claim of silent) lines.push(`  NO CLAIM     ${claim.scene}: the description names no field colour`);
+  for (const claim of silent) lines.push(`  NO CLAIM     ${claim.subject}: the description names no field colour`);
 
   lines.push('');
   lines.push(
