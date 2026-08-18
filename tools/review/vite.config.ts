@@ -407,7 +407,19 @@ function reviewPlugin(): Plugin[] {
                 server.ws.send({ type: 'full-reload' });
 
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ id, path: relative(projectRoot, outPath) }));
+                // Report the COUNT, not just the path. Ineligible cells are filtered out above, so a
+                // request can legitimately cover a subset of the scene — and "Written: <path>" told the
+                // user nothing about which. A success message narrower than its reader believes is the
+                // same defect as a silent drop, one layer up.
+                res.end(
+                  JSON.stringify({
+                    id,
+                    path: relative(projectRoot, outPath),
+                    committed: eligible.length,
+                    total: payload.cells.length,
+                    skipped: payload.cells.filter((c) => c.pixelSha256 === null).map((c) => c.renderer),
+                  }),
+                );
               } catch {
                 res.statusCode = 400;
                 res.end(JSON.stringify({ error: 'invalid JSON body' }));
