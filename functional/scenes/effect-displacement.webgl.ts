@@ -22,8 +22,18 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
 // Hashed horizontal block tears + per-channel RGB separation in one fullscreen pass.
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark background with five wide horizontal bars, each about 512 px wide ' +
+    'and 78 px tall, stacked down the field from x 144 with their tops near y 48, 150, 252, 354 and ' +
+    '456: red, green, blue, amber and purple from top to bottom. Their edges are RIPPLED rather than ' +
+    'straight — each bar wobbles along its length in a repeating wave, so no edge is a clean horizontal ' +
+    'line, and the wobble pattern repeats several times across a bar rather than bending it once. Five ' +
+    'bars with straight edges is the failure. Each bar keeps its own flat colour and its overall place ' +
+    'in the stack; the bars do not merge into one another.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

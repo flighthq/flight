@@ -22,8 +22,17 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
 // dither: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark background carrying ten small bars of about 56 x 20, each turned by ' +
+    'a different angle, in two rows of five across the upper and middle parts of the field. The whole ' +
+    'picture is POSTERISED to a handful of tones per channel: smooth shading is replaced by visible ' +
+    'stepped bands and a fine ordered speckle at the boundaries between them, rather than a continuous ' +
+    'ramp. A picture with smooth gradients and no visible banding is the failure. The bars stay where ' +
+    'they were drawn and keep recognisably their own hues, just quantised.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
