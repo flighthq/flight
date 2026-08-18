@@ -7,6 +7,22 @@ import pc from 'picocolors';
 import { getFunctionExports } from './completeness-core';
 import { getSelectors, selectPackages } from './select';
 
+// Gate: every exported function has a colocated describe block named after it.
+//
+// ★ THE PREDICATE IS A DESCRIBE NAME, AND THE OUTPUT MUST NOT CLAIM MORE THAN THAT. An export counts here
+// when `getCoveredFunctions` finds `describe('<name>'` in the colocated test file — nothing checks that
+// the function is imported, called, or asserted on. Four EMPTY `describe('<name>', () => {})` blocks
+// satisfy it, which was demonstrated, not theorised.
+//
+// This file used to end by printing "every exported function has a colocated test" and a "Fully covered"
+// percentage. Both were read as coverage evidence and quoted as coverage evidence, including in
+// attestations. The measurement was never wrong; the SENTENCE was, and a sentence travels further than a
+// predicate. Every string below therefore says "named" or "describe", never "covered" or "tested".
+//
+// Depth is a different instrument and the repo already owns it: `npm run untested` lists the arms no test
+// took, `npm run unchecked` mutates tokens to find the ones no assertion catches. Do not teach this gate
+// to half-measure depth — it would blur two clean tools into one vague one and still prove no assertion.
+
 interface FileCoverage {
   covered: string[];
   exports: string[];
@@ -82,33 +98,36 @@ if (missing.length > 0) {
 }
 
 if (partial.length > 0) {
-  printHeading('Partial coverage', partial.length, pc.yellow);
+  printHeading('Exports with no matching describe', partial.length, pc.yellow);
   for (const result of partial) {
     const count = `${result.covered.length}/${result.exports.length}`;
     console.log(`  ${pc.yellow('!')} ${pc.white(result.file.rel)} ${pc.dim(`(${count})`)}`);
-    console.log(`    ${pc.dim('uncovered:')} ${formatNames(result.uncovered, pc.yellow)}\n`);
+    console.log(`    ${pc.dim('unnamed:')} ${formatNames(result.uncovered, pc.yellow)}\n`);
   }
 }
 
 printHeading('Summary');
 console.log(`  ${pc.dim('Functional files:')} ${pc.bold(total.toString())}`);
 console.log(
-  `  ${pc.dim('Fully covered:   ')} ${pc.green(full.length.toString())} ${pc.dim(`(${pct(full.length, total)}%)`)}`,
+  `  ${pc.dim('All exports named:')} ${pc.green(full.length.toString())} ${pc.dim(`(${pct(full.length, total)}%)`)}`,
 );
 console.log(
-  `  ${pc.dim('Partial:         ')} ${pc.yellow(partial.length.toString())} ${pc.dim(`(${pct(partial.length, total)}%)`)}`,
+  `  ${pc.dim('Some unnamed:    ')} ${pc.yellow(partial.length.toString())} ${pc.dim(`(${pct(partial.length, total)}%)`)}`,
 );
 console.log(
-  `  ${pc.dim('No tests:        ')} ${pc.red(missing.length.toString())} ${pc.dim(`(${pct(missing.length, total)}%)`)}`,
+  `  ${pc.dim('No test file:    ')} ${pc.red(missing.length.toString())} ${pc.dim(`(${pct(missing.length, total)}%)`)}`,
 );
 
 console.log('');
 if (passed) {
-  console.log(pc.green(`✓ every exported function has a colocated test (${total} files)`));
+  console.log(pc.green(`✓ every exported function has a colocated describe block named after it (${total} files)`));
+  console.log(
+    pc.dim('  Names only — whether those blocks assert anything is `npm run untested` / `npm run unchecked`.'),
+  );
   process.exit(0);
 } else {
   const gapCount = missing.length + partial.length;
-  console.log(pc.red(`✗ ${gapCount} file${gapCount === 1 ? '' : 's'} with missing or partial test coverage`));
+  console.log(pc.red(`✗ ${gapCount} file${gapCount === 1 ? '' : 's'} missing a test file or a matching describe name`));
   process.exit(1);
 }
 
@@ -173,8 +192,10 @@ function getCoveredFunctions(testPath: string, fnNames: string[]): Set<string> {
   return covered;
 }
 
+// Floor, not round: a shortfall must never display as 100. 1387 of 1388 rounds to "100%" while the gate
+// is failing on the 1388th, which is the same overclaim this file's wording was corrected for.
 function pct(n: number, d: number): string {
-  return d === 0 ? '0' : Math.round((n / d) * 100).toString();
+  return d === 0 ? '0' : Math.floor((n / d) * 100).toString();
 }
 
 function printHeading(label: string, count?: number, color: (value: string) => string = pc.white): void {
