@@ -1,6 +1,9 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
-import { decodeOraclePng } from './reference-image-png';
+import { decodeOraclePng, getOraclePngPixelSha256, hashOraclePixelBytes } from './reference-image-png';
 
 // ★ GROUND TRUTH IS THE PIXELS THE TEST ENCODED, NOT ANOTHER DECODER'S OPINION OF THEM. Each case builds
 // a PNG from known bytes under a chosen filter, so a passing decode means the original pixels came back —
@@ -36,6 +39,22 @@ describe('decodeOraclePng', () => {
     expect('png' in result && [result.png.width, result.png.height]).toEqual([2, 2]);
   });
 
+  it('decodes the measured type-2 DOM capture to opaque RGBA', () => {
+    expect(createHash('sha256').update(DOM_TYPE_2_CAPTURE).digest('hex')).toBe(
+      'c7bc1c2d9d70795d3388f7c526f75cca16a3a662a784961cc9f9faf0f8d5b116',
+    );
+    expect(DOM_TYPE_2_CAPTURE[25]).toBe(2);
+
+    const result = decodeOraclePng(DOM_TYPE_2_CAPTURE);
+    if ('refused' in result) throw new Error(`capture was refused: ${result.refused}`);
+
+    expect([result.png.width, result.png.height]).toEqual([800, 600]);
+    expect(result.png.data.every((value, index) => index % 4 !== 3 || value === 255)).toBe(true);
+    expect(pixel(result.png.data, result.png.width, 10, 10)).toEqual([0, 0, 255, 255]);
+    expect(pixel(result.png.data, result.png.width, 240, 300)).toEqual([253, 253, 255, 255]);
+    expect(pixel(result.png.data, result.png.width, 560, 300)).toEqual([126, 126, 255, 255]);
+  });
+
   // ★ EVERY REFUSAL IS NAMED. A general decoder handles a surprise by decoding it somehow, and a wrong
   // decode is a wrong hash — a false regression, or a false pass on a reference nobody meant to bless.
   it('refuses bytes that are not a PNG', () => {
@@ -52,10 +71,8 @@ describe('decodeOraclePng', () => {
     });
   });
 
-  it('refuses a colour type it does not implement', () => {
-    // Colour type 2 is RGB without alpha: a real PNG, three bytes per pixel, which this decoder would
-    // otherwise unfilter at the wrong stride and hash as plausible garbage.
-    expect(decodeOraclePng(png(2, 2, new Uint8Array(16), 0, { colorType: 2 }))).toEqual({
+  it.each([0, 3, 4])('refuses unmeasured colour type %i', (colorType) => {
+    expect(decodeOraclePng(png(2, 2, new Uint8Array(16), 0, { colorType }))).toEqual({
       refused: 'unsupported-color-type',
     });
   });
@@ -75,6 +92,17 @@ describe('decodeOraclePng', () => {
   });
 });
 
+describe('getOraclePngPixelSha256', () => {
+  it('hashes the same opaque pixels identically as type 2 and type 6', () => {
+    const pixels = new Uint8Array([1, 2, 3, 255, 40, 50, 60, 255, 70, 80, 90, 255, 200, 210, 220, 255]);
+    const type2 = getOraclePngPixelSha256(png(2, 2, pixels, 4, { colorType: 2 }));
+    const type6 = getOraclePngPixelSha256(png(2, 2, pixels, 4, { colorType: 6 }));
+
+    expect(type2).toEqual(type6);
+    expect(type2).toEqual({ pixelSha256: hashOraclePixelBytes(pixels) });
+  });
+});
+
 /** Builds a PNG from raw RGBA, applying one filter type to every scanline. Format facts only. */
 function png(
   width: number,
@@ -83,15 +111,24 @@ function png(
   filter: number,
   options: { bitDepth?: number; colorType?: number; interlace?: number; omitIdat?: boolean } = {},
 ): Uint8Array {
-  const stride = width * 4;
+  const colorType = options.colorType ?? 6;
+  const channelCount = colorType === 2 ? 3 : 4;
+  const channelPixels = new Uint8Array(width * height * channelCount);
+  for (let index = 0; index < width * height; index++) {
+    for (let channel = 0; channel < channelCount; channel++) {
+      channelPixels[index * channelCount + channel] = pixels[index * 4 + channel] ?? 0;
+    }
+  }
+
+  const stride = width * channelCount;
   const raw = new Uint8Array(height * (stride + 1));
   for (let y = 0; y < height; y++) {
     raw[y * (stride + 1)] = filter;
     for (let x = 0; x < stride; x++) {
-      const value = pixels[y * stride + x] ?? 0;
-      const a = x >= 4 ? (pixels[y * stride + x - 4] ?? 0) : 0;
-      const b = y > 0 ? (pixels[(y - 1) * stride + x] ?? 0) : 0;
-      const c = x >= 4 && y > 0 ? (pixels[(y - 1) * stride + x - 4] ?? 0) : 0;
+      const value = channelPixels[y * stride + x] ?? 0;
+      const a = x >= channelCount ? (channelPixels[y * stride + x - channelCount] ?? 0) : 0;
+      const b = y > 0 ? (channelPixels[(y - 1) * stride + x] ?? 0) : 0;
+      const c = x >= channelCount && y > 0 ? (channelPixels[(y - 1) * stride + x - channelCount] ?? 0) : 0;
       let encoded = value;
       if (filter === 1) encoded = value - a;
       else if (filter === 2) encoded = value - b;
@@ -106,7 +143,7 @@ function png(
   view.setUint32(0, width, false);
   view.setUint32(4, height, false);
   ihdr[8] = options.bitDepth ?? 8;
-  ihdr[9] = options.colorType ?? 6;
+  ihdr[9] = colorType;
   ihdr[12] = options.interlace ?? 0;
 
   const chunks = [chunk('IHDR', ihdr)];
@@ -143,3 +180,15 @@ function predictor(a: number, b: number, c: number): number {
   if (pa <= pb && pa <= pc) return a;
   return pb <= pc ? b : c;
 }
+
+function pixel(data: Readonly<Uint8Array>, width: number, x: number, y: number): number[] {
+  const offset = (y * width + x) * 4;
+  return Array.from(data.subarray(offset, offset + 4));
+}
+
+// Captured from the production DOM screenshot path with:
+// npm run capture:functional -- --filter-exact bitmap-transparent-compositing --renderer dom
+// Encoded SHA-256: c7bc1c2d9d70795d3388f7c526f75cca16a3a662a784961cc9f9faf0f8d5b116.
+const DOM_TYPE_2_CAPTURE = readFileSync(
+  resolve(process.cwd(), 'scripts/fixtures/reference-image-png/bitmap-transparent-compositing-dom.png'),
+);
