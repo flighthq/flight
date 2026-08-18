@@ -1,10 +1,25 @@
 {
   "$schema": "https://raw.githubusercontent.com/flighthq/flight-reference-images/main/schemas/reference-image-lock.schema.json",
-  "manifestSha256": "87e240c8cf3dd1fb73fefab927c295a2623555b93578c90541656073f97b5b15",
-  "oracleCommit": "3d2d38800115740bb1e0a925dbada9be62f0449e",
+  "manifestSha256": "5aa3c52b8bd51fe6ef244903759afaeaba33efe9394cd1bb57faed5fdc38aa06",
+  "oracleCommit": "367048ccbdc0e4b278e33e1f4c2b15f20af5575b",
   "packs": {
+    "functional-images": {
+      "file": "functional-images-oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8.tgz",
+      "images": {
+        "functional/effect-brightness-contrast/canvas": {
+          "pixelSha256": "b4c797c71fdfb059ad95f2e0265c867a52a5a268da3df5a4b19a4f4780a3cd0b"
+        },
+        "functional/effect-brightness-contrast/webgl": {
+          "pixelSha256": "c2bb3a34b1ed107552a03489242f4f3a4f3d6560db780ec6d3298fde65394495"
+        },
+        "functional/effect-brightness-contrast/webgpu": {
+          "pixelSha256": "00e0957a17312ecf8322f4ea413753de075dc98a20a3e78c75b6f0ad789942b7"
+        }
+      },
+      "sha256": "38ff5192ac16d77e87ffa26153c4b611877012129e3aaa3c12392802131fb712"
+    },
     "functional-other": {
-      "file": "functional-other-oracle-f7499a91-7498-469c-9e40-50abb8969433-a60edf574118.tgz",
+      "file": "functional-other-oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8.tgz",
       "images": {
         "functional/application-render-view/webgl": {
           "pixelSha256": "7bcb04262948136293f73fc5b0c3d3d4240128517e4fe8ca61ee4614bcd5dc4b"
@@ -13,7 +28,7 @@
       "sha256": "cfa4a964006c580c59e6fc924df687459f24ff234cb3882783a9468a8e8c397d"
     },
     "functional-shapes": {
-      "file": "functional-shapes-oracle-f7499a91-7498-469c-9e40-50abb8969433-a60edf574118.tgz",
+      "file": "functional-shapes-oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8.tgz",
       "images": {
         "functional/shape-fill-solid/webgl": {
           "pixelSha256": "9bc1f4942c55075e2ec292a567d87b4f9569674ec0d7dbad09acdebc6e46d22d"
@@ -22,7 +37,7 @@
       "sha256": "afc4373f5d106822b34b74fc1b6ae663a8dc3f5490b6edf656a2730e2464a75e"
     }
   },
-  "releaseTag": "oracle-f7499a91-7498-469c-9e40-50abb8969433-a60edf574118",
+  "releaseTag": "oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8",
   "repository": "flighthq/flight-reference-images",
   "schemaVersion": 2
 }
