@@ -1,11 +1,23 @@
 {
   "$schema": "https://raw.githubusercontent.com/flighthq/flight-reference-images/main/schemas/reference-image-lock.schema.json",
-  "manifestSha256": "5aa3c52b8bd51fe6ef244903759afaeaba33efe9394cd1bb57faed5fdc38aa06",
-  "oracleCommit": "367048ccbdc0e4b278e33e1f4c2b15f20af5575b",
+  "manifestSha256": "846456a5ee886538be293ff2ba70a7f11c028bd34f884186cd7912dff39e4abf",
+  "oracleCommit": "6637a004457cbe57572a7bafcf75059d0b3158b4",
   "packs": {
     "functional-images": {
-      "file": "functional-images-oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8.tgz",
+      "file": "functional-images-oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7.tgz",
       "images": {
+        "functional/bitmap-color-transform/canvas": {
+          "pixelSha256": "ce02534c3dc19aded24b2ee53f572356d5b4f08d7757f5bcda40df4ee3d99470"
+        },
+        "functional/bitmap-color-transform/dom": {
+          "pixelSha256": "ce02534c3dc19aded24b2ee53f572356d5b4f08d7757f5bcda40df4ee3d99470"
+        },
+        "functional/bitmap-color-transform/webgl": {
+          "pixelSha256": "ce02534c3dc19aded24b2ee53f572356d5b4f08d7757f5bcda40df4ee3d99470"
+        },
+        "functional/bitmap-color-transform/webgpu": {
+          "pixelSha256": "ce02534c3dc19aded24b2ee53f572356d5b4f08d7757f5bcda40df4ee3d99470"
+        },
         "functional/effect-brightness-contrast/canvas": {
           "pixelSha256": "b4c797c71fdfb059ad95f2e0265c867a52a5a268da3df5a4b19a4f4780a3cd0b"
         },
@@ -16,10 +28,10 @@
           "pixelSha256": "00e0957a17312ecf8322f4ea413753de075dc98a20a3e78c75b6f0ad789942b7"
         }
       },
-      "sha256": "38ff5192ac16d77e87ffa26153c4b611877012129e3aaa3c12392802131fb712"
+      "sha256": "eb1591ad481f0359886c2af37b94a8b318439d9ab150fb0ea74bcc83c059e86e"
     },
     "functional-other": {
-      "file": "functional-other-oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8.tgz",
+      "file": "functional-other-oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7.tgz",
       "images": {
         "functional/application-render-view/webgl": {
           "pixelSha256": "7bcb04262948136293f73fc5b0c3d3d4240128517e4fe8ca61ee4614bcd5dc4b"
@@ -28,7 +40,7 @@
       "sha256": "cfa4a964006c580c59e6fc924df687459f24ff234cb3882783a9468a8e8c397d"
     },
     "functional-shapes": {
-      "file": "functional-shapes-oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8.tgz",
+      "file": "functional-shapes-oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7.tgz",
       "images": {
         "functional/shape-fill-solid/webgl": {
           "pixelSha256": "9bc1f4942c55075e2ec292a567d87b4f9569674ec0d7dbad09acdebc6e46d22d"
@@ -37,7 +49,7 @@
       "sha256": "afc4373f5d106822b34b74fc1b6ae663a8dc3f5490b6edf656a2730e2464a75e"
     }
   },
-  "releaseTag": "oracle-e187349c-c08e-49dc-b4fe-ac24e9f97237-3e09c93f6cf8",
+  "releaseTag": "oracle-64a1b44f-8b0b-48bd-b47a-cf5caea2635e-1501798a54e7",
   "repository": "flighthq/flight-reference-images",
   "schemaVersion": 2
 }
