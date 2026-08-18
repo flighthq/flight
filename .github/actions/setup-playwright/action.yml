@@ -6,6 +6,14 @@ inputs:
     description: Browser to install
     required: false
     default: chromium
+  cache:
+    description: Whether to restore and save the Playwright browser cache
+    required: false
+    default: 'true'
+  install-deps:
+    description: Whether to install operating-system dependencies after a browser-cache miss
+    required: false
+    default: 'true'
 
 runs:
   using: composite
@@ -24,18 +32,24 @@ runs:
 
     - name: Restore Playwright browser cache
       id: pw-cache
+      if: inputs.cache == 'true'
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ runner.os }}-${{ steps.pw-version.outputs.version }}-${{ inputs.browser }}
 
+    # Deliberately NOT also gated on the browser cache. The cache covers ~/.cache/ms-playwright — browser
+    # binaries — and apt packages live outside it, so a cache hit says nothing about whether the system
+    # libraries are present. Gating this on cache-hit means the first run after a runner image change
+    # restores binaries that then fail to launch. install-deps is idempotent and cheap when satisfied.
     - name: Install system dependencies
+      if: inputs.install-deps == 'true'
       shell: bash
       run: npx playwright install-deps ${{ inputs.browser }}
       timeout-minutes: 5
 
     - name: Install Playwright browser
-      if: steps.pw-cache.outputs.cache-hit != 'true'
+      if: inputs.cache != 'true' || steps.pw-cache.outputs.cache-hit != 'true'
       shell: bash
       run: npx playwright install ${{ inputs.browser }}
       timeout-minutes: 5
