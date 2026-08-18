@@ -27,8 +27,9 @@ import { declareExpectedImageDescription } from '@ft/render';
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background showing four turned tiles of about 140 px — white near ' +
     '(224,180), warm yellow near (576,180), cyan near (224,420) and pink near (576,420) — with most of ' +
-    'the picture DEFOCUSED. Only a narrow band of depth stays sharp; everything outside it is blurred ' +
-    'enough that tile edges read as soft gradients rather than lines, and fine detail is gone. The whole ' +
+    'the picture DEFOCUSED. The blur is UNIFORM across the whole frame — every tile is softened by the ' +
+    'same amount and no part of the picture stays sharp while another blurs. Tile edges read as soft ' +
+    'gradients rather than lines, and fine detail is gone. The whole ' +
     'frame carries much less high-frequency contrast than the same scene drawn without the effect: a ' +
     'picture where every tile edge is crisp is the failure. Colours and positions are unchanged by the ' +
     'blur — the tiles stay in place and keep their hues, they are simply soft.',
