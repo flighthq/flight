@@ -142,8 +142,17 @@ jobs:
 
             let sent = 0;
             for (const artifact of candidates) {
-              const stem = artifact.name.replace(/^reference-image-candidate-/, '');
-              const requestPath = `reference-image-requests/${stem}.json`;
+              // The capture workflow prefixes a display-only entry label, but the trailing UUID remains
+              // the identity. Accept the legacy UUID-only name too so promoting this bridge cannot break
+              // a capture that started on the previous workflow revision.
+              const requestId = artifact.name.match(
+                /^reference-image-candidate-(?:.+-)?(?<requestId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
+              )?.groups?.requestId;
+              if (requestId === undefined) {
+                core.setFailed(`candidate artifact ${artifact.name} does not end in a request UUID`);
+                return;
+              }
+              const requestPath = `reference-image-requests/${requestId}.json`;
 
               // The request binding is read from the REPOSITORY at the landed commit, never from the
               // candidate: the hash then describes what is actually committed, so a candidate cannot
