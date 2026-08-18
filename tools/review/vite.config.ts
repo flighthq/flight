@@ -7,7 +7,7 @@ import { defineConfig } from 'vite';
 
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import { workspacePackages } from '../../scripts/workspaces';
-import { sourceContainsExpectedDescription } from './src/sourceExpectedDescription';
+import { sourceContainsExpectedDescription, sourceWithheldExpectedDescription } from './src/sourceExpectedDescription';
 
 const projectRoot = resolve(__dirname, '../..');
 const artifactsDir = resolve(projectRoot, '.artifacts');
@@ -53,6 +53,7 @@ interface ReviewTest {
   cells: ReviewCell[];
   expectedImageDescription?: string;
   sourceHasDescription: boolean;
+  withheldReason?: string;
 }
 
 const lockPath = join(projectRoot, 'scripts', 'reference-image-lock.json');
@@ -219,6 +220,23 @@ function readParityStatuses(): Map<string, ParityStatus> {
   return statuses;
 }
 
+function sourceWithheldReason(tool: string, name: string, renderers: readonly string[]): string | null {
+  const sceneDir = SCENE_DIRS[tool];
+  if (!sceneDir) return null;
+  const candidates = [`${name}.ts`, ...renderers.map((r) => `${name}.${r}.ts`)];
+  for (const candidate of candidates) {
+    const filePath = join(sceneDir, candidate);
+    if (!existsSync(filePath)) continue;
+    try {
+      const reason = sourceWithheldExpectedDescription(readFileSync(filePath, 'utf8'));
+      if (reason !== null) return reason;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 function sourceHasExpectedDescription(tool: string, name: string, renderers: readonly string[]): boolean {
   const sceneDir = SCENE_DIRS[tool];
   if (!sceneDir) return false;
@@ -378,7 +396,13 @@ function discoverReviewTests(): ReviewTest[] {
           name,
           cells.map((c) => c.renderer),
         );
+        const withheld = sourceWithheldReason(
+          tool,
+          name,
+          cells.map((c) => c.renderer),
+        );
         const entry: ReviewTest = { tool, name, cells, sourceHasDescription: hasDesc };
+        if (withheld !== null) entry.withheldReason = withheld;
         if (expectedImageDescription !== undefined) entry.expectedImageDescription = expectedImageDescription;
         results.push(entry);
       }
