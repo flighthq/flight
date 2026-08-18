@@ -122,6 +122,38 @@ describe('readSceneBackgroundClaims', () => {
     expect(readSceneBackgroundClaims(directory)[0]).toMatchObject({ actual: 'black', claimed: 'black' });
   });
 
+  // ★ THE TWO DECLARATION FORMS ARE DISJOINT POPULATIONS, AND READING ONE SWEPT HALF THE CORPUS. 110
+  // scenes declare the description as a functional-target field and 105 call
+  // `declareExpectedImageDescription(...)`, with no overlap; the field-only reader reported "110
+  // described scene(s)" — true, and quoted as evidence about the other 105, which it had never opened.
+  // The scenes that use the call form also build their own render state, so they name the background
+  // `backgroundColor`, and reading one spelling would report the whole half as unverifiable instead.
+  it('reads a description declared by the call form, whose background is spelled backgroundColor', () => {
+    const directory = scenes({
+      'declared.ts': [
+        'const state = createGlRenderState(canvas, { backgroundColor: 0x101018ff });',
+        'declareExpectedImageDescription(',
+        `  'An 800x600 opaque black field with one square, ' +`,
+        `    'turned by a small angle.',`,
+        ');',
+      ].join('\n'),
+    });
+
+    const claims = readSceneBackgroundClaims(directory);
+
+    expect(claims).toHaveLength(1);
+    expect(claims[0]).toMatchObject({ subject: 'declared', actual: 'near-black', claimed: 'black' });
+  });
+
+  it('counts both declaration forms in one population', () => {
+    const directory = scenes({
+      'called.ts': `declareExpectedImageDescription(\n  'An opaque black field.',\n);\nconst s = { backgroundColor: 0x000000ff };`,
+      'field.ts': scene('0x000000ff', 'An opaque black field.'),
+    });
+
+    expect(readSceneBackgroundClaims(directory).map((claim) => claim.subject)).toEqual(['called', 'field']);
+  });
+
   // A description that is PRESENT but unreadable is a hole in the sweep. Returning it as unverifiable
   // keeps the report's population equal to the number of scenes carrying the field; dropping it silently
   // is how a checker reports a clean run over a set it never covered.

@@ -202,7 +202,7 @@ export function readSceneDescriptors(sceneDirectory: string): DescriptorRecord[]
     .filter((name) => name.endsWith('.ts'))
     .sort()) {
     const source = readFileSync(join(sceneDirectory, file), 'utf8');
-    if (!source.includes('expectedImageDescription')) continue;
+    if (!/[eE]xpectedImageDescription/.test(source)) continue;
     const description = readDescription(source);
     records.push({
       background: description === null ? null : readBackground(source),
@@ -280,16 +280,27 @@ export function formatBackgroundClaimReport(claims: readonly Readonly<SceneBackg
 }
 
 /**
- * The description text, however its segments are quoted.
+ * The description text, however its segments are quoted and whichever form declares it.
  *
  * ★ IT MUST ACCEPT DOUBLE QUOTES, AND THE COST OF NOT DOING SO WAS INVISIBLE. A segment switches to
  * double quotes the moment its sentence contains an apostrophe — "the square's bottom-right" — and the
  * single-quote-only reader failed to match the WHOLE description, so five scenes were skipped entirely
  * and the report announced a population of 105 out of 110 as though 105 were the population. A hole in a
  * swept set never reports itself; it returns a smaller number that looks like an answer.
+ *
+ * ★ AND IT MUST ACCEPT BOTH DECLARATION FORMS, WHICH IS THE SAME DEFECT AT A LARGER SCALE. A scene
+ * declares its description either as the `expectedImageDescription:` field of a functional target or by
+ * calling `declareExpectedImageDescription(...)`, and the two sets are DISJOINT — 110 scenes and 105
+ * scenes with no overlap. Reading only the field form swept a little over half the corpus while
+ * reporting "110 described scene(s)", a true sentence that several agents (this one included) quoted as
+ * evidence about cells the sweep had never opened. The population a report names must be the population
+ * it covers, not the one its parser happened to recognise.
  */
 function readDescription(source: string): string | null {
-  const match = /expectedImageDescription:\s*\n((?:\s*(?:'.*?'|".*?") \+\n)*\s*(?:'.*?'|".*?"),)/.exec(source);
+  const match =
+    /(?:expectedImageDescription:|declareExpectedImageDescription\()\s*\n((?:\s*(?:'.*?'|".*?") \+\n)*\s*(?:'.*?'|".*?"),)/.exec(
+      source,
+    );
   if (match === null) return null;
   return [...match[1]!.matchAll(/'(.*?)'|"(.*?)"/g)].map((m) => m[1] ?? m[2]).join(' ');
 }
@@ -300,11 +311,16 @@ function readDescription(source: string): string | null {
  * Reads the literal in the target options, and follows a single constant indirection when the options
  * name one — several scenes write `background: document.backgroundColor ?? BACKGROUND`, where the
  * literal lives on the constant.
+ *
+ * Both spellings are read for the same reason both declaration forms are: a functional target names it
+ * `background`, while a scene that builds its own render state names it `backgroundColor`, and the two
+ * populations barely overlap. Reading one spelling resolves the background for one half of the corpus
+ * and reports the other half as unverifiable — a quiet downgrade that looks like coverage.
  */
 function readBackground(source: string): number | null {
-  const inline = /background:\s*(0x[0-9a-fA-F]{8})/.exec(source);
+  const inline = /background(?:Color)?:\s*(0x[0-9a-fA-F]{8})/.exec(source);
   if (inline !== null) return Number(inline[1]);
-  const named = /background:[^,\n]*\b([A-Z][A-Z_0-9]*)\b/.exec(source);
+  const named = /background(?:Color)?:[^,\n]*\b([A-Z][A-Z_0-9]*)\b/.exec(source);
   if (named === null) return null;
   const constant = new RegExp(`^const ${named[1]!} = (0x[0-9a-fA-F]{8})`, 'm').exec(source);
   return constant === null ? null : Number(constant[1]);
