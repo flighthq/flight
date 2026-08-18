@@ -106,7 +106,13 @@ describe('reference-image-commission request binding', () => {
     // it — and renaming the fence without updating the capture path below is exactly how the two halves
     // come apart, leaving a broken job and a green test. Perturbing the real workflow is what exposed it:
     // `toContain('path: reviewed')` did not notice `path: reviewedZZ`.
-    expect(workflow).toMatch(/^\s*path: reviewed$/m);
+    // The anchoring is strict on purpose: `path: "reviewed"` or a trailing comment trips it. That failure is
+    // loud and instantly diagnosable, where the one it replaced was silent — the right trade on a line the
+    // capture's `--dir` depends on by literal value.
+    expect(
+      workflow,
+      "the reviewed-tree fence must be exactly `path: reviewed` — the capture step's `--dir` depends on this literal value, so renaming or quoting it here silently points the capture at a tree that does not exist",
+    ).toMatch(/^\s*path: reviewed$/m);
     expect(workflow).toContain('--dir reviewed/tools/functional/dist');
     expect(workflow).toContain('request-image-differences.json');
     expect(workflow).toContain('reviewed build commit: \\`${{ steps.reviewed-build.outputs.commit }}\\`');

@@ -150,6 +150,11 @@ if (failed.length > 0) {
 // not three careless readings, so the correction goes where the reader already is: the pass states what
 // it did NOT do. The count is derived from what actually ran rather than written down, so a gate added
 // or scoped away cannot leave this line quietly wrong.
+// It currently prints 28, and an older measurement of 27 is also correct rather than in conflict: there
+// were 27 distinct executing gates (28 textual registrations, `typecheck` appearing twice across the
+// scoped and bare arms), and `data-cast-colour:check` was registered afterwards when its repo-wide scan
+// moved out of the test suite. 27 + 1 = 28. Do not "correct" this back to a remembered count — read it
+// off a run, which is the whole point of deriving it.
 process.stdout.write(`\n${pc.green('✓')} ${pc.bold('all check gates passed')}\n`);
 process.stdout.write(
   pc.dim(`  ${results.length} gates, 0 tests — \`npm run test\` is the only thing that runs them.\n`),
