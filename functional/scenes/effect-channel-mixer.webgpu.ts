@@ -22,8 +22,17 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks about 267 x 300 ' +
+    'each, no background visible. The colours are NOT the ones the shapes were filled with — every block ' +
+    'has had its red, green and blue channels rotated, so the top-left block, filled orange, renders as ' +
+    'a GREEN-DOMINANT colour with little red in it. A top-left block that still reads orange means the ' +
+    'channel rotation did not run, which is the failure. Each block is flat with hard straight edges, no ' +
+    'gradient inside it and no blending where two meet.',
+);
 // Wgpu parity column for the same full-frame channelMixer grade as render.webgl.ts: rotates the RGB channels (R<-B, G<-R, B<-G) via a 3x4 row-major mix matrix.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline
 // runs between renderWgpuBackground (opens the encoder + canvas pass) and submitWgpuRenderPass

@@ -21,7 +21,17 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks, each about 267 x ' +
+    '300, with no background visible anywhere: red, green and blue across the top row, then amber, ' +
+    'magenta and cyan across the bottom. Every block is BRIGHTER AND MORE SATURATED than its plain fill ' +
+    'colour would be — the whole grid is lifted, so the blue block in the top right reads as a clearly ' +
+    'light blue rather than a deep one. A grid whose colours match their raw fills, the blue block ' +
+    'reading dark, is the failure this is watching for. The blocks tile edge to edge with hard straight ' +
+    'boundaries, each one flat with no gradient inside it and no blending where two meet.',
+);
 // Full-frame brightnessContrast color grade: lifts brightness and adds contrast across the whole frame. One config applied to the whole scene through an
 // rgba8 effect pipeline (the default format for color ops, so format is omitted).
 const pixelRatio = window.devicePixelRatio || 1;

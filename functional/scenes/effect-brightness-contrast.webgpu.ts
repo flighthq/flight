@@ -22,8 +22,18 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks, each about 267 x ' +
+    '300, with no background visible anywhere: red, green and blue across the top row, then amber, ' +
+    'magenta and cyan across the bottom. Every block is BRIGHTER AND MORE SATURATED than its plain fill ' +
+    'colour would be — the whole grid is lifted, so the blue block in the top right reads as a clearly ' +
+    'light blue rather than a deep one. A grid whose colours match their raw fills, the blue block ' +
+    'reading dark, is the failure this is watching for. The blocks tile edge to edge with hard straight ' +
+    'boundaries, each one flat with no gradient inside it and no blending where two meet.',
+);
 // Wgpu parity column for the same full-frame brightnessContrast grade as render.webgl.ts: lifts brightness and adds contrast across the whole frame.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline
 // runs between renderWgpuBackground (opens the encoder + canvas pass) and submitWgpuRenderPass

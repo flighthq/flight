@@ -22,7 +22,18 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with four square tiles of about 110 px, each turned by ' +
+    'a different small angle, marching left to right across the middle of the field at roughly x 160, ' +
+    '320, 480 and 640, with the second and fourth sitting slightly lower than the first and third: ' +
+    'white, warm yellow, cyan and pink in that order. Every tile is SMEARED — its edges are directional ' +
+    'streaks rather than clean lines, and the smear runs the same way on all four. A picture with four ' +
+    'crisp-edged tiles is the failure. The frame carries much less fine detail than the same tiles drawn ' +
+    'without the effect, but the tiles keep their positions and their colours: nothing is displaced from ' +
+    'where it was drawn, and no tile takes on another hue.',
+);
 // Camera3D motion blur [MOTION]: the full frame smears along the camera motion vectors, so the
 // mid-screen shapes streak in the direction of travel.
 const pixelRatio = window.devicePixelRatio || 1;

@@ -25,8 +25,21 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 opaque black field with two 160x160 squares sharing the same top edge at y 220 and ' +
+    'running down to y 380: one spanning x 100-260 and one spanning x 320-480. The right square is a ' +
+    'strong flat blue. The left square is a MUTED, half-strength red — noticeably darker than a full ' +
+    'red, because it is drawn at half opacity over the black background, and carrying no blue or green ' +
+    'tint. A left square at full-strength red is a failure just as much as a missing one: it would mean ' +
+    'the half transparency was ignored. Both squares have hard axis-aligned edges and are one flat tone ' +
+    'each — no gradient, no block-shaped patchiness, and no softening at the edges even though each is ' +
+    'magnified forty times from a tiny source. Everything outside the two squares is pure black, ' +
+    'including the area up and to the left of them near x 260, y 160 — the squares are bounded quads, ' +
+    'not a wash across the whole field.',
+);
 const WIDTH = 800;
 const HEIGHT = 600;
 const TEX = 4;

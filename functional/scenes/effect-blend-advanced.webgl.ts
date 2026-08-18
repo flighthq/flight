@@ -27,7 +27,18 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field split into four equal quadrants of flat black and white, arranged diagonally: the ' +
+    'top-left quadrant is BLACK, the top-right is WHITE, the bottom-left is WHITE, and the bottom-right ' +
+    'is BLACK. The top-left is the discriminating one — a white foreground block covers the whole top ' +
+    'half and a white backdrop block covers the whole left half, so white-over-white must come out ' +
+    'BLACK there. A top-left quadrant that is white means the blend was skipped and the foreground ' +
+    'simply passed through, which is the failure. The quadrant edges are hard straight lines meeting at ' +
+    'the centre of the field, with no gradient or blend across them and no grey anywhere: every pixel ' +
+    'is near-black or near-white.',
+);
 // effect-blend-advanced — pixel-level coverage of the advanced-blend BlendEffect on GL (glBlendEffect),
 // the composite recipe the fixed-function BlendMode enum deliberately excludes. The BlendEffect samples an
 // incoming LAYER (the pipeline's rendered foreground) and a registered BACKDROP texture, computes a

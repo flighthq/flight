@@ -26,7 +26,18 @@ import {
   invalidateNodeLocalTransform,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with two solid cubes side by side, level with each ' +
+    'other across the middle of the field: an amber one centred near x 240 and a cyan one centred near ' +
+    'x 560. THE TWO ARE THE SAME SIZE ON SCREEN — each about 130 px across — and that equality is the ' +
+    'entire claim, because they sit at different distances from the camera: the amber one is nearer, ' +
+    'the cyan one further away. A picture where the cyan cube is visibly smaller than the amber one is ' +
+    'the failure this exists to catch. Both are flat, unshaded colour with no face-to-face brightness ' +
+    'variation. They do not overlap or touch, and the space around and between them is the near-black ' +
+    'background.',
+);
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
 

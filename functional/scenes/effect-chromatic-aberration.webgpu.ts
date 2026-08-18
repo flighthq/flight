@@ -23,8 +23,19 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark background with five square tiles of about 100 px, each turned ' +
+    'slightly: four near the corners at roughly (128,120), (672,120), (128,480) and (672,480), and one ' +
+    'centred at (400,300). Each tile edge shows COLOUR FRINGING — a thin red-ish edge on one side and a ' +
+    'blue-ish edge on the other, rather than a clean boundary between tile and background. The fringing ' +
+    'is RADIAL: it grows with distance from the centre of the field, so the four corner tiles fringe ' +
+    'noticeably while the centre tile is nearly clean. A picture where every tile fringes equally, or ' +
+    'where the centre tile fringes as strongly as the corners, is wrong. The tiles themselves stay in ' +
+    'place and keep their fill colours in their interiors.',
+);
 // Wgpu parity column for the same chromatic-aberration intent as render.webgl.ts. Unlike Canvas
 // (passthrough), chromatic aberration is a real effect on Wgpu: the R/G/B channels are sampled
 // with a growing radial offset. Wgpu render-state init is async; the effect pipeline runs between

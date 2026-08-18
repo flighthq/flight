@@ -22,7 +22,17 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background showing four turned tiles of about 140 px — white near ' +
+    '(224,180), warm yellow near (576,180), cyan near (224,420) and pink near (576,420) — with most of ' +
+    'the picture DEFOCUSED. Only a narrow band of depth stays sharp; everything outside it is blurred ' +
+    'enough that tile edges read as soft gradients rather than lines, and fine detail is gone. The whole ' +
+    'frame carries much less high-frequency contrast than the same scene drawn without the effect: a ' +
+    'picture where every tile edge is crisp is the failure. Colours and positions are unchanged by the ' +
+    'blur — the tiles stay in place and keep their hues, they are simply soft.',
+);
 // Bokeh depth-of-field [DEPTH]: shapes near the focus distance stay sharp while out-of-focus
 // shapes spread into soft bokeh discs. Gl drives the circle-of-confusion from the depth target.
 const pixelRatio = window.devicePixelRatio || 1;
