@@ -27,7 +27,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'A white 80×80 square at upper-center (50%, 40%) surrounded by four colored 100×100 squares (yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0, orange 0xffd45c) arranged radially at 28% of the frame dimensions, all on a near-black background (0x05060a). Radial light streaks emanate outward from the central white core through the dark areas between and beyond the shapes, fading with distance. The HDR pipeline (rgba16f) carries the bright regions into soft volumetric rays.',
+  'A white 80×80 square centered at (400,240) surrounded by four colored 100×100 squares (yellow 0xfff05c at (624,240), cyan 0x5cffe0 at (400,464), magenta 0xff5ce0 at (176,240), orange 0xffd45c at (400,16)) on a near-black 800×600 background (0x05060a). Radial light streaks emanate outward from the central white core through the dark areas between and beyond the shapes, fading with distance. The HDR pipeline (rgba16f) carries the bright regions into soft volumetric rays.',
 );
 
 // Wgpu parity column for god rays. The HDR rgba16f scene target is radially sampled from the light

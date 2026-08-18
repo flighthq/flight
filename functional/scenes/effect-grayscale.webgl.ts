@@ -24,9 +24,11 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Six shades of neutral gray in a 3×2 grid filling the 800×600 frame. Top row left to right: dark gray, medium gray, medium-dark gray; bottom row: light gray, medium gray, medium gray. Each cell is a single flat tone with no color — all saturation removed. No gaps between cells. Dark gray-blue border is not visible because the grid covers the full frame.',
+  'Six shades of neutral gray in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300). Top row left to right: dark gray (from red 0xff3030), medium gray (from green 0x30c040), medium-dark gray (from blue 0x3060ff); bottom row: light gray (from yellow 0xffd030), medium gray (from magenta 0xff30c0), medium gray (from cyan 0x30d0d0). Each cell is a single flat tone with no color — all saturation removed. No gaps between cells.',
 );
 
+// Full-frame grayscale color grade: fully desaturates the frame to luminance. One config applied to the whole scene through an
+// rgba8 effect pipeline (the default format for color ops, so format is omitted).
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

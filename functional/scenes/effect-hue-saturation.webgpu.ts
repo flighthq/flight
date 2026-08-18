@@ -26,7 +26,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Six saturated rectangles in a 3×2 grid filling the 800×600 frame, each hue-rotated 90° from the source and boosted in saturation. The original red, green, blue, yellow, magenta, cyan cells shift to different hues — red toward yellow-green, green toward cyan, blue toward violet, yellow toward green, magenta toward blue, cyan toward warm red. No gaps between cells.',
+  'Six saturated rectangles in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300), each hue-rotated 90° from the source (red 0xff3030, green 0x30c040, blue 0x3060ff, yellow 0xffd030, magenta 0xff30c0, cyan 0x30d0d0) and boosted in saturation. Red shifts toward yellow-green, green toward cyan, blue toward violet, yellow toward green, magenta toward blue, cyan toward warm red. No gaps between cells.',
 );
 
 // Wgpu parity column for the same full-frame hueSaturation grade as render.webgl.ts: rotates hue 90 degrees and boosts saturation.
