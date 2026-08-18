@@ -1,12 +1,17 @@
 {
-  "schemaVersion": 2,
-  "id": "072fb0f6-fece-4eac-b629-3d7a6242d1de",
+  "schemaVersion": 3,
+  "id": "97739c38-f97e-4736-beb9-badba1ffd62a",
   "subject": "functional",
   "targets": [
     {
       "entry": "bitmap-transparent-compositing",
       "renderer": "dom",
       "pixelSha256": "5182773601ff32ed6ad5c144b90c21bd6de1a8887071160df3f8f5a6afa3ed7a",
+      "build": {
+        "commit": "7431bb1294fe823c7b7e59844e6a0f58b1ae3bc2",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
       "capture": {
         "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
         "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
@@ -16,6 +21,11 @@
       "entry": "bitmap-transparent-compositing",
       "renderer": "canvas",
       "pixelSha256": "4b70457e40a79254ddf63187567b92862626e226978a065e66bc974956ab3910",
+      "build": {
+        "commit": "7431bb1294fe823c7b7e59844e6a0f58b1ae3bc2",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
       "capture": {
         "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
         "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
@@ -25,6 +35,11 @@
       "entry": "bitmap-transparent-compositing",
       "renderer": "webgl",
       "pixelSha256": "3b2fa07e16ae8f98a5ec294ad1dec201eec65aaadff60a970605c82e319bf6e1",
+      "build": {
+        "commit": "7431bb1294fe823c7b7e59844e6a0f58b1ae3bc2",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
       "capture": {
         "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
         "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
@@ -34,6 +49,11 @@
       "entry": "bitmap-transparent-compositing",
       "renderer": "webgpu",
       "pixelSha256": "7181f103625ba55c88ce9106e3b7befc3d6fe58a3cae5bcd474961d9458e6d4f",
+      "build": {
+        "commit": "7431bb1294fe823c7b7e59844e6a0f58b1ae3bc2",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
       "capture": {
         "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
         "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
