@@ -3,10 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
+  analyzeDescriptorBackgrounds,
+  classifyBackgroundClaim,
   formatBackgroundClaimReport,
   getBackgroundTone,
   getClaimedTone,
   readSceneBackgroundClaims,
+  readSceneDescriptors,
 } from './verify-expected-image-backgrounds';
 
 describe('getBackgroundTone', () => {
@@ -87,8 +90,8 @@ describe('readSceneBackgroundClaims', () => {
 
     const claims = readSceneBackgroundClaims(directory);
 
-    expect(claims.find((c) => c.scene === 'wrong')).toMatchObject({ actual: 'near-black', claimed: 'black' });
-    expect(claims.find((c) => c.scene === 'right')).toMatchObject({ actual: 'black', claimed: 'black' });
+    expect(claims.find((c) => c.subject === 'wrong')).toMatchObject({ actual: 'near-black', claimed: 'black' });
+    expect(claims.find((c) => c.subject === 'right')).toMatchObject({ actual: 'black', claimed: 'black' });
   });
 
   // Several scenes write `background: document.backgroundColor ?? BACKGROUND`, so the literal is on the
@@ -130,7 +133,7 @@ describe('readSceneBackgroundClaims', () => {
     const claims = readSceneBackgroundClaims(directory);
 
     expect(claims).toHaveLength(1);
-    expect(claims[0]).toMatchObject({ scene: 'broken', unparsed: true });
+    expect(claims[0]).toMatchObject({ subject: 'broken', unparsed: true });
     expect(formatBackgroundClaimReport(claims)).toContain('could not be parsed');
   });
 
@@ -144,7 +147,7 @@ describe('readSceneBackgroundClaims', () => {
 describe('formatBackgroundClaimReport', () => {
   it('names the contradiction with both sides, so the reader can check the tool', () => {
     const text = formatBackgroundClaimReport([
-      { actual: 'near-black', background: 0x101018ff, claimed: 'black', scene: 'particle-emitter.canvas' },
+      { actual: 'near-black', background: 0x101018ff, claimed: 'black', subject: 'particle-emitter.canvas' },
     ]);
 
     expect(text).toContain('CONTRADICTS  particle-emitter.canvas');
@@ -157,9 +160,9 @@ describe('formatBackgroundClaimReport', () => {
   // than a green tick.
   it('accounts for every scene, including the ones it could not decide', () => {
     const text = formatBackgroundClaimReport([
-      { actual: 'black', background: 0x000000ff, claimed: 'black', scene: 'agrees' },
-      { actual: 'other', background: 0x2244ccff, claimed: 'black', scene: 'undecidable' },
-      { actual: 'black', background: 0x000000ff, claimed: null, scene: 'silent' },
+      { actual: 'black', background: 0x000000ff, claimed: 'black', subject: 'agrees' },
+      { actual: 'other', background: 0x2244ccff, claimed: 'black', subject: 'undecidable' },
+      { actual: 'black', background: 0x000000ff, claimed: null, subject: 'silent' },
     ]);
 
     expect(text).toContain('UNVERIFIABLE undecidable');
@@ -188,3 +191,50 @@ function scenes(files: Readonly<Record<string, string>>): string {
   for (const [name, source] of Object.entries(files)) writeFileSync(join(directory, name), source);
   return directory;
 }
+
+describe('analyzeDescriptorBackgrounds', () => {
+  // ★ THE ANALYSIS IS THE PART THAT MUST SURVIVE A CHANGE OF SOURCE. Every lesson this tool paid for —
+  // the field-phrase window, hyphenated compounds, negation, ambiguity, present-but-unreadable — lives
+  // here rather than in the scene reader, so the next descriptor shape inherits them instead of
+  // relearning them one false accusation at a time. These cases go through NO file at all.
+  it('classifies descriptors that never came from a scene file', () => {
+    const claims = analyzeDescriptorBackgrounds([
+      { background: 0x000000ff, description: 'An opaque black field with one square.', subject: 'cell-a' },
+      { background: 0x101018ff, description: 'An opaque black field with six squares.', subject: 'cell-b' },
+      { background: 0x808080ff, description: 'On a mid-gray field, two squares.', subject: 'cell-c' },
+    ]);
+
+    expect(claims.map((c) => classifyBackgroundClaim(c))).toEqual(['agrees', 'contradicts', 'agrees']);
+    expect(claims[1]).toMatchObject({ actual: 'near-black', claimed: 'black', subject: 'cell-b' });
+  });
+
+  // A reader signals "descriptor present, could not read it" with a null description. The population must
+  // keep it, or the count silently becomes "the ones the parser coped with".
+  it('keeps an unreadable descriptor in the population rather than dropping it', () => {
+    const claims = analyzeDescriptorBackgrounds([
+      { background: null, description: null, subject: 'cell-unreadable' },
+      { background: 0x000000ff, description: 'An opaque black field.', subject: 'cell-fine' },
+    ]);
+
+    expect(claims).toHaveLength(2);
+    expect(claims[0]).toMatchObject({ subject: 'cell-unreadable', unparsed: true });
+    expect(classifyBackgroundClaim(claims[0]!)).toBe('unverifiable');
+    expect(formatBackgroundClaimReport(claims)).toContain('2 described scene(s)');
+  });
+});
+
+describe('readSceneDescriptors', () => {
+  it('yields one record per scene carrying the field, unreadable ones included', () => {
+    const directory = scenes({
+      'good.ts': scene('0x000000ff', 'An opaque black field with one square.'),
+      'broken.ts': 'const x = { expectedImageDescription: someIdentifier };\n',
+      'bare.ts': 'const WIDTH = 800;\n',
+    });
+
+    const records = readSceneDescriptors(directory).sort((a, b) => a.subject.localeCompare(b.subject));
+
+    expect(records.map((r) => r.subject)).toEqual(['broken', 'good']);
+    expect(records[0]).toMatchObject({ description: null });
+    expect(records[1]!.description).toContain('opaque black field');
+  });
+});
