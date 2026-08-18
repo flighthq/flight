@@ -24,7 +24,17 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
+    'the frame height across, shaded by DISTANCE rather than by light: it is a grey gradient across the ' +
+    'surface, brightest where the surface is nearest the viewer and falling off toward its edges as the ' +
+    'surface curves away. Scanning outward from the centre the tone must VARY measurably rather than ' +
+    'holding one value — a flat, evenly toned disc is the failure. There is no coloured tint, no ' +
+    'specular highlight and no light-and-shadow split: the variation is purely front-to-back. The ' +
+    'background stays near-black.',
+);
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
 
