@@ -114,6 +114,11 @@ derivation, which is the very step that goes wrong; `0.28*W` sitting in text whe
 visible by comparison. Make the wrong thing visibly wrong rather than requiring the reader to recompute
 it — the same reason the completion condition above names a checkable property instead of a commit hash.
 
+It is required **even when the numeric result is correct**, because the substitutions it exposes are wider
+than the dimension: width for height, **radius for diameter**, pre-scale for post-scale, world for screen.
+Each of those produces a plausible number, so a right-looking value is not evidence the derivation was
+right — only the retained expression is.
+
 Check the command can still fail before quoting its output as done: `package.json` must pass `--check`,
 which is what reaches the only `process.exitCode = 1` in the script. An earlier revision of this line
 named the same command while `--check` was absent, so the finish condition was unfalsifiable — the
@@ -145,10 +150,9 @@ The left clause positively asserts a blended rather than hard transition; the ca
 evidence for it. The right clause states only where the source derivation stops. The correction must
 withhold both possible outcomes, not turn the observed capture into a negated sentence.
 
-Every derived screen-space value must retain its symbolic derivation and the dimension or named
-constant it came from: write `y = 0.3*H = 180`, not only `y = 180`. This is required even when the
-numeric result is correct, because it exposes width/height, radius/diameter, pre/post-scale, and
-world/screen substitutions that otherwise produce plausible numbers.
+Derived values retain their symbolic form and dimension — stated once above, under "Derived values carry
+their symbolic form". It is not restated here on purpose: a rule written in two places is a rule that will
+be updated in one.
 
 ### Shared perspective-sphere diameter guard
 
