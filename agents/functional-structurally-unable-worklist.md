@@ -1,6 +1,7 @@
 # Structurally Unable Expected-Image Worklist
 
-Status: measured CC-2 assignment sheet. This document contains no expected-image descriptions.
+Status: measured CC-2 assignment sheet and source-only authoring guard. Quoted description fragments
+below are audit evidence, not active expected-image descriptions.
 
 The census below traverses `discoverEntries('functional', root)` and every renderer cell, resolves each
 cell's backing file through `functionalScene3DFile`, and parses that file's calls. It does not infer
@@ -125,6 +126,62 @@ so the shared-file/per-backend constraint documented in
 this population records a genuinely undecided correct picture like `swf-alpha-transform`. `none`
 means no candidate was found in this audit; a CC-2 writer must still stop and report newly discovered
 evidence of an undecided design rather than weaken a precise description.
+
+## Source-only authoring guard
+
+Write and verify every expected-image description from the scene graph, the shader and pipeline that
+actually execute, texture/sampler state, projection, and the scene assertion. Never inspect a capture
+to decide what the description should say. A capture may refute a source-derived prediction, but it may
+never author a replacement positive appearance claim.
+
+A grammatical negative can still be a positive appearance claim. The `env-skybox` review produced the
+minimal worked pair:
+
+| capture-supplied positive claim — forbidden | genuine source-only withholding |
+| --- | --- |
+| `the changes between faces are NOT hard-edged bands` | `How wide each transition is depends on filtering and mip selection, which source does not fix` |
+
+The left clause positively asserts a blended rather than hard transition; the capture was the only
+evidence for it. The right clause states only where the source derivation stops. The correction must
+withhold both possible outcomes, not turn the observed capture into a negated sentence.
+
+Every derived screen-space value must retain its symbolic derivation and the dimension or named
+constant it came from: write `y = 0.3*H = 180`, not only `y = 180`. This is required even when the
+numeric result is correct, because it exposes width/height, radius/diameter, pre/post-scale, and
+world/screen substitutions that otherwise produce plausible numbers.
+
+### Shared perspective-sphere diameter guard
+
+The guarded family is found by source predicate, never by a hand-maintained roster:
+
+- `createSphereMeshGeometry(0.5, ...)`;
+- a look-at camera at `(0,0,3)` aimed at the origin; and
+- perspective `fovY = pi/4`.
+
+For sphere radius `r = 0.5`, camera distance `d = 3`, and frame height `H`, the projected silhouette
+diameter is
+
+`D/H = tan(asin(r/d))/tan((pi/4)/2) = tan(asin(0.5/3))/tan(pi/8) = 0.4081`,
+
+so `D = 0.4081*H = 244.9 px` when `H = 600`. Approximately 120 px is the **radius**, not the distance
+across the sphere. A description in this family must keep the symbolic diameter above and, when it
+states the centre, write `(0.5*W,0.5*H) = (400,300)` rather than only `(400,300)`.
+
+Twelve cells with that same setup were still undescribed when this guard was recorded and are the
+forward-looking population most likely to reintroduce the radius-as-diameter error:
+
+- `material-standard-pbr/webgl`
+- `material-standard-pbr/webgpu`
+- `material-subsurface/webgl`
+- `material-toon/webgl`
+- `material-toon/webgpu`
+- `material-transmission-volume/webgl`
+- `material-unlit/webgl`
+- `material-unlit/webgpu`
+- `material-vertex-color/webgl`
+- `material-vertex-color/webgpu`
+- `material-wireframe/webgl`
+- `material-wireframe/webgpu`
 
 | cell | file | constructor / registration seam | family | bounded candidate |
 | --- | --- | --- | --- | --- |
