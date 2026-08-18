@@ -37,7 +37,7 @@ declareExpectedImageDescription(
     'highlight. This is the PHONG cell: its specular term is pow(dot(reflect(-L,N), V), 32), a falloff in the ' +
     'REFLECTION angle, which runs at twice the rate in surface-normal terms that the Blinn-Phong sibling ' +
     'pow(dot(N,H), 32) does (exactly twice where L, N and V are coplanar). At shininess 32 the half-power ' +
-    'half-angle is therefore 5.93 deg here against 11.86 deg there, so this hotspot must read as the TIGHTER, ' +
+    'half-angle is therefore 5.94 deg here against 11.88 deg there, so this hotspot must read as the TIGHTER, ' +
     'sharper, more concentrated of the two. A broad soft highlight here is a Blinn-Phong shader substituted by ' +
     'mistake, which is the discrimination this pair exists to make. Bounded deliberately: no pixel width for the ' +
     'hotspot is derivable without a capture and none is claimed here, only the relative narrowness. The sphere ' +
