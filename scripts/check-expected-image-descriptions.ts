@@ -181,6 +181,12 @@ function main(): void {
   } else {
     console.log(pc.red(`${missing.length} scene(s) missing expectedImageDescription:`));
     for (const name of missing) console.log(`  ${pc.red('✗')} ${name}`);
+    // Open one of the named files before believing this list. On 2026-08-18 this gate reported 110
+    // missing and ALL 110 were false positives: the predicate accepted only a single string literal,
+    // while every real description is a `'…' + '…'` concatenation. A large count that appears the moment
+    // this file changes is a predicate bug; a small count that appears when scenes change is a real gap.
+    console.log(pc.dim('\n  Open one named file before acting. A description is a concatenation, not one literal —'));
+    console.log(pc.dim('  if the named scene visibly HAS a description, this gate is wrong, not the scene.'));
     if (isGate) process.exitCode = 1;
   }
 }
