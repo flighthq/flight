@@ -26,8 +26,18 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
+    'the frame height across, coloured NOT by a light but by the direction each part of its surface ' +
+    'faces. The result is a smooth multi-coloured shading that changes across the sphere — the centre ' +
+    'and a point a short way to its right are visibly DIFFERENT colours, not merely different ' +
+    'brightnesses of one colour. A flat, evenly coloured disc is the failure this exists to catch: it ' +
+    'would mean a plain fill was drawn instead of the surface directions. The background stays ' +
+    'near-black.',
+);
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 

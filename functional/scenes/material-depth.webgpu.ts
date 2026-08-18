@@ -25,8 +25,18 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
+    'the frame height across, shaded by DISTANCE rather than by light: it is a grey gradient across the ' +
+    'surface, brightest where the surface is nearest the viewer and falling off toward its edges as the ' +
+    'surface curves away. Scanning outward from the centre the tone must VARY measurably rather than ' +
+    'holding one value — a flat, evenly toned disc is the failure. There is no coloured tint, no ' +
+    'specular highlight and no light-and-shadow split: the variation is purely front-to-back. The ' +
+    'background stays near-black.',
+);
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 

@@ -25,7 +25,17 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
+    'the frame height across, coloured NOT by a light but by the direction each part of its surface ' +
+    'faces. The result is a smooth multi-coloured shading that changes across the sphere — the centre ' +
+    'and a point a short way to its right are visibly DIFFERENT colours, not merely different ' +
+    'brightnesses of one colour. A flat, evenly coloured disc is the failure this exists to catch: it ' +
+    'would mean a plain fill was drawn instead of the surface directions. The background stays ' +
+    'near-black.',
+);
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
 
