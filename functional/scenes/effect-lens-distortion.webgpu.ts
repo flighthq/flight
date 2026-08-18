@@ -26,7 +26,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Four rotated squares (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 160×160 logical pixels near the four corners of the 800×600 frame on near-black (0x05060a), rotated 8°/22°/36°/50°. Barrel distortion (amount 0.35) bows straight edges into gentle curves most visible at the corners — shapes near the frame edges warp outward from center.',
+  'Four rotated squares (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 160×160 logical pixels near the four corners of the 800×600 frame on near-black (0x05060a), rotated 8°/22°/36°/50°. Barrel distortion (amount 0.35) bows straight edges into gentle curves most visible at the corners — peripheral source content is pulled inward toward the center; the nonlinear radial remap bows straight edges.',
 );
 
 // Wgpu parity column for the same barrel-distortion intent as render.webgl.ts.
