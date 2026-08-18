@@ -22,8 +22,12 @@ import {
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// Lens flare [HDR]: bright shapes above the threshold seed ghosts and a halo mirrored through the
-// frame center, run through an HDR (rgba16f) pipeline so bright spots carry the flare.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 12°/32°/52°/72°. Semi-transparent ghost images mirrored through the frame center and a soft halo ring from the HDR lens flare (threshold 0.7, 5 ghosts, halo 0.4, rgba16f pipeline). Bright shapes above the threshold seed the flare artifacts.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

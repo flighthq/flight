@@ -23,9 +23,12 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas parity column for the MSAA + bloom scene. Canvas 2D antialiases edges natively, so there is
-// no explicit sampleCount seam here; the column still runs the bloom scene2d over the scene so the same
-// bright shapes pick up a glowing halo for visual comparison against the Gl MSAA + bloom result.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Canvas 2D antialiases edges natively (no explicit MSAA). Soft glowing halos bleed outward from the bright shapes via bloom (threshold 0.6, intensity 1.4).',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

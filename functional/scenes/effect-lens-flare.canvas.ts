@@ -22,8 +22,12 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas has no realized lens-flare capability. The unregistered operation is intentionally skipped
-// so this column records the backend's unsupported result without a fake passthrough runner.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 12°/32°/52°/72°. No lens flare is applied — no ghost images or halo ring appear. This is the canvas control column; the lens-flare effect is not registered on this backend.',
+);
+
 export const functionalBackendSupport = 'control' as const;
 
 const pixelRatio = window.devicePixelRatio || 1;

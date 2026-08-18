@@ -22,10 +22,13 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column for the same lens-flare intent as render.webgl.ts, also using the HDR
-// (rgba16f) scene target so bright spots seed ghosts and the halo.
+declareExpectedImageDescription(
+  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 12°/32°/52°/72°. Semi-transparent ghost images mirrored through the frame center and a soft halo ring from the HDR lens flare (threshold 0.7, 5 ghosts, halo 0.4, rgba16f pipeline). Bright shapes above the threshold seed the flare artifacts.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

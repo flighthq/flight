@@ -23,7 +23,12 @@ import {
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
 
-// outline: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Eighteen small overlapping rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) arranged in a roughly 5-across×4-down pattern on a dark background (0x101014), each rotated by i×22°. Solid black (0x000000) outlines trace every shape edge and color boundary with thickness 2 and threshold 0.2.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
