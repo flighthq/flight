@@ -29,27 +29,27 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background (0x0a0c10) with a single grey sphere centred at (400,300), about ' +
-    '245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H. One white directional light travels along ' +
-    '(-1,-0.35,-0.55), so it arrives from the upper right and slightly toward the viewer: the screen-right side ' +
-    'of the sphere is clearly brighter than the screen-left, which falls away to the dim blue-grey ambient fill ' +
-    'alone. On the lit cap sits a SPECULAR HIGHLIGHT, centred where the surface normal meets the halfway vector H ' +
-    '= normalize(L + V); that fixed point projects to about (463,278), up and to the right of the sphere centre, ' +
-    'and it is the same point in both members of this pair. What must distinguish them is the WIDTH of that ' +
-    'highlight. The two lobes stand in a fixed symbolic relation: write delta for the angle between the surface ' +
-    'normal and H, and the angle between the reflection vector and the view direction is 2*delta (exactly so ' +
-    'where L, N and V are coplanar). So Blinn-Phong falls off as cos(delta)^32 and Phong as cos(2*delta)^32 at ' +
-    'the same shininess, and their half-power half-angles are acos(0.5^(1/32)) = 11.88 deg and acos(0.5^(1/32))/2 ' +
-    '= 5.94 deg respectively — a factor of two in angle, by construction rather than by measurement. This is the ' +
-    'BLINN-PHONG cell: its specular term is pow(dot(N,H), 32), the falloff in the HALF-VECTOR angle, so its ' +
-    'half-power half-angle is the 11.88 deg one and this hotspot must read as the BROADER, softer, more spread ' +
-    'out of the two. A tight pinpoint highlight here is a Phong shader substituted by mistake, which is the ' +
-    'discrimination this pair exists to make. Bounded deliberately: no pixel width for the hotspot is derivable ' +
-    'without a capture and none is claimed here, only the relative narrowness that the angles above fix. The ' +
-    'sphere renders into an HDR rgba16f target and is tone-presented, so the highlight is a visible brightening ' +
-    'over the surrounding lit cap rather than a hard white dot, and absolute levels are backend-dependent while ' +
-    'the orderings (lit brighter than shadow, hotspot brighter than the lit cap around it) are not. The ' +
-    'background stays near-black and is not lit.',
+  'An 800x600 field on a near-black background (0x0a0c10) with a single grey sphere centred at (0.5*W, 0.5*H) = ' +
+    '(400,300), about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H. One white directional light ' +
+    'travels along (-1,-0.35,-0.55), so it arrives from the upper right and slightly toward the viewer: the ' +
+    'screen-right side of the sphere is clearly brighter than the screen-left, which falls away to the dim ' +
+    'blue-grey ambient fill alone. On the lit cap sits a SPECULAR HIGHLIGHT, centred where the surface normal ' +
+    'meets the halfway vector H = normalize(L + V); that fixed point projects to about (463,278), up and to the ' +
+    'right of the sphere centre, and it is the same point in both members of this pair. What must distinguish ' +
+    'them is the WIDTH of that highlight. The two lobes stand in a fixed symbolic relation: write delta for the ' +
+    'angle between the surface normal and H, and the angle between the reflection vector and the view direction ' +
+    'is 2*delta (exactly so where L, N and V are coplanar). So Blinn-Phong falls off as cos(delta)^32 and Phong ' +
+    'as cos(2*delta)^32 at the same shininess, and their half-power half-angles are acos(0.5^(1/32)) = 11.88 deg ' +
+    'and acos(0.5^(1/32))/2 = 5.94 deg respectively — a factor of two in angle, by construction rather than by ' +
+    'measurement. This is the BLINN-PHONG cell: its specular term is pow(dot(N,H), 32), the falloff in the ' +
+    'HALF-VECTOR angle, so its half-power half-angle is the 11.88 deg one and this hotspot must read as the ' +
+    'BROADER, softer, more spread out of the two. A tight pinpoint highlight here is a Phong shader substituted ' +
+    'by mistake, which is the discrimination this pair exists to make. Bounded deliberately: no pixel width for ' +
+    'the hotspot is derivable without a capture and none is claimed here, only the relative breadth that the ' +
+    'angles above fix. The sphere renders into an HDR rgba16f target and is tone-presented, so the highlight is a ' +
+    'visible brightening over the surrounding lit cap rather than a hard white dot, and absolute levels are ' +
+    'backend-dependent while the orderings (lit brighter than shadow, hotspot brighter than the lit cap around ' +
+    'it) are not. The background stays near-black and is not lit.',
 );
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

@@ -24,19 +24,19 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a very dark blue background (0x081020) with a single sphere centred at (400,300) and 350 ' +
-    'px across — D = 2*0.7/(2*1.2)*H = 0.58333*H, and the same 350 px horizontally under the orthographic ' +
-    'halfWidth of 1.6, so the silhouette is a true circle with no perspective distortion anywhere in the frame. ' +
-    'It is shaded by DISTANCE rather than by light: a pure grey gradient with no colour tint, no highlight and no ' +
-    'terminator. Under this projection the gradient runs the opposite way to intuition — the sphere is DARKEST at ' +
-    'its centre and brightens steadily outward to its silhouette. The values follow grey = viewDepth/3.5 (a depth ' +
-    'material with near 0 and far 3.5) with the camera 3 units away, so the centre sits at (3 - 0.7)/3.5 = 0.657, ' +
-    'the assertion sample 0.6 world units out at x = 550 px sits at (3 - sqrt(0.7^2 - 0.6^2))/3.5 = 0.754, and ' +
-    'the silhouette reaches 3/3.5 = 0.857. Centre and edge reading the same, or the centre reading brighter, is ' +
-    'the failure — that is what appears when clip w is used as eye depth. Both points are clearly lit rather than ' +
-    'blank, the gradient is radially symmetric about the centre, and the background stays very dark blue. The ' +
-    'frame is presented through the linear present path, so the encoded grey levels are backend-dependent while ' +
-    'the fractions above and the outward direction are not.',
+  'An 800x600 field on a very dark blue background (0x081020) with a single sphere centred at (0.5*W, 0.5*H) = ' +
+    '(400,300) and 350 px across — D = H*(2*0.7)/(2*1.2) = 0.58333*H, and the same 350 px horizontally under the ' +
+    'orthographic halfWidth of 1.6, so the silhouette is a true circle with no perspective distortion anywhere in ' +
+    'the field. It is shaded by DISTANCE rather than by light: a pure grey gradient with no colour tint, no ' +
+    'highlight and no terminator. Under this projection the gradient runs the opposite way to intuition — the ' +
+    'sphere is DARKEST at its centre and brightens steadily outward to its silhouette. The values follow grey = ' +
+    'viewDepth/3.5 (a depth material with near 0 and far 3.5) with the camera 3 units away, so the centre sits at ' +
+    '(3 - 0.7)/3.5 = 0.657, the assertion sample 0.6 world units out at x = 0.5*W + 0.6*(W/3.2) = 550 px sits at ' +
+    '(3 - sqrt(0.7^2 - 0.6^2))/3.5 = 0.754, and the silhouette reaches 3/3.5 = 0.857. Centre and edge reading the ' +
+    'same, or the centre reading brighter, is the failure — that is what appears when clip w is used as eye ' +
+    'depth. Both points are clearly lit rather than blank, the gradient is radially symmetric about the centre, ' +
+    'and the background stays very dark blue. The field is presented through the linear present path, so the ' +
+    'encoded grey levels are backend-dependent while the fractions above and the outward direction are not.',
 );
 // Orthographic regression for DepthMaterial's linear view-axis depth. A perspective camera makes
 // clip-space w equal positive eye depth, which lets an illicit `1 / gl_FragCoord.w` implementation

@@ -29,7 +29,12 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), that is UNIFORMLY BLUE with no variation across it at all: no lookup texture is supplied, so the surface renders as its flat tint alone. Any orientation-driven gradient, highlight or light-and-dark split across the sphere is the failure — a completely even disc of colour is the correct picture. The background stays near-black and is not lit by anything.',
+  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = ' +
+    'H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (0.5*W, 0.5*H) = (400,300), that is UNIFORMLY BLUE with ' +
+    'no variation across it at all: no lookup texture is supplied, so the surface renders as its flat tint alone. ' +
+    'Any orientation-driven gradient, highlight or light-and-dark split across the sphere is the failure — a ' +
+    'completely even disc of colour is the correct picture. The background stays near-black and is not lit by ' +
+    'anything.',
 );
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

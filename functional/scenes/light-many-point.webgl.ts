@@ -33,18 +33,21 @@ declareExpectedImageDescription(
     'grid. They are the top faces of twelve boxes seen straight down by an orthographic camera 12 units above the ' +
     'origin — NOT pools of light on a continuous floor. There is no floor in this scene at all, so the dark gaps ' +
     'between the tiles are empty background, not shadow, and each tile has four hard straight edges rather than a ' +
-    'soft falloff rim. Each tile is 90 x 90 px (a 1.35 x 1.35 world top face across a 12 x 9 world view), centred ' +
-    'at x = 100, 300, 500 and 700 px and at y = 133.3, 300 and 466.7 px, leaving about 110 px of background ' +
-    'between neighbours horizontally and about 77 px vertically. Each tile carries its own point light 1.6 units ' +
-    'above it, and the light colours cycle through warm red (0xff6040), cool blue (0x60a0ff), green (0x70ff80) ' +
-    'and amber (0xffd060) along each row, shifted one step per row, so equal colours run in diagonals across the ' +
-    'grid. Neighbouring lights do reach one another (spacing 3 against range 4.5), so each tile reads mostly as ' +
-    'its own colour with a weaker wash of the adjacent ones rather than as a pure swatch. The tile at (300,300) ' +
-    'is the exception and the brightest of the twelve: three overlapping spot lights, red plus green plus blue ' +
-    'from one point 1.8 units above it, add to a near-white wash there. At least ten of the twelve must be ' +
-    'clearly lit — a frame with only three or four lit tiles is the failure this scene exists to catch, since ' +
-    'that is what a fixed four-light budget produces, and a frame lit evenly corner to corner would mean geometry ' +
-    'the scene does not contain.',
+    'soft falloff rim. The camera spans 12 x 9 world units, so a world size s maps to (s/12)*W horizontally and ' +
+    '(s/9)*H vertically, and a box at world (x, z) lands at ((0.5 + x/12)*W, (0.5 + z/9)*H). Each 1.35 x 1.35 top ' +
+    'face is therefore (1.35/12)*W = 90 px by (1.35/9)*H = 90 px, and the four columns at x = -4.5, -1.5, 1.5, ' +
+    '4.5 sit at 100, 300, 500 and 700 px while the three rows at z = -2.5, 0, 2.5 sit at 133.3, 300 and 466.7 px. ' +
+    'The gaps follow from the same two expressions: (3/12)*W - 90 = 110 px of background between horizontal ' +
+    'neighbours and (2.5/9)*H - 90 = 76.7 px between vertical ones. Each tile carries its own point light 1.6 ' +
+    'units above it, and the light colours cycle through warm red (0xff6040), cool blue (0x60a0ff), green ' +
+    '(0x70ff80) and amber (0xffd060) along each row, shifted one step per row, so equal colours run in diagonals ' +
+    'across the grid. Neighbouring lights do reach one another (spacing 3 against range 4.5), so each tile reads ' +
+    'mostly as its own colour with a weaker wash of the adjacent ones rather than as a pure swatch. The tile at ' +
+    '(300,300) is the exception and the brightest of the twelve: three overlapping spot lights, red plus green ' +
+    'plus blue from one point 1.8 units above it, add to a near-white wash there. At least ten of the twelve must ' +
+    'be clearly lit — a field with only three or four lit tiles is the failure this scene exists to catch, since ' +
+    'that is what a fixed four-light budget produces, and one lit evenly corner to corner would mean geometry the ' +
+    'scene does not contain.',
 );
 // Twelve independently lit meshes demonstrate per-object selection. Four finite-range decoy lights
 // are intentionally first in input order and far outside the field; the twelve useful lights come
