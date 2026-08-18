@@ -28,8 +28,18 @@ import {
   setCubeTextureFace,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field whose BACKDROP IS NOT FLAT: the area behind the subject varies from top to left ' +
+    'to right rather than being one uniform colour, so the frame reads as an environment surrounding ' +
+    'the scene instead of a plain fill. A uniform backdrop of a single colour anywhere across those ' +
+    'three regions is the failure, and a blank backdrop is a worse one. In front of it sits a single ' +
+    'matte grey sphere, centred, of moderate size — about a quarter of the frame height across — shaded ' +
+    'so one side is clearly brighter than the other rather than flat. The sphere has no mirror-like ' +
+    'reflection of its surroundings: it is rough, not polished.',
+);
 // WebGPU mirror of env-skybox.webgl: distinct procedural cube faces must vary across reconstructed
 // view rays rather than collapsing to a flat backdrop.
 const pixelRatio = window.devicePixelRatio || 1;
