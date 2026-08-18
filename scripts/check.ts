@@ -67,7 +67,7 @@ if (scoped) {
   add('typecheck', 'tsx', ['scripts/typecheck.ts']);
 }
 add('lint', 'oxlint', scoped ? ['--max-warnings=0', ...paths] : ['--max-warnings=0']);
-add('format:check', 'oxfmt', scoped ? ['--check', ...paths] : ['--check', '.']);
+add('format:check', 'oxfmt', scoped ? ['--check', '--threads=4', ...paths] : ['--check', '--threads=4', '.']);
 add('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);
 add('exports:check', 'tsx', ['scripts/completeness.ts', ...selectors]);
 add('reachability:check', 'tsx', ['scripts/reachability.ts', '--check', ...selectors]);

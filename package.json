@@ -96,7 +96,7 @@
     "fix": "tsx ./scripts/fix.ts",
     "fixtures": "tsx ./scripts/fixtures.ts",
     "format": "oxfmt --write .",
-    "format:check": "oxfmt --check .",
+    "format:check": "oxfmt --check --threads=4 .",
     "functional": "npm run dev:functional",
     "hermeticity": "tsx ./scripts/handRolledHermeticity.ts",
     "import-diagnostic-origins": "tsx ./scripts/import-diagnostic-origins.ts",
