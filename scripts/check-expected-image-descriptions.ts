@@ -176,8 +176,15 @@ function main(): void {
     `expectedImageDescription: ${reachableCells.length}/${totalCells} cells reachable, ` + `${excludedDescription}\n`,
   );
 
+  // "covered" was the wrong word and it was load-bearing. This gate asks only whether a cell carries
+  // non-empty static text; it cannot ask whether that text describes the picture, because the referent is
+  // an image and no static check reaches one. Read as "covered", the number rises as the arc completes and
+  // therefore reads as PROGRESS — which is what makes it dangerous: a batch of confidently wrong
+  // descriptions scores identically to a batch of right ones. A wrong description is worse than a missing
+  // one, because it becomes the reference a reviewer compares the render against. Say what is measured.
   if (missing.length === 0) {
-    console.log(pc.green(`✓ all ${reachableCells.length} reachable cells covered`));
+    console.log(pc.green(`✓ all ${reachableCells.length} reachable cells carry a non-empty description`));
+    console.log(pc.dim('  Non-empty only — whether each describes its picture needs the render beside it.'));
   } else {
     console.log(pc.red(`${missing.length} scene(s) missing expectedImageDescription:`));
     for (const name of missing) console.log(`  ${pc.red('✗')} ${name}`);

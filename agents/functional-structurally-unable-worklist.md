@@ -19,8 +19,20 @@ cells from filenames or grep totals.
 The 243 rows comprise 219 GL/WebGPU render-target or effect-pipeline cells, 18 Canvas
 `beginCanvasRenderEffectPipeline` cells, and six direct-registration tail cells. The six are marked
 `DIRECT` below because a constructor-family sweep can silently omit them; CC-2 must use this explicit
-cell list as its population. The completion condition is `npm run check:expected-image-descriptions`
-reporting 493/493 reachable and zero structurally unable, not the sum of batch reports.
+cell list as its population. The completion condition has **two** parts and the number alone is not one
+of them: `npm run check:expected-image-descriptions` reporting 493/493 reachable and zero structurally
+unable, **and** cross-verification sign-off by an agent other than the batch's author.
+
+The number cannot stand alone because of what it measures. The gate asks only whether a cell carries
+non-empty static text — it cannot ask whether that text describes the picture, since the referent is an
+image. A confidently wrong description scores exactly as well as a right one, and a wrong description is
+worse than a missing one: the missing one prompts somebody to write it, while the wrong one becomes the
+reference a reviewer compares the render against. On 2026-08-18 a cross-verification pass disputed 18 of
+41 cells in one landed batch while this number read as fully covered.
+
+Cross-verification is a **precondition of landing a batch, not a follow-up to it** — the gate cannot hold
+these, so the process has to. Note also that two source-only readings disagreeing establishes a
+disagreement, not which reading is right; settling that needs the description beside the render.
 
 Check the command can still fail before quoting its output as done: `package.json` must pass `--check`,
 which is what reaches the only `process.exitCode = 1` in the script. An earlier revision of this line
