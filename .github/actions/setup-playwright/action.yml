@@ -30,7 +30,6 @@ runs:
         key: playwright-${{ runner.os }}-${{ steps.pw-version.outputs.version }}-${{ inputs.browser }}
 
     - name: Install system dependencies
-      if: steps.pw-cache.outputs.cache-hit != 'true'
       shell: bash
       run: npx playwright install-deps ${{ inputs.browser }}
       timeout-minutes: 5
