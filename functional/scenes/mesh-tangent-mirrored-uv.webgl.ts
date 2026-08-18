@@ -32,7 +32,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x080b12) with two triangles forming a diamond shape sharing a vertical edge, the diamond spanning roughly x 110–690, y 10–590. The right triangle has a mirrored UV relative to the left. A constant normal map tilts shading rightward on the right face and leftward on the mirrored face. A directional light from the right makes the right half bright and the left half dark. The material is a light gray (0xd8dde8) with no specular highlight.',
+  'An 800×600 dark field (0x080b12) with two triangles forming a diamond shape sharing a vertical edge, the diamond centered at (0.5*W, 0.5*H) = (400, 300), spanning x W/2 ± 1.2*H/(6*tan(PI/8)) ≈ 110–690, y H/2 ± 1.2*H/(6*tan(PI/8)) ≈ 10–590. The right triangle has a mirrored UV relative to the left. A constant normal map tilts shading rightward on the right face and leftward on the mirrored face. A directional light from the right makes the right half bright and the left half dark. The material is a light gray (0xd8dde8) with no specular highlight.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

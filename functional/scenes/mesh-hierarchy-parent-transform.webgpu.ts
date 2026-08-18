@@ -33,7 +33,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x0a0c10) with an unlit green (0x40e080) unit cube rendered off-center in the upper-right area, its front face spanning roughly x 566–772, y 52–259, centered near (669, 156). The mesh position comes entirely from its parent node translation — the child local transform is identity. The frame center and lower-left quadrant are background.',
+  'An 800×600 dark field (0x0a0c10) with an unlit green (0x40e080) unit cube rendered off-center in the upper-right area, its front face at depth 3.5, scale s = H/(7*tan(PI/8)) ≈ 207 px/unit, spanning x W/2 + 0.8*s to W/2 + 1.8*s ≈ 566–772, y H/2 − 1.2*s to H/2 − 0.2*s ≈ 52–259, centered near (W/2 + 1.3*s, H/2 − 0.7*s) ≈ (669, 156). The mesh position comes entirely from its parent node translation — the child local transform is identity. The frame center and lower-left quadrant are background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import

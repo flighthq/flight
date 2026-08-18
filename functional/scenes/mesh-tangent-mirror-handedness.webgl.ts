@@ -68,7 +68,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x080b12) with three flat quads side by side, each centered at y 300. The left quad spans roughly x 14–255, the center quad x 279–521, and the right quad x 545–786 (all y 179–421). Each carries a constant normal map. The left is plain; the center is mirrored in X; the right is mirrored in Y. Under a top-down directional light, the plain and X-mirrored quads shade the same brightness while the Y-mirrored quad shades differently — that three-way pattern gates correct tangent handedness. The material is a light gray (0xd8dde8) with no specular highlight.',
+  'An 800×600 dark field (0x080b12) with three flat quads side by side, each centered at y 300. At depth 6, scale s = H/(12*tan(PI/8)) ≈ 121 px/unit. The left quad spans x W/2 − 3.2*s to W/2 − 1.2*s ≈ 14–255, the center quad x W/2 ± s ≈ 279–521, and the right quad x W/2 + 1.2*s to W/2 + 3.2*s ≈ 545–786 (all y H/2 ± s ≈ 179–421). Each carries a constant normal map. The left is plain; the center is mirrored in X; the right is mirrored in Y. Under a top-down directional light, the plain and X-mirrored quads shade the same brightness while the Y-mirrored quad shades differently — that three-way pattern gates correct tangent handedness. The material is a light gray (0xd8dde8) with no specular highlight.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
