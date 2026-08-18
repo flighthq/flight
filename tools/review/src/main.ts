@@ -468,19 +468,21 @@ function showRenderer(): void {
   }
 }
 
+// `.compare-view` is an absolute overlay (inset: 0), so it covers the description the preview rendered
+// underneath it. The description travels into the overlay rather than being hidden by it — and sits
+// BELOW the images: you look first, then read what it should have been, so the text does not prime the
+// eye before it has seen the pixels.
+function appendCompareDescription(container: HTMLElement, t: ReviewTest): void {
+  if (!t.expectedImageDescription) return;
+  const desc = document.createElement('div');
+  desc.className = 'compare-description';
+  desc.textContent = t.expectedImageDescription;
+  container.appendChild(desc);
+}
+
 async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   const container = document.createElement('div');
   container.className = 'compare-view';
-
-  // `.compare-view` is an absolute overlay (inset: 0), so it covers the description the preview
-  // rendered underneath it. The description is the whole point of comparing — it states what the
-  // image SHOULD show — so it travels into the overlay rather than being hidden by it.
-  if (t.expectedImageDescription) {
-    const desc = document.createElement('div');
-    desc.className = 'compare-description';
-    desc.textContent = t.expectedImageDescription;
-    container.appendChild(desc);
-  }
 
   const candidateSrc = screenshotUrl(t.tool, t.name, cell.renderer);
   const referenceSrc = referenceUrl(t.tool, t.name, cell.renderer);
@@ -495,6 +497,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
 
   if (candidateImg === null) {
     container.innerHTML = `<div class="compare-message">No capture for this cell — re-capture with npm run review:functional:fresh</div>`;
+    appendCompareDescription(container, t);
     preview.appendChild(container);
     return;
   }
@@ -535,6 +538,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     grid.appendChild(referencePanel);
 
     container.appendChild(grid);
+    appendCompareDescription(container, t);
     preview.appendChild(container);
     return;
   }
@@ -616,6 +620,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     container.appendChild(stats);
   }
 
+  appendCompareDescription(container, t);
   preview.appendChild(container);
 }
 

@@ -563,7 +563,7 @@ body {
   line-height: 1.5;
   color: #b9b9b9;
   background: #141414;
-  border-bottom: 1px solid #262626;
+  border-top: 1px solid #262626;
   flex: 0 0 auto;
   max-height: 30%;
   overflow-y: auto;
