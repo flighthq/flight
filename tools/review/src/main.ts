@@ -269,8 +269,18 @@ async function commissionCurrentTest(): Promise<void> {
       showCommissionFeedback(`Error: ${(err as { error: string }).error}`, true);
       return;
     }
-    const result = (await res.json()) as { id: string; path: string };
-    showCommissionFeedback(`Written: ${result.path}`, false);
+    const result = (await res.json()) as {
+      id: string;
+      path: string;
+      committed: number;
+      total: number;
+      skipped: string[];
+    };
+    const scope =
+      result.committed === result.total
+        ? `all ${result.total} renderer(s)`
+        : `${result.committed} of ${result.total} renderer(s) — skipped ${result.skipped.join(', ')} (no capture hash)`;
+    showCommissionFeedback(`Requested ${scope} → ${result.path}`, result.committed !== result.total);
   } catch (e) {
     showCommissionFeedback(`Network error: ${e}`, true);
   }
