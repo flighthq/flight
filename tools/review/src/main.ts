@@ -35,6 +35,7 @@ interface ReviewTest {
   cells: ReviewCell[];
   expectedImageDescription?: string;
   sourceHasDescription: boolean;
+  withheldReason?: string;
 }
 
 const STORAGE_KEY = 'review-selected';
@@ -841,6 +842,12 @@ function updatePreview(): void {
   desc.className = 'expected-description';
   if (t.expectedImageDescription) {
     desc.textContent = t.expectedImageDescription;
+    // A withheld scene has no description ON PURPOSE. Falling through to the absent branch would tell the
+    // reviewer to author work somebody deliberately declined, which is the same misdirection the stale
+    // branch exists to prevent — so show the reason instead of asking for the thing.
+  } else if (t.withheldReason !== undefined) {
+    desc.textContent = `Description deliberately withheld — ${t.withheldReason}`;
+    desc.classList.add('expected-description-withheld');
   } else if (t.sourceHasDescription) {
     desc.textContent = 'No description recorded in this capture — re-capture to populate.';
     desc.classList.add('expected-description-stale');
