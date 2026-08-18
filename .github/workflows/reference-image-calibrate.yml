@@ -47,6 +47,7 @@ jobs:
       matrix:
         host: [1, 2, 3]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
         uses: actions/checkout@v4
@@ -62,7 +63,7 @@ jobs:
           npm run build
           npm run build:functional
       - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/setup-playwright
 
       # The descriptor every leg records. If the legs disagree on their own descriptor, they were not the
       # same declared environment and the comparison below is not the one anyone meant to run.
