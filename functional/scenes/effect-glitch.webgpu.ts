@@ -23,7 +23,12 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'Five horizontal color bars (pink 0xff3366, green 0x33ff99, blue 0x3399ff, yellow 0xffcc33, purple 0xcc33ff) on a dark background (0x101014), each spanning 62% of the frame width and 12% of its height, vertically spaced. The bars are torn into displaced horizontal block segments with RGB channel fringing — rows shift sideways and individual color channels separate, producing colored ghost edges alongside the displaced blocks.',
+);
 
 // Wgpu parity column: hashed block tears + RGB channel separation in a single fullscreen WGSL pass.
 const pixelRatio = window.devicePixelRatio || 1;

@@ -23,8 +23,12 @@ import {
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// God rays stream light outward from the centerX/centerY light point through an HDR (rgba16f) pipeline.
-// The bright core and surrounding shapes give the radial sampling occluders to streak around.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'A white 80×80 square at upper-center (50%, 40%) surrounded by four colored 100×100 squares (yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0, orange 0xffd45c) arranged radially at 28% of the frame dimensions, all on a near-black background (0x05060a). Radial light streaks emanate outward from the central white core through the dark areas between and beyond the shapes, fading with distance. The HDR pipeline (rgba16f) carries the bright regions into soft volumetric rays.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

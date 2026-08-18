@@ -23,8 +23,12 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas parity column for the same full-frame hueSaturation grade as render.webgl.ts: rotates hue 90 degrees and boosts saturation,
-// realized through Canvas 2D compositing.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Six saturated rectangles in a 3×2 grid filling the 800×600 frame, each hue-rotated 90° from the source and boosted in saturation. The original red, green, blue, yellow, magenta, cyan cells shift to different hues — red toward yellow-green, green toward cyan, blue toward violet, yellow toward green, magenta toward blue, cyan toward warm red. No gaps between cells.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

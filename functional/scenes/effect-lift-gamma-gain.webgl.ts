@@ -22,8 +22,12 @@ import {
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
 
-// Full-frame liftGammaGain color grade: applies a warm lift and cool gain for a cinematic split-tone. One config applied to the whole scene through an
-// rgba8 effect pipeline (the default format for color ops, so format is omitted).
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Six rectangles in a 3×2 grid filling the 800×600 frame with a warm-shadow / cool-highlight split-tone grade applied. Shadows are pushed warm (amber tint from lift 0x8a7860) while highlights are pushed cool (blue-gray tint from gain 0x7088a0). The six source colors (red, green, blue, yellow, magenta, cyan) each shift in hue and brightness — blues are notably suppressed. No gaps between cells.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

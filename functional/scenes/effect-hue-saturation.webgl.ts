@@ -22,8 +22,12 @@ import {
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// Full-frame hueSaturation color grade: rotates hue 90 degrees and boosts saturation. One config applied to the whole scene through an
-// rgba8 effect pipeline (the default format for color ops, so format is omitted).
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Six saturated rectangles in a 3×2 grid filling the 800×600 frame, each hue-rotated 90° from the source and boosted in saturation. The original red, green, blue, yellow, magenta, cyan cells shift to different hues — red toward yellow-green, green toward cyan, blue toward violet, yellow toward green, magenta toward blue, cyan toward warm red. No gaps between cells.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

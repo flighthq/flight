@@ -23,7 +23,12 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'Four rotated rectangles (white, red 0xff3040, cyan 0x30c0ff, yellow 0xffd040) on a near-black background (0x05060a), each 180×180 logical pixels, arranged in a 2×2 pattern and rotated at 27°, 40°, 53°, 66°. Diagonal edges are smooth rather than stair-stepped — FXAA antialiasing blends the high-contrast boundaries. No glow or halo; the smoothing is confined to edge pixels.',
+);
 
 // Wgpu parity column for FXAA. The full frame is edge-detected and blended to soften jagged edges.
 const pixelRatio = window.devicePixelRatio || 1;

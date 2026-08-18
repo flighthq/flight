@@ -23,7 +23,12 @@ import {
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// Hashed horizontal block tears + per-channel RGB separation in one fullscreen pass.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Five horizontal color bars (pink 0xff3366, green 0x33ff99, blue 0x3399ff, yellow 0xffcc33, purple 0xcc33ff) on a dark background (0x101014), each spanning 62% of the frame width and 12% of its height, vertically spaced. The bars are torn into displaced horizontal block segments with RGB channel fringing — rows shift sideways and individual color channels separate, producing colored ghost edges alongside the displaced blocks.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

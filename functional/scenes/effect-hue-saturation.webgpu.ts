@@ -22,7 +22,12 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'Six saturated rectangles in a 3×2 grid filling the 800×600 frame, each hue-rotated 90° from the source and boosted in saturation. The original red, green, blue, yellow, magenta, cyan cells shift to different hues — red toward yellow-green, green toward cyan, blue toward violet, yellow toward green, magenta toward blue, cyan toward warm red. No gaps between cells.',
+);
 
 // Wgpu parity column for the same full-frame hueSaturation grade as render.webgl.ts: rotates hue 90 degrees and boosts saturation.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

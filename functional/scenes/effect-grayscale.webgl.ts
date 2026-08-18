@@ -22,8 +22,12 @@ import {
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// Full-frame grayscale color grade: fully desaturates the frame to luminance. One config applied to the whole scene through an
-// rgba8 effect pipeline (the default format for color ops, so format is omitted).
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Six shades of neutral gray in a 3×2 grid filling the 800×600 frame. Top row left to right: dark gray, medium gray, medium-dark gray; bottom row: light gray, medium gray, medium gray. Each cell is a single flat tone with no color — all saturation removed. No gaps between cells. Dark gray-blue border is not visible because the grid covers the full frame.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
