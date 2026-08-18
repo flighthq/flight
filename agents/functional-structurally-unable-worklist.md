@@ -31,8 +31,21 @@ reference a reviewer compares the render against. On 2026-08-18 a cross-verifica
 41 cells in one landed batch while this number read as fully covered.
 
 Cross-verification is a **precondition of landing a batch, not a follow-up to it** — the gate cannot hold
-these, so the process has to. Note also that two source-only readings disagreeing establishes a
-disagreement, not which reading is right; settling that needs the description beside the render.
+these, so the process has to. Two source-only readings disagreeing establishes a disagreement, not which
+reading is right. Where the source decides it — a coordinate recomputed, a shader that multiplies
+saturation by 0.4 under a description saying "boosted" — recomputation is the adjudication and the
+correction is safe. Where only appearance decides it, it stays open.
+
+Both writing and correcting a description are **source-only**. A description is an independent prediction
+derived from the source, which is what lets it catch a renderer bug; write it — or fix it — by looking at
+the render and agreement becomes true by construction, leaving a transcript that can never disagree with
+anything.
+
+**So if you ever put a description beside its render: a disagreement is never resolved by rewriting the
+description to match the picture.** A disagreement means the description is wrong *or the renderer is*,
+and the render alone cannot say which — the second case is the entire reason these descriptions exist.
+Adjudicate by returning to the source. "Correcting" a description against a capture silently converts a
+renderer-bug detector into a renderer-bug concealer, and nothing downstream can detect that it happened.
 
 Check the command can still fail before quoting its output as done: `package.json` must pass `--check`,
 which is what reaches the only `process.exitCode = 1` in the script. An earlier revision of this line
