@@ -39,17 +39,20 @@ declareExpectedImageDescription(
     'dark-grey -Y faces are much further from dominance vertically than the side faces are horizontally. So the ' +
     'picture reads left to right as green, then a broad yellow field across the middle, then red — NOT a uniform ' +
     'fill, which would mean the per-ray reconstruction collapsed. BOUNDED, and the reason is that the derivation ' +
-    'runs out here: each cube face is only an 8x8 solid canvas, sampled with filtering, so the changes between ' +
-    'faces are NOT hard-edged bands. How wide each transition is depends on filtering and mip selection, which ' +
-    'source does not fix, and this description therefore claims the ORDER and the DOMINANT face only — a sharp ' +
-    'boundary at exactly 55 px is not predicted, and neither is any particular blend width. In front of the ' +
-    'backdrop sits a single matte grey sphere (baseColor 0x808080, metallic 0, roughness 0.5), horizontally ' +
-    'centred but sitting ABOVE the frame centre because the camera is tilted down by atan(0.4/4) = 5.71 deg: its ' +
-    'centre is at (400, 265.4) and it is about 142 px across (141.3 px horizontally by 142.8 px vertically, so a ' +
-    'circle to the eye). It is lit from above and slightly from the right by one directional light travelling ' +
-    'along (-0.4,-1,-0.3), so its upper surface is clearly brighter than its lower — and it carries NO ' +
-    'mirror-like reflection of the cube around it, because nothing feeds the environment into the material: it is ' +
-    'a rough, ordinary grey ball in front of a coloured backdrop.',
+    'runs out here: the boundary sharpness is INDETERMINATE FROM SOURCE. The scene configures each cube face as ' +
+    'an 8x8 solid-colour canvas and sets no filtering parameters at all — no minFilter, no magFilter, no seamless ' +
+    'flag anywhere in the scene file — so whether a transition renders as a hard edge or as a blend depends on ' +
+    'the default texture filter mode and on whether GL_TEXTURE_CUBE_MAP_SEAMLESS (or the WebGPU sampler ' +
+    'equivalent) is enabled. Neither is a scene-file parameter; both are texture and rendering-infrastructure ' +
+    'defaults invisible from source. Source alone therefore cannot determine this, so this description claims the ' +
+    'ORDER and the DOMINANT face only: it predicts neither a sharp boundary at exactly 55 px nor any particular ' +
+    'blend width. In front of the backdrop sits a single matte grey sphere (baseColor 0x808080, metallic 0, ' +
+    'roughness 0.5), horizontally centred but sitting ABOVE the frame centre because the camera is tilted down by ' +
+    'atan(0.4/4) = 5.71 deg: its centre is at (400, 265.4) and it is about 142 px across (141.3 px horizontally ' +
+    'by 142.8 px vertically, so a circle to the eye). It is lit from above and slightly from the right by one ' +
+    'directional light travelling along (-0.4,-1,-0.3), so its upper surface is clearly brighter than its lower — ' +
+    'and it carries NO mirror-like reflection of the cube around it, because nothing feeds the environment into ' +
+    'the material: it is a rough, ordinary grey ball in front of a coloured backdrop.',
 );
 // drawGlEnvironmentSkybox + drawGlScene3D collide with the wgpu backend in the @flighthq/sdk barrel, so
 // import the Gl scene functions directly. The skybox draws the environment cubemap as the backdrop
