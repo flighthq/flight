@@ -23,9 +23,13 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column: hashed block tears + RGB channel separation in a single fullscreen WGSL pass.
+declareExpectedImageDescription(
+  'Four near-white blocks (white 0xffffff, warm-white 0xfff0c0, cool-white 0xc0f0ff, white 0xffffff) of 160×160 in a 2×2 grid on dark background (0x101014), not rotated. Procedural smudge-like glows appear where scene luminance exceeds the dirt threshold (0.45) — light bleeds outward from the bright blocks into surrounding dark areas with intensity 1.5 and seed 4.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

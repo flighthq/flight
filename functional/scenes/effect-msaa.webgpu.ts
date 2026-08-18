@@ -20,13 +20,13 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column for the MSAA reference scene. NOTE: sampleCount currently no-ops on the Wgpu
-// effect pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu
-// target is a follow-up, mirroring the Gl seam. We still render the same rotated shapes through the
-// pipeline with an empty effect list so the column exists for visual comparison; its edges may alias
-// more than Gl's until Wgpu MSAA lands.
+declareExpectedImageDescription(
+  'Four narrow colored bars (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 180×32 on dark background (0x101014), rotated 18°/42°/66°/90°. No post-process effects applied — empty effects array. Edges may alias — Wgpu MSAA is not yet wired for the effect pipeline.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

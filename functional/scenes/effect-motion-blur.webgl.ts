@@ -33,10 +33,12 @@ import {
   setGlRenderEffectVelocityTexture,
 } from '@flighthq/sdk';
 
-// Per-object motion blur driven by the scene velocity G-buffer. Normally the velocity comes from
-// per-frame transform deltas, but a static screenshot has only one frame — so here we *explicitly*
-// contribute a screen-space velocity to each shape before rendering the velocity pass. That makes the
-// blur visible in a single deterministic capture instead of requiring real motion across frames.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Four colored squares (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 100×100 in a 2×2 arrangement on dark background (0x101014), not rotated. Each shape is smeared horizontally by a 40-pixel screen-space velocity (contributed explicitly via the velocity G-buffer). Sharp vertical edges are replaced by directional blur trails extending rightward from each square.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

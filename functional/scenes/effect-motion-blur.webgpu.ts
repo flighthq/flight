@@ -33,13 +33,13 @@ import {
   setWgpuRenderEffectVelocityTexture,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column for per-object motion blur, the mirror of render.webgl.ts. A static screenshot has
-// no transform delta to derive motion from, so each shape is given an explicit screen-space velocity
-// before the velocity pass (renderWgpuVelocity) rasterizes it into the velocity G-buffer; the motion
-// blur runner then smears each shape along its own vector. Exercises the Wgpu velocity producer end to
-// end (createWgpuVelocityTarget → registerWgpuVelocityWriter → renderWgpuVelocity).
+declareExpectedImageDescription(
+  'Four colored squares (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 100×100 in a 2×2 arrangement on dark background (0x101014), not rotated. Each shape is smeared horizontally by a 40-pixel screen-space velocity (contributed explicitly via the velocity G-buffer). Sharp vertical edges are replaced by directional blur trails extending rightward from each square.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

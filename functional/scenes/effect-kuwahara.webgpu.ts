@@ -23,10 +23,13 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// Wgpu parity column for the same kuwahara intent as render.webgl.ts. Wgpu render-state init is
-// async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
+declareExpectedImageDescription(
+  'Eighteen small overlapping rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) arranged in a roughly 5-across×4-down pattern on a dark background (0x101014), each rotated by i×22°. Edges are softened and fine detail smoothed by the Kuwahara filter (radius 4) — an oil-painting effect that preserves broad color boundaries while blurring sharp transitions into flat regions.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
