@@ -44,11 +44,7 @@ export function findScenesWithoutExpectedImageDescription(scenesDirectory: strin
     .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
     .filter((f) => {
       const content = readFileSync(join(scenesDirectory, f), 'utf8');
-      return (
-        hasDescriptionCapableCall(content) &&
-        !content.includes('expectedImageDescription') &&
-        !content.includes('declareExpectedImageDescription')
-      );
+      return hasDescriptionCapableCall(content) && !hasNonEmptyDescription(content);
     })
     .map((f) => f.replace(/\.ts$/, ''))
     .sort();
@@ -94,6 +90,50 @@ function hasDescriptionCapableCall(source: string): boolean {
     ) {
       found = true;
       return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found;
+}
+
+function isNonEmptyStringLiteral(node: ts.Node): boolean {
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+    return node.text.trim().length > 0;
+  }
+  return false;
+}
+
+function hasNonEmptyDescription(source: string): boolean {
+  const sourceFile = ts.createSourceFile('functional-scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      if (
+        node.expression.text === 'declareExpectedImageDescription' &&
+        node.arguments.length >= 1 &&
+        isNonEmptyStringLiteral(node.arguments[0])
+      ) {
+        found = true;
+        return;
+      }
+      if (node.expression.text === 'createFunctionalTarget' && node.arguments.length >= 1) {
+        const arg = node.arguments[0];
+        if (ts.isObjectLiteralExpression(arg)) {
+          for (const prop of arg.properties) {
+            if (
+              ts.isPropertyAssignment(prop) &&
+              ts.isIdentifier(prop.name) &&
+              prop.name.text === 'expectedImageDescription' &&
+              isNonEmptyStringLiteral(prop.initializer)
+            ) {
+              found = true;
+              return;
+            }
+          }
+        }
+      }
     }
     ts.forEachChild(node, visit);
   };

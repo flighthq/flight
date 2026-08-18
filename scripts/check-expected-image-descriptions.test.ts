@@ -106,18 +106,40 @@ describe('findScenesWithoutExpectedImageDescription', () => {
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
   });
 
-  it('reports scenes using declareExpectedImageDescription without the field', () => {
+  it('accepts declareExpectedImageDescription with a non-empty string', () => {
     const scenesDir = join(root, 'functional', 'scenes');
     writeFileSync(
       join(scenesDir, 'has-declare.webgl.ts'),
-      'declareExpectedImageDescription("bloom"); beginGlRenderEffectPipeline(state, pipeline);',
+      'declareExpectedImageDescription("bloom halo"); beginGlRenderEffectPipeline(state, pipeline);',
     );
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
+  });
+
+  it('rejects declareExpectedImageDescription with an empty string', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
     writeFileSync(
-      join(scenesDir, 'missing-declare.webgl.ts'),
+      join(scenesDir, 'empty-declare.webgl.ts'),
       'declareExpectedImageDescription(""); beginGlRenderEffectPipeline(state, pipeline);',
     );
 
-    const missing = findScenesWithoutExpectedImageDescription(scenesDir);
-    expect(missing).toEqual([]);
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['empty-declare.webgl']);
+  });
+
+  it('rejects a comment containing expectedImageDescription', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'comment-only.ts'),
+      '// expectedImageDescription: "not real"\ncreateFunctionalTarget({});',
+    );
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['comment-only']);
+  });
+
+  it('rejects createFunctionalTarget with an empty expectedImageDescription', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(join(scenesDir, 'empty-field.ts'), 'createFunctionalTarget({ expectedImageDescription: "" });');
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['empty-field']);
   });
 });
