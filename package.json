@@ -56,6 +56,7 @@
     "catalog:check": "tsx ./scripts/catalog.ts --check",
     "check": "tsx ./scripts/check.ts",
     "check:append-only-ledgers": "tsx ./scripts/check-append-only-ledgers.ts",
+    "check:documented-commands": "tsx ./scripts/check-documented-commands.ts",
     "check:expected-image-descriptions": "tsx ./scripts/check-expected-image-descriptions.ts",
     "check:fingerprint-source-hashes": "tsx ./scripts/check-fingerprint-source-hashes.ts",
     "check:import-conformance": "tsx ./conformance/core/check-import-conformance-ratchet.ts",
