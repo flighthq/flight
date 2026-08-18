@@ -44,8 +44,23 @@ export function findScenesWithoutExpectedImageDescription(scenesDirectory: strin
     .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
     .filter((f) => {
       const content = readFileSync(join(scenesDirectory, f), 'utf8');
-      return hasDescriptionCapableCall(content) && !hasNonEmptyDescription(content);
+      if (!hasDescriptionCapableCall(content)) return false;
+      if (hasNonEmptyDescription(content)) return false;
+      // A withheld cell is accounted for, not missing — but only when it carries a reason. An empty
+      // reason is exactly the forgotten cell this state exists to distinguish, so it stays a failure.
+      return !hasWithheldReason(content);
     })
+    .map((f) => f.replace(/\.ts$/, ''))
+    .sort();
+}
+
+// Scenes that CAN carry a description and deliberately do not, each with a stated reason. Separate from
+// the structurally-unable set, which is a claim about capability: putting a `will not` in a `cannot`
+// bucket makes the finish line unreachable and hides why, since nothing ever goes red to announce it.
+export function findScenesWithWithheldExpectedImageDescription(scenesDirectory: string): string[] {
+  return readdirSync(scenesDirectory)
+    .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+    .filter((f) => hasWithheldReason(readFileSync(join(scenesDirectory, f), 'utf8')))
     .map((f) => f.replace(/\.ts$/, ''))
     .sort();
 }
@@ -76,7 +91,11 @@ export function describeExcludedPopulation(cells: readonly string[]): string {
   return `${cells.length} structurally unable (${parts.join(', ')})`;
 }
 
-const DESCRIPTION_CAPABLE_CALLS = new Set(['createFunctionalTarget', 'declareExpectedImageDescription']);
+const DESCRIPTION_CAPABLE_CALLS = new Set([
+  'createFunctionalTarget',
+  'declareExpectedImageDescription',
+  'declareExpectedImageDescriptionWithheld',
+]);
 
 function hasDescriptionCapableCall(source: string): boolean {
   const sourceFile = ts.createSourceFile('functional-scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
@@ -125,6 +144,29 @@ function hasNonEmptyStaticString(node: ts.Node): boolean {
   return getStaticStringLength(node) > 0;
 }
 
+// Same predicate as the description itself, deliberately: a withheld cell whose reason is `''` is
+// indistinguishable from a forgotten one, which is the confusion this state was added to remove.
+function hasWithheldReason(source: string): boolean {
+  const sourceFile = ts.createSourceFile('functional-scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'declareExpectedImageDescriptionWithheld' &&
+      node.arguments.length >= 1 &&
+      hasNonEmptyStaticString(node.arguments[0])
+    ) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found;
+}
+
 function hasNonEmptyDescription(source: string): boolean {
   const sourceFile = ts.createSourceFile('functional-scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   let found = false;
@@ -167,6 +209,7 @@ function main(): void {
   const root = resolve(dirname(scriptPath), '..');
   const scenesDir = join(root, 'functional', 'scenes');
   const missing = findScenesWithoutExpectedImageDescription(scenesDir);
+  const withheld = findScenesWithWithheldExpectedImageDescription(scenesDir);
   const { reachableCells, structurallyUnableCells } = findExpectedImageDescriptionCellScope(root);
   const totalCells = reachableCells.length + structurallyUnableCells.length;
 
@@ -182,9 +225,21 @@ function main(): void {
   // therefore reads as PROGRESS — which is what makes it dangerous: a batch of confidently wrong
   // descriptions scores identically to a batch of right ones. A wrong description is worse than a missing
   // one, because it becomes the reference a reviewer compares the render against. Say what is measured.
+  // The withheld count is printed on the pass line every time, never only when it changes. A parked
+  // cell that stops being mentioned is how "temporary" becomes permanent without anyone deciding it.
   if (missing.length === 0) {
-    console.log(pc.green(`✓ all ${reachableCells.length} reachable cells carry a non-empty description`));
-    console.log(pc.dim('  Non-empty only — whether each describes its picture needs the render beside it.'));
+    const described = reachableCells.length - withheld.length;
+    console.log(
+      pc.green(`✓ ${totalCells}/${totalCells} accounted for: `) +
+        pc.green(`${described} described + ${withheld.length} withheld + `) +
+        pc.green(`${structurallyUnableCells.length} structurally unable`),
+    );
+    console.log(
+      pc.dim('  Described means non-empty text — whether it matches the picture needs the render beside it.'),
+    );
+    for (const name of withheld) {
+      console.log(pc.dim(`  withheld: ${name} — reason declared in the scene file`));
+    }
   } else {
     console.log(pc.red(`${missing.length} scene(s) missing expectedImageDescription:`));
     for (const name of missing) console.log(`  ${pc.red('✗')} ${name}`);

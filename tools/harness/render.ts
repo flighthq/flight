@@ -14,10 +14,27 @@ export type {
 } from './target';
 export type { FunctionalTargetOptions };
 
-type BackendWindow = typeof window & { __ftBackend?: string; __ftExpectedImageDescription?: string };
+type BackendWindow = typeof window & {
+  __ftBackend?: string;
+  __ftExpectedImageDescription?: string;
+  __ftExpectedImageDescriptionWithheld?: string;
+};
 
 export function declareExpectedImageDescription(description: string): void {
   (window as BackendWindow).__ftExpectedImageDescription = description;
+}
+
+// The scene CAN carry a description and we are choosing not to write one — a policy state, distinct from
+// the capability state a scene without any declaration is in. Kuwahara is the case it was built for: the
+// shader has a known bug, so describing what it currently draws would bless the defect as the
+// specification, and a description written to match a broken render can never disagree with the renderer.
+//
+// It lives at the site, not in a register, because a register is a second source that drifts: fixing the
+// shader means replacing this call with a real description and the counts move on their own, with nothing
+// to remember. The reason is required for the same reason the description is — a withheld cell with no
+// reason is indistinguishable from a forgotten one six weeks later.
+export function declareExpectedImageDescriptionWithheld(reason: string): void {
+  (window as BackendWindow).__ftExpectedImageDescriptionWithheld = reason;
 }
 
 // Each backend is dynamically imported so a scene's per-backend bundle pulls in only the one backend

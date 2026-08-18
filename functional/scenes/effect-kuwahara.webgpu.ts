@@ -23,13 +23,15 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescriptionWithheld } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-// EXCLUDED: description intentionally omitted — the Kuwahara shader has a known implementation bug
-// (3 of 4 sector quadrants degenerate to a line or single point instead of a 2D region; the correct
-// math exists in computeKuwaharaSectorOffsets but is not wired into the shader). Describing the
-// current broken output would bless the defect as the specification. Pending a shader fix that
-// crosses package boundaries (out of CC-2 scope). See manager trace.
+declareExpectedImageDescriptionWithheld(
+  'The Kuwahara shader has a known implementation bug: 3 of 4 sector quadrants degenerate to a line ' +
+    'or a single point instead of a 2D region. The correct math exists in computeKuwaharaSectorOffsets ' +
+    'but is not wired into the shader. Describing what this currently draws would bless the defect as ' +
+    'the specification. Withheld pending a shader fix that crosses package boundaries.',
+);
 
 // Wgpu parity column for the same kuwahara intent as render.webgl.ts. Wgpu render-state init is
 // async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
