@@ -364,9 +364,7 @@ async function commissionCurrentTest(): Promise<void> {
       dirty: string[];
       dirtyOmitted: number;
     };
-    const notApproved = t.cells
-      .filter((c) => !selectedCells.includes(c))
-      .map((c) => c.renderer);
+    const notApproved = t.cells.filter((c) => !selectedCells.includes(c)).map((c) => c.renderer);
     const parts: string[] = [];
     if (notApproved.length > 0) {
       parts.push(`${notApproved.length} not approved`);
