@@ -33,7 +33,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x080b12) with two side-by-side flat quads. At depth 6, scale s = H/(12*tan(PI/8)) ≈ 121 px/unit. The left quad spans x W/2 − 2.35*s to W/2 − 0.35*s ≈ 116–358, y H/2 ± s ≈ 179–421; the right quad spans x W/2 + 0.35*s to W/2 + 2.35*s ≈ 442–684, y H/2 ± s ≈ 179–421. Both carry a constant normal map that tilts the shading normal. The right quad is mirrored in X. Both quads are visible (neither is culled by the mirror), but they shade on opposite sides — one bright where the other is dark — because the mirror reverses the tangent frame handedness. The material is a light gray (0xd8dde8) with no specular highlight. A light shines from the right.',
+  'An 800×600 dark field (0x080b12) with two side-by-side flat quads. The left quad spans roughly x 116–358, y 179–421; the right quad spans roughly x 442–684, y 179–421. Both carry a constant normal map that tilts the shading normal. The right quad is mirrored in X. Both quads are visible (neither is culled by the mirror), but they shade on opposite sides — one bright where the other is dark — because the mirror reverses the tangent frame handedness. The material is a light gray (0xd8dde8) with no specular highlight. A light shines from the right.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
