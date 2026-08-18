@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "id": "4a23f87e-8462-4f0a-905b-b83bc5c05575",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "node-blend-modes-advanced",
+      "renderer": "dom",
+      "pixelSha256": "9f94143512432a3ee0f7bdd3a8882ef73fd2f528ef36bba6c9aa7098100d7003",
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "node-blend-modes-advanced",
+      "renderer": "canvas",
+      "pixelSha256": "9f94143512432a3ee0f7bdd3a8882ef73fd2f528ef36bba6c9aa7098100d7003",
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review"
+}

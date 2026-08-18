@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "id": "afd9c54a-772b-4efd-8cf1-d282462ab92e",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "bitmap-transform-rotation",
+      "renderer": "canvas",
+      "pixelSha256": "38be4421eaf60b77c1720b7eec4ad827f84dafb88cc7ea7a9198460b0a80d57b",
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review"
+}
