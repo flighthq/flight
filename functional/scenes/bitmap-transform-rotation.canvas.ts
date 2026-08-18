@@ -36,8 +36,7 @@ const { render, width } = await createFunctionalTarget({
     'center) centered at (200, 150). The diamond spans roughly 70 px along each axis from ' +
     'the center. The interior is uniformly red; the four axis-aligned corners of the original ' +
     'unrotated bounding box (e.g. top-left near (150, 100)) are exposed as black background, ' +
-    'proving the rotation occurred. No other colors, no gradient, no anti-aliased fringe ' +
-    'beyond the rotated edges.',
+    'proving the rotation occurred. No other colors or gradient within the diamond interior.',
 });
 
 const canvas = document.createElement('canvas');
