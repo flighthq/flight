@@ -1,10 +1,19 @@
 {
   "$schema": "https://raw.githubusercontent.com/flighthq/flight-reference-images/main/schemas/reference-image-lock.schema.json",
-  "manifestSha256": "62d8cacba61569287988c7feedb3e2aa4bf280e39abb8b063b1728eafdd68ec9",
-  "oracleCommit": "0782ec6416a3acc7bd7e0691eb60db039dd84c3c",
+  "manifestSha256": "87e240c8cf3dd1fb73fefab927c295a2623555b93578c90541656073f97b5b15",
+  "oracleCommit": "3d2d38800115740bb1e0a925dbada9be62f0449e",
   "packs": {
+    "functional-other": {
+      "file": "functional-other-oracle-f7499a91-7498-469c-9e40-50abb8969433-a60edf574118.tgz",
+      "images": {
+        "functional/application-render-view/webgl": {
+          "pixelSha256": "7bcb04262948136293f73fc5b0c3d3d4240128517e4fe8ca61ee4614bcd5dc4b"
+        }
+      },
+      "sha256": "cfa4a964006c580c59e6fc924df687459f24ff234cb3882783a9468a8e8c397d"
+    },
     "functional-shapes": {
-      "file": "functional-shapes-oracle-shape-fill-solid-webgl-2026-08-14-09943d495bc9.tgz",
+      "file": "functional-shapes-oracle-f7499a91-7498-469c-9e40-50abb8969433-a60edf574118.tgz",
       "images": {
         "functional/shape-fill-solid/webgl": {
           "pixelSha256": "9bc1f4942c55075e2ec292a567d87b4f9569674ec0d7dbad09acdebc6e46d22d"
@@ -13,7 +22,7 @@
       "sha256": "afc4373f5d106822b34b74fc1b6ae663a8dc3f5490b6edf656a2730e2464a75e"
     }
   },
-  "releaseTag": "oracle-shape-fill-solid-webgl-2026-08-14-09943d495bc9",
+  "releaseTag": "oracle-f7499a91-7498-469c-9e40-50abb8969433-a60edf574118",
   "repository": "flighthq/flight-reference-images",
   "schemaVersion": 2
 }
