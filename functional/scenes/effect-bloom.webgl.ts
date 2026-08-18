@@ -26,14 +26,15 @@ import { declareExpectedImageDescription } from '@ft/render';
 // Bloom: bright shapes on a dark background bleed glow through an HDR (rgba16f) pipeline. Pixels above
 // the bright-pass threshold blur and add back, so the lit shapes gain a soft halo.
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with four square tiles of about 140 px, each turned by ' +
-    'a different small angle so none sits square to the edges: white centred near (224,180), warm ' +
-    'yellow near (576,180), cyan near (224,420) and pink near (576,420). Each tile is bright and ' +
-    'saturated at its core and carries a SOFT GLOW spilling outward past its edges into the dark ' +
-    'background — the halo is the point, so four crisp-edged tiles with the background pure and unlit ' +
-    'right up to each edge is the failure. The glow falls off gradually rather than stopping at a line, ' +
-    'it is the tile own colour rather than white, and it does not fill the field: the middle of the ' +
-    'picture between the four tiles stays dark. The tiles do not overlap each other.',
+  'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
+    '72 degrees so none sits square to the edges — a turned square covers more than its side, so they span 166, ' +
+    '193, 197 and 176 px corner to corner (side*(cos a + sin a)): white centred near (224,180), warm yellow near ' +
+    '(576,180), cyan near (224,420) and pink near (576,420). Each tile is bright and saturated at its core and ' +
+    'carries a SOFT GLOW spilling outward past its edges into the dark background — the halo is the point, so ' +
+    'four crisp-edged tiles with the background pure and unlit right up to each edge is the failure. The glow ' +
+    'falls off gradually rather than stopping at a line, it is the tile own colour rather than white, and it does ' +
+    'not fill the field: the middle of the picture between the four tiles stays dark. The tiles do not overlap ' +
+    'each other.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);

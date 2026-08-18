@@ -28,15 +28,15 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with four turned tiles of about 140 px — white near ' +
-    '(224,180), warm yellow near (576,180), cyan near (224,420), pink near (576,420) — carrying THREE ' +
-    'stacked treatments at once, and all three must be visible together. Each tile glows softly outward ' +
-    'past its edges into the dark background. The colours are more saturated and higher in contrast ' +
-    'than their raw fills. And the frame is DARKENED TOWARD ITS CORNERS: the four corners are noticeably ' +
-    'darker than the centre. Any one of the three missing is a failure — crisp tile edges, colour no ' +
-    'more saturated than the raw fills, or uniform brightness corner-to-centre each mean one stage of ' +
-    'the chain did not run. The ' +
-    'tiles keep their positions and their hues throughout.',
+  'An 800x600 field on a near-black background with four tiles 140 px on a side, turned 12, 32, 52 and 72 ' +
+    'degrees so they span 166, 193, 197 and 176 px corner to corner (side*(cos a + sin a)) — white near ' +
+    '(224,180), warm yellow near (576,180), cyan near (224,420), pink near (576,420) — carrying THREE stacked ' +
+    'treatments at once, and all three must be visible together. Each tile glows softly outward past its edges ' +
+    'into the dark background. The colours are more saturated and higher in contrast than their raw fills. And ' +
+    'the field is DARKENED TOWARD ITS CORNERS: the four corners are noticeably darker than the centre. Any one of ' +
+    'the three missing is a failure — crisp tile edges, colour no more saturated than the raw fills, or uniform ' +
+    'brightness corner-to-centre each mean one stage of the chain did not run. The tiles keep their positions and ' +
+    'their hues throughout.',
 );
 // Canvas parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The Canvas pipeline composites each registered runner in order over the scene, the

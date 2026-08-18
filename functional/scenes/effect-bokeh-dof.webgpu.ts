@@ -26,14 +26,15 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background showing four turned tiles of about 160 px, placed near ' +
-    'the four corners rather than in a tidy grid: white near (128,108), warm yellow near (672,120), cyan ' +
-    'near (144,492) and pink near (656,480) — with the picture DEFOCUSED. The blur is UNIFORM across the whole frame — every tile is softened by the ' +
-    'same amount and no part of the picture stays sharp while another blurs. Tile edges read as soft ' +
-    'gradients rather than lines, and fine detail is gone. The whole ' +
-    'frame carries much less high-frequency contrast than the same scene drawn without the effect: a ' +
-    'picture where every tile edge is crisp is the failure. Colours and positions are unchanged by the ' +
-    'blur — the tiles stay in place and keep their hues, they are simply soft.',
+  'An 800x600 field on a near-black background showing four tiles 160 px on a side, turned 8, 22, 36 and 50 ' +
+    'degrees so they span 181, 208, 223 and 225 px corner to corner (side*(cos a + sin a)), placed near the four ' +
+    'corners rather than in a tidy grid: white near (128,108), warm yellow near (672,120), cyan near (144,492) ' +
+    'and pink near (656,480) — with the picture DEFOCUSED. The blur is UNIFORM across the whole field — every ' +
+    'tile is softened by the same amount and no part of the picture stays sharp while another blurs. Tile edges ' +
+    'read as soft gradients rather than lines, and fine detail is gone. The whole field carries much less ' +
+    'high-frequency contrast than the same scene drawn without the effect: a picture where every tile edge is ' +
+    'crisp is the failure. Colours and positions are unchanged by the blur — the tiles stay in place and keep ' +
+    'their hues, they are simply soft.',
 );
 // WGPU has no realized bokeh depth-of-field capability. The unregistered operation is intentionally
 // skipped so this column records the backend's unsupported result without a misleading whole-frame blur.

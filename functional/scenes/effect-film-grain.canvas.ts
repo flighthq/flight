@@ -29,13 +29,12 @@ import { declareExpectedImageDescription } from '@ft/render';
 // a flat mid-gray fill. The fixed seed keeps the static capture deterministic — the same RenderEffect
 // intent realized with Canvas 2D compositing.
 declareExpectedImageDescription(
-  'An 800x600 field of flat mid-grey covering the whole frame edge to edge, with no shape visible as ' +
-    'distinct content anywhere on it, overlaid with a fine random SPECKLE. Individual pixels vary slightly lighter and darker ' +
-    'than the underlying grey, at a fine scale rather than in large patches, and the variation is ' +
-    'spread evenly across the whole frame rather than clustering in one region. A perfectly uniform ' +
-    'grey field with no speckle is the failure. The speckle is monochrome — it lightens and darkens ' +
-    'without introducing colour — and the underlying tone stays mid-grey rather than drifting lighter ' +
-    'or darker overall.',
+  'An 800x600 field of flat mid-grey covering the whole field edge to edge, with no shape visible as distinct ' +
+    'content anywhere on it, overlaid with a fine random SPECKLE. Individual pixels vary slightly lighter and ' +
+    'darker than the underlying grey, at a fine scale rather than in large patches, and the variation is spread ' +
+    'evenly across the whole field rather than clustering in one region. A perfectly uniform grey field with no ' +
+    'speckle is the failure. The speckle is monochrome — it lightens and darkens without introducing colour — and ' +
+    'the underlying tone stays mid-grey rather than drifting lighter or darker overall.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);

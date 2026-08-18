@@ -24,12 +24,12 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks about 267 x 300 ' +
-    'each, no background visible. The colours are NOT the ones the shapes were filled with — every block ' +
-    'has had its red, green and blue channels rotated, so the top-left block, filled orange, renders as ' +
-    'a GREEN-DOMINANT colour with little red in it. A top-left block that still reads orange means the ' +
-    'channel rotation did not run, which is the failure. Each block is flat with hard straight edges, no ' +
-    'gradient inside it and no blending where two meet.',
+  'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks, each W/3 x H/2 = 266.7 x 300 ' +
+    'px, no background visible — block centres at x = 133.3, 400 and 666.7 and y = 150 and 450. The colours are ' +
+    'NOT the ones the shapes were filled with — every block has had its red, green and blue channels rotated, so ' +
+    'the top-left block, filled orange, renders as a GREEN-DOMINANT colour with little red in it. A top-left ' +
+    'block that still reads orange means the channel rotation did not run, which is the failure. Each block is ' +
+    'flat with hard straight edges, no gradient inside it and no blending where two meet.',
 );
 // Full-frame channelMixer color grade: rotates the RGB channels (R<-B, G<-R, B<-G) via a 3x4 row-major mix matrix. One config applied to the whole scene through an
 // rgba8 effect pipeline (the default format for color ops, so format is omitted).

@@ -32,14 +32,14 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field split into four equal quadrants of flat black and white, arranged diagonally: the ' +
-    'top-left quadrant is BLACK, the top-right is WHITE, the bottom-left is WHITE, and the bottom-right ' +
-    'is BLACK. The top-left is the discriminating one — a white foreground block covers the whole top ' +
-    'half and a white backdrop block covers the whole left half, so white-over-white must come out ' +
-    'BLACK there. A top-left quadrant that is white means the blend was skipped and the foreground ' +
-    'simply passed through, which is the failure. The quadrant edges are hard straight lines meeting at ' +
-    'the centre of the field, with no gradient or blend across them and no grey anywhere: every pixel ' +
-    'is near-black or near-white.',
+  'An 800x600 field split into four equal quadrants of flat black and white, each 0.5*W x 0.5*H = 400 x 300 px ' +
+    'with their boundaries at x = 0.5*W = 400 and y = 0.5*H = 300, arranged diagonally: the top-left quadrant is ' +
+    'BLACK, the top-right is WHITE, the bottom-left is WHITE, and the bottom-right is BLACK. The top-left is the ' +
+    'discriminating one — a white foreground block covers the whole top half and a white backdrop block covers ' +
+    'the whole left half, so white-over-white must come out BLACK there. A top-left quadrant that is white means ' +
+    'the blend was skipped and the foreground simply passed through, which is the failure. The quadrant edges are ' +
+    'hard straight lines meeting at the centre of the field, with no gradient or blend across them and no grey ' +
+    'anywhere: every pixel is near-black or near-white.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
