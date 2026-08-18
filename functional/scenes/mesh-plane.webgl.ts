@@ -28,7 +28,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A flat plane (2.5x2.5) in the XZ plane at the origin rendered with unlit material (teal 0x30c0b0) on a black background (0x000000). Viewed from above and in front (eye at 0, 2.2, 2.6), the +Y front face reads as a filled tilted parallelogram covering the frame center. No shading gradient — unlit material. Frame corners are background.',
+  'An 800×600 black field (0x000000) with an unlit teal (0x30c0b0) flat plane in the XZ plane viewed from above and in front. The front face reads as a filled tilted trapezoid: the top edge runs roughly x 192–608 at y 166 and the bottom edge runs roughly x 31–769 at y 539. No shading gradient — the material is unlit. Frame corners are background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

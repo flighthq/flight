@@ -33,7 +33,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'A unit cube (unlit green 0x40e080) rendered OFF-CENTER in the upper-right quadrant on a dark background (0x0a0c10). The mesh is a child of a parent Node3D translated to (+1.3, +0.7, 0); the child local transform is identity — its position is entirely from parent world composition. The frame center is background. Lower-left quadrant is background. Camera at (0,0,4) looking at origin.',
+  'An 800×600 dark field (0x0a0c10) with an unlit green (0x40e080) unit cube rendered off-center in the upper-right area, its front face spanning roughly x 566–772, y 52–259, centered near (669, 156). The mesh position comes entirely from its parent node translation — the child local transform is identity. The frame center and lower-left quadrant are background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import

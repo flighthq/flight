@@ -38,7 +38,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A centered sphere (radius 0.5, 48×32 segments) with full transmission (ior 1.5, thickness 1, attenuation color 0x80c0ff) over a backdrop of five vertical color stripes (red 0xf43f5e, cyan 0x22d3ee, yellow 0xfacc15, purple 0x8b5cf6, green 0x34d399) on dark background (0x0a0c10). The sphere refracts and tints the striped backdrop through its volume — the stripes are visible through the sphere but distorted and color-shifted by the blue attenuation. Mid-gray 0x808080 base, metallic 0, roughness 0.5. Camera at (0,0,3) looking at origin.',
+  'An 800×600 dark field (0x0a0c10) with a translucent sphere centered at (400, 300), roughly 121 px radius (spanning about x 279–521, y 179–421), over a backdrop of five vertical color stripes (red, cyan, yellow, purple, green) placed behind the sphere. The sphere refracts and tints the striped backdrop through its volume — the stripes are visible through the sphere but distorted and color-shifted by a blue attenuation. The sphere base color is mid-gray (0x808080). Frame corners are dark background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

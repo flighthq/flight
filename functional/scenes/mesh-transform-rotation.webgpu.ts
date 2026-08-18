@@ -33,7 +33,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'A bar-shaped box (1.6x0.35x0.35, unlit rust 0xc06030) rotated 90 degrees about the Z axis via its local matrix, on a dark background (0x0a0c10). The bar, originally horizontal along X, now stands vertical along Y. The silhouette extends above and below center but not left and right. Camera at (0,0,4) looking at origin.',
+  'An 800×600 dark field (0x0a0c10) with an unlit rust (0xc06030) bar-shaped box rotated 90 degrees about the Z axis, so it stands vertical. The silhouette spans roughly x 367–433 (narrow) by y 149–451 (tall), centered at (400, 300). The bar extends above and below center but not left and right.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import

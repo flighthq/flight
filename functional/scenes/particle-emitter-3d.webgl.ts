@@ -27,7 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Three equally spaced translucent warm-orange squares centered vertically on a dark background (0x101018). Each square uses a 64×64 atlas filled with rgba(224,96,48,0.5) at particle alpha 0.5, compositing to approximately #793320 (muted brown-orange) over the background. The three quads are positioned at x = -1.2, 0, +1.2 with slight depth stagger. Gaps between the squares and all frame edges show the dark background. No lighting (ambient and directional are null). Camera at (0,0,5), fovY π/3.',
+  'An 800×600 dark field (0x101018) with three equally spaced translucent warm-orange squares centered vertically at y 300. The left square is centered near x 275, the middle near x 400, and the right near x 545, each roughly 93 px wide. Each square composites to approximately a muted brown-orange over the dark background due to half-opacity orange fill (rgba 224, 96, 48, 0.5) over the dark field. Gaps between the squares and all frame edges show the dark background. No lighting is applied.',
 );
 
 // Real-WebGL proof for the ParticleEmitter3D path that drawGlScene3D invokes automatically. The

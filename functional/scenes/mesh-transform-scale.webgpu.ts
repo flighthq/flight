@@ -33,7 +33,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'A unit cube (unlit violet 0x8040d0) scaled 2x uniformly via its local matrix, on a dark background (0x0a0c10). The scaled silhouette extends well past the unit footprint — points at ~16% of frame width from center are inside the cube. Frame corners are still background. Camera at (0,0,4) looking at origin.',
+  'An 800×600 dark field (0x0a0c10) with an unlit violet (0x8040d0) cube scaled 2× uniformly. The front face spans roughly x 159–641, y 59–541, filling most of the frame but leaving the corners as background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import

@@ -28,7 +28,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A cylinder (radius 0.6, height 1.4) at the origin rendered with unlit material (violet 0x9050e0) on a black background (0x000000). Viewed from a slight side angle (eye at 1.6, 0.4, 2.6), the cylinder reads as a tall vertically-extended silhouette with straight sides and no taper — both top and bottom are full-width. No shading gradient — unlit material. Frame corners are background.',
+  'An 800×600 black field (0x000000) with an unlit violet (0x9050e0) cylinder viewed from a slight side angle. The silhouette spans roughly x 288–538, y 117–507, reading as a tall vertically-extended shape with straight sides and no taper — both top and bottom are full-width. No shading gradient — the material is unlit. Frame corners are background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

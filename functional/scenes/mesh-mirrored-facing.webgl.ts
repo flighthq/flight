@@ -33,7 +33,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Two side-by-side flat quads on dark background (0x080b12), each carrying a constant normal map that tilts the shading normal. The left quad is plain; the right quad is mirrored (scale.x = -1). Both quads are visible (neither is culled by the mirror), but they shade on opposite sides — one bright where the other is dark — because the model determinant reverses the tangent frame handedness. BlinnPhong material (diffuse 0xd8dde8, no specular). Light from screen-right direction (1,0,-1). Camera at (0,0,6) looking at origin.',
+  'An 800×600 dark field (0x080b12) with two side-by-side flat quads. The left quad spans roughly x 116–358, y 179–421; the right quad spans roughly x 442–684, y 179–421. Both carry a constant normal map that tilts the shading normal. The right quad is mirrored in X. Both quads are visible (neither is culled by the mirror), but they shade on opposite sides — one bright where the other is dark — because the mirror reverses the tangent frame handedness. The material is a light gray (0xd8dde8) with no specular highlight. A light shines from the right.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

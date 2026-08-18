@@ -32,7 +32,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Two triangles forming a diamond shape sharing a vertical edge on dark background (0x080b12). The right triangle has a positive UV determinant; the left has a mirrored (negative) UV determinant. A constant +tangent-space-X normal map tilts shading rightward on the right face and leftward on the mirrored face. A directional light from screen-right makes the right half bright and the left half dark. BlinnPhong material (diffuse 0xd8dde8, no specular). Camera at (0,0,3) looking at origin.',
+  'An 800×600 dark field (0x080b12) with two triangles forming a diamond shape sharing a vertical edge, the diamond spanning roughly x 110–690, y 10–590. The right triangle has a mirrored UV relative to the left. A constant normal map tilts shading rightward on the right face and leftward on the mirrored face. A directional light from the right makes the right half bright and the left half dark. The material is a light gray (0xd8dde8) with no specular highlight.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
