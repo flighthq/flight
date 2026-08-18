@@ -93,6 +93,51 @@ jobs:
             echo "docs=$FILTER_DOCS" >> "$GITHUB_OUTPUT"
           fi
 
+  # A cache whose hit path skips setup must have its miss path exercised, not merely reviewed. Every
+  # ordinary browser job below uses the warmable Playwright cache; this job deliberately opts out and
+  # gives Playwright a run-unique empty directory. It therefore proves that a fresh ubuntu-latest host
+  # can download and launch Chromium without `install-deps`, which decides whether that apt step can be
+  # deleted or instead must run unconditionally outside the browser-binary cache gate.
+  playwright-cold-cache:
+    name: Playwright · cold cache launch
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /tmp/playwright-cold-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Chromium from a deliberately cold cache without system dependencies
+        uses: ./.github/actions/setup-playwright
+        with:
+          cache: 'false'
+          install-deps: 'false'
+      - name: Launch Chromium and load a page
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from '@playwright/test';
+
+          const browser = await chromium.launch({ headless: true });
+          try {
+            const page = await browser.newPage();
+            await page.setContent('<title>playwright-cold-cache-ok</title>');
+            const title = await page.title();
+            if (title !== 'playwright-cold-cache-ok') {
+              throw new Error(`Chromium returned unexpected title: ${title}`);
+            }
+            console.log('Chromium launched successfully from a cold browser cache without install-deps.');
+          } finally {
+            await browser.close();
+          }
+          NODE
+
   # Runs on any docs change, including the docs-only commits that skip every code leg entirely.
   # It deliberately does NOT depend on `code` being false: a gate whose firing hinges on a
   # second output comparing exactly equal to 'false' is the failure mode this job exists to
