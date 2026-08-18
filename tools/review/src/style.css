@@ -151,6 +151,33 @@ body {
   background: #c04040;
 }
 
+.attention-header {
+  padding: 6px 10px 3px 12px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: #444;
+}
+
+.attention-header[data-attention='differs'] {
+  color: #d0a040;
+}
+
+.attention-header[data-attention='changed'] {
+  color: #907020;
+}
+
+.attention-header[data-attention='not-commissioned'] {
+  color: #555;
+}
+
+.attention-header[data-attention='requested'] {
+  color: #7a9ad0;
+}
+
+.attention-header[data-attention='included'] {
+  color: #4a8a4a;
+}
+
 .sidebar-empty {
   padding: 14px 12px;
   color: #333;
