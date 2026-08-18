@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import {
+  REQUEST_IMAGE_DIFFERENCES_FILE,
   buildOracleCandidateBundle,
   stageOracleCandidateImages,
   verifyOracleRequestedPixels,
@@ -76,13 +77,21 @@ if (subcommand === 'scope') {
 }
 
 const artifactsRoot = readOption(rest, '--artifacts') ?? '.artifacts';
-const pixelProblems = verifyOracleRequestedPixels(request, artifactsRoot);
-if (pixelProblems.length > 0) {
-  for (const problem of pixelProblems) {
+const pixelVerification = verifyOracleRequestedPixels(request, artifactsRoot);
+if (pixelVerification.problems.length > 0) {
+  for (const problem of pixelVerification.problems) {
     console.error(`  ${problem.kind}: ${problem.identity} — ${problem.detail}`);
   }
-  console.error('reference-image-commission: refusing to stage a capture that differs from the request');
+  console.error('reference-image-commission: refusing to stage without readable pixels for every requested cell');
   process.exit(1);
+}
+for (const difference of pixelVerification.evidence.differences) {
+  const { entry, renderer, subject } = difference.identity;
+  console.warn(
+    `  request-image-mismatch: ${subject}/${entry}/${renderer} — ` +
+      `request selected ${difference.requestedPixelSha256}, commissioned capture produced ${difference.capturedPixelSha256}; ` +
+      `recording the difference for review in ${REQUEST_IMAGE_DIFFERENCES_FILE}`,
+  );
 }
 // ★ THE IDENTITIES ARE READ FROM A COMMITTED RECORD, NEVER COMPUTED. They are registered in
 // `flight-reference-images` and copied here verbatim; a value Flight derives would be a second producer of one
@@ -119,6 +128,8 @@ mkdirSync(stageRoot, { recursive: true });
 const staged = stageOracleCandidateImages(bundle, artifactsRoot, stageRoot);
 const out = join(stageRoot, 'candidate.json');
 writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`);
+const differencesOut = join(stageRoot, REQUEST_IMAGE_DIFFERENCES_FILE);
+writeFileSync(differencesOut, `${JSON.stringify(pixelVerification.evidence, null, 2)}\n`);
 
 const captured = bundle.captures.filter((capture) => capture.status === 'captured');
 const missing = bundle.captures.filter((capture) => capture.status === 'missing');
@@ -127,7 +138,10 @@ for (const capture of missing) {
   const { entry, renderer, subject } = capture.identity;
   console.log(`  missing  ${subject}/${entry}/${renderer}  ${'error' in capture ? capture.error : ''}`);
 }
-console.log(`staged ${staged} image(s) and wrote ${out}`);
+console.log(
+  `staged ${staged} image(s), recorded ${pixelVerification.evidence.differences.length} pixel difference(s), ` +
+    `and wrote ${out} + ${differencesOut}`,
+);
 
 // ★ A BUNDLE WITH NOTHING IN IT IS A FAILURE, NOT AN EMPTY SUCCESS. Dispatching it would open an ReferenceImage
 // PR proposing to bless no images, which a reviewer can only reject — and the run that produced it would

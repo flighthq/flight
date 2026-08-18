@@ -122,29 +122,51 @@ describe('stageOracleCandidateImages', () => {
 });
 
 describe('verifyOracleRequestedPixels', () => {
-  it('accepts the later capture only when its decoded pixels are the image the request selected', () => {
+  it('records no differences when the later capture has the pixels the request selected', () => {
     const request = input(root({ hash: PIXEL_HASH })).request;
     const artifacts = root({ hash: PIXEL_HASH });
 
-    expect(verifyOracleRequestedPixels(request, artifacts)).toEqual([]);
+    expect(verifyOracleRequestedPixels(request, artifacts)).toEqual({
+      evidence: { differences: [], requestId: request.id, schemaVersion: 1 },
+      problems: [],
+    });
   });
 
-  it('refuses a differing decoded image instead of blessing whatever a later capture produced', () => {
+  it('records both decoded hashes when a later capture differs instead of treating it as fatal', () => {
     const artifacts = root({ hash: PIXEL_HASH });
     const request = input(artifacts).request;
     request.targets[0]!.pixelSha256 = 'f'.repeat(64);
 
-    expect(verifyOracleRequestedPixels(request, artifacts).map((problem) => problem.kind)).toEqual([
-      'request-image-mismatch',
-    ]);
+    expect(verifyOracleRequestedPixels(request, artifacts)).toEqual({
+      evidence: {
+        differences: [
+          {
+            capturedPixelSha256: REQUEST_PIXEL_HASH,
+            identity: { entry: 'shape', renderer: 'webgl', subject: 'functional' },
+            requestedPixelSha256: 'f'.repeat(64),
+          },
+        ],
+        requestId: request.id,
+        schemaVersion: 1,
+      },
+      problems: [],
+    });
   });
 
-  it('refuses when no capture exists to prove the requested pixel identity', () => {
+  it('keeps a missing capture fatal because there are no pixels to record', () => {
     const request = input(root({ hash: PIXEL_HASH })).request;
 
-    expect(verifyOracleRequestedPixels(request, mkdtempSync(join(tmpdir(), 'reference-image-empty-')))[0]?.kind).toBe(
-      'request-image-missing',
-    );
+    expect(
+      verifyOracleRequestedPixels(request, mkdtempSync(join(tmpdir(), 'reference-image-empty-'))).problems[0]?.kind,
+    ).toBe('request-image-missing');
+  });
+
+  it('keeps an unreadable capture fatal because its decoded pixel identity is unknown', () => {
+    const artifacts = root({ hash: PIXEL_HASH });
+    const request = input(artifacts).request;
+    writeFileSync(join(artifacts, 'functional', 'shape', 'webgl', 'screenshot.png'), 'not a png');
+
+    expect(verifyOracleRequestedPixels(request, artifacts).problems[0]?.kind).toBe('request-image-unreadable');
   });
 });
 

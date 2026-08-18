@@ -167,15 +167,17 @@ jobs:
           done
           npx tsx ./scripts/reference-image-commission.ts bundle "$request" --artifacts .artifacts --stage stage
 
-      # ★ `candidate.json` SITS AT THE ARCHIVE ROOT. Intake opens `<extracted>/candidate.json` directly;
-      # a subdirectory reads to it as a missing manifest, which is the failure this replaces. Pointing
-      # `path` at the single request's directory makes ITS CONTENTS the archive root.
+      # ★ `candidate.json` AND THE PIXEL-DIFFERENCE SIDECAR SIT AT THE ARCHIVE ROOT. Intake opens
+      # `<extracted>/candidate.json` directly; a subdirectory reads to it as a missing manifest, which is
+      # the failure this replaces. The sidecar preserves review evidence without adding a field to the
+      # candidate schema, whose `additionalProperties: false` contract belongs to another repository.
       - name: Assert the archive shape before uploading
         run: |
           dir="stage/${{ matrix.request }}"
           test -f "$dir/candidate.json" || { echo "no candidate.json in $dir" >&2; exit 1; }
+          test -f "$dir/request-image-differences.json" || { echo "no request-image-differences.json in $dir" >&2; exit 1; }
           pngs=$(find "$dir/images" -name '*.png' 2>/dev/null | wc -l)
-          echo "candidate.json + $pngs image(s):"
+          echo "candidate.json + request-image-differences.json + $pngs image(s):"
           find "$dir" -type f | sed 's/^/  /'
           [ "$pngs" -gt 0 ] || { echo "no image staged for ${{ matrix.request }}" >&2; exit 1; }
 
@@ -190,9 +192,17 @@ jobs:
           {
             echo "### oracle candidate · ${{ matrix.request }}"
             echo ""
-            echo "- commit: \`${{ github.sha }}\`"
+            echo "- reviewed build commit: \`${{ steps.reviewed-build.outputs.commit }}\`"
+            echo ""
+            echo "#### Candidate"
             echo ""
             echo '```json'
             cat "stage/${{ matrix.request }}/candidate.json"
+            echo '```'
+            echo ""
+            echo "#### Requested-vs-captured pixel evidence"
+            echo ""
+            echo '```json'
+            cat "stage/${{ matrix.request }}/request-image-differences.json"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,28 +15,67 @@ const WORKFLOW = join(
   'workflows',
   'reference-image-capture.yml',
 );
+const REVIEW_MAIN = join(dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'review', 'src', 'main.ts');
 const TSX = join(dirname(fileURLToPath(import.meta.url)), '..', 'node_modules', '.bin', 'tsx');
 const PIXEL_SHA256 = hashOraclePixelBytes(new Uint8Array(4));
 const BUILD_COMMIT = 'b'.repeat(40);
 
 describe('reference-image-commission request binding', () => {
-  it('stages the capture only when its decoded pixels match the request', () => {
+  it('stages a matching capture with an empty difference-evidence sidecar', () => {
     const fixture = commissionedCapture(PIXEL_SHA256);
 
     const run = bundle(fixture);
 
     expect(run.status).toBe(0);
     expect(existsSync(join(fixture.stage, 'request', 'candidate.json'))).toBe(true);
+    expect(readJson(join(fixture.stage, 'request', 'request-image-differences.json'))).toEqual({
+      differences: [],
+      requestId: 'request',
+      schemaVersion: 1,
+    });
   });
 
-  it('refuses a later capture whose decoded pixels differ from the image the requester selected', () => {
+  it('stages a later capture whose decoded pixels differ and records both hashes for review', () => {
     const fixture = commissionedCapture('f'.repeat(64));
 
     const run = bundle(fixture);
 
-    expect(run.status).toBe(1);
+    expect(run.status).toBe(0);
     expect(run.stderr).toContain('request-image-mismatch');
-    expect(run.stderr).toContain('refusing to stage');
+    expect(run.stderr).toContain('recording the difference for review');
+    expect(existsSync(join(fixture.stage, 'request', 'candidate.json'))).toBe(true);
+    expect(readJson(join(fixture.stage, 'request', 'request-image-differences.json'))).toEqual({
+      differences: [
+        {
+          capturedPixelSha256: PIXEL_SHA256,
+          identity: { entry: 'shape', renderer: 'webgl', subject: 'functional' },
+          requestedPixelSha256: 'f'.repeat(64),
+        },
+      ],
+      requestId: 'request',
+      schemaVersion: 1,
+    });
+  });
+
+  it('still refuses a missing requested image and stages no partial archive', () => {
+    const fixture = commissionedCapture(PIXEL_SHA256);
+    rmSync(join(fixture.artifacts, 'functional', 'shape', 'webgl', 'screenshot.png'));
+
+    const run = bundle(fixture);
+
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('request-image-missing');
+    expect(existsSync(join(fixture.stage, 'request', 'candidate.json'))).toBe(false);
+  });
+
+  it('still refuses an unreadable requested image and stages no partial archive', () => {
+    const fixture = commissionedCapture(PIXEL_SHA256);
+    writeFileSync(join(fixture.artifacts, 'functional', 'shape', 'webgl', 'screenshot.png'), 'not a png');
+
+    const run = bundle(fixture);
+
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain('request-image-unreadable');
     expect(existsSync(join(fixture.stage, 'request', 'candidate.json'))).toBe(false);
   });
 
@@ -56,8 +95,21 @@ describe('reference-image-commission request binding', () => {
     expect(workflow).toContain('ref: ${{ steps.reviewed-build.outputs.commit }}');
     expect(workflow).toContain('the request names commit $commit, which is not reachable from this push');
     expect(workflow).toContain('WORKFLOW FROM TRUNK, CODE FROM THE REQUEST IS INTENTIONAL');
+    expect(workflow).toContain('request-image-differences.json');
+    expect(workflow).toContain('reviewed build commit: \\`${{ steps.reviewed-build.outputs.commit }}\\`');
+  });
+
+  it('tells the reviewer that replay differences are preserved as evidence', () => {
+    const review = readFileSync(REVIEW_MAIN, 'utf8');
+
+    expect(review).toContain('CI recreates the recorded build commit');
+    expect(review).toContain('any decoded-pixel difference is preserved in request-image-differences.json for review');
   });
 });
+
+function readJson(path: string): unknown {
+  return JSON.parse(readFileSync(path, 'utf8')) as unknown;
+}
 
 function commissionedCapture(pixelSha256: string): { artifacts: string; request: string; stage: string } {
   const root = mkdtempSync(join(tmpdir(), 'reference-image-commission-'));
@@ -112,16 +164,11 @@ function command(
   fixture: { artifacts: string; request: string; stage: string },
   rest: readonly string[] = [],
 ): CommandResult {
-  try {
-    const stdout = execFileSync(TSX, [SCRIPT, subcommand, fixture.request, ...rest], {
-      encoding: 'utf8',
-      stdio: 'pipe',
-    });
-    return { status: 0, stderr: '', stdout };
-  } catch (error) {
-    const failure = error as { status?: number; stderr?: string; stdout?: string };
-    return { status: failure.status ?? -1, stderr: failure.stderr ?? '', stdout: failure.stdout ?? '' };
-  }
+  const result = spawnSync(TSX, [SCRIPT, subcommand, fixture.request, ...rest], {
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+  return { status: result.status ?? -1, stderr: result.stderr, stdout: result.stdout };
 }
 
 function png(): Uint8Array {

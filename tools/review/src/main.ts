@@ -504,9 +504,13 @@ function buildRendererBar(): void {
     if (dirtyPaths.length > 0 || dirtyOmitted > 0) {
       commissionBtn.title += ` — WARNING: Built with uncommitted changes: ${formatDirtyPaths(dirtyPaths, dirtyOmitted)}`;
       commissionBtn.setAttribute('data-build-dirty', 'true');
+    }
+    const buildUnavailable = t.cells.some((cell) => cell.build === null || cell.build.commit === null);
+    if (buildUnavailable) {
+      commissionBtn.title += ' — Build commit unavailable: rebuild and recapture before commissioning';
     } else {
       commissionBtn.title +=
-        ' — selected pixel hashes record what you reviewed; CI recreates the recorded build commit and may render environment-specific pixels';
+        ' — selected pixel hashes record what you reviewed; CI recreates the recorded build commit, and any decoded-pixel difference is preserved in request-image-differences.json for review';
     }
     commissionBtn.addEventListener('click', () => void commissionCurrentTest());
   }
