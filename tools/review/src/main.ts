@@ -7,6 +7,7 @@ interface ReviewCellProvenance {
 }
 
 type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
+type ParityStatus = 'passed' | 'failed' | 'no-data';
 type AttentionGroup = 'differs' | 'changed' | 'not-commissioned' | 'requested' | 'included';
 
 interface ReviewCell {
@@ -18,6 +19,7 @@ interface ReviewCell {
   provenance: ReviewCellProvenance | null;
   commissionState: CommissionState;
   holdReason: string | null;
+  parityStatus: ParityStatus;
 }
 
 interface ReviewTest {
@@ -418,6 +420,14 @@ function buildRendererBar(): void {
     if (mark === true) btn.setAttribute('data-approval', 'approved');
 
     btn.textContent = cell.renderer;
+    if (cell.parityStatus !== 'no-data') {
+      const indicator = document.createElement('span');
+      indicator.className = 'parity-indicator';
+      indicator.setAttribute('data-parity', cell.parityStatus);
+      indicator.textContent = cell.parityStatus === 'failed' ? '≢' : '≡';
+      indicator.title = cell.parityStatus === 'failed' ? 'Parity: FAILED' : 'Parity: passed';
+      btn.appendChild(indicator);
+    }
     btn.addEventListener('click', () => {
       selectedRenderer = cell.renderer;
       buildRendererBar();
@@ -554,6 +564,25 @@ function showRenderer(): void {
     }
   } else {
     stateEl?.remove();
+  }
+
+  let parityEl = preview.querySelector<HTMLElement>('.parity-state');
+  if (cell) {
+    if (!parityEl) {
+      parityEl = document.createElement('div');
+      parityEl.className = 'parity-state';
+      preview.appendChild(parityEl);
+    }
+    parityEl.setAttribute('data-parity', cell.parityStatus);
+    if (cell.parityStatus === 'passed') {
+      parityEl.textContent = 'Parity: passed';
+    } else if (cell.parityStatus === 'failed') {
+      parityEl.textContent = 'Parity: FAILED';
+    } else {
+      parityEl.textContent = 'No parity data — run npm run test:functional:parity';
+    }
+  } else {
+    parityEl?.remove();
   }
 
   preview.querySelector('.compare-view')?.remove();
@@ -725,6 +754,7 @@ function updatePreview(): void {
   preview.querySelector('.empty-state')?.remove();
   preview.querySelector('.expected-description')?.remove();
   preview.querySelector('.commission-state')?.remove();
+  preview.querySelector('.parity-state')?.remove();
 
   const t = currentTest();
   if (!t) {

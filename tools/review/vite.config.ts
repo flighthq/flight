@@ -25,6 +25,7 @@ interface ReviewCellProvenance {
 }
 
 type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
+type ParityStatus = 'passed' | 'failed' | 'no-data';
 
 interface ReviewCell {
   renderer: string;
@@ -35,6 +36,7 @@ interface ReviewCell {
   provenance: ReviewCellProvenance | null;
   commissionState: CommissionState;
   holdReason: string | null;
+  parityStatus: ParityStatus;
 }
 
 interface ReviewTest {
@@ -170,6 +172,45 @@ function readRequestedCells(): Set<string> {
   return requested;
 }
 
+function readParityStatuses(): Map<string, ParityStatus> {
+  const statuses = new Map<string, ParityStatus>();
+  if (!existsSync(artifactsDir)) return statuses;
+
+  for (const toolDir of readdirSync(artifactsDir, { withFileTypes: true })) {
+    if (!toolDir.isDirectory() || EXCLUDE_TOOLS.has(toolDir.name)) continue;
+    const reportPath = join(artifactsDir, toolDir.name, 'validation-report.json');
+    if (!existsSync(reportPath)) continue;
+    try {
+      const report = JSON.parse(readFileSync(reportPath, 'utf8')) as {
+        result?: {
+          checks?: readonly {
+            entry: string;
+            renderers?: readonly string[];
+            kind: string;
+            status: string;
+          }[];
+        };
+      };
+      const checks = report.result?.checks;
+      if (!checks) continue;
+      for (const check of checks) {
+        if (check.kind !== 'parity' || !check.renderers) continue;
+        const failed = check.status === 'failed';
+        for (const renderer of check.renderers) {
+          const key = `${toolDir.name}/${check.entry}/${renderer}`;
+          const existing = statuses.get(key);
+          if (failed || existing === undefined) {
+            statuses.set(key, failed ? 'failed' : 'passed');
+          }
+        }
+      }
+    } catch {
+      // ignore malformed report
+    }
+  }
+  return statuses;
+}
+
 function sourceHasExpectedDescription(tool: string, name: string, renderers: readonly string[]): boolean {
   const sceneDir = SCENE_DIRS[tool];
   if (!sceneDir) return false;
@@ -209,6 +250,7 @@ function discoverReviewTests(): ReviewTest[] {
   const locked = readLockedImages();
   const held = readHeldCells();
   const requested = readRequestedCells();
+  const parity = readParityStatuses();
 
   const toolFilter = process.env['VITE_REVIEW_TOOL'];
   const toolDirs = readdirSync(artifactsDir, { withFileTypes: true })
@@ -294,7 +336,8 @@ function discoverReviewTests(): ReviewTest[] {
         const commissionState = resolveCommissionState(tool, name, renderer, hash, locked, requested);
         const imageKey = `${tool}/${name}/${renderer}`;
         const holdReason = held.get(imageKey) ?? null;
-        cells.push({ renderer, state, error, changed, hash, provenance, commissionState, holdReason });
+        const parityStatus: ParityStatus = parity.get(imageKey) ?? 'no-data';
+        cells.push({ renderer, state, error, changed, hash, provenance, commissionState, holdReason, parityStatus });
       }
 
       if (cells.length > 0) {
