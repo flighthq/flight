@@ -27,9 +27,11 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Eighteen small overlapping rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) on a dark 800×600 background (0x101014) in a 5×4 grid (x centers at ~96/240/384/528/672, y centers at ~108/228/348/468; last row has 3), each rotated by i×22°. Edges are softened and fine detail smoothed by the Kuwahara filter (radius 4) — an oil-painting effect that preserves broad color boundaries while blurring sharp transitions into flat regions.',
+  'Eighteen small rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) on a dark 800×600 background (0x101014) in a 5×4 grid (x centers at ~96/240/384/528/672, y centers at ~108/228/348/468; last row has 3), each rotated by i×22°. The Kuwahara filter (radius 4) flattens interior detail into broad uniform regions while preserving crisp edges — an oil-painting effect. Sharp interior texture with no flat-region simplification is a failure.',
 );
 
+// Wgpu parity column for the same kuwahara intent as render.webgl.ts. Wgpu render-state init is
+// async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

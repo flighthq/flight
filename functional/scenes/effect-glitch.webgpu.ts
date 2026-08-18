@@ -27,7 +27,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Five horizontal color bars (pink 0xff3366, green 0x33ff99, blue 0x3399ff, yellow 0xffcc33, purple 0xcc33ff) on a dark 800×600 background (0x101014), each ~496×72 px centered at x≈152, y≈60/156/252/348/444. The bars are torn into displaced horizontal block segments with RGB channel fringing — rows shift sideways and individual color channels separate, producing colored ghost edges alongside the displaced blocks.',
+  'Five horizontal color bars (pink 0xff3366, green 0x33ff99, blue 0x3399ff, yellow 0xffcc33, purple 0xcc33ff) on a dark 800×600 background (0x101014), each 496×72 px centered at x=400, y=96/192/288/384/480. The bars are torn into displaced horizontal block segments with RGB channel fringing — rows shift sideways and individual color channels separate, producing colored ghost edges alongside the displaced blocks. Five cleanly aligned bars with no horizontal displacement and no color-channel splitting is a failure.',
 );
 
 // Wgpu parity column: hashed block tears + RGB channel separation in a single fullscreen WGSL pass.
