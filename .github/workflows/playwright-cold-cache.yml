@@ -47,6 +47,8 @@ jobs:
         uses: ./.github/actions/setup-playwright
         with:
           cache: 'false'
+      - name: Verify the runner already has Chromium system dependencies
+        run: npx playwright install-deps --dry-run chromium
       - name: Launch Chromium and load a page
         run: |
           node --input-type=module <<'NODE'

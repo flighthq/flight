@@ -148,6 +148,9 @@ jobs:
           npm run build
           npm run build:functional
 
+      # Browser identity belongs to today's instrument too. This action runs from the root only after
+      # root npm ci, so both its lockfile lookup and `npx playwright` resolve current dependencies.
+      # `reviewed/` supplies static product bytes; never install a browser from its Playwright version.
       - uses: ./.github/actions/setup-playwright
 
       # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/reference-image-capture-identity.json`, NOT COMPUTED HERE.
