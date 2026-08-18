@@ -32,16 +32,33 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a very dark background showing SIX COLUMNS of coloured patches drawn over one ' +
-    'opaque backdrop, each column using a different compositing rule, in this reading order: normal, ' +
-    'add, multiply, screen, darken, lighten. Every column holds the SAME patch colour twice — once at ' +
-    'full opacity in the upper row and once at quarter opacity in the lower row — so within a column the ' +
-    'only difference between the two rows is coverage. In the normal, add, screen and lighten columns ' +
-    'the two rows must look CLEARLY DIFFERENT from each other: a quarter-opacity patch that matches its ' +
-    'full-opacity twin is the failure this scene exists to catch, because identical rows are exactly ' +
-    'what happens when coverage never reaches the composite. The multiply and darken columns may look ' +
-    'alike between rows at this patch colour and that is expected, not a defect. Columns differ from ' +
-    'each other too: add and screen are lighter than the backdrop, multiply and darken are darker.',
+  'An 800x600 frame filled edge to edge by ONE flat mid-grey backdrop — an unlit 0x808080 quad 9x7 world units ' +
+    'across an 8x6 orthographic view, so no background shows anywhere — carrying a grid of SIX COLUMNS by THREE ' +
+    'ROWS of 110x110 px patches. The columns are centred at x = 66.7, 200, 333.3, 466.7, 600 and 733.3 px (pitch ' +
+    '133.3 px, leaving about 23 px of bare backdrop between neighbours) and run in this reading order: normal, ' +
+    'add, multiply, screen, darken, lighten. The rows are centred at y = 120, 300 and 480 px and hold the SAME ' +
+    'patch colour (0xff8040, a saturated orange) at full opacity, quarter opacity and zero opacity from top to ' +
+    'bottom. In the TOP row, composited against the grey: normal shows the orange itself; add and screen are both ' +
+    'clearly lighter than the backdrop; multiply is clearly darker, a dark brown; darken is a khaki grey ' +
+    '(per-channel min against the grey); lighten is a salmon (per-channel max). In the MIDDLE row each patch sits ' +
+    'visibly between the backdrop and its full-opacity twin — a quarter-opacity patch that MATCHES its ' +
+    'full-opacity twin is the failure this scene exists to catch, because identical rows are exactly what happens ' +
+    'when coverage never reaches the composite. The multiply and darken columns are the exception and may look ' +
+    'alike across those two rows at this patch colour; that is a property of those operators, not a defect. The ' +
+    'BOTTOM row is deliberately NOT uniform, and this is the part a description must not quietly omit: in the ' +
+    'normal, add, multiply and screen columns the zero-opacity patch is invisible and the backdrop passes through ' +
+    'untouched, so that stretch reads as unbroken grey — but the DARKEN column instead shows a solid BLACK ' +
+    '110x110 px square centred at (600,480). That square is a known and recorded fixed-function limitation rather ' +
+    'than a defect to report: Darken realizes as MIN with ONE/ONE factors, which cannot carry the coverage term, ' +
+    'so a fully transparent source computes min(0, dst) = 0 and wipes the backdrop to black. Lighten realizes as ' +
+    'MAX with the same factors, where max(0, dst) = dst, so its zero-opacity cell is invisible like the first ' +
+    'four. Bounded, with the reason stated: the assertion samples the RED CHANNEL only, at one point per cell, ' +
+    'and compares ordinals — coverage separation in normal/add/screen/lighten, the zero-coverage no-op in ' +
+    'normal/add/multiply/screen, Multiply directionally (never brighter than the backdrop) and Normal by ' +
+    'bracketing between backdrop and full. It does NOT check Darken at any row, Lighten at zero coverage, or any ' +
+    'absolute level, and the black square above is exactly the cell that scope excludes. Exact levels are not ' +
+    'derivable here at all: the scene renders through an HDR rgba16f target and is tone-presented, so magnitudes ' +
+    'are backend- and curve-dependent while every ordering described above is not.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);

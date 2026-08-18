@@ -27,8 +27,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single grey sphere centred in it, about a fifth ' +
-    'of the frame height across, lit FROM ABOVE AND BELOW BY DIFFERENT LIGHT: its upper half is warm ' +
+  'An 800x600 field on a near-black background with a single grey sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), lit FROM ABOVE AND BELOW BY DIFFERENT LIGHT: its upper half is warm ' +
     'and clearly brighter, its lower half is much darker and cooler, with a smooth gradient between the ' +
     'two rather than a hard line. The top-versus-bottom difference is the claim — a sphere lit evenly, ' +
     'or one brighter at the bottom, is the failure. There is no single hard-edged highlight of the kind ' +
