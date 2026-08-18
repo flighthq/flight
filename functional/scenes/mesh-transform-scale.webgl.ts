@@ -31,7 +31,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A unit cube (unlit violet 0x8040d0) scaled 2x uniformly via its local matrix, on a black background (0x000000). The scaled silhouette extends well past the unit footprint — points at ~16% of frame width from center are inside the cube. Frame corners are still background. Camera at (0,0,4) looking at origin.',
+  'An 800×600 black field (0x000000) with an unlit violet (0x8040d0) cube scaled 2× uniformly. The front face spans roughly x 159–641, y 59–541, filling most of the frame but leaving the corners as background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

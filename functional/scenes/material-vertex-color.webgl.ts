@@ -27,7 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with vertex-color material (tint 0x40a0e0). The geometry has no color0 vertex attribute, so the tint is applied as a flat uniform color — the sphere appears as a solid blue disk with no per-vertex color variation. A white directional light from upper-right illuminates the screen-right hemisphere while the screen-left falls into shadow. Camera at (0,0,3) looking at origin.',
+  'An 800×600 dark field (0x0a0c10) with a blue-tinted (0x40a0e0) sphere centered at (400, 300), roughly 121 px radius (spanning about x 279–521, y 179–421). The geometry has no per-vertex color data, so the tint appears as a flat uniform color across the sphere. A directional light from the upper right illuminates the right hemisphere while the left hemisphere falls into shadow. Frame corners are dark background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

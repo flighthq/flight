@@ -68,7 +68,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Three flat quads side by side on dark background (0x080b12), each carrying a constant bitangent-tilted normal map. Left: plain. Center: mirrored in X (scale.x = -1). Right: mirrored in Y (scale.y = -1). Under a Y-dominant directional light (0,-1,-1.2), the plain and X-mirrored quads shade the same brightness while the Y-mirrored quad shades differently — that three-way pattern gates correct tangent.w handedness from the model determinant. BlinnPhong material (diffuse 0xd8dde8, no specular). Camera at (0,0,6) looking at origin.',
+  'An 800×600 dark field (0x080b12) with three flat quads side by side, each centered at y 300. The left quad spans roughly x 14–255, the center quad x 279–521, and the right quad x 545–786 (all y 179–421). Each carries a constant normal map. The left is plain; the center is mirrored in X; the right is mirrored in Y. Under a top-down directional light, the plain and X-mirrored quads shade the same brightness while the Y-mirrored quad shades differently — that three-way pattern gates correct tangent handedness. The material is a light gray (0xd8dde8) with no specular highlight.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

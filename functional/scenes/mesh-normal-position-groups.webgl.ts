@@ -30,7 +30,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Two perpendicular triangles forming a V-shape sharing a vertical edge with duplicated vertices for distinct UVs, on dark background (0x080b12). Position-group normal computation gives both copies of the shared edge the same diagonal normal, so lighting transitions smoothly across the seam. A directional light from +Z brightens the right face away from the seam and darkens the left face away from the seam. BlinnPhong material (diffuse 0xd8dde8, no specular). Camera at (3,0,3) looking at origin.',
+  'An 800×600 dark field (0x080b12) with two perpendicular triangles forming a V-shape sharing a vertical edge. The shape spans roughly x 219–581, y 95–505, with the shared vertical edge at the center and the two wings extending to the left and right. The normal computation gives both copies of the shared edge the same diagonal normal, so lighting transitions smoothly across the seam. A directional light brightens the right face and darkens the left face. The material is a light gray (0xd8dde8) with no specular highlight.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

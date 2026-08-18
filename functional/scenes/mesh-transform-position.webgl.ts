@@ -31,7 +31,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A unit cube (unlit teal 0x30c0a0) translated to (+1.3, +0.7, 0) via its local matrix, rendering in the upper-right quadrant on a black background (0x000000). The frame center is background — the cube is not at the origin. Lower-left quadrant is also background. Camera at (0,0,4) looking at origin.',
+  'An 800×600 black field (0x000000) with an unlit teal (0x30c0a0) unit cube translated off-center, its front face spanning roughly x 566–772, y 52–259, centered near (669, 156). The frame center is background — the cube is not at the origin. The lower-left quadrant is also background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

@@ -30,7 +30,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with extended PBR material (mid-gray 0x808080 base, metallic 0, roughness 0.5) plus wrapped-diffuse subsurface extension (color 0xff8060, strength 1). A white directional light from upper-right illuminates the screen-right hemisphere while the screen-left falls into shadow with warm subsurface contribution bleeding light around the terminator. Dim cool ambient fill (0x6070a0, intensity 0.15). Camera at (0,0,3) looking at origin.',
+  'An 800×600 dark field (0x0a0c10) with a mid-gray (0x808080) sphere centered at (400, 300), roughly 121 px radius (spanning about x 279–521, y 179–421). A directional light from the upper right illuminates the right hemisphere while the left hemisphere falls into shadow, with a warm orange-red subsurface contribution bleeding light around the shadow boundary so the transition from lit to unlit is softer and warmer than a plain diffuse sphere. A dim cool ambient fill keeps the shadowed side slightly above the background. Frame corners are dark background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

@@ -27,7 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with unlit material (blue 0x40a0e0). The surface is a flat, uniform blue disk with no light/dark gradient — unlit material ignores the directional and ambient lights entirely. No shading, no specular highlight, no shadow gradient. Camera at (0,0,3) looking at origin.',
+  'An 800×600 dark field (0x0a0c10) with a blue (0x40a0e0) sphere centered at (400, 300), roughly 121 px radius (spanning about x 279–521, y 179–421). The surface is a flat, uniform blue disk with no light-to-dark gradient — the material ignores scene lighting entirely. No specular highlight, no shadow gradient. Frame corners are dark background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

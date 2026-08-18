@@ -33,7 +33,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A quad filling the view with per-vertex colors interpolated across its surface: red at one corner, green at another, blue and yellow at the remaining two (RGBY). The four colors blend smoothly into each other across the face — no discrete boundaries, just a continuous bilinear gradient. Background 0x0a0c10. Camera at (0,0,3) looking at origin. Custom vertex layout with color0 attribute at stride 64.',
+  'An 800×600 dark field (0x0a0c10) with a quad spanning roughly x 159–641, y 119–481, filled with per-vertex colors interpolated across its surface: red at one corner, green at another, blue and yellow at the remaining two. The four colors blend smoothly into each other — no discrete boundaries, just a continuous bilinear gradient filling the quad.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

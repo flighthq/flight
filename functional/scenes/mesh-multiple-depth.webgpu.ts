@@ -33,7 +33,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Two overlapping unit cubes on a dark background (0x0a0c10): a near red box (unlit 0xff3030, at +0.35x +0.6z) and a far blue box (unlit 0x3060ff, at -0.35x -0.6z). The near red box occludes the far blue box where their projections overlap at screen center. Red is visible at center and on the right flank; blue is visible only on the left flank where the near box does not cover it. Frame corners are background. Camera at (0,0,4).',
+  'An 800×600 dark field (0x0a0c10) with two overlapping unit cubes: a near red box (unlit 0xff3030, front face roughly x 363–612, y 175–425) and a far blue box (unlit 0x3060ff, front face roughly x 250–426, y 212–388). The near red box occludes the far blue box where their projections overlap near center. Red is visible at center and on the right; blue is visible only on the left flank where the near box does not cover it. Frame corners are background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import

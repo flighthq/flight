@@ -27,7 +27,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A centered sphere (radius 0.5, 48×32 segments) on a black background (0x000000) rendered with wireframe material (white 0xffffff). Only the triangle edges are visible as thin white lines against the black background — no filled faces, no shading gradient. The wireframe shows the spherical tessellation pattern. Camera at (0,0,3) looking at origin.',
+  'An 800×600 black field (0x000000) with a white (0xffffff) wireframe sphere centered at (400, 300), roughly 121 px radius (spanning about x 279–521, y 179–421). Only the triangle edges are visible as thin white lines against the black background — no filled faces, no shading gradient. The wireframe reveals the spherical tessellation pattern. Frame corners are black background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

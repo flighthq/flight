@@ -30,7 +30,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'A cone (radius 0.7, height 1.4) at the origin rendered with unlit material (amber 0xf0a020) on a dark background (0x0a0c10). Viewed from a slight side angle (eye at 1.4, 0.8, 2.6), the cone reads as a tapered silhouette: wide at the base, narrowing to a pointed apex at the top. No shading gradient — unlit material. Frame corners are background.',
+  'An 800×600 dark field (0x0a0c10) with an unlit amber (0xf0a020) cone viewed from a slight side angle. The apex projects near (400, 130) and the base spans roughly x 275–553, y 397–529, reading as a tapered silhouette: wide at the base and narrowing to a point at the top. No shading gradient — the material is unlit. Frame corners are background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import

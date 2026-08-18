@@ -26,7 +26,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A horizontal plane (2×1) textured with a synthetic 2×1 video frame: the left half is red (0xff0000), the right half is blue (0x0000ff). The plane fills most of the view under an orthographic camera looking straight down from above. Black background (0x000000). No lighting response — the material is unlit, so the video colors appear at full saturation.',
+  'An 800×600 black field (0x000000) with a horizontal plane textured with a synthetic 2×1 video frame, viewed top-down under an orthographic camera. The plane fills roughly x 80–720, y 100–500. The left half is red (0xff0000) and the right half is blue (0x0000ff). The material is unlit, so the video colors appear at full saturation with no shading gradient.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
