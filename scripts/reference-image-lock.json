@@ -1,10 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/flighthq/flight-reference-images/main/schemas/reference-image-lock.schema.json",
-  "manifestSha256": "14220816c0098397c9a6a5ee643baa1d727c71094aaf411718d69b25f03842a5",
-  "oracleCommit": "33d2bf48c92f68e4cbd83807710135a96d061bcf",
+  "manifestSha256": "3afd9b68d87320c7485156db7ed4e273d8c5c0328ec8cdf9dbfc6f2d3cb4c505",
+  "oracleCommit": "5f2001ecd1772bb34bb0d5e41546f907e66d0add",
   "packs": {
     "functional-images": {
-      "file": "functional-images-oracle-8f48d909-c7e1-4fee-9004-fe4cc2fbc5c8-8f6b7456add0.tgz",
+      "file": "functional-images-oracle-e4fce4c0-e5a7-45d0-b8e7-21df064a058d-b49091d591ec.tgz",
       "images": {
         "functional/bitmap-color-transform/canvas": {
           "pixelSha256": "ce02534c3dc19aded24b2ee53f572356d5b4f08d7757f5bcda40df4ee3d99470"
@@ -43,7 +43,7 @@
       "sha256": "81ccd8a96e9077b216fe73711e9837b55caf92115a7d3286e09cb41dd512fd11"
     },
     "functional-other": {
-      "file": "functional-other-oracle-8f48d909-c7e1-4fee-9004-fe4cc2fbc5c8-8f6b7456add0.tgz",
+      "file": "functional-other-oracle-e4fce4c0-e5a7-45d0-b8e7-21df064a058d-b49091d591ec.tgz",
       "images": {
         "functional/application-render-view/webgl": {
           "pixelSha256": "7bcb04262948136293f73fc5b0c3d3d4240128517e4fe8ca61ee4614bcd5dc4b"
@@ -53,12 +53,18 @@
         },
         "functional/camera-orthographic/webgpu": {
           "pixelSha256": "4739a36b8538de3a4c1156f9e85c5d2b33a5155323d1a4a9215a52074dbc64d3"
+        },
+        "functional/node-blend-modes-advanced/canvas": {
+          "pixelSha256": "62b61d288ab8cf15768cea848e61fcd2dcb39df52b3a6fd5851a73c5747d5d68"
+        },
+        "functional/node-blend-modes-advanced/dom": {
+          "pixelSha256": "62b61d288ab8cf15768cea848e61fcd2dcb39df52b3a6fd5851a73c5747d5d68"
         }
       },
-      "sha256": "750e09815a93c6335093a1a522b495dac68a75f50cef09241550ea1a80e6e9e4"
+      "sha256": "ff1de069b3cfcd9c084c9b40ae1ba68515401e2cdb3a7c2de04df2dd5e325d27"
     },
     "functional-shapes": {
-      "file": "functional-shapes-oracle-8f48d909-c7e1-4fee-9004-fe4cc2fbc5c8-8f6b7456add0.tgz",
+      "file": "functional-shapes-oracle-e4fce4c0-e5a7-45d0-b8e7-21df064a058d-b49091d591ec.tgz",
       "images": {
         "functional/shape-fill-solid/webgl": {
           "pixelSha256": "9bc1f4942c55075e2ec292a567d87b4f9569674ec0d7dbad09acdebc6e46d22d"
@@ -67,7 +73,7 @@
       "sha256": "afc4373f5d106822b34b74fc1b6ae663a8dc3f5490b6edf656a2730e2464a75e"
     }
   },
-  "releaseTag": "oracle-8f48d909-c7e1-4fee-9004-fe4cc2fbc5c8-8f6b7456add0",
+  "releaseTag": "oracle-e4fce4c0-e5a7-45d0-b8e7-21df064a058d-b49091d591ec",
   "repository": "flighthq/flight-reference-images",
   "schemaVersion": 2
 }
