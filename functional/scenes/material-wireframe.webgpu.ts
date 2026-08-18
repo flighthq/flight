@@ -25,7 +25,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with wireframe material (white 0xffffff). Only the triangle edges are visible as thin white lines against the dark background — no filled faces, no shading gradient. The wireframe shows the spherical tessellation pattern. Camera at (0,0,3) looking at origin.',
+);
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

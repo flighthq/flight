@@ -31,12 +31,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Gl forward 3D column, wiring copied from material-vertex-color. The VertexColor renderer writes into
-// the effect pipeline's rgba16f + depth scene target, then ends with an empty effect list to tone-present
-// the scene straight to the canvas.
+declareExpectedImageDescription(
+  'A quad filling the view with per-vertex colors interpolated across its surface: red at one corner, green at another, blue and yellow at the remaining two (RGBY). The four colors blend smoothly into each other across the face — no discrete boundaries, just a continuous bilinear gradient. Background 0x0a0c10. Camera at (0,0,3) looking at origin. Custom vertex layout with color0 attribute at stride 64.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

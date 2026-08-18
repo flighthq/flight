@@ -25,7 +25,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with unlit material (blue 0x40a0e0). The surface is a flat, uniform blue disk with no light/dark gradient — unlit material ignores the directional and ambient lights entirely. No shading, no specular highlight, no shadow gradient. Camera at (0,0,3) looking at origin.',
+);
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
