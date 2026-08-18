@@ -37,7 +37,7 @@ declareExpectedImageDescription(
     'highlight. This is the BLINN-PHONG cell: its specular term is pow(dot(N,H), 32), a falloff in the ' +
     'HALF-VECTOR angle, which runs at half the rate in surface-normal terms that the Phong sibling ' +
     'pow(dot(reflect(-L,N), V), 32) does (exactly half where L, N and V are coplanar). At shininess 32 the ' +
-    'half-power half-angle is therefore 11.86 deg here against 5.93 deg there, so this hotspot must read as the ' +
+    'half-power half-angle is therefore 11.88 deg here against 5.94 deg there, so this hotspot must read as the ' +
     'BROADER, softer, more spread out of the two. A tight pinpoint highlight here is a Phong shader substituted ' +
     'by mistake, which is the discrimination this pair exists to make. Bounded deliberately: no pixel width for ' +
     'the hotspot is derivable without a capture and none is claimed here, only the relative narrowness. The ' +
