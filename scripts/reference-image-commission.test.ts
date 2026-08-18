@@ -94,7 +94,20 @@ describe('reference-image-commission request binding', () => {
 
     expect(workflow).toContain('ref: ${{ steps.reviewed-build.outputs.commit }}');
     expect(workflow).toContain('the request names commit $commit, which is not reachable from this push');
-    expect(workflow).toContain('WORKFLOW FROM TRUNK, CODE FROM THE REQUEST IS INTENTIONAL');
+    // Both halves, because either alone is satisfiable while the property is broken: keeping the fence but
+    // pointing the capture back at root restores the coupling the fence exists to remove, and the capture
+    // path alone says nothing about whether the subject was ever fenced. Together they are the property —
+    // root holds the instrument, the reviewed commit contributes built bytes and nothing else.
+    // This pins BEHAVIOUR, deliberately not the rationale comment above it in the workflow. An earlier
+    // revision pinned that prose, so rewording it was a test failure and a change that IMPROVED the
+    // wording got reported as a regression. Comments stay free to improve; tests pin what cannot be
+    // reworded without changing what the job does.
+    // Anchored, not `toContain`. A substring match admits any suffix, so `path: reviewed-build` satisfies
+    // it — and renaming the fence without updating the capture path below is exactly how the two halves
+    // come apart, leaving a broken job and a green test. Perturbing the real workflow is what exposed it:
+    // `toContain('path: reviewed')` did not notice `path: reviewedZZ`.
+    expect(workflow).toMatch(/^\s*path: reviewed$/m);
+    expect(workflow).toContain('--dir reviewed/tools/functional/dist');
     expect(workflow).toContain('request-image-differences.json');
     expect(workflow).toContain('reviewed build commit: \\`${{ steps.reviewed-build.outputs.commit }}\\`');
   });
