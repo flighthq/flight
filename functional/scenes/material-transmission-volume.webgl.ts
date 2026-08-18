@@ -36,12 +36,12 @@ import {
   setGlPbrTransmissionSceneColor,
 } from '@flighthq/sdk';
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Gl forward-lit 3D column. The PBR renderer writes linear HDR into the effect pipeline's
-// rgba16f + depth scene target (depth-test ON so the sphere occludes itself correctly), then end with
-// an empty effect list to tone-present the HDR scene straight to the canvas.
+declareExpectedImageDescription(
+  'A centered sphere (radius 0.5, 48×32 segments) with full transmission (ior 1.5, thickness 1, attenuation color 0x80c0ff) over a backdrop of five vertical color stripes (red 0xf43f5e, cyan 0x22d3ee, yellow 0xfacc15, purple 0x8b5cf6, green 0x34d399) on dark background (0x0a0c10). The sphere refracts and tints the striped backdrop through its volume — the stripes are visible through the sphere but distorted and color-shifted by the blue attenuation. Mid-gray 0x808080 base, metallic 0, roughness 0.5. Camera at (0,0,3) looking at origin.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

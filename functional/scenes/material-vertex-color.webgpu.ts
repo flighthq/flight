@@ -25,7 +25,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with vertex-color material (tint 0x40a0e0). The geometry has no color0 vertex attribute, so the tint is applied as a flat uniform color — the sphere appears as a solid blue disk with no per-vertex color variation. A white directional light from upper-right illuminates the screen-right hemisphere while the screen-left falls into shadow. Camera at (0,0,3) looking at origin.',
+);
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

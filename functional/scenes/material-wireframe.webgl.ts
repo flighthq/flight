@@ -25,12 +25,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Gl forward-lit 3D column. The Wireframe renderer writes linear HDR into the effect pipeline's
-// rgba16f + depth scene target (depth-test ON so the sphere occludes itself correctly), then end with
-// an empty effect list to tone-present the HDR scene straight to the canvas.
+declareExpectedImageDescription(
+  'A centered sphere (radius 0.5, 48×32 segments) on a black background (0x000000) rendered with wireframe material (white 0xffffff). Only the triangle edges are visible as thin white lines against the black background — no filled faces, no shading gradient. The wireframe shows the spherical tessellation pattern. Camera at (0,0,3) looking at origin.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

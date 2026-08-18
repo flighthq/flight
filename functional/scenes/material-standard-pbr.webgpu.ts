@@ -25,7 +25,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with StandardPbr material (mid-gray 0x808080, metallic 0, roughness 0.5). A white directional light from upper-right illuminates the screen-right hemisphere brightly while the screen-left hemisphere falls into shadow, showing a smooth diffuse gradient across the surface. Dim cool ambient fill (0x6070a0, intensity 0.15). Camera at (0,0,3) looking at origin.',
+);
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

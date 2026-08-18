@@ -28,12 +28,12 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 
-// drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
-// (re-exported from both) and is unavailable there — import the Gl one directly from its package.
+import { declareExpectedImageDescription } from '@ft/render';
 
-// Gl forward-lit 3D column. The PBR renderer writes linear HDR into the effect pipeline's
-// rgba16f + depth scene target (depth-test ON so the sphere occludes itself correctly), then end with
-// an empty effect list to tone-present the HDR scene straight to the canvas.
+declareExpectedImageDescription(
+  'A centered sphere (radius 0.5, 48×32 segments) on a dark background (0x0a0c10) rendered with extended PBR material (mid-gray 0x808080 base, metallic 0, roughness 0.5) plus wrapped-diffuse subsurface extension (color 0xff8060, strength 1). A white directional light from upper-right illuminates the screen-right hemisphere while the screen-left falls into shadow with warm subsurface contribution bleeding light around the terminator. Dim cool ambient fill (0x6070a0, intensity 0.15). Camera at (0,0,3) looking at origin.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
