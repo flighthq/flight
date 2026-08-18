@@ -33,8 +33,8 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800×600 environment backdrop surrounds two large spheres centred near (256,300) and ' +
-    '(544,300). The backdrop is assembled from strong red, green, near-white, dark grey-violet, blue ' +
+  'An 800×600 environment backdrop surrounds two large spheres centred near (243,300) and ' +
+    '(557,300). The backdrop is assembled from strong red, green, near-white, dark grey-violet, blue ' +
     'and yellow faces. The left sphere is a very smooth metal: it is brightly lit and carries visibly ' +
     'different reflected face colours across its surface rather than one flat tone. The right sphere ' +
     'is a rough grey non-metal with a softer diffuse environment tint and little sharp reflection. ' +
