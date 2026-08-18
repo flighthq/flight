@@ -32,7 +32,6 @@ import {
   renderGlVelocity,
   setGlRenderEffectVelocityTexture,
 } from '@flighthq/sdk';
-
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(

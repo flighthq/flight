@@ -22,7 +22,6 @@ import {
   renderGlScene2D,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
-
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(

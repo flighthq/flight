@@ -35,7 +35,6 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setGlPbrTransmissionSceneColor,
 } from '@flighthq/sdk';
-
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(

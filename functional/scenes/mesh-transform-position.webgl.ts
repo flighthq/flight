@@ -28,7 +28,6 @@ import {
   setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
-
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
