@@ -79,11 +79,6 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   endGlRenderEffectPipeline(state, pipeline, []);
 }
 
-// BACKEND CAVEAT: scoped to WebGL (render.webgpu.ts intentionally removed). Orthographic projection
-// renders BLANK on WebGPU while perspective renders fine — almost certainly a clip-space z-range issue
-// (WebGPU NDC z is [0,1] vs WebGL [-1,1]; the ortho matrix is not remapped for it). A real renderer gap
-// to fix in the WebGPU scene path, not a test problem.
-//
 // camera-orthographic — proves the camera's ORTHOGRAPHIC projection on the Gl and Wgpu scene renderers.
 // Two IDENTICAL unit boxes sit side by side in X (one left, one right) but at DIFFERENT depths: the
 // right box is pushed far from the camera (-z) and the left box pulled near (+z). Under an orthographic
@@ -99,8 +94,6 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 //
 // Camera3D model (RH view, eye on +z looking at origin): +x is screen-right, larger +z is nearer the eye.
 // Only the PROJECTION differs from the perspective tests; the look-at view is identical.
-//
-// app.ts is backend-agnostic; the per-backend scene wiring lives in render.webgl.ts / render.webgpu.ts.
 
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
