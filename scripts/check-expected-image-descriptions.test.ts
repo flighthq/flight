@@ -72,6 +72,17 @@ describe('findExpectedImageDescriptionCellScope', () => {
       structurallyUnableCells: ['overridden/webgl', 'specific/webgl', 'unreachable/dom'],
     });
   });
+
+  it('treats declareExpectedImageDescription as description-capable', () => {
+    writeFileSync(
+      join(root, 'functional', 'scenes', 'effect-bloom.webgl.ts'),
+      'declareExpectedImageDescription("bloom halo"); beginGlRenderEffectPipeline(state, pipeline);',
+    );
+
+    const { reachableCells, structurallyUnableCells } = findExpectedImageDescriptionCellScope(root);
+    expect(reachableCells).toContain('effect-bloom/webgl');
+    expect(structurallyUnableCells).not.toContain('effect-bloom/webgl');
+  });
 });
 
 describe('findScenesWithoutExpectedImageDescription', () => {
@@ -93,5 +104,20 @@ describe('findScenesWithoutExpectedImageDescription', () => {
     writeFileSync(join(scenesDir, 'complete.ts'), 'createFunctionalTarget({ expectedImageDescription: "done" });');
 
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual([]);
+  });
+
+  it('reports scenes using declareExpectedImageDescription without the field', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'has-declare.webgl.ts'),
+      'declareExpectedImageDescription("bloom"); beginGlRenderEffectPipeline(state, pipeline);',
+    );
+    writeFileSync(
+      join(scenesDir, 'missing-declare.webgl.ts'),
+      'declareExpectedImageDescription(""); beginGlRenderEffectPipeline(state, pipeline);',
+    );
+
+    const missing = findScenesWithoutExpectedImageDescription(scenesDir);
+    expect(missing).toEqual([]);
   });
 });

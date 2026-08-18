@@ -31,7 +31,7 @@ export function findExpectedImageDescriptionCellScope(rootDirectory: string): {
   for (const entry of discoverEntries('functional', rootDirectory)) {
     for (const renderer of entry.renderers) {
       const file = functionalScene3DFile(scenesDirectory, entry.name, renderer);
-      const cells = hasFunctionalTargetCall(readFileSync(file, 'utf8')) ? reachableCells : structurallyUnableCells;
+      const cells = hasDescriptionCapableCall(readFileSync(file, 'utf8')) ? reachableCells : structurallyUnableCells;
       cells.push(`${entry.name}/${renderer}`);
     }
   }
@@ -44,7 +44,11 @@ export function findScenesWithoutExpectedImageDescription(scenesDirectory: strin
     .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
     .filter((f) => {
       const content = readFileSync(join(scenesDirectory, f), 'utf8');
-      return hasFunctionalTargetCall(content) && !content.includes('expectedImageDescription');
+      return (
+        hasDescriptionCapableCall(content) &&
+        !content.includes('expectedImageDescription') &&
+        !content.includes('declareExpectedImageDescription')
+      );
     })
     .map((f) => f.replace(/\.ts$/, ''))
     .sort();
@@ -76,7 +80,9 @@ export function describeExcludedPopulation(cells: readonly string[]): string {
   return `${cells.length} structurally unable (${parts.join(', ')})`;
 }
 
-function hasFunctionalTargetCall(source: string): boolean {
+const DESCRIPTION_CAPABLE_CALLS = new Set(['createFunctionalTarget', 'declareExpectedImageDescription']);
+
+function hasDescriptionCapableCall(source: string): boolean {
   const sourceFile = ts.createSourceFile('functional-scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   let found = false;
   const visit = (node: ts.Node): void => {
@@ -84,7 +90,7 @@ function hasFunctionalTargetCall(source: string): boolean {
     if (
       ts.isCallExpression(node) &&
       ts.isIdentifier(node.expression) &&
-      node.expression.text === 'createFunctionalTarget'
+      DESCRIPTION_CAPABLE_CALLS.has(node.expression.text)
     ) {
       found = true;
       return;
