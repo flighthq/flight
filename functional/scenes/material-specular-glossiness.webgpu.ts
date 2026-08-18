@@ -25,8 +25,16 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with a single sphere centred in it, about a fifth of ' +
+    'the frame height across, lit from the right so the right side is clearly brighter than the left, ' +
+    'with a moderately soft highlight on the lit side — neither a mirror-sharp point nor a completely ' +
+    'matte wash. A sphere lit uniformly, or one brighter on the left, is the failure. The background ' +
+    'stays near-black.',
+);
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.
 

@@ -27,8 +27,17 @@ import {
   setVector3,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background covered by a GRID OF SEPARATE LIT POOLS rather than ' +
+    'one broad wash: twelve bright patches in four columns and three rows, spread across the frame, each ' +
+    'falling off into darkness before it reaches its neighbours so the dark background remains visible ' +
+    'between them. At least ten of the twelve must be clearly lit — a picture with only a few bright ' +
+    'spots, or one evenly lit corner to corner with no dark gaps, is the failure. The lit pools sit on a ' +
+    'flat surface and are roughly evenly spaced.',
+);
 // WebGPU mirror of light-many-point.webgl. Four finite-range decoys come first; only per-mesh
 // contribution selection can choose the twelve nearby lights and illuminate the field.
 const pixelRatio = window.devicePixelRatio || 1;
