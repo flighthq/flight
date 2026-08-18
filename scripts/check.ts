@@ -144,7 +144,16 @@ if (failed.length > 0) {
   process.exit(1);
 }
 
+// `npm run check` reads like "the check", and three agents in one day acted on it covering the tests —
+// two cited "check passes" for a change whose only guard was a `scripts/*.test.ts`, and one attributed
+// this command's CPU time to "the test suite it runs". That is a name promising more than it delivers,
+// not three careless readings, so the correction goes where the reader already is: the pass states what
+// it did NOT do. The count is derived from what actually ran rather than written down, so a gate added
+// or scoped away cannot leave this line quietly wrong.
 process.stdout.write(`\n${pc.green('✓')} ${pc.bold('all check gates passed')}\n`);
+process.stdout.write(
+  pc.dim(`  ${results.length} gates, 0 tests — \`npm run test\` is the only thing that runs them.\n`),
+);
 
 async function runGate(gate: Gate): Promise<GateResult> {
   return await new Promise((resolve) => {
