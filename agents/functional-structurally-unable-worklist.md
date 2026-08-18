@@ -38,6 +38,22 @@ register to remember. A cross-package defect nobody is authorised to fix must no
 because the pressure that creates is exactly "just describe the broken output", which is the thing the
 source-only rule below refuses.
 
+**A withheld reason must name a specific external blocker that somebody else could act on** — a filed
+defect, a fix that crosses package boundaries, an unratified design decision. "Hard to derive", "the scene
+is confusing" and "unclear what it should look like" are **not** blockers, they are the work, and
+withholding for them converts the state into a way of not doing it. Kuwahara qualifies because there is a
+real shader defect, outside this arc's authority, with a named fix site.
+
+Two consequences follow. A **new** withheld cell takes the same non-author sign-off a landing does. And
+the withheld count **rising** is an event, not a status line: the number is meant to fall to zero, so
+growth is the signal that the hatch is being used as a shortcut.
+
+Note honestly what tier this guard sits at. The gate can require a reason to *exist* and be non-empty —
+that is executable, and it is enforced. It cannot judge whether the reason names a real external blocker,
+because that is a semantic claim about the world. So this paragraph is the weakest kind of rule: one that
+depends on being read. It is written here rather than in a thread for that reason, and the count on the
+pass line is what gives a reader somewhere to start looking.
+
 The number cannot stand alone because of what it measures. The gate asks only whether a cell carries
 non-empty static text — it cannot ask whether that text describes the picture, since the referent is an
 image. A confidently wrong description scores exactly as well as a right one, and a wrong description is
