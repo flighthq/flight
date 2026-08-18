@@ -80,10 +80,31 @@ export interface ReferenceImageCandidateInput {
   repositoryRoot?: string;
 }
 
+export const REQUEST_IMAGE_DIFFERENCES_FILE = 'request-image-differences.json';
+
 export interface ReferenceImageRequestedPixelProblem {
   identity: string;
-  kind: 'request-image-missing' | 'request-image-unreadable' | 'request-image-mismatch';
+  kind: 'request-image-missing' | 'request-image-unreadable';
   detail: string;
+}
+
+export interface ReferenceImageRequestedPixelDifference {
+  identity: ReferenceImageCandidateIdentity;
+  requestedPixelSha256: string;
+  capturedPixelSha256: string;
+}
+
+export interface ReferenceImageRequestedPixelEvidence {
+  schemaVersion: 1;
+  requestId: string;
+  differences: readonly ReferenceImageRequestedPixelDifference[];
+}
+
+export interface ReferenceImageRequestedPixelVerification {
+  /** Missing or unreadable images leave no evidence to review, so they remain fatal. */
+  problems: readonly ReferenceImageRequestedPixelProblem[];
+  /** Decodable differences are review evidence, not a capture failure once the build commit is bound. */
+  evidence: ReferenceImageRequestedPixelEvidence;
 }
 
 /** Reads the exact selected image, capture run, and served-build stamp into the v3 target shape. */
@@ -132,13 +153,16 @@ function readStatusBuild(status: Record<string, unknown>): NonNullable<Reference
 }
 
 /**
- * Proves the later workflow capture is the decoded image the requester selected, before any candidate
- * bytes are staged. A request is authority over bytes, not merely over a cell name.
+ * Compares the later workflow capture with the decoded image the requester selected before any candidate
+ * bytes are staged. A missing or unreadable image cannot support review and remains fatal. Once the request
+ * binds the code under test to its reviewed commit, a decodable pixel difference is environment evidence:
+ * preserve both hashes for review instead of silently accepting it or misclassifying it as code drift.
  */
 export function verifyOracleRequestedPixels(
   request: Readonly<ReferenceImageRequest>,
   artifactsRoot: string,
-): ReferenceImageRequestedPixelProblem[] {
+): ReferenceImageRequestedPixelVerification {
+  const differences: ReferenceImageRequestedPixelDifference[] = [];
   const problems: ReferenceImageRequestedPixelProblem[] = [];
   for (const target of request.targets) {
     const identity = `${request.subject}/${target.entry}/${target.renderer}`;
@@ -151,7 +175,18 @@ export function verifyOracleRequestedPixels(
       });
       continue;
     }
-    const actual = getOraclePngPixelSha256(readFileSync(path));
+    let bytes: Buffer;
+    try {
+      bytes = readFileSync(path);
+    } catch (error) {
+      problems.push({
+        detail: `the commissioned capture could not be read (${String(error)})`,
+        identity,
+        kind: 'request-image-unreadable',
+      });
+      continue;
+    }
+    const actual = getOraclePngPixelSha256(bytes);
     if ('refused' in actual) {
       problems.push({
         detail: `the commissioned capture could not be decoded (${actual.refused})`,
@@ -161,14 +196,14 @@ export function verifyOracleRequestedPixels(
       continue;
     }
     if (actual.pixelSha256 !== target.pixelSha256) {
-      problems.push({
-        detail: `request selected ${target.pixelSha256}, commissioned capture produced ${actual.pixelSha256}`,
-        identity,
-        kind: 'request-image-mismatch',
+      differences.push({
+        capturedPixelSha256: actual.pixelSha256,
+        identity: { entry: target.entry, renderer: target.renderer, subject: request.subject },
+        requestedPixelSha256: target.pixelSha256,
       });
     }
   }
-  return problems;
+  return { evidence: { differences, requestId: request.id, schemaVersion: 1 }, problems };
 }
 
 /**
