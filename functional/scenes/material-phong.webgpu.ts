@@ -44,12 +44,12 @@ declareExpectedImageDescription(
     'measurement. This is the PHONG cell: its specular term is pow(dot(reflect(-L,N), V), 32), the falloff in the ' +
     'REFLECTION angle, so its half-power half-angle is the 5.94 deg one and this hotspot must read as the ' +
     'TIGHTER, sharper, more concentrated of the two. A broad soft highlight here is a Blinn-Phong shader ' +
-    'substituted by mistake, which is the discrimination this pair exists to make. Bounded deliberately: no pixel ' +
-    'width for the hotspot is derivable without a capture and none is claimed here, only the relative narrowness ' +
-    'that the angles above fix. The sphere renders into an HDR rgba16f target and is tone-presented, so the ' +
-    'highlight is a visible brightening over the surrounding lit cap rather than a hard white dot, and absolute ' +
-    'levels are backend-dependent while the orderings (lit brighter than shadow, hotspot brighter than the lit ' +
-    'cap around it) are not. The background stays near-black and is not lit.',
+    'substituted by mistake, which is the discrimination this pair exists to make. Source does not determine the ' +
+    'pixel width of the hotspot; it depends on measuring the rendered falloff, which needs a capture. Only the ' +
+    'relative narrowness that the angles above fix is claimed here. The sphere renders into an HDR rgba16f target ' +
+    'and is tone-presented, so the highlight is a visible brightening over the surrounding lit cap rather than a ' +
+    'hard white dot, and absolute levels are backend-dependent while the orderings (lit brighter than shadow, ' +
+    'hotspot brighter than the lit cap around it) are not. The background stays near-black and is not lit.',
 );
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
 // the Wgpu one directly from its package.

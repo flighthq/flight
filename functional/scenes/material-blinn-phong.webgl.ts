@@ -42,12 +42,12 @@ declareExpectedImageDescription(
     'measurement. This is the BLINN-PHONG cell: its specular term is pow(dot(N,H), 32), the falloff in the ' +
     'HALF-VECTOR angle, so its half-power half-angle is the 11.88 deg one and this hotspot must read as the ' +
     'BROADER, softer, more spread out of the two. A tight pinpoint highlight here is a Phong shader substituted ' +
-    'by mistake, which is the discrimination this pair exists to make. Bounded deliberately: no pixel width for ' +
-    'the hotspot is derivable without a capture and none is claimed here, only the relative breadth that the ' +
-    'angles above fix. The sphere renders into an HDR rgba16f target and is tone-presented, so the highlight is a ' +
-    'visible brightening over the surrounding lit cap rather than a hard white dot, and absolute levels are ' +
-    'backend-dependent while the orderings (lit brighter than shadow, hotspot brighter than the lit cap around ' +
-    'it) are not. The background stays near-black and is not lit.',
+    'by mistake, which is the discrimination this pair exists to make. Source does not determine the pixel width ' +
+    'of the hotspot; it depends on measuring the rendered falloff, which needs a capture. Only the relative ' +
+    'breadth that the angles above fix is claimed here. The sphere renders into an HDR rgba16f target and is ' +
+    'tone-presented, so the highlight is a visible brightening over the surrounding lit cap rather than a hard ' +
+    'white dot, and absolute levels are backend-dependent while the orderings (lit brighter than shadow, hotspot ' +
+    'brighter than the lit cap around it) are not. The background stays near-black and is not lit.',
 );
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
