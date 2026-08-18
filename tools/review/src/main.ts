@@ -7,6 +7,7 @@ interface ReviewCellProvenance {
 }
 
 type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
+type AttentionGroup = 'differs' | 'changed' | 'not-commissioned' | 'requested' | 'included';
 
 interface ReviewCell {
   renderer: string;
@@ -171,6 +172,30 @@ function testStatus(t: ReviewTest): 'error' | 'changed' | 'pass' {
   return 'pass';
 }
 
+const ATTENTION_GROUP_ORDER: readonly AttentionGroup[] = [
+  'differs',
+  'changed',
+  'not-commissioned',
+  'requested',
+  'included',
+];
+
+function testAttentionGroup(t: ReviewTest): AttentionGroup {
+  if (t.cells.some((c) => c.commissionState === 'differs')) return 'differs';
+  if (t.cells.some((c) => c.changed === true)) return 'changed';
+  if (t.cells.some((c) => c.commissionState === 'not-commissioned')) return 'not-commissioned';
+  if (t.cells.some((c) => c.commissionState === 'requested')) return 'requested';
+  return 'included';
+}
+
+const ATTENTION_GROUP_LABELS: Record<AttentionGroup, string> = {
+  differs: 'Differs',
+  changed: 'Changed',
+  'not-commissioned': 'Not commissioned',
+  requested: 'Requested',
+  included: 'Included',
+};
+
 function ensureCached(t: ReviewTest): HTMLImageElement[] {
   const key = testKey(t);
   if (!imgCache.has(key)) {
@@ -201,15 +226,38 @@ function buildSidebar(): void {
       testList.appendChild(header);
     }
 
-    for (const t of visible.filter((v) => v.tool === tool)) {
-      const key = testKey(t);
-      const btn = document.createElement('button');
-      btn.className = 'test-btn' + (key === selectedKey ? ' selected' : '');
-      btn.setAttribute('data-status', testStatus(t));
-      btn.textContent = t.name;
-      btn.title = multiTool ? `${t.tool}: ${t.name}` : t.name;
-      btn.addEventListener('click', () => selectTest(t));
-      testList.appendChild(btn);
+    const toolTests = visible.filter((v) => v.tool === tool);
+    const grouped = new Map<AttentionGroup, ReviewTest[]>();
+    for (const t of toolTests) {
+      const group = testAttentionGroup(t);
+      let arr = grouped.get(group);
+      if (!arr) {
+        arr = [];
+        grouped.set(group, arr);
+      }
+      arr.push(t);
+    }
+
+    for (const group of ATTENTION_GROUP_ORDER) {
+      const tests = grouped.get(group);
+      if (!tests || tests.length === 0) continue;
+
+      const groupHeader = document.createElement('div');
+      groupHeader.className = 'attention-header';
+      groupHeader.setAttribute('data-attention', group);
+      groupHeader.textContent = `${ATTENTION_GROUP_LABELS[group]} (${tests.length})`;
+      testList.appendChild(groupHeader);
+
+      for (const t of tests) {
+        const key = testKey(t);
+        const btn = document.createElement('button');
+        btn.className = 'test-btn' + (key === selectedKey ? ' selected' : '');
+        btn.setAttribute('data-status', testStatus(t));
+        btn.textContent = t.name;
+        btn.title = multiTool ? `${t.tool}: ${t.name}` : t.name;
+        btn.addEventListener('click', () => selectTest(t));
+        testList.appendChild(btn);
+      }
     }
   }
 
