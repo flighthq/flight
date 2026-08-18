@@ -30,7 +30,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x0a0c10) with an unlit violet (0x9050e0) cylinder viewed from a slight side angle. The silhouette spans roughly x 288–538, y 117–507, reading as a tall vertically-extended shape with straight sides and no taper — both top and bottom are full-width. No shading gradient — the material is unlit. Frame corners are background.',
+  'An 800×600 dark field (0x0a0c10) with an unlit violet (0x9050e0) cylinder viewed from a slight side angle. The tangent silhouette spans x 0.315*W–0.685*W ≈ 252–548, y 0.19*H–0.86*H ≈ 114–517 — a tall vertically-extended shape with straight sides and no taper, both top and bottom full-width. No shading gradient — the material is unlit. Frame corners are background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import

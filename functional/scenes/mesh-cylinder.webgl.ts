@@ -28,7 +28,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 black field (0x000000) with an unlit violet (0x9050e0) cylinder viewed from a slight side angle. The silhouette spans roughly x 288–538, y 117–507, reading as a tall vertically-extended shape with straight sides and no taper — both top and bottom are full-width. No shading gradient — the material is unlit. Frame corners are background.',
+  'An 800×600 black field (0x000000) with an unlit violet (0x9050e0) cylinder (radius 0.6, height 1.4) viewed from a slight side angle (eye at 1.6, 0.4, 2.6). The tangent silhouette spans x 0.315*W–0.685*W ≈ 252–548, y 0.19*H–0.86*H ≈ 114–517 — a tall vertically-extended shape with straight sides and no taper, both top and bottom full-width. No shading gradient — the material is unlit. Frame corners are background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;

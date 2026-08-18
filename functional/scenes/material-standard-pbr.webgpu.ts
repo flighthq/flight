@@ -29,7 +29,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x0a0c10) with a mid-gray (0x808080) sphere centered at (400, 300), roughly 121 px radius (spanning about x 279–521, y 179–421). A directional light from the upper right illuminates the right hemisphere brightly while the left hemisphere falls into shadow, producing a smooth diffuse gradient across the surface. A dim cool ambient fill keeps the shadowed side slightly above the background. Frame corners are dark background.',
+  'An 800×600 dark field (0x0a0c10) with a mid-gray (0x808080) sphere centered at (0.5*W, 0.5*H) = (400, 300), tangent-silhouette radius H*tan(asin(0.5/3))/(2*tan(PI/8)) ≈ 122 px (spanning x 278–522, y 178–422). A directional light from the upper right illuminates the right hemisphere brightly while the left hemisphere falls into shadow, producing a smooth diffuse gradient across the surface. A dim cool ambient fill keeps the shadowed side slightly above the background. Frame corners are dark background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
