@@ -465,16 +465,42 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   const candidateSrc = screenshotUrl(t.tool, t.name, cell.renderer);
   const referenceSrc = referenceUrl(t.tool, t.name, cell.renderer);
 
-  let candidateImg: HTMLImageElement;
-  let referenceImg: HTMLImageElement;
-  try {
-    [candidateImg, referenceImg] = await Promise.all([loadImage(candidateSrc), loadImage(referenceSrc)]);
-  } catch {
+  // Loaded INDEPENDENTLY on purpose. Most cells have no reference image yet, and a single
+  // Promise.all rejection used to discard the candidate too — so the common case rendered an empty
+  // pane and the capture, which always exists, became invisible for want of a referent.
+  const [candidateImg, referenceImg] = await Promise.all([
+    loadImage(candidateSrc).catch(() => null),
+    loadImage(referenceSrc).catch(() => null),
+  ]);
+
+  if (candidateImg === null) {
+    container.innerHTML = `<div class="compare-message">No capture for this cell — re-capture with npm run review:functional:fresh</div>`;
+    preview.appendChild(container);
+    return;
+  }
+
+  // No reference: show the capture alone, and name WHICH absence it is rather than rendering nothing.
+  if (referenceImg === null) {
     const isCommissioned = cell.commissionState === 'included' || cell.commissionState === 'differs';
     const msg = isCommissioned
       ? 'No reference fetched yet — run npm run reference-image:fetch to extract the pack'
       : 'No reference image — this cell is not commissioned';
-    container.innerHTML = `<div class="compare-message">${msg}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'compare-grid';
+    const panel = document.createElement('div');
+    panel.className = 'compare-panel';
+    const label = document.createElement('div');
+    label.className = 'compare-label';
+    label.textContent = 'Candidate';
+    candidateImg.className = 'compare-img';
+    panel.appendChild(label);
+    panel.appendChild(candidateImg);
+    grid.appendChild(panel);
+    container.appendChild(grid);
+    const note = document.createElement('div');
+    note.className = 'compare-message';
+    note.textContent = msg;
+    container.appendChild(note);
     preview.appendChild(container);
     return;
   }
