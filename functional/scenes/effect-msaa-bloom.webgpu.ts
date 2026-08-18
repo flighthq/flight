@@ -26,9 +26,13 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Soft glowing halos bleeding outward from the bloom effect (threshold 0.6, intensity 1.4, rgba16f pipeline). Edges may alias — Wgpu MSAA is not yet wired for the effect pipeline.',
+  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Soft glowing halos bleeding outward from the bloom effect (threshold 0.6, intensity 1.4, rgba16f pipeline). Edges show visible aliasing stair-steps (sampleCount currently no-ops on Wgpu — the offscreen target is single-sampled).',
 );
 
+// Wgpu parity column for MSAA + bloom. NOTE: sampleCount currently no-ops on the Wgpu effect
+// pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu target
+// is a follow-up, mirroring the Gl seam. The bloom scene2d still runs over the HDR rgba16f scene, so
+// this column verifies effect compose; its edges may alias more than Gl's until Wgpu MSAA lands.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

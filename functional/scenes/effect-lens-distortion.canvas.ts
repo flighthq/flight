@@ -27,6 +27,8 @@ declareExpectedImageDescription(
   'Four rotated squares (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 160×160 logical pixels near the four corners of the 800×600 frame on near-black (0x05060a), rotated 8°/22°/36°/50°. No lens distortion is applied — edges remain straight. This is the canvas control column; the lens-distortion effect is not registered on this backend.',
 );
 
+// Canvas has no realized lens-distortion capability. The unregistered operation is intentionally
+// skipped so this column records the backend's unsupported result without a fake passthrough runner.
 export const functionalBackendSupport = 'control' as const;
 
 const pixelRatio = window.devicePixelRatio || 1;

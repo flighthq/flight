@@ -25,6 +25,9 @@ declareExpectedImageDescription(
   'Four narrow colored bars (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 180×32 on dark background (0x101014), rotated 18°/42°/66°/90°. Diagonal edges are smooth from 4× multisampling. No post-process effects applied — empty effects array.',
 );
 
+// MSAA reference: the scene renders through the opt-in effect pipeline with sampleCount 4 — an
+// offscreen multisampled target that resolves to the canvas. With no effect stages, this isolates
+// MSAA alone, so the rotated shape's edges should be smooth (the jaggies that started this work).
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

@@ -27,6 +27,9 @@ declareExpectedImageDescription(
   'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Smooth antialiased edges from 4× MSAA and soft glowing halos bleeding outward from the bloom effect (threshold 0.6, intensity 1.4, rgba16f pipeline).',
 );
 
+// MSAA + bloom together: the pipeline uses a multisampled HDR (rgba16f) target with sampleCount 4 and
+// also runs a bloom scene2d. This proves the MSAA-resolve and the effect-compose paths cooperate — the
+// rotated shapes' edges resolve smooth while their bright interiors still bloom a soft halo.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

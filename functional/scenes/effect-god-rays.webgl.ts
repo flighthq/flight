@@ -25,7 +25,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'A white 80×80 square centered at (400,240) surrounded by four colored 100×100 squares (yellow 0xfff05c at (624,240), cyan 0x5cffe0 at (400,464), magenta 0xff5ce0 at (176,240), orange 0xffd45c at (400,16)) on a near-black 800×600 background (0x05060a). Radial light streaks emanate outward from the central white core through the dark areas between and beyond the shapes, fading with distance. The HDR pipeline (rgba16f) carries the bright regions into soft volumetric rays.',
+  'A white 80×80 square centered at (400,240) surrounded by four colored 100×100 squares (yellow 0xfff05c at (624,240), cyan 0x5cffe0 at (400,408), magenta 0xff5ce0 at (176,240), orange 0xffd45c at (400,72)) on a near-black 800×600 background (0x05060a), each rotated 12°/32°/52°/72°. Radial light streaks emanate outward from the central white core through the dark areas between and beyond the shapes, fading with distance. A uniformly dark frame with no radial streaks reaching the edges is a failure.',
 );
 
 // God rays stream light outward from the centerX/centerY light point through an HDR (rgba16f)

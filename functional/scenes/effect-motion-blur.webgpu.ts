@@ -37,9 +37,14 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Four colored squares (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 100×100 in a 2×2 arrangement on dark background (0x101014), not rotated. Each shape is smeared horizontally by a 40-pixel screen-space velocity (contributed explicitly via the velocity G-buffer). Sharp vertical edges are replaced by directional blur trails extending rightward from each square.',
+  'Four colored squares (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 100×100 in a 2×2 arrangement centered at (200,180)/(600,180)/(200,420)/(600,420) on dark 800×600 background (0x101014), not rotated. Each shape is smeared symmetrically along the horizontal axis by a 40-pixel screen-space velocity (16 taps spanning t=[-0.5, 0.5], so ~20 px each side). Sharp vertical edges become soft horizontal gradients on both sides. Four clean-edged squares with no horizontal smear is a failure.',
 );
 
+// Wgpu parity column for per-object motion blur, the mirror of render.webgl.ts. A static screenshot has
+// no transform delta to derive motion from, so each shape is given an explicit screen-space velocity
+// before the velocity pass (renderWgpuVelocity) rasterizes it into the velocity G-buffer; the motion
+// blur runner then smears each shape along its own vector. Exercises the Wgpu velocity producer end to
+// end (createWgpuVelocityTarget → registerWgpuVelocityWriter → renderWgpuVelocity).
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
