@@ -14,7 +14,17 @@ import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { emitSignal } from '@flighthq/signals';
 import type { Bitmap } from '@flighthq/types';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark blue background — not black — filled edge to edge, with a single ' +
+    'solid cyan cube centred in it, seen in perspective from above and to its right so its top face and ' +
+    'one side face are both visible. The cube is flat cyan with no shading variation between its faces: ' +
+    'it is lit by ambient light alone, so a picture where one face is darker than another is wrong. It ' +
+    'occupies roughly the middle third of the field. Everything outside it is the dark blue background, ' +
+    'in particular near x 32, y 24 — the window is resized after the view is attached, and the ' +
+    'background must still reach that corner rather than leaving the pre-resize extent visible.',
+);
 export const width = 800;
 export const height = 600;
 export const scale = window.devicePixelRatio || 1;

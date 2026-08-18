@@ -23,8 +23,19 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with four square tiles of about 110 px, each turned by ' +
+    'a different small angle, marching left to right across the middle of the field at roughly x 160, ' +
+    '320, 480 and 640, with the second and fourth sitting slightly lower than the first and third: ' +
+    'white, warm yellow, cyan and pink in that order. Every tile is SMEARED — its edges are directional ' +
+    'streaks rather than clean lines, and the smear runs the same way on all four. A picture with four ' +
+    'crisp-edged tiles is the failure. The frame carries much less fine detail than the same tiles drawn ' +
+    'without the effect, but the tiles keep their positions and their colours: nothing is displaced from ' +
+    'where it was drawn, and no tile takes on another hue.',
+);
 // Wgpu parity column. Wgpu has no velocity G-buffer here, so the effect is color-only/uniform:
 // it applies a uniform full-frame blur rather than a motion-vector-driven smear.
 const pixelRatio = window.devicePixelRatio || 1;

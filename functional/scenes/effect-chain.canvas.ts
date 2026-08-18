@@ -25,7 +25,18 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with four turned tiles of about 140 px — white near ' +
+    '(224,180), warm yellow near (576,180), cyan near (224,420), pink near (576,420) — carrying THREE ' +
+    'stacked treatments at once, and all three must be visible together. Each tile glows softly outward ' +
+    'past its edges into the dark background. The colours are more saturated and higher in contrast ' +
+    'than their raw fills. And the frame is DARKENED TOWARD ITS CORNERS: the four corners are noticeably ' +
+    'darker than the centre. Any one of the three missing is a failure — crisp tile edges, washed-out ' +
+    'colour, or uniform brightness corner-to-centre each mean one stage of the chain did not run. The ' +
+    'tiles keep their positions and their hues throughout.',
+);
 // Canvas parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The Canvas pipeline composites each registered runner in order over the scene, the
 // same RenderEffect stack intent realized with Canvas 2D compositing.
