@@ -31,17 +31,17 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 frame filled edge to edge by a single camera-facing quad — 3.4 x 2.6 world units against a view ' +
+  'An 800x600 field filled edge to edge by a single camera-facing quad — 3.4 x 2.6 world units against a view ' +
     'that is 3.314 x 2.485 units across at the quad plane, so the quad overhangs every edge and no quad border is ' +
     'visible — split down the middle into two halves that differ ONLY IN COVERAGE. Left of x = 0.5*W = 400 px the ' +
     'quad is fully present and reads as a warm, evenly lit orange-red (diffuse 0xcc5522, specular black, so there ' +
-    'is no highlight anywhere on it). Right of x = 400 px every fragment is discarded, because the alpha map is ' +
-    'green = 0 there against alphaCutoff 0.5, and the deep blue background (0x002850) stands alone. The boundary ' +
-    'is a HARD VERTICAL LINE at x = 400 px running the full height of the frame: mask mode snaps at the cutoff, ' +
-    'so no gradient band straddles it. A quad uniformly solid across its width means the alpha map never reached ' +
-    'the material; a quad cut away everywhere means it was applied to every fragment. The scene renders into an ' +
-    'HDR rgba16f target and is tone-presented, so the absolute warmth of the left half is backend-dependent while ' +
-    'the left-red / right-blue split and the position of the boundary are not.',
+    'is no highlight anywhere on it). Right of x = 0.5*W = 400 px every fragment is discarded, because the alpha ' +
+    'map is green = 0 there against alphaCutoff 0.5, and the deep blue background (0x002850) stands alone. The ' +
+    'boundary is a HARD VERTICAL LINE at x = 0.5*W = 400 px running the full height of the field: mask mode snaps ' +
+    'at the cutoff, so no gradient band straddles it. A quad uniformly solid across its width means the alpha map ' +
+    'never reached the material; a quad cut away everywhere means it was applied to every fragment. The scene ' +
+    'renders into an HDR rgba16f target and is tone-presented, so the absolute warmth of the left half is ' +
+    'backend-dependent while the left-red / right-blue split and the position of the boundary are not.',
 );
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl one directly from its package.

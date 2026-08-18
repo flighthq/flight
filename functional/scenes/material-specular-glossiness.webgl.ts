@@ -27,10 +27,11 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), lit from the right so the right side is clearly brighter than the left, ' +
-    'with a moderately soft highlight on the lit side — neither a mirror-sharp point nor a completely ' +
-    'matte wash. A sphere lit uniformly, or one brighter on the left, is the failure. The background ' +
-    'stays near-black.',
+  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = ' +
+    'H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (0.5*W, 0.5*H) = (400,300), lit from the right so the ' +
+    'right side is clearly brighter than the left, with a moderately soft highlight on the lit side — neither a ' +
+    'mirror-sharp point nor a completely matte wash. A sphere lit uniformly, or one brighter on the left, is the ' +
+    'failure. The background stays near-black.',
 );
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.

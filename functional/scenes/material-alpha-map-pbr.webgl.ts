@@ -32,21 +32,26 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 frame filled edge to edge by a single camera-facing PBR quad over a deep blue background ' +
+  'An 800x600 field filled edge to edge by a single camera-facing PBR quad over a deep blue background ' +
     '(0x002850) — 3.4 x 2.6 world units against a 3.314 x 2.485 unit view, so the quad overhangs every edge. Its ' +
     'colour is a flat warm orange (a 1x1 0xcc5522 base-colour source, so its uvScale of 3 repeats an unchanging ' +
-    'pixel and produces no visible banding), and what varies is COVERAGE, horizontally: fully opaque at the left ' +
-    'edge, falling off CONTINUOUSLY, and reaching zero at x = 0.329*W = 263 px. From there to the right edge the ' +
-    'quad is completely gone and the frame is bare background. This is a ONE-THIRD-WIDTH FADE, not two halves and ' +
-    'not a hard edge — alphaMode blend composites the intermediate coverages, so the left band is a smooth ' +
-    'orange-into-blue ramp with no step in it, and the remaining two-thirds of the frame is flat background. The ' +
-    'stop point is derivable: both PBR pipelines sample every map from one shared UV that the PRIMARY base-colour ' +
-    'map transform has already scaled by 3, and the alpha map is wrapU clamp-to-edge, so its green coverage ' +
-    'channel reaches 0 at u = 1/3 of the quad, world x = -1.7 + 2*1.7/3 = -0.567, which projects to 0.5*W*(1 + ' +
-    '-0.567/1.657) = 263 px. A quad that fades across the whole width means the alpha map was sampled with its ' +
-    'own untransformed UV instead of the shared one; a quad with a hard middle boundary means the gradient was ' +
-    'quantised into a mask. The scene renders into an HDR rgba16f target and is tone-presented, so absolute ' +
-    'levels are backend-dependent while the fade extent and direction are not.',
+    'pixel and produces no visible banding), and what varies is COVERAGE, horizontally: at the visible left edge ' +
+    'the quad is very nearly opaque but NOT exactly so — coverage there is about 0.993, because that edge sits at ' +
+    'u = 0.0381 of the alpha map, already past its first texel centre at 0.5/16 = 0.03125, so the linear filter ' +
+    'has begun mixing toward the second texel. From there coverage falls off CONTINUOUSLY and reaches zero at x = ' +
+    '0.3183*W = 254.6 px. Beyond that the quad is completely gone and the field is bare background. This is a ' +
+    'ONE-THIRD-WIDTH FADE, not two halves and not a hard edge — alphaMode blend composites the intermediate ' +
+    'coverages, so the left band is a smooth orange-into-blue ramp with no step in it, and the remaining ' +
+    'two-thirds is flat background. The stop point is derivable, and its derivation must respect that the opacity ' +
+    'source is SAMPLED rather than continuous: both PBR pipelines sample every map from one shared UV that the ' +
+    'PRIMARY base-colour map transform has already scaled by 3, and the alpha map is a 16-texel gradient with ' +
+    'wrapU clamp-to-edge, so its green coverage channel first reaches 0 at the LAST TEXEL CENTRE, u = 15.5/16 of ' +
+    'the map — not at u = 1. That is 15.5/48 = 0.3229 of the way across the quad, world x = -1.7 + 3.4*15.5/48 = ' +
+    '-0.6021, which projects to 0.5*W*(1 - 0.6021/1.6569) = 0.3183*W = 254.6 px. A quad that fades across the ' +
+    'whole width means the alpha map was sampled with its own untransformed UV instead of the shared one; a quad ' +
+    'with a hard middle boundary means the gradient was quantised into a mask. The scene renders into an HDR ' +
+    'rgba16f target and is tone-presented, so absolute levels are backend-dependent while the fade extent and ' +
+    'direction are not.',
 );
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel —
 // import the Gl one directly from its package.

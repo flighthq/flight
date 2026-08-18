@@ -27,11 +27,14 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (400,300), shaded by DISTANCE rather than by light: it is a grey gradient across the ' +
-    'surface, DARKEST at the centre and rising steadily outward to its brightest at the silhouette — grey = (viewDepth - 2)/(4 - 2), so the centre at depth 3 - 0.5 = 2.5 gives 0.25 while the silhouette at depth ~2.92 gives ~0.46. Scanning outward from the centre the tone must VARY measurably rather than ' +
-    'holding one value — a flat, evenly toned disc is the failure. There is no coloured tint, no ' +
-    'specular highlight and no light-and-shadow split: the variation is purely front-to-back. The ' +
-    'background stays near-black.',
+  'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = ' +
+    'H*tan(asin(0.5/3))/tan(pi/8) = 0.408*H — centred at (0.5*W, 0.5*H) = (400,300), shaded by DISTANCE rather ' +
+    'than by light: it is a grey gradient across the surface, DARKEST at the centre and rising steadily outward ' +
+    'to its brightest at the silhouette — grey = (viewDepth - 2)/(4 - 2), so the centre at depth 3 - 0.5 = 2.5 ' +
+    'gives 0.25 while the silhouette at depth ~2.92 gives ~0.46. Scanning outward from the centre the tone must ' +
+    'VARY measurably rather than holding one value — a flat, evenly toned disc is the failure. There is no ' +
+    'coloured tint, no specular highlight and no light-and-shadow split: the variation is purely front-to-back. ' +
+    'The background stays near-black.',
 );
 // drawGlScene3D exists on both scene-gl and scene-wgpu, so it collides in the @flighthq/sdk barrel
 // (re-exported from both) and is unavailable there — import the Gl one directly from its package.
