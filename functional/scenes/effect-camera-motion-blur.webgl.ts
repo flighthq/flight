@@ -29,12 +29,16 @@ declareExpectedImageDescription(
     '64 degrees so they span 127, 149, 156 and 147 px corner to corner (side*(cos a + sin a)), marching left to ' +
     'right across the middle of the field at x = W*(0.2 + 0.2*i) = 160, 320, 480 and 640 with y = H*(0.4 + ' +
     '0.12*(i mod 2)) alternating between 240 and 312, with the second and fourth sitting slightly lower than the ' +
-    'first and third: white, warm yellow, cyan and pink in that order. Every tile is SMEARED — its edges are ' +
-    'directional streaks rather than clean lines, and every streak points TOWARD THE CENTRE OF THE FRAME — the ' +
-    'smear direction therefore differs per tile rather than running the same way on all four, and the tiles ' +
-    'farthest from the centre smear the most. A picture with four crisp-edged tiles is the failure. The field ' +
-    'carries much less fine detail than the same tiles drawn without the effect, but the tiles keep their ' +
-    'positions and their colours: nothing is displaced from where it was drawn, and no tile takes on another hue.',
+    'first and third: white, warm yellow, cyan and pink in that order. Every tile is SMEARED into a RADIAL ' +
+    'streak, and the trail extends OUTWARD, away from the centre of the field — not toward it. The shader ' +
+    'averages 12 taps of the source at uv + (centre - uv)*t*0.8 for t running 0 to 1, so inverting it, ink drawn ' +
+    'at p leaves its copy at q = centre + (p - centre)/(1 - 0.8*t): every tap past the first lands FARTHER from ' +
+    'the centre than the source, and the last lands 1/(1 - 0.8) = 5 times as far. The streak is therefore ' +
+    'radially aligned, its direction differs per tile rather than running the same way on all four, and the tiles ' +
+    'farthest from the centre smear the most. A picture with four crisp-edged tiles is the failure, and so is one ' +
+    'whose trails run inward. The field carries much less fine detail than the same tiles drawn without the ' +
+    'effect and no tile takes on another hue, but the ink is NOT position-preserving: only the t = 0 tap sits ' +
+    'where the tile was drawn, and the rest spread its colour outward.',
 );
 // Camera3D motion blur [MOTION]: the full frame smears along the camera motion vectors, so the
 // mid-screen shapes streak in the direction of travel.
