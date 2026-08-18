@@ -32,11 +32,18 @@ declareExpectedImageDescription(
     'degrees so they span 166, 193, 197 and 176 px corner to corner (side*(cos a + sin a)) — white near ' +
     '(224,180), warm yellow near (576,180), cyan near (224,420), pink near (576,420) — carrying THREE stacked ' +
     'treatments at once, and all three must be visible together. Each tile glows softly outward past its edges ' +
-    'into the dark background. The colours are more saturated and higher in contrast than their raw fills. And ' +
-    'the field is DARKENED TOWARD ITS CORNERS: the four corners are noticeably darker than the centre. Any one of ' +
-    'the three missing is a failure — crisp tile edges, colour no more saturated than the raw fills, or uniform ' +
-    'brightness corner-to-centre each mean one stage of the chain did not run. The tiles keep their positions and ' +
-    'their hues throughout.',
+    'into the dark background. THE GLOW IS FAINT ON THIS BACKEND, and how faint is derivable: the canvas bright ' +
+    'pass scales every surviving pixel to 1 - threshold = 0.4 of its value (CSS applies brightness after the ' +
+    'contrast stretch), and the composite sets globalAlpha to the intensity, which Canvas 2D cannot take above 1, ' +
+    'so the requested 1.2 becomes 1.0. The canvas halo therefore carries 0.4/1.2 = 0.33 of the energy the GL and ' +
+    'WGPU siblings put into it. Expect a glow that reads clearly in a luminance profile and is easy to miss by ' +
+    'eye against the near-black field. This ratio is derived from the two scaling terms, not measured on this ' +
+    'cell — the sibling scene effect-bloom/canvas is the one where it was measured, at 0.29 for its intensity of ' +
+    '1.4.  The colours are more saturated and higher in contrast than their raw fills. And the field is DARKENED ' +
+    'TOWARD ITS CORNERS: the four corners are noticeably darker than the centre. Any one of the three missing is ' +
+    'a failure — crisp tile edges, colour no more saturated than the raw fills, or uniform brightness ' +
+    'corner-to-centre each mean one stage of the chain did not run. The tiles keep their positions and their hues ' +
+    'throughout.',
 );
 // Canvas parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The Canvas pipeline composites each registered runner in order over the scene, the
