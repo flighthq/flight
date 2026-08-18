@@ -49,6 +49,17 @@ type CompareMode = 'off' | 'side-by-side' | 'onion-skin';
 let compareMode: CompareMode = 'side-by-side';
 let onionOpacity = 0.5;
 
+const approvedCells = new Map<string, boolean>();
+let promptOpen = false;
+
+function approvalKey(t: ReviewTest, renderer: string): string {
+  return `${t.tool}/${t.name}/${renderer}`;
+}
+
+function clearApprovals(): void {
+  approvedCells.clear();
+}
+
 function screenshotUrl(tool: string, name: string, renderer: string): string {
   return `/artifacts/${tool}/${name}/${renderer}/screenshot.png`;
 }
@@ -212,11 +223,13 @@ function buildSidebar(): void {
   testList.querySelector('.selected')?.scrollIntoView({ block: 'nearest' });
 }
 
-async function holdCurrentTest(): Promise<void> {
+async function holdRenderers(renderers: readonly string[]): Promise<void> {
   const t = currentTest();
   if (!t) return;
 
+  promptOpen = true;
   const reason = prompt('Hold reason (mandatory — explain what is wrong with this render):');
+  promptOpen = false;
   if (!reason || reason.trim().length === 0) return;
 
   try {
@@ -226,7 +239,7 @@ async function holdCurrentTest(): Promise<void> {
       body: JSON.stringify({
         tool: t.tool,
         entry: t.name,
-        renderers: t.cells.map((c) => c.renderer),
+        renderers,
         reason: reason.trim(),
       }),
     });
@@ -237,21 +250,34 @@ async function holdCurrentTest(): Promise<void> {
     }
     const result = (await res.json()) as { keys: string[]; path: string };
     showCommissionFeedback(`Held ${result.keys.length} cell(s) in ${result.path}`, false);
+    showCurrent();
   } catch (e) {
     showCommissionFeedback(`Network error: ${e}`, true);
   }
+}
+
+async function holdCurrentTest(): Promise<void> {
+  const t = currentTest();
+  if (!t) return;
+  await holdRenderers(t.cells.map((c) => c.renderer));
 }
 
 async function commissionCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
 
-  const cells = t.cells.map((c) => ({
+  const hasMarks = t.cells.some((c) => approvedCells.has(approvalKey(t, c.renderer)));
+  const selectedCells = hasMarks
+    ? t.cells.filter((c) => approvedCells.get(approvalKey(t, c.renderer)) === true)
+    : t.cells;
+
+  const cells = selectedCells.map((c) => ({
     renderer: c.renderer,
     pixelSha256: c.hash,
     hostInstanceId: c.provenance?.hostInstanceId ?? null,
     environmentId: c.provenance?.environmentId ?? null,
   }));
+
 
   try {
     const res = await fetch('/api/commission', {
@@ -281,6 +307,8 @@ async function commissionCurrentTest(): Promise<void> {
         ? `all ${result.total} renderer(s)`
         : `${result.committed} of ${result.total} renderer(s) — skipped ${result.skipped.join(', ')} (no capture hash)`;
     showCommissionFeedback(`Requested ${scope} → ${result.path}`, result.committed !== result.total);
+    clearApprovals();
+    showCurrent();
   } catch (e) {
     showCommissionFeedback(`Network error: ${e}`, true);
   }
@@ -336,6 +364,10 @@ function buildRendererBar(): void {
 
     const label = commissionStateLabel(cell.commissionState);
     if (label) btn.setAttribute('data-commission', cell.commissionState);
+
+    const mark = approvedCells.get(approvalKey(t, cell.renderer));
+    if (mark === true) btn.setAttribute('data-approval', 'approved');
+
     btn.textContent = cell.renderer;
     btn.addEventListener('click', () => {
       selectedRenderer = cell.renderer;
@@ -366,13 +398,23 @@ function buildRendererBar(): void {
     commissionBtn.title = 'A commission request is already queued for this scene';
     commissionBtn.disabled = true;
     commissionBtn.setAttribute('data-commission', 'requested');
-  } else if (summary.state === 'differs') {
-    commissionBtn.textContent = 'Commission (differs)';
-    commissionBtn.title = 'This capture differs from the locked reference — commission to update';
-    commissionBtn.addEventListener('click', () => void commissionCurrentTest());
   } else {
-    commissionBtn.textContent = 'Commission';
-    commissionBtn.title = 'Write a reference image request for all renderers of this scene';
+    const approvedCount = t.cells.filter((c) => approvedCells.get(approvalKey(t, c.renderer)) === true).length;
+    const hasMarks = t.cells.some((c) => approvedCells.has(approvalKey(t, c.renderer)));
+    if (hasMarks && approvedCount > 0) {
+      commissionBtn.textContent = `Commission (${approvedCount} of ${t.cells.length})`;
+      commissionBtn.title = `Commission ${approvedCount} approved cell(s) — press 'a' to approve more, 'd' to deny`;
+    } else if (hasMarks && approvedCount === 0) {
+      commissionBtn.textContent = 'Commission (none approved)';
+      commissionBtn.title = "No cells approved — press 'a' on a cell to approve it";
+      commissionBtn.disabled = true;
+    } else if (summary.state === 'differs') {
+      commissionBtn.textContent = 'Commission (differs)';
+      commissionBtn.title = 'This capture differs from the locked reference — commission to update';
+    } else {
+      commissionBtn.textContent = 'Commission';
+      commissionBtn.title = 'Write a reference image request for all renderers of this scene';
+    }
     commissionBtn.addEventListener('click', () => void commissionCurrentTest());
   }
 
@@ -454,6 +496,9 @@ function showRenderer(): void {
     if (cell.holdReason) {
       stateEl.textContent = `HELD — ${cell.holdReason}`;
       stateEl.setAttribute('data-commission', 'held');
+    } else if (t && approvedCells.get(approvalKey(t, cell.renderer)) === true) {
+      stateEl.textContent = 'Approved for commissioning (not yet filed)';
+      stateEl.setAttribute('data-commission', 'approved');
     } else {
       stateEl.textContent = commissionStateMessage(cell.commissionState);
       stateEl.setAttribute('data-commission', cell.commissionState);
@@ -691,6 +736,7 @@ function saveState(): void {
 
 function selectTest(t: ReviewTest): void {
   selectedKey = testKey(t);
+  clearApprovals();
   if (!t.cells.some((c) => c.renderer === selectedRenderer)) {
     selectedRenderer = t.cells[0]?.renderer ?? '';
   }
@@ -717,6 +763,7 @@ function cycleRenderer(delta: -1 | 1): void {
 }
 
 document.addEventListener('keydown', (e) => {
+  if (promptOpen) return;
   if (e.target === filterInput) {
     if (e.key === 'Escape') {
       filterInput.value = '';
@@ -748,8 +795,55 @@ document.addEventListener('keydown', (e) => {
     compareMode = modes[(modes.indexOf(compareMode) + 1) % modes.length];
     buildRendererBar();
     showRenderer();
+  } else if (e.key === 'a') {
+    e.preventDefault();
+    approveCurrentCell();
+  } else if (e.key === 'd') {
+    e.preventDefault();
+    void denyCurrentCell();
   }
 });
+
+function approveCurrentCell(): void {
+  const t = currentTest();
+  if (!t) return;
+  const ci = currentCellIndex();
+  const cell = t.cells[ci];
+  if (!cell) return;
+
+  if (!cell.hash || !cell.provenance?.hostInstanceId || !cell.provenance?.environmentId) {
+    showCommissionFeedback(
+      `Cannot approve ${cell.renderer}: missing capture hash or provenance (re-capture first)`,
+      true,
+    );
+    return;
+  }
+  if (cell.holdReason) {
+    showCommissionFeedback(`Cannot approve ${cell.renderer}: cell is held`, true);
+    return;
+  }
+
+  const key = approvalKey(t, cell.renderer);
+  const current = approvedCells.get(key);
+  if (current === true) {
+    approvedCells.delete(key);
+  } else {
+    approvedCells.set(key, true);
+  }
+  buildRendererBar();
+  showRenderer();
+}
+
+async function denyCurrentCell(): Promise<void> {
+  const t = currentTest();
+  if (!t) return;
+  const ci = currentCellIndex();
+  const cell = t.cells[ci];
+  if (!cell) return;
+
+  approvedCells.delete(approvalKey(t, cell.renderer));
+  await holdRenderers([cell.renderer]);
+}
 
 filterInput.addEventListener('input', () => {
   filterQuery = filterInput.value;
