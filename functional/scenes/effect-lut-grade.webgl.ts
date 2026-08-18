@@ -25,9 +25,12 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Six rectangles in a 3×2 grid filling the 800×600 frame with a warm color grade from a 32³ lookup table. Reds are lifted brighter (γ=0.8), greens slightly compressed (γ=1.1), and blues crushed darker (γ=1.5). The red cell appears brighter than its ungraded source; the blue cell is notably darker. Overall warm shift across all cells. No gaps between cells.',
+  'Six rectangles in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300; source colors red 0xff3030, green 0x30c040, blue 0x3060ff, yellow 0xffd030, magenta 0xff30c0, cyan 0x30d0d0) with a warm color grade from a 32³ lookup table. Reds are lifted brighter (γ=0.8), greens slightly compressed (γ=1.1), and blues crushed darker (γ=1.5). The red cell appears brighter than its ungraded source; the blue cell is notably darker. No gaps between cells.',
 );
 
+// Full-frame lutGrade color grade: applies a baked 32^3 warm-tone LUT at full strength. The grade lifts
+// reds (γ=0.8), slightly compresses greens (γ=1.1), and crushes blues (γ=1.5), producing a visible warm
+// shift. One config applied to the whole scene through an rgba8 effect pipeline.
 const warmGradeLut = bakeColorLut(
   [
     (out, r, g, b) => {

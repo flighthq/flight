@@ -24,9 +24,11 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Six rectangles in a 3×2 grid filling the 800×600 frame, showing complementary colors of the source: the original red cell (0xff3030) inverts to cyan, green (0x30c040) to magenta, blue (0x3060ff) to yellow, yellow (0xffd030) to dark blue, magenta (0xff30c0) to green, cyan (0x30d0d0) to warm red. Originally bright cells appear darker; originally dark cells appear lighter. No gaps between cells.',
+  'Six rectangles in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300), showing complementary colors of the source: red (0xff3030) inverts to cyan, green (0x30c040) to magenta, blue (0x3060ff) to yellow, yellow (0xffd030) to dark blue, magenta (0xff30c0) to green, cyan (0x30d0d0) to warm red. Originally bright cells appear darker; originally dark cells appear lighter. No gaps between cells.',
 );
 
+// Full-frame invert color grade: fully inverts every channel. One config applied to the whole scene through an
+// rgba8 effect pipeline (the default format for color ops, so format is omitted).
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

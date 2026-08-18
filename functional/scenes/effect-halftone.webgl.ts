@@ -25,9 +25,10 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'Eighteen small overlapping rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) arranged in a roughly 5-across×4-down pattern on a dark background (0x101014), each rotated by i×22°. A halftone dot screen (scale 4, angle 0.4 radians) replaces the flat color fills with a repeating pattern of round dots — brighter areas produce larger dots, darker areas smaller ones.',
+  'Eighteen small overlapping rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) on a dark 800×600 background (0x101014) in a 5×4 grid (x centers at ~96/240/384/528/672, y centers at ~108/228/348/468; last row has 3), each rotated by i×22°. A halftone dot screen (scale 4, angle 0.4 rad) replaces the flat fills with round dots — brighter areas produce larger dots, darker areas smaller ones.',
 );
 
+// halftone: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
