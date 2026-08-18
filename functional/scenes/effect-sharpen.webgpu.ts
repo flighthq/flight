@@ -23,7 +23,18 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black blue-grey field (about R16 G16 B20) carries 18 narrow saturated rectangles ' +
+    'in four staggered rows. Each rectangle is 56×20 before rotation; their centres use five columns ' +
+    'at 12%, 30%, 48%, 66% and 84% of the width and rows at 18%, 38%, 58% and 78% of the height, with ' +
+    'only three in the last row. Red-pink, green, blue, yellow, violet and cyan repeat, and ' +
+    'successive rectangles turn by 22 degrees. The diagonal colour boundaries are crisp and locally ' +
+    'accentuated, not softened or spread into broad halos. Shapes remain separate and the gaps remain ' +
+    'the same near-black field.',
+);
 
 // Wgpu parity column for the same sharpen intent as render.webgl.ts. Wgpu render-state init is
 // async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.

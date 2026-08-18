@@ -23,6 +23,17 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black blue-grey field (about R16 G16 B20) carries 18 narrow saturated rectangles ' +
+    'in four staggered rows. Each is 56×20 before rotation; the repeated colours are red-pink, green, ' +
+    'blue, yellow, violet and cyan, and successive rectangles turn by 22 degrees. Alternating dark ' +
+    'horizontal bands cross the entire field and every rectangle at a spacing of about 2.5 px (600 px ' +
+    'divided by 240 bands), making brightness vary strongly between adjacent rows. The bands do not ' +
+    'become vertical, stop at shape edges or erase the near-black gaps between the separate ' +
+    'rectangles.',
+);
 
 // Canvas parity column for the same scanlines intent as render.webgl.ts.
 // Scanlines (REAL on Canvas): the scene is drawn, then a set of darkening horizontal lines is

@@ -23,7 +23,17 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four 160×160 squares sit near the corners: ' +
+    'white centred at (128,108), yellow at (672,120), cyan at (144,492) and magenta at (656,480), ' +
+    'turned by 8, 22, 36 and 50 degrees. The top and bottom out-of-focus bands soften those four ' +
+    'off-centre silhouettes, while the horizontal focus band through the middle stays free of ' +
+    'spurious blur. The shapes remain separately coloured rather than merging into a wash, and the ' +
+    'extreme corners remain near-black.',
+);
 
 // Wgpu parity column for the same tilt-shift intent as render.webgl.ts.
 const pixelRatio = window.devicePixelRatio || 1;

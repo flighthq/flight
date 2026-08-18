@@ -22,6 +22,16 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four 140×140 rotated squares form a 2×2 ' +
+    'arrangement: white at (224,180), yellow at (576,180), cyan at (224,420) and magenta at ' +
+    '(576,420), turned by 12, 32, 52 and 72 degrees. Their centres remain bright and their flat ' +
+    'colours remain distinct. With no depth information in this scene, no ambient-occlusion crease, ' +
+    'contact shadow or dark depth halo appears; the result is the unoccluded four-shape picture, not ' +
+    'a blank field and not four blackened centres.',
+);
 
 // ssao is depth-driven [DEPTH]. With no sampleable depth buffer in this test, the Gl recipe is a
 // color-only fallback (no occlusion darkening), passing the lit scene through.

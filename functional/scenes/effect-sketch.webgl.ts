@@ -22,6 +22,17 @@ import {
   renderGlScene2D,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black field carries the stroke-like remains of 18 narrow rectangles in four ' +
+    'staggered rows, with five columns in the first three rows and three in the last. The rectangles ' +
+    'began as six repeating saturated colours and successive 22-degree rotations, but the visible ' +
+    'result is entirely monochrome: edges and interior detail read as varied grey pencil marks, with ' +
+    'no surviving red, green, blue, yellow, violet or cyan. The result is not a flat grey wash — ' +
+    'adjacent light and dark stroke structure remains — and the separate shapes do not merge into one ' +
+    'solid block.',
+);
 
 // sketch: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
 const pixelRatio = window.devicePixelRatio || 1;

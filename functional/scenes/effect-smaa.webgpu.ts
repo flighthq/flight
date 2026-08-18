@@ -23,7 +23,17 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four 180×180 high-contrast rotated squares ' +
+    'form a 2×2 arrangement: white at (224,180), red at (576,180), cyan at (224,420) and yellow at ' +
+    '(576,420), turned by 27, 40, 53 and 66 degrees. Their diagonal silhouettes have narrow blended ' +
+    'antialiasing transitions rather than hard stair steps, while each centre stays a bright flat ' +
+    'colour. The squares remain separate, carry no detached outline or glow, and the field around ' +
+    'them stays near-black.',
+);
 
 // Wgpu SMAA: single-pass approximation antialiasing the full frame's jagged edges.
 const pixelRatio = window.devicePixelRatio || 1;

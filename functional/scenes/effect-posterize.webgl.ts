@@ -22,6 +22,16 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat colour panels, each one ' +
+    'third of the width and one half of the height. From left to right they remain recognisably red, ' +
+    'green and blue on the top row, then yellow, magenta and cyan on the bottom, but every channel is ' +
+    'snapped to one of four intensity steps: across the six panel centres there are no more than four ' +
+    'distinct blue values, rather than the five values in the ungraded colours. There is no visible ' +
+    'background, border, gradient, outline or spacing between panels.',
+);
 
 // Full-frame posterize color grade: quantizes each channel to 4 levels. One config applied to the whole scene through an
 // rgba8 effect pipeline (the default format for color ops, so format is omitted).

@@ -22,6 +22,16 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat colour panels, each one ' +
+    'third of the width and one half of the height. From left to right they remain recognisably red, ' +
+    'green and blue on the top row, then yellow, magenta and cyan on the bottom, but the whole set is ' +
+    "warmed and shifted toward magenta. In particular the blue panel's red channel is visibly lifted " +
+    'above its authored value of 48 while blue is attenuated; it is not the untouched cool blue. ' +
+    'There is no background, border, gradient, outline or spacing between panels.',
+);
 
 // Full-frame whiteBalance color grade: warms the temperature and shifts tint toward magenta. One config applied to the whole scene through an
 // rgba8 effect pipeline (the default format for color ops, so format is omitted).

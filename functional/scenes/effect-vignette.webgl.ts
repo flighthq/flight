@@ -22,6 +22,15 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'The entire 800×600 field is one pale blue-white fill (authored R232 G236 B244) with a smooth ' +
+    'radial darkening toward every edge and corner. The centre remains close to the authored bright ' +
+    'colour while the corner luminance is more than 20 levels darker. There are no objects, borders, ' +
+    'bands or abrupt steps: only the continuous centre-to-edge falloff. The corners are not the same ' +
+    'brightness as the centre, and no background shows through.',
+);
 
 // Vignette: a full-bleed bright fill darkened toward the corners. The center stays bright while the
 // edges fall off, so the radial darkening is obvious against the flat fill.

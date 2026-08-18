@@ -28,6 +28,17 @@ import {
   setCubeTextureFace,
   setVector3,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 environment backdrop surrounds two large spheres centred near (256,300) and ' +
+    '(544,300). The backdrop is assembled from strong red, green, near-white, dark grey-violet, blue ' +
+    'and yellow faces. The left sphere is a very smooth metal: it is brightly lit and carries visibly ' +
+    'different reflected face colours across its surface rather than one flat tone. The right sphere ' +
+    'is a rough grey non-metal with a softer diffuse environment tint and little sharp reflection. ' +
+    'Neither sphere is black, there is no punctual-light spot, and the near-black clear colour does ' +
+    'not replace the environment behind them.',
+);
 
 // Gl-backend IBL render: bake the environment's split-sum set once, draw the skybox backdrop, then
 // draw the scene whose PBR materials are lit purely by the baked environment (no punctual lights).

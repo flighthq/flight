@@ -22,7 +22,17 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four 140×140 rotated squares form a 2×2 ' +
+    'arrangement: white at (224,180), yellow at (576,180), cyan at (224,420) and magenta at ' +
+    '(576,420), turned by 12, 32, 52 and 72 degrees. This control picture remains unchanged: the ' +
+    'centres are bright and flat, the gaps are near-black, and there are no reflected copies, ' +
+    'mirrored streaks or secondary shapes anywhere around them. The field is not blank and none of ' +
+    'the four source squares disappears.',
+);
 
 // WGPU has no realized SSR capability. The unregistered operation is intentionally skipped so this
 // column records the backend's unsupported result without a fake identity implementation.

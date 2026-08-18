@@ -23,7 +23,17 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four unrotated 160×160 squares form a 2×2 ' +
+    'arrangement: white centred at (240,192), red at (560,192), green at (240,408) and blue at ' +
+    '(560,408). The raised highlights roll off instead of clipping: the white square stays bright but ' +
+    'below flat R255 G255 B255, approximately 224 per channel because a 1.0 white at 1.5 exposure ' +
+    'maps to about 0.877. The red, green and blue squares keep their dominant hue rather than turning ' +
+    'white. No gradient, border or extra shape appears, and all gaps stay near-black.',
+);
 
 // Wgpu parity column for the same tone-map intent as render.webgl.ts. Unlike Canvas (passthrough),
 // tone mapping is real on Wgpu: bright HDR content rendered into an rgba16f target is compressed

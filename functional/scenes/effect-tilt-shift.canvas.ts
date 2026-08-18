@@ -22,6 +22,15 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four sharp 160×160 squares sit near the ' +
+    'corners: white centred at (128,108), yellow at (672,120), cyan at (144,492) and magenta at ' +
+    '(656,480), turned by 8, 22, 36 and 50 degrees. Every diagonal edge remains crisp from top to ' +
+    'bottom; there is no softened upper or lower band, no central haze and no colour outside the four ' +
+    'silhouettes. The wide middle gap and extreme corners stay near-black.',
+);
 
 // Canvas has no realized tilt-shift capability. The unregistered operation is intentionally skipped
 // so this column records the backend's unsupported result without a fake passthrough runner.

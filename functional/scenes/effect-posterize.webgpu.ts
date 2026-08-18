@@ -23,7 +23,17 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat colour panels, each one ' +
+    'third of the width and one half of the height. From left to right they remain recognisably red, ' +
+    'green and blue on the top row, then yellow, magenta and cyan on the bottom, but every channel is ' +
+    'snapped to one of four intensity steps: across the six panel centres there are no more than four ' +
+    'distinct blue values, rather than the five values in the ungraded colours. There is no visible ' +
+    'background, border, gradient, outline or spacing between panels.',
+);
 
 // Wgpu parity column for the same full-frame posterize grade as render.webgl.ts: quantizes each channel to 4 levels.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

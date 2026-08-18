@@ -22,6 +22,17 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black blue-grey field (about R16 G16 B20) carries 18 narrow saturated rectangles ' +
+    'in four staggered rows. Each rectangle is 56×20 before rotation; their centres use five columns ' +
+    'at 12%, 30%, 48%, 66% and 84% of the width and rows at 18%, 38%, 58% and 78% of the height, with ' +
+    'only three in the last row. Red-pink, green, blue, yellow, violet and cyan repeat, and ' +
+    'successive rectangles turn by 22 degrees. The diagonal colour boundaries are crisp and locally ' +
+    'accentuated, not softened or spread into broad halos. Shapes remain separate and the gaps remain ' +
+    'the same near-black field.',
+);
 
 // sharpen: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
 const pixelRatio = window.devicePixelRatio || 1;

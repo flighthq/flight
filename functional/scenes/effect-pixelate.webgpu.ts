@@ -23,7 +23,18 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black blue-grey field (about R16 G16 B20) carries 18 red-pink, green, blue, ' +
+    'yellow, violet and cyan narrow rectangles in four staggered rows. Each source rectangle is ' +
+    '56×20, centred in columns at 12%, 30%, 48%, 66% and 84% of the field width and rows at 18%, 38%, ' +
+    '58% and 78% of its height, with only three rectangles in the last row; successive rectangles ' +
+    'turn by 22 degrees. The whole picture is reduced to chunky uniform 24 px blocks, so diagonal ' +
+    'edges are visibly stair-stepped and fine one-pixel colour changes are absent. The rectangles ' +
+    'remain separate, with blocky near-black gaps rather than a continuous coloured mass.',
+);
 
 // Wgpu parity column for the same pixelate intent as render.webgl.ts. Wgpu render-state init is
 // async; the effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.

@@ -22,6 +22,16 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'An 800×600 field shows four 140×140 rotated squares in a 2×2 arrangement: white at (224,180), ' +
+    'yellow at (576,180), cyan at (224,420) and magenta at (576,420), turned by 12, 32, 52 and 72 ' +
+    'degrees. A uniform blue-grey haze is blended across both shapes and background, lifting even the ' +
+    'extreme corners well above the source near-black R5 G6 B10. Because this scene supplies no depth ' +
+    'variation, the haze is flat rather than nearer shapes being clearer or farther shapes being ' +
+    'denser. No corner remains near-black and no depth-graded horizon appears.',
+);
 
 // screenSpaceFog is depth-driven [DEPTH]. These tests carry no sampleable depth buffer, so the Gl
 // recipe falls back to a color-only flat fog tint over the frame rather than depth-graded fog.
