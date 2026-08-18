@@ -22,7 +22,6 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
