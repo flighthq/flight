@@ -46,7 +46,7 @@ let activeImgs: HTMLImageElement[] = [];
 const imgCache = new Map<string, HTMLImageElement[]>();
 
 type CompareMode = 'off' | 'side-by-side' | 'onion-skin';
-let compareMode: CompareMode = 'off';
+let compareMode: CompareMode = 'side-by-side';
 let onionOpacity = 0.5;
 
 function screenshotUrl(tool: string, name: string, renderer: string): string {
