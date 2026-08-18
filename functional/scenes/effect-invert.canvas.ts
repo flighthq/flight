@@ -23,8 +23,12 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas parity column for the same full-frame invert grade as render.webgl.ts: fully inverts every channel,
-// realized through Canvas 2D compositing.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Six rectangles in a 3×2 grid filling the 800×600 frame, showing complementary colors of the source: the original red cell (0xff3030) inverts to cyan, green (0x30c040) to magenta, blue (0x3060ff) to yellow, yellow (0xffd030) to dark blue, magenta (0xff30c0) to green, cyan (0x30d0d0) to warm red. Originally bright cells appear darker; originally dark cells appear lighter. No gaps between cells.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

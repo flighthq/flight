@@ -23,9 +23,12 @@ import {
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// Film grain: per-pixel noise is mixed over the frame. A flat mid-gray fill is the cleanest backdrop —
-// the grain shows as fine speckle that would be invisible over busy content. Fixed seed keeps the
-// static capture deterministic.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'A uniform mid-gray field (0x808080) covering the entire 800×600 frame, overlaid with fine random speckle noise from the film grain effect (intensity 0.3, grain size 1.5). No shapes, no color variation — only the grain texture over flat gray. The noise is subtle: individual specks are visible at full resolution but average to gray at a distance.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

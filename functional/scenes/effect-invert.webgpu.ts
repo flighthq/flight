@@ -22,7 +22,12 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'Six rectangles in a 3×2 grid filling the 800×600 frame, showing complementary colors of the source: the original red cell (0xff3030) inverts to cyan, green (0x30c040) to magenta, blue (0x3060ff) to yellow, yellow (0xffd030) to dark blue, magenta (0xff30c0) to green, cyan (0x30d0d0) to warm red. Originally bright cells appear darker; originally dark cells appear lighter. No gaps between cells.',
+);
 
 // Wgpu parity column for the same full-frame invert grade as render.webgl.ts: fully inverts every channel.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

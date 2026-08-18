@@ -23,7 +23,12 @@ import {
   submitWgpuRenderPass,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'Eighteen small overlapping rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) arranged in a roughly 5-across×4-down pattern on a dark background (0x101014), each rotated by i×22°. A halftone dot screen (scale 4, angle 0.4 radians) replaces the flat color fills with a repeating pattern of round dots — brighter areas produce larger dots, darker areas smaller ones.',
+);
 
 // Wgpu parity column for the same halftone intent as render.webgl.ts. Wgpu render-state init is
 // async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.

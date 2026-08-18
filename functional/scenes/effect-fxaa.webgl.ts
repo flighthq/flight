@@ -23,8 +23,12 @@ import {
   renderGlScene2D,
 } from '@flighthq/sdk';
 
-// FXAA antialiases the whole frame: a full-frame edge-detect/blend pass smooths the jagged diagonal
-// edges of the rotated shapes.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Four rotated rectangles (white, red 0xff3040, cyan 0x30c0ff, yellow 0xffd040) on a near-black background (0x05060a), each 180×180 logical pixels, arranged in a 2×2 pattern and rotated at 27°, 40°, 53°, 66°. Diagonal edges are smooth rather than stair-stepped — FXAA antialiasing blends the high-contrast boundaries. No glow or halo; the smoothing is confined to edge pixels.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

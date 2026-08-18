@@ -23,7 +23,12 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'A uniform mid-gray field (0x808080) covering the entire 800×600 frame, overlaid with fine random speckle noise from the film grain effect (intensity 0.3, grain size 1.5). No shapes, no color variation — only the grain texture over flat gray. The noise is subtle: individual specks are visible at full resolution but average to gray at a distance.',
+);
 
 // Wgpu parity column for the same film-grain intent as render.webgl.ts: per-pixel noise over a flat
 // mid-gray fill, fixed seed for a deterministic capture. Wgpu render-state init is async; the effect

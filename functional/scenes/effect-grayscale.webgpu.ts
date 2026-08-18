@@ -22,7 +22,12 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'Six shades of neutral gray in a 3×2 grid filling the 800×600 frame. Top row left to right: dark gray, medium gray, medium-dark gray; bottom row: light gray, medium gray, medium gray. Each cell is a single flat tone with no color — all saturation removed. No gaps between cells. Dark gray-blue border is not visible because the grid covers the full frame.',
+);
 
 // Wgpu parity column for the same full-frame grayscale grade as render.webgl.ts: fully desaturates the frame to luminance.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

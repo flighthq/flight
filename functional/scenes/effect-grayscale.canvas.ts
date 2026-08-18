@@ -23,8 +23,12 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/sdk';
 
-// Canvas parity column for the same full-frame grayscale grade as render.webgl.ts: fully desaturates the frame to luminance,
-// realized through Canvas 2D compositing.
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'Six shades of neutral gray in a 3×2 grid filling the 800×600 frame. Top row left to right: dark gray, medium gray, medium-dark gray; bottom row: light gray, medium gray, medium gray. Each cell is a single flat tone with no color — all saturation removed. No gaps between cells. Dark gray-blue border is not visible because the grid covers the full frame.',
+);
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
