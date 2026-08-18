@@ -22,10 +22,20 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for exposure. The HDR rgba16f scene target is multiplied by 2^exposure; init
 // is async so createWgpuRenderState is awaited.
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with four square tiles of about 140 px, each turned by ' +
+    'a different small angle: white centred near (224,180), warm yellow near (576,180), cyan near ' +
+    '(224,420) and pink near (576,420). The whole picture is BRIGHTENED — every tile reads lighter than ' +
+    'its raw fill and the three coloured tiles are visibly washed toward white, while the background ' +
+    'stays dark. A picture whose tiles match their raw fills is the failure. The tiles keep their ' +
+    'positions, their angles and their distinct hues from each other; they do not bloom or spill past ' +
+    'their edges.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

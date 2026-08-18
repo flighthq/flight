@@ -20,11 +20,21 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the empty-passthrough identity check. The scene renders through the effect
 // pipeline with an EMPTY effect list at sampleCount 1; begin -> render -> end with no stages must
 // present the scene unchanged, proving the Wgpu pipeline's present path is an identity blit.
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark background with four square tiles of about 140 px, each turned by ' +
+    'a different small angle: red centred near (224,180), green near (576,180), blue near (224,420) and ' +
+    'yellow near (576,420). The picture is COMPLETELY UNTREATED — the tiles have hard clean edges, flat ' +
+    'unmodified fill colours, no glow or spill past any edge, no darkening toward the corners, no ' +
+    'banding and no blur. It must look exactly as the same four tiles would look drawn straight to the ' +
+    'screen: any visible processing at all is the failure, because an empty effect list must change ' +
+    'nothing. The very dark background is visible between and around all four.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

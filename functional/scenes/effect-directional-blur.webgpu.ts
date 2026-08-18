@@ -23,10 +23,20 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column. The directional smear is a color-only/uniform full-frame blur along the
 // configured angle (no depth/velocity G-buffer is involved).
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with four square tiles of about 110 px, each turned by ' +
+    'a different small angle, marching left to right across the middle at roughly x 160, 320, 480 and ' +
+    '640, the second and fourth sitting slightly lower than the first and third: white, warm yellow, ' +
+    'cyan and pink in that order. Every tile is SMEARED ALONG ONE SHARED DIAGONAL — the streaks run the ' +
+    'same direction on all four, slightly off horizontal, rather than radiating outward or differing ' +
+    'per tile. Crisp-edged tiles, or smears running different ways, are both failures. The tiles keep ' +
+    'their positions and their colours; only their edges are drawn out.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
