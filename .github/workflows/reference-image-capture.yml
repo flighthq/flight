@@ -2,12 +2,13 @@
 # agents/render-reference-image-repository.md §7 step 2.
 #
 # ★★ THIS WORKFLOW IS UNTRUSTED-CODE EXECUTION AND HOLDS NO CROSS-REPOSITORY CREDENTIAL.
-# It checks out a commissioned Flight commit and runs its build, its browsers and its capture tool —
-# whoever can land a request can run arbitrary code in this job. `permissions` is therefore read-only on
-# contents and nothing else, and there is no secret in this file. The dispatch to `flight-reference-images` lives
-# in `reference-image-bridge.yml`, which never executes this checkout. §7's credential boundary exists so that a
-# commissioned source commit cannot read the credential able to rewrite the store it is measured against;
-# splitting it across two workflows is what enforces it, not a convention anyone has to remember.
+# It checks out and builds a commissioned Flight commit, then current capture tooling serves that build's
+# static output — whoever can land a request can still run arbitrary code through install/build scripts in
+# this job. `permissions` is therefore read-only on contents and nothing else, and there is no secret in this
+# file. The dispatch to `flight-reference-images` lives in `reference-image-bridge.yml`, which never executes
+# this checkout. §7's credential boundary exists so that a commissioned source commit cannot read the
+# credential able to rewrite the store it is measured against; splitting it across two workflows is what
+# enforces it, not a convention anyone has to remember.
 #
 # ★ THE TRIGGER IS EVERY PUSH TO THE TRUNK, DELIBERATELY, AND THAT REPLACED A PATH FILTER THAT KEPT
 # SILENTLY MISSING COMMISSIONS. A path filter answers "did the queue change in this push"; the body
@@ -124,17 +125,25 @@ jobs:
           cp "$request" "$RUNNER_TEMP/reference-image-requests/${{ matrix.request }}.json"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
 
-      # ★ WORKFLOW FROM TRUNK, CODE FROM THE REQUEST IS INTENTIONAL. The workflow definition and its
-      # capture recipe remain the current trusted version that this push triggered; this checkout changes
-      # the repository bytes under test to the commit whose static build the requester actually reviewed.
-      # Replacing this ref with github.sha would silently reintroduce code drift between review and CI.
+      # ★ TODAY'S INSTRUMENT ON AN OLD SUBJECT. Root remains at github.sha so scope, capture and bundle use
+      # the current interfaces this workflow was written against. The reviewed commit is fenced under its
+      # own directory and contributes only the product build being measured. A second root checkout used to
+      # replace today's tools with old ones: renamed flags that still parsed, or changed output shapes, then
+      # failed silently. The explicit path is the version boundary rather than a comment readers must infer.
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.reviewed-build.outputs.commit }}
+          path: reviewed
 
-      - run: npm ci
+      - name: Install current capture instruments
+        run: npm ci
 
-      - name: Build the harness
+      - name: Install reviewed build dependencies
+        working-directory: reviewed
+        run: npm ci
+
+      - name: Build the reviewed harness
+        working-directory: reviewed
         run: |
           npm run build
           npm run build:functional
@@ -164,7 +173,7 @@ jobs:
           # The scope comes from the request through one code path (getOracleRequestCells), so the
           # workflow never re-derives which cells are in scope.
           npx tsx ./scripts/reference-image-commission.ts scope "$request" | while read -r args; do
-            npx tsx ./packages/tool-capture/src/bin.ts capture $args
+            npx tsx ./packages/tool-capture/src/bin.ts capture --dir reviewed/tools/functional/dist $args
           done
           npx tsx ./scripts/reference-image-commission.ts bundle "$request" --artifacts .artifacts --stage stage
 
