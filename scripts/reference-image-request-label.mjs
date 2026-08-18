@@ -38,6 +38,22 @@ export function getReferenceImageRequestLabel(value) {
  * Builds the Actions matrix. An optional request path narrows a manual run to one file; only its
  * basename is accepted, matching the workflow's existing path contract without admitting traversal.
  *
+ * A LABEL IS DISPLAY-ONLY AND MUST NEVER STOP A CAPTURE. Every per-file failure degrades to the id
+ * and continues, because this function's answer is "which requests are outstanding" and describing
+ * them is the additive part. It briefly did the opposite: it parsed every request and threw, so ONE
+ * unreadable file enumerated zero requests instead of the other sixteen, and no capture ran for any
+ * of them. Presentation had silently become a precondition for the pipeline running at all.
+ *
+ * The failure is reported on STDERR, never stdout — stdout is the matrix JSON the workflow assigns
+ * to `list`, so a diagnostic written there would be parsed as data.
+ *
+ * This deliberately does NOT validate requests. Nothing else does either, which is exactly why a
+ * validator must be added on purpose, as a gate that fails at authoring time where a hard failure is
+ * correct — not inherited by whichever code happens to parse these files first.
+ *
+ * Listing the directory is the one thing that may still throw: with no listing there is no answer to
+ * give, degraded or otherwise.
+ *
  * @param {string} directory
  * @param {string} [requestedPath]
  */
@@ -50,12 +66,22 @@ export function getReferenceImageRequestMatrix(directory, requestedPath = '') {
       : [`${basename(requestedPath, '.json')}.json`];
 
   return files.map((file) => {
+    // The stem is the identity: it is what every path is built from, so it is known before the file
+    // is read and stays correct however badly the contents are malformed.
     const id = basename(file, '.json');
-    const request = JSON.parse(readFileSync(join(directory, file), 'utf8'));
-    if (request.id !== id) {
-      throw new Error(`${file}: request id ${String(request.id)} does not match its path identity ${id}`);
+    try {
+      const request = JSON.parse(readFileSync(join(directory, file), 'utf8'));
+      if (request.id !== id) {
+        throw new Error(`request id ${String(request.id)} does not match its path identity ${id}`);
+      }
+      return { id, ...getReferenceImageRequestLabel(request) };
+    } catch (error) {
+      process.stderr.write(
+        `reference-image-request-label: ${file}: ${error instanceof Error ? error.message : String(error)}; ` +
+          `labelling it by id and continuing\n`,
+      );
+      return { id, cellCount: 0, entryLabel: id, label: id, rendererLabel: '' };
     }
-    return { id, ...getReferenceImageRequestLabel(request) };
   });
 }
 

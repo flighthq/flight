@@ -141,6 +141,7 @@ jobs:
             }
 
             let sent = 0;
+            const unnamed = [];
             for (const artifact of candidates) {
               // The capture workflow prefixes a display-only entry label, but the trailing UUID remains
               // the identity. Accept the legacy UUID-only name too so promoting this bridge cannot break
@@ -148,9 +149,15 @@ jobs:
               const requestId = artifact.name.match(
                 /^reference-image-candidate-(?:.+-)?(?<requestId>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i,
               )?.groups?.requestId;
+              // COLLECT AND CONTINUE, never `setFailed` + `return`. The label in this name is display
+              // metadata, and one artifact whose name it cannot read says nothing about its siblings —
+              // aborting here would drop candidates that are perfectly well formed, turning a cosmetic
+              // naming problem into lost capture work. The run is still failed, but AFTER every good
+              // candidate has been dispatched, so the report costs nobody else their result.
               if (requestId === undefined) {
-                core.setFailed(`candidate artifact ${artifact.name} does not end in a request UUID`);
-                return;
+                core.warning(`candidate artifact ${artifact.name} does not end in a request UUID; skipping it`);
+                unnamed.push(artifact.name);
+                continue;
               }
               const requestPath = `reference-image-requests/${requestId}.json`;
 
@@ -194,6 +201,9 @@ jobs:
               sent += 1;
             }
             core.setOutput('sent', String(sent));
+            if (unnamed.length > 0) {
+              core.setFailed(`candidate artifact(s) with no request UUID were skipped: ${unnamed.join(', ')}`);
+            }
 
       - name: Record what was forwarded
         run: |

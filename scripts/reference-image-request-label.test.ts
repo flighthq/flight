@@ -72,16 +72,69 @@ describe('getReferenceImageRequestMatrix', () => {
     ]);
   });
 
-  it('selects a manual request by basename and refuses an id/path mismatch', () => {
+  it('selects a manual request by basename and labels an id/path mismatch by id rather than refusing', () => {
     const directory = requestDirectory({
       first: { id: 'first', targets: [target('first-entry', 'webgl')] },
       second: { id: 'wrong', targets: [target('second-entry', 'webgpu')] },
     });
 
     expect(getReferenceImageRequestMatrix(directory, 'reference-image-requests/first.json')[0]?.id).toBe('first');
-    expect(() => getReferenceImageRequestMatrix(directory, 'second.json')).toThrow(
-      'request id wrong does not match its path identity second',
-    );
+    expect(getReferenceImageRequestMatrix(directory, 'second.json')).toEqual([
+      { cellCount: 0, entryLabel: 'second', id: 'second', label: 'second', rendererLabel: '' },
+    ]);
+  });
+
+  // A LABEL MUST NEVER STOP A CAPTURE, so each of these asserts the SURVIVORS, not just that no throw
+  // escaped. The regression being pinned is not "it threw" — it is that one unreadable file took the
+  // whole queue down, enumerating zero requests where sixteen were fine and no capture ran for any of
+  // them. A test that only caught the throw would pass against a version that returned `[]`.
+  it('keeps every sibling when one request cannot be described, whatever is wrong with it', () => {
+    for (const broken of [
+      { case: 'malformed JSON', write: 'not json at all' },
+      // Deliberately well-formed APART from the id, so this case fails for the reason it names. With
+      // empty targets it would still fail once the id check was gone, and would vouch for nothing.
+      {
+        case: 'id disagrees with the filename',
+        write: JSON.stringify({ id: 'elsewhere', targets: [{ entry: 'node-alpha', renderer: 'webgl' }] }),
+      },
+      { case: 'no targets', write: JSON.stringify({ id: 'broken', targets: [] }) },
+      { case: 'targets is not an array', write: JSON.stringify({ id: 'broken', targets: 'nope' }) },
+      {
+        case: 'a target is missing its entry',
+        write: JSON.stringify({ id: 'broken', targets: [{ renderer: 'webgl' }] }),
+      },
+    ]) {
+      const directory = requestDirectory({
+        alpha: { id: 'alpha', targets: [target('node-alpha', 'webgl')] },
+        omega: { id: 'omega', targets: [target('node-omega', 'webgpu')] },
+      });
+      writeFileSync(join(directory, 'broken.json'), broken.write);
+
+      const matrix = getReferenceImageRequestMatrix(directory);
+
+      expect(
+        matrix.map((entry) => entry.id),
+        broken.case,
+      ).toEqual(['alpha', 'broken', 'omega']);
+      expect(
+        matrix.find((entry) => entry.id === 'broken'),
+        broken.case,
+      ).toEqual({
+        cellCount: 0,
+        entryLabel: 'broken',
+        id: 'broken',
+        label: 'broken',
+        rendererLabel: '',
+      });
+      // The describable siblings keep their real labels: degrading one file must not degrade the rest.
+      expect(matrix.find((entry) => entry.id === 'alpha')?.label, broken.case).toBe('node-alpha (1 cell)');
+    }
+  });
+
+  // The one failure that must still be fatal. With no listing there is no answer to give, degraded or
+  // otherwise, so this is the boundary between "cannot describe a request" and "cannot find the queue".
+  it('still throws when the directory itself cannot be listed', () => {
+    expect(() => getReferenceImageRequestMatrix(join(tmpdir(), 'reference-image-requests-absent'))).toThrow();
   });
 });
 
@@ -133,6 +186,38 @@ describe('reference-image request presentation workflow', () => {
     expect(`reference-image-candidate-node-alpha-${id}`.match(artifactPattern)?.groups?.['requestId']).toBe(id);
     expect(`reference-image-candidate-node-alpha +2 more-${id}`.match(artifactPattern)?.groups?.['requestId']).toBe(id);
     expect(dispatch.with.script).toContain('const requestPath = `reference-image-requests/${requestId}.json`;');
+  });
+
+  // The same rule as the enumeration, at the second site: an unreadable NAME is a cosmetic problem and
+  // must not cost a sibling its dispatch. This asserts the loop keeps going and that the run is still
+  // failed afterwards, because the alternative to aborting is not silence — a candidate that was
+  // captured and then dropped has to be visible, just not at the price of the ones that were fine.
+  it('skips a candidate whose name has no UUID and still dispatches its siblings', () => {
+    const workflow = parse(readFileSync(join(ROOT, '.github', 'workflows', 'reference-image-bridge.yml'), 'utf8')) as {
+      jobs: { dispatch: { steps: Array<Record<string, unknown>> } };
+    };
+    const script = (
+      workflow.jobs.dispatch.steps.find((step) => step['id'] === 'dispatch') as { with: { script: string } }
+    ).with.script;
+    // Delimit the branch by LINES. Scanning for the next `}` finds the one closing `${artifact.name}`
+    // inside the warning's template literal, which cuts the slice off before the statement under test —
+    // and a window that excludes the evidence looks exactly like evidence that is absent.
+    const lines = script.split('\n');
+    const opens = lines.findIndex((line) => line.includes('if (requestId === undefined)'));
+    const closes = lines.findIndex((line, index) => index > opens && line.trim() === '}');
+    expect(opens, 'bridge unnamed-candidate branch').toBeGreaterThan(-1);
+    expect(closes, 'bridge unnamed-candidate branch never closes').toBeGreaterThan(opens);
+    const unnamedBranch = lines.slice(opens, closes + 1).join('\n');
+
+    expect(unnamedBranch).toContain('continue;');
+    expect(unnamedBranch, 'aborting the loop here drops sibling candidates that parsed fine').not.toContain('return;');
+    expect(script, 'a skipped candidate must still fail the run, after every good one is dispatched').toContain(
+      'core.setFailed(`candidate artifact(s) with no request UUID were skipped:',
+    );
+    // Ordering is the whole point: the failure is reported only after the dispatch loop has finished.
+    expect(script.indexOf("core.setOutput('sent'")).toBeLessThan(
+      script.indexOf('core.setFailed(`candidate artifact(s) with no request UUID'),
+    );
   });
 });
 
