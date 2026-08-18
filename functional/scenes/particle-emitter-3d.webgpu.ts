@@ -29,12 +29,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'On an 800×600 near-black blue-grey field (about R16 G16 B24), three separate translucent ' +
-    'burnt-orange square particles are centred near 34.4%, 50% and 65.6% of the width at mid-height. ' +
-    'They use the same 64×64 source, about 0.9 scale, with turns of 0, 0.35 and 0.70 radians. Over ' +
-    'the dark field their centres composite near R121 G51 B32: distinctly orange-brown, neither much ' +
-    'darker brown nor bright opaque orange. The gaps and all space outside the three squares remain ' +
-    'near-black; no white particle or fourth copy appears.',
+  'An 800×600 dark field (0x101018) with three equally spaced translucent warm-orange squares centered vertically at 0.5*H = 300. The assertion probes at x fractions 0.344, 0.5, 0.656 give centers near 0.344*W = 275, 0.5*W = 400, 0.656*W = 525, each roughly 93 px wide. Each square composites to approximately a muted brown-orange over the dark background due to half-opacity orange fill (rgba 224, 96, 48, 0.5) over the dark field. Gaps between the squares and all frame edges show the dark background. No lighting is applied.',
 );
 
 // Real-WebGPU proof for the ParticleEmitter3D path that drawWgpuScene3D invokes automatically. The

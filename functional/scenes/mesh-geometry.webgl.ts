@@ -28,7 +28,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 black field (0x000000) with an unlit orange (0xff8030) unit cube at the origin viewed from a 3/4 angle. The cube reads as a convex hexagonal silhouette covering the frame center, spanning roughly x 248–545, y 165–469. Three faces are visible (front, top, right side). No shading gradient — the material is unlit. Frame corners are background.',
+  'An 800×600 black field (0x000000) with an unlit orange (0xff8030) unit cube at the origin viewed from a 3/4 angle. The cube reads as a convex hexagonal silhouette centered at (0.5*W, 0.5*H) = (400, 300), spanning roughly x 0.31*W–0.68*W ≈ 248–545, y 0.28*H–0.78*H ≈ 165–469. Three faces are visible (front, top, right side). No shading gradient — the material is unlit. Frame corners are background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
