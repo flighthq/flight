@@ -485,13 +485,17 @@ function reviewPlugin(): Plugin[] {
                 // has no FLIGHT_CAPTURE_ENVIRONMENT_ID, so reading it from provenance rejected every
                 // locally-captured cell — the workflow reads the file for the same reason.
                 const registeredEnvironmentId = readRegisteredEnvironmentId();
-                const noBuild = payload.cells.filter((c) => c.build === null).length;
-                const unstamped = payload.cells.filter((c) => c.build?.commit === null).length;
+                // A cell without a hash has no capture to commission; it is filtered below. A cell WITH
+                // captured pixels but no build stamp is different: the build already happened, and the
+                // missing step is to capture again so status.json records that completed build.
+                const capturedCells = payload.cells.filter((c) => c.pixelSha256 !== null);
+                const noBuild = capturedCells.filter((c) => c.build === null).length;
+                const unstamped = capturedCells.filter((c) => c.build?.commit === null).length;
                 if (noBuild + unstamped > 0) {
                   res.statusCode = 400;
                   res.end(
                     JSON.stringify({
-                      error: `no usable build commit for ${noBuild + unstamped} selected cell(s) of ${payload.entry} — rebuild and recapture before commissioning`,
+                      error: `${noBuild + unstamped} captured cell(s) of ${payload.entry} have no usable build stamp — re-capture now that the build is complete`,
                     }),
                   );
                   return;
@@ -513,7 +517,7 @@ function reviewPlugin(): Plugin[] {
                     JSON.stringify({
                       error:
                         noHash === payload.cells.length
-                          ? `no capture hash for any cell of ${payload.entry} — these artifacts predate pixel hashing, or the capture failed. Re-capture with: npm run review:functional:fresh`
+                          ? `no capture hash for any cell of ${payload.entry} — these artifacts predate pixel hashing, or the capture failed. Capture the cells before commissioning`
                           : 'no eligible cells: every cell needs a capture hash and a host identity',
                     }),
                   );
