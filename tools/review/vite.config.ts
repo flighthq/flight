@@ -58,6 +58,34 @@ const packsRoot = join(artifactsDir, 'reference-image-packs');
 // The registered environment identity, read from the committed record rather than from a capture.
 // `reference-image-capture.yml` reads the same file for the same reason: the id is owned by
 // flight-reference-images and copied verbatim, so nothing local may derive or substitute one.
+// Declares that each named cell now OWES a reference image. Mirrors `addReferenceImageCoverage` in
+// reference-image-eligibility.ts, applied to the committed manifest rather than an in-memory copy.
+function addReferenceImageCoverageForCells(cells: readonly string[]): number {
+  const manifestPath = resolve(projectRoot, 'scripts', 'capture-baseline-coverage-manifest.json');
+  if (!existsSync(manifestPath)) return 0;
+  try {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+      subjects?: Record<string, Record<string, string[]>>;
+    };
+    const functional = manifest.subjects?.['functional'];
+    if (functional === undefined) return 0;
+    let added = 0;
+    for (const cell of cells) {
+      const kinds = functional[cell];
+      // A cell absent from coverage is not ours to invent — it means the manifest and the live corpus
+      // disagree, which is a finding rather than something to paper over from a dev server.
+      if (kinds === undefined || kinds.includes('referenceImage')) continue;
+      kinds.push('referenceImage');
+      kinds.sort();
+      added++;
+    }
+    if (added > 0) writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+    return added;
+  } catch {
+    return 0;
+  }
+}
+
 function readRegisteredEnvironmentId(): string | null {
   try {
     const raw = readFileSync(resolve(projectRoot, 'scripts', 'reference-image-capture-identity.json'), 'utf8');
@@ -398,6 +426,16 @@ function reviewPlugin(): Plugin[] {
                 const outPath = join(queueDir, `${id}.json`);
                 writeFileSync(outPath, JSON.stringify(request, null, 2) + '\n');
 
+                // §7 step 1 commissions with TWO artifacts, not one: the request AND the cell's
+                // `referenceImage` coverage identity. Writing only the request produced 31
+                // `request-off-target` failures in CI — `reference-image-check` treats a cell as required
+                // only when the coverage manifest names that kind, so an uncovered request reads as
+                // naming a cell nobody is watching. The request is the ask; the coverage is what makes
+                // the cell answerable.
+                const coverageAdded = addReferenceImageCoverageForCells(
+                  eligible.map((c) => `${payload.entry}/${c.renderer}`),
+                );
+
                 // Rebuild the manifest so the cell's commission state becomes `requested` immediately.
                 // Without this the UI kept reporting `not-commissioned` after a successful write, which
                 // reads as "the click did nothing" — and a user filed six requests for one scene before
@@ -416,6 +454,7 @@ function reviewPlugin(): Plugin[] {
                     id,
                     path: relative(projectRoot, outPath),
                     committed: eligible.length,
+                    coverageAdded,
                     total: payload.cells.length,
                     skipped: payload.cells.filter((c) => c.pixelSha256 === null).map((c) => c.renderer),
                   }),

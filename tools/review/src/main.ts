@@ -278,7 +278,6 @@ async function commissionCurrentTest(): Promise<void> {
     environmentId: c.provenance?.environmentId ?? null,
   }));
 
-
   try {
     const res = await fetch('/api/commission', {
       method: 'POST',
@@ -301,12 +300,14 @@ async function commissionCurrentTest(): Promise<void> {
       committed: number;
       total: number;
       skipped: string[];
+      coverageAdded: number;
     };
     const scope =
       result.committed === result.total
         ? `all ${result.total} renderer(s)`
         : `${result.committed} of ${result.total} renderer(s) — skipped ${result.skipped.join(', ')} (no capture hash)`;
-    showCommissionFeedback(`Requested ${scope} → ${result.path}`, result.committed !== result.total);
+    const coverage = result.coverageAdded > 0 ? `, ${result.coverageAdded} coverage entr(y/ies) declared` : '';
+    showCommissionFeedback(`Requested ${scope}${coverage} → ${result.path}`, result.committed !== result.total);
     clearApprovals();
     showCurrent();
   } catch (e) {
