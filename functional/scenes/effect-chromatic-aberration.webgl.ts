@@ -25,8 +25,8 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800x600 field on a very dark background with five square tiles of about 100 px, each turned ' +
-    'slightly: four near the corners at roughly (128,120), (672,120), (128,480) and (672,480), and one ' +
+  'An 800x600 field on a very dark background with five square tiles of about 100 px, four of them ' +
+    'turned by increasing angles while the fifth sits square to the frame: four near the corners at roughly (128,120), (672,120), (128,480) and (672,480), and one ' +
     'centred at (400,300). Each tile edge shows COLOUR FRINGING — a thin red-ish edge on one side and a ' +
     'blue-ish edge on the other, rather than a clean boundary between tile and background. The fringing ' +
     'is RADIAL: it grows with distance from the centre of the field, so the four corner tiles fringe ' +

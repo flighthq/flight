@@ -33,8 +33,9 @@ declareExpectedImageDescription(
     'stacked treatments at once, and all three must be visible together. Each tile glows softly outward ' +
     'past its edges into the dark background. The colours are more saturated and higher in contrast ' +
     'than their raw fills. And the frame is DARKENED TOWARD ITS CORNERS: the four corners are noticeably ' +
-    'darker than the centre. Any one of the three missing is a failure — crisp tile edges, washed-out ' +
-    'colour, or uniform brightness corner-to-centre each mean one stage of the chain did not run. The ' +
+    'darker than the centre. Any one of the three missing is a failure — crisp tile edges, colour no ' +
+    'more saturated than the raw fills, or uniform brightness corner-to-centre each mean one stage of ' +
+    'the chain did not run. The ' +
     'tiles keep their positions and their hues throughout.',
 );
 // Canvas parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,

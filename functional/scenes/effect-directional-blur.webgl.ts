@@ -28,8 +28,8 @@ import { declareExpectedImageDescription } from '@ft/render';
 // streak uniformly in the configured direction.
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles of about 110 px, each turned by ' +
-    'a different small angle, marching left to right across the middle at roughly x 160, 320, 480 and ' +
-    '640, the second and fourth sitting slightly lower than the first and third: white, warm yellow, ' +
+    'a different angle from about 10 up to about 64 degrees, marching left to right across the middle ' +
+    'at roughly x 160, 320, 480 and 640, the second and fourth sitting slightly lower than the first and third: white, warm yellow, ' +
     'cyan and pink in that order. Every tile is SMEARED ALONG ONE SHARED DIAGONAL — the streaks run the ' +
     'same direction on all four, slightly off horizontal, rather than radiating outward or differing ' +
     'per tile. Crisp-edged tiles, or smears running different ways, are both failures. The tiles keep ' +
