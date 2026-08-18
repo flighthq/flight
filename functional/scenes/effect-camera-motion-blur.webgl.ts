@@ -29,7 +29,9 @@ declareExpectedImageDescription(
     'a different small angle, marching left to right across the middle of the field at roughly x 160, ' +
     '320, 480 and 640, with the second and fourth sitting slightly lower than the first and third: ' +
     'white, warm yellow, cyan and pink in that order. Every tile is SMEARED — its edges are directional ' +
-    'streaks rather than clean lines, and the smear runs the same way on all four. A picture with four ' +
+    'streaks rather than clean lines, and every streak points TOWARD THE CENTRE OF THE FRAME — the smear ' +
+    'direction therefore differs per tile rather than running the same way on all four, and the tiles ' +
+    'farthest from the centre smear the most. A picture with four ' +
     'crisp-edged tiles is the failure. The frame carries much less fine detail than the same tiles drawn ' +
     'without the effect, but the tiles keep their positions and their colours: nothing is displaced from ' +
     'where it was drawn, and no tile takes on another hue.',
