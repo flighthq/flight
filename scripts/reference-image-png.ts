@@ -58,7 +58,8 @@ export function hashOraclePixelBytes(bytes: Readonly<Uint8Array>): string {
 }
 
 /**
- * Decodes a non-interlaced 8-bit RGBA PNG. Any other variant is refused by name rather than approximated.
+ * Decodes a non-interlaced 8-bit truecolour PNG to RGBA. Any other variant is refused by name rather than
+ * approximated.
  */
 export function decodeOraclePng(bytes: Readonly<Uint8Array>): PngResult {
   if (bytes.length < 8 + 25) return { refused: 'truncated' };
@@ -68,6 +69,7 @@ export function decodeOraclePng(bytes: Readonly<Uint8Array>): PngResult {
   let offset = 8;
   let width = 0;
   let height = 0;
+  let colorType = 0;
   const idat: Uint8Array[] = [];
 
   while (offset + 8 <= bytes.length) {
@@ -80,7 +82,8 @@ export function decodeOraclePng(bytes: Readonly<Uint8Array>): PngResult {
       width = view.getUint32(dataStart, false);
       height = view.getUint32(dataStart + 4, false);
       if (bytes[dataStart + 8] !== 8) return { refused: 'unsupported-bit-depth' };
-      if (bytes[dataStart + 9] !== 6) return { refused: 'unsupported-color-type' };
+      colorType = bytes[dataStart + 9]!;
+      if (colorType !== 2 && colorType !== 6) return { refused: 'unsupported-color-type' };
       if (bytes[dataStart + 10] !== 0) return { refused: 'unsupported-compression' };
       if (bytes[dataStart + 11] !== 0) return { refused: 'unsupported-filter-method' };
       // Adam7 would need a second, differently-shaped path. Flight never produces one, so it is refused
@@ -98,11 +101,11 @@ export function decodeOraclePng(bytes: Readonly<Uint8Array>): PngResult {
 
   const compressed = concat(idat);
   const raw = new Uint8Array(inflateSync(compressed));
-  const bpp = 4;
-  const stride = width * bpp;
+  const channelCount = colorType === 2 ? 3 : 4;
+  const stride = width * channelCount;
   if (raw.length < height * (stride + 1)) return { refused: 'size-mismatch' };
 
-  const data = new Uint8Array(height * stride);
+  const channels = new Uint8Array(height * stride);
   let source = 0;
   for (let y = 0; y < height; y++) {
     const filter = raw[source++]!;
@@ -110,10 +113,10 @@ export function decodeOraclePng(bytes: Readonly<Uint8Array>): PngResult {
     const previous = row - stride;
     for (let x = 0; x < stride; x++) {
       const value = raw[source + x]!;
-      // a = byte bpp to the left, b = byte above, c = byte above-left; 0 outside the image.
-      const a = x >= bpp ? data[row + x - bpp]! : 0;
-      const b = y > 0 ? data[previous + x]! : 0;
-      const c = x >= bpp && y > 0 ? data[previous + x - bpp]! : 0;
+      // a = same channel of the pixel to the left, b = byte above, c = byte above-left; 0 outside the image.
+      const a = x >= channelCount ? channels[row + x - channelCount]! : 0;
+      const b = y > 0 ? channels[previous + x]! : 0;
+      const c = x >= channelCount && y > 0 ? channels[previous + x - channelCount]! : 0;
       let out: number;
       switch (filter) {
         case 0:
@@ -134,11 +137,20 @@ export function decodeOraclePng(bytes: Readonly<Uint8Array>): PngResult {
         default:
           return { refused: 'bad-filter-type' };
       }
-      data[row + x] = out & 0xff;
+      channels[row + x] = out & 0xff;
     }
     source += stride;
   }
 
+  if (colorType === 6) return { png: { data: channels, height, width } };
+
+  const data = new Uint8Array(width * height * 4);
+  for (let pixel = 0; pixel < width * height; pixel++) {
+    data[pixel * 4] = channels[pixel * 3]!;
+    data[pixel * 4 + 1] = channels[pixel * 3 + 1]!;
+    data[pixel * 4 + 2] = channels[pixel * 3 + 2]!;
+    data[pixel * 4 + 3] = 255;
+  }
   return { png: { data, height, width } };
 }
 
