@@ -462,6 +462,16 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   const container = document.createElement('div');
   container.className = 'compare-view';
 
+  // `.compare-view` is an absolute overlay (inset: 0), so it covers the description the preview
+  // rendered underneath it. The description is the whole point of comparing — it states what the
+  // image SHOULD show — so it travels into the overlay rather than being hidden by it.
+  if (t.expectedImageDescription) {
+    const desc = document.createElement('div');
+    desc.className = 'compare-description';
+    desc.textContent = t.expectedImageDescription;
+    container.appendChild(desc);
+  }
+
   const candidateSrc = screenshotUrl(t.tool, t.name, cell.renderer);
   const referenceSrc = referenceUrl(t.tool, t.name, cell.renderer);
 
@@ -485,22 +495,36 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     const msg = isCommissioned
       ? 'No reference fetched yet — run npm run reference-image:fetch to extract the pack'
       : 'No reference image — this cell is not commissioned';
+    // Two panels, not one: the grid's default three columns left a lone capture at a third width
+    // with the explanation stranded below it, so a mode called "side-by-side" did not look like one.
+    // The absence belongs in the slot the reference would occupy.
     const grid = document.createElement('div');
     grid.className = 'compare-grid';
-    const panel = document.createElement('div');
-    panel.className = 'compare-panel';
-    const label = document.createElement('div');
-    label.className = 'compare-label';
-    label.textContent = 'Candidate';
+    grid.style.gridTemplateColumns = '1fr 1fr';
+
+    const candidatePanel = document.createElement('div');
+    candidatePanel.className = 'compare-panel';
+    const candidateLabel = document.createElement('div');
+    candidateLabel.className = 'compare-label';
+    candidateLabel.textContent = 'Candidate';
     candidateImg.className = 'compare-img';
-    panel.appendChild(label);
-    panel.appendChild(candidateImg);
-    grid.appendChild(panel);
+    candidatePanel.appendChild(candidateLabel);
+    candidatePanel.appendChild(candidateImg);
+    grid.appendChild(candidatePanel);
+
+    const referencePanel = document.createElement('div');
+    referencePanel.className = 'compare-panel';
+    const referenceLabel = document.createElement('div');
+    referenceLabel.className = 'compare-label';
+    referenceLabel.textContent = 'Reference';
+    const placeholder = document.createElement('div');
+    placeholder.className = 'compare-placeholder';
+    placeholder.textContent = msg;
+    referencePanel.appendChild(referenceLabel);
+    referencePanel.appendChild(placeholder);
+    grid.appendChild(referencePanel);
+
     container.appendChild(grid);
-    const note = document.createElement('div');
-    note.className = 'compare-message';
-    note.textContent = msg;
-    container.appendChild(note);
     preview.appendChild(container);
     return;
   }

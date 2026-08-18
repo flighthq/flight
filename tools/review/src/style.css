@@ -556,3 +556,28 @@ body {
   max-width: 200px;
   accent-color: #b090e0;
 }
+
+.compare-description {
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b9b9b9;
+  background: #141414;
+  border-bottom: 1px solid #262626;
+  flex: 0 0 auto;
+  max-height: 30%;
+  overflow-y: auto;
+}
+
+.compare-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #7a7a7a;
+  background: #121212;
+  border: 1px dashed #303030;
+}
