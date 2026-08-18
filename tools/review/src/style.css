@@ -627,3 +627,41 @@ body {
 .commission-state[data-commission='approved'] {
   color: #50b050;
 }
+
+.parity-state {
+  position: absolute;
+  top: 32px;
+  left: 8px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  color: #555;
+  pointer-events: none;
+}
+
+.parity-state[data-parity='passed'] {
+  color: #4aaa4a;
+}
+
+.parity-state[data-parity='failed'] {
+  color: #c05050;
+}
+
+.parity-state[data-parity='no-data'] {
+  color: #555;
+}
+
+.parity-indicator {
+  font-size: 9px;
+  margin-left: 2px;
+}
+
+.parity-indicator[data-parity='failed'] {
+  color: #c05050;
+}
+
+.parity-indicator[data-parity='passed'] {
+  color: #4aaa4a;
+}
