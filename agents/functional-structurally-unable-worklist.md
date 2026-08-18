@@ -19,10 +19,14 @@ cells from filenames or grep totals.
 The 243 rows comprise 219 GL/WebGPU render-target or effect-pipeline cells, 18 Canvas
 `beginCanvasRenderEffectPipeline` cells, and six direct-registration tail cells. The six are marked
 `DIRECT` below because a constructor-family sweep can silently omit them; CC-2 must use this explicit
-cell list as its population. The completion condition is the post-`fefb9035f`
-`npm run check:expected-image-descriptions` invocation—with `--check` baked into the npm script so
-that a gap makes the command fail—reporting 493/493 reachable and zero structurally unable, not the
-sum of batch reports.
+cell list as its population. The completion condition is `npm run check:expected-image-descriptions`
+reporting 493/493 reachable and zero structurally unable, not the sum of batch reports.
+
+Check the command can still fail before quoting its output as done: `package.json` must pass `--check`,
+which is what reaches the only `process.exitCode = 1` in the script. An earlier revision of this line
+named the same command while `--check` was absent, so the finish condition was unfalsifiable — the
+command reported success whatever state the descriptions were in. That is verifiable in one step and
+does not depend on a commit hash, which a rebase rewrites.
 
 The bounded-candidate audit found none. Every row resolves to a unique backend-specific backing file,
 so the shared-file/per-backend constraint documented in
