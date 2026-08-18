@@ -102,8 +102,6 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - uses: ./.github/actions/setup-playwright
-
       - name: Resolve the reviewed build
         id: reviewed-build
         run: |
@@ -136,19 +134,12 @@ jobs:
 
       - run: npm ci
 
-      # setup-playwright ran above the reviewed-commit checkout, so its browser matches the lockfile at
-      # github.sha, while the npm ci above just installed the REVIEWED commit's playwright-core. When the
-      # two commits pin different Playwright versions the driver looks for a browser build that is not on
-      # disk. This re-install is keyed to the reviewed lockfile and is a no-op when the versions agree.
-      # It is a plain run step on purpose: a composite action would resolve against the reviewed tree,
-      # which predates the action and is the failure this hoist exists to avoid.
-      - name: Ensure reviewed commit's Playwright browser is installed
-        run: npx playwright install chromium
-
       - name: Build the harness
         run: |
           npm run build
           npm run build:functional
+
+      - uses: ./.github/actions/setup-playwright
 
       # ★ THE ENVIRONMENT IDENTITY IS READ FROM `scripts/reference-image-capture-identity.json`, NOT COMPUTED HERE.
       # It is registered in `flight-reference-images` and copied verbatim. This workflow previously derived its own
