@@ -55,6 +55,19 @@ const SCENE_DIRS: Record<string, string> = {
 
 const packsRoot = join(artifactsDir, 'reference-image-packs');
 
+// The registered environment identity, read from the committed record rather than from a capture.
+// `reference-image-capture.yml` reads the same file for the same reason: the id is owned by
+// flight-reference-images and copied verbatim, so nothing local may derive or substitute one.
+function readRegisteredEnvironmentId(): string | null {
+  try {
+    const raw = readFileSync(resolve(projectRoot, 'scripts', 'reference-image-capture-identity.json'), 'utf8');
+    const parsed = JSON.parse(raw) as { environmentId?: string };
+    return parsed.environmentId ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function readLockedImages(): Map<string, string> {
   const locked = new Map<string, string>();
   if (!existsSync(lockPath)) return locked;
@@ -328,15 +341,24 @@ function reviewPlugin(): Plugin[] {
                   return;
                 }
 
+                // The environment identity is REGISTERED, never derived from a capture: it is owned by
+                // flight-reference-images and copied verbatim into capture-identity.json. A local capture
+                // has no FLIGHT_CAPTURE_ENVIRONMENT_ID, so reading it from provenance rejected every
+                // locally-captured cell — the workflow reads the file for the same reason.
+                const registeredEnvironmentId = readRegisteredEnvironmentId();
                 const eligible = payload.cells.filter(
-                  (c): c is typeof c & { pixelSha256: string; hostInstanceId: string; environmentId: string } =>
-                    c.pixelSha256 !== null && c.hostInstanceId !== null && c.environmentId !== null,
+                  (c): c is typeof c & { pixelSha256: string; hostInstanceId: string } =>
+                    c.pixelSha256 !== null && c.hostInstanceId !== null,
                 );
                 if (eligible.length === 0) {
+                  const noHash = payload.cells.filter((c) => c.pixelSha256 === null).length;
                   res.statusCode = 400;
                   res.end(
                     JSON.stringify({
-                      error: 'no eligible cells: every cell needs pixelSha256, hostInstanceId, and environmentId',
+                      error:
+                        noHash === payload.cells.length
+                          ? `no capture hash for any cell of ${payload.entry} — these artifacts predate pixel hashing, or the capture failed. Re-capture with: npm run review:functional:fresh`
+                          : 'no eligible cells: every cell needs a capture hash and a host identity',
                     }),
                   );
                   return;
@@ -353,7 +375,7 @@ function reviewPlugin(): Plugin[] {
                     pixelSha256: c.pixelSha256,
                     capture: {
                       hostInstanceId: c.hostInstanceId,
-                      environmentId: c.environmentId,
+                      environmentId: registeredEnvironmentId,
                     },
                   })),
                   frames: 1,
