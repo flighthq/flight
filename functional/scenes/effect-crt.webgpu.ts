@@ -23,10 +23,21 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same crt intent as render.webgl.ts. Wgpu render-state init is
 // async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
+declareExpectedImageDescription(
+  'An 800x600 field on a very dark background carrying ten small bars of about 56 x 20, each turned ' +
+    'by a different angle, laid out in two rows of five across the upper and middle parts of the field. ' +
+    'The whole picture is treated to look like an old tube display, and three things must all be ' +
+    'visible at once: fine horizontal SCANLINES banding the image, a BARREL CURVATURE that bows the ' +
+    'picture outward so the bars near the edges are displaced from where they were drawn, and DARKENED ' +
+    'CORNERS relative to the centre. Any of the three missing is a failure — flat even brightness, ' +
+    'straight unbowed geometry, or a clean unbanded image each mean part of the treatment did not run. ' +
+    'The bars keep their individual colours.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
