@@ -22,10 +22,21 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 
 // Canvas parity column for the same bloom intent as render.webgl.ts: bright shapes on a dark
 // background bleed glow. The Canvas bloom recipe bright-passes and blurs via ctx.filter, then adds
 // the glow back over the scene — the same RenderEffect intent realized with Canvas 2D compositing.
+declareExpectedImageDescription(
+  'An 800x600 field on a near-black background with four square tiles of about 140 px, each turned by ' +
+    'a different small angle so none sits square to the edges: white centred near (224,180), warm ' +
+    'yellow near (576,180), cyan near (224,420) and pink near (576,420). Each tile is bright and ' +
+    'saturated at its core and carries a SOFT GLOW spilling outward past its edges into the dark ' +
+    'background — the halo is the point, so four crisp-edged tiles with the background pure and unlit ' +
+    'right up to each edge is the failure. The glow falls off gradually rather than stopping at a line, ' +
+    'it is the tile own colour rather than white, and it does not fill the field: the middle of the ' +
+    'picture between the four tiles stays dark. The tiles do not overlap each other.',
+);
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
