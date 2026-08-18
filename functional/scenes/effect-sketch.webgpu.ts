@@ -23,7 +23,18 @@ import {
   submitWgpuRenderPass,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'An 800×600 near-black field carries the stroke-like remains of 18 narrow rectangles in four ' +
+    'staggered rows, with five columns in the first three rows and three in the last. The rectangles ' +
+    'began as six repeating saturated colours and successive 22-degree rotations, but the visible ' +
+    'result is entirely monochrome: edges and interior detail read as varied grey pencil marks, with ' +
+    'no surviving red, green, blue, yellow, violet or cyan. The result is not a flat grey wash — ' +
+    'adjacent light and dark stroke structure remains — and the separate shapes do not merge into one ' +
+    'solid block.',
+);
 
 // Wgpu parity column for the same sketch intent as render.webgl.ts. Wgpu render-state init is
 // async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.

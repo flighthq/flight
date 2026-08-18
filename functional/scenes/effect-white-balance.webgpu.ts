@@ -23,7 +23,17 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat colour panels, each one ' +
+    'third of the width and one half of the height. From left to right they remain recognisably red, ' +
+    'green and blue on the top row, then yellow, magenta and cyan on the bottom, but the whole set is ' +
+    "warmed and shifted toward magenta. In particular the blue panel's red channel is visibly lifted " +
+    'above its authored value of 48 while blue is attenuated; it is not the untouched cool blue. ' +
+    'There is no background, border, gradient, outline or spacing between panels.',
+);
 
 // Wgpu parity column for the same full-frame whiteBalance grade as render.webgl.ts: warms the temperature and shifts tint toward magenta.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

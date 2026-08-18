@@ -22,6 +22,16 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four 180×180 high-contrast rotated squares ' +
+    'form a 2×2 arrangement: white at (224,180), red at (576,180), cyan at (224,420) and yellow at ' +
+    '(576,420), turned by 27, 40, 53 and 66 degrees. Their diagonal silhouettes have narrow blended ' +
+    'antialiasing transitions rather than hard stair steps, while each centre stays a bright flat ' +
+    'colour. The squares remain separate, carry no detached outline or glow, and the field around ' +
+    'them stays near-black.',
+);
 
 // SMAA antialiases the whole frame. This is a single-pass approximation of SMAA (not the full
 // edge/blend-weight/neighborhood three-pass), smoothing the jagged diagonal edges.

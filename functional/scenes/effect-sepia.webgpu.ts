@@ -22,7 +22,16 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareExpectedImageDescription(
+  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat panels, each one third of ' +
+    'the width and one half of the height. The six source colours retain different brightnesses but ' +
+    'all become warm sepia browns and tans whose channels descend red to green to blue. Saturated ' +
+    'green, blue, magenta and cyan are absent; no panel keeps a cool hue. There is no visible ' +
+    'background, border, gradient, outline or spacing between panels.',
+);
 
 // Wgpu parity column for the same full-frame sepia grade as render.webgl.ts: applies a full sepia tone.
 // Wgpu render-state init is async (createWgpuRenderState returns a Promise). The effect pipeline

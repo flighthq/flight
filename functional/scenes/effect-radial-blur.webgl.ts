@@ -22,6 +22,16 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
+import { declareExpectedImageDescription } from '@ft/render';
+
+declareExpectedImageDescription(
+  'On an 800×600 near-black field (about R5 G6 B10), four 110×110 rotated squares form a loose ' +
+    'zig-zag across the middle: white at (160,240), yellow at (320,312), cyan at (480,240) and ' +
+    'magenta at (640,312), turned by 10, 28, 46 and 64 degrees. Their colour and edges smear radially ' +
+    'away from the field centre at (400,300), producing soft zoom-like streaks and no crisp square ' +
+    'boundary. The four sources remain individually readable rather than blending into one central ' +
+    'cloud, and the outer corners stay near-black instead of being filled by colour.',
+);
 
 // Radial blur: the full frame smears radially outward from the configured center, so mid-screen
 // shapes streak toward the edges like a zoom blur.
