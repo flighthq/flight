@@ -69,6 +69,10 @@ intended sample positions or scalar result.
 
 ### All 45 pairs, per path
 
+"**Fails**" means the path is non-equivariant under Y-only reflection absent its local compensation —
+it describes the seam's property, not a present-tense bug. Compensated paths note the fix inline;
+the "Existing hand compensations" section below lists them all.
+
 | pair | pass/path verdicts under Y-only reflection |
 | --- | --- |
 | Bevel | Tint **holds**; horizontal/vertical box blur **holds**; source blit, clip modes, and erase **hold**. Directional composite **fails** when the light has a nonzero Y component: both runners upload the same negative numeric Y offset, attaching highlight/shadow to opposite displayed sides. |
@@ -76,19 +80,19 @@ intended sample positions or scalar result.
 | Bloom | Bright-threshold pass **holds**; Gaussian horizontal/vertical passes **hold**; direct scene/blur composite **holds**. |
 | Blur | Gaussian horizontal and vertical passes both **hold**. |
 | CameraMotionBlur | The one-way march from each position toward fixed centre `(0.5, 0.5)` **holds**; the path itself reflects correctly and does not rely on symmetric taps. |
-| ChromaticAberration | Horizontal-only RGB offsets **hold**. Radial mode **fails** because `normalize(centered + vec2(1e-5))` adds a positive Y bias in both coordinate systems instead of reflecting that bias. Direct centre/alpha reads **hold**. |
+| ChromaticAberration | Horizontal-only RGB offsets **hold**. Radial mode **fails** absent compensation: the unreflected `vec2(1e-5)` epsilon would add a positive Y bias in both coordinate systems instead of reflecting it. Compensated locally with `vec2(1e-5, -1e-5)`. Direct centre/alpha reads **hold**. |
 | Composite | Missing-backdrop fallback and direct layer/backdrop reads **hold**; every Porter-Duff operator branch is color/alpha-only and **holds**. |
 | ContactShadows | Its only current path delegates to the SSAO approximation; the symmetric axial neighbourhood **holds**. |
 | Convolution | Direct centre-alpha restoration and the clamp/edge-color boundary branches **hold**. Kernel accumulation **fails** for the public general matrix because row weights are not reflected. An odd-height kernel holds only when its rows are vertically palindromic; an even-height kernel has an asymmetric offset set and holds only in degenerate cases where the unmatched outer weight is zero and the remaining signed-offset weights are symmetric. |
 | Crt | Fixed-centre barrel transform and bounds **hold**; horizontal RGB split **holds**; GL's `1 - uv.y` scanline phase versus WGPU's `uv.y` **holds**; fixed-centre vignette **holds**. |
-| DirectionalBlur | The direct base path **holds**. The symmetric tap line **fails** for a diagonal `(cos(angle), sin(angle))`: `+/-` symmetry erases full sign but not Y-only reflection. Horizontal and vertical axes alone hide the defect. |
+| DirectionalBlur | The direct base path **holds**. The symmetric tap line **fails** absent compensation for a diagonal angle: `+/-` symmetry erases full sign but not Y-only reflection, and horizontal/vertical axes alone hide the defect. Compensated locally by negating `sin(u_angle)`. |
 | Displacement | Procedural phase **holds** because GL uses image Y and WGPU uses its native top-left Y; horizontal warp **holds**; GL's negated vertical sample displacement versus WGPU's positive displacement **holds**. |
 | Dither | Direct source read and color quantization **hold**. Bayer lookup **fails** because reflected pixel rows index a different phase of the non-vertically-symmetric 4x4 matrix. |
 | DropShadow | Tint **holds**; box blur **holds**; direct blit/erase modes **hold**. The shared offset-blit path **fails** for nonzero `dy`. |
 | FilmGrain | Direct source read and color mix **hold**. The `floor(uv * 1024 / size)`-seeded hash **fails** because reflected Y produces a different grain field. |
 | Fxaa | Centre and diagonal-neighbour reads **hold as a reflected set**; the no-edge direct branch **holds**. Reflection maps the derived direction to `-R(d)`, and the later symmetric line taps erase that extra full sign, so both blend branches **hold**. |
 | Glitch | GL's image-Y block index versus WGPU's native Y **holds**; the resulting tear, corruption choice, horizontal displacement, and horizontal RGB split all **hold**. |
-| GodRays | Direct base read and ray march **hold** after the GL runner converts public top-left `centerY` to GL texture Y. The dead `u_resolution` uniform has no bearing on this verdict. |
+| GodRays | Direct base read and ray march **hold** after the GL runner converts public top-left `centerY` to GL texture Y. The formerly dead `u_resolution` uniform has been removed. |
 | GradientBevel | Tint **holds**; box blur **holds**. Directional bevel encode **fails** for a nonzero Y light component because both runners upload the same negative numeric Y offset. Ramp lookup, source-alpha clip, direct blits, and erase **hold**. |
 | GradientGlow | Tint **holds**; box blur **holds**; scalar gradient-ramp lookup **holds**; direct blit/erase compositing **holds**. |
 | Halftone | Direct source/luminance path **holds**. Rotating the absolute pixel grid and wrapping it into cells **fails** generically under Y reflection, changing grid orientation or phase. WGPU's floored modulo now matches GLSL for negative rotated coordinates, but that separate fix does not make the grid equivariant. |
@@ -97,9 +101,9 @@ intended sample positions or scalar result.
 | Kuwahara | Direct centre-alpha restoration **holds**. Sector sampling **fails generically in current source**: the `sign(lo[q] + 1)` formula degenerates the four intended quadrants into one corner, one row, one column, and one quadrant, and those four sample sets do not permute under Y reflection. |
 | LensDirt | Bright-threshold pass **holds**; Gaussian horizontal/vertical blur **holds**; direct scene/bright composite reads **hold**. The seeded `dirtAmount(uv, seed)` mask **fails** because its fixed hashed centres are not reflected between backends. |
 | LensDistortion | Fixed-centre radial polynomial, bounds branch, and direct sampling all **hold**. |
-| LensFlare | Direct scene read **holds**; the centre-directed ghost train **holds**. The halo **fails** because `normalize(toCenter + vec2(1e-5))` repeats ChromaticAberration's unreflected positive Y bias. |
+| LensFlare | Direct scene read **holds**; the centre-directed ghost train **holds**. The halo **fails** absent compensation: the unreflected `vec2(1e-5)` epsilon would repeat ChromaticAberration's positive Y bias. Compensated locally with `vec2(1e-5, -1e-5)`. |
 | Median | Square-neighbour collection **holds as a reflected multiset**; sorting that multiset and selecting its median **holds**; direct centre alpha **holds**. |
-| MotionBlur | No-velocity sentinel copy **holds**; direct velocity lookup **holds**. The velocity-driven tap line **fails** for diagonal motion because both velocity buffers store the same Y-down `(vx, vy)`, but GL uses `vy` without converting it to its opposite texture axis. Pure horizontal and pure vertical lines hide the defect. |
+| MotionBlur | No-velocity sentinel copy **holds**; direct velocity lookup **holds**. The velocity-driven tap line **fails** absent compensation for diagonal motion: both velocity buffers store Y-down `(vx, vy)`, and without negation the GL smear direction would disagree. Pure horizontal and pure vertical lines hide the defect. Compensated locally by negating `velocityPixels.y`. |
 | OuterGlow | Tint **holds**; box blur **holds**; direct blit/erase compositing **holds**. |
 | Outline | The reflected Sobel neighbourhood preserves X gradient and negates Y gradient; magnitude and direct alpha paths therefore **hold**. |
 | Pixelate | Block-centre quantization **holds** when `height / size` is integral, away from exact quantizer boundaries. It **fails** for the supported general case with a non-integral vertical block count because top and bottom leave different remainders. |
