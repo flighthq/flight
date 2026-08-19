@@ -20,6 +20,7 @@ import {
   enableWgpuClipSupport,
   enableWgpuFrameCapture,
   enableWgpuRenderCache,
+  enableWgpuRenderEffectGuards,
   enableWgpuStrokePathTessellation,
   getCanvasRenderStateTextureResolvers,
   invalidateNodeLocalTransform,
@@ -64,6 +65,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
+  enableWgpuRenderEffectGuards(state);
   registerStandardWgpuTextureResolvers(state);
   registerWgpuStandardMaterial(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
