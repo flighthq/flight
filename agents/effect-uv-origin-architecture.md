@@ -161,6 +161,14 @@ above).
 compensated (including the 4 fixed defects) + 3 symmetric-invisible + 12 false positives = 24
 (the 4 fixed defects appear in both the defect list and the compensation table). 0 unexamined.
 
+## Review heuristics
+
+1. **A comment justifying a value by saying it matches the other backend is evidence of a missing
+   conversion, not evidence of correctness.** Matching the raw numbers across two coordinate spaces
+   IS the bug. Source: the Bevel pair, where WGPU's own comment said "matching the GL bevel
+   conventions" — copying the numeric values between GL (UV Y-up) and WGPU (UV Y-down) without
+   converting is exactly the kind of defect this document catalogues.
+
 ## Camera-motion-blur check
 
 `glCameraMotionBlurEffect` and `wgpuCameraMotionBlurEffect` are NOT affected. They work entirely in
