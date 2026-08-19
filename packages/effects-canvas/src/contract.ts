@@ -15,6 +15,7 @@ export * from './canvasInnerGlowEffect';
 export * from './canvasInnerShadowEffect';
 export * from './canvasOuterGlowEffect';
 export * from './canvasPixelateEffect';
+export * from './canvasPosterizeEffect';
 export * from './canvasRenderEffectPipeline';
 export * from './canvasRenderEffectRegistry';
 export * from './canvasRenderTextureEffect';

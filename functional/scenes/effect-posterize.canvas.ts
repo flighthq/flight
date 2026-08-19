@@ -17,6 +17,7 @@ import {
   defaultCanvasShapeRenderer,
   endCanvasRenderEffectPipeline,
   prepareScene2DRender,
+  registerCanvasPosterizeEffect,
   registerCanvasShapeCommands,
   registerRenderer,
   renderCanvasBackground,
@@ -25,20 +26,18 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat, ungraded colour panels, each one ' +
-    'third of the width and one half of the height. From left to right the top row is red (about R255 G48 B48), ' +
-    'green (R48 G192 B64) and blue (R48 G96 B255); the bottom row is yellow (R255 G208 B48), magenta (R255 G48 ' +
-    'B192) and cyan (R48 G208 B208). All five authored blue-channel values remain distinct. There is no visible ' +
-    'background, border, gradient, outline or spacing between panels. THE PANELS ARE UNPOSTERISED ON PURPOSE and ' +
-    'this cell is the canvas CONTROL: the posterize effect is not registered on this backend, so the pipeline ' +
-    'treats it as an identity pass and copies the scene through unchanged. A picture with quantised or banded ' +
-    'panels here would mean an unregistered effect had run. The realized posterisation belongs to the webgl and ' +
-    'wgpu siblings.',
+  'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat colour panels, each one third of the ' +
+    'width and one half of the height. From left to right they remain recognisably red, green and blue on the top ' +
+    'row, then yellow, magenta and cyan on the bottom, but every channel is snapped to one of four intensity ' +
+    'steps: across the six panel centres there are no more than four distinct blue values, rather than the five ' +
+    'values in the ungraded colours. There is no visible background, border, gradient, outline or spacing between ' +
+    'panels. This cell renders the same quantisation its Gl and Wgpu siblings do — canvas realizes posterize ' +
+    'through registerCanvasPosterizeEffect, applying floor(c*levels)/(levels - 1) per channel over the raw ' +
+    'pixels, so it is no longer a backend control. The one place it is permitted to differ from those siblings is ' +
+    'the two 1-pixel columns at x = W/3 = 266 and x = 2W/3 = 533, where the panel boundary falls on a fractional ' +
+    'pixel: the backends resolve that column to slightly different source values and the step function snaps the ' +
+    'difference to a whole level. Every panel INTERIOR matches exactly.',
 );
-
-// Canvas has no realized posterize capability. The unregistered operation is intentionally skipped so
-// this column records the backend's unsupported result without a fake passthrough runner.
-export const functionalBackendSupport = 'control' as const;
 
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createCanvasElement(800, 600, pixelRatio);
@@ -47,6 +46,7 @@ document.body.appendChild(canvas);
 export const state = createCanvasRenderState(canvas, { pixelRatio, backgroundColor: 0x202830ff });
 registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
 registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerCanvasPosterizeEffect(state);
 
 const pipeline = createCanvasRenderEffectPipeline(state);
 
@@ -94,6 +94,11 @@ render(root);
 // Control column: canvas has no posterize runner, so the 6 input shapes render unquantized.
 // The 6 RGBA colors yield 5 distinct blue channels (48, 64, 255, 192, 208). Exactly 5 confirms the
 // shapes rendered with correct RGBA unpacking and no spurious quantization was applied.
+// This cell is no longer a backend control: canvas now realizes posterize through
+// registerCanvasPosterizeEffect, so it asserts the SAME quantisation its Gl and Wgpu siblings do.
+// The previous assertion here required 5 distinct levels — the unquantised picture — and would
+// now fail against a correct render, which is what a control assertion becomes once the backend
+// grows the capability.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;
   const rows = 2;
@@ -116,9 +121,9 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     if (!found) blues.add(b);
   }
 
-  if (blues.size !== 5) {
+  if (blues.size > 4) {
     throw new Error(
-      `[effect-posterize] control column expects 5 distinct blue levels (no quantization), got ${blues.size} — ` +
+      `[effect-posterize] expected <= 4 distinct blue levels after quantization, got ${blues.size} — ` +
         `values: ${[...blues].join(', ')}`,
     );
   }
