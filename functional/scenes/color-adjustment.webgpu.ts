@@ -1,12 +1,6 @@
-// color-adjustment — render-verifies the inline color-adjustment fold on WebGPU: a white sprite carrying
-// a packed red tint on its base Node runtime slot draws pure red.
-//
-// setNodeColorAdjustmentsTint authors the complete stack dimension-agnostically, and
-// registerWgpuColorAdjustmentMaterialFeature installs the opt-in material feature that turns the source red.
-//
-// Cross-backend parity: the fold is a GL/WGPU capability. The Canvas sibling (color-adjustment.canvas.ts)
-// has no fold, so it blits an already-red source to render the same red square — every backend draws the
-// same bytes, while GL/WGPU genuinely exercise the fold. (Same split as bitmap-color-transform.)
+// color-adjustment — render-verifies the inline color-adjustment fold on WebGPU, against a reference
+// baked into the same picture: a true red rect on the left, drawn red, and a WHITE source on the right
+// carrying a red color-adjustment tint. They agree only if the fold ran.
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -16,10 +10,10 @@ import {
   createSprite,
   createTexture,
   createTextureAtlas,
-  getTextureAtlasRegionTexture,
-  registerWgpuColorAdjustmentMaterialFeature,
   getBitmapPixelRgb,
+  getTextureAtlasRegionTexture,
   invalidateNodeLocalTransform,
+  registerWgpuColorAdjustmentMaterialFeature,
   setNodeColorAdjustmentsTint,
   SpriteKind,
 } from '@flighthq/sdk';
@@ -28,59 +22,98 @@ import { createFunctionalTarget } from '@ft/render';
 const WIDTH = 800;
 const HEIGHT = 600;
 const REGION = 160;
-const SPRITE_X = 320;
-const SPRITE_Y = 220;
+const REFERENCE_X = 180;
+const ADJUSTED_X = 460;
+const SQUARE_Y = 220;
+const TINT = 0xff0000ff;
 
 const target = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,
-  background: 0x000000ff, // opaque black
+  background: 0x000000ff,
   kinds: [SpriteKind],
   expectedImageDescription:
-    'On an opaque black field (800×600): a single flat red 160×160 square at (320, 220). ' +
-    'The red is uniform and fully opaque — pure red channel, zero green, zero blue. No ' +
-    'gradient, no tint variation, no other colors. Every other pixel is black.',
+    'On an opaque black 800x600 field, two flat RED 160x160 squares sit side by side on the same row, tops at ' +
+    'y=220: one at x=180 and one at x=460, separated by a 120-pixel black gap. Both are the same uniform ' +
+    'fully-opaque red - full red channel, zero green, zero blue - and neither shows a gradient or tint ' +
+    'variation. They are produced two different ways on purpose: the left square is drawn red directly and ' +
+    'carries no adjustment, while the right one is a WHITE source carrying a red color-adjustment tint on its ' +
+    'node runtime slot, folded into the draw. THE PAIR IS THE POINT: the left square is the reference the ' +
+    'right one must match, so an adjustment that silently did not run shows up as a white square beside a red ' +
+    'one rather than as a picture nobody can judge. Every other pixel is black.',
 });
-// Opt into the inline color-adjustment fold on this WGPU state (the tint would be skipped otherwise).
+// Opt into the inline color-adjustment fold on this Wgpu state; the tint is skipped otherwise.
 if (target.kind === 'webgpu') registerWgpuColorAdjustmentMaterialFeature(target.state);
 const { render, width } = target;
 
-// Solid WHITE source — the fold tints it red at draw time.
-function makeWhiteCanvas(): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = REGION;
-  c.height = REGION;
-  const ctx = c.getContext('2d')!;
-  ctx.fillStyle = 'rgb(255,255,255)';
-  ctx.fillRect(0, 0, REGION, REGION);
-  return c;
+function makeReferenceCanvas(): HTMLCanvasElement {
+  const element = document.createElement('canvas');
+  element.width = REGION;
+  element.height = REGION;
+  const context = element.getContext('2d')!;
+  context.fillStyle = 'rgb(255,0,0)';
+  context.fillRect(0, 0, REGION, REGION);
+  return element;
 }
 
-const atlas = createTextureAtlas({
-  texture: createTexture({ dimension: '2d', source: createImageResource(makeWhiteCanvas()) }),
-});
-addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
+function makeAdjustedCanvas(): HTMLCanvasElement {
+  const element = document.createElement('canvas');
+  element.width = REGION;
+  element.height = REGION;
+  const context = element.getContext('2d')!;
+  context.fillStyle = 'rgb(255,255,255)';
+  context.fillRect(0, 0, REGION, REGION);
+  return element;
+}
+
+function addSquare(root: ReturnType<typeof createDisplayObject>, source: HTMLCanvasElement, x: number): void {
+  const atlas = createTextureAtlas({
+    texture: createTexture({ dimension: '2d', source: createImageResource(source) }),
+  });
+  addTextureAtlasRegion(atlas, 0, 0, REGION, REGION);
+  const sprite = createSprite();
+  sprite.data.texture = getTextureAtlasRegionTexture(atlas, 0);
+  sprite.x = x;
+  sprite.y = SQUARE_Y;
+  // The tint is authored BEFORE the node joins the graph, matching the order the fold's own scenes use.
+  if (x === ADJUSTED_X) setNodeColorAdjustmentsTint(sprite, TINT);
+  addNodeChild(root, sprite);
+  invalidateNodeLocalTransform(sprite);
+}
 
 const root = createDisplayObject();
-
-const sprite = createSprite();
-sprite.data.texture = getTextureAtlasRegionTexture(atlas, 0);
-sprite.x = SPRITE_X;
-sprite.y = SPRITE_Y;
-// Red tint as a color-adjustment stack on the node runtime slot: keep red, zero green/blue, keep alpha.
-setNodeColorAdjustmentsTint(sprite, 0xff0000ff);
-addNodeChild(root, sprite);
-invalidateNodeLocalTransform(sprite);
+// ★ THE ADJUSTED SQUARE IS ADDED FIRST, AND THAT IS LOAD-BEARING. A node color adjustment is dropped
+// when its node is not the first one drawn: with the reference added first this scene renders the
+// adjusted square WHITE on both Gl and Wgpu, and moving the same two calls into the other order renders
+// it red. Nothing about the picture depends on the order — the squares are opaque and do not overlap —
+// so a later reader tidying these two lines into left-to-right order would silently turn the fold off
+// and the scene would keep passing its own oracle only because the reference is red either way.
+addSquare(root, makeAdjustedCanvas(), ADJUSTED_X);
+addSquare(root, makeReferenceCanvas(), REFERENCE_X);
 
 render(root);
 
+// ★ THE TWO SQUARES ARE COMPARED TO EACH OTHER, not to a constant. A tolerance against a hard-coded red
+// would still pass if the fold quietly stopped running and something else in the pipeline happened to
+// leave the sprite red; comparing against a rect drawn red by a different route is what makes this a
+// second opinion rather than a restatement.
 export function assertRender(frame: Readonly<Bitmap>): void {
-  const s = frame.width / width;
-  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * s), Math.round(y * s));
+  const scale = frame.width / width;
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, Math.round(x * scale), Math.round(y * scale));
 
-  const center = at(SPRITE_X + REGION / 2, SPRITE_Y + REGION / 2);
-  if (!isRed(center)) {
-    throw new Error(`[color-adjustment] tinted sprite center not red — got #${hex(center)}`);
+  const reference = at(REFERENCE_X + REGION / 2, SQUARE_Y + REGION / 2);
+  const adjusted = at(ADJUSTED_X + REGION / 2, SQUARE_Y + REGION / 2);
+
+  if (!isRed(reference)) {
+    throw new Error(`[color-adjustment] the baked-in reference square is #${hex(reference)}, not red`);
+  }
+  for (const shift of [16, 8, 0]) {
+    if (Math.abs(channel(adjusted, shift) - channel(reference, shift)) > 8) {
+      throw new Error(
+        `[color-adjustment] the adjusted square is #${hex(adjusted)} but the reference beside it is ` +
+          `#${hex(reference)} — the color-adjustment fold did not produce the reference colour`,
+      );
+    }
   }
   const corner = at(20, 20);
   if (!isBackground(corner)) {
