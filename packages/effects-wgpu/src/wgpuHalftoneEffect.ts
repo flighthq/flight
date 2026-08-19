@@ -56,7 +56,9 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   let s = sin(uni.u_angle);
   let co = cos(uni.u_angle);
   let rp = vec2f(p.x * co - p.y * s, p.x * s + p.y * co);
-  let cell = (rp % vec2f(uni.u_scale)) - uni.u_scale * 0.5;
+  let scale = vec2f(uni.u_scale);
+  let wrapped = rp - floor(rp / scale) * scale;
+  let cell = wrapped - scale * 0.5;
   let dist = length(cell) / (uni.u_scale * 0.5);
   let radius = sqrt(1.0 - lum);
   let dot1 = step(dist, radius);
