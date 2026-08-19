@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,6 +8,7 @@ import {
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
   createShape,
+  getBitmapPixelRgb,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -35,11 +36,13 @@ declareExpectedImageDescription(
     'the screen: any visible processing at all is the failure, because an empty effect list must change nothing. ' +
     'The very dark background is visible between and around all four.',
 );
+const BACKGROUND_COLOR = 0x101014ff;
+
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
+export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: BACKGROUND_COLOR });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 
@@ -71,10 +74,10 @@ root.scaleY = scale;
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
-const colors = [0xff5c5cff, 0x5cff5cff, 0x5c5cffff, 0xffff5cff];
-for (let i = 0; i < colors.length; i++) {
+const COLORS = [0xff5c5cff, 0x5cff5cff, 0x5c5cffff, 0xffff5cff];
+for (let i = 0; i < COLORS.length; i++) {
   const shape = createShape();
-  appendShapeBeginFill(shape, colors[i], 1);
+  appendShapeBeginFill(shape, COLORS[i], 1);
   appendShapeRectangle(shape, -70, -70, 140, 140);
   appendShapeEndFill(shape);
   shape.x = logicalWidth * (0.28 + 0.44 * (i % 2));
@@ -83,3 +86,46 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ★ READ OFF THE SOURCE: this scene draws four AXIS-ALIGNED filled rectangles of known colour on a flat
+// field and hands the pipeline an EMPTY effects array. Axis-aligned edges produce no partial coverage,
+// and an empty effect list must be an exact identity, so the finished frame can contain exactly five
+// colours and no others — the four fills and the background.
+//
+// That makes the check total rather than sampled: every pixel is examined, and ANY sixth colour is a
+// failure. A blur, a glow, a vignette, a tint, a resample or an accidental antialias each introduce an
+// intermediate value on the first pixel they touch. Measured on all three backends today: exactly 5
+// distinct colours in 480000 pixels.
+//
+// Both directions are checked on purpose. An unexpected colour means something processed the frame; a
+// MISSING colour means a tile did not draw at all, which a "no unexpected colours" check alone would
+// call clean on an empty screen.
+const EXPECTED_COLORS = [...COLORS.map((rgba) => (rgba >>> 8) & 0xffffff), BACKGROUND_COLOR >>> 8];
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const seen = new Set<number>();
+  for (let y = 0; y < frame.height; y++) {
+    for (let x = 0; x < frame.width; x++) {
+      seen.add(getBitmapPixelRgb(frame, x, y) & 0xffffff);
+    }
+  }
+
+  for (const color of seen) {
+    if (!EXPECTED_COLORS.includes(color)) {
+      throw new Error(
+        `[effect-empty-passthrough] the frame contains #${color.toString(16).padStart(6, '0')}, which is ` +
+          `neither a tile fill nor the background — an empty effect list must change nothing, so any ` +
+          `intermediate value means the pipeline processed the picture`,
+      );
+    }
+  }
+
+  for (const color of EXPECTED_COLORS) {
+    if (!seen.has(color)) {
+      throw new Error(
+        `[effect-empty-passthrough] #${color.toString(16).padStart(6, '0')} is absent from the frame — ` +
+          `a tile or the background did not draw, which a check for unexpected colours alone would miss`,
+      );
+    }
+  }
+}
