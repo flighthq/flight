@@ -57,7 +57,9 @@ function createMinimalSwf(): Uint8Array {
 // Pool semantics should never fail for being slow — generous timeout.
 const POOL_SEMANTICS_TIMEOUT_MS = 60_000;
 
-// The load budget is an explicit measurement, not a timeout. The hard ceiling catches catastrophic
-// regressions (stuck workers, missing modules); the console.log reports the actual number so CI logs
-// surface drift from the observed 6-11s range before a ceiling is ever hit.
-const LOAD_BUDGET_HARD_CEILING_MS = 30_000;
+// The load budget is an explicit measurement, not a timeout. The hard ceiling is a tripwire for
+// order-of-magnitude regressions (stuck workers, missing modules), not a bound on normal variance.
+// It must sit above the ambient swing — a 3.4x variation on a ~14s worst case means anything below
+// ~50s fires on a busy machine, not a regression. 120s only trips on a genuine order-of-magnitude
+// change. The console.log reports the actual number so CI logs surface drift long before this fires.
+const LOAD_BUDGET_HARD_CEILING_MS = 120_000;
