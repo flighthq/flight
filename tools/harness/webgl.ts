@@ -19,6 +19,7 @@ import {
   enableGlBlendModeSupport,
   enableGlClipSupport,
   enableGlRenderCache,
+  enableGlRenderEffectGuards,
   enableGlStrokePathTessellation,
   getCanvasRenderStateTextureResolvers,
   invalidateNodeLocalTransform,
@@ -67,6 +68,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
+  enableGlRenderEffectGuards(state);
   registerStandardGlTextureResolvers(state);
   registerGlStandardMaterial(state);
   for (const kind of options.kinds ?? []) {
