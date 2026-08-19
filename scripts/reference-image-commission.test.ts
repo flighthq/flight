@@ -141,7 +141,14 @@ function commissionedCapture(pixelSha256: string): { artifacts: string; request:
     JSON.stringify({
       build: { commit: BUILD_COMMIT, dirty: ['README.md'], dirtyOmitted: 47 },
       hash: 'browser-capture-hash',
-      provenance: { frames: 1, sourceHash: null, targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 },
+      provenance: {
+        computationId: null,
+        frames: 1,
+        sourceHash: null,
+        targetKind: 'webgl',
+        verifyPublished: true,
+        warmupFrames: 0,
+      },
       state: 'ready',
     }),
   );

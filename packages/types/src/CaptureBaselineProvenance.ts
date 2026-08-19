@@ -16,6 +16,13 @@
  * that fires on every legacy record is a gate nobody can leave switched on.
  */
 export interface CaptureBaselineProvenance {
+  /**
+   * Identity of the computation that produced the fingerprint value, or `null` when the record
+   * predates computation tracking. A changed computation (different grid averaging, different
+   * channel selection, different serialization) invalidates every baseline produced by the old
+   * one — the values are no longer comparable even when the scene source has not changed.
+   */
+  computationId: string | null;
   /** `captureFrames` the artifact was produced at — the deterministic freeze point, 0 when unset. */
   frames: number;
   /**

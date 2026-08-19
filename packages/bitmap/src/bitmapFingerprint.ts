@@ -4,6 +4,15 @@ import type { Bitmap, BitmapFingerprint } from '@flighthq/types/contract';
 // antialiasing jitter that breaks an exact hash washes out while gross changes still register. The
 // committed regression baseline is the hex-encoded form (formatBitmapFingerprint), not a PNG.
 
+/**
+ * Opaque identity of this module's fingerprint computation. Recorded in baseline provenance so a
+ * change to the averaging, channel selection, or serialization invalidates every baseline produced
+ * by the previous version — the gate detects stale baselines even when the scene source is unchanged.
+ * Bump this value whenever the output of `createBitmapFingerprint` or `formatBitmapFingerprint`
+ * changes for the same input bitmap.
+ */
+export const BITMAP_FINGERPRINT_COMPUTATION_ID = 'grid-average-rgb-v1';
+
 const HEX = '0123456789abcdef';
 
 /**

@@ -158,4 +158,11 @@ describe('setCaptureBaselineProvenance', () => {
   });
 });
 
-const PROVENANCE = { frames: 1, sourceHash: 'a1b2c3', targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 };
+const PROVENANCE = {
+  computationId: 'grid-average-rgb-v1',
+  frames: 1,
+  sourceHash: 'a1b2c3',
+  targetKind: 'webgl',
+  verifyPublished: true,
+  warmupFrames: 0,
+};

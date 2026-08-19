@@ -221,6 +221,7 @@ function createRegressionFixture(
   mkdirSync(scenes, { recursive: true });
   writeFileSync(join(scenes, 'sample.canvas.ts'), currentSource);
   setBaselineField(root, 'functional', 'sample', 'canvas', 'fingerprint', '2:000000000000000000ffffff', {
+    computationId: 'grid-average-rgb-v1',
     frames: 1,
     sourceHash: recordedSourceHash,
     targetKind: 'canvas',

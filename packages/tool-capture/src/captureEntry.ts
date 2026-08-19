@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import { BITMAP_FINGERPRINT_COMPUTATION_ID } from '@flighthq/bitmap/contract';
 import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
 import type { BrowserContext, Page } from '@playwright/test';
 
@@ -585,6 +586,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // object means the two can only disagree when they genuinely came from different captures — never
       // because one pass sampled the conditions a moment later than the other.
       const captureProvenance: CaptureBaselineProvenance = {
+        computationId: BITMAP_FINGERPRINT_COMPUTATION_ID,
         frames: captureFrames,
         sourceHash: getCaptureSceneSourceHash(root, tool, entry, renderer),
         targetKind: verificationTargetKind,
@@ -1298,6 +1300,7 @@ function captureUrlStatusProvenance(
   diagnostics: Readonly<CaptureObserveDiagnostics>,
 ): CaptureStatusProvenance {
   return withCaptureHostProvenance({
+    computationId: null,
     frames: captureFrames,
     sourceHash: null,
     targetKind: diagnostics.verifyTargetKind,
