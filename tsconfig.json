@@ -19,6 +19,7 @@
     // Scripts tests cover these pure helpers from the review tool. Only the helpers are listed: the rest
     // of tools/review is browser code whose DOM types this project does not carry.
     "tools/review/src/sourceExpectedDescription.ts",
+    "tools/review/src/cellRole.ts",
     "tools/review/src/commissionEligibility.ts",
     "tools/review/src/commissionState.ts"
   ],
