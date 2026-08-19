@@ -31,7 +31,7 @@ import {
 import { declareExpectedImageDescription } from '@ft/render';
 
 declareExpectedImageDescription(
-  'An 800×600 black field (0x000000) with two overlapping unit cubes: a near red box (unlit 0xff3030, front face at depth 2.9 with scale s = H/(5.8*tan(PI/8)) ≈ 250: x W/2 − 0.15*s to W/2 + 0.85*s ≈ 363–612, y H/2 ± 0.5*s ≈ 175–425) and a far blue box (unlit 0x3060ff, front face at depth 4.1 with scale s = H/(8.2*tan(PI/8)) ≈ 177: x W/2 − 0.85*s to W/2 + 0.15*s ≈ 250–426, y H/2 ± 0.5*s ≈ 212–388). The near red box occludes the far blue box where their projections overlap near center. Red is visible at center and on the right; blue is visible only on the left flank where the near box does not cover it. Frame corners are background.',
+  'An 800×600 dark field (0x0a0c10) with two overlapping unit cubes: a near red box (unlit 0xff3030, front face at depth 2.9 with scale s = H/(5.8*tan(PI/8)) ≈ 250: x W/2 − 0.15*s to W/2 + 0.85*s ≈ 363–612, y H/2 ± 0.5*s ≈ 175–425) and a far blue box (unlit 0x3060ff, front face at depth 4.1 with scale s = H/(8.2*tan(PI/8)) ≈ 177: x W/2 − 0.85*s to W/2 + 0.15*s ≈ 250–426, y H/2 ± 0.5*s ≈ 212–388). The near red box occludes the far blue box where their projections overlap near center. Red is visible at center and on the right; blue is visible only on the left flank where the near box does not cover it. Frame corners are background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -40,7 +40,7 @@ document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
   pixelRatio,
-  backgroundColor: 0x000000ff,
+  backgroundColor: 0x0a0c10ff,
   contextAttributes: { alpha: false, preserveDrawingBuffer: true },
 });
 registerGlUnlitMaterial(state);
