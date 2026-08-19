@@ -27,7 +27,7 @@
       "camera-orthographic/webgl": ["fingerprint", "oracle", "referenceImage", "screenshot"],
       "camera-orthographic/webgpu": ["oracle", "referenceImage", "screenshot"],
       "camera2d-viewport/canvas": ["oracle", "referenceImage", "screenshot"],
-      "color-adjustment/canvas": ["fingerprint", "oracle", "referenceImage", "screenshot"],
+      "color-adjustment/canvas": ["fingerprint", "oracle", "screenshot"],
       "color-adjustment/webgl": ["fingerprint", "oracle", "referenceImage", "screenshot"],
       "color-adjustment/webgpu": ["fingerprint", "oracle", "referenceImage", "screenshot"],
       "compressed-texture/webgl": ["oracle", "referenceImage", "screenshot"],
