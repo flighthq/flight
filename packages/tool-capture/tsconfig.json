@@ -12,6 +12,7 @@
   "include": ["src"],
   "references": [
     { "path": "../capture" },
+    { "path": "../effects-wgpu" },
     { "path": "../render-wgpu" },
     { "path": "../bitmap" },
     { "path": "../types" }

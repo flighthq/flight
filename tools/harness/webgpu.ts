@@ -65,6 +65,10 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
+  // enableFlightDiagnostics lives in @flighthq/debug and cannot reach a backend package, so the WGPU
+  // effect guards are wired here. Without them the pipeline's sampleCount downgrade (a requested 4
+  // becomes 1, because WebGPU effect targets are single-sample today) is applied SILENTLY, and every
+  // functional scene asking for MSAA records a capture that looks like it got it.
   enableWgpuRenderEffectGuards(state);
   registerStandardWgpuTextureResolvers(state);
   registerWgpuStandardMaterial(state);

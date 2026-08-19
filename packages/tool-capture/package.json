@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@flighthq/capture": "*",
+    "@flighthq/effects-wgpu": "*",
     "@flighthq/render-wgpu": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/types": "*",
