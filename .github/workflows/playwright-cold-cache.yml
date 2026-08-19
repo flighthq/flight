@@ -1,19 +1,7 @@
 name: Playwright · Cold Cache
 
-# A cache whose hit path skips setup must have its miss path exercised, not merely reviewed. Changes to
-# CI configuration get immediate feedback, while the schedule catches ubuntu-latest image drift within
-# a day. Running on every unrelated source push would spend one or two runner minutes to remeasure two
-# inputs that did not change. This workflow is not a required check, so its path filters do not strand
-# branch protection in an "Expected" state on commits that correctly do not start it.
+# This diagnostic intentionally runs only when requested from the Actions UI.
 on:
-  push:
-    paths:
-      - '.github/**'
-  pull_request:
-    paths:
-      - '.github/**'
-  schedule:
-    - cron: '15 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -34,10 +22,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Scheduled workflows start from the default branch, while nightly quality measures develop.
-          # Exercise the same integration tip so runner drift is tested against the config headed to users.
-          ref: ${{ github.event_name == 'schedule' && 'develop' || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 20
