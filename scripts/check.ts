@@ -152,7 +152,10 @@ if (failed.length > 0) {
 // not three careless readings, so the correction goes where the reader already is: the pass states what
 // it did NOT do. Both the gate count and the test command are derived from what actually ran rather than
 // written down, so a gate added or scoped away cannot leave this line quietly wrong.
-const testFileCount = countTestFiles(projects);
+// The bare run covers all vitest projects: packages (shared + isolated + tool-capture), scripts
+// (shared project), and conformance (its own project). Counting only packages/ undercounts by
+// ~95 files — exactly the directories check itself never reaches.
+const testFileCount = countTestFiles(scoped ? projects : [...projects, 'scripts', 'conformance']);
 const testCommand = scoped ? `npm run test ${selectors.join(' ')}` : 'npm run test';
 process.stdout.write(`\n${pc.green('✓')} ${pc.bold('all check gates passed')}\n`);
 process.stdout.write(
@@ -196,6 +199,6 @@ function countTestFiles(dirs: readonly string[]): number {
       else if (entry.name.endsWith('.test.ts')) count++;
     }
   };
-  for (const dir of dirs.length > 0 ? dirs : ['packages']) walk(dir);
+  for (const dir of dirs) walk(dir);
   return count;
 }
