@@ -321,8 +321,15 @@ its gate reported 0.00 green while its own oracle threw on a real defect.
   | Tier | When it applies | What parity requires |
   | --- | --- | --- |
   | Numeric | The contract specifies one pixel transform or discrete mapping and both backends have the same required inputs (for example pointwise colour math, quantisation, or a fixed pixel grid). | Equal decoded values at corresponding interior probes, apart from explicitly named representation rounding. Rasterisation noise at the source silhouette is not permission for the effect math itself to differ. |
-  | Effect-family | The contract fixes the visual operation and parameter meanings but deliberately leaves the kernel or sampling algorithm open. | The same visible effect family and measurable scene invariants: direction or centre, threshold response, footprint/scale ordering, monotonic parameter response, and non-trivial strength. Kernel shape and edge rounding may differ; a barely visible effect, ignored parameter, reversed direction, or silent no-op may not. |
+  | Effect-family | The contract fixes the visual operation and parameter meanings but deliberately leaves the kernel or sampling algorithm open. | The same visible effect family and measurable scene invariants: contract-visible direction, centre, anchor, or coordinate semantics; threshold response; footprint/scale ordering; monotonic parameter response; and non-trivial strength. Kernel shape and edge rounding may differ; a barely visible effect, ignored parameter, reversed direction, displaced public reference point, or silent no-op may not. |
   | Declared approximation | A backend lacks a named input or primitive needed for the faithful operation, but can implement a deliberately narrower substitute that is still supposed to satisfy the shared observable invariants. | The missing capability, the lost dimension, and the surrogate behaviour are recorded beside the functional scene before comparison, and that backend's oracle checks the surrogate. This can satisfy the narrowed scene contract, but is not evidence that the full algorithm matches. If no honest surrogate preserves the shared effect family, that backend has no cell in the comparison set; a separate `functionalBackendSupport = 'control'` fixture may exercise the unsupported path outside it. |
+
+  A reference point constrains parity only when the public contract makes it observable: for example, a
+  centre parameter, stated direction, or canonical anchor must retain its meaning across backends.
+  Anonymous hash-derived or procedural centres remain implementation details when the contract promises
+  only that a seed varies a distribution or layout; reflecting one equally valid layout may therefore
+  remain in-contract. Symmetry by itself is not the discriminator: it can make a coordinate-origin
+  difference unobservable, but it neither creates nor removes a contract-visible reference.
 
   Every in-set tier still requires the scene to request the same public effect intent and parameters, to
   register and execute a real runner, and to show a detectable change from its untreated reference.
