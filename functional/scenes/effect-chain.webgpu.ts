@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -10,6 +10,7 @@ import {
   createColorGradeAdjustment,
   createDisplayObject,
   createShape,
+  getBitmapPixelRgb,
   createVignetteEffect,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
@@ -97,3 +98,68 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ★ READ OFF THE SOURCE: three stacked treatments — a bloom, a colour grade at saturation 1.4 /
+// contrast 1.1, and a vignette at intensity 0.7 — and the description names each one's own failure.
+// Two of the three are asserted below. The third is not, and the reason is recorded rather than left
+// as a gap.
+//
+// 1. BLOOM — the gradient population, pixels that are neither background nor tile core. Measured here:
+//    0.68 of the lit population on canvas, 0.52 on Gl and Wgpu. The same frame with no bloom collapses
+//    to about 0.014, so the bar of 0.1 sits five times below the working case and seven times above a
+//    frame without it.
+//
+// 2. VIGNETTE — the field must darken toward its corners. Measured: corner luminance 0.33 against 0.67
+//    in the middle of the field, on all three backends. A missing vignette leaves the two equal.
+//
+// ★ 3. THE SATURATION CLAIM IS DELIBERATELY NOT ASSERTED, because the picture does not satisfy it and
+// that is a finding rather than something to encode leniently. The description says the colours come
+// out "more saturated and higher in contrast than their raw fills". The pink tile does: 0.729 against a
+// raw 0.639. The YELLOW tile does not, on Gl and Wgpu: its core reads [182,182,135], a saturation of
+// 0.258 against the same raw 0.639 — LESS saturated, not more. Canvas keeps it at 0.912.
+//
+// The cause is upstream of the colour grade: in the bloom-only scene the same tile's core is #ffff5c on
+// canvas and #ffffdd on Gl, so the Gl bloom is feeding white light back into bright cores and washing
+// them out before the grade ever runs. Asserting the description's claim here would make this cell red
+// for a defect that belongs to bloom; asserting a weakened version would bless the wash-out. So it
+// waits on a ruling, and this comment is where the measurement lives until then.
+const MID_BAND_LOW = 15;
+const MID_BAND_HIGH = 120;
+const MIN_GRADIENT_RATIO = 0.1;
+const MIN_VIGNETTE_RATIO = 1.5;
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const luminance = (x: number, y: number): number => {
+    const rgb = getBitmapPixelRgb(frame, x, y);
+    return (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+  };
+
+  let gradient = 0;
+  let lit = 0;
+  for (let y = 0; y < frame.height; y++) {
+    for (let x = 0; x < frame.width; x++) {
+      const value = luminance(x, y);
+      if (value > MID_BAND_LOW && value < MID_BAND_HIGH) gradient++;
+      else if (value >= MID_BAND_HIGH) lit++;
+    }
+  }
+
+  const ratio = gradient / Math.max(1, lit);
+  if (ratio < MIN_GRADIENT_RATIO) {
+    throw new Error(
+      `[effect-chain] the gradient population is ${ratio.toFixed(3)} of the lit population (expected at ` +
+        `least ${MIN_GRADIENT_RATIO}) — the tiles have crisp edges, so the bloom stage did not run`,
+    );
+  }
+
+  // Field background only: the two corners and a point in the middle gap between the four tiles.
+  const corner = (luminance(12, 12) + luminance(frame.width - 12, frame.height - 12)) / 2;
+  const middle = luminance(Math.round(frame.width * 0.5), Math.round(frame.height * 0.5));
+  if (middle < corner * MIN_VIGNETTE_RATIO) {
+    throw new Error(
+      `[effect-chain] the corners read ${corner.toFixed(2)} and the middle of the field ` +
+        `${middle.toFixed(2)} — the field is not darkening toward its corners, so the vignette stage ` +
+        `did not run`,
+    );
+  }
+}
