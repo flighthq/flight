@@ -477,6 +477,31 @@
       "label": "Effects",
       "scenes": [
         {
+          "scene": "effect-bevel",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            }
+          }
+        },
+        {
           "scene": "effect-blend-advanced",
           "backends": {
             "canvas": {
@@ -998,6 +1023,31 @@
               "status": "realized",
               "fingerprint": true,
               "realization": true
+            }
+          }
+        },
+        {
+          "scene": "effect-gradient-bevel",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
             }
           }
         },
