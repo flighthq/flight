@@ -27,6 +27,11 @@ describe('getFlightCaptureValidationPreset', () => {
     expect(getFlightCaptureValidationPreset('custom').fingerprintSkip).toEqual([]);
   });
 
+  // ★ THIS TEST IS A MIRROR OF THE CONSTANT, so retiring an exception means editing BOTH. Two entries
+  // were retired once their stated cause was fixed — effect-god-rays (the centerY UV-origin repair)
+  // and effect-vignette (canvas now matches the GPU recipe byte-for-byte) — and this deep-equal went
+  // red on the merge tree because only the constant had been updated. `npm run check` cannot see it:
+  // it runs 28 gates and no tests. `npm run test tool-capture` is what catches it, in 34 seconds.
   it('keeps only the parity exceptions backed by current renderer behavior', () => {
     expect(getFlightCaptureValidationPreset('functional').paritySkip).toEqual({
       'effect-invert': ['webgpu'],
