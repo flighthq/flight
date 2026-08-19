@@ -53,6 +53,7 @@ import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
 import { isTransientCaptureError } from './captureEntry.js';
 import { selectCaptureEntriesByName } from './captureEntryFilter.js';
+import { compareCaptureFixtureBackgrounds } from './captureFixtureBackground.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
@@ -166,6 +167,18 @@ export interface CaptureValidationCheck {
   fingerprintProvenanceStatus?: 'full' | 'partial' | 'unavailable';
   recordedSourceHash?: string | null;
   currentSourceHash?: string | null;
+  /**
+   * Whether the two fixtures of a parity pair DECLARE different clear colours, which makes their
+   * distance partly an artefact of the fixtures rather than a renderer disagreement.
+   *
+   * ★ ABSENT MEANS NOT CHECKED, NOT CLEAN. The field is set only on parity checks whose scene sources
+   * could both be read and which both declare a literal `backgroundColor: 0x…`; anywhere else it is
+   * undefined, and undefined must never be read as "screened". `false` likewise means only that the two
+   * DECLARED backgrounds match — it is not a statement that the fixtures agree in any other respect.
+   * The detector behind it (`compareCaptureFixtureBackgrounds`) matches one literal declaration and
+   * nothing else, which is why this field is named for that one condition instead of for confounds.
+   */
+  fixtureBackgroundMismatch?: boolean;
 }
 
 interface ResolvedCaptureValidationOptions {
@@ -234,6 +247,30 @@ function isFunctionalParityControl(root: string, subject: string, entry: string,
   } catch (error) {
     if (error instanceof Error && error.message.startsWith('Unknown functionalBackendSupport value')) throw error;
     return false;
+  }
+}
+
+// Reads both fixtures of a parity pair and reports whether their DECLARED clear colours differ.
+//
+// Returns null whenever the question could not be answered — a subject other than functional, a source
+// that would not read, or either fixture declaring no colour — so the caller leaves the report field
+// undefined rather than asserting a clean result it did not establish.
+function findParityFixtureBackgroundMismatch(
+  root: string,
+  subject: string,
+  entry: string,
+  a: string,
+  b: string,
+): boolean | null {
+  if (subject !== 'functional') return null;
+  const scenesDir = join(root, 'functional', 'scenes');
+  try {
+    return compareCaptureFixtureBackgrounds(
+      readFileSync(functionalScene3DFile(scenesDir, entry, a), 'utf8'),
+      readFileSync(functionalScene3DFile(scenesDir, entry, b), 'utf8'),
+    );
+  } catch {
+    return null;
   }
 }
 
@@ -975,6 +1012,7 @@ async function processEntry(
       const segments = pairs.map((p) => `${p.label} ${p.dist.toFixed(2)}`).join('  ');
       result.output.push(detailLine(pc.dim('~'), 'parity', pc.dim(segments), pc.dim));
       for (const pair of pairs) {
+        const mismatch = findParityFixtureBackgroundMismatch(options.root, options.subject, entry.name, pair.a, pair.b);
         result.checks.push({
           entry: entry.name,
           renderers: [pair.a, pair.b],
@@ -983,6 +1021,7 @@ async function processEntry(
           message: `parity ${pair.label} distance ${pair.dist.toFixed(2)}`,
           distance: pair.dist,
           threshold: pair.tolerance,
+          ...(mismatch === null ? {} : { fixtureBackgroundMismatch: mismatch }),
         });
       }
     } else if (options.gateParity) {
@@ -990,6 +1029,10 @@ async function processEntry(
       const segments = pairs
         .map((p) => {
           const check = evaluateCaptureParity(parityEligible.get(p.a)!, parityEligible.get(p.b)!, p.tolerance);
+          // Undefined when the question could not be answered; see the field's own documentation for
+          // why that is deliberately NOT the same as false.
+          const mismatch = findParityFixtureBackgroundMismatch(options.root, options.subject, entry.name, p.a, p.b);
+          const fixtureBackground = mismatch === null ? {} : { fixtureBackgroundMismatch: mismatch };
           if (!check.pass) {
             anyFailed = true;
             result.parityFailures++;
@@ -1001,6 +1044,7 @@ async function processEntry(
               message: `parity ${p.label} ${p.dist.toFixed(2)} > ${p.tolerance}`,
               distance: p.dist,
               threshold: p.tolerance,
+              ...fixtureBackground,
             });
             return pc.red(`${p.label} ${p.dist.toFixed(2)}>${p.tolerance}`);
           }
@@ -1013,6 +1057,7 @@ async function processEntry(
             message: `parity ${p.label} ${p.dist.toFixed(2)} ≤ ${p.tolerance}`,
             distance: p.dist,
             threshold: p.tolerance,
+            ...fixtureBackground,
           });
           return pc.dim(`${p.label} ${p.dist.toFixed(2)}`);
         })

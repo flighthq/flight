@@ -14,6 +14,7 @@ export * from './captureRenderTarget';
 export * from './captureServer';
 export * from './captureSuite';
 export * from './captureSourceHash';
+export * from './captureFixtureBackground';
 export * from './captureValidation';
 export * from './captureWorkflow';
 export * from './functionalScene3Ds';
