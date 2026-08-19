@@ -64,7 +64,9 @@ void main() {
     vec2 uv = v_texCoord + toCenter * (2.0 * t);
     flare += brightPass(uv);
   }
-  vec2 haloDir = normalize(toCenter + vec2(1e-5));
+  // Negate epsilon Y: GL UV Y-up vs WGPU UV Y-down. The epsilon is a divide-by-zero guard for
+  // normalize(); its Y must match the screen-space convention to avoid a direction flip at center.
+  vec2 haloDir = normalize(toCenter + vec2(1e-5, -1e-5));
   flare += brightPass(v_texCoord + haloDir * u_halo) * u_halo;
   o_color = vec4(scene.rgb + flare * u_intensity, scene.a);
 }`;
