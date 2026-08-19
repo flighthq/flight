@@ -1105,9 +1105,9 @@
           "scene": "effect-lens-distortion",
           "backends": {
             "canvas": {
-              "status": "control",
+              "status": "realized",
               "fingerprint": true,
-              "realization": false
+              "realization": true
             },
             "dom": {
               "status": "unbaselined",

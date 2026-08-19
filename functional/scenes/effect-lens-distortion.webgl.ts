@@ -1,5 +1,6 @@
-import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
+  getBitmapPixelRgb,
   ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
@@ -48,12 +49,16 @@ export const scale = pixelRatio;
 export const width = 800;
 export const height = 600;
 
+// The distortion amount the effect is given AND the value the assertion reasons about. One constant so
+// the descriptor and the oracle cannot drift apart.
+const LENS_AMOUNT = 0.35;
+
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createLensDistortionEffect({ amount: 0.35, scale: 1 })]);
+  endGlRenderEffectPipeline(state, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
 }
 
 // Off-center shapes pushed toward the frame edges, so lens curvature and out-of-focus falloff away
@@ -85,3 +90,34 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ★ THE ORACLE MUST SEPARATE "DISTORTED" FROM "UNTOUCHED", and the two probes below are chosen because
+// an identity pass fails both. The remap is `centered * (1 + amount * r2)`, so the centre is its FIXED
+// POINT — it must still read the scene background — while the frame corner samples past the source edge
+// and the recipe writes opaque black there rather than clamping. Undistorted, the corner would read the
+// same near-black background as the centre, which is a different colour from pure black; that is the
+// discrimination. Before this, these scenes had no assertion at all on any backend.
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const channels = (x: number, y: number): { blue: number; green: number; red: number } => {
+    const rgb = getBitmapPixelRgb(frame, x, y);
+    return { blue: rgb & 0xff, green: (rgb >> 8) & 0xff, red: (rgb >> 16) & 0xff };
+  };
+
+  const corner = channels(2, 2);
+  const centre = channels(Math.round(frame.width / 2), Math.round(frame.height / 2));
+
+  if (corner.red > 3 || corner.green > 3 || corner.blue > 3) {
+    throw new Error(
+      `[effect-lens-distortion] frame corner is rgb(${corner.red},${corner.green},${corner.blue}), expected ` +
+        `the opaque black the recipe writes where amount ${LENS_AMOUNT} pushes the sample off the source — ` +
+        `the scene background would read here if no distortion ran`,
+    );
+  }
+
+  if (centre.red + centre.green + centre.blue < 12) {
+    throw new Error(
+      `[effect-lens-distortion] centre is rgb(${centre.red},${centre.green},${centre.blue}), expected the ` +
+        `scene background — the centre is the fixed point of the remap and must not be pushed off-frame`,
+    );
+  }
+}
