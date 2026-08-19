@@ -18,7 +18,7 @@ describe('createDirectionalBlurEffect', () => {
 
 describe('getDirectionalBlurEffectPadding', () => {
   it('projects the centered half-length onto both axes', () => {
-    expect(getDirectionalBlurEffectPadding(createDirectionalBlurEffect({ angle: Math.PI / 2, length: 9 }))).toEqual({
+    expect(getDirectionalBlurEffectPadding(createDirectionalBlurEffect({ angle: 90, length: 9 }))).toEqual({
       bottom: 5,
       left: 0,
       right: 0,

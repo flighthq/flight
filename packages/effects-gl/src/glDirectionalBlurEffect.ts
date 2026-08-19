@@ -17,7 +17,7 @@ export function applyDirectionalBlurEffectToGl(
   dest: Readonly<GlRenderTarget>,
   effect: Readonly<DirectionalBlurEffect>,
 ): void {
-  const angle = effect.angle ?? 0;
+  const angle = ((effect.angle ?? 0) * Math.PI) / 180;
   const length = effect.length ?? 8;
   const samples = effect.samples ?? 16;
   const program = getGlEffectProgram(state, 'directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_SRC);

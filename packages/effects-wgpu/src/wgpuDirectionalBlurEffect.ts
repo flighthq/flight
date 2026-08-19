@@ -18,7 +18,7 @@ export function applyDirectionalBlurEffectToWgpu(
   dest: Readonly<WgpuRenderTarget>,
   effect: Readonly<DirectionalBlurEffect>,
 ): void {
-  const angle = effect.angle ?? 0;
+  const angle = ((effect.angle ?? 0) * Math.PI) / 180;
   const length = effect.length ?? 8;
   const samples = effect.samples ?? 16;
   const pipeline = getWgpuEffectPipeline(state, 'motion.directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_WGSL, 'replace');
