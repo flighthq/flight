@@ -1,6 +1,7 @@
 # Effect-pass UV origin: sweep and architecture record
 
-Status: source sweep complete; architecture decision proposed; no implementation in this change.
+Status: source sweep and Y-only-reflection correction complete; architecture decision proposed; no
+implementation in this change.
 
 ## Decision in one sentence
 
@@ -45,9 +46,9 @@ migration blast radius.
 | source classification | count | named effects |
 | --- | ---: | --- |
 | already hand-compensated | 7 | Crt, Displacement, Glitch, GodRays, Scanlines, ScreenSpaceFog, TiltShift |
-| observable with current or existing non-symmetric options | 8 | Bevel, Dither, DropShadow, FilmGrain, GradientBevel, Halftone, InnerShadow, LensDirt |
-| parameter/content-dependent observability | 4 | Convolution, Kuwahara, Pixelate, RadialBlur |
-| reflection-equivariant today, so the divergence is hidden | 20 | Bloom, Blur, CameraMotionBlur, ChromaticAberration, ContactShadows, DirectionalBlur, Fxaa, GradientGlow, InnerGlow, LensDistortion, LensFlare, Median, MotionBlur, OuterGlow, Outline, Sharpen, Sketch, Smaa, Ssao, Vignette |
+| observable with current or existing non-symmetric options | 10 | Bevel, Dither, DirectionalBlur, DropShadow, FilmGrain, GradientBevel, Halftone, InnerShadow, LensDirt, MotionBlur |
+| parameter/content/precision-dependent observability | 6 | ChromaticAberration, Convolution, Kuwahara, LensFlare, Pixelate, RadialBlur |
+| Y-reflection-equivariant today, so the divergence is hidden | 16 | Bloom, Blur, CameraMotionBlur, ContactShadows, Fxaa, GradientGlow, InnerGlow, LensDistortion, Median, OuterGlow, Outline, Sharpen, Sketch, Smaa, Ssao, Vignette |
 | direct-screen-sample only, so excluded by the predicate | 6 | Blend, Composite, Posterize, RenderTexture, ToneMap, WhiteBalance |
 
 The last six still have to migrate to the screen-sampling helper in the structural change. Otherwise
@@ -64,34 +65,53 @@ normalizing GL's position UV would vertically flip their sampled image.
 | Halftone | The dot grid rotates absolute pixel coordinates. At the functional angle `0.4`, vertical reflection changes grid orientation/phase. | This is real in addition to the separate GLSL `mod` versus WGSL signed-remainder translation defect. Fixing either one alone leaves a compounded mismatch; re-verify after both are absent. |
 | LensDirt | `dirtAmount(uv, seed)` is another coordinate-seeded procedural field, so the divergence is real. | Manager has already ruled the existing difference in-contract/acceptable. Record it; do not reopen that ruling during this migration without a new decision about which image is canonical. |
 | Convolution | Kernel rows are applied to signed Y offsets without reflecting the matrix. Vertically symmetric kernels hide the issue; the public arbitrary matrix permits asymmetric kernels that expose it. | Verify with a deliberately asymmetric kernel whose top and bottom weights differ. |
+| ChromaticAberration | The centred radial construction would commute with Y reflection, but both shaders normalize `centered + vec2(1e-5)`. Under `R(x, y) = (x, -y)`, the Y component of that bias must change sign; adding the same positive Y bias in both coordinate systems produces slightly different radial directions. The horizontal-only mode is unaffected. | Replace the two-axis bias with an origin-independent zero-length guard, then verify the radial mode on asymmetric content. The source defect is small enough that an 8-bit capture may hide it, so capture equality alone is not a proof. |
+| DirectionalBlur | Both shaders construct `d = (cos(angle), sin(angle))`. The GL sample line appears on screen as `R(d) = (d.x, -d.y)`, while WGPU uses `d`. Symmetric `+t/-t` taps identify `d` with `-d`; they do not identify `d` with `R(d)` for a diagonal angle. | The existing `angle = 0.5` scene is already a diagonal probe. Negate the GL Y component or express the angle in the eventual common position-UV convention; axis-aligned tests are insufficient. |
 | Kuwahara | Reflection permutes the four sampled quadrants. With a unique minimum-variance quadrant the output is equivariant; exact variance ties can select a different first quadrant with a different mean. This origin defect is separate from the already-open shared defect where both backends offset the source by `(-r, -r)` and degenerate three quadrants while `computeKuwaharaSectorOffsets` contains unused correct sector math. | Include a constructed tie case or make tie behavior origin-independent. Keep the origin repair and the quadrant repair in separate commits unless evidence proves they share one cause. |
+| LensFlare | The centre-directed ghost train commutes with Y reflection, but the halo repeats ChromaticAberration's `normalize(toCenter + vec2(1e-5))` bias. Its Y component is not reflected, so the halo sample is source-level divergent even though the discrepancy may be subpixel. | Replace the bias with an origin-independent zero-length guard and verify the halo separately from the already-correct ghost train. |
+| MotionBlur | The velocity buffers store the same Y-down screen-space `(vx, vy)` values on both backends. WGPU converts that vector directly to the intended UV line; GL also uses it directly even though its texture Y axis is opposite, so a displayed GL smear follows `(vx, -vy)`. Symmetric taps erase only `v` versus `-v`, not that Y-only reflection. The horizontal `effect-motion-blur` scene hides the defect, while diagonal particles in `particle-motion-blur` expose it. | Convert the GL screen-space velocity to GL texture space by negating its Y component. Keep a diagonal-velocity assertion; horizontal and vertical vectors each describe the same unoriented line after reflection and cannot detect this defect. |
 | Pixelate | Block-centre quantization is reflection-equivariant only when the target height divides into an integral block grid (the current 600/24 scene does). Other supported sizes leave a different remainder at the top versus bottom. | Verify a size that does not divide the target height as well as the existing size 24 case. |
 | RadialBlur | A centred `centerY = 0.5` reflects onto itself, which hides the mismatch in the current functional scene. The public off-centre parameter does not. | Verify with an off-centre Y value such as 0.3. |
 
-## Divergent but currently hidden
+## Corrected Y-only-reflection audit of the former hidden group
 
-These pairs still satisfy the positional predicate. They must not be dropped merely because their present
-math commutes with vertical reflection:
+The original audit used an over-broad shortcut: a symmetric tap set is unchanged when a direction is
+fully inverted, `d -> -d`, but the backend seam reflects only Y, `R(d) = (d.x, -d.y)`. Those operations
+coincide only on an axis. A diagonal line through the origin is unchanged by full inversion and changed
+by Y reflection. Applying that distinction to all 20 formerly hidden pairs gives these source results:
 
-- Symmetric tap sets hide direction reversal: `Blur`, `DirectionalBlur`, `Median`, and the shared
-  `EffectBoxBlur`; `Bloom`, `GradientGlow`, `InnerGlow`, and `OuterGlow` inherit that property.
-- `MotionBlur` also uses a symmetric set. Its `count = 16` taps have
-  `t = i / (count - 1) - 0.5`, so every `+t` has a `-t`. Reversing a vertical velocity reverses the
-  traversal order but not the sampled set. Therefore the UV-origin seam does **not** explain the held
-  particle-motion-blur pictures whose blur directions reportedly disagree. That H4 observation remains
-  unresolved; this sweep does not establish whether its cause is velocity production/association or a
-  different backend seam.
-- `CameraMotionBlur` samples toward the fixed centre; reflection maps the whole centre-directed path
-  onto itself. `ChromaticAberration`, `LensDistortion`, `LensFlare`, and `Vignette` are likewise centred
-  radial constructions. The tiny `vec2(1e-5)` normalization biases in chromatic aberration and lens flare
-  prevent claiming bit identity, so both still need verification.
-- `Outline` and `Sketch` reduce the reflected Sobel field to gradient magnitude. `Sharpen`, `Ssao`, and
-  the `ContactShadows` alias use symmetric neighbour sets. `Fxaa` and `Smaa` derive and sample symmetric
-  edge neighbourhoods. Reflection permutes or negates intermediate values without changing the intended
-  result.
+| pair | Y-only-reflection result | source reason |
+| --- | --- | --- |
+| Bloom | genuinely equivariant | Its bright/composite passes are direct samples; the blur is the same separable axis-aligned Gaussian as Blur. |
+| Blur | genuinely equivariant | Horizontal taps are unchanged and vertical taps are permuted by Y reflection with equal weights. |
+| CameraMotionBlur | genuinely equivariant | The one-way path to fixed centre `(0.5, 0.5)` itself reflects correctly; this does not rely on symmetric taps. |
+| ChromaticAberration | **defect** | The radial direction's `vec2(1e-5)` normalization bias does not reflect in Y. |
+| ContactShadows | genuinely equivariant | It delegates to the current SSAO approximation's symmetric axial neighbourhood. |
+| DirectionalBlur | **defect** | A diagonal `(cos(angle), sin(angle))` line reflects to a different line; `+t/-t` symmetry only removes full sign. |
+| Fxaa | genuinely equivariant | Reflection transforms its derived edge direction to `-R(d)`; its `+/-` line taps erase that additional full sign. |
+| GradientGlow | genuinely equivariant | Its positional stage is the separable axis-aligned EffectBoxBlur; ramp lookup and compositing are direct. |
+| InnerGlow | genuinely equivariant | Its positional stage is the same box blur; tint, clip, and composite are direct samples. |
+| LensDistortion | genuinely equivariant | The fixed-centre radial polynomial uses only a reflected centred vector and its squared length. |
+| LensFlare | **defect** | The ghost train reflects correctly, but the halo direction has the same unreflected `vec2(1e-5)` Y bias. |
+| Median | genuinely equivariant | Y reflection permutes the same square sample multiset, which is sorted before selecting the median. |
+| MotionBlur | **defect** | A shared Y-down screen velocity becomes `(vx, -vy)` on GL's texture axis; a diagonal line is not repaired by symmetric taps. |
+| OuterGlow | genuinely equivariant | Its positional stage is the separable axis-aligned EffectBoxBlur; tint and compositing are direct. |
+| Outline | genuinely equivariant | Y reflection negates the Sobel Y component and preserves X; the shader emits only gradient magnitude. |
+| Sharpen | genuinely equivariant | Its Laplacian gives equal weight to the exchanged north/south neighbours. |
+| Sketch | genuinely equivariant | Like Outline, it reduces the reflected Sobel vector to magnitude. |
+| Smaa | genuinely equivariant | The current approximation uses a symmetric axial cross for both detection and averaging. |
+| Ssao | genuinely equivariant | The current approximation sums equal absolute luminance differences over a symmetric axial cross. |
+| Vignette | genuinely equivariant | Its fixed-centre result depends only on the length of the reflected centred vector. |
+
+The 16 “genuinely equivariant” verdicts are mathematical source classifications, not promises of
+cross-API bit identity: a compiler may still reassociate floating-point sums. They mean that the Y-origin
+seam does not change the intended sampled points or scalar result. `DirectionalBlur`, `MotionBlur`,
+`ChromaticAberration`, and `LensFlare` do change intended sample positions and therefore move into the
+source-confirmed defect set.
 
 Hidden is not absent. A later asymmetric tap weight, off-centre parameter, directional output, or changed
-tie-break can make any of these visible without touching the backend seam.
+tie-break can make any of the 16 visible without touching the backend seam. Future proofs must name the
+exact operation they exclude; invariance under `d -> -d` is never shorthand for invariance under `R(d)`.
 
 ## Existing hand compensations
 
@@ -163,14 +183,17 @@ changes in the WGPU effect path; overlapping them would make the combined visual
 attribute or review.
 
 The verification set must contain asymmetric probes, not only scenes whose symmetry hides the seam,
-and those probes must land **with** the migration rather than in a follow-up. Twenty of the 45 pairs are
-unobservable under current symmetric inputs, so landing the convention first would give meaningful
-verification to only 25 pairs while calling the migration atomic:
+and those probes must land **with** the migration rather than in a follow-up. Sixteen of the 45 pairs are
+source-level Y-reflection-equivariant today, while other current inputs hide parameter-dependent defects;
+landing the convention without the probes would therefore leave much of the migration unobserved:
 
 - a 2x2 labelled-corner texture proves direct sampling remains upright while position UV is top-left;
 - off-centre GodRays, TiltShift, and RadialBlur prove public Y parameters;
 - seeded FilmGrain and LensDirt plus the exact Dither matrix prove procedural coordinates;
 - angled Halftone, Bevel, GradientBevel, DropShadow, and InnerShadow prove signed/rotated directions;
+- diagonal DirectionalBlur and velocity-driven MotionBlur prove that full-inversion tap symmetry is not
+  mistaken for Y-reflection symmetry; radial ChromaticAberration and the LensFlare halo prove that
+  zero-length guards do not introduce an origin-dependent directional bias;
 - an asymmetric Convolution kernel and non-dividing Pixelate size prove latent options;
 - the six pre-existing compensated families plus the recently corrected GodRays pair prove that the
   migration did not double-flip them;
