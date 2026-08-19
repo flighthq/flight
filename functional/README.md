@@ -51,6 +51,16 @@ So a scene with a canvas or dom cell **cannot** be uniformly AA-off, and one wit
 
 **UNDECIDED: where AA is applied.** Two routes are open — plumbing `multisample` through the WebGPU pipelines, or supersampling in the functional targets (`tools/harness/*.ts`) for all four backends. The requirement above holds either way. Until it is settled, do not add a scene whose subject is antialiasing quality, and do not add a new `antialias: false` to a scene that has a canvas or dom cell.
 
+### 5. Parameters are off-centre and off-axis, or the scene cannot catch a convention error
+
+A scene that passes a symmetric or neutral parameter value **cannot reveal a convention error in that parameter**. The effect runs, the assertion passes, both cells look right — because the one value where a flip is invisible is also the most natural default to write.
+
+This has hidden three defects so far: god-rays behind `centerY: 0.5`, directional-blur behind an axis-aligned angle, radial-blur behind `centerY: 0.5` again. In every case the parameter was the exact subject of the bug and the scene chose the one value that could not expose it.
+
+So: choose positional parameters **off-centre**, directional ones **off-axis** — a centre at 0.25 rather than 0.5, an angle at 0.5 rad rather than 0 or π/2. If a scene must use a neutral value for its own reasons, say in a comment what it therefore cannot detect, so the next reader does not mistake its green for coverage.
+
+The same rule applies to a fix's discriminating case: the case that proves a convention fix is the one that would have failed before it, and an axis-aligned or centred case is not that.
+
 ## Controls
 
 A control used to be a **backend** cell that deliberately rendered a feature's _absence_, declared with `export const functionalBackendSupport = 'control'`. That form is retired: it is rules 1 and 4 violated in their purest form, and confirming that nothing happened is not a job a picture does well.
