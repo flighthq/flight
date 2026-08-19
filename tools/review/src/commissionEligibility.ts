@@ -1,12 +1,20 @@
+import type { ReviewCellRole } from './cellRole';
+
 export interface ReviewCommissionCandidate {
+  role: ReviewCellRole;
   hash: string | null;
   provenance: { hostInstanceId: string | null } | null;
   build: { commit: string | null } | null;
 }
 
-export type ReviewCommissionIneligibility = 'missing-capture' | 'missing-build-stamp' | 'missing-host-identity';
+export type ReviewCommissionIneligibility =
+  | 'reference-cell'
+  | 'missing-capture'
+  | 'missing-build-stamp'
+  | 'missing-host-identity';
 
 export function reviewCommissionIneligibility(cell: ReviewCommissionCandidate): ReviewCommissionIneligibility | null {
+  if (cell.role === 'reference') return 'reference-cell';
   if (cell.hash === null) return 'missing-capture';
   if (cell.build === null || cell.build.commit === null) return 'missing-build-stamp';
   if (cell.provenance === null || cell.provenance.hostInstanceId === null) return 'missing-host-identity';
@@ -18,6 +26,9 @@ export function isReviewCommissionEligible(cell: ReviewCommissionCandidate): boo
 }
 
 export function reviewCommissionIneligibilityMessage(reason: ReviewCommissionIneligibility): string {
+  if (reason === 'reference-cell') {
+    return 'Reference cell — shown as context, never approved or commissioned.';
+  }
   if (reason === 'missing-capture') {
     return 'No capture available — capture this cell before commissioning.';
   }

@@ -12,6 +12,7 @@ const COMMIT = 'a'.repeat(40);
 function cell(
   overrides: Partial<{
     approval: boolean;
+    role: 'reviewable' | 'reference';
     hash: string | null;
     hostInstanceId: string | null;
     environmentId: string | null;
@@ -20,6 +21,7 @@ function cell(
 ) {
   return {
     approval: overrides.approval,
+    role: overrides.role ?? 'reviewable',
     hash: overrides.hash === undefined ? 'pixels' : overrides.hash,
     provenance: {
       hostInstanceId: overrides.hostInstanceId === undefined ? 'local-host' : overrides.hostInstanceId,
@@ -50,6 +52,14 @@ describe('review commission eligibility', () => {
   it('requires the host identity that the commission endpoint also requires', () => {
     expect(reviewCommissionIneligibility(cell({ hostInstanceId: null }))).toBe('missing-host-identity');
   });
+
+  it('never makes a contextual reference cell commissionable', () => {
+    const reference = cell({ role: 'reference' });
+
+    expect(reviewCommissionIneligibility(reference)).toBe('reference-cell');
+    expect(isReviewCommissionEligible(reference)).toBe(false);
+    expect(reviewCommissionIneligibilityMessage('reference-cell')).toContain('never approved or commissioned');
+  });
 });
 
 describe('selectReviewCommissionCells', () => {
@@ -61,6 +71,12 @@ describe('selectReviewCommissionCells', () => {
 
   it('selects only approved eligible cells when marks exist', () => {
     const cells = [cell({ approval: true }), cell({ approval: false }), cell({ approval: true, hash: null })];
+
+    expect(selectReviewCommissionCells(cells, (candidate) => candidate.approval)).toEqual([cells[0]]);
+  });
+
+  it('drops reference cells even when they are explicitly marked approved', () => {
+    const cells = [cell({ approval: true }), cell({ approval: true, role: 'reference' })];
 
     expect(selectReviewCommissionCells(cells, (candidate) => candidate.approval)).toEqual([cells[0]]);
   });
