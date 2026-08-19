@@ -1,5 +1,5 @@
 {
-  "$comment": "Cells that must NOT be commissioned, with who holds each and why. A hold is checked before any local evidence is read, so a cell that looks perfect in today's capture still stays held \u2014 the holder knows something a capture run cannot see. This file exists because the alternative is a hold that lives only in one agent's session: it is lost on a reset, and the cell is then commissioned by whoever looks next and finds nothing wrong with it. A hold is released by DELETING its entry, which is a reviewed change with a name on it.",
+  "$comment": "Cells that must NOT be commissioned, with who holds each and why. A hold is checked before any local evidence is read, so a cell that looks perfect in today's capture still stays held — the holder knows something a capture run cannot see. This file exists because the alternative is a hold that lives only in one agent's session: it is lost on a reset, and the cell is then commissioned by whoever looks next and finds nothing wrong with it. A hold is released by DELETING its entry, which is a reviewed change with a name on it.",
   "schemaVersion": 1,
   "held": {
     "functional/effect-bloom/canvas": "under repair by builder: measuring determinism after the environment-only exemption was rejected",
@@ -32,6 +32,22 @@
     "functional/effect-posterize/webgpu": "historical parity-green is not verification evidence for this scene: it sits on FLIGHT_PARITY_SKIP, so it took the captureValidation zero-pairs path that builder fixed at 2ff7b9007. Re-run parity on the fixed harness before treating it as verified",
     "functional/effect-vignette/canvas": "historical parity-green is not verification evidence for this scene: it sits on FLIGHT_PARITY_SKIP, so it took the captureValidation zero-pairs path that builder fixed at 2ff7b9007. Re-run parity on the fixed harness before treating it as verified",
     "functional/effect-vignette/webgl": "historical parity-green is not verification evidence for this scene: it sits on FLIGHT_PARITY_SKIP, so it took the captureValidation zero-pairs path that builder fixed at 2ff7b9007. Re-run parity on the fixed harness before treating it as verified",
-    "functional/effect-vignette/webgpu": "historical parity-green is not verification evidence for this scene: it sits on FLIGHT_PARITY_SKIP, so it took the captureValidation zero-pairs path that builder fixed at 2ff7b9007. Re-run parity on the fixed harness before treating it as verified"
+    "functional/effect-vignette/webgpu": "historical parity-green is not verification evidence for this scene: it sits on FLIGHT_PARITY_SKIP, so it took the captureValidation zero-pairs path that builder fixed at 2ff7b9007. Re-run parity on the fixed harness before treating it as verified",
+    "functional/effect-halftone/webgl": "black triangle overlapping wgpu render",
+    "functional/effect-halftone/webgpu": "black triangle overlapping wgpu render",
+    "functional/particle-motion-blur/webgl": "blur directions do not agree between webgl and webgpu",
+    "functional/particle-motion-blur/webgpu": "blur directions do not agree between webgl and webgpu",
+    "functional/swf-alpha-transform/dom": "dom has white background and is not centered",
+    "functional/swf-alpha-transform/canvas": "dom has white background and is not centered",
+    "functional/swf-alpha-transform/webgl": "dom has white background and is not centered",
+    "functional/swf-alpha-transform/webgpu": "dom has white background and is not centered",
+    "functional/swf-mirrored-placement/dom": "dom has white background and is not centered",
+    "functional/swf-mirrored-placement/canvas": "dom has white background and is not centered",
+    "functional/swf-mirrored-placement/webgl": "dom has white background and is not centered",
+    "functional/swf-mirrored-placement/webgpu": "dom has white background and is not centered",
+    "functional/text-markup-color/dom": "dom has white background and is misaligned",
+    "functional/text-markup-color/canvas": "dom has white background and is misaligned",
+    "functional/text-markup-color/webgl": "dom has white background and is misaligned",
+    "functional/text-markup-color/webgpu": "dom has white background and is misaligned"
   }
 }
