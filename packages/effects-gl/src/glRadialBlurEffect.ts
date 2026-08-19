@@ -13,7 +13,12 @@ export function applyRadialBlurEffectToGl(
   effect: Readonly<RadialBlurEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
-  const centerY = effect.centerY ?? 0.5;
+  // `centerY` is screen space on RadialBlurEffect — top-left origin, +Y down. This pass reads
+  // `v_texCoord` from drawGlFullscreenPass, whose quad is BOTTOM-left origin, so the descriptor value
+  // is converted here at this runner's seam. The Wgpu runner does not convert, because its fullscreen
+  // uv is already top-left. A centred blur cannot show this going wrong — 0.5 is its own mirror — so
+  // the scene deliberately uses an off-centre value.
+  const centerY = 1 - (effect.centerY ?? 0.5);
   const strength = effect.strength ?? 0.2;
   const samples = effect.samples ?? 16;
   const program = getGlEffectProgram(state, 'radialBlur', RADIAL_BLUR_FRAGMENT_SRC);

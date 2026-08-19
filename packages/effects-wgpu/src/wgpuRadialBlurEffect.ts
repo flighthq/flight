@@ -19,6 +19,9 @@ export function applyRadialBlurEffectToWgpu(
   effect: Readonly<RadialBlurEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
+  // `centerY` is screen space on RadialBlurEffect — top-left origin, +Y down — and wgpuEffectPass's
+  // fullscreen uv is already top-left, so this runner passes the value through UNCONVERTED. That is
+  // the conversion working, not a missing one; the Gl runner flips because its quad is bottom-left.
   const centerY = effect.centerY ?? 0.5;
   const strength = effect.strength ?? 0.2;
   const samples = effect.samples ?? 16;
