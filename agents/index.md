@@ -47,6 +47,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [3D pipeline](3d-pipeline-architecture.md) — the 3D draw pipeline end to end.
 - [blend / composite](blend-composite-architecture.md) — blend modes and compositing across backends.
 - [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.
+- [dom screenshot / fingerprint divergence](dom-screenshot-fingerprint-divergence.md) — DOM captures produce two different artifacts for the regression gate and human review; the gate is blind to screenshot-only defects.
 - [document audio resources](document-audio-resources.md) — a document carries audio bytes on the image lane's terms, never playback.
 - [draw order model](draw-order-model.md) — child order is the only order; the caller-owned `NodeOrderList`.
 - [bounded expected-image descriptions](functional-bounded-descriptions.md) — functional scenes whose expected picture is genuinely undecided, and therefore cannot be commissioned as a permanent reference.
