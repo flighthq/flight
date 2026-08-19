@@ -15,15 +15,15 @@ captureEntry.ts:500
 
 For DOM captures, two different artifacts exist:
 
-1. **Fingerprint source**: the DOM readback — `captureDomReadback.ts` rasterizes the container div to a canvas via `html2canvas` or an equivalent, producing pixels from the rendered DOM tree. This is what the regression gate compares.
+1. **Fingerprint source**: the DOM readback — `captureDomReadback.ts:21` takes a Playwright element screenshot of the container div (`element.screenshot({ animations: 'disabled' })`), clipped to the container. Same browser compositor as the page screenshot. This is what the regression gate compares.
 
 2. **Screenshot source**: `page.screenshot()` — a Playwright full-viewport capture of the browser page. This is what a human sees in the gallery and reviews for commissioning.
 
-These are two pictures of the same scene taken by different cameras. They agree in the common case, but they can diverge — and when they do, the gate is structurally blind to defects visible only in the screenshot.
+Both are browser compositor output — the same camera, not two. They differ in exactly two things: what is included in the frame (element-clipped vs full viewport) and the instant each is taken. That is still enough to diverge, and when they do, the gate is structurally blind to defects visible only in the screenshot.
 
 ## How it bit us
 
-Five DOM scenes requested dimensions smaller than the hardcoded 800×600 capture viewport. The `page.screenshot()` captured the full viewport, producing screenshots with white gaps around the scene's container div. The fingerprint, computed from the rendered DOM tree (the container div's content), was clean — it sees only what the scene drew, not the viewport around it.
+Five DOM scenes requested dimensions smaller than the hardcoded 800×600 capture viewport. The `page.screenshot()` captured the full viewport, producing screenshots with white gaps around the scene's container div. The element screenshot behind the fingerprint was clipped to the container and clean — it sees only what the scene drew, not the viewport around it.
 
 Two of these (`rive-import/dom`, `shape-stroke-ring-fallback/dom`) had no hold in `reference-image-held.json`. Their contaminated screenshots could have been commissioned as reference images while the fingerprint gate reported green, because the gate was checking a different picture.
 
@@ -38,7 +38,7 @@ Every DOM cell in the corpus — not just these five — has this two-artifact s
 The two artifacts can disagree on:
 
 - **Viewport-level artifacts**: page background color, page margin/padding, scroll position, viewport size mismatch (the instance that surfaced this).
-- **Rasterization differences**: the DOM readback rasterizes CSS through a canvas-backed reimplementation (`html2canvas`-style); the browser screenshot captures the browser's own compositor output. CSS features, sub-pixel rendering, font rendering, and compositing can differ.
+- **Framing, not rasterization**: both artifacts are browser compositor output, so CSS, sub-pixel and font rendering cannot differ between them. What differs is what each frame includes — the readback is clipped to the container, the screenshot is the full viewport.
 - **Timing**: the screenshot is taken at the moment `page.screenshot()` fires; the DOM readback may rasterize at a different frame, especially if layout observers or transitions are active.
 
 ## Options (not recommendations)
@@ -51,7 +51,7 @@ The two artifacts can disagree on:
 
 4. **Accept the gap**: document it (this record) and rely on human review to catch DOM-only screenshot defects. The viewport fix closes the known instance; remaining divergence is theoretical until a second instance surfaces.
 
-None of these is recommended here. The choice depends on which artifact the regression gate should be authoritative over — the rendered DOM tree or the browser's compositor output — and that is a design decision for the capture-verification tiers doctrine.
+None of these is recommended here. The choice depends on which framing the regression gate should be authoritative over — the container-clipped frame or the full viewport around it — and that is a design decision for the capture-verification tiers doctrine.
 
 ## Related
 
