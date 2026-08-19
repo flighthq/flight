@@ -8,7 +8,7 @@
       "renderer": "canvas",
       "pixelSha256": "cd3246f7ee4dd0b41047b5d92c71793ce858a9680d9653893ed777892cb68800",
       "build": {
-        "commit": "7431bb1294fe823c7b7e59844e6a0f58b1ae3bc2",
+        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -22,7 +22,7 @@
       "renderer": "webgl",
       "pixelSha256": "cd3246f7ee4dd0b41047b5d92c71793ce858a9680d9653893ed777892cb68800",
       "build": {
-        "commit": "7431bb1294fe823c7b7e59844e6a0f58b1ae3bc2",
+        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -36,7 +36,7 @@
       "renderer": "webgpu",
       "pixelSha256": "cd3246f7ee4dd0b41047b5d92c71793ce858a9680d9653893ed777892cb68800",
       "build": {
-        "commit": "7431bb1294fe823c7b7e59844e6a0f58b1ae3bc2",
+        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
         "dirty": [],
         "dirtyOmitted": 0
       },

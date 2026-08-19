@@ -8,7 +8,7 @@
       "renderer": "webgl",
       "pixelSha256": "01906e8a27525cefb7c0ae41ab0b920f998fe79a29370523db99b5d15d80b304",
       "build": {
-        "commit": "737e1f661d7bc12d34c08536728b4a1392cd1a69",
+        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -22,7 +22,7 @@
       "renderer": "webgpu",
       "pixelSha256": "d57d22c5d31f1581a866a6e93ab46a6d50f2152f24d97519890fe60a81a54379",
       "build": {
-        "commit": "737e1f661d7bc12d34c08536728b4a1392cd1a69",
+        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
         "dirty": [],
         "dirtyOmitted": 0
       },
