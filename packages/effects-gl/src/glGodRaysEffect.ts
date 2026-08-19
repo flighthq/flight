@@ -15,7 +15,11 @@ export function applyGodRaysEffectToGl(
   effect: Readonly<GodRaysEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
-  const centerY = effect.centerY ?? 0.5;
+  // `centerY` is declared top-left-origin on GodRaysEffect (0 = top). This pass reads `v_texCoord`
+  // from drawGlFullscreenPass, whose quad carries BOTTOM-left-origin texcoords, so the contract value
+  // is flipped into this backend's texture space here — at the seam, not in the shader and not by the
+  // caller. Forwarding it untouched is what put the Gl light 120 px below the Wgpu one.
+  const centerY = 1 - (effect.centerY ?? 0.5);
   const density = effect.density ?? 0.96;
   const decay = effect.decay ?? 0.93;
   const weight = effect.weight ?? 0.4;

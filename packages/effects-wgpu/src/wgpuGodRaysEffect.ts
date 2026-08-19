@@ -21,6 +21,10 @@ export function applyGodRaysEffectToWgpu(
   effect: Readonly<GodRaysEffect>,
 ): void {
   const centerX = effect.centerX ?? 0.5;
+  // `centerY` is declared top-left-origin on GodRaysEffect (0 = top), and wgpuEffectPass's fullscreen
+  // quad already carries top-left-origin uv, so this backend's texture space matches the contract and
+  // the value passes through unchanged. Stated rather than assumed: the Gl sibling must flip, and a
+  // reader comparing the two runners should see why one converts and the other does not.
   const centerY = effect.centerY ?? 0.5;
   const density = effect.density ?? 0.96;
   const decay = effect.decay ?? 0.93;
