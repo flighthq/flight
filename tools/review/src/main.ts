@@ -2,6 +2,14 @@
 import { tests as _tests } from 'virtual:review-manifest';
 
 import {
+  isReviewableCell,
+  nextReviewableCell,
+  referenceCells,
+  reviewableCells,
+  selectedReviewableCell,
+} from './cellRole';
+import type { ReviewCellRole } from './cellRole';
+import {
   isReviewCommissionEligible,
   reviewCommissionIneligibility,
   reviewCommissionIneligibilityMessage,
@@ -26,13 +34,14 @@ type AttentionGroup = 'differs' | 'changed' | 'not-commissioned' | 'requested' |
 
 interface ReviewCell {
   renderer: string;
+  role: ReviewCellRole;
   state: 'ready' | 'error';
   error: string | null;
   changed: boolean | null;
   hash: string | null;
   provenance: ReviewCellProvenance | null;
   build: ReviewBuildProvenance | null;
-  commissionState: CommissionState;
+  commissionState: CommissionState | null;
   holdReason: string | null;
   parityStatus: ParityStatus;
 }
@@ -180,13 +189,15 @@ function currentTest(): ReviewTest | null {
 function currentCellIndex(): number {
   const t = currentTest();
   if (!t) return 0;
-  const i = t.cells.findIndex((c) => c.renderer === selectedRenderer);
+  const selected = selectedReviewableCell(t.cells, selectedRenderer);
+  const i = selected === null ? -1 : t.cells.indexOf(selected);
   return i >= 0 ? i : 0;
 }
 
 function testStatus(t: ReviewTest): 'error' | 'changed' | 'pass' {
-  if (t.cells.some((c) => c.state === 'error')) return 'error';
-  if (t.cells.some((c) => c.changed)) return 'changed';
+  const cells = reviewableCells(t.cells);
+  if (cells.some((c) => c.state === 'error')) return 'error';
+  if (cells.some((c) => c.changed)) return 'changed';
   return 'pass';
 }
 
@@ -199,10 +210,11 @@ const ATTENTION_GROUP_ORDER: readonly AttentionGroup[] = [
 ];
 
 function testAttentionGroup(t: ReviewTest): AttentionGroup {
-  if (t.cells.some((c) => c.commissionState === 'differs')) return 'differs';
-  if (t.cells.some((c) => c.changed === true)) return 'changed';
-  if (t.cells.some((c) => c.commissionState === 'not-commissioned')) return 'not-commissioned';
-  if (t.cells.some((c) => c.commissionState === 'requested')) return 'requested';
+  const cells = reviewableCells(t.cells);
+  if (cells.some((c) => c.commissionState === 'differs')) return 'differs';
+  if (cells.some((c) => c.changed === true)) return 'changed';
+  if (cells.some((c) => c.commissionState === 'not-commissioned')) return 'not-commissioned';
+  if (cells.some((c) => c.commissionState === 'requested')) return 'requested';
   return 'included';
 }
 
@@ -325,14 +337,15 @@ async function holdRenderers(renderers: readonly string[]): Promise<void> {
 async function holdCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
-  await holdRenderers(t.cells.map((c) => c.renderer));
+  await holdRenderers(reviewableCells(t.cells).map((c) => c.renderer));
 }
 
 async function commissionCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
 
-  const selectedCells = selectReviewCommissionCells(t.cells, (cell) =>
+  const reviewable = reviewableCells(t.cells);
+  const selectedCells = selectReviewCommissionCells(reviewable, (cell) =>
     approvedCells.get(approvalKey(t, cell.renderer)),
   );
 
@@ -349,7 +362,7 @@ async function commissionCurrentTest(): Promise<void> {
     environmentId: c.provenance?.environmentId ?? null,
   }));
 
-  const totalCells = t.cells.length;
+  const totalCells = reviewable.length;
   try {
     const res = await fetch('/api/commission', {
       method: 'POST',
@@ -377,7 +390,7 @@ async function commissionCurrentTest(): Promise<void> {
       dirty: string[];
       dirtyOmitted: number;
     };
-    const notApproved = t.cells.filter((c) => !selectedCells.includes(c)).map((c) => c.renderer);
+    const notApproved = reviewable.filter((c) => !selectedCells.includes(c)).map((c) => c.renderer);
     const parts: string[] = [];
     if (notApproved.length > 0) {
       parts.push(`${notApproved.length} not approved`);
@@ -424,8 +437,10 @@ function showCommissionFeedback(message: string, isError: boolean): void {
   setTimeout(() => el?.remove(), 4000);
 }
 
-function commissionStateLabel(state: CommissionState): string {
+function commissionStateLabel(state: CommissionState | null): string {
   switch (state) {
+    case null:
+      return '';
     case 'included':
       return 'included';
     case 'differs':
@@ -438,9 +453,10 @@ function commissionStateLabel(state: CommissionState): string {
 }
 
 function testCommissionSummary(t: ReviewTest): { state: CommissionState; canCommission: boolean } {
-  const hasIncluded = t.cells.some((c) => c.commissionState === 'included');
-  const hasDiffers = t.cells.some((c) => c.commissionState === 'differs');
-  const hasRequested = t.cells.some((c) => c.commissionState === 'requested');
+  const cells = reviewableCells(t.cells);
+  const hasIncluded = cells.some((c) => c.commissionState === 'included');
+  const hasDiffers = cells.some((c) => c.commissionState === 'differs');
+  const hasRequested = cells.some((c) => c.commissionState === 'requested');
 
   if (hasRequested) return { state: 'requested', canCommission: false };
   if (hasIncluded && !hasDiffers) return { state: 'included', canCommission: false };
@@ -454,14 +470,23 @@ function buildRendererBar(): void {
   if (!t) return;
 
   const ci = currentCellIndex();
+  const reviewable = reviewableCells(t.cells);
   t.cells.forEach((cell, i) => {
+    if (!isReviewableCell(cell)) {
+      const label = document.createElement('span');
+      label.className = 'renderer-reference';
+      label.textContent = `${cell.renderer} · reference`;
+      label.title = 'Context only — never selected, approved, held, or commissioned';
+      rendererBar.appendChild(label);
+      return;
+    }
     const btn = document.createElement('button');
     btn.className = 'renderer-btn' + (i === ci ? ' selected' : '');
     if (cell.state === 'error') btn.setAttribute('data-status', 'error');
     else if (cell.changed) btn.setAttribute('data-status', 'changed');
 
     const label = commissionStateLabel(cell.commissionState);
-    if (label) btn.setAttribute('data-commission', cell.commissionState);
+    if (label) btn.setAttribute('data-commission', label);
 
     const mark = approvedCells.get(approvalKey(t, cell.renderer));
     if (mark === true) btn.setAttribute('data-approval', 'approved');
@@ -485,7 +510,7 @@ function buildRendererBar(): void {
   });
 
   const summary = testCommissionSummary(t);
-  const isHeld = t.cells.some((c) => c.holdReason !== null);
+  const isHeld = reviewable.some((c) => c.holdReason !== null);
   const commissionBtn = document.createElement('button');
   commissionBtn.className = 'commission-btn';
 
@@ -505,10 +530,10 @@ function buildRendererBar(): void {
     commissionBtn.disabled = true;
     commissionBtn.setAttribute('data-commission', 'requested');
   } else {
-    const approvedCount = t.cells.filter((c) => approvedCells.get(approvalKey(t, c.renderer)) === true).length;
-    const hasMarks = t.cells.some((c) => approvedCells.has(approvalKey(t, c.renderer)));
+    const approvedCount = reviewable.filter((c) => approvedCells.get(approvalKey(t, c.renderer)) === true).length;
+    const hasMarks = reviewable.some((c) => approvedCells.has(approvalKey(t, c.renderer)));
     if (hasMarks && approvedCount > 0) {
-      commissionBtn.textContent = `Commission (${approvedCount} of ${t.cells.length})`;
+      commissionBtn.textContent = `Commission (${approvedCount} of ${reviewable.length})`;
       commissionBtn.title = `Commission ${approvedCount} approved cell(s) — press 'a' to approve more, 'd' to deny`;
     } else if (hasMarks && approvedCount === 0) {
       commissionBtn.textContent = 'Commission (none approved)';
@@ -521,17 +546,19 @@ function buildRendererBar(): void {
       commissionBtn.textContent = 'Commission';
       commissionBtn.title = 'Write a reference image request for all renderers of this scene';
     }
-    const dirtyPaths = [...new Set(t.cells.flatMap((cell) => cell.build?.dirty ?? []))];
-    const dirtyOmitted = Math.max(0, ...t.cells.map((cell) => cell.build?.dirtyOmitted ?? 0));
+    const dirtyPaths = [...new Set(reviewable.flatMap((cell) => cell.build?.dirty ?? []))];
+    const dirtyOmitted = Math.max(0, ...reviewable.map((cell) => cell.build?.dirtyOmitted ?? 0));
     if (dirtyPaths.length > 0 || dirtyOmitted > 0) {
       commissionBtn.title += ` — WARNING: Built with uncommitted changes: ${formatDirtyPaths(dirtyPaths, dirtyOmitted)}`;
       commissionBtn.setAttribute('data-build-dirty', 'true');
     }
-    const missingCaptures = t.cells.filter((cell) => reviewCommissionIneligibility(cell) === 'missing-capture').length;
-    const missingBuildStamps = t.cells.filter(
+    const missingCaptures = reviewable.filter(
+      (cell) => reviewCommissionIneligibility(cell) === 'missing-capture',
+    ).length;
+    const missingBuildStamps = reviewable.filter(
       (cell) => reviewCommissionIneligibility(cell) === 'missing-build-stamp',
     ).length;
-    const missingHostIdentities = t.cells.filter(
+    const missingHostIdentities = reviewable.filter(
       (cell) => reviewCommissionIneligibility(cell) === 'missing-host-identity',
     ).length;
     if (missingCaptures > 0) {
@@ -543,11 +570,11 @@ function buildRendererBar(): void {
     if (missingHostIdentities > 0) {
       commissionBtn.title += ` — ${missingHostIdentities} captured cell(s) have no host identity and will be skipped; re-capture them so the machine identity is recorded`;
     }
-    if (t.cells.every((cell) => isReviewCommissionEligible(cell))) {
+    if (reviewable.every((cell) => isReviewCommissionEligible(cell))) {
       commissionBtn.title +=
         ' — selected pixel hashes record what you reviewed; CI recreates the recorded build commit, and any decoded-pixel difference is preserved in request-image-differences.json for review';
     }
-    if (!hasMarks && !t.cells.some((cell) => isReviewCommissionEligible(cell))) {
+    if (!hasMarks && !reviewable.some((cell) => isReviewCommissionEligible(cell))) {
       commissionBtn.textContent = 'Commission (no eligible captures)';
       commissionBtn.disabled = true;
     }
@@ -556,7 +583,7 @@ function buildRendererBar(): void {
 
   rendererBar.appendChild(commissionBtn);
 
-  const anyHeld = t.cells.some((c) => c.holdReason !== null);
+  const anyHeld = reviewable.some((c) => c.holdReason !== null);
   const holdBtn = document.createElement('button');
   holdBtn.className = 'hold-btn';
   if (anyHeld) {
@@ -589,8 +616,10 @@ function buildRendererBar(): void {
   }
 }
 
-function commissionStateMessage(state: CommissionState): string {
+function commissionStateMessage(state: CommissionState | null): string {
   switch (state) {
+    case null:
+      return 'Reference cell — context only, never reviewed or commissioned.';
     case 'included':
       return 'Already included — this capture matches the locked reference image.';
     case 'differs':
@@ -637,7 +666,7 @@ function showRenderer(): void {
       stateEl.setAttribute('data-commission', 'approved');
     } else {
       stateEl.textContent = commissionStateMessage(cell.commissionState);
-      stateEl.setAttribute('data-commission', cell.commissionState);
+      stateEl.setAttribute('data-commission', cell.commissionState ?? 'not-commissioned');
     }
   } else {
     stateEl?.remove();
@@ -679,7 +708,7 @@ function showRenderer(): void {
   }
 
   preview.querySelector('.compare-view')?.remove();
-  if (compareMode !== 'off' && t && cell) {
+  if (t && cell && (compareMode !== 'off' || referenceCells(t.cells).length > 0)) {
     showCompareView(t, cell);
   }
 }
@@ -696,19 +725,41 @@ function appendCompareDescription(container: HTMLElement, t: ReviewTest): void {
   container.appendChild(desc);
 }
 
+function makeComparePanel(title: string, element: HTMLElement): HTMLElement {
+  const panel = document.createElement('div');
+  panel.className = 'compare-panel';
+  const label = document.createElement('div');
+  label.className = 'compare-label';
+  label.textContent = title;
+  panel.appendChild(label);
+  panel.appendChild(element);
+  return panel;
+}
+
+function setCompareGridColumns(grid: HTMLElement): void {
+  grid.style.gridTemplateColumns = `repeat(${grid.childElementCount}, minmax(0, 1fr))`;
+}
+
 async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   const container = document.createElement('div');
   container.className = 'compare-view';
 
   const candidateSrc = screenshotUrl(t.tool, t.name, cell.renderer);
   const referenceSrc = referenceUrl(t.tool, t.name, cell.renderer);
+  const contextCells = referenceCells(t.cells);
 
   // Loaded INDEPENDENTLY on purpose. Most cells have no reference image yet, and a single
   // Promise.all rejection used to discard the candidate too — so the common case rendered an empty
   // pane and the capture, which always exists, became invisible for want of a referent.
-  const [candidateImg, referenceImg] = await Promise.all([
+  const [candidateImg, referenceImg, contextImages] = await Promise.all([
     loadImage(candidateSrc).catch(() => null),
-    loadImage(referenceSrc).catch(() => null),
+    compareMode === 'off' ? Promise.resolve(null) : loadImage(referenceSrc).catch(() => null),
+    Promise.all(
+      contextCells.map(async (contextCell) => ({
+        cell: contextCell,
+        image: await loadImage(screenshotUrl(t.tool, t.name, contextCell.renderer)).catch(() => null),
+      })),
+    ),
   ]);
 
   if (candidateImg === null) {
@@ -718,36 +769,44 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     return;
   }
 
-  // No reference: show the capture alone, and name WHICH absence it is rather than rendering nothing.
-  if (referenceImg === null) {
-    // Two panels, not one: the grid's default three columns left a lone capture at a third width
-    // with the explanation stranded below it, so a mode called "side-by-side" did not look like one.
-    // The absence belongs in the slot the reference would occupy.
+  const appendContextPanels = (grid: HTMLElement): void => {
+    for (const context of contextImages) {
+      const content = context.image ?? document.createElement('div');
+      if (context.image) {
+        context.image.className = 'compare-img';
+      } else {
+        content.className = 'compare-placeholder';
+        content.textContent = 'Reference capture unavailable';
+      }
+      grid.appendChild(makeComparePanel(`Reference · ${context.cell.renderer}`, content));
+    }
+  };
+
+  if (compareMode === 'off') {
     const grid = document.createElement('div');
     grid.className = 'compare-grid';
-    grid.style.gridTemplateColumns = '1fr 1fr';
-
-    const candidatePanel = document.createElement('div');
-    candidatePanel.className = 'compare-panel';
-    const candidateLabel = document.createElement('div');
-    candidateLabel.className = 'compare-label';
-    candidateLabel.textContent = 'Candidate';
     candidateImg.className = 'compare-img';
-    candidatePanel.appendChild(candidateLabel);
-    candidatePanel.appendChild(candidateImg);
-    grid.appendChild(candidatePanel);
+    grid.appendChild(makeComparePanel('Candidate', candidateImg));
+    appendContextPanels(grid);
+    setCompareGridColumns(grid);
+    container.appendChild(grid);
+    appendCompareDescription(container, t);
+    preview.appendChild(container);
+    return;
+  }
 
-    const referencePanel = document.createElement('div');
-    referencePanel.className = 'compare-panel';
-    const referenceLabel = document.createElement('div');
-    referenceLabel.className = 'compare-label';
-    referenceLabel.textContent = 'Reference';
+  // No reference: show the capture alone, and name WHICH absence it is rather than rendering nothing.
+  if (referenceImg === null) {
+    const grid = document.createElement('div');
+    grid.className = 'compare-grid';
+    candidateImg.className = 'compare-img';
+    grid.appendChild(makeComparePanel('Candidate', candidateImg));
+    appendContextPanels(grid);
     const placeholder = document.createElement('div');
     placeholder.className = 'compare-placeholder';
-    placeholder.textContent = reviewMissingReferenceMessage(cell.commissionState);
-    referencePanel.appendChild(referenceLabel);
-    referencePanel.appendChild(placeholder);
-    grid.appendChild(referencePanel);
+    placeholder.textContent = reviewMissingReferenceMessage(cell.commissionState ?? 'not-commissioned');
+    grid.appendChild(makeComparePanel('Blessed reference', placeholder));
+    setCompareGridColumns(grid);
 
     container.appendChild(grid);
     appendCompareDescription(container, t);
@@ -766,23 +825,15 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
 
     const grid = document.createElement('div');
     grid.className = 'compare-grid';
-
-    const makePanel = (title: string, element: HTMLElement): HTMLElement => {
-      const panel = document.createElement('div');
-      panel.className = 'compare-panel';
-      const label = document.createElement('div');
-      label.className = 'compare-label';
-      label.textContent = title;
-      element.className = 'compare-img';
-      panel.appendChild(label);
-      panel.appendChild(element);
-      return panel;
-    };
-
-    grid.appendChild(makePanel('Candidate', candidateImg));
+    candidateImg.className = 'compare-img';
+    grid.appendChild(makeComparePanel('Candidate', candidateImg));
+    appendContextPanels(grid);
     const refClone = referenceImg.cloneNode(true) as HTMLImageElement;
-    grid.appendChild(makePanel('Reference', refClone));
-    grid.appendChild(makePanel('Delta', delta.canvas));
+    refClone.className = 'compare-img';
+    grid.appendChild(makeComparePanel('Blessed reference', refClone));
+    delta.canvas.className = 'compare-img';
+    grid.appendChild(makeComparePanel('Delta', delta.canvas));
+    setCompareGridColumns(grid);
 
     container.appendChild(grid);
 
@@ -806,7 +857,12 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     referenceImg.style.opacity = String(onionOpacity);
     onionWrap.appendChild(candidateImg);
     onionWrap.appendChild(referenceImg);
-    container.appendChild(onionWrap);
+    const grid = document.createElement('div');
+    grid.className = 'compare-grid';
+    grid.appendChild(makeComparePanel('Candidate / blessed reference', onionWrap));
+    appendContextPanels(grid);
+    setCompareGridColumns(grid);
+    container.appendChild(grid);
 
     const controls = document.createElement('div');
     controls.className = 'onion-controls';
@@ -902,7 +958,8 @@ function showCurrent(): void {
 function saveState(): void {
   const t = currentTest();
   if (!t) return;
-  const renderer = selectedRenderer || t.cells[currentCellIndex()]?.renderer || '';
+  const renderer = selectedReviewableCell(t.cells, selectedRenderer)?.renderer ?? '';
+  selectedRenderer = renderer;
   const path = `/${t.tool}/${t.name}/${renderer}`;
   sessionStorage.setItem(STORAGE_KEY, path);
   history.replaceState({}, '', `#${path}`);
@@ -911,8 +968,9 @@ function saveState(): void {
 function selectTest(t: ReviewTest): void {
   selectedKey = testKey(t);
   clearApprovals();
-  if (!t.cells.some((c) => c.renderer === selectedRenderer)) {
-    selectedRenderer = t.cells[0]?.renderer ?? '';
+  const selected = selectedReviewableCell(t.cells, selectedRenderer);
+  if (selected?.renderer !== selectedRenderer) {
+    selectedRenderer = selected?.renderer ?? '';
   }
   showCurrent();
   saveState();
@@ -928,9 +986,7 @@ function selectTestByDelta(delta: -1 | 1): void {
 function cycleRenderer(delta: -1 | 1): void {
   const t = currentTest();
   if (!t) return;
-  const ci = currentCellIndex();
-  const ni = (ci + delta + t.cells.length) % t.cells.length;
-  selectedRenderer = t.cells[ni]?.renderer ?? selectedRenderer;
+  selectedRenderer = nextReviewableCell(t.cells, selectedRenderer, delta)?.renderer ?? selectedRenderer;
   buildRendererBar();
   showRenderer();
   saveState();
@@ -983,7 +1039,7 @@ function approveCurrentCell(): void {
   if (!t) return;
   const ci = currentCellIndex();
   const cell = t.cells[ci];
-  if (!cell) return;
+  if (!cell || !isReviewableCell(cell)) return;
 
   const commissionIneligibility = reviewCommissionIneligibility(cell);
   if (commissionIneligibility !== null) {
@@ -1014,7 +1070,7 @@ async function denyCurrentCell(): Promise<void> {
   if (!t) return;
   const ci = currentCellIndex();
   const cell = t.cells[ci];
-  if (!cell) return;
+  if (!cell || !isReviewableCell(cell)) return;
 
   approvedCells.delete(approvalKey(t, cell.renderer));
   await holdRenderers([cell.renderer]);
@@ -1027,7 +1083,7 @@ filterInput.addEventListener('input', () => {
     const first = visible[0];
     if (first) {
       selectedKey = testKey(first);
-      selectedRenderer = first.cells[0]?.renderer ?? '';
+      selectedRenderer = reviewableCells(first.cells)[0]?.renderer ?? '';
     }
   }
   showCurrent();
@@ -1038,8 +1094,9 @@ function stateFromPath(path: string): { key: string; renderer: string } | null {
   if (parts.length < 2) return null;
   const [tool, name, renderer = ''] = parts;
   const key = `${tool}/${name}`;
-  if (!allTests.some((t) => testKey(t) === key)) return null;
-  return { key, renderer };
+  const test = allTests.find((candidate) => testKey(candidate) === key);
+  if (!test) return null;
+  return { key, renderer: selectedReviewableCell(test.cells, renderer)?.renderer ?? '' };
 }
 
 const initState = stateFromPath(location.hash.slice(1)) ?? stateFromPath(sessionStorage.getItem(STORAGE_KEY) ?? '');
@@ -1051,7 +1108,7 @@ if (initState) {
   const first = allTests[0];
   if (first) {
     selectedKey = testKey(first);
-    selectedRenderer = first.cells[0]?.renderer ?? '';
+    selectedRenderer = reviewableCells(first.cells)[0]?.renderer ?? '';
   }
 }
 

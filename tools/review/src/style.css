@@ -242,6 +242,19 @@ body {
   color: #d0a040;
 }
 
+.renderer-reference {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid rgba(176, 144, 224, 0.28);
+  border-radius: 4px;
+  color: #a58ac8;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  cursor: default;
+}
+
 #preview {
   flex: 1;
   position: relative;

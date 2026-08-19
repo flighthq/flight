@@ -7,6 +7,8 @@ import { defineConfig } from 'vite';
 
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import { workspacePackages } from '../../scripts/workspaces';
+import { isReviewableCell, reviewableCells, reviewCellRole } from './src/cellRole';
+import type { ReviewCellRole } from './src/cellRole';
 import type { ReviewCommissionState as CommissionState } from './src/commissionState';
 import {
   sourceContainsExpectedDescription,
@@ -22,7 +24,7 @@ const reviewArtifactFiles = [
 ];
 
 const TOOL_ORDER = ['functional', 'examples', 'reference'];
-const RENDERER_ORDER = ['dom', 'canvas', 'webgl', 'webgpu'];
+const RENDERER_ORDER = ['dom', 'canvas', 'webgl', 'webgpu', 'control'];
 const EXCLUDE_TOOLS = new Set(['site']);
 
 interface ReviewCellProvenance {
@@ -40,13 +42,14 @@ type ParityStatus = 'passed' | 'failed' | 'no-data';
 
 interface ReviewCell {
   renderer: string;
+  role: ReviewCellRole;
   state: 'ready' | 'error';
   error: string | null;
   changed: boolean | null;
   hash: string | null;
   provenance: ReviewCellProvenance | null;
   build: ReviewBuildProvenance | null;
-  commissionState: CommissionState;
+  commissionState: CommissionState | null;
   holdReason: string | null;
   parityStatus: ParityStatus;
 }
@@ -339,6 +342,7 @@ function discoverReviewTests(): ReviewTest[] {
         // They are not review subjects: a deliberately different column would dilute the disagreement
         // signal this tool asks a reviewer to inspect.
         if (functionalCellIsControl(tool, name, renderer)) continue;
+        const role = reviewCellRole(tool, renderer);
         const rendererPath = join(testPath, renderer);
         const screenshotPath = join(rendererPath, 'screenshot.png');
         const statusPath = join(rendererPath, 'status.json');
@@ -394,12 +398,14 @@ function discoverReviewTests(): ReviewTest[] {
         if (cellDescription !== undefined && expectedImageDescription === undefined) {
           expectedImageDescription = cellDescription;
         }
-        const commissionState = resolveCommissionState(tool, name, renderer, hash, locked, requested);
+        const commissionState =
+          role === 'reviewable' ? resolveCommissionState(tool, name, renderer, hash, locked, requested) : null;
         const imageKey = `${tool}/${name}/${renderer}`;
-        const holdReason = held.get(imageKey) ?? null;
+        const holdReason = role === 'reviewable' ? (held.get(imageKey) ?? null) : null;
         const parityStatus: ParityStatus = parity.get(imageKey) ?? 'no-data';
         cells.push({
           renderer,
+          role,
           state,
           error,
           changed,
@@ -412,17 +418,10 @@ function discoverReviewTests(): ReviewTest[] {
         });
       }
 
-      if (cells.length > 0) {
-        const hasDesc = sourceHasExpectedDescription(
-          tool,
-          name,
-          cells.map((c) => c.renderer),
-        );
-        const withheld = sourceWithheldReason(
-          tool,
-          name,
-          cells.map((c) => c.renderer),
-        );
+      if (cells.some(isReviewableCell)) {
+        const renderers = reviewableCells(cells).map((cell) => cell.renderer);
+        const hasDesc = sourceHasExpectedDescription(tool, name, renderers);
+        const withheld = sourceWithheldReason(tool, name, renderers);
         const entry: ReviewTest = { tool, name, cells, sourceHasDescription: hasDesc };
         if (withheld !== null) entry.withheldReason = withheld;
         if (expectedImageDescription !== undefined) entry.expectedImageDescription = expectedImageDescription;
@@ -499,6 +498,18 @@ function reviewPlugin(): Plugin[] {
                 if (!payload.tool || !payload.entry || !payload.cells?.length) {
                   res.statusCode = 400;
                   res.end(JSON.stringify({ error: 'missing required fields: tool, entry, cells' }));
+                  return;
+                }
+                const referenceRenderers = payload.cells
+                  .filter((cell) => reviewCellRole(payload.tool, cell.renderer) === 'reference')
+                  .map((cell) => cell.renderer);
+                if (referenceRenderers.length > 0) {
+                  res.statusCode = 400;
+                  res.end(
+                    JSON.stringify({
+                      error: `reference cells are context-only and cannot be commissioned: ${referenceRenderers.join(', ')}`,
+                    }),
+                  );
                   return;
                 }
 
@@ -652,6 +663,18 @@ function reviewPlugin(): Plugin[] {
                 if (!payload.reason || payload.reason.trim().length === 0) {
                   res.statusCode = 400;
                   res.end(JSON.stringify({ error: 'a hold requires a reason' }));
+                  return;
+                }
+                const referenceRenderers = payload.renderers.filter(
+                  (renderer) => reviewCellRole(payload.tool, renderer) === 'reference',
+                );
+                if (referenceRenderers.length > 0) {
+                  res.statusCode = 400;
+                  res.end(
+                    JSON.stringify({
+                      error: `reference cells are context-only and cannot be held: ${referenceRenderers.join(', ')}`,
+                    }),
+                  );
                   return;
                 }
 
