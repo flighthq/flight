@@ -397,6 +397,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     // threw both ran and failed — and a binding scoped to the try would leave the error path with
     // nothing to write but null, which reads as "never invoked".
     let verification: RenderVerification | null = null;
+    let domScreenshot: Buffer | null = null;
     let expectedImageDescription: string | null = null;
 
     try {
@@ -461,7 +462,9 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       let verifiedFingerprint: string | null = null;
       if (waitsForVerification) {
         console.log(statusLine('muted', renderer, 'verifying render…'));
-        verification = await waitForRenderVerification(page);
+        const verificationResult = await waitForRenderVerification(page);
+        verification = verificationResult.verification;
+        domScreenshot = verificationResult.domScreenshot;
         if (verification?.state === 'failed') throw new Error(verification.error ?? 'render verification failed');
         if (verification?.state !== 'passed') throw new Error('render verifier did not reach a terminal state');
         // Held rather than published here: the fingerprint's provenance is not knowable yet, and a
@@ -541,15 +544,11 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           .screenshot()
           .catch(() => page.screenshot());
       } else if (backend === 'dom') {
-        // Element screenshot of the container div — the same mechanism the DOM readback
-        // (captureDomReadback.ts:21) already uses for the fingerprint, so the reviewed image and the
-        // fingerprinted image are the same artifact, same as every other backend. Falls back to a
-        // page screenshot if no container div exists (unknown layout).
-        screenshotBuffer = await page
-          .locator('body > div')
-          .first()
-          .screenshot({ animations: 'disabled' })
-          .catch(() => page.screenshot());
+        // Reuse the element screenshot the DOM readback already took for the fingerprint
+        // (captureDomReadback.ts), so the reviewed image and the fingerprinted image are the same
+        // artifact — one capture, two uses, matching every other backend. Falls back to a page
+        // screenshot when verification was not requested or the readback produced no screenshot.
+        screenshotBuffer = domScreenshot ?? (await page.screenshot());
       } else if (backend === 'webgl' && captureFrames > 0) {
         // launchBrowser forces preserveDrawingBuffer in deterministic frame mode, so read the canvas
         // itself instead of Chromium's compositor. Headless SwiftShader can display a WebGL canvas in
@@ -926,7 +925,13 @@ function isCaptureReadPixelsWarning(text: string): boolean {
   return text.includes('GPU stall due to ReadPixels');
 }
 
-async function waitForRenderVerification(page: Page): Promise<RenderVerification | null> {
+interface VerificationResult {
+  verification: RenderVerification | null;
+  domScreenshot: Buffer | null;
+}
+
+async function waitForRenderVerification(page: Page): Promise<VerificationResult> {
+  let domScreenshot: Buffer | null = null;
   const reachedReadbackOrTerminal = await page
     .waitForFunction(
       () => {
@@ -950,26 +955,31 @@ async function waitForRenderVerification(page: Page): Promise<RenderVerification
     .then(() => true)
     .catch(() => false);
 
-  if (reachedReadbackOrTerminal && (await provideCaptureDomRenderPixels(page))) {
-    await page
-      .waitForFunction(
-        () => {
-          const verification = (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification;
-          return (
-            verification?.state === 'failed' ||
-            (verification?.state === 'passed' && verification.fingerprint !== null) ||
-            document.getElementById('ft-error') !== null
-          );
-        },
-        null,
-        { polling: 100, timeout: getCaptureTimeoutMs() },
-      )
-      .catch(() => {});
+  if (reachedReadbackOrTerminal) {
+    const readback = await provideCaptureDomRenderPixels(page);
+    if (readback.provided) {
+      domScreenshot = readback.screenshot;
+      await page
+        .waitForFunction(
+          () => {
+            const verification = (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification;
+            return (
+              verification?.state === 'failed' ||
+              (verification?.state === 'passed' && verification.fingerprint !== null) ||
+              document.getElementById('ft-error') !== null
+            );
+          },
+          null,
+          { polling: 100, timeout: getCaptureTimeoutMs() },
+        )
+        .catch(() => {});
+    }
   }
 
-  return page
+  const verification = await page
     .evaluate(() => (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification ?? null)
     .catch(() => null);
+  return { verification, domScreenshot };
 }
 
 // Flattens entries × renderers into a shared job queue and processes them with workerCount

@@ -17,7 +17,9 @@ describe('provideCaptureDomRenderPixels', () => {
       }),
     };
 
-    await expect(provideCaptureDomRenderPixels(page as never)).resolves.toBe(true);
+    const result = await provideCaptureDomRenderPixels(page as never);
+    expect(result.provided).toBe(true);
+    expect(result.screenshot).toEqual(Buffer.from('pixels'));
     expect(screenshot).toHaveBeenCalledWith({ animations: 'disabled' });
     expect(evaluate.mock.calls[0]?.[1]).toBe(`data:image/png;base64,${Buffer.from('pixels').toString('base64')}`);
     expect(dispose).toHaveBeenCalledOnce();
@@ -29,7 +31,9 @@ describe('provideCaptureDomRenderPixels', () => {
       evaluateHandle: vi.fn().mockResolvedValue({ asElement: () => null, dispose }),
     };
 
-    await expect(provideCaptureDomRenderPixels(page as never)).resolves.toBe(false);
+    const result = await provideCaptureDomRenderPixels(page as never);
+    expect(result.provided).toBe(false);
+    expect(result.screenshot).toBeNull();
     expect(dispose).toHaveBeenCalledOnce();
   });
 });
