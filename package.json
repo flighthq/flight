@@ -142,7 +142,7 @@
     "review:examples": "cross-env VITE_REVIEW_TOOL=examples npm run dev --workspace=tools/review",
     "review:examples:fresh": "npm run build:examples && npm run capture:examples && cross-env VITE_REVIEW_TOOL=examples npm run dev --workspace=tools/review",
     "review:functional": "cross-env VITE_REVIEW_TOOL=functional npm run dev --workspace=tools/review",
-    "review:functional:fresh": "npm run build:functional && npm run clean:artifacts:functional && npm run capture:functional && cross-env VITE_REVIEW_TOOL=functional npm run dev --workspace=tools/review",
+    "review:functional:full": "npm run build:functional && npm run reference-image:fetch && npm run clean:artifacts:functional && npm run capture:functional && cross-env VITE_REVIEW_TOOL=functional npm run dev --workspace=tools/review",
     "review:snapshot": "tsx ./scripts/review-snapshot.ts",
     "sbx:whitelist": "sbx policy allow network cdn.playwright.dev,playwright.download.prss.microsoft.com,github.com,objects.githubusercontent.com,release-assets.githubusercontent.com,static.crates.io,crates.io",
     "shader-vertical-origin": "tsx ./scripts/shader-vertical-origin.ts",
