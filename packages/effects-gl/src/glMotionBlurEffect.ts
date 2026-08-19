@@ -57,10 +57,11 @@ void main() {
     o_color = base;
     return;
   }
-  // Velocity decode: rgba16f buffer stores screen-space velocity in pixels in the RG channels. Convert
-  // to a UV-space smear vector via u_resolution and scale by intensity.
+  // Velocity decode: rgba16f buffer stores screen-space velocity in pixels in the RG channels (Y-down).
+  // The fullscreen pass UV is bottom-left origin (v increases upward), so the Y component is negated to
+  // convert from screen-space-down to UV-space-up before scaling by intensity.
   vec2 velocityPixels = texture(u_texture1, v_texCoord).rg;
-  vec2 smear = (velocityPixels / u_resolution) * u_intensity;
+  vec2 smear = vec2(velocityPixels.x, -velocityPixels.y) / u_resolution * u_intensity;
   float count = min(u_samples, 16.0);
   vec4 sum = vec4(0.0);
   float taken = 0.0;
