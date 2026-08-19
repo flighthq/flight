@@ -12,6 +12,8 @@ A **cell** is one scene on one backend — `functional/effect-bloom/webgl`. A sc
 
 The reviewer is looking for differences. Any difference a scene puts there _on purpose_ spends the signal the review exists to produce — it trains the eye to accept disagreement, and the next real defect reads as another intentional one. So a scene may not ship a cell that deliberately differs from its neighbours, for any reason, however well documented.
 
+**This is not only about the human reviewer.** Parity is compared mechanically against `CAPTURE_PARITY_TOLERANCE`, and that tolerance has to be loose enough to absorb every difference the corpus ships on purpose. Measured tonight: a scene whose canvas and webgl cells carry _materially different content_ — 6.10% of pixels, mean delta 129.5 — scores 4.35 against a tolerance of 15 and passes, while two scenes fixed to agree score 0.05 and 0.28. Every intentional difference raises the floor the gate must clear, for the whole corpus. **Cells that look precisely the same are the precondition for a tolerance tight enough to catch anything.**
+
 Four things follow, and they are the ones that actually get violated:
 
 ### 1. A backend that cannot show the same thing gets no cell
@@ -49,27 +51,43 @@ So a scene with a canvas or dom cell **cannot** be uniformly AA-off, and one wit
 
 **UNDECIDED: where AA is applied.** Two routes are open — plumbing `multisample` through the WebGPU pipelines, or supersampling in the functional targets (`tools/harness/*.ts`) for all four backends. The requirement above holds either way. Until it is settled, do not add a scene whose subject is antialiasing quality, and do not add a new `antialias: false` to a scene that has a canvas or dom cell.
 
-## Controls: not a cell
+## Controls
 
-A control used to be a cell that deliberately rendered the _absence_ of a feature, declared with `export const functionalBackendSupport = 'control'`. That is retired. It is rule 1 and rule 4's violation in its purest form, and the review job it created — confirming that nothing happened — is not a job a picture does well.
+A control used to be a **backend** cell that deliberately rendered a feature's _absence_, declared with `export const functionalBackendSupport = 'control'`. That form is retired: it is rules 1 and 4 violated in their purest form, and confirming that nothing happened is not a job a picture does well.
 
-**Two separate things were being conflated. Send each to its own home:**
+What replaces it has two forms. Reach for whichever the scene can support.
 
-- **"This backend does not implement this feature."** A capability fact. It needs no picture; the correct rendering of an unimplemented feature is nothing. Its home is the support matrix and the package's `status.md`, and its resolution is to implement the feature or record the gap — not to photograph it.
-- **"The effect visibly did something."** A within-backend fact, and a picture _does_ answer it — so **bake the control into the scene**: a directly-drawn reference element beside the treated one, in every cell. On a correct backend the two agree. This keeps the signal inside one image, where it cannot dilute the cross-backend comparison.
+### The baked-in control — always available
 
-  The canonical shape, in the user's words: _a true red rect next to an adjusted rectangle._
+Put the reference **inside the picture**: a directly-drawn element beside the treated one, present in every cell. On a correct backend the two agree. The canonical shape, in the user's words: _a true red rect next to an adjusted rectangle._
 
-**Never declare a canvas cell a control.** Beyond the rules above, canvas is the declared parity _reference_ (`reference: 'canvas'` in `FLIGHT_VISUAL_PARITY_GROUPS`), so excluding a canvas cell silently re-shapes that scene's parity from reference-based to all-pairs. One declaration doing two unrelated jobs is a mixed signal by construction.
+This keeps the "did the effect actually run" signal inside one image, where it cannot dilute the cross-backend comparison, and it costs no new machinery.
+
+### The `control` cell — where the expected image is independently derivable
+
+A distinct target, `<name>.control.ts`, that draws what the scene is _defined_ to produce. It is **not a backend** and it never occupies the canvas slot.
+
+- **Visible during review, never reviewed.** It is shown alongside the real cells as context, because seeing the target is helpful. It is not a cell anyone is asked to judge, and navigation does not stop on it. _Displayed_ and _reviewable_ are now two different things.
+- **Never commissioned.** It does not go to `flight-reference-images` and has no reference image — its appearance is specified in source, so there is nothing for a human to approve. Drift is caught by its fingerprint baseline, the same as any cell.
+- **It is the parity reference when present.** Comparing two captured backends compares two things that can both drift; comparing against an authored control fixes one side by construction.
+- **It must look precisely the same** as the real cells — not approximately, and not "the same modulo a known difference".
+
+**The condition that makes it sound: derive the control from what the effect is DEFINED to produce, never from what the implementation currently produces.** A control authored by looking at current output agrees with the implementation's bugs, and then two things are wrong in the same way and nothing reports it. That is a second opinion from the same source, not a control.
+
+**Where it is constructible:** only where the expected image is independently derivable — the same boundary the `expectedImageDescription` work maps. A flat tinted rect, yes. A bloom or a radial distortion, no: you would be re-implementing the effect, and agreement between two implementations of the same idea proves nothing. When a control cell is not constructible, use the baked-in form.
+
+### A capability gap is not a control, in either form
+
+"This backend does not implement this feature" needs no picture at all — the correct rendering of an unimplemented feature is nothing. Its home is the support matrix and the package's `status.md`, and its resolution is to implement the feature or record the gap.
+
+**Never put a control in the canvas slot.** Beyond the rules above, canvas is the declared parity _reference_ (`reference: 'canvas'` in `FLIGHT_VISUAL_PARITY_GROUPS`), so excluding a canvas cell silently re-shapes that scene's parity from reference-based to all-pairs. One declaration doing two unrelated jobs is a mixed signal by construction.
 
 ### When you find a backend without an implementation
 
-Ask **can it, or has nobody written it** — and answer it from what the backend can express, not from what the scene currently does. `effects-canvas` ships `drawCanvasImageDataPass` precisely for effects with no CSS-filter equivalent, so "Canvas can only do CSS filters" is not the constraint it looks like. Five cells were assumed inexpressible on canvas; four turned out merely unwritten.
+Ask **can it, or has nobody written it** — and answer from what the backend can express, not from what the scene currently does. `effects-canvas` ships `drawCanvasImageDataPass` precisely for effects with no CSS-filter equivalent, so "Canvas can only do CSS filters" is not the constraint it looks like. Five cells were assumed inexpressible on canvas; four turned out merely unwritten.
 
 - **Implementable → implement it.** A feature area that is partially built is unfinished work, not a design choice (`AGENTS.md`). Deleting a cell that could have been made to work discards a capability slot, and it is expensive to reverse: cells appear in the coverage manifest, the calibration file, the hold ledger, and committed baselines.
 - **Genuinely impossible, or only approximable → no cell**, and record the gap where it will be acted on.
-
-The rule is not "delete the control declaration". It is: decide which of the two homes above the fact belongs in, and put it there.
 
 ## Holds
 
