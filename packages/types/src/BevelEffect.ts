@@ -13,10 +13,10 @@ export interface BevelEffect extends RenderEffect {
    * displayed. Each runner converts into its own texcoord space at its own seam. 0 offsets to
    * the RIGHT and 90 offsets DOWNWARD, the way an author reads the picture.
    *
-   * ★ THE UNIT IS DEGREES HERE AND RADIANS ON SOME OTHER EFFECTS. `DirectionalBlurEffect.angle` and
-   * `HalftoneEffect.angle` are radians; this family converts with `* Math.PI / 180` inside the runner.
-   * The unit is stated on every angle field for that reason — naming only "radians" or only "degrees"
-   * without the origin and sense is what let this whole class of defect through.
+   * ★ THE UNIT IS STATED ON EVERY ANGLE FIELD IN THE SDK, and this family is why. `DirectionalBlurEffect`
+   * and `HalftoneEffect` carried radians here while these four carried degrees, with nothing in either
+   * header saying so; they are all degrees now. Naming only "radians" or only "degrees" without the
+   * origin and sense is what let the whole class of defect through in the first place.
    */
   angle?: number;
   bevelType?: 'full' | 'inner' | 'outer';
