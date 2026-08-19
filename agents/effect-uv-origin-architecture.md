@@ -26,12 +26,12 @@ Two distinct mechanisms appear in the codebase:
 
 2. **Direction/velocity compensation** (negate Y component): for values that represent a screen-space
    direction or velocity, the GL shader negates the Y component to convert from screen-Y-down to
-   UV-Y-up. Example: motion blur velocity smear.
+   UV-Y-up. Examples: motion blur velocity smear, directional blur angle.
 
 The two mechanisms are easy to confuse because both involve the Y axis, but they apply to different
 quantities. A position fix on a direction, or vice versa, produces the wrong result.
 
-## Correctly compensated effects (4)
+## Correctly compensated effects (6)
 
 | # | Effect | File | Line | Mechanism | Compensation |
 |---|--------|------|------|-----------|--------------|
@@ -39,8 +39,10 @@ quantities. A position fix on a direction, or vice versa, produces the wrong res
 | 2 | CRT scanlines | `glCrtEffect.ts` | 66 | position | `(1.0 - uv.y)` |
 | 3 | Tilt-shift focus band | `glTiltShiftEffect.ts` | 50 | position | `(1.0 - v_texCoord.y)` |
 | 4 | Displacement sine + offset | `glDisplacementEffect.ts` | 49, 55 | position + direction | `imageY = 1.0 - v_texCoord.y` for phase, negate `offset.y` for application |
+| 5 | Motion blur velocity smear | `glMotionBlurEffect.ts` | 63 | direction | `vec2(velocityPixels.x, -velocityPixels.y)` |
+| 6 | Directional blur angle | `glDirectionalBlurEffect.ts` | 52 | direction | `vec2(cos(u_angle), -sin(u_angle))` |
 
-All four have comments explaining the conversion.
+All six have comments explaining the conversion.
 
 ## Confirmed defects (3)
 
@@ -61,31 +63,39 @@ All four have comments explaining the conversion.
   diagonal velocities — where both components are nonzero — expose the Y-reflection as a different
   sample line than the original.
 
-### Defect 2: glDirectionalBlurEffect — angle Y-component not negated
+### Defect 2: glDirectionalBlurEffect — angle Y-component not negated (FIXED)
 
-- **File**: `glDirectionalBlurEffect.ts:51`
+- **File**: `glDirectionalBlurEffect.ts:52`
 - **Mechanism**: direction
-- **Code**: `vec2 dir = vec2(cos(u_angle), sin(u_angle)) * (u_length / u_resolution);`
+- **Before**: `vec2 dir = vec2(cos(u_angle), sin(u_angle)) * (u_length / u_resolution);`
+- **After**: `vec2 dir = vec2(cos(u_angle), -sin(u_angle)) * (u_length / u_resolution);`
 - **Same mechanism as motion blur**: `sin(angle)` gives the screen-space Y component. In GL UV, this
   component points upward instead of downward. The blur line for angle θ in GL equals the blur line
   for angle (π − θ) in WGPU.
 - **Visual impact**: milder than motion blur because blur is symmetric (averages both sides equally),
   so the output quality is identical — but the user's angle parameter means different diagonals on
   different backends. Axis-aligned angles (0, π/2) are unaffected.
-- **Fix**: `vec2 dir = vec2(cos(u_angle), -sin(u_angle)) * (u_length / u_resolution);`
+- **Discriminating case**: the `effect-directional-blur` scene uses `angle: 0.5` (~28.6°), a diagonal
+  that exposes the Y-reflection. The same symmetric-tap blind spot that masked motion blur's
+  horizontal/vertical cases applies here: axis-aligned angles match trivially, and only diagonals
+  expose the difference. The existing Class C PASS verdict was invalid — it was almost certainly
+  verified against an axis-aligned angle.
 
-### Defect 3: glGodRaysEffect — light position centerY not compensated
+### Defect 3: glGodRaysEffect — light position centerY not compensated (checked, already correct)
 
 - **File**: `glGodRaysEffect.ts:62` (shader), line 27 (TypeScript uniform set)
 - **Mechanism**: position
-- **Code**: `u_lightPosition = (centerX, centerY)` passed unmodified; shader uses
-  `vec2 delta = (v_texCoord - u_lightPosition) * (u_density / SAMPLES);`
+- **Original code**: `u_lightPosition = (centerX, centerY)` passed unmodified
 - **Root cause**: `centerY` is a 0–1 fraction measured from the top of the image. In GL UV,
   `v_texCoord.y = 0` is the screen bottom, so `centerY = 0.2` places the light at 20% from the
   bottom instead of 20% from the top. The rays march toward the wrong screen position.
-- **Note**: `u_resolution` is declared as a GL uniform but is UNUSED in the shader body (dead
-  uniform). The defect is purely about `u_lightPosition.y`.
-- **Fix**: pass `(centerX, 1.0 - centerY)` as `u_lightPosition` in the TypeScript code.
+- **Status**: verified correct on the integrated tree — `glGodRaysEffect.ts:22` reads
+  `const centerY = 1 - (effect.centerY ?? 0.5)`, the exact compensation this sweep prescribed. The
+  fix predates this sweep's seed (ef4fae7fc), so the sweep flagged it as unfixed from a stale tree.
+- **Residual**: `u_resolution` is declared as a GL uniform (line 51) and set (line 26) but is NEVER
+  referenced in the shader body — a dead uniform. The comment at line 10 defends it with "u_resolution
+  is set so the light direction is computed in a consistent space", which is not true (the shader uses
+  `u_lightPosition` directly in UV coordinates, not a direction derived from resolution).
 
 ## Symmetric-invisible-but-divergent (3)
 
@@ -110,8 +120,9 @@ Box Blur, Outline. Plus `u_resolution` in `glRenderTextureEffect` (diagnostic co
 ## Population reconciliation
 
 22 GL effects with `u_resolution` or `texelSize` grep hits. All 22 classified:
-3 confirmed defects + 4 correctly compensated + 3 symmetric-invisible + 12 false positives = 22.
-0 unexamined.
+3 confirmed defects (2 fixed here, 1 already correct on the integrated tree) + 6 correctly
+compensated (including the 2 fixed defects) + 3 symmetric-invisible + 12 false positives = 22
+(the 2 fixed defects appear in both the defect list and the compensation table). 0 unexamined.
 
 ## Camera-motion-blur check
 

@@ -11,6 +11,8 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 // sample count. Single-pass reference recipe. u_resolution converts the texel length into UV space.
+// The sin(angle) component is negated in the shader to convert the screen-space-Y-down angle into
+// the GL fullscreen-pass UV-Y-up direction.
 export function applyDirectionalBlurEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -48,7 +50,8 @@ uniform vec2 u_resolution;
 out vec4 o_color;
 const int SAMPLES = 16;
 void main() {
-  vec2 dir = vec2(cos(u_angle), sin(u_angle)) * (u_length / u_resolution);
+  // Negate sin to convert screen-space-Y-down angle to GL UV-Y-up direction.
+  vec2 dir = vec2(cos(u_angle), -sin(u_angle)) * (u_length / u_resolution);
   float count = min(u_samples, 16.0);
   vec4 sum = vec4(0.0);
   float taken = 0.0;
