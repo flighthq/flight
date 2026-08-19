@@ -79,6 +79,14 @@ export function render(root: Node2D): void {
 // could no longer show what it exists to show: a clipped effect looks the same whether its radial
 // falloff is right or badly wrong. A saturated parameter hides magnitude and shape exactly as a neutral
 // one hides direction.
+//
+// ★ WHY THE DESCRIPTION WAS TREATED AS AUTHORITATIVE HERE, AND WHY THAT IS NOT A GENERAL RULE. When the
+// text and the picture disagreed, the text won for one reason only: it states the more DISCRIMINATING
+// test. Its radial claim — no fringing at the optical centre, growing with radius — is a property a
+// check can fail on, and the saturated picture was one no check could distinguish from a badly wrong
+// implementation. Had the description instead demanded something the effect cannot do, the description
+// would have been the thing to fix. Nothing here says prose outranks pixels; it says the falsifiable
+// artifact outranks the unfalsifiable one.
 const ABERRATION_INTENSITY = 0.01;
 
 const root = createDisplayObject();
