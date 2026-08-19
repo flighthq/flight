@@ -395,7 +395,7 @@ function discoverReviewTests(): ReviewTest[] {
           }
         }
 
-        if (cellDescription !== undefined && expectedImageDescription === undefined) {
+        if (role === 'reviewable' && cellDescription !== undefined && expectedImageDescription === undefined) {
           expectedImageDescription = cellDescription;
         }
         const commissionState =

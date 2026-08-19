@@ -741,6 +741,7 @@ function setCompareGridColumns(grid: HTMLElement): void {
 }
 
 async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
+  if (!isReviewableCell(cell) || cell.commissionState === null) return;
   const container = document.createElement('div');
   container.className = 'compare-view';
 
@@ -795,7 +796,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     return;
   }
 
-  // No reference: show the capture alone, and name WHICH absence it is rather than rendering nothing.
+  // No blessed reference: show the capture and any authored context, and name WHICH absence remains.
   if (referenceImg === null) {
     const grid = document.createElement('div');
     grid.className = 'compare-grid';
@@ -804,7 +805,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     appendContextPanels(grid);
     const placeholder = document.createElement('div');
     placeholder.className = 'compare-placeholder';
-    placeholder.textContent = reviewMissingReferenceMessage(cell.commissionState ?? 'not-commissioned');
+    placeholder.textContent = reviewMissingReferenceMessage(cell.commissionState);
     grid.appendChild(makeComparePanel('Blessed reference', placeholder));
     setCompareGridColumns(grid);
 
