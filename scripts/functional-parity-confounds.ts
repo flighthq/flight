@@ -17,6 +17,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { findCaptureFixtureBackground } from '@flighthq/tool-capture';
+
 export interface FunctionalParityConfound {
   scene: string;
   values: Readonly<Record<string, string>>;
@@ -28,9 +30,16 @@ export interface FunctionalParityConfoundReport {
   scenesWithoutDeclaration: number;
 }
 
-/** Reads the clear colour a functional scene fixture declares, or null when it states none. */
+/**
+ * Reads the clear colour a functional scene fixture declares, or null when it states none.
+ *
+ * Delegates to `@flighthq/tool-capture` so this corpus scan and the per-run validation report's
+ * `fixtureBackgroundMismatch` field read ONE detector. They used to be two independent enumerations
+ * with no join between them, which is how a scan could report a clean corpus while a run reported a
+ * distance nothing had qualified.
+ */
 export function findFunctionalSceneClearColor(source: string): string | null {
-  return /backgroundColor:\s*(0x[0-9a-fA-F]+)/.exec(source)?.[1]?.toLowerCase() ?? null;
+  return findCaptureFixtureBackground(source);
 }
 
 /**
