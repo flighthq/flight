@@ -38,16 +38,7 @@
     "functional/particle-motion-blur/webgl": "blur directions do not agree between webgl and webgpu",
     "functional/particle-motion-blur/webgpu": "blur directions do not agree between webgl and webgpu",
     "functional/swf-alpha-transform/dom": "dom has white background and is not centered",
-    "functional/swf-alpha-transform/canvas": "dom has white background and is not centered",
-    "functional/swf-alpha-transform/webgl": "dom has white background and is not centered",
-    "functional/swf-alpha-transform/webgpu": "dom has white background and is not centered",
     "functional/swf-mirrored-placement/dom": "dom has white background and is not centered",
-    "functional/swf-mirrored-placement/canvas": "dom has white background and is not centered",
-    "functional/swf-mirrored-placement/webgl": "dom has white background and is not centered",
-    "functional/swf-mirrored-placement/webgpu": "dom has white background and is not centered",
-    "functional/text-markup-color/dom": "dom has white background and is misaligned",
-    "functional/text-markup-color/canvas": "dom has white background and is misaligned",
-    "functional/text-markup-color/webgl": "dom has white background and is misaligned",
-    "functional/text-markup-color/webgpu": "dom has white background and is misaligned"
+    "functional/text-markup-color/dom": "dom has white background and is misaligned"
   }
 }
