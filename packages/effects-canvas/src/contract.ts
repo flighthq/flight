@@ -13,6 +13,7 @@ export * from './canvasGradientGlowEffect';
 export * from './canvasGradientRamp';
 export * from './canvasInnerGlowEffect';
 export * from './canvasLensDistortionEffect';
+export * from './canvasTiltShiftEffect';
 export * from './canvasInnerShadowEffect';
 export * from './canvasOuterGlowEffect';
 export * from './canvasPixelateEffect';

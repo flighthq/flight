@@ -183,6 +183,10 @@
     },
     {
       "packageName": "effects-canvas",
+      "registrar": "registerCanvasTiltShiftEffect"
+    },
+    {
+      "packageName": "effects-canvas",
       "registrar": "registerCanvasVignetteEffect"
     },
     {
