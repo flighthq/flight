@@ -167,6 +167,10 @@
     },
     {
       "packageName": "effects-canvas",
+      "registrar": "registerCanvasPosterizeEffect"
+    },
+    {
+      "packageName": "effects-canvas",
       "registrar": "registerCanvasRenderEffect"
     },
     {
