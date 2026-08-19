@@ -127,6 +127,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 
 **Reference docs** (`agents/`) — declarative knowledge, read to _know_:
 
+- [functional cell rules](functional/README.md) — before adding a functional scene, adding a backend variant, declaring a backend unsupported, or changing a scene's antialiasing. A scene's cells must all show the SAME THING; controls are baked into the scene, never given a cell of their own.
 - [registration model](agents/registration-model.md) — before answering a consumer question about registration or backend capability. The two public doors, the register-means-real-implementation rule, and the DOM batch-kind exclusions.
 - [npm script naming](agents/conventions/npm-scripts.md) — before adding, renaming, or removing a `package.json` script. The `action:subject:modifier` grammar, collapse aliases, and the `smoke`/`parity`/`regression` vocabulary.
 - [packaging & publishing](agents/packaging.md) — the published package shape, enforced by `npm run packages:check`, not memory.
