@@ -73,9 +73,43 @@ registerWgpuFunctionalTarget(state, scale);
 
 Canvas/WebGL scenes need no registration — the verifier reads back the largest canvas on the page.
 
-## Per-scene oracle (optional — Tier 4)
+## Per-scene oracle (Tier 4)
 
-Beyond the automatic not-blank check, a scene may export precise checks. The verifier reads them off the module:
+**Every scene carries one.** All 354 scene files do as of this writing; a new scene without an `assertRender` is a regression, not a default.
+
+### An oracle is only a check if a wrong picture fails it
+
+Write the check, then **prove it by breaking the scene**. The standard is three images, and a real oracle gives three different answers:
+
+| image | how to produce it | expected |
+| --- | --- | --- |
+| the correct picture | as authored | passes |
+| the effect not running | set its intensity/strength to 0, or drop it from the effects array | **fails** |
+| the effect running wrongly | flip the axis, remove a runner's coordinate conversion, saturate the parameter | **fails** |
+
+If all three pass, you have measured that something is on the screen, not that the scene is right. Two real cases: an oracle that summed |neighbour difference| along each row read 0.690 on an unblurred frame and 0.688 on a blurred one against a threshold of 2.5 — total variation is nearly conserved by a blur, so the number could not move. Another scanned the single column at the exact centre of a radial effect — the locus where that effect is weakest — and passed identically on a uniform version, a ten-times-too-strong version, and the picture its description promised.
+
+### Sample where the effect is most diagnostic, not where it is largest
+
+A radial effect is checked at two radii, not at its centre. A vignette is checked on the field, not on the shapes. A directional blur is checked across its axis. A shadow is checked on the side it should fall on — a shadow on the wrong side is still soft, still dark, and passes every "is it blurred" check.
+
+### Parameters: neither neutral nor saturated
+
+A scene parameter must be **off-centre and off-axis**, and **inside the effect's discriminating range**. A neutral value (`centerY: 0.5`, an axis-aligned angle) hides the effect's DIRECTION — `0.5` is its own mirror, so a Y-origin error is invisible. A saturated value hides its MAGNITUDE AND SHAPE — when every pixel is clipped, a correct implementation and a badly wrong one produce the same picture. If a scene must use a neutral value for some other reason, say in a comment what it therefore cannot detect.
+
+### Assert the gap, so closing it is noticed
+
+When a backend does not implement something, assert the ABSENCE its description claims rather than skipping the cell. `effect-msaa.webgpu.ts` requires _few_ partial-coverage pixels because Wgpu downgrades `sampleCount` to 1; if multisampling ever lands there the cell fails loudly and points at the file to update, instead of the description quietly going stale.
+
+### Prefer an exact check when the scene admits one
+
+`effect-empty-passthrough` draws axis-aligned tiles of known colour with an empty effects array, so the frame can contain **exactly five colours and no others** — and the oracle examines every pixel for a sixth. It also fails on a MISSING colour, because "no unexpected colours" alone calls an empty screen clean. When a scene can be exact, be exact.
+
+### Derived from source, cross-checked against the description
+
+Write the assertion from what the scene's own code does, then compare it with the `expectedImageDescription`. If they disagree, that is a finding to report — not a threshold to loosen until the current picture passes.
+
+Beyond the automatic not-blank check, the verifier reads these off the module:
 
 ```typescript
 import type { Bitmap } from '@flighthq/sdk';
