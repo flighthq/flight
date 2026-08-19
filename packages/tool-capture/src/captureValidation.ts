@@ -19,7 +19,8 @@
 // can call runCaptureValidation directly. Baselines live at `<subject>/baselines/<name>.json`, keyed by
 // renderer/column id.
 
-import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import {
   CAPTURE_PARITY_TOLERANCE,
@@ -63,6 +64,7 @@ import type { Server } from './captureServer.js';
 import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import type { CaptureFingerprintMap, CaptureFingerprintProvenanceMap } from './captureSuite.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
+import { functionalScene3DFile } from './functionalScene3Ds.js';
 
 export interface CaptureValidationOptions {
   subject: string;
@@ -215,6 +217,24 @@ function validationRenderers(
     const backend = separator === -1 ? renderer : renderer.slice(separator + 1);
     return (backend !== 'dom' || explicitTargets.has(renderer)) && rendererMatchesFilter(renderer, rendererFilter);
   });
+}
+
+function isFunctionalParityControl(root: string, subject: string, entry: string, renderer: string): boolean {
+  if (subject !== 'functional') return false;
+  const scenesDir = join(root, 'functional', 'scenes');
+  try {
+    const source = readFileSync(functionalScene3DFile(scenesDir, entry, renderer), 'utf8');
+    const declaration =
+      /\bexport\s+const\s+functionalBackendSupport\s*=\s*(['"])([^'"]+)\1(?:\s+as\s+const)?\s*;?/.exec(source);
+    if (declaration === null) return false;
+    if (declaration[2] !== 'control') {
+      throw new Error(`Unknown functionalBackendSupport value '${declaration[2]}'; expected 'control'`);
+    }
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Unknown functionalBackendSupport value')) throw error;
+    return false;
+  }
 }
 
 function distance(a: string, b: string): number | null {
@@ -853,20 +873,30 @@ async function processEntry(
 
   // Tier 3 (parity): cross-backend agreement among the eligible (baselined / self-stable) raster
   // backends.
+  // Assertions and regression fingerprints cover every functional cell, including unsupported controls.
+  // Parity asks a narrower question: whether implementations of the SAME feature agree. A cell that
+  // positively declares itself a control is absent from that comparison population by construction.
+  const parityEligible = new Map(
+    [...eligible].filter(
+      ([renderer]) => !isFunctionalParityControl(options.root, options.subject, entry.name, renderer),
+    ),
+  );
+  if (parityEligible.size === 0) return result;
+
   const skip = options.paritySkip[entry.name];
   const allowed = (renderer: string): boolean => skip !== 'all' && !skip?.includes(renderer);
   const pairs: { a: string; b: string; label: string; dist: number; tolerance: number }[] = [];
   const groups = Object.entries(options.parityGroups);
   if (groups.length === 0) {
-    const present = [...eligible.keys()].filter(allowed);
+    const present = [...parityEligible.keys()].filter(allowed);
     for (let i = 0; i < present.length; i++) {
       for (let j = i + 1; j < present.length; j++) {
-        addPair(pairs, eligible, present[i]!, present[j]!, '', options.parityTolerance);
+        addPair(pairs, parityEligible, present[i]!, present[j]!, '', options.parityTolerance);
       }
     }
   } else {
     for (const [groupName, group] of groups) {
-      const present = group.targets.filter((renderer) => eligible.has(renderer) && allowed(renderer));
+      const present = group.targets.filter((renderer) => parityEligible.has(renderer) && allowed(renderer));
       // When the declared reference is absent (skipped or never a column), the reference claim cannot
       // be checked. Fall through to all-pairs among the remaining targets: weaker than the reference
       // claim, but real coverage, and the label makes the substitution transparent.
@@ -876,20 +906,34 @@ async function processEntry(
           // deliberately excluded it. Either way, all-pairs among the columns that DO exist is real
           // coverage worth keeping. The label says which case it is so the claim is transparent.
           const reason =
-            eligible.has(group.reference) && !allowed(group.reference)
+            parityEligible.has(group.reference) && !allowed(group.reference)
               ? `${group.reference} skipped`
               : `no ${group.reference} column`;
           const label = `${groupName} (all-pairs, ${reason})`;
           for (let i = 0; i < present.length; i++) {
             for (let j = i + 1; j < present.length; j++) {
-              addPair(pairs, eligible, present[i]!, present[j]!, label, group.tolerance ?? options.parityTolerance);
+              addPair(
+                pairs,
+                parityEligible,
+                present[i]!,
+                present[j]!,
+                label,
+                group.tolerance ?? options.parityTolerance,
+              );
             }
           }
           continue;
         }
         for (const renderer of present) {
           if (renderer !== group.reference) {
-            addPair(pairs, eligible, group.reference, renderer, groupName, group.tolerance ?? options.parityTolerance);
+            addPair(
+              pairs,
+              parityEligible,
+              group.reference,
+              renderer,
+              groupName,
+              group.tolerance ?? options.parityTolerance,
+            );
           }
         }
         continue;
@@ -897,7 +941,14 @@ async function processEntry(
       // No reference declared at all: all-pairs is what this group means, not a fallback for a lost one.
       for (let i = 0; i < present.length; i++) {
         for (let j = i + 1; j < present.length; j++) {
-          addPair(pairs, eligible, present[i]!, present[j]!, groupName, group.tolerance ?? options.parityTolerance);
+          addPair(
+            pairs,
+            parityEligible,
+            present[i]!,
+            present[j]!,
+            groupName,
+            group.tolerance ?? options.parityTolerance,
+          );
         }
       }
     }
@@ -908,15 +959,15 @@ async function processEntry(
   // Report and baseline-write modes are excluded because neither claims to gate anything.
   if (pairs.length === 0 && options.gateParity && !options.report && !options.updateFingerprints) {
     result.parityUncovered++;
-    if (skip === undefined && eligible.size >= 2) {
+    if (skip === undefined && parityEligible.size >= 2) {
       result.parityUndeclaredUncovered++;
     }
     result.checks.push({
       entry: entry.name,
-      renderers: [...eligible.keys()],
+      renderers: [...parityEligible.keys()],
       kind: 'parity',
       status: 'skipped',
-      message: explainCaptureParityUncovered(eligible.size, groups.length > 0),
+      message: explainCaptureParityUncovered(parityEligible.size, groups.length > 0),
     });
   }
   if (pairs.length > 0) {
@@ -938,7 +989,7 @@ async function processEntry(
       let anyFailed = false;
       const segments = pairs
         .map((p) => {
-          const check = evaluateCaptureParity(eligible.get(p.a)!, eligible.get(p.b)!, p.tolerance);
+          const check = evaluateCaptureParity(parityEligible.get(p.a)!, parityEligible.get(p.b)!, p.tolerance);
           if (!check.pass) {
             anyFailed = true;
             result.parityFailures++;
