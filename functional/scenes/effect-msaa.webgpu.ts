@@ -12,6 +12,7 @@ import {
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
   defaultWgpuShapeRenderer,
+  enableWgpuRenderEffectGuards,
   endWgpuRenderEffectPipeline,
   prepareScene2DRender,
   registerWgpuStandardMaterial,
@@ -39,6 +40,7 @@ document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x101014ff });
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
+enableWgpuRenderEffectGuards(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
