@@ -1,7 +1,12 @@
 import type { Page } from '@playwright/test';
 
+export interface DomReadbackResult {
+  provided: boolean;
+  screenshot: Buffer | null;
+}
+
 /** Supplies a pending page-side DOM verifier with pixels from its registered element. */
-export async function provideCaptureDomRenderPixels(page: Page): Promise<boolean> {
+export async function provideCaptureDomRenderPixels(page: Page): Promise<DomReadbackResult> {
   const handle = await page
     .evaluateHandle(() => {
       const target = (
@@ -15,12 +20,12 @@ export async function provideCaptureDomRenderPixels(page: Page): Promise<boolean
   const element = handle?.asElement();
   if (element === null || element === undefined) {
     await handle?.dispose();
-    return false;
+    return { provided: false, screenshot: null };
   }
   try {
     const screenshot = await element.screenshot({ animations: 'disabled' }).catch(() => null);
     const source = screenshot === null ? null : `data:image/png;base64,${screenshot.toString('base64')}`;
-    return page.evaluate(async (dataUrl) => {
+    const provided = await page.evaluate(async (dataUrl) => {
       const provide = (
         window as unknown as {
           __ftProvideDomRenderPixels?: (
@@ -53,6 +58,7 @@ export async function provideCaptureDomRenderPixels(page: Page): Promise<boolean
       }
       return true;
     }, source);
+    return { provided, screenshot };
   } finally {
     await handle?.dispose();
   }
