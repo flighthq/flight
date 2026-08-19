@@ -47,7 +47,4 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   // Bloom runs on WebGPU, but its rotated source shapes enter the recipe through the same single-sample
   // target. Keep WebGPU out while Canvas's inherent AA and WebGL's sampleCount-4 source remain comparable.
   'effect-msaa-bloom': ['webgpu'],
-  // Canvas ramps its multiply gradient to the frame corner; the GPU smoothstep reaches full darkening
-  // at the configured radius. Keep the canvas reference out until those vignette recipes agree.
-  'effect-vignette': ['canvas'],
 };
