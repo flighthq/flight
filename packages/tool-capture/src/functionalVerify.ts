@@ -6,6 +6,7 @@ import {
   getBitmapCoverage,
   getBitmapPixel,
 } from '@flighthq/bitmap/contract';
+import { enableWgpuRenderEffectGuards } from '@flighthq/effects-wgpu/contract';
 import { createBitmapFromWgpuRenderState, enableWgpuFrameCapture } from '@flighthq/render-wgpu/contract';
 import type {
   CanvasRenderState,
@@ -170,6 +171,11 @@ export function registerFunctionalTarget<T extends FunctionalTarget>(target: T):
 
 export function registerWgpuFunctionalTarget(state: WgpuRenderState, scale = 1): void {
   enableWgpuFrameCapture(state);
+  // Every functional WGPU scene passes through here, INCLUDING the ~100 that build their own render
+  // state instead of going through the harness — which is where the sampleCount requests live. Without
+  // this, `createWgpuRenderEffectPipeline` downgrades a requested sampleCount of 4 to 1 in silence, and
+  // a capture of a scene that asked for MSAA is indistinguishable from one that got it.
+  enableWgpuRenderEffectGuards(state);
   registerFunctionalTarget({
     kind: 'webgpu',
     state,
