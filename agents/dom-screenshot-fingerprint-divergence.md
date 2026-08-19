@@ -1,6 +1,6 @@
 # DOM Screenshot / Fingerprint Artifact Divergence
 
-**Status: OPEN.** The divergence is identified and the fix is in review.
+**Status: RESOLVED.** The reuse fix has landed; both consumers now share a single artifact.
 
 **Standing note on mechanism citations.** This record's first draft described the fingerprint source as "html2canvas or an equivalent" — a plausible mechanism that was wrong. The actual mechanism is a Playwright element screenshot (`captureDomReadback.ts:21`), same browser compositor as the page screenshot. The error survived because the record cited the module name but not the line, so nobody re-read the code before acting on the claim. When a record's argument turns on how something works, cite the file and line, and re-read that line before acting on the record.
 
@@ -54,9 +54,16 @@ The two artifacts can disagree on:
 
 None of these is recommended here. The choice depends on which artifact the regression gate should be authoritative over — the element-clipped frame or the full viewport — and that is a design decision for the capture-verification tiers doctrine.
 
+## The fix
+
+Option 1 was chosen: `captureDomReadback` now returns the element screenshot buffer, which
+`waitForRenderVerification` threads through as the reviewed image. Both the fingerprint and the
+human-reviewed screenshot are derived from the same `element.screenshot()` bytes. The two-artifact
+gap no longer exists for DOM entries.
+
 ## Related
 
 - [Capture verification tiers](capture-verification-tiers.md) — the organizing rule this gap touches.
-- `captureEntry.ts` — the DOM screenshot branch (currently `page.screenshot()`).
-- `captureDomReadback.ts:21` — the element screenshot for the fingerprint.
+- `captureEntry.ts` — the DOM screenshot branch (reuses the element screenshot from `captureDomReadback`).
+- `captureDomReadback.ts:21` — the element screenshot, now shared by both consumers.
 - `scripts/reference-image-held.json` — the two held entries that surfaced this gap.
