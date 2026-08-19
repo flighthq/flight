@@ -827,6 +827,31 @@
           }
         },
         {
+          "scene": "effect-drop-shadow",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            }
+          }
+        },
+        {
           "scene": "effect-empty-passthrough",
           "backends": {
             "canvas": {
@@ -1048,6 +1073,31 @@
               "status": "realized",
               "fingerprint": true,
               "realization": true
+            }
+          }
+        },
+        {
+          "scene": "effect-inner-shadow",
+          "backends": {
+            "canvas": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "dom": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "unbaselined",
+              "fingerprint": false,
+              "realization": false
             }
           }
         },
