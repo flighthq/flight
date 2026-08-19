@@ -13,7 +13,7 @@ export function applyHalftoneEffectToGl(
   effect: Readonly<HalftoneEffect>,
 ): void {
   const scale = effect.scale ?? 6;
-  const angle = effect.angle ?? 0.4;
+  const angle = ((effect.angle ?? 22.92) * Math.PI) / 180;
   const program = getGlEffectProgram(state, 'stylization.halftone', HALFTONE_FRAGMENT_SRC);
   drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_scale'), Math.max(1, scale));

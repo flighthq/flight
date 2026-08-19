@@ -6,6 +6,6 @@ describe('createHalftoneEffect', () => {
   });
 
   it('carries options', () => {
-    expect(createHalftoneEffect({ scale: 6, angle: 0.5 })).toMatchObject({ scale: 6, angle: 0.5 });
+    expect(createHalftoneEffect({ scale: 6, angle: 30 })).toMatchObject({ scale: 6, angle: 30 });
   });
 });

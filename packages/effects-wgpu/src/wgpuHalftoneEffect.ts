@@ -18,7 +18,7 @@ export function applyHalftoneEffectToWgpu(
   effect: Readonly<HalftoneEffect>,
 ): void {
   const scale = effect.scale ?? 6;
-  const angle = effect.angle ?? 0.4;
+  const angle = ((effect.angle ?? 22.92) * Math.PI) / 180;
   const pipeline = getWgpuEffectPipeline(state, 'stylization.halftone', HALFTONE_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(1, scale);

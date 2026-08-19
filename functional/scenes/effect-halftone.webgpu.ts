@@ -27,7 +27,7 @@ import { declareExpectedImageDescription } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 declareExpectedImageDescription(
-  'Eighteen small rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) on a dark 800×600 background (0x101014) in a 5×4 grid (x centers at ~96/240/384/528/672, y centers at ~108/228/348/468; last row has 3), each rotated by i×22°. A halftone dot screen (scale 4, angle 0.4 rad) replaces the flat fills with round dots — darker areas produce larger dots, brighter areas smaller ones. Smooth flat fills with no visible dot pattern is a failure.',
+  'Eighteen small rotated rectangles (56×20 each, six cycling colors: pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c, purple 0xd25cff, cyan 0x5cf0ff) on a dark 800×600 background (0x101014) in a 5×4 grid (x centers at ~96/240/384/528/672, y centers at ~108/228/348/468; last row has 3), each rotated by i×22°. A halftone dot screen (scale 4, angle 22.92 degrees) replaces the flat fills with round dots — darker areas produce larger dots, brighter areas smaller ones. Smooth flat fills with no visible dot pattern is a failure.',
 );
 
 // Wgpu parity column for the same halftone intent as render.webgl.ts. Wgpu render-state init is
@@ -52,7 +52,7 @@ export function render(root: Node2D): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createHalftoneEffect({ scale: 4, angle: 0.4 })]);
+  endWgpuRenderEffectPipeline(state, pipeline, [createHalftoneEffect({ scale: 4, angle: 22.92 })]);
   submitWgpuRenderPass(state);
 }
 

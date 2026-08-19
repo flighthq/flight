@@ -58,7 +58,9 @@ export function render(root: Node2D): void {
   renderWgpuBackground(state);
   beginWgpuRenderEffectPipeline(state, pipeline);
   renderWgpuScene2D(state, root);
-  endWgpuRenderEffectPipeline(state, pipeline, [createDirectionalBlurEffect({ angle: 0.5, length: 24, samples: 12 })]);
+  endWgpuRenderEffectPipeline(state, pipeline, [
+    createDirectionalBlurEffect({ angle: 28.65, length: 24, samples: 12 }),
+  ]);
   submitWgpuRenderPass(state);
 }
 

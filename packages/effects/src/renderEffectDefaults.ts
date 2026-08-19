@@ -97,7 +97,7 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
     strength: 1,
   },
   GradientGlowEffect: { blurX: 6, blurY: 6, quality: 1, sourceMode: 'draw', strength: 1 },
-  HalftoneEffect: { angle: 0.785, scale: 8 }, // 0.785 ≈ π/4 = 45°
+  HalftoneEffect: { angle: 45, scale: 8 }, // degrees, like every other angle-carrying effect
   InnerGlowEffect: { alpha: 1, blurX: 6, blurY: 6, color: 0xff0000ff, quality: 1, sourceMode: 'draw', strength: 1 },
   InnerShadowEffect: {
     alpha: 1,

@@ -60,7 +60,7 @@ export function render(root: Node2D): void {
   beginGlRenderEffectPipeline(state, pipeline);
   renderGlBackground(state);
   renderGlScene2D(state, root);
-  endGlRenderEffectPipeline(state, pipeline, [createDirectionalBlurEffect({ angle: 0.5, length: 24, samples: 12 })]);
+  endGlRenderEffectPipeline(state, pipeline, [createDirectionalBlurEffect({ angle: 28.65, length: 24, samples: 12 })]);
 }
 
 // A few mid-screen shapes spaced along the horizontal axis with gaps between them, so a full-frame
