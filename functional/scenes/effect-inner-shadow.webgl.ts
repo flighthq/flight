@@ -32,11 +32,12 @@ declareExpectedImageDescription(
     'clockwise as displayed - darkens the edges the light is coming FROM, which are the ones opposite the ' +
     'offset direction. Shading along the bottom and right instead would mean the runner read the angle in a ' +
     'bottom-left-origin space. Outside the square the field stays near-black. ' +
-    'There is NO Wgpu sibling cell: the full-frame InnerShadow recipe does not render on that backend today - ' +
-    'with the background drawn inside the effect pipeline it throws on a null command encoder, and with the ' +
-    'background outside it (the ordering every working Wgpu scene uses) it produces a completely blank frame. ' +
-    'The Gl cell here uses identical parameters and renders correctly, so the difference is the backend, not ' +
-    'the scene. This cell therefore cannot compare the two backends; it can only establish what Gl draws.',
+    'There is NO Wgpu sibling cell, and the reason is a measured backend gap rather than a property of this ' +
+    'scene. On Wgpu the full-frame effect pipeline runs every source-composite effect - the seven that carry ' +
+    'a sourceMode, this one among them - as a silent NO-OP, passing the source through untouched. A Blur in ' +
+    'the identical scene skeleton, which has no sourceMode, works. The same effects DO run on Wgpu through ' +
+    'the per-node offscreen path, so it is this route that does not carry them. This cell therefore cannot ' +
+    'compare the two backends; it can only establish what Gl draws.',
 );
 
 // The angle the effect is given AND the angle the oracle reasons about, so the two cannot drift apart.
