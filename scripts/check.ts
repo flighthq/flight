@@ -1,7 +1,5 @@
 import { spawn } from 'node:child_process';
-import { readdirSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
-import { join } from 'node:path';
 
 import pc from 'picocolors';
 
@@ -149,19 +147,13 @@ if (failed.length > 0) {
 // `npm run check` reads like "the check", and three agents in one day acted on it covering the tests —
 // two cited "check passes" for a change whose only guard was a `scripts/*.test.ts`, and one attributed
 // this command's CPU time to "the test suite it runs". That is a name promising more than it delivers,
-// not three careless readings, so the correction goes where the reader already is: the pass states what
-// it did NOT do. Both the gate count and the test command are derived from what actually ran rather than
-// written down, so a gate added or scoped away cannot leave this line quietly wrong.
-// The bare run covers all vitest projects: packages (shared + isolated + tool-capture), scripts
-// (shared project), and conformance (its own project). Counting only packages/ undercounts by
-// ~95 files — exactly the directories check itself never reaches.
-const testFileCount = countTestFiles(scoped ? projects : [...projects, 'scripts', 'conformance']);
+// not three careless readings, so the correction goes where the reader already is: the pass names the
+// specific command to run. The gate count is derived from what actually ran rather than written down, so
+// a gate added or scoped away cannot leave this line quietly wrong.
 const testCommand = scoped ? `npm run test ${selectors.join(' ')}` : 'npm run test';
 process.stdout.write(`\n${pc.green('✓')} ${pc.bold('all check gates passed')}\n`);
 process.stdout.write(
-  pc.dim(
-    `  ${results.length} gates, 0 tests — run \`${testCommand}\` (${testFileCount} test files) to cover the packages this checked.\n`,
-  ),
+  pc.dim(`  ${results.length} gates, 0 tests — run \`${testCommand}\` to cover the packages this checked.\n`),
 );
 
 async function runGate(gate: Gate): Promise<GateResult> {
@@ -189,16 +181,4 @@ async function runGates(items: readonly Gate[], limit: number): Promise<GateResu
     }),
   );
   return results;
-}
-
-function countTestFiles(dirs: readonly string[]): number {
-  let count = 0;
-  const walk = (dir: string): void => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.isDirectory()) walk(join(dir, entry.name));
-      else if (entry.name.endsWith('.test.ts')) count++;
-    }
-  };
-  for (const dir of dirs) walk(dir);
-  return count;
 }
