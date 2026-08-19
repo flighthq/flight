@@ -541,11 +541,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           .screenshot()
           .catch(() => page.screenshot());
       } else if (backend === 'dom') {
-        // Locator screenshots wait for DOM stability and can consume Playwright's full 30s action
-        // timeout on platform-text pages whose layout observers keep reporting movement. The viewport
-        // was resized to the scene's container dimensions above, so a direct page screenshot clips to
-        // the scene's own surface without the stability heuristic.
-        screenshotBuffer = await page.screenshot();
+        // Element screenshot of the container div — the same mechanism the DOM readback
+        // (captureDomReadback.ts:21) already uses for the fingerprint, so the reviewed image and the
+        // fingerprinted image are the same artifact, same as every other backend. Falls back to a
+        // page screenshot if no container div exists (unknown layout).
+        screenshotBuffer = await page
+          .locator('body > div')
+          .first()
+          .screenshot({ animations: 'disabled' })
+          .catch(() => page.screenshot());
       } else if (backend === 'webgl' && captureFrames > 0) {
         // launchBrowser forces preserveDrawingBuffer in deterministic frame mode, so read the canvas
         // itself instead of Chromium's compositor. Headless SwiftShader can display a WebGL canvas in
