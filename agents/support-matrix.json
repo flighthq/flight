@@ -312,9 +312,9 @@
           "scene": "color-adjustment",
           "backends": {
             "canvas": {
-              "status": "control",
+              "status": "realized",
               "fingerprint": true,
-              "realization": false
+              "realization": true
             },
             "dom": {
               "status": "unbaselined",
@@ -1130,8 +1130,8 @@
           "scene": "effect-lens-flare",
           "backends": {
             "canvas": {
-              "status": "control",
-              "fingerprint": true,
+              "status": "unbaselined",
+              "fingerprint": false,
               "realization": false
             },
             "dom": {

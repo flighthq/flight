@@ -93,7 +93,6 @@
       "effect-lens-distortion/canvas": ["fingerprint", "oracle", "screenshot"],
       "effect-lens-distortion/webgl": ["fingerprint", "oracle", "screenshot"],
       "effect-lens-distortion/webgpu": ["fingerprint", "oracle", "screenshot"],
-      "effect-lens-flare/canvas": ["fingerprint", "screenshot"],
       "effect-lens-flare/webgl": ["fingerprint", "screenshot"],
       "effect-lens-flare/webgpu": ["fingerprint", "screenshot"],
       "effect-lensdirt/webgl": ["fingerprint", "oracle", "screenshot"],
