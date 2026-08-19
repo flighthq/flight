@@ -1,4 +1,4 @@
-import type { Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -8,6 +8,7 @@ import {
   beginWgpuRenderEffectPipeline,
   createDisplayObject,
   createShape,
+  getBitmapPixelRgb,
   createWgpuCanvasElement,
   createWgpuRenderEffectPipeline,
   createWgpuRenderState,
@@ -82,3 +83,47 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ★ READ OFF THE SOURCE, NOT OFF THE PICTURE: this scene builds its effect pipeline with
+// `sampleCount: 4` and draws four filled bars rotated off-axis on a flat field, with an empty effects
+// array. A multisampled resolve is the only thing in that description that can put a pixel at PARTIAL
+// coverage — a fraction of a bar's colour blended with the field — so counting partial-luminance pixels
+// along the diagonal edges measures exactly the one property the scene exists to show.
+//
+// The window sits between the two luminances the scene actually contains: the field is 0x101014
+// (luminance about 17) and the dimmest bar channel average is well above 90, so nothing but an edge
+// pixel can land inside it.
+const PARTIAL_LOW = 20;
+const PARTIAL_HIGH = 90;
+
+function countPartialCoveragePixels(frame: Readonly<Bitmap>): number {
+  let partial = 0;
+  for (let y = 0; y < frame.height; y++) {
+    for (let x = 0; x < frame.width; x++) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const luminance = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (luminance > PARTIAL_LOW && luminance < PARTIAL_HIGH) partial++;
+    }
+  }
+  return partial;
+}
+
+// ★ THIS CELL ASSERTS THE ABSENCE ITS DESCRIPTION CLAIMS, and that is deliberate. Wgpu silently
+// downgrades any sampleCount above 1 to 1, so the identical scene that antialiases on Gl comes out with
+// hard stair-stepped edges here. Measured: 0 partial pixels, against 258 on Gl.
+//
+// If multisampling ever lands on Wgpu this assertion FAILS, which is the behaviour it should have — the
+// description above says the edges are aliased, and a picture that quietly stopped matching its own
+// description is worse than a red cell pointing at the file to update.
+const MAX_ALIASED_EDGE_PIXELS = 40;
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const partial = countPartialCoveragePixels(frame);
+  if (partial > MAX_ALIASED_EDGE_PIXELS) {
+    throw new Error(
+      `[effect-msaa] ${partial} partial-coverage pixels (expected at most ${MAX_ALIASED_EDGE_PIXELS}) — ` +
+        `the edges are antialiased, so sampleCount is no longer a no-op on Wgpu; update this cell and ` +
+        `its description, which both state that it is`,
+    );
+  }
+}
