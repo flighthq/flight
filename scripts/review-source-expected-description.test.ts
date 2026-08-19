@@ -2,8 +2,28 @@ import { describe, expect, it } from 'vitest';
 
 import {
   sourceContainsExpectedDescription,
+  sourceDeclaresFunctionalBackendControl,
   sourceWithheldExpectedDescription,
 } from '../tools/review/src/sourceExpectedDescription';
+
+describe('sourceDeclaresFunctionalBackendControl', () => {
+  it('recognizes the exported const declaration with or without an as-const assertion', () => {
+    expect(sourceDeclaresFunctionalBackendControl("export const functionalBackendSupport = 'control' as const;")).toBe(
+      true,
+    );
+    expect(sourceDeclaresFunctionalBackendControl('export const functionalBackendSupport = "control";')).toBe(true);
+  });
+
+  it('does not turn comments, local variables, or other support values into control cells', () => {
+    expect(
+      sourceDeclaresFunctionalBackendControl(`
+        // export const functionalBackendSupport = 'control';
+        const functionalBackendSupport = 'control';
+      `),
+    ).toBe(false);
+    expect(sourceDeclaresFunctionalBackendControl("export const functionalBackendSupport = 'partial';")).toBe(false);
+  });
+});
 
 describe('sourceContainsExpectedDescription', () => {
   it('accepts the functional-target field form', () => {
