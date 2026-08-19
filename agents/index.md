@@ -52,6 +52,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [draw order model](draw-order-model.md) — child order is the only order; the caller-owned `NodeOrderList`.
 - [bounded expected-image descriptions](functional-bounded-descriptions.md) — functional scenes whose expected picture is genuinely undecided, and therefore cannot be commissioned as a permanent reference.
 - [effect / adjustment / material](effect-adjustment-architecture.md) — the three-tier image-operation model.
+- [effect-pass UV origin](effect-uv-origin-architecture.md) — the GL/WGPU positional-UV sweep and the proposed sampler-local normalization seam.
 - [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
 - [parity skip declaration model](parity-skip-declaration-model.md) — **unratified.** what a parity skip must record, and the reference-to-all-pairs demotion it hides.
