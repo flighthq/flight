@@ -417,6 +417,47 @@ describe('runCaptureValidation', () => {
     expect(passed?.message).toContain('all-pairs, no canvas column');
   });
 
+  it('keeps a declared control in fingerprint regression but excludes it from parity', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'tool-capture-control-parity-'));
+    try {
+      const scenes = join(root, 'functional', 'scenes');
+      const baselines = join(root, 'functional', 'baselines');
+      mkdirSync(scenes, { recursive: true });
+      mkdirSync(baselines, { recursive: true });
+      writeFileSync(join(scenes, 'sample.canvas.ts'), "export const functionalBackendSupport = 'control' as const;\n");
+      writeFileSync(join(scenes, 'sample.webgl.ts'), 'export const scene = true;\n');
+      writeFileSync(
+        join(baselines, 'sample.json'),
+        `${JSON.stringify({ canvas: { fingerprint: '1:000000' }, webgl: { fingerprint: '1:000000' } })}\n`,
+      );
+
+      const result = await runCaptureValidation({
+        subject: 'functional',
+        entries: [{ name: 'sample', renderers: ['canvas', 'webgl'] }],
+        server: { url: 'http://unused.invalid', kill: vi.fn() },
+        root,
+        gateParity: true,
+        quiet: true,
+        parityGroups: { visual: { targets: ['canvas', 'webgl'], reference: 'canvas' } },
+        fingerprints: { sample: { canvas: '1:000000', webgl: '1:000000' } },
+        browserSession: {
+          browser: { close: vi.fn() } as never,
+          context: { newPage: vi.fn() } as never,
+        },
+      });
+
+      expect(result.regressionPasses).toBe(2);
+      expect(result.parityPasses + result.parityFailures).toBe(0);
+      expect(result.parityUncovered).toBe(1);
+      expect(result.checks.find((check) => check.kind === 'parity')).toMatchObject({
+        renderers: ['webgl'],
+        status: 'skipped',
+      });
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+
   it('is a callable fingerprint-validation orchestrator', () => {
     expect(typeof runCaptureValidation).toBe('function');
   });
