@@ -81,6 +81,12 @@
     },
     {
       "packageName": "effects-canvas",
+      "symbol": "defaultCanvasPosterizeEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
       "symbol": "defaultCanvasScanlinesEffectRunner",
       "dot": true,
       "contract": true
@@ -166,6 +172,12 @@
     {
       "packageName": "effects-canvas",
       "symbol": "registerCanvasPixelateEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasPosterizeEffect",
       "dot": true,
       "contract": true
     },

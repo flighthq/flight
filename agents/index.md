@@ -89,6 +89,7 @@ which is why they are not in the map.
 - [structurally unable expected-image worklist](functional-structurally-unable-worklist.md) — the
   measured 243-cell CC-2 assignment sheet, including constructor seams and direct-registration tails.
 - [maturity gaps](maturity-gaps.md) — production-readiness gaps across the SDK.
+- [god-rays parity investigation](god-rays-parity-investigation.md) — the UV-origin root cause behind the Gl/Wgpu god-rays split, with the four hypotheses that were tested and refuted first.
 - [port readiness](port-readiness.md) — the roadmap toward the C/C++ port (draft).
 - [review work items](review-work-items.md) — outstanding items raised by review passes.
 - [sdk blocking issues](sdk-blocking-issues.md) — what blocks AwayJS example parity.
