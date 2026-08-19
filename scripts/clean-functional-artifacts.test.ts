@@ -35,16 +35,20 @@ describe('cleanFunctionalArtifacts', () => {
     expect(() => cleanFunctionalArtifacts(root)).not.toThrow();
   });
 
-  it('keeps the fresh functional review command wired through cleanup', () => {
+  it('keeps the full functional review command wired through every preparation step', () => {
     const rootPackage = JSON.parse(
       readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'), 'utf8'),
     ) as { scripts: Record<string, string> };
-    const freshSteps = rootPackage.scripts['review:functional:fresh']!.split(' && ');
+    const fullSteps = rootPackage.scripts['review:functional:full']!.split(' && ');
 
     expect(rootPackage.scripts['clean:artifacts:functional']).toBe('tsx ./scripts/clean-functional-artifacts.ts');
-    expect(freshSteps).toContain('npm run clean:artifacts:functional');
-    expect(freshSteps.indexOf('npm run clean:artifacts:functional')).toBeLessThan(
-      freshSteps.indexOf('npm run capture:functional'),
-    );
+    expect(rootPackage.scripts['review:functional:fresh']).toBeUndefined();
+    expect(fullSteps).toEqual([
+      'npm run build:functional',
+      'npm run reference-image:fetch',
+      'npm run clean:artifacts:functional',
+      'npm run capture:functional',
+      'cross-env VITE_REVIEW_TOOL=functional npm run dev --workspace=tools/review',
+    ]);
   });
 });
