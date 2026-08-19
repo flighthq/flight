@@ -17,7 +17,7 @@ produce different visual output for the same effect parameters.
 
 ## Compensation mechanisms
 
-Two distinct mechanisms appear in the codebase:
+Three distinct mechanisms appear in the codebase:
 
 1. **Position/index compensation** (`1.0 - v_texCoord.y`): for values that represent a screen-space
    position or row index, the GL shader converts `v_texCoord.y` to image-space Y before use.
@@ -28,10 +28,18 @@ Two distinct mechanisms appear in the codebase:
    direction or velocity, the GL shader negates the Y component to convert from screen-Y-down to
    UV-Y-up. Examples: motion blur velocity smear, directional blur angle.
 
-The two mechanisms are easy to confuse because both involve the Y axis, but they apply to different
-quantities. A position fix on a direction, or vice versa, produces the wrong result.
+3. **Epsilon bias compensation** (negate epsilon Y): for normalize() divide-by-zero guards that add a
+   constant `vec2(1e-5)` before normalization, the GL shader negates the Y component of the epsilon
+   so the fallback direction at the radial center matches the screen-space direction the WGPU epsilon
+   produces. Without this, the epsilon-dominated direction at center points upward on screen in GL
+   but downward in WGPU. Examples: chromatic aberration radial center, lens flare halo center.
 
-## Correctly compensated effects (6)
+The three mechanisms are easy to confuse because all involve the Y axis, but they apply to different
+quantities. A position fix on a direction, or vice versa, produces the wrong result. Mechanism 3 is
+distinct from mechanism 2: it applies to a constant bias, not a computed component, and the fix is
+`vec2(1e-5, -1e-5)` rather than negating a variable.
+
+## Correctly compensated effects (8)
 
 | # | Effect | File | Line | Mechanism | Compensation |
 |---|--------|------|------|-----------|--------------|
@@ -41,8 +49,10 @@ quantities. A position fix on a direction, or vice versa, produces the wrong res
 | 4 | Displacement sine + offset | `glDisplacementEffect.ts` | 49, 55 | position + direction | `imageY = 1.0 - v_texCoord.y` for phase, negate `offset.y` for application |
 | 5 | Motion blur velocity smear | `glMotionBlurEffect.ts` | 63 | direction | `vec2(velocityPixels.x, -velocityPixels.y)` |
 | 6 | Directional blur angle | `glDirectionalBlurEffect.ts` | 52 | direction | `vec2(cos(u_angle), -sin(u_angle))` |
+| 7 | Chromatic aberration radial epsilon | `glChromaticAberrationEffect.ts` | 49 | epsilon bias | `vec2(1e-5, -1e-5)` |
+| 8 | Lens flare halo epsilon | `glLensFlareEffect.ts` | 69 | epsilon bias | `vec2(1e-5, -1e-5)` |
 
-All six have comments explaining the conversion.
+All eight have comments explaining the conversion.
 
 ## Confirmed defects (3)
 
@@ -92,10 +102,36 @@ All six have comments explaining the conversion.
 - **Status**: verified correct on the integrated tree — `glGodRaysEffect.ts:22` reads
   `const centerY = 1 - (effect.centerY ?? 0.5)`, the exact compensation this sweep prescribed. The
   fix predates this sweep's seed (ef4fae7fc), so the sweep flagged it as unfixed from a stale tree.
-- **Residual**: `u_resolution` is declared as a GL uniform (line 51) and set (line 26) but is NEVER
-  referenced in the shader body — a dead uniform. The comment at line 10 defends it with "u_resolution
-  is set so the light direction is computed in a consistent space", which is not true (the shader uses
-  `u_lightPosition` directly in UV coordinates, not a direction derived from resolution).
+- **Residual**: `u_resolution` was a dead uniform (declared, set, never referenced in the shader).
+  Removed together with the misleading comment that defended it.
+
+### Defect 4: glChromaticAberrationEffect — normalize epsilon Y not reflected (FIXED)
+
+- **File**: `glChromaticAberrationEffect.ts:49`
+- **Mechanism**: epsilon bias (mechanism 3)
+- **Before**: `normalize(centered + vec2(1e-5))`
+- **After**: `normalize(centered + vec2(1e-5, -1e-5))`
+- **Root cause**: the `vec2(1e-5)` divide-by-zero guard dominates the normalization at the radial
+  center where `centered ≈ (0, 0)`. In GL UV (Y-up), epsilon Y = +1e-5 points upward on screen; in
+  WGPU UV (Y-down), the same +1e-5 points downward. The fallback direction disagrees between backends.
+- **Visual impact**: negligible for chromatic aberration because `scale = length(centered) * 2.0`
+  kills the offset at center. The fix is a correctness-of-convention repair, not a visual fix.
+- **Discriminating case**: any pixel at the exact radial center (0.5, 0.5), or close enough that the
+  epsilon is a significant fraction of `centered`. The defect is invisible at off-center pixels where
+  `centered` dominates.
+
+### Defect 5: glLensFlareEffect — halo normalize epsilon Y not reflected (FIXED)
+
+- **File**: `glLensFlareEffect.ts:69`
+- **Mechanism**: epsilon bias (mechanism 3)
+- **Before**: `normalize(toCenter + vec2(1e-5))`
+- **After**: `normalize(toCenter + vec2(1e-5, -1e-5))`
+- **Root cause**: same as defect 4 — the epsilon Y points in different screen-space directions. Unlike
+  chromatic aberration, the halo sample position `v_texCoord + haloDir * u_halo` has no scale-at-center
+  kill, so at the center pixel the halo samples at different screen-space positions on GL vs WGPU.
+- **Discriminating case**: a pixel at the radial center with a bright region placed asymmetrically
+  above/below center. The ghost sampling (which also uses `toCenter`) is self-consistent because it
+  walks from the pixel toward a fixed UV point (0.5, 0.5) — no epsilon compensation needed there.
 
 ## Symmetric-invisible-but-divergent (3)
 
@@ -115,14 +151,15 @@ self-consistent within the coordinate system, or unused:
 
 SSAO, Pixelate, SMAA, FXAA, Median, Sharpen, Kuwahara, Bokeh DoF, Sketch, Blur (Gaussian),
 Box Blur, Outline. Plus `u_resolution` in `glRenderTextureEffect` (diagnostic comment) and
-`glGodRaysEffect` (dead uniform — the actual defect is the light position, classified above).
+`glGodRaysEffect` (dead uniform — now removed; the actual defect was the light position, classified
+above).
 
 ## Population reconciliation
 
-22 GL effects with `u_resolution` or `texelSize` grep hits. All 22 classified:
-3 confirmed defects (2 fixed here, 1 already correct on the integrated tree) + 6 correctly
-compensated (including the 2 fixed defects) + 3 symmetric-invisible + 12 false positives = 22
-(the 2 fixed defects appear in both the defect list and the compensation table). 0 unexamined.
+24 GL effects examined (22 from `u_resolution`/`texelSize` grep + 2 from epsilon-bias sweep).
+5 confirmed defects (4 fixed here, 1 already correct on the integrated tree) + 8 correctly
+compensated (including the 4 fixed defects) + 3 symmetric-invisible + 12 false positives = 24
+(the 4 fixed defects appear in both the defect list and the compensation table). 0 unexamined.
 
 ## Camera-motion-blur check
 

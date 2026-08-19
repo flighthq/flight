@@ -6,8 +6,7 @@ import { registerGlRenderEffect } from './glRenderEffectRegistry';
 
 // God rays: radial light scattering from a screen-space light position (centerX, centerY). Marches
 // SAMPLES steps along the ray from each fragment toward the light, accumulating color with per-step
-// decay and weight, then scales by exposure. A true single-pass recipe — no depth needed. Reads
-// u_texture0; u_resolution is set so the light direction is computed in a consistent space.
+// decay and weight, then scales by exposure. A true single-pass recipe — no depth needed.
 export function applyGodRaysEffectToGl(
   state: GlRenderState,
   source: Readonly<GlRenderTarget>,
@@ -27,7 +26,6 @@ export function applyGodRaysEffectToGl(
   const samples = Math.max(1, Math.round(effect.samples ?? 64));
   const program = getGlEffectProgram(state, `atmospheric.godRays.${samples}`, buildGodRaysFragment(samples));
   drawGlFullscreenPass(state, program, [source.texture], dest, (gl, p) => {
-    gl.uniform2f(gl.getUniformLocation(p.program, 'u_resolution'), source.width, source.height);
     gl.uniform2f(gl.getUniformLocation(p.program, 'u_lightPosition'), centerX, centerY);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_density'), density);
     gl.uniform1f(gl.getUniformLocation(p.program, 'u_decay'), decay);
@@ -52,7 +50,6 @@ const GOD_RAYS_FRAGMENT_HEAD = `#version 300 es
 precision highp float;
 in vec2 v_texCoord;
 uniform sampler2D u_texture0;
-uniform vec2 u_resolution;
 uniform vec2 u_lightPosition;
 uniform float u_density;
 uniform float u_decay;
