@@ -308,23 +308,30 @@ its gate reported 0.00 green while its own oracle threw on a real defect.
 - `npm run dev:functional` launches the functional test tool in `tools/functional`, a browser dev server that runs each functional test across its renderers (Canvas/DOM/WebGL) for visual and behavioral checks you cannot get from jsdom unit tests. (`dev:examples` and `dev:gallery` are the equivalent live servers for the other tools.)
 - `npm run test:functional` is the headless render gate for those same tests, returning pass/fail. It is an umbrella over three checks, each runnable on its own: `test:functional:smoke` (builds, runs, no error, not blank), `test:functional:parity` (the raster backends agree with each other — consistency), and `test:functional:regression` (each backend matches its committed fingerprint baseline — `:regression:baseline` rewrites them). `test:examples:*` mirrors all of this for examples. The per-check collapse aliases `test:smoke` / `test:parity` / `test:regression` run that one check across both subjects. Smoke and parity are environment-independent (CI gates every PR); regression is coupled to where its baselines were captured.
 
-  **Effect parity has three tiers, chosen before looking at a mismatch.** Use the strictest tier the
-  public effect contract and both backends' available inputs can support; a red comparison cannot be
-  downgraded after the fact merely because a looser tier would pass.
+  **The effect-parity comparison set contains only cells that are supposed to match.** A control cell is
+  outside that set by construction: it is not reviewable parity evidence, is never compared, and does
+  not enter through a skip, tolerance, exception flag, or fourth tier. It may still exercise assertions
+  and fingerprint/regression coverage, but a picture designed to differ would dilute the reviewer's one
+  signal here — an unexpected backend difference — if it appeared beside matching cells.
+
+  In-set effects have three tiers, chosen before looking at a mismatch. Use the strictest tier the public
+  effect contract and both backends' available inputs can support; a red comparison cannot be downgraded
+  after the fact merely because a looser tier would pass.
 
   | Tier | When it applies | What parity requires |
   | --- | --- | --- |
   | Numeric | The contract specifies one pixel transform or discrete mapping and both backends have the same required inputs (for example pointwise colour math, quantisation, or a fixed pixel grid). | Equal decoded values at corresponding interior probes, apart from explicitly named representation rounding. Rasterisation noise at the source silhouette is not permission for the effect math itself to differ. |
   | Effect-family | The contract fixes the visual operation and parameter meanings but deliberately leaves the kernel or sampling algorithm open. | The same visible effect family and measurable scene invariants: direction or centre, threshold response, footprint/scale ordering, monotonic parameter response, and non-trivial strength. Kernel shape and edge rounding may differ; a barely visible effect, ignored parameter, reversed direction, or silent no-op may not. |
-  | Declared approximation | A backend lacks a named input or primitive needed for the faithful operation, but can implement a deliberately narrower substitute. | The missing capability, the lost dimension, and the surrogate behaviour are recorded beside the functional scene before comparison, and that backend's oracle checks the surrogate. This can satisfy the narrowed scene contract, but is not evidence that the full algorithm matches. If no honest surrogate preserves the effect family, the cell is a `functionalBackendSupport = 'control'` fixture instead. |
+  | Declared approximation | A backend lacks a named input or primitive needed for the faithful operation, but can implement a deliberately narrower substitute that is still supposed to satisfy the shared observable invariants. | The missing capability, the lost dimension, and the surrogate behaviour are recorded beside the functional scene before comparison, and that backend's oracle checks the surrogate. This can satisfy the narrowed scene contract, but is not evidence that the full algorithm matches. If no honest surrogate preserves the shared effect family, that backend has no cell in the comparison set; a separate `functionalBackendSupport = 'control'` fixture may exercise the unsupported path outside it. |
 
-  Every realized tier still requires the scene to request the same public effect intent and parameters,
-  to register and execute a real runner, and to show a detectable change from its untreated control.
-  Registration alone proves none of those visual claims. Conversely, an unregistered declared control is
-  excluded from effect-parity claims rather than treated as an identity implementation. The pixel parity
-  gate is the detector, not the adjudication rule: a mismatch remains withheld until it is fixed or the
-  scene supplies the tier-appropriate invariant evidence. An allowed family/approximation difference is
-  not closed by a blanket skip or a widened tolerance that measures nothing.
+  Every in-set tier still requires the scene to request the same public effect intent and parameters, to
+  register and execute a real runner, and to show a detectable change from its untreated reference.
+  Registration alone proves none of those visual claims. `functionalBackendSupport = 'control'` records a
+  non-parity fixture for other gates; the reviewable-cell enumerator must omit it rather than teaching
+  reviewers to overlook an expected difference. The pixel parity gate is the detector, not the
+  adjudication rule: a mismatch remains withheld until it is fixed or the scene supplies the
+  tier-appropriate invariant evidence. An allowed family/approximation difference is not closed by a
+  blanket skip or a widened tolerance that measures nothing.
 - `npm run capture:check` is the visual regression gate: captures every tool, compares each screenshot against its committed baseline, and exits 1 if any has changed. Run after committing baselines. `capture:examples:check` and `capture:functional:check` run each tool independently.
 
 
