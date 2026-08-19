@@ -82,12 +82,12 @@ function addSquare(root: ReturnType<typeof createDisplayObject>, source: HTMLCan
 }
 
 const root = createDisplayObject();
-// ★ THE ADJUSTED SQUARE IS ADDED FIRST, AND THAT IS LOAD-BEARING. A node color adjustment is dropped
-// when its node is not the first one drawn: with the reference added first this scene renders the
-// adjusted square WHITE on both Gl and Wgpu, and moving the same two calls into the other order renders
-// it red. Nothing about the picture depends on the order — the squares are opaque and do not overlap —
-// so a later reader tidying these two lines into left-to-right order would silently turn the fold off
-// and the scene would keep passing its own oracle only because the reference is red either way.
+// ★ THE ADJUSTED SQUARE IS ADDED FIRST, AND THAT IS LOAD-BEARING. Only the FIRST BATCH of a frame has
+// its colour adjustment honoured; a batch after it draws with no fold at all. These two squares carry
+// different textures, so they are two batches, and with the reference added first the adjusted square
+// renders WHITE on both Gl and Wgpu. Nothing about the PICTURE depends on the order — the squares are
+// opaque and do not overlap — so a later reader tidying these two lines into left-to-right order would
+// silently turn the fold off. The assertion below is what catches that; this comment only says why.
 addSquare(root, makeAdjustedCanvas(), ADJUSTED_X);
 addSquare(root, makeReferenceCanvas(), REFERENCE_X);
 
@@ -111,7 +111,10 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     if (Math.abs(channel(adjusted, shift) - channel(reference, shift)) > 8) {
       throw new Error(
         `[color-adjustment] the adjusted square is #${hex(adjusted)} but the reference beside it is ` +
-          `#${hex(reference)} — the color-adjustment fold did not produce the reference colour`,
+          `#${hex(reference)} — the color-adjustment fold did not produce the reference colour. FIRST ` +
+          `CHECK THE ORDER OF THE addSquare CALLS ABOVE: the two squares use different textures and so ` +
+          `land in different batches, and only the FIRST BATCH of a frame has its adjustment honoured, ` +
+          `so the adjusted square must be added before the reference one`,
       );
     }
   }
