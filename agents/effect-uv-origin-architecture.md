@@ -64,7 +64,7 @@ normalizing GL's position UV would vertically flip their sampled image.
 | Halftone | The dot grid rotates absolute pixel coordinates. At the functional angle `0.4`, vertical reflection changes grid orientation/phase. | This is real in addition to the separate GLSL `mod` versus WGSL signed-remainder translation defect. Fixing either one alone leaves a compounded mismatch; re-verify after both are absent. |
 | LensDirt | `dirtAmount(uv, seed)` is another coordinate-seeded procedural field, so the divergence is real. | Manager has already ruled the existing difference in-contract/acceptable. Record it; do not reopen that ruling during this migration without a new decision about which image is canonical. |
 | Convolution | Kernel rows are applied to signed Y offsets without reflecting the matrix. Vertically symmetric kernels hide the issue; the public arbitrary matrix permits asymmetric kernels that expose it. | Verify with a deliberately asymmetric kernel whose top and bottom weights differ. |
-| Kuwahara | Reflection permutes the four sampled quadrants. With a unique minimum-variance quadrant the output is equivariant; exact variance ties can select a different first quadrant with a different mean. | Include a constructed tie case or make tie behavior origin-independent. |
+| Kuwahara | Reflection permutes the four sampled quadrants. With a unique minimum-variance quadrant the output is equivariant; exact variance ties can select a different first quadrant with a different mean. This origin defect is separate from the already-open shared defect where both backends offset the source by `(-r, -r)` and degenerate three quadrants while `computeKuwaharaSectorOffsets` contains unused correct sector math. | Include a constructed tie case or make tie behavior origin-independent. Keep the origin repair and the quadrant repair in separate commits unless evidence proves they share one cause. |
 | Pixelate | Block-centre quantization is reflection-equivariant only when the target height divides into an integral block grid (the current 600/24 scene does). Other supported sizes leave a different remainder at the top versus bottom. | Verify a size that does not divide the target height as well as the existing size 24 case. |
 | RadialBlur | A centred `centerY = 0.5` reflects onto itself, which hides the mismatch in the current functional scene. The public off-centre parameter does not. | Verify with an off-centre Y value such as 0.3. |
 
@@ -147,14 +147,25 @@ This cannot ship as a vertex-only flip or as one more per-effect patch. One atom
 
 1. the documented top-left position-UV contract in both fullscreen substrates;
 2. backend screen-texture sampling helpers for every screen input binding, including depth and velocity;
-3. migration of all 45 paired effects plus `EffectBoxBlur`, `EffectBlitShader`, and shared color/effect
-   passes to the correct screen or data sampler;
+3. migration of all 45 paired effects; the paired shared executable modules `ColorLutPass`,
+   `ColorMatrixPass`, `EffectBlitShader`, `EffectBoxBlur`, `EffectGradientRamp`, and
+   `EffectTintShader`; and GL-only `BokehDepthOfFieldEffect` to the correct screen or data sampler.
+   `ColorLutPass` and `EffectGradientRamp` are the concrete LUT/ramp cases that prove why data samplers
+   cannot inherit the screen-texture flip;
 4. removal/re-expression of all seven current hand compensations;
-5. an explicit compatibility decision for GL `CustomShaderEffect`, whose documented author surface exposes
-   raw `v_texCoord` and `texture`; silently changing that ABI would invert existing custom shaders;
-6. re-verification of every affected pair in the same landing.
+5. a renamed GL `CustomShaderEffect` ABI: changing the meaning of `v_texCoord` silently would leave old
+   custom shaders compiling but vertically inverted, so the top-left position varying must take a new
+   name such as `v_positionUv` and make old shaders fail explicitly until migrated;
+6. re-verification of every affected paired, shared, and GL-only module in the same landing.
 
-The verification set must contain asymmetric probes, not only scenes whose symmetry hides the seam:
+Sequence this migration **after** the WGPU antialiasing work, not concurrently with it. Both are atomic
+changes in the WGPU effect path; overlapping them would make the combined visual diff impossible to
+attribute or review.
+
+The verification set must contain asymmetric probes, not only scenes whose symmetry hides the seam,
+and those probes must land **with** the migration rather than in a follow-up. Twenty of the 45 pairs are
+unobservable under current symmetric inputs, so landing the convention first would give meaningful
+verification to only 25 pairs while calling the migration atomic:
 
 - a 2x2 labelled-corner texture proves direct sampling remains upright while position UV is top-left;
 - off-centre GodRays, TiltShift, and RadialBlur prove public Y parameters;
