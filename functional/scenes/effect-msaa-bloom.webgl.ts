@@ -1,4 +1,4 @@
-import type { GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
+import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
   addNodeChild,
@@ -12,6 +12,7 @@ import {
   createGlRenderEffectPipeline,
   createGlRenderState,
   createShape,
+  getBitmapPixelRgb,
   registerGlBloomEffect,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
@@ -84,3 +85,56 @@ for (let i = 0; i < colors.length; i++) {
 }
 
 render(root);
+
+// ★ READ OFF THE SOURCE: bright rotated tiles on a near-black field with a bloom at threshold 0.6,
+// intensity 1.4, through a pipeline built at sampleCount 4. The check counts the GRADIENT POPULATION —
+// pixels that are neither background nor tile core — because a bloom's whole signature is a wide band
+// of them. Measured here: 20558 on canvas, 23116 on Gl, 22883 on Wgpu against 78-82k lit pixels. The
+// same frame with the bloom's intensity set to 0 collapses to about 1100, the antialiased rim alone.
+//
+// ★ WHAT THIS CELL CANNOT ESTABLISH, stated rather than left implied: the description also makes an
+// ANTIALIASING claim, and this scene cannot separate it. The bloom's own gradient occupies exactly the
+// intermediate-luminance band that a multisample resolve would show up in, so any measurement of one
+// is contaminated by the other. `effect-msaa` tests that claim in isolation — same tiles, no bloom —
+// and does distinguish the backends (258 partial-coverage pixels on Gl against 0 on Wgpu).
+//
+// The hue claim is likewise left to `effect-bloom`: its tiles are rotated less, so a point outside the
+// silhouette still sits in coloured halo, whereas here the tile corners reach that far.
+const MID_BAND_LOW = 15;
+const MID_BAND_HIGH = 120;
+const MIN_GRADIENT_RATIO = 0.1;
+const MAX_FIELD_CENTRE_LUMINANCE = 15;
+
+export function assertRender(frame: Readonly<Bitmap>): void {
+  const luminance = (x: number, y: number): number => {
+    const rgb = getBitmapPixelRgb(frame, x, y);
+    return (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+  };
+
+  let gradient = 0;
+  let lit = 0;
+  for (let y = 0; y < frame.height; y++) {
+    for (let x = 0; x < frame.width; x++) {
+      const value = luminance(x, y);
+      if (value > MID_BAND_LOW && value < MID_BAND_HIGH) gradient++;
+      else if (value >= MID_BAND_HIGH) lit++;
+    }
+  }
+
+  const ratio = gradient / Math.max(1, lit);
+  if (ratio < MIN_GRADIENT_RATIO) {
+    throw new Error(
+      `[effect-msaa-bloom] the gradient population is ${ratio.toFixed(3)} of the lit population ` +
+        `(expected at least ${MIN_GRADIENT_RATIO}) — the tiles have crisp edges with no halo, so the ` +
+        `bloom did not run`,
+    );
+  }
+
+  const centre = luminance(Math.round(frame.width * 0.5), Math.round(frame.height * 0.5));
+  if (centre > MAX_FIELD_CENTRE_LUMINANCE) {
+    throw new Error(
+      `[effect-msaa-bloom] the middle of the field reads ${centre.toFixed(1)} (expected at most ` +
+        `${MAX_FIELD_CENTRE_LUMINANCE}) — the glow is filling the picture instead of staying near the tiles`,
+    );
+  }
+}
