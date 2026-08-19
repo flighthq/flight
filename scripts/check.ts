@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
+import { readdirSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
+import { join } from 'node:path';
 
 import pc from 'picocolors';
 
@@ -148,16 +150,15 @@ if (failed.length > 0) {
 // two cited "check passes" for a change whose only guard was a `scripts/*.test.ts`, and one attributed
 // this command's CPU time to "the test suite it runs". That is a name promising more than it delivers,
 // not three careless readings, so the correction goes where the reader already is: the pass states what
-// it did NOT do. The count is derived from what actually ran rather than written down, so a gate added
-// or scoped away cannot leave this line quietly wrong.
-// It currently prints 28, and an older measurement of 27 is also correct rather than in conflict: there
-// were 27 distinct executing gates (28 textual registrations, `typecheck` appearing twice across the
-// scoped and bare arms), and `data-cast-colour:check` was registered afterwards when its repo-wide scan
-// moved out of the test suite. 27 + 1 = 28. Do not "correct" this back to a remembered count — read it
-// off a run, which is the whole point of deriving it.
+// it did NOT do. Both the gate count and the test command are derived from what actually ran rather than
+// written down, so a gate added or scoped away cannot leave this line quietly wrong.
+const testFileCount = countTestFiles(projects);
+const testCommand = scoped ? `npm run test ${selectors.join(' ')}` : 'npm run test';
 process.stdout.write(`\n${pc.green('✓')} ${pc.bold('all check gates passed')}\n`);
 process.stdout.write(
-  pc.dim(`  ${results.length} gates, 0 tests — \`npm run test\` is the only thing that runs them.\n`),
+  pc.dim(
+    `  ${results.length} gates, 0 tests — run \`${testCommand}\` (${testFileCount} test files) to cover the packages this checked.\n`,
+  ),
 );
 
 async function runGate(gate: Gate): Promise<GateResult> {
@@ -185,4 +186,16 @@ async function runGates(items: readonly Gate[], limit: number): Promise<GateResu
     }),
   );
   return results;
+}
+
+function countTestFiles(dirs: readonly string[]): number {
+  let count = 0;
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) walk(join(dir, entry.name));
+      else if (entry.name.endsWith('.test.ts')) count++;
+    }
+  };
+  for (const dir of dirs.length > 0 ? dirs : ['packages']) walk(dir);
+  return count;
 }
