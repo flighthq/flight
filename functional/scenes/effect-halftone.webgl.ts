@@ -82,17 +82,26 @@ for (let i = 0; i < 18; i++) {
 render(root);
 
 // Halftone replaces flat fills with a dot screen, and a dot screen is high-frequency structure — exactly
-// what the regression fingerprint averages away into the flat tone underneath (this target's whole
-// committed grid scores 1.17 against a uniform frame of its own background, against a gate threshold of
-// 5). Adjacent-pixel energy is the complement of what the fingerprint keeps. Measured with the effect
-// applied vs the same scene with the pipeline bypassed: 7.13 vs 0.66 on webgl, 5.93 with the effect on
-// webgpu. The floor sits between the two arms.
+// what the regression fingerprint averages away into the flat tone underneath. Adjacent-pixel energy
+// proves that the effect exists somewhere, while the darkest spatial tile proves that the grid still
+// covers the whole frame. The second arm catches a signed-remainder regression that left ample healthy
+// texture elsewhere but turned the negative rotated-coordinate region solid black. That regression's
+// minimum tile coverage was 0%; healthy WebGL/WebGPU captures measure 66.73%/66.67%, leaving the 10% floor
+// well clear of representation noise.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const highFrequency = measureHighFrequency(frame);
   if (highFrequency < 3) {
     throw new Error(
       `[effect-halftone] adjacent-pixel energy is ${highFrequency.toFixed(2)} (expected >= 3) — the fills are ` +
         `smooth, so no dot screen was applied`,
+    );
+  }
+
+  const darkestTileCoverage = measureDarkestTileCoverage(frame);
+  if (darkestTileCoverage < 0.1) {
+    throw new Error(
+      `[effect-halftone] darkest spatial tile retains ${(darkestTileCoverage * 100).toFixed(2)}% non-black ` +
+        `pixels (expected >= 10%) — a large black dead zone replaced part of the dot grid`,
     );
   }
 }
@@ -113,4 +122,29 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
     }
   }
   return pairs === 0 ? 0 : deltas / pairs;
+}
+
+function measureDarkestTileCoverage(frame: Readonly<Bitmap>): number {
+  const columns = Math.min(8, frame.width);
+  const rows = Math.min(6, frame.height);
+  if (columns === 0 || rows === 0) return 0;
+
+  let minimumCoverage = 1;
+  for (let row = 0; row < rows; row += 1) {
+    const startY = Math.floor((row * frame.height) / rows);
+    const endY = Math.floor(((row + 1) * frame.height) / rows);
+    for (let column = 0; column < columns; column += 1) {
+      const startX = Math.floor((column * frame.width) / columns);
+      const endX = Math.floor(((column + 1) * frame.width) / columns);
+      let nonBlackPixels = 0;
+      for (let y = startY; y < endY; y += 1) {
+        for (let x = startX; x < endX; x += 1) {
+          if (getBitmapPixelRgb(frame, x, y) !== 0) nonBlackPixels += 1;
+        }
+      }
+      const pixelCount = (endX - startX) * (endY - startY);
+      minimumCoverage = Math.min(minimumCoverage, nonBlackPixels / pixelCount);
+    }
+  }
+  return minimumCoverage;
 }
