@@ -283,6 +283,7 @@ function readFingerprintProvenance(
   const value = column.fingerprintProvenance;
   if (
     !isRecord(value) ||
+    (value.computationId !== null && value.computationId !== undefined && typeof value.computationId !== 'string') ||
     typeof value.frames !== 'number' ||
     (value.sourceHash !== null && typeof value.sourceHash !== 'string') ||
     (value.targetKind !== null && typeof value.targetKind !== 'string') ||

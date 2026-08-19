@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { BITMAP_FINGERPRINT_COMPUTATION_ID } from '@flighthq/bitmap/contract';
 import pc from 'picocolors';
 
 export interface FingerprintBaselineInput {
@@ -21,6 +22,7 @@ export interface FingerprintSourceHashAllowanceResult extends FingerprintSourceH
 
 export interface FingerprintSourceHashReport {
   allowances: FingerprintSourceHashAllowanceResult[];
+  computationMismatches: number;
   fingerprintColumns: number;
   full: number;
   partial: number;
@@ -60,6 +62,7 @@ export function checkFingerprintSourceHashes(
   const states = new Map<string, FingerprintSourceHashAllowanceResult['state']>(
     allowances.map((entry) => [allowanceKey(entry.path, entry.renderer), 'missing']),
   );
+  let computationMismatches = 0;
   let full = 0;
   let fingerprintColumns = 0;
   let partial = 0;
@@ -88,6 +91,18 @@ export function checkFingerprintSourceHashes(
         if (namedAllowance) states.set(key, 'invalid');
         violations.push({ detail: 'fingerprintProvenance is malformed', path: input.path, renderer });
         continue;
+      }
+      if (
+        fingerprintProvenance !== null &&
+        typeof fingerprintProvenance.computationId === 'string' &&
+        fingerprintProvenance.computationId !== BITMAP_FINGERPRINT_COMPUTATION_ID
+      ) {
+        computationMismatches++;
+        violations.push({
+          detail: `fingerprint computationId mismatch: baseline has '${fingerprintProvenance.computationId}', current is '${BITMAP_FINGERPRINT_COMPUTATION_ID}'`,
+          path: input.path,
+          renderer,
+        });
       }
       const fullProvenance = fingerprintProvenance !== null;
       const sourceHashPresent = fullProvenance
@@ -135,7 +150,15 @@ export function checkFingerprintSourceHashes(
     }
   }
 
-  return { allowances: allowanceResults, fingerprintColumns, full, partial, unavailable, violations };
+  return {
+    allowances: allowanceResults,
+    computationMismatches,
+    fingerprintColumns,
+    full,
+    partial,
+    unavailable,
+    violations,
+  };
 }
 
 export function formatFingerprintSourceHashReport(report: Readonly<FingerprintSourceHashReport>): string {
@@ -189,6 +212,7 @@ function readFingerprintProvenance(
   const value = column.fingerprintProvenance;
   if (
     !isRecord(value) ||
+    (value.computationId !== null && value.computationId !== undefined && typeof value.computationId !== 'string') ||
     typeof value.frames !== 'number' ||
     (value.sourceHash !== null && typeof value.sourceHash !== 'string') ||
     (value.targetKind !== null && typeof value.targetKind !== 'string') ||

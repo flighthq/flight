@@ -111,6 +111,59 @@ describe('fingerprint source-hash completeness', () => {
     expect(report.violations[0]?.detail).toMatch(/^invalid JSON:/);
   });
 
+  it('detects a computation ID mismatch as a violation', () => {
+    const report = checkFingerprintSourceHashes(
+      [
+        baseline('functional/baselines/stale-computation.json', 'webgl', {
+          fingerprint: 'coarse',
+          fingerprintProvenance: provenance('scene', 'old-algorithm-v0'),
+        }),
+      ],
+      [],
+    );
+
+    expect(report.computationMismatches).toBe(1);
+    expect(report.violations).toHaveLength(1);
+    expect(report.violations[0]?.detail).toContain('computationId mismatch');
+    expect(report.violations[0]?.detail).toContain('old-algorithm-v0');
+  });
+
+  it('accepts a matching computation ID without violation', () => {
+    const report = checkFingerprintSourceHashes(
+      [
+        baseline('functional/baselines/current.json', 'webgl', {
+          fingerprint: 'coarse',
+          fingerprintProvenance: provenance('scene'),
+        }),
+      ],
+      [],
+    );
+
+    expect(report.computationMismatches).toBe(0);
+    expect(report.violations).toEqual([]);
+  });
+
+  it('tolerates absent computationId on legacy baselines', () => {
+    const report = checkFingerprintSourceHashes(
+      [
+        baseline('functional/baselines/legacy.json', 'webgl', {
+          fingerprint: 'coarse',
+          fingerprintProvenance: {
+            frames: 1,
+            sourceHash: 'scene',
+            targetKind: 'webgl',
+            verifyPublished: true,
+            warmupFrames: 0,
+          },
+        }),
+      ],
+      [],
+    );
+
+    expect(report.computationMismatches).toBe(0);
+    expect(report.violations).toEqual([]);
+  });
+
   it('fails a stale allowance that no longer names a fingerprint column', () => {
     const allowance = FINGERPRINT_SOURCE_HASH_ALLOWANCES[0];
     const report = checkFingerprintSourceHashes(
@@ -131,8 +184,8 @@ function baseline(
   return { path, text: JSON.stringify({ [renderer]: column }) };
 }
 
-function provenance(sourceHash: string) {
-  return { frames: 1, sourceHash, targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 };
+function provenance(sourceHash: string, computationId: string | null = 'grid-average-rgb-v1') {
+  return { computationId, frames: 1, sourceHash, targetKind: 'webgl', verifyPublished: true, warmupFrames: 0 };
 }
 
 function combineAllowances(

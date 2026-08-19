@@ -1,11 +1,19 @@
 import { createBitmap } from './bitmap';
 import {
+  BITMAP_FINGERPRINT_COMPUTATION_ID,
   compareBitmapFingerprints,
   createBitmapFingerprint,
   formatBitmapFingerprint,
   parseBitmapFingerprint,
 } from './bitmapFingerprint';
 import { setBitmapPixel } from './bitmapPixel';
+
+describe('BITMAP_FINGERPRINT_COMPUTATION_ID', () => {
+  it('is a non-empty string identifying the current computation', () => {
+    expect(typeof BITMAP_FINGERPRINT_COMPUTATION_ID).toBe('string');
+    expect(BITMAP_FINGERPRINT_COMPUTATION_ID.length).toBeGreaterThan(0);
+  });
+});
 
 describe('compareBitmapFingerprints', () => {
   it('reports 0 for identical fingerprints', () => {
