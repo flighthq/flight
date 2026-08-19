@@ -89,6 +89,8 @@ Write the check, then **prove it by breaking the scene**. The standard is three 
 
 If all three pass, you have measured that something is on the screen, not that the scene is right. Two real cases: an oracle that summed |neighbour difference| along each row read 0.690 on an unblurred frame and 0.688 on a blurred one against a threshold of 2.5 — total variation is nearly conserved by a blur, so the number could not move. Another scanned the single column at the exact centre of a radial effect — the locus where that effect is weakest — and passed identically on a uniform version, a ten-times-too-strong version, and the picture its description promised.
 
+**Confirm the break actually landed before believing the result.** A control that silently did not apply looks exactly like an oracle that cannot discriminate, and both end in a green run you then misread. Two ways this has happened: a string replacement matched nothing because the formatter had reflowed the call it was targeting across several lines, and a probe scene recovered with `git show <ref>:<path> > f 2>/dev/null || …` ran against an empty file, because the shell created `f` before `git` failed and the fallback then "succeeded". Assert the mutation is present — the changed value, a non-trivial file size — and only then run the capture.
+
 ### Sample where the effect is most diagnostic, not where it is largest
 
 A radial effect is checked at two radii, not at its centre. A vignette is checked on the field, not on the shapes. A directional blur is checked across its axis. A shadow is checked on the side it should fall on — a shadow on the wrong side is still soft, still dark, and passes every "is it blurred" check.
@@ -96,6 +98,10 @@ A radial effect is checked at two radii, not at its centre. A vignette is checke
 ### Parameters: neither neutral nor saturated
 
 A scene parameter must be **off-centre and off-axis**, and **inside the effect's discriminating range**. A neutral value (`centerY: 0.5`, an axis-aligned angle) hides the effect's DIRECTION — `0.5` is its own mirror, so a Y-origin error is invisible. A saturated value hides its MAGNITUDE AND SHAPE — when every pixel is clipped, a correct implementation and a badly wrong one produce the same picture. If a scene must use a neutral value for some other reason, say in a comment what it therefore cannot detect.
+
+### The subject is a parameter too
+
+Ask the same question of what the scene DRAWS, not only of what it passes: does the subject saturate one side of the result? A bevel paints a white highlight and a black shadow, so on a WHITE square the highlight is invisible and the check can only ever see half the effect — mid-grey makes both bands legible. This is the neither-neutral-nor-saturated rule one level further out, and it is easy to miss because the parameters look fine.
 
 ### Assert the gap, so closing it is noticed
 
