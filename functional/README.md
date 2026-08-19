@@ -55,7 +55,7 @@ So a scene with a canvas or dom cell **cannot** be uniformly AA-off, and one wit
 
 A control used to be a **backend** cell that deliberately rendered a feature's _absence_, declared with `export const functionalBackendSupport = 'control'`. That form is retired: it is rules 1 and 4 violated in their purest form, and confirming that nothing happened is not a job a picture does well.
 
-What replaces it has two forms. Reach for whichever the scene can support.
+What replaces it has two forms, and **they do not have the same availability.** The baked-in control needs nothing and is usable today. The `control` cell is a RATIFIED DESIGN THAT DOES NOT EXIST YET — no `<name>.control.ts` target is implemented, in the harness or anywhere else. Nothing below is an in-progress migration, and reading it as one has already caused a builder to pause work that had no conflict. Until it is built, the baked-in form is the only control there is.
 
 ### The baked-in control — always available
 
@@ -63,9 +63,11 @@ Put the reference **inside the picture**: a directly-drawn element beside the tr
 
 This keeps the "did the effect actually run" signal inside one image, where it cannot dilute the cross-backend comparison, and it costs no new machinery.
 
-### The `control` cell — where the expected image is independently derivable
+### The `control` cell — DESIGN ONLY, NOT BUILT
 
-A distinct target, `<name>.control.ts`, that draws what the scene is _defined_ to produce. It is **not a backend** and it never occupies the canvas slot.
+**Nothing in this subsection is implemented.** It is written in the present tense because it records a settled design, not because the mechanism exists. Do not author a `<name>.control.ts`, and do not treat an absent one as a gap. When it is built, this marker comes off in the same commit.
+
+The design: a distinct target, `<name>.control.ts`, that draws what the scene is _defined_ to produce. It is **not a backend** and it never occupies the canvas slot.
 
 - **Visible during review, never reviewed.** It is shown alongside the real cells as context, because seeing the target is helpful. It is not a cell anyone is asked to judge, and navigation does not stop on it. _Displayed_ and _reviewable_ are now two different things.
 - **Never commissioned.** It does not go to `flight-reference-images` and has no reference image — its appearance is specified in source, so there is nothing for a human to approve. Drift is caught by its fingerprint baseline, the same as any cell.
