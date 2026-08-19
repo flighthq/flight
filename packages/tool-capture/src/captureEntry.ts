@@ -471,6 +471,22 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       const verificationTargetKind = waitsForVerification ? await getFunctionalTargetKind(page) : null;
       expectedImageDescription = await getExpectedImageDescription(page);
 
+      // DOM scenes size a container <div> to the scene's requested dimensions rather than painting into
+      // a canvas, and the screenshot captures the full viewport. Match the viewport to the container so
+      // `page.screenshot()` clips to the scene's own surface — the invariant the original comment below
+      // assumed was already true. Canvas/GL/WGPU paths extract from the element directly and are
+      // unaffected by viewport size. Only the 5 scenes requesting less than the default 800x600 see any
+      // change; the rest are already a no-op match.
+      if (rendererBackend(renderer) === 'dom') {
+        const containerSize = await page.evaluate(() => {
+          const div = document.querySelector('body > div');
+          return div ? { width: div.clientWidth, height: div.clientHeight } : null;
+        });
+        if (containerSize !== null) {
+          await page.setViewportSize(containerSize);
+        }
+      }
+
       // Screenshot the render output only — not the full viewport — so all renderers produce the same
       // frame size and the gallery blink comparator has something meaningful to compare.
       //
@@ -526,9 +542,9 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
           .catch(() => page.screenshot());
       } else if (backend === 'dom') {
         // Locator screenshots wait for DOM stability and can consume Playwright's full 30s action
-        // timeout on platform-text pages whose layout observers keep reporting movement. The capture
-        // viewport is the functional surface size, so a direct page screenshot is the same image
-        // without the stability heuristic.
+        // timeout on platform-text pages whose layout observers keep reporting movement. The viewport
+        // was resized to the scene's container dimensions above, so a direct page screenshot clips to
+        // the scene's own surface without the stability heuristic.
         screenshotBuffer = await page.screenshot();
       } else if (backend === 'webgl' && captureFrames > 0) {
         // launchBrowser forces preserveDrawingBuffer in deterministic frame mode, so read the canvas
