@@ -159,6 +159,10 @@
     },
     {
       "packageName": "effects-canvas",
+      "registrar": "registerCanvasLensDistortionEffect"
+    },
+    {
+      "packageName": "effects-canvas",
       "registrar": "registerCanvasOuterGlowEffect"
     },
     {
