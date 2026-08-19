@@ -45,7 +45,9 @@ out vec4 o_color;
 void main() {
   vec2 centered = v_texCoord - 0.5;
   float scale = mix(1.0, length(centered) * 2.0, u_radial);
-  vec2 dir = mix(vec2(1.0, 0.0), normalize(centered + vec2(1e-5)), u_radial);
+  // Negate epsilon Y: GL UV Y-up vs WGPU UV Y-down. The epsilon is a divide-by-zero guard for
+  // normalize(); its Y must match the screen-space convention to avoid a direction flip at center.
+  vec2 dir = mix(vec2(1.0, 0.0), normalize(centered + vec2(1e-5, -1e-5)), u_radial);
   vec2 offset = dir * u_intensity * scale;
   float r = texture(u_texture0, v_texCoord + offset).r;
   float g = texture(u_texture0, v_texCoord).g;
