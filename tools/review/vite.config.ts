@@ -7,7 +7,11 @@ import { defineConfig } from 'vite';
 
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import { workspacePackages } from '../../scripts/workspaces';
-import { sourceContainsExpectedDescription, sourceWithheldExpectedDescription } from './src/sourceExpectedDescription';
+import {
+  sourceContainsExpectedDescription,
+  sourceDeclaresFunctionalBackendControl,
+  sourceWithheldExpectedDescription,
+} from './src/sourceExpectedDescription';
 
 const projectRoot = resolve(__dirname, '../..');
 const artifactsDir = resolve(projectRoot, '.artifacts');
@@ -253,6 +257,20 @@ function sourceHasExpectedDescription(tool: string, name: string, renderers: rea
   return false;
 }
 
+function functionalCellIsControl(tool: string, name: string, renderer: string): boolean {
+  const sceneDir = SCENE_DIRS[tool];
+  if (sceneDir === undefined) return false;
+  const specific = join(sceneDir, `${name}.${renderer}.ts`);
+  const generic = join(sceneDir, `${name}.ts`);
+  const sourcePath = existsSync(specific) ? specific : generic;
+  if (!existsSync(sourcePath)) return false;
+  try {
+    return sourceDeclaresFunctionalBackendControl(readFileSync(sourcePath, 'utf8'));
+  } catch {
+    return false;
+  }
+}
+
 function resolveCommissionState(
   tool: string,
   name: string,
@@ -317,6 +335,10 @@ function discoverReviewTests(): ReviewTest[] {
 
       for (const rendererDir of rendererDirs) {
         const renderer = rendererDir.name;
+        // Unsupported controls still run assertions and produce fingerprints, so their artifacts exist.
+        // They are not review subjects: a deliberately different column would dilute the disagreement
+        // signal this tool asks a reviewer to inspect.
+        if (functionalCellIsControl(tool, name, renderer)) continue;
         const rendererPath = join(testPath, renderer);
         const screenshotPath = join(rendererPath, 'screenshot.png');
         const statusPath = join(rendererPath, 'status.json');

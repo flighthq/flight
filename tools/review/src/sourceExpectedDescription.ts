@@ -1,5 +1,32 @@
 import ts from 'typescript';
 
+/** Whether this exact functional cell declares itself an unsupported control rather than a review subject. */
+export function sourceDeclaresFunctionalBackendControl(source: string): boolean {
+  const sourceFile = ts.createSourceFile('scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let found = false;
+
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (
+      ts.isVariableStatement(node) &&
+      node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) === true &&
+      (node.declarationList.flags & ts.NodeFlags.Const) !== 0
+    ) {
+      found = node.declarationList.declarations.some((declaration) => {
+        if (!ts.isIdentifier(declaration.name) || declaration.name.text !== 'functionalBackendSupport') return false;
+        const initializer =
+          declaration.initializer === undefined ? undefined : unwrapExpression(declaration.initializer);
+        return initializer !== undefined && ts.isStringLiteral(initializer) && initializer.text === 'control';
+      });
+      if (found) return;
+    }
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  return found;
+}
+
 export function sourceContainsExpectedDescription(source: string): boolean {
   const sourceFile = ts.createSourceFile('scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   let found = false;
@@ -70,4 +97,12 @@ function staticStringOf(node: ts.Node): string {
   }
   if (ts.isParenthesizedExpression(node)) return staticStringOf(node.expression);
   return '';
+}
+
+function unwrapExpression(node: ts.Expression): ts.Expression {
+  let expression = node;
+  while (ts.isAsExpression(expression) || ts.isParenthesizedExpression(expression)) {
+    expression = expression.expression;
+  }
+  return expression;
 }
