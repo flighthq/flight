@@ -35,6 +35,8 @@
     "functional/effect-halftone/webgpu": "black triangle overlapping wgpu render",
     "functional/particle-motion-blur/webgl": "blur directions do not agree between webgl and webgpu",
     "functional/particle-motion-blur/webgpu": "blur directions do not agree between webgl and webgpu",
+    "functional/rive-import/dom": "committed DOM baseline captured through the full-viewport screenshot path while the scene requests 800x480, smaller than the hardcoded 800x600 capture viewport; the fingerprint is clean because it is computed from the rendered frame, not the viewport screenshot, so no gate can see the white gap — hold exists to stop a reference image being commissioned from the contaminated screenshot, not to re-baseline the fingerprint",
+    "functional/shape-stroke-ring-fallback/dom": "committed DOM baseline captured through the full-viewport screenshot path while the scene requests 400x260, smaller than the hardcoded 800x600 capture viewport; the fingerprint is clean because it is computed from the rendered frame, not the viewport screenshot, so no gate can see the white gap — hold exists to stop a reference image being commissioned from the contaminated screenshot, not to re-baseline the fingerprint",
     "functional/swf-alpha-transform/dom": "dom has white background and is not centered",
     "functional/swf-mirrored-placement/dom": "dom has white background and is not centered",
     "functional/text-markup-color/dom": "dom has white background and is misaligned"
