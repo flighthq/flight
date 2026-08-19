@@ -7,6 +7,8 @@ import {
   reviewCommissionIneligibilityMessage,
   selectReviewCommissionCells,
 } from './commissionEligibility';
+import { reviewMissingReferenceMessage } from './commissionState';
+import type { ReviewCommissionState as CommissionState } from './commissionState';
 
 interface ReviewCellProvenance {
   hostInstanceId: string | null;
@@ -19,7 +21,6 @@ interface ReviewBuildProvenance {
   dirtyOmitted: number;
 }
 
-type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
 type ParityStatus = 'passed' | 'failed' | 'no-data';
 type AttentionGroup = 'differs' | 'changed' | 'not-commissioned' | 'requested' | 'included';
 
@@ -719,10 +720,6 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
 
   // No reference: show the capture alone, and name WHICH absence it is rather than rendering nothing.
   if (referenceImg === null) {
-    const isCommissioned = cell.commissionState === 'included' || cell.commissionState === 'differs';
-    const msg = isCommissioned
-      ? 'No reference fetched yet — run npm run reference-image:fetch to extract the pack'
-      : 'No reference image — this cell is not commissioned';
     // Two panels, not one: the grid's default three columns left a lone capture at a third width
     // with the explanation stranded below it, so a mode called "side-by-side" did not look like one.
     // The absence belongs in the slot the reference would occupy.
@@ -747,7 +744,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     referenceLabel.textContent = 'Reference';
     const placeholder = document.createElement('div');
     placeholder.className = 'compare-placeholder';
-    placeholder.textContent = msg;
+    placeholder.textContent = reviewMissingReferenceMessage(cell.commissionState);
     referencePanel.appendChild(referenceLabel);
     referencePanel.appendChild(placeholder);
     grid.appendChild(referencePanel);

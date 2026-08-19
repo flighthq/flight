@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import { workspacePackages } from '../../scripts/workspaces';
+import type { ReviewCommissionState as CommissionState } from './src/commissionState';
 import {
   sourceContainsExpectedDescription,
   sourceDeclaresFunctionalBackendControl,
@@ -35,7 +36,6 @@ interface ReviewBuildProvenance {
   dirtyOmitted: number;
 }
 
-type CommissionState = 'included' | 'differs' | 'not-commissioned' | 'requested';
 type ParityStatus = 'passed' | 'failed' | 'no-data';
 
 interface ReviewCell {
