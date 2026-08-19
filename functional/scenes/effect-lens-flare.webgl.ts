@@ -27,7 +27,14 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
-  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 12°/32°/52°/72°. Semi-transparent ghost images mirrored through the frame center and a displaced halo arc from the HDR lens flare (threshold 0.7, 5 ghosts, halo 0.4, rgba16f pipeline). Bright shapes above the threshold seed the flare artifacts. A frame with only the four rectangles and no ghost/halo artifacts between them is a failure.',
+  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 12°/32°/52°/72°. Semi-transparent ghost images mirrored through the frame center and a displaced halo arc from the HDR lens flare (threshold 0.7, 5 ghosts, halo 0.4, rgba16f pipeline). Bright shapes above the threshold seed the flare artifacts. A frame with only the four rectangles and no ghost/halo artifacts between them is a failure. ' +
+    'The four FRAME CORNERS are lit, and that is the ghost chain rather than an artifact: the recipe walks ' +
+    'each ghost along the line from the sampled pixel through the frame centre, so from a corner that line ' +
+    'runs diagonally across the field and through the tiles on it. Measured means are about 192 at the ' +
+    'top-left corner and 140 to 153 at the other three, while the MIDPOINTS of the top and left edges stay at ' +
+    'the near-black background exactly, because no ghost line from there reaches a tile. A picture with dark ' +
+    'corners has lost the ghosts, and a picture with lit edge midpoints is spilling light where the recipe ' +
+    'places none.',
 );
 
 // Lens flare [HDR]: bright shapes above the threshold seed ghosts and a halo mirrored through the
@@ -87,61 +94,76 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// ★ READ OFF THE SOURCE: a lens flare at threshold 0.7 with 5 ghosts and halo 0.4, over four bright
-// tiles. The recipe walks ghost samples along the vector toward the frame centre, so its whole
-// signature is light appearing in the gap BETWEEN the tiles — and the description names that as its own
-// failure: "a frame with only the four rectangles and no ghost/halo artifacts between them".
+// ★ READ OFF THE SOURCE: the recipe walks up to `ghosts` samples along the line from each pixel through
+// the frame centre — `uv + (0.5 - uv) * 2t` for t = i/(ghosts+1) — and adds the bright pass of whatever
+// it finds. So the lit regions are PREDICTABLE from the tile geometry, and the check reads two places
+// the prediction separates: the four corners, whose ghost lines cross the tiles, and the midpoints of
+// the top and left edges, whose lines do not reach one.
 //
-// So the check reads the centre of the frame, which no tile reaches. Measured against a control with
-// the flare's intensity set to 0:
+// Predicted taps per pixel against measured mean luminance, computed from the shader's own arithmetic
+// and compared with the render:
 //
-//     flare running   centre mean 18.13, max 56
-//     flare at 0      centre mean  7.00, max  7    the background, exactly
+//     top-left corner        2.42 taps    191.96
+//     bottom-right corner    2.50 taps    153.40
+//     top-right corner       2.03 taps    147.98
+//     bottom-left corner     2.04 taps    140.36
+//     top edge midpoint      0.00 taps      7.00     the background, exactly
+//     left edge midpoint     0.00 taps      7.00
 //
-// Both a mean and a max, because they fail differently: a uniform lift of the whole field would raise
-// the mean without producing a ghost, and the max is what shows discrete structure.
+// Across the whole frame, restricted to pixels outside every tile: 2662 pixels with a predicted ghost
+// average 124.98, and 3606 without average 9.79. The lit areas ARE the predicted ghosts.
 //
-// ★ ONE OBSERVATION THIS DOES NOT ASSERT, recorded rather than dropped: the far corner of the frame,
-// which no tile and no description clause covers, reads mean 192.7 with the flare on and 7.0 with it
-// off. That is a very strong artifact in a region the description never mentions, and whether it is
-// correct for this recipe is not something the scene's own text settles. Asserting it either way would
-// bless or condemn a picture nobody has ruled on.
-const MIN_CENTRE_MEAN = 12;
-const MIN_CENTRE_MAX = 25;
-const CENTRE_HALF = 60;
+// The corner brightness was investigated as a possible artifact and is not one. It also does not move
+// when the halo's normalization bias is removed — measured byte-identical with and without — so it is
+// the ghost chain, not the halo.
+const MIN_CORNER_MEAN = 60;
+const MAX_EDGE_MIDPOINT_MEAN = 15;
+const PROBE = 60;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
   const luminance = (x: number, y: number): number => {
     const rgb = getBitmapPixelRgb(frame, x, y);
     return (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
   };
+  const meanOf = (x0: number, y0: number, x1: number, y1: number): number => {
+    let sum = 0;
+    let count = 0;
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
+        sum += luminance(x, y);
+        count++;
+      }
+    }
+    return count === 0 ? 0 : sum / count;
+  };
 
-  const midX = Math.round(frame.width / 2);
-  const midY = Math.round(frame.height / 2);
-  let sum = 0;
-  let count = 0;
-  let peak = 0;
-  for (let y = midY - CENTRE_HALF; y < midY + CENTRE_HALF; y++) {
-    for (let x = midX - CENTRE_HALF; x < midX + CENTRE_HALF; x++) {
-      const value = luminance(x, y);
-      sum += value;
-      count++;
-      if (value > peak) peak = value;
+  const corners: Array<[string, number]> = [
+    ['top-left', meanOf(0, 0, PROBE, PROBE)],
+    ['top-right', meanOf(frame.width - PROBE, 0, frame.width, PROBE)],
+    ['bottom-left', meanOf(0, frame.height - PROBE, PROBE, frame.height)],
+    ['bottom-right', meanOf(frame.width - PROBE, frame.height - PROBE, frame.width, frame.height)],
+  ];
+  for (const [name, mean] of corners) {
+    if (mean < MIN_CORNER_MEAN) {
+      throw new Error(
+        `[effect-lens-flare] the ${name} corner reads ${mean.toFixed(2)} (expected at least ` +
+          `${MIN_CORNER_MEAN}) — its ghost line crosses the tiles, so it must carry ghost light`,
+      );
     }
   }
-  const mean = sum / Math.max(1, count);
 
-  if (mean < MIN_CENTRE_MEAN) {
-    throw new Error(
-      `[effect-lens-flare] the centre of the frame reads ${mean.toFixed(2)} (expected at least ` +
-        `${MIN_CENTRE_MEAN}) — no ghost or halo light between the tiles, which is this scene's own ` +
-        `stated failure`,
-    );
-  }
-  if (peak < MIN_CENTRE_MAX) {
-    throw new Error(
-      `[effect-lens-flare] the brightest pixel between the tiles is ${peak.toFixed(0)} (expected at ` +
-        `least ${MIN_CENTRE_MAX}) — the centre is lifted uniformly rather than carrying a ghost`,
-    );
+  // The paired negative: no ghost line from an edge midpoint reaches a tile, so light there is spill
+  // the recipe does not place. Without this, "the corners are bright" passes on a uniformly lit frame.
+  const edges: Array<[string, number]> = [
+    ['top', meanOf(Math.round(frame.width / 2) - 40, 0, Math.round(frame.width / 2) + 40, PROBE)],
+    ['left', meanOf(0, Math.round(frame.height / 2) - 30, PROBE, Math.round(frame.height / 2) + 30)],
+  ];
+  for (const [name, mean] of edges) {
+    if (mean > MAX_EDGE_MIDPOINT_MEAN) {
+      throw new Error(
+        `[effect-lens-flare] the ${name} edge midpoint reads ${mean.toFixed(2)} (expected at most ` +
+          `${MAX_EDGE_MIDPOINT_MEAN}) — no ghost line from there reaches a tile, so this is spill`,
+      );
+    }
   }
 }
