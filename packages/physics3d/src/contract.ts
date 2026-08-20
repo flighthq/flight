@@ -1,3 +1,6 @@
+export * from './contacts';
+export * from './explainPhysics3DJoints';
+export * from './explainPhysics3DStep';
 export * from './integrate';
 export * from './islands';
 export * from './jointCollisionSuppression';
@@ -7,4 +10,6 @@ export * from './joints';
 export * from './massProperties';
 export * from './registerBuiltInPhysics3DJointSolvers';
 export * from './solver';
+export * from './step';
+export * from './stepValidation';
 export * from './world';

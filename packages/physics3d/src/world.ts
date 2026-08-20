@@ -7,7 +7,9 @@ import type {
 } from '@flighthq/types/contract';
 
 import { refreshRigidBody3DWorldInertia } from './integrate';
+import { rebuildPhysics3DJointCollisionSuppressions } from './jointCollisionSuppression';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
+import { physics3DJointOwners } from './ownership';
 
 // World and body lifecycle: allocation, membership, and the mutations that have to run through a
 // function because something derived follows from them.
@@ -230,6 +232,11 @@ export function findPhysics3DBody(world: Readonly<Physics3DWorld>, index: number
 // Constraints go with it because a contact naming a removed body would resolve to null inside a solver
 // loop, and the alternative — a null check per constraint per iteration — pays on every step for a case
 // that only arises at removal.
+//
+// A joint dropped here leaves by the SAME two exits `removePhysics3DJoint` uses: its ownership entry is
+// released, and the suppression index is rebuilt. Splicing it out of the array alone leaves a joint that
+// no world holds but that every world still refuses to accept, and leaves the pair it connected suppressed
+// against a joint that no longer exists — a contact that silently never reports.
 export function removePhysics3DBody(world: Physics3DWorld, body: RigidBody3D): boolean {
   const at = world.bodies.indexOf(body);
   if (at < 0) return false;
@@ -242,10 +249,15 @@ export function removePhysics3DBody(world: Physics3DWorld, body: RigidBody3D): b
     const contact = world.contacts[i];
     if (contact.bodyA === index || contact.bodyB === index) world.contacts.splice(i, 1);
   }
+  let removedJoint = false;
   for (let i = world.joints.length - 1; i >= 0; i--) {
     const joint = world.joints[i];
-    if (joint.bodyA === index || joint.bodyB === index) world.joints.splice(i, 1);
+    if (joint.bodyA !== index && joint.bodyB !== index) continue;
+    world.joints.splice(i, 1);
+    physics3DJointOwners.delete(joint);
+    removedJoint = true;
   }
+  if (removedJoint) rebuildPhysics3DJointCollisionSuppressions(world);
   world.solver.constraintByPair.clear();
   return true;
 }

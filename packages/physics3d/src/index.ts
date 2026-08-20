@@ -4,6 +4,9 @@ export {
   integrateRigidBody3DVelocity,
   refreshRigidBody3DWorldInertia,
 } from './integrate';
+export { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
+export { explainPhysics3DJoints } from './explainPhysics3DJoints';
+export { explainPhysics3DStep } from './explainPhysics3DStep';
 export { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
 export {
   createPhysics3DBallAndSocketJoint,
@@ -43,6 +46,7 @@ export {
   setRigidBody3DMassData,
 } from './massProperties';
 export { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
+export { stepPhysics3D, stepPhysics3DInterval } from './step';
 export {
   addPhysics3DBody,
   applyPhysics3DForce,
