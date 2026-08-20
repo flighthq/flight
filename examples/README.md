@@ -2,12 +2,11 @@
 
 Examples are grouped by implementation and launched by host-oriented runners:
 
-- `packages/` contains TypeScript implementations.
-- `crates/` contains Rust implementations.
-- `runners/web/` loads the TypeScript implementations in a browser.
+- `packages/` contains the TypeScript implementations.
+- `runners/web/` loads them in a browser.
 - `runners/electron/` hosts that same web runner in Electron.
-- `runners/native/` runs Rust implementations through the native winit host.
-- `runners/wasm/` adapts Rust implementations to browser APIs with `wasm-bindgen`; its generated module is loaded by both the web and Electron runners.
+
+The Rust implementations, the winit native runner and the `wasm-bindgen` browser adapter were moved out of this repository in `57722ed4c` and now live in **flight-rs** / **flight-reference**. Nothing here builds or runs them, and the commands that did (`examples:wasm`, `examples:native`, and their `dev:` forms) went with them.
 
 Run the current cells from the repository root. The bare command defaults to the web runner:
 
@@ -15,12 +14,8 @@ Run the current cells from the repository root. The bare command defaults to the
 npm run examples
 npm run examples:web
 npm run examples:electron
-npm run examples:wasm
-npm run examples:native
 ```
 
-The equivalent explicit development commands are `dev:examples`, `dev:examples:web`, `dev:examples:electron`, `dev:examples:wasm`, and `dev:examples:native`.
+The equivalent explicit development commands are `dev:examples`, `dev:examples:web` and `dev:examples:electron`.
 
-There are currently 17 TypeScript examples and 17 Rust examples. Each example is available in TypeScript through the web and Electron runners, and as a host-neutral Rust implementation through Wasm in web/Electron and winit natively. `examples:wasm` opens the Rust/Wasm cell directly.
-
-The current Wasm adapter draws through browser Canvas2D; moving that adapter to Flight's WebGPU renderer requires a Rust browser graphics host and does not change the example crate.
+There are currently 41 TypeScript examples under `packages/`, each available through the web and Electron runners.
