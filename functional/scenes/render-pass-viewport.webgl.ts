@@ -25,7 +25,9 @@ import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import type { Bitmap, GlRenderState, Viewport } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark navy field contains four separated proof areas. At top left, a green 300×220 ' +

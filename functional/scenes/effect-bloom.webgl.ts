@@ -22,10 +22,12 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Bloom: bright shapes on a dark background bleed glow through an HDR (rgba16f) pipeline. Pixels above
 // the bright-pass threshold blur and add back, so the lit shapes gain a soft halo.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
     '72 degrees so none sits square to the edges — a turned square covers more than its side, so they span 166, ' +

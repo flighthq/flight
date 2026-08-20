@@ -22,9 +22,11 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // dither: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background carrying EIGHTEEN small bars of about 56 x 20, each turned by a ' +
     'different angle, in five columns at x = W*(0.12 + 0.18*c) = 96, 240, 384, 528 and 672 across four rows at y ' +
