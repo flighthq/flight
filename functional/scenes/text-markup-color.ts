@@ -38,13 +38,19 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 400;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the two text bands plus a 20 px margin
+// rather than floating them in an 800x400 field that was mostly empty. The empty field is not free:
+// the regression gate scores a change as a MEAN over the whole frame, so padding dilutes every defect
+// by the ratio of the areas — this scene scored 1.49 for a one-cell shift against a tolerance of 5,
+// with 5.71 available over its own ink bounding box. The field width follows WIDTH by construction
+// here, and 400 px still comfortably holds the ~310 px upper line.
+const WIDTH = 440;
+const HEIGHT = 210;
 
 const FONT_SIZE = 44;
-const TEXT_X = 40;
-const MIXED_Y = 60;
-const PLAIN_Y = 220;
+const TEXT_X = 20;
+const MIXED_Y = 20;
+const PLAIN_Y = 120;
 const BAND_HEIGHT = FONT_SIZE + 20;
 
 // Widely separated so an antialiased edge of one can never satisfy the other's test.
@@ -66,8 +72,8 @@ const { render } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x400 opaque black field with two lines of text at about 44 px, both starting at x 40: an upper ' +
-    'line near y 60-124 and a lower one near y 220-284. The upper line is TWO-COLOURED in one continuous ' +
+    'A 440x210 opaque black field with two lines of text at about 44 px, both starting at x 20: an upper ' +
+    'line near y 20-84 and a lower one near y 120-184. The upper line is TWO-COLOURED in one continuous ' +
     'run of letters — its first half, reading PLAIN, is light blue, and its second half, reading TAGGED, ' +
     'is orange, with the colour changing at the boundary between the two words and nowhere else. The ' +
     'lower line, reading UNTAGGED, is entirely light blue with no orange anywhere in it. Both colours ' +

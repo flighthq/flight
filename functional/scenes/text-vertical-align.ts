@@ -17,20 +17,27 @@ import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY, AND ONLY ON THE AXIS THAT IS NOT THE SUBJECT. The box
+// HEIGHT is untouched at 150: the vertical slack a short line is aligned within is exactly what this
+// scene tests, so shrinking it would remove the subject. The box WIDTH plays no part in vertical
+// alignment, and 600 px of it held a ~180 px word, so it comes down to 280 and the frame follows.
+// The empty field is not free: the regression gate scores a change as a MEAN over the whole frame, so
+// padding dilutes every defect by the ratio of the areas — this scene scored 1.56 for a one-cell shift
+// at 800x600 against a tolerance of 5, with 5.02 available over its own ink bounding box.
+const WIDTH = 320;
+const HEIGHT = 550;
 
 const TEXT_COLOR = 0xffcc33ff; // bright amber
 const TEXT = 'FLIGHT'; // short single line — far less than the field height, so slack is visible
 const FONT_SIZE = 44;
 
 // All three fields share x/width/height so their alignment boxes are identical; only verticalAlign differs.
-const FIELD_X = 100;
-const FIELD_W = 600;
+const FIELD_X = 20;
+const FIELD_W = 280;
 const FIELD_H = 150;
-const TOP_FIELD_Y = 30; // verticalAlign='top'
-const MIDDLE_FIELD_Y = 220; // verticalAlign='middle'
-const BOTTOM_FIELD_Y = 410; // verticalAlign='bottom'
+const TOP_FIELD_Y = 20; // verticalAlign='top'
+const MIDDLE_FIELD_Y = 200; // verticalAlign='middle'
+const BOTTOM_FIELD_Y = 380; // verticalAlign='bottom'
 
 declareAntialiasingPolicy('aa');
 
@@ -40,8 +47,8 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with the same short amber word, FLIGHT, at about 44 px, drawn three ' +
-    'times in three 600x150 boxes that all start at x 100: y 30-180, y 220-370 and y 410-560. The word is ' +
+    'A 320x550 opaque black field with the same short amber word, FLIGHT, at about 44 px, drawn three ' +
+    'times in three 280x150 boxes that all start at x 20: y 20-170, y 200-350 and y 380-530. The word is ' +
     'far shorter than each box is tall, so every box has vertical slack, and WHERE THE WORD SITS IN THAT ' +
     'SLACK is the whole picture. In the first box it hugs the top edge; in the second it sits around the ' +
     'vertical middle, with roughly equal empty space above and below; in the third it drops to the bottom ' +

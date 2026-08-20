@@ -11,13 +11,21 @@ import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the text box plus a 20 px margin
+// rather than floating it in an 800x600 field that was mostly empty. The empty field is not free:
+// the regression gate scores a change as a MEAN over the whole frame, so padding dilutes every
+// defect by the ratio of the areas — measured across this family, moving the whole picture one
+// fingerprint cell scored 0.79-1.78 at 800x600 and 4.79-30.10 over the subject's own bounding box.
+// The frame keeps 80 px below the box rather than 20, because this scene's assertion samples an EMPTY
+// BOTTOM STRIP (y HEIGHT-60 to HEIGHT-10) and a tighter frame put that strip inside the text box — the
+// capture caught it as 24 amber pixels where it wanted none. The margin is the oracle's, not decoration.
+const WIDTH = 460;
+const HEIGHT = 220;
 
 // Bright amber text on black. The field box is placed at a known location; the string is short so it fits.
 const TEXT_COLOR = 0xffcc00ff;
-const FIELD_X = 120;
-const FIELD_Y = 180;
+const FIELD_X = 20;
+const FIELD_Y = 20;
 const FIELD_W = 420;
 const FIELD_H = 120;
 const FONT_SIZE = 72;
@@ -30,11 +38,11 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with one short line of bold amber text reading Flight, inside a 420x120 ' +
-    'box whose top-left corner is at x 120, y 180. The glyphs are roughly 72 px tall, sit on a single ' +
+    'A 460x220 opaque black field with one short line of bold amber text reading Flight, inside a 420x120 ' +
+    'box whose top-left corner is at x 20, y 20. The glyphs are roughly 72 px tall, sit on a single ' +
     'line, and do not wrap to a second. Nothing frames them: no filled box behind the text, no border ' +
     'rectangle, no underline or strike line. The bottom of the field is empty — the strip across ' +
-    'y 540-590 carries no amber at all. Exact glyph outlines depend on the installed sans-serif face and ' +
+    'y 160-210 carries no amber at all. Exact glyph outlines depend on the installed sans-serif face and ' +
     'are not part of the claim; the position, the colour and the emptiness elsewhere are.',
 });
 

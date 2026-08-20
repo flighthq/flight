@@ -27,15 +27,22 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the text box plus a 20 px margin
+// rather than floating it in an 800x600 field that was mostly empty. The empty field is not free:
+// the regression gate scores a change as a MEAN over the whole frame, so padding dilutes every
+// defect by the ratio of the areas — measured across this family, moving the whole picture one
+// fingerprint cell scored 0.79-1.78 at 800x600 and 4.79-30.10 over the subject's own bounding box.
+// The BOX WIDTH comes down too, from 640 to 300: the subject is the LEAN of the strokes, and 640 px held
+// a pair of glyph groups about 210 px wide. Nothing this scene tests depends on the extra black.
+const WIDTH = 340;
+const HEIGHT = 180;
 
 const TEXT_COLOR = 0xffffffff; // white — maximize contrast for ink detection
 const FONT_SIZE = 72; // large and tall, so the top↔bottom slant offset is several pixels
 
-const FIELD_X = 80;
-const FIELD_Y = 230;
-const FIELD_W = 640;
+const FIELD_X = 20;
+const FIELD_Y = 20;
+const FIELD_W = 300;
 const FIELD_H = 140;
 
 // Tall vertical glyphs whose strokes run the full glyph height — the shear shows clearly across height.
@@ -54,8 +61,8 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with one line of white text at about 72 px, reading four tall vertical ' +
-    'strokes twice side by side — IIII IIII — inside a 640-wide box at x 80-720, y 230-370. Both groups ' +
+    'A 680x180 opaque black field with one line of white text at about 72 px, reading four tall vertical ' +
+    'strokes twice side by side — IIII IIII — inside a 300-wide box at x 20-320, y 20-160. Both groups ' +
     'are the same colour and size; the ONLY visible difference is lean. The left group SLANTS: the ink at ' +
     'the top of each stroke sits several pixels to the RIGHT of the ink at its bottom. The right group is ' +
     'upright, with top and bottom ink vertically aligned. Both groups upright, or both leaning, is the ' +

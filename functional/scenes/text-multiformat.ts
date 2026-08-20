@@ -20,11 +20,17 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the text box plus a 20 px margin
+// rather than floating it in an 800x600 field that was mostly empty. The empty field is not free:
+// the regression gate scores a change as a MEAN over the whole frame, so padding dilutes every
+// defect by the ratio of the areas — measured across this family, moving the whole picture one
+// fingerprint cell scored 0.79-1.78 at 800x600 and 4.79-30.10 over the subject's own bounding box.
+// Nothing this scene tests depends on the extra black.
+const WIDTH = 680;
+const HEIGHT = 160;
 
-const FIELD_X = 80;
-const FIELD_Y = 220;
+const FIELD_X = 20;
+const FIELD_Y = 20;
 const FIELD_W = 640;
 const FIELD_H = 120;
 const FONT_SIZE = 56;
@@ -40,8 +46,8 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with one line of text at about 56 px inside a 640-wide box at x 80-720, ' +
-    'y 220-340, reading REDSIDE BLUESIDE. It is two-coloured in one continuous line: the left word is ' +
+    'A 680x160 opaque black field with one line of text at about 56 px inside a 640-wide box at x 20-660, ' +
+    'y 20-140, reading REDSIDE BLUESIDE. It is two-coloured in one continuous line: the left word is ' +
     'red and the right word is blue, with the change falling at the space between them. There is no red ' +
     'in the right portion and no blue in the left, and no blended or purple region where they meet — the ' +
     'two runs keep their own colours. Both words sit on the same baseline at the same size, so only ' +

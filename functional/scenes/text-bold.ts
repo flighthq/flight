@@ -23,14 +23,20 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the text box plus a 20 px margin
+// rather than floating it in an 800x600 field that was mostly empty. The empty field is not free:
+// the regression gate scores a change as a MEAN over the whole frame, so padding dilutes every
+// defect by the ratio of the areas — measured across this family, moving the whole picture one
+// fingerprint cell scored 0.79-1.78 at 800x600 and 4.79-30.10 over the subject's own bounding box.
+// Nothing this scene tests depends on the extra black.
+const WIDTH = 680;
+const HEIGHT = 160;
 
 const TEXT_COLOR = 0xffffffff; // white — maximize contrast against the black background for ink counting
 const FONT_SIZE = 56;
 
-const FIELD_X = 80;
-const FIELD_Y = 240;
+const FIELD_X = 20;
+const FIELD_Y = 20;
 const FIELD_W = 640;
 const FIELD_H = 120;
 
@@ -57,8 +63,8 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with one line of white text at about 56 px, reading the same word twice ' +
-    'side by side — WEIGHT WEIGHT — inside a 640-wide box at x 80-720, y 240-360. The two copies are the ' +
+    'A 680x160 opaque black field with one line of white text at about 56 px, reading the same word twice ' +
+    'side by side — WEIGHT WEIGHT — inside a 640-wide box at x 20-660, y 20-140. The two copies are the ' +
     'same colour, the same size and on the same baseline; the ONLY visible difference is stroke ' +
     'thickness. The left copy is noticeably heavier: its strokes are thicker, so it lays down visibly ' +
     'more white than the right copy over an equal area. Two copies of identical weight is the failure. ' +
