@@ -1,6 +1,7 @@
 # Spatial Dimension Seams — two suffixed seams, not one generic index
 
-**Status: PROPOSAL, awaiting ruling. Raised 2026-08-20 in a direction session with the user.**
+**Status: RATIFIED 2026-08-20 by the user.** The ruling is recorded in the
+[spatial charter](packages/spatial/charter.md) Decisions; this note is the reasoning behind it.
 
 Read before adding a 3D broadphase backend, widening `SpatialAabb`, or acting on the 2026-07-15
 unified-2D+3D decision in the [spatial charter](packages/spatial/charter.md). That decision is sound;

@@ -1,6 +1,7 @@
 # Collision Support Registry — replacing the pair matrix with a support-function core
 
-**Status: PROPOSAL, awaiting ruling. Raised 2026-08-20 in a direction session with the user.**
+**Status: RATIFIED 2026-08-20 by the user.** The ruling is recorded in the
+[collision charter](packages/collision/charter.md) Decisions; this note is the reasoning behind it.
 
 Read before adding a collision shape, touching either generic dispatcher, or acting on the
 2026-07-15 unified-2D+3D decision in the [collision charter](packages/collision/charter.md). This

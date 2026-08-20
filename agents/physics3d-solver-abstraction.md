@@ -1,7 +1,7 @@
 # Physics3D Solver Abstraction — sequential impulses without barring XPBD
 
-**Status: PROPOSAL, awaiting ruling. Direction relayed by the user 2026-08-20; this note works out
-what it costs and proposes the charter wording.**
+**Status: RATIFIED 2026-08-20 by the user.** The ruling is recorded in the
+[physics3d charter](packages/physics3d/charter.md) Decisions; this note is the reasoning behind it.
 
 Read before writing any `@flighthq/physics3d` solver code, and before copying `@flighthq/physics2d`'s
 type shapes into 3D. This resolves Open direction 1 in the
