@@ -47,6 +47,7 @@ export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
   { path: 'packages/effects-gl/src/glEffectBoxBlur.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glEffectTintShader.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glGlitchEffect.test.ts', reason: 'mocks-modules' },
+  { path: 'packages/effects-gl/src/glGodRaysEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glInnerGlowEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glInnerShadowEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glLensDirtEffect.test.ts', reason: 'mocks-modules' },
