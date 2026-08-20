@@ -8,9 +8,22 @@ import {
 
 const PREFIX = `
   type Bitmap = { height: number; width: number };
+  declare function getBitmapPixelRgb(frame: Bitmap, x: number, y: number): number;
 `;
 
-describe('assertion sensitivity census', () => {
+describe('assertSensitivityControls', () => {
+  it('fails when a known-answer control changes classification', () => {
+    const path = Object.keys(ASSERTION_SENSITIVITY_CONTROLS)[0]!;
+    const expected = ASSERTION_SENSITIVITY_CONTROLS[path]!;
+    const wrong = expected === 'able' ? 'blind' : 'able';
+
+    expect(() => assertSensitivityControls([{ evidence: 'mutant', line: 1, path, verdict: wrong }])).toThrow(
+      path,
+    );
+  });
+});
+
+describe('classifyAssertionSource', () => {
   it('keeps a whole-frame coverage fraction blind to rearrangement', () => {
     const source = `${PREFIX}
       export function assertRender(frame: Bitmap): void {
@@ -93,25 +106,9 @@ describe('assertion sensitivity census', () => {
 
     expect(classifyAssertionSource('gap.ts', source)).toMatchObject({ verdict: 'gap' });
   });
+});
 
-  it('fails when a known-answer control changes classification', () => {
-    const path = Object.keys(ASSERTION_SENSITIVITY_CONTROLS)[0]!;
-    const expected = ASSERTION_SENSITIVITY_CONTROLS[path]!;
-    const wrong = expected === 'able' ? 'blind' : 'able';
-
-    expect(() => assertSensitivityControls([{ evidence: 'mutant', line: 1, path, verdict: wrong }])).toThrow(
-      path,
-    );
-  });
-
-  it('re-runs every current-tree control and retains every scene identity', () => {
-    const rows = readAssertionSensitivityRows(process.cwd());
-
-    expect(rows.length).toBeGreaterThan(300);
-    expect(new Set(rows.map((row) => row.path)).size).toBe(rows.length);
-    expect(() => assertSensitivityControls(rows)).not.toThrow();
-  });
-
+describe('formatAssertionSensitivityReport', () => {
   it('prints the population and per-case evidence in the committed format', () => {
     const report = formatAssertionSensitivityReport([
       { evidence: 'point at (4, 8)', line: 12, path: 'functional/scenes/example.ts', verdict: 'able' },
@@ -119,5 +116,15 @@ describe('assertion sensitivity census', () => {
 
     expect(report).toContain('| **total** | **1** |');
     expect(report).toContain('`functional/scenes/example.ts` | able | L12: point at (4, 8)');
+  });
+});
+
+describe('readAssertionSensitivityRows', () => {
+  it('re-runs every current-tree control and retains every scene identity', () => {
+    const rows = readAssertionSensitivityRows(process.cwd());
+
+    expect(rows.length).toBeGreaterThan(300);
+    expect(new Set(rows.map((row) => row.path)).size).toBe(rows.length);
+    expect(() => assertSensitivityControls(rows)).not.toThrow();
   });
 });
