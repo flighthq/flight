@@ -506,6 +506,27 @@ body {
   color: #a05050;
 }
 
+.tolerance-btn {
+  padding: 4px 12px;
+  background: rgba(80, 90, 150, 0.2);
+  border: 1px solid rgba(80, 90, 150, 0.4);
+  border-radius: 4px;
+  color: #8794cb;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.tolerance-btn:hover {
+  background: rgba(80, 90, 150, 0.35);
+  color: #aab5e4;
+}
+
+.tolerance-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .renderer-sep {
   width: 1px;
   height: 20px;

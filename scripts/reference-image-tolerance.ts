@@ -3,10 +3,8 @@
 // must not acquire subtly different "convenient" implementations on either side of the review loop.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
-import { createBitmap } from '../packages/bitmap/src/bitmap.js';
-import type { Bitmap } from '../packages/types/src/Bitmap.js';
 import { compareOracleReference } from './reference-image-compare';
-import type { ReferenceImageCellComparison } from './reference-image-compare';
+import type { ReferenceImageBitmap, ReferenceImageCellComparison } from './reference-image-compare';
 import { hashOraclePixelBytes } from './reference-image-png';
 
 export const LEGACY_EXACT_COMPARISON_POLICY_ID = 'pixel-exact-swiftshader-pw-1-61-v1';
@@ -66,6 +64,8 @@ export interface ReferenceImageComparisonResult {
   candidatePixelSha256: string;
   comparison: ReferenceImageCellComparison;
   matches: boolean;
+  /** False only when exact comparison used its hash fast path because blessed pixels were unavailable. */
+  measured: boolean;
 }
 
 export type CompareReferenceImageResult = ReferenceImageComparisonResult | { problem: string };
@@ -80,10 +80,11 @@ export function readReferenceImageToleranceCatalog(
   const manifest = readJson(paths.manifestPath, 'tolerance manifest');
   const identity = readJson(paths.captureIdentityPath, 'capture identity');
   const coverage = readJson(paths.coverageManifestPath, 'coverage manifest');
-  const readProblems = [manifest, identity, coverage].flatMap((result) =>
-    'problem' in result ? [result.problem] : [],
-  );
-  if (readProblems.length > 0) return { problems: readProblems };
+  if ('problem' in manifest || 'problem' in identity || 'problem' in coverage) {
+    return {
+      problems: [manifest, identity, coverage].flatMap((result) => ('problem' in result ? [result.problem] : [])),
+    };
+  }
 
   const comparisonPolicyId = objectString(identity.value, 'comparisonPolicyId');
   if (comparisonPolicyId === null) {
@@ -181,20 +182,38 @@ export function compareReferenceImage(
   policy: Readonly<ResolvedReferenceImageTolerance>,
 ): CompareReferenceImageResult {
   const candidatePixelSha256 = hashOraclePixelBytes(candidate.data);
-  if (!policy.overridden) {
+  if (reference !== null) {
+    const referencePixelSha256 = hashOraclePixelBytes(reference.data);
+    if (referencePixelSha256 !== expectedPixelSha256) {
+      return {
+        problem: `blessed pixels hash ${referencePixelSha256}, but the lock expects ${expectedPixelSha256}`,
+      };
+    }
+  }
+  if (!policy.overridden && reference === null) {
     const same = candidatePixelSha256 === expectedPixelSha256;
     const comparison = {
       dimensionMismatch: false,
       fraction: same ? 0 : 1,
       maxChannelDelta: same ? 0 : 255,
     };
-    return { candidatePixelSha256, comparison, matches: referenceImageComparisonPasses(comparison, policy) };
+    return {
+      candidatePixelSha256,
+      comparison,
+      matches: referenceImageComparisonPasses(comparison, policy),
+      measured: false,
+    };
   }
   if (reference === null) {
     return { problem: `scene ${policy.scene} has a tolerance override but its blessed pixels are unavailable` };
   }
   const comparison = compareOracleReference(asBitmap(reference), asBitmap(candidate), policy.channelTolerance);
-  return { candidatePixelSha256, comparison, matches: referenceImageComparisonPasses(comparison, policy) };
+  return {
+    candidatePixelSha256,
+    comparison,
+    matches: referenceImageComparisonPasses(comparison, policy),
+    measured: true,
+  };
 }
 
 /** The one verdict implementation used by both the join and review-tool commission state. */
@@ -315,10 +334,8 @@ function referenceImageScene(cellIdentity: string): string {
   return cellIdentity.slice(0, rendererSeparator);
 }
 
-function asBitmap(pixels: Readonly<DecodedReferenceImagePixels>): Bitmap {
-  const bitmap = createBitmap(pixels.width, pixels.height);
-  bitmap.data.set(pixels.data);
-  return bitmap;
+function asBitmap(pixels: Readonly<DecodedReferenceImagePixels>): ReferenceImageBitmap {
+  return { data: pixels.data, height: pixels.height, width: pixels.width };
 }
 
 function readJson(path: string, label: string): { value: unknown } | { problem: ReferenceImageToleranceProblem } {

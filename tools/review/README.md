@@ -11,13 +11,13 @@ The sidebar re-sorts immediately when commission state changes. That behavior is
 1. Advance to the next cell automatically upon commission.
 2. Avoid re-sorting immediately by freezing the ordered list for the pass.
 
-## Proposed per-scene reference-image tolerance (design only)
+## Per-scene reference-image tolerance
 
-Status: proposed for manager review. There is no tolerance manifest, reader, setter, or fuzzy review verdict yet.
+Status: implemented with an empty exact-policy manifest. The setter remains disabled until `flight-reference-images` registers the replacement comparison-policy identity; no scene override may be disguised under the current exact identity.
 
 ### Declaration
 
-Add one committed Flight-owned file, `scripts/reference-image-tolerances.json`. An absent scene entry means exact comparison; there is no mutable review-tool default and no tolerance stored in browser state.
+The committed Flight-owned file is `scripts/reference-image-tolerances.json`. An absent scene entry means exact comparison; there is no mutable review-tool default and no tolerance stored in browser state.
 
 ```json
 {
@@ -42,19 +42,19 @@ The value above is deliberately illustrative, not an approved or registered iden
 
 ### One implementation, two consumers
 
-A new shared scripts module owns all of these operations:
+The shared `scripts/reference-image-tolerance.ts` module owns all of these operations:
 
 1. Parse and validate the committed manifest.
 2. Resolve `subject/scene` to an explicit policy, with an exact zero policy for absence.
 3. Compare decoded blessed and candidate bitmaps through `compareOracleReference`.
 4. Apply the resolved `maxFraction` and `maxChannelDelta` gates to the resulting measurement.
 
-The review Vite server and `scripts/reference-image-check.ts` must import those same functions. The browser may render the delta image, but it does not independently decide `included` versus `differs`. For an exact policy the shared implementation may retain decoded-pixel hash equality as a fast path. For any nonzero policy it must decode both images: a hash mismatch is binary and cannot say whether the measured delta is inside the declared policy.
+The review Vite server and `scripts/reference-image-check.ts` import those same functions. The browser renders the delta image, but it does not independently decide `included` versus `differs`. For an exact policy the shared implementation retains decoded-pixel hash equality as a fast path when fetched pixels are unavailable. For any override it decodes both images: a hash mismatch is binary and cannot say whether the measured delta is inside the declared policy.
 
 CI passes the scene policy into `verifyOracleCaptures`, and the review manifest uses the same verdict when it builds each cell's commission state. Tests use one image pair that is hash-different but inside policy and another just outside it, then assert the tool-facing state and CI verdict agree for both. A defeating test gives the tool and CI different policies and must fail the consistency assertion.
 
 ### Setting it in the tool
 
-The review tool exposes **Set scene tolerance** only while showing a measured candidate/reference comparison. It displays the current measurements beside fields pre-populated from the scene's existing declared policy, requires a reason, and writes the scene entry to the committed manifest through a server endpoint. It does not store the value in local storage, auto-commission the image, or infer a permanent threshold from one observation. Removing an override is a reviewed file deletion that returns the scene to exact comparison.
+The review tool enables **Tolerance: exact/custom** only while showing a measured candidate/reference comparison under a registered per-scene policy identity. It displays the current measurements beside fields pre-populated from the scene's existing declared policy, requires a reason, and writes the scene entry to the committed manifest through a server endpoint. It does not store the value in local storage, auto-commission the image, or infer a permanent threshold from one observation. Removing an override is a reviewed file deletion that returns the scene to exact comparison.
 
 This is per-pair pinning in a different guise, not a reversal of the earlier parity-tolerance decision. Parity pinning was withdrawn because the parity distribution had a clean numeric gap at 5, so one corpus-wide threshold was sufficient. Reference-image exact-hash equality has no distribution and no gap: it is a binary same/different result, so text rasterisation needs a separately declared full-resolution policy that both the review tool and CI apply.
