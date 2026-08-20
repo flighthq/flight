@@ -44,7 +44,7 @@ void main() {
   float vars[4];
   for (int q = 0; q < 4; q++) {
     int ox = (q & 1) == 0 ? -r : 0;
-    int oy = (q & 2) == 0 ? -r : 0;
+    int oy = (q & 2) == 0 ? 0 : -r;
     vec3 sum = vec3(0.0);
     vec3 sumSq = vec3(0.0);
     float n = 0.0;
