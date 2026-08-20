@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
@@ -11,6 +12,8 @@ import { workspacePackages } from '../../scripts/workspaces';
 import { isReviewableCell, reviewableCells, reviewCellRole } from './src/cellRole';
 import type { ReviewCellRole } from './src/cellRole';
 import type { ReviewCommissionState as CommissionState } from './src/commissionState';
+import { recordReviewHoldReleases, recordReviewHolds } from './src/holdLedger';
+import type { ReviewHoldLedger } from './src/holdLedger';
 import {
   createReferenceImageRequestTarget,
   resolveReferenceImageCommissionState,
@@ -178,6 +181,27 @@ function readHeldCells(): Map<string, string> {
     // ignore malformed held file
   }
   return held;
+}
+
+function readHoldLedger(): ReviewHoldLedger {
+  if (!existsSync(heldPath)) return { schemaVersion: 2, held: {}, history: [] };
+  const parsed = JSON.parse(readFileSync(heldPath, 'utf8')) as Partial<ReviewHoldLedger>;
+  return { ...parsed, held: parsed.held ?? {} };
+}
+
+function writeHoldLedger(ledger: ReviewHoldLedger): void {
+  writeFileSync(heldPath, JSON.stringify(ledger, null, 2) + '\n');
+}
+
+function reviewActor(): string {
+  try {
+    const name = execFileSync('git', ['config', 'user.name'], { cwd: projectRoot, encoding: 'utf8' }).trim();
+    const email = execFileSync('git', ['config', 'user.email'], { cwd: projectRoot, encoding: 'utf8' }).trim();
+    if (name.length > 0) return email.length > 0 ? `${name} <${email}>` : name;
+  } catch {
+    // Fall through to the local account identity only when this checkout has no Git identity.
+  }
+  return process.env['USER']?.trim() || 'unknown reviewer';
 }
 
 function readRequestedCells(): Set<string> {
@@ -649,7 +673,7 @@ function reviewPlugin(): Plugin[] {
             return;
           }
 
-          if (req.method === 'POST' && urlPath === '/api/hold') {
+          if ((req.method === 'POST' || req.method === 'DELETE') && urlPath === '/api/hold') {
             let body = '';
             req.on('data', (chunk: Buffer) => {
               body += chunk.toString();
@@ -669,7 +693,11 @@ function reviewPlugin(): Plugin[] {
                 }
                 if (!payload.reason || payload.reason.trim().length === 0) {
                   res.statusCode = 400;
-                  res.end(JSON.stringify({ error: 'a hold requires a reason' }));
+                  res.end(
+                    JSON.stringify({
+                      error: req.method === 'DELETE' ? 'a release requires a reason' : 'a hold requires a reason',
+                    }),
+                  );
                   return;
                 }
                 const referenceRenderers = payload.renderers.filter(
@@ -685,27 +713,24 @@ function reviewPlugin(): Plugin[] {
                   return;
                 }
 
-                let heldData: { $comment?: string; schemaVersion?: number; held: Record<string, string> };
-                if (existsSync(heldPath)) {
-                  heldData = JSON.parse(readFileSync(heldPath, 'utf8')) as typeof heldData;
-                } else {
-                  heldData = { schemaVersion: 1, held: {} };
-                }
+                const heldData = readHoldLedger();
+                const requestedKeys = payload.renderers.map(
+                  (renderer) => `${payload.tool}/${payload.entry}/${renderer}`,
+                );
+                const actor = reviewActor();
+                const at = new Date().toISOString();
+                const keys =
+                  req.method === 'DELETE'
+                    ? recordReviewHoldReleases(heldData, requestedKeys, actor, payload.reason, at)
+                    : recordReviewHolds(heldData, requestedKeys, actor, payload.reason, at);
 
-                const keys: string[] = [];
-                for (const renderer of payload.renderers) {
-                  const key = `${payload.tool}/${payload.entry}/${renderer}`;
-                  heldData.held[key] = payload.reason.trim();
-                  keys.push(key);
-                }
-
-                writeFileSync(heldPath, JSON.stringify(heldData, null, 2) + '\n');
+                writeHoldLedger(heldData);
 
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ keys, path: relative(projectRoot, heldPath) }));
-              } catch {
+                res.end(JSON.stringify({ actor, keys, path: relative(projectRoot, heldPath) }));
+              } catch (error) {
                 res.statusCode = 400;
-                res.end(JSON.stringify({ error: 'invalid JSON body' }));
+                res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'invalid JSON body' }));
               }
             });
             return;

@@ -328,8 +328,47 @@ async function holdRenderers(renderers: readonly string[]): Promise<void> {
       showCommissionFeedback(`Error: ${(err as { error: string }).error}`, true);
       return;
     }
-    const result = (await res.json()) as { keys: string[]; path: string };
-    showCommissionFeedback(`Held ${result.keys.length} cell(s) in ${result.path}`, false);
+    const result = (await res.json()) as { actor: string; keys: string[]; path: string };
+    for (const cell of t.cells) {
+      if (result.keys.includes(`${t.tool}/${t.name}/${cell.renderer}`)) cell.holdReason = reason.trim();
+    }
+    showCommissionFeedback(`Held ${result.keys.length} cell(s) as ${result.actor} in ${result.path}`, false);
+    showCurrent();
+  } catch (e) {
+    showCommissionFeedback(`Network error: ${e}`, true);
+  }
+}
+
+async function releaseHeldRenderers(renderers: readonly string[]): Promise<void> {
+  const t = currentTest();
+  if (!t || renderers.length === 0) return;
+
+  promptOpen = true;
+  const reason = prompt('Release reason (mandatory — explain why the hold no longer applies):');
+  promptOpen = false;
+  if (!reason || reason.trim().length === 0) return;
+
+  try {
+    const res = await fetch('/api/hold', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tool: t.tool,
+        entry: t.name,
+        renderers,
+        reason: reason.trim(),
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      showCommissionFeedback(`Error: ${(err as { error: string }).error}`, true);
+      return;
+    }
+    const result = (await res.json()) as { actor: string; keys: string[]; path: string };
+    for (const cell of t.cells) {
+      if (result.keys.includes(`${t.tool}/${t.name}/${cell.renderer}`)) cell.holdReason = null;
+    }
+    showCommissionFeedback(`Released ${result.keys.length} hold(s) as ${result.actor} in ${result.path}`, false);
     showCurrent();
   } catch (e) {
     showCommissionFeedback(`Network error: ${e}`, true);
@@ -583,10 +622,11 @@ function buildRendererBar(): void {
   const holdBtn = document.createElement('button');
   holdBtn.className = 'hold-btn';
   if (anyHeld) {
-    holdBtn.textContent = 'Held';
-    holdBtn.title = 'One or more cells are held — see the status overlay for the reason';
-    holdBtn.disabled = true;
+    const heldRenderers = reviewable.filter((cell) => cell.holdReason !== null).map((cell) => cell.renderer);
+    holdBtn.textContent = heldRenderers.length === 1 ? 'Release hold' : `Release ${heldRenderers.length} holds`;
+    holdBtn.title = 'Release the held cell(s) after recording who released them and why';
     holdBtn.setAttribute('data-held', 'true');
+    holdBtn.addEventListener('click', () => void releaseHeldRenderers(heldRenderers));
   } else {
     holdBtn.textContent = 'Hold';
     holdBtn.title = 'Hold this render — marks all cells as not ready for commissioning (requires a reason)';
