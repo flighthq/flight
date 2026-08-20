@@ -220,7 +220,7 @@ export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBod
 
 // Looks a body up by its persistent index, or null when no body in this world carries it. The
 // expected-failure sentinel: a caller holding an index across a removal gets null, not a throw.
-export function findPhysics3DBody(world: Physics3DWorld, index: number): RigidBody3D | null {
+export function findPhysics3DBody(world: Readonly<Physics3DWorld>, index: number): RigidBody3D | null {
   return world.bodyByIndex.get(index) ?? null;
 }
 
