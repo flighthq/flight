@@ -16,7 +16,7 @@ import { findPhysics3DBody, wakePhysics3DBody } from './world';
 // obligation: each impulse lands on the velocities the previous one left, and an ordering that varied with
 // construction history would make the result vary with it. Contacts get their order from the broadphase pair
 // sort; joints have no broadphase, so it is enforced here, at the one place a joint enters a world.
-export function addPhysics3DJoint(world: Physics3DWorld, joint: Physics3DJoint): Physics3DJoint {
+export function addPhysics3DJoint<T extends Physics3DJoint>(world: Physics3DWorld, joint: T): T {
   assertPhysics3DWorldNotStepping(world);
   if (physics3DJointOwners.has(joint) || world.joints.includes(joint)) {
     throw new Error('Cannot add a physics joint that already belongs to a physics world');
