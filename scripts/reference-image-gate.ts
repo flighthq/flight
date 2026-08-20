@@ -19,6 +19,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveGateExitStatus } from './reference-image-gate-exit';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 
@@ -40,24 +42,54 @@ function run(cmd: string, label: string): void {
 // wonder whether the run finished, and the answer is that it did.
 function runFinal(cmd: string, label: string): never {
   console.log(`\n── ${label} ──`);
+  let checkStatus = 0;
   try {
     execSync(cmd, { cwd: repoRoot, stdio: 'inherit' });
   } catch (error) {
-    const status =
-      typeof (error as { status?: unknown }).status === 'number' ? (error as { status: number }).status : 1;
-    console.error(`\n${label} reported failures — see the list above. Exiting ${status}.`);
-    process.exit(status);
+    checkStatus = readExitStatus(error);
+    console.error(`\n${label} reported failures — see the list above.`);
   }
-  process.exit(0);
+
+  // Reported separately from the comparison, and never summed into it: a capture that failed and a
+  // reference image that disagrees are different findings with different remedies, and a single number
+  // covering both would send the reader to the wrong one.
+  if (captureFailures.length > 0) {
+    console.error(`\n${captureFailures.length} capture target(s) failed before the comparison:`);
+    for (const failure of captureFailures) console.error(`  exit ${failure.status}  ${failure.target}`);
+    console.error('  Their cells are recorded as errored; the comparison above still ran on everything else.');
+  }
+
+  process.exit(resolveGateExitStatus(checkStatus, captureFailures.length));
 }
+
+// ★ THE SAME RULE AS `runFinal`, AND THIS IS WHERE IT WAS MISSING. `execFileSync` throws on a non-zero
+// exit, so ONE scene failing its own render assertion aborted the whole gate with a Node stack trace:
+// every remaining capture target went unrun and the comparison never happened at all. The reader is then
+// told nothing about the other 200 cells, and what they see last is a crash rather than a finding — the
+// worst of both, since the failure it was reporting was real and specific.
+//
+// A failed capture target is data, not a reason to stop. Its cells are recorded as errored in their own
+// status.json, and the comparison step already has verdicts for a cell it cannot compare, so the run that
+// continues is strictly more informative than the run that aborts.
+const captureFailures: { target: string; status: number }[] = [];
 
 function runCapture(captureArgs: string): void {
   const argv = captureArgs.split(/\s+/).filter(Boolean);
   if (devMode) argv.push('--dev');
-  execFileSync('npx', ['tsx', './packages/tool-capture/src/bin.ts', 'capture', ...argv], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-  });
+  try {
+    execFileSync('npx', ['tsx', './packages/tool-capture/src/bin.ts', 'capture', ...argv], {
+      cwd: repoRoot,
+      stdio: 'inherit',
+    });
+  } catch (error) {
+    const status = readExitStatus(error);
+    captureFailures.push({ target: captureArgs, status });
+    console.error(`  ✗ capture target failed (exit ${status}) — continuing: ${captureArgs}`);
+  }
+}
+
+function readExitStatus(error: unknown): number {
+  return typeof (error as { status?: unknown }).status === 'number' ? (error as { status: number }).status : 1;
 }
 
 // 0. Environment identity and disclosure
