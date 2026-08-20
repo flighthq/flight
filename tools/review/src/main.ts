@@ -17,6 +17,7 @@ import {
 } from './commissionEligibility';
 import { reviewMissingReferenceMessage } from './commissionState';
 import type { ReviewCommissionState as CommissionState } from './commissionState';
+import { createReviewCommissionPayloadCell } from './referenceImageCommission';
 
 interface ReviewCellProvenance {
   hostInstanceId: string | null;
@@ -39,6 +40,7 @@ interface ReviewCell {
   error: string | null;
   changed: boolean | null;
   hash: string | null;
+  referencePixelSha256: string | null;
   provenance: ReviewCellProvenance | null;
   build: ReviewBuildProvenance | null;
   commissionState: CommissionState | null;
@@ -354,13 +356,7 @@ async function commissionCurrentTest(): Promise<void> {
     return;
   }
 
-  const cells = selectedCells.map((c) => ({
-    build: c.build,
-    renderer: c.renderer,
-    pixelSha256: c.hash,
-    hostInstanceId: c.provenance?.hostInstanceId ?? null,
-    environmentId: c.provenance?.environmentId ?? null,
-  }));
+  const cells = selectedCells.map(createReviewCommissionPayloadCell);
 
   const totalCells = reviewable.length;
   try {

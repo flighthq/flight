@@ -2,7 +2,7 @@ import type { ReviewCellRole } from './cellRole';
 
 export interface ReviewCommissionCandidate {
   role: ReviewCellRole;
-  hash: string | null;
+  referencePixelSha256: string | null;
   provenance: { hostInstanceId: string | null } | null;
   build: { commit: string | null } | null;
 }
@@ -15,7 +15,7 @@ export type ReviewCommissionIneligibility =
 
 export function reviewCommissionIneligibility(cell: ReviewCommissionCandidate): ReviewCommissionIneligibility | null {
   if (cell.role === 'reference') return 'reference-cell';
-  if (cell.hash === null) return 'missing-capture';
+  if (cell.referencePixelSha256 === null) return 'missing-capture';
   if (cell.build === null || cell.build.commit === null) return 'missing-build-stamp';
   if (cell.provenance === null || cell.provenance.hostInstanceId === null) return 'missing-host-identity';
   return null;
