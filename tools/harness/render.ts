@@ -18,6 +18,7 @@ type BackendWindow = typeof window & {
   __ftAntialiasingPolicy?: 'aa' | 'no-aa';
   __ftBackend?: string;
   __ftExpectedImageDescription?: string;
+  __ftExpectedImageDescriptionUnavailable?: string;
   __ftExpectedImageDescriptionWithheld?: string;
 };
 
@@ -41,6 +42,10 @@ export function declareExpectedImageDescription(description: string): void {
 // shader means replacing this call with a real description and the counts move on their own, with nothing
 // to remember. The reason is required for the same reason the description is — a withheld cell with no
 // reason is indistinguishable from a forgotten one six weeks later.
+export function declareExpectedImageDescriptionUnavailable(reason: string): void {
+  (window as BackendWindow).__ftExpectedImageDescriptionUnavailable = reason;
+}
+
 export function declareExpectedImageDescriptionWithheld(reason: string): void {
   (window as BackendWindow).__ftExpectedImageDescriptionWithheld = reason;
 }
