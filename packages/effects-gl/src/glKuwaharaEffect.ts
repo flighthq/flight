@@ -65,11 +65,17 @@ void main() {
   }
   float minVar = vars[0];
   vec3 result = means[0];
+  float tiedCount = 1.0;
   for (int q = 1; q < 4; q++) {
     if (vars[q] < minVar) {
       minVar = vars[q];
       result = means[q];
+      tiedCount = 1.0;
+    } else if (vars[q] == minVar) {
+      result += means[q];
+      tiedCount += 1.0;
     }
   }
+  result /= tiedCount;
   o_color = vec4(result, texture(u_texture0, v_texCoord).a);
 }`;
