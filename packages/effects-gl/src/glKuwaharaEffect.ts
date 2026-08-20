@@ -42,16 +42,16 @@ void main() {
   int r = int(min(float(R), u_radius));
   vec3 means[4];
   float vars[4];
-  ivec2 lo[4] = ivec2[4](ivec2(-1, -1), ivec2(0, -1), ivec2(-1, 0), ivec2(0, 0));
   for (int q = 0; q < 4; q++) {
+    int ox = (q & 1) == 0 ? -r : 0;
+    int oy = (q & 2) == 0 ? -r : 0;
     vec3 sum = vec3(0.0);
     vec3 sumSq = vec3(0.0);
     float n = 0.0;
     for (int y = 0; y <= R; y++) {
       for (int x = 0; x <= R; x++) {
         if (x > r || y > r) continue;
-        ivec2 d = ivec2(x, y) * sign(lo[q] + ivec2(1)) + lo[q] * r;
-        vec2 off = vec2(float(d.x), float(d.y)) * texel;
+        vec2 off = vec2(float(ox + x), float(oy + y)) * texel;
         vec3 col = texture(u_texture0, v_texCoord + off).rgb;
         sum += col;
         sumSq += col * col;
