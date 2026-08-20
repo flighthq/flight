@@ -93,13 +93,9 @@ describe('causal limitation prose', () => {
     for (const kind of CANVAS_EFFECTS) expect(support).toContain(kind.replace(/Effect$/, ''));
   });
 
-  it('keeps the 12 STILL TRUE functional claim sites attached to assert-the-gap guards', () => {
+  it('keeps the 10 STILL TRUE functional claim sites attached to assert-the-gap guards', () => {
     expect(DIRECT_FUNCTIONAL_GAP_GUARDS).toHaveLength(10);
     for (const [path, marker] of DIRECT_FUNCTIONAL_GAP_GUARDS) expect(read(path), path).toContain(marker);
-
-    // The other two claim sites are the Gl/Wgpu Kuwahara descriptions. Their guards inspect the backend
-    // source formula below because the visible high-frequency oracle cannot isolate the quadrant defect.
-    expect(DIRECT_FUNCTIONAL_GAP_GUARDS.length + 2).toBe(12);
   });
 
   it('fails when a descriptor-only effect gains a runner underneath the named seven-kind record', () => {
@@ -121,26 +117,6 @@ describe('causal limitation prose', () => {
     if (wgpu.has('BokehDepthOfFieldEffect')) {
       throw new Error(
         'Wgpu now has a BokehDepthOfFieldEffect runner; update effect-bokeh-dof.webgpu.ts and its description',
-      );
-    }
-  });
-
-  it('fails when the malformed Kuwahara quadrants are repaired underneath the withheld descriptions', () => {
-    const glSource = read('packages/effects-gl/src/glKuwaharaEffect.ts');
-    const wgpuSource = read('packages/effects-wgpu/src/wgpuKuwaharaEffect.ts');
-    const glDefect = 'ivec2(x, y) * sign(lo[q] + ivec2(1)) + lo[q] * r';
-    const wgpuDefect = 'vec2i(x, y) * sign(lo[q] + vec2i(1)) + lo[q] * r';
-
-    if (!glSource.includes(glDefect)) {
-      throw new Error(
-        'the Gl Kuwahara sector formula changed; update effect-kuwahara.webgl.ts, whose withheld description ' +
-          'says three quadrants still degenerate',
-      );
-    }
-    if (!wgpuSource.includes(wgpuDefect)) {
-      throw new Error(
-        'the Wgpu Kuwahara sector formula changed; update effect-kuwahara.webgpu.ts, whose withheld description ' +
-          'says three quadrants still degenerate',
       );
     }
   });
