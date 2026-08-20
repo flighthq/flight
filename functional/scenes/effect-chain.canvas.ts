@@ -34,19 +34,18 @@ declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four tiles 140 px on a side, turned 12, 32, 52 and 72 ' +
     'degrees so they span 166, 193, 197 and 176 px corner to corner (side*(cos a + sin a)) — white near ' +
     '(224,180), warm yellow near (576,180), cyan near (224,420), pink near (576,420) — carrying THREE stacked ' +
-    'treatments at once, and all three must be visible together. Each tile glows softly outward past its edges ' +
-    'into the dark background. THE GLOW IS FAINT ON THIS BACKEND, and how faint is derivable: the canvas bright ' +
-    'pass scales every surviving pixel to 1 - threshold = 0.4 of its value (CSS applies brightness after the ' +
-    'contrast stretch), and the composite sets globalAlpha to the intensity, which Canvas 2D cannot take above 1, ' +
-    'so the requested 1.2 becomes 1.0. The canvas halo therefore carries 0.4/1.2 = 0.33 of the energy the GL and ' +
-    'WGPU siblings put into it. Expect a glow that reads clearly in a luminance profile and is easy to miss by ' +
-    'eye against the near-black field. This ratio is derived from the two scaling terms, not measured on this ' +
-    'cell — the sibling scene effect-bloom/canvas is the one where it was measured, at 0.29 for its intensity of ' +
-    '1.4.  The colours are more saturated and higher in contrast than their raw fills. And the field is DARKENED ' +
-    'TOWARD ITS CORNERS: the four corners are noticeably darker than the centre. Any one of the three missing is ' +
-    'a failure — crisp tile edges, colour no more saturated than the raw fills, or uniform brightness ' +
-    'corner-to-centre each mean one stage of the chain did not run. The tiles keep their positions and their hues ' +
-    'throughout.',
+    'treatments at once, and all three must be visible together. Each tile glows softly outward past its ' +
+    'edges into the dark background. The colours come out LESS saturated than their raw fills, not more: ' +
+    'bloom runs FIRST and adds light into each bright core, which pulls every channel toward white, and the ' +
+    'grade that follows amplifies what is left rather than recovering what the addition removed. Measured on ' +
+    'the warm yellow tile, whose blue channel has the most room to be lifted, the core reads about ' +
+    '(181,181,134) for a saturation of 0.26 against a raw fill of 0.64. The pink tile, whose channels sit ' +
+    'further apart, still comes out above its fill at 0.73. And the field is DARKENED TOWARD ITS CORNERS: the ' +
+    'four corners are noticeably darker than the centre. Any one of the three missing is a failure — crisp ' +
+    'tile edges, a yellow core still at its raw saturation, or uniform brightness corner-to-centre each mean ' +
+    'one stage of the chain did not run. A yellow core MORE saturated than its fill would mean the passes ran ' +
+    'in the other order, grade before bloom, which measures 0.84 and is a different pipeline from the one ' +
+    'this scene demonstrates. The tiles keep their positions and their hues throughout.',
 );
 // Canvas parity column for the same three-scene2d chain as render.webgl.ts: bloom, then color grade,
 // then vignette. The Canvas pipeline composites each registered runner in order over the scene, the
@@ -117,23 +116,29 @@ render(root);
 // 2. VIGNETTE — the field must darken toward its corners. Measured: corner luminance 0.33 against 0.67
 //    in the middle of the field, on all three backends. A missing vignette leaves the two equal.
 //
-// ★ 3. THE SATURATION CLAIM IS DELIBERATELY NOT ASSERTED, because the picture does not satisfy it and
-// that is a finding rather than something to encode leniently. The description says the colours come
-// out "more saturated and higher in contrast than their raw fills". The pink tile does: 0.729 against a
-// raw 0.639. The YELLOW tile does not, on Gl and Wgpu: its core reads [182,182,135], a saturation of
-// 0.258 against the same raw 0.639 — LESS saturated, not more. Canvas keeps it at 0.912.
+// 3. SATURATION — the yellow tile's core must come out LESS saturated than its raw fill. Bloom runs
+//    first and adds light into the core, which pulls the channels toward white; the grade that follows
+//    amplifies what is left rather than recovering it. Measured 0.26 against a raw 0.64, on all three
+//    backends since the canvas bloom was rebuilt.
 //
-// The cause is upstream of the colour grade: in the bloom-only scene the same tile's core is #ffff5c on
-// canvas and #ffffdd on Gl, so the Gl bloom is feeding white light back into bright cores and washing
-// them out before the grade ever runs. Asserting the description's claim here would make this cell red
-// for a defect that belongs to bloom; asserting a weakened version would bless the wash-out. So it
-// waits on a ruling, and this comment is where the measurement lives until then.
+//    ★ THIS CLAIM WAS LEFT UNASSERTED UNTIL IT WAS MEASURED BOTH WAYS. The description used to say the
+//    colours came out MORE saturated, and canvas appeared to satisfy that at 0.91 while Gl read 0.26 —
+//    but only because the old canvas bright pass dropped the blue channel entirely. With that fixed the
+//    three backends agree and the old sentence is simply false. The ordering was then probed too:
+//    grade-then-bloom reads 0.84, above the fill, so the claim was achievable by a DIFFERENT pipeline.
+//    Bloom-then-grade is the canonical order, so the recipe stayed and the prose changed.
+//
+//    The upper bound is what makes this positional rather than a restatement: a picture that came out
+//    more saturated than its fill would be the other pass order, which is a different pipeline from the
+//    one this scene demonstrates.
 const MID_BAND_LOW = 15;
 const MID_BAND_HIGH = 120;
 const MIN_GRADIENT_RATIO = 0.1;
 const MIN_VIGNETTE_RATIO = 1.5;
+const MAX_YELLOW_SATURATION = 0.45;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
+  const at = (x: number, y: number): number => getBitmapPixelRgb(frame, x, y);
   const luminance = (x: number, y: number): number => {
     const rgb = getBitmapPixelRgb(frame, x, y);
     return (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
@@ -165,6 +170,19 @@ export function assertRender(frame: Readonly<Bitmap>): void {
       `[effect-chain] the corners read ${corner.toFixed(2)} and the middle of the field ` +
         `${middle.toFixed(2)} — the field is not darkening toward its corners, so the vignette stage ` +
         `did not run`,
+    );
+  }
+
+  // 3. the grade cannot recover what the bloom added — see the note above for why this is an upper bound
+  const yellow = at(Math.round(frame.width * 0.72), Math.round(frame.height * 0.3));
+  const channels = [(yellow >> 16) & 255, (yellow >> 8) & 255, yellow & 255];
+  const peak = Math.max(...channels);
+  const saturation = peak === 0 ? 0 : (peak - Math.min(...channels)) / peak;
+  if (saturation > MAX_YELLOW_SATURATION) {
+    throw new Error(
+      `[effect-chain] the yellow tile core is ${saturation.toFixed(3)} saturated (expected at most ` +
+        `${MAX_YELLOW_SATURATION}, against a raw fill of 0.64) — bloom runs before the grade here, so a ` +
+        `MORE saturated core means the passes ran grade-first, a different pipeline from this one`,
     );
   }
 }
