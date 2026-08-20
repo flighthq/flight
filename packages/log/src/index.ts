@@ -3,6 +3,7 @@ export {
   beginLogGroup,
   clearLogChannelLevels,
   clearLogGroups,
+  clearLogOnceKeys,
   clearLogRedactionPaths,
   clearLogSerializers,
   clearLogSinks,

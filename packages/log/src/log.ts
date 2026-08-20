@@ -56,6 +56,12 @@ export function clearLogGroups(): void {
   _groupDepth = 0;
 }
 
+// Clears the set of keys that logOnce has already emitted, so subsequent calls with those keys will
+// fire again. Test-only: production code relies on once-per-process semantics.
+export function clearLogOnceKeys(): void {
+  _onceKeys.clear();
+}
+
 // Clears all field redaction paths set by setLogRedactionPaths.
 export function clearLogRedactionPaths(): void {
   _redactionPaths.length = 0;

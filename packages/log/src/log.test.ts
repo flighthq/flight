@@ -7,6 +7,7 @@ import {
   beginLogGroup,
   clearLogChannelLevels,
   clearLogGroups,
+  clearLogOnceKeys,
   clearLogRedactionPaths,
   clearLogSerializers,
   clearLogSinks,
@@ -78,6 +79,7 @@ function recordingSink(): { entries: LogEntry[]; sink: (entry: LogEntry) => void
 
 beforeEach(() => {
   clearLogGroups();
+  clearLogOnceKeys();
   clearLogRedactionPaths();
   clearLogSerializers();
   clearLogSinks();
@@ -157,6 +159,18 @@ describe('clearLogGroups', () => {
     // After clearLogGroups, endLogGroup should be a no-op (depth is 0)
     endLogGroup();
     expect(entries).toHaveLength(0);
+  });
+});
+
+describe('clearLogOnceKeys', () => {
+  it('allows a previously consumed key to fire again', () => {
+    const { entries } = recordingSink();
+    logOnce('once-clear-test', LogLevel.Warn, 'first');
+    expect(entries).toHaveLength(1);
+    clearLogOnceKeys();
+    logOnce('once-clear-test', LogLevel.Warn, 'second');
+    expect(entries).toHaveLength(2);
+    expect(entries[1].data).toBe('second');
   });
 });
 
@@ -1058,11 +1072,6 @@ describe('logInfoWith', () => {
 });
 
 describe('logOnce', () => {
-  afterEach(() => {
-    // Reset module-level once-key set by clearing the internal state via a fresh import.
-    // Since we can't easily reset the module state, we test idempotency within a single test.
-  });
-
   it('emits only the first time for a given key', () => {
     const { entries } = recordingSink();
     logOnce('key1', LogLevel.Warn, 'first');
