@@ -17,9 +17,12 @@ import {
   createShape,
   getBitmapPixelRgb,
   invalidateNodeAppearance,
+  registerDefaultShapeBoundsCommands,
   ShapeKind,
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
+
+registerDefaultShapeBoundsCommands();
 
 const WIDTH = 800;
 const HEIGHT = 600;
