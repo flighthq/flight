@@ -1,15 +1,56 @@
 {
   "$comment": "Cells that must NOT be commissioned, with who holds each and why. A hold is checked before any local evidence is read, so a cell that looks perfect in today's capture still stays held — the holder knows something a capture run cannot see. This file exists because the alternative is a hold that lives only in one agent's session: it is lost on a reset, and the cell is then commissioned by whoever looks next and finds nothing wrong with it. The review tool removes a released entry from held and appends an attributed hold/release record to history; history begins with schema version 2.",
   "schemaVersion": 2,
-  "history": [],
+  "history": [
+    {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-20T16:30:24.364Z",
+      "keys": ["functional/particle-motion-blur/webgl", "functional/particle-motion-blur/webgpu"],
+      "priorReasons": {
+        "functional/particle-motion-blur/webgl": "blur directions do not agree between webgl and webgpu",
+        "functional/particle-motion-blur/webgpu": "blur directions do not agree between webgl and webgpu"
+      },
+      "reason": "improved"
+    },
+    {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-20T16:30:36.481Z",
+      "keys": ["functional/rive-import/dom"],
+      "priorReasons": {
+        "functional/rive-import/dom": "committed DOM baseline captured through the full-viewport screenshot path while the scene requests 800x480, smaller than the hardcoded 800x600 capture viewport; the fingerprint is clean because it is computed from the rendered frame, not the viewport screenshot, so no gate can see the white gap — hold exists to stop a reference image being commissioned from the contaminated screenshot, not to re-baseline the fingerprint"
+      },
+      "reason": "looks better"
+    },
+    {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-20T16:31:18.718Z",
+      "keys": ["functional/swf-mirrored-placement/dom"],
+      "priorReasons": {
+        "functional/swf-mirrored-placement/dom": "dom has white background and is not centered"
+      },
+      "reason": "looks better"
+    },
+    {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-20T16:55:04.442Z",
+      "keys": ["functional/effect-invert/canvas", "functional/effect-invert/webgl", "functional/effect-invert/webgpu"],
+      "priorReasons": {
+        "functional/effect-invert/canvas": "the WebGPU effect target is single-sampled while WebGL renders at sampleCount 4 and Canvas antialiases; release after WebGPU can honor sampleCount 4, the WebGPU scene requests it, and current parity passes",
+        "functional/effect-invert/webgl": "the WebGPU effect target is single-sampled while WebGL renders at sampleCount 4 and Canvas antialiases; release after WebGPU can honor sampleCount 4, the WebGPU scene requests it, and current parity passes",
+        "functional/effect-invert/webgpu": "the WebGPU effect target is single-sampled while WebGL renders at sampleCount 4 and Canvas antialiases; release after WebGPU can honor sampleCount 4, the WebGPU scene requests it, and current parity passes"
+      },
+      "reason": "looks same"
+    }
+  ],
   "held": {
     "functional/color-adjustment/canvas": "canvas does not implement the colour-adjustment fold, so this cell shows a different picture from its siblings; parity absorbs it at 9.07/15. Release by implementing the fold in scene2d-canvas (with the user) or by removing the cell.",
-    "functional/effect-bokeh-dof/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all \u2014 its live request target was withdrawn at the same time",
+    "functional/effect-bokeh-dof/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
     "functional/effect-god-rays/webgl": "the UV-origin repair is parity-green, but the repaired pixels have agreed only in same-host repeats; release after two post-fix captures with distinct hostInstanceId values and one environmentId agree",
     "functional/effect-god-rays/webgpu": "the UV-origin repair is parity-green, but the repaired pixels have agreed only in same-host repeats; release after two post-fix captures with distinct hostInstanceId values and one environmentId agree",
-    "functional/effect-invert/canvas": "the WebGPU effect target is single-sampled while WebGL renders at sampleCount 4 and Canvas antialiases; release after WebGPU can honor sampleCount 4, the WebGPU scene requests it, and current parity passes",
-    "functional/effect-invert/webgl": "the WebGPU effect target is single-sampled while WebGL renders at sampleCount 4 and Canvas antialiases; release after WebGPU can honor sampleCount 4, the WebGPU scene requests it, and current parity passes",
-    "functional/effect-invert/webgpu": "the WebGPU effect target is single-sampled while WebGL renders at sampleCount 4 and Canvas antialiases; release after WebGPU can honor sampleCount 4, the WebGPU scene requests it, and current parity passes",
     "functional/effect-lens-distortion/webgl": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
     "functional/effect-lens-distortion/webgpu": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
     "functional/effect-lens-flare/webgl": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
@@ -21,19 +62,15 @@
     "functional/effect-msaa/webgpu": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes",
     "functional/effect-posterize/webgl": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes",
     "functional/effect-posterize/webgpu": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes",
-    "functional/effect-ssr/webgl": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all \u2014 its live request target was withdrawn at the same time",
-    "functional/effect-ssr/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all \u2014 its live request target was withdrawn at the same time",
-    "functional/effect-taa/webgl": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all \u2014 its live request target was withdrawn at the same time",
-    "functional/effect-taa/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all \u2014 its live request target was withdrawn at the same time",
-    "functional/effect-tilt-shift/canvas": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all \u2014 its live request target was withdrawn at the same time",
+    "functional/effect-ssr/webgl": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
+    "functional/effect-ssr/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
+    "functional/effect-taa/webgl": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
+    "functional/effect-taa/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
+    "functional/effect-tilt-shift/canvas": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
     "functional/effect-halftone/webgl": "the signed-remainder black dead zone is fixed, but the angled effect still rotates absolute pixel coordinates in the backends' opposite native Y origins, changing the dot-grid orientation or phase while the per-backend assertions check only dot energy and dead-zone coverage; release after the effect uses a shared position-UV convention or equivalent backend compensation and a current cross-backend parity capture verifies matching dot placement",
     "functional/effect-halftone/webgpu": "the signed-remainder black dead zone is fixed, but the angled effect still rotates absolute pixel coordinates in the backends' opposite native Y origins, changing the dot-grid orientation or phase while the per-backend assertions check only dot energy and dead-zone coverage; release after the effect uses a shared position-UV convention or equivalent backend compensation and a current cross-backend parity capture verifies matching dot placement",
-    "functional/particle-motion-blur/webgl": "blur directions do not agree between webgl and webgpu",
-    "functional/particle-motion-blur/webgpu": "blur directions do not agree between webgl and webgpu",
-    "functional/rive-import/dom": "committed DOM baseline captured through the full-viewport screenshot path while the scene requests 800x480, smaller than the hardcoded 800x600 capture viewport; the fingerprint is clean because it is computed from the rendered frame, not the viewport screenshot, so no gate can see the white gap — hold exists to stop a reference image being commissioned from the contaminated screenshot, not to re-baseline the fingerprint",
     "functional/shape-stroke-ring-fallback/dom": "committed DOM baseline captured through the full-viewport screenshot path while the scene requests 400x260, smaller than the hardcoded 800x600 capture viewport; the fingerprint is clean because it is computed from the rendered frame, not the viewport screenshot, so no gate can see the white gap — hold exists to stop a reference image being commissioned from the contaminated screenshot, not to re-baseline the fingerprint",
     "functional/swf-alpha-transform/dom": "dom has white background and is not centered",
-    "functional/swf-mirrored-placement/dom": "dom has white background and is not centered",
     "functional/text-markup-color/dom": "dom has white background and is misaligned"
   }
 }
