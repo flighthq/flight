@@ -77,7 +77,7 @@ close the gap by inventing a detector; if such an entry is wrong, only a reader 
 
 Mocking remains the right tool for genuine **interaction** assertions — which collaborator a dispatch routed to, and with what arguments — where there is no pure kernel to extract. When you do, put the file in the isolated tier and use a top-level `vi.mock`, per the tier rule above.
 
-**`logOnce` keys are process-scoped, not test-scoped.** A `@flighthq/log`-based guard that warns once per reason suppresses that key for the rest of the process once it has fired — a second test asserting the same key's message will pass or fail purely on file/test order, not on its own behavior. Assert a given `logOnce` key's message in exactly one test: the one that first trips it. Hit twice already (a snapshot guard, then a glyph-atlas guard) — expect it again as more `enable*Guards` modules land.
+**`logOnce` keys are process-scoped, not test-scoped.** A `@flighthq/log`-based guard that warns once per reason suppresses that key for the rest of the process once it has fired. Two mechanisms handle isolation: **within a file**, call `clearLogOnceKeys()` in `beforeEach` so each test starts with a fresh key set and no ordering dependency; **across files** in the same Vitest worker, register the file in `registryIsolatedTests.ts` with reason `process-global-registry` so it runs in its own worker. Both are required — `clearLogOnceKeys` cannot help when a different file in the same worker has already consumed the key.
 
 ## Out-parameter testing
 
@@ -146,13 +146,13 @@ invisible on a green run, and one of them — a fixture built from the same unde
 invisible under mutation too. Each is named by its opening sentence; refer to them by name, never by
 position, since an inserted shape silently rewrites what "the last one" means.
 
-**A once-per-process observation is single-use — order the assertions inside ONE test.** `logOnce`
-suppresses a key for the lifetime of the process, not the test. So the *second* test to touch a key
-observes nothing regardless of what the code does: a "warns about X" test consumes the key, and a
-separate "stays silent when X does not apply" test then passes even if the guard has stopped checking
-anything at all. It is not enough to avoid duplicating the key across tests — assert both directions in
-a single test, **silence first, while the key is still unconsumed**, then the warning. Anything that
-reports once per process (deprecation notices, warmup warnings) has the same property.
+**A once-per-process observation is single-use — reset the key set between tests.** `logOnce`
+suppresses a key for the lifetime of the process, not the test. Call `clearLogOnceKeys()` in
+`beforeEach` so each test starts fresh, then assert fire and silence independently — no ordering
+dependency, no need to pack both directions into a single test. Files that assert `logOnce` output must
+also be registered in `registryIsolatedTests.ts` (reason `process-global-registry`) so cross-file
+isolation holds. Anything that reports once per process (deprecation notices, warmup warnings) has the
+same property.
 
 **Verifying a guard's logic — or a policy default's condition — is not verifying that anything calls
 it.** A guard installed through a seam, and a policy default like `isVerifiedCaptureTool(subject)`, have
