@@ -3,7 +3,9 @@ import type { CrtEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/c
 
 // The shader is a module-private string, so it is read back from the argument the effect hands the
 // program cache — the exact text that would be compiled — rather than exported for the test's benefit.
-const programMock = vi.hoisted(() => ({ getGlEffectProgram: vi.fn(() => ({ program: {} })) }));
+const programMock = vi.hoisted(() => ({
+  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
+}));
 
 vi.mock('./glEffectProgramCache', () => programMock);
 
