@@ -21,7 +21,14 @@
 // chooses it is part of the work, not a default anyone can inherit by accident.
 import { getBitmapMismatch } from '../packages/bitmap/src/bitmapCompare.js';
 import type { Bitmap } from '../packages/types/src/Bitmap.js';
-import type { ReferenceImageCellComparison } from './reference-image-state';
+
+export interface ReferenceImageCellComparison {
+  /** From getBitmapMismatch. Do NOT inherit the fingerprint-space tolerances (§2). */
+  fraction: number;
+  maxChannelDelta: number;
+  /** True when the two images differed in size; `fraction` and `maxChannelDelta` are then meaningless. */
+  dimensionMismatch: boolean;
+}
 
 /**
  * Compares a candidate render against its blessed reference, returning a verdict-shaped result even when

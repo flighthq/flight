@@ -1,0 +1,6 @@
+{
+  "$comment": "Per-scene reference-image comparison policy. A scene absent from this map is pixel exact. The policy identity is owned by flight-reference-images; scene overrides must not be added until that repository registers a per-scene policy identity and this copied value is updated to match.",
+  "schemaVersion": 1,
+  "comparisonPolicyId": "pixel-exact-swiftshader-pw-1-61-v1",
+  "scenes": {}
+}

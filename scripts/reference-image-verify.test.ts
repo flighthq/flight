@@ -4,34 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
-import {
-  comparePixels,
-  readPackManifest,
-  verifyOracleCaptures,
-  verifyOracleLockImages,
-} from './reference-image-verify';
+import type { ReferenceImageToleranceCatalog } from './reference-image-tolerance';
+import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './reference-image-verify';
 
 // ★ EACH CASE ASSERTS A DIFFERENT CAUSE PRODUCES A DIFFERENT NAME. The whole value of this layer is that
 // a corrupt pack, an absent capture, an undecodable file and a genuine render change do not collapse into
 // one verdict — a collapsed verdict sends the reader to the wrong repository.
-
-describe('comparePixels', () => {
-  it('reports no difference when the decoded hash matches', () => {
-    const pixels = new Uint8Array([1, 2, 3, 255]);
-
-    expect(comparePixels(pixels, sha(pixels))).toEqual({ dimensionMismatch: false, fraction: 0, maxChannelDelta: 0 });
-  });
-
-  // ★ 1 AND 255 ARE SENTINELS, NOT MEASUREMENTS. Under an exact policy the only answerable question is
-  // same-or-different; a plausible-looking 0.03 would read as "how different" and be a fabrication.
-  it('saturates rather than inventing a magnitude it cannot measure', () => {
-    expect(comparePixels(new Uint8Array([1, 2, 3, 255]), 'a'.repeat(64))).toEqual({
-      dimensionMismatch: false,
-      fraction: 1,
-      maxChannelDelta: 255,
-    });
-  });
-});
 
 describe('readPackManifest', () => {
   it('returns the images a well-formed manifest lists', () => {
@@ -78,12 +56,22 @@ describe('verifyOracleCaptures', () => {
   it('compares a fresh capture that matches the blessed reference', () => {
     const pixels = new Uint8Array([10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255]);
     const { packRoot, artifactsRoot, images } = fixture(pixels, pixels);
-    const result = verifyOracleCaptures(packRoot, images, artifactsRoot);
+    const result = verifyOracleCaptures(packRoot, images, artifactsRoot, exactCatalog());
 
     expect(result.problems).toEqual([]);
     expect(result.cells).toEqual([
       {
         comparison: { dimensionMismatch: false, fraction: 0, maxChannelDelta: 0 },
+        comparisonPolicy: {
+          channelTolerance: 0,
+          comparisonPolicyId: 'test-policy',
+          gateOnMaxChannelDelta: true,
+          maxChannelDelta: 0,
+          maxFraction: 0,
+          overridden: false,
+          reason: null,
+          scene: 'functional/shape-fill-solid',
+        },
         identity: 'functional/shape-fill-solid/webgl',
         pinned: true,
         required: true,
@@ -95,11 +83,24 @@ describe('verifyOracleCaptures', () => {
     const blessed = new Uint8Array([10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255]);
     const drifted = new Uint8Array([11, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255]);
     const { packRoot, artifactsRoot, images } = fixture(blessed, drifted);
-    const result = verifyOracleCaptures(packRoot, images, artifactsRoot);
+    const result = verifyOracleCaptures(packRoot, images, artifactsRoot, exactCatalog());
 
     // A render change is a legitimate answer from a sound pipeline: nothing is wrong with the machinery.
     expect(result.problems).toEqual([]);
     expect(result.cells[0]?.comparison?.fraction).toBe(1);
+  });
+
+  it('decodes both images and measures a hash-different capture under a scene override', () => {
+    const blessed = new Uint8Array([10, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255]);
+    const drifted = new Uint8Array([13, 20, 30, 255, 40, 50, 60, 255, 70, 80, 90, 255, 100, 110, 120, 255]);
+    const { packRoot, artifactsRoot, images } = fixture(blessed, drifted);
+    const result = verifyOracleCaptures(packRoot, images, artifactsRoot, fuzzyCatalog());
+
+    expect(result.problems).toEqual([]);
+    expect(result.cells[0]).toMatchObject({
+      comparison: { dimensionMismatch: false, fraction: 0.25, maxChannelDelta: 3 },
+      comparisonPolicy: { channelTolerance: 2, maxFraction: 0.25, overridden: true },
+    });
   });
 
   // ★ THE CENTRAL FIRING TEST. Corrupt pack bytes must never reach a pixel comparison. If they did, the
@@ -108,7 +109,7 @@ describe('verifyOracleCaptures', () => {
     const pixels = new Uint8Array(16);
     const { packRoot, artifactsRoot, images } = fixture(pixels, pixels);
     const tampered = images.map((i) => ({ ...i, artifactSha256: 'a'.repeat(64) }));
-    const result = verifyOracleCaptures(packRoot, tampered, artifactsRoot);
+    const result = verifyOracleCaptures(packRoot, tampered, artifactsRoot, exactCatalog());
 
     expect(result.problems.map((p) => p.kind)).toEqual(['pack-image-corrupt']);
     expect(result.cells[0]).toMatchObject({ comparison: null, pinned: false });
@@ -118,7 +119,7 @@ describe('verifyOracleCaptures', () => {
     const pixels = new Uint8Array(16);
     const { packRoot, artifactsRoot, images } = fixture(pixels, pixels);
     const absent = [{ ...images[0]!, path: 'images/functional/absent/webgl.png' }];
-    const result = verifyOracleCaptures(packRoot, absent, artifactsRoot);
+    const result = verifyOracleCaptures(packRoot, absent, artifactsRoot, exactCatalog());
 
     expect(result.problems.map((p) => p.kind)).toEqual(['pack-image-missing']);
     expect(result.cells[0]).toMatchObject({ comparison: null, pinned: false, required: true });
@@ -129,7 +130,12 @@ describe('verifyOracleCaptures', () => {
   it('names a missing fresh capture without claiming the reference is absent', () => {
     const pixels = new Uint8Array(16);
     const { packRoot, images } = fixture(pixels, pixels);
-    const result = verifyOracleCaptures(packRoot, images, mkdtempSync(join(tmpdir(), 'reference-image-empty-')));
+    const result = verifyOracleCaptures(
+      packRoot,
+      images,
+      mkdtempSync(join(tmpdir(), 'reference-image-empty-')),
+      exactCatalog(),
+    );
 
     expect(result.problems.map((p) => p.kind)).toEqual(['capture-missing']);
     expect(result.cells[0]).toMatchObject({ comparison: null, pinned: true, required: true });
@@ -139,7 +145,7 @@ describe('verifyOracleCaptures', () => {
     const pixels = new Uint8Array(16);
     const { packRoot, artifactsRoot, images } = fixture(pixels, pixels);
     writeFileSync(join(artifactsRoot, 'functional/shape-fill-solid/webgl/screenshot.png'), Buffer.alloc(64));
-    const result = verifyOracleCaptures(packRoot, images, artifactsRoot);
+    const result = verifyOracleCaptures(packRoot, images, artifactsRoot, exactCatalog());
 
     expect(result.problems.map((p) => p.kind)).toEqual(['capture-undecodable']);
     expect(result.problems[0]?.detail).toContain('not-a-png');
@@ -150,7 +156,12 @@ describe('verifyOracleCaptures', () => {
   it('reports a dimension change as an incomparable cell and keeps going', () => {
     const blessed = new Uint8Array(16);
     const { packRoot, artifactsRoot, images } = fixture(blessed, blessed);
-    const result = verifyOracleCaptures(packRoot, [{ ...images[0]!, height: 4, width: 4 }], artifactsRoot);
+    const result = verifyOracleCaptures(
+      packRoot,
+      [{ ...images[0]!, height: 4, width: 4 }],
+      artifactsRoot,
+      exactCatalog(),
+    );
 
     expect(result.problems.map((p) => p.kind)).toEqual(['dimensions']);
     expect(result.cells[0]?.comparison?.dimensionMismatch).toBe(true);
@@ -216,6 +227,26 @@ function image() {
     path: 'images/functional/shape-fill-solid/webgl.png',
     pixelSha256: 'b'.repeat(64),
     width: 800,
+  };
+}
+
+function exactCatalog(): ReferenceImageToleranceCatalog {
+  return { comparisonPolicyId: 'test-policy', scenes: {}, schemaVersion: 1 };
+}
+
+function fuzzyCatalog(): ReferenceImageToleranceCatalog {
+  return {
+    comparisonPolicyId: 'test-policy',
+    schemaVersion: 1,
+    scenes: {
+      'functional/shape-fill-solid': {
+        channelTolerance: 2,
+        gateOnMaxChannelDelta: true,
+        maxChannelDelta: 4,
+        maxFraction: 0.25,
+        reason: 'test',
+      },
+    },
   };
 }
 
