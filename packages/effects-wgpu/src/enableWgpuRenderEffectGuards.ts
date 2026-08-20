@@ -48,7 +48,7 @@ function warnWgpuRenderEffectPipelineSampleCount(
     LogLevel.Warn,
     {
       appliedSampleCount,
-      message: `createWgpuRenderEffectPipeline: sampleCount ${requestedSampleCount} requested, but WGPU effect targets currently support only ${appliedSampleCount} — continuing with sampleCount ${appliedSampleCount}; multisampling was NOT applied`,
+      message: `createWgpuRenderEffectPipeline: sampleCount ${requestedSampleCount} requested, but WGPU effect targets support 1 or 4 — continuing with sampleCount ${appliedSampleCount}`,
       requestedSampleCount,
     },
     'effects-wgpu',

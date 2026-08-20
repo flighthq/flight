@@ -30,6 +30,22 @@ describe('acquireWgpuRenderTarget', () => {
     expect(hdr.format).toBe('rgba16float');
   });
 
+  it('realizes and pools a four-sample request at twice the extent in each axis', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pool = createWgpuRenderTargetPool();
+    const supersampled = acquireWgpuRenderTarget(state, pool, { width: 64, height: 48, sampleCount: 4 });
+    expect(supersampled.width).toBe(128);
+    expect(supersampled.height).toBe(96);
+    expect(supersampled.sampleCount).toBe(4);
+
+    releaseWgpuRenderTarget(pool, supersampled);
+    const singleSampled = acquireWgpuRenderTarget(state, pool, { width: 128, height: 96 });
+    expect(singleSampled).not.toBe(supersampled);
+
+    const reused = acquireWgpuRenderTarget(state, pool, { width: 64, height: 48, sampleCount: 4 });
+    expect(reused).toBe(supersampled);
+  });
+
   it('re-stamps the logical color space when reusing storage', async () => {
     const state = await createWgpuRenderStateForTest();
     const pool = createWgpuRenderTargetPool();

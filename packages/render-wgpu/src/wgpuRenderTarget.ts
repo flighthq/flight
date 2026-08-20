@@ -104,10 +104,17 @@ export function createWgpuRenderTarget(
   height: number,
   format: GPUTextureFormat = state.format,
   colorSpace: RenderTargetColorSpace = 'srgb',
+  sampleCount = 1,
 ): WgpuRenderTarget {
   const device = state.device;
-  const w = Math.max(1, Math.ceil(width));
-  const h = Math.max(1, Math.ceil(height));
+  const resolved = resolveWgpuRenderTargetExtent(width, height, sampleCount);
+  const { height: h, sampleCount: samples, width: w } = resolved;
+  const maxDimension = device.limits.maxTextureDimension2D;
+  if (w > maxDimension || h > maxDimension) {
+    throw new Error(
+      `Wgpu render target sampleCount ${samples} requires a ${w}x${h} texture, exceeding maxTextureDimension2D ${maxDimension}.`,
+    );
+  }
 
   const texture = device.createTexture({
     size: [w, h, 1],
@@ -132,6 +139,7 @@ export function createWgpuRenderTarget(
     depthStencilTexture,
     depthStencilView,
     format,
+    sampleCount: samples,
     clearColors: [],
     clearDepth: 1,
     width: w,
@@ -244,15 +252,23 @@ export function resizeWgpuRenderTarget(
   target: WgpuRenderTarget,
   width: number,
   height: number,
+  sampleCount = target.sampleCount,
 ): void {
   const device = state.device;
   const format = target.format;
-  const w = Math.max(1, Math.ceil(width));
-  const h = Math.max(1, Math.ceil(height));
-  if (w === target.width && h === target.height) return;
+  const resolved = resolveWgpuRenderTargetExtent(width, height, sampleCount);
+  const { height: h, sampleCount: samples, width: w } = resolved;
+  const maxDimension = device.limits.maxTextureDimension2D;
+  if (w > maxDimension || h > maxDimension) {
+    throw new Error(
+      `Wgpu render target sampleCount ${samples} requires a ${w}x${h} texture, exceeding maxTextureDimension2D ${maxDimension}.`,
+    );
+  }
+  if (w === target.width && h === target.height && samples === target.sampleCount) return;
 
   target.width = w;
   target.height = h;
+  target.sampleCount = samples;
 
   target.texture.destroy();
   target.depthStencilTexture.destroy();
@@ -296,6 +312,20 @@ function resolveWgpuClearColor(target: Readonly<WgpuRenderTarget>): GPUColor {
     g: target.colorSpace === 'linear' ? srgbChannelToLinear(g) : g,
     b: target.colorSpace === 'linear' ? srgbChannelToLinear(b) : b,
     a: (packed & 0xff) / 255,
+  };
+}
+
+function resolveWgpuRenderTargetExtent(
+  width: number,
+  height: number,
+  sampleCount: number,
+): { height: number; sampleCount: number; width: number } {
+  const samples = sampleCount > 1 ? 4 : 1;
+  const scale = samples === 4 ? 2 : 1;
+  return {
+    height: Math.max(1, Math.ceil(height)) * scale,
+    sampleCount: samples,
+    width: Math.max(1, Math.ceil(width)) * scale,
   };
 }
 

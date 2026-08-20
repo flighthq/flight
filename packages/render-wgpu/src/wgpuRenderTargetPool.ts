@@ -11,9 +11,6 @@ import { createWgpuRenderTarget, destroyWgpuRenderTarget } from './wgpuRenderTar
 // brackets: every acquireWgpuRenderTarget must have a matching releaseWgpuRenderTarget. A released
 // target returns to the free list (its GPU storage is kept) rather than being destroyed.
 //
-// MSAA is intentionally out of scope: Wgpu MSAA needs multisample-capable pipelines, so pooled
-// targets stay sampleCount 1 — a follow-up once the effect pipelines grow multisample variants.
-
 export function acquireWgpuRenderTarget(
   state: WgpuRenderState,
   pool: WgpuRenderTargetPool,
@@ -22,21 +19,29 @@ export function acquireWgpuRenderTarget(
     height: number;
     format?: GPUTextureFormat;
     colorSpace?: RenderTargetColorSpace;
+    sampleCount?: number;
   }>,
 ): WgpuRenderTarget {
-  const w = Math.max(1, Math.ceil(descriptor.width));
-  const h = Math.max(1, Math.ceil(descriptor.height));
+  const sampleCount = descriptor.sampleCount !== undefined && descriptor.sampleCount > 1 ? 4 : 1;
+  const scale = sampleCount === 4 ? 2 : 1;
+  const w = Math.max(1, Math.ceil(descriptor.width)) * scale;
+  const h = Math.max(1, Math.ceil(descriptor.height)) * scale;
   const format = descriptor.format ?? state.format;
 
   for (let i = 0; i < pool.free.length; i++) {
     const candidate = pool.free[i];
-    if (candidate.width === w && candidate.height === h && candidate.format === format) {
+    if (
+      candidate.width === w &&
+      candidate.height === h &&
+      candidate.format === format &&
+      candidate.sampleCount === sampleCount
+    ) {
       pool.free.splice(i, 1);
       candidate.colorSpace = descriptor.colorSpace ?? 'srgb';
       return candidate;
     }
   }
-  return createWgpuRenderTarget(state, w, h, format, descriptor.colorSpace);
+  return createWgpuRenderTarget(state, descriptor.width, descriptor.height, format, descriptor.colorSpace, sampleCount);
 }
 
 export function createWgpuRenderTargetPool(): WgpuRenderTargetPool {

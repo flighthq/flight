@@ -56,9 +56,9 @@ export function beginWgpuRenderEffectPipeline(
   const format = pipeline.options.format === 'rgba16f' ? 'rgba16float' : state.format;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createWgpuRenderTarget(state, w, h, format, colorSpace);
+    pipeline.sceneTarget = createWgpuRenderTarget(state, w, h, format, colorSpace, pipeline.options.sampleCount);
   } else {
-    resizeWgpuRenderTarget(state, pipeline.sceneTarget, w, h);
+    resizeWgpuRenderTarget(state, pipeline.sceneTarget, w, h, pipeline.options.sampleCount);
   }
   // Declare the producer's space before the pass opens: the clear value is packed sRGB input and
   // must be decoded when the target stores linear scene color.
@@ -77,23 +77,15 @@ export function createWgpuRenderEffectPipeline(
   state: WgpuRenderState,
   options: Readonly<RenderEffectPipelineOptions> = {},
 ): WgpuRenderEffectPipeline {
-  // WebGPU effect targets are single-sample: a requested sampleCount above 1 cannot be honoured here and
-  // is normalised away. This ACCEPTS rather than rejects, deliberately. An earlier revision threw, which
-  // was authorised by a ruling that omitted the caller-migration constraint — 102 live call sites pass
-  // sampleCount 4, all at module scope, so the throw made those scene modules unloadable. Rejecting an
-  // argument a live population passes is a breaking change wearing the clothes of strictness; the fault in
-  // accept-and-drop was that it is SILENT, not that it is permissive. Do not restore the throw until
-  // sampleCount is genuinely forwarded or every caller has been migrated. The core reports through a
-  // message-free seam; enableWgpuRenderEffectGuards owns the caller-facing warning and logging dependency.
   const requestedSampleCount = options.sampleCount ?? 1;
-  const appliedSampleCount = requestedSampleCount > 1 ? 1 : requestedSampleCount;
+  const appliedSampleCount = requestedSampleCount > 1 ? 4 : 1;
   if (requestedSampleCount !== appliedSampleCount) {
     _sampleCountGuards.get(state)?.(state, requestedSampleCount, appliedSampleCount);
   }
   return {
     options: {
       ...options,
-      ...(options.sampleCount === undefined ? {} : { sampleCount: appliedSampleCount }),
+      sampleCount: appliedSampleCount,
     },
     sceneTarget: null,
     pool: createWgpuRenderTargetPool(),

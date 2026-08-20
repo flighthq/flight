@@ -162,4 +162,17 @@ describe('writeWgpuRenderTextureTarget', () => {
     expect(renderTexture.version).toBe(1);
     expect(isWgpuRenderTextureReady(state, renderTexture)).toBe(true);
   });
+
+  it('realizes a four-sample render texture at twice its logical extent', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const renderTexture = texture();
+    renderTexture.source.sampleCount = 4;
+
+    writeWgpuRenderTextureTarget(state, renderTexture, () => {});
+
+    const target = getWgpuRenderTextureTarget(state, renderTexture)!;
+    expect(target.width).toBe(16);
+    expect(target.height).toBe(16);
+    expect(target.sampleCount).toBe(4);
+  });
 });

@@ -136,7 +136,14 @@ function ensureWgpuRenderTextureEntry(
   const entries = (runtime.wgpuRenderTextureCache ??= new WeakMap());
   let entry = entries.get(renderTexture);
   if (entry === undefined) {
-    const target = createWgpuRenderTarget(state, requested.width, requested.height, format, colorSpace);
+    const target = createWgpuRenderTarget(
+      state,
+      requested.width,
+      requested.height,
+      format,
+      colorSpace,
+      requested.sampleCount,
+    );
     target.clearColors = [...requested.clearColors];
     target.clearDepth = requested.clearDepth;
     entry = { status: 'unrendered', target };
@@ -144,10 +151,17 @@ function ensureWgpuRenderTextureEntry(
   } else {
     if (entry.target.format !== format) {
       destroyWgpuRenderTarget(state, entry.target);
-      entry.target = createWgpuRenderTarget(state, requested.width, requested.height, format, colorSpace);
+      entry.target = createWgpuRenderTarget(
+        state,
+        requested.width,
+        requested.height,
+        format,
+        colorSpace,
+        requested.sampleCount,
+      );
       entry.status = 'unrendered';
     } else {
-      resizeWgpuRenderTarget(state, entry.target, requested.width, requested.height);
+      resizeWgpuRenderTarget(state, entry.target, requested.width, requested.height, requested.sampleCount);
       entry.target.colorSpace = colorSpace;
     }
     entry.target.clearColors = [...requested.clearColors];

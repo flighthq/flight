@@ -70,6 +70,16 @@ describe('createWgpuRenderTarget', () => {
     expect(createWgpuRenderTarget(state, 16, 16).colorSpace).toBe('srgb');
     expect(createWgpuRenderTarget(state, 16, 16, state.format, 'linear').colorSpace).toBe('linear');
   });
+
+  it('realizes four coverage samples as a 2x extent in each axis', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const target = createWgpuRenderTarget(state, 64, 48, state.format, 'srgb', 4);
+    expect(target.width).toBe(128);
+    expect(target.height).toBe(96);
+    expect(target.sampleCount).toBe(4);
+    expect(target.texture.width).toBe(128);
+    expect(target.texture.height).toBe(96);
+  });
 });
 
 describe('declareWgpuRenderTargetColorSpace', () => {
@@ -178,6 +188,19 @@ describe('resizeWgpuRenderTarget', () => {
     expect(target.height).toBe(150);
     expect(target.bindGroup).toBeDefined();
     expect(target.bindGroup).not.toBe(previousBindGroup);
+  });
+
+  it('reallocates when the effective sample count changes', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const target = createWgpuRenderTarget(state, 64, 48);
+    const previousTexture = target.texture;
+
+    resizeWgpuRenderTarget(state, target, 64, 48, 4);
+
+    expect(target.width).toBe(128);
+    expect(target.height).toBe(96);
+    expect(target.sampleCount).toBe(4);
+    expect(target.texture).not.toBe(previousTexture);
   });
 });
 

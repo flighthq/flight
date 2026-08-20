@@ -115,29 +115,30 @@ describe('enableWgpuRenderEffectGuards', () => {
     expect(again).toHaveLength(0);
   });
 
-  it('WARNS once when a multisample request is accepted but degraded to one sample', async () => {
+  it('WARNS once when an unsupported sample count is substituted', async () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuRenderEffectGuards(state);
 
     let pipeline = createWgpuRenderEffectPipeline(state);
     const entries = captureLog(() => {
-      pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
-      createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+      pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
+      createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
     });
 
-    expect(pipeline.options.sampleCount).toBe(1);
+    expect(pipeline.options.sampleCount).toBe(4);
     expect(entries).toHaveLength(1);
-    expect(messageOf(entries[0])).toContain('sampleCount 4 requested');
-    expect(messageOf(entries[0])).toContain('multisampling was NOT applied');
-    expect(entries[0]?.data).toMatchObject({ appliedSampleCount: 1, requestedSampleCount: 4 });
+    expect(messageOf(entries[0])).toContain('sampleCount 8 requested');
+    expect(messageOf(entries[0])).toContain('continuing with sampleCount 4');
+    expect(entries[0]?.data).toMatchObject({ appliedSampleCount: 4, requestedSampleCount: 8 });
   });
 
-  it('stays SILENT when the requested sample count is supported', async () => {
+  it('stays SILENT when the requested sample counts are supported', async () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuRenderEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(createWgpuRenderEffectPipeline(state, { sampleCount: 1 }).options.sampleCount).toBe(1);
+      expect(createWgpuRenderEffectPipeline(state, { sampleCount: 4 }).options.sampleCount).toBe(4);
     });
 
     expect(entries).toHaveLength(0);
