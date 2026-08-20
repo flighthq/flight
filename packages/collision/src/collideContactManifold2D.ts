@@ -1,6 +1,6 @@
-import type { CollisionContactManifold, CollisionShape, CollisionShapeKind } from '@flighthq/types/contract';
+import type { CollisionContactManifold2D, CollisionShape2D, CollisionShapeKind2D } from '@flighthq/types/contract';
 
-import { clearCollisionContactManifold } from './contactManifold';
+import { clearCollisionContactManifold2D } from './contactManifold';
 import {
   collideAabbAabbContactManifold,
   collideAabbObbContactManifold,
@@ -14,10 +14,10 @@ import {
   collidePolygonPolygonContactManifold,
 } from './shapeContact';
 
-// Generic narrow-phase contact test: the `testCollision` dispatcher's contact-resolving twin.
+// Generic narrow-phase contact test: the `testCollision2D` dispatcher's contact-resolving twin.
 // Dispatches on the two shapes' `kind`s and writes the full contact manifold pushing **A out of B**.
 // Shapes are ordered by kind rank before dispatch, and the normal is negated when the arguments
-// arrived reversed, exactly as `testCollision` does. Contact points are world-space and need no such
+// arrived reversed, exactly as `testCollision2D` does. Contact points are world-space and need no such
 // correction.
 //
 // **Argument order.** Overlap, normal, and depth are order-invariant for every pair (the normal
@@ -40,15 +40,15 @@ import {
 //
 // Area-less kinds (`segment`, `point`) and unknown kinds carry no contact — the pair is reported as
 // non-overlapping. The direct per-pair functions remain the hot path.
-export function collideContactManifold(
-  a: Readonly<CollisionShape>,
-  b: Readonly<CollisionShape>,
-  out: CollisionContactManifold,
+export function collideContactManifold2D(
+  a: Readonly<CollisionShape2D>,
+  b: Readonly<CollisionShape2D>,
+  out: CollisionContactManifold2D,
 ): boolean {
   const rankA = contactShapeKindRank(a.kind);
   const rankB = contactShapeKindRank(b.kind);
   if (rankA < 0 || rankB < 0) {
-    clearCollisionContactManifold(out);
+    clearCollisionContactManifold2D(out);
     return false;
   }
 
@@ -114,7 +114,7 @@ export function collideContactManifold(
 // Canonical dispatch rank of a shape kind, or -1 for kinds that carry no contact (segment, point,
 // and any custom kind). Ordering the pair by rank collapses the 4x4 kind matrix to its ten lower-
 // triangular contact pairs.
-function contactShapeKindRank(kind: CollisionShapeKind): number {
+function contactShapeKindRank(kind: CollisionShapeKind2D): number {
   switch (kind) {
     case 'circle':
       return 0;

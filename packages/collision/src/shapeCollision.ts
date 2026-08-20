@@ -1,17 +1,17 @@
 import { createVector2, normalizeVector2 } from '@flighthq/geometry/contract';
 import type {
-  CollisionAabb,
-  CollisionCircle,
-  CollisionManifold,
-  CollisionObb,
-  CollisionPolygon,
+  CollisionAabb2D,
+  CollisionCircle2D,
+  CollisionManifold2D,
+  CollisionObb2D,
+  CollisionPolygon2D,
 } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus } from './collisionShapeValidation';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation';
 import { writeAabbVertices, writeObbVertices } from './convexVertices';
-import { clearCollisionManifold } from './manifold';
+import { clearCollisionManifold2D } from './manifold';
 
-// The 2D narrow-phase pair tests. Each writes an `out` CollisionManifold and returns whether the
+// The 2D narrow-phase pair tests. Each writes an `out` CollisionManifold2D and returns whether the
 // pair overlaps. On overlap the manifold normal is the unit minimum-translation axis oriented to
 // push shape **A** (the first argument) out of **B**, with `depth` the penetration along it; on a
 // miss the manifold is cleared. Touching (zero penetration) counts as **not** overlapping.
@@ -29,9 +29,9 @@ const RELATIVE_EPSILON = 1e-9;
 // Axis-aligned box vs axis-aligned box. Direct min-overlap test (no SAT needed): the only candidate
 // separating axes are X and Y, and the manifold uses whichever has the smaller penetration.
 export function testAabbAabbCollision(
-  a: Readonly<CollisionAabb>,
-  b: Readonly<CollisionAabb>,
-  out: CollisionManifold,
+  a: Readonly<CollisionAabb2D>,
+  b: Readonly<CollisionAabb2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (!isValidAabb(a) || !isValidAabb(b)) return clearInvalidCollisionManifold(out);
   const aMinX = a.minX;
@@ -52,7 +52,7 @@ export function testAabbAabbCollision(
   const penUpY = bMaxY - aMinY;
   const overlapY = penDownY < penUpY ? penDownY : penUpY;
   if (overlapX <= 0 || overlapY <= 0) {
-    clearCollisionManifold(out);
+    clearCollisionManifold2D(out);
     return false;
   }
 
@@ -71,9 +71,9 @@ export function testAabbAabbCollision(
 
 // Axis-aligned box vs oriented box (SAT over both boxes' four corners).
 export function testAabbObbCollision(
-  a: Readonly<CollisionAabb>,
-  b: Readonly<CollisionObb>,
-  out: CollisionManifold,
+  a: Readonly<CollisionAabb2D>,
+  b: Readonly<CollisionObb2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (!isValidAabb(a) || !isValidObb(b)) return clearInvalidCollisionManifold(out);
   const scratch = acquireShapeCollisionScratch();
@@ -88,11 +88,11 @@ export function testAabbObbCollision(
 
 // Axis-aligned box vs convex polygon (SAT).
 export function testAabbPolygonCollision(
-  a: Readonly<CollisionAabb>,
-  b: Readonly<CollisionPolygon>,
-  out: CollisionManifold,
+  a: Readonly<CollisionAabb2D>,
+  b: Readonly<CollisionPolygon2D>,
+  out: CollisionManifold2D,
 ): boolean {
-  if (!isValidAabb(a) || getCollisionPolygonValidationStatus(b.points) !== null) {
+  if (!isValidAabb(a) || getCollisionPolygonValidationStatus2D(b.points) !== null) {
     return clearInvalidCollisionManifold(out);
   }
   const bPoints = b.points;
@@ -108,9 +108,9 @@ export function testAabbPolygonCollision(
 // Circle vs axis-aligned box. Closest-point when the center is outside the box; nearest-face
 // push-out when the center is inside it.
 export function testCircleAabbCollision(
-  a: Readonly<CollisionCircle>,
-  b: Readonly<CollisionAabb>,
-  out: CollisionManifold,
+  a: Readonly<CollisionCircle2D>,
+  b: Readonly<CollisionAabb2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (!isValidCircle(a) || !isValidAabb(b)) return clearInvalidCollisionManifold(out);
   return circleAabbOverlap(a.x, a.y, a.radius, b.minX, b.minY, b.maxX, b.maxY, out);
@@ -119,9 +119,9 @@ export function testCircleAabbCollision(
 // Circle vs circle. Radial: overlapping when the centers are closer than the radius sum; the normal
 // points from B's center to A's center. Concentric centers fall back to a +X normal at full depth.
 export function testCircleCircleCollision(
-  a: Readonly<CollisionCircle>,
-  b: Readonly<CollisionCircle>,
-  out: CollisionManifold,
+  a: Readonly<CollisionCircle2D>,
+  b: Readonly<CollisionCircle2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (!isValidCircle(a) || !isValidCircle(b)) return clearInvalidCollisionManifold(out);
   const ax = a.x;
@@ -134,7 +134,7 @@ export function testCircleCircleCollision(
   const dy = ay - by;
   const distSquared = dx * dx + dy * dy;
   if (distSquared >= radiusSum * radiusSum) {
-    clearCollisionManifold(out);
+    clearCollisionManifold2D(out);
     return false;
   }
 
@@ -156,9 +156,9 @@ export function testCircleCircleCollision(
 // Circle vs oriented box. The circle center is transformed into the box's local frame, tested as
 // circle-vs-AABB there, then the resulting normal is rotated back into world space.
 export function testCircleObbCollision(
-  a: Readonly<CollisionCircle>,
-  b: Readonly<CollisionObb>,
-  out: CollisionManifold,
+  a: Readonly<CollisionCircle2D>,
+  b: Readonly<CollisionObb2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (!isValidCircle(a) || !isValidObb(b)) return clearInvalidCollisionManifold(out);
   const cx = a.x;
@@ -187,11 +187,11 @@ export function testCircleObbCollision(
 // Circle vs convex polygon (SAT: polygon edge normals plus the axis from the circle center to its
 // nearest polygon vertex, the axis SAT would otherwise miss at a corner).
 export function testCirclePolygonCollision(
-  a: Readonly<CollisionCircle>,
-  b: Readonly<CollisionPolygon>,
-  out: CollisionManifold,
+  a: Readonly<CollisionCircle2D>,
+  b: Readonly<CollisionPolygon2D>,
+  out: CollisionManifold2D,
 ): boolean {
-  if (!isValidCircle(a) || getCollisionPolygonValidationStatus(b.points) !== null) {
+  if (!isValidCircle(a) || getCollisionPolygonValidationStatus2D(b.points) !== null) {
     return clearInvalidCollisionManifold(out);
   }
   const points = b.points;
@@ -205,9 +205,9 @@ export function testCirclePolygonCollision(
 
 // Oriented box vs oriented box (SAT over both boxes' four corners).
 export function testObbObbCollision(
-  a: Readonly<CollisionObb>,
-  b: Readonly<CollisionObb>,
-  out: CollisionManifold,
+  a: Readonly<CollisionObb2D>,
+  b: Readonly<CollisionObb2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (!isValidObb(a) || !isValidObb(b)) return clearInvalidCollisionManifold(out);
   const scratch = acquireShapeCollisionScratch();
@@ -222,11 +222,11 @@ export function testObbObbCollision(
 
 // Oriented box vs convex polygon (SAT).
 export function testObbPolygonCollision(
-  a: Readonly<CollisionObb>,
-  b: Readonly<CollisionPolygon>,
-  out: CollisionManifold,
+  a: Readonly<CollisionObb2D>,
+  b: Readonly<CollisionPolygon2D>,
+  out: CollisionManifold2D,
 ): boolean {
-  if (!isValidObb(a) || getCollisionPolygonValidationStatus(b.points) !== null) {
+  if (!isValidObb(a) || getCollisionPolygonValidationStatus2D(b.points) !== null) {
     return clearInvalidCollisionManifold(out);
   }
   const bPoints = b.points;
@@ -241,13 +241,13 @@ export function testObbPolygonCollision(
 
 // Convex polygon vs convex polygon (SAT — the general convex core).
 export function testPolygonPolygonCollision(
-  a: Readonly<CollisionPolygon>,
-  b: Readonly<CollisionPolygon>,
-  out: CollisionManifold,
+  a: Readonly<CollisionPolygon2D>,
+  b: Readonly<CollisionPolygon2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (
-    getCollisionPolygonValidationStatus(a.points) !== null ||
-    getCollisionPolygonValidationStatus(b.points) !== null
+    getCollisionPolygonValidationStatus2D(a.points) !== null ||
+    getCollisionPolygonValidationStatus2D(b.points) !== null
   ) {
     return clearInvalidCollisionManifold(out);
   }
@@ -271,7 +271,7 @@ function circleAabbOverlap(
   minY: number,
   maxX: number,
   maxY: number,
-  out: CollisionManifold,
+  out: CollisionManifold2D,
 ): boolean {
   const closestX = cx < minX ? minX : cx > maxX ? maxX : cx;
   const closestY = cy < minY ? minY : cy > maxY ? maxY : cy;
@@ -284,7 +284,7 @@ function circleAabbOverlap(
     // Center outside the box: separate along the closest-point direction.
     const dist = Math.sqrt(distSquared);
     if (dist >= radius) {
-      clearCollisionManifold(out);
+      clearCollisionManifold2D(out);
       return false;
     }
     const inv = 1 / dist;
@@ -334,7 +334,7 @@ function satCircleConvexOverlap(
   radius: number,
   px: ArrayLike<number>,
   pn: number,
-  out: CollisionManifold,
+  out: CollisionManifold2D,
   scratch: ShapeCollisionScratch,
 ): boolean {
   const epsilon = relativeEpsilon(Math.max(getPolygonExtent(px, pn), radius));
@@ -357,7 +357,7 @@ function satCircleConvexOverlap(
     const axisY = scratch.axis.y;
     const overlap = circlePolygonAxisOverlap(axisX, axisY, cx, cy, radius, px, pn);
     if (overlap <= epsilon) {
-      clearCollisionManifold(out);
+      clearCollisionManifold2D(out);
       return false;
     }
     if (isPreferredAxis(overlap, axisX, axisY, minOverlap, normalX, normalY, epsilon)) {
@@ -392,7 +392,7 @@ function satCircleConvexOverlap(
     const axisY = scratch.axis.y;
     const overlap = circlePolygonAxisOverlap(axisX, axisY, cx, cy, radius, px, pn);
     if (overlap <= epsilon) {
-      clearCollisionManifold(out);
+      clearCollisionManifold2D(out);
       return false;
     }
     if (isPreferredAxis(overlap, axisX, axisY, minOverlap, normalX, normalY, epsilon)) {
@@ -403,7 +403,7 @@ function satCircleConvexOverlap(
   }
 
   if (minOverlap === Infinity) {
-    clearCollisionManifold(out);
+    clearCollisionManifold2D(out);
     return false;
   }
 
@@ -465,7 +465,7 @@ function satConvexOverlap(
   an: number,
   bx: ArrayLike<number>,
   bn: number,
-  out: CollisionManifold,
+  out: CollisionManifold2D,
   scratch: ShapeCollisionScratch,
 ): boolean {
   const epsilon = relativeEpsilon(Math.max(getPolygonExtent(ax, an), getPolygonExtent(bx, bn)));
@@ -475,7 +475,7 @@ function satConvexOverlap(
   if (!accumulatePolygonAxes(ax, an, ax, an, bx, bn, epsilon, out, scratch)) return false;
   if (!accumulatePolygonAxes(bx, bn, ax, an, bx, bn, epsilon, out, scratch)) return false;
   if (scratch.minOverlapAxis.overlap === Infinity) {
-    clearCollisionManifold(out);
+    clearCollisionManifold2D(out);
     return false;
   }
 
@@ -522,7 +522,7 @@ function accumulatePolygonAxes(
   bx: ArrayLike<number>,
   bn: number,
   epsilon: number,
-  out: CollisionManifold,
+  out: CollisionManifold2D,
   scratch: ShapeCollisionScratch,
 ): boolean {
   for (let i = 0; i < sn; i++) {
@@ -540,7 +540,7 @@ function accumulatePolygonAxes(
     const axisY = scratch.axis.y;
     const overlap = polygonAxisOverlap(axisX, axisY, ax, an, bx, bn);
     if (overlap <= epsilon) {
-      clearCollisionManifold(out);
+      clearCollisionManifold2D(out);
       return false;
     }
     if (
@@ -601,8 +601,8 @@ function canonicalizeScratchAxis(scratch: ShapeCollisionScratch): void {
   }
 }
 
-function clearInvalidCollisionManifold(out: CollisionManifold): false {
-  clearCollisionManifold(out);
+function clearInvalidCollisionManifold(out: CollisionManifold2D): false {
+  clearCollisionManifold2D(out);
   return false;
 }
 
@@ -637,7 +637,7 @@ function isPreferredAxis(
   return Math.abs(axisX - currentX) <= RELATIVE_EPSILON && axisY > currentY;
 }
 
-function isValidAabb(shape: Readonly<CollisionAabb>): boolean {
+function isValidAabb(shape: Readonly<CollisionAabb2D>): boolean {
   return (
     Number.isFinite(shape.minX) &&
     Number.isFinite(shape.minY) &&
@@ -648,11 +648,11 @@ function isValidAabb(shape: Readonly<CollisionAabb>): boolean {
   );
 }
 
-function isValidCircle(shape: Readonly<CollisionCircle>): boolean {
+function isValidCircle(shape: Readonly<CollisionCircle2D>): boolean {
   return Number.isFinite(shape.x) && Number.isFinite(shape.y) && Number.isFinite(shape.radius) && shape.radius > 0;
 }
 
-function isValidObb(shape: Readonly<CollisionObb>): boolean {
+function isValidObb(shape: Readonly<CollisionObb2D>): boolean {
   return (
     Number.isFinite(shape.x) &&
     Number.isFinite(shape.y) &&

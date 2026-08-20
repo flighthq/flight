@@ -1,9 +1,9 @@
 import type {
-  CollisionAabb,
-  CollisionCircle,
-  CollisionObb,
-  CollisionPolygon,
-  CollisionSegment,
+  CollisionAabb2D,
+  CollisionCircle2D,
+  CollisionObb2D,
+  CollisionPolygon2D,
+  CollisionSegment2D,
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -15,12 +15,12 @@ import {
   testSegmentSegmentCollision,
 } from './segmentCollision';
 
-function segment(x0: number, y0: number, x1: number, y1: number): CollisionSegment {
+function segment(x0: number, y0: number, x1: number, y1: number): CollisionSegment2D {
   return { x0, y0, x1, y1 };
 }
 
 describe('testSegmentAabbCollision', () => {
-  const box: CollisionAabb = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+  const box: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
 
   it('is true for a segment crossing the box', () => {
     expect(testSegmentAabbCollision(segment(-5, 5, 15, 5), box)).toBe(true);
@@ -45,7 +45,7 @@ describe('testSegmentAabbCollision', () => {
 });
 
 describe('testSegmentCircleCollision', () => {
-  const circle: CollisionCircle = { x: 0, y: 0, radius: 2 };
+  const circle: CollisionCircle2D = { x: 0, y: 0, radius: 2 };
 
   it('is true for a segment passing through the circle', () => {
     expect(testSegmentCircleCollision(segment(-10, 0, 10, 0), circle)).toBe(true);
@@ -65,7 +65,7 @@ describe('testSegmentCircleCollision', () => {
 });
 
 describe('testSegmentObbCollision', () => {
-  const obb: CollisionObb = { x: 0, y: 0, halfW: 3, halfH: 3, rotation: Math.PI / 4 };
+  const obb: CollisionObb2D = { x: 0, y: 0, halfW: 3, halfH: 3, rotation: Math.PI / 4 };
 
   it('is true for a segment crossing the rotated box', () => {
     expect(testSegmentObbCollision(segment(-10, 0, 10, 0), obb)).toBe(true);
@@ -77,7 +77,7 @@ describe('testSegmentObbCollision', () => {
 });
 
 describe('testSegmentPolygonCollision', () => {
-  const square: CollisionPolygon = { points: [0, 0, 10, 0, 10, 10, 0, 10] };
+  const square: CollisionPolygon2D = { points: [0, 0, 10, 0, 10, 10, 0, 10] };
 
   it('is true for a segment crossing the polygon', () => {
     expect(testSegmentPolygonCollision(segment(-5, 5, 15, 5), square)).toBe(true);

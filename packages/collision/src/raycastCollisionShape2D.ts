@@ -1,24 +1,24 @@
-import type { CollisionRaycastHit, CollisionShape } from '@flighthq/types/contract';
+import type { CollisionRaycastHit2D, CollisionShape2D } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus } from './collisionShapeValidation';
-import { getCollisionShapeContainsPoint } from './pointContainment';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation';
+import { getCollisionShapeContainsPoint2D } from './pointContainment';
 
 const RELATIVE_EPSILON = 1e-9;
 
-export function createCollisionRaycastHit(): CollisionRaycastHit {
+export function createCollisionRaycastHit2D(): CollisionRaycastHit2D {
   return { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
 }
 
 // Writes the first exact intersection of `origin + direction * fraction` with `shape`. Direction need
 // not be normalized; fraction therefore stays in the caller's parameterization. `maxFraction` bounds a
 // segment or sweep without changing the ray direction, and defaults to an unbounded forward ray.
-export function raycastCollisionShape(
-  shape: Readonly<CollisionShape>,
+export function raycastCollisionShape2D(
+  shape: Readonly<CollisionShape2D>,
   originX: number,
   originY: number,
   directionX: number,
   directionY: number,
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
   maxFraction = Number.POSITIVE_INFINITY,
 ): boolean {
   clearRaycastHit(out);
@@ -32,7 +32,7 @@ export function raycastCollisionShape(
   ) {
     return false;
   }
-  if (getCollisionShapeContainsPoint(shape, originX, originY)) {
+  if (getCollisionShapeContainsPoint2D(shape, originX, originY)) {
     writeRaycastHit(out, originX, originY, directionX, directionY, 0, 0, 0);
     return true;
   }
@@ -117,7 +117,7 @@ function raycastCircle(
   directionY: number,
   directionLengthSquared: number,
   maxFraction: number,
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
 ): boolean {
   if (!Number.isFinite(centerX) || !Number.isFinite(centerY) || !(radius >= 0) || !Number.isFinite(radius)) {
     return false;
@@ -148,7 +148,7 @@ function raycastBox(
   directionX: number,
   directionY: number,
   maxFraction: number,
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
 ): boolean {
   if (
     !Number.isFinite(minX) ||
@@ -215,13 +215,13 @@ function raycastBox(
 }
 
 function raycastObb(
-  shape: Readonly<Extract<CollisionShape, { kind: 'obb' }>>,
+  shape: Readonly<Extract<CollisionShape2D, { kind: 'obb' }>>,
   originX: number,
   originY: number,
   directionX: number,
   directionY: number,
   maxFraction: number,
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
   scratch: RaycastScratch,
 ): boolean {
   if (
@@ -272,10 +272,10 @@ function raycastPolygon(
   directionX: number,
   directionY: number,
   maxFraction: number,
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
   scratch: RaycastScratch,
 ): boolean {
-  if (getCollisionPolygonValidationStatus(points) !== null) return false;
+  if (getCollisionPolygonValidationStatus2D(points) !== null) return false;
   let bestFraction = maxFraction;
   let bestNormalX = 0;
   let bestNormalY = 0;
@@ -349,7 +349,7 @@ function raycastSegment(
   directionY: number,
   directionLengthSquared: number,
   maxFraction: number,
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
   scratch: RaycastScratch,
 ): boolean {
   if (!Number.isFinite(x0) || !Number.isFinite(y0) || !Number.isFinite(x1) || !Number.isFinite(y1)) return false;
@@ -436,7 +436,7 @@ function raycastPoint(
   directionY: number,
   directionLengthSquared: number,
   maxFraction: number,
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
 ): boolean {
   if (!Number.isFinite(pointX) || !Number.isFinite(pointY)) return false;
   const offsetX = pointX - originX;
@@ -454,7 +454,7 @@ function raycastPoint(
 }
 
 function writeRaycastHit(
-  out: CollisionRaycastHit,
+  out: CollisionRaycastHit2D,
   originX: number,
   originY: number,
   directionX: number,
@@ -470,7 +470,7 @@ function writeRaycastHit(
   out.normalY = normalY;
 }
 
-function clearRaycastHit(out: CollisionRaycastHit): void {
+function clearRaycastHit(out: CollisionRaycastHit2D): void {
   out.fraction = 0;
   out.x = 0;
   out.y = 0;
@@ -479,7 +479,7 @@ function clearRaycastHit(out: CollisionRaycastHit): void {
 }
 
 interface RaycastScratch {
-  localHit: CollisionRaycastHit;
+  localHit: CollisionRaycastHit2D;
   fraction: { value: number };
   polygonCenter: { x: number; y: number };
 }

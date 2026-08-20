@@ -1,6 +1,6 @@
 import { createUniformGridSpatialBackend } from '@flighthq/spatial/contract';
 import type {
-  CollisionShape,
+  CollisionShape2D,
   Physics2DCollisionFilter,
   Physics2DCollider,
   Physics2DMaterial,
@@ -172,7 +172,7 @@ export function applyPhysics2DTorque(body: RigidBody2D, torque: number): boolean
 // rewrites the world one in place. Copying here makes two colliders created from one authoring template
 // independent invalidation units rather than aliases whose mass and broadphase caches can disagree.
 export function createPhysics2DCollider(
-  local: CollisionShape,
+  local: CollisionShape2D,
   material: Physics2DMaterial,
   sensor = false,
   filter?: Readonly<Physics2DCollisionFilter>,
@@ -187,7 +187,7 @@ export function createPhysics2DCollider(
   };
 }
 
-function clonePhysics2DLocalShape(local: Readonly<CollisionShape>): CollisionShape {
+function clonePhysics2DLocalShape(local: Readonly<CollisionShape2D>): CollisionShape2D {
   switch (local.kind) {
     case 'circle':
       return { kind: 'circle', x: local.x, y: local.y, radius: local.radius };

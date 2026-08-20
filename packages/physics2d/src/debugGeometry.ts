@@ -1,5 +1,5 @@
 import type {
-  CollisionShape,
+  CollisionShape2D,
   Physics2DDebugCircle,
   Physics2DDebugFeature,
   Physics2DDebugGeometry,
@@ -93,7 +93,7 @@ export function writePhysics2DDebugGeometry(
 
 function writeCollider(
   out: Physics2DDebugGeometry,
-  shape: Readonly<CollisionShape>,
+  shape: Readonly<CollisionShape2D>,
   body: Readonly<RigidBody2D>,
   options: Readonly<Partial<Physics2DDebugGeometryOptions>>,
 ): void {

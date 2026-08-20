@@ -1,4 +1,4 @@
-import type { CollisionShape } from './Collision';
+import type { CollisionShape2D } from './Collision';
 import type { SpatialIndexBackend } from './Spatial';
 
 // 2D rigid-body dynamics header. `@flighthq/physics2d` is the solver that sits on top of
@@ -48,7 +48,7 @@ export interface Physics2DCollisionFilter {
 // One piece of a body's shape. A collider carries its shape in the body's LOCAL space and a
 // preallocated world-space copy that `stepPhysics2D` refreshes once per step.
 //
-// The two shapes exist because a `CollisionShape` is world-space by construction — a circle carries
+// The two shapes exist because a `CollisionShape2D` is world-space by construction — a circle carries
 // its centre, an oriented box its centre and rotation, and a polygon its absolute points with no
 // centre or rotation field to move at all — so a body's position and angle cannot live inside the
 // shape. Hence: author in local space, and let the step transform. `world` is owned by the collider
@@ -58,13 +58,13 @@ export interface Physics2DCollisionFilter {
 // producing an impulse, which is how a trigger volume is built. After mutating `local`, `material`,
 // `filter`, or `sensor`, call `invalidatePhysics2DCollider` so the world can rebuild all derived state.
 export interface Physics2DCollider {
-  local: CollisionShape;
+  local: CollisionShape2D;
   // The world-space shape, rewritten every step. Its KIND may differ from `local`'s: a rotated
   // axis-aligned box is not an axis-aligned box, so an `aabb` local shape carries an `obb` world shape.
   // The alternative — forbidding aabb colliders on rotating bodies — would make a legal authoring choice
   // depend on a runtime property, and would fail silently the first time a body was given angular
   // velocity. Local kind is what you author; world kind is what the narrow phase needs.
-  world: CollisionShape;
+  world: CollisionShape2D;
   material: Physics2DMaterial;
   filter: Physics2DCollisionFilter;
   sensor: boolean;

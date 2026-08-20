@@ -1,6 +1,6 @@
-import type { CollisionShape } from '@flighthq/types/contract';
+import type { CollisionShape2D } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus } from './collisionShapeValidation';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation';
 
 const RELATIVE_EPSILON = 1e-9;
 
@@ -8,7 +8,7 @@ const RELATIVE_EPSILON = 1e-9;
 // edge of any shape counts as contained. For the area-less kinds this degrades to an on-shape test —
 // `segment` returns true when the point lies on the segment (within epsilon), `point` when the two
 // points coincide (within epsilon). Unknown kinds return false. The polygon is assumed convex.
-export function getCollisionShapeContainsPoint(shape: Readonly<CollisionShape>, x: number, y: number): boolean {
+export function getCollisionShapeContainsPoint2D(shape: Readonly<CollisionShape2D>, x: number, y: number): boolean {
   switch (shape.kind) {
     case 'circle': {
       const dx = x - shape.x;
@@ -27,7 +27,7 @@ export function getCollisionShapeContainsPoint(shape: Readonly<CollisionShape>, 
       return Math.abs(localX) <= shape.halfW && Math.abs(localY) <= shape.halfH;
     }
     case 'polygon':
-      if (getCollisionPolygonValidationStatus(shape.points) !== null) return false;
+      if (getCollisionPolygonValidationStatus2D(shape.points) !== null) return false;
       return isPointInConvexPolygon(x, y, shape.points, shape.points.length >> 1);
     case 'segment': {
       const dx = shape.x1 - shape.x0;

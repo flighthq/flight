@@ -1,9 +1,9 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { CollisionShape, LogEntry } from '@flighthq/types/contract';
+import type { CollisionShape2D, LogEntry } from '@flighthq/types/contract';
 
 import { areCollisionGuardsEnabled, disableCollisionGuards, enableCollisionGuards } from './enableCollisionGuards';
-import { createCollisionManifold } from './manifold';
-import { testCollision } from './testCollision';
+import { createCollisionManifold2D } from './manifold';
+import { testCollision2D } from './testCollision2D';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
@@ -33,10 +33,10 @@ describe('disableCollisionGuards', () => {
     enableCollisionGuards();
     disableCollisionGuards();
     const entries = captureLog(() => {
-      testCollision(
+      testCollision2D(
         { kind: 'circle', radius: 0, x: 0, y: 0 },
         { kind: 'circle', radius: 1, x: 0, y: 0 },
-        createCollisionManifold(),
+        createCollisionManifold2D(),
       );
     });
     expect(entries).toHaveLength(0);
@@ -44,29 +44,29 @@ describe('disableCollisionGuards', () => {
 });
 
 describe('enableCollisionGuards', () => {
-  it('stays silent for supported inputs, then warns once for a degenerate shape through testCollision', () => {
+  it('stays silent for supported inputs, then warns once for a degenerate shape through testCollision2D', () => {
     enableCollisionGuards();
-    const out = createCollisionManifold();
-    const valid: CollisionShape = { kind: 'circle', radius: 1, x: 0, y: 0 };
+    const out = createCollisionManifold2D();
+    const valid: CollisionShape2D = { kind: 'circle', radius: 1, x: 0, y: 0 };
     const entries = captureLog(() => {
-      testCollision(valid, { kind: 'circle', radius: 1, x: 4, y: 0 }, out);
-      testCollision({ kind: 'point', x: 0, y: 0 }, valid, out);
-      testCollision({ kind: 'circle', radius: 0, x: 0, y: 0 }, valid, out);
-      testCollision({ kind: 'circle', radius: 0, x: 0, y: 0 }, valid, out);
+      testCollision2D(valid, { kind: 'circle', radius: 1, x: 4, y: 0 }, out);
+      testCollision2D({ kind: 'point', x: 0, y: 0 }, valid, out);
+      testCollision2D({ kind: 'circle', radius: 0, x: 0, y: 0 }, valid, out);
+      testCollision2D({ kind: 'circle', radius: 0, x: 0, y: 0 }, valid, out);
     });
     expect(entries).toHaveLength(1);
     expect(entries[0].channel).toBe('collision');
     expect(entries[0].data).toMatchObject({ kind: 'circle', shapeIndex: 0, status: 'degenerate-shape' });
-    expect(String((entries[0].data as Record<string, unknown>).message)).toContain('explainCollisionTest');
+    expect(String((entries[0].data as Record<string, unknown>).message)).toContain('explainCollisionTest2D');
   });
 
   it('warns for a non-convex polygon and identifies its argument index', () => {
     enableCollisionGuards();
     const entries = captureLog(() => {
-      testCollision(
+      testCollision2D(
         { kind: 'circle', radius: 1, x: 0, y: 0 },
         { kind: 'polygon', points: [0, 0, 2, 0, 1, 1, 2, 2, 0, 2] },
-        createCollisionManifold(),
+        createCollisionManifold2D(),
       );
     });
     expect(entries).toHaveLength(1);

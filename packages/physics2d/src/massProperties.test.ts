@@ -1,10 +1,10 @@
-import type { CollisionShape, Physics2DCollider, Physics2DMassData, RigidBody2D } from '@flighthq/types/contract';
+import type { CollisionShape2D, Physics2DCollider, Physics2DMassData, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties';
 import { createPhysics2DCollider, createRigidBody2D } from './world';
 
-function collider(local: CollisionShape, density = 1): Physics2DCollider {
+function collider(local: CollisionShape2D, density = 1): Physics2DCollider {
   return createPhysics2DCollider(local, { density, friction: 0.2, restitution: 0 });
 }
 

@@ -1,4 +1,4 @@
-import type { CollisionAabb, CollisionObb } from '@flighthq/types/contract';
+import type { CollisionAabb2D, CollisionObb2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { writeAabbVertices, writeObbVertices } from './convexVertices';
@@ -6,14 +6,14 @@ import { writeAabbVertices, writeObbVertices } from './convexVertices';
 describe('writeAabbVertices', () => {
   it('writes the four corners counter-clockwise from the min corner', () => {
     const out = new Float64Array(8);
-    const aabb: CollisionAabb = { minX: 1, minY: 2, maxX: 5, maxY: 8 };
+    const aabb: CollisionAabb2D = { minX: 1, minY: 2, maxX: 5, maxY: 8 };
     writeAabbVertices(aabb, out);
     expect(Array.from(out)).toEqual([1, 2, 5, 2, 5, 8, 1, 8]);
   });
 
   it('writes a degenerate box as four coincident corners rather than skipping any', () => {
     const out = new Float64Array(8);
-    const aabb: CollisionAabb = { minX: 3, minY: 3, maxX: 3, maxY: 3 };
+    const aabb: CollisionAabb2D = { minX: 3, minY: 3, maxX: 3, maxY: 3 };
     writeAabbVertices(aabb, out);
     expect(Array.from(out)).toEqual([3, 3, 3, 3, 3, 3, 3, 3]);
   });
@@ -30,7 +30,7 @@ describe('writeObbVertices', () => {
 
   it('rotates the corners about the center, preserving the distance to it', () => {
     const out = new Float64Array(8);
-    const obb: CollisionObb = { x: 0, y: 0, halfW: 3, halfH: 4, rotation: Math.PI / 3 };
+    const obb: CollisionObb2D = { x: 0, y: 0, halfW: 3, halfH: 4, rotation: Math.PI / 3 };
     writeObbVertices(obb, out);
     const expected = Math.sqrt(3 * 3 + 4 * 4);
     for (let i = 0; i < 4; i++) {

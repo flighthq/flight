@@ -1,11 +1,11 @@
-import type { CollisionShape, CollisionTimeOfImpact } from '@flighthq/types/contract';
+import type { CollisionShape2D, CollisionTimeOfImpact2D } from '@flighthq/types/contract';
 
-import { collideContactManifold } from './collideContactManifold';
-import { getCollisionShapeValidationStatus } from './collisionShapeValidation';
-import { createCollisionContactManifold } from './contactManifold';
+import { collideContactManifold2D } from './collideContactManifold2D';
+import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation';
+import { createCollisionContactManifold2D } from './contactManifold';
 import { writeAabbVertices, writeObbVertices } from './convexVertices';
 
-export function createCollisionTimeOfImpact(): CollisionTimeOfImpact {
+export function createCollisionTimeOfImpact2D(): CollisionTimeOfImpact2D {
   return { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
 }
 
@@ -13,14 +13,14 @@ export function createCollisionTimeOfImpact(): CollisionTimeOfImpact {
 // quadratic root, circle-polygon uses the polygon's rounded face/vertex expansion, and polygon pairs
 // use continuous SAT. Those are the complete convex area-shape combinations supported by the discrete
 // manifold dispatcher; point/segment and invalid/custom kinds fail closed and fully clear `out`.
-export function sweepCollisionShape(
-  shapeA: Readonly<CollisionShape>,
+export function sweepCollisionShape2D(
+  shapeA: Readonly<CollisionShape2D>,
   translationAX: number,
   translationAY: number,
-  shapeB: Readonly<CollisionShape>,
+  shapeB: Readonly<CollisionShape2D>,
   translationBX: number,
   translationBY: number,
-  out: CollisionTimeOfImpact,
+  out: CollisionTimeOfImpact2D,
   maxFraction = 1,
 ): boolean {
   clearCollisionTimeOfImpact(out);
@@ -31,8 +31,8 @@ export function sweepCollisionShape(
     !Number.isFinite(translationBY) ||
     !Number.isFinite(maxFraction) ||
     maxFraction < 0 ||
-    getCollisionShapeValidationStatus(shapeA) !== null ||
-    getCollisionShapeValidationStatus(shapeB) !== null
+    getCollisionShapeValidationStatus2D(shapeA) !== null ||
+    getCollisionShapeValidationStatus2D(shapeB) !== null
   ) {
     return false;
   }
@@ -56,17 +56,17 @@ export function sweepCollisionShape(
 }
 
 function sweepCollisionShapeWithScratch(
-  shapeA: Readonly<CollisionShape>,
+  shapeA: Readonly<CollisionShape2D>,
   translationAX: number,
   translationAY: number,
-  shapeB: Readonly<CollisionShape>,
+  shapeB: Readonly<CollisionShape2D>,
   translationBX: number,
   translationBY: number,
-  out: CollisionTimeOfImpact,
+  out: CollisionTimeOfImpact2D,
   maxFraction: number,
   scratch: CollisionSweepScratch,
 ): boolean {
-  if (collideContactManifold(shapeA, shapeB, scratch.manifold)) {
+  if (collideContactManifold2D(shapeA, shapeB, scratch.manifold)) {
     out.normalX = canonicalZero(scratch.manifold.normalX);
     out.normalY = canonicalZero(scratch.manifold.normalY);
     writeShapeASupport(shapeA, 0, 0, out, scratch);
@@ -131,7 +131,7 @@ function sweepCircleCircle(
   radiusB: number,
   velocityX: number,
   velocityY: number,
-  out: CollisionTimeOfImpact,
+  out: CollisionTimeOfImpact2D,
 ): boolean {
   const offsetX = ax - bx;
   const offsetY = ay - by;
@@ -161,7 +161,7 @@ function sweepCirclePolygon(
   vertices: ArrayLike<number>,
   velocityX: number,
   velocityY: number,
-  out: CollisionTimeOfImpact,
+  out: CollisionTimeOfImpact2D,
 ): boolean {
   let bestFraction = Number.POSITIVE_INFINITY;
   let bestNormalX = 0;
@@ -221,7 +221,7 @@ function sweepPolygonPolygon(
   velocityX: number,
   velocityY: number,
   maxFraction: number,
-  out: CollisionTimeOfImpact,
+  out: CollisionTimeOfImpact2D,
   scratch: CollisionSweepScratch,
 ): boolean {
   scratch.entry = Number.NEGATIVE_INFINITY;
@@ -307,7 +307,7 @@ function rayCircleFraction(
   return (-b - Math.sqrt(discriminant)) / (2 * a);
 }
 
-function writeShapeVertices(shape: Readonly<CollisionShape>, scratch: Float64Array): ArrayLike<number> | null {
+function writeShapeVertices(shape: Readonly<CollisionShape2D>, scratch: Float64Array): ArrayLike<number> | null {
   switch (shape.kind) {
     case 'aabb':
       writeAabbVertices(shape, scratch);
@@ -323,10 +323,10 @@ function writeShapeVertices(shape: Readonly<CollisionShape>, scratch: Float64Arr
 }
 
 function writeShapeASupport(
-  shape: Readonly<CollisionShape>,
+  shape: Readonly<CollisionShape2D>,
   translationX: number,
   translationY: number,
-  out: CollisionTimeOfImpact,
+  out: CollisionTimeOfImpact2D,
   scratch: CollisionSweepScratch,
 ): void {
   if (shape.kind === 'circle') {
@@ -386,7 +386,7 @@ function polygonAreaTwice(vertices: ArrayLike<number>): number {
   return area;
 }
 
-function clearCollisionTimeOfImpact(out: CollisionTimeOfImpact): void {
+function clearCollisionTimeOfImpact(out: CollisionTimeOfImpact2D): void {
   out.fraction = 0;
   out.x = 0;
   out.y = 0;
@@ -399,7 +399,7 @@ function canonicalZero(value: number): number {
 }
 
 interface CollisionSweepScratch {
-  manifold: ReturnType<typeof createCollisionContactManifold>;
+  manifold: ReturnType<typeof createCollisionContactManifold2D>;
   verticesA: Float64Array;
   verticesB: Float64Array;
   projectionMin: number;
@@ -416,7 +416,7 @@ function acquireCollisionSweepScratch(): CollisionSweepScratch {
 
 function createCollisionSweepScratch(): CollisionSweepScratch {
   return {
-    manifold: createCollisionContactManifold(),
+    manifold: createCollisionContactManifold2D(),
     verticesA: new Float64Array(8),
     verticesB: new Float64Array(8),
     projectionMin: 0,

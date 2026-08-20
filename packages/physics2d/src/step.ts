@@ -1,20 +1,20 @@
 import {
-  collideContactManifold,
-  createCollisionContactManifold,
-  createCollisionTimeOfImpact,
-  getCollisionShapeContainsPoint,
+  collideContactManifold2D,
+  createCollisionContactManifold2D,
+  createCollisionTimeOfImpact2D,
+  getCollisionShapeContainsPoint2D,
   testSegmentAabbCollision,
   testSegmentCircleCollision,
   testSegmentObbCollision,
   testSegmentPolygonCollision,
   testSegmentSegmentCollision,
-  sweepCollisionShape,
+  sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
 import type {
-  CollisionContactManifold,
-  CollisionSegment,
-  CollisionShape,
-  CollisionTimeOfImpact,
+  CollisionContactManifold2D,
+  CollisionSegment2D,
+  CollisionShape2D,
+  CollisionTimeOfImpact2D,
   Physics2DContact,
   Physics2DContactPoint,
   Physics2DWorld,
@@ -101,7 +101,7 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
         // nothing can ever resolve. Sensors are reported and never resolved, so a sensor pair is the
         // only pair worth keeping between two bodies that cannot move.
         if (bothImmovable && !sensorPair) continue;
-        const manifold = collideContactManifold(colliderA.world, colliderB.world, getPhysics2DStepScratch().manifold);
+        const manifold = collideContactManifold2D(colliderA.world, colliderB.world, getPhysics2DStepScratch().manifold);
         if (!manifold && (!sensorPair || !testPhysics2DAreaLessSensorOverlap(colliderA.world, colliderB.world))) {
           continue;
         }
@@ -138,17 +138,17 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
 // normal for the impulse solver to consume. A sensor needs only a boolean overlap, though, so it can use
 // collision's exact point-containment and segment-query lanes and persist a zero-point contact solely for
 // begin/end lifecycle. This fallback is sensor-only; a solid segment remains non-resolving by design.
-function testPhysics2DAreaLessSensorOverlap(a: Readonly<CollisionShape>, b: Readonly<CollisionShape>): boolean {
-  if (a.kind === 'point') return getCollisionShapeContainsPoint(b, a.x, a.y);
-  if (b.kind === 'point') return getCollisionShapeContainsPoint(a, b.x, b.y);
+function testPhysics2DAreaLessSensorOverlap(a: Readonly<CollisionShape2D>, b: Readonly<CollisionShape2D>): boolean {
+  if (a.kind === 'point') return getCollisionShapeContainsPoint2D(b, a.x, a.y);
+  if (b.kind === 'point') return getCollisionShapeContainsPoint2D(a, b.x, b.y);
   if (a.kind === 'segment') return testPhysics2DSegmentOverlap(a, b);
   if (b.kind === 'segment') return testPhysics2DSegmentOverlap(b, a);
   return false;
 }
 
 function testPhysics2DSegmentOverlap(
-  segment: Readonly<CollisionSegment & { kind: 'segment' }>,
-  other: Readonly<CollisionShape>,
+  segment: Readonly<CollisionSegment2D & { kind: 'segment' }>,
+  other: Readonly<CollisionShape2D>,
 ): boolean {
   switch (other.kind) {
     case 'aabb':
@@ -162,7 +162,7 @@ function testPhysics2DSegmentOverlap(
     case 'segment':
       return testSegmentSegmentCollision(segment, other);
     case 'point':
-      return getCollisionShapeContainsPoint(segment, other.x, other.y);
+      return getCollisionShapeContainsPoint2D(segment, other.x, other.y);
   }
 }
 
@@ -188,7 +188,7 @@ function mergePhysics2DContact(
   bodyB: number,
   colliderA: number,
   colliderB: number,
-  manifold: Readonly<CollisionContactManifold>,
+  manifold: Readonly<CollisionContactManifold2D>,
   sensor: boolean,
   friction: number,
   restitution: number,
@@ -334,7 +334,7 @@ function solvePhysics2DPositionsOnce(world: Physics2DWorld, indices: number[], s
     if (colliderA === undefined || colliderB === undefined) continue;
     updatePhysics2DColliderWorldShape(colliderA, bodyA);
     updatePhysics2DColliderWorldShape(colliderB, bodyB);
-    if (!collideContactManifold(colliderA.world, colliderB.world, getPhysics2DStepScratch().manifold)) continue;
+    if (!collideContactManifold2D(colliderA.world, colliderB.world, getPhysics2DStepScratch().manifold)) continue;
 
     const normalX = getPhysics2DStepScratch().manifold.normalX;
     const normalY = getPhysics2DStepScratch().manifold.normalY;
@@ -780,7 +780,7 @@ function findPhysics2DColliderImpact(
       world.config.maxCcdRotationSubsteps,
     );
   }
-  return sweepCollisionShape(
+  return sweepCollisionShape2D(
     colliderA.world,
     translationAX,
     translationAY,
@@ -904,7 +904,7 @@ function testPhysics2DColliderOverlapAtFraction(
   try {
     updatePhysics2DColliderWorldShape(colliderA, bodyA);
     updatePhysics2DColliderWorldShape(colliderB, bodyB);
-    return collideContactManifold(colliderA.world, colliderB.world, getPhysics2DStepScratch().ccdRotationalManifold);
+    return collideContactManifold2D(colliderA.world, colliderB.world, getPhysics2DStepScratch().ccdRotationalManifold);
   } finally {
     bodyA.x = xA;
     bodyA.y = yA;
@@ -927,7 +927,7 @@ function isPhysics2DCcdPairActive(bodyA: Readonly<RigidBody2D>, bodyB: Readonly<
 function isPhysics2DImpactApproaching(
   bodyA: Readonly<RigidBody2D>,
   bodyB: Readonly<RigidBody2D>,
-  impact: Readonly<CollisionTimeOfImpact>,
+  impact: Readonly<CollisionTimeOfImpact2D>,
   translationAX: number,
   translationAY: number,
   translationBX: number,
@@ -1198,9 +1198,9 @@ function comparePhysics2DContacts(left: Readonly<Physics2DContact>, right: Reado
 interface Physics2DStepScratch {
   pairs: SpatialPair[];
   ccdPairs: SpatialPair[];
-  manifold: CollisionContactManifold;
-  ccdSweep: CollisionTimeOfImpact;
-  ccdRotationalManifold: CollisionContactManifold;
+  manifold: CollisionContactManifold2D;
+  ccdSweep: CollisionTimeOfImpact2D;
+  ccdRotationalManifold: CollisionContactManifold2D;
   ccdCenterA: { x: number; y: number };
   ccdCenterB: { x: number; y: number };
   ccdImpactFraction: number;
@@ -1222,9 +1222,9 @@ function createPhysics2DStepScratch(): Physics2DStepScratch {
   return {
     pairs: [],
     ccdPairs: [],
-    manifold: createCollisionContactManifold(),
-    ccdSweep: createCollisionTimeOfImpact(),
-    ccdRotationalManifold: createCollisionContactManifold(),
+    manifold: createCollisionContactManifold2D(),
+    ccdSweep: createCollisionTimeOfImpact2D(),
+    ccdRotationalManifold: createCollisionContactManifold2D(),
     ccdCenterA: { x: 0, y: 0 },
     ccdCenterB: { x: 0, y: 0 },
     ccdImpactFraction: 0,

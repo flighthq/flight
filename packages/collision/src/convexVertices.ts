@@ -1,4 +1,4 @@
-import type { CollisionAabb, CollisionObb } from '@flighthq/types/contract';
+import type { CollisionAabb2D, CollisionObb2D } from '@flighthq/types/contract';
 
 // Materializes a box collider as the flat `[x0,y0,...]` vertex list the convex cores consume, so
 // AABB, OBB, and polygon all reduce to one representation. Package-internal: these are a detail of
@@ -6,7 +6,7 @@ import type { CollisionAabb, CollisionObb } from '@flighthq/types/contract';
 // emit their four corners in consistent winding, which the cores rely on to walk edges in order.
 
 // Writes the four corners of an axis-aligned box into `out` as a flat `[x0,y0,...]` list.
-export function writeAabbVertices(aabb: Readonly<CollisionAabb>, out: Float64Array): void {
+export function writeAabbVertices(aabb: Readonly<CollisionAabb2D>, out: Float64Array): void {
   const minX = aabb.minX;
   const minY = aabb.minY;
   const maxX = aabb.maxX;
@@ -22,7 +22,7 @@ export function writeAabbVertices(aabb: Readonly<CollisionAabb>, out: Float64Arr
 }
 
 // Writes the four world-space corners of an oriented box into `out` as a flat `[x0,y0,...]` list.
-export function writeObbVertices(obb: Readonly<CollisionObb>, out: Float64Array): void {
+export function writeObbVertices(obb: Readonly<CollisionObb2D>, out: Float64Array): void {
   const cx = obb.x;
   const cy = obb.y;
   const halfW = obb.halfW;

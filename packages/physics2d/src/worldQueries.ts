@@ -1,10 +1,10 @@
 import {
-  createCollisionRaycastHit,
-  getCollisionShapeContainsPoint,
-  raycastCollisionShape,
+  createCollisionRaycastHit2D,
+  getCollisionShapeContainsPoint2D,
+  raycastCollisionShape2D,
 } from '@flighthq/collision/contract';
 import type {
-  CollisionRaycastHit,
+  CollisionRaycastHit2D,
   Physics2DCollider,
   Physics2DQueryFilter,
   Physics2DQueryResult,
@@ -65,7 +65,7 @@ export function queryPhysics2DPoint(
       for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex++) {
         const collider = body.colliders[colliderIndex];
         if (!passesColliderFilter(collider, filter)) continue;
-        if (!getCollisionShapeContainsPoint(collider.world, x, y)) continue;
+        if (!getCollisionShapeContainsPoint2D(collider.world, x, y)) continue;
         writeQueryHit(out, body, collider, colliderIndex);
       }
     }
@@ -140,7 +140,7 @@ function queryPhysics2DRayInternal(
         const collider = body.colliders[colliderIndex];
         if (!passesColliderFilter(collider, filter)) continue;
         if (
-          !raycastCollisionShape(
+          !raycastCollisionShape2D(
             collider.world,
             originX,
             originY,
@@ -200,7 +200,7 @@ function writeClosestRayHit(
   body: RigidBody2D,
   collider: Physics2DCollider,
   colliderIndex: number,
-  source: Readonly<CollisionRaycastHit>,
+  source: Readonly<CollisionRaycastHit2D>,
 ): void {
   if (out.hitCount === 0) {
     writeRayHit(out, body, collider, colliderIndex, source);
@@ -246,7 +246,7 @@ function writeRayHit(
   body: RigidBody2D,
   collider: Physics2DCollider,
   colliderIndex: number,
-  source: Readonly<CollisionRaycastHit>,
+  source: Readonly<CollisionRaycastHit2D>,
 ): void {
   const hit = out.hits[out.hitCount];
   if (hit === undefined) {
@@ -333,7 +333,7 @@ function compareNumbers(a: number, b: number): number {
 interface Physics2DQueryScratch {
   candidateBodies: number[];
   colliderBounds: SpatialAabb;
-  raycastHit: CollisionRaycastHit;
+  raycastHit: CollisionRaycastHit2D;
 }
 
 function acquirePhysics2DQueryScratch(): Physics2DQueryScratch {
@@ -346,7 +346,7 @@ function createPhysics2DQueryScratch(): Physics2DQueryScratch {
   return {
     candidateBodies: [],
     colliderBounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
-    raycastHit: createCollisionRaycastHit(),
+    raycastHit: createCollisionRaycastHit2D(),
   };
 }
 

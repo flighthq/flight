@@ -1,4 +1,4 @@
-import type { CollisionAabb, CollisionManifold, FlowState, Node2D, Shape } from '@flighthq/sdk';
+import type { CollisionAabb2D, CollisionManifold2D, FlowState, Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -8,7 +8,7 @@ import {
   connectSignal,
   connectInputStateToInputManager,
   createCamera2D,
-  createCollisionManifold,
+  createCollisionManifold2D,
   createDisplayObject,
   createFlowStack,
   createImageResource,
@@ -206,10 +206,10 @@ function triggerGameOver(): void {
   replaceFlowState(flow, gameOverState);
 }
 
-const manifold: CollisionManifold = createCollisionManifold();
+const manifold: CollisionManifold2D = createCollisionManifold2D();
 
-const playerAabb: CollisionAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-const platformAabb: CollisionAabb = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+const playerAabb: CollisionAabb2D = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+const platformAabb: CollisionAabb2D = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 
 function updateGame(dt: number): void {
   velocityX = 0;
