@@ -44,6 +44,30 @@
         "functional/effect-invert/webgpu": "the WebGPU effect target is single-sampled while WebGL renders at sampleCount 4 and Canvas antialiases; release after WebGPU can honor sampleCount 4, the WebGPU scene requests it, and current parity passes"
       },
       "reason": "looks same"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-20T22:39:41.101Z",
+      "keys": [
+        "functional/swf-import/dom",
+        "functional/swf-import/canvas",
+        "functional/swf-import/webgl",
+        "functional/swf-import/webgpu"
+      ],
+      "reason": "text is rendering slightly different on ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-20T22:40:24.970Z",
+      "keys": [
+        "functional/text-background-box/dom",
+        "functional/text-background-box/canvas",
+        "functional/text-background-box/webgl",
+        "functional/text-background-box/webgpu"
+      ],
+      "reason": "text is rendering slightly differently"
     }
   ],
   "held": {
@@ -55,7 +79,7 @@
     "functional/effect-lens-distortion/webgpu": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
     "functional/effect-lens-flare/webgl": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
     "functional/effect-lens-flare/webgpu": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
-    "functional/effect-msaa-bloom/canvas": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4 and Canvas antialiases; release after the WebGPU sample-count seam is resolved and current parity passes SECOND CONDITION, independent of the determinism question: this canvas cell is measured against siblings that render on a FLOAT target \u2014 effect-effect-msaa-bloom.webgl.ts and .webgpu.ts both build their pipeline with format: 'rgba16f' (verified in source, not assumed), while Canvas 2D has no float path and clamps to [0,1] before the effect's threshold is applied. \u2605 NO MEASUREMENT STANDS BEHIND THIS YET: the divergence originally cited here has since been traced to canvas clamping bloom's intensity to 1 and to its per-channel bright pass, both since fixed, and dropping the Gl target from rgba16f to rgba8 leaves the core byte-identical \u2014 evidence AGAINST the format mattering for this scene. Whoever releases this hold should establish a measurement rather than inherit mine.",
+    "functional/effect-msaa-bloom/canvas": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4 and Canvas antialiases; release after the WebGPU sample-count seam is resolved and current parity passes SECOND CONDITION, independent of the determinism question: this canvas cell is measured against siblings that render on a FLOAT target — effect-effect-msaa-bloom.webgl.ts and .webgpu.ts both build their pipeline with format: 'rgba16f' (verified in source, not assumed), while Canvas 2D has no float path and clamps to [0,1] before the effect's threshold is applied. ★ NO MEASUREMENT STANDS BEHIND THIS YET: the divergence originally cited here has since been traced to canvas clamping bloom's intensity to 1 and to its per-channel bright pass, both since fixed, and dropping the Gl target from rgba16f to rgba8 leaves the core byte-identical — evidence AGAINST the format mattering for this scene. Whoever releases this hold should establish a measurement rather than inherit mine.",
     "functional/effect-msaa-bloom/webgl": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4 and Canvas antialiases; release after the WebGPU sample-count seam is resolved and current parity passes",
     "functional/effect-msaa-bloom/webgpu": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4 and Canvas antialiases; release after the WebGPU sample-count seam is resolved and current parity passes",
     "functional/effect-msaa/webgl": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes",
@@ -71,6 +95,14 @@
     "functional/effect-halftone/webgpu": "the signed-remainder black dead zone is fixed, but the angled effect still rotates absolute pixel coordinates in the backends' opposite native Y origins, changing the dot-grid orientation or phase while the per-backend assertions check only dot energy and dead-zone coverage; release after the effect uses a shared position-UV convention or equivalent backend compensation and a current cross-backend parity capture verifies matching dot placement",
     "functional/shape-stroke-ring-fallback/dom": "committed DOM baseline captured through the full-viewport screenshot path while the scene requests 400x260, smaller than the hardcoded 800x600 capture viewport; the fingerprint is clean because it is computed from the rendered frame, not the viewport screenshot, so no gate can see the white gap — hold exists to stop a reference image being commissioned from the contaminated screenshot, not to re-baseline the fingerprint",
     "functional/swf-alpha-transform/dom": "dom has white background and is not centered",
-    "functional/text-markup-color/dom": "dom has white background and is misaligned"
+    "functional/text-markup-color/dom": "dom has white background and is misaligned",
+    "functional/swf-import/dom": "text is rendering slightly different on ci",
+    "functional/swf-import/canvas": "text is rendering slightly different on ci",
+    "functional/swf-import/webgl": "text is rendering slightly different on ci",
+    "functional/swf-import/webgpu": "text is rendering slightly different on ci",
+    "functional/text-background-box/dom": "text is rendering slightly differently",
+    "functional/text-background-box/canvas": "text is rendering slightly differently",
+    "functional/text-background-box/webgl": "text is rendering slightly differently",
+    "functional/text-background-box/webgpu": "text is rendering slightly differently"
   }
 }
