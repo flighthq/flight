@@ -46,6 +46,8 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [3D materials & lighting](3d-materials-architecture.md) — the canonical 3D material and light model.
 - [3D pipeline](3d-pipeline-architecture.md) — the 3D draw pipeline end to end.
 - [blend / composite](blend-composite-architecture.md) — blend modes and compositing across backends.
+- [Canvas CSS-filter / luminance sweep](canvas-css-filter-luminance-sweep.md) — the exhaustive nine-effect
+  filter population, its one luminance intersection, and the mixed-channel reproduction that distinguishes it.
 - [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.
 - [dom screenshot / fingerprint divergence](dom-screenshot-fingerprint-divergence.md) — DOM captures produce two different artifacts for the regression gate and human review; the gate is blind to screenshot-only defects.
 - [document audio resources](document-audio-resources.md) — a document carries audio bytes on the image lane's terms, never playback.
