@@ -67,6 +67,7 @@ export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
   { path: 'packages/effects-wgpu/src/wgpuColorMatrixPass.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuContactShadowsEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuDropShadowEffect.test.ts', reason: 'mocks-modules' },
+  { path: 'packages/effects-wgpu/src/wgpuEffectBlitShader.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuEffectBoxBlur.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuEffectProgramCache.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuEffectTintShader.test.ts', reason: 'mocks-modules' },
