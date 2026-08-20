@@ -1,4 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
+import { RAD_TO_DEG } from '@flighthq/math/contract';
 import type { MatrixLike, Transform2D, Transform2DLike } from '@flighthq/types/contract';
 
 // Allocates a decomposed 2D transform carrier. Defaults are the identity transform (no translation,
@@ -64,5 +65,3 @@ export function decomposeMatrixToTransform2D(out: Transform2DLike, source: Reado
   out.x = source.tx;
   out.y = source.ty;
 }
-
-const RAD_TO_DEG = 180 / Math.PI;

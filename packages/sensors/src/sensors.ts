@@ -1,3 +1,4 @@
+import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   AmbientLightReading,
@@ -82,10 +83,9 @@ export function computeEulerFromQuaternion(out: OrientationReading, quaternion: 
   const beta = Math.abs(sinBeta) >= 1 ? (Math.sign(sinBeta) * Math.PI) / 2 : Math.asin(sinBeta);
   const alpha = Math.atan2(2 * (w * z + x * y), 1 - 2 * (x * x + z * z));
   const gamma = Math.atan2(2 * (w * y + x * z), 1 - 2 * (x * x + y * y));
-  const toDeg = 180 / Math.PI;
-  out.alpha = (((alpha * toDeg) % 360) + 360) % 360; // normalize to [0, 360)
-  out.beta = beta * toDeg;
-  out.gamma = gamma * toDeg;
+  out.alpha = (((alpha * RAD_TO_DEG) % 360) + 360) % 360; // normalize to [0, 360)
+  out.beta = beta * RAD_TO_DEG;
+  out.gamma = gamma * RAD_TO_DEG;
   out.interval = quaternion.interval;
   out.timestamp = quaternion.timestamp;
   out.accuracy = quaternion.accuracy;
@@ -96,9 +96,8 @@ export function computeEulerFromQuaternion(out: OrientationReading, quaternion: 
 // gravity vector onto each device axis. Writes into `out`.
 // Safe when `out` aliases any field of `orientation` because all inputs are read first.
 export function computeGravityFromOrientation(out: MotionReading, orientation: Readonly<OrientationReading>): void {
-  const toRad = Math.PI / 180;
-  const b = orientation.beta * toRad;
-  const g = orientation.gamma * toRad;
+  const b = orientation.beta * DEG_TO_RAD;
+  const g = orientation.gamma * DEG_TO_RAD;
   // Gravity components in device frame. g is 9.81 m/s².
   const G = 9.80665;
   const sinG = Math.sin(g);
@@ -120,10 +119,9 @@ export function computeQuaternionFromOrientationReading(
   out: QuaternionReading,
   orientation: Readonly<OrientationReading>,
 ): void {
-  const toRad = Math.PI / 180;
-  const a = orientation.alpha * toRad * 0.5;
-  const b = orientation.beta * toRad * 0.5;
-  const g = orientation.gamma * toRad * 0.5;
+  const a = orientation.alpha * DEG_TO_RAD * 0.5;
+  const b = orientation.beta * DEG_TO_RAD * 0.5;
+  const g = orientation.gamma * DEG_TO_RAD * 0.5;
   const ca = Math.cos(a);
   const sa = Math.sin(a);
   const cb = Math.cos(b);
@@ -182,8 +180,7 @@ export function computeScreenRelativeOrientation(
   const beta = orientation.beta;
   const gamma = orientation.gamma;
   // Read all inputs before writing any output (alias safety).
-  const toRad = Math.PI / 180;
-  const angle = screenAngle * toRad;
+  const angle = screenAngle * DEG_TO_RAD;
   const sinA = Math.sin(angle);
   const cosA = Math.cos(angle);
   // Rotate gamma and beta components by the screen angle in the horizontal plane.

@@ -1,3 +1,4 @@
+import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles/contract';
 import type {
   ParticleBlendMode,
@@ -7,8 +8,6 @@ import type {
   SpineParticleDocument,
   SpineTintKeyframe,
 } from '@flighthq/types/contract';
-
-const RAD2DEG = 180 / Math.PI;
 
 function rgbToHex(r: number, g: number, b: number): string {
   const byte = (v: number) =>
@@ -22,8 +21,8 @@ function configToDocument(
   config: Readonly<ParticleEmitterConfig>,
   existing: Partial<SpineParticleDocument>,
 ): SpineParticleDocument {
-  const angleMid = Math.atan2(-config.directionY, config.directionX) * RAD2DEG;
-  const spreadDeg = config.spread * RAD2DEG;
+  const angleMid = Math.atan2(-config.directionY, config.directionX) * RAD_TO_DEG;
+  const spreadDeg = config.spread * RAD_TO_DEG;
 
   return {
     name: existing.name ?? '',
@@ -50,7 +49,7 @@ function configToDocument(
           : { low: 0, high: 0 },
     velocity: { low: config.speedMin, high: config.speedMax },
     angle: { low: angleMid - spreadDeg, high: angleMid + spreadDeg },
-    rotation: { low: config.rotationSpeedMin * RAD2DEG, high: config.rotationSpeedMax * RAD2DEG },
+    rotation: { low: config.rotationSpeedMin * RAD_TO_DEG, high: config.rotationSpeedMax * RAD_TO_DEG },
     wind: { low: 0, high: 0 }, // gravityX not representable as wind range
     gravity: { low: config.gravityY, high: config.gravityY },
     scale: { low: config.scaleMin, high: config.scaleMax },

@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
@@ -43,8 +44,6 @@ export function parseStarlingPexDocument(xml: string, options?: StarlingPexParse
     document: doc,
   };
 }
-
-const DEG2RAD = Math.PI / 180;
 
 type PexDict = Record<string, string>;
 
@@ -145,7 +144,7 @@ function dictToDocument(d: PexDict): StarlingPexDocument {
 }
 
 function documentToConfig(doc: Readonly<StarlingPexDocument>, textureSize: number): ParticleEmitterConfig {
-  const angleRad = doc.angle * DEG2RAD;
+  const angleRad = doc.angle * DEG_TO_RAD;
   const lifespan = doc.particleLifespan;
   const lifespanVar = doc.particleLifespanVariance;
   const speed = doc.speed;
@@ -161,8 +160,8 @@ function documentToConfig(doc: Readonly<StarlingPexDocument>, textureSize: numbe
   const rotStartVar = doc.rotationStartVariance;
   const rotEndVar = doc.rotationEndVariance;
   const lifetimeMid = lifespan + lifespanVar * 0.5 || 1;
-  const rotSpeedMid = ((rotStart + rotEnd) * 0.5 * DEG2RAD) / lifetimeMid;
-  const rotSpeedVar = (Math.max(rotStartVar, rotEndVar) * DEG2RAD) / lifetimeMid;
+  const rotSpeedMid = ((rotStart + rotEnd) * 0.5 * DEG_TO_RAD) / lifetimeMid;
+  const rotSpeedVar = (Math.max(rotStartVar, rotEndVar) * DEG_TO_RAD) / lifetimeMid;
   const pdDuration = doc.duration;
   return createParticleEmitterConfig({
     maxParticles: doc.maxParticles,
@@ -174,7 +173,7 @@ function documentToConfig(doc: Readonly<StarlingPexDocument>, textureSize: numbe
     speedMax: speed + speedVar,
     directionX: Math.cos(angleRad),
     directionY: -Math.sin(angleRad),
-    spread: doc.angleVariance * DEG2RAD,
+    spread: doc.angleVariance * DEG_TO_RAD,
     gravityX: doc.gravityx,
     gravityY: doc.gravityy,
     emitterShape,

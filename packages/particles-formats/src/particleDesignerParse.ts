@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
@@ -10,8 +11,6 @@ import type {
   ParticleDesignerRawDict,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
-const DEG2RAD = Math.PI / 180;
 
 // ─── Minimal plist XML parser ────────────────────────────────────────────────
 
@@ -76,7 +75,7 @@ function str(d: ParticleDesignerRawDict, key: string, def = ''): string {
 // ─── Shared conversion logic operating directly on the raw dict ──────────────
 
 function rawDictToConfig(d: ParticleDesignerRawDict, textureSize: number): ParticleEmitterConfig {
-  const angleRad = num(d, 'angle', 90) * DEG2RAD;
+  const angleRad = num(d, 'angle', 90) * DEG_TO_RAD;
   const lifespan = num(d, 'particleLifespan', 1);
   const lifespanVar = num(d, 'particleLifespanVariance', 0);
   const speed = num(d, 'speed', 100);
@@ -92,8 +91,8 @@ function rawDictToConfig(d: ParticleDesignerRawDict, textureSize: number): Parti
   const rotStartVar = num(d, 'rotationStartVariance', 0);
   const rotEndVar = num(d, 'rotationEndVariance', 0);
   const lifetimeMid = lifespan + lifespanVar * 0.5 || 1;
-  const rotSpeedMid = ((rotStart + rotEnd) * 0.5 * DEG2RAD) / lifetimeMid;
-  const rotSpeedVar = (Math.max(rotStartVar, rotEndVar) * DEG2RAD) / lifetimeMid;
+  const rotSpeedMid = ((rotStart + rotEnd) * 0.5 * DEG_TO_RAD) / lifetimeMid;
+  const rotSpeedVar = (Math.max(rotStartVar, rotEndVar) * DEG_TO_RAD) / lifetimeMid;
 
   // Particle Designer `duration` is in seconds; -1 (or 0) means emit forever.
   const pdDuration = num(d, 'duration', -1);
@@ -108,7 +107,7 @@ function rawDictToConfig(d: ParticleDesignerRawDict, textureSize: number): Parti
     speedMax: speed + speedVar,
     directionX: Math.cos(angleRad),
     directionY: -Math.sin(angleRad),
-    spread: num(d, 'angleVariance', 0) * DEG2RAD,
+    spread: num(d, 'angleVariance', 0) * DEG_TO_RAD,
     gravityX: num(d, 'gravityx', 0),
     gravityY: num(d, 'gravityy', 0),
     emitterShape,

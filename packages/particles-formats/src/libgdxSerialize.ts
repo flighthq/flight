@@ -1,3 +1,4 @@
+import { RAD_TO_DEG } from '@flighthq/math/contract';
 import type {
   LibgdxSerializeOptions,
   ParticleEmitterConfig,
@@ -32,8 +33,6 @@ export function serializeLibgdxParticleDocument(
   return { text, warnings };
 }
 
-const RAD2DEG = 180 / Math.PI;
-
 function collectLibgdxSerializeWarnings(config: Readonly<ParticleEmitterConfig>): string[] {
   const warnings: string[] = [];
   if (config.blendMode !== null && config.blendMode !== 'add' && config.blendMode !== 'normal') {
@@ -67,8 +66,8 @@ function configToDocument(
   existing: Partial<LibgdxParticleDocument>,
   textureSize: number,
 ): LibgdxParticleDocument {
-  const angleMid = Math.atan2(-config.directionY, config.directionX) * RAD2DEG;
-  const spreadDeg = config.spread * RAD2DEG;
+  const angleMid = Math.atan2(-config.directionY, config.directionX) * RAD_TO_DEG;
+  const spreadDeg = config.spread * RAD_TO_DEG;
   const angleMin = angleMid - spreadDeg;
   const angleMax = angleMid + spreadDeg;
   const scaleMinPx = config.scaleMin * textureSize;
@@ -88,8 +87,8 @@ function configToDocument(
     spawnHeight = makeConstRange(config.emitterHeight);
   }
   const lifetimeMid = (config.lifetimeMin + config.lifetimeMax) * 0.5 || 1;
-  const rotDegMin = config.rotationSpeedMin * RAD2DEG * lifetimeMid;
-  const rotDegMax = config.rotationSpeedMax * RAD2DEG * lifetimeMid;
+  const rotDegMin = config.rotationSpeedMin * RAD_TO_DEG * lifetimeMid;
+  const rotDegMax = config.rotationSpeedMax * RAD_TO_DEG * lifetimeMid;
   // Duration: infinite if looping, otherwise use duration in ms
   const durMs = config.loop ? -1 : config.duration > 0 ? config.duration * 1000 : 3000;
   const durVal = durMs > 0 ? durMs : 3000;
