@@ -106,6 +106,7 @@ if (!scoped) {
 
   add('data-cast-colour:check', 'tsx', ['scripts/check-data-cast-colour.ts']);
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
+  add('functional-antialiasing:check', 'tsx', ['scripts/check-functional-antialiasing.ts', '--check']);
 
   // Advisory, and deliberately not a gate: `scripts/size.ts` always exits 0, so this reports which
   // bundles moved against the unminified baseline without ever failing the sweep. A red here would

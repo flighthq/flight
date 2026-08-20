@@ -15,10 +15,18 @@ export type {
 export type { FunctionalTargetOptions };
 
 type BackendWindow = typeof window & {
+  __ftAntialiasingPolicy?: 'aa' | 'no-aa';
   __ftBackend?: string;
   __ftExpectedImageDescription?: string;
   __ftExpectedImageDescriptionWithheld?: string;
 };
+
+// A checked claim about the final reviewed picture, never a renderer setter. The repository gate owns
+// declaration presence and sibling agreement; its report-only census independently resolves backend
+// defaults and target normalization so a scene cannot make its own claim green by calling this.
+export function declareAntialiasingPolicy(policy: 'aa' | 'no-aa'): void {
+  (window as BackendWindow).__ftAntialiasingPolicy = policy;
+}
 
 export function declareExpectedImageDescription(description: string): void {
   (window as BackendWindow).__ftExpectedImageDescription = description;

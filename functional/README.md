@@ -38,6 +38,15 @@ The worked case: `color-adjustment.canvas` blitted an already-red source with no
 
 AA on every cell, or off on every cell. **If it is off, that applies to the canvas and dom cells too, if the scene has them.**
 
+Every scene source module states that policy beside its expected-image declaration:
+
+```ts
+declareAntialiasingPolicy('aa');
+// or: declareAntialiasingPolicy('no-aa');
+```
+
+The call is a checked claim about the final reviewed picture, never a renderer setting. It accepts only those two literal values: there is deliberately no `mixed`, `inherit`, computed, or default state. A backend-agnostic source makes one declaration for every cell it produces; backend-specific sibling modules each declare locally and must agree. `npm run check:functional-antialiasing` gates declaration presence and sibling agreement immediately. Its declaration-vs-effective-configuration census remains report-only until WebGPU has an AA path, because the current backend-agnostic population cannot satisfy either uniform policy today; the census names that broken state rather than legitimizing it.
+
 That clause has teeth, because it is not always satisfiable:
 
 | backend | AA control |
