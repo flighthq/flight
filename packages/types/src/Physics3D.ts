@@ -1,0 +1,563 @@
+// 3D rigid-body dynamics header. `@flighthq/physics3d` owns integration and constraint resolution in
+// three dimensions and owns no detection of its own. Everything here is plain data advanced by an
+// explicit `stepPhysics3D(world, dt)` — no implicit world object, no hidden per-frame allocation, and
+// no scene-graph reference. Copying a body's transform onto a scene node is the caller's job.
+//
+// 2D rigid-body dynamics is `@flighthq/physics2d`, a separate package, because the dimension changes
+// the model rather than only its width: a 2D rotational inertia is one scalar about a fixed axis,
+// where 3D needs a tensor that must be re-expressed in world space every step; friction acts along one
+// tangent in 2D and spans a two-dimensional plane in 3D; and orientation integrates as a quaternion
+// rather than accumulating into a scalar angle.
+//
+// CONTACT GENERATION IS NOT HERE AND IS NOT YET ANYWHERE. A `Physics3DContact` is consumed by this
+// package, not produced by it: the 3D narrow phase (`@flighthq/collision`) and the 3D broadphase
+// (`@flighthq/spatial`) do not exist yet, so a caller supplies contacts directly. That seam is
+// deliberate rather than temporary — the solver is defined against contact records and would be so
+// defined regardless — but until those packages grow their 3D halves, a world simulates only the
+// contacts it is given. See `agents/collision-support-registry.md` and
+// `agents/spatial-dimension-seams.md`.
+
+// How a body participates in the simulation. `dynamic` is integrated by forces and resolved by
+// constraints. `static` never moves and behaves as infinite mass; it is the ground, the terrain. A
+// `kinematic` body is moved by the caller through its velocity and pushes dynamic bodies without being
+// pushed back — a lift, a scripted door. Static and kinematic bodies both carry zero inverse mass and a
+// zero inverse inertia tensor, so the solver applies no impulse to them and two of them in contact
+// generate no constraint at all.
+export type Physics3DBodyType = 'dynamic' | 'kinematic' | 'static';
+
+// The surface properties a contact between two bodies is resolved with.
+//
+// `density` is mass per unit VOLUME — the 2D package's is per unit area, and the difference is not
+// cosmetic: the same number describes a different material in each, so a density copied between them
+// is wrong by a length. `friction` is the Coulomb coefficient and `restitution` the normal-direction
+// bounce, both in [0,1] by convention though neither is clamped: a restitution above 1 adds energy,
+// which is occasionally what a game wants and is never what a solver can promise to keep stable.
+export interface Physics3DMaterial {
+  density: number;
+  friction: number;
+  restitution: number;
+}
+
+// Which other bodies one body may contact. Categories and masks use the familiar symmetric rule: A's
+// mask must include B's category AND B's mask must include A's category. A matching non-zero group
+// overrides both masks — positive always collides, negative never collides — for assemblies whose
+// pieces must make one decision regardless of their ordinary categories.
+export interface Physics3DCollisionFilter {
+  categoryBits: number;
+  maskBits: number;
+  groupIndex: number;
+}
+
+// The mass properties of a body or of one primitive contributing to it.
+//
+// The rotational inertia is a symmetric 3x3 tensor, stored as its six unique components because a
+// symmetric matrix has six and storing nine invites the two halves to disagree. `xx`/`yy`/`zz` are the
+// diagonal and `xy`/`xz`/`yz` the off-diagonal terms; the tensor is expressed about the CENTRE OF MASS
+// in the body's LOCAL frame, which is the only frame in which it is constant. (`centerX`,`centerY`,
+// `centerZ`) is that centre, also local.
+//
+// Off-diagonal terms are zero exactly when the local axes are the principal axes — true for a centred
+// sphere, box, or capsule, and false the moment two such primitives are combined at an offset. Storing
+// the general symmetric form rather than three principal moments is what lets primitives combine by the
+// parallel-axis theorem without an eigenvalue solve.
+export interface Physics3DMassData {
+  mass: number;
+  inertiaXX: number;
+  inertiaYY: number;
+  inertiaZZ: number;
+  inertiaXY: number;
+  inertiaXZ: number;
+  inertiaYZ: number;
+  centerX: number;
+  centerY: number;
+  centerZ: number;
+}
+
+// A rigid body: the simulated entity. Position, orientation, and velocity are flat fields rather than
+// nested `Vector3`/`Quaternion` objects, so the integrator writes through them without dereferencing
+// and a body array stays one contiguous block of plain numbers for the C/C++ port. `Quaternion` and
+// `Matrix3` are `Entity` types backed by a `Float32Array`, which is both an indirection and a precision
+// step down from what a solver's accumulators need.
+//
+// `index` is the body's persistent identity, assigned by the world at creation. It is what every pair
+// of bodies is canonically ordered by before a contact is created, which is what keeps contact identity
+// — and therefore the warm-start cache — stable while the bodies move. Geometry cannot supply that
+// order, because any order derived from coordinates flips the moment those coordinates cross. Identity
+// survives motion; position does not.
+export interface RigidBody3D {
+  index: number;
+  // Once inserted, change participation through `setPhysics3DBodyType` so mass and constraints follow.
+  type: Physics3DBodyType;
+
+  // Once inserted, teleport through `setPhysics3DBodyTransform` so derived state follows.
+  x: number;
+  y: number;
+  z: number;
+  // Orientation as a UNIT quaternion. Kept normalized by the integrator, which renormalizes after every
+  // angular update: integrating a quaternion by angular velocity is a first-order step off the unit
+  // sphere, so without renormalization the drift compounds into a visible shear.
+  orientationX: number;
+  orientationY: number;
+  orientationZ: number;
+  orientationW: number;
+
+  velocityX: number;
+  velocityY: number;
+  velocityZ: number;
+  // Angular velocity in RADIANS per second, as a world-space vector whose direction is the axis and
+  // whose magnitude is the rate. Radians because this is the math layer; the sync layer that copies a
+  // body onto a scene node converts at that seam, which is where the SDK converts everywhere else.
+  angularVelocityX: number;
+  angularVelocityY: number;
+  angularVelocityZ: number;
+
+  // Prefer the apply-force/torque helpers: they reject unsupported bodies and wake accepted work.
+  forceX: number;
+  forceY: number;
+  forceZ: number;
+  torqueX: number;
+  torqueY: number;
+  torqueZ: number;
+
+  mass: number;
+  inverseMass: number;
+
+  // The inverse inertia tensor in the body's LOCAL frame, symmetric, six unique components. Constant
+  // while the body's mass properties are.
+  inverseInertiaXX: number;
+  inverseInertiaYY: number;
+  inverseInertiaZZ: number;
+  inverseInertiaXY: number;
+  inverseInertiaXZ: number;
+  inverseInertiaYZ: number;
+
+  // The same tensor rotated into WORLD space as `R * Iinv * transpose(R)`, refreshed once per substep
+  // from the current orientation. It is stored rather than recomputed per constraint because every
+  // contact point and every joint row multiplies by it, and a stack of a few hundred contacts would
+  // otherwise redo the same similarity transform thousands of times per step.
+  //
+  // This field is DERIVED. Writing it has no lasting effect; write the orientation and the local tensor.
+  inverseInertiaWorldXX: number;
+  inverseInertiaWorldYY: number;
+  inverseInertiaWorldZZ: number;
+  inverseInertiaWorldXY: number;
+  inverseInertiaWorldXZ: number;
+  inverseInertiaWorldYZ: number;
+
+  // The centre of mass in LOCAL space. Rarely the body's origin, and the difference is not cosmetic:
+  // torque acts about the centre of mass, so a solver that rotates about the origin gives an offset
+  // body the swing of a shape it does not have.
+  centerX: number;
+  centerY: number;
+  centerZ: number;
+
+  linearDamping: number;
+  angularDamping: number;
+  gravityScale: number;
+  // A fixed-rotation dynamic body retains translational mass but exposes a zero inverse inertia tensor
+  // to every contact and joint equation. Change this through `setPhysics3DBodyFixedRotation`.
+  fixedRotation: boolean;
+  // Opts a dynamic body into continuous collision detection. The discrete path remains the default;
+  // change this through `setPhysics3DBodyBullet`. Honoured only once a 3D narrow phase exists to sweep
+  // against — until then the flag is carried and reported, and nothing consumes it.
+  bullet: boolean;
+
+  // A sleeping body is skipped by integration and by the solver: it holds its pose, spends no
+  // iterations, and its contacts contribute nothing. Sleep is decided per ISLAND rather than per body,
+  // because a body resting on a moving neighbour is not at rest — the island is the unit that can
+  // truthfully be called still. Static bodies are never asleep or awake; they simply do not move.
+  sleeping: boolean;
+  // Per-body opt-out from world sleeping. A disabled member keeps its whole connected island awake,
+  // because constraints can transmit its continuing motion or external control to every neighbour.
+  sleepEnabled: boolean;
+  // Seconds this body has been continuously below both sleep thresholds. Reset the moment it exceeds
+  // either, so the timer measures an unbroken stretch of stillness rather than a total.
+  sleepTimer: number;
+
+  material: Physics3DMaterial;
+  filter: Physics3DCollisionFilter;
+}
+
+// One point of a contact, carrying the GEOMETRY AND IDENTITY of the touch and nothing about how it is
+// resolved.
+//
+// The omission is deliberate and is the load-bearing difference from `Physics2DContactPoint`, which
+// inlines `normalImpulse`, `tangentImpulse`, `normalMass`, `tangentMass`, and `bias` — every one of
+// them a sequential-impulse construct. A position-based solver has no effective-mass denominators and
+// no velocity bias; it accumulates a Lagrange multiplier against a compliance. Putting one solver's
+// accumulators on the shared record makes the record mean "contact, as resolved by sequential
+// impulses," and the second solver then either inherits dead fields or forces a breaking change.
+// Solver state lives in `Physics3DContactConstraintPoint`, which the solver owns.
+//
+// (`x`,`y`,`z`) is the world-space contact point. (`rA*`)/(`rB*`) are the lever arms from each body's
+// centre of mass to it — the vectors whose cross product with the normal is the entire reason a contact
+// can produce torque. They are geometry, not solver state: every solver needs them.
+//
+// `featureId` is an opaque, frame-stable identifier for WHICH feature pair produced this point, so a
+// solver can match this step's points against last step's accumulators and warm-start. Stability across
+// steps is the whole contract; the value itself means nothing.
+export interface Physics3DContactPoint {
+  x: number;
+  y: number;
+  z: number;
+  depth: number;
+  featureId: number;
+
+  rAX: number;
+  rAY: number;
+  rAZ: number;
+  rBX: number;
+  rBY: number;
+  rBZ: number;
+}
+
+// A persistent contact between two bodies. Persistent is the point: the record survives between steps
+// so the solver's matching accumulators can be reused.
+//
+// `bodyA` and `bodyB` are body indices, ALWAYS ordered so `bodyA < bodyB`. That ordering is an
+// invariant of contact creation, not a convention a caller is asked to respect: a narrow phase resolves
+// contact points on the reference shape's surface and ties toward its first argument, so passing the
+// same pair the other way round moves the points and renumbers their feature ids.
+//
+// The normal points so that resolving pushes A out of B, matching the 2D package and
+// `@flighthq/collision`. It is a UNIT vector; the solver builds its friction basis from it and does not
+// re-normalize.
+//
+// `friction` and `restitution` are the combined surface values for the pair, mixed once when the
+// contact is created rather than re-derived per iteration.
+export interface Physics3DContact {
+  bodyA: number;
+  bodyB: number;
+
+  normalX: number;
+  normalY: number;
+  normalZ: number;
+
+  pointCount: number;
+  points: Physics3DContactPoint[];
+
+  friction: number;
+  restitution: number;
+
+  // Reset to true when the pair is found each step. A pre-solve hook may set it false to keep the
+  // contact and its begin/end lifecycle while omitting every solver and island effect for this step.
+  enabled: boolean;
+  // Whether either side is a sensor: the contact is reported but generates no impulse.
+  sensor: boolean;
+  // Whether the pair was overlapping this step. A contact that stops touching is kept for one step so
+  // an end-of-contact event can be reported before it is retired.
+  touching: boolean;
+}
+
+// This step's contact transitions. A per-step output buffer, not a second record of contact state: the
+// persistent contact list already knows which pairs are touching, and these are read off the moments it
+// gains and loses entries.
+export interface Physics3DContactEvents {
+  began: Physics3DContact[];
+  ended: Physics3DContact[];
+}
+
+// A strict per-contact callback invoked by the explicit world step. Pre-solve runs after contact
+// intake and before constraint preparation, so it may adjust friction/restitution or set
+// `enabled=false` for this step. Post-solve runs once the step has committed. World lifecycle and
+// body-action helpers reject calls from either hook: contact fields are the hook's sole mutation
+// surface. Sensors invoke neither, because they produce no constraint to solve.
+export type Physics3DContactCallback = (world: Physics3DWorld, contact: Physics3DContact) => void;
+
+export interface Physics3DContactHooks {
+  preSolve: Physics3DContactCallback | null;
+  postSolve: Physics3DContactCallback | null;
+}
+
+// The sequential-impulse accumulators for one contact point. Owned by the solver, matched back to its
+// `Physics3DContactPoint` by `featureId`.
+//
+// 3D friction needs TWO tangents, not one: the friction force spans the plane orthogonal to the normal,
+// so a single tangent would leave one direction unopposed and a resting box would drift along it. The
+// pair is solved as a coupled cone rather than two independent axes, because clamping each to
+// `mu * normalImpulse` separately permits a combined magnitude up to `sqrt(2) * mu * normalImpulse`
+// along the diagonal — a box that slides measurably faster at 45 degrees than along either axis.
+export interface Physics3DContactConstraintPoint {
+  featureId: number;
+
+  normalImpulse: number;
+  tangentImpulse0: number;
+  tangentImpulse1: number;
+
+  // Precomputed constraint denominators, rebuilt each substep from the lever arms and the world inverse
+  // inertia tensors.
+  normalMass: number;
+  tangentMass0: number;
+  tangentMass1: number;
+
+  // The restitution velocity bias applied along the normal. Penetration recovery is a separate
+  // position pass, so correcting overlap does not inject artificial separating velocity.
+  bias: number;
+}
+
+// The solver's per-contact working set: the friction basis and the accumulators. Rebuilt each step from
+// the contact list and carried across steps so warm starting has something to start from.
+export interface Physics3DContactConstraint {
+  // Index into `Physics3DWorld.contacts`, valid for the duration of one step.
+  contact: number;
+
+  // An orthonormal basis for the friction plane, derived from the contact normal. Derived rather than
+  // stored on the contact because it is a solver's choice of parameterization, and because a basis
+  // built fresh from a normal that has barely moved can flip sign between steps — which is why the
+  // accumulators are matched by `featureId` and not by tangent index.
+  tangent0X: number;
+  tangent0Y: number;
+  tangent0Z: number;
+  tangent1X: number;
+  tangent1Y: number;
+  tangent1Z: number;
+
+  pointCount: number;
+  points: Physics3DContactConstraintPoint[];
+}
+
+// The sequential-impulse solver's own state, held by the world but owned by the solver. Keeping it here
+// rather than on the contact records is what lets a second solver be added without either inheriting
+// these fields or renaming them.
+export interface Physics3DSequentialImpulseState {
+  constraints: Physics3DContactConstraint[];
+  // Constraints surviving from the previous step, keyed by the contact's canonical body pair, so warm
+  // starting can find last step's accumulators after the contact list has been rebuilt.
+  constraintByPair: Map<number, Physics3DContactConstraint>;
+}
+
+// The knobs specific to the sequential-impulse solver.
+//
+// More `velocityIterations` buys accuracy in the impulse solve (stacks that do not squash); more
+// `positionIterations` buys penetration recovery. `penetrationSlop` is the overlap deliberately left
+// unresolved, so resting bodies stop twitching against a target of exactly zero, and
+// `positionCorrection` is the fraction of the excess corrected per iteration — correcting all of it at
+// once makes a deep overlap explode outward. `restitutionThreshold` is the approach speed below which
+// restitution is dropped, without which a ball bounces forever at ever smaller amplitudes.
+export interface Physics3DSequentialImpulseConfig {
+  velocityIterations: number;
+  positionIterations: number;
+  penetrationSlop: number;
+  positionCorrection: number;
+  restitutionThreshold: number;
+  warmStarting: boolean;
+}
+
+// The solver-independent knobs, plus the block belonging to whichever solver is in use.
+//
+// The nesting is deliberate. A flat record carrying `velocityIterations` beside `allowSleeping` would
+// make every field look equally universal, and adding a position-based solver would then mean either
+// dead fields on every world or a breaking rename. A named block per solver means a second solver is
+// purely additive: a sibling field, and nothing above it moves.
+export interface Physics3DSolverConfig {
+  // Sleeping trades simulation cost for the fact that a settled stack does not need re-solving every
+  // step. A body counts as still while its linear speed is under `sleepLinearThreshold` and its angular
+  // speed under `sleepAngularThreshold`; the island sleeps once EVERY member has been still
+  // continuously for `timeToSleep` seconds. Requiring the whole island prevents the visible failure
+  // where a settled crate sleeps while the crate it leans on is still sliding out from under it.
+  allowSleeping: boolean;
+  sleepLinearThreshold: number;
+  sleepAngularThreshold: number;
+  timeToSleep: number;
+
+  // How many equal sub-intervals each `stepPhysics3D` call is divided into. One is the default and
+  // reproduces a single discrete step.
+  //
+  // It exists from the first release rather than being added when something needs it, because the
+  // substep loop is the OUTER loop: a solver that integrates once and then iterates cannot be turned
+  // into one that substeps without restructuring everything that reads the step, and every caller
+  // tuning iteration counts would be retuning against a different meaning. Reserving the shape costs a
+  // field and a loop that runs once.
+  substeps: number;
+
+  // Opts the world into continuous collision detection for bodies flagged `bullet`. Carried and
+  // reported but not yet consumed: CCD needs a swept 3D narrow phase, which does not exist.
+  continuousCollision: boolean;
+  maxCcdSubsteps: number;
+
+  sequentialImpulse: Physics3DSequentialImpulseConfig;
+}
+
+// Pure diagnosis of whether one explicit step can run. Individual flags keep simultaneous faults
+// visible; `status` is the stable summary for callers that need only a ready/not-ready branch.
+export interface Physics3DStepExplanation {
+  readonly bodyStateValid: boolean;
+  readonly contactStateValid: boolean;
+  readonly gravityValid: boolean;
+  readonly jointStateValid: boolean;
+  readonly solverConfigValid: boolean;
+  readonly substepsValid: boolean;
+  readonly timestepValid: boolean;
+  readonly velocityIterationsValid: boolean;
+  readonly positionIterationsValid: boolean;
+  readonly status: 'invalid-step' | 'ready';
+}
+
+// Why a joint cannot be solved, or that it can. `unregistered-kind` is the common one: a joint whose
+// kind has no registered solver is skipped in silence by the step, and this is how a caller finds out.
+export interface Physics3DJointExplanation {
+  readonly kind: Physics3DJointKind;
+  readonly index: number;
+  readonly hasSolver: boolean;
+  readonly bodiesResolvable: boolean;
+  readonly status: 'invalid-bodies' | 'solvable' | 'unregistered-kind';
+}
+
+// A joint's type identifier. A plain string, not a closed union, because joints are the family a
+// physics package is most likely to be extended in: a game with a bespoke constraint (a ragdoll limit,
+// a suspension with a custom profile) should be able to register its own without this package knowing.
+// Built-in kinds take bare names; a user's take a vendor prefix (`acme.Suspension`), which is what
+// keeps the two from colliding without a registration guard.
+export type Physics3DJointKind = string;
+
+// The fields every joint carries, whatever its kind. A concrete joint is this plus its own parameters,
+// and the solver registered for its kind is what knows the difference.
+//
+// `bodyA` and `bodyB` are body indices ordered so `bodyA < bodyB`, for the same identity-over-geometry
+// reason contacts are. The anchors are in each body's LOCAL frame.
+//
+// The impulse block is deliberately untyped: six accumulators, whose meaning belongs to the kind. A
+// ball-and-socket means three linear components at the anchor; a hinge means those plus two angular
+// rows; a 6-DOF may use all six. Only the kind knows, which is why turning them back into an impulse is
+// the solver's `warmStart` rather than a generic service.
+export interface Physics3DJoint {
+  kind: Physics3DJointKind;
+  bodyA: number;
+  bodyB: number;
+
+  localAnchorAX: number;
+  localAnchorAY: number;
+  localAnchorAZ: number;
+  localAnchorBX: number;
+  localAnchorBY: number;
+  localAnchorBZ: number;
+
+  collideConnected: boolean;
+
+  impulse0: number;
+  impulse1: number;
+  impulse2: number;
+  impulse3: number;
+  impulse4: number;
+  impulse5: number;
+
+  // World-space lever arms from each body's centre of mass to its anchor, rebuilt each substep by the
+  // kind's `prepare`.
+  rAX: number;
+  rAY: number;
+  rAZ: number;
+  rBX: number;
+  rBY: number;
+  rBZ: number;
+}
+
+// The behaviour of one joint kind. Registered per world by kind, so two worlds in one process can carry
+// different custom joints without one seeing the other's.
+//
+// `prepare` runs once per substep, before iteration, and rebuilds whatever the kind derives from the
+// current poses. `solve` runs once per velocity iteration and applies its impulses IMMEDIATELY, because
+// that is what makes a sequential solver converge.
+//
+// `solve` TAKES `dt`, unlike the 2D package's, whose `solve(world, joint)` is velocity-level by
+// construction. The parameter is what keeps a position-based or compliant solver registerable: such a
+// solver's multiplier update divides its compliance by `dt` squared, so a signature without `dt` closes
+// the registry to every solver that is not velocity-level. It costs one argument now and cannot be
+// added later without breaking every registered kind.
+//
+// Neither may add or remove bodies, contacts, or joints: the solve list is fixed for the step.
+export interface Physics3DJointSolver {
+  prepare(world: Physics3DWorld, joint: Physics3DJoint, dt: number): void;
+  solve(world: Physics3DWorld, joint: Physics3DJoint, dt: number): void;
+  // Whether bodyA participates in this kind's constraint. Omit for the ordinary two-body case. A
+  // one-body kind sets false so world services do not resolve, wake, remove, island-connect, or
+  // suppress collisions through a placeholder endpoint the solver never reads.
+  usesBodyA?: boolean;
+  // Whether this constraint represents continuing external control and therefore keeps its
+  // participating non-static bodies awake.
+  keepsBodiesAwake?: boolean;
+  // Whether this kind's two ends may be exchanged, and its chance to carry direction-bearing state
+  // across the exchange. Called with the ends still in their original order; return true to let the
+  // generic swap of bodies and anchors proceed, false to veto it. The generic swap can only move what
+  // every joint has — two body indices and two anchors — and anything a kind measures FROM bodyA TO
+  // bodyB reverses sign when the ends trade places.
+  swapEnds?(joint: Physics3DJoint): boolean;
+  // Reapplies the impulses this joint converged on last substep, before iteration begins. Called after
+  // `prepare`, so the current lever arms are in place. Omit it and the kind starts each substep cold,
+  // which is correct but converges more slowly.
+  warmStart?(world: Physics3DWorld, joint: Physics3DJoint): void;
+  // Scales kind-specific accumulators when the caller changes timestep. The common `impulse0..5` block
+  // is scaled by the step itself; a motor or another extra accumulator belongs here.
+  scaleAccumulatedImpulses?(joint: Physics3DJoint, timestepRatio: number): void;
+  // Discards the accumulated impulses, so a world with warm starting switched off does not keep seeding
+  // each substep from a cache it has been told not to use.
+  clearAccumulatedImpulses?(joint: Physics3DJoint): void;
+}
+
+// The simulation. A world owns its bodies, its contacts, its joints, and the solver state over them.
+//
+// It owns no broadphase index, which is the one structural difference from `Physics2DWorld`. That is
+// not an omission to fill in later with a physics-specific seam: `SpatialIndexBackend` is the swap
+// point, and its 3D counterpart does not exist yet. When it does, it attaches here exactly as the 2D
+// index attaches there.
+//
+// `gravityX`/`gravityY`/`gravityZ` is an acceleration, scaled per body by `gravityScale`, so a balloon
+// is one field rather than a special case in the integrator.
+export interface Physics3DWorld {
+  // Version of the serializable physics fields on this record. Runtime-owned maps and solver registries
+  // are reconstructed by the caller's format layer; `hydratePhysics3DWorld` upgrades older reconstructed
+  // records before they enter the explicit step path.
+  version: number;
+
+  bodies: RigidBody3D[];
+  // Persistent identity lookup kept in lockstep with `bodies` by the world lifecycle helpers. Contacts
+  // and joints resolve this map inside solver loops, so body identity lookup does not scale with the
+  // number of bodies in the world.
+  bodyByIndex: Map<number, RigidBody3D>;
+
+  contacts: Physics3DContact[];
+  joints: Physics3DJoint[];
+  jointSolvers: Map<Physics3DJointKind, Physics3DJointSolver>;
+  // Active two-body joints with `collideConnected=false`, indexed by canonical body pair. The nested
+  // value is a reference count so removing one of several suppressing joints cannot re-enable the pair.
+  jointCollisionSuppressions: Map<number, Map<number, number>>;
+
+  events: Physics3DContactEvents;
+  contactHooks: Physics3DContactHooks;
+
+  solver: Physics3DSequentialImpulseState;
+  config: Physics3DSolverConfig;
+
+  // Reusable union-find and reduction scratch for sleeping islands, allocated with the world and
+  // cleared in place. Keeping them on the plain world record makes the no-per-step-allocation contract
+  // explicit and maps directly to owned scratch tables in the native port.
+  islandParents: Map<number, number>;
+  islandSleepTimers: Map<number, number>;
+
+  // Deterministic, flattened solve-island workspace, refilled in place after sleep has resolved the
+  // active constraint graph. Each island owns contiguous slices of the body, contact, and joint index
+  // arrays, so the solver never scans unrelated or sleeping constraints.
+  solveIslandByRoot: Map<number, number>;
+  solveIslandRoots: number[];
+  solveIslandBodyStarts: number[];
+  solveIslandBodyCounts: number[];
+  solveIslandContactStarts: number[];
+  solveIslandContactCounts: number[];
+  solveIslandJointStarts: number[];
+  solveIslandJointCounts: number[];
+  solveIslandBodyIndices: number[];
+  solveIslandContactIndices: number[];
+  solveIslandJointIndices: number[];
+  solveIslandCursors: number[];
+
+  gravityX: number;
+  gravityY: number;
+  gravityZ: number;
+
+  // The last successfully completed substep interval, used to express cached impulses in the next one's
+  // time interval. Zero means the world has not completed a step yet.
+  previousTimestep: number;
+
+  // Monotonic counter backing `RigidBody3D.index`, so an index is never reused by a later body and a
+  // stale contact can never be revived against a different body that inherited its slot.
+  nextBodyIndex: number;
+}

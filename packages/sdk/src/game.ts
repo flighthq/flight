@@ -5,5 +5,6 @@ export * from '@flighthq/particleemitter';
 export * from '@flighthq/particles';
 export * from '@flighthq/snapshot';
 export * from '@flighthq/physics2d';
+export * from '@flighthq/physics3d';
 export * from '@flighthq/spatial';
 export * from '@flighthq/statechart';

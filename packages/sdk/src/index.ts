@@ -108,6 +108,7 @@ export * from '@flighthq/skeleton3d';
 export * from '@flighthq/snapshot';
 export * from '@flighthq/socket';
 export * from '@flighthq/physics2d';
+export * from '@flighthq/physics3d';
 export * from '@flighthq/spatial';
 export * from '@flighthq/spring';
 export * from '@flighthq/statechart';

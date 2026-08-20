@@ -278,6 +278,8 @@
       "@flighthq/socket/*": ["./packages/socket/src/*"],
       "@flighthq/physics2d": ["./packages/physics2d/src/index.ts"],
       "@flighthq/physics2d/*": ["./packages/physics2d/src/*"],
+      "@flighthq/physics3d": ["./packages/physics3d/src/index.ts"],
+      "@flighthq/physics3d/*": ["./packages/physics3d/src/*"],
       "@flighthq/spatial": ["./packages/spatial/src/index.ts"],
       "@flighthq/spatial/*": ["./packages/spatial/src/*"],
       "@flighthq/spring": ["./packages/spring/src/index.ts"],
