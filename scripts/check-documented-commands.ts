@@ -29,6 +29,16 @@ import pc from 'picocolors';
 // them: a bare token cannot be told from prose without a script-name dictionary that would match common
 // English. Stated so the gate's silence on them is not read as their absence.
 
+// ★ THIS GATE HAS BEEN WATCHED FAIL ON A REAL, UNPLANNED SPECIMEN. Measured 2026-08-20 on its
+// first full-tree run, while a delivery gap left five already-stale citations on this base: the
+// `rust:conformance` and `mixing:conformance` citations together on
+// `.claude/skills/api-alignment-review/SKILL.md:10`, a second `mixing:conformance` citation at line 69,
+// and `examples:wasm` / `examples:native` at `examples/README.md:18-19`. Across 410 citations of 104
+// distinct commands in 698 tracked markdown files, it named exactly those five and exited 1. Their
+// fixes already existed on builder2's not-yet-delivered stack, so this was neither a constructed
+// mutation nor a new product defect: it was perishable evidence that the check really gates stale
+// command prose, captured before the incoming fixes made the specimen disappear.
+
 // One `npm run <name>` citation found in a doc.
 export interface DocumentedCommand {
   command: string;
