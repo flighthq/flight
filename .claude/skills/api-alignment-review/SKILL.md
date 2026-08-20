@@ -7,7 +7,7 @@ description: Audit the Flight SDK against its own conventions — exported API n
 
 A periodic audit of whether the SDK obeys its own rules. Four independent **dimensions**, each producing one Markdown doc per package plus one cross-cutting synthesis doc.
 
-This is the **judgment** layer. It complements — never duplicates — the machine-checkable gates. Run those first and only report what they miss: `npm run api` / `api:json`, `npm run packages:check`, `npm run order`, `npm run rust:conformance`, `npm run mixing:conformance`.
+This is the **judgment** layer. It complements — never duplicates — the machine-checkable gates. Run those first and only report what they miss: `npm run api` / `api:json`, `npm run packages:check`, `npm run order`.
 
 ## How to run
 
@@ -57,20 +57,13 @@ The test: **remove the folder — is the bare filename self-describing?**
 - Layering respected (renderers→render core; backends independent; nothing reaches up a layer).
 - The dep set is predictable from the package's purpose; flag surprising edges and cycles.
 
-### 4. `ts-rust` — TS-upstream ↔ Rust-downstream alignment (per mapped pair + `_divergence.md`)
+### 4. `ts-rust` — NOT APPLICABLE IN THIS REPOSITORY
 
-TS `@flighthq/<name>` is authoritative; Rust `flighthq-<name>` conforms.
+**There is no Rust here to review.** The Rust port and the reference suite were moved out in `57722ed4c` and now live in **flight-rs** / **flight-reference**. This tree has no `crates/`, no `-rs` packages, no `agents/rust/`, and no conformance scripts — so every check this dimension used to make has nothing to read, and the `rust:conformance` / `mixing:conformance` gates it cited no longer exist.
 
-- Package→crate name identity unless in the documented rename/divergence map (`agents/rust/conformance.md`, `scripts/rust-conformance.ts`).
-- Function names map 1:1 camelCase→snake_case with the full type word preserved; flag missing/extra/abbreviated ports.
-- File basenames track too (`transform2D.ts` ↔ `transform2d.rs`).
-- `out`/sentinel/teardown conventions carry across (`&mut`, `Option`, `dispose_`/`destroy_`…).
-- Every difference must be a **recorded divergence** with rationale — flag silent drift; note stale map entries.
-- **`-rs` wasm drop-ins are the most important target.** A TS `X-rs` package (e.g. `surface-rs`) must export the _same_ public API as its base TS `X` (`surface`), backed by the `X-wasm` crate — substitutable at the seam. The workflow runs a dedicated mixing-conformance agent per `-rs` package; the machine gate is `npm run mixing:conformance` (diffs `X-rs` vs `X` signatures; allows only wasm `init*` extras).
-- Known TS-only (no crate): `scene2d-canvas`, `scene2d-dom`, `effects-canvas`, `filters-canvas`, `filters-css`, `host-electron`, `surface-rs`, `textshaper-canvas`. Known Rust-only (no package): `capture`, `scene2d-skia`, `functional`, `host-sdl`, `host-web`, `host-winit`, `surface-wasm`. Each `-rs`/`-wasm` is a matched mixing pair. The synthesis verifies each is documented.
+Running this dimension against this repository produces nothing. It is left standing rather than deleted because whether the review moves to flight-rs, spans both repositories, or goes away is a scope decision and not a documentation one; the workflow still declares a `ts-rust` phase (`.claude/workflows/api-alignment-review.js`), which would need the same ruling.
 
 ## Maintaining this review
 
 - Conventions live in the workflow's `*_CHECKLIST` strings (authoritative) and mirrored above.
-- When crates are added/removed, refresh the TS-only / Rust-only sets: `comm -23 <(ls packages|sort) <(ls crates|sed 's/^flighthq-//'|sort)` (TS-only) and `comm -13 …` (Rust-only).
 - To add a dimension, extend `DIMENSION_KEYS` + the prompt builders in the workflow.
