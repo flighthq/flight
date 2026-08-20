@@ -149,6 +149,33 @@ describe('joinOracleState', () => {
     expect(verdicts(result)['functional/ok/webgl']).toBe('compared');
   });
 
+  // ★ THE DEMOTION THE RESIZE PATH USED TO BE DENIED. A pixel change covered by a request reads as
+  // `pending-changed`; a SIZE change covered by the same request read as a hard failure, so a corpus with
+  // a deliberately reframed scene stayed red from the moment the scene changed until new bytes were
+  // blessed — a window a reviewer could do nothing about, on the movement where the old reference is most
+  // obviously superseded. Both paths now ask the same question in the same order.
+  it('demotes a requested resize to pending instead of failing the run', () => {
+    const result = join(
+      [cell('functional/resized/webgl', { comparison: { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 } })],
+      [record(request('r-resize', 'functional', 'resized'))],
+    );
+
+    expect(verdicts(result)['functional/resized/webgl']).toBe('pending-changed');
+    expect(result.failures).toEqual([]);
+    expect(result.pendingCount).toBe(1);
+  });
+
+  // The other half of the same claim: pending is an allowance to proceed, never a comparison. A resize
+  // that goes pending must not be counted as one that matched.
+  it('does not count a pending resize as compared', () => {
+    const result = join(
+      [cell('functional/resized/webgl', { comparison: { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 } })],
+      [record(request('r-resize', 'functional', 'resized'))],
+    );
+
+    expect(result.comparedCount).toBe(0);
+  });
+
   it('fires request-expired and stops the stale request demoting anything', () => {
     const result = join(
       [cell('functional/a/webgl', { comparison: moved() })],
