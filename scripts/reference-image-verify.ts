@@ -23,9 +23,14 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { decodeOraclePng, hashOraclePixelBytes } from './reference-image-png';
+import { decodeOraclePng } from './reference-image-png';
 import type { ReferenceImageLockImage } from './reference-image-records';
 import type { ReferenceImageCellInput } from './reference-image-state';
+import {
+  compareReferenceImage,
+  resolveReferenceImageTolerance,
+  type ReferenceImageToleranceCatalog,
+} from './reference-image-tolerance';
 
 export interface PackManifestImage {
   path: string;
@@ -37,7 +42,14 @@ export interface PackManifestImage {
 
 export interface VerifyProblem {
   identity: string;
-  kind: 'pack-image-missing' | 'pack-image-corrupt' | 'capture-missing' | 'capture-undecodable' | 'dimensions';
+  kind:
+    | 'pack-image-missing'
+    | 'pack-image-corrupt'
+    | 'pack-image-undecodable'
+    | 'capture-missing'
+    | 'capture-undecodable'
+    | 'comparison-unavailable'
+    | 'dimensions';
   detail: string;
 }
 
@@ -97,12 +109,14 @@ export function verifyOracleCaptures(
   packRoot: string,
   manifestImages: readonly PackManifestImage[],
   artifactsRoot: string,
+  toleranceCatalog: Readonly<ReferenceImageToleranceCatalog>,
 ): VerifyResult {
   const cells: ReferenceImageCellInput[] = [];
   const problems: VerifyProblem[] = [];
 
   for (const image of manifestImages) {
     const identity = packManifestImageIdentity(image.path);
+    const comparisonPolicy = resolveReferenceImageTolerance(toleranceCatalog, identity);
     const blessedPath = join(packRoot, image.path);
 
     if (!existsSync(blessedPath)) {
@@ -111,7 +125,7 @@ export function verifyOracleCaptures(
         identity,
         kind: 'pack-image-missing',
       });
-      cells.push({ comparison: null, identity, pinned: false, required: true });
+      cells.push({ comparison: null, comparisonPolicy, identity, pinned: false, required: true });
       continue;
     }
     // The blessed bytes are checked against the manifest BEFORE anything is decoded or compared, so a
@@ -124,7 +138,7 @@ export function verifyOracleCaptures(
         identity,
         kind: 'pack-image-corrupt',
       });
-      cells.push({ comparison: null, identity, pinned: false, required: true });
+      cells.push({ comparison: null, comparisonPolicy, identity, pinned: false, required: true });
       continue;
     }
 
@@ -132,7 +146,7 @@ export function verifyOracleCaptures(
     const capturePath = join(artifactsRoot, parts[0] ?? '', parts[1] ?? '', parts[2] ?? '', 'screenshot.png');
     if (!existsSync(capturePath)) {
       problems.push({ detail: 'no fresh capture for a pinned reference', identity, kind: 'capture-missing' });
-      cells.push({ comparison: null, identity, pinned: true, required: true });
+      cells.push({ comparison: null, comparisonPolicy, identity, pinned: true, required: true });
       continue;
     }
 
@@ -143,7 +157,7 @@ export function verifyOracleCaptures(
         identity,
         kind: 'capture-undecodable',
       });
-      cells.push({ comparison: null, identity, pinned: true, required: true });
+      cells.push({ comparison: null, comparisonPolicy, identity, pinned: true, required: true });
       continue;
     }
 
@@ -156,6 +170,7 @@ export function verifyOracleCaptures(
       });
       cells.push({
         comparison: { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 },
+        comparisonPolicy,
         identity,
         pinned: true,
         required: true,
@@ -163,29 +178,31 @@ export function verifyOracleCaptures(
       continue;
     }
 
-    cells.push({
-      comparison: comparePixels(decoded.png.data, image.pixelSha256),
-      identity,
-      pinned: true,
-      required: true,
-    });
+    const reference = comparisonPolicy.overridden ? decodeOraclePng(blessedBytes) : null;
+    if (reference !== null && 'refused' in reference) {
+      problems.push({
+        detail: `blessed reference could not be decoded for its scene override: ${reference.refused}`,
+        identity,
+        kind: 'pack-image-undecodable',
+      });
+      cells.push({ comparison: null, comparisonPolicy, identity, pinned: false, required: true });
+      continue;
+    }
+    const compared = compareReferenceImage(
+      decoded.png,
+      image.pixelSha256,
+      reference === null ? null : reference.png,
+      comparisonPolicy,
+    );
+    if ('problem' in compared) {
+      problems.push({ detail: compared.problem, identity, kind: 'comparison-unavailable' });
+      cells.push({ comparison: null, comparisonPolicy, identity, pinned: true, required: true });
+      continue;
+    }
+    cells.push({ comparison: compared.comparison, comparisonPolicy, identity, pinned: true, required: true });
   }
 
   return { cells, problems };
-}
-
-/**
- * The exact-policy comparison: equality of the decoded-pixel hash.
- *
- * `fraction` is reported as 0 or 1 rather than a real proportion, and that is deliberate — under an exact
- * policy the only answerable question is same-or-different, and a fabricated fraction would look like a
- * measurement of HOW different. A fuzzy policy replaces this whole function with `compareOracleReference`
- * over both decoded images, which can answer that honestly.
- */
-export function comparePixels(decoded: Readonly<Uint8Array>, expectedPixelSha256: string) {
-  const actual = hashOraclePixelBytes(decoded);
-  const same = actual === expectedPixelSha256;
-  return { dimensionMismatch: false, fraction: same ? 0 : 1, maxChannelDelta: same ? 0 : 255 };
 }
 
 /** Reads and shape-checks a pack manifest. A malformed manifest is reported, never partially trusted. */

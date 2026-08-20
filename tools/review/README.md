@@ -23,7 +23,7 @@ Add one committed Flight-owned file, `scripts/reference-image-tolerances.json`. 
 {
   "$comment": "Per-scene full-resolution reference-image comparison policy. Missing scenes are pixel-exact.",
   "schemaVersion": 1,
-  "comparisonPolicyId": "per-scene-reference-v1",
+  "comparisonPolicyId": "illustrative-upstream-registered-policy-id",
   "scenes": {
     "functional/text-markup-color": {
       "channelTolerance": 2,
@@ -38,7 +38,7 @@ Add one committed Flight-owned file, `scripts/reference-image-tolerances.json`. 
 
 The key is `subject/scene`, never a renderer or an individual reference/candidate pair, so every backend cell in a scene is judged by the same declared rule. `channelTolerance` is the existing `getBitmapMismatch` per-channel noise band; `maxFraction`, `gateOnMaxChannelDelta`, and `maxChannelDelta` map directly to `ReferenceImageComparisonPolicy`. All four numeric/gating fields and a non-empty reason are explicit on every override. The parser rejects unknown scenes, unknown fields, non-integer channel values outside 0–255, fractions outside 0–1, and malformed records. Both consumers fail closed on an invalid file rather than silently falling back to exact comparison.
 
-The registered `comparisonPolicyId` must name the per-scene policy contract and match `scripts/reference-image-capture-identity.json`. That identity is still registered by `flight-reference-images` and copied here; the review tool must not invent one. Adopting this design therefore includes registering the new policy identity before the first override lands.
+The value above is deliberately illustrative, not an approved or registered identifier. The real registered `comparisonPolicyId` must name the per-scene policy contract and match `scripts/reference-image-capture-identity.json`. That identity is still registered by `flight-reference-images` and copied here; the review tool must not invent one. Adopting this design therefore includes registering the new policy identity before the first override lands.
 
 ### One implementation, two consumers
 

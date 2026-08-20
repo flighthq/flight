@@ -31,6 +31,7 @@ import {
 } from './reference-image-records';
 import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state';
 import type { ReferenceImageCellInput, ReferenceImageRequestRecord } from './reference-image-state';
+import { readReferenceImageToleranceCatalog } from './reference-image-tolerance';
 import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './reference-image-verify';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -57,6 +58,18 @@ if ('problems' in lockResult) {
   process.exit(1);
 }
 const lock = lockResult.lock;
+const toleranceResult = readReferenceImageToleranceCatalog({
+  captureIdentityPath: join(__dirname, 'reference-image-capture-identity.json'),
+  coverageManifestPath: join(__dirname, 'capture-baseline-coverage-manifest.json'),
+  manifestPath: join(__dirname, 'reference-image-tolerances.json'),
+});
+if ('problems' in toleranceResult) {
+  for (const problem of toleranceResult.problems)
+    console.error(`  tolerance-policy: ${problem.path} — ${problem.detail}`);
+  console.error('reference-image-check: the per-scene comparison policy is not valid');
+  process.exit(1);
+}
+const toleranceCatalog = toleranceResult.catalog;
 
 if (subcommand === 'fetch') await fetchPacks();
 else if (subcommand === 'scope') printScope();
@@ -162,7 +175,7 @@ async function check(): Promise<void> {
       console.error(`reference-image-check: ${pack} does not carry the exact images named by the lock`);
       process.exit(1);
     }
-    const verified = verifyOracleCaptures(packRoot, manifest.images, artifactsRoot);
+    const verified = verifyOracleCaptures(packRoot, manifest.images, artifactsRoot, toleranceCatalog);
     cells.push(...verified.cells);
     for (const problem of verified.problems) problems.push(`${problem.kind}: ${problem.identity} — ${problem.detail}`);
   }
@@ -179,12 +192,6 @@ async function check(): Promise<void> {
   const result = joinOracleState({
     cells: joined,
     maxPendingDays: MAX_PENDING_DAYS,
-    policy: {
-      comparisonPolicyId: readIdentity().comparisonPolicyId,
-      gateOnMaxChannelDelta: true,
-      maxChannelDelta: 0,
-      maxFraction: 0,
-    },
     requests: readOutstandingRequests(),
   });
 
@@ -193,7 +200,7 @@ async function check(): Promise<void> {
   // unless the report says which ones it used.
   const lines = [
     `reference image: ${lock.repository}@${lock.releaseTag}`,
-    `policy: ${readIdentity().comparisonPolicyId} | environment: ${readIdentity().environmentId}`,
+    `policy: ${toleranceCatalog.comparisonPolicyId} | environment: ${readIdentity().environmentId}`,
     `captured at frames=${frames}`,
     '',
   ];

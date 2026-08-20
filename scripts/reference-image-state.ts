@@ -1,3 +1,4 @@
+import type { ReferenceImageCellComparison } from './reference-image-compare';
 // The Flight-side join of the render-oracle proposal (agents/render-reference-image-repository.md §6 and §9):
 // given what the coverage manifest REQUIRES, what the lock PINS, and what the request queue has
 // OUTSTANDING, decide each cell's verdict — and decide it in one place so "pending" cannot mean two
@@ -18,6 +19,9 @@
 // keying may gain an environment column; when it does, the generator changes and this file does not.
 import type { ReferenceImageRequest } from './reference-image-records';
 import { getOracleRequestCells } from './reference-image-records';
+import { referenceImageComparisonPasses, type ReferenceImageVerdictPolicy } from './reference-image-tolerance';
+
+export type { ReferenceImageCellComparison } from './reference-image-compare';
 
 /** What CI may claim about one required cell. Ordered worst-first for stable reporting. */
 export type ReferenceImageCellVerdict =
@@ -47,24 +51,12 @@ export interface ReferenceImageCellInput {
    * which is not the same as a comparison that found nothing, and is why this is not a boolean.
    */
   comparison: ReferenceImageCellComparison | null;
+  /** Per-scene policy resolved by the shared catalog. Absent only for legacy/pure-function callers. */
+  comparisonPolicy?: Readonly<ReferenceImageVerdictPolicy>;
 }
 
-export interface ReferenceImageCellComparison {
-  /** From getBitmapMismatch. Do NOT inherit the fingerprint-space tolerances (§2). */
-  fraction: number;
-  maxChannelDelta: number;
-  /** True when the two images differed in size; `fraction` and `maxChannelDelta` are then meaningless. */
-  dimensionMismatch: boolean;
-}
-
-export interface ReferenceImageComparisonPolicy {
-  /** Versioned so a threshold change is a visible record change, not a silent re-tune (§8). */
-  comparisonPolicyId: string;
-  maxFraction: number;
-  /** When false, `maxChannelDelta` is reported but does not gate — the document leaves this a policy choice. */
-  gateOnMaxChannelDelta: boolean;
-  maxChannelDelta: number;
-}
+/** Kept as the public join name; its implementation and meaning live in the shared tolerance module. */
+export type ReferenceImageComparisonPolicy = ReferenceImageVerdictPolicy;
 
 export interface ReferenceImageRequestRecord {
   request: ReferenceImageRequest;
@@ -75,7 +67,8 @@ export interface ReferenceImageRequestRecord {
 export interface ReferenceImageJoinInput {
   cells: readonly ReferenceImageCellInput[];
   requests: readonly ReferenceImageRequestRecord[];
-  policy: Readonly<ReferenceImageComparisonPolicy>;
+  /** Legacy/pure-function fallback. Production cells carry the shared resolver's per-scene policy. */
+  policy?: Readonly<ReferenceImageComparisonPolicy>;
   /** §6: repository policy must bound how long a request may remain pending. No default is offered. */
   maxPendingDays: number;
 }
@@ -265,10 +258,11 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
       continue;
     }
 
-    const withinFraction = comparison.fraction <= input.policy.maxFraction;
-    const withinChannel =
-      !input.policy.gateOnMaxChannelDelta || comparison.maxChannelDelta <= input.policy.maxChannelDelta;
-    if (withinFraction && withinChannel) {
+    const policy = cell.comparisonPolicy ?? input.policy;
+    if (policy === undefined) {
+      throw new Error(`reference-image comparison policy was not resolved for ${cell.identity}`);
+    }
+    if (referenceImageComparisonPasses(comparison, policy)) {
       comparedCount += 1;
       cells.push({ identity: cell.identity, verdict: 'compared', requestId, detail: describe(comparison) });
       continue;
