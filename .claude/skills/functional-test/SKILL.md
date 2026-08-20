@@ -91,6 +91,16 @@ If all three pass, you have measured that something is on the screen, not that t
 
 **Confirm the break actually landed before believing the result.** A control that silently did not apply looks exactly like an oracle that cannot discriminate, and both end in a green run you then misread. Two ways this has happened: a string replacement matched nothing because the formatter had reflowed the call it was targeting across several lines, and a probe scene recovered with `git show <ref>:<path> > f 2>/dev/null || …` ran against an empty file, because the shell created `f` before `git` failed and the fallback then "succeeded". Assert the mutation is present — the changed value, a non-trivial file size — and only then run the capture.
 
+### A zero that was predicted is evidence; a zero that is unexplained is an alarm
+
+Two probes tonight measured the same number and meant opposite things. Reverting the epsilon in chromatic aberration's `normalize` changed **0 pixels** — and that is what the geometry predicts, since the epsilon alters direction only within about 1e-5 of the optical centre, a region far smaller than one pixel at 800x600. The zero CONFIRMED a prediction that existed before the measurement. Reverting the motion-blur smear's sign also changed **0 pixels**, with no prediction behind it; that zero was explained away after the fact, and the real cause turned out to be that the effect contributed nothing to the picture at all.
+
+So derive the expected magnitude BEFORE you measure. If you cannot say in advance roughly how much the picture should move, a zero tells you nothing about the change and quite a lot about the setup.
+
+### Before probing a parameter, check the effect does anything at all
+
+Remove the whole effect from the chain and diff. If the picture is byte-identical, no finer probe of its parameters means anything, and every measurement taken before that check was measuring nothing. This is the subject-side twin of proving your oracle by breaking the scene: one asks whether the instrument can detect anything, the other whether the subject does anything.
+
 ### Sample where the effect is most diagnostic, not where it is largest
 
 A radial effect is checked at two radii, not at its centre. A vignette is checked on the field, not on the shapes. A directional blur is checked across its axis. A shadow is checked on the side it should fall on — a shadow on the wrong side is still soft, still dark, and passes every "is it blurred" check.
