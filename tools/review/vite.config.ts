@@ -598,12 +598,20 @@ function reviewPlugin(): Plugin[] {
         // Requests can also arrive from outside the UI — `reference-image:commission:write` files them
         // from the CLI. Without this the tool would keep offering a Commission button for a scene that
         // already has a queued request, which is the same stale-state defect one layer out.
-        server.watcher.add(join(requestsDir, '*.json'));
+        // Watch the directory and filter events ourselves so externally-written requests use the same
+        // targeted client update as requests filed through the review UI.
+        server.watcher.add(requestsDir);
         server.watcher.on('add', (file: string) => {
           if (!file.startsWith(requestsDir) || !file.endsWith('.json')) return;
+          const request = readOracleRequest(file);
+          if ('problems' in request) return;
           const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
           if (mod) server.moduleGraph.invalidateModule(mod);
-          server.ws.send({ type: 'full-reload' });
+          server.ws.send({
+            type: 'custom',
+            event: 'review:commission-requested',
+            data: { cells: getOracleRequestCells(request.request) },
+          });
         });
 
         server.watcher.add(tolerancePaths.manifestPath);
@@ -718,7 +726,7 @@ function reviewPlugin(): Plugin[] {
 
                 const id = randomUUID();
                 const request = {
-                  schemaVersion: 3,
+                  schemaVersion: 3 as const,
                   id,
                   subject: payload.tool,
                   targets: eligible.map((c) =>
@@ -743,13 +751,16 @@ function reviewPlugin(): Plugin[] {
                   eligible.map((c) => `${payload.entry}/${c.renderer}`),
                 );
 
-                // Rebuild the manifest so the cell's commission state becomes `requested` immediately.
-                // Without this the UI kept reporting `not-commissioned` after a successful write, which
-                // reads as "the click did nothing" — and a user filed six requests for one scene before
-                // anything on screen changed. The watcher covers .artifacts, never oracle-requests.
+                // Tell every connected review client exactly which cells changed. The requesting client
+                // also patches from this response, so neither path relies on a file-watcher race and no
+                // page teardown destroys review context.
                 const manifestModule = server.moduleGraph.getModuleById('\0virtual:review-manifest');
                 if (manifestModule) server.moduleGraph.invalidateModule(manifestModule);
-                server.ws.send({ type: 'full-reload' });
+                server.ws.send({
+                  type: 'custom',
+                  event: 'review:commission-requested',
+                  data: { cells: eligible.map((cell) => `${payload.tool}/${payload.entry}/${cell.renderer}`) },
+                });
 
                 res.setHeader('Content-Type', 'application/json');
                 // Report the COUNT, not just the path. Ineligible cells are filtered out above, so a
