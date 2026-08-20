@@ -200,5 +200,15 @@ describe('causal limitation prose', () => {
     expect(audit).toContain('**STILL TRUE 21 · NOW FALSE 38 · CANNOT TELL 5**');
     expect(audit).toContain('12 functional claim sites');
     expect(audit).toContain('nine architecture gap groups');
+    expect(audit.match(/Release\s+observation:/g)).toHaveLength(5);
+    for (const releaseMarker of [
+      'pinned official WebGL capture',
+      'pinned official WebGPU capture',
+      'scan horizontally through x=300 at y=150',
+      'after an architecture ruling chooses parity',
+      'minimal functional A/B whose',
+    ]) {
+      expect(audit).toContain(releaseMarker);
+    }
   });
 });

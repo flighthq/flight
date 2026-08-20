@@ -97,12 +97,30 @@ Twenty-four architecture claim groups were stale:
 These claims depend on runtime policy or an unresolved design rather than source-visible backend capability,
 so they are bounded rather than asserted as gaps:
 
-1. `env-skybox.webgl.ts` — cube-face transition profile depends on runtime filtering/seam policy.
-2. `env-skybox.webgpu.ts` — same.
-3. `svg-image.ts` — exact magnified seam width/profile depends on backend resampling.
-4. `swf-alpha-transform.ts` — the backend RGB-fold difference is an undecided design.
+1. `env-skybox.webgl.ts` — cube-face transition profile depends on runtime filtering/seam policy. **Release
+   observation:** in a pinned official WebGL capture, scan a sphere-clear row across the predicted x≈55 and
+   x≈745 face boundaries and report the first/last mixed-colour pixels together with the runtime min/mag filter
+   and cube-seam state. The same frame's green/yellow/red face-centre probes are the positive control; their
+   presence makes the measured hard edge or blend width/profile admissible.
+2. `env-skybox.webgpu.ts` — same source uncertainty, but its runtime sampler is independent. **Release
+   observation:** repeat that boundary scan in a pinned official WebGPU capture, reporting the sampler and
+   seamless-equivalent state; use the same frame's three face-centre probes as the positive control. That
+   observation settles the WebGPU transition independently of WebGL.
+3. `svg-image.ts` — exact magnified seam width/profile depends on backend resampling. **Release observation:**
+   for each supported backend in a pinned runner, scan horizontally through x=300 at y=150 and vertically
+   through y=210 at x=240, then report the first/last mixed pixels and their colour profile. The four asserted
+   quadrant-centre colours in the same frame are the positive control; those scans settle a backend-specific
+   seam profile without promoting one backend's result into a shared contract.
+4. `swf-alpha-transform.ts` — the backend RGB-fold difference is an undecided design. **Release observation:**
+   after an architecture ruling chooses parity or explicitly preserves backend divergence, capture all four
+   backends and observe the ruled fourth-square colour on each; the first three cross-backend-equal squares are
+   the positive control. The ruling plus that four-backend result releases the temporary WHITE-versus-GREEN
+   bound into the selected permanent contract.
 5. `maturity-gaps.md` group/container blend — the record says unverified/likely absent; source inspection does
-   not establish a supported semantic contract.
+   not establish a supported semantic contract. **Release observation:** add a minimal functional A/B whose
+   overlapping-child result differs between whole-subtree blend, per-child blend, and Normal, alongside a known
+   supported child-level blend as the positive control. A group result matching the once-flattened reference
+   establishes support; byte identity with Normal while the control changes establishes absence.
 
 `scripts/causal-limitation-prose.test.ts` pins the classification total, the ten direct functional guard
 markers, the two Kuwahara source tripwires, and all nine architecture absence groups. A capability repair
