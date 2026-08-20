@@ -33,6 +33,13 @@ claim about this tree, not about a session.
   `mapDomPointerEventToElement` helper that would fold both gotchas together is deliberately unbuilt.
 - **No gesture recognizers** — drag, pan, pinch, swipe, tap, long-press. Whether they become an
   `interaction-gesture` neighbor (keeping this package a pure router) is a design ruling, not effort.
+- **Zero functional-scene coverage.** No functional scene imports `@flighthq/interaction`. Four
+  interaction bounds consumers — hit testing, overlap, focus manager, spatial index — all read shape
+  bounds via `getNodeWorldBoundsRectangle`. Without `registerDefaultShapeBoundsCommands()`, those
+  bounds are zero, producing silent no-ops: clicks pass through, overlaps always false, focus rects
+  zero-area, spatial index entries zero-width. Because the GL/Canvas shape *renderer* works fine
+  without bounds registration, a scene that looks correct visually may have an interaction layer
+  silently doing nothing. No picture reveals it.
 
 ## Log
 
