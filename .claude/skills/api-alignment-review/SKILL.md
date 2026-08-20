@@ -1,6 +1,6 @@
 ---
 name: api-alignment-review
-description: Audit the Flight SDK against its own conventions — exported API naming/verbs/out-params, source filename descriptiveness, dependency hygiene, and TS-upstream↔Rust-downstream alignment. Use when asked to do an "API alignment review", "convention/consistency check", "filename review", "dependency mapping review", or "TS/Rust sync check". Produces ephemeral Markdown reports (gitignored under reports/).
+description: Audit the Flight SDK against its own conventions — exported API naming/verbs/out-params, source filename descriptiveness, and dependency hygiene. Use when asked to do an "API alignment review", "convention/consistency check", "filename review", or "dependency mapping review". Produces ephemeral Markdown reports (gitignored under reports/).
 ---
 
 # API & Structural Alignment Review
