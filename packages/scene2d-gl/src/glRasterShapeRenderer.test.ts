@@ -4,25 +4,22 @@ import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createS
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
 
-import type * as GlRasterShapeModule from './glRasterShapeRenderer';
+// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
+// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
+// dance bought by hand comes from the platform here, with no hook. The dance was not merely redundant:
+// it rebuilt the subject's entire transitive module graph inside a FIXED `beforeAll` deadline, which is
+// unbounded work against a fixed clock and the shape of flake that tiering exists to remove.
+vi.mock('@flighthq/node/contract', async (importOriginal) => ({
+  ...(await importOriginal<typeof FlightNodeModule>()),
+  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+  getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
+    source?.data?.version ?? 0,
+}));
+
+import { defaultGlRasterShapeRenderer, drawGlRasterShape } from './glRasterShapeRenderer';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
-import { scopeModuleMocks } from './moduleMockTestHelper';
-
-let defaultGlRasterShapeRenderer: typeof GlRasterShapeModule.defaultGlRasterShapeRenderer;
-let drawGlRasterShape: typeof GlRasterShapeModule.drawGlRasterShape;
-
-scopeModuleMocks(['@flighthq/node']);
-
-beforeAll(async () => {
-  vi.doMock('@flighthq/node/contract', async (importOriginal) => ({
-    ...(await importOriginal<typeof FlightNodeModule>()),
-    getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-    getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
-  }));
-  ({ defaultGlRasterShapeRenderer, drawGlRasterShape } = await import('./glRasterShapeRenderer'));
-});
 
 function makeShapeData() {
   return { surface: null, lastContentId: -1, lastPixelRatio: 0, lastW: 0, lastH: 0, meshVersion: -1, meshes: null };
