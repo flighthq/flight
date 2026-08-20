@@ -113,6 +113,7 @@
     { "path": "./packages/snapshot" },
     { "path": "./packages/socket" },
     { "path": "./packages/physics2d" },
+    { "path": "./packages/physics3d" },
     { "path": "./packages/spatial" },
     { "path": "./packages/spring" },
     { "path": "./packages/statechart" },
