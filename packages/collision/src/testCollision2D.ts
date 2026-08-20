@@ -1,11 +1,11 @@
 import type {
-  CollisionManifold,
-  CollisionShape,
-  CollisionShapeKind,
-  CollisionTestGuard,
+  CollisionManifold2D,
+  CollisionShape2D,
+  CollisionShapeKind2D,
+  CollisionTestGuard2D,
 } from '@flighthq/types/contract';
 
-import { clearCollisionManifold } from './manifold';
+import { clearCollisionManifold2D } from './manifold';
 import {
   testAabbAabbCollision,
   testAabbObbCollision,
@@ -19,8 +19,8 @@ import {
   testPolygonPolygonCollision,
 } from './shapeCollision';
 
-// Installs the optional diagnostics seam consulted before testCollision dispatches its shape pair.
-export function setCollisionTestGuard(guard: CollisionTestGuard | null): void {
+// Installs the optional diagnostics seam consulted before testCollision2D dispatches its shape pair.
+export function setCollisionTestGuard2D(guard: CollisionTestGuard2D | null): void {
   collisionTestGuard = guard;
 }
 
@@ -29,19 +29,19 @@ export function setCollisionTestGuard(guard: CollisionTestGuard | null): void {
 // dispatch so only the ten manifold-bearing pairs (circle/aabb/obb/polygon) need explicit branches;
 // when the arguments arrive in the reversed order the shared normal is negated to preserve the
 // A-out-of-B orientation. Area-less kinds (`segment`, `point`) and unknown kinds carry no manifold —
-// the pair is reported as non-overlapping; use `getCollisionShapeContainsPoint` or the
+// the pair is reported as non-overlapping; use `getCollisionShapeContainsPoint2D` or the
 // `testSegment*Collision` queries for those. The direct per-pair functions remain the hot path.
-export function testCollision(
-  a: Readonly<CollisionShape>,
-  b: Readonly<CollisionShape>,
-  out: CollisionManifold,
+export function testCollision2D(
+  a: Readonly<CollisionShape2D>,
+  b: Readonly<CollisionShape2D>,
+  out: CollisionManifold2D,
 ): boolean {
   if (collisionTestGuard !== null) collisionTestGuard(a, b);
 
   const rankA = shapeKindRank(a.kind);
   const rankB = shapeKindRank(b.kind);
   if (rankA < 0 || rankB < 0) {
-    clearCollisionManifold(out);
+    clearCollisionManifold2D(out);
     return false;
   }
 
@@ -107,7 +107,7 @@ export function testCollision(
 // Canonical dispatch rank of a shape kind, or -1 for kinds that carry no manifold (segment, point,
 // and any custom kind). Ordering the pair by rank collapses the 4x4 kind matrix to its ten lower-
 // triangular manifold pairs.
-function shapeKindRank(kind: CollisionShapeKind): number {
+function shapeKindRank(kind: CollisionShapeKind2D): number {
   switch (kind) {
     case 'circle':
       return 0;
@@ -122,4 +122,4 @@ function shapeKindRank(kind: CollisionShapeKind): number {
   }
 }
 
-let collisionTestGuard: CollisionTestGuard | null = null;
+let collisionTestGuard: CollisionTestGuard2D | null = null;

@@ -15,7 +15,7 @@ import type { SpatialIndexingExplanation } from './SpatialIndexing';
 export type SpatialObjectId = number;
 
 // An object's 2D axis-aligned bounds, as min/max corners. This is spatial's own bounds type: it is
-// structurally the same as collision's `CollisionAabb`, but defined here so `@flighthq/spatial`
+// structurally the same as collision's `CollisionAabb2D`, but defined here so `@flighthq/spatial`
 // depends only on `@flighthq/geometry` + `@flighthq/types` and never on `@flighthq/collision`. Also
 // distinct from `@flighthq/geometry`'s `Aabb`, whose corners are 3D (min/max carry a `z`).
 export interface SpatialAabb {

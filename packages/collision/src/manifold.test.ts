@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionManifold, createCollisionManifold } from './manifold';
+import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold';
 
-describe('clearCollisionManifold', () => {
+describe('clearCollisionManifold2D', () => {
   it('resets every field to the non-overlapping state', () => {
     const manifold = { overlapping: true, normalX: 0.5, normalY: -0.5, depth: 3 };
-    clearCollisionManifold(manifold);
+    clearCollisionManifold2D(manifold);
     expect(manifold.overlapping).toBe(false);
     expect(manifold.normalX).toBe(0);
     expect(manifold.normalY).toBe(0);
@@ -13,9 +13,9 @@ describe('clearCollisionManifold', () => {
   });
 });
 
-describe('createCollisionManifold', () => {
+describe('createCollisionManifold2D', () => {
   it('allocates a fresh manifold in the non-overlapping state', () => {
-    const manifold = createCollisionManifold();
+    const manifold = createCollisionManifold2D();
     expect(manifold.overlapping).toBe(false);
     expect(manifold.normalX).toBe(0);
     expect(manifold.normalY).toBe(0);
@@ -23,8 +23,8 @@ describe('createCollisionManifold', () => {
   });
 
   it('returns an independent object each call', () => {
-    const a = createCollisionManifold();
-    const b = createCollisionManifold();
+    const a = createCollisionManifold2D();
+    const b = createCollisionManifold2D();
     a.overlapping = true;
     expect(b.overlapping).toBe(false);
   });

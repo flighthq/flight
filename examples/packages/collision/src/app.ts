@@ -1,4 +1,4 @@
-import type { CollisionAabb, CollisionCircle, CollisionManifold, CollisionPolygon, Shape } from '@flighthq/sdk';
+import type { CollisionAabb2D, CollisionCircle2D, CollisionManifold2D, CollisionPolygon2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -14,7 +14,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 import {
-  createCollisionManifold,
+  createCollisionManifold2D,
   testAabbAabbCollision,
   testAabbPolygonCollision,
   testCircleAabbCollision,
@@ -41,19 +41,19 @@ main.scaleY = scale;
 
 interface CircleCollider {
   kind: 'circle';
-  collider: CollisionCircle;
+  collider: CollisionCircle2D;
   shape: Shape;
 }
 
 interface AabbCollider {
   kind: 'aabb';
-  collider: CollisionAabb;
+  collider: CollisionAabb2D;
   shape: Shape;
 }
 
 interface PolygonCollider {
   kind: 'polygon';
-  collider: CollisionPolygon;
+  collider: CollisionPolygon2D;
   centerX: number;
   centerY: number;
   shape: Shape;
@@ -174,7 +174,7 @@ function isPointInsideCollider(c: Collider, px: number, py: number): boolean {
 }
 
 // Test one pair for collision, dispatching on the two kinds.
-function testPairCollision(a: Collider, b: Collider, out: CollisionManifold): boolean {
+function testPairCollision(a: Collider, b: Collider, out: CollisionManifold2D): boolean {
   if (a.kind === 'circle' && b.kind === 'circle') {
     return testCircleCircleCollision(a.collider, b.collider, out);
   }
@@ -327,7 +327,7 @@ canvasElement.addEventListener('pointerup', () => {
   dragTarget = null;
 });
 
-const manifold = createCollisionManifold();
+const manifold = createCollisionManifold2D();
 
 function enterFrame(): void {
   // Determine which colliders are involved in at least one overlap.

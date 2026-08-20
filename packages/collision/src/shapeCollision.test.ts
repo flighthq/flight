@@ -1,7 +1,7 @@
-import type { CollisionAabb, CollisionCircle, CollisionObb, CollisionPolygon } from '@flighthq/types/contract';
+import type { CollisionAabb2D, CollisionCircle2D, CollisionObb2D, CollisionPolygon2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCollisionManifold } from './manifold';
+import { createCollisionManifold2D } from './manifold';
 import {
   testAabbAabbCollision,
   testAabbObbCollision,
@@ -16,16 +16,16 @@ import {
 } from './shapeCollision';
 
 // A square collider as a flat convex polygon, corners CCW from the min corner.
-function square(minX: number, minY: number, size: number): CollisionPolygon {
+function square(minX: number, minY: number, size: number): CollisionPolygon2D {
   return { points: [minX, minY, minX + size, minY, minX + size, minY + size, minX, minY + size] };
 }
 
 describe('testAabbAabbCollision', () => {
   it('reports the least-penetration axis: boxes overlapping more on X separate along Y', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     // A = 0..10 square; B spans x[2,8] (deep X overlap) but only y[8,10] of A (shallow Y overlap).
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
-    const b: CollisionAabb = { minX: 2, minY: 8, maxX: 8, maxY: 20 };
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const b: CollisionAabb2D = { minX: 2, minY: 8, maxX: 8, maxY: 20 };
     expect(testAabbAabbCollision(a, b, out)).toBe(true);
     expect(out.overlapping).toBe(true);
     expect(out.normalX).toBeCloseTo(0);
@@ -34,9 +34,9 @@ describe('testAabbAabbCollision', () => {
   });
 
   it('is separated when the boxes are disjoint', () => {
-    const out = createCollisionManifold();
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 1, maxY: 1 };
-    const b: CollisionAabb = { minX: 2, minY: 2, maxX: 3, maxY: 3 };
+    const out = createCollisionManifold2D();
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 1, maxY: 1 };
+    const b: CollisionAabb2D = { minX: 2, minY: 2, maxX: 3, maxY: 3 };
     expect(testAabbAabbCollision(a, b, out)).toBe(false);
     expect(out.overlapping).toBe(false);
     expect(out.normalX).toBe(0);
@@ -45,17 +45,17 @@ describe('testAabbAabbCollision', () => {
   });
 
   it('treats edge-touching as not overlapping (exclusive)', () => {
-    const out = createCollisionManifold();
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 1, maxY: 1 };
-    const b: CollisionAabb = { minX: 1, minY: 0, maxX: 2, maxY: 1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 1, maxY: 1 };
+    const b: CollisionAabb2D = { minX: 1, minY: 0, maxX: 2, maxY: 1 };
     expect(testAabbAabbCollision(a, b, out)).toBe(false);
   });
 
   it('resolves containment with the exit-distance depth, not the intersection length', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     // B fully inside A, closer to A's top face — MTV pushes A up through the nearest face by 5.
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
-    const b: CollisionAabb = { minX: 3, minY: 3, maxX: 6, maxY: 5 };
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const b: CollisionAabb2D = { minX: 3, minY: 3, maxX: 6, maxY: 5 };
     expect(testAabbAabbCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(0);
     expect(out.normalY).toBeCloseTo(1);
@@ -63,7 +63,7 @@ describe('testAabbAabbCollision', () => {
   });
 
   it('clears a reused manifold when a following pair misses', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     testAabbAabbCollision({ minX: 0, minY: 0, maxX: 2, maxY: 2 }, { minX: 1, minY: 1, maxX: 3, maxY: 3 }, out);
     expect(out.overlapping).toBe(true);
     testAabbAabbCollision({ minX: 0, minY: 0, maxX: 1, maxY: 1 }, { minX: 5, minY: 5, maxX: 6, maxY: 6 }, out);
@@ -74,7 +74,7 @@ describe('testAabbAabbCollision', () => {
   });
 
   it('rejects boxes with a zero-width or zero-height extent', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     out.overlapping = true;
     out.normalX = 1;
     out.depth = 4;
@@ -85,7 +85,7 @@ describe('testAabbAabbCollision', () => {
   });
 
   it('prefers +X when both separation axes and directions tie', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     const box = { minX: -1, minY: -1, maxX: 1, maxY: 1 };
     expect(testAabbAabbCollision(box, box, out)).toBe(true);
     expect(out.normalX).toBe(1);
@@ -95,7 +95,7 @@ describe('testAabbAabbCollision', () => {
 
 describe('testAabbObbCollision', () => {
   it('keeps SAT state isolated from a nested collision triggered by the output setter', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     let normalX = 0;
     let nested = false;
     Object.defineProperty(out, 'normalX', {
@@ -109,7 +109,7 @@ describe('testAabbObbCollision', () => {
         testAabbObbCollision(
           { minX: -10, minY: -10, maxX: 10, maxY: 10 },
           { x: 0, y: 0, halfW: 3, halfH: 3, rotation: 0 },
-          createCollisionManifold(),
+          createCollisionManifold2D(),
         );
       },
     });
@@ -141,18 +141,18 @@ describe('testAabbObbCollision', () => {
     // than the guards that happen to exist is what reaches the ones nobody thought to cover.
     // Each degenerate box is placed where it WOULD overlap the AABB if validation wrongly accepted it:
     // a zero-extent box parked outside the AABB returns false either way and pins nothing.
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     out.overlapping = true;
     out.normalX = 1;
     out.depth = 4;
-    expect(testAabbObbCollision({ minX: 0, minY: 0, maxX: 4, maxY: 10 }, b as CollisionObb, out)).toBe(false);
+    expect(testAabbObbCollision({ minX: 0, minY: 0, maxX: 4, maxY: 10 }, b as CollisionObb2D, out)).toBe(false);
     expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
   });
 
   it('overlaps an axis-aligned OBB and pushes the box off it', () => {
-    const out = createCollisionManifold();
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 4, maxY: 10 };
-    const b: CollisionObb = { x: 6, y: 5, halfW: 3, halfH: 3, rotation: 0 };
+    const out = createCollisionManifold2D();
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 4, maxY: 10 };
+    const b: CollisionObb2D = { x: 6, y: 5, halfW: 3, halfH: 3, rotation: 0 };
     expect(testAabbObbCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-1);
     expect(out.normalY).toBeCloseTo(0);
@@ -160,9 +160,9 @@ describe('testAabbObbCollision', () => {
   });
 
   it('is separated when apart', () => {
-    const out = createCollisionManifold();
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 2, maxY: 2 };
-    const b: CollisionObb = { x: 10, y: 10, halfW: 1, halfH: 1, rotation: 0.5 };
+    const out = createCollisionManifold2D();
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 2, maxY: 2 };
+    const b: CollisionObb2D = { x: 10, y: 10, halfW: 1, halfH: 1, rotation: 0.5 };
     expect(testAabbObbCollision(a, b, out)).toBe(false);
     expect(out.overlapping).toBe(false);
   });
@@ -170,25 +170,25 @@ describe('testAabbObbCollision', () => {
 
 describe('testAabbPolygonCollision', () => {
   it('overlaps a convex polygon', () => {
-    const out = createCollisionManifold();
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 6, maxY: 6 };
+    const out = createCollisionManifold2D();
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 6, maxY: 6 };
     expect(testAabbPolygonCollision(a, square(4, 0, 6), out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-1);
     expect(out.depth).toBeCloseTo(2); // A right x=6, polygon left x=4 -> penetration 2
   });
 
   it('is separated when apart', () => {
-    const out = createCollisionManifold();
-    const a: CollisionAabb = { minX: 0, minY: 0, maxX: 2, maxY: 2 };
+    const out = createCollisionManifold2D();
+    const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 2, maxY: 2 };
     expect(testAabbPolygonCollision(a, square(10, 10, 4), out)).toBe(false);
   });
 });
 
 describe('testCircleAabbCollision', () => {
   it('overlaps with the closest-point normal when the center is outside the box', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 15, y: 5, radius: 7 };
-    const b: CollisionAabb = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 15, y: 5, radius: 7 };
+    const b: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
     expect(testCircleAabbCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(1);
     expect(out.normalY).toBeCloseTo(0);
@@ -196,23 +196,23 @@ describe('testCircleAabbCollision', () => {
   });
 
   it('is separated when the closest point is beyond the radius', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 20, y: 5, radius: 3 };
-    const b: CollisionAabb = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 20, y: 5, radius: 3 };
+    const b: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
     expect(testCircleAabbCollision(a, b, out)).toBe(false);
   });
 
   it('treats exact touching as not overlapping (exclusive)', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 17, y: 5, radius: 7 }; // closest (10,5), dist 7 == radius
-    const b: CollisionAabb = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 17, y: 5, radius: 7 }; // closest (10,5), dist 7 == radius
+    const b: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
     expect(testCircleAabbCollision(a, b, out)).toBe(false);
   });
 
   it('pushes out through the nearest face when the center is inside the box', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 8, y: 5, radius: 1 }; // 2 from the right face
-    const b: CollisionAabb = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 8, y: 5, radius: 1 }; // 2 from the right face
+    const b: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
     expect(testCircleAabbCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(1);
     expect(out.normalY).toBeCloseTo(0);
@@ -222,9 +222,9 @@ describe('testCircleAabbCollision', () => {
 
 describe('testCircleCircleCollision', () => {
   it('gives depth 1 and a unit normal for two radius-1 circles centered 1 apart', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 0, y: 0, radius: 1 };
-    const b: CollisionCircle = { x: 1, y: 0, radius: 1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 0, y: 0, radius: 1 };
+    const b: CollisionCircle2D = { x: 1, y: 0, radius: 1 };
     expect(testCircleCircleCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-1); // pushes A (left) off B (right)
     expect(out.normalY).toBeCloseTo(0);
@@ -232,33 +232,33 @@ describe('testCircleCircleCollision', () => {
   });
 
   it('is separated when the centers are farther than the radius sum', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 0, y: 0, radius: 1 };
-    const b: CollisionCircle = { x: 3, y: 0, radius: 1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 0, y: 0, radius: 1 };
+    const b: CollisionCircle2D = { x: 3, y: 0, radius: 1 };
     expect(testCircleCircleCollision(a, b, out)).toBe(false);
     expect(out.depth).toBe(0);
   });
 
   it('treats exact touching (distance == radius sum) as not overlapping', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 0, y: 0, radius: 1 };
-    const b: CollisionCircle = { x: 2, y: 0, radius: 1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 0, y: 0, radius: 1 };
+    const b: CollisionCircle2D = { x: 2, y: 0, radius: 1 };
     expect(testCircleCircleCollision(a, b, out)).toBe(false);
   });
 
   it('handles a fully contained circle', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 0, y: 0, radius: 5 };
-    const b: CollisionCircle = { x: 1, y: 0, radius: 1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 0, y: 0, radius: 5 };
+    const b: CollisionCircle2D = { x: 1, y: 0, radius: 1 };
     expect(testCircleCircleCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-1);
     expect(out.depth).toBeCloseTo(5); // radiusSum 6 - dist 1
   });
 
   it('falls back to a +X normal at full depth for concentric circles', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 2, y: 2, radius: 3 };
-    const b: CollisionCircle = { x: 2, y: 2, radius: 1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 2, y: 2, radius: 3 };
+    const b: CollisionCircle2D = { x: 2, y: 2, radius: 1 };
     expect(testCircleCircleCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBe(1);
     expect(out.normalY).toBe(0);
@@ -266,7 +266,7 @@ describe('testCircleCircleCollision', () => {
   });
 
   it('rejects a zero-radius circle and clears the output', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     out.overlapping = true;
     out.normalX = -1;
     out.depth = 2;
@@ -275,7 +275,7 @@ describe('testCircleCircleCollision', () => {
   });
 
   it('keeps a directional normal for proportionally tiny circles', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     expect(testCircleCircleCollision({ x: 0, y: 0, radius: 1e-12 }, { x: 1e-12, y: 0, radius: 1e-12 }, out)).toBe(true);
     expect(out.normalX).toBe(-1);
     expect(out.normalY).toBe(0);
@@ -285,9 +285,9 @@ describe('testCircleCircleCollision', () => {
 
 describe('testCircleObbCollision', () => {
   it('matches circle-vs-AABB for a zero-rotation OBB', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 15, y: 5, radius: 7 };
-    const b: CollisionObb = { x: 5, y: 5, halfW: 5, halfH: 5, rotation: 0 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 15, y: 5, radius: 7 };
+    const b: CollisionObb2D = { x: 5, y: 5, halfW: 5, halfH: 5, rotation: 0 };
     expect(testCircleObbCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(1);
     expect(out.normalY).toBeCloseTo(0);
@@ -295,10 +295,10 @@ describe('testCircleObbCollision', () => {
   });
 
   it('rotates the manifold normal back into world space for a rotated OBB', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     // OBB rotated 90 degrees: its half-width (5) lies along world Y, half-height (1) along world X.
-    const a: CollisionCircle = { x: 3, y: 0, radius: 2.5 };
-    const b: CollisionObb = { x: 0, y: 0, halfW: 5, halfH: 1, rotation: Math.PI / 2 };
+    const a: CollisionCircle2D = { x: 3, y: 0, radius: 2.5 };
+    const b: CollisionObb2D = { x: 0, y: 0, halfW: 5, halfH: 1, rotation: Math.PI / 2 };
     expect(testCircleObbCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(1); // world +X face at x=1, circle center x=3 r=2.5
     expect(out.normalY).toBeCloseTo(0);
@@ -306,17 +306,17 @@ describe('testCircleObbCollision', () => {
   });
 
   it('is separated when apart', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 20, y: 0, radius: 1 };
-    const b: CollisionObb = { x: 0, y: 0, halfW: 2, halfH: 2, rotation: 0.7 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 20, y: 0, radius: 1 };
+    const b: CollisionObb2D = { x: 0, y: 0, halfW: 2, halfH: 2, rotation: 0.7 };
     expect(testCircleObbCollision(a, b, out)).toBe(false);
   });
 });
 
 describe('testCirclePolygonCollision', () => {
   it('overlaps a square polygon on the edge nearest the circle', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 13, y: 5, radius: 5 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 13, y: 5, radius: 5 };
     expect(testCirclePolygonCollision(a, square(0, 0, 10), out)).toBe(true);
     expect(out.normalX).toBeCloseTo(1);
     expect(out.normalY).toBeCloseTo(0);
@@ -324,47 +324,47 @@ describe('testCirclePolygonCollision', () => {
   });
 
   it('uses the vertex axis to separate a circle just past a corner', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     // Corner (10,10), circle center (13,13): corner distance sqrt(18) ~= 4.243 > radius 4.
     // Edge normals alone (X and Y) would falsely report overlap; the vertex axis separates them.
-    const a: CollisionCircle = { x: 13, y: 13, radius: 4 };
+    const a: CollisionCircle2D = { x: 13, y: 13, radius: 4 };
     expect(testCirclePolygonCollision(a, square(0, 0, 10), out)).toBe(false);
     expect(out.overlapping).toBe(false);
   });
 
   it('reports overlap when the circle reaches past the corner', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 13, y: 13, radius: 5 }; // corner distance 4.243 < radius 5
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 13, y: 13, radius: 5 }; // corner distance 4.243 < radius 5
     expect(testCirclePolygonCollision(a, square(0, 0, 10), out)).toBe(true);
   });
 
   it('handles a circle fully contained in the polygon', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 5, y: 5, radius: 1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 5, y: 5, radius: 1 };
     expect(testCirclePolygonCollision(a, square(0, 0, 10), out)).toBe(true);
     expect(out.overlapping).toBe(true);
     expect(out.depth).toBeCloseTo(6); // 5 to the nearest edge + radius 1
   });
 
   it('prefers +X for a centered circle whose edge axes tie', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     expect(testCirclePolygonCollision({ x: 0, y: 0, radius: 1 }, square(-5, -5, 10), out)).toBe(true);
     expect(out.normalX).toBe(1);
     expect(out.normalY).toBe(0);
   });
 
   it('is separated when far from the polygon', () => {
-    const out = createCollisionManifold();
-    const a: CollisionCircle = { x: 30, y: 5, radius: 3 };
+    const out = createCollisionManifold2D();
+    const a: CollisionCircle2D = { x: 30, y: 5, radius: 3 };
     expect(testCirclePolygonCollision(a, square(0, 0, 10), out)).toBe(false);
   });
 });
 
 describe('testObbObbCollision', () => {
   it('overlaps an axis-aligned box with a 45-degree diamond and separates along X', () => {
-    const out = createCollisionManifold();
-    const a: CollisionObb = { x: 0, y: 0, halfW: 2, halfH: 2, rotation: 0 };
-    const b: CollisionObb = { x: 3, y: 0, halfW: 2, halfH: 2, rotation: Math.PI / 4 };
+    const out = createCollisionManifold2D();
+    const a: CollisionObb2D = { x: 0, y: 0, halfW: 2, halfH: 2, rotation: 0 };
+    const b: CollisionObb2D = { x: 3, y: 0, halfW: 2, halfH: 2, rotation: Math.PI / 4 };
     expect(testObbObbCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-1); // pushes A (left) off the diamond
     expect(out.normalY).toBeCloseTo(0);
@@ -372,35 +372,35 @@ describe('testObbObbCollision', () => {
   });
 
   it('is separated when apart', () => {
-    const out = createCollisionManifold();
-    const a: CollisionObb = { x: 0, y: 0, halfW: 1, halfH: 1, rotation: 0.3 };
-    const b: CollisionObb = { x: 8, y: 0, halfW: 1, halfH: 1, rotation: 1.1 };
+    const out = createCollisionManifold2D();
+    const a: CollisionObb2D = { x: 0, y: 0, halfW: 1, halfH: 1, rotation: 0.3 };
+    const b: CollisionObb2D = { x: 8, y: 0, halfW: 1, halfH: 1, rotation: 1.1 };
     expect(testObbObbCollision(a, b, out)).toBe(false);
   });
 });
 
 describe('testObbPolygonCollision', () => {
   it('overlaps a convex polygon', () => {
-    const out = createCollisionManifold();
-    const a: CollisionObb = { x: 0, y: 0, halfW: 3, halfH: 3, rotation: 0 };
+    const out = createCollisionManifold2D();
+    const a: CollisionObb2D = { x: 0, y: 0, halfW: 3, halfH: 3, rotation: 0 };
     expect(testObbPolygonCollision(a, square(2, -1, 4), out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-1);
     expect(out.depth).toBeCloseTo(1); // OBB right x=3, polygon left x=2 -> penetration 1
   });
 
   it('is separated when apart', () => {
-    const out = createCollisionManifold();
-    const a: CollisionObb = { x: 0, y: 0, halfW: 1, halfH: 1, rotation: 0.4 };
+    const out = createCollisionManifold2D();
+    const a: CollisionObb2D = { x: 0, y: 0, halfW: 1, halfH: 1, rotation: 0.4 };
     expect(testObbPolygonCollision(a, square(10, 10, 3), out)).toBe(false);
   });
 });
 
 describe('testPolygonPolygonCollision', () => {
   it('reports the least-penetration axis for two overlapping squares', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     // A = 0..10 square; B overlaps deeply on X (x[2,8]) but shallowly on Y (y[8,20]).
     const a = square(0, 0, 10);
-    const b: CollisionPolygon = { points: [2, 8, 8, 8, 8, 20, 2, 20] };
+    const b: CollisionPolygon2D = { points: [2, 8, 8, 8, 8, 20, 2, 20] };
     expect(testPolygonPolygonCollision(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(0);
     expect(out.normalY).toBeCloseTo(-1);
@@ -408,33 +408,33 @@ describe('testPolygonPolygonCollision', () => {
   });
 
   it('treats a concave-looking-but-convex polygon (a regular hexagon) correctly', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     // A convex hexagon centered near the origin.
-    const hex: CollisionPolygon = { points: [2, 0, 1, 2, -1, 2, -2, 0, -1, -2, 1, -2] };
+    const hex: CollisionPolygon2D = { points: [2, 0, 1, 2, -1, 2, -2, 0, -1, -2, 1, -2] };
     expect(testPolygonPolygonCollision(hex, square(0, 0, 3), out)).toBe(true);
     expect(out.overlapping).toBe(true);
   });
 
   it('is separated when the polygons are disjoint', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     expect(testPolygonPolygonCollision(square(0, 0, 2), square(5, 5, 2), out)).toBe(false);
   });
 
   it('treats edge-touching as not overlapping (exclusive)', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     expect(testPolygonPolygonCollision(square(0, 0, 2), square(2, 0, 2), out)).toBe(false);
   });
 
   it('rejects polygons with fewer than three vertices', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     out.overlapping = true;
     expect(testPolygonPolygonCollision({ points: [0, 0, 1, 1] }, square(0, 0, 2), out)).toBe(false);
     expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
   });
 
   it('chooses the same +X MTV for coincident squares regardless of start vertex and winding', () => {
-    const out = createCollisionManifold();
-    const variants: CollisionPolygon[] = [
+    const out = createCollisionManifold2D();
+    const variants: CollisionPolygon2D[] = [
       { points: [-1, -1, 1, -1, 1, 1, -1, 1] },
       { points: [1, 1, 1, -1, -1, -1, -1, 1] },
       { points: [-1, 1, 1, 1, 1, -1, -1, -1] },
@@ -448,12 +448,12 @@ describe('testPolygonPolygonCollision', () => {
   });
 
   it('is translation-stable at large world coordinates', () => {
-    const out = createCollisionManifold();
+    const out = createCollisionManifold2D();
     const origin = 1e15;
-    const a: CollisionPolygon = {
+    const a: CollisionPolygon2D = {
       points: [origin, origin, origin + 10, origin, origin + 10, origin + 10, origin, origin + 10],
     };
-    const b: CollisionPolygon = {
+    const b: CollisionPolygon2D = {
       points: [origin + 8, origin, origin + 18, origin, origin + 18, origin + 10, origin + 8, origin + 10],
     };
     expect(testPolygonPolygonCollision(a, b, out)).toBe(true);

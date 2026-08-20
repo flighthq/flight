@@ -1,4 +1,4 @@
-import type { CollisionContactManifold, CollisionContactPoint } from '@flighthq/types/contract';
+import type { CollisionContactManifold2D, CollisionContactPoint2D } from '@flighthq/types/contract';
 
 // Lifecycle for the contact manifold the `collide*ContactManifold` functions write. The two contact
 // points are allocated once, here, and reused for the manifold's whole life — a solver's per-frame
@@ -8,7 +8,7 @@ import type { CollisionContactManifold, CollisionContactPoint } from '@flighthq/
 // count zero. The contact-point entries themselves are left untouched — `pointCount` alone bounds
 // what is readable, so clearing does not need to walk them and a stale point can never be read
 // through the documented contract.
-export function clearCollisionContactManifold(out: CollisionContactManifold): void {
+export function clearCollisionContactManifold2D(out: CollisionContactManifold2D): void {
   out.overlapping = false;
   out.normalX = 0;
   out.normalY = 0;
@@ -18,7 +18,7 @@ export function clearCollisionContactManifold(out: CollisionContactManifold): vo
 
 // Allocates a fresh contact manifold in the non-overlapping state, with its fixed two-point array
 // already populated, ready to be passed as an `out` parameter.
-export function createCollisionContactManifold(): CollisionContactManifold {
+export function createCollisionContactManifold2D(): CollisionContactManifold2D {
   return {
     overlapping: false,
     normalX: 0,
@@ -29,6 +29,6 @@ export function createCollisionContactManifold(): CollisionContactManifold {
   };
 }
 
-function createContactPoint(): CollisionContactPoint {
+function createContactPoint(): CollisionContactPoint2D {
   return { x: 0, y: 0, depth: 0, featureId: 0 };
 }

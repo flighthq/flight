@@ -1,5 +1,5 @@
 import type {
-  CollisionShape,
+  CollisionShape2D,
   Physics2DCollider,
   Physics2DContact,
   Physics2DJoint,
@@ -95,7 +95,7 @@ export function isPhysics2DSolverConfigValid(config: Readonly<Physics2DSolverCon
   );
 }
 
-function isCollisionShapeStateValid(shape: Readonly<CollisionShape>): boolean {
+function isCollisionShapeStateValid(shape: Readonly<CollisionShape2D>): boolean {
   switch (shape.kind) {
     case 'circle':
       return Number.isFinite(shape.x) && Number.isFinite(shape.y) && Number.isFinite(shape.radius) && shape.radius > 0;

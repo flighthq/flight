@@ -1,9 +1,9 @@
-import type { CollisionShape, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
+import type { CollisionShape2D, Physics2DCollider, RigidBody2D } from '@flighthq/types/contract';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and
 // polygon storage is sized once here so the per-step transform can write in place.
-export function createPhysics2DColliderWorldShape(local: Readonly<CollisionShape>): CollisionShape {
+export function createPhysics2DColliderWorldShape(local: Readonly<CollisionShape2D>): CollisionShape2D {
   switch (local.kind) {
     case 'circle':
       return { kind: 'circle', x: local.x, y: local.y, radius: local.radius };

@@ -1,6 +1,6 @@
 // Contact feature identity: the packing that lets a solver recognise, next frame, that it is looking
 // at the same contact and may reuse the impulse it converged on. Private to the package — the packed
-// value is opaque to callers, so only `CollisionContactPoint.featureId` crosses the boundary.
+// value is opaque to callers, so only `CollisionContactPoint2D.featureId` crosses the boundary.
 
 // The largest vertex count whose face indices still pack without aliasing. Face indices take 25 bits
 // each, above a 1-bit contact-point slot and below the reference-shape bit. A convex polygon at this

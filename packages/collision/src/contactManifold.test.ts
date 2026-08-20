@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionContactManifold, createCollisionContactManifold } from './contactManifold';
+import { clearCollisionContactManifold2D, createCollisionContactManifold2D } from './contactManifold';
 
-describe('clearCollisionContactManifold', () => {
+describe('clearCollisionContactManifold2D', () => {
   it('resets the manifold to the non-overlapping state', () => {
-    const manifold = createCollisionContactManifold();
+    const manifold = createCollisionContactManifold2D();
     manifold.overlapping = true;
     manifold.normalX = 1;
     manifold.normalY = -1;
     manifold.depth = 4;
     manifold.pointCount = 2;
 
-    clearCollisionContactManifold(manifold);
+    clearCollisionContactManifold2D(manifold);
     expect(manifold.overlapping).toBe(false);
     expect(manifold.normalX).toBe(0);
     expect(manifold.normalY).toBe(0);
@@ -20,17 +20,17 @@ describe('clearCollisionContactManifold', () => {
   });
 
   it('keeps the point array allocated so a cleared manifold stays reusable', () => {
-    const manifold = createCollisionContactManifold();
+    const manifold = createCollisionContactManifold2D();
     const points = manifold.points;
-    clearCollisionContactManifold(manifold);
+    clearCollisionContactManifold2D(manifold);
     expect(manifold.points).toBe(points);
     expect(manifold.points).toHaveLength(2);
   });
 });
 
-describe('createCollisionContactManifold', () => {
+describe('createCollisionContactManifold2D', () => {
   it('starts non-overlapping with zeroed normal, depth, and point count', () => {
-    const manifold = createCollisionContactManifold();
+    const manifold = createCollisionContactManifold2D();
     expect(manifold.overlapping).toBe(false);
     expect(manifold.normalX).toBe(0);
     expect(manifold.normalY).toBe(0);
@@ -39,7 +39,7 @@ describe('createCollisionContactManifold', () => {
   });
 
   it('preallocates both contact points so the hot path never allocates', () => {
-    const manifold = createCollisionContactManifold();
+    const manifold = createCollisionContactManifold2D();
     expect(manifold.points).toHaveLength(2);
     for (const point of manifold.points) {
       expect(point).toEqual({ x: 0, y: 0, depth: 0, featureId: 0 });
@@ -47,8 +47,8 @@ describe('createCollisionContactManifold', () => {
   });
 
   it('gives each manifold its own points rather than sharing one array', () => {
-    const first = createCollisionContactManifold();
-    const second = createCollisionContactManifold();
+    const first = createCollisionContactManifold2D();
+    const second = createCollisionContactManifold2D();
     expect(first.points).not.toBe(second.points);
     expect(first.points[0]).not.toBe(second.points[0]);
   });

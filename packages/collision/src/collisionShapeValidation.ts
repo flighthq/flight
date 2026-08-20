@@ -1,8 +1,8 @@
-import type { CollisionShape, CollisionTestStatus } from '@flighthq/types/contract';
+import type { CollisionShape2D, CollisionTestStatus } from '@flighthq/types/contract';
 
 // Validates the flat polygon contract and distinguishes zero-area/malformed input from a real but
 // non-convex polygon. Winding and collinear vertices are accepted when the polygon still has area.
-export function getCollisionPolygonValidationStatus(points: readonly number[]): CollisionTestStatus | null {
+export function getCollisionPolygonValidationStatus2D(points: readonly number[]): CollisionTestStatus | null {
   if (points.length < 6 || (points.length & 1) !== 0) return 'degenerate-shape';
   let minX = Infinity;
   let minY = Infinity;
@@ -49,7 +49,7 @@ export function getCollisionPolygonValidationStatus(points: readonly number[]): 
 
 // Returns the invalid/unsupported status that prevents a shape from participating in a manifold,
 // or null when it is a finite, positive-area member of the supported manifold shape set.
-export function getCollisionShapeValidationStatus(shape: Readonly<CollisionShape>): CollisionTestStatus | null {
+export function getCollisionShapeValidationStatus2D(shape: Readonly<CollisionShape2D>): CollisionTestStatus | null {
   switch (shape.kind) {
     case 'circle':
       return Number.isFinite(shape.x) && Number.isFinite(shape.y) && Number.isFinite(shape.radius) && shape.radius > 0
@@ -75,7 +75,7 @@ export function getCollisionShapeValidationStatus(shape: Readonly<CollisionShape
         ? null
         : 'degenerate-shape';
     case 'polygon':
-      return getCollisionPolygonValidationStatus(shape.points);
+      return getCollisionPolygonValidationStatus2D(shape.points);
     case 'segment':
       return Number.isFinite(shape.x0) &&
         Number.isFinite(shape.y0) &&
