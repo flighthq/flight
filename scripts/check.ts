@@ -108,6 +108,17 @@ if (!scoped) {
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
   add('functional-antialiasing:check', 'tsx', ['scripts/check-functional-antialiasing.ts', '--check']);
 
+  // Advisory, and deliberately not a gate. `fingerprint-source-hashes:check` above proves a baseline
+  // column RECORDS a sourceHash; nothing proved that hash still names the current scene bytes, and the
+  // instrument that answers it existed unrun. It cannot become a gate: measured 2026-08-19 the functional
+  // suite is exact=0 mismatch=408 of 408 columns, so a gate would be red on day one and switched off by
+  // Friday. It is also not a defect count — a comment or import reorder moves a scene's hash without
+  // moving a pixel, which is why the census prints that warning above its own numbers.
+  //
+  // Read it as: the 408 are UNVERIFIED, not wrong. A column is only known wrong when someone captures it
+  // and the pixels disagree, which is a separate and much stronger claim.
+  add('capture provenance (advisory)', 'tsx', ['scripts/capture-provenance-census.ts']);
+
   // Advisory, and deliberately not a gate: `scripts/size.ts` always exits 0, so this reports which
   // bundles moved against the unminified baseline without ever failing the sweep. A red here would
   // push an agent to rewrite the baseline to clear it, and the shipping pins sit one command away —
