@@ -37,6 +37,11 @@ export type ReferenceImageCellVerdict =
   | 'pending-uncaptured'
   /** A request names it, prior bytes exist, and the movement is in scope. §6 row 2. */
   | 'pending-changed'
+  /**
+   * A committed hold covers it: the picture's failure is a DEFERRED DECISION, not an active error. The
+   * comparison still runs and still prints, so the cell stays visible while the question is open.
+   */
+  | 'held'
   /** Compared against the pinned bytes and within tolerance. The only verdict that is a pass. */
   | 'compared';
 
@@ -71,6 +76,18 @@ export interface ReferenceImageJoinInput {
   policy?: Readonly<ReferenceImageComparisonPolicy>;
   /** §6: repository policy must bound how long a request may remain pending. No default is offered. */
   maxPendingDays: number;
+  /**
+   * Cells a ruling has held, identity → reason, from the committed hold ledger.
+   *
+   * ★ WHY A HOLD BELONGS IN THE VERDICT AND NOT ONLY IN COMMISSIONING. The eligibility layer already
+   * refuses to bless a held cell, which is right. Without this, though, the same cell keeps FAILING —
+   * and because it is held it cannot be cleared by commissioning either. Held meant "cannot fix, stays
+   * red", which turns a deliberate deferral into permanent noise and trains everyone to read a red run
+   * as normal. A hold is a decision that was made; it should read as one.
+   *
+   * Optional so existing pure-function callers keep working; absent means no cell is held.
+   */
+  held?: ReadonlyMap<string, string>;
 }
 
 export interface ReferenceImageCellResult {
@@ -88,6 +105,8 @@ export interface ReferenceImageJoinResult {
   /** Cells that compared and passed. Zero of these with work outstanding is itself a failure. */
   comparedCount: number;
   pendingCount: number;
+  /** Cells whose picture-failure a hold demoted. Never counted as compared, never counted as pending. */
+  heldCount: number;
 }
 
 export interface ReferenceImageJoinFailure {
@@ -140,6 +159,34 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
   const failures: ReferenceImageJoinFailure[] = [];
   const required = new Set(input.cells.filter((cell) => cell.required).map((cell) => cell.identity));
   const live = new Set(input.cells.map((cell) => cell.identity));
+  const holds = input.held ?? new Map<string, string>();
+  let heldCount = 0;
+
+  // ★ ONE PLACE DECIDES WHETHER A PICTURE-FAILURE IS A FAILURE. Four sites below can conclude that a
+  // cell's image is wrong — absent, uncompared, resized, regressed — and a hold has to demote every one
+  // of them or it demotes none reliably. Routing all four through this function is what makes "a held
+  // cell never reports an active error" a property of the code rather than of four remembered edits.
+  //
+  // ★ IT DEMOTES THE PICTURE, NOT THE BOOKKEEPING. `orphan`, `request-overlap`, `request-off-target` and
+  // `request-expired` stay failures for a held cell, because they are statements about the queue rather
+  // than about whether the render is right — and a deferred decision about an image is not a licence to
+  // let its paperwork rot.
+  const concludeFailure = (
+    identity: string,
+    requestId: string | null,
+    kind: ReferenceImageJoinFailureKind,
+    verdict: ReferenceImageCellVerdict,
+    detail: string,
+  ): void => {
+    const heldBy = holds.get(identity);
+    if (heldBy !== undefined) {
+      heldCount += 1;
+      cells.push({ identity, verdict: 'held', requestId, detail: `${detail} — HELD: ${heldBy}` });
+      return;
+    }
+    cells.push({ identity, verdict, requestId, detail });
+    failures.push({ kind, identity, detail });
+  };
 
   // Which cells are legitimately demoted, and by which request. Expired requests demote nothing — an
   // unbounded queue is a skip list — and a cell claimed twice is rejected rather than arbitrated, since
@@ -209,34 +256,26 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
           detail: 'commissioned; no blessed bytes yet, so no comparison is claimed',
         });
       } else {
-        cells.push({
-          identity: cell.identity,
-          verdict: 'missing',
-          requestId: null,
-          detail: 'required, unpinned, and nothing requested it',
-        });
-        failures.push({
-          kind: 'missing-reference-image',
-          identity: cell.identity,
-          detail: 'required reference image is absent and uncommissioned',
-        });
+        concludeFailure(
+          cell.identity,
+          null,
+          'missing-reference-image',
+          'missing',
+          'required reference image is absent and uncommissioned',
+        );
       }
       continue;
     }
 
     const comparison = cell.comparison;
     if (comparison === null) {
-      cells.push({
-        identity: cell.identity,
-        verdict: 'missing',
+      concludeFailure(
+        cell.identity,
         requestId,
-        detail: 'pinned but never compared — a capture that did not run is missing, not passing',
-      });
-      failures.push({
-        kind: 'missing-reference-image',
-        identity: cell.identity,
-        detail: 'pinned reference image was never compared',
-      });
+        'missing-reference-image',
+        'missing',
+        'pinned but never compared — a capture that did not run is missing, not passing',
+      );
       continue;
     }
 
@@ -262,17 +301,13 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
         });
         continue;
       }
-      cells.push({
-        identity: cell.identity,
-        verdict: 'incomparable',
+      concludeFailure(
+        cell.identity,
         requestId,
-        detail: 'reference and candidate differ in size',
-      });
-      failures.push({
-        kind: 'incomparable-dimensions',
-        identity: cell.identity,
-        detail: 'reference and candidate differ in size',
-      });
+        'incomparable-dimensions',
+        'incomparable',
+        'reference and candidate differ in size',
+      );
       continue;
     }
 
@@ -297,8 +332,7 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
       continue;
     }
 
-    cells.push({ identity: cell.identity, verdict: 'regressed', requestId: null, detail: describe(comparison) });
-    failures.push({ kind: 'regression', identity: cell.identity, detail: describe(comparison) });
+    concludeFailure(cell.identity, null, 'regression', 'regressed', describe(comparison));
   }
 
   // §9: "a gated run that compared zero NON-PENDING images is unconfigured, not clean." The denominator is
@@ -310,7 +344,9 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
   // would have made the first run of the mechanism indistinguishable from a broken one and taught everybody
   // to expect a red on seeding. A gate that cries wolf on the state the design intends is worse than no
   // gate: it fires when nothing is wrong, so it is ignored when something is.
-  const gatedCells = required.size - pendingCount;
+  // Held cells leave the denominator for the same reason pending ones do: neither is a comparison this
+  // run is claiming, so neither can make a run of nothing-but-deferrals look unconfigured.
+  const gatedCells = required.size - pendingCount - heldCount;
   if (comparedCount === 0 && gatedCells > 0) {
     failures.push({
       kind: 'zero-comparisons',
@@ -319,7 +355,7 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
     });
   }
 
-  return { cells, failures, comparedCount, pendingCount };
+  return { cells, failures, comparedCount, pendingCount, heldCount };
 }
 
 /** Stable one-line summary of a comparison, so a report row and a failure detail cannot disagree. */
