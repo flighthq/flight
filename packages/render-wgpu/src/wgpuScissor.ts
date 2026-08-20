@@ -1,5 +1,6 @@
 import type { WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
+import { getWgpuSurfaceRenderScale } from './wgpuAntialias';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 // Applies the current scissor rectangle to the active render pass. No-op when there is no active
@@ -15,7 +16,7 @@ export function applyWgpuScissorRect(state: WgpuRenderState, pass: GPURenderPass
   const y = Math.max(0, Math.floor(rect.y));
   const w = Math.max(1, Math.ceil(rect.width));
   const h = Math.max(1, Math.ceil(rect.height));
-  pass.setScissorRect(x, y, w, h);
+  setWgpuRenderPassScissorRect(state, pass, x, y, w, h);
 }
 
 // Pops the topmost scissor rectangle from the stack and restores the previous one (or clears
@@ -37,4 +38,18 @@ export function pushWgpuScissorRect(state: WgpuRenderState, rect: Readonly<WgpuS
     runtime.scissorStack.push(runtime.currentScissorRect);
   }
   runtime.currentScissorRect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+}
+
+// Converts a logical main-surface scissor to the physical supersample surface. Offscreen render-target
+// scissors pass through unchanged because their viewport and texture already share one coordinate space.
+export function setWgpuRenderPassScissorRect(
+  state: Readonly<WgpuRenderState>,
+  pass: GPURenderPassEncoder,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
+  const scale = getWgpuSurfaceRenderScale(state);
+  pass.setScissorRect(x * scale, y * scale, width * scale, height * scale);
 }

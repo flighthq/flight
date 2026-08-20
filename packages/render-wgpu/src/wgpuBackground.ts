@@ -1,5 +1,10 @@
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
+import {
+  acquireWgpuSurfaceAntialiasView,
+  clearWgpuSurfacePresentation,
+  encodeWgpuSurfaceAntialiasResolve,
+} from './wgpuAntialias';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { acquireWgpuFrameCaptureTexture, encodeWgpuFrameCapture } from './wgpuSurface';
 
@@ -69,13 +74,18 @@ export function renderWgpuBackground(state: WgpuRenderState): void {
   const width = canvas.width;
   const height = canvas.height;
 
-  ensureWgpuDepthStencil(state, width, height);
-
   // With frame capture on, render into an offscreen COPY_SRC texture instead of the swapchain: software/
   // headless adapters never present the swapchain and its texture reads back as zeros, so the readable
   // copy must be the render target itself.
-  const canvasTexture = acquireWgpuFrameCaptureTexture(state) ?? context.getCurrentTexture();
-  const canvasView = canvasTexture.createView();
+  const presentationTexture = acquireWgpuFrameCaptureTexture(state) ?? context.getCurrentTexture();
+  const presentationView = presentationTexture.createView();
+  const antialiasView = acquireWgpuSurfaceAntialiasView(state, presentationView);
+  const renderWidth = antialiasView === null ? width : width * 2;
+  const renderHeight = antialiasView === null ? height : height * 2;
+
+  ensureWgpuDepthStencil(state, renderWidth, renderHeight);
+
+  const canvasView = antialiasView ?? presentationView;
   runtime.canvasTextureView = canvasView;
   runtime.canvasViewCleared = true;
   // The canvas (and the capture texture, when capture is on) is the canvas format; scene pipelines key on this.
@@ -106,7 +116,7 @@ export function renderWgpuBackground(state: WgpuRenderState): void {
     },
   });
 
-  renderPass.setViewport(0, 0, width, height, 0, 1);
+  renderPass.setViewport(0, 0, renderWidth, renderHeight, 0, 1);
   runtime.renderPass = renderPass;
 }
 
@@ -150,6 +160,8 @@ export function submitWgpuRenderPass(state: WgpuRenderState): void {
     if (uniformOffset > 0) {
       device.queue.writeBuffer(uniformBuffer, 0, uniformData.buffer, 0, uniformOffset);
     }
+    // Resolve the optional 2× main surface into the presentation target before capture reads it back.
+    encodeWgpuSurfaceAntialiasResolve(state, commandEncoder);
     // Copy the offscreen capture texture into the readback buffer within this frame's encoder; on the
     // adapters capture exists for, GPU work queued in a later task does not land.
     // A standalone offscreen frame (for example a render-cache bake) has no canvas view and must not
@@ -174,4 +186,5 @@ export function submitWgpuRenderPass(state: WgpuRenderState): void {
 
   runtime.canvasTextureView = null;
   runtime.canvasViewCleared = false;
+  clearWgpuSurfacePresentation(state);
 }

@@ -242,6 +242,20 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   canvasTextureView: GPUTextureView | null;
   canvasViewCleared: boolean;
 
+  // Optional 2× supersampled main surface. The scene renders into surfaceAntialiasTexture; immediately
+  // before submit, one fullscreen linear-sampling pass resolves it into surfacePresentationView (the
+  // swapchain view, or frameCaptureTexture when readback is enabled). All scene pipelines remain
+  // single-sampled and unchanged: this is deliberately a surface seam rather than a pipeline variant.
+  surfaceAntialiasEnabled: boolean;
+  surfaceAntialiasTexture: GPUTexture | null;
+  surfaceAntialiasView: GPUTextureView | null;
+  surfaceAntialiasWidth: number;
+  surfaceAntialiasHeight: number;
+  surfaceAntialiasResolveBindGroupLayout: GPUBindGroupLayout | null;
+  surfaceAntialiasResolvePipeline: GPURenderPipeline | null;
+  surfaceAntialiasResolveBindGroup: GPUBindGroup | null;
+  surfacePresentationView: GPUTextureView | null;
+
   // Opt-in frame capture (enableWgpuFrameCapture → createBitmapFromWgpuRenderState). When enabled,
   // the frame is rendered into frameCaptureTexture (an offscreen COPY_SRC target) instead of the
   // swapchain — software/headless adapters do not present the swapchain and its texture reads back as

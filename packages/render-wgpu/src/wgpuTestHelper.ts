@@ -1,4 +1,4 @@
-import type { WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuRenderOptions, WgpuRenderState } from '@flighthq/types/contract';
 
 import { createWgpuRenderState } from './wgpuRenderState';
 
@@ -279,11 +279,11 @@ export function createReadyImageElementForTest(width = 1, height = 1): HTMLImage
   return image;
 }
 
-export async function createWgpuRenderStateForTest(): Promise<WgpuRenderState> {
+export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = {}): Promise<WgpuRenderState> {
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 600;
-  return createWgpuRenderState(canvas);
+  return createWgpuRenderState(canvas, options);
 }
 
 export function installWgpuMock(): void {

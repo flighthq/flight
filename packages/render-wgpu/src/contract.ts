@@ -1,4 +1,5 @@
 export * from './wgpuAdapterCapabilities';
+export * from './wgpuAntialias';
 export * from './wgpuBackground';
 export * from './wgpuCompressedTexture';
 export * from './wgpuDraw';

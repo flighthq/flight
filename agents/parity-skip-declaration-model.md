@@ -462,10 +462,11 @@ declarations record scene-specific consequences at the entries themselves: `effe
 missing pass, `effect-msaa-bloom` feeds aliased geometry into bloom, and `effect-invert` differs on the
 shape boundaries rather than on its interior colour transform.
 
-The queued capability is an explicit caller-invoked multisample-and-resolve pass backed by
-multisample-capable WebGPU pipeline variants. It is deliberately not an `antialias` render-state option
-mirroring WebGL's context attribute; the existing unread `WgpuRenderOptions.antialias` field is an
-orphan to remove, not the seam to wire.
+The original queued capability here was an explicit caller-invoked multisample-and-resolve pass backed by
+multisample-capable WebGPU pipeline variants. **Superseded 2026-08-19 for the main surface:**
+`WgpuRenderOptions.antialias` is now wired as an opt-in 2× supersample-and-resolve render step in
+`render-wgpu`, default off. That does not supersede the effect-target part of this ruling: requested
+`sampleCount: 4` targets still need multisample-capable pipeline variants and remain held separately.
 
 This supplies real per-entry reasons but does **not** settle the proposal's mechanism question. The
 reasons still live in comments because the current skip schema can carry only renderer names or
