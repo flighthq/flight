@@ -188,7 +188,8 @@ async function check(): Promise<void> {
   // than `pending`, and a reference that silently stopped being published read as a clean run. The
   // orphan gate was unreachable from the other side for the same reason — every pack cell was marked
   // required by construction, so a pinned image with no live target could never be seen as one.
-  const joined = withRequiredIdentities(cells, readRequiredIdentities());
+  const required = readRequiredIdentities();
+  const joined = withRequiredIdentities(cells, required);
 
   const result = joinOracleState({
     cells: joined,
@@ -218,7 +219,7 @@ async function check(): Promise<void> {
   lines.push(
     '',
     `compared ${result.comparedCount}, pending ${result.pendingCount}, held ${result.heldCount}, ` +
-      `failures ${result.failures.length}`,
+      `not yet commissioned ${countNotYetCommissioned(required)}, failures ${result.failures.length}`,
   );
   for (const failure of result.failures)
     lines.push(`  FAIL ${failure.kind}: ${failure.identity ?? '—'} ${failure.detail}`);
@@ -238,6 +239,27 @@ async function check(): Promise<void> {
  * This is the record an agent cannot quietly weaken: removing an identity from it is a reviewed coverage
  * reduction, whereas failing to add one would only ever have made a run compare less than it claimed.
  */
+/**
+ * Cells the coverage manifest names but does NOT require a reference image for — the backlog.
+ *
+ * ★ THE POPULATION THAT WAS INVISIBLE. A cell earns gating by being commissioned: the write path adds the
+ * `referenceImage` coverage identity, so "not required" and "not yet commissioned" are the same state. It
+ * is a safe state — nothing is compared, so nothing can fail — but it appeared in no report at all, which
+ * made a run of 249 gating cells indistinguishable from a corpus of 496 that was half unstarted. Counting
+ * it here costs nothing and turns the check's summary into a statement about the whole population.
+ */
+function countNotYetCommissioned(required: ReadonlySet<string>): number {
+  const path = join(__dirname, 'capture-baseline-coverage-manifest.json');
+  const manifest = JSON.parse(readFileSync(path, 'utf8')) as { subjects?: Record<string, Record<string, string[]>> };
+  let total = 0;
+  for (const [subject, cells] of Object.entries(manifest.subjects ?? {})) {
+    for (const cell of Object.keys(cells)) {
+      if (!required.has(`${subject}/${cell}`)) total += 1;
+    }
+  }
+  return total;
+}
+
 function readRequiredIdentities(): Set<string> {
   const path = join(__dirname, 'capture-baseline-coverage-manifest.json');
   const manifest = JSON.parse(readFileSync(path, 'utf8')) as { subjects?: Record<string, Record<string, string[]>> };

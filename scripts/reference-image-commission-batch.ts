@@ -168,7 +168,6 @@ const report = selectCommissionableCells({
   coverage,
   determinism: readDeterminism(runs),
   determinismScope: scope,
-  held: readHeld(),
   outstanding: readOutstanding(),
   parityWithheld: readParityWithholdings(runs[0]!, subject),
   pinned: readPinned(),
@@ -218,9 +217,18 @@ for (const { count, reason } of summarizeOracleBlocks(report.blocked)) {
 console.log('');
 console.log(`byte-identical to a sibling backend ${report.collisions.length} (reported, not blocking)`);
 
+// ★ HELD IS REPORTED HERE AND BLOCKS NOTHING, WHICH IS THE WHOLE POINT OF THE SPLIT. A hold says the
+// RESULT is not endorsed; it used to also refuse a fresh capture, so the only way to say "we have not
+// decided" was to stop measuring. Commissioning a held cell is now allowed and normal — the hold keeps
+// its meaning at the gate, where `reference-image-check` demotes the cell's failure to a `held` verdict.
+// It is printed because someone commissioning a cell under an open ruling should know they are doing so.
+const heldAmongCommissionable = [...readHeld().keys()].filter((identity) => report.eligible.includes(identity));
+console.log(`under an open hold ${heldAmongCommissionable.length} (reported, not blocking)`);
+
 if (readOption('--verbose') !== undefined || rest.includes('--verbose')) {
   for (const cell of report.blocked) console.log(`  ${cell.reason.padEnd(23)} ${cell.identity}  ${cell.detail}`);
   for (const pair of report.collisions) console.log(`  collision              ${pair.identity}  == ${pair.twin}`);
+  for (const identity of heldAmongCommissionable) console.log(`  held (not blocking)    ${identity}`);
 }
 
 if (subcommand === 'report') process.exit(0);

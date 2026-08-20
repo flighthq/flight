@@ -61,3 +61,40 @@ describe('review hold ledger', () => {
     expect(ledger).toEqual({ schemaVersion: 2, held: {}, history: [] });
   });
 });
+
+describe('recordReviewHolds after a release', () => {
+  // ★ THE RATCHET. A release is a signed statement that the cell may gate; if a later hold could take it
+  // back, every failure would have a one-word cure and `held` would drift from "not yet decided" to "not
+  // looked at". The refusal names the release so a deliberate reversal is still possible — by editing the
+  // ledger, which leaves a diff, rather than by a click that leaves only an outcome.
+  it('refuses to re-hold a cell that was released', () => {
+    const ledger: ReviewHoldLedger = { schemaVersion: 2, held: {}, history: [] };
+    recordReviewHolds(ledger, ['functional/a/webgl'], 'reviewer', 'deferred', '2026-08-20T00:00:00.000Z');
+    recordReviewHoldReleases(ledger, ['functional/a/webgl'], 'joshua', 'looks right', '2026-08-20T01:00:00.000Z');
+
+    expect(() =>
+      recordReviewHolds(ledger, ['functional/a/webgl'], 'reviewer', 'second thoughts', '2026-08-20T02:00:00.000Z'),
+    ).toThrow('releasing is one-way');
+  });
+
+  // The refusal has to say WHICH release it honours, or the only way to understand it is to read the
+  // ledger by hand — and the reason a reviewer needs is the one recorded at release time.
+  it('names the release that blocks the re-hold', () => {
+    const ledger: ReviewHoldLedger = { schemaVersion: 2, held: {}, history: [] };
+    recordReviewHolds(ledger, ['functional/a/webgl'], 'reviewer', 'deferred', '2026-08-20T00:00:00.000Z');
+    recordReviewHoldReleases(ledger, ['functional/a/webgl'], 'joshua', 'looks right', '2026-08-20T01:00:00.000Z');
+
+    expect(() =>
+      recordReviewHolds(ledger, ['functional/a/webgl'], 'reviewer', 'again', '2026-08-20T02:00:00.000Z'),
+    ).toThrow(/joshua.*looks right/);
+  });
+
+  // The ratchet applies to REVERSAL, not to holding: a cell nobody released is held as normal.
+  it('still holds a cell with no release in its history', () => {
+    const ledger: ReviewHoldLedger = { schemaVersion: 2, held: {}, history: [] };
+
+    expect(
+      recordReviewHolds(ledger, ['functional/b/webgl'], 'reviewer', 'deferred', '2026-08-20T00:00:00.000Z'),
+    ).toEqual(['functional/b/webgl']);
+  });
+});

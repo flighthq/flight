@@ -68,8 +68,6 @@ export interface ReferenceImageEligibilityInput {
   outstanding: ReadonlySet<string>;
   /** Identities the parity leg withholds, and whether it judged them or could not judge them at all. */
   parityWithheld: ReadonlyMap<string, ReferenceImageParityWithholding>;
-  /** Identities a peer has claimed for repair, or a ruling has held. Never overridden by local evidence. */
-  held: ReadonlyMap<string, string>;
   /** Per-identity verdict from `compareCalibrationRuns`. A cell absent from this map is unmeasured. */
   determinism: ReadonlyMap<string, ReferenceImageDeterminismVerdict>;
   /**
@@ -113,8 +111,6 @@ export type ReferenceImageBlockReason =
    * is load-bearing rather than pedantic.
    */
   | 'baseline-unreproduced-here'
-  /** A peer or a ruling holds this cell. Local evidence never overrides that. */
-  | 'held'
   /** Already claimed by an open request. */
   | 'already-commissioned'
   /** Already blessed and gating. Re-commissioning is a re-bless, which is a separate decision. */
@@ -206,11 +202,19 @@ export function selectCommissionableCells(
       blocked.push({ detail: 'an open request already claims it', identity, reason: 'already-commissioned' });
       continue;
     }
-    const heldBy = input.held.get(identity);
-    if (heldBy !== undefined) {
-      blocked.push({ detail: heldBy, identity, reason: 'held' });
-      continue;
-    }
+    // ★ A HOLD NO LONGER BLOCKS COMMISSIONING, AND THE TWO PATHS NOW AGREE. Commissioning answers "what
+    // do we compare against"; a hold answers "do we endorse the result". Fusing them meant the only way to
+    // say "not endorsed" was to also refuse a fresh measurement — which is what made a deferred cell go
+    // dark, and what made a held cell impossible to move: it could not be blessed and, before the join
+    // learned about holds, could not be green either. The review tool's `/api/commission` never consulted
+    // this ledger, so the CLI and the UI already disagreed; this is the disagreement resolved toward the
+    // path in use.
+    //
+    // ★ WHAT STILL BLOCKS IS UNCHANGED, AND DELIBERATELY SO. `capture-failed`, `nondeterministic`,
+    // `determinism-unmeasured` and `parity-disagreement` are not judgements about whether the picture is
+    // RIGHT — they are judgements about whether the capture is a valid MEASUREMENT. Blessing bytes from a
+    // nondeterministic capture yields a reference that disagrees with the next run, which corrupts the
+    // very signal a held cell is being watched for.
 
     const capture = byIdentity.get(identity);
     if (capture === undefined) {
@@ -559,7 +563,6 @@ const BLOCK_REASON_ORDER: readonly ReferenceImageBlockReason[] = [
   'parity-unevaluated',
   'parity-single-column',
   'baseline-unreproduced-here',
-  'held',
   'already-commissioned',
   // Worst-first puts the declaration-only state ABOVE `already-pinned`: it is somebody's outstanding
   // work — a reference that was asked for and never arrived — while a pinned cell is finished and needs
