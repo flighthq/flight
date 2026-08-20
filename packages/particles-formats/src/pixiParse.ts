@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
@@ -25,8 +26,6 @@ export function parsePixiParticleDocument(json: string): PixiParseResult {
     diagnostics: collectPixiDiagnostics(raw),
   };
 }
-
-const DEG2RAD = Math.PI / 180;
 
 type PixiRaw = Record<string, unknown>;
 
@@ -118,8 +117,8 @@ function rawToConfig(raw: PixiRaw): ParticleEmitterConfig {
   const angleObj = raw.angle as { min?: unknown; max?: unknown } | undefined;
   const angleMin = rn(angleObj?.min, 0);
   const angleMax = rn(angleObj?.max, 360);
-  const angleMid = (angleMin + angleMax) * 0.5 * DEG2RAD;
-  const spread = (angleMax - angleMin) * 0.5 * DEG2RAD;
+  const angleMid = (angleMin + angleMax) * 0.5 * DEG_TO_RAD;
+  const spread = (angleMax - angleMin) * 0.5 * DEG_TO_RAD;
   // Spawn shape: pos + optional spawnRect/spawnCircle/spawnBurst
   let emitterShape: 'point' | 'circle' | 'rect' = 'point';
   let emitterRadius = 0;
@@ -143,7 +142,7 @@ function rawToConfig(raw: PixiRaw): ParticleEmitterConfig {
   else if (blendModeStr === 'screen') blendMode = 'screen';
   else if (blendModeStr === 'normal' || blendModeStr === 'src_alpha') blendMode = 'normal';
   // Rotation speed
-  const rotationSpeed = rn(raw.rotationSpeed, 0) * DEG2RAD;
+  const rotationSpeed = rn(raw.rotationSpeed, 0) * DEG_TO_RAD;
   return createParticleEmitterConfig({
     maxParticles,
     spawnRate,

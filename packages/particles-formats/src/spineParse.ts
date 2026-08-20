@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import {
   createParticleEmitterConfig,
   particleColorCurveFromKeyframes,
@@ -17,8 +18,6 @@ import type {
   SpineTintKeyframe,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
-
-const DEG2RAD = Math.PI / 180;
 
 // ─── Value helpers (operate on raw JSON, no document allocation) ─────────────
 
@@ -100,8 +99,8 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
   const lifeHigh = rangeHigh(raw.life, 1500) / 1000;
   const angleLow = rangeLow(raw.angle, 60);
   const angleHigh = rangeHigh(raw.angle, 120);
-  const angleMid = (angleLow + angleHigh) * 0.5 * DEG2RAD;
-  const spread = (angleHigh - angleLow) * 0.5 * DEG2RAD;
+  const angleMid = (angleLow + angleHigh) * 0.5 * DEG_TO_RAD;
+  const spread = (angleHigh - angleLow) * 0.5 * DEG_TO_RAD;
   const spawnShape = typeof raw.spawnShape === 'string' ? raw.spawnShape : 'point';
   const sx = rangeMid(raw.spawnWidth, 0);
   const sy = rangeMid(raw.spawnHeight, 0);
@@ -149,8 +148,8 @@ function rawToConfig(raw: Record<string, unknown>): ParticleEmitterConfig {
     colorEndB: endTint[2],
     alphaStart: firstAlpha(raw.alpha),
     alphaEnd: lastAlpha(raw.alpha),
-    rotationSpeedMin: rangeLow(raw.rotation, 0) * DEG2RAD,
-    rotationSpeedMax: rangeHigh(raw.rotation, 0) * DEG2RAD,
+    rotationSpeedMin: rangeLow(raw.rotation, 0) * DEG_TO_RAD,
+    rotationSpeedMax: rangeHigh(raw.rotation, 0) * DEG_TO_RAD,
     blendMode: spineBlendMode(typeof raw.blendMode === 'string' ? raw.blendMode : 'normal'),
   });
 }

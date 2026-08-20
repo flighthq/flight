@@ -57,6 +57,7 @@
     "check": "tsx ./scripts/check.ts",
     "check:append-only-ledgers": "tsx ./scripts/check-append-only-ledgers.ts",
     "check:data-cast-colour": "tsx ./scripts/check-data-cast-colour.ts",
+    "check:degree-constants": "tsx ./scripts/check-degree-constants.ts",
     "check:documented-commands": "tsx ./scripts/check-documented-commands.ts --check",
     "check:expected-image-descriptions": "tsx ./scripts/check-expected-image-descriptions.ts --check",
     "check:functional-antialiasing": "tsx ./scripts/check-functional-antialiasing.ts --check",

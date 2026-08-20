@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/importdiagnostics": "*",
+    "@flighthq/math": "*",
     "@flighthq/particles": "*",
     "@flighthq/types": "*"
   },

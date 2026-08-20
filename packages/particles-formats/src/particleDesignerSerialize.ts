@@ -1,3 +1,4 @@
+import { RAD_TO_DEG } from '@flighthq/math/contract';
 import type {
   ParticleDesignerSerializeOptions,
   ParticleEmitterConfig,
@@ -5,15 +6,13 @@ import type {
   ParticleSerializeResult,
 } from '@flighthq/types/contract';
 
-const RAD2DEG = 180 / Math.PI;
-
 function configToDocument(
   config: Readonly<ParticleEmitterConfig>,
   existing: Partial<ParticleDesignerDocument>,
   textureSize: number,
 ): ParticleDesignerDocument {
   // Direction vector → degrees (0°=right, 90°=up-screen)
-  const angleDeg = Math.atan2(-config.directionY, config.directionX) * RAD2DEG;
+  const angleDeg = Math.atan2(-config.directionY, config.directionX) * RAD_TO_DEG;
 
   // Scale multipliers → absolute pixel sizes
   const startSize = (config.scaleMin + config.scaleMax) * 0.5 * textureSize;
@@ -24,8 +23,8 @@ function configToDocument(
   const rotSpeedMid = (config.rotationSpeedMin + config.rotationSpeedMax) * 0.5;
   const rotSpeedVar = (config.rotationSpeedMax - config.rotationSpeedMin) * 0.5;
   const lifetimeMid = (config.lifetimeMin + config.lifetimeMax) * 0.5;
-  const rotStart = rotSpeedMid * lifetimeMid * RAD2DEG;
-  const rotVar = rotSpeedVar * lifetimeMid * RAD2DEG;
+  const rotStart = rotSpeedMid * lifetimeMid * RAD_TO_DEG;
+  const rotVar = rotSpeedVar * lifetimeMid * RAD_TO_DEG;
 
   // Emitter shape → sourcePositionVariance
   let vx = 0;
@@ -47,7 +46,7 @@ function configToDocument(
     speed: (config.speedMin + config.speedMax) * 0.5,
     speedVariance: (config.speedMax - config.speedMin) * 0.5,
     angle: angleDeg,
-    angleVariance: config.spread * RAD2DEG,
+    angleVariance: config.spread * RAD_TO_DEG,
     gravityx: config.gravityX,
     gravityy: config.gravityY,
     sourcePositionVariancex: vx,

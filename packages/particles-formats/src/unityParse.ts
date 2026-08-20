@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import {
   createParticleEmitterConfig,
   particleColorCurveFromKeyframes,
@@ -24,7 +25,6 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-const DEG2RAD = Math.PI / 180;
 const DEFAULT_PPU = 100;
 const DEFAULT_GRAVITY = 9.81;
 
@@ -121,7 +121,7 @@ function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitter
       emitterHeight = rn(scaleRaw?.y, 1) * ppu;
       spread = Math.PI * 2;
     } else if (shapeType === 'Cone') {
-      spread = rn(shapeRaw?.angle, 25) * DEG2RAD;
+      spread = rn(shapeRaw?.angle, 25) * DEG_TO_RAD;
       emitterShape = shapeRadius > 0 ? 'circle' : 'point';
       emitterRadius = shapeRadius;
     }
@@ -149,8 +149,8 @@ function rawToConfig(raw: Record<string, unknown>, ppu: number): ParticleEmitter
 
   const rolRaw = raw.rotationOverLifetime as Record<string, unknown> | undefined;
   const rolEnabled = rb(rolRaw?.enabled, false);
-  const rotLow = rolEnabled ? mmLow(rolRaw?.angularVelocity, 0) * DEG2RAD : 0;
-  const rotHigh = rolEnabled ? mmHigh(rolRaw?.angularVelocity, 0) * DEG2RAD : 0;
+  const rotLow = rolEnabled ? mmLow(rolRaw?.angularVelocity, 0) * DEG_TO_RAD : 0;
+  const rotHigh = rolEnabled ? mmHigh(rolRaw?.angularVelocity, 0) * DEG_TO_RAD : 0;
 
   // A looping Unity system emits forever (duration is just the cycle length);
   // a non-looping one emits for `duration` seconds then stops.

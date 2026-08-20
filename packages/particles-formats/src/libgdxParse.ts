@@ -1,4 +1,5 @@
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 import type {
   ImportDiagnostic,
@@ -41,8 +42,6 @@ export function parseLibgdxParticleDocument(text: string, options?: LibgdxParseO
     document: doc,
   };
 }
-
-const DEG2RAD = Math.PI / 180;
 
 type LibgdxSection = Map<string, string>;
 
@@ -144,8 +143,8 @@ function documentToConfig(doc: LibgdxParticleDocument, textureSize: number): Par
   const [lifeMin, lifeMax] = rangeToMinMax(doc.life);
   const [velMin, velMax] = doc.velocity.active ? rangeToMinMax(doc.velocity) : [0, 0];
   const [angleMin, angleMax] = doc.angle.active ? rangeToMinMax(doc.angle) : [0, 360];
-  const angleMid = (angleMin + angleMax) * 0.5 * DEG2RAD;
-  const spread = (angleMax - angleMin) * 0.5 * DEG2RAD;
+  const angleMid = (angleMin + angleMax) * 0.5 * DEG_TO_RAD;
+  const spread = (angleMax - angleMin) * 0.5 * DEG_TO_RAD;
   const [scaleMinPx, scaleMaxPx] = rangeToMinMax(doc.scale);
   const scaleMin = scaleMinPx / textureSize;
   const scaleMax = scaleMaxPx / textureSize;
@@ -192,8 +191,8 @@ function documentToConfig(doc: LibgdxParticleDocument, textureSize: number): Par
   // Rotation: libGDX stores angular velocity range
   const [rotMin, rotMax] = doc.rotation.active ? rangeToMinMax(doc.rotation) : [0, 0];
   const lifetimeMid = (lifeMin / 1000 + lifeMax / 1000) * 0.5 || 1;
-  const rotSpeedMin = (rotMin * DEG2RAD) / lifetimeMid;
-  const rotSpeedMax = (rotMax * DEG2RAD) / lifetimeMid;
+  const rotSpeedMin = (rotMin * DEG_TO_RAD) / lifetimeMid;
+  const rotSpeedMax = (rotMax * DEG_TO_RAD) / lifetimeMid;
   const blendMode = doc.additive ? 'add' : 'normal';
   return createParticleEmitterConfig({
     maxParticles: doc.maxParticleCount,

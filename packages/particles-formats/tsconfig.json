@@ -9,15 +9,10 @@
     "sourceMap": true
   },
   "references": [
-    {
-      "path": "../importdiagnostics"
-    },
-    {
-      "path": "../particles"
-    },
-    {
-      "path": "../types"
-    }
+    { "path": "../importdiagnostics" },
+    { "path": "../math" },
+    { "path": "../particles" },
+    { "path": "../types" }
   ],
   "include": ["src"]
 }

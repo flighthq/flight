@@ -107,6 +107,7 @@ if (!scoped) {
   add('data-cast-colour:check', 'tsx', ['scripts/check-data-cast-colour.ts']);
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
   add('functional-antialiasing:check', 'tsx', ['scripts/check-functional-antialiasing.ts', '--check']);
+  add('degree-constants:check', 'tsx', ['scripts/check-degree-constants.ts']);
 
   // Advisory, and deliberately not a gate. `fingerprint-source-hashes:check` above proves a baseline
   // column RECORDS a sourceHash; nothing proved that hash still names the current scene bytes, and the

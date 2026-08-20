@@ -1,3 +1,4 @@
+import { RAD_TO_DEG } from '@flighthq/math/contract';
 import { particleColorCurveToKeyframes, particleCurveToKeyframes } from '@flighthq/particles/contract';
 import type {
   UnitySerializeOptions,
@@ -10,7 +11,6 @@ import type {
   UnityParticleDocument,
 } from '@flighthq/types/contract';
 
-const RAD2DEG = 180 / Math.PI;
 const DEFAULT_PPU = 100;
 
 function color(r: number, g: number, b: number, a: number): UnityColor {
@@ -29,8 +29,8 @@ function configToDocument(
   existing: Partial<UnityParticleDocument>,
   ppu: number,
 ): UnityParticleDocument {
-  const rotSpeedDegLow = config.rotationSpeedMin * RAD2DEG;
-  const rotSpeedDegHigh = config.rotationSpeedMax * RAD2DEG;
+  const rotSpeedDegLow = config.rotationSpeedMin * RAD_TO_DEG;
+  const rotSpeedDegHigh = config.rotationSpeedMax * RAD_TO_DEG;
   const hasRotation = config.rotationSpeedMin !== 0 || config.rotationSpeedMax !== 0;
   const hasBurst = config.burstCount > 0;
 
@@ -42,7 +42,7 @@ function configToDocument(
   // Shape
   let shapeType: UnityParticleDocument['shape']['shapeType'] = 'Cone';
   let radius = 0;
-  let angle = config.spread * RAD2DEG;
+  let angle = config.spread * RAD_TO_DEG;
   const scaleXY = 1;
 
   if (config.emitterShape === 'circle') {

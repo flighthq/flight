@@ -18,6 +18,11 @@ export interface InnerShadowEffect extends RenderEffect {
    * and `HalftoneEffect` carried radians here while these four carried degrees, with nothing in either
    * header saying so; they are all degrees now. Naming only "radians" or only "degrees" without the
    * origin and sense is what let the whole class of defect through in the first place.
+   *
+   * A runner converting this to radians uses `DEG_TO_RAD` from `@flighthq/math`, never a hand-rolled
+   * `Math.PI / 180`: the two are not interchangeable in general, because multiply-first and
+   * divide-first forms disagree by about 1 ULP on roughly 29 per cent of values, and a rasterization
+   * decision can turn on that.
    */
   angle?: number;
   blurX?: number;
