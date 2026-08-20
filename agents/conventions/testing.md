@@ -315,6 +315,36 @@ The trigger to reach for this: **a comment or name that says a value must *match
 *consistent with* something else.** That wording is the tell that the value is relative, and that pinning
 it alone is pinning half an invariant.
 
+## An assertion that works by pinning the thing under test
+
+The sibling of the entry above, with the opposite symptom: that one is a real instrument aimed at half an
+invariant, this one is a real instrument whose discrimination comes from **encoding a value the project is
+about to define**. Both are green, both catch their own reversion, and this one is the harder to remove.
+
+**A working instrument is harder to remove than a broken one.** A test that discriminates gets kept,
+cited and defended. So an assertion that achieves its discrimination by pinning the very thing under test
+survives the decision it prejudges, and then argues against it — the later change has to fight a passing
+test with a plausible name.
+
+The instance, and it was proposed rather than shipped. The GL epsilon tests pin one term of a coordinate
+invariant (see above). The obvious repair is to assert the direction at a fixed off-centre sample, and it
+works: it catches both transform rewrites that the centre-only assertion misses. But the expected value
+at that sample **is** the screen-space-to-UV convention, and that convention is not yet declared —
+an approved migration exists to give effect shaders one documented origin and localise the flip into
+per-input-type sampling helpers. An off-centre expected value written first would have hardened a guess
+into a green test that the migration then had to argue with.
+
+**An assertion that works by pinning the thing under test is worse than no assertion**, because the
+no-assertion case is visibly a gap and this one is visibly a success.
+
+- **The trigger:** you are about to write an expected value whose correctness depends on a decision that
+  has not been made. Not a decision you disagree with — one that is genuinely open, or scheduled.
+- **The remedy is not a weaker test, it is a dated one.** Where the reference does not exist yet, the
+  honest interim is a comment stating exactly what the test does and does not pin, and naming the work
+  that will make the full invariant checkable. A boundary nobody can cite past is the whole protection.
+- **Withdraw a rejected assertion in writing**, with the reason. "It would have worked" is the load-bearing
+  half — a quietly dropped proposal reads as untried, and the next person tries it.
+
 ## What belongs in a unit test vs. elsewhere
 
 - Put unit behavior in a colocated `*.test.ts` in the package that owns it, where `exports:check` binds it to an exported function and a developer changing that code will see it. A compiler-enforced property (e.g. the `Node<Traits>` invariance law) belongs in a colocated test too, asserted with `// @ts-expect-error` — `tsc -b` typechecks `src/*.test.ts`, so the failing-compile case is the assertion.
