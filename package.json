@@ -59,6 +59,7 @@
     "check:data-cast-colour": "tsx ./scripts/check-data-cast-colour.ts",
     "check:documented-commands": "tsx ./scripts/check-documented-commands.ts --check",
     "check:expected-image-descriptions": "tsx ./scripts/check-expected-image-descriptions.ts --check",
+    "check:functional-antialiasing": "tsx ./scripts/check-functional-antialiasing.ts --check",
     "check:fingerprint-source-hashes": "tsx ./scripts/check-fingerprint-source-hashes.ts",
     "check:import-conformance": "tsx ./conformance/core/check-import-conformance-ratchet.ts",
     "check:license-provenance": "tsx ./scripts/check-license-provenance.ts",
