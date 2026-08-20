@@ -23,13 +23,15 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same bloom intent as render.webgl.ts. Wgpu render-state init is
 // async (createWgpuRenderState returns a Promise). The effect pipeline runs between
 // renderWgpuBackground (opens the command encoder + canvas pass) and submitWgpuRenderPass
 // (flushes it); the HDR rgba16f scene target is bright-passed, blurred, and added back.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
     '72 degrees so none sits square to the edges — a turned square covers more than its side, so they span 166, ' +

@@ -24,7 +24,9 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with a single GREEN sphere centred in it, about 245 px across — ' +

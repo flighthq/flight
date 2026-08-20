@@ -14,7 +14,9 @@ import { createMesh, createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D, registerGlUnlitMaterial } from '@flighthq/scene3d-gl';
 import { emitSignal } from '@flighthq/signals';
 import type { Bitmap } from '@flighthq/types';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a very dark blue background — not black — filled edge to edge, with a single solid cyan ' +

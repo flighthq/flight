@@ -23,8 +23,10 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'A white 80×80 square centered at (400,240) surrounded by four colored 100×100 squares (yellow 0xfff05c at ' +

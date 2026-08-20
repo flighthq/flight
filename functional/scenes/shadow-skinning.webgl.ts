@@ -37,7 +37,9 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 view shows a light-grey ground plane and a narrow light-grey bar rising near the ' +

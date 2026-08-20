@@ -31,8 +31,10 @@ import {
   setVector3,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'A top-down 800×600 view is filled edge to edge by a large light-grey ground plane. Three similar ' +

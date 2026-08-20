@@ -28,7 +28,9 @@ import {
   setCubeTextureFace,
   setVector3,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 environment backdrop surrounds two large spheres centred near (243,300) and ' +

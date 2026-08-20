@@ -24,7 +24,9 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field, two aligned half-transparent square boxes overlap at the centre. ' +

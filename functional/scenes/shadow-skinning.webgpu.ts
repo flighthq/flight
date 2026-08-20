@@ -39,8 +39,10 @@ import {
   setVector3,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 view shows a light-grey ground plane and a narrow light-grey bar rising near the ' +

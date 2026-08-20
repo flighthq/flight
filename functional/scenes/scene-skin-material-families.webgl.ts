@@ -38,7 +38,9 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field, four separate slender bars stand in columns centred near x=127, ' +

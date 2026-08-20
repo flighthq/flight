@@ -28,8 +28,10 @@ import {
   submitWgpuRenderPass,
   BlendMode,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800x600 field filled edge to edge by ONE flat mid-grey backdrop — an unlit 0x808080 quad 9x7 world units ' +

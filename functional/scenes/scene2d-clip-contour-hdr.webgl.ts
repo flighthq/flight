@@ -28,7 +28,9 @@ import {
   renderGlScene2D,
   setNode2DClip,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field, a bright pale-cyan triangle is centred with apex at (400,150) ' +

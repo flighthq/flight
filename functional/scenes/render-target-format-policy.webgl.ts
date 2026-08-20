@@ -10,7 +10,9 @@ import {
   presentGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type { Bitmap } from '@flighthq/types';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'The entire 320×240 field is a single opaque green, approximately R33 G196 B90. The colour is ' +

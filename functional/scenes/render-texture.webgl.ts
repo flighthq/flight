@@ -27,7 +27,9 @@ import {
   renderIntoGlRenderTexture,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black navy field (about R8 G11 B18), a large perspective box is centred in ' +

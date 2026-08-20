@@ -30,8 +30,10 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800x600 field filled edge to edge by a single camera-facing PBR quad over a deep blue background ' +

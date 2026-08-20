@@ -23,8 +23,10 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Soft glowing halos bleeding outward from the bloom effect (threshold 0.6, intensity 1.4, rgba16f pipeline). Edges show visible aliasing stair-steps (sampleCount currently no-ops on Wgpu — the offscreen target is single-sampled).',

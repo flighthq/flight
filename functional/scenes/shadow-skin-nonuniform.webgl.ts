@@ -33,7 +33,9 @@ import {
   setVector3,
   skinVertices,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 view of a medium-grey ground plane, a bright horizontal bar floats above the ' +

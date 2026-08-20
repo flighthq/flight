@@ -29,7 +29,9 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'A top-down 800×600 view is filled edge to edge by a large light-grey ground plane. Three similar ' +

@@ -23,8 +23,10 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'Six rectangles in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300; source colors red 0xff3030, green 0x30c040, blue 0x3060ff, yellow 0xffd030, magenta 0xff30c0, cyan 0x30d0d0) with a warm color grade from a 32³ lookup table. The R channel is lifted (γ=0.8), the G channel slightly compressed (γ=1.1), and the B channel crushed (γ=1.5). The red cell (R=255) stays at full red but loses its blue/green component (B drops from 48 to ~21), becoming a purer red. The blue cell (B=255) is nearly unchanged because its dominant channel at 1.0 maps to 1.0 under any gamma. No gaps between cells. Six panels matching their ungraded source colors is a failure.',

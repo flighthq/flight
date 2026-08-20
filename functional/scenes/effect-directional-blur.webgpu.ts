@@ -23,11 +23,13 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column. The directional smear is a color-only/uniform full-frame blur along the
 // configured angle (no depth/velocity G-buffer is involved).
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 110 px on a side, turned 10, 28, 46 and ' +
     '64 degrees so they span 127, 149, 156 and 147 px corner to corner (side*(cos a + sin a)), marching left to ' +

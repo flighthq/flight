@@ -27,7 +27,9 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setCubeTextureFace,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800x600 field whose entire backdrop is the inside of a six-colour environment cube, with a matte grey ' +

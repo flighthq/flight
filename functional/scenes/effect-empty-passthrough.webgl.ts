@@ -20,11 +20,13 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Empty passthrough: the scene renders through the opt-in effect pipeline with an EMPTY effect list
 // and sampleCount 1 (single-sampled, no MSAA). begin -> render -> end with no stages must present the
 // scene unchanged, proving the pipeline's present path is an identity blit.
+declareAntialiasingPolicy('no-aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with four AXIS-ALIGNED square tiles of about 140 px — none of ' +
     'them rotated, all sitting square to the edges of the field: red centred near (224,180), green near ' +
