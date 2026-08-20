@@ -73,6 +73,8 @@
     "conformance:fixtures": "tsx ./conformance/fixtures/import-fixture-conformance.ts",
     "contrast": "tsx ./scripts/capture-contrast.ts",
     "contrast:json": "tsx ./scripts/capture-contrast.ts --json",
+    "displacement": "tsx ./scripts/capture-displacement.ts",
+    "displacement:json": "tsx ./scripts/capture-displacement.ts --json",
     "dev:electron-harness": "npm run dev --workspace=@flighthq/examples-electron",
     "dev:examples": "npm run dev:examples:web",
     "dev:examples:electron": "tsx ./scripts/electron-tool.ts examples",

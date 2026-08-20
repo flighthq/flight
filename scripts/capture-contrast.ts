@@ -6,6 +6,18 @@
 // when deciding where an oracle is worth writing. It never exits non-zero on its findings, and nothing
 // should be wired to it. Earning gate status would be a separate decision needing its own evidence.
 //
+// ★ THIS IS THE SECONDARY SENSITIVITY MEASURE. `npm run displacement` is the primary one, and the two
+// answer different questions:
+//
+//     contrast     — a property of the IMAGE: how far is this frame from a flat field?
+//     displacement — a property of the GATE'S RESPONSE: how far would this frame move if it broke?
+//
+// Only the second is a statement about whether the gate works, and reading a contrast number as gate
+// sensitivity is a mistake with a measured example: `effect-brightness-contrast` reads 20.21 here, four
+// times the tolerance, and scores 3.38 — under it — when its whole picture shifts one grid cell. Contrast
+// still earns its place, because it catches what displacement cannot: a frame with nothing in it to move
+// is invisible to a displacement measure and obvious to this one.
+//
 // THE MEASURE. The gate scores a change as the mean absolute per-channel difference over the 16x16x3
 // fingerprint grid. Contrast applies that same comparison between a target's committed fingerprint and a
 // uniform frame of its own corner cell — so a target reading 0.55 has a whole picture worth a ninth of
@@ -50,6 +62,10 @@ if (jsonMode) {
   console.log(
     `${rows.length} fingerprinted targets — ${belowTolerance.length} carry less contrast than the gate's ` +
       `tolerance of ${REGRESSION_TOLERANCE}, and ${exposed.length} of those have no oracle either.`,
+  );
+  console.log(
+    'This measures the IMAGE — how far each frame sits from a flat field. It is NOT gate sensitivity: ' +
+      'for that, run `npm run displacement`, which scores what the gate would report if content moved.',
   );
   console.log('\nlowest contrast first; a target with no oracle is the one worth writing one for:');
   for (const row of rows.slice(0, limit)) {

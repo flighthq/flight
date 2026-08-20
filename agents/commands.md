@@ -255,12 +255,48 @@ swallowed all 341 otherwise-clean cells under one heading and every actionable l
 hold is read **before** any capture fact, because the holder knows something a capture run cannot see;
 releasing one is a reviewed deletion with a name on it.
 
-### `npm run contrast` — how much the regression gate has to grip
+### `npm run displacement` / `npm run contrast` — the render-side sensitivity pair
 
-The third reading tool, and the render-side counterpart to the pair above: `untested` asks which arms no
-test took, `unchecked` asks whether taking them would notice a break, and `contrast` asks the same second
-question of the **fingerprint gate**. It does not gate, is not part of `npm run check`, and commits
-nothing.
+The render-side counterpart to `untested` / `unchecked`, and it splits the same way. Neither gates,
+neither is part of `npm run check`, and neither commits anything.
+
+**They answer different questions, and only one of them is about the gate.**
+
+    contrast      a property of the IMAGE — how far is this frame from a flat field?
+    displacement  a property of the GATE'S RESPONSE — how far would this frame move if it broke?
+
+Read a contrast number as gate sensitivity and you will be wrong in a way that has a measured example:
+`effect-brightness-contrast` reads 20.21, four times the pass mark, and scores 3.38 — under it — when its
+whole picture shifts one grid cell. A frame can be vivid and still be one the gate cannot see change. The
+two disagree on which targets are exposed, in both directions, so read both.
+
+### `npm run displacement` — what the gate would score if the picture moved
+
+    npm run displacement                 # every fingerprinted target, most blind first
+    npm run displacement -- --limit=80   # widen the printed head
+    npm run displacement:json            # the same rows as JSON
+
+It translates each committed fingerprint by one and two grid cells and scores the result with the gate's
+own comparator, reporting the WEAKER of the two axes — the question is what could pass, so the answer has
+to be the axis that passes. A row under the pass mark is a target where the whole frame could slide by
+that much and the gate would report no change.
+
+★ **THE TECHNIQUE IS GENERAL AND WORTH REACHING FOR BY NAME: mutate the stored expectation synthetically,
+then score the mutant with the checker's own comparator.** That is exactly what `npm run unchecked` does
+to source — mutate one token, see what no assertion catches — applied to a baseline instead of to code.
+Anywhere a check compares a fresh result against a stored expectation, the same measure is available and
+costs nothing: no capture, no environment, no browser. The honest alternative, injecting a real defect and
+re-capturing, is far more expensive and has been done twice in this repository's history.
+
+Its limits, measured rather than assumed. It models DISPLACEMENT only: a tonal change scores differently
+and often far higher. The mutation TRANSLATES the grid, where real movement resamples, so a row is a
+predictor rather than a measurement. And it inherits the fingerprint's resolution — a subject smaller than
+one grid cell moves within a cell and is invisible to it, which is `text-border-box` by construction.
+
+One retrodiction, the only case with a recorded real defect: `text-native/dom` scores 4.62 here and its
+real injected defect measured 5.09, clearing the pass mark by 0.09. This predicted that near-miss.
+
+### `npm run contrast` — how much the regression gate has to grip
 
 The regression gate scores a change as the mean absolute per-channel difference over the 16×16 fingerprint
 grid, and fails past 5. `contrast` applies that same comparison between a target's committed fingerprint
