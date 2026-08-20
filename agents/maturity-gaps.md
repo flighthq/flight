@@ -8,13 +8,13 @@ the audits; treat them as the starting point, not gospel.
 
 Companion docs: [quality-plan](quality-plan.md), [test-depth-review](test-depth-review.md),
 [render-backend-support](render-backend-support.md), [effect-adjustment-architecture](effect-adjustment-architecture.md),
-[wgpu-3d-parity-spec](wgpu-3d-parity-spec.md) (the un-postpone plan for every WebGPU 3D gap this doc marks open).
+[wgpu-3d-parity-spec](wgpu-3d-parity-spec.md), and the guarded
+[causal-limitation-prose audit](causal-limitation-prose-audit.md).
 
 **2026-07 update:** the AAA workflow closed many gaps below (GPU skinning across all material families on
 both GPU backends, morph on gl/wgpu, ShadedMaterial + modifiers on both GPU backends, advanced blend on gl/wgpu,
-glTF/OBJ/3DS/MD5/AWD import, and video + compressed textures on gl). Rows it closed are marked
-RESOLVED/RESOLVED (gl); remaining WebGPU counterparts are specced in
-[wgpu-3d-parity-spec](wgpu-3d-parity-spec.md).
+glTF/OBJ/3DS/MD5/AWD import, and video + compressed textures on gl/wgpu). Rows it closed are marked
+RESOLVED; remaining named gaps are tracked in [wgpu-3d-parity-spec](wgpu-3d-parity-spec.md).
 
 Bite legend: **SURPRISE** = looks done / tests green but silently does nothing or wrong; **MAJOR** = real
 capability gap a real app hits; **MINOR** = fidelity/edge-case hole or breadth gap clearly unbuilt.
@@ -27,14 +27,14 @@ Ranked, worst first. Each is something a user assumes works and it does not.
 
 1. **The GPU unit-test-confidence illusion.** Every gl/wgpu code path is *unit*-tested against a *mock*
    WebGL2 context in jsdom (`scene2d-gl/src/glTestHelper.ts:7`); a green unit run is a far weaker
-   guarantee for the GPU backends than for Canvas — the real parity gaps (joins, smoothing, tint, blend
-   modes, skinning) are exactly what a mock can't catch. Real-pixel verification does exist, but it lives
+   guarantee for the GPU backends than for Canvas — the real parity gaps (positional UV conventions,
+   tint, blend coverage, and skinning) are exactly what a mock can't catch. Real-pixel verification does exist, but it lives
    in the **functional capture harness** (Playwright + SwiftShader software Vulkan for wgpu — see Theme A),
    not in the unit suite; don't read `npm run test` green as "the GPU renders correctly."
-2. **Screen-space & G-buffer effects are theater.** SSAO/SSR/TAA/motion-blur/contact-shadows/volumetric-light
-   are descriptor-only or passthrough/approximate placeholders on *every* backend including gl/wgpu, because
-   the effect pipeline is color-only (no depth/normal/velocity/history buffers). They pass regression baselines
-   that captured the stub output.
+2. **Screen-space & G-buffer effects remain uneven.** MotionBlur has a real velocity-texture path on both
+   GPU backends, but SSAO and ContactShadows remain colour-derived approximations, ScreenSpaceFog uses a
+   flat colour fallback without depth, SSR/TAA have no runner, and VolumetricLight is descriptor-only.
+   The control and approximation scenes make those boundaries visible instead of registering passthrough stubs.
 3. **~~Skinned glTF/PBR characters render in bind pose on the GPU.~~ RESOLVED.** `HAS_SKIN` spans all five
    real material families on gl and wgpu (classic/pbr/toon/unlit/shaded). Both use a growable
    **RGBA32F data texture** for the bone palette, read with `texelFetch` on gl and `textureLoad` on wgpu,
@@ -53,7 +53,7 @@ Ranked, worst first. Each is something a user assumes works and it does not.
    property and silently fall to Normal. They are a separate `AdvancedBlendMode` vocabulary realized as a
    `BlendEffect` composite recipe (`@flighthq/effects` `createBlendEffect` + `blendModeMath`), run on **gl**
    by `@flighthq/effects-gl` `glBlendEffect`, on wgpu by `@flighthq/effects-wgpu` `wgpuBlendEffect`, and
-   natively on canvas/dom. The GPU runners use matching named-backdrop offscreen passes; the WebGPU
+   natively on canvas. DOM has no full-frame effect pipeline. The GPU runners use matching named-backdrop offscreen passes; the WebGPU
    functional scene matches the WebGL raster exactly. [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §5.
 6. **~~Compressed textures (KTX2/DDS/Basis) are a mirage.~~ NATIVE UPLOAD LANDED ON GL + WGPU.** `render-gl`
    `uploadGlCompressedTextureContainer` now uploads BCn/ETC/ASTC/PVRTC + ATF containers natively via
@@ -89,38 +89,33 @@ Playwright's Chromium drives WebGL and — via the bundled SwiftShader software 
 with no host GPU. Re-verified 2026-07-18: of the WebGPU functional scenes, the large majority match the
 committed host baselines exactly (`0.00`), and only a small set exceed the fingerprint tolerance on
 software-vs-hardware antialiasing. So the regression tier is mostly reproducible in-sandbox for wgpu, not
-blind. What remains genuine debt: whole feature classes have **no functional/example coverage at all**:
-scene-format imports (no `createScene3DFrom*` anywhere under
-examples/functional), GPU skinning (no `*skin*` functional scene; the example exercises the CPU path),
-streaming/compressed-texture/resource-resolution, glyph/bitmaptext (headless only ever draws stub white
-boxes — `glyphatlas/status.md`), particle emitters, and camera2d view-matrix application
-(`test-depth-review.md:126-128`). "Tests pass" systematically overstates readiness for anything GPU-rendered.
+blind. What remains genuine debt is narrower: scene-format imports still have no `createScene3DFrom*`
+functional cell, resource streaming/resolution and glyph/bitmaptext lack production-pixel coverage, and
+Camera2D has only a Canvas viewport cell. GPU skinning, compressed textures, and particle emitters now have
+functional cells on both GPU backends. "Tests pass" still overstates readiness where only a mock-backed unit
+path runs.
 
-### B. WebGPU is a second-class citizen everywhere
-wgpu still lags gl in several audited domains, though GPU skinning, morph deformation, ShadedMaterial
-modifier stacks, and advanced-blend `BlendEffect` now render on both GPU backends. Remaining gaps include
-the pre-existing **no custom-shader material/effect**, **no 3D-particle renderer** (wait — 3D particles *do*
-render on wgpu via host capture; see
-that row), and **no `.webgpu.ts` functional baseline** for several light/shadow/IBL scenes — so the punctual-lighting parity that
-`render-backend-support.md` gap #8 marks "DONE on both gl and wgpu" is claimed by inspection, never by
-evidence. The "four co-equal backends" framing is false; treat wgpu 3D as partial. The concrete un-postpone
-plan for every one of these is [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md).
+### B. WebGPU's remaining gaps are narrow and named
+wgpu still has discrete gaps, but the old cluster is gone: GPU skinning, morph deformation,
+ShadedMaterial modifiers, `CustomShaderMaterial`, 3D particles, punctual lighting/shadows/IBL, and the
+advanced-blend `BlendEffect` all render on both GPU backends with functional cells. `CustomShaderEffect`
+still has no Wgpu runner and Wgpu effect targets remain single-sampled when a scene requests MSAA. Treat
+those named gaps as the boundary rather than the former blanket "second-class" description.
 
 ### C. Backend feature-parity is silently uneven for 2D too
-Beyond wgpu: several 2D features that Canvas/DOM render are dropped on gl/wgpu — advanced **blend modes**
-(wrong, not absent), **stroke joins** (miter/bevel/round undifferentiated), per-bitmap **smoothing** flag
-(ignored; first-draw filter sticks via cached texture), **text strikethrough** (no branch). And the *reverse*
-asymmetry: per-instance **ColorTransform tint** is gl/wgpu-only, drawing untinted on Canvas/DOM. **Sprite/
-QuadBatch/Tilemap have no DOM renderer at all.** Every one of these is silent — the wrong output survives a
-green run and a glance on one backend.
+Beyond wgpu, several 2D features remain asymmetric: per-instance **ColorTransform tint** is gl/wgpu-only
+and draws untinted on Canvas/DOM, while the batch kinds **QuadBatch/Tilemap/BitmapText/ParticleEmitter2D**
+have no DOM renderer by design. Ordinary Sprite does have a DOM renderer. Stroke
+joins, per-draw smoothing, and text strikethrough are no longer examples: both GPU backends now have
+functional proofs for differentiated joins and sampler variants, and all four backends draw line-through.
 
 ### D. Descriptor/header layer advertises features with no renderer behind them
 The "header layer is the design surface" convention means many fully-formed types exist with no implementation,
 reading as shipped: **area lights** (`AreaLightKind` + photometric helpers, but `Scene3DLights` has no `area`
 field — unrenderable on any backend), **`InstancedMesh`/`LodMesh`** (typed, not exported from scene, no
-renderer), **six effects** (autoExposure/barrelDistortion/contactShadows/filmEmulation/panniniProjection/
-volumetricLight — descriptor+tests, zero realization files), **`ThreeDsMaterial`** (dead exported type). The
-header promises breadth the renderers don't cover.
+renderer), and **seven effects** (autoExposure/barrelDistortion/filmEmulation/panniniProjection/ssr/taa/
+volumetricLight — descriptor+tests, zero realization files). `ThreeDsMaterial` is not an example: the 3DS
+parser builds a material table and converts each referenced entry to a live BlinnPhong material.
 
 ### E. Resource lifecycle: no unload, eviction, or refcount in the live path
 Scene-resource streaming grows memory unbounded — cancel-on-drop only aborts in-flight loads; a *resolved*
@@ -146,17 +141,17 @@ feature. Particle sim is CPU-only, and the 3D emitter runs its forces/collisions
 ### H. ~~Stale docs invert reality in both directions~~ — LARGELY RECONCILED
 The 2026-07 workflow rewrote the drifted tables. `AGENTS.md` Feature Lookup now lists the completed importers
 (glTF/OBJ+MTL/3DS/MD5/AWD, FBX still "not implemented"), 3D particles as gl+wgpu (host-captured), morph, video
-texture, and compressed textures; the skinning story is corrected here (gl across all five families, wgpu
-open) and in [render-backend-support.md](render-backend-support.md). `shading` is a committed package + gl
-renderer. Residual drift to watch: per-package `charter`/`review`/`status.md` cells may still trail the code
+texture, and compressed textures; GPU skinning spans the same five material families on both backends here
+and in [render-backend-support.md](render-backend-support.md). `shading` is a committed package with Gl and
+Wgpu renderers. Residual drift to watch: per-package `charter`/`review`/`status.md` cells may still trail the code
 (e.g. a `scene-formats` "stub" score, a `shading/status.md` "code NOT started") — trust the source and the
 top-level tables over a package cell that predates the workflow.
 
-### I. Diagnostics gap: the silent-drop pattern has no guards
-Nearly every SURPRISE above is silent — no warning, no `explain*`, no guard fires when materials evaporate,
-blend modes degrade, skinning falls to bind pose, the affine-only adjustment fold drops saturation/hue, or an
-effect is an unregistered passthrough. The inversion-rule guard layer that should catch these misuse-vs-
-unsupported cases is largely unbuilt for the gaps that most need it.
+### I. Diagnostics remain uneven
+Effect-registration misses, texture-resolution misses, and the GPU color-adjustment fold now have opt-in
+guards, and scene-coverage explainers distinguish unregistered from unavailable kinds. A caller that does
+not enable those guards can still receive silent wrong output, and several non-render subsystems below have
+no equivalent diagnostic seam.
 
 ---
 
@@ -172,7 +167,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | OBJ+MTL attaches materials | Works: `createScene3DFromObj(source, parseObjMaterialLibrary(mtl))` reads the library, resolves one `BlinnPhongMaterial` per `usemtl` (`flushGroup`/`resolveObjMaterial`), and emits a `MeshSubset` per material. Gap is downstream — the emitted `map_Kd` refs are `Unresolved` (no decode) and the aircraft-demo ignores the `materials` arg entirely | all | RESOLVED |
 | 3DS respects material + object placement | `import3ds` now parses per-face materials + textures; object-transform placement (`TRANSFORM_MATRIX 0x4160`) may still be partial — verify against a multi-object `.3ds` | all | RESOLVED (materials) |
 | MD2 (animated Quake2) imports animation | Only frame 0 kept (`md2Parse.ts:20-21`); skin/texture paths not even modeled | all | MAJOR |
-| Imports have ever been rendered | Zero example/functional coverage; skinned imports deform on gl only, wgpu unwired | gl/wgpu | MAJOR |
+| Imports have ever been rendered | Zero 3D-import example/functional coverage. Once parsed into a Scene3D, skinned content can deform on either GPU backend; the missing evidence is the importer-to-pixel path itself. | gl/wgpu | MAJOR |
 | MD5 texture available | `shader` name now emitted as a `BlinnPhongMaterial.diffuseMap` external ref (`md5Parse.ts`), not dropped — but `Unresolved` until decoded; `.md5anim`→clip via `parseMd5Anim` (or folded by `importMd5Mesh`) | all | MINOR |
 | USD/FBX/COLLADA/PLY/STL, Draco/meshopt, export direction | Absent; charter/map promise USD; all formats import-only | n/a | MINOR |
 
@@ -210,26 +205,26 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Unit tests green ⇒ GPU works | Unit tests use mock WebGL2 (`glTestHelper.ts:7`); no draw touches a rasterizer. Real-pixel checks live in the functional capture harness (wgpu runs there via SwiftShader software Vulkan, mostly reproducible in-sandbox) — not the unit suite | gl/wgpu | SURPRISE |
 | Orthographic camera on WebGPU | RESOLVED — backend-seam VP depth remap plus `camera-orthographic.webgpu.ts` raster proof | wgpu | RESOLVED |
 | Transparent 3D meshes on WebGPU | RESOLVED — two-pass pooled partition, back-to-front sort, blended pipelines, and `scene-transparent.webgpu.ts` proof | wgpu | RESOLVED |
-| Overlay/HardLight/Difference/… blend | No longer in the `BlendMode` node enum (fixed-function only) — assigning one as a node property is impossible, killing the silent-degrade. Now an explicit `BlendEffect` composite recipe: realized on gl (`glBlendEffect`), wgpu (`wgpuBlendEffect`), and canvas/dom natively. `effect-blend-advanced` verifies exact gl/wgpu raster parity. | all | RESOLVED |
-| Per-bitmap `smoothing` flag | Ignored on gl/wgpu; global filter, texture cached so first-draw filter sticks → pixel-art blurry | gl/wgpu | MAJOR |
-| Stroke joins (miter/bevel/round) | Not differentiated on gl/wgpu (caps work); scoped canvas/dom | gl/wgpu | MAJOR |
+| Overlay/HardLight/Difference/… blend | No longer in the `BlendMode` node enum (fixed-function only) — assigning one as a node property is impossible, killing the silent-degrade. Now an explicit `BlendEffect` composite recipe: realized on gl (`glBlendEffect`), wgpu (`wgpuBlendEffect`), and canvas natively. DOM has no full-frame effect pipeline. `effect-blend-advanced` verifies exact gl/wgpu raster parity. | canvas/gl/wgpu | RESOLVED |
+| Per-draw texture smoothing | RESOLVED — Gl applies the texture sampler on every bind; WebGPU selects a LINEAR/NEAREST bind-group variant per draw. `bitmap-perbitmap-smoothing` proves two draws sharing one image can use different filters. | gl/wgpu | RESOLVED |
+| Stroke joins (miter/bevel/round) | RESOLVED — both GPU shape renderers tessellate differentiated outlines; `shape-stroke-joints` proves all three joins on all four backends | gl/wgpu | RESOLVED |
 | Per-instance ColorTransform tint | gl/wgpu-only; Canvas/DOM draw untinted (no color-transform renderer) — flash-on-hit/team-color silently fails | canvas/dom | MAJOR |
 | Darken/Lighten (MIN/MAX) | Can't fold `(1-src.a)` on gl/wgpu → transparent surround darkens/clips backdrop at edges | gl/wgpu | MAJOR |
 | Group/container `blendMode` | Whole-subtree flatten unverified/likely absent; no render-to-texture group-blend path found | all | MAJOR |
-| Sprite/QuadBatch/Tilemap on DOM | No DOM renderer — renders nothing | dom | MAJOR |
+| QuadBatch/Tilemap/BitmapText/ParticleEmitter2D on DOM | Deliberately no DOM batch renderer; use the documented Sprite or HtmlView canvas-embedding path | dom | BY DESIGN |
 | wgpu 2D-blend parity covered | RESOLVED — cross-backend Normal/Add parity is asserted in `node-blend-modes.webgpu.ts`; all six fixed Shape states plus Bitmap Multiply remain asserted in the WebGPU-only `node-blend-modes-fixed.webgpu.ts` suite | wgpu | RESOLVED |
-| Text strikethrough | No `strikethrough` branch in `glRichText.ts:170`/`wgpuRichText.ts:184` | gl/wgpu | MINOR |
+| Text strikethrough | RESOLVED — `glRichText` and `wgpuRichText` draw the same line-through as Canvas/DOM; `text-strikethrough` proves all four backends | gl/wgpu | RESOLVED |
 | cacheAsBitmap out-of-frame | WebGPU out-of-frame bake RESOLVED with a standalone encoder and `scene2d-cache` raster proof; DOM still bakes in-frame | dom | MINOR |
 
 ### Materials, Shading, Effects & Adjustments
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
-| SSAO/SSR/TAA/motion-blur/fog work on GPU | Pipeline is color-only (no depth/normal/velocity/history); SSR/TAA = passthrough, SSAO/SMAA = crude single-pass, fog = screen-Y gradient proxy; baselines captured the stubs | gl/wgpu (canvas passthrough) | SURPRISE |
-| All 51 effects render | 6 are descriptor-only — no realization file in effects-{gl,wgpu,canvas} (autoExposure/barrelDistortion/contactShadows/filmEmulation/panniniProjection/volumetricLight); return passthrough sentinel | all | SURPRISE |
-| Canvas post-FX stack works | 31 of ~40 canvas effects are passthrough no-ops (`canvasSsaoEffect.ts:8` etc.); bevel/gradientBevel/gradientGlow/innerGlow/innerShadow have no canvas file despite Feature Lookup listing "canvas" | canvas | MAJOR |
+| SSAO/SSR/TAA/motion-blur/fog work on GPU | MotionBlur has a real velocity-texture path on Gl/WGPU; SSAO and ContactShadows are colour-derived approximations, ScreenSpaceFog is flat without depth, and SSR/TAA are honestly unregistered controls | gl/wgpu | SURPRISE |
+| All 53 effects render | Seven are descriptor-only on every backend: AutoExposure, BarrelDistortion, FilmEmulation, PanniniProjection, SSR, TAA, VolumetricLight. Unregistered operations are skipped and guards report them rather than running passthrough stubs. | all | SURPRISE |
+| A registered Canvas post-FX runner changes pixels | RESOLVED — all 18 Canvas runners are real; the 31 passthrough registrations were removed, and unsupported kinds are absent rather than silently inert | canvas | RESOLVED |
 | ShadedMaterial + modifiers cross-backend | `@flighthq/shading` modifier tier (fresnel/normalPerturb/emissive/envReflect/fog/vertexDisplace/dissolve/toon) is realized by `shadedGlMeshMaterialRenderer` and `shadedWgpuMeshMaterialRenderer`, with tangent-space normal mapping on both. `shading-globe` and `shading-normal-map` carry WebGPU raster proof ([wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) §4). | gl, wgpu | RESOLVED |
-| customShader material/effect escape hatch on GPU | gl-only; no `customShader…Wgpu…`, no `wgpuCustomShaderEffect`; 3D particles gl-only too | gl only | MAJOR |
+| customShader material/effect escape hatch on GPU | `CustomShaderMaterial` is realized on Gl and Wgpu, and 3D particles render on both. `CustomShaderEffect` remains Gl-only; Wgpu has no effect runner/source registry for it. | gl/wgpu material; gl effect | MAJOR |
 | Saturation/hue/sepia/channel-mix fold onto sprites | Inline GPU fold is affine-only; off-diagonal terms dropped unless re-routed as full-frame Effect (`colorAdjustmentResolution.ts:67`); guard is opt-in so drop is silent; no canvas inline fold | gl/wgpu partial, canvas none | MAJOR |
 | Punctual lights/shadows verified on wgpu; ortho; area lights | WebGPU point/spot/hemisphere selection, directional shadows (PBR + classic), and ortho are RESOLVED with raster proofs; area lights remain descriptor-only on all backends | all | MAJOR |
 
@@ -243,8 +238,8 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | `InstancedMesh`/`LodMesh` ship | Header types only; no `create*`, not exported from scene barrel, no renderer consumes them | none | SURPRISE |
 | Frustum culling is automatic | `cullSceneNodeByFrustum` exists but no renderer calls it (grep across render/scene-gl/wgpu → none); every mesh drawn every frame | gl/wgpu (manual) | MAJOR |
 | Orthographic on WebGPU | RESOLVED — VP depth remap and functional baseline | wgpu | RESOLVED |
-| Particles (3D) status | Map says "not implemented" but GL renderer exists; no wgpu twin; no functional test | gl only | MAJOR |
-| IBL is production quality | Real split-sum but baked at "deliberately modest" software resolutions; wgpu unverified | gl (wgpu unverified) | MINOR |
+| Particles (3D) status | RESOLVED on both GPU backends with instanced billboard renderers and `particle-emitter-3d` functional cells | gl/wgpu | RESOLVED |
+| IBL is production quality | Real split-sum on both GPU backends with `env-ibl` functional cells, but baked at deliberately modest software resolutions | gl/wgpu | MINOR |
 | Photometric units are real | Lux/Candela anchored at arbitrary "100000 units = 1.0"; directional needs ~+1.5-+3 EV manual fudge | all | MINOR |
 
 ### Text & Glyph
@@ -257,7 +252,7 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | Word wrap handles CJK/Thai | `\n`+ASCII-space only (`textLineBreaks.ts:28`, `textLayout.ts:215`); no UAX#14; CJK/Thai/ZWSP unhandled | all | MAJOR |
 | BitmapText covered by regression suite | Headless rasterizer blank; stub backend draws identical boxes ("not a production text renderer", `glyphatlas/status.md`) — glyph shapes/packing/kerning never verified | gl/wgpu/headless | MAJOR |
 | gl/wgpu text is GPU glyph/atlas rendering | Whole-label 2D-canvas rasterization uploaded as texture (`glTextLabel.ts:52-56`); DOM+font-load bound, no worker, re-rasterized on change | gl/wgpu | MAJOR |
-| Strikethrough renders everywhere | gl/wgpu handle underline only | gl/wgpu | MINOR |
+| Strikethrough renders everywhere | RESOLVED — Canvas/DOM/Gl/Wgpu all draw line-through; `text-strikethrough` covers the four backends | all | RESOLVED |
 | NativeText is cross-backend | dom-only (`domNativeText.ts`); no canvas/gl/wgpu | dom | MINOR |
 | bidi/segmentation are well-tested | `textbidi` flagged THIN (7+6 `it`s for full UAX#9); `textsegment` light (5/15/7) | n/a | MINOR |
 
@@ -266,10 +261,10 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
 | collision+spring+spatial = physics | No solver/joints/integration; `physics2d`/`physics3d` empty charters (no package dir); collision returns MTV, doesn't resolve | n/a | SURPRISE |
-| 3D particles (per map) / real 3D physics | Map says "not implemented" but sim node + GL renderer exist; no wgpu renderer; forces/collisions cast to 2D — only spawn vel + `gravityZ` touch z (`stepParticleEmitter3D.ts:21-30`) | gl only | SURPRISE |
+| 3D particles / real 3D physics | Rendering is realized on Gl and Wgpu, but simulation forces/collisions remain planar — only spawn velocity and `gravityZ` touch z (`stepParticleEmitter3D.ts:21-30`) | gl/wgpu render; CPU sim | SURPRISE |
 | collision is a complete narrow-phase | Discrete-overlap + MTV only; no swept/TOI (fast movers tunnel), no contact sets, no capsule/concave, no 3D despite "unified 2D+3D" charter | headless | MAJOR |
 | spatial: pick index, get trigger events | Uniform grid only (quadtree/sweep-and-prune unbuilt); no persistent enter/stay/exit pair tracking; no 3D backends | headless | MAJOR |
-| GPU-backed animation renders correctly | Particles/spritesheet/movieclip/camera2d jsdom-only, never pixel-verified (`test-depth-review.md:126-128`); wgpu no blend + blank ortho | gl/wgpu | MAJOR |
+| GPU-backed animation renders correctly | Particle emitters now have Gl/Wgpu functional cells and orthographic Wgpu rendering is covered. Spritesheet/movieclip and most Camera2D behavior remain unit- or Canvas-only. | gl/wgpu | MAJOR |
 | snapshot interpolate/restore robust | Different-shape, number↔non-number, dotted-path schema, extra-key restore untested — netcode/replay hits these | headless | MAJOR |
 | Spritesheet seek is correct | `seekSpritesheetPlayerToFrame` broken for non-forward directions — ping-pong/reverse land wrong frame | canvas/gl/wgpu | MAJOR |
 | Particle sim scales | CPU-only, single-threaded; no GPU sim (deferred to future compute-wgpu) | all | MINOR |
@@ -283,32 +278,30 @@ unsupported cases is largely unbuilt for the gaps that most need it.
 To close the highest-bite gaps, in order. Rationale: establish trust in verification first, then fix the
 silent-wrong cases, then fill the biggest capability holes.
 
-1. **Establish real GPU visual verification (Theme A).** Stand up a browser-capable capture path (or a
-   documented external host loop) so functional baselines can actually be re-captured and trusted. Until this
-   exists, every fix below is unverifiable and every "green" claim is suspect. This is the force multiplier —
-   it converts inspection-only claims into evidence across skinning, lighting, effects, blend modes, text.
+1. **Maintain and broaden real GPU visual verification (Theme A).** The browser-capable capture path now
+   renders Gl and SwiftShader-backed Wgpu pixels and can re-capture functional baselines. Extend that evidence
+   to the remaining import/resource/text gaps instead of treating mock-backed unit green as pixel proof.
 
-2. **Fix the silent-wrong output cases (no new features, just correctness + diagnostics).** These make Canvas-
-   correct designs look broken on GPU with no warning: advanced blend modes → Normal (gl/wgpu), per-bitmap
-   smoothing ignored, stroke joins undifferentiated, ColorTransform tint untinted on Canvas/DOM, affine-only
-   adjustment fold dropping saturation/hue. Where a true fix is large, at minimum add the guard-layer warnings
-   (Theme I) so the drop stops being silent.
+2. **Fix the remaining silent-wrong output cases (no new features, just correctness + diagnostics).**
+   ColorTransform tint remains untinted on Canvas/DOM, and the affine-only adjustment fold can drop
+   saturation/hue. Advanced blend routing, per-draw smoothing, and stroke joins are resolved and have
+   functional proofs. Where a true fix is large, at minimum add the guard-layer warnings (Theme I) so the
+   drop stops being silent.
 
 3. **~~Close the first WebGPU parity gaps that were outright broken (Theme B).~~ SECTIONS 1–5 COMPLETE.**
    Transparent-pass sorting (§1), the orthographic NDC-Z remap (§2), GPU skinning (§3), ShadedMaterial (§4),
    and the advanced-blend `BlendEffect` runner (§5) now have WebGPU implementations and functional evidence.
-   Continue the later [wgpu-3d-parity-spec.md](wgpu-3d-parity-spec.md) gaps, including shadow-pass frame
-   ordering, and add `.webgpu.ts` baselines for the remaining light/shadow/IBL scenes.
+   Continue with the still-named effect/MSAA gaps rather than the now-closed light/shadow/IBL cluster.
 
-4. **~~Make skinned characters actually deform on the GPU (Exec #3).~~ DONE ON GL.** `HAS_SKIN` now spans all
-   five gl families (classic/pbr/toon/unlit/shaded), the palette is an RGBA32F **data texture read via
-   `texelFetch`** (bounded by MAX_TEXTURE_SIZE — no capacity gate, no CPU fallback), and the CPU kernel +
-   skinned bounds live in `@flighthq/skeleton3d` for bounds/picking only. Remaining: the wgpu port (folded
-   into item 3 above) and a functional skin scene that exercises the GPU path, not the CPU crutch.
+4. **~~Make skinned characters actually deform on the GPU (Exec #3).~~ DONE ON GL + WGPU.** `HAS_SKIN` spans
+   all five families (classic/pbr/toon/unlit/shaded); both backends use an RGBA32F data-texture palette
+   (`texelFetch` / `textureLoad`) without a uniform-capacity fallback, and `scene-skinning` proves the posed
+   silhouette on both, including an 80-joint Wgpu rig.
 
-5. **Wire the effect G-buffer (Theme, Exec #2).** Feed depth/normal/velocity/history buffers so SSAO/SSR/TAA/
-   motion-blur/fog stop being placeholders. This unblocks the largest "looks AAA, does nothing" cluster. Then
-   register or clearly de-list the 6 descriptor-only effects and the 31 canvas no-ops.
+5. **Finish the effect G-buffer (Theme, Exec #2).** MotionBlur now consumes a scene velocity texture; feed
+   depth/normal/history so SSAO, ContactShadows, ScreenSpaceFog, SSR, and TAA can replace their approximation
+   or absent paths. The 31 Canvas passthrough registrations are already retired. Keep the seven descriptor-only
+   effects honestly absent until each has a real implementation.
 
 6. **~~Complete glTF import (Themes F/H).~~ DONE (parse).** glTF now emits materials/textures + all animation
    channels + skins + morph + sparse accessors + external URIs; OBJ/3DS/MD5/AWD emit materials; the
@@ -318,8 +311,8 @@ silent-wrong cases, then fill the biggest capability holes.
 7. **Resource lifecycle (Theme E).** Add refcount/unload/eviction to the streaming path and wire `assets` in
    with default adapters + surfaced group-load failures, so streaming stops leaking. Wire the imported
    texture refs through decode so imported meshes render textured (the parse side is done; resolution is not).
-   Compressed-texture native upload landed on gl (`uploadGlCompressedTextureContainer`); remaining is
-   Basis-Universal transcode (spec-only) and the wgpu upload path.
+   Compressed-texture native upload landed on both GPU backends; the remaining container gap is
+   Basis-Universal transcode (spec-only).
 
 8. **Text i18n pipeline (Exec #4).** Wire `textbidi`/`textsegment` into layout, add a real shaping backend and
    an MSDF shader, and implement UAX #14 line breaking. Large, but non-Latin text is broken today, not merely

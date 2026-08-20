@@ -57,9 +57,10 @@ declareExpectedImageDescription(
     'the same factors, where max(0, dst) = dst, so its zero-opacity cell is invisible like the first four. ' +
     'Bounded, with the reason stated: the assertion samples the RED CHANNEL only, at one point per cell, and ' +
     'compares ordinals — coverage separation in normal/add/screen/lighten, the zero-coverage no-op in ' +
-    'normal/add/multiply/screen, Multiply directionally (never brighter than the backdrop) and Normal by ' +
-    'bracketing between backdrop and full. It does NOT check Darken at any row, Lighten at zero coverage, or any ' +
-    'absolute level, and the black patch above is exactly the cell that scope excludes. Exact levels are not ' +
+    'normal/add/multiply/screen/lighten, Multiply directionally (never brighter than the backdrop) and Normal by ' +
+    'bracketing between backdrop and full. Darken at zero coverage is the one absolute bound: it must remain ' +
+    'black while the fixed-function limitation above exists, so a coverage-correct repair fails this cell and ' +
+    'points at the prose to update. Other exact levels are not ' +
     'derivable here at all: the scene renders through an HDR rgba16f target and is tone-presented, so magnitudes ' +
     'are backend- and curve-dependent while every ordering described above is not.',
 );
@@ -153,6 +154,7 @@ const COLUMN_NORMAL = 0;
 const COLUMN_ADD = 1;
 const COLUMN_MULTIPLY = 2;
 const COLUMN_SCREEN = 3;
+const COLUMN_DARKEN = 4;
 const COLUMN_LIGHTEN = 5;
 
 // The columns whose operator genuinely separates a quarter-alpha patch from a fully-opaque one at this
@@ -161,9 +163,16 @@ const COLUMN_LIGHTEN = 5;
 const COVERAGE_COLUMNS: readonly number[] = [COLUMN_NORMAL, COLUMN_ADD, COLUMN_SCREEN, COLUMN_LIGHTEN];
 
 // The modes whose fixed-function realization is EXACT under partial coverage, and so must leave the
-// destination untouched at zero alpha. Darken and Lighten are absent because MIN/MAX provably cannot
-// express `(1-a)*dst + a*B(src,dst)` — see DEFAULT_GL_BLEND_MODES.
-const ZERO_COVERAGE_COLUMNS: readonly number[] = [COLUMN_NORMAL, COLUMN_ADD, COLUMN_MULTIPLY, COLUMN_SCREEN];
+// destination untouched at zero alpha. Darken is absent because MIN with ONE/ONE computes min(0, dst)
+// there. Lighten's MAX with the same factors cannot express general partial coverage either, but at zero
+// alpha max(0, dst) is the destination, so that endpoint belongs in this exact set.
+const ZERO_COVERAGE_COLUMNS: readonly number[] = [
+  COLUMN_NORMAL,
+  COLUMN_ADD,
+  COLUMN_MULTIPLY,
+  COLUMN_SCREEN,
+  COLUMN_LIGHTEN,
+];
 
 // Readback margin separating a real coverage difference from tone-mapping and MSAA noise. The real
 // post-fix differences are an order of magnitude larger; today they are exactly zero.
@@ -271,6 +280,17 @@ function assertBlendModeCoverage(bitmap: Readonly<Bitmap>, tag: string): void {
           `A fully transparent source must composite to the destination under every blend equation.`,
       );
     }
+  }
+
+  // ★ ASSERT THE GAP THE DESCRIPTION NAMES. Fixed-function Darken uses MIN with ONE/ONE factors,
+  // so a zero-alpha premultiplied source computes min(0, dst) and produces black. If a coverage-correct
+  // realization replaces it, this must fail loudly before the old black-patch prose can rot silently.
+  if (zero[COLUMN_DARKEN] > COVERAGE_MARGIN) {
+    throw new Error(
+      `${tag} Darken at zero coverage reads ${zero[COLUMN_DARKEN]} (expected black, at most ` +
+        `${COVERAGE_MARGIN}) — the fixed-function MIN limitation has been repaired; update this cell and ` +
+        `its description, which both say the transparent patch is black`,
+    );
   }
 
   if (quarter[COLUMN_MULTIPLY] > backdrop + 10) {

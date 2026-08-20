@@ -107,6 +107,18 @@ const MIN_GRADIENT_RATIO = 0.1;
 const MAX_FIELD_CENTRE_LUMINANCE = 15;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
+  // ★ ASSERT THE GAP THE DESCRIPTION NAMES. Bloom makes partial-pixel counts unsuitable for detecting
+  // MSAA in this cell, but the pipeline records the sample count it actually applied. When Wgpu starts
+  // honoring the requested four samples, fail before the aliased-edge prose can silently become false.
+  const appliedSampleCount = pipeline.options.sampleCount ?? 1;
+  if (appliedSampleCount !== 1) {
+    throw new Error(
+      `[effect-msaa-bloom] the Wgpu pipeline applied sampleCount ${appliedSampleCount}, not the ` +
+        `single-sample fallback — multisampling has landed; update this cell and its description, which ` +
+        `both say the edges remain aliased`,
+    );
+  }
+
   const luminance = (x: number, y: number): number => {
     const rgb = getBitmapPixelRgb(frame, x, y);
     return (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;

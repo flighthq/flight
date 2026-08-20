@@ -33,15 +33,11 @@ declareExpectedImageDescription(
     'natively (no explicit MSAA). EACH RECTANGLE MUST CARRY A SOFT GLOWING HALO bleeding outward past its edges ' +
     'into the dark background, from bloom at threshold 0.6 and intensity 1.4 — four rectangles with sharp edges ' +
     'and no glow anywhere outside them is the failure this cell exists to catch, and it is a failure whether or ' +
-    'not the rest of the picture is correct. THE GLOW IS FAINT ON THIS BACKEND, and how faint is derivable: the ' +
-    'canvas bright pass scales every surviving pixel to 1 - threshold = 0.4 of its value (CSS applies brightness ' +
-    'after the contrast stretch), and the composite sets globalAlpha to the intensity, which Canvas 2D cannot ' +
-    'take above 1, so the requested 1.4 becomes 1.0. The canvas halo therefore carries 0.4/1.4 = 0.29 of the ' +
-    'energy the GL and WGPU siblings put into the same halo. Expect a glow that reads clearly in a luminance ' +
-    'profile and is easy to miss by eye against the near-black field; a picture with no gradient at all outside ' +
-    'the silhouettes is still the failure. This ratio is derived from the two scaling terms, not measured on this ' +
-    'cell — the sibling scene effect-bloom/canvas is the one where it was measured, peaking near 47/255 just ' +
-    'outside a tile edge against 147/255 on webgl at the same pixel.',
+    'not the rest of the picture is correct. Canvas now uses the same luminance-gated bright-pass rule as the GPU ' +
+    'backends and composites scene + bloom*intensity per pixel, so intensity 1.4 is neither clipped to 1 nor ' +
+    'attenuated by the former CSS brightness factor. The repaired effect-bloom control measures the Canvas halo ' +
+    'within 3 percent of both GPU siblings. A picture with no gradient at all outside the silhouettes remains the ' +
+    'failure; backend-specific faintness is no longer an expected result.',
 );
 
 // Canvas parity column for the MSAA + bloom scene. Canvas 2D antialiases edges natively, so there is

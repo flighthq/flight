@@ -64,8 +64,8 @@ export function render(root: Node2D): void {
   endCanvasRenderEffectPipeline(state, pipeline, [createPosterizeEffect({ levels: 4 })]);
 }
 
-// Distinct saturated-color shapes retain the shared scene intent while the missing backend capability
-// stays visible as an unchanged image.
+// Distinct saturated-color shapes make the four-level Canvas quantization directly comparable with the
+// Gl and Wgpu siblings.
 
 const root = createDisplayObject();
 root.scaleX = scale;
@@ -93,9 +93,6 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// Control column: canvas has no posterize runner, so the 6 input shapes render unquantized.
-// The 6 RGBA colors yield 5 distinct blue channels (48, 64, 255, 192, 208). Exactly 5 confirms the
-// shapes rendered with correct RGBA unpacking and no spurious quantization was applied.
 // This cell is no longer a backend control: canvas now realizes posterize through
 // registerCanvasPosterizeEffect, so it asserts the SAME quantisation its Gl and Wgpu siblings do.
 // The previous assertion here required 5 distinct levels — the unquantised picture — and would

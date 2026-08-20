@@ -67,8 +67,7 @@ export function render(root: Node2D): void {
   endCanvasRenderEffectPipeline(state, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
 }
 
-// Off-center shapes retain the shared scene intent while the missing backend capability stays visible
-// as an unchanged image.
+// Off-center shapes make the Canvas remap directly comparable with the Gl and Wgpu siblings.
 
 const root = createDisplayObject();
 root.scaleX = scale;

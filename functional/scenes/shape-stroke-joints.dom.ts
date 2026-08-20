@@ -1,7 +1,5 @@
-// BACKEND CAVEAT: scoped to canvas/dom (see package.json `renderers`). The WebGL/WGPU shape-stroke
-// tessellation does NOT differentiate join styles (no miter/bevel/round handling), so miter joins are not
-// extended there — a renderer limitation, not a missing test. Canvas (native lineJoin) + DOM honor all
-// three; shape-stroke-caps DOES pass on all four (caps are handled).
+// DOM uses CSS/SVG joins for this proof. The GPU siblings now tessellate the same miter/bevel/round
+// outlines, and Canvas uses native lineJoin, so this scene has a column on all four backends.
 //
 // shape-stroke-joints — validates the three line-join styles ('round'/'bevel'/'miter') at a sharp
 // corner. Three identical V-shaped white polylines (thickness 30) are drawn — moveTo top-left, lineTo a

@@ -1,3 +1,4 @@
+import { hasGlRenderEffectRunner } from '@flighthq/effects-gl/contract';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -95,6 +96,13 @@ render(root);
 // 0xffffffff) at its center should retain high luminance (> 200) after the SSR pass, verifying
 // the pipeline produces valid output. Without the pipeline, the frame is blank.
 export function assertRender(frame: Readonly<Bitmap>): void {
+  if (hasGlRenderEffectRunner(state, 'SsrEffect')) {
+    throw new Error(
+      '[effect-ssr] Gl now has a registered SSR runner — update this control cell and its description, ' +
+        'which both say that capability is absent',
+    );
+  }
+
   const cx = Math.round(frame.width * 0.28);
   const cy = Math.round(frame.height * 0.3);
   const rgb = getBitmapPixelRgb(frame, cx, cy);

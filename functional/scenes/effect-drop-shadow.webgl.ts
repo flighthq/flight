@@ -34,14 +34,7 @@ declareExpectedImageDescription(
     'OFFSET DIRECTION IS THE POINT: 45 degrees is measured from +X toward +Y in screen space, which is ' +
     'clockwise as displayed, so the shadow falls toward the bottom-right corner of the frame. A shadow ' +
     'appearing above the square instead would mean the runner read the angle in a bottom-left-origin space. The ' +
-    'rest of the field stays near-black. ' +
-    'There is NO Wgpu sibling cell, and the reason is a measured backend gap rather than a property of this ' +
-    'scene. On Wgpu the full-frame effect pipeline runs every source-composite effect - the seven that carry ' +
-    'a sourceMode: Bevel, DropShadow, GradientBevel, GradientGlow, InnerGlow, InnerShadow and OuterGlow - as ' +
-    'a silent NO-OP, passing the source through untouched, and GradientBevel renders nothing at all. A Blur ' +
-    'in the identical scene skeleton, which has no sourceMode, works. The same effects DO run on Wgpu through ' +
-    'the per-node offscreen path, so it is this route that does not carry them. This cell therefore cannot ' +
-    'compare the two backends; it can only establish what Gl draws.',
+    'rest of the field stays near-black.',
 );
 
 // The angle the effect is given AND the angle the oracle reasons about, so the two cannot drift apart.
