@@ -17,7 +17,7 @@ import {
 } from './commissionEligibility';
 import { reviewMissingReferenceMessage } from './commissionState';
 import type { ReviewCommissionState as CommissionState } from './commissionState';
-import { createReviewCommissionPayloadCell } from './referenceImageCommission';
+import { createReviewCommissionPayloadCell, markReviewCommissionRequested } from './referenceImageCommission';
 import { filterReviewItems } from './reviewFilter';
 import { orderReviewItems, REVIEW_ATTENTION_GROUP_ORDER, reviewItemByVisualDelta } from './reviewOrder';
 import type { ReviewAttentionGroup as AttentionGroup } from './reviewOrder';
@@ -85,6 +85,12 @@ interface ReviewTest {
 
 const STORAGE_KEY = 'review-selected';
 const allTests = _tests as ReviewTest[];
+
+if (import.meta.hot) {
+  import.meta.hot.on('review:commission-requested', (event: { cells: string[] }) => {
+    if (markReviewCommissionRequested(allTests, event.cells) > 0) showCurrent();
+  });
+}
 
 let filterQuery = '';
 let includeSingleCellScenes = false;
@@ -615,6 +621,12 @@ async function commissionCurrentTest(): Promise<void> {
       result.dirty.length === 0 && result.dirtyOmitted === 0
         ? ''
         : ` — WARNING: Built with uncommitted changes: ${formatDirtyPaths(result.dirty, result.dirtyOmitted)}`;
+    markReviewCommissionRequested(
+      allTests,
+      selectedCells
+        .filter((cell) => !result.skipped.includes(cell.renderer))
+        .map((cell) => `${t.tool}/${t.name}/${cell.renderer}`),
+    );
     showCommissionFeedback(
       `Requested ${scope}${coverage}${build}${dirty} → ${result.path}`,
       result.skipped.length > 0 || result.dirty.length > 0 || result.dirtyOmitted > 0,

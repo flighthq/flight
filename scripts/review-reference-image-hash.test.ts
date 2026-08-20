@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import {
   createReferenceImageRequestTarget,
   createReviewCommissionPayloadCell,
+  markReviewCommissionRequested,
   resolveReferenceImageCommissionState,
 } from '../tools/review/src/referenceImageCommission';
 import { decodeOraclePng, getOraclePngPixelSha256 } from './reference-image-png';
@@ -56,5 +57,31 @@ describe('review reference-image pixel identity', () => {
       'registered-environment',
     );
     expect.soft(requestTarget.pixelSha256).toBe(referenceHash.pixelSha256);
+  });
+
+  it('treats a queued update as requested even when the cell already has a lock', () => {
+    // Pre-fix regression control: removing the requested-state precedence failed here with
+    // "Expected: requested / Received: differs", proving this assertion exercises the repaired path.
+    expect(
+      resolveReferenceImageCommissionState({ hash: null, referencePixelSha256: 'candidate' }, 'locked', true, false),
+    ).toBe('requested');
+  });
+
+  it('patches only named review cells and is idempotent', () => {
+    const tests = [
+      {
+        tool: 'functional',
+        name: 'text-basic',
+        cells: [
+          { renderer: 'canvas', commissionState: 'differs' as const },
+          { renderer: 'reference', commissionState: null },
+          { renderer: 'webgl', commissionState: 'not-commissioned' as const },
+        ],
+      },
+    ];
+
+    expect(markReviewCommissionRequested(tests, ['functional/text-basic/canvas'])).toBe(1);
+    expect(tests[0]!.cells.map((cell) => cell.commissionState)).toEqual(['requested', null, 'not-commissioned']);
+    expect(markReviewCommissionRequested(tests, ['functional/text-basic/canvas'])).toBe(0);
   });
 });

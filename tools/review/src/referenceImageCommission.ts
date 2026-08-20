@@ -14,6 +14,7 @@ export function resolveReferenceImageCommissionState(
   /** Shared comparator verdict. When present it is authoritative over the exact-hash legacy path. */
   comparisonMatches?: boolean | null,
 ): ReviewCommissionState {
+  if (requested) return 'requested';
   if (lockedPixelSha256 !== undefined) {
     if (comparisonMatches !== undefined && comparisonMatches !== null) {
       return comparisonMatches ? 'included' : 'differs';
@@ -22,7 +23,32 @@ export function resolveReferenceImageCommissionState(
       ? 'included'
       : 'differs';
   }
-  return requested ? 'requested' : 'not-commissioned';
+  return 'not-commissioned';
+}
+
+export interface ReviewCommissionStateTest {
+  tool: string;
+  name: string;
+  cells: { renderer: string; commissionState: ReviewCommissionState | null }[];
+}
+
+/** Applies a request event without replacing the page, selection, or scroll context. Idempotent. */
+export function markReviewCommissionRequested(
+  tests: readonly ReviewCommissionStateTest[],
+  requestedCells: readonly string[],
+): number {
+  const requested = new Set(requestedCells);
+  let changed = 0;
+  for (const test of tests) {
+    for (const cell of test.cells) {
+      if (!requested.has(`${test.tool}/${test.name}/${cell.renderer}`) || cell.commissionState === null) continue;
+      if (cell.commissionState !== 'requested') {
+        cell.commissionState = 'requested';
+        changed++;
+      }
+    }
+  }
+  return changed;
 }
 
 interface ReviewCommissionPayloadSource extends ReviewReferenceHashCell {
