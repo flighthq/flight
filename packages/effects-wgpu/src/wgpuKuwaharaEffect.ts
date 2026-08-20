@@ -55,16 +55,16 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   let r = i32(min(f32(R), uni.u_radius));
   var means : array<vec3f, 4>;
   var vars : array<f32, 4>;
-  var lo = array<vec2i, 4>(vec2i(-1, -1), vec2i(0, -1), vec2i(-1, 0), vec2i(0, 0));
   for (var q = 0; q < 4; q++) {
+    let ox = select(-r, 0, (q & 1) != 0);
+    let oy = select(-r, 0, (q & 2) != 0);
     var sum = vec3f(0.0);
     var sumSq = vec3f(0.0);
     var n = 0.0;
     for (var y = 0; y <= R; y++) {
       for (var x = 0; x <= R; x++) {
         if (x > r || y > r) { continue; }
-        let d = vec2i(x, y) * sign(lo[q] + vec2i(1)) + lo[q] * r;
-        let off = vec2f(f32(d.x), f32(d.y)) * texel;
+        let off = vec2f(f32(ox + x), f32(oy + y)) * texel;
         let col = textureSampleLevel(tex, smp, uv + off, 0.0).rgb;
         sum += col;
         sumSq += col * col;

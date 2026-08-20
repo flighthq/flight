@@ -22,14 +22,13 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescriptionWithheld, declareAntialiasingPolicy } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 declareAntialiasingPolicy('aa');
 
-declareExpectedImageDescriptionWithheld(
-  'The Kuwahara shader has a known implementation bug: 3 of 4 sector quadrants degenerate to a line ' +
-    'or a single point instead of a 2D region. The correct math exists in computeKuwaharaSectorOffsets ' +
-    'but is not wired into the shader. Describing what this currently draws would bless the defect as ' +
-    'the specification. Withheld pending a shader fix that crosses package boundaries.',
+declareExpectedImageDescription(
+  '18 rotated colored rectangles (pink, green, blue, gold, purple, cyan) on dark background ' +
+    '(0x101014), smoothed by Kuwahara radius-4 edge-preserving filter. Broad color regions are ' +
+    'flattened with an oil-painting appearance while edges between shapes remain sharp.',
 );
 
 // kuwahara: a full-frame stylization pass applied to the whole scene through a default rgba8 pipeline.
