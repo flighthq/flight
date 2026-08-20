@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { findCaptureFixtureBackground } from './captureFixtureBackground.js';
+
 export interface FunctionalParityConfound {
   scene: string;
   values: Readonly<Record<string, string>>;
@@ -76,7 +78,7 @@ export function findFunctionalParityConfounds(
 
 /** Reads the clear colour a functional scene fixture declares, or null when it states none. */
 export function findFunctionalSceneClearColor(source: string): string | null {
-  return /backgroundColor:\s*(0x[0-9a-fA-F]+)/.exec(source)?.[1]?.toLowerCase() ?? null;
+  return findCaptureFixtureBackground(source);
 }
 
 /** Formats the standalone whole-corpus report. */
