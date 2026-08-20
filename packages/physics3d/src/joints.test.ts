@@ -2,12 +2,21 @@ import type { Physics3DJoint, Physics3DJointSolver, Physics3DWorld, RigidBody3D 
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate';
-import { createPhysics3DFixedJoint, createPhysics3DHingeJoint } from './jointFactories';
+import {
+  createPhysics3DConeTwistJoint,
+  createPhysics3DFixedJoint,
+  createPhysics3DGeneric6DofJoint,
+  createPhysics3DHingeJoint,
+  createPhysics3DSliderJoint,
+} from './jointFactories';
 import { writePhysics3DJointAnchorVelocity, writePhysics3DJointAnchors } from './jointMath';
 import {
   physics3DBallAndSocketJointSolver,
+  physics3DConeTwistJointSolver,
   physics3DFixedJointSolver,
+  physics3DGeneric6DofJointSolver,
   physics3DHingeJointSolver,
+  physics3DSliderJointSolver,
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
   Physics3DFixedJointKind,
@@ -16,7 +25,7 @@ import {
   Physics3DSliderJointKind,
 } from './joints';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world';
 
 describe('Physics3DBallAndSocketJointKind', () => {
   it('names every built-in kind uniquely and without a vendor prefix', () => {
@@ -74,6 +83,70 @@ describe('physics3DBallAndSocketJointSolver', () => {
   });
 });
 
+describe('physics3DConeTwistJointSolver', () => {
+  it('leaves a swing inside the cone alone', () => {
+    const scene = createScene();
+    const joint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 1, swingLimitZ: 1 });
+    scene.bodyB.angularVelocityZ = 0.5;
+
+    solveJoint(scene.world, joint, physics3DConeTwistJointSolver, 16);
+
+    // Both twist axes still coincide, so the joint is at the centre of its cone and has nothing to resist.
+    expect(scene.bodyB.angularVelocityZ - scene.bodyA.angularVelocityZ).toBeCloseTo(0.5, 6);
+  });
+
+  it('pushes back on a swing past the cone', () => {
+    const scene = createScene();
+    // Half a radian of tilt about Z, well past a cone of 0.2.
+    setAxisAngle(scene.bodyB, 0, 0, 1, 0.5);
+    const joint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 0.2, swingLimitZ: 0.2 });
+
+    solveJoint(scene.world, joint, physics3DConeTwistJointSolver, 16);
+
+    // The swing axis for a tilt about +z is +z, so closing the cone means a negative relative spin about it.
+    expect(scene.bodyB.angularVelocityZ - scene.bodyA.angularVelocityZ).toBeLessThan(0);
+  });
+
+  it('takes its cone from the axis the tilt is actually in', () => {
+    const wide = createScene();
+    setAxisAngle(wide.bodyB, 0, 0, 1, 0.5);
+    // A tilt about +z carries the twist axis toward frame Y, so swingLimitY is the bound that applies.
+    const wideJoint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 1.2, swingLimitZ: 0.05 });
+    solveJoint(wide.world, wideJoint, physics3DConeTwistJointSolver, 16);
+
+    const narrow = createScene();
+    setAxisAngle(narrow.bodyB, 0, 0, 1, 0.5);
+    const narrowJoint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 0.05, swingLimitZ: 1.2 });
+    solveJoint(narrow.world, narrowJoint, physics3DConeTwistJointSolver, 16);
+
+    expect(wide.bodyB.angularVelocityZ).toBeCloseTo(0, 9);
+    expect(narrow.bodyB.angularVelocityZ).toBeLessThan(0);
+  });
+
+  it('bounds the twist without touching the swing', () => {
+    const scene = createScene();
+    setAxisAngle(scene.bodyB, 1, 0, 0, 0.5);
+    const joint = createPhysics3DConeTwistJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableSwingLimit: false,
+      enableTwistLimit: true,
+      lowerTwistAngle: -0.1,
+      upperTwistAngle: 0.1,
+    });
+
+    solveJoint(scene.world, joint, physics3DConeTwistJointSolver, 16);
+
+    expect(scene.bodyB.angularVelocityX - scene.bodyA.angularVelocityX).toBeLessThan(0);
+  });
+
+  it('refuses to exchange its ends', () => {
+    const joint = createPhysics3DConeTwistJoint({ bodyA: 1, bodyB: 0 });
+
+    expect(physics3DConeTwistJointSolver.swapEnds?.(joint)).toBe(false);
+  });
+});
+
 describe('physics3DFixedJointSolver', () => {
   it('cancels relative rotation about every axis', () => {
     const scene = createScene();
@@ -113,6 +186,97 @@ describe('physics3DFixedJointSolver', () => {
     expect(joint.localRotationAW).toBe(1);
     expect(joint.localRotationBX).toBe(1);
     expect(joint.localRotationBW).toBe(0);
+  });
+});
+
+describe('physics3DGeneric6DofJointSolver', () => {
+  it('constrains nothing when every axis is free', () => {
+    const scene = createScene();
+    const joint = createPhysics3DGeneric6DofJoint({ bodyA: 0, bodyB: 1 });
+    scene.bodyB.velocityX = 1;
+    scene.bodyB.velocityY = 2;
+    scene.bodyB.angularVelocityZ = 3;
+
+    solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 16);
+
+    expect(scene.bodyB.velocityX).toBeCloseTo(1, 9);
+    expect(scene.bodyB.velocityY).toBeCloseTo(2, 9);
+    expect(scene.bodyB.angularVelocityZ).toBeCloseTo(3, 9);
+  });
+
+  it('locks the one axis whose bounds are equal and leaves the rest free', () => {
+    const scene = createScene();
+    // A is the anchored end, so the row's coordinate is B's own displacement along the axis and reads
+    // directly off B's velocity. With both ends dynamic the coordinate also carries A's rotation about its
+    // lever arm, and a plain velocity difference is then measuring something the joint never constrained.
+    makeStatic(scene.bodyA);
+    const joint = createPhysics3DGeneric6DofJoint({
+      bodyA: 0,
+      bodyB: 1,
+      lowerLinearY: 0,
+      upperLinearY: 0,
+    });
+    scene.bodyB.velocityX = 1;
+    scene.bodyB.velocityY = 2;
+
+    solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 16);
+
+    expect(scene.bodyB.velocityY - scene.bodyA.velocityY).toBeCloseTo(0, 6);
+    expect(scene.bodyB.velocityX).toBeCloseTo(1, 9);
+  });
+
+  it('lets a limited axis move within its interval', () => {
+    const scene = createScene();
+    // The anchors are 2 apart along +x, and the interval admits that.
+    const joint = createPhysics3DGeneric6DofJoint({
+      bodyA: 0,
+      bodyB: 1,
+      lowerLinearX: 1,
+      upperLinearX: 3,
+    });
+    scene.bodyB.velocityX = 0.5;
+
+    solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 16);
+
+    expect(scene.bodyB.velocityX - scene.bodyA.velocityX).toBeCloseTo(0.5, 6);
+  });
+
+  it('stops a limited axis at the end of its interval', () => {
+    const scene = createScene();
+    const joint = createPhysics3DGeneric6DofJoint({
+      bodyA: 0,
+      bodyB: 1,
+      lowerLinearX: -1,
+      upperLinearX: 1,
+    });
+
+    solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 16);
+
+    // The separation is 2, past the upper bound of 1, so the pair is drawn back together.
+    expect(scene.bodyB.velocityX - scene.bodyA.velocityX).toBeLessThan(0);
+  });
+
+  it('locks an angular axis without disturbing the other two', () => {
+    const scene = createScene();
+    const joint = createPhysics3DGeneric6DofJoint({
+      bodyA: 0,
+      bodyB: 1,
+      lowerAngularZ: 0,
+      upperAngularZ: 0,
+    });
+    scene.bodyB.angularVelocityY = 1;
+    scene.bodyB.angularVelocityZ = 2;
+
+    solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 16);
+
+    expect(scene.bodyB.angularVelocityZ - scene.bodyA.angularVelocityZ).toBeCloseTo(0, 6);
+    expect(scene.bodyB.angularVelocityY - scene.bodyA.angularVelocityY).toBeCloseTo(1, 6);
+  });
+
+  it('refuses to exchange its ends', () => {
+    const joint = createPhysics3DGeneric6DofJoint({ bodyA: 1, bodyB: 0 });
+
+    expect(physics3DGeneric6DofJointSolver.swapEnds?.(joint)).toBe(false);
   });
 });
 
@@ -255,6 +419,99 @@ describe('physics3DHingeJointSolver', () => {
   });
 });
 
+describe('physics3DSliderJointSolver', () => {
+  it('leaves travel along its axis free while cancelling the other two', () => {
+    const scene = createScene();
+    // The rail is the anchored end — the ordinary way a slider is authored — which is also what makes the
+    // row's coordinate equal to B's velocity along it rather than to a difference that carries A's spin.
+    makeStatic(scene.bodyA);
+    const joint = createPhysics3DSliderJoint({ bodyA: 0, bodyB: 1 });
+    scene.bodyB.velocityX = 2;
+    scene.bodyB.velocityY = 1.5;
+    scene.bodyB.velocityZ = -1;
+
+    solveJoint(scene.world, joint, physics3DSliderJointSolver, 24);
+
+    expect(scene.bodyB.velocityX - scene.bodyA.velocityX).toBeCloseTo(2, 6);
+    expect(scene.bodyB.velocityY - scene.bodyA.velocityY).toBeCloseTo(0, 6);
+    expect(scene.bodyB.velocityZ - scene.bodyA.velocityZ).toBeCloseTo(0, 6);
+  });
+
+  it('locks relative rotation about every axis', () => {
+    const scene = createScene();
+    const joint = createPhysics3DSliderJoint({ bodyA: 0, bodyB: 1 });
+    scene.bodyB.angularVelocityX = 1;
+    scene.bodyB.angularVelocityY = -2;
+
+    solveJoint(scene.world, joint, physics3DSliderJointSolver, 24);
+
+    expect(scene.bodyB.angularVelocityX - scene.bodyA.angularVelocityX).toBeCloseTo(0, 6);
+    expect(scene.bodyB.angularVelocityY - scene.bodyA.angularVelocityY).toBeCloseTo(0, 6);
+  });
+
+  it('drives the travel toward the motor speed', () => {
+    const scene = createScene();
+    const joint = createPhysics3DSliderJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableMotor: true,
+      motorSpeed: 4,
+      maxMotorForce: 1000,
+    });
+
+    solveJoint(scene.world, joint, physics3DSliderJointSolver, 24);
+
+    expect(scene.bodyB.velocityX - scene.bodyA.velocityX).toBeCloseTo(4, 6);
+  });
+
+  it('stops travel at the end of its interval', () => {
+    const scene = createScene();
+    const joint = createPhysics3DSliderJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableLimit: true,
+      lowerTranslation: -0.5,
+      upperTranslation: 0.5,
+    });
+
+    solveJoint(scene.world, joint, physics3DSliderJointSolver, 24);
+
+    // The anchors are 2 apart along the axis, past the upper bound.
+    expect(scene.bodyB.velocityX - scene.bodyA.velocityX).toBeLessThan(0);
+  });
+
+  it('does not brake travel that is nowhere near its limits', () => {
+    const scene = createScene();
+    const joint = createPhysics3DSliderJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableLimit: true,
+      lowerTranslation: -5,
+      upperTranslation: 5,
+    });
+    scene.bodyB.velocityX = 1;
+
+    solveJoint(scene.world, joint, physics3DSliderJointSolver, 24);
+
+    expect(scene.bodyB.velocityX - scene.bodyA.velocityX).toBeCloseTo(1, 6);
+  });
+
+  it('reverses and exchanges the travel interval when its ends are swapped', () => {
+    const joint = createPhysics3DSliderJoint({
+      bodyA: 1,
+      bodyB: 0,
+      lowerTranslation: -0.25,
+      upperTranslation: 1.5,
+      motorSpeed: 4,
+    });
+
+    expect(physics3DSliderJointSolver.swapEnds?.(joint)).toBe(true);
+    expect(joint.lowerTranslation).toBe(-1.5);
+    expect(joint.upperTranslation).toBe(0.25);
+    expect(joint.motorSpeed).toBe(-4);
+  });
+});
+
 function anchorSpeed(scene: Readonly<Scene>, joint: Physics3DJoint): number {
   writePhysics3DJointAnchors(scene.bodyA, scene.bodyB, joint);
   const velocity = [0, 0, 0];
@@ -288,6 +545,11 @@ function createUnitBody(): RigidBody3D {
   setRigidBody3DMassData(body, data);
   refreshRigidBody3DWorldInertia(body);
   return body;
+}
+
+function makeStatic(body: RigidBody3D): void {
+  setPhysics3DBodyType(body, 'static');
+  refreshRigidBody3DWorldInertia(body);
 }
 
 function setAxisAngle(body: RigidBody3D, x: number, y: number, z: number, angle: number): void {
