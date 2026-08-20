@@ -52,11 +52,7 @@ out vec4 o_color;
 const int SAMPLES = 16;
 void main() {
   vec4 base = texture(u_texture0, v_texCoord);
-  // BISECTION PROBE: hardcode to bypass sentinel — if the picture changes, the sentinel
-  // gate is the break (u_hasVelocity uniform or velocity-texture binding is wrong); if it
-  // does not change, the velocity texture is empty or the smear math is inert.
-  float hasVelocityProbe = 1.0;
-  if (hasVelocityProbe < 0.5) {
+  if (u_hasVelocity < 0.5) {
     o_color = base;
     return;
   }
