@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "97739c38-f97e-4736-beb9-badba1ffd62a",
+  "id": "5ab0ea76-7631-41ca-a359-e38065e6d5bf",
   "subject": "functional",
   "targets": [
     {
-      "entry": "bitmap-transparent-compositing",
+      "entry": "text-italic",
       "renderer": "dom",
-      "pixelSha256": "5182773601ff32ed6ad5c144b90c21bd6de1a8887071160df3f8f5a6afa3ed7a",
+      "pixelSha256": "7d95386ebc8d3982b74027d57bedf1cf24c45625f01f82901f7f035c1d708c3a",
       "build": {
-        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "bitmap-transparent-compositing",
+      "entry": "text-italic",
       "renderer": "canvas",
-      "pixelSha256": "4b70457e40a79254ddf63187567b92862626e226978a065e66bc974956ab3910",
+      "pixelSha256": "7d95386ebc8d3982b74027d57bedf1cf24c45625f01f82901f7f035c1d708c3a",
       "build": {
-        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -32,11 +32,11 @@
       }
     },
     {
-      "entry": "bitmap-transparent-compositing",
+      "entry": "text-italic",
       "renderer": "webgl",
-      "pixelSha256": "3b2fa07e16ae8f98a5ec294ad1dec201eec65aaadff60a970605c82e319bf6e1",
+      "pixelSha256": "7d95386ebc8d3982b74027d57bedf1cf24c45625f01f82901f7f035c1d708c3a",
       "build": {
-        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -46,11 +46,11 @@
       }
     },
     {
-      "entry": "bitmap-transparent-compositing",
+      "entry": "text-italic",
       "renderer": "webgpu",
-      "pixelSha256": "7181f103625ba55c88ce9106e3b7befc3d6fe58a3cae5bcd474961d9458e6d4f",
+      "pixelSha256": "7d95386ebc8d3982b74027d57bedf1cf24c45625f01f82901f7f035c1d708c3a",
       "build": {
-        "commit": "a69907a83c6ff3b3de8935e42c221b780c180296",
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
         "dirty": [],
         "dirtyOmitted": 0
       },
