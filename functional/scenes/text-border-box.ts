@@ -1,3 +1,12 @@
+// ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
+// the subject is a ONE-PIXEL stroke on an 800x600 frame. Each grid cell averages ~1875 pixels of which ~50
+// are stroke, so a correct render lifts a cell by 3-7 of 255 and committed contrast is 0.27-0.54. That is the
+// correct render, not a faint one. `assertRender` scans a band across the top edge for >= 12 border-coloured
+// samples and checks an interior and an exterior point, which does see a 1px stroke.
+//
+// There is nothing here to close. The limitation is structural — the fingerprint cannot represent this
+// subject — rather than a missing capability, so this must never be filed later as an unfixed gap.
+//
 // text-border-box — validates the RichText field border stroke: with data.border = true and
 // data.borderColor set, the renderer strokes the field box edges (data.width x data.height at the field
 // origin) with that color. Purely visual — the stroke is a renderer concern, not part of layout — so only a

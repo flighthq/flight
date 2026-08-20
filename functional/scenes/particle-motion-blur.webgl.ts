@@ -1,3 +1,11 @@
+// ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
+// the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
+// committed contrast is 0.57-0.62. `assertRender` requires >= 0.8% mid-dim coverage and <= 0.05% of the frame
+// left at full particle brightness, which does see the smear.
+//
+// There is nothing here to close. The limitation is structural — the fingerprint cannot represent this
+// subject — rather than a missing capability, so this must never be filed later as an unfixed gap.
+//
 import type { Bitmap, Node2D, GlRenderEffectPipeline, GlRenderTarget } from '@flighthq/sdk';
 import {
   ParticleEmitter2DKind,

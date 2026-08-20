@@ -1,3 +1,12 @@
+// ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
+// the subject is sub-cell by construction. A 256x256 checkerboard minified to 0.3x averages to flat grey in
+// a 16x16 grid whether smoothing is ON or OFF, so the two states this scene exists to tell apart produce the
+// SAME fingerprint; committed contrast is 0.01. `assertRender` classifies sampled pixels as mid-grey or
+// near-pure and requires zero mid-greys under nearest and several under bilinear, which does separate them.
+//
+// There is nothing here to close. The limitation is structural — the fingerprint cannot represent this
+// subject — rather than a missing capability, so this must never be filed later as an unfixed gap.
+//
 // This Canvas/DOM pair exercises the native 2D sampling paths. The GPU backends no longer have the old
 // global-filter limitation: `bitmap-perbitmap-smoothing` proves that Gl reapplies sampler state per bind
 // and Wgpu selects the Texture's LINEAR/NEAREST sampler variant per draw.

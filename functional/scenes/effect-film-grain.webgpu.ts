@@ -1,3 +1,12 @@
+// ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
+// the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
+// precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
+// 0.55. `assertRender` measures adjacent-pixel energy (>= 4) and bounds mean luma to 120..210 so a wash to
+// black or white cannot pass as grain, which does see it.
+//
+// There is nothing here to close. The limitation is structural — the fingerprint cannot represent this
+// subject — rather than a missing capability, so this must never be filed later as an unfixed gap.
+//
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
