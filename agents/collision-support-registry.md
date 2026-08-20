@@ -105,7 +105,7 @@ Two shape unions, two entry points, two registries. Passing a sphere to `testCol
 compile error because the unions never unify. **The registry is open along the axis meant to grow
 (shapes) and closed along the axis that must not (dimension).**
 
-This is why the chartered `testCollision2D` → `testCollision2D` / `testCollision3D` rename is
+This is why the chartered `testCollision` → `testCollision2D` / `testCollision3D` rename is
 load-bearing rather than cosmetic: it *is* the boundary that replaces the graph's role. The SDK
 already solves this same shape the same way — `registerRenderer(state, FooKind, renderer)` is one
 registry pattern serving both dimensions, separated by distinct entry points and state
@@ -126,21 +126,21 @@ land on the current structure.
 
 1. **The guard does not warn on the sentinel the explain seam classifies.** The diagnostics layer
    here is mostly built and should not be rebuilt: `shapeKindRank` returns `-1` for an unrecognized
-   kind and `testCollision2D` clears the manifold and reports non-overlapping
-   (`collision/src/testCollision2D.ts:41-45`), but `explainCollisionTest2D` already distinguishes that
-   sentinel from a real separation — `getCollisionShapeValidationStatus2D` returns
+   kind and `testCollision` clears the manifold and reports non-overlapping
+   (`collision/src/testCollision.ts:41-45`), but `explainCollisionTest` already distinguishes that
+   sentinel from a real separation — `getCollisionShapeValidationStatus` returns
    `'unsupported-shape-kind'` for `segment`, `point`, and every unknown kind
    (`collisionShapeValidation.ts:84-90`), and the status is in the public union.
    The residual gap is one branch wide: `warnOnInvalidCollisionShapes` fires only on
    `'degenerate-shape'` and `'non-convex-polygon'` (`enableCollisionGuards.ts:24-33`), so with guards
-   **enabled**, feeding `testCollision2D` a vendor kind still returns a silent `false` and logs
+   **enabled**, feeding `testCollision` a vendor kind still returns a silent `false` and logs
    nothing. A missed collision is the worst available sentinel, and it is exactly the case the guard
    skips. **Add the `'unsupported-shape-kind'` arm to the guard** — a few lines, not a layer. The
    compile-time half of the boundary is defect 2's job.
-2. **The kind union is open but the shape union is closed.** `CollisionShapeKind2D` admits any string
-   via `(string & {})` (`types/src/Collision.ts:13`), but `CollisionShape2D` is a closed tagged union
+2. **The kind union is open but the shape union is closed.** `CollisionShapeKind` admits any string
+   via `(string & {})` (`types/src/Collision.ts:13`), but `CollisionShape` is a closed tagged union
    of exactly the six built-ins (`types/src/Collision.ts:66-72`). A custom kind cannot be constructed
-   as a `CollisionShape2D` without a cast, so the advertised vendor extensibility does not exist. Fixing
+   as a `CollisionShape` without a cast, so the advertised vendor extensibility does not exist. Fixing
    the dispatcher alone would leave the type still closed — **both halves move together or neither
    does.**
 3. **Both generic dispatchers are closed `switch` ladders**, already recorded as open in
@@ -208,7 +208,7 @@ Adopt the support-function registry, keep `@flighthq/collision` unified, and seq
 
 1. **Rule this proposal.** Nothing below is safe to start first.
 2. **Split the types by dimension** — `CollisionShape2D` / `CollisionShape3D` and the matching
-   manifolds — and rename `testCollision2D` to `testCollision2D`. This is the boundary, and it is
+   manifolds — and rename `testCollision` to `testCollision2D`. This is the boundary, and it is
    worth landing on its own because it is mechanical and independently correct.
 3. **Close defect 1** (one guard arm for `'unsupported-shape-kind'`) and **defect 2** (open kind /
    closed union) together, since both are about the same lie in the type — one at runtime, one at
@@ -227,7 +227,7 @@ To append to `agents/packages/collision/charter.md` under Decisions if ruled:
 > shape through a shared GJK/EPA core; pair specializations register over that floor where they earn
 > it, last-write-wins. Rationale: the pair matrix costs O(N²) authored functions in N shapes — 10
 > today, 21 for the chartered 3D set — while support functions cost O(N), and the vendor
-> extensibility the open `CollisionShapeKind2D` already advertises is unreachable without it. The
+> extensibility the open `CollisionShapeKind` already advertises is unreachable without it. The
 > generic core does not replace contact clipping, which needs face topology a support function hides.
 > Because the core is then dimension-independent, the package stays **unified**, superseding nothing
 > in the 2026-07-15 ruling but supplying the reason it holds. The dimension boundary is carried by
@@ -238,7 +238,7 @@ To append to `agents/packages/collision/charter.md` under Decisions if ruled:
 
 ## What is not proposed
 
-- **No change to the manifold contract.** `CollisionManifold2D` and `CollisionContactManifold2D` stay two
+- **No change to the manifold contract.** `CollisionManifold` and `CollisionContactManifold` stay two
   lanes, per the 2026-07-29 decision; the cheap overlap path must not start linking clipping
   machinery.
 - **No change to argument-order semantics.** The 2026-07-29 ruling that stable ordering is the

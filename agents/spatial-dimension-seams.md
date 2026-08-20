@@ -3,7 +3,7 @@
 **Status: RATIFIED 2026-08-20 by the user.** The ruling is recorded in the
 [spatial charter](packages/spatial/charter.md) Decisions; this note is the reasoning behind it.
 
-Read before adding a 3D broadphase backend, widening `SpatialAabb2D`, or acting on the 2026-07-15
+Read before adding a 3D broadphase backend, widening `SpatialAabb`, or acting on the 2026-07-15
 unified-2D+3D decision in the [spatial charter](packages/spatial/charter.md). That decision is sound;
 its wording describes a seam that does not exist, and this note supplies the shape that makes it true.
 
@@ -22,34 +22,34 @@ gain 3D twins, exactly as `register.md` already prescribes for a unified package
 The seam is 2D at every point a dimension could enter (`types/src/Spatial.ts`):
 
 ```ts
-export interface SpatialAabb2D {            // :21 — no z
+export interface SpatialAabb {            // :21 — no z
   minX: number; minY: number; maxX: number; maxY: number;
 }
 
-export interface SpatialIndexBackend2D {    // :43
-  insertSpatialObject2D(id: SpatialObjectId, bounds: Readonly<SpatialAabb2D>): boolean;
-  querySpatialPoint2D(x: number, y: number, out: SpatialObjectId[]): void;
-  querySpatialRay2D(x: number, y: number, dx: number, dy: number, out: SpatialObjectId[]): void;
+export interface SpatialIndexBackend {    // :43
+  insertSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean;
+  querySpatialPoint(x: number, y: number, out: SpatialObjectId[]): void;
+  querySpatialRay(x: number, y: number, dx: number, dy: number, out: SpatialObjectId[]): void;
   // …
 }
 ```
 
 A BVH or octree cannot register behind that, because the bounds type it would be handed has no third
 axis and the point/ray queries have no third argument. The charter's own Open direction 4 ("BVH and
-octree … behind the same `SpatialIndexBackend2D` seam") describes something the type system forbids.
+octree … behind the same `SpatialIndexBackend` seam") describes something the type system forbids.
 
-The type file even records the 2D-ness as deliberate, noting `SpatialAabb2D` is "distinct from
+The type file even records the 2D-ness as deliberate, noting `SpatialAabb` is "distinct from
 `@flighthq/geometry`'s `Aabb`, whose corners are 3D." The seam was correctly built for the job it had;
 it was never dimension-generic, and the decision text assumed it was.
 
 ## Why not simply widen the seam
 
-Adding `z` to `SpatialAabb2D` and a third argument to the queries is the obvious move and the wrong one.
+Adding `z` to `SpatialAabb` and a third argument to the queries is the obvious move and the wrong one.
 
 The seam's consumers are `camera`, `interaction`, `physics2d`, and `sdk` — and **every current
 consumer is 2D**. `camera` uses it for culling and `interaction` for hit testing. Widening makes all
 of them carry a dimension they do not have, store bounds a third larger, and read
-`querySpatialRay2D(x, y, z, dx, dy, dz)` for a two-dimensional hit test.
+`querySpatialRay(x, y, z, dx, dy, dz)` for a two-dimensional hit test.
 
 That is the standing bundle invariant, stated as a rule in `AGENTS.md`: *an assembly never inflates
 the bundle cost of a primitive.* A 3D capability is an assembly here; the 2D index is the primitive.
@@ -87,7 +87,7 @@ export type SpatialIndexingReason = SpatialDeclineReason | 'invalid-cell-size' |
 ```
 
 Object identity, the oversized-extent overflow policy, declining non-finite bounds, `bucketCount` as
-the cost measure, and the whole `explainSpatialIndexing2D` seam are identical in three dimensions. That
+the cost measure, and the whole `explainSpatialIndexing` seam are identical in three dimensions. That
 is a real shared layer, and it is precisely what `collision` lacks — which is why the two packages get
 opposite answers from the same test.
 
@@ -100,12 +100,12 @@ explicit suffixes"*, with `Camera2D`/`Camera3D` as the precedent:
 
 | Today | Becomes | Plus |
 | --- | --- | --- |
-| `SpatialAabb2D` | `SpatialAabb2D` | `SpatialAabb3D` |
-| `SpatialIndexBackend2D` | `SpatialIndexBackend2D` | `SpatialIndexBackend3D` |
-| `SpatialIndex2D` | `SpatialIndex2D` | `SpatialIndex3D` |
-| `SpatialIndexRuntime2D` | `SpatialIndexRuntime2D` | `SpatialIndexRuntime3D` |
+| `SpatialAabb` | `SpatialAabb2D` | `SpatialAabb3D` |
+| `SpatialIndexBackend` | `SpatialIndexBackend2D` | `SpatialIndexBackend3D` |
+| `SpatialIndex` | `SpatialIndex2D` | `SpatialIndex3D` |
+| `SpatialIndexRuntime` | `SpatialIndexRuntime2D` | `SpatialIndexRuntime3D` |
 | `SpatialPair` | `SpatialPair2D` | `SpatialPair3D` |
-| `createSpatialIndex2D` | `createSpatialIndex2D` | `createSpatialIndex3D` |
+| `createSpatialIndex` | `createSpatialIndex2D` | `createSpatialIndex3D` |
 
 `SpatialPair` carries only two ids and is structurally dimension-free; it is suffixed anyway so that
 a pair cannot be handed to the wrong index's confirm step. If that reads as noise at implementation
@@ -122,7 +122,7 @@ would double the diagnostics vocabulary for nothing.
 
 - `createQuadtreeSpatialBackend` (2D) and `createOctreeSpatialBackend` (3D) — distinct words, no
   suffix.
-- `createUniformGridSpatialBackend2D` → **needs** a suffix; a grid is dimension-ambiguous.
+- `createUniformGridSpatialBackend` → **needs** a suffix; a grid is dimension-ambiguous.
 - `createSweepAndPruneSpatialBackend` and `createBvhSpatialBackend` — both ambiguous, both suffixed.
 
 ## Blast radius
@@ -149,16 +149,16 @@ To append to `agents/packages/spatial/charter.md` under Decisions if ruled:
 
 > **[2026-08-20] Two dimension-native seams in one package, over a shared policy layer.** The
 > 2026-07-15 unification holds — `spatial` stays one package — but 3D does **not** arrive behind the
-> existing `SpatialIndexBackend2D`, which is 2D in its types (`SpatialAabb2D` has no z; the point and ray
+> existing `SpatialIndexBackend`, which is 2D in its types (`SpatialAabb` has no z; the point and ray
 > queries take no third axis) and was never dimension-generic. The seam is suffixed
 > (`SpatialIndexBackend2D` / `SpatialIndexBackend3D`, `SpatialAabb2D` / `SpatialAabb3D`,
 > `createSpatialIndex2D` / `createSpatialIndex3D`) while the policy vocabulary that is genuinely
 > dimension-free — object identity, indexing mode, decline reasons, `bucketCount`, the
-> `explainSpatialIndexing2D` seam — stays unsuffixed and shared. Widening one seam to three dimensions
+> `explainSpatialIndexing` seam — stays unsuffixed and shared. Widening one seam to three dimensions
 > was rejected: every current consumer (`camera`, `interaction`, `physics2d`) is 2D and would pay for
 > an axis it does not use, which is the bundle invariant. Backend factories suffix only where the
 > structure's name is dimension-ambiguous, so `createQuadtreeSpatialBackend` and
-> `createOctreeSpatialBackend` need none while `createUniformGridSpatialBackend2D` does. User-directed.
+> `createOctreeSpatialBackend` need none while `createUniformGridSpatialBackend` does. User-directed.
 
 Open direction 4 in the same charter should be reworded at the same time: BVH and octree arrive
 behind the **3D** seam, not "the same" one.
