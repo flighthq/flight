@@ -71,7 +71,7 @@ services:
 
 layouts:
   default:
-    expr: '((principal manager foreman auditor) | (@builder integration)):80 / (host $serve):20'
+    expr: '((principal manager foreman auditor integration) | (@builder)):80 / (host $serve):20'
 
 default: default
 
@@ -81,10 +81,11 @@ presets:
     agents:
       principal: { role: principal }
       manager: { role: manager }
-      integration: { role: integration }
+      integration: { role: integration, runtimeProfile: codex-sbx }
       auditor: { role: auditor, runtimeProfile: codex-sbx }
-      foreman: { role: foreman }
+      foreman: { role: foreman, runtimeProfile: codex-sbx }
       builder: { role: builder }
       builder2: { role: builder }
       builder3: { role: builder, runtimeProfile: codex-sbx }
       builder4: { role: builder, runtimeProfile: codex-sbx }
+      builder5: { role: builder, runtimeProfile: codex-sbx }
