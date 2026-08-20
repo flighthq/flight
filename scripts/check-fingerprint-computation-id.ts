@@ -10,27 +10,27 @@ export interface FingerprintBaselineInput {
   text: string;
 }
 
-export interface FingerprintSourceHashAllowance {
+export interface FingerprintComputationIdAllowance {
   path: string;
   reason: string;
   renderer: string;
 }
 
-export interface FingerprintSourceHashAllowanceResult extends FingerprintSourceHashAllowance {
+export interface FingerprintComputationIdAllowanceResult extends FingerprintComputationIdAllowance {
   state: 'full' | 'partial' | 'invalid' | 'missing' | 'unavailable';
 }
 
-export interface FingerprintSourceHashReport {
-  allowances: FingerprintSourceHashAllowanceResult[];
+export interface FingerprintComputationIdReport {
+  allowances: FingerprintComputationIdAllowanceResult[];
   computationMismatches: number;
   fingerprintColumns: number;
   full: number;
   partial: number;
   unavailable: number;
-  violations: FingerprintSourceHashViolation[];
+  violations: FingerprintComputationIdViolation[];
 }
 
-export interface FingerprintSourceHashViolation {
+export interface FingerprintComputationIdViolation {
   detail: string;
   path: string;
   renderer?: string;
@@ -45,7 +45,7 @@ const UNAVAILABLE_REASON =
 // fingerprint was uniform (one distinct cell of 256), which the repo refuses to write today because it
 // matches any uniform frame and so cannot fail. Dropping that fingerprint left real evidence behind and
 // removed the gap this list existed to name.
-export const FINGERPRINT_SOURCE_HASH_ALLOWANCES: readonly FingerprintSourceHashAllowance[] = [
+export const FINGERPRINT_COMPUTATION_ID_ALLOWANCES: readonly FingerprintComputationIdAllowance[] = [
   allowance('functional/baselines/bitmap-perbitmap-smoothing.json', 'webgpu'),
   allowance('functional/baselines/shape-stroke-joints.json', 'webgl'),
   allowance('functional/baselines/shape-stroke-joints.json', 'webgpu'),
@@ -54,12 +54,12 @@ export const FINGERPRINT_SOURCE_HASH_ALLOWANCES: readonly FingerprintSourceHashA
 ];
 
 /** Checks that every fingerprint column carries write-time scene-source evidence or a named honest gap. */
-export function checkFingerprintSourceHashes(
+export function checkFingerprintComputationIds(
   inputs: readonly FingerprintBaselineInput[],
-  allowances: readonly FingerprintSourceHashAllowance[],
-): FingerprintSourceHashReport {
-  const violations: FingerprintSourceHashViolation[] = [];
-  const states = new Map<string, FingerprintSourceHashAllowanceResult['state']>(
+  allowances: readonly FingerprintComputationIdAllowance[],
+): FingerprintComputationIdReport {
+  const violations: FingerprintComputationIdViolation[] = [];
+  const states = new Map<string, FingerprintComputationIdAllowanceResult['state']>(
     allowances.map((entry) => [allowanceKey(entry.path, entry.renderer), 'missing']),
   );
   let computationMismatches = 0;
@@ -136,7 +136,7 @@ export function checkFingerprintSourceHashes(
     }
   }
 
-  const allowanceResults = allowances.map<FingerprintSourceHashAllowanceResult>((entry) => ({
+  const allowanceResults = allowances.map<FingerprintComputationIdAllowanceResult>((entry) => ({
     ...entry,
     state: states.get(allowanceKey(entry.path, entry.renderer)) ?? 'missing',
   }));
@@ -161,7 +161,7 @@ export function checkFingerprintSourceHashes(
   };
 }
 
-export function formatFingerprintSourceHashReport(report: Readonly<FingerprintSourceHashReport>): string {
+export function formatFingerprintComputationIdReport(report: Readonly<FingerprintComputationIdReport>): string {
   const passed = report.violations.length === 0;
   const summary = `full provenance ${report.full}; PROVENANCE-PARTIAL ${report.partial}; ${report.unavailable} honest gap${report.unavailable === 1 ? '' : 's'}`;
   const lines = [
@@ -182,7 +182,7 @@ export function formatFingerprintSourceHashReport(report: Readonly<FingerprintSo
   return lines.join('\n');
 }
 
-function allowance(path: string, renderer: string): FingerprintSourceHashAllowance {
+function allowance(path: string, renderer: string): FingerprintComputationIdAllowance {
   return { path, reason: UNAVAILABLE_REASON, renderer };
 }
 
@@ -190,7 +190,7 @@ function allowanceKey(path: string, renderer: string): string {
   return `${path}:${renderer}`;
 }
 
-function allowanceStateLabel(state: FingerprintSourceHashAllowanceResult['state']): string {
+function allowanceStateLabel(state: FingerprintComputationIdAllowanceResult['state']): string {
   switch (state) {
     case 'full':
       return 'full provenance recorded; allowance ready';
@@ -249,8 +249,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function main(): void {
-  const report = checkFingerprintSourceHashes(getBaselineInputs(root), FINGERPRINT_SOURCE_HASH_ALLOWANCES);
-  console.log(formatFingerprintSourceHashReport(report));
+  const report = checkFingerprintComputationIds(getBaselineInputs(root), FINGERPRINT_COMPUTATION_ID_ALLOWANCES);
+  console.log(formatFingerprintComputationIdReport(report));
   if (report.violations.length > 0) process.exitCode = 1;
 }
 

@@ -1,13 +1,13 @@
 import {
-  checkFingerprintSourceHashes,
-  FINGERPRINT_SOURCE_HASH_ALLOWANCES,
-  formatFingerprintSourceHashReport,
-} from './check-fingerprint-source-hashes';
+  checkFingerprintComputationIds,
+  FINGERPRINT_COMPUTATION_ID_ALLOWANCES,
+  formatFingerprintComputationIdReport,
+} from './check-fingerprint-computation-id';
 
 describe('fingerprint source-hash completeness', () => {
   it('accepts a partial legacy column while labelling its named allowance and migration state', () => {
-    const allowance = FINGERPRINT_SOURCE_HASH_ALLOWANCES[0];
-    const report = checkFingerprintSourceHashes(
+    const allowance = FINGERPRINT_COMPUTATION_ID_ALLOWANCES[0];
+    const report = checkFingerprintComputationIds(
       [baseline(allowance.path, allowance.renderer, { fingerprint: 'coarse', sourceHash: 'scene' })],
       [allowance],
     );
@@ -20,13 +20,13 @@ describe('fingerprint source-hash completeness', () => {
       unavailable: 0,
       violations: [],
     });
-    expect(formatFingerprintSourceHashReport(report)).toContain(
+    expect(formatFingerprintComputationIdReport(report)).toContain(
       `${allowance.path}:${allowance.renderer} [PROVENANCE-PARTIAL sourceHash recorded; allowance ready] — ${allowance.reason}`,
     );
   });
 
   it('prefers full provenance over a disagreeing legacy sourceHash and counts the column once', () => {
-    const report = checkFingerprintSourceHashes(
+    const report = checkFingerprintComputationIds(
       [
         baseline('functional/baselines/mixed.json', 'webgl', {
           fingerprint: 'coarse',
@@ -38,7 +38,7 @@ describe('fingerprint source-hash completeness', () => {
     );
 
     expect(report).toMatchObject({ fingerprintColumns: 1, full: 1, partial: 0, violations: [] });
-    expect(formatFingerprintSourceHashReport(report)).toContain('full provenance 1; PROVENANCE-PARTIAL 0');
+    expect(formatFingerprintComputationIdReport(report)).toContain('full provenance 1; PROVENANCE-PARTIAL 0');
   });
 
   it('accepts EVERY named case, however many there are, only when both exact hashes are absent', () => {
@@ -46,9 +46,9 @@ describe('fingerprint source-hash completeness', () => {
     // INPUTS from that array, so a hardcoded total reads list-derived while pinning the list's size:
     // removing an allowance then fails here for the wrong reason, naming a count instead of the
     // behaviour. The title carries no number for the same reason.
-    const named = FINGERPRINT_SOURCE_HASH_ALLOWANCES.length;
-    const inputs = combineAllowances(FINGERPRINT_SOURCE_HASH_ALLOWANCES);
-    const report = checkFingerprintSourceHashes(inputs, FINGERPRINT_SOURCE_HASH_ALLOWANCES);
+    const named = FINGERPRINT_COMPUTATION_ID_ALLOWANCES.length;
+    const inputs = combineAllowances(FINGERPRINT_COMPUTATION_ID_ALLOWANCES);
+    const report = checkFingerprintComputationIds(inputs, FINGERPRINT_COMPUTATION_ID_ALLOWANCES);
 
     expect(report).toMatchObject({
       fingerprintColumns: named,
@@ -58,7 +58,7 @@ describe('fingerprint source-hash completeness', () => {
       violations: [],
     });
     expect(report.allowances.every((entry) => entry.state === 'unavailable')).toBe(true);
-    expect(formatFingerprintSourceHashReport(report)).toContain(
+    expect(formatFingerprintComputationIdReport(report)).toContain(
       `full provenance 0; PROVENANCE-PARTIAL 0; ${named} honest gaps`,
     );
     // Non-vacuous: an empty list would satisfy every assertion above.
@@ -66,7 +66,7 @@ describe('fingerprint source-hash completeness', () => {
   });
 
   it('fails an ordinary fingerprint column without sourceHash', () => {
-    const report = checkFingerprintSourceHashes(
+    const report = checkFingerprintComputationIds(
       [baseline('functional/baselines/ordinary.json', 'canvas', { fingerprint: 'coarse' })],
       [],
     );
@@ -81,8 +81,8 @@ describe('fingerprint source-hash completeness', () => {
   });
 
   it('does not let a named allowance hide a sha256-backed omission', () => {
-    const allowance = FINGERPRINT_SOURCE_HASH_ALLOWANCES[0];
-    const report = checkFingerprintSourceHashes(
+    const allowance = FINGERPRINT_COMPUTATION_ID_ALLOWANCES[0];
+    const report = checkFingerprintComputationIds(
       [baseline(allowance.path, allowance.renderer, { fingerprint: 'coarse', sha256: 'pixels' })],
       [allowance],
     );
@@ -94,8 +94,8 @@ describe('fingerprint source-hash completeness', () => {
   });
 
   it('requires sourceHash to be absent rather than empty in a named case', () => {
-    const allowance = FINGERPRINT_SOURCE_HASH_ALLOWANCES[0];
-    const report = checkFingerprintSourceHashes(
+    const allowance = FINGERPRINT_COMPUTATION_ID_ALLOWANCES[0];
+    const report = checkFingerprintComputationIds(
       [baseline(allowance.path, allowance.renderer, { fingerprint: 'coarse', sourceHash: '' })],
       [allowance],
     );
@@ -105,14 +105,14 @@ describe('fingerprint source-hash completeness', () => {
   });
 
   it('fails malformed baseline JSON', () => {
-    const report = checkFingerprintSourceHashes([{ path: 'functional/baselines/broken.json', text: '{' }], []);
+    const report = checkFingerprintComputationIds([{ path: 'functional/baselines/broken.json', text: '{' }], []);
 
     expect(report.violations).toHaveLength(1);
     expect(report.violations[0]?.detail).toMatch(/^invalid JSON:/);
   });
 
   it('detects a computation ID mismatch as a violation', () => {
-    const report = checkFingerprintSourceHashes(
+    const report = checkFingerprintComputationIds(
       [
         baseline('functional/baselines/stale-computation.json', 'webgl', {
           fingerprint: 'coarse',
@@ -129,7 +129,7 @@ describe('fingerprint source-hash completeness', () => {
   });
 
   it('accepts a matching computation ID without violation', () => {
-    const report = checkFingerprintSourceHashes(
+    const report = checkFingerprintComputationIds(
       [
         baseline('functional/baselines/current.json', 'webgl', {
           fingerprint: 'coarse',
@@ -144,7 +144,7 @@ describe('fingerprint source-hash completeness', () => {
   });
 
   it('tolerates absent computationId on legacy baselines', () => {
-    const report = checkFingerprintSourceHashes(
+    const report = checkFingerprintComputationIds(
       [
         baseline('functional/baselines/legacy.json', 'webgl', {
           fingerprint: 'coarse',
@@ -165,8 +165,8 @@ describe('fingerprint source-hash completeness', () => {
   });
 
   it('fails a stale allowance that no longer names a fingerprint column', () => {
-    const allowance = FINGERPRINT_SOURCE_HASH_ALLOWANCES[0];
-    const report = checkFingerprintSourceHashes(
+    const allowance = FINGERPRINT_COMPUTATION_ID_ALLOWANCES[0];
+    const report = checkFingerprintComputationIds(
       [baseline(allowance.path, 'canvas', { fingerprint: 'coarse' })],
       [allowance],
     );

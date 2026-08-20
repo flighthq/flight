@@ -377,7 +377,7 @@ Three ways a baseline loses its referent, all observed:
   Renaming them back restored seven real support marks. Deleting them would have destroyed the evidence.
 
 An orphan can also strand *evidence about evidence*: deleting a baseline left a now-dangling named allowance
-in `check-fingerprint-source-hashes.ts`. Check the allowance lists when removing a baseline.
+in `check-fingerprint-computation-id.ts`. Check the allowance lists when removing a baseline.
 
 ### A missing premise is labelled, never argued
 
