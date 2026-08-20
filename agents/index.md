@@ -102,6 +102,8 @@ which is why they are not in the map.
   each with its detection question, and what `untested` / `unchecked` can and cannot see. Read before
   writing tests for a residue, not only when auditing one.
 - [test depth review](test-depth-review.md) — the unit-test-depth review and its gap list.
+- [gate audit results](gate-audit-results.md) — fresh mutation specimens and observed failure output for
+  all 29 non-advisory whole-repository gates.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
 - [boundary-only checks](boundary-only-checks.md) — its mirror: checks that verify exactly what they
   claim and that CI cannot run, because each one's subject is a parcel and a parcel is not in the tree.
