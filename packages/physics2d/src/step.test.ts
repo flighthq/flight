@@ -1,9 +1,9 @@
-import { createUniformGridSpatialBackend } from '@flighthq/spatial/contract';
+import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
   Physics2DJoint,
   Physics2DWorld,
   RigidBody2D,
-  SpatialIndexBackend,
+  SpatialIndexBackend2D,
   SpatialPair,
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -48,8 +48,8 @@ function traceWorld(world: Readonly<Physics2DWorld>): string {
 // A broadphase that returns its pairs in reverse order, and one that swaps each pair's two ids. Both
 // wrap the real grid, so the candidate SET is identical and only its presentation differs — which is
 // what makes them isolate ordering rather than change the simulation.
-function createReversedPairBackend(): SpatialIndexBackend {
-  const inner = createUniformGridSpatialBackend(1);
+function createReversedPairBackend(): SpatialIndexBackend2D {
+  const inner = createUniformGridSpatialBackend2D(1);
   return {
     ...inner,
     querySpatialPairs(out: SpatialPair[]): void {
@@ -59,8 +59,8 @@ function createReversedPairBackend(): SpatialIndexBackend {
   };
 }
 
-function createSwappedPairBackend(): SpatialIndexBackend {
-  const inner = createUniformGridSpatialBackend(1);
+function createSwappedPairBackend(): SpatialIndexBackend2D {
+  const inner = createUniformGridSpatialBackend2D(1);
   return {
     ...inner,
     querySpatialPairs(out: SpatialPair[]): void {
@@ -882,7 +882,7 @@ describe('stepPhysics2D', () => {
     // ORDER-INDEPENDENCE, OBLIGATION 2 — the contact LIST sort.
     //
     // The harness injects a broadphase that reverses its pair list, leaving the bodies and their indices
-    // untouched. That isolates the variable that matters: `querySpatialPairs` walks a Map of Sets, so its
+    // untouched. That isolates the variable that matters: `querySpatialPairs2D` walks a Map of Sets, so its
     // order follows insertion and movement history, and a sequential-impulse solver applies each impulse
     // against the velocities the previous ones left. Without the canonical sort the answer would depend
     // on the broadphase's history.
@@ -1130,7 +1130,7 @@ describe('stepPhysics2D contact events', () => {
 describe('stepPhysics2D with joints', () => {
   const DISTANCE = 'Distance';
 
-  function jointedWorld(index?: SpatialIndexBackend) {
+  function jointedWorld(index?: SpatialIndexBackend2D) {
     const world = createPhysics2DWorld(0, -9.81, index);
     registerPhysics2DJointSolver(world, DISTANCE, physics2DDistanceJointSolver);
     ground(world);

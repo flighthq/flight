@@ -710,7 +710,7 @@ export interface Physics3DGeneric6DofJointOptions extends Physics3DJointFrameOpt
 // The simulation. A world owns its bodies, its contacts, its joints, and the solver state over them.
 //
 // It owns no broadphase index, which is the one structural difference from `Physics2DWorld`. That is
-// not an omission to fill in later with a physics-specific seam: `SpatialIndexBackend` is the swap
+// not an omission to fill in later with a physics-specific seam: `SpatialIndexBackend2D` is the swap
 // point, and its 3D counterpart does not exist yet. When it does, it attaches here exactly as the 2D
 // index attaches there.
 //

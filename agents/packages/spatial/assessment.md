@@ -36,13 +36,13 @@ TODO generator stops reporting them as work.
 Parked, with why:
 
 - **Quadtree backend (P2)** and **sort-and-sweep backend (P3)** — chartered phases; build order is the user's call, and the seam-signature questions below should settle first.
-- **Ray entry-`t` / nearest-first results** — changes the `SpatialIndexBackend` seam in `@flighthq/types`; settle once before backends multiply. Surface to charter Open directions.
+- **Ray entry-`t` / nearest-first results** — changes the `SpatialIndexBackend2D` seam in `@flighthq/types`; settle once before backends multiply. Surface to charter Open directions.
 - **`SpatialPair` result protocol (objects vs flat interleaved ids)** — same seam-signature category; cross-cuts the header layer.
 - **Persistent pair tracking (enter/stay/exit events)** — charter Open direction 3; composition shape (signals layer over raw query vs backend feature) is undecided.
 
 ## Approved
 
-- [2026-07-31 · completed] `updateSpatialObject` compares the old and new covered cell ranges and,
+- [2026-07-31 · completed] `updateSpatialObject2D` compares the old and new covered cell ranges and,
   when unchanged, overwrites only the private stored bounds instead of removing and reinserting the
   object across its cells.
 - [2026-08-01 · picked] Pair-scan de-allocation, complete indexing-notice coverage, deterministic

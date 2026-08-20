@@ -56,7 +56,7 @@ import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
 //      the points and renumber their feature ids, which discards the warm-start cache.
 //   2. The contact LIST is sorted, because a sequential-impulse solver is order-dependent by
 //      construction — each impulse is applied against the velocities the previous ones left behind — and
-//      `querySpatialPairs` walks a Map of Sets, so its order follows insertion and movement history.
+//      `querySpatialPairs2D` walks a Map of Sets, so its order follows insertion and movement history.
 //
 // Neither substitutes for the other: the first fixes contact identity, the second fixes solve order.
 // A determinism harness that shuffles only insertion order would pass with the first one broken.

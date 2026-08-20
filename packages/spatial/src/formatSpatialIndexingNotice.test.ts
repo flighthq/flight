@@ -2,7 +2,11 @@ import type { SpatialIndexingNotice } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { formatSpatialIndexingNotice } from './formatSpatialIndexingNotice';
-import { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend, setSpatialIndexingGuard } from './uniformGrid';
+import {
+  MAX_INDEXED_CELLS_PER_OBJECT,
+  createUniformGridSpatialBackend2D,
+  setSpatialIndexingGuard,
+} from './uniformGrid';
 
 afterEach(() => {
   setSpatialIndexingGuard(null);
@@ -18,7 +22,7 @@ describe('formatSpatialIndexingNotice', () => {
       reason: 'non-finite-bounds',
       wouldOccupyBucketCount: 0,
     });
-    expect(message).toContain('insertSpatialObject(3)');
+    expect(message).toContain('insertSpatialObject2D(3)');
     expect(message).toContain('not finite');
     expect(message).toContain('returns false');
   });
@@ -32,7 +36,7 @@ describe('formatSpatialIndexingNotice', () => {
       reason: null,
       wouldOccupyBucketCount: 40000,
     });
-    expect(message).toContain('insertSpatialObject(4)');
+    expect(message).toContain('insertSpatialObject2D(4)');
     expect(message).toContain('40000 cells');
     expect(message).toContain(`${MAX_INDEXED_CELLS_PER_OBJECT} per-object budget`);
     expect(message).toContain('cellSize is too small');
@@ -90,7 +94,7 @@ describe('formatSpatialIndexingNotice', () => {
     // Pins the two halves together: a record produced by a real insert, rendered by this formatter.
     const notices: SpatialIndexingNotice[] = [];
     setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
-    const grid = createUniformGridSpatialBackend(1);
+    const grid = createUniformGridSpatialBackend2D(1);
     grid.insertSpatialObject(9, { minX: 0, minY: 0, maxX: 199, maxY: 199 });
     grid.insertSpatialObject(10, { minX: NaN, minY: 0, maxX: 1, maxY: 1 });
     expect(notices.map(formatSpatialIndexingNotice)).toEqual([

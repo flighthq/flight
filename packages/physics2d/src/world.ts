@@ -1,4 +1,4 @@
-import { createUniformGridSpatialBackend } from '@flighthq/spatial/contract';
+import { createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import type {
   CollisionShape2D,
   Physics2DCollisionFilter,
@@ -7,7 +7,7 @@ import type {
   Physics2DSolverConfig,
   Physics2DWorld,
   RigidBody2D,
-  SpatialIndexBackend,
+  SpatialIndexBackend2D,
 } from '@flighthq/types/contract';
 
 import { synchronizePhysics2DBroadphase } from './broadphase';
@@ -235,9 +235,9 @@ export function createPhysics2DSolverConfig(): Physics2DSolverConfig {
 }
 
 // Creates an empty world. `index` defaults to a uniform grid; pass one to swap the broadphase structure
-// without this package knowing which it got — `SpatialIndexBackend` is already that seam, so physics
+// without this package knowing which it got — `SpatialIndexBackend2D` is already that seam, so physics
 // adds no second one over it.
-export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: SpatialIndexBackend): Physics2DWorld {
+export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: SpatialIndexBackend2D): Physics2DWorld {
   return {
     version: Physics2DWorldVersion,
     bodies: [],
@@ -248,7 +248,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     jointCollisionSuppressions: new Map(),
     events: { began: [], ended: [] },
     contactHooks: { preSolve: null, postSolve: null },
-    index: index ?? createUniformGridSpatialBackend(1),
+    index: index ?? createUniformGridSpatialBackend2D(1),
     config: createPhysics2DSolverConfig(),
     islandParents: new Map(),
     islandSleepTimers: new Map(),

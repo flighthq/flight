@@ -2,7 +2,7 @@ import type { SpatialObjectId } from './Spatial';
 
 // Plain-data answer to "how is this object held, and why is it not in my query results?" — the pull
 // half of the diagnostics convention for `@flighthq/spatial`. Recomputed on demand by
-// explainSpatialIndexing from the backend's live state, holding no reference to it. Format for humans
+// explainSpatialIndexing2D from the backend's live state, holding no reference to it. Format for humans
 // in a separate format* companion, never here.
 export interface SpatialIndexingExplanation {
   readonly id: SpatialObjectId;

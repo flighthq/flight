@@ -1,7 +1,7 @@
 import { setRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeLocalBoundsRectangle, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createDisplayObject, createNode2D } from '@flighthq/scene2d/contract';
-import { createSpatialIndex, createUniformGridSpatialBackend } from '@flighthq/spatial/contract';
+import { createSpatialIndex2D, createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { hitTestGraphLocalBounds, registerHitTest } from './hitTests';
@@ -22,7 +22,7 @@ function candidate(x: number, y: number, w: number, h: number) {
 function managedScene3D() {
   registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);
   const root = createDisplayObject();
-  const index = createSpatialIndex(createUniformGridSpatialBackend(64));
+  const index = createSpatialIndex2D(createUniformGridSpatialBackend2D(64));
   const manager = createInteractionManager(root, { spatialIndex: index });
   return { manager, root };
 }

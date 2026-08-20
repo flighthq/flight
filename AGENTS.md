@@ -146,7 +146,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [render view model](agents/render-view-model.md) — **unratified.** Before touching `ApplicationRenderView`, `application-gl`, or the `render` sub-target Directed item. Extracting a windowless `RenderView` into `render`.
 - [draw order model](agents/draw-order-model.md) — before adding an ordering field to a node, giving a format importer its own child-reordering pass, or deciding where a draw-order timeline binds. Child order is the only order; ordering is a caller-owned `NodeOrderList`.
 - [collision support registry](agents/collision-support-registry.md) — before adding a collision shape, touching a dispatcher, or renaming for 3D. The support-function core and the 2D/3D boundary.
-- [spatial dimension seams](agents/spatial-dimension-seams.md) — before adding a 3D broadphase backend or widening `SpatialAabb`. Two suffixed seams, one policy layer.
+- [spatial dimension seams](agents/spatial-dimension-seams.md) — before adding a 3D broadphase backend or widening `SpatialAabb2D`. Two suffixed seams, one policy layer.
 - [texture color space](agents/texture-color-space-model.md) — **unratified.** Before touching `Texture.colorSpace`, the `resolveGl*/resolveWgpu*Texture` resolvers, or adding a color-space-aware op to the 2D path. Where Flight decodes and where it encodes.
 
 The full `agents/` library — plans, reviews, breadth analyses, and every record not triggered by a rule above — is indexed in [`agents/index.md`](agents/index.md). Read it when you need a doc you could not reach from this map.

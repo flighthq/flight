@@ -1,4 +1,4 @@
-import type { Shape, SpatialAabb, SpatialObjectId, SpatialPair } from '@flighthq/sdk';
+import type { Shape, SpatialAabb2D, SpatialObjectId, SpatialPair } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -15,14 +15,14 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 import {
-  createSpatialIndex,
-  createUniformGridSpatialBackend,
-  insertSpatialObject,
-  querySpatialPairs,
-  querySpatialPoint,
-  querySpatialRay,
-  querySpatialRegion,
-  updateSpatialObject,
+  createSpatialIndex2D,
+  createUniformGridSpatialBackend2D,
+  insertSpatialObject2D,
+  querySpatialPairs2D,
+  querySpatialPoint2D,
+  querySpatialRay2D,
+  querySpatialRegion2D,
+  updateSpatialObject2D,
 } from '@flighthq/sdk/game';
 
 import { canvas, render, scale } from './render';
@@ -48,11 +48,11 @@ const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
 
-const index = createSpatialIndex(createUniformGridSpatialBackend(100));
+const index = createSpatialIndex2D(createUniformGridSpatialBackend2D(100));
 
 interface SpatialObject {
   id: SpatialObjectId;
-  bounds: SpatialAabb;
+  bounds: SpatialAabb2D;
   shape: Shape;
   vx: number;
   vy: number;
@@ -85,7 +85,7 @@ for (let i = 0; i < OBJECT_COUNT; i++) {
   const h = randomRange(20, 60);
   const x = randomRange(10, CANVAS_WIDTH - w - 10);
   const y = randomRange(40, CANVAS_HEIGHT - h - 50);
-  const bounds: SpatialAabb = { minX: x, minY: y, maxX: x + w, maxY: y + h };
+  const bounds: SpatialAabb2D = { minX: x, minY: y, maxX: x + w, maxY: y + h };
 
   const shape = createShape();
   addNodeChild(root, shape);
@@ -101,7 +101,7 @@ for (let i = 0; i < OBJECT_COUNT; i++) {
     vy: isMoving ? randomRange(-speed, speed) : 0,
   });
 
-  insertSpatialObject(index, i, bounds);
+  insertSpatialObject2D(index, i, bounds);
 }
 
 // Query visualization overlay: draws region box, ray line, or point marker.
@@ -261,7 +261,7 @@ function enterFrame(): void {
       obj.vy = -Math.abs(obj.vy);
     }
 
-    updateSpatialObject(index, obj.id, obj.bounds);
+    updateSpatialObject2D(index, obj.id, obj.bounds);
   }
 
   // Determine which objects to highlight based on the active query mode.
@@ -269,14 +269,14 @@ function enterFrame(): void {
   let resultCount = 0;
 
   if (activeMode === 'pairs') {
-    querySpatialPairs(index, pairsOut);
+    querySpatialPairs2D(index, pairsOut);
     resultCount = pairsOut.length;
     for (let i = 0; i < pairsOut.length; i++) {
       highlightSet.add(pairsOut[i].a);
       highlightSet.add(pairsOut[i].b);
     }
   } else if (activeMode === 'point') {
-    querySpatialPoint(index, mouseX, mouseY, idsOut);
+    querySpatialPoint2D(index, mouseX, mouseY, idsOut);
     resultCount = idsOut.length;
     for (let i = 0; i < idsOut.length; i++) {
       highlightSet.add(idsOut[i]);
@@ -284,19 +284,19 @@ function enterFrame(): void {
   } else if (activeMode === 'ray') {
     const dx = mouseX;
     const dy = mouseY - CANVAS_HEIGHT / 2;
-    querySpatialRay(index, 0, CANVAS_HEIGHT / 2, dx, dy, idsOut);
+    querySpatialRay2D(index, 0, CANVAS_HEIGHT / 2, dx, dy, idsOut);
     resultCount = idsOut.length;
     for (let i = 0; i < idsOut.length; i++) {
       highlightSet.add(idsOut[i]);
     }
   } else if (activeMode === 'region') {
-    const region: SpatialAabb = {
+    const region: SpatialAabb2D = {
       minX: mouseX - 50,
       minY: mouseY - 50,
       maxX: mouseX + 50,
       maxY: mouseY + 50,
     };
-    querySpatialRegion(index, region, idsOut);
+    querySpatialRegion2D(index, region, idsOut);
     resultCount = idsOut.length;
     for (let i = 0; i < idsOut.length; i++) {
       highlightSet.add(idsOut[i]);

@@ -121,7 +121,7 @@ export function createPhysics3DSolverConfig(): Physics3DSolverConfig {
 // Allocates an empty world under earth gravity along -Y.
 //
 // The world owns no broadphase index, unlike `Physics2DWorld`. That is not an omission to be filled by
-// a physics-specific seam: `SpatialIndexBackend` is the swap point and its 3D counterpart does not
+// a physics-specific seam: `SpatialIndexBackend2D` is the swap point and its 3D counterpart does not
 // exist yet, so contacts are supplied by the caller until it does.
 export function createPhysics3DWorld(): Physics3DWorld {
   return {

@@ -1,6 +1,6 @@
 import type {
-  SpatialAabb,
-  SpatialIndexBackend,
+  SpatialAabb2D,
+  SpatialIndexBackend2D,
   SpatialDeclineReason,
   SpatialIndexingExplanation,
   SpatialIndexingGuard,
@@ -35,13 +35,13 @@ export const MAX_INDEXED_CELLS_PER_OBJECT = 1024;
 // good value is a positive finite number roughly the size of a typical object (too small over-spans
 // large objects across many cells, too large lumps unrelated objects together). An invalid size uses
 // the bounded overflow path to keep results correct and reports through the indexing guard. No
-// import-time side effect — the caller constructs a grid explicitly, and createSpatialIndex uses
+// import-time side effect — the caller constructs a grid explicitly, and createSpatialIndex2D uses
 // this as its default index.
 //
 // Object size does not set the cost: an AABB spanning more than MAX_INDEXED_CELLS_PER_OBJECT cells
 // goes to a flat overflow list that every query scans, and non-finite or inverted bounds are declined
-// outright with a false sentinel. Both are visible through explainSpatialIndexing.
-export function createUniformGridSpatialBackend(cellSize: number): SpatialIndexBackend {
+// outright with a false sentinel. Both are visible through explainSpatialIndexing2D.
+export function createUniformGridSpatialBackend2D(cellSize: number): SpatialIndexBackend2D {
   const grid: UniformGrid = {
     cellSize,
     cells: new Map(),
@@ -123,7 +123,7 @@ interface GridCell {
 interface UniformGrid {
   cellSize: number;
   cells: Map<string, GridCell>;
-  bounds: Map<SpatialObjectId, SpatialAabb>;
+  bounds: Map<SpatialObjectId, SpatialAabb2D>;
   overflow: Set<SpatialObjectId>;
   declined: Map<SpatialObjectId, SpatialDeclineReason>;
   minCellX: number;
@@ -174,7 +174,7 @@ function _explainGridIndexing(grid: UniformGrid, id: SpatialObjectId): SpatialIn
 function _insertIntoGrid(
   grid: UniformGrid,
   id: SpatialObjectId,
-  bounds: Readonly<SpatialAabb>,
+  bounds: Readonly<SpatialAabb2D>,
   operation: SpatialIndexingOperation,
 ): boolean {
   if (
@@ -248,7 +248,7 @@ function _insertIntoGrid(
 // bounds take the ordinary indexing path and cover exactly the same cells. Small per-frame movement
 // usually stays inside this range, so its dominant cost becomes four field writes instead of a
 // remove-and-reinsert walk. Every mode or range transition keeps using the shared slow path below.
-function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Readonly<SpatialAabb>): boolean {
+function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Readonly<SpatialAabb2D>): boolean {
   const wasMissing = !grid.bounds.has(id) && !grid.declined.has(id);
   const previous = grid.bounds.get(id);
   if (
@@ -287,7 +287,7 @@ function _updateGridObject(grid: UniformGrid, id: SpatialObjectId, bounds: Reado
 }
 
 // Reports whether an AABB contains the point (`x`,`y`).
-function _isSpatialAabbContainsPoint(aabb: Readonly<SpatialAabb>, x: number, y: number): boolean {
+function _isSpatialAabbContainsPoint(aabb: Readonly<SpatialAabb2D>, x: number, y: number): boolean {
   const minX = aabb.minX;
   const minY = aabb.minY;
   const maxX = aabb.maxX;
@@ -296,7 +296,7 @@ function _isSpatialAabbContainsPoint(aabb: Readonly<SpatialAabb>, x: number, y: 
 }
 
 // Reports whether two AABBs overlap; edge-touching counts as disjoint.
-function _isSpatialAabbOverlapping(a: Readonly<SpatialAabb>, b: Readonly<SpatialAabb>): boolean {
+function _isSpatialAabbOverlapping(a: Readonly<SpatialAabb2D>, b: Readonly<SpatialAabb2D>): boolean {
   const aMinX = a.minX;
   const aMinY = a.minY;
   const aMaxX = a.maxX;
@@ -576,7 +576,7 @@ function _queryGridRay(
 // lookups against a grid that may hold one object. When the region spans more cells than the grid has
 // occupied, walking the objects is both cheaper and exact, so the walk flips — a region query is
 // never more expensive than a full scan.
-function _queryGridRegion(grid: UniformGrid, region: Readonly<SpatialAabb>, out: SpatialObjectId[]): void {
+function _queryGridRegion(grid: UniformGrid, region: Readonly<SpatialAabb2D>, out: SpatialObjectId[]): void {
   out.length = 0;
   const cs = grid.cellSize;
   const seen = grid.seen;
@@ -615,7 +615,7 @@ function _queryGridRegion(grid: UniformGrid, region: Readonly<SpatialAabb>, out:
 // budget is compared against, computed before any cell is touched. Returns NaN for bounds or a cell
 // size that make the cell indices non-finite; callers test it with a negated `<=` so NaN falls to the
 // bounded path rather than through it.
-function _spannedCellCount(cellSize: number, aabb: Readonly<SpatialAabb>): number {
+function _spannedCellCount(cellSize: number, aabb: Readonly<SpatialAabb2D>): number {
   const cx0 = _cellIndex(aabb.minX, cellSize);
   const cx1 = _cellIndex(aabb.maxX, cellSize);
   const cy0 = _cellIndex(aabb.minY, cellSize);

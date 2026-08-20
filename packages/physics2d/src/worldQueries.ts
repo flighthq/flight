@@ -12,7 +12,7 @@ import type {
   Physics2DRayResult,
   Physics2DWorld,
   RigidBody2D,
-  SpatialAabb,
+  SpatialAabb2D,
 } from '@flighthq/types/contract';
 
 import { synchronizePhysics2DBroadphase } from './broadphase';
@@ -167,7 +167,7 @@ function queryPhysics2DRayInternal(
 // the empty gap between two colliders on one body must not report either collider as a hit.
 export function queryPhysics2DRegion(
   world: Physics2DWorld,
-  region: Readonly<SpatialAabb>,
+  region: Readonly<SpatialAabb2D>,
   out: Physics2DQueryResult,
   filter?: Readonly<Physics2DQueryFilter>,
 ): void {
@@ -293,7 +293,7 @@ function compareRayHits(a: Readonly<Physics2DRayHit>, b: Readonly<Physics2DRayHi
   return a.colliderIndex - b.colliderIndex;
 }
 
-function boundsOverlap(a: Readonly<SpatialAabb>, b: Readonly<SpatialAabb>): boolean {
+function boundsOverlap(a: Readonly<SpatialAabb2D>, b: Readonly<SpatialAabb2D>): boolean {
   return a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
 }
 
@@ -315,7 +315,7 @@ function passesColliderFilter(
   );
 }
 
-function isValidRegion(region: Readonly<SpatialAabb>): boolean {
+function isValidRegion(region: Readonly<SpatialAabb2D>): boolean {
   return (
     Number.isFinite(region.minX) &&
     Number.isFinite(region.minY) &&
@@ -332,7 +332,7 @@ function compareNumbers(a: number, b: number): number {
 
 interface Physics2DQueryScratch {
   candidateBodies: number[];
-  colliderBounds: SpatialAabb;
+  colliderBounds: SpatialAabb2D;
   raycastHit: CollisionRaycastHit2D;
 }
 

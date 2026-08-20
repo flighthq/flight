@@ -82,7 +82,11 @@ describe('enableCollisionGuards', () => {
     const entries = captureLog(() => {
       testCollision2D(
         { kind: 'circle', radius: 1, x: 0, y: 0 },
-        { kind: 'acme.capsule' } as CollisionShape2D,
+        // Cast through `unknown` because `CollisionShape2D` is still a CLOSED tagged union while
+        // `CollisionShapeKind2D` is open — the mismatch the collision charter's open direction 2
+        // names. A vendor kind is not constructible without this, which is the compile-time half of
+        // the same lie the guard arm above fixes at runtime.
+        { kind: 'acme.capsule' } as unknown as CollisionShape2D,
         createCollisionManifold2D(),
       );
     });
