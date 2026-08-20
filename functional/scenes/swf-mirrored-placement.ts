@@ -21,7 +21,7 @@
 // returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
 import type { Bitmap, MovieClip } from '@flighthq/sdk';
 import { createScene2DFromSwf, getBitmapPixelRgb, getNodeChildren, MovieClipKind, ShapeKind } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 640;
 const HEIGHT = 300;
@@ -310,6 +310,8 @@ const children = getNodeChildren(root);
 if (children.length !== 2 || children.some((child) => child.kind !== ShapeKind)) {
   throw new Error(`[swf-mirrored-placement] expected two imported solid shapes, got ${children.length}`);
 }
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

@@ -19,13 +19,15 @@ import {
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 400;
 const HEIGHT = 300;
 const CX = 200;
 const CY = 150;
 const RADIUS = 100;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

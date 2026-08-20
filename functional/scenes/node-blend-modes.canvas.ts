@@ -22,7 +22,7 @@ import {
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -41,6 +41,8 @@ const OVERLAY_W = 180;
 // Two overlay columns inside the base band: one Normal (control), one Add. Same source color.
 const NORMAL_X = 180;
 const ADD_X = 440;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

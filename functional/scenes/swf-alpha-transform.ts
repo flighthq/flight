@@ -22,7 +22,7 @@ import {
   registerWgpuColorAdjustmentMaterialFeature,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 640;
 const HEIGHT = 220;
@@ -389,6 +389,8 @@ if (Math.abs(halfAlpha.alpha - 0.5) > 0.0001) {
 if (zeroAlphaAdd.alpha !== 0) {
   throw new Error(`[swf-alpha-transform] zero-multiply CXFORM imported node alpha ${zeroAlphaAdd.alpha}, expected 0`);
 }
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

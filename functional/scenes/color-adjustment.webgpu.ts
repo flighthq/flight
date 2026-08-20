@@ -17,7 +17,7 @@ import {
   setNodeColorAdjustmentsTint,
   SpriteKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -26,6 +26,8 @@ const REFERENCE_X = 180;
 const ADJUSTED_X = 460;
 const SQUARE_Y = 220;
 const TINT = 0xff0000ff;
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

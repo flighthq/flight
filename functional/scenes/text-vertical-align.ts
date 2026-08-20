@@ -15,7 +15,7 @@
 // textColor and a shared FONT_SIZE.
 import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -31,6 +31,8 @@ const FIELD_H = 150;
 const TOP_FIELD_Y = 30; // verticalAlign='top'
 const MIDDLE_FIELD_Y = 220; // verticalAlign='middle'
 const BOTTOM_FIELD_Y = 410; // verticalAlign='bottom'
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

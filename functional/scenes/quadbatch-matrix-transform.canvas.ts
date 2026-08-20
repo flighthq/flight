@@ -26,7 +26,7 @@ import {
   QuadBatchKind,
   setQuadBatchLocalBoundsRectangle,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -48,6 +48,8 @@ const SIN45 = Math.SQRT1_2;
 // Half-diagonal of the QUAD-sized square; the rotated quad becomes a diamond whose vertices sit this far
 // from its center along the screen axes (W * √2 / 2).
 const A_HALF_DIAGONAL = (QUAD * Math.SQRT2) / 2; // ≈ 42.43
+
+declareAntialiasingPolicy('aa');
 
 const { height, render, width } = await createFunctionalTarget({
   width: WIDTH,

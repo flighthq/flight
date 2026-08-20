@@ -19,7 +19,7 @@ import {
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -47,6 +47,8 @@ function buildCheckerCanvas(): HTMLCanvasElement {
   }
   return canvas;
 }
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

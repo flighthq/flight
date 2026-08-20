@@ -20,7 +20,7 @@ import {
   renderGlScene2D,
   renderIntoGlRenderTexture,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -32,6 +32,8 @@ const BACKING = 0x292440ff;
 
 // Exact corner and extent probes below replace the generic coverage heuristic for this small target.
 export const minCoverage = 0;
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

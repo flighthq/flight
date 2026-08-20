@@ -9,7 +9,7 @@
 // background. A renderer that didn't draw the label, or a missing registration, leaves the box empty.
 import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createTextLabel, getBitmapPixelRgb, TextLabelKind } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -19,6 +19,8 @@ const FIELD_Y = 240;
 const FIELD_W = 420;
 const FIELD_H = 120;
 const INK = 0xffcc00ff; // amber
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

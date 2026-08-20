@@ -20,7 +20,7 @@ import {
   invalidateNodeLocalTransform,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -31,6 +31,8 @@ const SIDE = 160;
 const HALF = SIDE / 2; // 80
 const CENTER_X = 400;
 const CENTER_Y = 300;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

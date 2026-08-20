@@ -18,7 +18,7 @@
 // a browser and the stroke is one device-pixel thin.
 import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -31,6 +31,8 @@ const FIELD_X = 200;
 const FIELD_Y = 180;
 const FIELD_W = 400;
 const FIELD_H = 240;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

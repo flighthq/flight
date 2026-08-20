@@ -26,7 +26,7 @@ import {
   ShapeKind,
   SpriteKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -892,6 +892,8 @@ const importedEditText = getNodeChildren(root).find((child) => child.kind === Ri
 if (importedEditText === undefined || importedEditText.data.text !== 'EDIT TEXT') {
   throw new Error('[swf-import] imported edit text was not attached to frame 2');
 }
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

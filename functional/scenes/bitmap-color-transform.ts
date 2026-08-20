@@ -25,7 +25,7 @@ import {
   createTexture,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -49,6 +49,8 @@ const redTint = createColorScaleBias({
 // Apply the transform into a separate destination surface (read-then-write per pixel).
 const result = createBitmap(TILE, TILE, 0x000000ff);
 applyBitmapColorScaleBias(createBitmapRegion(result), createBitmapRegion(source), redTint);
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

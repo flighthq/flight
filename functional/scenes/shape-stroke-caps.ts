@@ -21,7 +21,7 @@ import {
   getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -34,6 +34,8 @@ const SEG_X1 = 550; // shared geometric endpoint x for all three segments
 const ROW_NONE_Y = 160;
 const ROW_ROUND_Y = 320;
 const ROW_SQUARE_Y = 480;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

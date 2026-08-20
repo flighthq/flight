@@ -22,7 +22,7 @@ import {
   invalidateNodeLocalTransform,
   setTextureUvFromPixelRect,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 400;
 const HEIGHT = 200;
@@ -30,6 +30,8 @@ const FRAME_SIZE = 64;
 const FRAME_COUNT = 4;
 
 const FRAME_COLORS = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'];
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

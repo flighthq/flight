@@ -19,7 +19,7 @@ import {
   invalidateNodeLocalTransform,
   SpriteKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -28,6 +28,8 @@ const FRAME_W = 200;
 const FRAME_H = 120;
 const VIDEO_X = 300;
 const VIDEO_Y = 240;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

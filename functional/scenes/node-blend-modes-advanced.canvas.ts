@@ -19,7 +19,7 @@ import {
   invalidateNodeAppearance,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -36,6 +36,8 @@ const OVERLAY_W = 180;
 
 const MULTIPLY_X = 200; // Multiply(0.5,0.5) → ~64 (darken)
 const SCREEN_X = 460; // Screen(0.5,0.5)   → ~192 (brighten)
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

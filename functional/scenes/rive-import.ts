@@ -3,7 +3,7 @@ import { applyAnimationClipToNode2D } from '@flighthq/scene2d';
 import { createScene2DFromRiveDocument } from '@flighthq/scene2d-formats';
 import type { Bitmap } from '@flighthq/types';
 import { DisplayObjectKind, ShapeKind } from '@flighthq/types';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 480;
@@ -307,6 +307,8 @@ const RIVE_KEYFRAME_FRAME = 67;
 const RIVE_KEYFRAME_INTERPOLATION = 68;
 const RIVE_KEYFRAME_VALUE = 70;
 const RIVE_CLIP_SOURCE_ID = 92;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

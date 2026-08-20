@@ -30,7 +30,7 @@ import {
   getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -60,6 +60,8 @@ const SVG_SOURCE = `<svg width="${WIDTH}" height="${HEIGHT}">
   <g transform="translate(${MIRROR_X},${ROW_Y}) scale(-1,1)" fill="${MIRROR_FILL}">${glyphMarkup()}</g>
   <g transform="translate(${ROTATE_X},${ROW_Y}) rotate(90)" fill="${ROTATE_FILL}">${glyphMarkup()}</g>
 </svg>`;
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

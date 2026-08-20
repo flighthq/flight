@@ -20,7 +20,7 @@ import {
   invalidateNodeLocalTransform,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -36,6 +36,8 @@ const INNER_DY = 90;
 // Compounded world origin of the shape: outer + inner + local(0,0).
 const COMPOUND_X = OUTER_X + INNER_DX;
 const COMPOUND_Y = OUTER_Y + INNER_DY;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

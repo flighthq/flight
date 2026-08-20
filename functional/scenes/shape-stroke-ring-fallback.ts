@@ -13,7 +13,7 @@ import {
   PathCommand,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 400;
 const HEIGHT = 260;
@@ -28,6 +28,8 @@ const BOW_LEFT = 225;
 const BOW_RIGHT = 355;
 const BOW_TOP = 65;
 const BOW_BOTTOM = 195;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
