@@ -11,6 +11,12 @@
       <nav id="sidebar">
         <div id="filter-wrap">
           <input id="filter-input" type="text" placeholder="filter" autocomplete="off" spellcheck="false" />
+          <label
+            id="single-cell-filter"
+            title="Single-cell scenes cannot compare renderers and are excluded by default">
+            <input id="include-single-cell" type="checkbox" />
+            Include single-cell
+          </label>
         </div>
         <div id="test-list"></div>
       </nav>

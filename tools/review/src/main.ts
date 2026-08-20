@@ -18,6 +18,7 @@ import {
 import { reviewMissingReferenceMessage } from './commissionState';
 import type { ReviewCommissionState as CommissionState } from './commissionState';
 import { createReviewCommissionPayloadCell } from './referenceImageCommission';
+import { filterReviewItems } from './reviewFilter';
 import { orderReviewItems, REVIEW_ATTENTION_GROUP_ORDER, reviewItemByVisualDelta } from './reviewOrder';
 import type { ReviewAttentionGroup as AttentionGroup } from './reviewOrder';
 
@@ -62,10 +63,12 @@ const STORAGE_KEY = 'review-selected';
 const allTests = _tests as ReviewTest[];
 
 let filterQuery = '';
+let includeSingleCellScenes = false;
 let selectedKey = ''; // `${tool}/${name}`
 let selectedRenderer = '';
 
 const filterInput = document.getElementById('filter-input') as HTMLInputElement;
+const includeSingleCellInput = document.getElementById('include-single-cell') as HTMLInputElement;
 const testList = document.getElementById('test-list')!;
 const rendererBar = document.getElementById('renderer-bar')!;
 const preview = document.getElementById('preview')!;
@@ -181,8 +184,15 @@ function testKey(t: ReviewTest): string {
 }
 
 function visibleTests(): ReviewTest[] {
-  const q = filterQuery.toLowerCase().trim();
-  return q ? allTests.filter((t) => t.name.includes(q) || t.tool.includes(q)) : allTests;
+  return filterReviewItems(
+    allTests,
+    { includeSingleCellScenes, query: filterQuery },
+    {
+      name: (test) => test.name,
+      reviewableCellCount: (test) => reviewableCells(test.cells).length,
+      tool: (test) => test.tool,
+    },
+  );
 }
 
 function currentTest(): ReviewTest | null {
@@ -296,7 +306,12 @@ function buildSidebar(): void {
   if (visible.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'sidebar-empty';
-    empty.textContent = allTests.length === 0 ? 'No captures yet' : 'No matches';
+    empty.textContent =
+      allTests.length === 0
+        ? 'No captures yet'
+        : !includeSingleCellScenes && allTests.every((test) => reviewableCells(test.cells).length < 2)
+          ? 'No multi-cell scenes'
+          : 'No matches';
     testList.appendChild(empty);
   }
 
@@ -1111,17 +1126,30 @@ async function denyCurrentCell(): Promise<void> {
   await holdRenderers([cell.renderer]);
 }
 
-filterInput.addEventListener('input', () => {
-  filterQuery = filterInput.value;
+function reconcileVisibleSelection(): void {
   const visible = visibleTests();
   if (!visible.some((t) => testKey(t) === selectedKey)) {
     const first = visible[0];
     if (first) {
       selectedKey = testKey(first);
       selectedRenderer = reviewableCells(first.cells)[0]?.renderer ?? '';
+    } else {
+      selectedKey = '';
+      selectedRenderer = '';
     }
   }
   showCurrent();
+}
+
+filterInput.addEventListener('input', () => {
+  filterQuery = filterInput.value;
+  reconcileVisibleSelection();
+});
+
+includeSingleCellInput.addEventListener('change', () => {
+  includeSingleCellScenes = includeSingleCellInput.checked;
+  clearApprovals();
+  reconcileVisibleSelection();
 });
 
 function stateFromPath(path: string): { key: string; renderer: string } | null {
@@ -1134,13 +1162,24 @@ function stateFromPath(path: string): { key: string; renderer: string } | null {
   return { key, renderer: selectedReviewableCell(test.cells, renderer)?.renderer ?? '' };
 }
 
-const initState = stateFromPath(location.hash.slice(1)) ?? stateFromPath(sessionStorage.getItem(STORAGE_KEY) ?? '');
+const hashState = stateFromPath(location.hash.slice(1));
+const initState = hashState ?? stateFromPath(sessionStorage.getItem(STORAGE_KEY) ?? '');
 
-if (initState) {
+// A direct link is an explicit opt-in: keep it addressable even when it names a scene excluded from the
+// default queue. Merely restoring a prior session does not silently widen the next review pass.
+if (hashState) {
+  const linked = allTests.find((test) => testKey(test) === hashState.key);
+  if (linked && reviewableCells(linked.cells).length < 2) {
+    includeSingleCellScenes = true;
+    includeSingleCellInput.checked = true;
+  }
+}
+
+if (initState && visibleTests().some((test) => testKey(test) === initState.key)) {
   selectedKey = initState.key;
   selectedRenderer = initState.renderer;
 } else {
-  const first = allTests[0];
+  const first = visibleTests()[0];
   if (first) {
     selectedKey = testKey(first);
     selectedRenderer = reviewableCells(first.cells)[0]?.renderer ?? '';
