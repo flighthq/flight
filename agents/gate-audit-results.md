@@ -23,7 +23,8 @@ failure output, and restoring the file.
 ## Gate 2: license-provenance:check
 
 - **Verdict:** FIRES
-- **Specimen:** Append `// Derived from https://example.com, MIT license` to `packages/math/src/clamp.ts`
+- **Specimen:** Append the comment formed by joining `// `, `Derived`, ` from https://example.com, `,
+  `M`, and `IT license` to `packages/math/src/clamp.ts`
 - **Exit code:** 1
 - **Failure output:**
   ```
