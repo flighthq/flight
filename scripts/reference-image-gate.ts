@@ -1,5 +1,6 @@
 // Runs the full reference-image check pipeline locally, reproducing the CI
 // `Reference Images · Check` job from tests.yml. The steps:
+//   0. Print environment identity and first-run disclosure
 //   1. Fetch and verify the pinned reference packs
 //   2. Build the harness (build + build:functional)
 //   3. Resolve the capture scope from the fetched packs
@@ -14,6 +15,7 @@
 // server instead of the static build for captures (implies --skip-build for the
 // functional build, but still builds packages).
 import { execFileSync, execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -58,6 +60,30 @@ function runCapture(captureArgs: string): void {
   });
 }
 
+// 0. Environment identity and disclosure
+const identity = JSON.parse(readFileSync(join(__dirname, 'reference-image-capture-identity.json'), 'utf8')) as {
+  comparisonPolicyId: string;
+  environmentId: string;
+};
+const playwrightVersion = execFileSync('npx', ['playwright', '--version'], {
+  cwd: repoRoot,
+  encoding: 'utf8',
+}).trim();
+
+console.log('reference-image:gate — local reproduction of the CI Reference Images · Check job');
+console.log('');
+console.log('This script reproduces the CI pipeline; it has not itself been independently verified.');
+console.log('The first person to run it and compare its output against the matching CI job is');
+console.log('confirming the reproduction. Compare the compared/pending/failures counts printed at');
+console.log("the end against the same commit's CI job output to verify agreement.");
+console.log('');
+console.log(`policy:     ${identity.comparisonPolicyId}`);
+console.log(`environment: ${identity.environmentId}`);
+console.log(`playwright:  ${playwrightVersion}`);
+console.log('');
+console.log('The comparison policy is pixel-exact against a pinned SwiftShader adapter and Playwright');
+console.log('version. A local result only predicts CI if this environment matches the registered one.');
+
 // 1. Fetch
 run('npm run reference-image:fetch', 'Fetch and verify the pinned reference packs');
 
@@ -91,5 +117,7 @@ for (const line of scopeLines) {
   runCapture(line);
 }
 
-// 5. Check
+// 5. Check — reference-image:check prints the compared/pending/failures summary line,
+// matching the CI output shape. Compare those counts against the same commit's CI job
+// to verify this local reproduction agrees.
 runFinal(`npm run reference-image:check -- --frames ${frames}`, 'Compare against the blessed references');
