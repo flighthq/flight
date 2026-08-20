@@ -22,7 +22,9 @@ import {
   renderGlScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an opaque near-black 800x600 field (about R5 G6 B10), one flat mid-grey 200x200 square sits with its ' +

@@ -22,7 +22,9 @@ import {
   renderGlScene2D,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 near-black field carries the stroke-like remains of 18 narrow rectangles in four ' +

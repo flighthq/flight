@@ -21,10 +21,12 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // exposure scales linear light by 2^exposure through an HDR (rgba16f) pipeline, brightening the
 // whole frame uniformly before display.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
     '72 degrees, so they span 166, 193, 197 and 176 px corner to corner (side*(cos a + sin a)): white centred ' +

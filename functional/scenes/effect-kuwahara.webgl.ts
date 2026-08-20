@@ -22,7 +22,9 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescriptionWithheld } from '@ft/render';
+import { declareExpectedImageDescriptionWithheld, declareAntialiasingPolicy } from '@ft/render';
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescriptionWithheld(
   'The Kuwahara shader has a known implementation bug: 3 of 4 sector quadrants degenerate to a line ' +
     'or a single point instead of a 2D region. The correct math exists in computeKuwaharaSectorOffsets ' +

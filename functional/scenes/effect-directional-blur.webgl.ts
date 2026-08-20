@@ -22,10 +22,12 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Directional blur: the full frame is smeared along a fixed angle, so the mid-screen shapes
 // streak uniformly in the configured direction.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 110 px on a side, turned 10, 28, 46 and ' +
     '64 degrees so they span 127, 149, 156 and 147 px corner to corner (side*(cos a + sin a)), marching left to ' +

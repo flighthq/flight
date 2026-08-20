@@ -21,7 +21,9 @@ import {
   renderGlBackground,
   renderGlScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'Six rectangles in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300), each hue-rotated 90° and reduced in saturation (0.4× multiplier) from the source colors (red 0xff3030, green 0x30c040, blue 0x3060ff, yellow 0xffd030, magenta 0xff30c0, cyan 0x30d0d0). Red shifts toward desaturated yellow-green, green toward steel blue, blue toward rose, yellow toward muted green, magenta toward gold, cyan toward violet. No gaps between cells. Six panels with the original source colors unchanged is a failure.',
