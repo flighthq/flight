@@ -10,6 +10,30 @@ import { join } from 'node:path';
 export const CAPTURE_BUILD_IDENTITY_FILE = 'capture-build.json';
 export const MAX_CAPTURE_BUILD_DIRTY_PATHS = 50;
 
+/**
+ * Paths whose dirtiness cannot reach a render, and are therefore not evidence about the build.
+ *
+ * ★ THE QUESTION THE DIRTY LIST ANSWERS IS "COULD WHAT I CAPTURED DIFFER FROM THE COMMITTED TREE". A
+ * file that no build step reads and no scene imports cannot change a pixel, so listing it does not
+ * answer that question — it just adds noise to the answer.
+ *
+ * ★ THESE TWO ARE THE REVIEW WORKFLOW'S OWN OUTPUT, WHICH MAKES THE NOISE SELF-INFLICTED AND RECURRING.
+ * Commissioning writes a request into `reference-image-requests/` and holding writes
+ * `scripts/reference-image-held.json`; both are then uncommitted, so the NEXT review of the same session
+ * reports "Built with uncommitted changes" and names files the reviewer just created by reviewing. A
+ * warning that fires because you used the tool teaches you to ignore the warning, which is the one
+ * outcome worse than not having it — and it fires on exactly the iterative loop the tool exists for.
+ *
+ * ★ ADDING TO THIS LIST IS A CLAIM, NOT A CONVENIENCE. The claim is that nothing under the prefix is read
+ * by a build step or a scene. `functional/baselines/` deliberately stays OUT: a changed baseline does not
+ * alter a render, but it does alter what a capture reports as changed, so its dirtiness is evidence about
+ * the run even though it is not evidence about the build.
+ */
+export const CAPTURE_BUILD_DIRTY_EXEMPT_PREFIXES: readonly string[] = [
+  'reference-image-requests/',
+  'scripts/reference-image-held.json',
+];
+
 export interface CaptureBuildIdentity {
   /** The commit checked out when the build began. */
   commit: string | null;
@@ -25,10 +49,11 @@ export function createCaptureBuildIdentity(
   commit: string | null,
   allDirtyPaths: readonly string[],
 ): CaptureBuildIdentity {
+  const relevant = allDirtyPaths.filter((path) => !isCaptureBuildDirtyExempt(path));
   return {
     commit,
-    dirty: allDirtyPaths.slice(0, MAX_CAPTURE_BUILD_DIRTY_PATHS),
-    dirtyOmitted: Math.max(0, allDirtyPaths.length - MAX_CAPTURE_BUILD_DIRTY_PATHS),
+    dirty: relevant.slice(0, MAX_CAPTURE_BUILD_DIRTY_PATHS),
+    dirtyOmitted: Math.max(0, relevant.length - MAX_CAPTURE_BUILD_DIRTY_PATHS),
   };
 }
 
@@ -48,6 +73,16 @@ export function getCaptureBuildIdentity(repositoryRoot: string): CaptureBuildIde
   } catch {
     return UNSTAMPED_CAPTURE_BUILD;
   }
+}
+
+/** Whether a dirty path is one the build and the scenes provably never read. */
+export function isCaptureBuildDirtyExempt(path: string): boolean {
+  // A rename record is `old -> new`; either side landing under an exempt prefix is still the same class
+  // of file, and the pair is only formatted for a human to read.
+  const candidates = path.includes(' -> ') ? path.split(' -> ') : [path];
+  return candidates.every((candidate) =>
+    CAPTURE_BUILD_DIRTY_EXEMPT_PREFIXES.some((prefix) => candidate.startsWith(prefix)),
+  );
 }
 
 /** Paths from `git status --porcelain=v1 -z`; rename/copy pairs remain one readable entry. */
