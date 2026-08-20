@@ -76,6 +76,15 @@ So: choose positional parameters **off-centre**, directional ones **off-axis** �
 
 The same rule applies to a fix's discriminating case: the case that proves a convention fix is the one that would have failed before it, and an axis-aligned or centred case is not that.
 
+### 6. When a description and an implementation disagree, fix whichever is wrong on its own terms
+
+Not whichever is cheaper to change, and not "the description always wins". Measure each against the canonical form of the thing it is. Two worked cases, opposite verdicts:
+
+- **`effect-chromatic-aberration`** — the scene's `intensity` was **800× the recipe's own default**, and the picture it produced was saturated everywhere. The implementation was the outlier; the description described the sensible operating point. → **the scene was fixed.**
+- **`effect-chain`** — bloom-then-grade is the **canonical post-process order**, and the description claimed an outcome that order does not produce (0.258 saturation against a raw 0.639). Grade-then-bloom _would_ have made the sentence true, at the cost of demonstrating a less canonical pipeline. → **the description was fixed.**
+
+That the rule cuts both ways is what makes it a rule rather than a preference for whichever artifact you trust. **The description is the specification for the ASSERTION. It is not the specification for the RECIPE.**
+
 ## Controls
 
 A control used to be a **backend** cell that deliberately rendered a feature's _absence_, declared with `export const functionalBackendSupport = 'control'`. That form is retired: it is rules 1 and 4 violated in their purest form, and confirming that nothing happened is not a job a picture does well.
