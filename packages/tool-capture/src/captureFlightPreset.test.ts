@@ -37,6 +37,8 @@ describe('getFlightCaptureValidationPreset', () => {
       'effect-invert': ['webgpu'],
       'effect-msaa': ['webgpu'],
       'effect-msaa-bloom': ['webgpu'],
+      'render-target-node-2d': ['canvas'],
+      'swf-alpha-transform': ['webgl', 'webgpu'],
     });
   });
 });

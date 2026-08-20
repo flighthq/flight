@@ -47,4 +47,12 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   // Bloom runs on WebGPU, but its rotated source shapes enter the recipe through the same single-sample
   // target. Keep WebGPU out while Canvas's inherent AA and WebGL's sampleCount-4 source remain comparable.
   'effect-msaa-bloom': ['webgpu'],
+  // Canvas exercises its own 2D draw-to-texture API with a hand-drawn flat cube, while the GPU cells
+  // exercise a lit Scene3D rendered into a texture. The compositing contract is shared, but those
+  // deliberately different producers are not visual references for one another; retain only GL↔WGPU.
+  'render-target-node-2d': ['canvas'],
+  // SWF RGB CXFORM realization is still an undecided design: GL and WGPU fold it into tessellated solid
+  // shapes, while Canvas and DOM leave it unapplied. Exclude the GPU cells until that representation is
+  // ruled instead of letting parity bless either side; Canvas↔DOM still compares the shared behavior.
+  'swf-alpha-transform': ['webgl', 'webgpu'],
 };
