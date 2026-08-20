@@ -1,6 +1,7 @@
 // @ts-expect-error -- virtual module typed below
 import { tests as _tests } from 'virtual:review-manifest';
 
+import { parseReviewApprovals, serializeReviewApprovals } from './approvalState';
 import {
   isReviewableCell,
   nextReviewableCell,
@@ -84,6 +85,7 @@ interface ReviewTest {
 }
 
 const STORAGE_KEY = 'review-selected';
+const APPROVALS_STORAGE_KEY = 'review-approvals';
 const allTests = _tests as ReviewTest[];
 
 if (import.meta.hot) {
@@ -113,15 +115,24 @@ type CompareMode = 'off' | 'side-by-side' | 'onion-skin';
 let compareMode: CompareMode = 'side-by-side';
 let onionOpacity = 0.5;
 
-const approvedCells = new Map<string, boolean>();
+const approvedCells = parseReviewApprovals(sessionStorage.getItem(APPROVALS_STORAGE_KEY));
 let promptOpen = false;
 
 function approvalKey(t: ReviewTest, renderer: string): string {
   return `${t.tool}/${t.name}/${renderer}`;
 }
 
+function saveApprovals(): void {
+  sessionStorage.setItem(APPROVALS_STORAGE_KEY, serializeReviewApprovals(approvedCells));
+}
+
+// Kept for the two places a reset is the INTENT — after a commission consumes the marks, and when the
+// visible set changes under the single-cell filter. It is no longer called on plain navigation: the keys
+// are `tool/name/renderer`, so they are test-scoped already and clearing on every selectTest destroyed
+// marks without scoping anything.
 function clearApprovals(): void {
   approvedCells.clear();
+  saveApprovals();
 }
 
 function screenshotUrl(tool: string, name: string, renderer: string): string {
@@ -766,17 +777,18 @@ function buildRendererBar(): void {
     const hasMarks = reviewable.some((c) => approvedCells.has(approvalKey(t, c.renderer)));
     if (hasMarks && approvedCount > 0) {
       commissionBtn.textContent = `Commission (${approvedCount} of ${reviewable.length})`;
-      commissionBtn.title = `Commission ${approvedCount} approved cell(s) — press 'a' to approve more, 'd' to deny`;
+      commissionBtn.title = `Commission ${approvedCount} approved cell(s) — 'a' marks another, 'h' holds one, 'c' commissions`;
     } else if (hasMarks && approvedCount === 0) {
       commissionBtn.textContent = 'Commission (none approved)';
-      commissionBtn.title = "No cells approved — press 'a' on a cell to approve it";
+      commissionBtn.title =
+        "No cells marked — 'a' marks the current cell; 'c' with nothing marked commissions every eligible cell";
       commissionBtn.disabled = true;
     } else if (summary.state === 'differs') {
       commissionBtn.textContent = 'Commission (differs)';
       commissionBtn.title = 'This capture differs from the locked reference — commission to update';
     } else {
       commissionBtn.textContent = 'Commission';
-      commissionBtn.title = 'Write a reference image request for all renderers of this scene';
+      commissionBtn.title = "Write a reference image request for all renderers of this scene ('c')";
     }
     // Named, not just counted: "Commission (3 of 4)" alone reads as an approval shortfall, and the one
     // cell that will not travel is the one the reviewer most needs to know about.
@@ -832,7 +844,8 @@ function buildRendererBar(): void {
     holdBtn.addEventListener('click', () => void releaseHeldRenderers(heldRenderers));
   } else {
     holdBtn.textContent = 'Hold';
-    holdBtn.title = 'Hold this render — marks all cells as not ready for commissioning (requires a reason)';
+    holdBtn.title =
+      "Hold this render — marks all cells as not ready for commissioning, requires a reason ('h' holds just the current cell)";
     holdBtn.addEventListener('click', () => void holdCurrentTest());
   }
   rendererBar.appendChild(holdBtn);
@@ -1238,7 +1251,6 @@ function saveState(): void {
 
 function selectTest(t: ReviewTest): void {
   selectedKey = testKey(t);
-  clearApprovals();
   const selected = selectedReviewableCell(t.cells, selectedRenderer);
   if (selected?.renderer !== selectedRenderer) {
     selectedRenderer = selected?.renderer ?? '';
@@ -1288,7 +1300,9 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     filterInput.focus();
     filterInput.select();
-  } else if (e.key === 'c') {
+  } else if (e.key === 'v') {
+    // View mode moved off `c` so that `c` can name the action a reviewer actually reaches for. The keys
+    // now spell what they do: c commissions, h holds, a marks, v changes the view.
     e.preventDefault();
     const modes: CompareMode[] = ['off', 'side-by-side', 'onion-skin'];
     compareMode = modes[(modes.indexOf(compareMode) + 1) % modes.length];
@@ -1297,7 +1311,10 @@ document.addEventListener('keydown', (e) => {
   } else if (e.key === 'a') {
     e.preventDefault();
     approveCurrentCell();
-  } else if (e.key === 'd') {
+  } else if (e.key === 'c') {
+    e.preventDefault();
+    void commissionCurrentTest();
+  } else if (e.key === 'h') {
     e.preventDefault();
     void denyCurrentCell();
   }
@@ -1325,6 +1342,7 @@ function approveCurrentCell(): void {
   } else {
     approvedCells.set(key, true);
   }
+  saveApprovals();
   buildRendererBar();
   showRenderer();
 }
@@ -1337,6 +1355,7 @@ async function denyCurrentCell(): Promise<void> {
   if (!cell || !isReviewableCell(cell)) return;
 
   approvedCells.delete(approvalKey(t, cell.renderer));
+  saveApprovals();
   await holdRenderers([cell.renderer]);
 }
 
