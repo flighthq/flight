@@ -1,4 +1,4 @@
-import type { Physics3DJoint, RigidBody3D } from '@flighthq/types/contract';
+import type { Physics3DFixedJoint, Physics3DJoint, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate';
@@ -230,8 +230,8 @@ describe('readFrameRotations', () => {
     const bodyA = createUnitBody();
     const bodyB = createUnitBody();
     const joint = createPhysics3DFixedJoint({ bodyA: 0, bodyB: 1 });
-    (joint as Record<string, unknown>).localRotationAW = undefined;
-    (joint as Record<string, unknown>).localRotationAX = undefined;
+    (joint as Partial<Physics3DFixedJoint>).localRotationAW = undefined;
+    (joint as Partial<Physics3DFixedJoint>).localRotationAX = undefined;
 
     readFrameRotations(bodyA, bodyB, joint);
 

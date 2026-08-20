@@ -658,6 +658,14 @@
       "registrar": "registerPhysics2DJointSolver"
     },
     {
+      "packageName": "physics3d",
+      "registrar": "registerBuiltInPhysics3DJointSolvers"
+    },
+    {
+      "packageName": "physics3d",
+      "registrar": "registerPhysics3DJointSolver"
+    },
+    {
       "packageName": "protocol",
       "registrar": "registerProtocolScheme"
     },
