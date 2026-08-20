@@ -224,15 +224,24 @@ function testKey(t: ReviewTest): string {
   return `${t.tool}/${t.name}`;
 }
 
+// ★ THE ORDER YOU SEE AND THE ORDER THE TOOL SELECTS IN MUST BE ONE ORDER. `filterReviewItems` says so
+// in its own doc comment — "preserving manifest order for later visual sorting" — and the visual sort was
+// never applied here. The sidebar sorted independently by attention group, so the list opened with
+// "Differs (N)" at the top while the initial selection was `visibleTests()[0]`, i.e. the alphabetically
+// first scene, which is almost always buried in "Included". You landed on a passing scene and had to go
+// find the failing ones that were already on screen above you.
 function visibleTests(): ReviewTest[] {
-  return filterReviewItems(
-    allTests,
-    { includeSingleCellScenes, query: filterQuery },
-    {
-      name: (test) => test.name,
-      reviewableCellCount: (test) => reviewableCells(test.cells).length,
-      tool: (test) => test.tool,
-    },
+  return orderReviewItems(
+    filterReviewItems(
+      allTests,
+      { includeSingleCellScenes, query: filterQuery },
+      {
+        name: (test) => test.name,
+        reviewableCellCount: (test) => reviewableCells(test.cells).length,
+        tool: (test) => test.tool,
+      },
+    ),
+    REVIEW_ORDER_ACCESSORS,
   );
 }
 
@@ -297,7 +306,9 @@ function ensureCached(t: ReviewTest): HTMLImageElement[] {
 function buildSidebar(): void {
   testList.innerHTML = '';
 
-  const visible = orderReviewItems(visibleTests(), REVIEW_ORDER_ACCESSORS);
+  // visibleTests() is already in visual order — one owner for the order, so the sidebar and the
+  // selection cannot drift apart again.
+  const visible = visibleTests();
   const tools = [...new Set(visible.map((t) => t.tool))];
   const multiTool = tools.length > 1;
 
