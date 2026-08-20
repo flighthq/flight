@@ -141,6 +141,34 @@ export type CollisionTestStatus =
   | 'separated'
   | 'unsupported-shape-kind';
 
+// Writes the furthest point on `shape` along the direction (`dirX`,`dirY`) into `out` as `[x, y]`.
+//
+// The missing primitive the whole narrow phase is built on. A pair matrix costs one authored function
+// per ORDERED PAIR of kinds — ten today for circle/aabb/obb/polygon, twenty-one for the chartered 3D
+// set — while a support function costs one per KIND, and GJK reaches overlap and penetration through
+// nothing else. Registering one makes a shape work against every other registered shape immediately.
+//
+// The direction is NOT required to be unit length, and a zero direction is a legal degenerate input a
+// support function must answer with some point on the shape rather than a NaN.
+//
+// A 3D support function is `(shape, dirX, dirY, dirZ, out)` — a different arity, in a different
+// registry. The two could not be confused even by accident, which is the dimension boundary holding
+// without anything having to enforce it.
+export type CollisionSupport2D = (shape: Readonly<CollisionShape2D>, dirX: number, dirY: number, out: number[]) => void;
+
+// A narrow-phase test specialized to one ordered pair of kinds, registered over the generic
+// support-function floor where it earns its place.
+//
+// Two things earn it. Speed: circle-circle is three operations and would be an iterative solve through
+// GJK. And CONTACT QUALITY: the SAT pairs hand back the reference face that manifold clipping needs
+// anyway, which a support function structurally hides — GJK yields one deepest point where a resting
+// box needs two. The generic core is the floor, never the ceiling.
+export type CollisionPairTest2D = (
+  a: Readonly<CollisionShape2D>,
+  b: Readonly<CollisionShape2D>,
+  out: CollisionManifold2D,
+) => boolean;
+
 // Installed by enableCollisionGuards and consulted only by the generic testCollision2D dispatcher.
 // Direct typed pair functions remain the allocation-free hot path.
 export type CollisionTestGuard2D = (a: Readonly<CollisionShape2D>, b: Readonly<CollisionShape2D>) => void;

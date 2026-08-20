@@ -40,3 +40,15 @@ export {
   testSegmentPolygonCollision,
   testSegmentSegmentCollision,
 } from './contract';
+export {
+  getCollisionPairTest2D,
+  getCollisionSupport2D,
+  registerBuiltInCollisionSupports2D,
+  registerCollisionPairTest2D,
+  registerCollisionSupport2D,
+  supportCollisionAabb2D,
+  supportCollisionCircle2D,
+  supportCollisionObb2D,
+  supportCollisionPolygon2D,
+} from './collisionSupport2D';
+export { testCollisionSupport2D, testCollisionSupportOverlap2D } from './gjk2D';
