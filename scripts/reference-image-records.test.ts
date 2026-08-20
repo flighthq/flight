@@ -9,6 +9,7 @@ import {
   readReferenceImageLock,
   readReferenceImageLockPins,
   readOracleRequest,
+  readReferenceImageHolds,
 } from './reference-image-records';
 
 const COMMIT = 'a'.repeat(40);
@@ -276,3 +277,31 @@ function writeRaw(text: string): string {
   writeFileSync(path, text);
   return path;
 }
+
+describe('readReferenceImageHolds', () => {
+  it('reads the ledger as identity to reason', () => {
+    const root = mkdtempSync(join(tmpdir(), 'reference-image-holds-'));
+    writeFileSync(
+      join(root, 'reference-image-held.json'),
+      JSON.stringify({ held: { 'functional/a/webgl': 'awaiting the fold' } }),
+    );
+
+    expect([...readReferenceImageHolds(root)]).toEqual([['functional/a/webgl', 'awaiting the fold']]);
+  });
+
+  // ★ THE ABSENT LEDGER IS THE ONE EMPTY THAT IS REAL, and it is worth pinning because the opposite
+  // reading is the dangerous one everywhere else in this family: an unreadable LOCK must never mean
+  // "nothing is pinned", because that would re-bless the corpus. A missing HOLD list is different — a
+  // repository with no disputes has no hold file — and returning empty there is the correct answer
+  // rather than a failure mode.
+  it('treats a missing ledger as nothing held', () => {
+    expect(readReferenceImageHolds(mkdtempSync(join(tmpdir(), 'reference-image-holds-')))).toEqual(new Map());
+  });
+
+  it('treats a ledger with no held key as nothing held', () => {
+    const root = mkdtempSync(join(tmpdir(), 'reference-image-holds-'));
+    writeFileSync(join(root, 'reference-image-held.json'), JSON.stringify({ schemaVersion: 2, history: [] }));
+
+    expect(readReferenceImageHolds(root)).toEqual(new Map());
+  });
+});

@@ -15,6 +15,7 @@
 // Types are declared locally rather than in `@flighthq/types` because `scripts/` is outside the package
 // graph — the same reason `FixtureExtractionVerification` lives in `scripts/fixtures.ts`.
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export interface ReferenceImageLock {
   schemaVersion: 2;
@@ -282,6 +283,24 @@ export type ReferenceImageRequestResult =
  * The cells one request claims, as `subject/entry/renderer`. This is the ONLY place a request's scope is
  * expanded, so "in scope" has exactly one definition for the pending allowance and the out-of-scope gate.
  */
+/**
+ * Cells a ruling has held, identity → reason, from the committed hold ledger.
+ *
+ * ★ ONE READER, BECAUSE TWO CONSUMERS NOW ASK THE SAME QUESTION. The commissioning bar refuses to bless a
+ * held cell and the CI join refuses to fail one; if each parsed the ledger itself, the two could disagree
+ * about what "held" means the moment the file's shape changed — and the disagreement would read as a cell
+ * that cannot be blessed and cannot be green either, which is the exact trap holds are meant to prevent.
+ *
+ * An absent ledger means nothing is held. That empty is real, unlike the lock's, because a repository with
+ * no disputes has no hold list.
+ */
+export function readReferenceImageHolds(root: string): Map<string, string> {
+  const path = join(root, 'reference-image-held.json');
+  if (!existsSync(path)) return new Map();
+  const held = (JSON.parse(readFileSync(path, 'utf8')) as { held?: Record<string, string> }).held ?? {};
+  return new Map(Object.entries(held));
+}
+
 export function getOracleRequestCells(request: Readonly<ReferenceImageRequest>): string[] {
   return request.targets.map((target) => `${request.subject}/${target.entry}/${target.renderer}`);
 }

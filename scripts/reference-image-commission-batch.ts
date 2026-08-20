@@ -47,6 +47,7 @@ import {
   getOracleRequestCells,
   readReferenceImageLockPins,
   readOracleRequest,
+  readReferenceImageHolds,
 } from './reference-image-records';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -382,12 +383,9 @@ function readDeterminism(roots: readonly string[]): Map<string, ReferenceImageDe
   return out;
 }
 
-/** Cells held by a peer or a ruling, from the committed hold list. */
+/** Cells held by a peer or a ruling. Delegates so this bar and the CI verdict read one ledger. */
 function readHeld(): Map<string, string> {
-  const path = join(__dirname, 'reference-image-held.json');
-  if (!existsSync(path)) return new Map();
-  const held = (JSON.parse(readFileSync(path, 'utf8')) as { held?: Record<string, string> }).held ?? {};
-  return new Map(Object.entries(held));
+  return readReferenceImageHolds(__dirname);
 }
 
 /**

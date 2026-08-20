@@ -176,6 +176,72 @@ describe('joinOracleState', () => {
     expect(result.comparedCount).toBe(0);
   });
 
+  // ★ A HOLD IS A DECISION THAT WAS MADE, AND IT SHOULD READ AS ONE. Before this, a held cell kept
+  // failing and — because a hold also blocks commissioning — could not be cleared by blessing it either.
+  // Held meant "cannot fix, stays red", which is how a deliberate deferral becomes permanent noise.
+  it('demotes a regression to held rather than failing the run', () => {
+    const result = join([cell('functional/deferred/webgl', { comparison: spikeComparison() })], [], {
+      held: new Map([['functional/deferred/webgl', 'canvas does not implement the fold']]),
+    });
+
+    expect(verdicts(result)['functional/deferred/webgl']).toBe('held');
+    expect(result.failures).toEqual([]);
+    expect(result.heldCount).toBe(1);
+  });
+
+  // The image stays visible: the point is to watch the number while tuning, not to stop measuring it.
+  it('keeps the comparison and the hold reason in the held row', () => {
+    const result = join([cell('functional/deferred/webgl', { comparison: spikeComparison() })], [], {
+      held: new Map([['functional/deferred/webgl', 'awaiting the fold']]),
+    });
+
+    expect(result.cells[0]!.detail).toContain('HELD: awaiting the fold');
+    expect(result.cells[0]!.detail).toContain('fraction');
+  });
+
+  // All four picture-failures route through one decision, so a hold cannot demote three of them and
+  // forget the fourth — the shape that made the resize path an exception for as long as it was one.
+  it('demotes every picture-failure a hold covers, not just a regression', () => {
+    const resized = join([cell('functional/a/webgl', { comparison: dimensionMismatch() })], [], {
+      held: new Map([['functional/a/webgl', 'deferred']]),
+    });
+    const absent = join([cell('functional/b/webgl', { comparison: null, pinned: false })], [], {
+      held: new Map([['functional/b/webgl', 'deferred']]),
+    });
+    const uncompared = join([cell('functional/c/webgl', { comparison: null })], [], {
+      held: new Map([['functional/c/webgl', 'deferred']]),
+    });
+
+    expect(verdicts(resized)['functional/a/webgl']).toBe('held');
+    expect(verdicts(absent)['functional/b/webgl']).toBe('held');
+    expect(verdicts(uncompared)['functional/c/webgl']).toBe('held');
+    expect([...resized.failures, ...absent.failures, ...uncompared.failures]).toEqual([]);
+  });
+
+  // ★ A HOLD COVERS THE PICTURE, NOT THE PAPERWORK. Deferring a judgement about a render is not a licence
+  // to let its queue entry rot, so the request gates keep firing for a held cell.
+  it('still fires a request gate for a held cell', () => {
+    const result = join(
+      [cell('functional/held-cell/webgl', { comparison: clean() })],
+      [record(request('r1', 'functional', 'ghost'))],
+      {
+        held: new Map([['functional/held-cell/webgl', 'deferred']]),
+      },
+    );
+
+    expect(kinds(result)).toContain('request-off-target');
+  });
+
+  // Held cells leave the zero-comparisons denominator, so a corpus of nothing but deferrals is not
+  // reported as unconfigured.
+  it('does not call a run of only held cells unconfigured', () => {
+    const result = join([cell('functional/deferred/webgl', { comparison: spikeComparison() })], [], {
+      held: new Map([['functional/deferred/webgl', 'deferred']]),
+    });
+
+    expect(kinds(result)).not.toContain('zero-comparisons');
+  });
+
   it('fires request-expired and stops the stale request demoting anything', () => {
     const result = join(
       [cell('functional/a/webgl', { comparison: moved() })],
@@ -242,8 +308,20 @@ function clean(): ReferenceImageCellComparison {
   return { dimensionMismatch: false, fraction: 0, maxChannelDelta: 1 };
 }
 
-function join(cells: readonly ReferenceImageCellInput[], requests: readonly ReferenceImageRequestRecord[]) {
-  return joinOracleState({ cells, maxPendingDays: 30, policy: POLICY, requests });
+function join(
+  cells: readonly ReferenceImageCellInput[],
+  requests: readonly ReferenceImageRequestRecord[],
+  extra: { held?: ReadonlyMap<string, string> } = {},
+) {
+  return joinOracleState({ cells, maxPendingDays: 30, policy: POLICY, requests, ...extra });
+}
+
+function spikeComparison(): ReferenceImageCellComparison {
+  return { dimensionMismatch: false, fraction: 1, maxChannelDelta: 255 };
+}
+
+function dimensionMismatch(): ReferenceImageCellComparison {
+  return { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 };
 }
 
 function kinds(result: {

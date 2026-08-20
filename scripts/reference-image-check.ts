@@ -28,6 +28,7 @@ import {
   getOracleRequestCells,
   readReferenceImageLock,
   readOracleRequest,
+  readReferenceImageHolds,
 } from './reference-image-records';
 import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state';
 import type { ReferenceImageCellInput, ReferenceImageRequestRecord } from './reference-image-state';
@@ -191,6 +192,7 @@ async function check(): Promise<void> {
 
   const result = joinOracleState({
     cells: joined,
+    held: readReferenceImageHolds(__dirname),
     maxPendingDays: MAX_PENDING_DAYS,
     requests: readOutstandingRequests(),
   });
@@ -215,7 +217,8 @@ async function check(): Promise<void> {
   }
   lines.push(
     '',
-    `compared ${result.comparedCount}, pending ${result.pendingCount}, failures ${result.failures.length}`,
+    `compared ${result.comparedCount}, pending ${result.pendingCount}, held ${result.heldCount}, ` +
+      `failures ${result.failures.length}`,
   );
   for (const failure of result.failures)
     lines.push(`  FAIL ${failure.kind}: ${failure.identity ?? '—'} ${failure.detail}`);
