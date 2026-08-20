@@ -17,6 +17,7 @@ import {
   createShape,
   createVelocityField,
   defaultGlNode2DVelocityWriter,
+  registerDefaultShapeBoundsCommands,
   registerGlMotionBlurEffect,
   defaultGlShapeRenderer,
   endGlRenderEffectPipeline,
@@ -37,9 +38,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
-  'CURRENTLY INERT — the description below states intended behavior; the effect produces no observable ' +
-    'output (removing it entirely is byte-identical). Under investigation (task 118). ' +
-    'INTENDED: Four colored squares (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 100×100 in a 2×2 arrangement centered at (200,180)/(600,180)/(200,420)/(600,420) on dark 800×600 background (0x101014), not rotated. Each shape is smeared symmetrically along the horizontal axis by a 40-pixel screen-space velocity (16 taps spanning t=[-0.5, 0.5], so ~20 px each side). Sharp vertical edges become soft horizontal gradients on both sides. Four clean-edged squares with no horizontal smear is a failure.',
+  'Four colored squares (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 100×100 in a 2×2 arrangement centered at (200,180)/(600,180)/(200,420)/(600,420) on dark 800×600 background (0x101014), not rotated. Each shape is smeared symmetrically along the horizontal axis by a 40-pixel screen-space velocity (16 taps spanning t=[-0.5, 0.5], so ~20 px each side). Sharp vertical edges become soft horizontal gradients on both sides. Four clean-edged squares with no horizontal smear is a failure.',
 );
 
 // Per-object motion blur driven by the scene velocity G-buffer. Normally the velocity comes from
@@ -58,6 +57,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 registerGlMotionBlurEffect(state);
+registerDefaultShapeBoundsCommands();
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
 registerGlVelocityWriter(state, ShapeKind, defaultGlNode2DVelocityWriter);
 
