@@ -25,12 +25,18 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the text box plus a 20 px margin
+// rather than floating it in an 800x600 field that was mostly empty. The empty field is not free:
+// the regression gate scores a change as a MEAN over the whole frame, so padding dilutes every
+// defect by the ratio of the areas — measured across this family, moving the whole picture one
+// fingerprint cell scored 0.79-1.78 at 800x600 and 4.79-30.10 over the subject's own bounding box.
+// Nothing this scene tests depends on the extra black.
+const WIDTH = 600;
+const HEIGHT = 160;
 
 const INK = 0xffee44ff; // bright yellow text + underline, far from the black background
-const FIELD_X = 120;
-const FIELD_Y = 240;
+const FIELD_X = 20;
+const FIELD_Y = 20;
 const FIELD_W = 560;
 const FIELD_H = 120;
 const FONT_SIZE = 72;
@@ -45,8 +51,8 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff,
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with one line of bright yellow text reading Flight at about 72 px, ' +
-    'inside a 560x120 box at x 120-680, y 240-360. A horizontal yellow line runs BENEATH the glyphs, ' +
+    'A 600x160 opaque black field with one line of bright yellow text reading Flight at about 72 px, ' +
+    'inside a 560x120 box at x 20-580, y 20-140. A horizontal yellow line runs BENEATH the glyphs, ' +
     'below their baseline and clear of the letter bodies rather than crossing them, and it spans the ' +
     'width of the word rather than the width of the box. The same text with no line under it, or with the ' +
     'line struck across the middle of the letters, is the failure. The line is the same yellow as the ' +

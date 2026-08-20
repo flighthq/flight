@@ -11,12 +11,18 @@ import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the text box plus a 20 px margin
+// rather than floating it in an 800x600 field that was mostly empty. The empty field is not free:
+// the regression gate scores a change as a MEAN over the whole frame, so padding dilutes every
+// defect by the ratio of the areas — measured across this family, moving the whole picture one
+// fingerprint cell scored 0.79-1.78 at 800x600 and 4.79-30.10 over the subject's own bounding box.
+// Nothing this scene tests depends on the extra black.
+const WIDTH = 300;
+const HEIGHT = 400;
 
 const TEXT_COLOR = 0x33ccffff; // bright cyan-blue
-const FIELD_X = 120;
-const FIELD_Y = 120;
+const FIELD_X = 20;
+const FIELD_Y = 20;
 // Narrow field: at size 30 this sentence is far wider than 260px, forcing several wrapped lines.
 const FIELD_W = 260;
 const FIELD_H = 360;
@@ -36,11 +42,11 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with a long sentence in bright cyan-blue at about 30 px, confined to a ' +
-    'narrow 260-wide column at x 120-380, y 120-480. The sentence BREAKS ONTO AT LEAST TWO LINES stacked ' +
+    'A 300x400 opaque black field with a long sentence in bright cyan-blue at about 30 px, confined to a ' +
+    'narrow 260-wide column at x 20-280, y 20-380. The sentence BREAKS ONTO AT LEAST TWO LINES stacked ' +
     'vertically, with a clear band of black between them, and no glyph extends past the right edge of ' +
-    'the column at x 380 — the text is wrapped inside the width, not run off it or clipped mid-letter at ' +
-    'the boundary. A single long line, or ink beyond x 380, is the failure. The text is one flat colour ' +
+    'the column at x 280 — the text is wrapped inside the width, not run off it or clipped mid-letter at ' +
+    'the boundary. A single long line, or ink beyond x 280, is the failure. The text is one flat colour ' +
     'with no box or border, and the rest of the field is pure black.',
 });
 

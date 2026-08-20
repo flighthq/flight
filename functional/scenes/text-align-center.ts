@@ -16,19 +16,26 @@ import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The frame holds the fields plus a small margin rather
+// than floating them in an 800x600 field that was mostly empty. The empty field is not free: the
+// regression gate scores a change as a MEAN over the whole frame, so padding dilutes every defect by
+// the ratio of the areas — measured across this family, moving the whole picture one fingerprint cell
+// scored 0.79-1.78 at 800x600 and 4.79-30.10 over the subject's own bounding box.
+// ★ WHAT IS NOT TOUCHED: the FIELD width, which is the measure alignment is relative to and therefore
+// part of the subject, and the gap between the two fields, which keeps them separately measurable.
+const WIDTH = 520;
+const HEIGHT = 360;
 
 const TEXT_COLOR = 0xffcc33ff; // bright amber
 const TEXT = 'FLIGHT'; // short, so it occupies far less than the field width — alignment is visible
 const FONT_SIZE = 64;
 
 // Both fields share width/x so their alignment boxes are identical; only align differs.
-const FIELD_X = 160;
+const FIELD_X = 20;
 const FIELD_W = 480;
 const FIELD_H = 110;
-const LEFT_FIELD_Y = 120; // align='left'
-const CENTER_FIELD_Y = 320; // align='center'
+const LEFT_FIELD_Y = 20; // align='left'
+const CENTER_FIELD_Y = 190; // align='center'
 
 declareAntialiasingPolicy('aa');
 
@@ -38,12 +45,12 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [RichTextKind],
   expectedImageDescription:
-    'An 800x600 opaque black field showing the same short word, FLIGHT, twice in bright amber at about ' +
-    '64 px, in two 480-wide boxes that both start at x 160 — the first at y 120-230, the second at ' +
-    'y 320-430. The two differ only in where the word sits across its box, and that difference is the ' +
-    'entire picture. The upper word starts at the left edge of its box, near x 160, with one wide empty ' +
+    'A 520x360 opaque black field showing the same short word, FLIGHT, twice in bright amber at about ' +
+    '64 px, in two 480-wide boxes that both start at x 20 — the first at y 20-130, the second at ' +
+    'y 190-300. The two differ only in where the word sits across its box, and that difference is the ' +
+    'entire picture. The upper word starts at the left edge of its box, near x 20, with one wide empty ' +
     'gap to its right. The lower word is centred: it has roughly EQUAL empty margins on both sides, so ' +
-    'its first glyph begins well right of x 160 and its last ends well left of x 640. Two words beginning ' +
+    'its first glyph begins well right of x 20 and its last ends well left of x 500. Two words beginning ' +
     'at the same x, or a lower word pushed to one side, is the failure. Both are amber on pure black with ' +
     'no box, border or underline, and neither wraps to a second line.',
 });

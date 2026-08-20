@@ -11,11 +11,17 @@ import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createTextLabel, getBitmapPixelRgb, TextLabelKind } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-const WIDTH = 800;
-const HEIGHT = 600;
+// ★ FRAMED AROUND THE SUBJECT, DELIBERATELY. The label box is 420x120 and the frame is sized to hold it
+// plus the margin the assertion's stray-ink sample needs, rather than floating it in an 800x600 field
+// that is 90 per cent empty. The empty field is not free: the regression gate scores a change as a MEAN
+// over the whole frame, so padding dilutes every defect by the ratio of the areas. Measured on this
+// scene, moving the whole picture one fingerprint cell scored 0.79 against a tolerance of 5 at 800x600,
+// and 11.81 over the label's own bounding box. Nothing about a TextLabel needs the extra black.
+const WIDTH = 460;
+const HEIGHT = 300;
 
-const FIELD_X = 200;
-const FIELD_Y = 240;
+const FIELD_X = 20;
+const FIELD_Y = 20;
 const FIELD_W = 420;
 const FIELD_H = 120;
 const INK = 0xffcc00ff; // amber
@@ -28,8 +34,8 @@ const { render, width } = await createFunctionalTarget({
   background: 0x000000ff, // opaque black (packed RGBA)
   kinds: [TextLabelKind],
   expectedImageDescription:
-    'An 800x600 opaque black field with one short line of bold amber text reading FLIGHT at about 72 px, ' +
-    'inside a 420x120 box at x 200-620, y 240-360. It is a single line that does not wrap, one flat ' +
+    'A 460x300 opaque black field with one short line of bold amber text reading FLIGHT at about 72 px, ' +
+    'inside a 420x120 box at x 20-440, y 20-140. It is a single line that does not wrap, one flat ' +
     'amber against pure black, with no filled box behind it, no border rectangle and no underline or ' +
     'strike line. Everything outside that box is pure black — a blank field is the failure this exists ' +
     'to catch. Exact glyph outlines depend on the installed sans-serif face and are not part of the ' +
