@@ -78,11 +78,17 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   }
   var minVar = vars[0];
   var result = means[0];
+  var tiedCount = 1.0;
   for (var q = 1; q < 4; q++) {
     if (vars[q] < minVar) {
       minVar = vars[q];
       result = means[q];
+      tiedCount = 1.0;
+    } else if (vars[q] == minVar) {
+      result += means[q];
+      tiedCount += 1.0;
     }
   }
+  result /= tiedCount;
   return vec4f(result, textureSampleLevel(tex, smp, uv, 0.0).a);
 }`;
