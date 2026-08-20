@@ -17,33 +17,29 @@ import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
-import { scopeModuleMocks } from './moduleMockTestHelper';
-import type * as WgpuShapeModule from './wgpuShape';
+// @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawWgpuShape with
+// lightweight fake proxies, so the two queries are stubbed.
+//
+// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
+// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
+// dance bought by hand comes from the platform here, with no hook, and the stub cannot reach the many
+// real consumers of these functions (node, interaction, shape, text). The dance was not merely
+// redundant: it rebuilt the subject's entire transitive module graph inside a FIXED `beforeAll`
+// deadline, which is unbounded work against a fixed clock and the shape of flake tiering exists to remove.
+vi.mock('@flighthq/node/contract', async (importOriginal) => ({
+  ...(await importOriginal<typeof FlightNodeModule>()),
+  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+  getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
+    source?.data?.version ?? 0,
+}));
+
+import { defaultWgpuMorphShapeRenderer, defaultWgpuShapeRenderer, drawWgpuShape } from './wgpuShape';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
 const noopRasterizer = (): void => {};
 
-// @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawWgpuShape
-// with lightweight fake proxies, so the two queries are stubbed. scopeModuleMocks scopes the stub to
-// this file (registry reset before the mock applies, unmock + reset after), so under a shared
-// (isolate:false) worker it never leaks into the many real consumers of these functions (node,
-// interaction, shape, text) — and a sibling that pre-evaluated ./wgpuShape still picks up the stub.
-let defaultWgpuMorphShapeRenderer: typeof WgpuShapeModule.defaultWgpuMorphShapeRenderer;
-let defaultWgpuShapeRenderer: typeof WgpuShapeModule.defaultWgpuShapeRenderer;
-let drawWgpuShape: typeof WgpuShapeModule.drawWgpuShape;
-
-scopeModuleMocks(['@flighthq/node']);
-
-beforeAll(async () => {
-  vi.doMock('@flighthq/node/contract', async (importOriginal) => ({
-    ...(await importOriginal<typeof FlightNodeModule>()),
-    getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-    getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
-  }));
-  ({ defaultWgpuMorphShapeRenderer, defaultWgpuShapeRenderer, drawWgpuShape } = await import('./wgpuShape'));
-  installWgpuMock();
-});
+beforeAll(() => installWgpuMock());
 
 // Mirrors createWgpuShapeData: the rasterization surface is absent until a shape actually needs one,
 // so a scene drawn entirely through the mesh path carries no canvases.

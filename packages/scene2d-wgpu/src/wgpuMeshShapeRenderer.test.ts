@@ -12,24 +12,22 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
 
-import { scopeModuleMocks } from './moduleMockTestHelper';
-import type * as WgpuMeshShapeModule from './wgpuMeshShapeRenderer';
+// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
+// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
+// dance bought by hand comes from the platform here, with no hook. The dance was not merely redundant:
+// it rebuilt the subject's entire transitive module graph inside a FIXED `beforeAll` deadline, which is
+// unbounded work against a fixed clock and the shape of flake that tiering exists to remove.
+vi.mock('@flighthq/node/contract', async (importOriginal) => ({
+  ...(await importOriginal<typeof FlightNodeModule>()),
+  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+  getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
+    source?.data?.version ?? 0,
+}));
+
+import { defaultWgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 
-let defaultWgpuMeshShapeRenderer: typeof WgpuMeshShapeModule.defaultWgpuMeshShapeRenderer;
-let drawWgpuMeshShape: typeof WgpuMeshShapeModule.drawWgpuMeshShape;
-
-scopeModuleMocks(['@flighthq/node']);
-
-beforeAll(async () => {
-  vi.doMock('@flighthq/node/contract', async (importOriginal) => ({
-    ...(await importOriginal<typeof FlightNodeModule>()),
-    getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-    getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
-  }));
-  ({ defaultWgpuMeshShapeRenderer, drawWgpuMeshShape } = await import('./wgpuMeshShapeRenderer'));
-  installWgpuMock();
-});
+beforeAll(() => installWgpuMock());
 
 function makeShapeData() {
   return {

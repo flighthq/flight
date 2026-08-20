@@ -20,115 +20,93 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
-import { scopeModuleMocks } from './moduleMockTestHelper';
-import type * as WgpuCacheModule from './wgpuCache';
 import type * as WgpuNode2DModule from './wgpuNode2D';
 import type * as WgpuQuadBatchWriterModule from './wgpuQuadBatchWriter';
 
 // The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
-// ./wgpuQuadBatchWriter and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested
-// without a real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite,
-// batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
-// The mocks are scoped to this file's dynamic import of ./wgpuCache and unmocked in afterAll, so
-// under a shared (isolate:false) worker they never leak into the real render-wgpu / scene2d-
-// wgpu consumers. The mocked functions are read back from the same dynamic imports so the handles
-// the assertions observe are the exact vi.fn instances the cache module calls.
-let createWgpuCacheState: typeof WgpuCacheModule.createWgpuCacheState;
-let defaultWgpuRenderCacheRenderer: typeof WgpuCacheModule.defaultWgpuRenderCacheRenderer;
-let enableWgpuRenderCache: typeof WgpuCacheModule.enableWgpuRenderCache;
-let ensureWgpuRenderCacheTarget: typeof WgpuCacheModule.ensureWgpuRenderCacheTarget;
-let getWgpuRenderCacheScreenState: typeof WgpuCacheModule.getWgpuRenderCacheScreenState;
-let getWgpuRenderCacheTarget: typeof WgpuCacheModule.getWgpuRenderCacheTarget;
-let refreshWgpuRenderCache: typeof WgpuCacheModule.refreshWgpuRenderCache;
-let releaseWgpuRenderCache: typeof WgpuCacheModule.releaseWgpuRenderCache;
-let createWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.createWgpuRenderStateRuntime;
-let getWgpuRenderStateRuntime: typeof WgpuRenderWgpuModule.getWgpuRenderStateRuntime;
-let getWgpuMaterialRenderer: typeof WgpuRenderWgpuModule.getWgpuMaterialRenderer;
-let registerWgpuMaterialRenderer: typeof WgpuRenderWgpuModule.registerWgpuMaterialRenderer;
-let resolveWgpuApplyBlendMode: typeof WgpuRenderWgpuModule.resolveWgpuApplyBlendMode;
-let beginWgpuFrame: typeof WgpuRenderWgpuModule.beginWgpuFrame;
-let destroyWgpuRenderTarget: typeof WgpuRenderWgpuModule.destroyWgpuRenderTarget;
-let drawWgpuRenderTargetResult: typeof WgpuRenderWgpuModule.drawWgpuRenderTargetResult;
-let submitWgpuRenderPass: typeof WgpuRenderWgpuModule.submitWgpuRenderPass;
-let renderWgpuScene2D: typeof WgpuNode2DModule.renderWgpuScene2D;
-let flushWgpuQuadBatchWriter: typeof WgpuQuadBatchWriterModule.flushWgpuQuadBatchWriter;
-
-// EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
-// registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
-// level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
-// subject even though the subject re-imports @flighthq/render under the reset.
-scopeModuleMocks(['./wgpuQuadBatchWriter', '@flighthq/render-wgpu', './wgpuNode2D']);
-
-beforeAll(async () => {
-  vi.doMock('./wgpuQuadBatchWriter', async (importOriginal) => {
-    const actual = await importOriginal<typeof WgpuQuadBatchWriterModule>();
-    return { ...actual, flushWgpuQuadBatchWriter: vi.fn() };
-  });
-  vi.doMock('@flighthq/render-wgpu/contract', async (importOriginal) => {
-    const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
-    return {
-      ...actual,
-      beginWgpuFrame: vi.fn((state: WgpuRenderState) => {
-        getWgpuRenderStateRuntime(state).commandEncoder = {} as GPUCommandEncoder;
-      }),
-      beginWgpuRenderPass: vi.fn(),
-      setWgpuRenderTransform2D: vi.fn(),
-      createWgpuRenderTarget: vi.fn(
-        (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
-          bindGroup: {} as GPUBindGroup,
-          colorSpace: 'srgb',
-          depthStencilTexture: {} as GPUTexture,
-          depthStencilView: {} as GPUTextureView,
-          texture: {} as GPUTexture,
-          view: {} as GPUTextureView,
-          format: 'bgra8unorm',
-          clearColors: [],
-          clearDepth: 1,
-          width,
-          height,
-        }),
-      ),
-      destroyWgpuRenderTarget: vi.fn(),
-      drawWgpuRenderTargetResult: vi.fn(),
-      endWgpuRenderPass: vi.fn(),
-      resizeWgpuRenderTarget: vi.fn((_state: unknown, target: WgpuRenderTarget, width: number, height: number) => {
-        target.width = width;
-        target.height = height;
-      }),
-      submitWgpuRenderPass: vi.fn((state: WgpuRenderState) => {
-        getWgpuRenderStateRuntime(state).commandEncoder = null;
-      }),
-    };
-  });
-  vi.doMock('./wgpuNode2D', async (importOriginal) => {
-    const actual = await importOriginal<typeof WgpuNode2DModule>();
-    return { ...actual, renderWgpuScene2D: vi.fn() };
-  });
-
-  ({
-    beginWgpuFrame,
-    createWgpuRenderStateRuntime,
-    destroyWgpuRenderTarget,
-    drawWgpuRenderTargetResult,
-    getWgpuMaterialRenderer,
-    getWgpuRenderStateRuntime,
-    registerWgpuMaterialRenderer,
-    resolveWgpuApplyBlendMode,
-    submitWgpuRenderPass,
-  } = await import('@flighthq/render-wgpu/contract'));
-  ({ flushWgpuQuadBatchWriter } = await import('./wgpuQuadBatchWriter'));
-  ({ renderWgpuScene2D } = await import('./wgpuNode2D'));
-  ({
-    createWgpuCacheState,
-    defaultWgpuRenderCacheRenderer,
-    enableWgpuRenderCache,
-    ensureWgpuRenderCacheTarget,
-    getWgpuRenderCacheScreenState,
-    getWgpuRenderCacheTarget,
-    refreshWgpuRenderCache,
-    releaseWgpuRenderCache,
-  } = await import('./wgpuCache'));
+// ./wgpuQuadBatchWriter and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested without a
+// real GPU pipeline: createWgpuRenderTarget returns a plain descriptor, and the composite, batch-flush
+// and subtree-render calls become spies for the call and ordering assertions below.
+//
+// ★ HOISTED MOCKS, NOT HAND-ROLLED ONES. This file is in REGISTRY_ISOLATED_TESTS, so it already runs with
+// its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import dance
+// bought by hand comes from the platform here, with no hook, and these stubs cannot reach the real
+// render-wgpu / scene2d-wgpu consumers. The dance was not merely redundant: it rebuilt the subject's
+// entire transitive module graph inside a FIXED `beforeAll` deadline — three modules plus everything they
+// import — which is unbounded work against a fixed clock and the shape of flake tiering exists to remove.
+//
+// ★ THE FRAME STUBS REACH THROUGH `actual`, NOT THROUGH AN OUTER BINDING. A hoisted factory runs during
+// this file's own import phase, so closing over a module-scope `const` declared below it would be a
+// temporal-dead-zone trap that only fires once the import order changes. `actual` is in hand already.
+vi.mock('./wgpuQuadBatchWriter', async (importOriginal) => {
+  const actual = await importOriginal<typeof WgpuQuadBatchWriterModule>();
+  return { ...actual, flushWgpuQuadBatchWriter: vi.fn() };
 });
+vi.mock('@flighthq/render-wgpu/contract', async (importOriginal) => {
+  const actual = await importOriginal<typeof WgpuRenderWgpuModule>();
+  return {
+    ...actual,
+    beginWgpuFrame: vi.fn((state: WgpuRenderState) => {
+      actual.getWgpuRenderStateRuntime(state).commandEncoder = {} as GPUCommandEncoder;
+    }),
+    beginWgpuRenderPass: vi.fn(),
+    setWgpuRenderTransform2D: vi.fn(),
+    createWgpuRenderTarget: vi.fn(
+      (_state: unknown, width: number, height: number): WgpuRenderTarget => ({
+        bindGroup: {} as GPUBindGroup,
+        colorSpace: 'srgb',
+        depthStencilTexture: {} as GPUTexture,
+        depthStencilView: {} as GPUTextureView,
+        texture: {} as GPUTexture,
+        view: {} as GPUTextureView,
+        format: 'bgra8unorm',
+        clearColors: [],
+        clearDepth: 1,
+        width,
+        height,
+      }),
+    ),
+    destroyWgpuRenderTarget: vi.fn(),
+    drawWgpuRenderTargetResult: vi.fn(),
+    endWgpuRenderPass: vi.fn(),
+    resizeWgpuRenderTarget: vi.fn((_state: unknown, target: WgpuRenderTarget, width: number, height: number) => {
+      target.width = width;
+      target.height = height;
+    }),
+    submitWgpuRenderPass: vi.fn((state: WgpuRenderState) => {
+      actual.getWgpuRenderStateRuntime(state).commandEncoder = null;
+    }),
+  };
+});
+vi.mock('./wgpuNode2D', async (importOriginal) => {
+  const actual = await importOriginal<typeof WgpuNode2DModule>();
+  return { ...actual, renderWgpuScene2D: vi.fn() };
+});
+
+import {
+  beginWgpuFrame,
+  createWgpuRenderStateRuntime,
+  destroyWgpuRenderTarget,
+  drawWgpuRenderTargetResult,
+  getWgpuMaterialRenderer,
+  getWgpuRenderStateRuntime,
+  registerWgpuMaterialRenderer,
+  resolveWgpuApplyBlendMode,
+  submitWgpuRenderPass,
+} from '@flighthq/render-wgpu/contract';
+
+import {
+  createWgpuCacheState,
+  defaultWgpuRenderCacheRenderer,
+  enableWgpuRenderCache,
+  ensureWgpuRenderCacheTarget,
+  getWgpuRenderCacheScreenState,
+  getWgpuRenderCacheTarget,
+  refreshWgpuRenderCache,
+  releaseWgpuRenderCache,
+} from './wgpuCache';
+import { renderWgpuScene2D } from './wgpuNode2D';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 function fakeScreen(options = {}): WgpuRenderState {
   const state = createRenderState(options) as unknown as WgpuRenderState;

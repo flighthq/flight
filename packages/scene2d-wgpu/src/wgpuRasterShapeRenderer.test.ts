@@ -6,25 +6,23 @@ import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createS
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistry } from '@flighthq/types/contract';
 
-import { scopeModuleMocks } from './moduleMockTestHelper';
-import type * as WgpuRasterShapeModule from './wgpuRasterShapeRenderer';
+// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
+// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
+// dance bought by hand comes from the platform here, with no hook. The dance was not merely redundant:
+// it rebuilt the subject's entire transitive module graph inside a FIXED `beforeAll` deadline, which is
+// unbounded work against a fixed clock and the shape of flake that tiering exists to remove.
+vi.mock('@flighthq/node/contract', async (importOriginal) => ({
+  ...(await importOriginal<typeof FlightNodeModule>()),
+  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+  getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
+    source?.data?.version ?? 0,
+}));
+
+import { defaultWgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
-let defaultWgpuRasterShapeRenderer: typeof WgpuRasterShapeModule.defaultWgpuRasterShapeRenderer;
-let drawWgpuRasterShape: typeof WgpuRasterShapeModule.drawWgpuRasterShape;
-
-scopeModuleMocks(['@flighthq/node']);
-
-beforeAll(async () => {
-  vi.doMock('@flighthq/node/contract', async (importOriginal) => ({
-    ...(await importOriginal<typeof FlightNodeModule>()),
-    getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-    getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
-  }));
-  ({ defaultWgpuRasterShapeRenderer, drawWgpuRasterShape } = await import('./wgpuRasterShapeRenderer'));
-  installWgpuMock();
-});
+beforeAll(() => installWgpuMock());
 
 function makeShapeData() {
   return {
