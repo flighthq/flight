@@ -508,6 +508,205 @@ export interface Physics3DJointSolver {
   clearAccumulatedImpulses?(joint: Physics3DJoint): void;
 }
 
+// The ORIENTATION half of a joint's two attachment frames. `Physics3DJoint` carries the position half —
+// the two local anchors — and a kind that constrains only a point needs nothing more. Every other kind
+// needs a full frame, and this is that frame's rotation: one unit quaternion per body, taking the joint's
+// own axes into that body's local frame.
+//
+// One convention holds across every kind that has an axis: THE JOINT'S PRIMARY AXIS IS THE FRAME'S LOCAL
+// +X. A hinge spins about frame X, a slider translates along frame X, a cone-twist twists about frame X
+// and swings X away from X, and a 6-DOF numbers its axes X, Y, Z in that frame. Frame Y and Z are the
+// perpendicular pair a hinge measures its angle against and a cone-twist's two swing limits are named for.
+//
+// Fixing ONE axis for every kind is the whole point. Engines that let each joint choose (a hinge about Z,
+// a cone-twist about X) make the convention a per-kind fact a reader has to carry, and a frame authored
+// for one kind then means something else in another. Here a frame is a frame.
+export interface Physics3DJointFrames {
+  localRotationAX: number;
+  localRotationAY: number;
+  localRotationAZ: number;
+  localRotationAW: number;
+  localRotationBX: number;
+  localRotationBY: number;
+  localRotationBZ: number;
+  localRotationBW: number;
+}
+
+// The authoring options every joint factory accepts. Anchors and `collideConnected` default, the two body
+// indices do not: a joint without endpoints has no meaning to default to.
+export interface Physics3DJointOptions {
+  bodyA: number;
+  bodyB: number;
+  localAnchorAX?: number;
+  localAnchorAY?: number;
+  localAnchorAZ?: number;
+  localAnchorBX?: number;
+  localAnchorBY?: number;
+  localAnchorBZ?: number;
+  collideConnected?: boolean;
+}
+
+// The authoring options for a joint carrying frames. Each rotation defaults to identity, which aligns the
+// joint frame with the body frame — the common case, and the one where a caller reasons in body axes.
+export interface Physics3DJointFrameOptions extends Physics3DJointOptions {
+  localRotationAX?: number;
+  localRotationAY?: number;
+  localRotationAZ?: number;
+  localRotationAW?: number;
+  localRotationBX?: number;
+  localRotationBY?: number;
+  localRotationBZ?: number;
+  localRotationBW?: number;
+}
+
+// Pins two anchors together and leaves all three rotational degrees of freedom free — a shoulder, a
+// pendulum link, a chain. The 3D counterpart of `Physics2DRevoluteJoint`'s point half, and the only
+// built-in kind that needs no frame: with rotation unconstrained there is no axis to name.
+//
+// Three constraint rows, solved as a coupled 3x3 block rather than three independent axes. Solving x, then
+// y, then z lets each undo part of the previous correction, and a loaded joint visibly creeps.
+export type Physics3DBallAndSocketJoint = Physics3DJoint;
+export type Physics3DBallAndSocketJointOptions = Physics3DJointOptions;
+
+// Pins two anchors together and locks all three rotational degrees of freedom — rigid attachment.
+//
+// Solved rather than exact, so it flexes under enough load. A truly rigid attachment is one body with two
+// colliders; the difference is that a fixed joint can be broken at runtime.
+export type Physics3DFixedJoint = Physics3DJoint & Physics3DJointFrames;
+export type Physics3DFixedJointOptions = Physics3DJointFrameOptions;
+
+// Pins two anchors together and confines relative rotation to the frame's X axis — a door, a wheel
+// bearing, an elbow. Optionally motorized and angle-limited.
+//
+// `lowerAngle` and `upperAngle` are RADIANS, like every angle in the math layer, measured from frame A's Y
+// axis to frame B's Y axis about the shared X axis, so the interval is signed and may straddle zero. The
+// motor drives the relative angular velocity about that axis toward `motorSpeed`, spending at most
+// `maxMotorTorque`; limits are solved after it and may override it, because a limit is a hard bound and a
+// motor is a request.
+export interface Physics3DHingeJoint extends Physics3DJoint, Physics3DJointFrames {
+  enableLimit: boolean;
+  lowerAngle: number;
+  upperAngle: number;
+
+  enableMotor: boolean;
+  motorSpeed: number;
+  maxMotorTorque: number;
+  // The motor's own accumulator. It is kind-specific rather than part of the `impulse0..5` block because
+  // the block's six slots are spoken for by the point and angular rows, and because a motor impulse is
+  // scaled and cleared on its own schedule — see `scaleAccumulatedImpulses`.
+  motorImpulse: number;
+}
+
+export interface Physics3DHingeJointOptions extends Physics3DJointFrameOptions {
+  enableLimit?: boolean;
+  lowerAngle?: number;
+  upperAngle?: number;
+  enableMotor?: boolean;
+  motorSpeed?: number;
+  maxMotorTorque?: number;
+}
+
+// Confines relative motion to translation along the frame's X axis, locking the other two translations and
+// all three rotations — a piston, a lift rail, a drawer. Optionally motorized and travel-limited.
+//
+// `lowerTranslation` and `upperTranslation` are distances along the axis, measured from A's anchor to B's,
+// so an interval containing zero admits the authored pose.
+export interface Physics3DSliderJoint extends Physics3DJoint, Physics3DJointFrames {
+  enableLimit: boolean;
+  lowerTranslation: number;
+  upperTranslation: number;
+
+  enableMotor: boolean;
+  motorSpeed: number;
+  maxMotorForce: number;
+  motorImpulse: number;
+}
+
+export interface Physics3DSliderJointOptions extends Physics3DJointFrameOptions {
+  enableLimit?: boolean;
+  lowerTranslation?: number;
+  upperTranslation?: number;
+  enableMotor?: boolean;
+  motorSpeed?: number;
+  maxMotorForce?: number;
+}
+
+// Pins two anchors together and bounds relative rotation as a cone plus a twist — the ragdoll joint. A hip,
+// a shoulder, a neck: rotation that is free within a range and hard-stopped outside it.
+//
+// SWING is how far frame B's X axis has tilted away from frame A's X axis, and TWIST is the remaining
+// rotation about X once that tilt is removed. The two limits are independent, which is what makes this
+// different from a 6-DOF with angular bounds: a cone is not a box, and a shoulder bounded by three
+// per-axis intervals reaches poses along the diagonal that the anatomy does not have.
+//
+// `swingLimitY` and `swingLimitZ` are the maximum swing half-angles when B's X axis tilts toward frame A's
+// local Y and Z respectively, in radians. Equal values give a circular cone; unequal ones give an
+// elliptical cone, interpolated by the direction of the tilt. `lowerTwistAngle`/`upperTwistAngle` bound the
+// twist and are signed, so a joint that may twist one way and not the other is one interval, not a flag.
+export interface Physics3DConeTwistJoint extends Physics3DJoint, Physics3DJointFrames {
+  enableSwingLimit: boolean;
+  swingLimitY: number;
+  swingLimitZ: number;
+
+  enableTwistLimit: boolean;
+  lowerTwistAngle: number;
+  upperTwistAngle: number;
+}
+
+export interface Physics3DConeTwistJointOptions extends Physics3DJointFrameOptions {
+  enableSwingLimit?: boolean;
+  swingLimitY?: number;
+  swingLimitZ?: number;
+  enableTwistLimit?: boolean;
+  lowerTwistAngle?: number;
+  upperTwistAngle?: number;
+}
+
+// Bounds each of the six degrees of freedom independently — the configurable joint every other kind is a
+// preset of. Reach for it when no built-in kind describes the constraint, not as a default: a hinge
+// expressed as a 6-DOF solves five locked rows where the hinge solves two, and reads as five coincidences
+// rather than as one axis.
+//
+// Each axis is one of three states, encoded in its bounds rather than in a mode enum, because the bounds
+// have to be read anyway and a separate flag is a second source that can disagree with them:
+//
+//   lower > upper   FREE      the axis is unconstrained
+//   lower === upper LOCKED    held at exactly that value
+//   otherwise       LIMITED   held inside [lower, upper], free within it
+//
+// A default-constructed joint is free on all six axes and constrains nothing. Linear bounds are distances
+// along frame A's axes; angular bounds are radians about them.
+export interface Physics3DGeneric6DofJoint extends Physics3DJoint, Physics3DJointFrames {
+  lowerLinearX: number;
+  lowerLinearY: number;
+  lowerLinearZ: number;
+  upperLinearX: number;
+  upperLinearY: number;
+  upperLinearZ: number;
+
+  lowerAngularX: number;
+  lowerAngularY: number;
+  lowerAngularZ: number;
+  upperAngularX: number;
+  upperAngularY: number;
+  upperAngularZ: number;
+}
+
+export interface Physics3DGeneric6DofJointOptions extends Physics3DJointFrameOptions {
+  lowerLinearX?: number;
+  lowerLinearY?: number;
+  lowerLinearZ?: number;
+  upperLinearX?: number;
+  upperLinearY?: number;
+  upperLinearZ?: number;
+  lowerAngularX?: number;
+  lowerAngularY?: number;
+  lowerAngularZ?: number;
+  upperAngularX?: number;
+  upperAngularY?: number;
+  upperAngularZ?: number;
+}
+
 // The simulation. A world owns its bodies, its contacts, its joints, and the solver state over them.
 //
 // It owns no broadphase index, which is the one structural difference from `Physics2DWorld`. That is
