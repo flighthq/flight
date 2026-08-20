@@ -185,6 +185,12 @@ body {
   color: #555;
 }
 
+/* Held sits visually between the two failing groups above it and the settled ones below: a colour of its
+   own, so a deferred decision is never mistaken at a glance for either an open failure or a pass. */
+.attention-header[data-attention='held'] {
+  color: #9a6ab0;
+}
+
 .attention-header[data-attention='requested'] {
   color: #7a9ad0;
 }

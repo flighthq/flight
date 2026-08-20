@@ -1,4 +1,8 @@
-import { orderReviewItems, reviewItemByVisualDelta } from '../tools/review/src/reviewOrder';
+import {
+  orderReviewItems,
+  resolveReviewAttentionGroup,
+  reviewItemByVisualDelta,
+} from '../tools/review/src/reviewOrder';
 import type { ReviewAttentionGroup, ReviewOrderAccessors } from '../tools/review/src/reviewOrder';
 
 interface Item {
@@ -42,5 +46,59 @@ describe('review visual order', () => {
       'alpha',
       'aardvark',
     ]);
+  });
+});
+
+describe('resolveReviewAttentionGroup', () => {
+  function cell(
+    overrides: Partial<{
+      commissionState: 'included' | 'differs' | 'not-commissioned' | 'requested' | null;
+      changed: boolean | null;
+      holdReason: string | null;
+    }> = {},
+  ) {
+    return {
+      commissionState: overrides.commissionState === undefined ? ('included' as const) : overrides.commissionState,
+      changed: overrides.changed === undefined ? false : overrides.changed,
+      holdReason: overrides.holdReason ?? null,
+    };
+  }
+
+  // ★ THE CONFLATION THIS EXISTS TO END. commissionState is resolved without ever seeing the hold ledger,
+  // so a held cell reported `differs` exactly like a cell nobody had decided about — while the gate
+  // demotes the held one and passes. One pile, two opposite remedies.
+  it('separates a scene whose every difference is held from one with an open difference', () => {
+    expect(resolveReviewAttentionGroup([cell({ commissionState: 'differs' })])).toBe('differs');
+    expect(resolveReviewAttentionGroup([cell({ commissionState: 'differs', holdReason: 'canvas is wrong' })])).toBe(
+      'held',
+    );
+  });
+
+  // Per-cell, not per-scene: one open failure is still an open failure however many siblings are settled.
+  it('keeps a partly held scene in differs', () => {
+    const group = resolveReviewAttentionGroup([
+      cell({ commissionState: 'differs', holdReason: 'canvas is wrong' }),
+      cell({ commissionState: 'differs' }),
+    ]);
+
+    expect(group).toBe('differs');
+  });
+
+  it('applies the same rule to an uncommissioned cell, which the gate also fails', () => {
+    expect(resolveReviewAttentionGroup([cell({ commissionState: 'not-commissioned' })])).toBe('not-commissioned');
+    expect(
+      resolveReviewAttentionGroup([cell({ commissionState: 'not-commissioned', holdReason: 'no second host' })]),
+    ).toBe('held');
+  });
+
+  it('does not let a held cell raise a scene into changed', () => {
+    expect(resolveReviewAttentionGroup([cell({ changed: true })])).toBe('changed');
+    expect(resolveReviewAttentionGroup([cell({ changed: true, holdReason: 'known drift' })])).toBe('held');
+  });
+
+  it('leaves settled scenes where they were', () => {
+    expect(resolveReviewAttentionGroup([cell({ commissionState: 'requested' })])).toBe('requested');
+    expect(resolveReviewAttentionGroup([cell()])).toBe('included');
+    expect(resolveReviewAttentionGroup([])).toBe('included');
   });
 });
