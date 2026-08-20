@@ -23,8 +23,10 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescriptionWithheld } from '@ft/render';
+import { declareExpectedImageDescriptionWithheld, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescriptionWithheld(
   'The Kuwahara shader has a known implementation bug: 3 of 4 sector quadrants degenerate to a line ' +

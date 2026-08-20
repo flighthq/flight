@@ -26,7 +26,9 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background (0x080a10) carrying TWELVE SEPARATE SQUARE TILES in a 4-by-3 ' +

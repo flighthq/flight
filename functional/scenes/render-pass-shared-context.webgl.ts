@@ -11,7 +11,9 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
 import type { Bitmap } from '@flighthq/types';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'The entire 320×240 field is a single opaque bright red, approximately R230 G20 B20. It is ' +

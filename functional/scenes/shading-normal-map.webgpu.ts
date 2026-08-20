@@ -37,8 +37,10 @@ import {
   submitWgpuRenderPass,
   VertexDisplaceModifierSource,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black navy field (about R8 G11 B18), one large pale blue, shallow box faces ' +

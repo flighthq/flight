@@ -33,8 +33,10 @@ import {
   submitWgpuRenderPass,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black blue-grey field (about R16 G16 B20), eight pale blue-white glows form a ' +

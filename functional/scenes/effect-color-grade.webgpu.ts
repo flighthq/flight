@@ -22,11 +22,13 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same color-grade intent as render.webgl.ts. Wgpu render-state init
 // is async; the effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with six upright rectangles of about 120 x 160, in ' +
     'two rows of three: centred near (144,192), (400,192) and (656,192) across the top, and (144,432), ' +

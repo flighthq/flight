@@ -22,11 +22,13 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for exposure. The HDR rgba16f scene target is multiplied by 2^exposure; init
 // is async so createWgpuRenderState is awaited.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
     '72 degrees, so they span 166, 193, 197 and 176 px corner to corner (side*(cos a + sin a)): white centred ' +

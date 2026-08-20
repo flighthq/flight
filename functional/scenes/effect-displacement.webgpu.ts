@@ -23,10 +23,12 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column: hashed block tears + RGB channel separation in a single fullscreen WGSL pass.
+declareAntialiasingPolicy('no-aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with five wide horizontal bars, each about 512 px wide ' +
     'and 78 px tall, stacked down the field from x 144 with their tops near y 48, 150, 252, 354 and ' +

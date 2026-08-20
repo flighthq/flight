@@ -28,7 +28,9 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setNodeLocalMatrix4,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit violet (0x8040d0) cube scaled 2× uniformly. The front face at depth 3, scale s = H/(6*tan(PI/8)) ≈ 241 px/unit, spans x W/2 ± s ≈ 159–641, y H/2 ± s ≈ 59–541, filling most of the frame but leaving the corners as background.',

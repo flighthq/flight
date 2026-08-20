@@ -28,7 +28,9 @@ import {
   setNodeLocalMatrix4,
   translateMatrix4,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit teal (0x30c0a0) unit cube translated off-center, its front face at depth 3.5, scale s = H/(7*tan(PI/8)) ≈ 207 px/unit, spanning x W/2 + 0.8*s to W/2 + 1.8*s ≈ 566–772, y H/2 − 1.2*s to H/2 − 0.2*s ≈ 52–259, centered near (W/2 + 1.3*s, H/2 − 0.7*s) ≈ (669, 156). The frame center is background — the cube is not at the origin. The lower-left quadrant is also background.',

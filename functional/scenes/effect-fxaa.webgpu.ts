@@ -23,8 +23,10 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'Four rotated rectangles (white, red 0xff3040, cyan 0x30c0ff, yellow 0xffd040) on a near-black 800×600 background (0x05060a), each 180×180 px, centered at (224,180), (576,180), (224,420), (576,420), rotated at 27°/40°/53°/66°. Diagonal edges are smooth rather than stair-stepped — FXAA antialiasing blends the high-contrast boundaries. No glow or halo; the smoothing is confined to edge pixels.',

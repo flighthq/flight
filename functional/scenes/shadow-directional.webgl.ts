@@ -30,7 +30,9 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setVector3,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 near-black sky frames a light-grey ground plane receding toward mid-field and a ' +

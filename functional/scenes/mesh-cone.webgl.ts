@@ -25,7 +25,9 @@ import {
   renderGlBackground,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit amber (0xf0a020) cone (base radius 0.7, height 1.4) viewed from a slight side angle (eye at 1.4, 0.8, 2.6). The apex at world (0, 0.7, 0) projects near (0.5*W, 0.22*H) ≈ (400, 130). The base rim circle at world y = -0.7 spans x 0.30*W–0.70*W ≈ 241–559, y 0.65*H–0.90*H ≈ 391–542 (tangent silhouette from eye to base rim, not axis-extreme points). The overall silhouette tapers from the wide base up to the apex point. No shading gradient — the material is unlit. Frame corners are background.',

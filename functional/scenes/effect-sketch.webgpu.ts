@@ -23,8 +23,10 @@ import {
   submitWgpuRenderPass,
   getBitmapPixelRgb,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 near-black field carries the stroke-like remains of 18 narrow rectangles in four ' +
