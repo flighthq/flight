@@ -33,7 +33,10 @@ describe('applyChromaticAberrationEffectToGl', () => {
     expect(typeof applyChromaticAberrationEffectToGl).toBe('function');
   });
 
-  it('keeps the radial direction finite and GL-oriented at and near the optical center', () => {
+  // Scope boundary: this pins only the normalize epsilon sign for an already-centered vector. Changing the
+  // shader's `centered` UV transform can invert which sign is correct without this unit seeing that other term.
+  // The composed transform-plus-epsilon invariant is deferred to the approved top-left/Y-down effect-UV migration.
+  it('pins the radial normalize epsilon sign at and near zero input', () => {
     const unguardedCenter = normalizeDirection([0, 0], [0, 0]);
     const preFixCenter = normalizeDirection([0, 0], [1e-5, 1e-5]);
     const fixedCenter = normalizeDirection([0, 0], readShaderEpsilon());

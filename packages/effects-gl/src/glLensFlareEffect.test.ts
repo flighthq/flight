@@ -33,7 +33,10 @@ describe('applyLensFlareEffectToGl', () => {
     expect(typeof applyLensFlareEffectToGl).toBe('function');
   });
 
-  it('keeps the halo direction finite and GL-oriented at and near the optical center', () => {
+  // Scope boundary: this pins only the normalize epsilon sign for an already-computed `toCenter` vector. Changing
+  // that UV transform can invert which sign is correct without this unit seeing the other term. The composed
+  // transform-plus-epsilon invariant is deferred to the approved top-left/Y-down effect-UV migration.
+  it('pins the halo normalize epsilon sign at and near zero input', () => {
     const unguardedCenter = normalizeDirection([0, 0], [0, 0]);
     const preFixCenter = normalizeDirection([0, 0], [1e-5, 1e-5]);
     const fixedCenter = normalizeDirection([0, 0], readShaderEpsilon());
