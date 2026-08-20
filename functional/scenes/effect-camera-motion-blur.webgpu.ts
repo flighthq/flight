@@ -44,8 +44,8 @@ declareExpectedImageDescription(
     'effect and no tile takes on another hue, but the ink is NOT position-preserving: only the t = 0 tap sits ' +
     'where the tile was drawn, and the rest spread its colour outward.',
 );
-// Wgpu parity column. Wgpu has no velocity G-buffer here, so the effect is color-only/uniform:
-// it applies a uniform full-frame blur rather than a motion-vector-driven smear.
+// Wgpu parity column for the same single-pass radial/zoom smear as Gl. Per-object motion blur is the
+// separate MotionBlurEffect path and reads a velocity texture when the scene supplies one.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);

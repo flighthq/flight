@@ -42,27 +42,8 @@ declareExpectedImageDescription(
 // apart. Deliberately OFF-AXIS: at 0 or 90 the lit and shaded bands land on one axis only, where a
 // Y-origin error is either invisible or indistinguishable from a sign convention. 45 degrees puts them
 // on both, so the oracle can name a corner rather than an edge.
-//
-// ★ WHAT THIS CELL CANNOT ESTABLISH, AND A DEFECT FOUND WHILE WRITING IT. The Gl runner does not
-// resolve `angle` to distinct pictures. Measured on this scene by sweeping the angle and reading the
-// four interior bands (top / bottom / left / right):
-//
-//     0     128.0  128.0   25.1  230.4      the only angle that lights the horizontal axis
-//     45     49.1  206.6   49.1  206.6
-//     90     25.1  230.4  128.0  128.0
-//     135    49.1  206.6   49.1  206.6      identical to 45
-//     180    25.1  230.4  128.0  128.0      identical to 90, though it should mirror 0
-//     225    49.1  206.6   49.1  206.6      identical to 45
-//     270    25.1  230.4  128.0  128.0      identical to 90, though it should mirror 90
-//     315   flat   flat   flat   flat       the bevel vanishes entirely
-//
-// Eight angles produce three outcomes and one degenerate case. `GradientBevelEffect` collapses the same
-// way (90 and 180 identical), which points at the shared bevel encode seam rather than either runner.
-//
-// So the oracle below can establish that the effect RAN and that the lit pair is the one the light
-// reaches at 45 degrees — both of which fail loudly — but it cannot establish that the angle is honoured
-// as a continuous parameter, because the render does not vary with it. That is recorded here rather
-// than asserted, because the fix belongs to the runner and this scene is the thing that found it.
+// The runner now converts the public degree value once at its trigonometry seam. This oracle establishes
+// that the effect ran and that the lit pair is the one the light reaches at the authored 45 degrees.
 const BEVEL_ANGLE = 45;
 
 const pixelRatio = window.devicePixelRatio || 1;

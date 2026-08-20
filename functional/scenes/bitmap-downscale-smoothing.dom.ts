@@ -1,7 +1,6 @@
-// BACKEND CAVEAT: scoped to canvas/dom (see package.json `renderers`). On WebGL/WGPU the bitmap texture
-// filter is taken from the GLOBAL state.allowSmoothing (render-gl bindGlTexture), NOT the per-bitmap
-// smoothing flag — so both bitmaps share one filter and the nearest-vs-bilinear distinction cannot be
-// made there. A renderer limitation; Canvas/DOM honor per-bitmap smoothing.
+// This Canvas/DOM pair exercises the native 2D sampling paths. The GPU backends no longer have the old
+// global-filter limitation: `bitmap-perbitmap-smoothing` proves that Gl reapplies sampler state per bind
+// and Wgpu selects the Texture's LINEAR/NEAREST sampler variant per draw.
 //
 // bitmap-downscale-smoothing — validates Bitmap.smoothing under DOWN-scaling, the minification case the
 // existing bitmap-smoothing test (upscaling) does not cover. A large 256×256 high-frequency checkerboard

@@ -1,3 +1,4 @@
+import { hasWgpuRenderEffectRunner } from '@flighthq/effects-wgpu/contract';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -94,6 +95,13 @@ render(root);
 // should retain high luminance (> 200) after the TAA pass, verifying the pipeline processes content
 // correctly. Without the pipeline, the frame is blank.
 export function assertRender(frame: Readonly<Bitmap>): void {
+  if (hasWgpuRenderEffectRunner(state, 'TaaEffect')) {
+    throw new Error(
+      '[effect-taa] Wgpu now has a registered TAA runner — update this control cell and its description, ' +
+        'which both say that capability is absent',
+    );
+  }
+
   const cx = Math.round(frame.width * 0.28);
   const cy = Math.round(frame.height * 0.3);
   const rgb = getBitmapPixelRgb(frame, cx, cy);
