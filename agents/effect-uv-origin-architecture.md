@@ -103,7 +103,7 @@ the "Existing hand compensations" section below lists them all.
 | LensDistortion | Fixed-centre radial polynomial, bounds branch, and direct sampling all **hold**. |
 | LensFlare | Direct scene read **holds**; the centre-directed ghost train **holds**. The halo **fails** absent compensation: the unreflected `vec2(1e-5)` epsilon would repeat ChromaticAberration's positive Y bias. Compensated locally with `vec2(1e-5, -1e-5)`. |
 | Median | Square-neighbour collection **holds as a reflected multiset**; sorting that multiset and selecting its median **holds**; direct centre alpha **holds**. |
-| MotionBlur | No-velocity sentinel copy **holds**; direct velocity lookup **holds**. The velocity-driven tap line **fails** absent compensation for diagonal motion: both velocity buffers store Y-down `(vx, vy)`, and without negation the GL smear direction would disagree. Pure horizontal and pure vertical lines hide the defect. Compensated locally by negating `velocityPixels.y`. |
+| MotionBlur | **BLOCKED pending task 118.** A live render measurement used a colour-change positive control (40,000 differing pixels), then found 0 differing pixels for the `(0, 0)` to `(0, 40)` velocity A/B and for removing MotionBlur entirely. The current scene therefore cannot decide the rendered origin verdict: the whole effect is inert. The conditional source result still says the velocity-driven tap line **fails** absent compensation for diagonal motion, so GL retains the local `velocityPixels.y` negation; that same-method source result is not picture corroboration. |
 | OuterGlow | Tint **holds**; box blur **holds**; direct blit/erase compositing **holds**. |
 | Outline | The reflected Sobel neighbourhood preserves X gradient and negates Y gradient; magnitude and direct alpha paths therefore **hold**. |
 | Pixelate | Block-centre quantization **holds** when `height / size` is integral, away from exact quantizer boundaries. It **fails** for the supported general case with a non-integral vertical block count because top and bottom leave different remainders. |
@@ -130,6 +130,12 @@ MotionBlur, Pixelate, and RadialBlur. It also confirms that every path in the fo
 direct-read, and 16-pair hidden groups has now been tested by the same property rather than inferred from
 its syntax.
 
+For MotionBlur, that property result remains a conditional source verdict, not rendered corroboration.
+The live capture instrument changed 40,000 pixels under its colour positive control, but the `(0, 0)` to
+`(0, 40)` velocity A/B and removal of MotionBlur each changed 0 pixels. The whole effect is inert in the
+current scene, so the rendered verdict is blocked pending task 118 even though the sign compensation
+remains in source.
+
 Two qualifications changed materially. First, current Kuwahara is not merely tie-sensitive under
 reflection: its degenerate sample sets do not permute, so ordinary unique-variance content can diverge.
 Repairing the quadrant construction would restore the intended four-set permutation, after which tie
@@ -145,8 +151,10 @@ scene cannot detect. In particular:
 - distinguish Bevel and GradientBevel highlight from shadow under a non-axis-aligned light;
 - compare Dither's exact 4x4 phase and keep deterministic FilmGrain/LensDirt seeds;
 - use a 45-degree nonzero-distance DropShadow/InnerShadow on an asymmetric source;
-- keep diagonal DirectionalBlur and diagonal velocity MotionBlur probes, because horizontal and vertical
-  unoriented lines each hide the Y-only reflection;
+- keep the diagonal DirectionalBlur probe, because horizontal and vertical unoriented lines each hide
+  the Y-only reflection;
+- after task 118 makes MotionBlur visibly active, use a diagonal velocity probe for the same reason;
+  until effect removal changes the capture, finer MotionBlur parameter probes are not admissible;
 - use angled Halftone, an odd-height asymmetric Convolution kernel, non-dividing Pixelate size, and
   off-centre RadialBlur;
 - exercise ChromaticAberration radial mode and LensFlare halo separately from their holding paths. Their
@@ -176,7 +184,8 @@ The following source already repairs one positional or directional use locally:
 - GL GodRays: the recently corrected runner converts the top-left `centerY` contract into GL texture Y.
   The dead `u_resolution` uniform (declared, set, never read) has been removed.
 - GL LensFlare: negates epsilon Y in the halo normalize() guard (`vec2(1e-5, -1e-5)`).
-- GL MotionBlur: negates `velocityPixels.y` for the smear direction.
+- GL MotionBlur: retains the `velocityPixels.y` negation for the smear direction; visible validation is
+  blocked pending task 118 because the current scene is byte-identical with the effect removed.
 - GL Scanlines: flips the row used for the sine phase.
 - GL TiltShift: flips the row before comparing it with the top-left focus centre.
 - WGPU ScreenSpaceFog: flips the fallback Y ramp to match the GL horizon placement.
@@ -261,9 +270,10 @@ unobserved:
 - off-centre GodRays, TiltShift, and RadialBlur prove public Y parameters;
 - seeded FilmGrain and LensDirt plus the exact Dither matrix prove procedural coordinates;
 - angled Halftone, Bevel, GradientBevel, DropShadow, and InnerShadow prove signed/rotated directions;
-- diagonal DirectionalBlur and velocity-driven MotionBlur prove that full-inversion tap symmetry is not
-  mistaken for Y-reflection symmetry; radial ChromaticAberration and the LensFlare halo prove that
-  zero-length guards do not introduce an origin-dependent directional bias;
+- diagonal DirectionalBlur proves that full-inversion tap symmetry is not mistaken for Y-reflection
+  symmetry; after task 118 restores visible MotionBlur output, velocity-driven MotionBlur must prove the
+  same property; radial ChromaticAberration and the LensFlare halo prove that zero-length guards do not
+  introduce an origin-dependent directional bias;
 - an asymmetric Convolution kernel and non-dividing Pixelate size prove latent options;
 - the six pre-existing compensated families plus the recently corrected GodRays pair prove that the
   migration did not double-flip them;
