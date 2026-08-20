@@ -5,11 +5,16 @@ import { join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
+import { getOraclePngPixelSha256 } from '../../scripts/reference-image-png';
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
 import { workspacePackages } from '../../scripts/workspaces';
 import { isReviewableCell, reviewableCells, reviewCellRole } from './src/cellRole';
 import type { ReviewCellRole } from './src/cellRole';
 import type { ReviewCommissionState as CommissionState } from './src/commissionState';
+import {
+  createReferenceImageRequestTarget,
+  resolveReferenceImageCommissionState,
+} from './src/referenceImageCommission';
 import {
   sourceContainsExpectedDescription,
   sourceDeclaresFunctionalBackendControl,
@@ -47,6 +52,7 @@ interface ReviewCell {
   error: string | null;
   changed: boolean | null;
   hash: string | null;
+  referencePixelSha256: string | null;
   provenance: ReviewCellProvenance | null;
   build: ReviewBuildProvenance | null;
   commissionState: CommissionState | null;
@@ -278,17 +284,13 @@ function resolveCommissionState(
   tool: string,
   name: string,
   renderer: string,
-  hash: string | null,
+  cell: Pick<ReviewCell, 'hash' | 'referencePixelSha256'>,
   locked: ReadonlyMap<string, string>,
   requested: ReadonlySet<string>,
 ): CommissionState {
   const imageKey = `${tool}/${name}/${renderer}`;
   const lockedHash = locked.get(imageKey);
-  if (lockedHash !== undefined) {
-    return hash !== null && hash === lockedHash ? 'included' : 'differs';
-  }
-  if (requested.has(imageKey)) return 'requested';
-  return 'not-commissioned';
+  return resolveReferenceImageCommissionState(cell, lockedHash, requested.has(imageKey));
 }
 
 function discoverReviewTests(): ReviewTest[] {
@@ -353,6 +355,7 @@ function discoverReviewTests(): ReviewTest[] {
         let error: string | null = null;
         let changed: boolean | null = null;
         let hash: string | null = null;
+        let referencePixelSha256: string | null = null;
         let provenance: ReviewCellProvenance | null = null;
         let build: ReviewBuildProvenance | null = null;
         let cellDescription: string | undefined;
@@ -395,11 +398,20 @@ function discoverReviewTests(): ReviewTest[] {
           }
         }
 
+        try {
+          const referenceHash = getOraclePngPixelSha256(readFileSync(screenshotPath));
+          if ('pixelSha256' in referenceHash) referencePixelSha256 = referenceHash.pixelSha256;
+        } catch {
+          // A missing or unreadable reference-domain identity is not interchangeable with status.hash.
+        }
+
         if (role === 'reviewable' && cellDescription !== undefined && expectedImageDescription === undefined) {
           expectedImageDescription = cellDescription;
         }
         const commissionState =
-          role === 'reviewable' ? resolveCommissionState(tool, name, renderer, hash, locked, requested) : null;
+          role === 'reviewable'
+            ? resolveCommissionState(tool, name, renderer, { hash, referencePixelSha256 }, locked, requested)
+            : null;
         const imageKey = `${tool}/${name}/${renderer}`;
         const holdReason = role === 'reviewable' ? (held.get(imageKey) ?? null) : null;
         const parityStatus: ParityStatus = parity.get(imageKey) ?? 'no-data';
@@ -410,6 +422,7 @@ function discoverReviewTests(): ReviewTest[] {
           error,
           changed,
           hash,
+          referencePixelSha256,
           provenance,
           build,
           commissionState,
@@ -518,9 +531,10 @@ function reviewPlugin(): Plugin[] {
                 // has no FLIGHT_CAPTURE_ENVIRONMENT_ID, so reading it from provenance rejected every
                 // locally-captured cell — the workflow reads the file for the same reason.
                 const registeredEnvironmentId = readRegisteredEnvironmentId();
-                // A cell without a hash has no capture to commission; it is filtered below. A cell WITH
-                // captured pixels but no build stamp is different: the build already happened, and the
-                // missing step is to capture again so status.json records that completed build.
+                // A cell without a reference-domain pixel hash has no decodable screenshot to commission;
+                // it is filtered below. A cell WITH captured pixels but no build stamp is different: the
+                // build already happened, and the missing step is to capture again so status.json records
+                // that completed build.
                 const capturedCells = payload.cells.filter((c) => c.pixelSha256 !== null);
                 const noBuild = capturedCells.filter((c) => c.build === null).length;
                 const unstamped = capturedCells.filter((c) => c.build?.commit === null).length;
@@ -550,8 +564,8 @@ function reviewPlugin(): Plugin[] {
                     JSON.stringify({
                       error:
                         noHash === payload.cells.length
-                          ? `no capture hash for any cell of ${payload.entry} — these artifacts predate pixel hashing, or the capture failed. Capture the cells before commissioning`
-                          : 'no eligible cells: every cell needs a capture hash and a host identity',
+                          ? `no reference pixel hash for any cell of ${payload.entry} — the screenshot is absent or cannot be decoded. Capture the cells before commissioning`
+                          : 'no eligible cells: every cell needs a reference pixel hash and a host identity',
                     }),
                   );
                   return;
@@ -579,16 +593,9 @@ function reviewPlugin(): Plugin[] {
                   schemaVersion: 3,
                   id,
                   subject: payload.tool,
-                  targets: eligible.map((c) => ({
-                    entry: payload.entry,
-                    renderer: c.renderer,
-                    pixelSha256: c.pixelSha256,
-                    build: c.build,
-                    capture: {
-                      hostInstanceId: c.hostInstanceId,
-                      environmentId: registeredEnvironmentId,
-                    },
-                  })),
+                  targets: eligible.map((c) =>
+                    createReferenceImageRequestTarget(payload.entry, c, registeredEnvironmentId),
+                  ),
                   frames: 1,
                   reason: payload.reason || 'Commissioned from review',
                 };

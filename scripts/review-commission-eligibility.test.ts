@@ -14,6 +14,7 @@ function cell(
     approval: boolean;
     role: 'reviewable' | 'reference';
     hash: string | null;
+    referencePixelSha256: string | null;
     hostInstanceId: string | null;
     environmentId: string | null;
     build: { commit: string | null } | null;
@@ -23,6 +24,8 @@ function cell(
     approval: overrides.approval,
     role: overrides.role ?? 'reviewable',
     hash: overrides.hash === undefined ? 'pixels' : overrides.hash,
+    referencePixelSha256:
+      overrides.referencePixelSha256 === undefined ? 'reference-pixels' : overrides.referencePixelSha256,
     provenance: {
       hostInstanceId: overrides.hostInstanceId === undefined ? 'local-host' : overrides.hostInstanceId,
       environmentId: overrides.environmentId === undefined ? null : overrides.environmentId,
@@ -39,7 +42,8 @@ describe('review commission eligibility', () => {
   });
 
   it('distinguishes no capture from a captured cell without a build stamp', () => {
-    expect(reviewCommissionIneligibility(cell({ hash: null, build: null }))).toBe('missing-capture');
+    expect(reviewCommissionIneligibility(cell({ referencePixelSha256: null, build: null }))).toBe('missing-capture');
+    expect(reviewCommissionIneligibility(cell({ hash: null }))).toBe(null);
     expect(reviewCommissionIneligibility(cell({ build: null }))).toBe('missing-build-stamp');
     expect(reviewCommissionIneligibility(cell({ build: { commit: null } }))).toBe('missing-build-stamp');
 
@@ -64,13 +68,17 @@ describe('review commission eligibility', () => {
 
 describe('selectReviewCommissionCells', () => {
   it('falls back to every eligible cell when there are no per-cell marks', () => {
-    const cells = [cell(), cell({ hash: null }), cell({ build: { commit: null } })];
+    const cells = [cell(), cell({ referencePixelSha256: null }), cell({ build: { commit: null } })];
 
     expect(selectReviewCommissionCells(cells, (candidate) => candidate.approval)).toEqual([cells[0]]);
   });
 
   it('selects only approved eligible cells when marks exist', () => {
-    const cells = [cell({ approval: true }), cell({ approval: false }), cell({ approval: true, hash: null })];
+    const cells = [
+      cell({ approval: true }),
+      cell({ approval: false }),
+      cell({ approval: true, referencePixelSha256: null }),
+    ];
 
     expect(selectReviewCommissionCells(cells, (candidate) => candidate.approval)).toEqual([cells[0]]);
   });
