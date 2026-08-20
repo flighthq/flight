@@ -49,6 +49,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [Canvas CSS-filter / luminance sweep](canvas-css-filter-luminance-sweep.md) — the exhaustive nine-effect
   filter population, its one luminance intersection, and the mixed-channel reproduction that distinguishes it.
 - [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.
+- [collision support registry](collision-support-registry.md) — **unratified.** replacing the O(N²) pair matrix with a support-function core; where genericity stops, and how the 2D/3D boundary is carried when there is no graph to enforce it.
 - [dom screenshot / fingerprint divergence](dom-screenshot-fingerprint-divergence.md) — DOM captures produce two different artifacts for the regression gate and human review; the gate is blind to screenshot-only defects.
 - [document audio resources](document-audio-resources.md) — a document carries audio bytes on the image lane's terms, never playback.
 - [draw order model](draw-order-model.md) — child order is the only order; the caller-owned `NodeOrderList`.
@@ -57,6 +58,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [effect-pass UV origin](effect-uv-origin-architecture.md) — the GL/WGPU positional-UV sweep and the proposed sampler-local normalization seam.
 - [loader progress currencies](loader-progress-currencies.md) — item count vs weighted fraction vs bytes.
 - [material modifier model](material-modifier-model.md) — color adjustment as a material feature.
+- [physics3d solver abstraction](physics3d-solver-abstraction.md) — **unratified.** sequential impulses first; the four data-model obligations that keep XPBD possible, and why a `SolverBackend` interface is not one of them.
 - [parity skip declaration model](parity-skip-declaration-model.md) — **unratified.** what a parity skip must record, and the reference-to-all-pairs demotion it hides.
 - [effect recipe model](effect-recipe-model.md) — **unratified.** who turns an effect intent into passes; the `strength` definition.
 - [morph-target animation](morph-target-animation.md) — the blend-shape deformer and the GPU path.
@@ -73,6 +75,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [scene2d format coverage](scene2d-format-coverage.md) — what the Lottie and SVG importers read and what they do not.
 - [scene3d format coverage](scene3d-format-coverage.md) — what each 3D importer reads and what it does not, per format.
 - [skeleton2d animation model](skeleton2d-animation-model.md) — non-bone timelines, target-kind dispatch, and where constraints live.
+- [spatial dimension seams](spatial-dimension-seams.md) — **unratified.** two dimension-native seams over one shared policy layer; why the 2026-07-15 "same seam" wording describes something that does not exist.
 - [swf JPEG alpha import](swf-jpeg-alpha-import-proposal.md) — the measured boundary for rejoining encoded colour and a separate alpha plane without choosing bitmap routing.
 - [swf video import](swf-video-import-proposal.md) — **proposal.** what a DefineVideoStream import may honestly claim at each stage.
 - [timeline source model](timeline-source-model.md) — dictionary vs sequence, and where playback vocabulary lives.
