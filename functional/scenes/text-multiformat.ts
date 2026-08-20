@@ -18,7 +18,7 @@ import {
   RichTextKind,
   setRichTextContent,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -32,6 +32,8 @@ const FONT_SIZE = 56;
 // The string splits cleanly into two equal-length halves at the space; the first half renders red, the
 // second blue. With equal glyph counts per half, the color boundary lands near the field's horizontal
 // midpoint, so the left third is reliably red and the right third reliably blue.
+declareAntialiasingPolicy('aa');
+
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
   height: HEIGHT,

@@ -21,7 +21,7 @@ import {
   setTilemapTile,
   TilemapKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -36,6 +36,8 @@ const COLS = 4;
 const ROWS = 3;
 const MAP_X = 200; // top-left of the tilemap in logical pixels
 const MAP_Y = 120;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

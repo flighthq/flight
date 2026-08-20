@@ -31,7 +31,7 @@ import {
   getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -59,6 +59,8 @@ const SVG_SOURCE = `<svg width="${WIDTH}" height="${HEIGHT}">
   <rect x="${BOUNDING_BOX_X}" y="${SHAPE_Y}" width="${SHAPE_WIDTH}" height="${SHAPE_HEIGHT}"
         fill="#33ff66" clip-path="url(#keepRight)"/>
 </svg>`;
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

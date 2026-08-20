@@ -25,7 +25,7 @@ import {
   getBitmapPixelRgb,
   invalidateNodeAppearance,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -56,6 +56,8 @@ function buildAlphaRampCanvas(): HTMLCanvasElement {
   ctx.fillRect(0, 0, IMG_SIZE, IMG_SIZE);
   return canvas;
 }
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

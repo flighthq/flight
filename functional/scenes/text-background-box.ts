@@ -21,7 +21,7 @@ import {
   RichTextKind,
   setRichTextFormatRange,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -38,6 +38,8 @@ const FIELD_H = 240;
 const FONT_SIZE = 40;
 
 const TEXT = 'BG';
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

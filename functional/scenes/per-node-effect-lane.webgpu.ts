@@ -38,7 +38,7 @@ import {
   renderWgpuScene2D,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -50,6 +50,8 @@ const FINAL_SCALE_X = 1.7;
 const FINAL_SCALE_Y = 1.45;
 
 export const minCoverage = 0;
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

@@ -24,7 +24,7 @@ import {
   invalidateNodeLocalTransform,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -41,6 +41,8 @@ const SVG_SOURCE = `<svg width="${DOC_WIDTH}" height="${DOC_HEIGHT}">
   <rect x="0" y="0" width="${HALF_WIDTH}" height="${HALF_HEIGHT}" fill="#ff3333"/>
   <rect x="${HALF_WIDTH}" y="${HALF_HEIGHT}" width="${HALF_WIDTH}" height="${HALF_HEIGHT}" fill="#33ff66"/>
 </svg>`;
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

@@ -9,7 +9,7 @@
 // well outside the field has none (the field did not flood the screen).
 import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -21,6 +21,8 @@ const FIELD_Y = 180;
 const FIELD_W = 420;
 const FIELD_H = 120;
 const FONT_SIZE = 72;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

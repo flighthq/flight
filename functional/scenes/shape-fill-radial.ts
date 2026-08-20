@@ -19,7 +19,7 @@ import {
   getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -30,6 +30,8 @@ const A_CX = 250; // centered focal point
 const A_CY = 300;
 const B_CX = 560; // off-center focal point
 const B_CY = 300;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

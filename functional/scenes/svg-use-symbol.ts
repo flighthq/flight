@@ -35,7 +35,7 @@ import {
   getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -76,6 +76,8 @@ const SVG_SOURCE = `<svg width="${WIDTH}" height="${HEIGHT}">
   <use href="#glyph" x="${B_X}" y="${B_Y}" width="${VIEW_W * B_SCALE}" height="${VIEW_H * B_SCALE}"/>
   <use href="#plate" x="${C_X}" y="${C_Y}"/>
 </svg>`;
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

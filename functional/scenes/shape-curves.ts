@@ -19,7 +19,7 @@ import {
   getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -32,6 +32,8 @@ const R = 150;
 const K = 0.5522847498 * R;
 
 const FILL_COLOR = 0xff8800ff; // solid orange
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

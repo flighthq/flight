@@ -34,7 +34,7 @@ import {
   setNodeLocalMatrix,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -54,6 +54,8 @@ const CONTROL_X = 100;
 const MIRROR_X = 620;
 
 const FILL = 0x33ccffff;
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

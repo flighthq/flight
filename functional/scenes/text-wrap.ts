@@ -9,7 +9,7 @@
 // between the bands is wide enough that a single line of this font size could not span both.
 import type { Bitmap } from '@flighthq/sdk';
 import { addNodeChild, createDisplayObject, createRichText, getBitmapPixelRgb, RichTextKind } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -27,6 +27,8 @@ const FONT_SIZE = 30;
 const BAND1_Y = FIELD_Y + 24;
 const BAND2_Y = FIELD_Y + 170;
 const BAND_HALF_HEIGHT = 14;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

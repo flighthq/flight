@@ -29,7 +29,7 @@ import {
   getBitmapPixelRgb,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -46,6 +46,8 @@ const APEX_X = 400;
 const ROUND_APEX_Y = 200;
 const BEVEL_APEX_Y = 360;
 const MITER_APEX_Y = 520;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

@@ -23,7 +23,9 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field (about R5 G6 B10), four 160×160 squares sit near the corners: white centred ' +

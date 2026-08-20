@@ -34,7 +34,7 @@ import {
   ShapeKind,
   SpriteKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -55,6 +55,8 @@ const IMAGE_HREF = 'quadrants.png';
 const SVG_SOURCE = `<svg width="${WIDTH}" height="${HEIGHT}">
   <image href="${IMAGE_HREF}" x="${DEST_X}" y="${DEST_Y}" width="${DEST_SIZE}" height="${DEST_SIZE}"/>
 </svg>`;
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

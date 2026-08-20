@@ -32,7 +32,7 @@ import {
   renderGlScene2D,
   renderIntoGlRenderTexture,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -46,6 +46,8 @@ const FINAL_SCALE_Y = 1.45;
 // The precise scene assertion below distinguishes the composed texture, its padding glow, and the backing.
 // Keep the generic foreground-vs-background heuristic out of this single-composite target.
 export const minCoverage = 0;
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

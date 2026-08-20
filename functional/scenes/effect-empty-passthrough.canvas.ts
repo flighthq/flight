@@ -21,11 +21,13 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Canvas parity column for the empty-passthrough identity check. The scene renders through the effect
 // pipeline with an EMPTY effect list; begin -> render -> end with no stages must present the scene
 // unchanged, proving the Canvas pipeline's present path is an identity composite.
+declareAntialiasingPolicy('no-aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with four AXIS-ALIGNED square tiles of about 140 px — none of ' +
     'them rotated, all sitting square to the edges of the field: red centred near (224,180), green near ' +

@@ -16,7 +16,7 @@ import {
   invalidateNodeLocalTransform,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 // WebGPU-only coverage for the complete fixed-function node BlendMode set. Six tessellated Shape
 // probes cover every state, and a Bitmap Multiply probe exercises the sprite-batch pipeline separately.
@@ -37,6 +37,8 @@ const PROBES: readonly (readonly [number, number, number, BlendMode, number])[] 
 ];
 const BITMAP_X = 100;
 const BITMAP_Y = 420;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: 800,

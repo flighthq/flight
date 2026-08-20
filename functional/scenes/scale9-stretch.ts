@@ -25,7 +25,7 @@ import {
   invalidateNodeLocalTransform,
   Scale9ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -45,6 +45,8 @@ const PANEL_Y = 90;
 const SCALE = 8; // 60 → 480 px per axis
 const PANEL_W = NATURAL * SCALE;
 const PANEL_H = NATURAL * SCALE;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

@@ -22,10 +22,12 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Canvas parity column for the same color-grade intent as render.webgl.ts: saturation, contrast, and
 // a warm temperature shift across the whole frame — realized with Canvas 2D compositing.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with six upright rectangles of about 120 x 160, in ' +
     'two rows of three: centred near (144,192), (400,192) and (656,192) across the top, and (144,432), ' +

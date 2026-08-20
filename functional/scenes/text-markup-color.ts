@@ -36,7 +36,7 @@ import {
   RichTextKind,
   setRichTextContent,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 400;
@@ -57,6 +57,8 @@ const BAND_HEIGHT = FONT_SIZE + 20;
 // scene asserts the CONTRACT ("this hex must paint") and is agnostic to how the value is packed.
 const FIRST_HEX = '#33ccff'; // light blue
 const SECOND_HEX = '#ff8833'; // orange
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

@@ -23,8 +23,10 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   submitWgpuRenderPass,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'An 800×600 black field (0x000000) with a horizontal plane textured with a synthetic 2×1 video frame, viewed top-down under an orthographic camera. The plane fills x W*(0.5 ± 1/2.5) = 0.1*W–0.9*W = 80–720, y H*(0.5 ± 1/3) ≈ 100–500. The left half is red (0xff0000) and the right half is blue (0x0000ff). The material is unlit, so the video colors appear at full saturation with no shading gradient.',

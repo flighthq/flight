@@ -12,8 +12,10 @@ import {
   renderDomBackground,
   renderDomScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerFunctionalTarget } from '@ft/verify';
+
+declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
   'On a pure white 800×600 field, three text blocks begin at x=60. Near y=56 is a bold 32 px dark ' +

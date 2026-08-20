@@ -15,7 +15,7 @@ import {
   ShapeKind,
   SpriteKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -23,6 +23,8 @@ const NODE_X = 220;
 const NODE_Y = 160;
 const NODE_WIDTH = 360;
 const NODE_HEIGHT = 280;
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

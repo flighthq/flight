@@ -32,7 +32,7 @@ import {
   ShapeKind,
   useRenderCache,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -47,6 +47,8 @@ const GREEN_Y = 320;
 const GREEN_COLOR = 0x33cc44ff; // 24-bit RGB
 
 const RECT_SIZE = 160;
+
+declareAntialiasingPolicy('aa');
 
 const target = await createFunctionalTarget({
   width: WIDTH,

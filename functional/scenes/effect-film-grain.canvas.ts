@@ -23,11 +23,13 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Canvas parity column for the same film-grain intent as render.webgl.ts: per-pixel noise mixed over
 // a flat mid-gray fill. The fixed seed keeps the static capture deterministic — the same RenderEffect
 // intent realized with Canvas 2D compositing.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field of flat mid-grey covering the whole field edge to edge, with no shape visible as distinct ' +
     'content anywhere on it, overlaid with a fine random SPECKLE. Individual pixels vary slightly lighter and ' +

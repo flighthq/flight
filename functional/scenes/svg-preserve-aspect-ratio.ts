@@ -34,7 +34,7 @@ import {
   ShapeKind,
   SpriteKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -64,6 +64,8 @@ const SVG_SOURCE = `<svg width="${WIDTH}" height="${HEIGHT}">
   <image href="${IMAGE_HREF}" preserveAspectRatio="xMinYMin meet"
          x="${TOP_ALIGNED_X}" y="${BOX_Y}" width="${BOX}" height="${BOX}"/>
 </svg>`;
+
+declareAntialiasingPolicy('aa');
 
 const { render } = await createFunctionalTarget({
   width: WIDTH,

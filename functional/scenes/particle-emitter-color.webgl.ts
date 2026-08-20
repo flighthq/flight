@@ -27,7 +27,7 @@ import {
   ParticleEmitter2DKind,
   reserveParticleEmitter2D,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 450;
@@ -44,6 +44,8 @@ const PARTICLES: readonly (readonly [number, number, number, number, number, num
   [400, 320, 3.0, 0, 1, 0, 1], // magenta (largest)
   [640, 320, 1.4, 0, 0, 1, 1], // cyan
 ];
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

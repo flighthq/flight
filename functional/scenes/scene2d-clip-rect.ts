@@ -21,7 +21,7 @@ import {
   setNode2DClip,
   ShapeKind,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -37,6 +37,8 @@ const SHAPE_COLOR = 0xff8800ff; // 24-bit RGB
 const CLIP_X = SHAPE_X;
 const CLIP_Y = SHAPE_Y;
 const CLIP_SIZE = 160;
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

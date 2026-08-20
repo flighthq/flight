@@ -23,11 +23,13 @@ import {
   renderCanvasBackground,
   renderCanvasScene2D,
 } from '@flighthq/sdk';
-import { declareExpectedImageDescription } from '@ft/render';
+import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
 // Canvas parity column for the same bloom intent as render.webgl.ts: bright shapes on a dark
 // background bleed glow. The Canvas bloom recipe bright-passes and blurs via ctx.filter, then adds
 // the glow back over the scene — the same RenderEffect intent realized with Canvas 2D compositing.
+declareAntialiasingPolicy('aa');
+
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
     '72 degrees so none sits square to the edges — a turned square covers more than its side, so they span 166, ' +

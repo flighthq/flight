@@ -22,7 +22,7 @@ import {
   QuadBatchKind,
   setQuadBatchLocalBoundsRectangle,
 } from '@flighthq/sdk';
-import { createFunctionalTarget } from '@ft/render';
+import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 const WIDTH = 800;
 const HEIGHT = 600;
@@ -41,6 +41,8 @@ const OFFSETS: ReadonlyArray<readonly [number, number]> = [
   [0, 250],
   [300, 250],
 ];
+
+declareAntialiasingPolicy('aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,
