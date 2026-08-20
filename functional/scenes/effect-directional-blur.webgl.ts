@@ -68,6 +68,14 @@ export function render(root: Node2D): void {
 // A few mid-screen shapes spaced along the horizontal axis with gaps between them, so a full-frame
 // directional/radial/camera smear leaves clearly readable streaks rather than overlapping mush.
 
+// The tile centres the scene draws AND the centres the oracle probes, so the two cannot drift apart.
+const TILE_CENTRES: ReadonlyArray<readonly [number, number]> = [
+  [160, 240],
+  [320, 312],
+  [480, 240],
+  [640, 312],
+];
+
 const root = createDisplayObject();
 root.scaleX = scale;
 root.scaleY = scale;
@@ -89,33 +97,56 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-function measureHighFrequency(frame: Readonly<Bitmap>): number {
-  let deltas = 0;
-  let pairs = 0;
-  for (let y = 0; y < frame.height; y += 1) {
-    let previous = -1;
-    for (let x = 0; x < frame.width; x += 1) {
-      const rgb = getBitmapPixelRgb(frame, x, y);
-      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
-      if (previous >= 0) {
-        deltas += Math.abs(value - previous);
-        pairs += 1;
-      }
-      previous = value;
-    }
-  }
-  return pairs === 0 ? 0 : deltas / pairs;
-}
+// ★ THIS IS THE CHECK THAT WOULD HAVE CAUGHT THE Gl SIGN DEFECT, and it is written from the two
+// pictures rather than from the geometry, which is stated plainly because it changes how to read it.
+//
+// The Gl runner's smear direction is `vec2(cos(u_angle), -sin(u_angle))`: the negation converts the
+// descriptor's screen-space angle (+Y down) into Gl's bottom-left-origin texcoords. Dropping it mirrors
+// the streak axis in Y. The scene's own whole-frame `measureHighFrequency` scalar cannot see that — a
+// mirrored axis leaves a frame-wide average untouched — which is exactly how the defect survived.
+//
+// So the probe is a PAIR of boxes placed symmetrically above and below each tile centre, and the
+// statistic is their ratio, which is a property of the axis rather than of the overall brightness. The
+// offset was found by searching both renders for maximum separation, NOT derived from the tile
+// geometry; both numbers are recorded so the choice is reproducible:
+//
+//     smear direction  vec2(cos, -sin)   upper 44.5   lower 13.6   ratio 3.26   as shipped
+//     smear direction  vec2(cos,  sin)   upper 33.1   lower 21.9   ratio 1.51   the defect
+//
+// The threshold sits between them with about 1.5x of room on each side.
+const PROBE_DX = -42;
+const PROBE_DY = 60;
+const PROBE_RADIUS = 10;
+const MIN_AXIS_RATIO = 2.2;
 
-// Directional blur (length 24) smears the entire frame along a fixed angle, softening all edges.
-// The unprocessed scene has 4 rotated shapes with sharp edges yielding HF energy ~3-4. After the
-// blur, HF drops below 1.5. Without the effect, sharp edges keep HF above 1.5 and the check fails.
 export function assertRender(frame: Readonly<Bitmap>): void {
-  const hf = measureHighFrequency(frame);
-  if (hf >= 1.5) {
+  const luminance = (x: number, y: number): number => {
+    const rgb = getBitmapPixelRgb(frame, x, y);
+    return (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+  };
+  const meanAt = (dx: number, dy: number): number => {
+    let sum = 0;
+    let count = 0;
+    for (const [cx, cy] of TILE_CENTRES) {
+      for (let y = cy + dy - PROBE_RADIUS; y < cy + dy + PROBE_RADIUS; y++) {
+        for (let x = cx + dx - PROBE_RADIUS; x < cx + dx + PROBE_RADIUS; x++) {
+          if (x < 0 || y < 0 || x >= frame.width || y >= frame.height) continue;
+          sum += luminance(x, y);
+          count++;
+        }
+      }
+    }
+    return count === 0 ? 0 : sum / count;
+  };
+
+  const upper = meanAt(PROBE_DX, -PROBE_DY);
+  const lower = meanAt(PROBE_DX, PROBE_DY);
+  const ratio = upper / Math.max(1e-6, lower);
+  if (ratio < MIN_AXIS_RATIO) {
     throw new Error(
-      `[effect-directional-blur] high-frequency energy is ${hf.toFixed(2)} (expected < 1.5) — ` +
-        `directional blur should smooth edges`,
+      `[effect-directional-blur] the smear is ${ratio.toFixed(2)}x brighter above the tiles than below ` +
+        `(expected at least ${MIN_AXIS_RATIO}x, measured ${upper.toFixed(1)} against ${lower.toFixed(1)}) ` +
+        `— the streak axis is mirrored in Y, which is what dropping the sin negation in the Gl runner does`,
     );
   }
 }
