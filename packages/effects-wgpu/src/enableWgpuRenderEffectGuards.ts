@@ -35,16 +35,16 @@ export function enableWgpuRenderEffectGuards(state: WgpuRenderState): void {
   _guardedStates.add(state);
 }
 
-// WGPU effect targets are single-sample today, but 102 live scene/example callers request 4 samples.
-// Rejecting made every one of those module-scope callers unloadable; accepting without this observation
-// hid that the requested capability was absent. Warn once per requested count and continue with 1.
+// WGPU effect targets support one or four coverage samples. Counts outside that set are substituted
+// rather than rejected so module-scope pipeline construction remains loadable; the guard makes the
+// applied count explicit. Warn once per requested count.
 function warnWgpuRenderEffectPipelineSampleCount(
   _state: WgpuRenderState,
   requestedSampleCount: number,
   appliedSampleCount: number,
 ): void {
   logOnce(
-    `effects-wgpu:pipeline-sample-count-degraded:${requestedSampleCount}`,
+    `effects-wgpu:pipeline-sample-count-substituted:${requestedSampleCount}`,
     LogLevel.Warn,
     {
       appliedSampleCount,

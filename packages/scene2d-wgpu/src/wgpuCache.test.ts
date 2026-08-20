@@ -60,6 +60,7 @@ vi.mock('@flighthq/render-wgpu/contract', async (importOriginal) => {
         texture: {} as GPUTexture,
         view: {} as GPUTextureView,
         format: 'bgra8unorm',
+        sampleCount: 1,
         clearColors: [],
         clearDepth: 1,
         width,

@@ -190,8 +190,8 @@ export function endWgpuRenderEffectPipeline(
   if (scratchB !== null) releaseWgpuRenderTarget(pipeline.pool, scratchB);
 }
 
-// The diagnostics seam for accepted-but-degraded multisampling requests. Core stays free of warning
-// strings and @flighthq/log; the separately-importable guard module installs the reporter when wanted.
+// The diagnostics seam for sample-count substitutions. Core stays free of warning strings and
+// @flighthq/log; the separately-importable guard module installs the reporter when wanted.
 export function setWgpuRenderEffectPipelineSampleCountGuard(
   state: WgpuRenderState,
   guard: WgpuRenderEffectPipelineSampleCountGuard | null,
