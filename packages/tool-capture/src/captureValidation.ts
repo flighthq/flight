@@ -54,6 +54,7 @@ import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
 import { isTransientCaptureError } from './captureEntry.js';
 import { selectCaptureEntriesByName } from './captureEntryFilter.js';
+import { compareCaptureFixtureBackgrounds } from './captureFixtureBackground.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
@@ -65,7 +66,6 @@ import type { Server } from './captureServer.js';
 import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import type { CaptureFingerprintMap, CaptureFingerprintProvenanceMap } from './captureSuite.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
-import { describeFunctionalParityFixtureState, readFunctionalSceneSources } from './functionalParityConfounds.js';
 import { functionalScene3DFile } from './functionalScene3Ds.js';
 
 export interface CaptureValidationOptions {
@@ -164,14 +164,24 @@ export interface CaptureValidationCheck {
   threshold?: number;
   /** Baseline fingerprint's internal contrast, reported beside regression results and never gated. */
   contrast?: number;
-  /** Fixture-level confound state that must accompany a functional parity distance. */
-  fixtureConfound?: string;
   /** Scene-source freshness classification for every gated fingerprint comparison. */
   sourceHashStatus?: 'changed' | 'unchanged' | 'unavailable';
   /** Whether source freshness came from full five-field provenance or the deprecated partial fallback. */
   fingerprintProvenanceStatus?: 'full' | 'partial' | 'unavailable';
   recordedSourceHash?: string | null;
   currentSourceHash?: string | null;
+  /**
+   * Whether the two fixtures of a parity pair DECLARE different clear colours, which makes their
+   * distance partly an artefact of the fixtures rather than a renderer disagreement.
+   *
+   * ★ ABSENT MEANS NOT CHECKED, NOT CLEAN. The field is set only on parity checks whose scene sources
+   * could both be read and which both declare a literal `backgroundColor: 0x…`; anywhere else it is
+   * undefined, and undefined must never be read as "screened". `false` likewise means only that the two
+   * DECLARED backgrounds match — it is not a statement that the fixtures agree in any other respect.
+   * The detector behind it (`compareCaptureFixtureBackgrounds`) matches one literal declaration and
+   * nothing else, which is why this field is named for that one condition instead of for confounds.
+   */
+  fixtureBackgroundMismatch?: boolean;
 }
 
 interface ResolvedCaptureValidationOptions {
@@ -194,7 +204,6 @@ interface ResolvedCaptureValidationOptions {
   parityGroups: Readonly<Record<string, Readonly<CaptureParityGroup>>>;
   fingerprints: Readonly<CaptureFingerprintMap>;
   fingerprintProvenance: Readonly<CaptureFingerprintProvenanceMap>;
-  functionalSceneSources: ReadonlyMap<string, ReadonlyMap<string, string>>;
 }
 
 interface Verification {
@@ -244,18 +253,52 @@ function isFunctionalParityControl(root: string, subject: string, entry: string,
   }
 }
 
+// Reads both fixtures of a parity pair and reports whether their DECLARED clear colours differ.
+//
+// Returns null whenever the question could not be answered — a subject other than functional, a source
+// that would not read, or either fixture declaring no colour — so the caller leaves the report field
+// undefined rather than asserting a clean result it did not establish.
+function findParityFixtureBackgroundMismatch(
+  root: string,
+  subject: string,
+  entry: string,
+  a: string,
+  b: string,
+): boolean | null {
+  if (subject !== 'functional') return null;
+  const scenesDir = join(root, 'functional', 'scenes');
+  try {
+    return compareCaptureFixtureBackgrounds(
+      readFileSync(functionalScene3DFile(scenesDir, entry, a), 'utf8'),
+      readFileSync(functionalScene3DFile(scenesDir, entry, b), 'utf8'),
+    );
+  } catch {
+    return null;
+  }
+}
+
 function distance(a: string, b: string): number | null {
   const difference = compareCaptureFingerprints(a, b);
   return Number.isFinite(difference) ? difference : null;
 }
 
-function parityFixtureConfound(
-  options: Readonly<ResolvedCaptureValidationOptions>,
-  entry: string,
-  renderers: readonly string[],
-): string {
-  if (options.subject !== 'functional') return 'fixture confound: n/a (non-functional subject)';
-  return describeFunctionalParityFixtureState(options.functionalSceneSources, entry, renderers);
+// Renders the fixture-background state that belongs beside a parity distance.
+//
+// ★ IT READS THE SAME THREE-STATE VALUE THE REPORT FIELD CARRIES, AND THAT IS THE WHOLE POINT. A sentence
+// computed independently of the field can disagree with it, and then a reader and a tool draw opposite
+// conclusions from one run. This takes `findParityFixtureBackgroundMismatch`'s answer and says it in
+// words, so there is one determination with two renderings rather than two determinations.
+//
+// ★ `null` IS NOT "NO MISMATCH". It means the question could not be answered — a non-functional subject,
+// a source that would not read, or either fixture declaring no colour — and it says NOT CHECKED rather
+// than anything that could be mistaken for a clean result. This is the same rule the field's own
+// documentation states, applied to the prose.
+//
+// The per-backend colours behind a DIFFER verdict are not repeated here; `npm run
+// test:functional:parity:confounds` reports them for the whole corpus and is the tool for that question.
+function describeParityFixtureBackground(mismatch: boolean | null): string {
+  if (mismatch === null) return 'fixture background: NOT CHECKED';
+  return mismatch ? 'fixture backgrounds DIFFER, so this distance is confounded' : 'fixture backgrounds match';
 }
 
 function addPair(
@@ -546,7 +589,7 @@ export function formatCaptureParityRanking(
   checks: readonly Readonly<{
     distance?: number;
     entry: string;
-    fixtureConfound?: string;
+    fixtureBackgroundMismatch?: boolean;
     kind: string;
     renderers?: readonly string[];
   }>[],
@@ -557,7 +600,8 @@ export function formatCaptureParityRanking(
     .map((check) => ({
       distance: check.distance!,
       entry: check.entry,
-      fixtureConfound: check.fixtureConfound ?? 'fixture confound: unknown (not recorded)',
+      // `undefined` on the check means the determination was never made, which is what NOT CHECKED says.
+      fixtureBackground: describeParityFixtureBackground(check.fixtureBackgroundMismatch ?? null),
       renderers: check.renderers ?? [],
     }))
     .sort((a, b) => b.distance - a.distance || a.entry.localeCompare(b.entry));
@@ -565,7 +609,7 @@ export function formatCaptureParityRanking(
   const shown = measured.slice(0, limit);
   const median = measured[measured.length >> 1]!.distance;
   const lines = shown.map(
-    (row) => `  ${row.distance.toFixed(2)}  ${row.entry}  ${row.renderers.join('·')}  — ${row.fixtureConfound}`,
+    (row) => `  ${row.distance.toFixed(2)}  ${row.entry}  ${row.renderers.join('·')}  — ${row.fixtureBackground}`,
   );
   const omitted = measured.length - shown.length;
   return [
@@ -1009,20 +1053,23 @@ async function processEntry(
   if (pairs.length > 0) {
     if (options.report) {
       const segments = pairs
-        .map((p) => `${p.label} ${p.dist.toFixed(2)} — ${parityFixtureConfound(options, entry.name, [p.a, p.b])}`)
+        .map((p) => {
+          const state = findParityFixtureBackgroundMismatch(options.root, options.subject, entry.name, p.a, p.b);
+          return `${p.label} ${p.dist.toFixed(2)} — ${describeParityFixtureBackground(state)}`;
+        })
         .join('  ');
       result.output.push(detailLine(pc.dim('~'), 'parity', pc.dim(segments), pc.dim));
       for (const pair of pairs) {
-        const fixtureConfound = parityFixtureConfound(options, entry.name, [pair.a, pair.b]);
+        const mismatch = findParityFixtureBackgroundMismatch(options.root, options.subject, entry.name, pair.a, pair.b);
         result.checks.push({
           entry: entry.name,
           renderers: [pair.a, pair.b],
           kind: 'parity',
           status: 'reported',
-          message: `parity ${pair.label} distance ${pair.dist.toFixed(2)} — ${fixtureConfound}`,
+          message: `parity ${pair.label} distance ${pair.dist.toFixed(2)} — ${describeParityFixtureBackground(mismatch)}`,
           distance: pair.dist,
-          fixtureConfound,
           threshold: pair.tolerance,
+          ...(mismatch === null ? {} : { fixtureBackgroundMismatch: mismatch }),
         });
       }
     } else if (options.gateParity) {
@@ -1030,7 +1077,12 @@ async function processEntry(
       const segments = pairs
         .map((p) => {
           const check = evaluateCaptureParity(parityEligible.get(p.a)!, parityEligible.get(p.b)!, p.tolerance);
-          const fixtureConfound = parityFixtureConfound(options, entry.name, [p.a, p.b]);
+          // Undefined when the question could not be answered; see the field's own documentation for
+          // why that is deliberately NOT the same as false. The sentence below renders from this same
+          // value, so the message and the field cannot disagree.
+          const mismatch = findParityFixtureBackgroundMismatch(options.root, options.subject, entry.name, p.a, p.b);
+          const fixtureBackground = mismatch === null ? {} : { fixtureBackgroundMismatch: mismatch };
+          const fixtureState = describeParityFixtureBackground(mismatch);
           if (!check.pass) {
             anyFailed = true;
             result.parityFailures++;
@@ -1039,13 +1091,13 @@ async function processEntry(
               renderers: [p.a, p.b],
               kind: 'parity',
               status: 'failed',
-              message: `parity ${p.label} ${p.dist.toFixed(2)} > ${p.tolerance} — ${fixtureConfound}; orientation triage: npm run test:functional:parity:orientation`,
+              message: `parity ${p.label} ${p.dist.toFixed(2)} > ${p.tolerance} — ${fixtureState}; orientation triage: npm run test:functional:parity:orientation`,
               distance: p.dist,
-              fixtureConfound,
               threshold: p.tolerance,
+              ...fixtureBackground,
             });
             return pc.red(
-              `${p.label} ${p.dist.toFixed(2)}>${p.tolerance} — ${fixtureConfound}; orientation triage: npm run test:functional:parity:orientation`,
+              `${p.label} ${p.dist.toFixed(2)}>${p.tolerance} — ${fixtureState}; orientation triage: npm run test:functional:parity:orientation`,
             );
           }
           result.parityPasses++;
@@ -1054,12 +1106,12 @@ async function processEntry(
             renderers: [p.a, p.b],
             kind: 'parity',
             status: 'passed',
-            message: `parity ${p.label} ${p.dist.toFixed(2)} ≤ ${p.tolerance} — ${fixtureConfound}`,
+            message: `parity ${p.label} ${p.dist.toFixed(2)} ≤ ${p.tolerance} — ${fixtureState}`,
             distance: p.dist,
-            fixtureConfound,
             threshold: p.tolerance,
+            ...fixtureBackground,
           });
-          return pc.dim(`${p.label} ${p.dist.toFixed(2)} — ${fixtureConfound}`);
+          return pc.dim(`${p.label} ${p.dist.toFixed(2)} — ${fixtureState}`);
         })
         .join('  ');
       const paint = anyFailed ? pc.red : pc.green;
@@ -1147,10 +1199,6 @@ export async function runCaptureValidation(
     parityGroups: input.parityGroups ?? {},
     fingerprints: input.fingerprints ?? {},
     fingerprintProvenance: input.fingerprintProvenance ?? {},
-    functionalSceneSources:
-      input.subject === 'functional'
-        ? readFunctionalSceneSources(join(resolve(input.root ?? process.cwd()), 'functional', 'scenes'))
-        : new Map(),
   };
   const ownsBrowser = input.browserSession === undefined;
   const launched =

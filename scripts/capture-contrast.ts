@@ -19,6 +19,13 @@
 // still earns its place, because it catches what displacement cannot: a frame with nothing in it to move
 // is invisible to a displacement measure and obvious to this one.
 //
+// ★ WHY THE SECONDARY MEASURE IS THE ONE PRINTED BESIDE EACH REGRESSION RESULT, since the two facts above
+// sit oddly together. Contrast is per-target and free at that point — the committed fingerprint is already
+// in hand — so it costs a run nothing to carry. Displacement answers the better question but is a property
+// of the corpus you read deliberately, target by target, not a number to hang on every line. Printed
+// beside a distance, a contrast figure says how much picture that distance had to work with; it does NOT
+// say the gate would have caught a defect, and it is not evidence that it would.
+//
 // THE MEASURE. The gate scores a change as the mean absolute per-channel difference over the 16x16x3
 // fingerprint grid. Contrast applies that same comparison between a target's committed fingerprint and a
 // uniform frame of its own corner cell — so a target reading 0.55 has a whole picture worth a ninth of

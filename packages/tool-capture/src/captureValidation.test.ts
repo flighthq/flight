@@ -107,11 +107,17 @@ describe('formatCaptureParityRanking', () => {
       {
         distance: 0.02,
         entry: 'shape-fill',
-        fixtureConfound: 'fixture confound: none (shared source)',
+        fixtureBackgroundMismatch: false,
         kind: 'parity',
         renderers: ['webgl', 'webgpu'],
       },
-      { distance: 11.11, entry: 'effect-glitch', kind: 'parity', renderers: ['webgl', 'webgpu'] },
+      {
+        distance: 11.11,
+        entry: 'effect-glitch',
+        fixtureBackgroundMismatch: true,
+        kind: 'parity',
+        renderers: ['webgl', 'webgpu'],
+      },
       { distance: 0.5, entry: 'effect-dither', kind: 'parity', renderers: ['webgl', 'webgpu'] },
     ]);
 
@@ -119,7 +125,21 @@ describe('formatCaptureParityRanking', () => {
     expect(text).toContain('3 compared');
     expect(text!.indexOf('effect-glitch')).toBeLessThan(text!.indexOf('effect-dither'));
     expect(text!.indexOf('effect-dither')).toBeLessThan(text!.indexOf('shape-fill'));
-    expect(text).toContain('fixture confound: none (shared source)');
+    expect(text).toContain('fixture backgrounds match');
+    expect(text).toContain('fixture backgrounds DIFFER');
+  });
+
+  // ★ THE ROW THAT CARRIES NO DETERMINATION MUST SAY SO. `effect-dither` above has no
+  // `fixtureBackgroundMismatch`, and an absent field is not a clean one — it means nothing established
+  // whether the two fixtures agree. A ranking that printed nothing there, or printed the same words as a
+  // matching pair, would turn "not checked" into "checked and fine" in the one place a reader is
+  // scanning for what to distrust.
+  it('says NOT CHECKED for a row whose fixture backgrounds were never compared', () => {
+    const text = formatCaptureParityRanking([
+      { distance: 0.5, entry: 'effect-dither', kind: 'parity', renderers: ['webgl', 'webgpu'] },
+    ]);
+
+    expect(text).toContain('fixture background: NOT CHECKED');
   });
 
   it('returns null when nothing was compared', () => {
@@ -281,7 +301,12 @@ async function validateParityFixture(input: Readonly<Record<string, unknown>>) {
 }
 
 describe('runCaptureValidation', () => {
-  it('prints the fixture-confound state beside parity distance and points failures to orientation triage', async () => {
+  // ★ COMPOSED FROM TWO IMPLEMENTATIONS OF ONE CAPABILITY. The scenario, the message text and the
+  // orientation-triage pointer came from the message-wiring side; the value they render came from the
+  // resolver side. The assertion is on BOTH, because the point of the composition is that they cannot
+  // disagree: `fixtureBackgroundMismatch` is the determination and the sentence is that same
+  // determination in words, never a second one computed alongside it.
+  it('states the fixture-background verdict beside a parity distance and points failures to orientation triage', async () => {
     const root = mkdtempSync(join(tmpdir(), 'tool-capture-parity-confound-'));
     try {
       const scenes = join(root, 'functional', 'scenes');
@@ -307,7 +332,10 @@ describe('runCaptureValidation', () => {
       });
 
       const parity = result.checks.find((check) => check.kind === 'parity');
-      expect(parity).toMatchObject({ fixtureConfound: 'fixture confound: YES (canvas=0x111111ff webgl=0x222222ff)' });
+      // The two fixtures declare different clear colours, so the determination is a mismatch — and the
+      // message says so in the same run rather than leaving a reader to infer it from the number.
+      expect(parity).toMatchObject({ fixtureBackgroundMismatch: true });
+      expect(parity?.message).toContain('fixture backgrounds DIFFER');
       expect(parity?.message).toContain('npm run test:functional:parity:orientation');
     } finally {
       rmSync(root, { force: true, recursive: true });
