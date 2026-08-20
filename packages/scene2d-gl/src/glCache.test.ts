@@ -5,112 +5,91 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import type * as GlCacheModule from './glCache';
 import type * as GlNode2DModule from './glNode2D';
 import type * as GlQuadBatchWriterModule from './glQuadBatchWriter';
-import { scopeModuleMocks } from './moduleMockTestHelper';
 
 // The GL render-target lifecycle (@flighthq/render-gl) and the two local collaborators
-// ./glQuadBatchWriter and ./glNode2D are stubbed so cache orchestration can be unit-tested
-// without a real GL pipeline: createGlRenderTarget returns a plain descriptor, and the composite,
-// batch-flush, and subtree-render calls become spies for the call and ordering assertions below.
-// The mocks are scoped to this file's dynamic import of ./glCache and unmocked in afterAll, so under
-// a shared (isolate:false) worker they never leak into the real render-gl / scene2d-gl
-// consumers. The mocked functions are read back from the same dynamic imports so the handles the
-// assertions observe are the exact vi.fn instances the cache module calls.
-let createGlCacheState: typeof GlCacheModule.createGlCacheState;
-let defaultGlRenderCacheRenderer: typeof GlCacheModule.defaultGlRenderCacheRenderer;
-let enableGlRenderCache: typeof GlCacheModule.enableGlRenderCache;
-let ensureGlRenderCacheTarget: typeof GlCacheModule.ensureGlRenderCacheTarget;
-let getGlRenderCacheScreenState: typeof GlCacheModule.getGlRenderCacheScreenState;
-let getGlRenderCacheTarget: typeof GlCacheModule.getGlRenderCacheTarget;
-let refreshGlRenderCache: typeof GlCacheModule.refreshGlRenderCache;
-let releaseGlRenderCache: typeof GlCacheModule.releaseGlRenderCache;
-let createGlRenderStateRuntime: typeof GlRenderGlModule.createGlRenderStateRuntime;
-let getGlRenderStateRuntime: typeof GlRenderGlModule.getGlRenderStateRuntime;
-let destroyGlRenderTarget: typeof GlRenderGlModule.destroyGlRenderTarget;
-let drawGlRenderTargetResult: typeof GlRenderGlModule.drawGlRenderTargetResult;
-let renderGlScene2D: typeof GlNode2DModule.renderGlScene2D;
-let flushGlQuadBatchWriter: typeof GlQuadBatchWriterModule.flushGlQuadBatchWriter;
-
-// EntityRuntimeKey (Symbol.for) and RenderCacheKind (a string) are identity-stable across the
-// registry reset scopeModuleMocks performs, and cache adapters are stored on the state, not module-
-// level, so the statically-imported @flighthq/render still interoperates with the re-evaluated
-// subject even though the subject re-imports @flighthq/render under the reset.
-scopeModuleMocks(['./glQuadBatchWriter', '@flighthq/render-gl', './glNode2D']);
-
-beforeAll(async () => {
-  vi.doMock('./glQuadBatchWriter', async (importOriginal) => {
-    const actual = await importOriginal<typeof GlQuadBatchWriterModule>();
-    return { ...actual, flushGlQuadBatchWriter: vi.fn() };
-  });
-  vi.doMock('@flighthq/render-gl/contract', async (importOriginal) => {
-    const actual = await importOriginal<typeof GlRenderGlModule>();
-    return {
-      ...actual,
-      beginGlRenderPass: vi.fn(),
-      setGlRenderTransform2D: vi.fn(),
-      createGlRenderTarget: vi.fn((_state: unknown, descriptor: { width: number; height: number }): GlRenderTarget => {
-        const texture = {} as WebGLTexture;
-        return {
-          requestedAxes: {
-            width: descriptor.width,
-            height: descriptor.height,
-            format: 'rgba8',
-            colorAttachments: 1,
-            colorFormats: ['rgba8'],
-            sampleCount: 1,
-            depth: 'none',
-            colorSpace: 'srgb',
-          },
-          framebuffer: {} as WebGLFramebuffer,
-          resolveFramebuffer: null,
-          texture,
-          textures: [texture],
-          depthTexture: null,
-          colorRenderbuffers: [],
-          depthStencilRenderbuffer: null,
+// ./glQuadBatchWriter and ./glNode2D are stubbed so cache orchestration can be unit-tested without a real
+// GL pipeline: createGlRenderTarget returns a plain descriptor, and the composite, batch-flush and
+// subtree-render calls become spies for the call and ordering assertions below.
+//
+// ★ HOISTED MOCKS, NOT HAND-ROLLED ONES. This file is in REGISTRY_ISOLATED_TESTS, so it already runs with
+// its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import dance
+// bought by hand comes from the platform here, with no hook, and these stubs cannot reach the real
+// render-gl / scene2d-gl consumers. The dance was not merely redundant: it rebuilt the subject's entire
+// transitive module graph inside a FIXED `beforeAll` deadline — three modules plus everything they
+// import — which is unbounded work against a fixed clock and the shape of flake tiering exists to remove.
+vi.mock('./glQuadBatchWriter', async (importOriginal) => {
+  const actual = await importOriginal<typeof GlQuadBatchWriterModule>();
+  return { ...actual, flushGlQuadBatchWriter: vi.fn() };
+});
+vi.mock('@flighthq/render-gl/contract', async (importOriginal) => {
+  const actual = await importOriginal<typeof GlRenderGlModule>();
+  return {
+    ...actual,
+    beginGlRenderPass: vi.fn(),
+    setGlRenderTransform2D: vi.fn(),
+    createGlRenderTarget: vi.fn((_state: unknown, descriptor: { width: number; height: number }): GlRenderTarget => {
+      const texture = {} as WebGLTexture;
+      return {
+        requestedAxes: {
+          width: descriptor.width,
+          height: descriptor.height,
           format: 'rgba8',
           colorAttachments: 1,
           colorFormats: ['rgba8'],
+          sampleCount: 1,
           depth: 'none',
           colorSpace: 'srgb',
-          clearColors: [],
-          clearDepth: 1,
-          sampleCount: 1,
-          width: descriptor.width,
-          height: descriptor.height,
-        };
-      }),
-      destroyGlRenderTarget: vi.fn(),
-      drawGlRenderTargetResult: vi.fn(),
-      endGlRenderPass: vi.fn(),
-      resizeGlRenderTarget: vi.fn((_state: unknown, target: GlRenderTarget, width: number, height: number) => {
-        target.width = width;
-        target.height = height;
-      }),
-    };
-  });
-  vi.doMock('./glNode2D', async (importOriginal) => {
-    const actual = await importOriginal<typeof GlNode2DModule>();
-    return { ...actual, renderGlScene2D: vi.fn() };
-  });
-
-  ({ createGlRenderStateRuntime, getGlRenderStateRuntime, destroyGlRenderTarget, drawGlRenderTargetResult } =
-    await import('@flighthq/render-gl/contract'));
-  ({ flushGlQuadBatchWriter } = await import('./glQuadBatchWriter'));
-  ({ renderGlScene2D } = await import('./glNode2D'));
-  ({
-    createGlCacheState,
-    defaultGlRenderCacheRenderer,
-    enableGlRenderCache,
-    ensureGlRenderCacheTarget,
-    getGlRenderCacheScreenState,
-    getGlRenderCacheTarget,
-    refreshGlRenderCache,
-    releaseGlRenderCache,
-  } = await import('./glCache'));
+        },
+        framebuffer: {} as WebGLFramebuffer,
+        resolveFramebuffer: null,
+        texture,
+        textures: [texture],
+        depthTexture: null,
+        colorRenderbuffers: [],
+        depthStencilRenderbuffer: null,
+        format: 'rgba8',
+        colorAttachments: 1,
+        colorFormats: ['rgba8'],
+        depth: 'none',
+        colorSpace: 'srgb',
+        clearColors: [],
+        clearDepth: 1,
+        sampleCount: 1,
+        width: descriptor.width,
+        height: descriptor.height,
+      };
+    }),
+    destroyGlRenderTarget: vi.fn(),
+    drawGlRenderTargetResult: vi.fn(),
+    endGlRenderPass: vi.fn(),
+    resizeGlRenderTarget: vi.fn((_state: unknown, target: GlRenderTarget, width: number, height: number) => {
+      target.width = width;
+      target.height = height;
+    }),
+  };
 });
+vi.mock('./glNode2D', async (importOriginal) => {
+  const actual = await importOriginal<typeof GlNode2DModule>();
+  return { ...actual, renderGlScene2D: vi.fn() };
+});
+
+import { destroyGlRenderTarget, drawGlRenderTargetResult } from '@flighthq/render-gl/contract';
+import { createGlRenderStateRuntime, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+
+import {
+  createGlCacheState,
+  defaultGlRenderCacheRenderer,
+  enableGlRenderCache,
+  ensureGlRenderCacheTarget,
+  getGlRenderCacheScreenState,
+  getGlRenderCacheTarget,
+  refreshGlRenderCache,
+  releaseGlRenderCache,
+} from './glCache';
+import { renderGlScene2D } from './glNode2D';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
 function fakeScreen(options = {}): GlRenderState {
   const state = createRenderState(options) as unknown as GlRenderState;

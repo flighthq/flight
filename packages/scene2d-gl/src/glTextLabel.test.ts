@@ -7,39 +7,35 @@ import { BatchFormat } from '@flighthq/types/contract';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
-import type * as GlTextLabelModule from './glTextLabel';
-import { scopeModuleMocks } from './moduleMockTestHelper';
 
 // @flighthq/textlayout.computeTextLayout is stubbed to emit one deterministic glyph group.
-// scopeModuleMocks scopes the stub to this file (registry reset before the mock applies, unmock +
-// reset after), so under a shared (isolate:false) worker it never leaks into the real text-layout
-// consumers (text package) — and a sibling that pre-evaluated ./glTextLabel still picks up the stub.
-let defaultGlTextLabelRenderer: typeof GlTextLabelModule.defaultGlTextLabelRenderer;
-let drawGlTextLabel: typeof GlTextLabelModule.drawGlTextLabel;
-
-scopeModuleMocks(['@flighthq/textlayout']);
-
-beforeAll(async () => {
-  vi.doMock('@flighthq/textlayout/contract', async (importOriginal) => {
-    const actual = (await importOriginal()) as Record<string, unknown>;
-    return {
-      ...actual,
-      computeTextLayout: vi.fn((result: { groups: object[] }, params: { formatRanges: Array<{ format: object }> }) => {
-        result.groups.push({
-          offsetX: 0,
-          offsetY: 0,
-          width: 50,
-          ascent: 12,
-          descent: 4,
-          format: params.formatRanges[0]?.format ?? {},
-          startIndex: 0,
-          endIndex: 5,
-        });
-      }),
-    };
-  });
-  ({ defaultGlTextLabelRenderer, drawGlTextLabel } = await import('./glTextLabel'));
+//
+// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
+// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
+// dance bought by hand comes from the platform here, with no hook, and the stub cannot reach the real
+// text-layout consumers. The dance was not merely redundant: it rebuilt the subject's entire transitive
+// module graph inside a FIXED `beforeAll` deadline, which is unbounded work against a fixed clock and
+// the shape of flake tiering exists to remove.
+vi.mock('@flighthq/textlayout/contract', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    computeTextLayout: vi.fn((result: { groups: object[] }, params: { formatRanges: Array<{ format: object }> }) => {
+      result.groups.push({
+        offsetX: 0,
+        offsetY: 0,
+        width: 50,
+        ascent: 12,
+        descent: 4,
+        format: params.formatRanges[0]?.format ?? {},
+        startIndex: 0,
+        endIndex: 5,
+      });
+    }),
+  };
 });
+
+import { defaultGlTextLabelRenderer, drawGlTextLabel } from './glTextLabel';
 
 function makeTextData() {
   const canvas = document.createElement('canvas');

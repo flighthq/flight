@@ -16,33 +16,28 @@ import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
 import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import type * as GlShapeModule from './glShape';
+// @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawGlShape with
+// lightweight fake proxies, so the two queries are stubbed.
+//
+// ★ A HOISTED MOCK, NOT A HAND-ROLLED ONE. This file is in REGISTRY_ISOLATED_TESTS, so it already runs
+// with its own module registry — the hermeticity the `scopeModuleMocks` + `vi.doMock` + dynamic-import
+// dance bought by hand comes from the platform here, with no hook, and the stub cannot reach the many
+// real consumers of these functions (node, interaction, shape, text). The dance was not merely
+// redundant: it rebuilt the subject's entire transitive module graph inside a FIXED `beforeAll`
+// deadline, which is unbounded work against a fixed clock and the shape of flake tiering exists to remove.
+vi.mock('@flighthq/node/contract', async (importOriginal) => ({
+  ...(await importOriginal<typeof FlightNodeModule>()),
+  getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
+  getNodeLocalContentRevision: (source: { data?: { version?: number } } | null | undefined) =>
+    source?.data?.version ?? 0,
+}));
+
+import { defaultGlMorphShapeRenderer, defaultGlShapeRenderer, drawGlShape } from './glShape';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 const noopRasterizer = (): void => {};
-import { scopeModuleMocks } from './moduleMockTestHelper';
-
-// @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawGlShape
-// with lightweight fake proxies, so the two queries are stubbed. scopeModuleMocks scopes the stub to
-// this file (registry reset before the mock applies, unmock + reset after), so under a shared
-// (isolate:false) worker it never leaks into the many real consumers of these functions (node,
-// interaction, shape, text) — and a sibling that pre-evaluated ./glShape still picks up the stub.
-let defaultGlMorphShapeRenderer: typeof GlShapeModule.defaultGlMorphShapeRenderer;
-let defaultGlShapeRenderer: typeof GlShapeModule.defaultGlShapeRenderer;
-let drawGlShape: typeof GlShapeModule.drawGlShape;
-
-scopeModuleMocks(['@flighthq/node']);
-
-beforeAll(async () => {
-  vi.doMock('@flighthq/node/contract', async (importOriginal) => ({
-    ...(await importOriginal<typeof FlightNodeModule>()),
-    getNodeLocalBoundsRectangle: () => ({ x: 0, y: 0, width: 64, height: 48 }),
-    getNodeLocalContentRevision: (source: any) => source?.data?.version ?? 0,
-  }));
-  ({ defaultGlMorphShapeRenderer, defaultGlShapeRenderer, drawGlShape } = await import('./glShape'));
-});
 
 // Mirrors createGlShapeData: the rasterization surface is absent until a shape actually needs one.
 function makeShapeData() {
