@@ -53,6 +53,7 @@ const int SAMPLES = 16;
 void main() {
   vec4 base = texture(u_texture0, v_texCoord);
   if (u_hasVelocity < 0.5) {
+    // Sentinel path: no velocity buffer written — passthrough copy.
     o_color = base;
     return;
   }
