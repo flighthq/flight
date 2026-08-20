@@ -671,7 +671,18 @@ function reviewPlugin(): Plugin[] {
                 // it is filtered below. A cell WITH captured pixels but no build stamp is different: the
                 // build already happened, and the missing step is to capture again so status.json records
                 // that completed build.
-                const capturedCells = payload.cells.filter((c) => c.pixelSha256 !== null);
+                // ★ THE LEDGER IS THE AUTHORITY ON WHAT IS HELD, NOT THE PAGE. The client already leaves
+                // held cells out of the payload, but a hold recorded after the page loaded — or by another
+                // reviewer — would otherwise be commissioned by a stale tab. Dropping them here costs one
+                // read and makes the held file the single place the answer comes from.
+                const heldNow = readHeldCells();
+                const heldSkipped = payload.cells
+                  .filter((c) => heldNow.has(`${payload.tool}/${payload.entry}/${c.renderer}`))
+                  .map((c) => c.renderer);
+                const openCells = payload.cells.filter(
+                  (c) => !heldNow.has(`${payload.tool}/${payload.entry}/${c.renderer}`),
+                );
+                const capturedCells = openCells.filter((c) => c.pixelSha256 !== null);
                 const noBuild = capturedCells.filter((c) => c.build === null).length;
                 const unstamped = capturedCells.filter((c) => c.build?.commit === null).length;
                 if (noBuild + unstamped > 0) {
@@ -683,7 +694,7 @@ function reviewPlugin(): Plugin[] {
                   );
                   return;
                 }
-                const eligible = payload.cells.filter(
+                const eligible = openCells.filter(
                   (
                     c,
                   ): c is typeof c & {
@@ -694,14 +705,16 @@ function reviewPlugin(): Plugin[] {
                     c.pixelSha256 !== null && c.hostInstanceId !== null && c.build !== null && c.build.commit !== null,
                 );
                 if (eligible.length === 0) {
-                  const noHash = payload.cells.filter((c) => c.pixelSha256 === null).length;
+                  const noHash = openCells.filter((c) => c.pixelSha256 === null).length;
                   res.statusCode = 400;
                   res.end(
                     JSON.stringify({
                       error:
-                        noHash === payload.cells.length
-                          ? `no reference pixel hash for any cell of ${payload.entry} — the screenshot is absent or cannot be decoded. Capture the cells before commissioning`
-                          : 'no eligible cells: every cell needs a reference pixel hash and a host identity',
+                        openCells.length === 0
+                          ? `every cell of ${payload.entry} is held (${heldSkipped.join(', ')}) — release a hold, or commission a scene with an open cell`
+                          : noHash === openCells.length
+                            ? `no reference pixel hash for any cell of ${payload.entry} — the screenshot is absent or cannot be decoded. Capture the cells before commissioning`
+                            : 'no eligible cells: every cell needs a reference pixel hash and a host identity',
                     }),
                   );
                   return;
@@ -774,7 +787,8 @@ function reviewPlugin(): Plugin[] {
                     committed: eligible.length,
                     coverageAdded,
                     total: payload.cells.length,
-                    skipped: payload.cells.filter((c) => c.pixelSha256 === null).map((c) => c.renderer),
+                    held: heldSkipped,
+                    skipped: openCells.filter((c) => c.pixelSha256 === null).map((c) => c.renderer),
                     buildCommit: build.commit,
                     dirty: build.dirty,
                     dirtyOmitted: build.dirtyOmitted,
