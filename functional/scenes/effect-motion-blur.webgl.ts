@@ -114,33 +114,93 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-function measureHighFrequency(frame: Readonly<Bitmap>): number {
-  let deltas = 0;
-  let pairs = 0;
-  for (let y = 0; y < frame.height; y += 1) {
-    let previous = -1;
-    for (let x = 0; x < frame.width; x += 1) {
-      const rgb = getBitmapPixelRgb(frame, x, y);
-      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
-      if (previous >= 0) {
-        deltas += Math.abs(value - previous);
-        pairs += 1;
-      }
-      previous = value;
-    }
-  }
-  return pairs === 0 ? 0 : deltas / pairs;
+// Luminance of a pixel (simple average of RGB channels).
+function luminance(frame: Readonly<Bitmap>, x: number, y: number): number {
+  const rgb = getBitmapPixelRgb(frame, x, y);
+  return (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
 }
 
-// Motion blur (intensity 1, 16 samples) smears the scene along the motion vector. The 4 squares
-// have axis-aligned edges, but the blur spreads color across boundaries, reducing HF energy from
-// the sharp transitions. Without the effect, clean square edges keep HF above 1.5.
+// Measure the horizontal transition width at a vertical edge: walk along a horizontal scanline and
+// count how many pixels the luminance takes to travel from 10% to 90% of the full delta between
+// background and square interior. A sharp edge gives 1–3px; a motion-blurred edge gives 15–40px.
+function measureEdgeTransitionWidth(frame: Readonly<Bitmap>, y: number, xStart: number, xEnd: number): number {
+  const step = xStart < xEnd ? 1 : -1;
+  const count = Math.abs(xEnd - xStart);
+  const values: number[] = [];
+  for (let i = 0; i <= count; i++) values.push(luminance(frame, xStart + i * step, y));
+
+  const lo = Math.min(values[0], values[values.length - 1]);
+  const hi = Math.max(values[0], values[values.length - 1]);
+  const delta = hi - lo;
+  if (delta < 10) return 0;
+
+  const threshold10 = lo + delta * 0.1;
+  const threshold90 = lo + delta * 0.9;
+  let first = -1;
+  let last = -1;
+  for (let i = 0; i < values.length; i++) {
+    if (first < 0 && values[i] >= threshold10) first = i;
+    if (values[i] <= threshold90) last = i;
+  }
+  return first >= 0 && last >= 0 ? Math.abs(last - first) : 0;
+}
+
+// The four squares' logical centers, matching the scene setup above. At pixelRatio=1 (headless),
+// pixel coordinates equal logical coordinates.
+const SQUARE_CENTERS = [
+  { x: 200, y: 180 },
+  { x: 600, y: 180 },
+  { x: 200, y: 420 },
+  { x: 600, y: 420 },
+];
+const SQUARE_HALF = 50;
+const BG_LUM_CEIL = 30;
+const MIN_SQUARE_LUM = 80;
+const MIN_TRANSITION_WIDTH = 8;
+
 export function assertRender(frame: Readonly<Bitmap>): void {
-  const hf = measureHighFrequency(frame);
-  if (hf >= 1.5) {
+  // Gate 1: verify each square is present at its expected center. A wrong-shape or blank image fails
+  // here with a positional diagnostic.
+  for (let i = 0; i < SQUARE_CENTERS.length; i++) {
+    const cx = SQUARE_CENTERS[i].x;
+    const cy = SQUARE_CENTERS[i].y;
+    const centerLum = luminance(frame, cx, cy);
+    if (centerLum < MIN_SQUARE_LUM) {
+      throw new Error(
+        `[effect-motion-blur] square ${i} center (${cx},${cy}) luminance is ${centerLum.toFixed(0)} ` +
+          `(expected >= ${MIN_SQUARE_LUM}) — colored square not found at expected position`,
+      );
+    }
+    // Verify background is dark well outside the smear zone (40px beyond the square edge).
+    const bgX = cx - SQUARE_HALF - 60;
+    if (bgX >= 0) {
+      const bgLum = luminance(frame, bgX, cy);
+      if (bgLum > BG_LUM_CEIL) {
+        throw new Error(
+          `[effect-motion-blur] background at (${bgX},${cy}) luminance is ${bgLum.toFixed(0)} ` +
+            `(expected <= ${BG_LUM_CEIL}) — unexpected content outside square region`,
+        );
+      }
+    }
+  }
+
+  // Gate 2: measure horizontal transition width at left edges (the vertical edge the horizontal smear
+  // softens). A blurred edge spans 15–40px; a sharp/inert edge spans 1–3px.
+  let totalTransition = 0;
+  let edgeCount = 0;
+  for (const center of SQUARE_CENTERS) {
+    const edgeX = center.x - SQUARE_HALF;
+    const tw = measureEdgeTransitionWidth(frame, center.y, edgeX - 30, edgeX + 30);
+    totalTransition += tw;
+    edgeCount++;
+  }
+  const avgTransition = totalTransition / Math.max(1, edgeCount);
+
+  if (avgTransition < MIN_TRANSITION_WIDTH) {
     throw new Error(
-      `[effect-motion-blur] high-frequency energy is ${hf.toFixed(2)} (expected < 1.5) — ` +
-        `motion blur should smooth transitions`,
+      `[effect-motion-blur] average horizontal edge transition is ${avgTransition.toFixed(1)}px ` +
+        `(expected >= ${MIN_TRANSITION_WIDTH}px) — no horizontal smear detected; ` +
+        `motion blur appears inert (sharp square edges with no gradient)`,
     );
   }
 }
