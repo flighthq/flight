@@ -31,7 +31,7 @@ export function findExpectedImageDescriptionCellScope(rootDirectory: string): {
   for (const entry of discoverEntries('functional', rootDirectory)) {
     for (const renderer of entry.renderers) {
       const file = functionalScene3DFile(scenesDirectory, entry.name, renderer);
-      const cells = hasDescriptionCapableCall(readFileSync(file, 'utf8')) ? reachableCells : structurallyUnableCells;
+      const cells = hasUnavailableReason(readFileSync(file, 'utf8')) ? structurallyUnableCells : reachableCells;
       cells.push(`${entry.name}/${renderer}`);
     }
   }
@@ -44,11 +44,11 @@ export function findScenesWithoutExpectedImageDescription(scenesDirectory: strin
     .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
     .filter((f) => {
       const content = readFileSync(join(scenesDirectory, f), 'utf8');
-      if (!hasDescriptionCapableCall(content)) return false;
       if (hasNonEmptyDescription(content)) return false;
       // A withheld cell is accounted for, not missing — but only when it carries a reason. An empty
       // reason is exactly the forgotten cell this state exists to distinguish, so it stays a failure.
-      return !hasWithheldReason(content);
+      if (hasWithheldReason(content)) return false;
+      return !hasUnavailableReason(content);
     })
     .map((f) => f.replace(/\.ts$/, ''))
     .sort();
@@ -91,31 +91,6 @@ export function describeExcludedPopulation(cells: readonly string[]): string {
   return `${cells.length} structurally unable (${parts.join(', ')})`;
 }
 
-const DESCRIPTION_CAPABLE_CALLS = new Set([
-  'createFunctionalTarget',
-  'declareExpectedImageDescription',
-  'declareExpectedImageDescriptionWithheld',
-]);
-
-function hasDescriptionCapableCall(source: string): boolean {
-  const sourceFile = ts.createSourceFile('functional-scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  let found = false;
-  const visit = (node: ts.Node): void => {
-    if (found) return;
-    if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      DESCRIPTION_CAPABLE_CALLS.has(node.expression.text)
-    ) {
-      found = true;
-      return;
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sourceFile);
-  return found;
-}
-
 // The property is STATICALLY-KNOWN NON-EMPTY CONTENT, not a syntax. An earlier revision asserted "a
 // non-empty string literal", which names a representation instead — and every description in this repo
 // is a `'…' + '…'` concatenation, because describing a picture with coordinate ranges and explicit
@@ -155,6 +130,27 @@ function hasWithheldReason(source: string): boolean {
       ts.isCallExpression(node) &&
       ts.isIdentifier(node.expression) &&
       node.expression.text === 'declareExpectedImageDescriptionWithheld' &&
+      node.arguments.length >= 1 &&
+      hasNonEmptyStaticString(node.arguments[0])
+    ) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return found;
+}
+
+function hasUnavailableReason(source: string): boolean {
+  const sourceFile = ts.createSourceFile('functional-scene.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let found = false;
+  const visit = (node: ts.Node): void => {
+    if (found) return;
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'declareExpectedImageDescriptionUnavailable' &&
       node.arguments.length >= 1 &&
       hasNonEmptyStaticString(node.arguments[0])
     ) {
