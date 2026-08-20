@@ -280,6 +280,41 @@ alphabetized, so inserting `BlendRealization`, `MaterialTextureLister` and `Modi
 "a material-renderer miss is ignored", the opposite of what the gate exists to assert, with nobody editing
 the file. The rule already existed on the enum itself, aimed at emitters; a fixture is a call site too.
 
+## A relative fact pinned as an absolute one — the assertion that inverts
+
+Every shape above is **under-powered**: a green means less than a reader assumes, but never the opposite.
+This one is different in kind, and it is worth its own name because the failure runs the other way.
+
+**An assertion on ONE TERM of a relationship is only valid while the other terms are held.** When a value
+is correct *relative to* something else, pinning that value alone records a relative fact as though it
+were absolute. Move the unpinned term and the test does not go quiet — it **fails on correct code and
+passes on wrong code**, arguing for the defect under its own name.
+
+The instance: the GL chromatic-aberration and lens-flare shaders guard `normalize()` at the optical
+centre with `vec2(1e-5, -1e-5)`, and the negative Y is there *only* to match the coordinate convention of
+the surrounding `centered` / `toCenter` expression — the source comment says so. A test parsed that
+epsilon out of the live shader and asserted the resulting direction, which is a real instrument: flip
+either sign and exactly one test fails by name with the wrong value. But rewriting the *other* term
+(`v_texCoord - 0.5` to `vec2(v_texCoord.x - 0.5, 0.5 - v_texCoord.y)`) inverts the actual direction
+everywhere and leaves the suite green. Had that rewrite been the real change, the correct epsilon would
+have become positive and this test would have demanded the wrong one.
+
+**A test that becomes wrong is worse than a test that was never strong, because it will be cited.**
+
+Two rules follow, and both are needed — either alone still leaves a blind test:
+
+- **Pin the relationship, not a term.** Derive both halves from the source and assert they agree, or
+  assert the composition the code actually depends on. Pinning both terms at once cannot invert.
+- **Sample where the property varies, never at the degenerate point.** The epsilon test sampled at the
+  exact centre — the single point at which the rewrite above is invisible. A degenerate sample makes a
+  correct implementation and a broken one produce identical output, so it cannot discriminate however
+  the assertion is phrased. This is the unit-test form of the same rule functional scenes follow when
+  they use a diagonal, off-centre or non-dividing case instead of the axis-aligned one.
+
+The trigger to reach for this: **a comment or name that says a value must *match*, *correspond to*, or be
+*consistent with* something else.** That wording is the tell that the value is relative, and that pinning
+it alone is pinning half an invariant.
+
 ## What belongs in a unit test vs. elsewhere
 
 - Put unit behavior in a colocated `*.test.ts` in the package that owns it, where `exports:check` binds it to an exported function and a developer changing that code will see it. A compiler-enforced property (e.g. the `Node<Traits>` invariance law) belongs in a colocated test too, asserted with `// @ts-expect-error` — `tsc -b` typechecks `src/*.test.ts`, so the failing-compile case is the assertion.
