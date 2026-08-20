@@ -18,6 +18,7 @@ function cell(
     hostInstanceId: string | null;
     environmentId: string | null;
     build: { commit: string | null } | null;
+    holdReason: string | null;
   }> = {},
 ) {
   return {
@@ -31,6 +32,7 @@ function cell(
       environmentId: overrides.environmentId === undefined ? null : overrides.environmentId,
     },
     build: overrides.build === undefined ? { commit: COMMIT } : overrides.build,
+    holdReason: overrides.holdReason ?? null,
   };
 }
 
@@ -51,6 +53,17 @@ describe('review commission eligibility', () => {
     expect(reviewCommissionIneligibilityMessage('missing-build-stamp')).toContain(
       're-capture now that the build is complete',
     );
+  });
+
+  // ★ HOLDING AND COMMISSIONING ARE TWO DIFFERENT DECISIONS. The hold used to disable the whole scene's
+  // commission button, so a scene with one bad backend could not have its other backends commissioned at
+  // all — and the only way forward was to release the hold, which is deliberately one-way. A hold now
+  // subtracts exactly the cell it names.
+  it('excludes a held cell without touching its siblings', () => {
+    expect(reviewCommissionIneligibility(cell({ holdReason: 'canvas does not implement the fold' }))).toBe('held');
+    expect(isReviewCommissionEligible(cell({ holdReason: 'reason' }))).toBe(false);
+    expect(isReviewCommissionEligible(cell())).toBe(true);
+    expect(reviewCommissionIneligibilityMessage('held')).toContain('siblings can still be commissioned');
   });
 
   it('requires the host identity that the commission endpoint also requires', () => {
@@ -81,6 +94,18 @@ describe('selectReviewCommissionCells', () => {
     ];
 
     expect(selectReviewCommissionCells(cells, (candidate) => candidate.approval)).toEqual([cells[0]]);
+  });
+
+  it('commissions the open cells of a partly held scene', () => {
+    const cells = [cell({ approval: true }), cell({ approval: true, holdReason: 'canvas is wrong' })];
+
+    expect(selectReviewCommissionCells(cells, (candidate) => candidate.approval)).toEqual([cells[0]]);
+  });
+
+  it('selects nothing when every cell is held, rather than commissioning one anyway', () => {
+    const cells = [cell({ holdReason: 'a' }), cell({ holdReason: 'b' })];
+
+    expect(selectReviewCommissionCells(cells, (candidate) => candidate.approval)).toEqual([]);
   });
 
   it('drops reference cells even when they are explicitly marked approved', () => {

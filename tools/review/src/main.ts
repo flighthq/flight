@@ -597,16 +597,24 @@ async function commissionCurrentTest(): Promise<void> {
       path: string;
       committed: number;
       total: number;
+      held: string[];
       skipped: string[];
       coverageAdded: number;
       buildCommit: string | null;
       dirty: string[];
       dirtyOmitted: number;
     };
-    const notApproved = reviewable.filter((c) => !selectedCells.includes(c)).map((c) => c.renderer);
+    // Held cells are already reported on their own line; counting them again as "not approved" would say
+    // the reviewer withheld approval they were never offered.
+    const notApproved = reviewable
+      .filter((c) => c.holdReason === null && !selectedCells.includes(c))
+      .map((c) => c.renderer);
     const parts: string[] = [];
     if (notApproved.length > 0) {
       parts.push(`${notApproved.length} not approved`);
+    }
+    if (result.held.length > 0) {
+      parts.push(`held ${result.held.join(', ')}`);
     }
     if (result.skipped.length > 0) {
       parts.push(`skipped ${result.skipped.join(', ')} (no capture hash)`);
@@ -729,13 +737,18 @@ function buildRendererBar(): void {
   });
 
   const summary = testCommissionSummary(t);
-  const isHeld = reviewable.some((c) => c.holdReason !== null);
+  // ★ A HELD SIBLING NO LONGER BLOCKS THE TEST. Holding and commissioning answer different questions —
+  // "is this picture one to bless" versus "capture what this build renders" — so a hold subtracts its own
+  // cell from the commission and leaves the rest of the row alone. Only a fully held test has nothing left
+  // to commission, and that is a fact about the row being empty, not a policy about holds.
+  const heldCells = reviewable.filter((c) => c.holdReason !== null);
+  const allHeld = reviewable.length > 0 && heldCells.length === reviewable.length;
   const commissionBtn = document.createElement('button');
   commissionBtn.className = 'commission-btn';
 
-  if (isHeld) {
-    commissionBtn.textContent = 'Held — cannot commission';
-    commissionBtn.title = 'One or more cells are held — resolve the hold before commissioning';
+  if (allHeld) {
+    commissionBtn.textContent = 'Every cell held — nothing to commission';
+    commissionBtn.title = 'Every reviewable cell is held, so no cell is left to commission';
     commissionBtn.disabled = true;
     commissionBtn.setAttribute('data-commission', 'held');
   } else if (summary.state === 'included') {
@@ -764,6 +777,12 @@ function buildRendererBar(): void {
     } else {
       commissionBtn.textContent = 'Commission';
       commissionBtn.title = 'Write a reference image request for all renderers of this scene';
+    }
+    // Named, not just counted: "Commission (3 of 4)" alone reads as an approval shortfall, and the one
+    // cell that will not travel is the one the reviewer most needs to know about.
+    if (heldCells.length > 0) {
+      commissionBtn.textContent += ` · ${heldCells.length} held`;
+      commissionBtn.title += ` — excluding held cell(s): ${heldCells.map((cell) => cell.renderer).join(', ')}`;
     }
     const dirtyPaths = [...new Set(reviewable.flatMap((cell) => cell.build?.dirty ?? []))];
     const dirtyOmitted = Math.max(0, ...reviewable.map((cell) => cell.build?.dirtyOmitted ?? 0));
@@ -1299,11 +1318,6 @@ function approveCurrentCell(): void {
     );
     return;
   }
-  if (cell.holdReason) {
-    showCommissionFeedback(`Cannot approve ${cell.renderer}: cell is held`, true);
-    return;
-  }
-
   const key = approvalKey(t, cell.renderer);
   const current = approvedCells.get(key);
   if (current === true) {
