@@ -103,6 +103,7 @@ if (!scoped) {
   // and a sweep that runs a stage twice is green either way. NON-OVERLAPPING TEXT IS NOT INDEPENDENT
   // INTENT: proximity, not identity, is what git checks.
   add('evidence:check', 'tsx', ['scripts/capture-evidence.ts', '--check']);
+  add('assertions:check', 'node', ['scripts/assertion-sensitivity.mjs', '--check']);
 
   add('data-cast-colour:check', 'tsx', ['scripts/check-data-cast-colour.ts']);
   add('expected-image-descriptions:check', 'tsx', ['scripts/check-expected-image-descriptions.ts', '--check']);
