@@ -191,7 +191,7 @@ duplication needs saying out loud:
 Census at 2026-08-14, over the 59 exported `explain*` in `packages/*/src`: **32** shared or re-executing
 and **27** re-deriving. Counted by a structural pass (does the explainer call a helper another exported
 function in the same file also calls) plus a read of the 25 that call in-package code, of which 17 share
-a judgement and not merely a handle. `explainSpatialIndexing` is inside the 27 by that method and is in
+a judgement and not merely a handle. `explainSpatialIndexing2D` is inside the 27 by that method and is in
 truth neither: it is one delegating call to `runtime.backend.explainSpatialIndexing`, invisible to a rule
 that sees only free functions.
 

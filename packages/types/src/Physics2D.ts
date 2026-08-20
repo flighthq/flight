@@ -1,5 +1,5 @@
 import type { CollisionShape2D } from './Collision';
-import type { SpatialIndexBackend } from './Spatial';
+import type { SpatialIndexBackend2D } from './Spatial';
 
 // 2D rigid-body dynamics header. `@flighthq/physics2d` is the solver that sits on top of
 // `@flighthq/spatial` (broadphase) and `@flighthq/collision` (narrow-phase): it owns integration and
@@ -285,7 +285,7 @@ export interface Physics2DStepExplanation {
 
 // The simulation. A world owns its bodies, its persistent contacts, and the broadphase index it keeps
 // body bounds in — the index directly rather than behind a physics-specific broadphase seam, because
-// `SpatialIndexBackend` is already the swap point and a seam over a seam buys no capability.
+// `SpatialIndexBackend2D` is already the swap point and a seam over a seam buys no capability.
 //
 // `gravityX`/`gravityY` is an acceleration, scaled per body by `gravityScale`, so a balloon is one
 // field rather than a special case in the integrator.
@@ -312,7 +312,7 @@ export interface Physics2DWorld {
   // read off the moments it gains and loses entries.
   events: Physics2DContactEvents;
   contactHooks: Physics2DContactHooks;
-  index: SpatialIndexBackend;
+  index: SpatialIndexBackend2D;
   config: Physics2DSolverConfig;
 
   // Reusable union-find and reduction scratch for sleeping islands. These maps are allocated with the

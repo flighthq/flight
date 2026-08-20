@@ -37,7 +37,7 @@ a previous-position per body, which is purely additive.
 ## The trap in "behind an abstraction"
 
 The tempting reading is a `Physics3DSolverBackend` interface with `prepare` / `solve` / `integrate`
-members, swapped like `SpatialIndexBackend`. **It would not work, and it would cost.**
+members, swapped like `SpatialIndexBackend2D`. **It would not work, and it would cost.**
 
 It would not work because SI and XPBD differ in **loop nesting**, not in the body of a per-constraint
 method. No amount of swapping a `solve` implementation turns an outer iteration loop into an outer

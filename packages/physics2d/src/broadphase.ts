@@ -1,4 +1,4 @@
-import type { Physics2DWorld, SpatialAabb } from '@flighthq/types/contract';
+import type { Physics2DWorld, SpatialAabb2D } from '@flighthq/types/contract';
 
 import { updatePhysics2DColliderWorldShape, writePhysics2DColliderBounds } from './colliderTransform';
 
@@ -109,8 +109,8 @@ function paddedUpperBound(value: number): number {
 const MAX_SIMULATED_EXTENT = 1e7;
 
 interface Physics2DBroadphaseScratch {
-  bounds: SpatialAabb;
-  bodyBounds: SpatialAabb;
+  bounds: SpatialAabb2D;
+  bodyBounds: SpatialAabb2D;
 }
 
 function acquirePhysics2DBroadphaseScratch(): Physics2DBroadphaseScratch {

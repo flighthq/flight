@@ -1,6 +1,6 @@
 import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
-import { clearSpatialIndex, insertSpatialObject, querySpatialPoint } from '@flighthq/spatial/contract';
-import type { Node2D, InteractionManager, NodeAny, SpatialAabb, SpatialObjectId } from '@flighthq/types/contract';
+import { clearSpatialIndex2D, insertSpatialObject2D, querySpatialPoint2D } from '@flighthq/spatial/contract';
+import type { Node2D, InteractionManager, NodeAny, SpatialAabb2D, SpatialObjectId } from '@flighthq/types/contract';
 
 import { hitTestNodeRegion } from './hitTests';
 import { getNodeInteractionState } from './nodeInteractionState';
@@ -22,7 +22,7 @@ export function findSpatialInteractionTarget<N extends NodeAny>(
   const nodes = managerCandidates.get(manager);
   if (nodes === undefined || nodes.length === 0) return null;
 
-  querySpatialPoint(index, x, y, spatialQueryOut);
+  querySpatialPoint2D(index, x, y, spatialQueryOut);
   let best: N | null = null;
   let bestRank = Infinity;
   for (let i = 0; i < spatialQueryOut.length; i++) {
@@ -52,14 +52,14 @@ export function refreshInteractionSpatialIndex<N extends NodeAny>(manager: Inter
   collectSpatialCandidates(manager.root, nodes);
   managerCandidates.set(manager, nodes);
 
-  clearSpatialIndex(index);
+  clearSpatialIndex2D(index);
   for (let rank = 0; rank < nodes.length; rank++) {
     const bounds = getNodeWorldBoundsRectangle(nodes[rank] as Node2D);
     spatialInsertAabb.minX = bounds.x;
     spatialInsertAabb.minY = bounds.y;
     spatialInsertAabb.maxX = bounds.x + bounds.width;
     spatialInsertAabb.maxY = bounds.y + bounds.height;
-    insertSpatialObject(index, rank as SpatialObjectId, spatialInsertAabb);
+    insertSpatialObject2D(index, rank as SpatialObjectId, spatialInsertAabb);
   }
 }
 
@@ -82,5 +82,5 @@ function collectSpatialCandidates(node: NodeAny, out: NodeAny[]): void {
 }
 
 const managerCandidates = new WeakMap<object, NodeAny[]>();
-const spatialInsertAabb: SpatialAabb = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
+const spatialInsertAabb: SpatialAabb2D = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
 const spatialQueryOut: SpatialObjectId[] = [];
