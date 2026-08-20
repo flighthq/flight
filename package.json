@@ -140,6 +140,7 @@
     "reference-image:commission": "tsx ./scripts/reference-image-commission-batch.ts report",
     "reference-image:commission:write": "tsx ./scripts/reference-image-commission-batch.ts write",
     "reference-image:fetch": "tsx ./scripts/reference-image-check.ts fetch",
+    "reference-image:gate": "tsx ./scripts/reference-image-gate.ts",
     "reference-image:scope": "tsx ./scripts/reference-image-check.ts scope",
     "release": "tsx ./scripts/publish-packages.ts",
     "review": "npm run dev:review",
