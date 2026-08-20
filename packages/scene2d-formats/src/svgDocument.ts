@@ -1383,7 +1383,7 @@ function resolveSvgGradientTransform(
     context.diagnostics,
     ImportDiagnosticSeverity.Recover,
     'svg.gradient-transform-singular',
-    'parseSvgDocument',
+    'resolveSvgGradientTransform',
     { gradient: attribute(element, 'id') ?? '<unnamed>' },
   );
   return null;

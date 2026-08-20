@@ -2488,10 +2488,12 @@ function buildAwdDocumentLights(
       range: light.fallOff,
     });
     if (light.hasRadius) {
-      tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-radius-dropped', { firstLight: light.name });
+      tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-radius-dropped', 'buildAwdDocumentLights', {
+        firstLight: light.name,
+      });
     }
   } else {
-    tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-unsupported-type', {
+    tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-unsupported-type', 'buildAwdDocumentLights', {
       firstLight: light.name,
       firstType: light.lightType,
     });
@@ -2501,7 +2503,7 @@ function buildAwdDocumentLights(
   // Away3D scales a light's specular response independently of its diffuse one. Flight's punctual lights
   // carry a single intensity that drives both, so a file that pulled them apart loses that separation.
   if (light.specular !== AWD2_LIGHT_DEFAULT_SPECULAR) {
-    tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-specular-dropped', {
+    tallyAwdLightDrop(drops, ImportDiagnosticSeverity.Skip, 'awd2.light-specular-dropped', 'buildAwdDocumentLights', {
       firstLight: light.name,
       firstSpecular: light.specular,
     });
@@ -2952,6 +2954,12 @@ interface AwdLightDropTally {
   count: number;
   detail: Record<string, boolean | number | string>;
   kind: string;
+  // ★ CARRIED RATHER THAN ASSERTED AT THE FLUSH. `origin` must name the function that DETECTED the loss,
+  // and the flush loop is not it — it runs from parseAwd2, one pass later. Naming the detector as a
+  // literal down there was correct and unverifiable: nothing tied the string to the function, so a rename
+  // would have left it pointing at a name that no longer exists. Recording it where the loss is seen makes
+  // the claim structural, and the origin check treats a relayed value as judged at its source.
+  origin: string;
   severity: ImportDiagnosticSeverity;
 }
 
@@ -2961,18 +2969,19 @@ function tallyAwdLightDrop(
   tallies: Map<string, AwdLightDropTally>,
   severity: ImportDiagnosticSeverity,
   kind: string,
+  origin: string,
   firstDetail: Record<string, boolean | number | string>,
 ): void {
   const existing = tallies.get(kind);
-  if (existing === undefined) tallies.set(kind, { count: 1, detail: firstDetail, kind, severity });
+  if (existing === undefined) tallies.set(kind, { count: 1, detail: firstDetail, kind, origin, severity });
   else existing.count++;
 }
 
-// Emits one crumb per accumulated light-drop kind, with buildAwdDocumentLights as the origin — the
-// function that detects and reports each of these losses.
+// Emits one crumb per accumulated light-drop kind, relaying each tally's own recorded origin — the
+// function that detected the loss, which is never this loop.
 function flushAwdLightDrops(tallies: Readonly<Map<string, AwdLightDropTally>>, diagnostics?: ImportDiagnostic[]): void {
   for (const tally of tallies.values()) {
-    reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'buildAwdDocumentLights', {
+    reportImportDiagnostic(diagnostics, tally.severity, tally.kind, tally.origin, {
       ...tally.detail,
       count: tally.count,
     });

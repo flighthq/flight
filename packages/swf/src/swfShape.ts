@@ -689,9 +689,15 @@ function readSwfShapeFillStyle(
     if (inverseMatrix(_textureMatrixScratch, textureMatrix)) {
       fill.textureMatrix = textureMatrix;
     } else {
-      reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Recover, 'swf.fill-matrix-singular', 'parseSwf', {
-        character: characterId,
-      });
+      reportImportDiagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity.Recover,
+        'swf.fill-matrix-singular',
+        'readSwfShapeFillStyle',
+        {
+          character: characterId,
+        },
+      );
     }
     return fill;
   }
