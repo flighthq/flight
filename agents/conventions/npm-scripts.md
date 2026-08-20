@@ -84,7 +84,7 @@ not itself a token. The root notice and exact package-manifest properties are st
 generated lock metadata and the two repository-policy examples are named, justified escapes printed on
 every run. The gate runs in precommit and the bare `npm run check` sweep.
 
-`check:fingerprint-source-hashes` requires every functional and example fingerprint column to retain its
+`check:fingerprint-computation-id` requires every functional and example fingerprint column to retain its
 scene-source hash. Named historical columns have neither a pixel hash nor a recoverable write boundary;
 the command names each one and prints why absence is the honest state. It runs beside `support:check` in
 the bare repository sweep, while focused package checks omit both repository-wide baseline invariants.

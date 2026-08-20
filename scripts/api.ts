@@ -525,6 +525,13 @@ function filterApi(packages: ApiPackage[], options: ParsedArgs): ApiPackage[] {
 // pair is a deliberate mirror where identical names are the point, not a
 // collision — e.g. a backend swap that must present the same surface. None exist
 // today; add a group here only when identical names are the deliberate design.
+// Groups of packages that may share an exported name because they are interchangeable implementations
+// of one thing — a caller swaps the import and nothing else changes.
+//
+// ★ THE LIST IS EMPTY AND THAT IS DELIBERATE, not an unfinished thought: no group has been declared, so
+// every cross-package duplicate is currently a violation. Whoever wrote it left no reason, and I could
+// find none in history — recording the absence rather than inventing a rationale, because the next
+// reader would otherwise have to re-derive whether the emptiness is a decision or an oversight.
 const DROP_IN_PACKAGES: ReadonlyArray<ReadonlyArray<string>> = [];
 
 // Ratchet allowlist for accessor-prefix violations that predate the check.
@@ -586,8 +593,12 @@ function collectAccessorIssues(packages: readonly ApiPackage[]): ApiCheckIssue[]
 function collectDuplicateNameIssues(packages: readonly ApiPackage[]): ApiCheckIssue[] {
   const packagesByFunctionName = new Map<string, string[]>();
 
+  // BOTH LANES. The uniqueness rule is about the SDK's exported vocabulary, and `./contract` carries
+  // more of it than `.` does — 1206 contract-only functions against 4086 public ones on this tree. An
+  // earlier revision read only `pkg.functions`, so two packages exporting one name from their contract
+  // barrels were invisible to a check whose own message says names "must be globally unique".
   for (const pkg of packages) {
-    for (const fn of pkg.functions) {
+    for (const fn of [...pkg.functions, ...pkg.contractOnlyFunctions]) {
       const owners = packagesByFunctionName.get(fn.name);
       if (owners === undefined) packagesByFunctionName.set(fn.name, [pkg.name]);
       else owners.push(pkg.name);
