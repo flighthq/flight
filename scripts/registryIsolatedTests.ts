@@ -41,6 +41,7 @@ export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
   { path: 'packages/effects-canvas/src/canvasOuterGlowEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glBevelEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glChromaticAberrationEffect.test.ts', reason: 'mocks-modules' },
+  { path: 'packages/effects-gl/src/glColorMatrixPass.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glContactShadowsEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glConvolutionEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glCrtEffect.test.ts', reason: 'mocks-modules' },
