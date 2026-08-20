@@ -123,12 +123,19 @@ package usable with no physics world at all.
 Found while checking the above. Each is independent of the ruling, and each gets worse if 3D kinds
 land on the current structure.
 
-1. **An unrecognized pair fails as a silent `false`.** `shapeKindRank` returns `-1` for an unknown
-   kind, and `testCollision` then clears the manifold and reports non-overlapping
-   (`testCollision.ts:34`). If dimensions ever did mix, the result would not be a crash — it would be
-   "these are not touching," which is indistinguishable from correct output. A missed collision is
-   the worst available sentinel. **Mixing must be a compile error, or a loud one; never a sentinel.**
-   This is a guard-layer case under [diagnostics](conventions/diagnostics.md), not a comment.
+1. **The guard does not warn on the sentinel the explain seam classifies.** The diagnostics layer
+   here is mostly built and should not be rebuilt: `shapeKindRank` returns `-1` for an unrecognized
+   kind and `testCollision` clears the manifold and reports non-overlapping
+   (`collision/src/testCollision.ts:41-45`), but `explainCollisionTest` already distinguishes that
+   sentinel from a real separation — `getCollisionShapeValidationStatus` returns
+   `'unsupported-shape-kind'` for `segment`, `point`, and every unknown kind
+   (`collisionShapeValidation.ts:84-90`), and the status is in the public union.
+   The residual gap is one branch wide: `warnOnInvalidCollisionShapes` fires only on
+   `'degenerate-shape'` and `'non-convex-polygon'` (`enableCollisionGuards.ts:24-33`), so with guards
+   **enabled**, feeding `testCollision` a vendor kind still returns a silent `false` and logs
+   nothing. A missed collision is the worst available sentinel, and it is exactly the case the guard
+   skips. **Add the `'unsupported-shape-kind'` arm to the guard** — a few lines, not a layer. The
+   compile-time half of the boundary is defect 2's job.
 2. **The kind union is open but the shape union is closed.** `CollisionShapeKind` admits any string
    via `(string & {})` (`types/src/Collision.ts:13`), but `CollisionShape` is a closed tagged union
    of exactly the six built-ins (`types/src/Collision.ts:66-72`). A custom kind cannot be constructed
@@ -202,8 +209,9 @@ Adopt the support-function registry, keep `@flighthq/collision` unified, and seq
 2. **Split the types by dimension** — `CollisionShape2D` / `CollisionShape3D` and the matching
    manifolds — and rename `testCollision` to `testCollision2D`. This is the boundary, and it is
    worth landing on its own because it is mechanical and independently correct.
-3. **Close defect 1** (silent `false` → guard + explain seam) and **defect 2** (open kind / closed
-   union) together, since both are about the same lie in the type.
+3. **Close defect 1** (one guard arm for `'unsupported-shape-kind'`) and **defect 2** (open kind /
+   closed union) together, since both are about the same lie in the type — one at runtime, one at
+   compile time.
 4. **Add the support registry with GJK/EPA as the 2D fallback**, behind the existing SAT
    specializations. 2D first, where there is an incumbent to differential-test against.
 5. **Add 3D shapes on the proven core**, which is the point of the exercise.
