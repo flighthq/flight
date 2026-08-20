@@ -190,6 +190,7 @@ export async function createWgpuRenderState(
 
   const runtime = createWgpuRenderStateRuntime();
   state[EntityRuntimeKey] = runtime;
+  runtime.surfaceAntialiasEnabled = options.antialias ?? false;
   runtime.currentBlendMode = null;
   runtime.currentRenderTarget = null;
 
@@ -270,6 +271,15 @@ export async function createWgpuRenderState(
 export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.applyBlendModeParent = null;
+  runtime.surfaceAntialiasEnabled = false;
+  runtime.surfaceAntialiasTexture = null;
+  runtime.surfaceAntialiasView = null;
+  runtime.surfaceAntialiasWidth = 0;
+  runtime.surfaceAntialiasHeight = 0;
+  runtime.surfaceAntialiasResolveBindGroupLayout = null;
+  runtime.surfaceAntialiasResolvePipeline = null;
+  runtime.surfaceAntialiasResolveBindGroup = null;
+  runtime.surfacePresentationView = null;
   runtime.registries = {
     compressedTextureDecoder: createSlotTable('WgpuCompressedTextureDecoder', 'Unregistered'),
     compressedTextureUpload: createSlotTable('WgpuCompressedTextureUpload', 'Unregistered'),
@@ -319,6 +329,7 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
   runtime.uniformBuffer?.destroy();
   runtime.particleInstanceBuffer?.destroy();
   runtime.depthStencilTexture?.destroy();
+  runtime.surfaceAntialiasTexture?.destroy();
   for (const slot of runtime.quadBatchWriterBufferPool) {
     slot.instanceBuffer?.destroy();
     slot.materialBuffer?.destroy();

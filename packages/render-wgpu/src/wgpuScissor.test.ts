@@ -1,6 +1,11 @@
 import { renderWgpuBackground } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { applyWgpuScissorRect, popWgpuScissorRect, pushWgpuScissorRect } from './wgpuScissor';
+import {
+  applyWgpuScissorRect,
+  popWgpuScissorRect,
+  pushWgpuScissorRect,
+  setWgpuRenderPassScissorRect,
+} from './wgpuScissor';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(() => {
@@ -93,5 +98,17 @@ describe('pushWgpuScissorRect', () => {
     pushWgpuScissorRect(state, rect);
     rect.width = 999;
     expect(getWgpuRenderStateRuntime(state).currentScissorRect?.width).toBe(50);
+  });
+});
+
+describe('setWgpuRenderPassScissorRect', () => {
+  it('scales logical coordinates on the acquired supersample surface', async () => {
+    const state = await createWgpuRenderStateForTest({ antialias: true });
+    renderWgpuBackground(state);
+    const setScissorRect = vi.fn();
+
+    setWgpuRenderPassScissorRect(state, { setScissorRect } as unknown as GPURenderPassEncoder, 3, 5, 7, 11);
+
+    expect(setScissorRect).toHaveBeenCalledWith(6, 10, 14, 22);
   });
 });

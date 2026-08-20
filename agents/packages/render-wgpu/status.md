@@ -22,11 +22,10 @@ A file:line here is a claim about this tree, not about a session.
 - **No profiling surface.** `enableWgpuTimestampQueries`, `getWgpuFrameGpuTime`, and
   `encodeWgpuTimestampResolve` are absent. `wgpuAdapterCapabilities.ts` still reports `timestamp-query`
   availability that nothing consumes.
-- **No MSAA anywhere in the backend.** The render state carries no multisample texture or `sampleCount`, and
-  pooled targets are pinned to sampleCount 1 by a stated design choice (`wgpuRenderTargetPool.ts:14-15`).
-  Queue multisample-capable pipeline variants plus an explicit caller-invoked multisample-and-resolve pass;
-  this is not a context attribute. The unread `WgpuRenderOptions.antialias` orphan must be removed rather
-  than wired, because it promises a render-state capability the backend cannot perform.
+- **No effect-target MSAA.** Pooled targets remain pinned to sampleCount 1 by a stated design choice
+  (`wgpuRenderTargetPool.ts:14-15`). The main surface now has a separate, real AA path:
+  `WgpuRenderOptions.antialias` renders at 2× in each axis and resolves once before presentation, default
+  off. Effect targets still need multisample-capable pipeline variants to honor requested sample counts.
 - **No sampleable depth.** `getWgpuRenderTargetDepthTexture` does not exist, which is exactly why
   `effects-wgpu` feeds `sceneDepthTexture: null` (`packages/effects-wgpu/src/wgpuRenderEffectPipeline.ts:165`)
   while its GL peer feeds a real texture. This is the single keystone under SSAO, screen-space fog, and
@@ -48,6 +47,9 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-19** — Wired `WgpuRenderOptions.antialias` at the single main-surface seam as a 2× supersample
+  texture plus fullscreen linear resolve (`wgpuAntialias.ts`, `wgpuBackground.ts`); default and capture
+  harness remain off, while effect-target MSAA remains a distinct open capability.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. The whole 2026-06-24 "pass 2, 91/100" block
   checked out **false**: `wgpuTimestampQuery.ts` and `wgpuRenderStateSignals.ts` are not in `src/`, and
   `enableWgpuRenderStateSignals`, `getWgpuFrameGpuTime`, `getActiveWgpuDepthWritePipeline`, and

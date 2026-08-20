@@ -45,7 +45,7 @@ declareAntialiasingPolicy('aa');
 // or: declareAntialiasingPolicy('no-aa');
 ```
 
-The call is a checked claim about the final reviewed picture, never a renderer setting. It accepts only those two literal values: there is deliberately no `mixed`, `inherit`, computed, or default state. A backend-agnostic source makes one declaration for every cell it produces; backend-specific sibling modules each declare locally and must agree. `npm run check:functional-antialiasing` gates declaration presence and sibling agreement immediately. Its declaration-vs-effective-configuration census remains report-only until WebGPU has an AA path, because the current backend-agnostic population cannot satisfy either uniform policy today; the census names that broken state rather than legitimizing it.
+The call is a checked claim about the final reviewed picture, never a renderer setting. It accepts only those two literal values: there is deliberately no `mixed`, `inherit`, computed, or default state. A backend-agnostic source makes one declaration for every cell it produces; backend-specific sibling modules each declare locally and must agree. `npm run check:functional-antialiasing` gates declaration presence and sibling agreement immediately. Its declaration-vs-effective-configuration census remains report-only until the newly available WebGPU path is deliberately enabled in the harness: doing so changes every WebGPU picture and is sequenced with one authorized re-baseline rather than smuggled into an unrelated change.
 
 That clause has teeth, because it is not always satisfiable:
 
@@ -54,11 +54,11 @@ That clause has teeth, because it is not always satisfiable:
 | Canvas 2D | **none** — `CanvasRenderOptions` has no `antialias` field, correctly: Canvas 2D has no API for it. `imageSmoothingEnabled` governs image scaling, not path edges. |
 | DOM | **none** — same, for the same reason. |
 | WebGL | `antialias` honoured, and it defaults to `true` (`glRenderState.ts`). Effect targets honour `sampleCount` with a real multisample renderbuffer. |
-| WebGPU | **no context-level switch exists by design.** MSAA must be plumbed as `multisample` state through every pipeline, and currently is not — `createWgpuRenderEffectPipeline` normalises any `sampleCount > 1` to 1. |
+| WebGPU | **no context-level switch exists by design.** `WgpuRenderOptions.antialias` now opts the main surface into a 2× supersample-and-linear-resolve step, default off. Effect-target `sampleCount > 1` remains a separate unsupported capability and is still normalised to 1. |
 
-So a scene with a canvas or dom cell **cannot** be uniformly AA-off, and one with a webgpu cell cannot currently be uniformly AA-on. Do not resolve that by switching WebGL's AA off to match WebGPU: that trades a GL-vs-WGPU difference for a GL-vs-canvas one, which is how the current state was reached.
+So a scene with a canvas or dom cell **cannot** be uniformly AA-off. A WebGPU cell can now opt into AA, but the functional harness deliberately leaves that option off until the associated picture changes can be captured once under the standing re-baseline decision. Do not resolve the interim mismatch by switching WebGL's AA off: that trades a GL-vs-WGPU difference for a GL-vs-canvas one, which is how the current state was reached.
 
-**UNDECIDED: where AA is applied.** Two routes are open — plumbing `multisample` through the WebGPU pipelines, or supersampling in the functional targets (`tools/harness/*.ts`) for all four backends. The requirement above holds either way. Until it is settled, do not add a scene whose subject is antialiasing quality, and do not add a new `antialias: false` to a scene that has a canvas or dom cell.
+**DECIDED: AA is a real SDK render step, not a harness filter.** The WebGPU state renders its main surface at 2× in each axis and resolves once into the canvas (or the enabled frame-capture target) before submit. The option defaults off, and `tools/harness/webgpu.ts` does not enable it yet. This does not implement multisampled effect targets: a scene whose subject is `sampleCount: 4` remains held until that distinct capability exists. Until the one authorized AA re-baseline is sequenced, do not add a scene whose subject is antialiasing quality, and do not add a new `antialias: false` to a scene that has a canvas or dom cell.
 
 ### 5. Parameters are off-centre and off-axis, or the scene cannot catch a convention error
 

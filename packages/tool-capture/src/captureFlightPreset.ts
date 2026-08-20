@@ -33,11 +33,11 @@ const FLIGHT_VISUAL_PARITY_GROUPS: Readonly<Record<string, Readonly<CaptureParit
 };
 
 const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> = {
-  // Canvas and DOM antialias inherently and expose no switch to disable it. WebGPU cannot be moved in
-  // the other direction yet: its pooled effect targets deliberately stay sampleCount 1 until the
-  // pipelines gain multisample variants (render-wgpu/src/wgpuRenderTargetPool.ts:14-15). AA everywhere
-  // will remove this systematic one-hard-edged-backend gap, but distinct rasterizers will still differ
-  // sample for sample, so these entries promise comparable AA policy rather than pixel-identical edges.
+  // Canvas and DOM antialias inherently and expose no switch to disable it. WebGPU now has an opt-in 2×
+  // main-surface supersample resolve, but the capture harness deliberately leaves it off until the AA
+  // picture changes can be included in one authorized re-baseline. Its pooled effect targets also stay
+  // sampleCount 1 until their pipelines gain multisample variants (render-wgpu/src/wgpuRenderTargetPool.ts:14-15).
+  // Comparable AA policy will not promise pixel-identical samples from distinct rasterizers.
   // Invert agrees away from its shape boundaries; its WebGPU boundary pixels come from that single-sample
   // scene target while this scene's WebGL target explicitly uses sampleCount 4.
   'effect-invert': ['webgpu'],

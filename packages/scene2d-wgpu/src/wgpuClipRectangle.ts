@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, setWgpuRenderPassScissorRect } from '@flighthq/render-wgpu/contract';
 import type { MatrixLike, RectangleLike, WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
@@ -16,12 +16,12 @@ export function popWgpuClipRectangle(state: WgpuRenderState): void {
 
   if (previous === null) {
     const viewport = runtime.renderTargetViewport ?? state.canvas;
-    pass.setScissorRect(0, 0, viewport.width, viewport.height);
+    setWgpuRenderPassScissorRect(state, pass, 0, 0, viewport.width, viewport.height);
   } else if (previous.width <= 0 || previous.height <= 0) {
     // Empty intersection stored during push — maintain degenerate scissor until fully popped.
-    pass.setScissorRect(0, 0, 1, 1);
+    setWgpuRenderPassScissorRect(state, pass, 0, 0, 1, 1);
   } else {
-    pass.setScissorRect(previous.x, previous.y, previous.width, previous.height);
+    setWgpuRenderPassScissorRect(state, pass, previous.x, previous.y, previous.width, previous.height);
   }
 }
 
@@ -44,9 +44,9 @@ export function pushWgpuClipRectangle(
   if (next.width <= 0 || next.height <= 0) {
     // Clip rect projects entirely outside the viewport — use a 1×1 degenerate scissor at
     // the origin so the node is effectively invisible while the rect remains Wgpu-valid.
-    pass.setScissorRect(0, 0, 1, 1);
+    setWgpuRenderPassScissorRect(state, pass, 0, 0, 1, 1);
   } else {
-    pass.setScissorRect(next.x, next.y, next.width, next.height);
+    setWgpuRenderPassScissorRect(state, pass, next.x, next.y, next.width, next.height);
   }
 }
 

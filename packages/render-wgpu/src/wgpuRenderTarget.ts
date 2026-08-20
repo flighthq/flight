@@ -9,6 +9,7 @@ import type {
   WgpuRenderTarget,
 } from '@flighthq/types/contract';
 
+import { getWgpuSurfaceRenderExtent } from './wgpuAntialias';
 import { buildWgpuRenderTargetBindGroup, drawWgpuQuadWithTransform } from './wgpuDraw';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -226,12 +227,13 @@ export function endWgpuRenderPass(state: WgpuRenderState): void {
   runtime.scissorStack = [];
 
   if (saved.canvasTextureView !== null) {
+    const surfaceExtent = getWgpuSurfaceRenderExtent(state);
     runtime.renderPass = beginWgpuRenderPassEncoder(
       state,
       saved.canvasTextureView,
       saved.depthStencilView ?? runtime.depthStencilView!,
-      runtime.renderTargetViewport?.width ?? state.canvas.width,
-      runtime.renderTargetViewport?.height ?? state.canvas.height,
+      runtime.renderTargetViewport?.width ?? surfaceExtent.width,
+      runtime.renderTargetViewport?.height ?? surfaceExtent.height,
       'load',
     );
   }
