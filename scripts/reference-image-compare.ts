@@ -30,11 +30,19 @@ export interface ReferenceImageCellComparison {
   dimensionMismatch: boolean;
 }
 
-/** The comparison primitive only observes these three bitmap fields. */
+/**
+ * The comparison primitive only observes these three bitmap fields.
+ *
+ * ★ `data` IS `ArrayLike<number>` BECAUSE THAT IS ALL THAT IS READ. `getBitmapMismatch` touches
+ * `data.length` and `data[i]` and nothing else, so naming a concrete typed array here would be a claim
+ * the code does not make — and it was the wrong one: a decoded PNG arrives as `Uint8Array` while a
+ * `Bitmap` carries `Uint8ClampedArray`, which is not assignable to it. That mismatch made every caller
+ * holding a real `Bitmap` a type error even though the comparison is identical for both.
+ */
 export interface ReferenceImageBitmap {
   width: number;
   height: number;
-  data: Readonly<Uint8Array>;
+  data: ArrayLike<number>;
 }
 
 /**
@@ -53,6 +61,8 @@ export function compareOracleReference(
     // missing one — and a wrong verdict is the harder of the two to notice.
     return { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 };
   }
+  // The cast is the seam between the two array types above: the primitive's signature names `Bitmap`,
+  // this function accepts anything indexable, and the loop inside reads neither type's methods.
   const mismatch = getBitmapMismatch(
     reference as unknown as Readonly<Bitmap>,
     candidate as unknown as Readonly<Bitmap>,
