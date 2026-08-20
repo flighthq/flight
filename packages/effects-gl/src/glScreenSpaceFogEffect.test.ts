@@ -1,8 +1,13 @@
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({ getGlEffectProgram: vi.fn(() => ({ program: {} })) }));
-const glMock = vi.hoisted(() => ({ uniform1f: vi.fn(), uniform3f: vi.fn() }));
+const programMock = vi.hoisted(() => ({
+  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
+}));
+const glMock = vi.hoisted(() => ({
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+  uniform3f: vi.fn((_location: unknown, _x: number, _y: number, _z: number) => {}),
+}));
 const drawCalls = vi.hoisted(() => ({ inputs: [] as unknown[][] }));
 
 vi.mock('./glEffectProgramCache', () => programMock);

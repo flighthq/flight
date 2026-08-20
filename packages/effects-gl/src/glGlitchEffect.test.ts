@@ -3,8 +3,13 @@ import type { GlitchEffect, GlRenderState, GlRenderTarget } from '@flighthq/type
 
 // The shader is module-private, so it is read back from the argument the effect hands the program
 // cache — the exact text that would be compiled — rather than exported for the test's benefit.
-const programMock = vi.hoisted(() => ({ getGlEffectProgram: vi.fn(() => ({ program: {} })) }));
-const glMock = vi.hoisted(() => ({ uniform1f: vi.fn(), uniform2f: vi.fn() }));
+const programMock = vi.hoisted(() => ({
+  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
+}));
+const glMock = vi.hoisted(() => ({
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
+}));
 
 vi.mock('./glEffectProgramCache', () => programMock);
 

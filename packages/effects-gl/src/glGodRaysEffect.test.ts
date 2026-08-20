@@ -1,8 +1,13 @@
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
-const programMock = vi.hoisted(() => ({ getGlEffectProgram: vi.fn(() => ({ program: {} })) }));
-const glMock = vi.hoisted(() => ({ uniform1f: vi.fn(), uniform2f: vi.fn() }));
+const programMock = vi.hoisted(() => ({
+  getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),
+}));
+const glMock = vi.hoisted(() => ({
+  uniform1f: vi.fn((_location: unknown, _value: number) => {}),
+  uniform2f: vi.fn((_location: unknown, _x: number, _y: number) => {}),
+}));
 
 vi.mock('./glEffectProgramCache', () => programMock);
 
