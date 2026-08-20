@@ -1,3 +1,12 @@
+// ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
+// the subject is a GLOBAL TONAL SHIFT over a flat field. That is the one class `npm run contrast` states it
+// does not bound, and `npm run displacement` cannot see it either — moving a flat field changes nothing;
+// committed contrast is 4.60 and the one-cell displacement score is 0.82. `assertRender` bounds mean blue to
+// 120..200, which does see a grade that did not run or that crushed the channel.
+//
+// There is nothing here to close. The limitation is structural — the fingerprint cannot represent this
+// subject — rather than a missing capability, so this must never be filed later as an unfixed gap.
+//
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,

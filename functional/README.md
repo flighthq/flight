@@ -138,3 +138,19 @@ Ask **can it, or has nobody written it** — and answer from what the backend ca
 **A hold's reason must name a condition someone else could check and thereby release.** "Held pending a design ruling" names no question, so nobody can release it; eight cells sat still for four days behind exactly that sentence. And when a reason goes stale, rewrite it rather than releasing on it — a hold released by disproving a reason that was already false releases a cell we know is broken.
 
 Releasing a hold is deleting its entry, which is a reviewed change with a name on it. Whoever rewrites a reason records in the commit what the old one said and why it no longer applies.
+
+## Scenes the fingerprint gate cannot measure — a scope declaration, not a gap
+
+Five scenes carry a subject the committed fingerprint **cannot represent even in principle**, and each one says so at the top of its own file. They are recorded here so the list is findable from one place and so nobody re-files them later as neglected coverage.
+
+| scene | why the fingerprint cannot see it | what does |
+| --- | --- | --- |
+| `bitmap-downscale-smoothing` | smoothing ON and OFF both average to flat grey in a 16×16 grid | mid-grey vs near-pure sample classification |
+| `text-border-box` | a 1 px stroke lifts a ~1875-pixel cell by 3–7 of 255 | a band scan requiring ≥ 12 border-coloured samples |
+| `effect-film-grain` | the subject is ±3-level per-pixel noise; the fingerprint is a block average | adjacent-pixel energy plus a mean-luma band |
+| `particle-motion-blur` | a dim smear on a near-black field, whole frame within ~20 levels | mid-dim coverage plus absence of full-brightness cores |
+| `effect-lift-gamma-gain` | a global tonal shift over a flat field — no structure to measure | a mean-blue band |
+
+**There is nothing here to close.** The limitation is structural rather than a missing capability: the instrument averages away the very thing the scene exists to show. Each scene's `assertRender` is the measurement that can see its subject, and each runs in-page on every capture — including the regression leg — so these scenes are watched, just not by the fingerprint.
+
+`npm run displacement` and `npm run contrast` both rank these scenes at the bottom, correctly. A low row for one of them is this declaration showing through, not a finding.
