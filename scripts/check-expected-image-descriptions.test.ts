@@ -48,15 +48,21 @@ describe('describeExcludedPopulation', () => {
 });
 
 describe('findExpectedImageDescriptionCellScope', () => {
-  it('counts resolved renderer cells rather than backing scene files', () => {
+  it('counts resolved renderer cells and requires explicit structural unavailability', () => {
     writeFileSync(join(root, 'functional', 'scenes', 'agnostic.ts'), 'createFunctionalTarget({});');
     writeFileSync(join(root, 'functional', 'scenes', 'overridden.ts'), 'createFunctionalTarget({});');
-    writeFileSync(join(root, 'functional', 'scenes', 'overridden.webgl.ts'), 'createGlRenderTarget({});');
-    writeFileSync(join(root, 'functional', 'scenes', 'specific.webgl.ts'), 'createGlRenderTarget({});');
+    writeFileSync(
+      join(root, 'functional', 'scenes', 'overridden.webgl.ts'),
+      'declareExpectedImageDescriptionUnavailable("no Gl harness"); createGlRenderTarget({});',
+    );
+    writeFileSync(
+      join(root, 'functional', 'scenes', 'specific.webgl.ts'),
+      'declareExpectedImageDescriptionUnavailable("no Gl harness"); createGlRenderTarget({});',
+    );
     writeFileSync(join(root, 'functional', 'scenes', 'specific.webgpu.ts'), 'createFunctionalTarget({});');
     writeFileSync(
       join(root, 'functional', 'scenes', 'unreachable.dom.ts'),
-      '// createFunctionalTarget({}) is not a call.\ncreateDomRenderTarget({});',
+      'declareExpectedImageDescriptionUnavailable("no DOM harness"); createDomRenderTarget({});',
     );
 
     expect(findExpectedImageDescriptionCellScope(root)).toEqual({
@@ -84,6 +90,18 @@ describe('findExpectedImageDescriptionCellScope', () => {
     expect(reachableCells).toContain('effect-bloom/webgl');
     expect(structurallyUnableCells).not.toContain('effect-bloom/webgl');
   });
+
+  it('keeps absent and empty unavailability declarations in the reachable population', () => {
+    writeFileSync(join(root, 'functional', 'scenes', 'removed.webgl.ts'), 'createGlRenderTarget({});');
+    writeFileSync(
+      join(root, 'functional', 'scenes', 'empty.webgl.ts'),
+      'declareExpectedImageDescriptionUnavailable(""); createGlRenderTarget({});',
+    );
+
+    const { reachableCells, structurallyUnableCells } = findExpectedImageDescriptionCellScope(root);
+    expect(reachableCells).toEqual(['empty/webgl', 'removed/webgl']);
+    expect(structurallyUnableCells).toEqual([]);
+  });
 });
 
 describe('findScenesWithoutExpectedImageDescription', () => {
@@ -94,10 +112,10 @@ describe('findScenesWithoutExpectedImageDescription', () => {
       'createFunctionalTarget({ expectedImageDescription: "test" });',
     );
     writeFileSync(join(scenesDir, 'missing-description.ts'), 'createFunctionalTarget({});');
-    writeFileSync(join(scenesDir, 'not-functional.ts'), 'createGlRenderTarget({});');
+    writeFileSync(join(scenesDir, 'removed-description.ts'), 'createGlRenderTarget({});');
 
     const missing = findScenesWithoutExpectedImageDescription(scenesDir);
-    expect(missing).toEqual(['missing-description']);
+    expect(missing).toEqual(['missing-description', 'removed-description']);
   });
 
   it('returns empty when all functional scenes have descriptions', () => {
@@ -125,6 +143,22 @@ describe('findScenesWithoutExpectedImageDescription', () => {
     );
 
     expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['empty-declare.webgl']);
+  });
+
+  // The production corpus currently has no structurally-unavailable cells, so this fixture is the sole
+  // consumer that protects the explicit-unavailable path from being mistaken for an unused export.
+  it('accepts explicit structural unavailability only when it carries a reason', () => {
+    const scenesDir = join(root, 'functional', 'scenes');
+    writeFileSync(
+      join(scenesDir, 'unavailable.webgl.ts'),
+      'declareExpectedImageDescriptionUnavailable("the harness cannot expose this target");',
+    );
+    writeFileSync(
+      join(scenesDir, 'unexplained-unavailable.webgl.ts'),
+      'declareExpectedImageDescriptionUnavailable("");',
+    );
+
+    expect(findScenesWithoutExpectedImageDescription(scenesDir)).toEqual(['unexplained-unavailable.webgl']);
   });
 
   it('rejects a comment containing expectedImageDescription', () => {
