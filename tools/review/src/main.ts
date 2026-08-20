@@ -35,6 +35,24 @@ interface ReviewBuildProvenance {
 
 type ParityStatus = 'passed' | 'failed' | 'no-data';
 
+/** Serialized server result; policy behavior remains exclusively in scripts/reference-image-tolerance.ts. */
+interface ReviewReferenceImageComparison {
+  fraction: number;
+  maxChannelDelta: number;
+  dimensionMismatch: boolean;
+}
+
+interface ReviewReferenceImageTolerance {
+  channelTolerance: number;
+  comparisonPolicyId: string;
+  gateOnMaxChannelDelta: boolean;
+  maxChannelDelta: number;
+  maxFraction: number;
+  overridden: boolean;
+  reason: string | null;
+  scene: string;
+}
+
 interface ReviewCell {
   renderer: string;
   role: ReviewCellRole;
@@ -46,6 +64,11 @@ interface ReviewCell {
   provenance: ReviewCellProvenance | null;
   build: ReviewBuildProvenance | null;
   commissionState: CommissionState | null;
+  comparisonPolicy: ReviewReferenceImageTolerance | null;
+  referenceComparison: ReviewReferenceImageComparison | null;
+  referenceComparisonMatches: boolean | null;
+  referenceComparisonMeasured: boolean;
+  referenceComparisonProblem: string | null;
   holdReason: string | null;
   parityStatus: ParityStatus;
 }
@@ -56,6 +79,7 @@ interface ReviewTest {
   cells: ReviewCell[];
   expectedImageDescription?: string;
   sourceHasDescription: boolean;
+  toleranceWritable: boolean;
   withheldReason?: string;
 }
 
@@ -390,6 +414,139 @@ async function releaseHeldRenderers(renderers: readonly string[]): Promise<void>
   }
 }
 
+async function configureCurrentTolerance(): Promise<void> {
+  const t = currentTest();
+  if (!t) return;
+  const cells = reviewableCells(t.cells);
+  const policy = cells.find((cell) => cell.comparisonPolicy !== null)?.comparisonPolicy;
+  if (policy === null || policy === undefined) return;
+  if (!t.toleranceWritable) {
+    showCommissionFeedback('Cannot set tolerance until flight-reference-images registers the policy identity', true);
+    return;
+  }
+  const measurements = cells.filter((cell) => cell.referenceComparisonMeasured && cell.referenceComparison !== null);
+  if (measurements.length === 0) {
+    showCommissionFeedback('No full-resolution comparison is available — fetch the blessed references first', true);
+    return;
+  }
+
+  promptOpen = true;
+  try {
+    if (
+      policy.overridden &&
+      confirm(
+        `Remove the ${policy.scene} override and restore exact comparison?\n\nOK removes it. Cancel keeps it and opens the editor.`,
+      )
+    ) {
+      await writeTolerance(t, null);
+      return;
+    }
+
+    const measured = measurements
+      .map((cell) => {
+        const comparison = cell.referenceComparison!;
+        return `${cell.renderer}: fraction ${comparison.fraction.toFixed(6)}, max channel delta ${comparison.maxChannelDelta}`;
+      })
+      .join('\n');
+    const channelTolerance = promptNumber(
+      `${policy.scene}\n\nCurrent full-resolution measurements:\n${measured}\n\nPer-channel tolerance (integer 0-255):`,
+      policy.channelTolerance,
+      { integer: true, minimum: 0, maximum: 255 },
+    );
+    if (channelTolerance === null) return;
+    const maxFraction = promptNumber('Maximum mismatched fraction (0-1):', policy.maxFraction, {
+      integer: false,
+      minimum: 0,
+      maximum: 1,
+    });
+    if (maxFraction === null) return;
+    const gateText = prompt(
+      'Gate on maximum channel delta? Enter true or false:',
+      String(policy.gateOnMaxChannelDelta),
+    );
+    if (gateText === null) return;
+    if (gateText !== 'true' && gateText !== 'false') {
+      showCommissionFeedback('Gate value must be true or false', true);
+      return;
+    }
+    const maxChannelDelta = promptNumber('Maximum channel delta (integer 0-255):', policy.maxChannelDelta, {
+      integer: true,
+      minimum: 0,
+      maximum: 255,
+    });
+    if (maxChannelDelta === null) return;
+    const reason = prompt(
+      'Reason (mandatory — record the measured renderer behavior this scene policy permits):',
+      policy.reason ?? '',
+    );
+    if (reason === null || reason.trim() === '') return;
+
+    await writeTolerance(t, {
+      channelTolerance,
+      gateOnMaxChannelDelta: gateText === 'true',
+      maxChannelDelta,
+      maxFraction,
+      reason: reason.trim(),
+    });
+  } finally {
+    promptOpen = false;
+  }
+}
+
+function promptNumber(
+  message: string,
+  current: number,
+  range: { integer: boolean; minimum: number; maximum: number },
+): number | null {
+  const raw = prompt(message, String(current));
+  if (raw === null) return null;
+  const value = Number(raw);
+  if (
+    !Number.isFinite(value) ||
+    (range.integer && !Number.isInteger(value)) ||
+    value < range.minimum ||
+    value > range.maximum
+  ) {
+    showCommissionFeedback(
+      `Value must be ${range.integer ? 'an integer' : 'a number'} from ${range.minimum} through ${range.maximum}`,
+      true,
+    );
+    return null;
+  }
+  return value;
+}
+
+async function writeTolerance(
+  t: ReviewTest,
+  tolerance: {
+    channelTolerance: number;
+    maxFraction: number;
+    gateOnMaxChannelDelta: boolean;
+    maxChannelDelta: number;
+    reason: string;
+  } | null,
+): Promise<void> {
+  try {
+    const res = await fetch('/api/tolerance', {
+      method: tolerance === null ? 'DELETE' : 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tool: t.tool, entry: t.name, tolerance }),
+    });
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: res.statusText }));
+      showCommissionFeedback(`Error: ${(error as { error: string }).error}`, true);
+      return;
+    }
+    const result = (await res.json()) as { path: string };
+    showCommissionFeedback(
+      tolerance === null ? `Restored exact comparison in ${result.path}` : `Updated scene tolerance in ${result.path}`,
+      false,
+    );
+  } catch (error) {
+    showCommissionFeedback(`Network error: ${error}`, true);
+  }
+}
+
 async function holdCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
@@ -649,6 +806,25 @@ function buildRendererBar(): void {
   }
   rendererBar.appendChild(holdBtn);
 
+  const tolerancePolicy = reviewable.find((cell) => cell.comparisonPolicy !== null)?.comparisonPolicy;
+  const toleranceBtn = document.createElement('button');
+  toleranceBtn.className = 'tolerance-btn';
+  toleranceBtn.textContent = tolerancePolicy?.overridden ? 'Tolerance: custom' : 'Tolerance: exact';
+  const measured = reviewable.some((cell) => cell.referenceComparisonMeasured && cell.referenceComparison !== null);
+  if (!t.toleranceWritable) {
+    toleranceBtn.disabled = true;
+    toleranceBtn.title = 'Waiting for flight-reference-images to register the per-scene comparison policy identity';
+  } else if (!measured) {
+    toleranceBtn.disabled = true;
+    toleranceBtn.title = 'Fetch a blessed reference to expose full-resolution measurements before setting policy';
+  } else {
+    toleranceBtn.title = tolerancePolicy?.overridden
+      ? `Edit or remove the declared policy — ${tolerancePolicy.reason}`
+      : 'Declare a measured per-scene comparison policy with a mandatory reason';
+    toleranceBtn.addEventListener('click', () => void configureCurrentTolerance());
+  }
+  rendererBar.appendChild(toleranceBtn);
+
   const sep = document.createElement('span');
   sep.className = 'renderer-sep';
   rendererBar.appendChild(sep);
@@ -791,6 +967,18 @@ function setCompareGridColumns(grid: HTMLElement): void {
   grid.style.gridTemplateColumns = `repeat(${grid.childElementCount}, minmax(0, 1fr))`;
 }
 
+function comparisonStats(cell: ReviewCell): string {
+  if (cell.referenceComparisonProblem !== null)
+    return `Policy comparison unavailable: ${cell.referenceComparisonProblem}`;
+  const comparison = cell.referenceComparison;
+  const policy = cell.comparisonPolicy;
+  if (comparison === null || policy === null) return 'Policy comparison unavailable';
+  const verdict = cell.referenceComparisonMatches ? 'WITHIN POLICY' : 'OUTSIDE POLICY';
+  const maxGate = policy.gateOnMaxChannelDelta ? String(policy.maxChannelDelta) : 'reported only';
+  const kind = policy.overridden ? 'scene override' : 'exact-by-absence';
+  return `${verdict} · fraction ${comparison.fraction.toFixed(6)} / ${policy.maxFraction} · max channel delta ${comparison.maxChannelDelta} / ${maxGate} · channel tolerance ${policy.channelTolerance} · ${kind}`;
+}
+
 async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   if (!isReviewableCell(cell) || cell.commissionState === null) return;
   const container = document.createElement('div');
@@ -867,7 +1055,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
   }
 
   if (compareMode === 'side-by-side') {
-    const delta = computeDelta(candidateImg, referenceImg, 0);
+    const delta = computeDelta(candidateImg, referenceImg, cell.comparisonPolicy?.channelTolerance ?? 0);
 
     if (delta.dimMismatch) {
       container.innerHTML = `<div class="compare-message">${delta.dimMismatch}</div>`;
@@ -891,10 +1079,10 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
 
     const stats = document.createElement('div');
     stats.className = 'compare-stats';
-    stats.textContent = `Mismatch: ${delta.fraction} | Max channel delta: ${delta.maxDelta} | Tolerance: 0`;
+    stats.textContent = comparisonStats(cell);
     container.appendChild(stats);
   } else if (compareMode === 'onion-skin') {
-    const delta = computeDelta(candidateImg, referenceImg, 0);
+    const delta = computeDelta(candidateImg, referenceImg, cell.comparisonPolicy?.channelTolerance ?? 0);
 
     if (delta.dimMismatch) {
       container.innerHTML = `<div class="compare-message">${delta.dimMismatch}</div>`;
@@ -936,7 +1124,7 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
 
     const stats = document.createElement('div');
     stats.className = 'compare-stats';
-    stats.textContent = `Mismatch: ${delta.fraction} | Max channel delta: ${delta.maxDelta} | Tolerance: 0`;
+    stats.textContent = comparisonStats(cell);
     container.appendChild(stats);
   }
 

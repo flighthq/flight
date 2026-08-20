@@ -30,14 +30,21 @@ export interface ReferenceImageCellComparison {
   dimensionMismatch: boolean;
 }
 
+/** The comparison primitive only observes these three bitmap fields. */
+export interface ReferenceImageBitmap {
+  width: number;
+  height: number;
+  data: Readonly<Uint8Array>;
+}
+
 /**
  * Compares a candidate render against its blessed reference, returning a verdict-shaped result even when
  * the two are incomparable. Never throws for a dimension difference; a genuinely unexpected error still
  * propagates, because an adapter that swallows everything would report a broken decoder as a clean run.
  */
 export function compareOracleReference(
-  reference: Readonly<Bitmap>,
-  candidate: Readonly<Bitmap>,
+  reference: Readonly<ReferenceImageBitmap>,
+  candidate: Readonly<ReferenceImageBitmap>,
   channelTolerance: number,
 ): ReferenceImageCellComparison {
   if (reference.width !== candidate.width || reference.height !== candidate.height) {
@@ -46,7 +53,11 @@ export function compareOracleReference(
     // missing one — and a wrong verdict is the harder of the two to notice.
     return { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 };
   }
-  const mismatch = getBitmapMismatch(reference, candidate, channelTolerance);
+  const mismatch = getBitmapMismatch(
+    reference as unknown as Readonly<Bitmap>,
+    candidate as unknown as Readonly<Bitmap>,
+    channelTolerance,
+  );
   return {
     dimensionMismatch: false,
     fraction: mismatch.fraction,

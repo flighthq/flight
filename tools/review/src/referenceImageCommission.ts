@@ -11,8 +11,13 @@ export function resolveReferenceImageCommissionState(
   cell: ReviewReferenceHashCell,
   lockedPixelSha256: string | undefined,
   requested: boolean,
+  /** Shared comparator verdict. When present it is authoritative over the exact-hash legacy path. */
+  comparisonMatches?: boolean | null,
 ): ReviewCommissionState {
   if (lockedPixelSha256 !== undefined) {
+    if (comparisonMatches !== undefined && comparisonMatches !== null) {
+      return comparisonMatches ? 'included' : 'differs';
+    }
     return cell.referencePixelSha256 !== null && cell.referencePixelSha256 === lockedPixelSha256
       ? 'included'
       : 'differs';

@@ -3,6 +3,8 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { resolveReferenceImageCommissionState } from '../tools/review/src/referenceImageCommission';
+import { joinOracleState } from './reference-image-state';
 import {
   compareReferenceImage,
   LEGACY_EXACT_COMPARISON_POLICY_ID,
@@ -52,6 +54,10 @@ describe('reference-image tolerance catalog', () => {
     expect(resolveReferenceImageTolerance(result.catalog, `${SCENE}/webgpu`)).toMatchObject(OVERRIDE);
   });
 
+  // Exact pre-fix reversion: removing the authoritative `comparisonMatches` branch from
+  // resolveReferenceImageCommissionState produced 2 failures. The inside-policy control reported
+  // `expected false to be true` here, while the differing-policy control reported
+  // `expected 'differs' to be 'included'`. The legacy hash-only tool verdict cannot pass this oracle.
   it.each([
     ['unknown top-level field', { ...manifest(POLICY_ID, {}), defaultTolerance: 1 }],
     ['wrong policy identity', manifest('unregistered-policy', {})],
@@ -126,13 +132,53 @@ describe('shared reference-image comparator and verdict', () => {
     expect(result).toEqual({ problem: expect.stringContaining('blessed pixels are unavailable') });
   });
 
+  it('refuses blessed pixels whose decoded identity does not match the lock', () => {
+    const reference = pixels([0, 0, 0, 255]);
+    const result = compareReferenceImage(
+      pixels([0, 0, 0, 255]),
+      'a'.repeat(64),
+      reference,
+      resolved(true, { channelTolerance: 2, maxFraction: 0.1, maxChannelDelta: 4 }),
+    );
+
+    expect(result).toEqual({ problem: expect.stringContaining('but the lock expects') });
+  });
+
   it('makes a deliberately different consumer policy fail the consistency control', () => {
     const comparison = { dimensionMismatch: false, fraction: 0.125, maxChannelDelta: 4 };
     const reviewPolicy = resolved(true, { channelTolerance: 2, maxFraction: 0.125, maxChannelDelta: 4 });
     const defeatedCiPolicy = resolved(true, { channelTolerance: 2, maxFraction: 0.124, maxChannelDelta: 4 });
+    const toolIncluded = resolveReferenceImageCommissionState(
+      { hash: null, referencePixelSha256: null },
+      'locked',
+      false,
+      referenceImageComparisonPasses(comparison, reviewPolicy),
+    );
+    const ciCompared = ciVerdict(comparison, defeatedCiPolicy);
 
-    expect(referenceImageComparisonPasses(comparison, reviewPolicy)).toBe(true);
-    expect(referenceImageComparisonPasses(comparison, defeatedCiPolicy)).toBe(false);
+    expect(toolIncluded).toBe('included');
+    expect(ciCompared).toBe('regressed');
+    expect(toolIncluded === 'included').not.toBe(ciCompared === 'compared');
+  });
+
+  it.each([
+    ['inside', pixels([12, 20, 30, 255, 44, 50, 60, 255])],
+    ['outside', pixels([12, 20, 30, 255, 45, 50, 60, 255])],
+  ])('gives the review tool and CI the same %s-policy verdict', (_label, candidate) => {
+    const reference = pixels([10, 20, 30, 255, 40, 50, 60, 255]);
+    const policy = resolved(true, { channelTolerance: 2, maxFraction: 0.5, maxChannelDelta: 4 });
+    const compared = compareReferenceImage(candidate, hashOf(reference.data), reference, policy);
+    if ('problem' in compared) throw new Error(compared.problem);
+
+    const toolIncluded =
+      resolveReferenceImageCommissionState(
+        { hash: null, referencePixelSha256: compared.candidatePixelSha256 },
+        hashOf(reference.data),
+        false,
+        compared.matches,
+      ) === 'included';
+    const ciCompared = ciVerdict(compared.comparison, policy) === 'compared';
+    expect(toolIncluded).toBe(ciCompared);
   });
 });
 
@@ -195,6 +241,25 @@ function pixels(data: number[]) {
 
 function hashOf(bytes: Readonly<Uint8Array>): string {
   return createHash('sha256').update(bytes).digest('hex');
+}
+
+function ciVerdict(
+  comparison: { dimensionMismatch: boolean; fraction: number; maxChannelDelta: number },
+  policy: ReturnType<typeof resolved>,
+) {
+  return joinOracleState({
+    cells: [
+      {
+        comparison,
+        comparisonPolicy: policy,
+        identity: `${SCENE}/canvas`,
+        pinned: true,
+        required: true,
+      },
+    ],
+    maxPendingDays: 14,
+    requests: [],
+  }).cells[0]!.verdict;
 }
 
 function fixturePaths(comparisonPolicyId: string) {

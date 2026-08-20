@@ -16,9 +16,9 @@
 //
 // ★ EXACT COMPARISON IS SUFFICIENT ONLY WHILE THE POLICY SAYS SO. The registered policy
 // `pixel-exact-swiftshader-pw-1-61-v1` is channelTolerance 0 / maximumMismatchFraction 0, so equality of
-// the decoded hash IS the comparison. The moment a fuzzy policy is registered this must decode BOTH
-// images and go through `compareOracleReference`; the seam for that is `comparePixels` below, and the
-// policy is read rather than assumed so a mismatch is caught instead of silently under-checking.
+// the decoded hash IS the comparison. An overridden scene decodes BOTH images and enters the shared
+// `compareReferenceImage` seam; the policy is resolved rather than assumed so a mismatch is caught
+// instead of silently under-checking.
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

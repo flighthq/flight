@@ -6,8 +6,19 @@ import { join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
-import { getOraclePngPixelSha256 } from '../../scripts/reference-image-png';
+import type { ReferenceImageCellComparison } from '../../scripts/reference-image-compare';
+import { decodeOraclePng, hashOraclePixelBytes } from '../../scripts/reference-image-png';
 import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
+import {
+  compareReferenceImage,
+  LEGACY_EXACT_COMPARISON_POLICY_ID,
+  readReferenceImageToleranceCatalog,
+  resolveReferenceImageTolerance,
+  writeReferenceImageSceneTolerance,
+  type ResolvedReferenceImageTolerance,
+  type ReferenceImageSceneTolerance,
+  type ReferenceImageToleranceCatalog,
+} from '../../scripts/reference-image-tolerance';
 import { workspacePackages } from '../../scripts/workspaces';
 import { isReviewableCell, reviewableCells, reviewCellRole } from './src/cellRole';
 import type { ReviewCellRole } from './src/cellRole';
@@ -59,6 +70,11 @@ interface ReviewCell {
   provenance: ReviewCellProvenance | null;
   build: ReviewBuildProvenance | null;
   commissionState: CommissionState | null;
+  comparisonPolicy: ResolvedReferenceImageTolerance | null;
+  referenceComparison: ReferenceImageCellComparison | null;
+  referenceComparisonMatches: boolean | null;
+  referenceComparisonMeasured: boolean;
+  referenceComparisonProblem: string | null;
   holdReason: string | null;
   parityStatus: ParityStatus;
 }
@@ -69,12 +85,18 @@ interface ReviewTest {
   cells: ReviewCell[];
   expectedImageDescription?: string;
   sourceHasDescription: boolean;
+  toleranceWritable: boolean;
   withheldReason?: string;
 }
 
 const lockPath = join(projectRoot, 'scripts', 'reference-image-lock.json');
 const heldPath = join(projectRoot, 'scripts', 'reference-image-held.json');
 const requestsDir = join(projectRoot, 'reference-image-requests');
+const tolerancePaths = {
+  captureIdentityPath: join(projectRoot, 'scripts', 'reference-image-capture-identity.json'),
+  coverageManifestPath: join(projectRoot, 'scripts', 'capture-baseline-coverage-manifest.json'),
+  manifestPath: join(projectRoot, 'scripts', 'reference-image-tolerances.json'),
+};
 
 const SCENE_DIRS: Record<string, string> = {
   functional: join(projectRoot, 'functional', 'scenes'),
@@ -311,13 +333,15 @@ function resolveCommissionState(
   cell: Pick<ReviewCell, 'hash' | 'referencePixelSha256'>,
   locked: ReadonlyMap<string, string>,
   requested: ReadonlySet<string>,
+  comparisonMatches: boolean | null,
 ): CommissionState {
   const imageKey = `${tool}/${name}/${renderer}`;
   const lockedHash = locked.get(imageKey);
-  return resolveReferenceImageCommissionState(cell, lockedHash, requested.has(imageKey));
+  return resolveReferenceImageCommissionState(cell, lockedHash, requested.has(imageKey), comparisonMatches);
 }
 
 function discoverReviewTests(): ReviewTest[] {
+  const toleranceCatalog = readToleranceCatalogOrThrow();
   if (!existsSync(artifactsDir)) return [];
 
   const locked = readLockedImages();
@@ -380,6 +404,7 @@ function discoverReviewTests(): ReviewTest[] {
         let changed: boolean | null = null;
         let hash: string | null = null;
         let referencePixelSha256: string | null = null;
+        let decodedCandidate: ReturnType<typeof decodeOraclePng> | null = null;
         let provenance: ReviewCellProvenance | null = null;
         let build: ReviewBuildProvenance | null = null;
         let cellDescription: string | undefined;
@@ -423,8 +448,8 @@ function discoverReviewTests(): ReviewTest[] {
         }
 
         try {
-          const referenceHash = getOraclePngPixelSha256(readFileSync(screenshotPath));
-          if ('pixelSha256' in referenceHash) referencePixelSha256 = referenceHash.pixelSha256;
+          decodedCandidate = decodeOraclePng(readFileSync(screenshotPath));
+          if ('png' in decodedCandidate) referencePixelSha256 = hashOraclePixelBytes(decodedCandidate.png.data);
         } catch {
           // A missing or unreadable reference-domain identity is not interchangeable with status.hash.
         }
@@ -432,11 +457,61 @@ function discoverReviewTests(): ReviewTest[] {
         if (role === 'reviewable' && cellDescription !== undefined && expectedImageDescription === undefined) {
           expectedImageDescription = cellDescription;
         }
+        const imageKey = `${tool}/${name}/${renderer}`;
+        const comparisonPolicy =
+          role === 'reviewable' ? resolveReferenceImageTolerance(toleranceCatalog, imageKey) : null;
+        let referenceComparison: ReferenceImageCellComparison | null = null;
+        let referenceComparisonMatches: boolean | null = null;
+        let referenceComparisonMeasured = false;
+        let referenceComparisonProblem: string | null = null;
+        const lockedHash = locked.get(imageKey);
+        if (comparisonPolicy !== null && lockedHash !== undefined) {
+          if (decodedCandidate === null || 'refused' in decodedCandidate) {
+            referenceComparisonProblem = 'candidate capture is not decodable in the reference-image domain';
+          } else {
+            const referencePath = resolveReferenceImagePath(imageKey);
+            let decodedReference: ReturnType<typeof decodeOraclePng> | null = null;
+            if (referencePath !== null) {
+              try {
+                decodedReference = decodeOraclePng(readFileSync(referencePath));
+                if ('refused' in decodedReference) {
+                  referenceComparisonProblem = `blessed reference is not decodable: ${decodedReference.refused}`;
+                  decodedReference = null;
+                }
+              } catch (error) {
+                referenceComparisonProblem = `blessed reference could not be read: ${String(error)}`;
+              }
+            }
+            if (referenceComparisonProblem === null) {
+              const compared = compareReferenceImage(
+                decodedCandidate.png,
+                lockedHash,
+                decodedReference !== null && 'png' in decodedReference ? decodedReference.png : null,
+                comparisonPolicy,
+              );
+              if ('problem' in compared) {
+                referenceComparisonProblem = compared.problem;
+              } else {
+                referenceComparison = compared.comparison;
+                referenceComparisonMatches = compared.matches;
+                referenceComparisonMeasured = compared.measured;
+              }
+            }
+            if (referenceComparisonProblem !== null) referenceComparisonMatches = false;
+          }
+        }
         const commissionState =
           role === 'reviewable'
-            ? resolveCommissionState(tool, name, renderer, { hash, referencePixelSha256 }, locked, requested)
+            ? resolveCommissionState(
+                tool,
+                name,
+                renderer,
+                { hash, referencePixelSha256 },
+                locked,
+                requested,
+                referenceComparisonMatches,
+              )
             : null;
-        const imageKey = `${tool}/${name}/${renderer}`;
         const holdReason = role === 'reviewable' ? (held.get(imageKey) ?? null) : null;
         const parityStatus: ParityStatus = parity.get(imageKey) ?? 'no-data';
         cells.push({
@@ -450,6 +525,11 @@ function discoverReviewTests(): ReviewTest[] {
           provenance,
           build,
           commissionState,
+          comparisonPolicy,
+          referenceComparison,
+          referenceComparisonMatches,
+          referenceComparisonMeasured,
+          referenceComparisonProblem,
           holdReason,
           parityStatus,
         });
@@ -459,7 +539,13 @@ function discoverReviewTests(): ReviewTest[] {
         const renderers = reviewableCells(cells).map((cell) => cell.renderer);
         const hasDesc = sourceHasExpectedDescription(tool, name, renderers);
         const withheld = sourceWithheldReason(tool, name, renderers);
-        const entry: ReviewTest = { tool, name, cells, sourceHasDescription: hasDesc };
+        const entry: ReviewTest = {
+          tool,
+          name,
+          cells,
+          sourceHasDescription: hasDesc,
+          toleranceWritable: toleranceCatalog.comparisonPolicyId !== LEGACY_EXACT_COMPARISON_POLICY_ID,
+        };
         if (withheld !== null) entry.withheldReason = withheld;
         if (expectedImageDescription !== undefined) entry.expectedImageDescription = expectedImageDescription;
         results.push(entry);
@@ -468,6 +554,16 @@ function discoverReviewTests(): ReviewTest[] {
   }
 
   return results;
+}
+
+function readToleranceCatalogOrThrow(): ReferenceImageToleranceCatalog {
+  const result = readReferenceImageToleranceCatalog(tolerancePaths);
+  if ('catalog' in result) return result.catalog;
+  throw new Error(
+    `Invalid reference-image tolerance catalog:\n${result.problems
+      .map((problem) => `  ${problem.path}: ${problem.detail}`)
+      .join('\n')}`,
+  );
 }
 
 function reviewPlugin(): Plugin[] {
@@ -505,6 +601,14 @@ function reviewPlugin(): Plugin[] {
         server.watcher.add(join(requestsDir, '*.json'));
         server.watcher.on('add', (file: string) => {
           if (!file.startsWith(requestsDir) || !file.endsWith('.json')) return;
+          const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+          if (mod) server.moduleGraph.invalidateModule(mod);
+          server.ws.send({ type: 'full-reload' });
+        });
+
+        server.watcher.add(tolerancePaths.manifestPath);
+        server.watcher.on('change', (file: string) => {
+          if (file !== tolerancePaths.manifestPath) return;
           const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
           if (mod) server.moduleGraph.invalidateModule(mod);
           server.ws.send({ type: 'full-reload' });
@@ -730,6 +834,64 @@ function reviewPlugin(): Plugin[] {
                 res.end(JSON.stringify({ actor, keys, path: relative(projectRoot, heldPath) }));
               } catch (error) {
                 res.statusCode = 400;
+                res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'invalid JSON body' }));
+              }
+            });
+            return;
+          }
+
+          if ((req.method === 'PUT' || req.method === 'DELETE') && urlPath === '/api/tolerance') {
+            let body = '';
+            req.on('data', (chunk: Buffer) => {
+              body += chunk.toString();
+            });
+            req.on('end', () => {
+              try {
+                const payload = JSON.parse(body) as {
+                  tool?: string;
+                  entry?: string;
+                  tolerance?: ReferenceImageSceneTolerance;
+                };
+                if (!payload.tool || !payload.entry) {
+                  res.statusCode = 400;
+                  res.end(JSON.stringify({ error: 'missing required fields: tool, entry' }));
+                  return;
+                }
+                if (req.method === 'PUT' && payload.tolerance === undefined) {
+                  res.statusCode = 400;
+                  res.end(JSON.stringify({ error: 'a tolerance declaration with a reason is required' }));
+                  return;
+                }
+                const scene = `${payload.tool}/${payload.entry}`;
+                const updated = writeReferenceImageSceneTolerance(
+                  tolerancePaths,
+                  scene,
+                  req.method === 'DELETE' ? null : payload.tolerance!,
+                );
+                if ('problems' in updated) {
+                  res.statusCode = 400;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(
+                    JSON.stringify({
+                      error: updated.problems.map((problem) => `${problem.path}: ${problem.detail}`).join('; '),
+                    }),
+                  );
+                  return;
+                }
+
+                const manifestModule = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+                if (manifestModule) server.moduleGraph.invalidateModule(manifestModule);
+                server.ws.send({ type: 'full-reload' });
+                res.setHeader('Content-Type', 'application/json');
+                res.end(
+                  JSON.stringify({
+                    path: relative(projectRoot, tolerancePaths.manifestPath),
+                    policy: resolveReferenceImageTolerance(updated.catalog, `${scene}/__review__`),
+                  }),
+                );
+              } catch (error) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'invalid JSON body' }));
               }
             });
