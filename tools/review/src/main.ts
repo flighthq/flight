@@ -20,7 +20,12 @@ import { reviewMissingReferenceMessage } from './commissionState';
 import type { ReviewCommissionState as CommissionState } from './commissionState';
 import { createReviewCommissionPayloadCell, markReviewCommissionRequested } from './referenceImageCommission';
 import { filterReviewItems } from './reviewFilter';
-import { orderReviewItems, REVIEW_ATTENTION_GROUP_ORDER, reviewItemByVisualDelta } from './reviewOrder';
+import {
+  orderReviewItems,
+  resolveReviewAttentionGroup,
+  REVIEW_ATTENTION_GROUP_ORDER,
+  reviewItemByVisualDelta,
+} from './reviewOrder';
 import type { ReviewAttentionGroup as AttentionGroup } from './reviewOrder';
 
 interface ReviewCellProvenance {
@@ -265,18 +270,17 @@ function testStatus(t: ReviewTest): 'error' | 'changed' | 'pass' {
 }
 
 function testAttentionGroup(t: ReviewTest): AttentionGroup {
-  const cells = reviewableCells(t.cells);
-  if (cells.some((c) => c.commissionState === 'differs')) return 'differs';
-  if (cells.some((c) => c.changed === true)) return 'changed';
-  if (cells.some((c) => c.commissionState === 'not-commissioned')) return 'not-commissioned';
-  if (cells.some((c) => c.commissionState === 'requested')) return 'requested';
-  return 'included';
+  return resolveReviewAttentionGroup(reviewableCells(t.cells));
 }
 
+// The labels say what the GATE does with each group, because that is the question a reviewer opens the
+// tool holding. "Differs" and "Not commissioned" are the two shapes the gate fails on; "Held" is the one
+// that looks like them and passes.
 const ATTENTION_GROUP_LABELS: Record<AttentionGroup, string> = {
-  differs: 'Differs',
+  differs: 'Differs — gate fails',
   changed: 'Changed',
-  'not-commissioned': 'Not commissioned',
+  'not-commissioned': 'Not commissioned — gate fails',
+  held: 'Held — deferred, gate passes',
   requested: 'Requested',
   included: 'Included',
 };
