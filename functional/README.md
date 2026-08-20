@@ -38,6 +38,13 @@ The worked case: `color-adjustment.canvas` blitted an already-red source with no
 
 AA on every cell, or off on every cell. **If it is off, that applies to the canvas and dom cells too, if the scene has them.**
 
+**RULED BY THE USER 2026-08-20 — NO-AA IS THE DEFAULT.** A scene declares `'no-aa'` unless one of exactly two things is true:
+
+1. **It has DOM and canvas cells and the geometry needs AA for those cells to reach parity.** Canvas 2D and DOM have no AA control (see the table below), so their edges are whatever the browser draws. When a scene's geometry makes that unavoidably different from a hard-edged WebGL/WebGPU render, the scene goes AA so all four cells can agree.
+2. **The scene's subject IS antialiasing** — `effect-msaa`, `effect-fxaa` and their kind. There the AA is the thing under test, not a property of the picture.
+
+Everything else is `'no-aa'`. The reason is that AA is _edge softening_, and so are a great many of the effects these scenes exist to confirm — blur, bokeh, tone mapping. Turning it on in a scene whose assertion reads edge softness puts noise directly on the measured axis, and a soft picture is the pass condition. A hard-edged input makes "did the effect run" unambiguous, which is what a functional cell is for. Prefer the least confounded input; spend AA only where parity or the subject demands it.
+
 Every scene source module states that policy beside its expected-image declaration:
 
 ```ts
@@ -54,9 +61,11 @@ That clause has teeth, because it is not always satisfiable:
 | Canvas 2D | **none** — `CanvasRenderOptions` has no `antialias` field, correctly: Canvas 2D has no API for it. `imageSmoothingEnabled` governs image scaling, not path edges. |
 | DOM | **none** — same, for the same reason. |
 | WebGL | `antialias` honoured, and it defaults to `true` (`glRenderState.ts`). Effect targets honour `sampleCount` with a real multisample renderbuffer. |
-| WebGPU | **no context-level switch exists by design.** `WgpuRenderOptions.antialias` now opts the main surface into a 2× supersample-and-linear-resolve step, default off. Effect-target `sampleCount > 1` remains a separate unsupported capability and is still normalised to 1. |
+| WebGPU | **no context-level switch exists by design.** `WgpuRenderOptions.antialias` opts the main surface into a 2× supersample-and-linear-resolve step, default off. Effect-target `sampleCount > 1` was normalised to 1 until `7260ece8b`, which made it allocate a 2×-per-axis target instead — see the warning below before relying on either behaviour. |
 
 So a scene with a canvas or dom cell **cannot** be uniformly AA-off. A WebGPU cell can now opt into AA, but the functional harness deliberately leaves that option off until the associated picture changes can be captured once under the standing re-baseline decision. Do not resolve the interim mismatch by switching WebGL's AA off: that trades a GL-vs-WGPU difference for a GL-vs-canvas one, which is how the current state was reached.
+
+**⚠ EFFECT-TARGET `sampleCount: 4` IS CURRENTLY BROKEN ON WEBGPU, and the no-AA default above routes around it.** `7260ece8b` changed `createWgpuRenderEffectPipeline` from normalising a requested sampleCount of 4 down to 1 into mapping it to 4, and `resolveWgpuRenderTargetExtent` turns that into a target allocated at **2× width and 2× height**. Scenes that request it render their content into a quarter of that target: observed as a quarter-size WebGPU picture on `effect-hue-saturation`, `effect-scanlines`, `effect-sepia` and `effect-white-balance`, and as eight WebGPU-only scene-assertion failures elsewhere. It also makes WebGPU antialias where WebGL does not, which is visible on `shadow-scene-scale`. Until that is repaired, a scene should request `sampleCount: 1`, which the rule above wants anyway.
 
 **DECIDED: AA is a real SDK render step, not a harness filter.** The WebGPU state renders its main surface at 2× in each axis and resolves once into the canvas (or the enabled frame-capture target) before submit. The option defaults off, and `tools/harness/webgpu.ts` does not enable it yet. This does not implement multisampled effect targets: a scene whose subject is `sampleCount: 4` remains held until that distinct capability exists. Until the one authorized AA re-baseline is sequenced, do not add a scene whose subject is antialiasing quality, and do not add a new `antialias: false` to a scene that has a canvas or dom cell.
 
