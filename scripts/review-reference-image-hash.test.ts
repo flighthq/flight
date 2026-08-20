@@ -37,12 +37,22 @@ describe('review reference-image pixel identity', () => {
     expect.soft(resolveReferenceImageCommissionState(cell, referenceHash.pixelSha256, false)).toBe('included');
 
     const payload = createReviewCommissionPayloadCell(cell);
-    if (payload.pixelSha256 === null || payload.hostInstanceId === null || payload.build?.commit === null) {
+    if (
+      payload.pixelSha256 === null ||
+      payload.hostInstanceId === null ||
+      payload.build === null ||
+      payload.build.commit === null
+    ) {
       throw new Error('fixture cell was unexpectedly ineligible');
     }
     const requestTarget = createReferenceImageRequestTarget(
       'bitmap-transparent-compositing',
-      { ...payload, pixelSha256: payload.pixelSha256, hostInstanceId: payload.hostInstanceId, build: payload.build },
+      {
+        ...payload,
+        pixelSha256: payload.pixelSha256,
+        hostInstanceId: payload.hostInstanceId,
+        build: { ...payload.build, commit: payload.build.commit },
+      },
       'registered-environment',
     );
     expect.soft(requestTarget.pixelSha256).toBe(referenceHash.pixelSha256);

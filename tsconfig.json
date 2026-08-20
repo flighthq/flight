@@ -21,7 +21,8 @@
     "tools/review/src/sourceExpectedDescription.ts",
     "tools/review/src/cellRole.ts",
     "tools/review/src/commissionEligibility.ts",
-    "tools/review/src/commissionState.ts"
+    "tools/review/src/commissionState.ts",
+    "tools/review/src/referenceImageCommission.ts"
   ],
   "exclude": ["node_modules", "dist", ".claude", "examples/runners"]
 }
