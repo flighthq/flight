@@ -4,6 +4,36 @@ export {
   integrateRigidBody3DVelocity,
   refreshRigidBody3DWorldInertia,
 } from './integrate';
+export { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
+export {
+  createPhysics3DBallAndSocketJoint,
+  createPhysics3DConeTwistJoint,
+  createPhysics3DFixedJoint,
+  createPhysics3DGeneric6DofJoint,
+  createPhysics3DHingeJoint,
+  createPhysics3DSliderJoint,
+} from './jointFactories';
+export {
+  addPhysics3DJoint,
+  getPhysics3DJointSolver,
+  invalidatePhysics3DJoint,
+  registerPhysics3DJointSolver,
+  removePhysics3DJoint,
+} from './jointRegistry';
+export {
+  physics3DBallAndSocketJointSolver,
+  physics3DConeTwistJointSolver,
+  physics3DFixedJointSolver,
+  physics3DGeneric6DofJointSolver,
+  physics3DHingeJointSolver,
+  physics3DSliderJointSolver,
+  Physics3DBallAndSocketJointKind,
+  Physics3DConeTwistJointKind,
+  Physics3DFixedJointKind,
+  Physics3DGeneric6DofJointKind,
+  Physics3DHingeJointKind,
+  Physics3DSliderJointKind,
+} from './joints';
 export {
   combinePhysics3DMassData,
   computePhysics3DBoxMassData,
@@ -12,6 +42,7 @@ export {
   createPhysics3DMassData,
   setRigidBody3DMassData,
 } from './massProperties';
+export { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
 export {
   addPhysics3DBody,
   applyPhysics3DForce,
