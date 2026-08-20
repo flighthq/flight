@@ -1,7 +1,11 @@
 import type { Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories';
+import { addPhysics3DJoint } from './jointRegistry';
 import { computePhysics3DSphereMassData, createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
 import {
   addPhysics3DBody,
   applyPhysics3DForce,
@@ -203,6 +207,43 @@ describe('findPhysics3DBody', () => {
 });
 
 describe('removePhysics3DBody', () => {
+  it('releases the ownership of every joint it drops', () => {
+    const world = createPhysics3DWorld();
+    registerBuiltInPhysics3DJointSolvers(world);
+    const anchor = createRigidBody3D('dynamic');
+    const hanging = createRigidBody3D('dynamic');
+    addPhysics3DBody(world, anchor);
+    addPhysics3DBody(world, hanging);
+    const joint = addPhysics3DJoint(
+      world,
+      createPhysics3DBallAndSocketJoint({ bodyA: anchor.index, bodyB: hanging.index }),
+    );
+
+    removePhysics3DBody(world, hanging);
+
+    // A joint dropped here leaves by the same exits `removePhysics3DJoint` uses. Splicing it out of the
+    // array alone leaves a joint that no world holds but that every world still refuses to accept.
+    expect(world.joints).toEqual([]);
+    expect(() => addPhysics3DJoint(world, joint)).not.toThrow();
+  });
+
+  it('stops suppressing a pair whose joint it just dropped', () => {
+    const world = createPhysics3DWorld();
+    registerBuiltInPhysics3DJointSolvers(world);
+    const first = createRigidBody3D('dynamic');
+    const second = createRigidBody3D('dynamic');
+    addPhysics3DBody(world, first);
+    addPhysics3DBody(world, second);
+    addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: first.index, bodyB: second.index }));
+    expect(isPhysics3DPairJointSuppressed(world, first.index, second.index)).toBe(true);
+
+    removePhysics3DBody(world, second);
+
+    // Leaving the index behind suppresses a pair against a joint that no longer exists, which reads as a
+    // contact that silently never reports.
+    expect(isPhysics3DPairJointSuppressed(world, first.index, second.index)).toBe(false);
+  });
+
   it('reports false for a body that is not in the world', () => {
     expect(removePhysics3DBody(createPhysics3DWorld(), createRigidBody3D())).toBe(false);
   });

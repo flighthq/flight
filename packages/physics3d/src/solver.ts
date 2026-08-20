@@ -5,6 +5,7 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
+import { isRigidBody3DPairAwake } from './islands';
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -58,9 +59,9 @@ export function createPhysics3DContactConstraintPoint(): Physics3DContactConstra
 // because a narrow phase may report the same physical corner at a different index between steps, and
 // warm starting the wrong corner is worse than not warm starting at all.
 //
-// Contacts that are disabled, sensors, non-touching, or between two bodies that both have infinite
-// mass produce no constraint: they are skipped rather than emitted with zero rows, so the iteration
-// loops never see work that cannot move anything.
+// Contacts that are disabled, sensors, non-touching, asleep, or between two bodies that both have
+// infinite mass produce no constraint: they are skipped rather than emitted with zero rows, so the
+// iteration loops never see work that cannot move anything.
 export function preparePhysics3DContactConstraints(world: Physics3DWorld): void {
   const state = world.solver;
   const previousByPair = state.constraintByPair;
@@ -83,6 +84,11 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
     ) {
       continue;
     }
+    // A pair with no live end is skipped, and that is not merely an optimisation. A resting contact
+    // usually carries penetration beyond the slop, so the position pass would move a sleeping pair, and
+    // the end-of-step stillness test would then read that motion and wake them again: a settled stack
+    // would twitch itself awake every step and never rest.
+    if (!isRigidBody3DPairAwake(bodyA, bodyB)) continue;
 
     const constraint = createPhysics3DContactConstraint();
     constraint.contact = contactIndex;
