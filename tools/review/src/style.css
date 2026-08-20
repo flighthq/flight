@@ -60,6 +60,21 @@ body {
   color: #ccc;
 }
 
+#single-cell-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  color: #666;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+#include-single-cell {
+  accent-color: #3d7fff;
+}
+
 #test-list {
   flex: 1;
   overflow-y: auto;
