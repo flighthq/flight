@@ -9,6 +9,7 @@ import {
   CAPTURE_BUILD_IDENTITY_FILE,
   createCaptureBuildIdentity,
   getCaptureBuildIdentity,
+  isCaptureBuildDirtyExempt,
   parseGitStatusPaths,
   readCaptureBuildIdentity,
 } from './captureBuildIdentity';
@@ -21,6 +22,42 @@ describe('createCaptureBuildIdentity', () => {
 
     expect(build.dirty).toEqual(paths.slice(0, 50));
     expect(build.dirtyOmitted).toBe(5);
+  });
+
+  // ★ THE REVIEW WORKFLOW'S OWN OUTPUT IS NOT EVIDENCE ABOUT THE BUILD. Commissioning writes a request
+  // file and holding writes the ledger; both are then uncommitted, so the next review in the same session
+  // warned "Built with uncommitted changes" and named files the reviewer had just created BY REVIEWING.
+  // A warning that fires because you used the tool is one people learn to ignore.
+  it('ignores the request queue and the hold ledger, which no build step reads', () => {
+    const build = createCaptureBuildIdentity('a'.repeat(40), [
+      'reference-image-requests/09cb2e5b.json',
+      'scripts/reference-image-held.json',
+    ]);
+
+    expect(build.dirty).toEqual([]);
+    expect(build.dirtyOmitted).toBe(0);
+  });
+
+  // The exemption must not swallow the signal it sits next to: a real source edit alongside a request file
+  // is still a dirty build, and the warning still has to say so.
+  it('still reports a source path dirtied in the same tree', () => {
+    const build = createCaptureBuildIdentity('a'.repeat(40), [
+      'reference-image-requests/09cb2e5b.json',
+      'functional/scenes/text-basic.ts',
+    ]);
+
+    expect(build.dirty).toEqual(['functional/scenes/text-basic.ts']);
+  });
+
+  // The omitted count is taken AFTER the exemption, or a queue of fifty stale requests would report fifty
+  // omissions and re-create the noise the exemption removes.
+  it('counts omissions after the exemption, not before', () => {
+    const requests = Array.from({ length: 60 }, (_, index) => `reference-image-requests/r${index}.json`);
+
+    const build = createCaptureBuildIdentity('a'.repeat(40), [...requests, 'packages/bitmap/src/bitmap.ts']);
+
+    expect(build.dirty).toEqual(['packages/bitmap/src/bitmap.ts']);
+    expect(build.dirtyOmitted).toBe(0);
   });
 });
 
@@ -48,6 +85,31 @@ describe('getCaptureBuildIdentity', () => {
     const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: directory, encoding: 'utf8' }).trim();
 
     expect(getCaptureBuildIdentity(directory)).toEqual({ commit, dirty: ['dirty path.ts'], dirtyOmitted: 0 });
+  });
+});
+
+describe('isCaptureBuildDirtyExempt', () => {
+  it('exempts a path under the request queue', () => {
+    expect(isCaptureBuildDirtyExempt('reference-image-requests/09cb2e5b.json')).toBe(true);
+  });
+
+  it('does not exempt a scene or a package source', () => {
+    expect(isCaptureBuildDirtyExempt('functional/scenes/text-basic.ts')).toBe(false);
+    expect(isCaptureBuildDirtyExempt('packages/bitmap/src/bitmap.ts')).toBe(false);
+  });
+
+  // ★ `functional/baselines/` IS DELIBERATELY NOT EXEMPT, and the distinction is the whole rule. A changed
+  // baseline alters no render, but it does alter what a capture reports as CHANGED — so its dirtiness is
+  // evidence about the run even though it is not evidence about the build.
+  it('does not exempt a committed baseline', () => {
+    expect(isCaptureBuildDirtyExempt('functional/baselines/text-basic.json')).toBe(false);
+  });
+
+  // A rename is one readable record with both sides; exempting it requires both sides to be exempt, so a
+  // file moved OUT of the queue into the tree still counts as dirty.
+  it('exempts a rename only when both sides are exempt', () => {
+    expect(isCaptureBuildDirtyExempt('reference-image-requests/a.json -> reference-image-requests/b.json')).toBe(true);
+    expect(isCaptureBuildDirtyExempt('reference-image-requests/a.json -> functional/scenes/a.ts')).toBe(false);
   });
 });
 
