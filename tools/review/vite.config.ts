@@ -29,6 +29,8 @@ import {
   createReferenceImageRequestTarget,
   resolveReferenceImageCommissionState,
 } from './src/referenceImageCommission';
+import { readRequiredReferenceImageCells } from './src/requiredReferenceImageCells';
+import type { ReviewCoverageManifest } from './src/requiredReferenceImageCells';
 import {
   sourceContainsExpectedDescription,
   sourceDeclaresFunctionalBackendControl,
@@ -312,6 +314,42 @@ function sourceHasExpectedDescription(tool: string, name: string, renderers: rea
   return false;
 }
 
+function readRequiredReferenceImageCellsForTool(tool: string): Map<string, string[]> {
+  try {
+    return readRequiredReferenceImageCells(
+      JSON.parse(readFileSync(tolerancePaths.coverageManifestPath, 'utf8')) as ReviewCoverageManifest,
+      tool,
+    );
+  } catch {
+    // A manifest we cannot read falls back to artifact-driven discovery, which is what this widens —
+    // never a reason to show the reviewer nothing.
+    return new Map();
+  }
+}
+
+/** A required cell with no decodable capture: visible, never commissionable (it has no pixels). */
+function createUncapturedReviewCell(tool: string, renderer: string, detail: string): ReviewCell {
+  return {
+    renderer,
+    role: reviewCellRole(tool, renderer),
+    state: 'error',
+    error: detail,
+    changed: null,
+    hash: null,
+    referencePixelSha256: null,
+    provenance: null,
+    build: null,
+    commissionState: 'not-commissioned',
+    comparisonPolicy: null,
+    referenceComparison: null,
+    referenceComparisonMatches: null,
+    referenceComparisonMeasured: false,
+    referenceComparisonProblem: null,
+    holdReason: null,
+    parityStatus: 'no-data',
+  };
+}
+
 function functionalCellIsControl(tool: string, name: string, renderer: string): boolean {
   const sceneDir = SCENE_DIRS[tool];
   if (sceneDir === undefined) return false;
@@ -365,18 +403,21 @@ function discoverReviewTests(): ReviewTest[] {
   for (const toolDir of toolDirs) {
     const tool = toolDir.name;
     const toolPath = join(artifactsDir, tool);
+    const requiredCells = readRequiredReferenceImageCellsForTool(tool);
 
-    const names = readdirSync(toolPath, { withFileTypes: true })
+    const captured = readdirSync(toolPath, { withFileTypes: true })
       .filter((d) => d.isDirectory())
-      .map((d) => d.name)
-      .sort();
+      .map((d) => d.name);
+    // Union, not concatenation: a required scene that captured nothing at all has no directory here, and
+    // that is precisely the case where staying artifact-driven shows the reviewer an empty list.
+    const names = [...new Set([...captured, ...requiredCells.keys()])].sort();
 
     for (const name of names) {
       const testPath = join(toolPath, name);
       const cells: ReviewCell[] = [];
       let expectedImageDescription: string | undefined;
 
-      const rendererDirs = readdirSync(testPath, { withFileTypes: true })
+      const rendererDirs = (existsSync(testPath) ? readdirSync(testPath, { withFileTypes: true }) : [])
         .filter((d) => d.isDirectory())
         .sort((a, b) => {
           const ai = RENDERER_ORDER.indexOf(a.name);
@@ -397,7 +438,12 @@ function discoverReviewTests(): ReviewTest[] {
         const screenshotPath = join(rendererPath, 'screenshot.png');
         const statusPath = join(rendererPath, 'status.json');
 
-        if (!existsSync(screenshotPath)) continue;
+        if (!existsSync(screenshotPath)) {
+          if (requiredCells.get(name)?.includes(renderer) === true) {
+            cells.push(createUncapturedReviewCell(tool, renderer, 'required, but this run produced no screenshot.png'));
+          }
+          continue;
+        }
 
         let state: 'ready' | 'error' = 'ready';
         let error: string | null = null;
@@ -533,6 +579,12 @@ function discoverReviewTests(): ReviewTest[] {
           holdReason,
           parityStatus,
         });
+      }
+
+      for (const renderer of requiredCells.get(name) ?? []) {
+        if (cells.some((cell) => cell.renderer === renderer)) continue;
+        if (functionalCellIsControl(tool, name, renderer)) continue;
+        cells.push(createUncapturedReviewCell(tool, renderer, 'required, but this run captured no cell at all'));
       }
 
       if (cells.some(isReviewableCell)) {
