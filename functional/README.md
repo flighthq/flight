@@ -74,6 +74,8 @@ So: choose positional parameters **off-centre**, directional ones **off-axis** �
 
 **Blind coverage is worse than no coverage.** A missing scene is visible as a gap and someone eventually fills it. A scene that exists and cannot see reports green, appears in the support matrix, and answers the question wrong — it impersonates the test that would have caught the defect. Measured on this corpus: 4 of 10 positional/directional parameter values were blind, and one of them was the sole coverage for a known-divergent effect whose own remedy note already prescribed the case it fails to run.
 
+**The discriminating case is PERISHABLE.** It exists only while the defect exists. Once the fix lands, the evidence that the check can fail cannot be recreated in history — only re-enacted, by someone who still knows exactly what the defect was. That is the real reason a fix lands with the case that would have failed without it: not tidiness, but that this is the only moment the evidence is available for free. If a fix has already landed without one, restore the exact prior line from history, run the new check against it, and **record the failure output in the commit** — the measured message and numbers, never "verified locally", which nobody can check.
+
 The same rule applies to a fix's discriminating case: the case that proves a convention fix is the one that would have failed before it, and an axis-aligned or centred case is not that.
 
 ### 6. When a description and an implementation disagree, fix whichever is wrong on its own terms
