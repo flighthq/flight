@@ -168,6 +168,12 @@ export function setRigidBody3DMassData(body: RigidBody3D, data: Readonly<Physics
   body.centerX = data.centerX;
   body.centerY = data.centerY;
   body.centerZ = data.centerZ;
+  body.inertiaXX = data.inertiaXX;
+  body.inertiaYY = data.inertiaYY;
+  body.inertiaZZ = data.inertiaZZ;
+  body.inertiaXY = data.inertiaXY;
+  body.inertiaXZ = data.inertiaXZ;
+  body.inertiaYZ = data.inertiaYZ;
 
   const movable = body.type === 'dynamic' && data.mass > 0;
   body.inverseMass = movable ? 1 / data.mass : 0;
