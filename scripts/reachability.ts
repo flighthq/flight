@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -227,6 +228,25 @@ if (!jsonMode) {
   }
 
   process.exitCode = !hardPassed && checkMode ? 1 : 0;
+}
+
+// Runtime survival is part of the reachability answer, not a diagnostic a reader should have to know to
+// run after the static half. Fold the companion's full report into this command. Its blocking contract is
+// unchanged: the standalone `:runtime:check` remains available, while this invocation matches the
+// report-only `reachability:runtime` command rather than turning today's inventory into a new gate.
+if (checkMode && !jsonMode) {
+  console.log(`\n${pc.bold('Runtime registrar reachability')}`);
+  const runtime = spawnSync(process.execPath, ['--import', 'tsx', join(root, 'scripts', 'registrar-runtime.ts')], {
+    cwd: root,
+    stdio: 'inherit',
+  });
+  if (runtime.error !== undefined) {
+    console.error(`${pc.red('✗')} Runtime registrar reachability could not start: ${runtime.error.message}`);
+    process.exitCode = 1;
+  } else if (runtime.status !== 0) {
+    // A report process that cannot complete is not a finding about registrars; it is a broken fold-in.
+    process.exitCode = 1;
+  }
 }
 
 function printRegistrarManifestDiff(diff: Readonly<RegistrarIdentityManifestDiff>, currentCount: number): void {

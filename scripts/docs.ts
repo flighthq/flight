@@ -38,6 +38,7 @@ import pc from 'picocolors';
 
 import { readPackageLastCommitDates } from '../agents/packages/todo-churn.mjs';
 import { getNewestStatusEntryDate } from '../agents/packages/todo-status-date.mjs';
+import { auditDocumentedCommands, formatDocumentedCommandAuditSummary } from './check-documented-commands';
 import { readSection } from './markdownSection';
 import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
 
@@ -695,6 +696,7 @@ function main(): void {
   const { files, source, unreadable } = listGateFiles();
   reportGateScope(files, source, unreadable);
   reportBudgets(files);
+  checkDocumentedCommands(files);
   checkLinks(files);
   checkOrphans(files);
   checkMapStatus(files);
@@ -711,6 +713,23 @@ function main(): void {
   process.stdout.write(
     `${pc.green('✓')} Agent docs valid (cell envelopes conform, supplementary docs are charter-acknowledged, links resolve, every doc reachable)\n`,
   );
+}
+
+// A command citation is a documentation contract just as much as a relative link. This deliberately
+// consumes the gate's one file set: the standalone audit remains available, but docs:check is the gate.
+function checkDocumentedCommands(files: ReadonlySet<string>): void {
+  const markdown = [...files].filter((file) => file.endsWith('.md')).sort();
+  const audit = auditDocumentedCommands(REPO_ROOT, markdown);
+  process.stdout.write(`${formatDocumentedCommandAuditSummary(audit)}\n`);
+  const missing = audit.byVerdict.get('missing')!;
+  if (missing.length === 0 && audit.unreadableDocs.length === 0) {
+    process.stdout.write(`${pc.green('✓')} Every documented npm command resolves against the root manifest\n`);
+    return;
+  }
+  for (const citation of missing) {
+    fail(`${citation.docPath}:${citation.docLine}: npm run ${citation.command} names no root script`);
+  }
+  for (const docPath of audit.unreadableDocs) fail(`${docPath}: tracked markdown could not be read for command audit`);
 }
 
 // Membership from the gate's file set, CONTENT from the working tree — the split the whole scanning

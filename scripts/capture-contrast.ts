@@ -3,8 +3,9 @@
 // to grip? — from data already in the tree.
 //
 // ★ A DIAGNOSTIC, NOT A GATE. Same standing as `npm run untested` / `npm run unchecked`: a list to read
-// when deciding where an oracle is worth writing. It never exits non-zero on its findings, and nothing
-// should be wired to it. Earning gate status would be a separate decision needing its own evidence.
+// when deciding where an oracle is worth writing. It never exits non-zero on its findings. The same
+// measure is printed beside each regression result, but earning gate status would be a separate decision
+// needing its own evidence.
 //
 // ★ THIS IS THE SECONDARY SENSITIVITY MEASURE. `npm run displacement` is the primary one, and the two
 // answer different questions:
@@ -35,8 +36,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { parseBitmapFingerprint } from '../packages/bitmap/src/bitmapFingerprint.js';
 import { readCaptureBaselineCoverageManifest } from '../packages/tool-capture/src/captureBaselineCoverageManifest.js';
+import { getCaptureFingerprintContrast } from '../packages/tool-capture/src/captureContrast.js';
 
 // The gate's own pass mark, from captureValidation's regression tolerance. Contrast is only meaningful
 // against it: the number that matters is the ratio, not the magnitude.
@@ -74,18 +75,6 @@ if (jsonMode) {
   if (rows.length > limit) console.log(`  … ${rows.length - limit} more, highest contrast last (--limit to widen)`);
 }
 
-// The mean absolute per-channel difference between a fingerprint and a uniform frame of its corner cell —
-// the same arithmetic compareBitmapFingerprints applies between two captures, so the result is directly
-// comparable to a regression distance.
-function computeFingerprintContrast(fingerprint: string): number | null {
-  const parsed = parseBitmapFingerprint(fingerprint);
-  if (parsed === null || parsed.cells.length === 0) return null;
-  const cells = parsed.cells;
-  let sum = 0;
-  for (let index = 0; index < cells.length; index += 1) sum += Math.abs(cells[index] - cells[index % 3]);
-  return sum / cells.length;
-}
-
 function readContrastRows(): ContrastRow[] {
   const baselines = join(root, 'functional', 'baselines');
   const pinned = readCaptureBaselineCoverageManifest(root)?.subjects.functional ?? {};
@@ -99,7 +88,7 @@ function readContrastRows(): ContrastRow[] {
     >;
     for (const [backend, record] of Object.entries(baseline)) {
       if (typeof record?.fingerprint !== 'string') continue;
-      const contrast = computeFingerprintContrast(record.fingerprint);
+      const contrast = getCaptureFingerprintContrast(record.fingerprint);
       if (contrast === null) continue;
       const target = `${name}/${backend}`;
       rows.push({ contrast, hasOracle: (pinned[target] ?? []).includes('oracle'), target });

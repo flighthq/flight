@@ -125,6 +125,8 @@ When a backend does not implement something, assert the ABSENCE its description 
 
 Write the assertion from what the scene's own code does, then compare it with the `expectedImageDescription`. If they disagree, that is a finding to report — not a threshold to loosen until the current picture passes.
 
+When authoring or changing `expectedImageDescription`, run `npm run verify:backgrounds` to check its field/background tone against that scene's own clear colour, and `npm run verify:size-claims` to reject frame-relative size prose that carries no expression a reader can re-derive. Both commands read the full description population; resolve findings in the scene you own and report unrelated live findings rather than editing another scene opportunistically.
+
 Beyond the automatic not-blank check, the verifier reads these off the module:
 
 ```typescript

@@ -48,12 +48,12 @@ import {
 import { isUniformCaptureFingerprint } from './captureBaselineSanity.js';
 import { launchBrowser } from './captureBrowser.js';
 import type { CaptureBrowserSession } from './captureBrowser.js';
+import { getCaptureFingerprintContrast } from './captureContrast.js';
 import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
 import { isTransientCaptureError } from './captureEntry.js';
 import { selectCaptureEntriesByName } from './captureEntryFilter.js';
-import { compareCaptureFixtureBackgrounds } from './captureFixtureBackground.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
@@ -65,6 +65,7 @@ import type { Server } from './captureServer.js';
 import { getCaptureSceneSourceHash } from './captureSourceHash.js';
 import type { CaptureFingerprintMap, CaptureFingerprintProvenanceMap } from './captureSuite.js';
 import { getCaptureTimeoutMs } from './captureTimeout.js';
+import { describeFunctionalParityFixtureState, readFunctionalSceneSources } from './functionalParityConfounds.js';
 import { functionalScene3DFile } from './functionalScene3Ds.js';
 
 export interface CaptureValidationOptions {
@@ -161,24 +162,16 @@ export interface CaptureValidationCheck {
   message: string;
   distance?: number;
   threshold?: number;
+  /** Baseline fingerprint's internal contrast, reported beside regression results and never gated. */
+  contrast?: number;
+  /** Fixture-level confound state that must accompany a functional parity distance. */
+  fixtureConfound?: string;
   /** Scene-source freshness classification for every gated fingerprint comparison. */
   sourceHashStatus?: 'changed' | 'unchanged' | 'unavailable';
   /** Whether source freshness came from full five-field provenance or the deprecated partial fallback. */
   fingerprintProvenanceStatus?: 'full' | 'partial' | 'unavailable';
   recordedSourceHash?: string | null;
   currentSourceHash?: string | null;
-  /**
-   * Whether the two fixtures of a parity pair DECLARE different clear colours, which makes their
-   * distance partly an artefact of the fixtures rather than a renderer disagreement.
-   *
-   * ★ ABSENT MEANS NOT CHECKED, NOT CLEAN. The field is set only on parity checks whose scene sources
-   * could both be read and which both declare a literal `backgroundColor: 0x…`; anywhere else it is
-   * undefined, and undefined must never be read as "screened". `false` likewise means only that the two
-   * DECLARED backgrounds match — it is not a statement that the fixtures agree in any other respect.
-   * The detector behind it (`compareCaptureFixtureBackgrounds`) matches one literal declaration and
-   * nothing else, which is why this field is named for that one condition instead of for confounds.
-   */
-  fixtureBackgroundMismatch?: boolean;
 }
 
 interface ResolvedCaptureValidationOptions {
@@ -201,6 +194,7 @@ interface ResolvedCaptureValidationOptions {
   parityGroups: Readonly<Record<string, Readonly<CaptureParityGroup>>>;
   fingerprints: Readonly<CaptureFingerprintMap>;
   fingerprintProvenance: Readonly<CaptureFingerprintProvenanceMap>;
+  functionalSceneSources: ReadonlyMap<string, ReadonlyMap<string, string>>;
 }
 
 interface Verification {
@@ -250,33 +244,18 @@ function isFunctionalParityControl(root: string, subject: string, entry: string,
   }
 }
 
-// Reads both fixtures of a parity pair and reports whether their DECLARED clear colours differ.
-//
-// Returns null whenever the question could not be answered — a subject other than functional, a source
-// that would not read, or either fixture declaring no colour — so the caller leaves the report field
-// undefined rather than asserting a clean result it did not establish.
-function findParityFixtureBackgroundMismatch(
-  root: string,
-  subject: string,
-  entry: string,
-  a: string,
-  b: string,
-): boolean | null {
-  if (subject !== 'functional') return null;
-  const scenesDir = join(root, 'functional', 'scenes');
-  try {
-    return compareCaptureFixtureBackgrounds(
-      readFileSync(functionalScene3DFile(scenesDir, entry, a), 'utf8'),
-      readFileSync(functionalScene3DFile(scenesDir, entry, b), 'utf8'),
-    );
-  } catch {
-    return null;
-  }
-}
-
 function distance(a: string, b: string): number | null {
   const difference = compareCaptureFingerprints(a, b);
   return Number.isFinite(difference) ? difference : null;
+}
+
+function parityFixtureConfound(
+  options: Readonly<ResolvedCaptureValidationOptions>,
+  entry: string,
+  renderers: readonly string[],
+): string {
+  if (options.subject !== 'functional') return 'fixture confound: n/a (non-functional subject)';
+  return describeFunctionalParityFixtureState(options.functionalSceneSources, entry, renderers);
 }
 
 function addPair(
@@ -564,17 +543,30 @@ export function explainCaptureVerificationStall(
  * than an empty one that would read as agreement.
  */
 export function formatCaptureParityRanking(
-  checks: readonly Readonly<{ distance?: number; entry: string; kind: string; renderers?: readonly string[] }>[],
+  checks: readonly Readonly<{
+    distance?: number;
+    entry: string;
+    fixtureConfound?: string;
+    kind: string;
+    renderers?: readonly string[];
+  }>[],
   limit = 10,
 ): string | null {
   const measured = checks
     .filter((check) => check.kind === 'parity' && typeof check.distance === 'number')
-    .map((check) => ({ distance: check.distance!, entry: check.entry, renderers: check.renderers ?? [] }))
+    .map((check) => ({
+      distance: check.distance!,
+      entry: check.entry,
+      fixtureConfound: check.fixtureConfound ?? 'fixture confound: unknown (not recorded)',
+      renderers: check.renderers ?? [],
+    }))
     .sort((a, b) => b.distance - a.distance || a.entry.localeCompare(b.entry));
   if (measured.length === 0) return null;
   const shown = measured.slice(0, limit);
   const median = measured[measured.length >> 1]!.distance;
-  const lines = shown.map((row) => `  ${row.distance.toFixed(2)}  ${row.entry}  ${row.renderers.join('·')}`);
+  const lines = shown.map(
+    (row) => `  ${row.distance.toFixed(2)}  ${row.entry}  ${row.renderers.join('·')}  — ${row.fixtureConfound}`,
+  );
   const omitted = measured.length - shown.length;
   return [
     `  widest parity distances (${measured.length} compared, median ${median.toFixed(2)}):`,
@@ -827,6 +819,8 @@ async function processEntry(
     // deriving coverage by subtracting skips would call every one of those targets lost.
     result.covered.push(formatCaptureBaselineCoverageIdentity(entry.name, renderer));
     const dist = distance(fingerprint, committed);
+    const contrast = getCaptureFingerprintContrast(committed);
+    const contrastMessage = contrast === null ? '' : ` — baseline contrast ${contrast.toFixed(2)} (report only)`;
     eligible.set(renderer, fingerprint);
     if (dist === null) {
       result.output.push(statusLine('fail', renderer, 'unreadable fingerprint baseline'));
@@ -839,13 +833,16 @@ async function processEntry(
         message: 'unreadable fingerprint baseline',
       });
     } else if (options.report) {
-      result.output.push(detailLine(pc.dim('='), renderer, pc.dim(`regression distance ${dist.toFixed(2)}`), pc.dim));
+      result.output.push(
+        detailLine(pc.dim('='), renderer, pc.dim(`regression distance ${dist.toFixed(2)}${contrastMessage}`), pc.dim),
+      );
       result.checks.push({
         entry: entry.name,
         renderers: [renderer],
         kind: 'regression',
         status: 'reported',
-        message: `regression distance ${dist.toFixed(2)}`,
+        message: `regression distance ${dist.toFixed(2)}${contrastMessage}`,
+        contrast: contrast ?? undefined,
         distance: dist,
         threshold: options.regressionTolerance,
       });
@@ -869,7 +866,7 @@ async function processEntry(
       const freshness = classifyCaptureBaselineFreshness(recordedSourceHash, currentSourceHash);
       const freshnessMessage = describeCaptureBaselineFreshness(freshness, check.pass, fingerprintProvenanceStatus);
       if (!check.pass) {
-        const message = `regression ${dist.toFixed(2)} > ${options.regressionTolerance} — ${freshnessMessage}`;
+        const message = `regression ${dist.toFixed(2)} > ${options.regressionTolerance}${contrastMessage} — ${freshnessMessage}`;
         result.output.push(statusLine('fail', renderer, message));
         result.regressionFailures++;
         result.checks.push({
@@ -880,13 +877,14 @@ async function processEntry(
           message,
           distance: dist,
           threshold: options.regressionTolerance,
+          contrast: contrast ?? undefined,
           sourceHashStatus: freshness.status,
           fingerprintProvenanceStatus,
           recordedSourceHash,
           currentSourceHash,
         });
       } else {
-        const message = `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance} — ${freshnessMessage}`;
+        const message = `regression ${dist.toFixed(2)} ≤ ${options.regressionTolerance}${contrastMessage} — ${freshnessMessage}`;
         result.output.push(statusLine('pass', renderer, message));
         result.regressionPasses++;
         result.checks.push({
@@ -897,6 +895,7 @@ async function processEntry(
           message,
           distance: dist,
           threshold: options.regressionTolerance,
+          contrast: contrast ?? undefined,
           sourceHashStatus: freshness.status,
           fingerprintProvenanceStatus,
           recordedSourceHash,
@@ -1009,19 +1008,21 @@ async function processEntry(
   }
   if (pairs.length > 0) {
     if (options.report) {
-      const segments = pairs.map((p) => `${p.label} ${p.dist.toFixed(2)}`).join('  ');
+      const segments = pairs
+        .map((p) => `${p.label} ${p.dist.toFixed(2)} — ${parityFixtureConfound(options, entry.name, [p.a, p.b])}`)
+        .join('  ');
       result.output.push(detailLine(pc.dim('~'), 'parity', pc.dim(segments), pc.dim));
       for (const pair of pairs) {
-        const mismatch = findParityFixtureBackgroundMismatch(options.root, options.subject, entry.name, pair.a, pair.b);
+        const fixtureConfound = parityFixtureConfound(options, entry.name, [pair.a, pair.b]);
         result.checks.push({
           entry: entry.name,
           renderers: [pair.a, pair.b],
           kind: 'parity',
           status: 'reported',
-          message: `parity ${pair.label} distance ${pair.dist.toFixed(2)}`,
+          message: `parity ${pair.label} distance ${pair.dist.toFixed(2)} — ${fixtureConfound}`,
           distance: pair.dist,
+          fixtureConfound,
           threshold: pair.tolerance,
-          ...(mismatch === null ? {} : { fixtureBackgroundMismatch: mismatch }),
         });
       }
     } else if (options.gateParity) {
@@ -1029,10 +1030,7 @@ async function processEntry(
       const segments = pairs
         .map((p) => {
           const check = evaluateCaptureParity(parityEligible.get(p.a)!, parityEligible.get(p.b)!, p.tolerance);
-          // Undefined when the question could not be answered; see the field's own documentation for
-          // why that is deliberately NOT the same as false.
-          const mismatch = findParityFixtureBackgroundMismatch(options.root, options.subject, entry.name, p.a, p.b);
-          const fixtureBackground = mismatch === null ? {} : { fixtureBackgroundMismatch: mismatch };
+          const fixtureConfound = parityFixtureConfound(options, entry.name, [p.a, p.b]);
           if (!check.pass) {
             anyFailed = true;
             result.parityFailures++;
@@ -1041,12 +1039,14 @@ async function processEntry(
               renderers: [p.a, p.b],
               kind: 'parity',
               status: 'failed',
-              message: `parity ${p.label} ${p.dist.toFixed(2)} > ${p.tolerance}`,
+              message: `parity ${p.label} ${p.dist.toFixed(2)} > ${p.tolerance} — ${fixtureConfound}; orientation triage: npm run test:functional:parity:orientation`,
               distance: p.dist,
+              fixtureConfound,
               threshold: p.tolerance,
-              ...fixtureBackground,
             });
-            return pc.red(`${p.label} ${p.dist.toFixed(2)}>${p.tolerance}`);
+            return pc.red(
+              `${p.label} ${p.dist.toFixed(2)}>${p.tolerance} — ${fixtureConfound}; orientation triage: npm run test:functional:parity:orientation`,
+            );
           }
           result.parityPasses++;
           result.checks.push({
@@ -1054,12 +1054,12 @@ async function processEntry(
             renderers: [p.a, p.b],
             kind: 'parity',
             status: 'passed',
-            message: `parity ${p.label} ${p.dist.toFixed(2)} ≤ ${p.tolerance}`,
+            message: `parity ${p.label} ${p.dist.toFixed(2)} ≤ ${p.tolerance} — ${fixtureConfound}`,
             distance: p.dist,
+            fixtureConfound,
             threshold: p.tolerance,
-            ...fixtureBackground,
           });
-          return pc.dim(`${p.label} ${p.dist.toFixed(2)}`);
+          return pc.dim(`${p.label} ${p.dist.toFixed(2)} — ${fixtureConfound}`);
         })
         .join('  ');
       const paint = anyFailed ? pc.red : pc.green;
@@ -1147,6 +1147,10 @@ export async function runCaptureValidation(
     parityGroups: input.parityGroups ?? {},
     fingerprints: input.fingerprints ?? {},
     fingerprintProvenance: input.fingerprintProvenance ?? {},
+    functionalSceneSources:
+      input.subject === 'functional'
+        ? readFunctionalSceneSources(join(resolve(input.root ?? process.cwd()), 'functional', 'scenes'))
+        : new Map(),
   };
   const ownsBrowser = input.browserSession === undefined;
   const launched =

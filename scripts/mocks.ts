@@ -133,6 +133,7 @@ if (violations.length === 0) {
   console.log(
     `${pc.green('OK')} ${pc.bold('Test mocks are tier-correct and self-consistent')} ${pc.dim(`(${allowed} named escape${allowed === 1 ? '' : 's'} allow-listed)`)}`,
   );
+  printHermeticityPointer();
   process.exit(0);
 }
 
@@ -145,7 +146,14 @@ for (const v of violations) {
 console.log(
   `\n${pc.dim('If an escape is genuinely intentional and contained, add it to ALLOW in scripts/mocks.ts with a reason. Tier membership lives in scripts/registryIsolatedTests.ts; the rules are in vitest.config.ts.')}`,
 );
+printHermeticityPointer();
 process.exit(checkMode ? 1 : 0);
+
+function printHermeticityPointer(): void {
+  console.log(
+    pc.dim('  For the report-only inventory of tests rebuilding module graphs by hand, run npm run hermeticity.'),
+  );
+}
 
 function walk(dir: string, out: string[]): void {
   if (!existsSync(dir)) return;
