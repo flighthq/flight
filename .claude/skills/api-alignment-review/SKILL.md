@@ -16,7 +16,7 @@ The heavy lifting is a fan-out, so this skill drives the **`api-alignment-review
 ```
 Workflow({ name: 'api-alignment-review' })                                  # all four dimensions
 Workflow({ name: 'api-alignment-review', args: { dimensions: ['filenames'] } })
-Workflow({ name: 'api-alignment-review', args: { dimensions: ['api','ts-rust'], packages: ['easing','path'] } })
+Workflow({ name: 'api-alignment-review', args: { dimensions: ['api','filenames'], packages: ['easing','path'] } })
 ```
 
 All four dimensions ≈ 340 agents — scope with `args.dimensions` and/or `args.packages` unless a full sweep is wanted. After it finishes, generate `alignment/index.md` from the returned `byDimension` summaries (one ranked table per dimension, high-severity first). If a few agents fail on transient API errors, re-run just those subjects with the Agent tool using the same prompt.
