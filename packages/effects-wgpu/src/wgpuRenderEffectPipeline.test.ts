@@ -121,17 +121,17 @@ describe('createWgpuRenderEffectPipeline', () => {
   describe('setWgpuRenderEffectPipelineSampleCountGuard', () => {
     it('reports the requested and applied sample counts through the optional diagnostics seam', async () => {
       const state = await createWgpuRenderStateForTest();
-      const degraded: Array<[number, number]> = [];
+      const substitutions: Array<[number, number]> = [];
       setWgpuRenderEffectPipelineSampleCountGuard(state, (_state, requested, applied) => {
-        degraded.push([requested, applied]);
+        substitutions.push([requested, applied]);
       });
 
       createWgpuRenderEffectPipeline(state, { sampleCount: 2 });
-      expect(degraded).toEqual([[2, 4]]);
+      expect(substitutions).toEqual([[2, 4]]);
 
       setWgpuRenderEffectPipelineSampleCountGuard(state, null);
       createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
-      expect(degraded).toEqual([[2, 4]]);
+      expect(substitutions).toEqual([[2, 4]]);
     });
   });
 

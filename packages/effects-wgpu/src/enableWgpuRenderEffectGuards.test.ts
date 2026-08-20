@@ -1,4 +1,10 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  clearLogOnceKeys,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
@@ -23,6 +29,7 @@ import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 import { applyWgpuRenderEffectsToRenderTexture } from './wgpuRenderTextureEffect';
 
 beforeAll(() => installWgpuMock());
+beforeEach(() => clearLogOnceKeys());
 
 describe('areWgpuRenderEffectGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', async () => {
@@ -52,9 +59,8 @@ describe('disableWgpuRenderEffectGuards', () => {
 });
 
 describe('enableWgpuRenderEffectGuards', () => {
-  // logOnce suppresses a key for the whole PROCESS, so a fired key can never fire again in a later test.
-  // Both the fire and the silence assertions live in this one test, in order, and every test in this file
-  // uses distinct effect kinds so no two share a key.
+  // logOnce suppresses a key until the next test reset. Both the fire and silence assertions still live
+  // in one test, in order, so the once-per-key behavior itself remains observable.
   it('WARNS that an unregistered chain returned false without writing dest, then stays quiet', async () => {
     const state = await createWgpuRenderStateForTest();
     enableWgpuRenderEffectGuards(state);
@@ -128,7 +134,9 @@ describe('enableWgpuRenderEffectGuards', () => {
     expect(pipeline.options.sampleCount).toBe(4);
     expect(entries).toHaveLength(1);
     expect(messageOf(entries[0])).toContain('sampleCount 8 requested');
+    expect(messageOf(entries[0])).toContain('effect targets support 1 or 4');
     expect(messageOf(entries[0])).toContain('continuing with sampleCount 4');
+    expect(messageOf(entries[0])).not.toContain('multisampling was NOT applied');
     expect(entries[0]?.data).toMatchObject({ appliedSampleCount: 4, requestedSampleCount: 8 });
   });
 
