@@ -79,7 +79,7 @@ export function render(root: Node2D): void {
   const childCount = getNodeChildCount(root);
   for (let i = 0; i < childCount; i++) {
     const child = getNodeChildAt(root, i);
-    if (child !== null) contributeVelocity(velocityField, child, 40 * pixelRatio, 0);
+    if (child !== null) contributeVelocity(velocityField, child, 40, 0);
   }
 
   renderWgpuBackground(state);
