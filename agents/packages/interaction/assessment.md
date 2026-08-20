@@ -36,7 +36,7 @@ Parked — each with why:
 - **Glyph-box text picking + caret index.** _Parked — gated on `@flighthq/textlayout`_ per-glyph rects.
 - **True SAT overlap for `hitTestDisplayObjectsShape`.** _Parked — precision ceiling unsettled_ (Open direction #3).
 - **`getDisplayObjectOverlapRectangle` disjoint contract (empty rect vs boolean).** _Parked — small API design fork_ (new Open direction; the lost implementation returned `boolean`).
-- **Spatial broadphase (`SpatialIndex2D` opt-in).** _Parked — profiling-gated_ (Decision #6 blessed the seam location, not the build).
+- **Spatial broadphase (`SpatialIndex` opt-in).** _Parked — profiling-gated_ (Decision #6 blessed the seam location, not the build).
 - **`@flighthq/gestures` neighbor package.** _Parked — new package_ (Decision #1).
 - **Rust `flighthq-interaction` crate.** _Parked — cross-worktree; sequenced after the TS surface stabilizes_ (Open direction #4).
 

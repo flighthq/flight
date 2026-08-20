@@ -17,7 +17,7 @@ its substep loop, and both `explain*` seams are built.
 
 - **No contact GENERATION, and none possible.** The 3D narrow phase
   (`agents/collision-support-registry.md`) and broadphase (`agents/spatial-dimension-seams.md`) are
-  ratified but unbuilt. `Physics3DWorld` deliberately owns no index field: `SpatialIndexBackend2D` is
+  ratified but unbuilt. `Physics3DWorld` deliberately owns no index field: `SpatialIndexBackend` is
   the swap point and its 3D counterpart is what is missing. A caller builds contacts with
   `createPhysics3DContact` / `createPhysics3DContactPoint`. Do NOT close this by writing a narrow
   phase inside this package.

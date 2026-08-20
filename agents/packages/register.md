@@ -91,7 +91,7 @@ The standing rule for packages that span two and three dimensions. The test: **"
 | `camera` | `Camera2D` | `Camera3D` | unified; `camera2d` absorbed | Both pure math (matrix producers), no graph dep |
 | `particleemitter` | `ParticleEmitter2D` | `ParticleEmitter3D` | add 3D, rename existing | Dual `scene2d`+`scene` dep accepted; tree-shaking zeroes cost |
 | `collision` | 2D shapes (existing) | 3D shapes (future) | add 3D when built | GJK/EPA joins same package; vocabulary-distinct names (Circle/Sphere) need no suffix |
-| `spatial` | 2D backends (existing) | 3D backends (future) | add 3D when built | BVH/octree behind same `SpatialIndexBackend2D` seam |
+| `spatial` | 2D backends (existing) | 3D backends (future) | add 3D when built | BVH/octree behind same `SpatialIndexBackend` seam |
 | `velocity` | `Velocity2D` (existing) | `Velocity3D` (future) | add 3D when built | Same concept: position delta / dt |
 
 ### Split (model differs)

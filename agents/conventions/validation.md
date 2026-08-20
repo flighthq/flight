@@ -76,7 +76,7 @@ Today `if (validateMeshGeometry(g))` means "valid" while `if (validateSkeleton2D
 and `if (validateParticleEmitterConfig(c))` is unconditionally true because an empty array is truthy.
 `if (isValid<Type>(x))` cannot be misread. The naming fix and the polarity fix are the same fix.
 
-The `explain*` half needs no new verb — `explainDisplayObjectRender`, `explainCollisionTest2D` and
+The `explain*` half needs no new verb — `explainDisplayObjectRender`, `explainCollisionTest` and
 `explainSkeleton2DDeformLength` already establish it.
 
 ## What this document does not do
