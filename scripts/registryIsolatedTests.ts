@@ -62,6 +62,7 @@ export const REGISTRY_ISOLATED_TESTS: readonly RegistryIsolatedTest[] = [
   { path: 'packages/effects-gl/src/glRadialBlurEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glScreenSpaceFogEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-gl/src/glTiltShiftEffect.test.ts', reason: 'mocks-modules' },
+  { path: 'packages/effects-wgpu/src/wgpuColorLutPass.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuColorMatrixPass.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuContactShadowsEffect.test.ts', reason: 'mocks-modules' },
   { path: 'packages/effects-wgpu/src/wgpuDropShadowEffect.test.ts', reason: 'mocks-modules' },
