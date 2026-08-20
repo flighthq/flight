@@ -71,6 +71,19 @@ describe('beginWgpuRenderEffectPipeline', () => {
     expect(pipeline.sceneTarget?.clearColors).toEqual([]);
     endWgpuRenderEffectPipeline(state, pipeline, []);
   });
+
+  it('realizes a four-sample scene target at twice the canvas extent', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+
+    beginWgpuFrame(state);
+    beginWgpuRenderEffectPipeline(state, pipeline);
+
+    expect(pipeline.sceneTarget?.width).toBe(state.canvas.width * 2);
+    expect(pipeline.sceneTarget?.height).toBe(state.canvas.height * 2);
+    expect(pipeline.sceneTarget?.sampleCount).toBe(4);
+    endWgpuRenderEffectPipeline(state, pipeline, []);
+  });
 });
 
 describe('createWgpuRenderEffectPipeline', () => {
@@ -97,15 +110,12 @@ describe('createWgpuRenderEffectPipeline', () => {
     expect(pipeline.options.format).toBe('rgba16f');
   });
 
-  // Guards the revert: rejecting sampleCount broke 102 live module-scope callers, so the pipeline must
-  // ACCEPT an unsupported count and normalise it. If this starts throwing again, the callers were not
-  // migrated first.
-  it('accepts an unsupported multisample request instead of refusing to build', async () => {
+  it('retains the supported four-sample request', async () => {
     const state = await createWgpuRenderStateForTest();
 
     const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
 
-    expect(pipeline.options.sampleCount).toBe(1);
+    expect(pipeline.options.sampleCount).toBe(4);
   });
 
   describe('setWgpuRenderEffectPipelineSampleCountGuard', () => {
@@ -116,12 +126,12 @@ describe('createWgpuRenderEffectPipeline', () => {
         degraded.push([requested, applied]);
       });
 
-      createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
-      expect(degraded).toEqual([[4, 1]]);
+      createWgpuRenderEffectPipeline(state, { sampleCount: 2 });
+      expect(degraded).toEqual([[2, 4]]);
 
       setWgpuRenderEffectPipelineSampleCountGuard(state, null);
       createWgpuRenderEffectPipeline(state, { sampleCount: 8 });
-      expect(degraded).toEqual([[4, 1]]);
+      expect(degraded).toEqual([[2, 4]]);
     });
   });
 
