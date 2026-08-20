@@ -1,7 +1,13 @@
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  clearLogOnceKeys,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
@@ -11,10 +17,15 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d/contract';
 import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/contract';
 import type { Camera3D, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
+import { beforeEach } from 'vitest';
 
 import { drawGlScene3D } from './drawGlScene3D';
 import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards';
 import { makeGlScene3DState } from './glScene3DTestHelper';
+
+beforeEach(() => {
+  clearLogOnceKeys();
+});
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({
@@ -76,8 +87,6 @@ describe('areGlScene3DDeformGuardsEnabled', () => {
 });
 
 describe('enableGlScene3DDeformGuards', () => {
-  // Runs FIRST, before the fire cases below consume the logOnce keys: a prepared mesh must not reach the
-  // warn branch at all, so this proves silence with fresh keys rather than relying on dedup to hide a bug.
   it('stays silent once the deform passes have run', () => {
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, morphMesh());

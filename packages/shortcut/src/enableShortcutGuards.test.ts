@@ -1,4 +1,10 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  clearLogOnceKeys,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import type { LogEntry, ShortcutBackend, ShortcutDrop } from '@flighthq/types/contract';
 
 import { disableShortcutGuards, enableShortcutGuards } from './enableShortcutGuards';
@@ -44,6 +50,7 @@ function messageOf(entry: Readonly<LogEntry>): string {
 }
 
 afterEach(() => {
+  clearLogOnceKeys();
   disableShortcutGuards();
   setShortcutBackend(null);
 });
@@ -65,8 +72,6 @@ describe('disableShortcutGuards', () => {
 });
 
 describe('enableShortcutGuards', () => {
-  // logOnce dedupes by key for the lifetime of the process, so each reason is asserted in exactly one
-  // test in this file and later tests observe the suppressed (zero-entry) behavior instead.
   it('warns once, naming the call and the parse reason, when an accelerator does not parse', () => {
     setShortcutBackend(nativeBackend());
     enableShortcutGuards();
@@ -84,6 +89,9 @@ describe('enableShortcutGuards', () => {
   it('suppresses a repeat of the same reason', () => {
     setShortcutBackend(nativeBackend());
     enableShortcutGuards();
+    captureLog(() => {
+      registerGlobalShortcut('Control+NotAKey', () => {});
+    });
     const entries = captureLog(() => {
       unregisterGlobalShortcut('Control+AlsoNotAKey');
     });
