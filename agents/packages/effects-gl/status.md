@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/effects-gl'
-updated: 2026-08-10
-by: principal
+updated: 2026-08-20
+by: builder5
 ---
 
 # effects-gl — Status
@@ -44,31 +44,14 @@ about this tree, not about a session.
   undetectable.
 - **Two kinds are GL-only.** `defaultGlBokehDepthOfFieldEffectRunner` and `defaultGlCustomShaderEffectRunner`
   have no `effects-wgpu` counterpart, so a chain using either silently degrades to identity there.
-- **Scanlines and Displacement still read an absolute vertical coordinate, and no instrument can see it.**
-  GL render targets are bottom-left origin while image space is top-left, so an effect keyed to absolute Y
-  renders inverted relative to other backends unless it compensates; `glGlitchEffect.ts:54` and
-  `glScreenSpaceFogEffect.ts:75` were corrected for this on 2026-08-08. Two remain:
-  `glScanlinesEffect.ts:40` (`sin(v_texCoord.y * u_count * PI)`) and `glDisplacementEffect.ts:46`
-  (`sin(y*f) + sin(y*f*2.3)`). Neither is a `1.0 - y` substitution like its fixed siblings — a flip shifts
-  the scanline phase and reshapes the displacement waveform rather than reversing either, so the fix shape
-  is undiagnosed. `scripts/functional-parity-orientation.ts` cannot find them: it flags a scene whose
-  *mirrored* fingerprint scores closer than its direct one, and for both of these the mirrored number moves
-  the wrong way — scanlines aliases against the coarse fingerprint grid, and displacement's two
-  incommensurate sines do not survive a flip as a mirror.
-- **The two are not the same case, and displacement has a second, dominant reason to be invisible.**
-  `effect-displacement` carries a `'all'` entry in `FLIGHT_PARITY_SKIP`
-  (`packages/tool-capture/src/captureFlightPreset.ts:42`), so the parity gate is told to ignore that scene
-  entirely — alongside `effect-god-rays` and `effect-screen-space-fog`, all nine entries landing in one
-  commit (`3e5513512`) with no per-entry reasoning. Un-skipping or justifying that entry may be enough for
-  displacement. **Scanlines carries no skip entry at all** and has full `canvas`/`webgl`/`webgpu` parity
-  scenes, so it stays invisible after every skip entry is resolved: the orientation instrument above is the
-  only thing that could see it, and structurally cannot. A skip-list cleanup that reports scanlines as
-  covered is wrong.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-20** — Closed the stale Scanlines/Displacement Open item: `1d71634fc` had already moved both
+  shaders into image-space rows, and their colocated tests now evaluate the shipped expressions to pin the
+  scanline top-edge phase, displacement phase conversion, and vertical-offset sign.
 - **2026-08-10** — Split the absolute-Y item: displacement is skip-all in `FLIGHT_PARITY_SKIP`
   (`captureFlightPreset.ts:42`), scanlines is not in the list at all. The 2026-08-09 entry below implied
   one shared cause; the skip is displacement's dominant one and does not apply to scanlines.
