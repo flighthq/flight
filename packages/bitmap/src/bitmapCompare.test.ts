@@ -58,6 +58,18 @@ describe('compareBitmap', () => {
 });
 
 describe('getBitmapMismatch', () => {
+  it('accepts decoded Uint8Array pixels as well as Bitmap clamped storage', () => {
+    const decoded = { width: 1, height: 1, data: new Uint8Array([10, 20, 30, 255]) };
+    const bitmap = createBitmap(1, 1, 0x0a141eff);
+
+    expect(getBitmapMismatch(decoded, bitmap)).toEqual({
+      fraction: 0,
+      maxChannelDelta: 0,
+      mismatchedPixels: 0,
+      totalPixels: 1,
+    });
+  });
+
   it('throws when dimensions differ', () => {
     expect(() => getBitmapMismatch(createBitmap(4, 4), createBitmap(4, 8))).toThrow();
   });

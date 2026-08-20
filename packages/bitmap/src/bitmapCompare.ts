@@ -2,6 +2,13 @@ import type { Bitmap, BitmapMismatch } from '@flighthq/types/contract';
 
 import { createBitmap } from './bitmap';
 
+/** The pixel facts used by mismatch measurement; accepts both decoded bytes and mutable Bitmap storage. */
+export interface BitmapComparisonSource {
+  readonly width: number;
+  readonly height: number;
+  readonly data: ArrayLike<number>;
+}
+
 /**
  * Compares two bitmaps pixel by pixel. Returns `null` if they are identical,
  * or a new Bitmap showing per-channel absolute differences (with alpha set to
@@ -44,8 +51,8 @@ export function compareBitmap(source: Readonly<Bitmap>, other: Readonly<Bitmap>)
  * incompatible bitmaps is a programmer error (mirrors compareBitmap).
  */
 export function getBitmapMismatch(
-  source: Readonly<Bitmap>,
-  other: Readonly<Bitmap>,
+  source: Readonly<BitmapComparisonSource>,
+  other: Readonly<BitmapComparisonSource>,
   channelTolerance: number = 0,
 ): BitmapMismatch {
   if (source.width !== other.width || source.height !== other.height) {

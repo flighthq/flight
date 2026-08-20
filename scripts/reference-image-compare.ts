@@ -20,7 +20,6 @@
 // passes a calibrated `channelTolerance` from a published comparison policy, and the calibration run that
 // chooses it is part of the work, not a default anyone can inherit by accident.
 import { getBitmapMismatch } from '../packages/bitmap/src/bitmapCompare.js';
-import type { Bitmap } from '../packages/types/src/Bitmap.js';
 
 export interface ReferenceImageCellComparison {
   /** From getBitmapMismatch. Do NOT inherit the fingerprint-space tolerances (§2). */
@@ -61,13 +60,7 @@ export function compareOracleReference(
     // missing one — and a wrong verdict is the harder of the two to notice.
     return { dimensionMismatch: true, fraction: 0, maxChannelDelta: 0 };
   }
-  // The cast is the seam between the two array types above: the primitive's signature names `Bitmap`,
-  // this function accepts anything indexable, and the loop inside reads neither type's methods.
-  const mismatch = getBitmapMismatch(
-    reference as unknown as Readonly<Bitmap>,
-    candidate as unknown as Readonly<Bitmap>,
-    channelTolerance,
-  );
+  const mismatch = getBitmapMismatch(reference, candidate, channelTolerance);
   return {
     dimensionMismatch: false,
     fraction: mismatch.fraction,
