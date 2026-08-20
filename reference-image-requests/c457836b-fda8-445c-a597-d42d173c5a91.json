@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 3,
+  "id": "c457836b-fda8-445c-a597-d42d173c5a91",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "text-basic",
+      "renderer": "dom",
+      "pixelSha256": "8bbc246f52f1334800c49316fe8d3345ad4aa99360dd434ec51824e014a66e91",
+      "build": {
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "text-basic",
+      "renderer": "canvas",
+      "pixelSha256": "8bbc246f52f1334800c49316fe8d3345ad4aa99360dd434ec51824e014a66e91",
+      "build": {
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "text-basic",
+      "renderer": "webgl",
+      "pixelSha256": "8bbc246f52f1334800c49316fe8d3345ad4aa99360dd434ec51824e014a66e91",
+      "build": {
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "text-basic",
+      "renderer": "webgpu",
+      "pixelSha256": "8bbc246f52f1334800c49316fe8d3345ad4aa99360dd434ec51824e014a66e91",
+      "build": {
+        "commit": "d04a3b41681a95a03fa5ece8954a9dd5dbd547e7",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review"
+}
