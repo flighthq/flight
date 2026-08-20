@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -186,6 +188,158 @@ describe('reference-image request presentation workflow', () => {
     expect(`reference-image-candidate-node-alpha-${id}`.match(artifactPattern)?.groups?.['requestId']).toBe(id);
     expect(`reference-image-candidate-node-alpha +2 more-${id}`.match(artifactPattern)?.groups?.['requestId']).toBe(id);
     expect(dispatch.with.script).toContain('const requestPath = `reference-image-requests/${requestId}.json`;');
+  });
+
+  it('sends one exact v2 batch and keeps the selected-off v1 rollback executable', async () => {
+    // Pre-fix regression control: selecting the v1 branch failed this test with
+    // `Expected "dispatches" => "1" / Received "dispatches" => "2"`.
+    const workflow = parse(readFileSync(join(ROOT, '.github', 'workflows', 'reference-image-bridge.yml'), 'utf8')) as {
+      jobs: { dispatch: { steps: Array<Record<string, unknown>> } };
+    };
+    const script = (
+      workflow.jobs.dispatch.steps.find((step) => step['id'] === 'dispatch') as { with: { script: string } }
+    ).with.script;
+    const firstId = '00000000-0000-4000-8000-000000000001';
+    const secondId = '00000000-0000-4000-8000-000000000002';
+    const requests = new Map([
+      [`reference-image-requests/${firstId}.json`, '{"id":"first"}\n'],
+      [`reference-image-requests/${secondId}.json`, '{"id":"second"}\n'],
+    ]);
+    const dispatches: unknown[] = [];
+    const outputs = new Map<string, string>();
+    const failures: string[] = [];
+    const github = {
+      rest: {
+        actions: {
+          listWorkflowRunArtifacts: async () => ({
+            data: {
+              artifacts: [
+                {
+                  digest: `sha256:${'2'.repeat(64)}`,
+                  id: 102,
+                  name: `reference-image-candidate-second-label-${secondId}`,
+                },
+                {
+                  digest: `sha256:${'1'.repeat(64)}`,
+                  id: 101,
+                  name: `reference-image-candidate-first-label-${firstId}`,
+                },
+              ],
+            },
+          }),
+        },
+        repos: {
+          createDispatchEvent: async (value: unknown) => {
+            dispatches.push(value);
+          },
+          getContent: async ({ path }: { path: string }) => {
+            const request = requests.get(path);
+            if (request === undefined) throw new Error(`missing test request ${path}`);
+            return { data: { content: Buffer.from(request).toString('base64'), encoding: 'base64' } };
+          },
+        },
+      },
+    };
+    const core = {
+      info: () => undefined,
+      setFailed: (message: string) => failures.push(message),
+      setOutput: (key: string, value: string) => outputs.set(key, value),
+      warning: () => undefined,
+    };
+    const execute = new Function('github', 'context', 'core', 'require', `return (async () => {\n${script}\n})();`) as (
+      ...args: unknown[]
+    ) => Promise<void>;
+
+    await execute(
+      github,
+      { payload: { workflow_run: { head_sha: 'a'.repeat(40), id: 456 } }, repo: { owner: 'flighthq', repo: 'flight' } },
+      core,
+      createRequire(import.meta.url),
+    );
+
+    expect(failures).toEqual([]);
+    expect(outputs).toEqual(
+      new Map([
+        ['sent', '2'],
+        ['dispatches', '1'],
+      ]),
+    );
+    expect(dispatches).toEqual([
+      {
+        client_payload: {
+          candidates: [
+            {
+              artifactDigest: `sha256:${'1'.repeat(64)}`,
+              artifactId: 101,
+              requestPath: `reference-image-requests/${firstId}.json`,
+              requestSha256: createHash('sha256')
+                .update(requests.get(`reference-image-requests/${firstId}.json`)!)
+                .digest('hex'),
+            },
+            {
+              artifactDigest: `sha256:${'2'.repeat(64)}`,
+              artifactId: 102,
+              requestPath: `reference-image-requests/${secondId}.json`,
+              requestSha256: createHash('sha256')
+                .update(requests.get(`reference-image-requests/${secondId}.json`)!)
+                .digest('hex'),
+            },
+          ],
+          flightCommit: 'a'.repeat(40),
+          repository: 'flighthq/flight',
+          schemaVersion: 2,
+          workflowRunId: 456,
+        },
+        event_type: 'flight-reference-image-candidate-batch',
+        owner: 'flighthq',
+        repo: 'flight-reference-images',
+      },
+    ]);
+
+    dispatches.length = 0;
+    outputs.clear();
+    failures.length = 0;
+    const legacyScript = script.replace('const useBatchDispatch = true;', 'const useBatchDispatch = false;');
+    expect(legacyScript, 'test must actually select the temporary v1 rollback branch').not.toBe(script);
+    const executeLegacy = new Function(
+      'github',
+      'context',
+      'core',
+      'require',
+      `return (async () => {\n${legacyScript}\n})();`,
+    ) as (...args: unknown[]) => Promise<void>;
+    await executeLegacy(
+      github,
+      { payload: { workflow_run: { head_sha: 'a'.repeat(40), id: 456 } }, repo: { owner: 'flighthq', repo: 'flight' } },
+      core,
+      createRequire(import.meta.url),
+    );
+
+    expect(failures).toEqual([]);
+    expect(outputs).toEqual(
+      new Map([
+        ['dispatches', '2'],
+        ['sent', '2'],
+      ]),
+    );
+    expect(dispatches).toHaveLength(2);
+    expect(
+      dispatches.map((value) => (value as { event_type: string }).event_type),
+      'manual rollback keeps sending only the already-exercised v1 event',
+    ).toEqual(['flight-reference-image-candidate', 'flight-reference-image-candidate']);
+    for (const value of dispatches) {
+      const dispatch = value as { client_payload: Record<string, unknown> };
+      expect(Object.keys(dispatch.client_payload).sort()).toEqual([
+        'artifactDigest',
+        'artifactExpiresAt',
+        'artifactId',
+        'flightCommit',
+        'repository',
+        'requestPath',
+        'requestSha256',
+        'workflowRunId',
+      ]);
+    }
   });
 
   // The same rule as the enumeration, at the second site: an unreadable NAME is a cosmetic problem and

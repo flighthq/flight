@@ -1,4 +1,4 @@
-# Forwards a completed capture to `flight-reference-images` as a fixed dispatch envelope.
+# Forwards a completed capture to `flight-reference-images` as one fixed batch dispatch envelope.
 # agents/render-reference-image-repository.md §7 step 3.
 #
 # ★★ THIS IS THE PRIVILEGED HALF, AND IT NEVER EXECUTES THE COMMISSIONED CHECKOUT.
@@ -113,12 +113,11 @@ jobs:
           owner: flighthq
           repositories: flight-reference-images
 
-      # ★ ONE ARTIFACT PER REQUEST, SO THE PAIRING IS THE ARTIFACT'S NAME. Each candidate archive holds
-      # exactly one `candidate.json` at its root, which is what intake reads, so an envelope names one
-      # artifact AND one request and the two must be the same candidate. Deriving the request from the
-      # artifact name keeps that pairing in one place; deriving it separately would let a dispatch bind
-      # request A's path to request B's bytes, and every hash downstream would still verify.
-      - name: Dispatch each candidate
+      # ★ ONE ARTIFACT PER REQUEST, SO EACH BATCH MEMBER'S PAIRING IS THE ARTIFACT'S NAME. Each candidate
+      # archive holds exactly one `candidate.json` at its root. Deriving the request from the artifact name
+      # keeps that pairing in one place; deriving it separately would let a batch member bind request A's
+      # path to request B's bytes, and every hash downstream would still verify.
+      - name: Dispatch candidate batch
         id: dispatch
         uses: actions/github-script@v7
         with:
@@ -140,7 +139,16 @@ jobs:
               return;
             }
 
-            let sent = 0;
+            const repository = `${context.repo.owner}/${context.repo.repo}`;
+            if (repository !== 'flighthq/flight') {
+              core.setFailed(`batch schema accepts only flighthq/flight, not ${repository}`);
+              return;
+            }
+
+            const batchCandidates = [];
+            const legacyCandidates = [];
+            const requestPaths = new Set();
+            const artifactIds = new Set();
             const unnamed = [];
             for (const artifact of candidates) {
               // The capture workflow prefixes a display-only entry label, but the trailing UUID remains
@@ -160,6 +168,18 @@ jobs:
                 continue;
               }
               const requestPath = `reference-image-requests/${requestId}.json`;
+              if (requestPaths.has(requestPath)) {
+                core.setFailed(`candidate artifacts repeat request path ${requestPath}`);
+                return;
+              }
+              if (artifactIds.has(artifact.id)) {
+                core.setFailed(`candidate artifacts repeat artifact id ${artifact.id}`);
+                return;
+              }
+              if (!/^sha256:[0-9a-f]{64}$/.test(artifact.digest ?? '')) {
+                core.setFailed(`artifact ${artifact.id} has no schema-valid sha256 digest`);
+                return;
+              }
 
               // The request binding is read from the REPOSITORY at the landed commit, never from the
               // candidate: the hash then describes what is actually committed, so a candidate cannot
@@ -178,29 +198,68 @@ jobs:
               }
               const bytes = Buffer.from(file.data.content, file.data.encoding);
               const requestSha256 = crypto.createHash('sha256').update(bytes).digest('hex');
-
-              await github.rest.repos.createDispatchEvent({
-                owner: 'flighthq',
-                repo: 'flight-reference-images',
-                // ★ MUST MATCH THE ORACLE INTAKE TRIGGER EXACTLY. GitHub accepts an unmatched
-                // repository_dispatch with a 204 and creates no run and no warning — a silent success on
-                // both sides, which cost a full round when this said `flight-candidate`.
-                event_type: 'flight-reference-image-candidate',
-                client_payload: {
-                  repository: `${context.repo.owner}/${context.repo.repo}`,
-                  flightCommit: run.head_sha,
-                  requestPath,
-                  requestSha256,
-                  workflowRunId: String(run.id),
-                  artifactId: String(artifact.id),
-                  artifactDigest: artifact.digest ?? '',
-                  artifactExpiresAt: artifact.expires_at ?? '',
-                },
+              requestPaths.add(requestPath);
+              artifactIds.add(artifact.id);
+              batchCandidates.push({
+                requestPath,
+                requestSha256,
+                artifactId: artifact.id,
+                artifactDigest: artifact.digest,
               });
-              core.info(`dispatched ${requestPath} with artifact ${artifact.id} (${artifact.name})`);
-              sent += 1;
+              legacyCandidates.push({ artifact, requestPath, requestSha256 });
             }
-            core.setOutput('sent', String(sent));
+
+            // ★ TEMPORARY CUTOVER SEAM. Exactly one branch runs. Keep the already-exercised v1 sender
+            // available for a manual rollback until a real v2 repository_dispatch starts intake-batch.yml;
+            // delete the false branch in a separate commit only after that downstream run is observed.
+            const useBatchDispatch = true;
+            batchCandidates.sort((left, right) => left.requestPath.localeCompare(right.requestPath));
+            if (useBatchDispatch) {
+              if (batchCandidates.length > 256) {
+                core.setFailed(`batch has ${batchCandidates.length} candidates; schema maximum is 256`);
+                return;
+              }
+              if (batchCandidates.length > 0) {
+                await github.rest.repos.createDispatchEvent({
+                  owner: 'flighthq',
+                  repo: 'flight-reference-images',
+                  // ★ MUST MATCH THE ORACLE BATCH INTAKE TRIGGER EXACTLY. GitHub accepts an unmatched
+                  // repository_dispatch with a 204 and creates no run and no warning — a silent success on
+                  // both sides, which cost a full round when this said `flight-candidate`.
+                  event_type: 'flight-reference-image-candidate-batch',
+                  client_payload: {
+                    schemaVersion: 2,
+                    repository,
+                    flightCommit: run.head_sha,
+                    workflowRunId: run.id,
+                    candidates: batchCandidates,
+                  },
+                });
+                core.info(`dispatched one batch containing ${batchCandidates.length} candidate(s)`);
+              }
+              core.setOutput('dispatches', batchCandidates.length > 0 ? '1' : '0');
+            } else {
+              for (const { artifact, requestPath, requestSha256 } of legacyCandidates) {
+                await github.rest.repos.createDispatchEvent({
+                  owner: 'flighthq',
+                  repo: 'flight-reference-images',
+                  event_type: 'flight-reference-image-candidate',
+                  client_payload: {
+                    repository,
+                    flightCommit: run.head_sha,
+                    requestPath,
+                    requestSha256,
+                    workflowRunId: String(run.id),
+                    artifactId: String(artifact.id),
+                    artifactDigest: artifact.digest ?? '',
+                    artifactExpiresAt: artifact.expires_at ?? '',
+                  },
+                });
+                core.info(`dispatched ${requestPath} with artifact ${artifact.id} (${artifact.name})`);
+              }
+              core.setOutput('dispatches', String(legacyCandidates.length));
+            }
+            core.setOutput('sent', String(batchCandidates.length));
             if (unnamed.length > 0) {
               core.setFailed(`candidate artifact(s) with no request UUID were skipped: ${unnamed.join(', ')}`);
             }
@@ -212,5 +271,6 @@ jobs:
             echo ""
             echo "- bridge file commit: \`${{ github.sha }}\`"
             echo "- flightCommit: \`${{ github.event.workflow_run.head_sha }}\`"
-            echo "- candidates dispatched: \`${{ steps.dispatch.outputs.sent || 0 }}\`"
+            echo "- dispatches sent: \`${{ steps.dispatch.outputs.dispatches || 0 }}\`"
+            echo "- candidates forwarded: \`${{ steps.dispatch.outputs.sent || 0 }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
