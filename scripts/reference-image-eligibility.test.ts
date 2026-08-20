@@ -420,19 +420,24 @@ describe('selectCommissionableCells', () => {
     ]);
   });
 
-  it('withholds a held cell and repeats the hold reason verbatim', () => {
-    expect(blockOf(select({ held: [['functional/good/webgl', 'builder is repairing it']] }))).toEqual([
-      'held',
-      'builder is repairing it',
-    ]);
+  // ★ A HOLD NO LONGER WITHHOLDS, AND THESE TWO TESTS USED TO ASSERT THAT IT DID. Commissioning answers
+  // "what do we compare against"; a hold answers "do we endorse the result". While they were fused, the
+  // only way to say "not endorsed" was to refuse a fresh measurement, so a deferred cell went dark and
+  // could not be moved: not blessable, and — until the CI join learned about holds — not green either.
+  // The hold keeps its full force at the gate, where `reference-image-check` demotes the cell's failure to
+  // a `held` verdict; the CLI prints held cells beside its eligible list rather than removing them from it.
+  it('commissions a held cell, because a hold is about endorsement rather than measurement', () => {
+    const report = select({ held: [['functional/good/webgl', 'builder is repairing it']] });
+
+    expect(report.eligible).toEqual(['functional/good/webgl']);
   });
 
-  it('never lets local evidence override a hold', () => {
-    // The hold is checked before any capture fact is read, so a cell that looks perfect locally still
-    // stays held. That ordering is the whole point: the holder knows something this run cannot see.
-    const report = select({ held: [['functional/good/webgl', 'ruling pending']] });
-
-    expect(report.eligible).toEqual([]);
+  // The bars that remain are about whether the CAPTURE is a valid measurement, not whether the picture is
+  // right — so local evidence still withholds a held cell, and for its own reason rather than the hold's.
+  it('still withholds a held cell whose capture failed', () => {
+    expect(
+      blockOf(select({ capture: { state: 'error' }, held: [['functional/good/webgl', 'ruling pending']] })),
+    ).toEqual(['capture-failed', 'capture state is error']);
   });
 
   it('withholds a cell an open request already claims', () => {
@@ -545,7 +550,6 @@ function select(options: {
     coverage: new Map(options.coverage ?? [['functional/good/webgl', ['fingerprint', 'oracle']]]),
     determinism: new Map(determinism),
     determinismScope: options.determinismScope ?? 'independent-hosts',
-    held: new Map(options.held ?? []),
     outstanding: new Set(options.outstanding ?? []),
     parityWithheld: new Map(options.parityWithheld ?? []),
     pinned: new Set(options.pinned ?? []),
