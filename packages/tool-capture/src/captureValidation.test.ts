@@ -104,7 +104,13 @@ describe('explainCaptureVerificationStall', () => {
 describe('formatCaptureParityRanking', () => {
   it('ranks measured distances widest first and states the median beside them', () => {
     const text = formatCaptureParityRanking([
-      { distance: 0.02, entry: 'shape-fill', kind: 'parity', renderers: ['webgl', 'webgpu'] },
+      {
+        distance: 0.02,
+        entry: 'shape-fill',
+        fixtureConfound: 'fixture confound: none (shared source)',
+        kind: 'parity',
+        renderers: ['webgl', 'webgpu'],
+      },
       { distance: 11.11, entry: 'effect-glitch', kind: 'parity', renderers: ['webgl', 'webgpu'] },
       { distance: 0.5, entry: 'effect-dither', kind: 'parity', renderers: ['webgl', 'webgpu'] },
     ]);
@@ -113,6 +119,7 @@ describe('formatCaptureParityRanking', () => {
     expect(text).toContain('3 compared');
     expect(text!.indexOf('effect-glitch')).toBeLessThan(text!.indexOf('effect-dither'));
     expect(text!.indexOf('effect-dither')).toBeLessThan(text!.indexOf('shape-fill'));
+    expect(text).toContain('fixture confound: none (shared source)');
   });
 
   it('returns null when nothing was compared', () => {
@@ -274,6 +281,39 @@ async function validateParityFixture(input: Readonly<Record<string, unknown>>) {
 }
 
 describe('runCaptureValidation', () => {
+  it('prints the fixture-confound state beside parity distance and points failures to orientation triage', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'tool-capture-parity-confound-'));
+    try {
+      const scenes = join(root, 'functional', 'scenes');
+      mkdirSync(scenes, { recursive: true });
+      writeFileSync(join(scenes, 'sample.canvas.ts'), 'const state = { backgroundColor: 0x111111ff };\n');
+      writeFileSync(join(scenes, 'sample.webgl.ts'), 'const state = { backgroundColor: 0x222222ff };\n');
+
+      const result = await runCaptureValidation({
+        subject: 'functional',
+        entries: [{ name: 'sample', renderers: ['canvas', 'webgl'] }],
+        server: { url: 'http://unused.invalid', kill: vi.fn() },
+        root,
+        gateParity: true,
+        gateRegression: false,
+        parityTolerance: 0,
+        parityGroups: { visual: { targets: ['canvas', 'webgl'] } },
+        quiet: true,
+        fingerprints: { sample: { canvas: '1:000000', webgl: '1:ffffff' } },
+        browserSession: {
+          browser: { close: vi.fn() } as never,
+          context: { newPage: vi.fn() } as never,
+        },
+      });
+
+      const parity = result.checks.find((check) => check.kind === 'parity');
+      expect(parity).toMatchObject({ fixtureConfound: 'fixture confound: YES (canvas=0x111111ff webgl=0x222222ff)' });
+      expect(parity?.message).toContain('npm run test:functional:parity:orientation');
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+
   it('retries transient fingerprint-load failures up to the validation budget', async () => {
     const newPage = vi.fn().mockRejectedValue(new Error('page.goto: Timeout 45000ms exceeded'));
     const result = await runCaptureValidation({
@@ -461,6 +501,21 @@ describe('runCaptureValidation', () => {
 
   it('is a callable fingerprint-validation orchestrator', () => {
     expect(typeof runCaptureValidation).toBe('function');
+  });
+
+  it('reports baseline contrast beside regression distance without changing the verdict', async () => {
+    const source = 'unchanged scene';
+    const fixture = createRegressionFixture(source, sha256(source));
+    try {
+      const result = await validateRegressionFixture(fixture.root, fixture.kill, '2:000000000000000000ffffff');
+      const regression = result.checks.find((check) => check.kind === 'regression');
+
+      expect(result.regressionPasses).toBe(1);
+      expect(regression).toMatchObject({ contrast: 63.75, status: 'passed' });
+      expect(regression?.message).toContain('baseline contrast 63.75 (report only)');
+    } finally {
+      rmSync(fixture.root, { force: true, recursive: true });
+    }
   });
 
   it('does not reload a target when capture already supplied its passed fingerprint', async () => {

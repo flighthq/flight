@@ -38,6 +38,14 @@ export interface DocumentedCommand {
 
 export type DocumentedCommandVerdict = 'metasyntactic' | 'missing' | 'resolved' | 'workspace-scoped';
 
+export interface DocumentedCommandAudit {
+  byVerdict: ReadonlyMap<DocumentedCommandVerdict, readonly DocumentedCommand[]>;
+  citationCount: number;
+  distinctCommandCount: number;
+  docCount: number;
+  unreadableDocs: readonly string[];
+}
+
 const metasyntacticCommands = new Set(['X', 'Y', 'Z', '<name>', '<script>']);
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -78,6 +86,49 @@ export function parseDocumentedCommands(docPath: string, text: string): Document
   return citations;
 }
 
+// Audits a caller-owned markdown population. docs:check passes its single git-derived gate file set;
+// the standalone command passes the same tracked-markdown population directly from git.
+export function auditDocumentedCommands(root: string, docPaths: readonly string[]): DocumentedCommandAudit {
+  const scriptNames = new Set(
+    Object.keys(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts ?? {}),
+  );
+  const citations: DocumentedCommand[] = [];
+  const unreadableDocs: string[] = [];
+  const workspaceScopedLines = new Set<string>();
+
+  for (const docPath of docPaths) {
+    let text: string;
+    try {
+      text = readFileSync(resolve(root, docPath), 'utf8');
+    } catch {
+      unreadableDocs.push(docPath);
+      continue;
+    }
+    text.split('\n').forEach((line, index) => {
+      if (line.includes('--workspace=')) workspaceScopedLines.add(`${docPath}:${index + 1}`);
+    });
+    citations.push(...parseDocumentedCommands(docPath, text));
+  }
+
+  return {
+    byVerdict: classifyDocumentedCommands(citations, scriptNames, workspaceScopedLines),
+    citationCount: citations.length,
+    distinctCommandCount: new Set(citations.map((citation) => citation.command)).size,
+    docCount: docPaths.length,
+    unreadableDocs,
+  };
+}
+
+export function formatDocumentedCommandAuditSummary(audit: Readonly<DocumentedCommandAudit>): string {
+  return (
+    `documented commands: ${audit.citationCount} citation(s) of ${audit.distinctCommandCount} distinct command(s) across ` +
+    `${audit.docCount} tracked markdown file(s) — ${audit.byVerdict.get('resolved')!.length} resolved, ` +
+    `${audit.byVerdict.get('workspace-scoped')!.length} workspace-scoped, ` +
+    `${audit.byVerdict.get('metasyntactic')!.length} metasyntactic placeholder(s), ` +
+    `${audit.unreadableDocs.length} unreadable`
+  );
+}
+
 function getDocumentedCommandVerdict(
   citation: Readonly<DocumentedCommand>,
   scriptNames: ReadonlySet<string>,
@@ -91,42 +142,24 @@ function getDocumentedCommandVerdict(
 function main(): void {
   const isGate = process.argv.includes('--check');
   const root = resolve(dirname(scriptPath), '..');
-  const scriptNames = new Set(
-    Object.keys(JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')).scripts ?? {}),
-  );
-
   const docPaths = listTrackedMarkdown(root);
-  const citations: DocumentedCommand[] = [];
-  const workspaceScopedLines = new Set<string>();
+  const audit = auditDocumentedCommands(root, docPaths);
+  const missing = audit.byVerdict.get('missing')!;
 
-  for (const docPath of docPaths) {
-    const text = readFileSync(resolve(root, docPath), 'utf8');
-    text.split('\n').forEach((line, index) => {
-      if (line.includes('--workspace=')) workspaceScopedLines.add(`${docPath}:${index + 1}`);
-    });
-    citations.push(...parseDocumentedCommands(docPath, text));
-  }
+  console.log(`${formatDocumentedCommandAuditSummary(audit)}\n`);
 
-  const byVerdict = classifyDocumentedCommands(citations, scriptNames, workspaceScopedLines);
-  const missing = byVerdict.get('missing')!;
-  const unique = new Set(citations.map((c) => c.command)).size;
-
-  console.log(
-    `documented commands: ${citations.length} citation(s) of ${unique} distinct command(s) across ` +
-      `${docPaths.length} tracked markdown file(s) — ${byVerdict.get('resolved')!.length} resolved, ` +
-      `${byVerdict.get('workspace-scoped')!.length} workspace-scoped, ` +
-      `${byVerdict.get('metasyntactic')!.length} metasyntactic placeholder(s)\n`,
-  );
-
-  if (missing.length === 0) {
+  if (missing.length === 0 && audit.unreadableDocs.length === 0) {
     console.log(pc.green(`✓ every cited command resolves against the root manifest`));
     return;
   }
 
-  console.log(pc.red(`${missing.length} citation(s) name no script in the root manifest:`));
-  for (const citation of missing) {
-    console.log(`  ${pc.red('✗')} ${citation.docPath}:${citation.docLine}  ${citation.command}`);
+  if (missing.length > 0) {
+    console.log(pc.red(`${missing.length} citation(s) name no script in the root manifest:`));
+    for (const citation of missing) {
+      console.log(`  ${pc.red('✗')} ${citation.docPath}:${citation.docLine}  ${citation.command}`);
+    }
   }
+  for (const docPath of audit.unreadableDocs) console.log(`  ${pc.red('✗')} ${docPath} could not be read`);
   if (isGate) process.exitCode = 1;
 }
 

@@ -9,6 +9,12 @@ Give every effect fragment shader a top-left-origin, Y-down **position UV**, and
 screen-texture sampling helpers translate that position UV into the texture storage convention. Position
 math then has one meaning; only code whose job is sampling a backend texture knows about a storage flip.
 
+When editing a paired GL/WGPU effect shader that reads position, direction, row phase, or any other
+vertical coordinate, run `npm run shader-vertical-origin` and inspect the named pairs. It is a report-only
+source heuristic, not a gate: zero findings cannot see one-sided effects, CPU-computed uniforms, or a
+conversion spelled differently from subtraction from one, so it complements rather than replaces the
+property reasoning and asymmetric functional probe below.
+
 ## The seam
 
 At the same displayed fragment, the current fullscreen passes provide vertically opposite coordinates:

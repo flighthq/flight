@@ -1,6 +1,50 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { classifyDocumentedCommands, parseDocumentedCommands } from './check-documented-commands';
+import {
+  auditDocumentedCommands,
+  classifyDocumentedCommands,
+  formatDocumentedCommandAuditSummary,
+  parseDocumentedCommands,
+} from './check-documented-commands';
+
+describe('auditDocumentedCommands', () => {
+  it('audits the exact markdown population supplied by its parent gate', () => {
+    const root = mkdtempSync(join(tmpdir(), 'documented-commands-'));
+    try {
+      mkdirSync(join(root, 'agents'));
+      writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { check: 'tsx check.ts' } }));
+      writeFileSync(join(root, 'README.md'), 'Run `npm run check`.\n');
+      writeFileSync(join(root, 'agents', 'commands.md'), 'Old: `npm run removed`.\n');
+
+      const audit = auditDocumentedCommands(root, ['README.md', 'agents/commands.md']);
+
+      expect(audit.byVerdict.get('missing')).toEqual([
+        { command: 'removed', docLine: 1, docPath: 'agents/commands.md' },
+      ]);
+      expect(formatDocumentedCommandAuditSummary(audit)).toContain('2 tracked markdown file(s)');
+      expect(audit.unreadableDocs).toEqual([]);
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+
+  it('reports a tracked markdown path whose working-tree content cannot be read', () => {
+    const root = mkdtempSync(join(tmpdir(), 'documented-commands-missing-'));
+    try {
+      writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: {} }));
+
+      const audit = auditDocumentedCommands(root, ['deleted.md']);
+
+      expect(audit.unreadableDocs).toEqual(['deleted.md']);
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+});
 
 describe('classifyDocumentedCommands', () => {
   it('resolves a citation naming a script the manifest has', () => {
