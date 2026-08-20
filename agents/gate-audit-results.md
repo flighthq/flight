@@ -4,7 +4,8 @@ Fresh measurement of all 29 non-advisory whole-repo gates in `scripts/check.ts`.
 Each gate was tested by applying a mutation, running the gate, recording exit code and
 failure output, and restoring the file.
 
-**Result: 29/29 FIRES.**
+**Result: all 29 non-advisory gates can be made to fail.** Whether each measures what its name
+implies is a separate question this audit did not ask.
 
 ---
 
