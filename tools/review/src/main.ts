@@ -18,6 +18,8 @@ import {
 import { reviewMissingReferenceMessage } from './commissionState';
 import type { ReviewCommissionState as CommissionState } from './commissionState';
 import { createReviewCommissionPayloadCell } from './referenceImageCommission';
+import { orderReviewItems, REVIEW_ATTENTION_GROUP_ORDER, reviewItemByVisualDelta } from './reviewOrder';
+import type { ReviewAttentionGroup as AttentionGroup } from './reviewOrder';
 
 interface ReviewCellProvenance {
   hostInstanceId: string | null;
@@ -31,7 +33,6 @@ interface ReviewBuildProvenance {
 }
 
 type ParityStatus = 'passed' | 'failed' | 'no-data';
-type AttentionGroup = 'differs' | 'changed' | 'not-commissioned' | 'requested' | 'included';
 
 interface ReviewCell {
   renderer: string;
@@ -203,14 +204,6 @@ function testStatus(t: ReviewTest): 'error' | 'changed' | 'pass' {
   return 'pass';
 }
 
-const ATTENTION_GROUP_ORDER: readonly AttentionGroup[] = [
-  'differs',
-  'changed',
-  'not-commissioned',
-  'requested',
-  'included',
-];
-
 function testAttentionGroup(t: ReviewTest): AttentionGroup {
   const cells = reviewableCells(t.cells);
   if (cells.some((c) => c.commissionState === 'differs')) return 'differs';
@@ -226,6 +219,13 @@ const ATTENTION_GROUP_LABELS: Record<AttentionGroup, string> = {
   'not-commissioned': 'Not commissioned',
   requested: 'Requested',
   included: 'Included',
+};
+
+const REVIEW_ORDER_ACCESSORS = {
+  key: testKey,
+  tool: (test: ReviewTest) => test.tool,
+  name: (test: ReviewTest) => test.name,
+  attentionGroup: testAttentionGroup,
 };
 
 function ensureCached(t: ReviewTest): HTMLImageElement[] {
@@ -246,7 +246,7 @@ function ensureCached(t: ReviewTest): HTMLImageElement[] {
 function buildSidebar(): void {
   testList.innerHTML = '';
 
-  const visible = visibleTests();
+  const visible = orderReviewItems(visibleTests(), REVIEW_ORDER_ACCESSORS);
   const tools = [...new Set(visible.map((t) => t.tool))];
   const multiTool = tools.length > 1;
 
@@ -270,7 +270,7 @@ function buildSidebar(): void {
       arr.push(t);
     }
 
-    for (const group of ATTENTION_GROUP_ORDER) {
+    for (const group of REVIEW_ATTENTION_GROUP_ORDER) {
       const tests = grouped.get(group);
       if (!tests || tests.length === 0) continue;
 
@@ -974,9 +974,7 @@ function selectTest(t: ReviewTest): void {
 }
 
 function selectTestByDelta(delta: -1 | 1): void {
-  const visible = visibleTests();
-  const i = visible.findIndex((t) => testKey(t) === selectedKey);
-  const next = visible[i + delta];
+  const next = reviewItemByVisualDelta(visibleTests(), selectedKey, delta, REVIEW_ORDER_ACCESSORS);
   if (next) selectTest(next);
 }
 
