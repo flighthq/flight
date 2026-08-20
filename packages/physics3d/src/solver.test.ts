@@ -1,0 +1,457 @@
+import type { Physics3DContact, Physics3DContactPoint, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
+import { describe, expect, it } from 'vitest';
+
+import { refreshRigidBody3DWorldInertia } from './integrate';
+import { computePhysics3DBoxMassData, createPhysics3DMassData } from './massProperties';
+import { setRigidBody3DMassData } from './massProperties';
+import {
+  createPhysics3DContactConstraint,
+  createPhysics3DContactConstraintPoint,
+  preparePhysics3DContactConstraints,
+  solvePhysics3DContactPositions,
+  solvePhysics3DContactVelocities,
+  warmStartPhysics3DContacts,
+} from './solver';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world';
+
+describe('createPhysics3DContactConstraint', () => {
+  it('allocates an unbound constraint with no points', () => {
+    const constraint = createPhysics3DContactConstraint();
+    expect(constraint.contact).toBe(-1);
+    expect(constraint.pointCount).toBe(0);
+    expect(constraint.points).toHaveLength(0);
+  });
+});
+
+describe('createPhysics3DContactConstraintPoint', () => {
+  it('zeroes every accumulator so a new contact warm-starts from nothing', () => {
+    const point = createPhysics3DContactConstraintPoint();
+    expect(point.normalImpulse).toBe(0);
+    expect(point.tangentImpulse0).toBe(0);
+    expect(point.tangentImpulse1).toBe(0);
+    expect(point.bias).toBe(0);
+  });
+});
+
+describe('preparePhysics3DContactConstraints', () => {
+  it('builds a friction basis orthonormal to the contact normal', () => {
+    const world = createFallingBoxWorld();
+    preparePhysics3DContactConstraints(world);
+
+    const constraint = world.solver.constraints[0];
+    const contact = world.contacts[0];
+    const dot0 =
+      constraint.tangent0X * contact.normalX +
+      constraint.tangent0Y * contact.normalY +
+      constraint.tangent0Z * contact.normalZ;
+    const dot1 =
+      constraint.tangent1X * contact.normalX +
+      constraint.tangent1Y * contact.normalY +
+      constraint.tangent1Z * contact.normalZ;
+    const dotTangents =
+      constraint.tangent0X * constraint.tangent1X +
+      constraint.tangent0Y * constraint.tangent1Y +
+      constraint.tangent0Z * constraint.tangent1Z;
+
+    expect(dot0).toBeCloseTo(0, 12);
+    expect(dot1).toBeCloseTo(0, 12);
+    expect(dotTangents).toBeCloseTo(0, 12);
+    expect(Math.hypot(constraint.tangent0X, constraint.tangent0Y, constraint.tangent0Z)).toBeCloseTo(1, 12);
+    expect(Math.hypot(constraint.tangent1X, constraint.tangent1Y, constraint.tangent1Z)).toBeCloseTo(1, 12);
+  });
+
+  it('produces a basis orthonormal to the normal for every axis-aligned normal', () => {
+    // The seed-axis choice flips at 1/sqrt(3); a normal aligned to the seed would cross to zero.
+    for (const [nx, ny, nz] of [
+      [1, 0, 0],
+      [-1, 0, 0],
+      [0, 1, 0],
+      [0, -1, 0],
+      [0, 0, 1],
+      [0, 0, -1],
+    ]) {
+      const world = createFallingBoxWorld();
+      const contact = world.contacts[0];
+      contact.normalX = nx;
+      contact.normalY = ny;
+      contact.normalZ = nz;
+      preparePhysics3DContactConstraints(world);
+
+      const constraint = world.solver.constraints[0];
+      expect(Math.hypot(constraint.tangent0X, constraint.tangent0Y, constraint.tangent0Z)).toBeCloseTo(1, 12);
+      expect(Math.hypot(constraint.tangent1X, constraint.tangent1Y, constraint.tangent1Z)).toBeCloseTo(1, 12);
+      expect(constraint.tangent0X * nx + constraint.tangent0Y * ny + constraint.tangent0Z * nz).toBeCloseTo(0, 12);
+      expect(constraint.tangent1X * nx + constraint.tangent1Y * ny + constraint.tangent1Z * nz).toBeCloseTo(0, 12);
+    }
+  });
+
+  it('sets the effective normal mass to the inverse mass sum for a centred contact', () => {
+    // Lever arm along the normal contributes no angular term, so the denominator is the mass sum alone.
+    const world = createFallingBoxWorld();
+    const contact = world.contacts[0];
+    contact.points[0].rAX = 0;
+    contact.points[0].rAY = -0.5;
+    contact.points[0].rAZ = 0;
+    preparePhysics3DContactConstraints(world);
+
+    const inverseMassSum = world.bodies[0].inverseMass + world.bodies[1].inverseMass;
+    expect(world.solver.constraints[0].points[0].normalMass).toBeCloseTo(1 / inverseMassSum, 9);
+  });
+
+  it('captures restitution from the approach speed before any impulse is applied', () => {
+    const world = createFallingBoxWorld();
+    world.contacts[0].restitution = 0.5;
+    world.bodies[0].velocityY = -10;
+    preparePhysics3DContactConstraints(world);
+
+    expect(world.solver.constraints[0].points[0].bias).toBeCloseTo(5, 9);
+  });
+
+  it('drops restitution below the threshold so a ball does not bounce forever', () => {
+    const world = createFallingBoxWorld();
+    world.contacts[0].restitution = 0.9;
+    world.config.sequentialImpulse.restitutionThreshold = 1;
+    world.bodies[0].velocityY = -0.1;
+    preparePhysics3DContactConstraints(world);
+
+    expect(world.solver.constraints[0].points[0].bias).toBe(0);
+  });
+
+  it('skips disabled, sensor, and non-touching contacts', () => {
+    for (const mutate of [
+      (c: Physics3DContact) => {
+        c.enabled = false;
+      },
+      (c: Physics3DContact) => {
+        c.sensor = true;
+      },
+      (c: Physics3DContact) => {
+        c.touching = false;
+      },
+    ]) {
+      const world = createFallingBoxWorld();
+      mutate(world.contacts[0]);
+      preparePhysics3DContactConstraints(world);
+      expect(world.solver.constraints).toHaveLength(0);
+    }
+  });
+
+  it('skips a contact between two bodies that can neither translate nor rotate', () => {
+    const world = createFallingBoxWorld();
+    setPhysics3DBodyType(world.bodies[0], 'static');
+    setPhysics3DBodyType(world.bodies[1], 'static');
+    preparePhysics3DContactConstraints(world);
+    expect(world.solver.constraints).toHaveLength(0);
+  });
+
+  it('carries accumulators across steps by featureId, not by point index', () => {
+    const world = createFallingBoxWorld();
+    preparePhysics3DContactConstraints(world);
+    world.solver.constraints[0].points[0].normalImpulse = 7;
+
+    // The narrow phase reports the same physical corner second this time.
+    const contact = world.contacts[0];
+    const moved = contact.points[0];
+    contact.points = [createContactPoint(99, 0.01), moved];
+    contact.pointCount = 2;
+    preparePhysics3DContactConstraints(world);
+
+    expect(world.solver.constraints[0].points[0].normalImpulse).toBe(0);
+    expect(world.solver.constraints[0].points[1].normalImpulse).toBe(7);
+  });
+
+  it('does not carry accumulators when warm starting is disabled', () => {
+    const world = createFallingBoxWorld();
+    preparePhysics3DContactConstraints(world);
+    world.solver.constraints[0].points[0].normalImpulse = 7;
+    world.config.sequentialImpulse.warmStarting = false;
+    preparePhysics3DContactConstraints(world);
+
+    expect(world.solver.constraints[0].points[0].normalImpulse).toBe(0);
+  });
+});
+
+describe('solvePhysics3DContactPositions', () => {
+  it('pushes a penetrating body out along the normal', () => {
+    const world = createFallingBoxWorld();
+    world.contacts[0].points[0].depth = 0.1;
+    preparePhysics3DContactConstraints(world);
+
+    const before = world.bodies[0].y;
+    solvePhysics3DContactPositions(world);
+    expect(world.bodies[0].y).toBeGreaterThan(before);
+  });
+
+  it('leaves the slop unresolved so a resting body does not twitch', () => {
+    const world = createFallingBoxWorld();
+    world.contacts[0].points[0].depth = world.config.sequentialImpulse.penetrationSlop;
+    preparePhysics3DContactConstraints(world);
+
+    const before = world.bodies[0].y;
+    solvePhysics3DContactPositions(world);
+    expect(world.bodies[0].y).toBe(before);
+  });
+
+  it('reports the deepest remaining penetration so a caller can stop iterating', () => {
+    const world = createFallingBoxWorld();
+    world.contacts[0].points[0].depth = 0.25;
+    preparePhysics3DContactConstraints(world);
+
+    const deepest = solvePhysics3DContactPositions(world);
+    expect(deepest).toBeCloseTo(0.25 - world.config.sequentialImpulse.penetrationSlop, 12);
+  });
+
+  it('converges toward the slop over repeated iterations', () => {
+    const world = createFallingBoxWorld();
+    world.contacts[0].points[0].depth = 0.2;
+    preparePhysics3DContactConstraints(world);
+
+    // Depth is an input the narrow phase would refresh; drive it from the body's own motion instead.
+    const startY = world.bodies[0].y;
+    for (let i = 0; i < 40; i += 1) {
+      world.contacts[0].points[0].depth = 0.2 - (world.bodies[0].y - startY);
+      solvePhysics3DContactPositions(world);
+    }
+    const remaining = 0.2 - (world.bodies[0].y - startY);
+    expect(remaining).toBeLessThan(0.2);
+    expect(remaining).toBeGreaterThan(0);
+  });
+
+  it('never moves a static body', () => {
+    const world = createBoxOnGroundWorld();
+    world.contacts[0].points[0].depth = 0.1;
+    preparePhysics3DContactConstraints(world);
+    const ground = world.bodies[1];
+    solvePhysics3DContactPositions(world);
+
+    expect(ground.y).toBe(0);
+    expect(ground.orientationW).toBe(1);
+  });
+});
+
+describe('solvePhysics3DContactVelocities', () => {
+  it('removes the approach velocity of a body resting on static ground', () => {
+    const world = createBoxOnGroundWorld();
+    world.bodies[0].velocityY = -5;
+    preparePhysics3DContactConstraints(world);
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(world);
+
+    expect(world.bodies[0].velocityY).toBeCloseTo(0, 9);
+  });
+
+  it('applies restitution so a bouncing body leaves at the expected fraction', () => {
+    const world = createBoxOnGroundWorld();
+    world.contacts[0].restitution = 0.5;
+    world.bodies[0].velocityY = -10;
+    preparePhysics3DContactConstraints(world);
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(world);
+
+    expect(world.bodies[0].velocityY).toBeCloseTo(5, 6);
+  });
+
+  it('never pulls two bodies together — the normal impulse stays non-negative', () => {
+    const world = createBoxOnGroundWorld();
+    world.bodies[0].velocityY = 5; // already separating
+    preparePhysics3DContactConstraints(world);
+    for (let i = 0; i < 4; i += 1) solvePhysics3DContactVelocities(world);
+
+    expect(world.solver.constraints[0].points[0].normalImpulse).toBe(0);
+    expect(world.bodies[0].velocityY).toBeCloseTo(5, 12);
+  });
+
+  it('leaves a frictionless body sliding at its full tangential speed', () => {
+    const world = createBoxOnGroundWorld();
+    world.contacts[0].friction = 0;
+    world.bodies[0].velocityX = 3;
+    world.bodies[0].velocityY = -1;
+    preparePhysics3DContactConstraints(world);
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(world);
+
+    expect(world.bodies[0].velocityX).toBeCloseTo(3, 9);
+  });
+
+  it('opposes tangential motion when friction is present', () => {
+    const world = createBoxOnGroundWorld();
+    world.contacts[0].friction = 0.5;
+    world.bodies[0].velocityX = 3;
+    world.bodies[0].velocityY = -1;
+    preparePhysics3DContactConstraints(world);
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(world);
+
+    expect(world.bodies[0].velocityX).toBeLessThan(3);
+    expect(world.bodies[0].velocityX).toBeGreaterThan(0);
+  });
+
+  it('clamps the two tangents as a coupled cone, not independently', () => {
+    // The defect this guards: clamping each tangent to mu*normalImpulse on its own permits a combined
+    // magnitude of sqrt(2)*mu*normalImpulse, so a box slides faster on the diagonal than on either axis.
+    // Compare a diagonal slide against an axis-aligned one of the same speed.
+    const speed = 3;
+    const axisWorld = createBoxOnGroundWorld();
+    axisWorld.contacts[0].friction = 0.3;
+    axisWorld.bodies[0].velocityX = speed;
+    axisWorld.bodies[0].velocityY = -1;
+    preparePhysics3DContactConstraints(axisWorld);
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(axisWorld);
+    const axisRemaining = Math.hypot(axisWorld.bodies[0].velocityX, axisWorld.bodies[0].velocityZ);
+
+    const diagonalWorld = createBoxOnGroundWorld();
+    diagonalWorld.contacts[0].friction = 0.3;
+    diagonalWorld.bodies[0].velocityX = speed / Math.SQRT2;
+    diagonalWorld.bodies[0].velocityZ = speed / Math.SQRT2;
+    diagonalWorld.bodies[0].velocityY = -1;
+    preparePhysics3DContactConstraints(diagonalWorld);
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(diagonalWorld);
+    const diagonalRemaining = Math.hypot(diagonalWorld.bodies[0].velocityX, diagonalWorld.bodies[0].velocityZ);
+
+    expect(diagonalRemaining).toBeCloseTo(axisRemaining, 9);
+  });
+
+  it('spins a body when the impulse acts off its centre of mass', () => {
+    const world = createBoxOnGroundWorld();
+    world.contacts[0].points[0].rAX = 0.5;
+    world.contacts[0].points[0].rAY = -0.5;
+    world.bodies[0].velocityY = -5;
+    preparePhysics3DContactConstraints(world);
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(world);
+
+    expect(Math.abs(world.bodies[0].angularVelocityZ)).toBeGreaterThan(1e-6);
+  });
+
+  it('applies no impulse to a static body', () => {
+    const world = createBoxOnGroundWorld();
+    world.bodies[0].velocityY = -5;
+    preparePhysics3DContactConstraints(world);
+    const ground = world.bodies[1];
+    for (let i = 0; i < 8; i += 1) solvePhysics3DContactVelocities(world);
+
+    expect(ground.velocityX).toBe(0);
+    expect(ground.velocityY).toBe(0);
+    expect(ground.angularVelocityZ).toBe(0);
+  });
+
+  it('shares the separation between two equal dynamic bodies', () => {
+    const world = createTwoDynamicBodyWorld();
+    world.bodies[0].velocityY = -4;
+    preparePhysics3DContactConstraints(world);
+    for (let i = 0; i < 12; i += 1) solvePhysics3DContactVelocities(world);
+
+    // Equal masses in a head-on contact end with the same normal velocity: momentum is conserved and
+    // the approach is removed.
+    expect(world.bodies[0].velocityY).toBeCloseTo(world.bodies[1].velocityY, 6);
+    expect(world.bodies[0].velocityY + world.bodies[1].velocityY).toBeCloseTo(-4, 6);
+  });
+});
+
+describe('warmStartPhysics3DContacts', () => {
+  it('replays a carried normal impulse onto the body', () => {
+    const world = createBoxOnGroundWorld();
+    preparePhysics3DContactConstraints(world);
+    world.solver.constraints[0].points[0].normalImpulse = 3;
+
+    warmStartPhysics3DContacts(world);
+    expect(world.bodies[0].velocityY).toBeCloseTo(3 * world.bodies[0].inverseMass, 12);
+  });
+
+  it('does nothing when warm starting is disabled', () => {
+    const world = createBoxOnGroundWorld();
+    preparePhysics3DContactConstraints(world);
+    world.solver.constraints[0].points[0].normalImpulse = 3;
+    world.config.sequentialImpulse.warmStarting = false;
+
+    warmStartPhysics3DContacts(world);
+    expect(world.bodies[0].velocityY).toBe(0);
+  });
+
+  it('reaches the resting impulse in fewer iterations than a cold solve', () => {
+    const converged = createBoxOnGroundWorld();
+    converged.bodies[0].velocityY = -5;
+    preparePhysics3DContactConstraints(converged);
+    for (let i = 0; i < 30; i += 1) solvePhysics3DContactVelocities(converged);
+    const target = converged.solver.constraints[0].points[0].normalImpulse;
+
+    const warm = createBoxOnGroundWorld();
+    warm.bodies[0].velocityY = -5;
+    preparePhysics3DContactConstraints(warm);
+    warm.solver.constraints[0].points[0].normalImpulse = target;
+    warmStartPhysics3DContacts(warm);
+    solvePhysics3DContactVelocities(warm);
+
+    const cold = createBoxOnGroundWorld();
+    cold.bodies[0].velocityY = -5;
+    preparePhysics3DContactConstraints(cold);
+    solvePhysics3DContactVelocities(cold);
+
+    expect(Math.abs(warm.bodies[0].velocityY)).toBeLessThanOrEqual(Math.abs(cold.bodies[0].velocityY));
+  });
+});
+
+function createContactPoint(featureId: number, depth: number): Physics3DContactPoint {
+  return {
+    depth,
+    featureId,
+    rAX: 0,
+    rAY: -0.5,
+    rAZ: 0,
+    rBX: 0,
+    rBY: 0.5,
+    rBZ: 0,
+    x: 0,
+    y: 0,
+    z: 0,
+  };
+}
+
+function createContact(bodyA: number, bodyB: number): Physics3DContact {
+  return {
+    bodyA,
+    bodyB,
+    enabled: true,
+    friction: 0,
+    normalX: 0,
+    normalY: 1,
+    normalZ: 0,
+    pointCount: 1,
+    points: [createContactPoint(1, 0.01)],
+    restitution: 0,
+    sensor: false,
+    touching: true,
+  };
+}
+
+function createUnitBox(world: Physics3DWorld): RigidBody3D {
+  const body = createRigidBody3D();
+  const mass = createPhysics3DMassData();
+  computePhysics3DBoxMassData(0.5, 0.5, 0.5, 1, mass);
+  setRigidBody3DMassData(body, mass);
+  refreshRigidBody3DWorldInertia(body);
+  addPhysics3DBody(world, body);
+  return body;
+}
+
+// One dynamic box whose single contact point references a body that is not in the world's contact
+// partner slot — used for the basis and mass-denominator tests, where only body A matters.
+function createFallingBoxWorld(): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const box = createUnitBox(world);
+  const other = createUnitBox(world);
+  world.contacts.push(createContact(box.index, other.index));
+  return world;
+}
+
+function createBoxOnGroundWorld(): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const box = createUnitBox(world);
+  const ground = createUnitBox(world);
+  setPhysics3DBodyType(ground, 'static');
+  world.contacts.push(createContact(box.index, ground.index));
+  return world;
+}
+
+function createTwoDynamicBodyWorld(): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const upper = createUnitBox(world);
+  const lower = createUnitBox(world);
+  world.contacts.push(createContact(upper.index, lower.index));
+  return world;
+}
