@@ -243,7 +243,25 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
     // A dimension change is a verdict, not a crash (§9). getBitmapMismatch throws on mismatched sizes,
     // which is correct for a programmer error but wrong for a corpus run: one resized scene must not
     // abort the other four hundred.
+    //
+    // ★ A REQUEST DEMOTES IT, EXACTLY AS IT DEMOTES A PIXEL CHANGE BELOW. A resize is the clearest case
+    // of "a request names it, prior bytes exist, and the movement is in scope" there is — the scene was
+    // deliberately reframed and new bytes have been asked for. This branch used to push its failure
+    // BEFORE the `requestId` check the pixel path gets, so the one movement a commission cannot rescue
+    // was the one where the reference is most obviously superseded: a corpus with a requested resize
+    // stayed red until the new bytes were blessed, with nothing a reviewer could do about it in between.
+    // Both paths now answer the same question in the same order — is this movement already requested?
     if (comparison.dimensionMismatch) {
+      if (requestId !== null) {
+        pendingCount += 1;
+        cells.push({
+          identity: cell.identity,
+          verdict: 'pending-changed',
+          requestId,
+          detail: 'in-scope resize awaiting blessing — reference and candidate differ in size',
+        });
+        continue;
+      }
       cells.push({
         identity: cell.identity,
         verdict: 'incomparable',

@@ -31,6 +31,24 @@ function run(cmd: string, label: string): void {
   execSync(cmd, { cwd: repoRoot, stdio: 'inherit' });
 }
 
+// ★ A FAILING STEP IS A VERDICT, NOT A CRASH. `execSync` throws on a non-zero exit, and an uncaught throw
+// prints a Node stack trace under the step's own output — which reads as the tool breaking rather than as
+// the check reporting. That matters here because this gate's whole job is to be run repeatedly while
+// working through a queue of cells: a stack trace after a clean list of failures invites the reader to
+// wonder whether the run finished, and the answer is that it did.
+function runFinal(cmd: string, label: string): never {
+  console.log(`\n── ${label} ──`);
+  try {
+    execSync(cmd, { cwd: repoRoot, stdio: 'inherit' });
+  } catch (error) {
+    const status =
+      typeof (error as { status?: unknown }).status === 'number' ? (error as { status: number }).status : 1;
+    console.error(`\n${label} reported failures — see the list above. Exiting ${status}.`);
+    process.exit(status);
+  }
+  process.exit(0);
+}
+
 function runCapture(captureArgs: string): void {
   const argv = captureArgs.split(/\s+/).filter(Boolean);
   if (devMode) argv.push('--dev');
@@ -74,4 +92,4 @@ for (const line of scopeLines) {
 }
 
 // 5. Check
-run(`npm run reference-image:check -- --frames ${frames}`, 'Compare against the blessed references');
+runFinal(`npm run reference-image:check -- --frames ${frames}`, 'Compare against the blessed references');
