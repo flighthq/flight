@@ -122,6 +122,21 @@ export interface RigidBody3D {
   mass: number;
   inverseMass: number;
 
+  // The forward inertia tensor in the body's LOCAL frame, symmetric, six unique components, about the
+  // centre of mass.
+  //
+  // It is stored alongside its inverse for the same reason `mass` is stored alongside `inverseMass`,
+  // and for one more: the inverse is ZERO for a static, kinematic, or fixed-rotation body, so it
+  // carries no information to recover the forward tensor from. Without the forward copy, making a
+  // static body dynamic would have to invent an inertia — and inverting the inverse's diagonal, which
+  // looks like it would work, is wrong for any tensor with off-diagonal terms.
+  inertiaXX: number;
+  inertiaYY: number;
+  inertiaZZ: number;
+  inertiaXY: number;
+  inertiaXZ: number;
+  inertiaYZ: number;
+
   // The inverse inertia tensor in the body's LOCAL frame, symmetric, six unique components. Constant
   // while the body's mass properties are.
   inverseInertiaXX: number;
