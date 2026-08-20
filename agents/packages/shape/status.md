@@ -43,6 +43,10 @@ Every item below was re-checked against `packages/shape/src/` on 2026-08-08.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-20** — Three DOM functional scenes (`shape-stroke-joints`, `node-blend-modes`,
+  `node-blend-modes-advanced`) were missing `registerDefaultShapeBoundsCommands()`. Hashes unchanged
+  because the global registry was populated by other scenes in the same capture process. Interaction
+  zero-coverage noted in `agents/packages/interaction/status.md`.
 - **2026-08-13** — Shape bounds moved from the closed command switch to explicit process-wide command
   contributions paired with Canvas draw registration; fill-only and ink traversals share the registry,
   adjacent segment summaries resolve miter/CLOSE geometry, registry revision invalidates cached bounds,
