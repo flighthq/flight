@@ -236,7 +236,8 @@ function restoreContactHookFields(
 // world the hook half-edited.
 function runPhysics3DContactHook(world: Physics3DWorld, hook: Physics3DContactCallback | null, phase: string): void {
   if (hook === null) return;
-  for (const contact of world.contacts) {
+  for (let contactIndex = 0; contactIndex < world.contacts.length; contactIndex += 1) {
+    const contact = world.contacts[contactIndex];
     if (contact.sensor) continue;
     const friction = contact.friction;
     const restitution = contact.restitution;
@@ -270,7 +271,8 @@ function scalePhysics3DWarmStartCaches(world: Physics3DWorld, dt: number): void 
   const divided = dt / previous;
   const timestepRatio = Number.isFinite(divided) ? divided : 0;
 
-  for (const constraint of world.solver.constraints) {
+  for (let constraintIndex = 0; constraintIndex < world.solver.constraints.length; constraintIndex += 1) {
+    const constraint = world.solver.constraints[constraintIndex];
     for (let i = 0; i < constraint.pointCount; i += 1) {
       const point = constraint.points[i];
       point.normalImpulse *= timestepRatio;
@@ -278,7 +280,8 @@ function scalePhysics3DWarmStartCaches(world: Physics3DWorld, dt: number): void 
       point.tangentImpulse1 *= timestepRatio;
     }
   }
-  for (const joint of world.joints) {
+  for (let jointIndex = 0; jointIndex < world.joints.length; jointIndex += 1) {
+    const joint = world.joints[jointIndex];
     joint.impulse0 *= timestepRatio;
     joint.impulse1 *= timestepRatio;
     joint.impulse2 *= timestepRatio;
@@ -331,7 +334,9 @@ function stepValidatedPhysics3D(world: Physics3DWorld, dt: number): void {
     stepPhysics3DInterval(world, substepDt);
   }
 
-  for (const body of world.bodies) clearRigidBody3DForces(body);
+  for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
+    clearRigidBody3DForces(world.bodies[bodyIndex]);
+  }
   world.previousTimestep = substepDt;
 
   // Post-solve observes a committed step. A hook that throws here cannot prevent pose integration, force

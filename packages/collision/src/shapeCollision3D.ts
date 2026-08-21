@@ -10,13 +10,12 @@ import { clearCollisionManifold3D } from './manifold3D';
 
 // Closed-form 3D narrow-phase pairs, each an exact alternative to the iterative GJK/EPA floor.
 //
-// Every pair here involves a CURVED boundary except aabb-aabb, and that is the selection rule rather
-// than a coincidence. EPA terminates on a distance, and distance is second-order insensitive to angular
-// error, so its normal on a curved surface is accurate only to about the square root of its tolerance —
-// a few parts in a thousand where the depth is good to 1e-10. A sphere's normal is the line between two
-// centres and is exact in three operations, so these win on conditioning AND on speed. Box-box is
-// deliberately NOT here: a box boundary is flat, EPA's normal on it is already exact, and only speed
-// would argue for hand-writing a fifteen-axis SAT.
+// Most pairs here involve a CURVED boundary. EPA terminates on a distance, and distance is second-order
+// insensitive to angular error, so its normal on a curved surface is accurate only to about the square
+// root of its tolerance — a few parts in a thousand where the depth is good to 1e-10. A sphere's normal
+// is the line between two centres and is exact in three operations, so those pairs win on conditioning
+// AND on speed. The two box pairs are the throughput cases: their exact SATs avoid iterative GJK/EPA on
+// the most common rigid-body primitive, including broadphase candidates that turn out not to overlap.
 //
 // All six take A and B in the order their name reads and write the manifold pushing **A out of B**.
 // `testCollision3D` reaches the mirrored order by trying the reversed key and negating the normal, so
@@ -54,6 +53,88 @@ export function testAabbAabbCollision3D(
     out.normalZ = a.minZ + a.maxZ < b.minZ + b.maxZ ? -1 : 1;
     out.depth = overlapZ;
   }
+  out.overlapping = true;
+  return true;
+}
+
+// Exact separating-axis test for two oriented boxes. The only possible separating axes are the three
+// face normals from each box plus the nine pairwise edge crosses. Every candidate is normalized before
+// its interval is measured, so `depth` is a world-space distance even when an edge cross is short.
+// Nearly parallel edge pairs have no usable cross and are skipped; their face axes already cover that
+// limit, while normalizing their roundoff would invent an unstable direction.
+export function testBoxBoxCollision3D(
+  a: Readonly<CollisionBox3D>,
+  b: Readonly<CollisionBox3D>,
+  out: CollisionManifold3D,
+): boolean {
+  if (!isValidBox3D(a) || !isValidBox3D(b)) return clearAndMiss(out);
+  writeBoxAxes3D(a.rotationX, a.rotationY, a.rotationZ, a.rotationW, boxAxesA);
+  writeBoxAxes3D(b.rotationX, b.rotationY, b.rotationZ, b.rotationW, boxAxesB);
+
+  for (let i = 0; i < 9; i += 1) {
+    boxSatAxes[i] = boxAxesA[i];
+    boxSatAxes[i + 9] = boxAxesB[i];
+  }
+  let axisCount = 6;
+  for (let axisA = 0; axisA < 3; axisA += 1) {
+    const aX = boxAxesA[axisA * 3];
+    const aY = boxAxesA[axisA * 3 + 1];
+    const aZ = boxAxesA[axisA * 3 + 2];
+    for (let axisB = 0; axisB < 3; axisB += 1) {
+      const bX = boxAxesB[axisB * 3];
+      const bY = boxAxesB[axisB * 3 + 1];
+      const bZ = boxAxesB[axisB * 3 + 2];
+      let crossX = aY * bZ - aZ * bY;
+      let crossY = aZ * bX - aX * bZ;
+      let crossZ = aX * bY - aY * bX;
+      const lengthSquared = crossX * crossX + crossY * crossY + crossZ * crossZ;
+      if (lengthSquared <= BOX_PARALLEL_AXIS_EPSILON) continue;
+      const inverseLength = 1 / Math.sqrt(lengthSquared);
+      crossX *= inverseLength;
+      crossY *= inverseLength;
+      crossZ *= inverseLength;
+      boxSatAxes[axisCount * 3] = crossX;
+      boxSatAxes[axisCount * 3 + 1] = crossY;
+      boxSatAxes[axisCount * 3 + 2] = crossZ;
+      axisCount += 1;
+    }
+  }
+
+  const deltaX = a.x - b.x;
+  const deltaY = a.y - b.y;
+  const deltaZ = a.z - b.z;
+  let bestDepth = Infinity;
+  let bestNormalX = 1;
+  let bestNormalY = 0;
+  let bestNormalZ = 0;
+  for (let axis = 0; axis < axisCount; axis += 1) {
+    const axisX = boxSatAxes[axis * 3];
+    const axisY = boxSatAxes[axis * 3 + 1];
+    const axisZ = boxSatAxes[axis * 3 + 2];
+    const radiusA =
+      a.halfX * Math.abs(axisX * boxAxesA[0] + axisY * boxAxesA[1] + axisZ * boxAxesA[2]) +
+      a.halfY * Math.abs(axisX * boxAxesA[3] + axisY * boxAxesA[4] + axisZ * boxAxesA[5]) +
+      a.halfZ * Math.abs(axisX * boxAxesA[6] + axisY * boxAxesA[7] + axisZ * boxAxesA[8]);
+    const radiusB =
+      b.halfX * Math.abs(axisX * boxAxesB[0] + axisY * boxAxesB[1] + axisZ * boxAxesB[2]) +
+      b.halfY * Math.abs(axisX * boxAxesB[3] + axisY * boxAxesB[4] + axisZ * boxAxesB[5]) +
+      b.halfZ * Math.abs(axisX * boxAxesB[6] + axisY * boxAxesB[7] + axisZ * boxAxesB[8]);
+    const centreProjection = deltaX * axisX + deltaY * axisY + deltaZ * axisZ;
+    const overlap = radiusA + radiusB - Math.abs(centreProjection);
+    if (overlap <= 0) return clearAndMiss(out);
+    if (overlap < bestDepth) {
+      const sign = centreProjection < 0 ? -1 : 1;
+      bestDepth = overlap;
+      bestNormalX = axisX * sign;
+      bestNormalY = axisY * sign;
+      bestNormalZ = axisZ * sign;
+    }
+  }
+
+  out.normalX = bestNormalX === 0 ? 0 : bestNormalX;
+  out.normalY = bestNormalY === 0 ? 0 : bestNormalY;
+  out.normalZ = bestNormalZ === 0 ? 0 : bestNormalZ;
+  out.depth = bestDepth;
   out.overlapping = true;
   return true;
 }
@@ -272,6 +353,26 @@ function rotateByQuaternion3D(
   out[0] = x + qw * tx + (sy * tz - sz * ty);
   out[1] = y + qw * ty + (sz * tx - sx * tz);
   out[2] = z + qw * tz + (sx * ty - sy * tx);
+}
+
+// Writes the three world-space columns of a unit quaternion's rotation matrix. Normalizing here keeps
+// the public collision primitive's existing non-zero-quaternion contract: a scaled quaternion denotes
+// the same rotation instead of turning its box axes into scaled or non-orthogonal SAT directions.
+function writeBoxAxes3D(qx: number, qy: number, qz: number, qw: number, out: number[] | Float64Array): void {
+  const inverseLength = 1 / Math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+  const x = qx * inverseLength;
+  const y = qy * inverseLength;
+  const z = qz * inverseLength;
+  const w = qw * inverseLength;
+  out[0] = 1 - 2 * (y * y + z * z);
+  out[1] = 2 * (x * y + w * z);
+  out[2] = 2 * (x * z - w * y);
+  out[3] = 2 * (x * y - w * z);
+  out[4] = 1 - 2 * (x * x + z * z);
+  out[5] = 2 * (y * z + w * x);
+  out[6] = 2 * (x * z + w * y);
+  out[7] = 2 * (y * z - w * x);
+  out[8] = 1 - 2 * (x * x + y * y);
 }
 
 // The closest points on two segments, written as `[ax, ay, az, bx, by, bz]`.
@@ -500,6 +601,10 @@ function clamp01(value: number): number {
 }
 
 const RELATIVE_EPSILON = 1e-12;
+const BOX_PARALLEL_AXIS_EPSILON = 1e-12;
+const boxAxesA = new Float64Array(9);
+const boxAxesB = new Float64Array(9);
+const boxSatAxes = new Float64Array(45);
 const closestPair = [0, 0, 0, 0, 0, 0];
 const localCentre = [0, 0, 0];
 const perpendicular = [0, 0, 0];

@@ -1,4 +1,4 @@
-import type { CollisionManifold3D, CollisionShape3D } from '@flighthq/types/contract';
+import type { CollisionBox3D, CollisionManifold3D, CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
@@ -6,6 +6,7 @@ import { testCollisionSupport3D } from './gjk3D';
 import { createCollisionManifold3D } from './manifold3D';
 import {
   testAabbAabbCollision3D,
+  testBoxBoxCollision3D,
   testCapsuleCapsuleCollision3D,
   testSphereAabbCollision3D,
   testSphereBoxCollision3D,
@@ -16,6 +17,25 @@ import {
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();
 });
+
+type TestCollisionBox3D = CollisionBox3D & { kind: 'box' };
+
+function createBox3D(overrides: Partial<TestCollisionBox3D> = {}): TestCollisionBox3D {
+  return {
+    kind: 'box',
+    x: 0,
+    y: 0,
+    z: 0,
+    halfX: 1,
+    halfY: 1,
+    halfZ: 1,
+    rotationX: 0,
+    rotationY: 0,
+    rotationZ: 0,
+    rotationW: 1,
+    ...overrides,
+  };
+}
 
 // A deterministic xorshift so a failure names one seed and reproduces exactly, rather than a run that
 // was unlucky once and green afterwards.
@@ -228,6 +248,71 @@ describe('testAabbAabbCollision3D', () => {
         out,
       ),
     ).toBe(false);
+  });
+});
+
+describe('testBoxBoxCollision3D', () => {
+  it('reports the shallowest face axis and A-out-of-B orientation', () => {
+    const out = createCollisionManifold3D();
+    expect(testBoxBoxCollision3D(createBox3D(), createBox3D({ x: 1.5 }), out)).toBe(true);
+    expect(out.depth).toBeCloseTo(0.5, 12);
+    expect([out.normalX, out.normalY, out.normalZ]).toEqual([-1, 0, 0]);
+  });
+
+  it('measures a rotated face in world space', () => {
+    const half = Math.SQRT1_2;
+    const out = createCollisionManifold3D();
+    expect(
+      testBoxBoxCollision3D(createBox3D({ halfX: 2, rotationW: half, rotationZ: half }), createBox3D({ y: 2.5 }), out),
+    ).toBe(true);
+    expect(out.depth).toBeCloseTo(0.5, 12);
+    expect(out.normalX).toBeCloseTo(0, 12);
+    expect(out.normalY).toBeCloseTo(-1, 12);
+    expect(out.normalZ).toBeCloseTo(0, 12);
+  });
+
+  it('treats touching as separated and clears a previous answer', () => {
+    const out = createCollisionManifold3D();
+    expect(testBoxBoxCollision3D(createBox3D(), createBox3D({ x: 1.5 }), out)).toBe(true);
+    expect(testBoxBoxCollision3D(createBox3D(), createBox3D({ x: 2 }), out)).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, normalZ: 0, overlapping: false });
+  });
+
+  it('normalizes scaled quaternion inputs before constructing axes', () => {
+    const out = createCollisionManifold3D();
+    expect(testBoxBoxCollision3D(createBox3D({ rotationW: 2 }), createBox3D({ x: 1.5 }), out)).toBe(true);
+    expect(out.depth).toBeCloseTo(0.5, 12);
+    expect(out.normalX).toBe(-1);
+  });
+
+  it('agrees with the generic convex floor over seeded orientations and separations', () => {
+    const random = createRandom(0x3db0_0b3);
+    const direct = createCollisionManifold3D();
+    const floor = createCollisionManifold3D();
+    for (let i = 0; i < 400; i += 1) {
+      const angleA = (random() - 0.5) * Math.PI * 2;
+      const angleB = (random() - 0.5) * Math.PI * 2;
+      const a = createBox3D({
+        halfX: 0.25 + random() * 1.75,
+        halfY: 0.25 + random() * 1.75,
+        halfZ: 0.25 + random() * 1.75,
+        rotationW: Math.cos(angleA * 0.5),
+        rotationZ: Math.sin(angleA * 0.5),
+      });
+      const b = createBox3D({
+        halfX: 0.25 + random() * 1.75,
+        halfY: 0.25 + random() * 1.75,
+        halfZ: 0.25 + random() * 1.75,
+        rotationW: Math.cos(angleB * 0.5),
+        rotationZ: Math.sin(angleB * 0.5),
+        x: (random() - 0.5) * 6,
+        y: (random() - 0.5) * 6,
+        z: (random() - 0.5) * 6,
+      });
+      const directHit = testBoxBoxCollision3D(a, b, direct);
+      const floorHit = testCollisionSupport3D(a, b, floor);
+      expect(directHit, `seed step ${String(i)}`).toBe(floorHit);
+    }
   });
 });
 

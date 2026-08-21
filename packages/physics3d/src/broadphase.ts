@@ -38,7 +38,8 @@ function synchronizePhysics3DBroadphaseWithScratch(
   scratch: Physics3DBroadphaseScratch,
   dt: number,
 ): void {
-  for (const body of world.bodies) {
+  for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
+    const body = world.bodies[bodyIndex];
     let minX = Infinity;
     let minY = Infinity;
     let minZ = Infinity;
@@ -46,7 +47,8 @@ function synchronizePhysics3DBroadphaseWithScratch(
     let maxY = -Infinity;
     let maxZ = -Infinity;
     let rotationRadiusSquared = 0;
-    for (const collider of body.colliders) {
+    for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex += 1) {
+      const collider = body.colliders[colliderIndex];
       updatePhysics3DColliderWorldShape(collider, body);
       writePhysics3DColliderBounds(collider, scratch.bounds);
       if (scratch.bounds.minX < minX) minX = scratch.bounds.minX;

@@ -74,9 +74,12 @@ function buildPhysics3DContactsWithScratch(
     world.events.began.length = 0;
     world.events.ended.length = 0;
   }
-  for (const contact of world.contacts) contact.touching = false;
+  for (let contactIndex = 0; contactIndex < world.contacts.length; contactIndex += 1) {
+    world.contacts[contactIndex].touching = false;
+  }
 
-  for (const pair of scratch.pairs) {
+  for (let pairIndex = 0; pairIndex < scratch.pairs.length; pairIndex += 1) {
+    const pair = scratch.pairs[pairIndex];
     const first = world.bodyByIndex.get(pair.a);
     const second = world.bodyByIndex.get(pair.b);
     if (first === undefined || second === undefined) continue;
@@ -147,8 +150,8 @@ function comparePhysics3DContacts(left: Readonly<Physics3DContact>, right: Reado
 }
 
 function hasPhysics3DSensorCollider(body: Readonly<Physics3DWorld['bodies'][number]>): boolean {
-  for (const collider of body.colliders) {
-    if (collider.sensor) return true;
+  for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex += 1) {
+    if (body.colliders[colliderIndex].sensor) return true;
   }
   return false;
 }
@@ -182,7 +185,8 @@ function mergePhysics3DContact(
   preserveOverrides: boolean,
 ): void {
   let contact: Physics3DContact | null = null;
-  for (const existing of world.contacts) {
+  for (let contactIndex = 0; contactIndex < world.contacts.length; contactIndex += 1) {
+    const existing = world.contacts[contactIndex];
     if (
       existing.bodyA === bodyA &&
       existing.bodyB === bodyB &&

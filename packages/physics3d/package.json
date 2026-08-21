@@ -44,6 +44,7 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/geometry": "*",
     "typescript": "^5.3.0"
   },
   "description": "3D rigid-body dynamics — quaternion integration over inertia tensors and a deterministic sequential-impulse solver, with explicit stepping and no hidden per-frame allocation",

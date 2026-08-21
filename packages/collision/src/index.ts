@@ -75,6 +75,7 @@ export { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionP
 export { registerBuiltInCollisionPairTests3D } from './registerBuiltInCollisionPairTests3D';
 export {
   testAabbAabbCollision3D,
+  testBoxBoxCollision3D,
   testCapsuleCapsuleCollision3D,
   testSphereAabbCollision3D,
   testSphereBoxCollision3D,

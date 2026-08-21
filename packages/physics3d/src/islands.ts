@@ -25,7 +25,8 @@ export function buildPhysics3DSolveIslands(world: Physics3DWorld): void {
   contactCounts.length = 0;
   jointCounts.length = 0;
 
-  for (const body of world.bodies) {
+  for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
+    const body = world.bodies[bodyIndex];
     if (body.type === 'static' || body.sleeping) continue;
     const root = islandRootOf(world.islandParents, body.index);
     let island = byRoot.get(root);
@@ -40,12 +41,14 @@ export function buildPhysics3DSolveIslands(world: Physics3DWorld): void {
     bodyCounts[island] += 1;
   }
 
-  for (const contact of world.contacts) {
+  for (let contactIndex = 0; contactIndex < world.contacts.length; contactIndex += 1) {
+    const contact = world.contacts[contactIndex];
     if (!contact.enabled || contact.sensor) continue;
     const island = solveIslandForPair(world, contact.bodyA, contact.bodyB);
     if (island >= 0) contactCounts[island] += 1;
   }
-  for (const joint of world.joints) {
+  for (let jointIndex = 0; jointIndex < world.joints.length; jointIndex += 1) {
+    const joint = world.joints[jointIndex];
     const solver = world.jointSolvers.get(joint.kind);
     if (solver === undefined || joint.broken) continue;
     const island =
@@ -148,11 +151,13 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
   // Build the active constraint graph even when sleeping is disabled. The same union-find owns the
   // solve islands below; clearing it and returning here would split every awake body into a singleton
   // and assign a multi-body constraint to only the first of those artificial components.
-  for (const contact of world.contacts) {
+  for (let contactIndex = 0; contactIndex < world.contacts.length; contactIndex += 1) {
+    const contact = world.contacts[contactIndex];
     if (!contact.enabled || contact.sensor) continue;
     unionDynamicPair(world, parents, contact.bodyA, contact.bodyB);
   }
-  for (const joint of world.joints) {
+  for (let jointIndex = 0; jointIndex < world.joints.length; jointIndex += 1) {
+    const joint = world.joints[jointIndex];
     const solver = world.jointSolvers.get(joint.kind);
     if (solver === undefined || joint.broken || solver.usesBodyA === false) continue;
     unionDynamicPair(world, parents, joint.bodyA, joint.bodyB);
@@ -161,7 +166,8 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
   if (!config.allowSleeping) {
     // The mechanism is off, so nothing may be left asleep from when it was on — a body that stayed
     // asleep here would never be integrated again and would look frozen for the rest of the session.
-    for (const body of bodies) {
+    for (let bodyIndex = 0; bodyIndex < bodies.length; bodyIndex += 1) {
+      const body = bodies[bodyIndex];
       body.sleeping = false;
       body.sleepTimer = 0;
     }
@@ -169,7 +175,8 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
   }
 
   // Per-body stillness first: each body's own timer, independent of who it is touching.
-  for (const body of bodies) {
+  for (let bodyIndex = 0; bodyIndex < bodies.length; bodyIndex += 1) {
+    const body = bodies[bodyIndex];
     if (body.type === 'static') continue;
     if (!body.sleepEnabled) {
       body.sleeping = false;
@@ -186,7 +193,8 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
   // A constraint driven by state outside the simulation cannot infer that its next target write is
   // coming, so its solver declares that participating bodies stay awake for the constraint's lifetime.
   // Reset after the stillness pass so even a timestep longer than timeToSleep cannot put one to sleep.
-  for (const joint of world.joints) {
+  for (let jointIndex = 0; jointIndex < world.joints.length; jointIndex += 1) {
+    const joint = world.joints[jointIndex];
     const solver = world.jointSolvers.get(joint.kind);
     if (solver?.keepsBodiesAwake !== true || joint.broken) continue;
     if (solver.usesBodyA !== false) keepBodyAwake(world, joint.bodyA);
@@ -194,14 +202,16 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
   }
 
   // The island's timer is the MINIMUM across its members: the least-settled body decides.
-  for (const body of bodies) {
+  for (let bodyIndex = 0; bodyIndex < bodies.length; bodyIndex += 1) {
+    const body = bodies[bodyIndex];
     if (body.type === 'static') continue;
     const root = islandRootOf(parents, body.index);
     const current = islandTimers.get(root);
     islandTimers.set(root, current === undefined ? body.sleepTimer : Math.min(current, body.sleepTimer));
   }
 
-  for (const body of bodies) {
+  for (let bodyIndex = 0; bodyIndex < bodies.length; bodyIndex += 1) {
+    const body = bodies[bodyIndex];
     if (body.type === 'static') continue;
     const islandTimer = islandTimers.get(islandRootOf(parents, body.index)) ?? body.sleepTimer;
     const shouldSleep = body.sleepEnabled && islandTimer >= config.timeToSleep;

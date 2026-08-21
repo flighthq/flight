@@ -3,6 +3,7 @@ import type { CollisionAabb3D, CollisionBox3D, CollisionCapsule3D, CollisionSphe
 import { registerCollisionPairTest3D } from './collisionSupport3D';
 import {
   testAabbAabbCollision3D,
+  testBoxBoxCollision3D,
   testCapsuleCapsuleCollision3D,
   testSphereAabbCollision3D,
   testSphereBoxCollision3D,
@@ -10,7 +11,7 @@ import {
   testSphereSphereCollision3D,
 } from './shapeCollision3D';
 
-// Registers the six closed-form 3D pairs over the generic GJK/EPA floor.
+// Registers the seven closed-form 3D pairs over the generic GJK/EPA floor.
 //
 // Separable from `registerBuiltInCollisionSupports3D` on purpose, and the two answer different
 // questions: registering supports is what makes a kind WORK AT ALL, while registering these makes six
@@ -28,6 +29,9 @@ import {
 export function registerBuiltInCollisionPairTests3D(): void {
   registerCollisionPairTest3D('aabb', 'aabb', (a, b, out) =>
     testAabbAabbCollision3D(a as CollisionAabb3D, b as CollisionAabb3D, out),
+  );
+  registerCollisionPairTest3D('box', 'box', (a, b, out) =>
+    testBoxBoxCollision3D(a as CollisionBox3D, b as CollisionBox3D, out),
   );
   registerCollisionPairTest3D('capsule', 'capsule', (a, b, out) =>
     testCapsuleCapsuleCollision3D(a as CollisionCapsule3D, b as CollisionCapsule3D, out),

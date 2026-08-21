@@ -30,6 +30,7 @@
     "backend-prefix:check": "tsx ./scripts/backendPrefix.ts --check",
     "benchmark:functional": "tsx ./packages/tool-capture/src/bin.ts benchmark --tool=functional --renderer=dom,canvas,webgl,webgpu --benchmark-reference=canvas",
     "benchmark:functional:baseline": "npm run benchmark:functional -- --update-benchmarks",
+    "benchmark:physics3d": "node --expose-gc --import tsx ./scripts/benchmark-physics3d.ts",
     "build": "tsc -b tsconfig.build.json",
     "build:check": "npm run packages:check && npm run typecheck",
     "build:clean": "npm run clean && npm run build",

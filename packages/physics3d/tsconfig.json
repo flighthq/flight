@@ -13,6 +13,9 @@
       "path": "../collision"
     },
     {
+      "path": "../geometry"
+    },
+    {
       "path": "../log"
     },
     {
