@@ -460,6 +460,13 @@
         "functional/text-border-box/webgpu"
       ],
       "reason": "visual weight of stroke does not agree between dom, canvas and hw"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T15:50:10.200Z",
+      "keys": ["functional/material-alpha-map-pbr/webgl", "functional/material-alpha-map-pbr/webgpu"],
+      "reason": "looks the same, holding to confirm after recommissioning"
     }
   ],
   "held": {
@@ -561,6 +568,8 @@
     "functional/text-border-box/dom": "visual weight of stroke does not agree between dom, canvas and hw",
     "functional/text-border-box/canvas": "visual weight of stroke does not agree between dom, canvas and hw",
     "functional/text-border-box/webgl": "visual weight of stroke does not agree between dom, canvas and hw",
-    "functional/text-border-box/webgpu": "visual weight of stroke does not agree between dom, canvas and hw"
+    "functional/text-border-box/webgpu": "visual weight of stroke does not agree between dom, canvas and hw",
+    "functional/material-alpha-map-pbr/webgl": "looks the same, holding to confirm after recommissioning",
+    "functional/material-alpha-map-pbr/webgpu": "looks the same, holding to confirm after recommissioning"
   }
 }
