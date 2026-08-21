@@ -155,12 +155,17 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
     joint.impulse2 = 0;
     joint.impulse3 = 0;
     joint.impulse4 = 0;
-    (joint as Physics3DHingeJoint).motorImpulse = 0;
+    const hinge = joint as Physics3DHingeJoint;
+    hinge.motorImpulse = 0;
+    hinge.lowerLimitImpulse = 0;
+    hinge.upperLimitImpulse = 0;
   },
 
   scaleAccumulatedImpulses(joint: Physics3DJoint, timestepRatio: number): void {
     const hinge = joint as Physics3DHingeJoint;
     hinge.motorImpulse = (hinge.motorImpulse ?? 0) * timestepRatio;
+    hinge.lowerLimitImpulse = (hinge.lowerLimitImpulse ?? 0) * timestepRatio;
+    hinge.upperLimitImpulse = (hinge.upperLimitImpulse ?? 0) * timestepRatio;
   },
 
   // The angle is measured from frame A's Y axis to frame B's about the shared X axis, so exchanging the ends
@@ -180,6 +185,11 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
     // field may still be absent — and `-undefined` is NaN, which is not nullish, so a later `??` would accept
     // the poison rather than replace it.
     hinge.motorImpulse = -(hinge.motorImpulse ?? 0);
+    // Exchanged, NOT negated. Each is a non-negative magnitude whose direction is carried by the row that
+    // owns it, so the push that used to hold the lower bound is the one that now holds the upper.
+    const lowerImpulse = hinge.lowerLimitImpulse ?? 0;
+    hinge.lowerLimitImpulse = hinge.upperLimitImpulse ?? 0;
+    hinge.upperLimitImpulse = lowerImpulse;
     return true;
   },
 
@@ -225,8 +235,17 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
     state[HINGE_LOCK_BIAS] = BAUMGARTE / dt;
     state[HINGE_LIMIT_BIAS] = 1 / dt;
     state[HINGE_MAX_MOTOR] = Math.max(0, dt * hinge.maxMotorTorque);
-    state[HINGE_LOWER_IMPULSE] = 0;
-    state[HINGE_UPPER_IMPULSE] = 0;
+    // Seeded from the carried accumulators rather than zeroed, which is what makes the limit rows warm
+    // start. Gated on the CURRENT `enableLimit` for the same reason the motor is: a cached impulse is only
+    // valid while the row that produced it is still being solved.
+    hinge.lowerLimitImpulse ??= 0;
+    hinge.upperLimitImpulse ??= 0;
+    if (!hinge.enableLimit) {
+      hinge.lowerLimitImpulse = 0;
+      hinge.upperLimitImpulse = 0;
+    }
+    state[HINGE_LOWER_IMPULSE] = hinge.lowerLimitImpulse;
+    state[HINGE_UPPER_IMPULSE] = hinge.upperLimitImpulse;
 
     hinge.motorImpulse ??= 0;
     if (hinge.enableMotor) {
@@ -281,6 +300,11 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
         state[HINGE_LIMIT_BIAS],
         HINGE_UPPER_IMPULSE,
       );
+      // Written back every iteration, not once at the end of the step: the solve state is per-sub-interval
+      // scratch that `beginJointSolve` reallocates, so the joint field is the only place a value survives to
+      // the next one.
+      hinge.lowerLimitImpulse = state[HINGE_LOWER_IMPULSE];
+      hinge.upperLimitImpulse = state[HINGE_UPPER_IMPULSE];
     }
 
     solveEqualityRow(
@@ -324,6 +348,12 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
     // last impulse here would exert a torque no solver ever asks for and nothing ever cancels — a disabled
     // motor that keeps turning the hinge forever.
     if (hinge.enableMotor) applyRow(bodyA, bodyB, state, HINGE_AXIS_ROW, hinge.motorImpulse);
+    // The lower row pushes along the axis and the upper row against it, which is the sign each carries in
+    // `solveLowerLimitRow`/`solveUpperLimitRow`. Reapplying them with the wrong signs would drive the joint
+    // toward the stop it is resting against instead of holding it off.
+    if (hinge.enableLimit) {
+      applyRow(bodyA, bodyB, state, HINGE_AXIS_ROW, hinge.lowerLimitImpulse - hinge.upperLimitImpulse);
+    }
   },
 };
 
@@ -337,6 +367,17 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
     joint.impulse0 = 0;
     joint.impulse1 = 0;
     joint.impulse2 = 0;
+    const cone = joint as Physics3DConeTwistJoint;
+    cone.swingLimitImpulse = 0;
+    cone.lowerTwistImpulse = 0;
+    cone.upperTwistImpulse = 0;
+  },
+
+  scaleAccumulatedImpulses(joint: Physics3DJoint, timestepRatio: number): void {
+    const cone = joint as Physics3DConeTwistJoint;
+    cone.swingLimitImpulse = (cone.swingLimitImpulse ?? 0) * timestepRatio;
+    cone.lowerTwistImpulse = (cone.lowerTwistImpulse ?? 0) * timestepRatio;
+    cone.upperTwistImpulse = (cone.upperTwistImpulse ?? 0) * timestepRatio;
   },
 
   // Vetoed, and the reason is exact rather than cautious. A kind may exchange its ends only when its own
@@ -397,9 +438,20 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
     state[CONE_TWIST_ANGLE] = 2 * Math.atan2(relativeRotation[0], relativeRotation[3]);
 
     state[CONE_LIMIT_BIAS] = 1 / dt;
-    state[CONE_SWING_IMPULSE] = 0;
-    state[CONE_LOWER_TWIST_IMPULSE] = 0;
-    state[CONE_UPPER_TWIST_IMPULSE] = 0;
+    // The swing row's AXIS moves with the tilt direction, so its carried impulse is reapplied along a
+    // slightly different axis than the one that earned it — the same approximation contact warm starting
+    // makes when a normal rotates, and it converges for the same reason: one iteration corrects it.
+    cone.swingLimitImpulse ??= 0;
+    cone.lowerTwistImpulse ??= 0;
+    cone.upperTwistImpulse ??= 0;
+    if (!cone.enableSwingLimit) cone.swingLimitImpulse = 0;
+    if (!cone.enableTwistLimit) {
+      cone.lowerTwistImpulse = 0;
+      cone.upperTwistImpulse = 0;
+    }
+    state[CONE_SWING_IMPULSE] = cone.swingLimitImpulse;
+    state[CONE_LOWER_TWIST_IMPULSE] = cone.lowerTwistImpulse;
+    state[CONE_UPPER_TWIST_IMPULSE] = cone.upperTwistImpulse;
   },
 
   solve(world: Physics3DWorld, joint: Physics3DJoint): void {
@@ -421,6 +473,7 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
         state[CONE_LIMIT_BIAS],
         CONE_SWING_IMPULSE,
       );
+      cone.swingLimitImpulse = state[CONE_SWING_IMPULSE];
     }
 
     if (cone.enableTwistLimit && state[CONE_TWIST_MASS] > 0) {
@@ -445,16 +498,30 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
         state[CONE_LIMIT_BIAS],
         CONE_UPPER_TWIST_IMPULSE,
       );
+      cone.lowerTwistImpulse = state[CONE_LOWER_TWIST_IMPULSE];
+      cone.upperTwistImpulse = state[CONE_UPPER_TWIST_IMPULSE];
     }
 
     solvePointBlock(bodyA, bodyB, joint, state);
   },
 
   warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
+    const cone = joint as Physics3DConeTwistJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return;
     const bodyA = findPhysics3DBody(world, joint.bodyA);
     const bodyB = findPhysics3DBody(world, joint.bodyB);
     if (bodyA === null || bodyB === null) return;
+
     warmStartPointBlock(bodyA, bodyB, joint);
+    // The swing row is reapplied only while it is the ACTIVE side of the cone. Outside that, the row it was
+    // measured against does not exist this sub-interval and its axis is stale.
+    if (cone.enableSwingLimit && state[CONE_SWING_ACTIVE] === 1) {
+      applyRow(bodyA, bodyB, state, CONE_SWING_ROW, -cone.swingLimitImpulse);
+    }
+    if (cone.enableTwistLimit) {
+      applyRow(bodyA, bodyB, state, CONE_TWIST_ROW, cone.lowerTwistImpulse - cone.upperTwistImpulse);
+    }
   },
 };
 
@@ -466,12 +533,25 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
 // can disagree with the numbers it describes.
 export const physics3DGeneric6DofJointSolver: Physics3DJointSolver = {
   clearAccumulatedImpulses(joint: Physics3DJoint): void {
+    const dof = joint as Physics3DGeneric6DofJoint;
+    for (let axis = 0; axis < 6; axis += 1) {
+      dof.lowerLimitImpulses[axis] = 0;
+      dof.upperLimitImpulses[axis] = 0;
+    }
     joint.impulse0 = 0;
     joint.impulse1 = 0;
     joint.impulse2 = 0;
     joint.impulse3 = 0;
     joint.impulse4 = 0;
     joint.impulse5 = 0;
+  },
+
+  scaleAccumulatedImpulses(joint: Physics3DJoint, timestepRatio: number): void {
+    const dof = joint as Physics3DGeneric6DofJoint;
+    for (let axis = 0; axis < 6; axis += 1) {
+      dof.lowerLimitImpulses[axis] *= timestepRatio;
+      dof.upperLimitImpulses[axis] *= timestepRatio;
+    }
   },
 
   // Vetoed for the same reason as a cone-twist, and for a kind whose entire purpose is per-axis freedom the
@@ -516,8 +596,15 @@ export const physics3DGeneric6DofJointSolver: Physics3DJointSolver = {
       const lower = dofLower[axis];
       const upper = dofUpper[axis];
       state[DOF_MODE + axis] = lower > upper ? DOF_FREE : lower === upper ? DOF_LOCKED : DOF_LIMITED;
-      state[DOF_LOWER_IMPULSE + axis] = 0;
-      state[DOF_UPPER_IMPULSE + axis] = 0;
+      // Carried only while the axis is still LIMITED. An axis whose bounds changed it to free or locked has
+      // an accumulator describing a constraint that no longer exists, and reapplying it would push against a
+      // bound the joint may no longer be anywhere near.
+      if (state[DOF_MODE + axis] !== DOF_LIMITED) {
+        dof.lowerLimitImpulses[axis] = 0;
+        dof.upperLimitImpulses[axis] = 0;
+      }
+      state[DOF_LOWER_IMPULSE + axis] = dof.lowerLimitImpulses[axis];
+      state[DOF_UPPER_IMPULSE + axis] = dof.upperLimitImpulses[axis];
       if (state[DOF_MODE + axis] === DOF_FREE) continue;
 
       if (axis < 3) {
@@ -590,13 +677,16 @@ export const physics3DGeneric6DofJointSolver: Physics3DJointSolver = {
         state[DOF_LIMIT_BIAS],
         DOF_UPPER_IMPULSE + axis,
       );
+      dof.lowerLimitImpulses[axis] = state[DOF_LOWER_IMPULSE + axis];
+      dof.upperLimitImpulses[axis] = state[DOF_UPPER_IMPULSE + axis];
     }
   },
 
-  // Only the locked axes are warm-started. A limited axis accumulates within the step and starts the next one
-  // cold, so there is no accumulator here to reapply — reapplying the locked block's slot for it would push
-  // against a bound the joint may no longer be anywhere near.
+  // Locked axes reapply the equality block's slot; limited axes reapply their own pair of one-sided
+  // accumulators. The two come from different places because a locked axis is one signed row while a limited
+  // axis is two rows that may only push, and neither can be read out of the other's storage.
   warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
+    const dof = joint as Physics3DGeneric6DofJoint;
     const state = getJointSolveState(joint);
     if (state === undefined) return;
     const bodyA = findPhysics3DBody(world, joint.bodyA);
@@ -604,8 +694,13 @@ export const physics3DGeneric6DofJointSolver: Physics3DJointSolver = {
     if (bodyA === null || bodyB === null) return;
 
     for (let axis = 0; axis < 6; axis += 1) {
-      if (state[DOF_MODE + axis] !== DOF_LOCKED) continue;
-      applyRow(bodyA, bodyB, state, DOF_ROWS + axis * ROW_LENGTH, readJointImpulse(joint, axis));
+      const mode = state[DOF_MODE + axis];
+      const rowOffset = DOF_ROWS + axis * ROW_LENGTH;
+      if (mode === DOF_LOCKED) {
+        applyRow(bodyA, bodyB, state, rowOffset, readJointImpulse(joint, axis));
+      } else if (mode === DOF_LIMITED) {
+        applyRow(bodyA, bodyB, state, rowOffset, dof.lowerLimitImpulses[axis] - dof.upperLimitImpulses[axis]);
+      }
     }
   },
 };
@@ -623,12 +718,17 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
     joint.impulse3 = 0;
     joint.impulse4 = 0;
     joint.impulse5 = 0;
-    (joint as Physics3DSliderJoint).motorImpulse = 0;
+    const slider = joint as Physics3DSliderJoint;
+    slider.motorImpulse = 0;
+    slider.lowerLimitImpulse = 0;
+    slider.upperLimitImpulse = 0;
   },
 
   scaleAccumulatedImpulses(joint: Physics3DJoint, timestepRatio: number): void {
     const slider = joint as Physics3DSliderJoint;
     slider.motorImpulse = (slider.motorImpulse ?? 0) * timestepRatio;
+    slider.lowerLimitImpulse = (slider.lowerLimitImpulse ?? 0) * timestepRatio;
+    slider.upperLimitImpulse = (slider.upperLimitImpulse ?? 0) * timestepRatio;
   },
 
   // The translation is measured from A's anchor to B's along the shared axis, so exchanging the ends reverses
@@ -643,6 +743,11 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
     slider.upperTranslation = -lower;
     slider.motorSpeed = -slider.motorSpeed;
     slider.motorImpulse = -(slider.motorImpulse ?? 0);
+    // Exchanged, not negated — see the hinge's swapEnds for why a magnitude behaves differently here from
+    // the bound it holds.
+    const lowerImpulse = slider.lowerLimitImpulse ?? 0;
+    slider.lowerLimitImpulse = slider.upperLimitImpulse ?? 0;
+    slider.upperLimitImpulse = lowerImpulse;
     return true;
   },
 
@@ -676,8 +781,14 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
     state[SLIDER_LOCK_BIAS] = BAUMGARTE / dt;
     state[SLIDER_LIMIT_BIAS] = 1 / dt;
     state[SLIDER_MAX_MOTOR] = Math.max(0, dt * slider.maxMotorForce);
-    state[SLIDER_LOWER_IMPULSE] = 0;
-    state[SLIDER_UPPER_IMPULSE] = 0;
+    slider.lowerLimitImpulse ??= 0;
+    slider.upperLimitImpulse ??= 0;
+    if (!slider.enableLimit) {
+      slider.lowerLimitImpulse = 0;
+      slider.upperLimitImpulse = 0;
+    }
+    state[SLIDER_LOWER_IMPULSE] = slider.lowerLimitImpulse;
+    state[SLIDER_UPPER_IMPULSE] = slider.upperLimitImpulse;
 
     slider.motorImpulse ??= 0;
     if (slider.enableMotor) {
@@ -730,6 +841,8 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
         state[SLIDER_LIMIT_BIAS],
         SLIDER_UPPER_IMPULSE,
       );
+      slider.lowerLimitImpulse = state[SLIDER_LOWER_IMPULSE];
+      slider.upperLimitImpulse = state[SLIDER_UPPER_IMPULSE];
     }
 
     solveAngularBlock(bodyA, bodyB, joint, state, SLIDER_ANGULAR_MASS, SLIDER_ANGULAR_BIAS);
@@ -769,6 +882,9 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
     applyRow(bodyA, bodyB, state, SLIDER_PERP_ROW0, joint.impulse0);
     applyRow(bodyA, bodyB, state, SLIDER_PERP_ROW1, joint.impulse1);
     if (slider.enableMotor) applyRow(bodyA, bodyB, state, SLIDER_AXIS_ROW, slider.motorImpulse);
+    if (slider.enableLimit) {
+      applyRow(bodyA, bodyB, state, SLIDER_AXIS_ROW, slider.lowerLimitImpulse - slider.upperLimitImpulse);
+    }
   },
 };
 
