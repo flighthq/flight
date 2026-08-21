@@ -1,9 +1,31 @@
 # WebGPU 2D supersample blocker
 
-**Status:** deterministic source regression, not a cold-cache or worker-count failure. This blocks both
-the AA-off mesh census and Arc J2 because a full functional report currently contains 25 WebGPU
-`assertRender` failures. No failing cells were excluded and no baselines were changed during this
-diagnosis.
+**Status: closed.** Measured on 2026-08-21 at base
+`d425ac4c6896c01fb3f1b2fd32f74cbf1ae0a3a3`: the exact clean-build sequential WebGPU validation below
+completed with **0 load failures** across all 207 functional entries. The former 25-failure population
+is historical and no longer blocks the AA-off mesh census or Arc J2.
+
+## Current-base closure
+
+The current content fix makes the allocator and projection agree. `beginWgpuRenderPass` derives the
+target's supersample scale with `getWgpuRenderTargetSupersampleScale`, publishes the logical extent
+(`target.width / supersample`, `target.height / supersample`) through `runtime.renderTargetViewport`,
+and still gives the render-pass encoder the physical `target.width` and `target.height`. Logical 2D
+coordinates therefore span the full physical supersample target.
+
+After `npm run build:functional`, this exact sequential reproduction completed successfully:
+
+```sh
+tsx packages/tool-capture/src/bin.ts validate --tool=functional --renderer=webgpu \
+  --no-regression --no-parity --report --out=<sequential-output> --sequential
+```
+
+The generated report (2026-08-21T09:01:59.217Z) recorded `loadFailures: 0`, `aborted: false`, and
+`shouldFail: false`. The 33 skips were out-of-scope renderers or entries without a WebGPU fingerprint,
+not hard failures. The historical diagnosis and its measured 25-cell census are preserved below.
+
+> **Historical record boundary:** everything from this point describes the original failure at
+> `50e987798904ae1243b2318d7b2517d840dc3a68`, not the current failure population.
 
 ## Reproduction
 
