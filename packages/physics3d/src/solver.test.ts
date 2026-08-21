@@ -214,6 +214,24 @@ describe('preparePhysics3DContactConstraints', () => {
 
     expect(world.solver.constraints[0].points[0].normalImpulse).toBe(0);
   });
+
+  it('retains every steady-topology constraint workspace object', () => {
+    const world = createFallingBoxWorld();
+    const constraints = world.solver.constraints;
+    const byContact = world.solver.constraintByContact;
+    preparePhysics3DContactConstraints(world);
+    const constraint = constraints[0];
+    const points = constraint.points;
+    const point = points[0];
+
+    preparePhysics3DContactConstraints(world);
+
+    expect(world.solver.constraints).toBe(constraints);
+    expect(world.solver.constraintByContact).toBe(byContact);
+    expect(world.solver.constraints[0]).toBe(constraint);
+    expect(world.solver.constraints[0].points).toBe(points);
+    expect(world.solver.constraints[0].points[0]).toBe(point);
+  });
 });
 
 describe('solvePhysics3DContactPositions', () => {
