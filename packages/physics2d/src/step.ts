@@ -28,6 +28,8 @@ import { synchronizePhysics2DBroadphase, synchronizePhysics2DSweptBroadphase } f
 import { updatePhysics2DColliderWorldShape } from './colliderTransform';
 import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
 import { isPhysics2DPairJointSuppressed } from './jointCollisionSuppression';
+import { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions';
+import { removePhysics2DJoint } from './jointRegistry';
 import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
 import { steppingPhysics2DWorlds } from './ownership';
 import {
@@ -404,14 +406,6 @@ function effectiveMass(
   return total > 0 ? 1 / total : 0;
 }
 
-// Advances the simulation by `dt` seconds. Everything the step does, it does because the caller asked:
-// there is no implicit accumulation, no fixed-timestep loop hidden inside, and no allocation once the
-// world's bodies and contacts exist.
-//
-// The order of the phases is not arbitrary. World shapes must be current before the broadphase sees
-// their bounds; the contact set must be built before impulses can warm-start from it; velocities are
-// solved before positions are integrated, so the integration moves bodies that have already had their
-// constraints applied rather than moving them and correcting afterwards.
 // Installs the diagnostics seam consulted once per successful step, before joints are prepared. Pass
 // `null` to remove it. Called by `enablePhysics2DGuards`; nothing in the solver path installs one, which
 // is what keeps the message text out of a build that never opts in.
@@ -425,6 +419,14 @@ export function setPhysics2DStepGuard(guard: Physics2DStepGuard | null): void {
   physics2DStepGuard = guard;
 }
 
+// Advances the simulation by `dt` seconds. Everything the step does, it does because the caller asked:
+// there is no implicit accumulation, no fixed-timestep loop hidden inside, and no allocation once the
+// world's bodies and contacts exist.
+//
+// The order of the phases is not arbitrary. World shapes must be current before the broadphase sees
+// their bounds; the contact set must be built before impulses can warm-start from it; velocities are
+// solved before positions are integrated, so the integration moves bodies that have already had their
+// constraints applied rather than moving them and correcting afterwards.
 export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   if (steppingPhysics2DWorlds.has(world)) {
     throw new Error('Cannot step a physics world recursively');
@@ -440,6 +442,12 @@ export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
     releasePhysics2DStepScratch(scratch);
     steppingPhysics2DWorlds.delete(world);
   }
+  // Detection happens inside the step, where the converged impulses and the timestep are both in hand;
+  // the removal happens HERE, out from under the stepping guard, because a joint leaving the world is a
+  // topology change and `removePhysics2DJoint` refuses to run during a step for exactly the reason that
+  // rule exists. It also means a post-solve hook still sees a joint that broke on the step it observed,
+  // which is the truthful ordering: the joint was there, carrying load, right up until it failed.
+  for (const broken of world.jointEvents.broke) removePhysics2DJoint(world, broken.joint);
 }
 
 function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
@@ -460,6 +468,8 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
     physics2DStepGuard?.(world, dt);
     return;
   }
+
+  world.jointEvents.broke.length = 0;
 
   // Only on a step that will actually run. A declined step already spoke above, and repeating the joint
   // complaint underneath it would bury the reason nothing moved at all.
@@ -658,6 +668,33 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
         throw new Error('Physics2D post-solve hook produced invalid contact state');
       }
     }
+  }
+
+  recordPhysics2DBrokenJoints(world, dt);
+}
+
+// Compares every breakable joint's converged load against its own thresholds, recording the ones that
+// failed. Removal is the caller's next statement, not this function's — see `stepPhysics2D`.
+//
+// The force is compared as a MAGNITUDE and the torque as an absolute value, because a threshold is a
+// strength and a strength has no direction: a bracket pulled apart and the same bracket crushed both
+// reach it. They are checked independently, so exceeding either one is enough.
+function recordPhysics2DBrokenJoints(world: Physics2DWorld, dt: number): void {
+  for (const joint of world.joints) {
+    // The overwhelmingly common case, and worth skipping before the reaction is computed: an
+    // unbreakable joint would otherwise pay for a query whose answer it discards.
+    if (joint.breakForce === Number.POSITIVE_INFINITY && joint.breakTorque === Number.POSITIVE_INFINITY) continue;
+    if (!writePhysics2DJointReaction(world, joint, dt, physics2DBreakScratch)) continue;
+    const forceX = physics2DBreakScratch.forceX;
+    const forceY = physics2DBreakScratch.forceY;
+    const torque = physics2DBreakScratch.torque;
+    if (
+      forceX * forceX + forceY * forceY <= joint.breakForce * joint.breakForce &&
+      Math.abs(torque) <= joint.breakTorque
+    ) {
+      continue;
+    }
+    world.jointEvents.broke.push({ forceX, forceY, joint, torque });
   }
 }
 
@@ -1321,6 +1358,7 @@ function releasePhysics2DStepScratch(scratch: Physics2DStepScratch): void {
 }
 
 let activePhysics2DStepScratch: Physics2DStepScratch | null = null;
+const physics2DBreakScratch = createPhysics2DJointReaction();
 let physics2DJointResolutionGuard: Physics2DJointResolutionGuard | null = null;
 let physics2DStepGuard: Physics2DStepGuard | null = null;
 const physics2DStepScratchPool: Physics2DStepScratch[] = [createPhysics2DStepScratch()];

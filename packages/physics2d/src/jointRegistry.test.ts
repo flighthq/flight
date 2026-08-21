@@ -35,6 +35,8 @@ function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorB
     localAnchorBX: anchorBX,
     localAnchorBY: 0,
     collideConnected: false,
+    breakForce: Number.POSITIVE_INFINITY,
+    breakTorque: Number.POSITIVE_INFINITY,
     impulse0: 0,
     impulse1: 0,
     impulse2: 0,

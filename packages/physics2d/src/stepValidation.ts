@@ -181,11 +181,25 @@ function isPhysics2DJointValid(joint: Readonly<Physics2DJoint>): boolean {
   ) {
     return false;
   }
+  // The two break thresholds are the only fields on a joint allowed to be non-finite, because `Infinity`
+  // is how a joint says it does not break. Everything else non-finite is a fault: a NaN anchor or a NaN
+  // impulse spreads through the solver in one step and never comes back.
+  if (!isPhysics2DBreakThresholdValid(joint.breakForce) || !isPhysics2DBreakThresholdValid(joint.breakTorque)) {
+    return false;
+  }
   for (const key in joint) {
+    if (key === 'breakForce' || key === 'breakTorque') continue;
     const value = joint[key as keyof typeof joint];
     if (typeof value === 'number' && !Number.isFinite(value)) return false;
   }
   return true;
+}
+
+// A threshold is a non-negative magnitude or `Infinity`. NaN is rejected rather than treated as
+// unbreakable: every comparison against NaN is false, so a NaN threshold would silently mean "never
+// breaks" while looking like a number the author chose.
+function isPhysics2DBreakThresholdValid(threshold: number): boolean {
+  return typeof threshold === 'number' && !Number.isNaN(threshold) && threshold >= 0;
 }
 
 function isRigidBody2DStateValid(body: Readonly<RigidBody2D>): boolean {

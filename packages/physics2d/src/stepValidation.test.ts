@@ -99,6 +99,8 @@ describe('isPhysics2DJointStateValid', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,

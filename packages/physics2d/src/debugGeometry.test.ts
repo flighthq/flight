@@ -19,6 +19,8 @@ function baseJoint(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
     bodyA,
     bodyB,
     collideConnected: false,
+    breakForce: Number.POSITIVE_INFINITY,
+    breakTorque: Number.POSITIVE_INFINITY,
     impulse0: 0,
     impulse1: 0,
     impulse2: 0,
