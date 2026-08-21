@@ -1,3 +1,5 @@
+import { createQuaternion, createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
+import type { RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -35,6 +37,24 @@ describe('integrateRigidBody3DPose', () => {
     integrateRigidBody3DPose(body, 0.5);
 
     expect(body.x).toBeCloseTo(1.5, 12);
+  });
+
+  it('keeps an offset centre of mass stationary during pure rotation', () => {
+    const body = dynamicSphere();
+    body.centerX = 2;
+    body.centerY = -1;
+    body.centerZ = 0.5;
+    body.angularVelocityX = 1;
+    body.angularVelocityY = -2;
+    body.angularVelocityZ = 3;
+    const before = getWorldCenter(body);
+
+    integrateRigidBody3DPose(body, 0.25);
+
+    const after = getWorldCenter(body);
+    expect(after.x).toBeCloseTo(before.x, 12);
+    expect(after.y).toBeCloseTo(before.y, 12);
+    expect(after.z).toBeCloseTo(before.z, 12);
   });
 
   it('leaves a static body alone', () => {
@@ -238,6 +258,16 @@ describe('refreshRigidBody3DWorldInertia', () => {
     expect(body.inverseInertiaWorldYY).toBe(0);
   });
 });
+
+function getWorldCenter(body: Readonly<RigidBody3D>): { x: number; y: number; z: number } {
+  const center = createVector3(body.centerX, body.centerY, body.centerZ);
+  const orientation = createQuaternion(body.orientationX, body.orientationY, body.orientationZ, body.orientationW);
+  rotateVector3ByQuaternion(center, center, orientation);
+  center.x += body.x;
+  center.y += body.y;
+  center.z += body.z;
+  return center;
+}
 
 function dynamicSphere(): ReturnType<typeof createRigidBody3D> {
   const body = createRigidBody3D();

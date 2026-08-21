@@ -34,12 +34,15 @@ export function clearRigidBody3DForces(body: RigidBody3D): void {
 
 // Advances a body's pose by its current velocity over `dt`.
 //
-// Position is a straight Euler step. Orientation is not: a quaternion is advanced by the quaternion
-// derivative `0.5 * omega * q`, where omega is the angular velocity as a pure quaternion. That step
-// leaves the unit sphere — it is a tangent move on a curved manifold — so the result is renormalized.
-// Skipping the renormalization does not look wrong for a step or a hundred; it accumulates into a
-// quaternion whose rotation matrix is no longer orthonormal, which reads downstream as a body that is
-// subtly sheared and getting worse.
+// The CENTRE OF MASS takes the straight Euler step because that is where `velocity` is measured. The
+// stored position is the body's authored origin, which may be offset from that centre: after rotation it
+// is shifted by oldRotatedCentre - newRotatedCentre so pure angular motion cannot make the centre orbit.
+//
+// Orientation is advanced by the quaternion derivative `0.5 * omega * q`, where omega is the angular
+// velocity as a pure quaternion. That step leaves the unit sphere — it is a tangent move on a curved
+// manifold — so the result is renormalized. Skipping the renormalization does not look wrong for a step
+// or a hundred; it accumulates into a quaternion whose rotation matrix is no longer orthonormal, which
+// reads downstream as a body that is subtly sheared and getting worse.
 export function integrateRigidBody3DPose(body: RigidBody3D, dt: number): void {
   if (body.type === 'static' || body.sleeping) return;
 
@@ -57,6 +60,22 @@ export function integrateRigidBody3DPose(body: RigidBody3D, dt: number): void {
   const qZ = body.orientationZ;
   const qW = body.orientationW;
 
+  const centerX = body.centerX;
+  const centerY = body.centerY;
+  const centerZ = body.centerZ;
+  const offset = centerX !== 0 || centerY !== 0 || centerZ !== 0;
+  let oldCenterX = 0;
+  let oldCenterY = 0;
+  let oldCenterZ = 0;
+  if (offset) {
+    const tX = 2 * (qY * centerZ - qZ * centerY);
+    const tY = 2 * (qZ * centerX - qX * centerZ);
+    const tZ = 2 * (qX * centerY - qY * centerX);
+    oldCenterX = centerX + qW * tX + qY * tZ - qZ * tY;
+    oldCenterY = centerY + qW * tY + qZ * tX - qX * tZ;
+    oldCenterZ = centerZ + qW * tZ + qX * tY - qY * tX;
+  }
+
   const half = dt * 0.5;
   const nX = qX + half * (wX * qW + wY * qZ - wZ * qY);
   const nY = qY + half * (wY * qW + wZ * qX - wX * qZ);
@@ -71,10 +90,22 @@ export function integrateRigidBody3DPose(body: RigidBody3D, dt: number): void {
     return;
   }
   const scale = 1 / Math.sqrt(lengthSquared);
-  body.orientationX = nX * scale;
-  body.orientationY = nY * scale;
-  body.orientationZ = nZ * scale;
-  body.orientationW = nW * scale;
+  const nextX = nX * scale;
+  const nextY = nY * scale;
+  const nextZ = nZ * scale;
+  const nextW = nW * scale;
+  if (offset) {
+    const tX = 2 * (nextY * centerZ - nextZ * centerY);
+    const tY = 2 * (nextZ * centerX - nextX * centerZ);
+    const tZ = 2 * (nextX * centerY - nextY * centerX);
+    body.x += oldCenterX - (centerX + nextW * tX + nextY * tZ - nextZ * tY);
+    body.y += oldCenterY - (centerY + nextW * tY + nextZ * tX - nextX * tZ);
+    body.z += oldCenterZ - (centerZ + nextW * tZ + nextX * tY - nextY * tX);
+  }
+  body.orientationX = nextX;
+  body.orientationY = nextY;
+  body.orientationZ = nextZ;
+  body.orientationW = nextW;
 }
 
 // Advances a body's velocities by the accumulated forces, gravity, and damping over `dt`.
