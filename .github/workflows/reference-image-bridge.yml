@@ -128,12 +128,48 @@ jobs:
 
             // Artifact metadata only — this job never downloads or extracts a candidate archive, because
             // it holds the credential that can write to the ReferenceImage repository (§7).
-            const { data } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: run.id,
-            });
-            const candidates = data.artifacts.filter((a) => a.name.startsWith('reference-image-candidate-'));
+            const pageSize = 100;
+            const artifactsById = new Map();
+            let receivedArtifactCount = 0;
+            let totalArtifactCount;
+            for (let page = 1; ; page += 1) {
+              const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: run.id,
+                page,
+                per_page: pageSize,
+              });
+              if (!Number.isSafeInteger(data.total_count) || data.total_count < 0) {
+                core.setFailed(`artifact API returned invalid total_count ${data.total_count}`);
+                return;
+              }
+              if (totalArtifactCount === undefined) {
+                totalArtifactCount = data.total_count;
+              } else if (data.total_count !== totalArtifactCount) {
+                core.setFailed(
+                  `artifact API total_count changed from ${totalArtifactCount} to ${data.total_count} during pagination`,
+                );
+                return;
+              }
+              receivedArtifactCount += data.artifacts.length;
+              for (const artifact of data.artifacts) {
+                artifactsById.set(artifact.id, artifact);
+              }
+              if (receivedArtifactCount >= totalArtifactCount || data.artifacts.length === 0) break;
+            }
+            if (artifactsById.size !== totalArtifactCount) {
+              core.setFailed(
+                `artifact pagination collected ${artifactsById.size} unique artifact(s), API reports ${totalArtifactCount}`,
+              );
+              return;
+            }
+            const artifacts = [...artifactsById.values()].sort(
+              (left, right) => left.name.localeCompare(right.name) || String(left.id).localeCompare(String(right.id)),
+            );
+            const candidates = artifacts.filter((artifact) =>
+              artifact.name.startsWith('reference-image-candidate-'),
+            );
             if (candidates.length === 0) {
               core.info('no candidate artifact on this run — nothing was commissioned');
               return;
