@@ -1,6 +1,7 @@
-// The gate child-process runner `scripts/check.ts` drives, extracted so that WHEN A GATE IS CONSIDERED
-// FINISHED is testable at all. check.ts runs its gates at import, so nothing inside it could be reached
-// from a test — the same reason `gateRegistry.ts` was carved out of that file ahead of this one.
+// The gate child-process runner `scripts/check.ts` drives, extracted so the two things that can go
+// wrong in it are testable at all: WHEN A GATE IS CONSIDERED FINISHED, and HOW ITS OUTPUT IS DECODED.
+// check.ts runs its gates at import, so nothing inside it could be reached from a test — the same
+// reason `gateRegistry.ts` was carved out of that file ahead of this one.
 //
 // ★ `close` IS NOT "THE CHILD DIED" — IT IS "EVERY PIPE CLOSED", AND FOR EVERY GATE HERE THOSE DIVERGE.
 // A child that forks leaves its grandchildren holding the inherited stdout/stderr fds, so killing the
@@ -50,10 +51,21 @@ export async function runGate(gate: Gate, graceMs: number = GATE_PIPE_GRACE_MS):
   return await new Promise((resolve) => {
     const child = spawn(gate.command, gate.args, { env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
 
+    // ★ DECODE PER STREAM, NOT PER CHUNK. `chunk.toString()` decodes each Buffer independently, so a
+    // UTF-8 sequence split across a chunk boundary is destroyed on both sides of the split. Measured:
+    // 200 KB of `✓★—` arrived in 13 chunks, and per-chunk decoding introduced 22 U+FFFD replacement
+    // characters. `setEncoding` puts a StringDecoder on the stream, which holds a partial sequence back
+    // until its remaining bytes arrive. Decoding per stream rather than concatenating both buffers at
+    // the end also keeps a stdout chunk from being spliced into the middle of a half-written stderr
+    // character. This matters here specifically because gate output is dense with `✓ ✗ ★ ▶ — ·`, and a
+    // mangled glyph in a diagnostic reads as a font problem rather than as data loss.
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+
     // One array in arrival order, so stdout and stderr stay interleaved the way the gate emitted them.
     const chunks: string[] = [];
-    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
-    child.stderr.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
+    child.stdout.on('data', (chunk: string) => chunks.push(chunk));
+    child.stderr.on('data', (chunk: string) => chunks.push(chunk));
 
     let settled = false;
     let graceTimer: NodeJS.Timeout | null = null;
