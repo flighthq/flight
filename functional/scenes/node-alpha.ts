@@ -30,9 +30,10 @@ const TOP_X = 350;
 const TOP_Y = 300;
 const SQUARE = 200;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

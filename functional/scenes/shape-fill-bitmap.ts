@@ -49,9 +49,10 @@ function buildCheckerCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

@@ -5,7 +5,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -13,7 +13,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -25,7 +25,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0
@@ -33,7 +33,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0
@@ -45,7 +45,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "webgl",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -53,7 +53,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "webgl",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -65,7 +65,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -73,7 +73,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d425213026d9c761334bc67bf7cc577a07166f29ef38ecc83673021965d501d",
+      "sourceHash": "0cae686ade0b9f76064bf4abfdad9f802724000b3300c52cad47086eb463ee07",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0

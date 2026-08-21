@@ -46,9 +46,10 @@ const SCALE = 8; // 60 → 480 px per axis
 const PANEL_W = NATURAL * SCALE;
 const PANEL_H = NATURAL * SCALE;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

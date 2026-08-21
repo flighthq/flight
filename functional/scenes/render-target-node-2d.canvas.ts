@@ -24,9 +24,10 @@ const NODE_Y = 160;
 const NODE_WIDTH = 360;
 const NODE_HEIGHT = 280;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const target = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x101018ff,

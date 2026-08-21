@@ -5,7 +5,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "c1ab7732ba9120ad016a3d4253a454d9d895a109dd314388aab79fb812008cf4",
+      "sourceHash": "76bd13db2c664b3ba4a00d44bbcff6059673503114597b4b91f2ab97a7b35695",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -13,7 +13,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "c1ab7732ba9120ad016a3d4253a454d9d895a109dd314388aab79fb812008cf4",
+      "sourceHash": "76bd13db2c664b3ba4a00d44bbcff6059673503114597b4b91f2ab97a7b35695",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0
@@ -25,7 +25,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "a90ca8d7557d85cc23a5b0f01cbe096536f6a9b269be4059317b5b93b68b0ed0",
+      "sourceHash": "7539f167e3c3c5fc76654a40fbbdbdd15d8c56eaacdfc85998382b03a066d642",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0
@@ -33,7 +33,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "a90ca8d7557d85cc23a5b0f01cbe096536f6a9b269be4059317b5b93b68b0ed0",
+      "sourceHash": "7539f167e3c3c5fc76654a40fbbdbdd15d8c56eaacdfc85998382b03a066d642",
       "targetKind": "dom",
       "verifyPublished": false,
       "warmupFrames": 0

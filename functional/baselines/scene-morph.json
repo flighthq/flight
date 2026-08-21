@@ -4,7 +4,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "3218314e2d2e17e933ca0da9547b3898a9515b841faea873dccf3521792c19db",
+      "sourceHash": "881666615cba3edc9e732eaea988b5485cd218bbbaef3fec9998528e1051e4b2",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0

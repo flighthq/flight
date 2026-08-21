@@ -48,9 +48,10 @@ const GREEN_COLOR = 0x33cc44ff; // 24-bit RGB
 
 const RECT_SIZE = 160;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const target = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

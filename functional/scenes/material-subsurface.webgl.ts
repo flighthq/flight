@@ -42,7 +42,7 @@ document.body.appendChild(canvas);
 export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x0a0c10ff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 registerGlWrappedDiffusePbrExtension(state);
 registerGlExtendedPbrMaterial(state);
