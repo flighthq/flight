@@ -9,7 +9,7 @@
 // launchBrowser's init script establishes (__ftRealRequestAnimationFrame, __ftRenderImage).
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { BITMAP_FINGERPRINT_COMPUTATION_ID } from '@flighthq/bitmap/contract';
@@ -338,6 +338,7 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
     if (isAborted()) break;
     const urlPath = getCaptureEntryRoute(entry, renderer, tool);
     const url = `${baseUrl}/${urlPath}`;
+    const backend = rendererBackend(renderer);
     const { outDir, tmpScreenshot, finalScreenshot, tmpLogs, finalLogs, statusPath } = getCaptureOutputPaths(
       outBase,
       tool,
@@ -345,6 +346,14 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       renderer,
     );
     mkdirSync(outDir, { recursive: true });
+    // A failed verified-DOM attempt must not leave a previous run's canonical image beside its fresh
+    // error status. That combination looks reviewable to artifact discovery even though these bytes were
+    // never examined by this attempt. Observe and unverified DOM deliberately retain their page-image
+    // fallback contract; this cleanup belongs only to the fail-closed verified verdict path.
+    if (verify && backend === 'dom' && !observe) {
+      rmSync(tmpScreenshot, { force: true });
+      rmSync(finalScreenshot, { force: true });
+    }
 
     const logs: unknown[] = [];
     const page = await context.newPage();
@@ -467,6 +476,14 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
         verification = verificationResult.verification;
         domScreenshot = verificationResult.domScreenshot;
         if (verification?.state === 'failed') throw new Error(verification.error ?? 'render verification failed');
+        if (backend === 'dom' && !observe && (!verificationResult.domReadbackProvided || domScreenshot === null)) {
+          throw new Error(
+            verificationResult.domReadbackProvided
+              ? 'verified DOM render did not produce an element-source PNG (element screenshot failed)'
+              : 'verified DOM render did not produce an element-source PNG ' +
+                  '(registered DOM target or readback bridge unavailable)',
+          );
+        }
         if (verification?.state !== 'passed') throw new Error('render verifier did not reach a terminal state');
         // Held rather than published here: the fingerprint's provenance is not knowable yet, and a
         // fingerprint published without it is a value its consumer can only store unstamped.
@@ -505,7 +522,6 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // True when no verified/non-blank frame was produced and the screenshot below is a fallback.
       // Only ever set in observe mode: gate mode throws instead (a blank frame must not pass silently).
       let blank = false;
-      const backend = rendererBackend(renderer);
       const dataUrl = waitsForVerification ? await getRenderImageDataUrl(page) : null;
       // Zero-integration path: in observe mode, prefer reading the frame straight from the WebGL contexts
       // the harness intercepted at getContext time (see launchBrowser). No client verifier registration
@@ -547,9 +563,15 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       } else if (backend === 'dom') {
         // Reuse the element screenshot the DOM readback already took for the fingerprint
         // (captureDomReadback.ts), so the reviewed image and the fingerprinted image are the same
-        // artifact — one capture, two uses, matching every other backend. Falls back to a page
-        // screenshot when verification was not requested or the readback produced no screenshot.
-        screenshotBuffer = domScreenshot ?? (await page.screenshot());
+        // artifact — one capture, two uses, matching every other backend. A verified verdict may never
+        // substitute a later page screenshot for that source; only unverified/observe capture is allowed
+        // to use the best-available page image as diagnostic evidence.
+        if (waitsForVerification && !observe) {
+          if (domScreenshot === null) throw new Error('verified DOM render lost its element-source PNG');
+          screenshotBuffer = domScreenshot;
+        } else {
+          screenshotBuffer = domScreenshot ?? (await page.screenshot());
+        }
       } else if (backend === 'webgl' && captureFrames > 0) {
         // launchBrowser forces preserveDrawingBuffer in deterministic frame mode, so read the canvas
         // itself instead of Chromium's compositor. Headless SwiftShader can display a WebGL canvas in
@@ -571,14 +593,35 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // mean something different from every other value in the same column with nothing downstream able
       // to tell them apart. This and the recapture that re-recorded all 574 committed values were one
       // operation — the meaning of the field and the values stored under it cannot diverge.
-      // ★ THE DIAGNOSTICS ARE WRITTEN BEFORE THE STEP THAT CAN FAIL. Hashing throws on a frame it will
-      // not record, and that is exactly the frame someone needs to look at; computing first left a failed
-      // capture with no screenshot and no logs, so the evidence existed only when it was not needed.
-      // Atomic write: tmp files renamed into place, status.json written last.
-      writeFileSync(tmpScreenshot, screenshotBuffer);
+      // Logs remain useful when screenshot validation fails, but a non-observe screenshot is verdict
+      // input, not merely a diagnostic: validate its decoded pixels before promoting it to the canonical
+      // path. Observe is the explicit eyes-only exception and keeps its best-available image even when a
+      // later diagnostic step cannot interpret it.
       writeFileSync(tmpLogs, logs.map((l) => JSON.stringify(l)).join('\n'));
-      renameSync(tmpScreenshot, finalScreenshot);
       renameSync(tmpLogs, finalLogs);
+      if (observe) {
+        writeFileSync(tmpScreenshot, screenshotBuffer);
+        renameSync(tmpScreenshot, finalScreenshot);
+      }
+
+      let hash: string;
+      try {
+        hash = await hashCaptureScreenshotPixels(
+          page,
+          screenshotBuffer,
+          verification?.state === 'passed' ? null : OBSERVE_BLANK_COVERAGE,
+        );
+      } catch (error) {
+        if (waitsForVerification && backend === 'dom' && !observe) {
+          const detail = error instanceof Error ? error.message : String(error);
+          throw new Error(`verified DOM render produced an invalid element-source PNG: ${detail}`);
+        }
+        throw error;
+      }
+      if (!observe) {
+        writeFileSync(tmpScreenshot, screenshotBuffer);
+        renameSync(tmpScreenshot, finalScreenshot);
+      }
 
       // ★ ONE PROVENANCE OBJECT FOR BOTH FIELDS, BUILT ONCE FROM THIS CAPTURE. The fingerprint and the
       // sha256 are written by different passes into the same column, and the whole point of recording
@@ -599,18 +642,12 @@ export async function captureEntry(opts: CaptureEntryOptions): Promise<'ok' | 'c
       // produced by some earlier capture under conditions nobody recorded, and attaching today's
       // conditions to it manufactures an agreement that was never observed. An absent provenance is
       // honest about an unknown; a wrong one is worse than the gap it fills.
+      // Publish the fingerprint only after the reviewed artifact has decoded and hashed successfully.
+      // CaptureWorkflow feeds this callback into the paired baseline writer; firing it earlier lets a
+      // malformed screenshot contribute a fingerprint to a run whose capture status is error.
       if (verifiedFingerprint !== null) {
         opts.onVerifiedFingerprint?.(entry.name, renderer, verifiedFingerprint, captureProvenance);
       }
-
-      // A passing verifier has already applied the SCENE'S OWN minCoverage, so the global threshold must
-      // not re-judge the same frame — see the note in captureScreenshotHash. Only an unverified capture
-      // needs the generic blank guard.
-      const hash = await hashCaptureScreenshotPixels(
-        page,
-        screenshotBuffer,
-        verification?.state === 'passed' ? null : OBSERVE_BLANK_COVERAGE,
-      );
 
       if (observe) {
         // Eyes mode: never gate, never touch baselines. Always emit the screenshot (done above) plus a
@@ -930,10 +967,12 @@ function isCaptureReadPixelsWarning(text: string): boolean {
 interface VerificationResult {
   verification: RenderVerification | null;
   domScreenshot: Buffer | null;
+  domReadbackProvided: boolean;
 }
 
 async function waitForRenderVerification(page: Page): Promise<VerificationResult> {
   let domScreenshot: Buffer | null = null;
+  let domReadbackProvided = false;
   const reachedReadbackOrTerminal = await page
     .waitForFunction(
       () => {
@@ -959,6 +998,7 @@ async function waitForRenderVerification(page: Page): Promise<VerificationResult
 
   if (reachedReadbackOrTerminal) {
     const readback = await provideCaptureDomRenderPixels(page);
+    domReadbackProvided = readback.provided;
     if (readback.provided) {
       domScreenshot = readback.screenshot;
       await page
@@ -981,7 +1021,7 @@ async function waitForRenderVerification(page: Page): Promise<VerificationResult
   const verification = await page
     .evaluate(() => (window as unknown as { __ftVerification?: RenderVerification }).__ftVerification ?? null)
     .catch(() => null);
-  return { verification, domScreenshot };
+  return { verification, domScreenshot, domReadbackProvided };
 }
 
 // Flattens entries × renderers into a shared job queue and processes them with workerCount

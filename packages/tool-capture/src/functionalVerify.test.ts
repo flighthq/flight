@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { createBitmap, createBitmapFingerprint, formatBitmapFingerprint } from '@flighthq/bitmap/contract';
 import type { DomRenderState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -142,15 +143,20 @@ describe('runRenderVerification', () => {
     registerFunctionalTarget(domTarget(host));
     const assertRender = vi.fn();
     const run = runRenderVerification({ assertRender }, 'dom');
-    provideDomRenderPixels();
+    const pixels = new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255]);
+    provideDomRenderPixels(pixels);
     await run;
+
+    const bitmap = createBitmap(2, 1);
+    bitmap.data.set(pixels);
+    const expectedFingerprint = formatBitmapFingerprint(createBitmapFingerprint(bitmap, 16));
 
     expect(assertRender).toHaveBeenCalledOnce();
     expect(verification()).toMatchObject({
       render: 'dom',
       state: 'passed',
       coverage: 0.5,
-      fingerprint: expect.stringMatching(/^16:/),
+      fingerprint: expectedFingerprint,
       error: null,
     });
   });
