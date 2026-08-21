@@ -47,6 +47,21 @@ describe('isPhysics3DBodyStateValid', () => {
     expect(isPhysics3DBodyStateValid(world)).toBe(false);
   });
 
+  it('rejects a zero or materially non-unit orientation before rotation math consumes it', () => {
+    const zero = createTestWorld();
+    zero.bodies[0].orientationW = 0;
+    expect(isPhysics3DBodyStateValid(zero)).toBe(false);
+
+    const scaled = createTestWorld();
+    scaled.bodies[0].orientationZ = 1;
+    expect(isPhysics3DBodyStateValid(scaled)).toBe(false);
+
+    const rounded = createTestWorld();
+    rounded.bodies[0].orientationZ = 0.70710678;
+    rounded.bodies[0].orientationW = 0.70710678;
+    expect(isPhysics3DBodyStateValid(rounded)).toBe(true);
+  });
+
   it('rejects a body the index map has lost track of', () => {
     const world = createTestWorld();
     world.bodyByIndex.delete(world.bodies[0].index);
