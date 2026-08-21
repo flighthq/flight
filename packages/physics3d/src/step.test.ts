@@ -20,6 +20,7 @@ import {
   createPhysics3DWorld,
   createRigidBody3D,
   removePhysics3DBody,
+  setPhysics3DBodyFixedRotation,
   setPhysics3DBodyType,
 } from './world';
 
@@ -173,8 +174,8 @@ describe('stepPhysics3D', () => {
       const body = addUnitBody(world);
       body.y = 0.51;
       body.velocityY = -1;
-      body.fixedRotation = true;
       attachUnitBoxCollider(world, body, 0);
+      setPhysics3DBodyFixedRotation(body, true);
       return { world, body };
     }
 
