@@ -76,7 +76,12 @@ function sweepCollisionShapeWithScratch(
   const relativeX = translationAX - translationBX;
   const relativeY = translationAY - translationBY;
   let hit = false;
-  if (shapeA.kind === 'circle') {
+  // Tested BEFORE the circle branches, not after. A capsule has no polygon vertices, so a
+  // circle-versus-capsule pair reaching the circle path asks the capsule for vertices, gets none, and
+  // reports a clean miss — which for a CCD bullet is a tunnel rather than an error.
+  if (shapeA.kind === 'capsule' || shapeB.kind === 'capsule') {
+    hit = sweepCapsulePair(shapeA, shapeB, relativeX, relativeY, maxFraction, out, scratch);
+  } else if (shapeA.kind === 'circle') {
     if (shapeB.kind === 'circle') {
       hit = sweepCircleCircle(
         shapeA.x,
@@ -120,6 +125,133 @@ function sweepCollisionShapeWithScratch(
   out.normalY = canonicalZero(out.normalY);
   writeShapeASupport(shapeA, translationAX * out.fraction, translationAY * out.fraction, out, scratch);
   return true;
+}
+
+// A capsule sweep, by decomposing each capsule into the two discs and the rectangle whose UNION it
+// exactly is, and taking the earliest impact among the pieces.
+//
+// The union is what makes this exact rather than conservative: the time of impact of a union of shapes
+// IS the minimum of their individual times, because the union touches the moment its first piece does.
+// So no new sweep geometry is written here — the pieces are a circle and a convex polygon, which the
+// two proven primitives above already answer for.
+//
+// The cost is at most nine pair sweeps for capsule-versus-capsule, and it stays there because a capsule
+// has three pieces and no more. A closed-form capsule sweep would be faster; it would also be a fourth
+// hand-derived continuous solver, and the earlier cylinder-cap defect in the 3D raycast is what that
+// trade looks like when it goes wrong.
+function sweepCapsulePair(
+  shapeA: Readonly<CollisionBuiltInShape2D>,
+  shapeB: Readonly<CollisionBuiltInShape2D>,
+  velocityX: number,
+  velocityY: number,
+  maxFraction: number,
+  out: CollisionTimeOfImpact2D,
+  scratch: CollisionSweepScratch,
+): boolean {
+  const piecesA = scratch.piecesA;
+  const piecesB = scratch.piecesB;
+  const pieceHit = scratch.pieceHit;
+  const countA = writeCapsulePieces(shapeA, piecesA);
+  const countB = writeCapsulePieces(shapeB, piecesB);
+  if (countA === 0 || countB === 0) return false;
+
+  let hit = false;
+  let bestFraction = Number.POSITIVE_INFINITY;
+  for (let indexA = 0; indexA < countA; indexA += 1) {
+    for (let indexB = 0; indexB < countB; indexB += 1) {
+      if (!sweepPiecePair(piecesA[indexA], piecesB[indexB], velocityX, velocityY, maxFraction, pieceHit, scratch)) {
+        continue;
+      }
+      if (pieceHit.fraction >= bestFraction) continue;
+      bestFraction = pieceHit.fraction;
+      hit = true;
+      out.fraction = pieceHit.fraction;
+      out.normalX = pieceHit.normalX;
+      out.normalY = pieceHit.normalY;
+      out.x = pieceHit.x;
+      out.y = pieceHit.y;
+    }
+  }
+  return hit;
+}
+
+// One convex piece against another, dispatching to whichever of the two proven sweeps fits. The
+// circle-versus-polygon case is run with the pair reversed and its normal negated, which is the same
+// correction the top-level dispatcher makes for the same reason.
+function sweepPiecePair(
+  a: Readonly<CollisionSweepPiece>,
+  b: Readonly<CollisionSweepPiece>,
+  velocityX: number,
+  velocityY: number,
+  maxFraction: number,
+  out: CollisionTimeOfImpact2D,
+  scratch: CollisionSweepScratch,
+): boolean {
+  if (a.vertices === null && b.vertices === null) {
+    return sweepCircleCircle(a.x, a.y, a.radius, b.x, b.y, b.radius, velocityX, velocityY, out);
+  }
+  if (a.vertices === null) {
+    return sweepCirclePolygon(a.x, a.y, a.radius, b.vertices!, velocityX, velocityY, out);
+  }
+  if (b.vertices === null) {
+    if (!sweepCirclePolygon(b.x, b.y, b.radius, a.vertices, -velocityX, -velocityY, out)) return false;
+    out.normalX = -out.normalX;
+    out.normalY = -out.normalY;
+    return true;
+  }
+  return sweepPolygonPolygon(a.vertices, b.vertices, velocityX, velocityY, maxFraction, out, scratch);
+}
+
+// Decomposes a shape into the convex pieces a sweep can take. A capsule becomes its two end discs plus
+// the rectangle between them; every other kind is already one piece. Returns how many were written.
+//
+// A ZERO-LENGTH capsule writes only ONE piece, because its two discs coincide and its rectangle has no
+// area. Emitting the degenerate rectangle anyway would hand `sweepPolygonPolygon` a shape with no
+// interior and no face normals to separate on.
+function writeCapsulePieces(shape: Readonly<CollisionBuiltInShape2D>, pieces: CollisionSweepPiece[]): number {
+  if (shape.kind !== 'capsule') {
+    if (shape.kind === 'circle') {
+      pieces[0].x = shape.x;
+      pieces[0].y = shape.y;
+      pieces[0].radius = shape.radius;
+      pieces[0].vertices = null;
+      return 1;
+    }
+    const vertices = writeShapeVertices(shape, pieces[0].storage);
+    if (vertices === null) return 0;
+    pieces[0].vertices = vertices;
+    return 1;
+  }
+
+  pieces[0].x = shape.x0;
+  pieces[0].y = shape.y0;
+  pieces[0].radius = shape.radius;
+  pieces[0].vertices = null;
+  const axisX = shape.x1 - shape.x0;
+  const axisY = shape.y1 - shape.y0;
+  const length = Math.hypot(axisX, axisY);
+  if (length <= SWEEP_EPSILON) return 1;
+
+  pieces[1].x = shape.x1;
+  pieces[1].y = shape.y1;
+  pieces[1].radius = shape.radius;
+  pieces[1].vertices = null;
+
+  // The body rectangle: the axis offset by the radius on each side, which is exactly the region the two
+  // end discs do not already cover.
+  const offsetX = (-axisY / length) * shape.radius;
+  const offsetY = (axisX / length) * shape.radius;
+  const storage = pieces[2].storage;
+  storage[0] = shape.x0 + offsetX;
+  storage[1] = shape.y0 + offsetY;
+  storage[2] = shape.x1 + offsetX;
+  storage[3] = shape.y1 + offsetY;
+  storage[4] = shape.x1 - offsetX;
+  storage[5] = shape.y1 - offsetY;
+  storage[6] = shape.x0 - offsetX;
+  storage[7] = shape.y0 - offsetY;
+  pieces[2].vertices = storage;
+  return 3;
 }
 
 function sweepCircleCircle(
@@ -334,6 +466,17 @@ function writeShapeASupport(
     out.y = shape.y + translationY - out.normalY * shape.radius;
     return;
   }
+  if (shape.kind === 'capsule') {
+    // The deepest point of a capsule along `-normal` is its support point: the axis endpoint that
+    // minimizes the projection, stepped one radius along the normal. Any other axis point lands inside.
+    const projection0 = shape.x0 * out.normalX + shape.y0 * out.normalY;
+    const projection1 = shape.x1 * out.normalX + shape.y1 * out.normalY;
+    const axisX = projection0 <= projection1 ? shape.x0 : shape.x1;
+    const axisY = projection0 <= projection1 ? shape.y0 : shape.y1;
+    out.x = axisX + translationX - out.normalX * shape.radius;
+    out.y = axisY + translationY - out.normalY * shape.radius;
+    return;
+  }
   const vertices = writeShapeVertices(shape, scratch.verticesA);
   if (vertices === null) return;
   let best = Number.NEGATIVE_INFINITY;
@@ -402,6 +545,13 @@ interface CollisionSweepScratch {
   manifold: ReturnType<typeof createCollisionContactManifold2D>;
   verticesA: Float64Array;
   verticesB: Float64Array;
+  // The capsule decomposition lives in the POOLED scratch rather than in module singletons, for the same
+  // reason everything else here does: a sweep can re-enter through a getter on the caller's output
+  // record, and a singleton is silently clobbered by the nested call while the outer one is still
+  // reading it. The pool is what makes each nesting level hold its own.
+  piecesA: CollisionSweepPiece[];
+  piecesB: CollisionSweepPiece[];
+  pieceHit: CollisionTimeOfImpact2D;
   projectionMin: number;
   projectionMax: number;
   entry: number;
@@ -419,6 +569,9 @@ function createCollisionSweepScratch(): CollisionSweepScratch {
     manifold: createCollisionContactManifold2D(),
     verticesA: new Float64Array(8),
     verticesB: new Float64Array(8),
+    piecesA: createSweepPieces(),
+    piecesB: createSweepPieces(),
+    pieceHit: { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 },
     projectionMin: 0,
     projectionMax: 0,
     entry: 0,
@@ -433,3 +586,18 @@ function releaseCollisionSweepScratch(scratch: CollisionSweepScratch): void {
 }
 
 const collisionSweepScratchPool: CollisionSweepScratch[] = [createCollisionSweepScratch()];
+
+// One convex piece of a swept shape: a disc when `vertices` is null, a convex polygon otherwise.
+interface CollisionSweepPiece {
+  x: number;
+  y: number;
+  radius: number;
+  vertices: ArrayLike<number> | null;
+  storage: Float64Array;
+}
+
+function createSweepPieces(): CollisionSweepPiece[] {
+  return [0, 1, 2].map(() => ({ radius: 0, storage: new Float64Array(8), vertices: null, x: 0, y: 0 }));
+}
+
+const SWEEP_EPSILON = 1e-9;

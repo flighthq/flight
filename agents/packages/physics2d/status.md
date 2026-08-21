@@ -11,11 +11,9 @@ by: principal
 
 ## Open
 
-- **The capsule is usable, with CCD the one gap.** It reaches every seam in this package and the contact
-  dispatcher answers for it, so a capsule body collides, rests, and stacks: a horizontal capsule settles
-  flat on a floor at an angle of 1.75e-10 and falls asleep, which is the two-point manifold doing what it
-  exists for. What is missing is `sweepCollisionShape2D`'s capsule arm, so a capsule cannot be a CCD
-  bullet — `continuousCollision` silently finds no impact for one and it tunnels at speed.
+- **The capsule is complete across every seam, CCD included.** A horizontal capsule settles flat on a
+  floor at an angle of 1.75e-10 and falls asleep, capsule-on-capsule stacks, and a capsule bullet at 600
+  units per second stops at a wall a tenth of a unit thick instead of tunnelling.
 - **Broad qualification is not established.** The suite covers a 16-body tall pile and an exact-repeat
   mixed scene, and every claim below is measured — but nothing here yet spans wide mass ratios, timestep
   variation, pathological stacking, or cross-platform determinism, and none of those should be assumed.
@@ -26,6 +24,10 @@ by: principal
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Capsule CCD works: `sweepCollisionShape2D` gained its capsule arm, so a capsule bullet
+  no longer passes through thin walls. The regression test pins the behaviour rather than the mechanism —
+  it fails against the pre-sweep code and passes after.
 
 - **2026-08-21** — Capsule colliders became real: the manifold pairs landed in `@flighthq/collision`, so
   `explainPhysics2DCollision` stopped naming the capsule and the contact-intake guard stopped warning

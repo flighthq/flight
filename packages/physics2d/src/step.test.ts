@@ -1639,6 +1639,29 @@ describe('stepPhysics2D with capsule colliders', () => {
     expect(capsule.sleeping).toBe(true);
   });
 
+  it('stops a capsule bullet at a thin wall instead of tunnelling through it', () => {
+    // The reason the capsule needed a sweep arm at all. Without one the CCD path finds no impact for a
+    // capsule and the body teleports past the wall in a single step — and it fails SILENTLY, because a
+    // sweep that reports no hit is indistinguishable from a clear path.
+    const world = createPhysics2DWorld(0, 0);
+    world.config.continuousCollision = true;
+    const wall = createRigidBody2D('static', 0, 0);
+    wall.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: 9.9, minY: -5, maxX: 10, maxY: 5 }, STONE));
+    addPhysics2DBody(world, wall);
+    const bullet = createRigidBody2D('dynamic', 0, 0);
+    bullet.bullet = true;
+    bullet.colliders.push(
+      createPhysics2DCollider({ kind: 'capsule', x0: -0.2, y0: 0, x1: 0.2, y1: 0, radius: 0.1 }, STONE),
+    );
+    addPhysics2DBody(world, bullet);
+    // Fast enough to clear the wall's whole thickness in one step several times over.
+    bullet.velocityX = 600;
+
+    for (let step = 0; step < 10; step++) stepPhysics2D(world, 1 / 60);
+
+    expect(bullet.x).toBeLessThan(10);
+  });
+
   it('rolls a capsule down a slope rather than sticking on a corner', () => {
     // A rounded end on an inclined face is the corner case the vertex axes exist for. With the wrong
     // contact normal the capsule catches on the slope instead of sliding down it.
