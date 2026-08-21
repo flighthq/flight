@@ -5,6 +5,16 @@ import { collideContactManifold2D } from './collideContactManifold2D';
 import { createCollisionContactManifold2D } from './contactManifold2D';
 import { createCollisionTimeOfImpact2D, sweepCollisionShape2D } from './sweepCollisionShape2D';
 
+type CollisionCapsule2D = Extract<CollisionBuiltInShape2D, { kind: 'capsule' }>;
+type CollisionSweepTarget2D = Extract<CollisionBuiltInShape2D, { kind: 'aabb' | 'capsule' | 'circle' | 'obb' }>;
+
+const SEEDED_CAPSULE_SWEEP_BATCHES = [
+  { endTrial: 300, startTrial: 0 },
+  { endTrial: 600, startTrial: 300 },
+  { endTrial: 900, startTrial: 600 },
+  { endTrial: 1200, startTrial: 900 },
+] as const;
+
 describe('createCollisionTimeOfImpact2D', () => {
   it('creates a cleared reusable output record', () => {
     expect(createCollisionTimeOfImpact2D()).toEqual({ fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 });
@@ -176,94 +186,91 @@ describe('sweepCollisionShape2D', () => {
   });
 
   // The instrument is the DISCRETE manifold test, marched along the motion — a different function with a
-  // different derivation, so agreement is evidence rather than restatement.
-  it('agrees with a brute-force march of the discrete test over a seeded capsule sweep', () => {
-    let state = 987654321;
-    const next = (): number => {
-      state ^= state << 13;
-      state ^= state >>> 17;
-      state ^= state << 5;
-      return ((state >>> 0) % 100000) / 100000;
-    };
-    const shift = (shape: CollisionBuiltInShape2D, dx: number, dy: number): CollisionBuiltInShape2D => {
-      switch (shape.kind) {
-        case 'capsule':
-          return { ...shape, x0: shape.x0 + dx, y0: shape.y0 + dy, x1: shape.x1 + dx, y1: shape.y1 + dy };
-        case 'circle':
-          return { ...shape, x: shape.x + dx, y: shape.y + dy };
-        case 'aabb':
-          return {
-            ...shape,
-            minX: shape.minX + dx,
-            maxX: shape.maxX + dx,
-            minY: shape.minY + dy,
-            maxY: shape.maxY + dy,
-          };
-        case 'obb':
-          return { ...shape, x: shape.x + dx, y: shape.y + dy };
-        default:
-          return shape;
-      }
-    };
-
-    const toi = createCollisionTimeOfImpact2D();
-    const manifold = createCollisionContactManifold2D();
-    const SAMPLES = 6000;
-    let compared = 0;
-    let worst = 0;
-
-    for (let trial = 0; trial < 1200; trial++) {
-      const capsule: CollisionBuiltInShape2D = {
-        kind: 'capsule',
-        x0: (next() - 0.5) * 3,
-        y0: (next() - 0.5) * 3,
-        x1: (next() - 0.5) * 3,
-        y1: (next() - 0.5) * 3,
-        radius: 0.2 + next() * 0.8,
+  // different derivation, so agreement is evidence rather than restatement. Keep the original 1,200
+  // trials, but divide their millions of manifold calls into independently timed batches: under the full
+  // repository suite one monolithic test could exhaust Vitest's five-second allowance through contention.
+  it.each(SEEDED_CAPSULE_SWEEP_BATCHES)(
+    'agrees with a brute-force march of the discrete test over seeded capsule sweep trials $startTrial–$endTrial',
+    ({ endTrial, startTrial }) => {
+      let state = 987654321;
+      const next = (): number => {
+        state ^= state << 13;
+        state ^= state >>> 17;
+        state ^= state << 5;
+        return ((state >>> 0) % 100000) / 100000;
       };
-      const pick = Math.floor(next() * 4);
-      const cx = 5 + next() * 3;
-      const cy = (next() - 0.5) * 4;
-      const other: CollisionBuiltInShape2D =
-        pick === 0
-          ? { kind: 'circle', x: cx, y: cy, radius: 0.3 + next() * 1.0 }
-          : pick === 1
-            ? { kind: 'aabb', minX: cx - 1, minY: cy - 0.8, maxX: cx + 1, maxY: cy + 0.8 }
-            : pick === 2
-              ? { kind: 'obb', x: cx, y: cy, halfW: 1, halfH: 0.6, rotation: next() * Math.PI }
-              : {
-                  kind: 'capsule',
-                  x0: cx,
-                  y0: cy,
-                  x1: cx + (next() - 0.5) * 3,
-                  y1: cy + (next() - 0.5) * 3,
-                  radius: 0.2 + next() * 0.8,
-                };
-      const dx = cx - (capsule.x0 + capsule.x1) / 2 + (next() - 0.5) * 2;
-      const dy = cy - (capsule.y0 + capsule.y1) / 2 + (next() - 0.5) * 2;
-      // Already-overlapping is a different question with its own arm above.
-      if (collideContactManifold2D(capsule, other, manifold)) continue;
+      const toi = createCollisionTimeOfImpact2D();
+      const manifold = createCollisionContactManifold2D();
+      const SAMPLES = 6000;
+      let compared = 0;
+      const comparedByKind: Record<CollisionSweepTarget2D['kind'], number> = { aabb: 0, capsule: 0, circle: 0, obb: 0 };
+      let worst = 0;
 
-      const hit = sweepCollisionShape2D(capsule, dx, dy, other, 0, 0, toi);
+      for (let trial = 0; trial < endTrial; trial++) {
+        const capsule: CollisionCapsule2D = {
+          kind: 'capsule',
+          x0: (next() - 0.5) * 3,
+          y0: (next() - 0.5) * 3,
+          x1: (next() - 0.5) * 3,
+          y1: (next() - 0.5) * 3,
+          radius: 0.2 + next() * 0.8,
+        };
+        const pick = Math.floor(next() * 4);
+        const cx = 5 + next() * 3;
+        const cy = (next() - 0.5) * 4;
+        const other: CollisionSweepTarget2D =
+          pick === 0
+            ? { kind: 'circle', x: cx, y: cy, radius: 0.3 + next() * 1.0 }
+            : pick === 1
+              ? { kind: 'aabb', minX: cx - 1, minY: cy - 0.8, maxX: cx + 1, maxY: cy + 0.8 }
+              : pick === 2
+                ? { kind: 'obb', x: cx, y: cy, halfW: 1, halfH: 0.6, rotation: next() * Math.PI }
+                : {
+                    kind: 'capsule',
+                    x0: cx,
+                    y0: cy,
+                    x1: cx + (next() - 0.5) * 3,
+                    y1: cy + (next() - 0.5) * 3,
+                    radius: 0.2 + next() * 0.8,
+                  };
+        const dx = cx - (capsule.x0 + capsule.x1) / 2 + (next() - 0.5) * 2;
+        const dy = cy - (capsule.y0 + capsule.y1) / 2 + (next() - 0.5) * 2;
+        // Replaying only the random draws before this batch preserves the original seeded 1,200-case
+        // sequence. Shape generation is cheap; the discrete march below is the work that needs batching.
+        if (trial < startTrial) continue;
+        // Already-overlapping is a different question with its own arm above.
+        if (collideContactManifold2D(capsule, other, manifold)) continue;
 
-      let marched = -1;
-      for (let sample = 0; sample <= SAMPLES; sample++) {
-        const fraction = sample / SAMPLES;
-        if (collideContactManifold2D(shift(capsule, dx * fraction, dy * fraction), other, manifold)) {
-          marched = fraction;
-          break;
+        const hit = sweepCollisionShape2D(capsule, dx, dy, other, 0, 0, toi);
+
+        let marched = -1;
+        // Reuse one probe shape for the millions of discrete samples. Allocation and GC are not part of
+        // this differential instrument, so they should not add another source of full-suite contention.
+        const marchedCapsule = { ...capsule };
+        for (let sample = 0; sample <= SAMPLES; sample++) {
+          const fraction = sample / SAMPLES;
+          marchedCapsule.x0 = capsule.x0 + dx * fraction;
+          marchedCapsule.y0 = capsule.y0 + dy * fraction;
+          marchedCapsule.x1 = capsule.x1 + dx * fraction;
+          marchedCapsule.y1 = capsule.y1 + dy * fraction;
+          if (collideContactManifold2D(marchedCapsule, other, manifold)) {
+            marched = fraction;
+            break;
+          }
         }
+
+        // Both directions matter, and they are not symmetric in consequence: a sweep that misses an impact
+        // the march finds is a bullet passing through a wall.
+        expect(hit, `trial ${String(trial)} hit/miss`).toBe(marched >= 0);
+        if (!hit) continue;
+        compared++;
+        comparedByKind[other.kind]++;
+        worst = Math.max(worst, Math.abs(toi.fraction - marched));
       }
 
-      // Both directions matter, and they are not symmetric in consequence: a sweep that misses an impact
-      // the march finds is a bullet passing through a wall.
-      expect(hit, `trial ${String(trial)} hit/miss`).toBe(marched >= 0);
-      if (!hit) continue;
-      compared++;
-      worst = Math.max(worst, Math.abs(toi.fraction - marched));
-    }
-
-    expect(compared).toBeGreaterThan(200);
-    expect(worst).toBeLessThan(2 / SAMPLES);
-  });
+      expect(compared).toBeGreaterThan(250);
+      for (const count of Object.values(comparedByKind)) expect(count).toBeGreaterThan(40);
+      expect(worst).toBeLessThan(2 / SAMPLES);
+    },
+  );
 });
