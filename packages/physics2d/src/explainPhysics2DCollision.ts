@@ -5,14 +5,16 @@ import type { CollisionShapeKind2D, Physics2DCollisionExplanation, Physics2DWorl
 //
 // This exists because the dispatcher's coverage is NARROWER than the collider type allows. Every kind in
 // `CollisionBuiltInShape2D` may be authored onto a body, but `collideContactManifold2D` answers only for
-// the area shapes it has pair functions for; anything else is reported as non-overlapping. That is the
-// right behaviour for `segment` and `point`, which are area-less by definition and carry no contact to
-// find — and it is a GAP for `capsule`, whose pair functions are not written yet.
+// the shapes that enclose an area; `segment` and `point` are area-less by definition and carry no contact
+// to find, so a body built from one is reported as touching nothing and falls through the world.
 //
-// The distinction matters to a caller and is deliberately not made here: this reports what does not
-// collide, not why. A segment collider on a body is a modelling mistake; a capsule one is a missing
-// feature. Both look identical from inside the simulation, which is exactly why the question needs
-// answering from outside it.
+// That is a modelling mistake with no fix inside this package, and it is invisible from inside the
+// simulation — nothing fails, nothing is slow, the body simply never collides. Which is exactly why the
+// question has to be answerable from outside it.
+//
+// The list stays a general query rather than a hardcoded "segment or point" test, because the answer is a
+// property of the dispatcher and not of this file: a kind added to the collider union without pair
+// functions would show up here on its own, which is how the capsule surfaced before its were written.
 export function explainPhysics2DCollision(world: Readonly<Physics2DWorld>): Physics2DCollisionExplanation {
   const unsupported = new Set<string>();
   for (const body of world.bodies) {
@@ -32,5 +34,5 @@ export function explainPhysics2DCollision(world: Readonly<Physics2DWorld>): Phys
 // through the dispatcher because asking the dispatcher would mean synthesizing a shape of each kind to
 // test with, and a diagnostic must not be able to change what it measures.
 function isPhysics2DContactSupportedKind(kind: CollisionShapeKind2D): boolean {
-  return kind === 'circle' || kind === 'aabb' || kind === 'obb' || kind === 'polygon';
+  return kind === 'circle' || kind === 'capsule' || kind === 'aabb' || kind === 'obb' || kind === 'polygon';
 }

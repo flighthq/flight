@@ -45,23 +45,32 @@ by: principal
   unsuffixed `manifold.ts` would have exported a type named for the concept rather than the dimension.
   `contactFeatureId.ts` deliberately keeps its bare name: packing two feature indices into one integer
   is dimension-free, and suffixing it would make a reusable utility look 2D-only.
-- **The 2D capsule exists everywhere EXCEPT the contact-manifold matrix, and that is the whole
-  remaining job.** `CollisionCapsule2D` is in the built-in union with validation, containment, bounds,
-  transform, mass/inertia, debug geometry, segment overlap, and an exact raycast — the last two verified
-  against instruments that share no algebra with them (grid integration for the inertia including the
-  `4rL/(3*pi)` end-cap cross term, and a containment march for the raycast: 311 rays, zero hit/miss
-  disagreements, every normal correct in both directions). What is NOT written is
-  `collideContactManifold2D`'s capsule arms and `sweepCollisionShape2D`'s, so `contactShapeKindRank`
-  still returns -1 for it and **a capsule is not yet usable as a rigid-body collider**. That gap is loud
-  rather than silent: `explainPhysics2DCollision` names it and `enablePhysics2DGuards` warns, telling a
-  caller it is an unimplemented pair rather than an area-less shape. The hard part left is a horizontal
-  capsule's floor contact, which needs a stable TWO-POINT manifold with stable feature ids — a support
-  function would give overlap and penetration and still leave a capsule that rocks on one point.
+- **The 2D capsule is complete through the contact matrix.** `CollisionCapsule2D` reaches every seam —
+  validation, containment, bounds, transform, mass/inertia, debug geometry, segment overlap, raycast —
+  and `capsuleContact2D.ts` adds the five manifold pairs (circle, capsule, aabb, obb, polygon), so a
+  capsule is a usable rigid-body collider. `sweepCollisionShape2D` is the one arm still missing, which
+  means a capsule works for discrete contact and world queries but not as a CCD bullet.
+  The manifold is a separating-axis search rather than a distance reduction, and the candidate set is
+  what makes it exact: polygon face normals, the capsule's own two side normals, and the direction from
+  each polygon VERTEX to the nearest point on the capsule's axis. The vertex axes are not optional — at
+  a corner the deepest direction is radial from that corner and matches no face normal of either shape.
 - **More shapes.** 2D rounded polygon, and a general concave-as-convex-decomposition path.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — The capsule's contact manifolds landed, and a differential instrument found three real
+  defects that hand-written expectations would not have. (1) capsule-capsule cannot reduce to the distance
+  between the two AXES: two capsules crossing in an X have axes at distance zero and are deeply
+  interpenetrating, so that reduction reported a depth of `rA + rB` that did not separate them — clearing
+  a crossed pair means moving far enough for the SEGMENTS to clear, a distance set by their lengths.
+  (2) the face-span clip fabricated two points for a near-END-ON capsule, placing them inside the shape by
+  stepping `radius` along a normal nearly parallel to the axis; a span is only meaningful when the
+  capsule's flat side faces the face. (3) a single contact point must be the SUPPORT point in `-normal`,
+  not the closest axis point, or it sits `radius * |sin(angle)|` from the axis and is again inside.
+  After all three: over 1383 seeded overlapping pairs, pushing A by `normal * depth` separates every one,
+  and every contact point lies on the capsule's surface to 5.6e-16.
 
 - **2026-08-21** — The 2D capsule landed as far as the contact matrix, deliberately stopping short of it
   rather than shipping a shape the solver silently ignores. Two findings worth keeping. The inertia is
@@ -76,23 +85,20 @@ by: principal
 - **2026-08-21** — 25 exports and 8 modules took a `2D` suffix, closing the naming asymmetry; renamed with
   a negative lookahead because every 3D name has its 2D twin as a prefix.
 - **2026-08-21** — Cylinder and cone landed across every 3D seam; a brute-force containment scan caught an
-  inverted cylinder CAP normal that no unit test had, and the cone's inertia is checked against a grid
-  integration because the textbook transverse moment is quoted about the APEX.
+  inverted cylinder CAP normal no unit test had, and the cone's inertia is grid-checked because the
+  textbook transverse moment is quoted about the APEX.
 - **2026-08-21** — `explainCollisionTest3D` and `getCollisionShapeValidationStatus3D` now exist; both had
   been cited by source comments for some time without being written.
 - **2026-08-21** — The differential test found a real defect in the incumbent: the SAT paths oriented their
-  manifold normal by comparing centroids, a heuristic, while the winning side was already computed and
-  thrown away. Fixed at `polygonAxisOverlap` and `circlePolygonAxisOverlap`.
+  manifold normal by comparing centroids while the winning side was already computed and thrown away.
 - **2026-08-21** — EPA tie-break canonicalized into a half-plane with a lexicographic fallback; the
   centroid rule applied unconditionally was tried first and took disagreements from 4 to 47.
-- **2026-08-20** — The dimension boundary and the support-function core landed: every 2D type and generic
-  entry point took a `2D` suffix, then `collisionSupport2D.ts` and `gjk2D.ts`. Three bugs the tests caught
-  — GJK reading the origin ON a 1-simplex as separation, the triangle case oriented by signed area, and
-  the test's own polygon generator overshooting 2*pi.
+- **2026-08-20** — The dimension boundary and the support-function core landed (`collisionSupport2D.ts`,
+  `gjk2D.ts`); three bugs the tests caught, one of them in the test's own polygon generator.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract; all five previously-open items checked out
   false and were deleted.
 - **2026-07-29** — Contact manifolds landed as a parallel lane, with feature ids packed by positional
   multiplication in the private `contactFeatureId.ts`.
 - **2026-07-10** — Phase 1 built: ten manifold pair tests over a shared SAT core, the kind-ranked
-  dispatcher, point containment, and five boolean segment queries. Frozen conventions: the normal pushes
-  **A out of B**; touching is exclusive for manifolds and inclusive for containment/segment queries.
+  dispatcher, containment, and five segment queries. Frozen conventions: the normal pushes **A out of B**;
+  touching is exclusive for manifolds and inclusive for containment/segment queries.

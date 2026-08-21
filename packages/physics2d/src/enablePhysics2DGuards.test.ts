@@ -102,28 +102,9 @@ describe('disablePhysics2DGuards', () => {
 });
 
 describe('enablePhysics2DGuards', () => {
-  it('reports a collider kind the contact dispatcher has no arm for', () => {
-    // The third seam, and the one that stops a capsule from being a silent trap: it is a valid collider
-    // the type system admits and the solver cannot see, so without this a body carrying one falls
-    // through the world with nothing failing anywhere.
-    enablePhysics2DGuards();
-    const world = createPhysics2DWorld(0, -10);
-    const body = createRigidBody2D('dynamic', 0, 0);
-    body.colliders.push(createPhysics2DCollider({ kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.4 }, STONE));
-    addPhysics2DBody(world, body);
-
-    const entries = captureLog(() => stepPhysics2D(world, 1 / 60));
-
-    expect(entries).toHaveLength(1);
-    const data = entries[0].data as { kinds: string[]; message: string; status: string };
-    expect(data.status).toBe('missing-contact-support');
-    expect(data.kinds).toEqual(['capsule']);
-    // Named as a gap rather than as a modelling mistake, which is the distinction a caller acts on.
-    expect(data.message).toContain('no pair functions');
-    expect(data.message).not.toContain('no area');
-  });
-
-  it('tells an area-less collider apart from an unimplemented one', () => {
+  it('reports an area-less collider used as a body shape', () => {
+    // The third seam. A segment on a rigid body is a modelling mistake the simulation cannot show you:
+    // nothing fails, nothing is slow, the body simply never collides with anything.
     enablePhysics2DGuards();
     const world = createPhysics2DWorld(0, -10);
     const body = createRigidBody2D('dynamic', 0, 0);
@@ -132,9 +113,24 @@ describe('enablePhysics2DGuards', () => {
 
     const entries = captureLog(() => stepPhysics2D(world, 1 / 60));
 
-    const data = entries[0].data as { message: string };
+    expect(entries).toHaveLength(1);
+    const data = entries[0].data as { kinds: string[]; message: string; status: string };
+    expect(data.status).toBe('missing-contact-support');
+    expect(data.kinds).toEqual(['segment']);
     expect(data.message).toContain('no area');
-    expect(data.message).not.toContain('no pair functions');
+  });
+
+  it('says nothing about a capsule, which the dispatcher answers for', () => {
+    // This test is the inverse of one that used to assert the opposite. The capsule was named by this
+    // guard while its pair functions were missing and stopped being named when they landed, which is the
+    // seam working in both directions rather than a list someone edits by hand.
+    enablePhysics2DGuards();
+    const world = createPhysics2DWorld(0, -10);
+    const body = createRigidBody2D('dynamic', 0, 0);
+    body.colliders.push(createPhysics2DCollider({ kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.4 }, STONE));
+    addPhysics2DBody(world, body);
+
+    expect(captureLog(() => stepPhysics2D(world, 1 / 60))).toHaveLength(0);
   });
 
   it('says nothing about colliders the dispatcher does answer for', () => {

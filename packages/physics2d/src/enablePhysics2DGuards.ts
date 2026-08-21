@@ -38,10 +38,11 @@ export function disablePhysics2DGuards(): void {
 // precisely so unused solvers tree-shake out, which makes forgetting `registerBuiltInPhysics2DJointSolvers`
 // an ordinary mistake rather than an exotic one.
 //
-// The third is a collider the contact dispatcher has no arm for. `collideContactManifold2D` is a closed
-// switch, so unlike 3D there is nothing to REGISTER and no way to forget to — but its coverage is
-// narrower than the collider type allows, and a kind it does not answer for is reported as
-// non-overlapping. A body carrying one falls through the floor with nothing failing anywhere.
+// The third is a collider the contact dispatcher has no arm for — in practice an area-less `segment` or
+// `point` used as a rigid body's shape. `collideContactManifold2D` is a closed switch, so unlike 3D there
+// is nothing to REGISTER and no way to forget to, but its coverage is narrower than the collider type
+// allows and a kind it does not answer for is reported as non-overlapping. A body carrying one falls
+// through the floor with nothing failing anywhere.
 //
 // Applications that never import this module shed both the message text and `@flighthq/log`.
 export function enablePhysics2DGuards(): void {
@@ -49,40 +50,6 @@ export function enablePhysics2DGuards(): void {
   setPhysics2DJointResolutionGuard(warnOnUnresolvedPhysics2DJoints);
   setPhysics2DContactIntakeGuard(warnOnUndetectablePhysics2DColliders);
   physics2DGuardsEnabled = true;
-}
-
-// Warns once per distinct set of undetectable collider kinds.
-//
-// The advice differs by kind, because the two causes are not the same problem. `segment` and `point` are
-// area-less by definition and carry no contact to find, so putting one on a rigid body is a modelling
-// mistake with no fix in this package. A `capsule` has no pair functions YET, which is a gap rather than
-// a rule — and a caller deserves to be told which of the two it has hit.
-function warnOnUndetectablePhysics2DColliders(world: Readonly<Physics2DWorld>): void {
-  const explanation = explainPhysics2DCollision(world);
-  if (explanation.status === 'ready') return;
-
-  const kinds = explanation.unsupportedKinds;
-  const arealess = kinds.filter((kind) => kind === 'segment' || kind === 'point');
-  const unimplemented = kinds.filter((kind) => kind !== 'segment' && kind !== 'point');
-  const areaFix =
-    arealess.length > 0
-      ? ` ${arealess.join(' and ')} carr${arealess.length === 1 ? 'ies' : 'y'} no area and so no contact, and cannot be a rigid body's collider — give the body a shape with area.`
-      : '';
-  const gapFix =
-    unimplemented.length > 0
-      ? ` collideContactManifold2D has no pair functions for ${unimplemented.join(', ')} yet, so ${unimplemented.length === 1 ? 'it is' : 'they are'} usable for queries and raycasts but not as a simulated collider.`
-      : '';
-
-  logOnce(
-    `physics2d:${explanation.status}:${kinds.join(',')}`,
-    LogLevel.Warn,
-    {
-      kinds,
-      message: `stepPhysics2D: collider kind${kinds.length === 1 ? '' : 's'} ${kinds.join(', ')} generate${kinds.length === 1 ? 's' : ''} no contacts, so the bodies carrying ${kinds.length === 1 ? 'it' : 'them'} pass through everything.${areaFix}${gapFix} Call explainPhysics2DCollision(world) for the same finding as data.`,
-      status: explanation.status,
-    },
-    'physics2d',
-  );
 }
 
 // The names of the flags that are false, in the explanation's own field order so the key is stable for a
@@ -107,6 +74,27 @@ function getUnresolvedPhysics2DJointFaults(explanation: Readonly<Physics2DJointR
     faults.add(`${joint.kind}:${joint.status}`);
   }
   return [...faults].sort();
+}
+
+// Warns once per distinct set of undetectable collider kinds.
+//
+// Keyed on the kinds rather than logged per step, so a 60Hz loop says this once — and a world that later
+// gains a second undetectable kind still says so.
+function warnOnUndetectablePhysics2DColliders(world: Readonly<Physics2DWorld>): void {
+  const explanation = explainPhysics2DCollision(world);
+  if (explanation.status === 'ready') return;
+
+  const kinds = explanation.unsupportedKinds;
+  logOnce(
+    `physics2d:${explanation.status}:${kinds.join(',')}`,
+    LogLevel.Warn,
+    {
+      kinds,
+      message: `stepPhysics2D: collider kind${kinds.length === 1 ? '' : 's'} ${kinds.join(', ')} enclose${kinds.length === 1 ? 's' : ''} no area and so generate${kinds.length === 1 ? 's' : ''} no contacts, and the bodies carrying ${kinds.length === 1 ? 'it' : 'them'} pass through everything — give the body a shape with area. Call explainPhysics2DCollision(world) for the same finding as data.`,
+      status: explanation.status,
+    },
+    'physics2d',
+  );
 }
 
 // Warns once per distinct set of unresolved joint faults.
