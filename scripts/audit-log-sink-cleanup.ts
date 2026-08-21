@@ -34,7 +34,7 @@ const cleanupDescriptions: Readonly<Record<CleanupClassification, string>> = {
     'Guaranteed on the straight-line path: the registration is immediately removed, cleared, or replaced before assertions can abort the owner.',
   'finally-cleanup': 'Guaranteed on success and failure: a local `finally` removes the same sink registration.',
   'lifecycle-owned':
-    'Owned by an explicit API lifetime: `disableDebug` removes the sink installed by `enableDebug`. It remains reachable for the intended debug session.',
+    'Owned by an explicit API lifetime: a failed `enableDebug` rolls back the sink, while `disableDebug` removes it after a successful enable.',
   'missing-cleanup':
     'Missing an exception-safe shorter-lifetime teardown. The sink and anything its closure captures remain reachable and can receive later log entries.',
   'test-hook-cleanup':
@@ -102,7 +102,9 @@ function classifyRegistration(
   argument: string,
   fileHasCleanupHook: boolean,
 ): CleanupClassification {
-  if (path === 'packages/debug/src/debug.ts' && argument === 'sink') return 'lifecycle-owned';
+  if (path === 'packages/debug/src/debug.ts' && argument === 'sink') {
+    return hasExceptionSafeDebugLifecycle(source) ? 'lifecycle-owned' : 'missing-cleanup';
+  }
   if (isPageLifetimeRegistration({ argument, classification: 'missing-cleanup', line: 0, path })) {
     return 'missing-cleanup';
   }
@@ -112,6 +114,44 @@ function classifyRegistration(
   if (owner !== null && hasFinallyCleanup(owner, source, argument)) return 'finally-cleanup';
   if (owner !== null && hasDirectCleanup(owner, source, call, argument)) return 'direct-cleanup';
   return 'missing-cleanup';
+}
+
+function hasExceptionSafeDebugLifecycle(source: ts.SourceFile): boolean {
+  const enable = findNamedFunction(source, 'enableDebug');
+  const disable = findNamedFunction(source, 'disableDebug');
+  return (
+    enable !== null &&
+    disable !== null &&
+    containsPropertyCall(enable, 'disableGuards') &&
+    containsNamedCall(enable, '_removeDebugSink') &&
+    containsNamedCall(enable, 'clearLogChannelLevel') &&
+    containsNamedCall(enable, 'setLogLevel') &&
+    rethrowsCatchVariable(enable) &&
+    containsNamedCall(disable, '_removeDebugSink')
+  );
+}
+
+function findNamedFunction(source: ts.SourceFile, name: string): ts.FunctionDeclaration | null {
+  return (
+    source.statements.find(
+      (statement): statement is ts.FunctionDeclaration =>
+        ts.isFunctionDeclaration(statement) && statement.name?.text === name,
+    ) ?? null
+  );
+}
+
+function rethrowsCatchVariable(node: ts.Node): boolean {
+  let found = false;
+  visit(node, (candidate) => {
+    if (found || !ts.isCatchClause(candidate) || !ts.isIdentifier(candidate.variableDeclaration?.name)) return;
+    const name = candidate.variableDeclaration.name.text;
+    visit(candidate.block, (nested) => {
+      if (ts.isThrowStatement(nested) && ts.isIdentifier(nested.expression) && nested.expression.text === name) {
+        found = true;
+      }
+    });
+  });
+  return found;
 }
 
 function findEnclosingFunction(node: ts.Node): ts.FunctionLikeDeclaration | null {
@@ -183,6 +223,21 @@ function containsNamedCall(node: ts.Node, name: string): boolean {
   let found = false;
   visit(node, (candidate) => {
     if (!found && isNamedCall(candidate, name)) found = true;
+  });
+  return found;
+}
+
+function containsPropertyCall(node: ts.Node, name: string): boolean {
+  let found = false;
+  visit(node, (candidate) => {
+    if (
+      !found &&
+      ts.isCallExpression(candidate) &&
+      ts.isPropertyAccessExpression(candidate.expression) &&
+      candidate.expression.name.text === name
+    ) {
+      found = true;
+    }
   });
   return found;
 }
@@ -271,11 +326,9 @@ function formatReport(registrations: readonly LogSinkRegistration[]): string {
       (classification) => `| \`${classification}\` | ${cleanupDescriptions[classification]} |`,
     ),
     '',
-    'The `lifecycle-owned` debug registration has one unresolved exception path: `enableDebug` installs',
-    'the sink before running subsystem `enableGuards` callbacks, but sets its enabled flag only after all',
-    'callbacks return. If one callback throws, `disableDebug` is a no-op and cannot close the partially',
-    'opened lifetime. Rolling back already-enabled subsystem guards is a lifetime-policy decision, so this',
-    'audit records and escalates it rather than choosing teardown semantics locally.',
+    'The `lifecycle-owned` debug registration is checked on both sides of its lifetime. A failed',
+    '`enableDebug` unwinds the throwing and earlier subsystem hooks, removes the sink, restores levels,',
+    'and rethrows the original enable error. After a successful enable, `disableDebug` owns teardown.',
     '',
     '## Every registration',
     '',
