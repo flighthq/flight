@@ -1,14 +1,16 @@
-import type { SpatialAabb3D, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
+import type { SpatialAabb3D, SpatialFrustum3D, SpatialObjectId, SpatialPair } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
   clearSpatialIndex3D,
   createSpatialIndex3D,
   insertSpatialObject3D,
+  querySpatialFrustum3D,
   querySpatialPairs3D,
   querySpatialPoint3D,
   querySpatialRay3D,
   querySpatialRegion3D,
+  querySpatialSphere3D,
   removeSpatialObject3D,
   updateSpatialObject3D,
 } from './spatialIndex3D';
@@ -74,6 +76,91 @@ describe('insertSpatialObject3D', () => {
   });
 });
 
+// A frustum looking down +Z: a small near quad at z=0 widening to a large far quad at z=400. Corner
+// order is the contracted one — four near corners, then the four far corners in the SAME winding.
+function viewFrustum(nearHalf: number, farHalf: number, farZ: number): SpatialFrustum3D {
+  return {
+    corners: [
+      -nearHalf,
+      -nearHalf,
+      0,
+      nearHalf,
+      -nearHalf,
+      0,
+      nearHalf,
+      nearHalf,
+      0,
+      -nearHalf,
+      nearHalf,
+      0,
+      -farHalf,
+      -farHalf,
+      farZ,
+      farHalf,
+      -farHalf,
+      farZ,
+      farHalf,
+      farHalf,
+      farZ,
+      -farHalf,
+      farHalf,
+      farZ,
+    ],
+  };
+}
+
+describe('querySpatialFrustum3D', () => {
+  it('finds an object inside the volume and excludes one far outside it', () => {
+    const index = createSpatialIndex3D(createUniformGridSpatialBackend3D(32));
+    insertSpatialObject3D(index, 1, box(-5, -5, 100, 10));
+    insertSpatialObject3D(index, 2, box(900, 900, 100, 10));
+    const out: SpatialObjectId[] = [];
+    querySpatialFrustum3D(index, viewFrustum(10, 200, 400), out);
+    expect(out).toContain(1);
+    expect(out).not.toContain(2);
+  });
+
+  it('reports each object once even when it straddles several slices', () => {
+    // A long object spanning most of the depth touches many slices. Without the dedup it would appear
+    // once per slice, so a caller counting results would over-count exactly the largest objects.
+    const index = createSpatialIndex3D(createUniformGridSpatialBackend3D(32));
+    insertSpatialObject3D(index, 7, { maxX: 5, maxY: 5, maxZ: 380, minX: -5, minY: -5, minZ: 10 });
+    const out: SpatialObjectId[] = [];
+    querySpatialFrustum3D(index, viewFrustum(10, 200, 400), out, 8);
+    expect(out.filter((id) => id === 7)).toHaveLength(1);
+  });
+
+  it('covers strictly less than the single bounding box as slices increase', () => {
+    // The point of slicing. An object out near the far corners of the frustum's own AABB but well
+    // outside the cone is a candidate at one slice and rejected at many.
+    const index = createSpatialIndex3D(createUniformGridSpatialBackend3D(32));
+    insertSpatialObject3D(index, 3, box(180, 180, 20, 8));
+    const coarse: SpatialObjectId[] = [];
+    const fine: SpatialObjectId[] = [];
+    querySpatialFrustum3D(index, viewFrustum(10, 200, 400), coarse, 1);
+    querySpatialFrustum3D(index, viewFrustum(10, 200, 400), fine, 16);
+    expect(coarse).toContain(3);
+    expect(fine).not.toContain(3);
+  });
+
+  it('returns nothing for a malformed corner list rather than guessing', () => {
+    const index = createSpatialIndex3D();
+    insertSpatialObject3D(index, 1, box(0, 0, 0, 10));
+    const out: SpatialObjectId[] = [];
+    querySpatialFrustum3D(index, { corners: [0, 0, 0] }, out);
+    expect(out).toEqual([]);
+    querySpatialFrustum3D(index, viewFrustum(10, 200, 400), out, 0);
+    expect(out).toEqual([]);
+  });
+
+  it('clears the output before filling it', () => {
+    const index = createSpatialIndex3D();
+    const out: SpatialObjectId[] = [99];
+    querySpatialFrustum3D(index, viewFrustum(10, 200, 400), out);
+    expect(out).not.toContain(99);
+  });
+});
+
 describe('querySpatialPairs3D', () => {
   it('reports a co-located pair once', () => {
     const index = createSpatialIndex3D();
@@ -115,6 +202,40 @@ describe('querySpatialRegion3D', () => {
     const out: SpatialObjectId[] = [];
     querySpatialRegion3D(index, box(0, 0, 0, 20), out);
     expect(out).toEqual([1]);
+  });
+});
+
+describe('querySpatialSphere3D', () => {
+  it('finds objects within the radius and excludes those beyond it', () => {
+    const index = createSpatialIndex3D(createUniformGridSpatialBackend3D(16));
+    insertSpatialObject3D(index, 1, box(0, 0, 0, 4));
+    insertSpatialObject3D(index, 2, box(500, 500, 500, 4));
+    const out: SpatialObjectId[] = [];
+    querySpatialSphere3D(index, 0, 0, 0, 20, out);
+    expect(out).toContain(1);
+    expect(out).not.toContain(2);
+  });
+
+  it('is a candidate set over the bounding cube, not an exact sphere test', () => {
+    // The corner of the cube reaches past the sphere by root three. This object sits in that corner —
+    // outside the sphere, inside the cube — and IS returned. Documented behaviour rather than a defect:
+    // the caller applies the exact distance test to what comes back.
+    const index = createSpatialIndex3D(createUniformGridSpatialBackend3D(16));
+    insertSpatialObject3D(index, 5, box(9, 9, 9, 0.5));
+    const out: SpatialObjectId[] = [];
+    querySpatialSphere3D(index, 0, 0, 0, 10, out);
+    expect(Math.hypot(9, 9, 9)).toBeGreaterThan(10);
+    expect(out).toContain(5);
+  });
+
+  it('returns nothing for a non-finite centre or negative radius', () => {
+    const index = createSpatialIndex3D();
+    insertSpatialObject3D(index, 1, box(0, 0, 0, 4));
+    const out: SpatialObjectId[] = [];
+    querySpatialSphere3D(index, NaN, 0, 0, 10, out);
+    expect(out).toEqual([]);
+    querySpatialSphere3D(index, 0, 0, 0, -1, out);
+    expect(out).toEqual([]);
   });
 });
 
