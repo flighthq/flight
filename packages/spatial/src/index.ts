@@ -5,6 +5,7 @@ export {
   createSpatialIndex2D,
   createSpatialIndex3D,
   createUniformGridSpatialBackend2D,
+  createBvhSpatialBackend3D,
   createUniformGridSpatialBackend3D,
   explainSpatialIndexing2D,
   explainSpatialIndexing3D,
