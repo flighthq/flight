@@ -3,6 +3,8 @@ import type {
   Physics3DBallAndSocketJointOptions,
   Physics3DConeTwistJoint,
   Physics3DConeTwistJointOptions,
+  Physics3DDistanceJoint,
+  Physics3DDistanceJointOptions,
   Physics3DFixedJoint,
   Physics3DFixedJointOptions,
   Physics3DGeneric6DofJoint,
@@ -20,6 +22,7 @@ import type {
 import {
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
+  Physics3DDistanceJointKind,
   Physics3DFixedJointKind,
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
@@ -57,6 +60,25 @@ export function createPhysics3DConeTwistJoint(
     swingLimitImpulse: 0,
     lowerTwistImpulse: 0,
     upperTwistImpulse: 0,
+  };
+}
+
+// Defaults to a RIGID strut: no spring, no limit, and a rest length of zero, which holds the two anchors
+// coincident until a caller names a length. The limit interval defaults to `[0, Infinity]` so that switching
+// `enableLimit` on alone gives a rope with no stated bound rather than one pinned to zero length.
+export function createPhysics3DDistanceJoint(options: Readonly<Physics3DDistanceJointOptions>): Physics3DDistanceJoint {
+  return {
+    kind: Physics3DDistanceJointKind,
+    ...createJointBase(options),
+    length: options.length ?? 0,
+    enableSpring: options.enableSpring ?? false,
+    frequencyHz: options.frequencyHz ?? 0,
+    dampingRatio: options.dampingRatio ?? 0,
+    enableLimit: options.enableLimit ?? false,
+    minLength: options.minLength ?? 0,
+    maxLength: options.maxLength ?? Number.POSITIVE_INFINITY,
+    lowerLimitImpulse: 0,
+    upperLimitImpulse: 0,
   };
 }
 

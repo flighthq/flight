@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createPhysics3DBallAndSocketJoint,
   createPhysics3DConeTwistJoint,
+  createPhysics3DDistanceJoint,
   createPhysics3DFixedJoint,
   createPhysics3DGeneric6DofJoint,
   createPhysics3DHingeJoint,
@@ -11,6 +12,7 @@ import {
 import {
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
+  Physics3DDistanceJointKind,
   Physics3DFixedJointKind,
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
@@ -79,6 +81,53 @@ describe('createPhysics3DConeTwistJoint', () => {
     expect(joint.swingLimitZ).toBe(1.1);
     expect(joint.lowerTwistAngle).toBe(-0.2);
     expect(joint.upperTwistAngle).toBe(0.9);
+  });
+});
+
+describe('createPhysics3DDistanceJoint', () => {
+  it('defaults to a RIGID strut with no spring and no limit', () => {
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 3 });
+
+    expect(joint.kind).toBe(Physics3DDistanceJointKind);
+    expect(joint.length).toBe(3);
+    expect(joint.enableSpring).toBe(false);
+    expect(joint.enableLimit).toBe(false);
+  });
+
+  it('defaults its interval to UNBOUNDED above, not to zero', () => {
+    // A caller who switches the limit on without naming a maximum means a rope with no stated bound. An
+    // interval defaulting to [0, 0] would instead pin the two anchors together, which is the opposite of a
+    // rope and would look like the joint holding rather than the default being wrong.
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1 });
+
+    expect(joint.minLength).toBe(0);
+    expect(joint.maxLength).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('carries the spring and limit it was given', () => {
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+      enableSpring: true,
+      frequencyHz: 4,
+      dampingRatio: 0.7,
+      enableLimit: true,
+      minLength: 1,
+      maxLength: 5,
+    });
+
+    expect(joint.frequencyHz).toBe(4);
+    expect(joint.dampingRatio).toBe(0.7);
+    expect(joint.minLength).toBe(1);
+    expect(joint.maxLength).toBe(5);
+  });
+
+  it('starts its limit accumulators cold', () => {
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1 });
+
+    expect(joint.lowerLimitImpulse).toBe(0);
+    expect(joint.upperLimitImpulse).toBe(0);
   });
 });
 

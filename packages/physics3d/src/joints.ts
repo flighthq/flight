@@ -1,5 +1,6 @@
 import type {
   Physics3DConeTwistJoint,
+  Physics3DDistanceJoint,
   Physics3DFixedJoint,
   Physics3DGeneric6DofJoint,
   Physics3DHingeJoint,
@@ -26,6 +27,7 @@ import {
   frameBRotation,
   getJointSolveState,
   getRowMass,
+  getRowVelocity,
   POINT_LENGTH,
   prepareAngularBlock,
   preparePointBlock,
@@ -50,6 +52,7 @@ import { findPhysics3DBody } from './world';
 // that convention rather than a registration guard is what keeps the two from colliding.
 export const Physics3DBallAndSocketJointKind = 'BallAndSocket';
 export const Physics3DConeTwistJointKind = 'ConeTwist';
+export const Physics3DDistanceJointKind = 'Distance';
 export const Physics3DFixedJointKind = 'Fixed';
 export const Physics3DGeneric6DofJointKind = 'Generic6Dof';
 export const Physics3DHingeJointKind = 'Hinge';
@@ -88,6 +91,175 @@ export const physics3DBallAndSocketJointSolver: Physics3DJointSolver = {
     const bodyB = findPhysics3DBody(world, joint.bodyB);
     if (bodyA === null || bodyB === null) return;
     warmStartPointBlock(bodyA, bodyB, joint);
+  },
+};
+
+// Holds two anchors apart along the line joining them. ONE row rather than the point block's three: the
+// separation is a single scalar coordinate, and constraining the other two axes is what makes a joint a
+// ball-and-socket instead.
+//
+// Up to three rows may be live at once — a rest-length row and the two one-sided limits — and they read
+// DIFFERENT effective masses on purpose. The rest row's mass is softened by the spring's compliance so the
+// spring can yield; a limit is a hard stop and reads the unsoftened mass, or a stiff spring would let the
+// cable stretch straight through the bound it exists to enforce.
+export const physics3DDistanceJointSolver: Physics3DJointSolver = {
+  clearAccumulatedImpulses(joint: Physics3DJoint): void {
+    joint.impulse0 = 0;
+    const distance = joint as Physics3DDistanceJoint;
+    distance.lowerLimitImpulse = 0;
+    distance.upperLimitImpulse = 0;
+  },
+
+  prepare(world: Physics3DWorld, joint: Physics3DJoint, dt: number): void {
+    const distance = joint as Physics3DDistanceJoint;
+    const bodyA = findPhysics3DBody(world, joint.bodyA);
+    const bodyB = findPhysics3DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) {
+      clearJointSolve(joint);
+      return;
+    }
+
+    const state = beginJointSolve(joint, DISTANCE_LENGTH);
+    writePhysics3DJointAnchors(bodyA, bodyB, joint);
+    writePhysics3DJointSeparation(bodyA, bodyB, joint, distanceAxis);
+
+    const separation = Math.sqrt(
+      distanceAxis[0] * distanceAxis[0] + distanceAxis[1] * distanceAxis[1] + distanceAxis[2] * distanceAxis[2],
+    );
+    // Coincident anchors leave the axis undefined — every direction is equally the line between them. Any
+    // fixed unit vector is a defensible reading and none is more correct; picking one keeps the row finite,
+    // where normalizing by zero would put NaN into both bodies and never leave.
+    const axisX = separation > AXIS_EPSILON ? distanceAxis[0] / separation : 1;
+    const axisY = separation > AXIS_EPSILON ? distanceAxis[1] / separation : 0;
+    const axisZ = separation > AXIS_EPSILON ? distanceAxis[2] / separation : 0;
+
+    // The angular arms are the CROSS products of each lever arm with the axis, not the lever arms
+    // themselves: a row's arm is what the inverse inertia tensor is applied to, and the torque an axial
+    // impulse exerts about the centre of mass is `r x axis`.
+    writeRow(
+      state,
+      DISTANCE_ROW,
+      axisX,
+      axisY,
+      axisZ,
+      joint.rAY * axisZ - joint.rAZ * axisY,
+      joint.rAZ * axisX - joint.rAX * axisZ,
+      joint.rAX * axisY - joint.rAY * axisX,
+      joint.rBY * axisZ - joint.rBZ * axisY,
+      joint.rBZ * axisX - joint.rBX * axisZ,
+      joint.rBX * axisY - joint.rBY * axisX,
+    );
+
+    const mass = getRowMass(bodyA, bodyB, state, DISTANCE_ROW);
+    state[DISTANCE_SEPARATION] = separation;
+    state[DISTANCE_LIMIT_MASS] = mass;
+    state[DISTANCE_LIMIT_BIAS] = 1 / dt;
+
+    // The rest-length row yields to the limits when the spring is off, because a fixed length and a slack
+    // interval cannot both hold on one axis. With the spring on, both are live and the interval bounds it.
+    const restActive = distance.enableSpring || !distance.enableLimit;
+    state[DISTANCE_REST_ACTIVE] = restActive ? 1 : 0;
+    const error = separation - distance.length;
+
+    if (restActive && distance.enableSpring && distance.frequencyHz > 0) {
+      // A frequency and a damping ratio describe the motion the caller wants; stiffness and damping are what
+      // the solver needs, and converting between them requires the mass being moved. Deriving them here,
+      // per-step and per-pair, is what makes a 2 Hz spring oscillate at 2 Hz whatever it is attached to —
+      // an authored stiffness would change frequency the moment either body's mass did.
+      const angular = TAU * distance.frequencyHz;
+      const damping = 2 * mass * distance.dampingRatio * angular;
+      const stiffness = mass * angular * angular;
+      const gammaDenominator = dt * (damping + dt * stiffness);
+      const gamma = gammaDenominator > 0 ? 1 / gammaDenominator : 0;
+      state[DISTANCE_GAMMA] = gamma;
+      state[DISTANCE_BIAS] = error * dt * stiffness * gamma;
+      // Compliance adds to the INVERSE mass, which is why this cannot reuse `mass` directly: softening is
+      // making the constraint easier to violate, and that is an addition on the reciprocal side.
+      const inverseMass = mass > 0 ? 1 / mass : 0;
+      const softened = inverseMass + gamma;
+      state[DISTANCE_MASS] = softened > 0 ? 1 / softened : 0;
+    } else {
+      state[DISTANCE_GAMMA] = 0;
+      state[DISTANCE_BIAS] = error * (BAUMGARTE / dt);
+      state[DISTANCE_MASS] = mass;
+    }
+
+    distance.lowerLimitImpulse ??= 0;
+    distance.upperLimitImpulse ??= 0;
+    if (!distance.enableLimit) {
+      distance.lowerLimitImpulse = 0;
+      distance.upperLimitImpulse = 0;
+    }
+    state[DISTANCE_LOWER_IMPULSE] = distance.lowerLimitImpulse;
+    state[DISTANCE_UPPER_IMPULSE] = distance.upperLimitImpulse;
+  },
+
+  solve(world: Physics3DWorld, joint: Physics3DJoint): void {
+    const distance = joint as Physics3DDistanceJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics3DBody(world, joint.bodyA);
+    const bodyB = findPhysics3DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+
+    if (state[DISTANCE_REST_ACTIVE] === 1) {
+      // The gamma term is the whole of the softness, and it multiplies the ACCUMULATED impulse rather than
+      // this iteration's. A soft constraint is one that gives way in proportion to how hard it has already
+      // been pushing, which is a statement about the total, not the increment.
+      const velocity = getRowVelocity(bodyA, bodyB, state, DISTANCE_ROW);
+      const impulse =
+        -state[DISTANCE_MASS] * (velocity + state[DISTANCE_BIAS] + state[DISTANCE_GAMMA] * joint.impulse0);
+      joint.impulse0 += impulse;
+      applyRow(bodyA, bodyB, state, DISTANCE_ROW, impulse);
+    }
+
+    if (distance.enableLimit) {
+      const separation = state[DISTANCE_SEPARATION];
+      solveLowerLimitRow(
+        bodyA,
+        bodyB,
+        state,
+        DISTANCE_ROW,
+        state[DISTANCE_LIMIT_MASS],
+        separation - distance.minLength,
+        state[DISTANCE_LIMIT_BIAS],
+        DISTANCE_LOWER_IMPULSE,
+      );
+      solveUpperLimitRow(
+        bodyA,
+        bodyB,
+        state,
+        DISTANCE_ROW,
+        state[DISTANCE_LIMIT_MASS],
+        distance.maxLength - separation,
+        state[DISTANCE_LIMIT_BIAS],
+        DISTANCE_UPPER_IMPULSE,
+      );
+      distance.lowerLimitImpulse = state[DISTANCE_LOWER_IMPULSE];
+      distance.upperLimitImpulse = state[DISTANCE_UPPER_IMPULSE];
+    }
+  },
+
+  // Nothing to reverse. Every quantity this kind carries is an unsigned scalar along a line, and a line has
+  // the same length read from either end — unlike a hinge's angles, which are positions on an axis that
+  // reverses with the ends. The two limit accumulators are magnitudes of "push apart" and "pull together",
+  // and those keep their meaning too, because the row's direction flips with them.
+  swapEnds(): boolean {
+    return true;
+  },
+
+  warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
+    const distance = joint as Physics3DDistanceJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return;
+    const bodyA = findPhysics3DBody(world, joint.bodyA);
+    const bodyB = findPhysics3DBody(world, joint.bodyB);
+    if (bodyA === null || bodyB === null) return;
+
+    if (state[DISTANCE_REST_ACTIVE] === 1) applyRow(bodyA, bodyB, state, DISTANCE_ROW, joint.impulse0);
+    if (distance.enableLimit) {
+      applyRow(bodyA, bodyB, state, DISTANCE_ROW, distance.lowerLimitImpulse - distance.upperLimitImpulse);
+    }
   },
 };
 
@@ -909,6 +1081,22 @@ function getSignedAxisAngle(basisA: readonly number[], basisB: readonly number[]
 }
 
 const BAUMGARTE = 0.2;
+
+const TAU = 2 * Math.PI;
+
+const DISTANCE_ROW = 0;
+const DISTANCE_MASS = DISTANCE_ROW + ROW_LENGTH;
+const DISTANCE_BIAS = DISTANCE_MASS + 1;
+const DISTANCE_GAMMA = DISTANCE_BIAS + 1;
+const DISTANCE_LIMIT_MASS = DISTANCE_GAMMA + 1;
+const DISTANCE_LIMIT_BIAS = DISTANCE_LIMIT_MASS + 1;
+const DISTANCE_SEPARATION = DISTANCE_LIMIT_BIAS + 1;
+const DISTANCE_REST_ACTIVE = DISTANCE_SEPARATION + 1;
+const DISTANCE_LOWER_IMPULSE = DISTANCE_REST_ACTIVE + 1;
+const DISTANCE_UPPER_IMPULSE = DISTANCE_LOWER_IMPULSE + 1;
+const DISTANCE_LENGTH = DISTANCE_UPPER_IMPULSE + 1;
+
+const distanceAxis = [0, 0, 0];
 
 const FIXED_ANGULAR_MASS = POINT_LENGTH;
 const FIXED_ANGULAR_BIAS = FIXED_ANGULAR_MASS + 6;

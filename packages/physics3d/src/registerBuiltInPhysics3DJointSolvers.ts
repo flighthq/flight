@@ -4,12 +4,14 @@ import { registerPhysics3DJointSolver } from './jointRegistry';
 import {
   physics3DBallAndSocketJointSolver,
   physics3DConeTwistJointSolver,
+  physics3DDistanceJointSolver,
   physics3DFixedJointSolver,
   physics3DGeneric6DofJointSolver,
   physics3DHingeJointSolver,
   physics3DSliderJointSolver,
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
+  Physics3DDistanceJointKind,
   Physics3DFixedJointKind,
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
@@ -22,6 +24,7 @@ import {
 export function registerBuiltInPhysics3DJointSolvers(world: Physics3DWorld): void {
   registerPhysics3DJointSolver(world, Physics3DBallAndSocketJointKind, physics3DBallAndSocketJointSolver);
   registerPhysics3DJointSolver(world, Physics3DConeTwistJointKind, physics3DConeTwistJointSolver);
+  registerPhysics3DJointSolver(world, Physics3DDistanceJointKind, physics3DDistanceJointSolver);
   registerPhysics3DJointSolver(world, Physics3DFixedJointKind, physics3DFixedJointSolver);
   registerPhysics3DJointSolver(world, Physics3DGeneric6DofJointKind, physics3DGeneric6DofJointSolver);
   registerPhysics3DJointSolver(world, Physics3DHingeJointKind, physics3DHingeJointSolver);
