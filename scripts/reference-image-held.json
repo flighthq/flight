@@ -218,15 +218,33 @@
         "functional/effect-msaa-bloom/webgpu": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4 and Canvas antialiases; release after the WebGPU sample-count seam is resolved and current parity passes"
       },
       "reason": "wgpu blur fixed"
+    },
+    {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:31:14.677Z",
+      "keys": ["functional/effect-lens-distortion/webgl", "functional/effect-lens-distortion/webgpu"],
+      "priorReasons": {
+        "functional/effect-lens-distortion/webgl": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
+        "functional/effect-lens-distortion/webgpu": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes"
+      },
+      "reason": "looks consistent now"
+    },
+    {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:31:58.182Z",
+      "keys": ["functional/effect-posterize/webgl", "functional/effect-posterize/webgpu"],
+      "priorReasons": {
+        "functional/effect-posterize/webgl": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes",
+        "functional/effect-posterize/webgpu": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes"
+      },
+      "reason": "looks close"
     }
   ],
   "held": {
     "functional/color-adjustment/canvas": "canvas does not implement the colour-adjustment fold, so this cell shows a different picture from its siblings; parity absorbs it at 9.07/15. Release by implementing the fold in scene2d-canvas (with the user) or by removing the cell.",
     "functional/effect-bokeh-dof/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
-    "functional/effect-lens-distortion/webgl": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
-    "functional/effect-lens-distortion/webgpu": "the historical parity green predates the harness fix that falls back to all-pairs when the Canvas reference is absent; release after a current-harness parity run compares the two realized GPU cells and passes",
-    "functional/effect-posterize/webgl": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes",
-    "functional/effect-posterize/webgpu": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes",
     "functional/effect-ssr/webgl": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
     "functional/effect-ssr/webgpu": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
     "functional/effect-taa/webgl": "declared control cell (functionalBackendSupport = 'control'): the user ruled that declared controls must never enter the reviewable set, so this cell is not commissionable at all — its live request target was withdrawn at the same time",
