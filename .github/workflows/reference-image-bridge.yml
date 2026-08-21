@@ -210,8 +210,9 @@ jobs:
             }
 
             // ★ TEMPORARY CUTOVER SEAM. Exactly one branch runs. Keep the already-exercised v1 sender
-            // available for a manual rollback until a real v2 repository_dispatch starts intake-batch.yml;
-            // delete the false branch in a separate commit only after that downstream run is observed.
+            // available for a manual rollback until a real v2 repository_dispatch starts intake-batch.yml
+            // in flight-reference-images; then delete the false branch in a separate commit. This is not
+            // a downstream compatibility guarantee — their v1 handler merely makes rollback our code change.
             const useBatchDispatch = true;
             batchCandidates.sort((left, right) => left.requestPath.localeCompare(right.requestPath));
             if (useBatchDispatch) {
