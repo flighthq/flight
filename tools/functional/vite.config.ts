@@ -9,7 +9,11 @@ import {
 } from '../../packages/tool-capture/src/captureBuildIdentity';
 // Imported from the package source (not the built barrel) so `vite --config` resolves it before
 // @flighthq/tool-capture is built; it is the same single source the capture scripts consume.
-import { discoverFunctionalScene3Ds, functionalScene3DFile } from '../../packages/tool-capture/src/functionalScene3Ds';
+import {
+  discoverFunctionalScene3Ds,
+  functionalScene3DFile,
+  resolveFunctionalTestRoute,
+} from '../../packages/tool-capture/src/functionalScene3Ds';
 import type { FunctionalScene3D } from '../../packages/tool-capture/src/functionalScene3Ds';
 import { resolveAssetTarget } from '../../scripts/asset-cache';
 import { copyDirectoryContents } from '../../scripts/copy-dir';
@@ -243,8 +247,21 @@ function functionalTestsPlugin(tests: FunctionalScene3D[]): Plugin[] {
           const [, name, render, ...assetParts] = parts;
 
           // Re-scan so a scene added since startup resolves without a restart.
-          const test = discoverTests().find((t) => t.name === name && t.renderers.includes(render));
-          if (!test) return next();
+          const route = resolveFunctionalTestRoute(discoverTests(), name, render);
+          if (route.kind === 'unknown') return next();
+          if (route.kind === 'unavailable') {
+            res.statusCode = 404;
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.end(
+              `<!DOCTYPE html><html><head><title>${name} · ${render} — not available</title></head>` +
+                `<body style="font-family:monospace;padding:2em;background:#1a1a2e;color:#e0e0e0">` +
+                `<h2>${name}/${render} — backend not available</h2>` +
+                `<p>This scene exists but has no <code>${render}</code> cell.</p>` +
+                `<p>Available backends: ${route.scene.renderers.map((r) => `<code>${r}</code>`).join(', ')}</p>` +
+                `</body></html>`,
+            );
+            return;
+          }
 
           if (assetParts.length > 0) {
             const assetRel = assetParts.join('/');
