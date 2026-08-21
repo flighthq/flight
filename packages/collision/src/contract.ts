@@ -15,6 +15,8 @@ export * from './manifold3D';
 export * from './pointContainment';
 export * from './raycastCollisionShape2D';
 export * from './registerBuiltInCollisionPairTests2D';
+export * from './registerBuiltInCollisionPairTests3D';
+export * from './shapeCollision3D';
 export * from './segmentCollision';
 export * from './shapeCollision';
 export * from './shapeContact';
