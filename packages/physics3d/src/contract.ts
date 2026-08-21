@@ -4,6 +4,8 @@ export * from './contactIntake';
 export * from './continuous';
 export * from './contacts';
 export * from './explainPhysics3DCollision';
+export * from './jointReaction';
+export * from './jointBreakage';
 export * from './explainPhysics3DJoints';
 export * from './enablePhysics3DGuards';
 export * from './explainPhysics3DStep';

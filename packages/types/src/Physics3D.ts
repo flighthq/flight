@@ -511,6 +511,19 @@ export interface Physics3DJoint {
 
   collideConnected: boolean;
 
+  // The load at which this joint gives way, as a FORCE and a TORQUE rather than an impulse, so a
+  // threshold means the same thing at any timestep. `Infinity` — the default — is unbreakable.
+  //
+  // The two are read against the reaction at the ANCHOR, so they are independent: hanging a heavy body
+  // off a joint loads `breakForce` and not `breakTorque`, and twisting it loads the reverse.
+  breakForce: number;
+  breakTorque: number;
+  // Set by the step when a threshold is crossed, and never cleared by it. A broken joint constrains
+  // nothing and no longer binds its two bodies into one solve island, but it stays in `world.joints`
+  // until the caller removes it: deciding what a break MEANS — debris, a callback, a respawn — is the
+  // caller's, and a joint that deleted itself would leave nothing to inspect.
+  broken: boolean;
+
   impulse0: number;
   impulse1: number;
   impulse2: number;
@@ -558,6 +571,14 @@ export interface Physics3DJointSolver {
   // every joint has — two body indices and two anchors — and anything a kind measures FROM bodyA TO
   // bodyB reverses sign when the ends trade places.
   swapEnds?(joint: Physics3DJoint): boolean;
+  // Writes the force and torque this kind's rows applied over the sub-interval just solved, in world
+  // space at the anchor, and returns whether it could. Reading the `impulse0..5` block generically is not
+  // an option: the slots mean different things per kind — three world axes for a point block, one axial
+  // scalar for a distance joint — so only the kind that wrote them can say what they add up to.
+  //
+  // Omit it and the kind reports no reaction, `writePhysics3DJointReaction` returns false for it, and it
+  // never breaks. That is the honest reading of a kind that cannot measure its own load.
+  writeReaction?(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean;
   // Reapplies the impulses this joint converged on last substep, before iteration begins. Called after
   // `prepare`, so the current lever arms are in place. Omit it and the kind starts each substep cold,
   // which is correct but converges more slowly.
@@ -596,6 +617,31 @@ export interface Physics3DJointFrames {
 
 // The authoring options every joint factory accepts. Anchors and `collideConnected` default, the two body
 // indices do not: a joint without endpoints has no meaning to default to.
+// The load a joint is carrying: the force and torque the constraint applied over one sub-interval,
+// measured at the ANCHOR and expressed in world space.
+//
+// At the anchor rather than at the centre of mass, which is what makes the two readings independent. A
+// linear constraint row acting through an offset anchor exerts `r x F` about the centre, so a torque
+// measured there would rise with pure hanging load and a `breakTorque` would fire on weight alone.
+//
+// A FORCE, not an impulse: the solver accumulates impulses, and dividing by the sub-interval turns a
+// quantity that changes with timestep into one that does not.
+export interface Physics3DJointReaction {
+  forceX: number;
+  forceY: number;
+  forceZ: number;
+  torqueX: number;
+  torqueY: number;
+  torqueZ: number;
+}
+
+// Joints that broke during the most recent step. Drained and refilled by the step, like the contact
+// events, and kept in its own record rather than widened into `Physics3DContactEvents` — that name is
+// accurate and a joint break is not a contact.
+export interface Physics3DJointEvents {
+  broke: Physics3DJoint[];
+}
+
 export interface Physics3DJointOptions {
   bodyA: number;
   bodyB: number;
@@ -606,6 +652,8 @@ export interface Physics3DJointOptions {
   localAnchorBY?: number;
   localAnchorBZ?: number;
   collideConnected?: boolean;
+  breakForce?: number;
+  breakTorque?: number;
 }
 
 // The authoring options for a joint carrying frames. Each rotation defaults to identity, which aligns the
@@ -883,6 +931,7 @@ export interface Physics3DWorld {
   jointCollisionSuppressions: Map<number, Map<number, number>>;
 
   events: Physics3DContactEvents;
+  jointEvents: Physics3DJointEvents;
   contactHooks: Physics3DContactHooks;
 
   solver: Physics3DSequentialImpulseState;
