@@ -29,14 +29,14 @@ describe('addReferenceImageCoverage', () => {
 
   it('adds referenceImage to each commissioned identity and keeps the kinds sorted', () => {
     expect(
-      addReferenceImageCoverage({ 'a/webgl': ['fingerprint', 'oracle', 'screenshot'] }, ['functional/a/webgl']),
-    ).toEqual({ coverage: { 'a/webgl': ['fingerprint', 'oracle', 'referenceImage', 'screenshot'] } });
+      addReferenceImageCoverage({ 'a/webgl': ['fingerprint', 'sceneAssertion', 'screenshot'] }, ['functional/a/webgl']),
+    ).toEqual({ coverage: { 'a/webgl': ['fingerprint', 'referenceImage', 'sceneAssertion', 'screenshot'] } });
   });
 
   it('leaves every cell the batch did not name untouched', () => {
     expect(
-      addReferenceImageCoverage({ 'a/webgl': ['fingerprint'], 'b/canvas': ['oracle'] }, ['functional/a/webgl']),
-    ).toEqual({ coverage: { 'a/webgl': ['fingerprint', 'referenceImage'], 'b/canvas': ['oracle'] } });
+      addReferenceImageCoverage({ 'a/webgl': ['fingerprint'], 'b/canvas': ['sceneAssertion'] }, ['functional/a/webgl']),
+    ).toEqual({ coverage: { 'a/webgl': ['fingerprint', 'referenceImage'], 'b/canvas': ['sceneAssertion'] } });
   });
 
   it('is idempotent on a cell that already carries the kind', () => {
@@ -180,8 +180,8 @@ describe('selectCommissionableCells', () => {
     // to freeze.
     const report = select({
       coverage: [
-        ['functional/good/canvas', ['fingerprint', 'oracle']],
-        ['functional/good/webgl', ['fingerprint', 'oracle']],
+        ['functional/good/canvas', ['fingerprint', 'sceneAssertion']],
+        ['functional/good/webgl', ['fingerprint', 'sceneAssertion']],
       ],
       captures: [fact('functional/good/canvas'), fact('functional/good/webgl', { state: 'error' })],
       determinismMap: [
@@ -207,7 +207,7 @@ describe('selectCommissionableCells', () => {
     // tree a three-week-old `bitmap-downscale-smoothing/webgl` withheld that scene's two live columns.
     // A cell that no longer exists cannot be under repair.
     const report = select({
-      coverage: [['functional/good/canvas', ['fingerprint', 'oracle']]],
+      coverage: [['functional/good/canvas', ['fingerprint', 'sceneAssertion']]],
       captures: [fact('functional/good/canvas'), fact('functional/good/webgl', { state: 'error' })],
       determinismMap: [['functional/good/canvas', 'agreed']],
     });
@@ -218,8 +218,8 @@ describe('selectCommissionableCells', () => {
   it('does not read a failure in a different scene as a sibling failure', () => {
     const report = select({
       coverage: [
-        ['functional/good/canvas', ['fingerprint', 'oracle']],
-        ['functional/other/webgl', ['fingerprint', 'oracle']],
+        ['functional/good/canvas', ['fingerprint', 'sceneAssertion']],
+        ['functional/other/webgl', ['fingerprint', 'sceneAssertion']],
       ],
       captures: [fact('functional/good/canvas'), fact('functional/other/webgl', { state: 'error' })],
       determinismMap: [['functional/good/canvas', 'agreed']],
@@ -325,8 +325,8 @@ describe('selectCommissionableCells', () => {
   it('withholds a cell parity could not judge under its own reason', () => {
     const report = select({
       coverage: [
-        ['functional/good/webgl', ['fingerprint', 'oracle']],
-        ['functional/good/canvas', ['fingerprint', 'oracle']],
+        ['functional/good/webgl', ['fingerprint', 'sceneAssertion']],
+        ['functional/good/canvas', ['fingerprint', 'sceneAssertion']],
       ],
       captures: [fact('functional/good/webgl'), fact('functional/good/canvas')],
       determinismMap: [
@@ -359,8 +359,8 @@ describe('selectCommissionableCells', () => {
     // safest in the suite — for an observation with no discriminating power.
     const report = select({
       coverage: [
-        ['functional/good/webgl', ['fingerprint', 'oracle']],
-        ['functional/good/webgpu', ['fingerprint', 'oracle']],
+        ['functional/good/webgl', ['fingerprint', 'sceneAssertion']],
+        ['functional/good/webgpu', ['fingerprint', 'sceneAssertion']],
       ],
       captures: [
         fact('functional/good/webgl', { hash: 'same', baselineHash: 'same' }),
@@ -385,8 +385,8 @@ describe('selectCommissionableCells', () => {
     // observation worth printing.
     const report = select({
       coverage: [
-        ['functional/good/webgl', ['fingerprint', 'oracle']],
-        ['functional/other/webgl', ['fingerprint', 'oracle']],
+        ['functional/good/webgl', ['fingerprint', 'sceneAssertion']],
+        ['functional/other/webgl', ['fingerprint', 'sceneAssertion']],
       ],
       captures: [
         fact('functional/good/webgl', { hash: 'same', baselineHash: 'same' }),
@@ -462,7 +462,7 @@ describe('selectCommissionableCells', () => {
   // marked ten cells "already blessed and gating" while the release carrying their bytes did not exist.
   it('reports a declared-but-unlocked reference as its own state, not as already-pinned', () => {
     expect(
-      blockOf(select({ coverage: [['functional/good/webgl', ['fingerprint', 'oracle', 'referenceImage']]] })),
+      blockOf(select({ coverage: [['functional/good/webgl', ['fingerprint', 'sceneAssertion', 'referenceImage']]] })),
     ).toEqual([
       'reference-declared-not-locked',
       'coverage declares a referenceImage and the locked release carries none for it',
@@ -473,7 +473,7 @@ describe('selectCommissionableCells', () => {
     expect(
       blockOf(
         select({
-          coverage: [['functional/good/webgl', ['fingerprint', 'oracle', 'referenceImage']]],
+          coverage: [['functional/good/webgl', ['fingerprint', 'sceneAssertion', 'referenceImage']]],
           pinned: ['functional/good/webgl'],
         }),
       ),
@@ -547,7 +547,7 @@ function select(options: {
     (options.determinism === null ? [] : ([['functional/good/webgl', options.determinism ?? 'agreed']] as const));
   const input: ReferenceImageEligibilityInput = {
     captures: options.captures ?? [fact('functional/good/webgl', options.capture)],
-    coverage: new Map(options.coverage ?? [['functional/good/webgl', ['fingerprint', 'oracle']]]),
+    coverage: new Map(options.coverage ?? [['functional/good/webgl', ['fingerprint', 'sceneAssertion']]]),
     determinism: new Map(determinism),
     determinismScope: options.determinismScope ?? 'independent-hosts',
     outstanding: new Set(options.outstanding ?? []),

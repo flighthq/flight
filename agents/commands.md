@@ -145,7 +145,7 @@ Same report, same shape, opposite worth. This is why the output is a list of add
 
 ### `npm run evidence` — which evidence each capture target actually carries
 
-A census of the three evidence kinds — fingerprint, screenshot hash, and pixel oracle — per capture
+A census of the three evidence kinds — fingerprint, screenshot hash, and scene assertion — per capture
 target, compared against `scripts/capture-baseline-coverage-manifest.json`. Unlike `contrast` below, this
 one **gates**: `evidence:check` is a stage of the whole-repo `npm run check`. It reads committed baselines
 and scene sources off disk and needs no browser, no GPU and no capture output, which is what makes a gate
@@ -157,9 +157,9 @@ affordable.
                                         # accept only exact named targets; repeat --target as needed
     npm run evidence:json            # the same rows as JSON
 
-**It is a static scan**, so the oracle column means *the scene exports an oracle*, never *the verifier
-called it*. Only the verifier settles the second, and it records that per target as `oracle` in its own
-status artifact. A green census is not evidence that oracles ran.
+**It is a static scan**, so the sceneAssertion column means *the scene exports an `assertRender`*, never
+*the verifier called it*. Only the verifier settles the second, and it records that per target as `oracle`
+in its own status artifact. A green census is not evidence that scene assertions ran.
 
 The current 450 functional screenshot pins were inherited from a blanket `evidence:baseline` update;
 they were not reviewed and accepted target by target. A clean `evidence:check` therefore proves only that
