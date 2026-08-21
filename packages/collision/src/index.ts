@@ -53,3 +53,18 @@ export {
 } from './collisionSupport2D';
 export { testCollisionSupport2D, testCollisionSupportOverlap2D } from './gjk2D';
 export { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
+export {
+  getCollisionPairTest3D,
+  getCollisionSupport3D,
+  registerBuiltInCollisionSupports3D,
+  registerCollisionPairTest3D,
+  registerCollisionSupport3D,
+  supportCollisionAabb3D,
+  supportCollisionBox3D,
+  supportCollisionCapsule3D,
+  supportCollisionConvex3D,
+  supportCollisionSphere3D,
+} from './collisionSupport3D';
+export { testCollisionSupport3D, testCollisionSupportOverlap3D } from './gjk3D';
+export { clearCollisionManifold3D, createCollisionManifold3D } from './manifold3D';
+export { testCollision3D } from './testCollision3D';
