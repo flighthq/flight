@@ -1,4 +1,4 @@
-import { selectCaptureEntriesByName } from './captureEntryFilter';
+import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter';
 
 const entries = [
   { name: 'material-depth' },
@@ -6,6 +6,56 @@ const entries = [
   { name: 'material-vertex-color' },
   { name: 'material-vertex-color-interpolated' },
 ];
+
+const entriesWithRenderers = [
+  { name: 'effect-bevel', renderers: ['canvas', 'webgl', 'webgpu'] },
+  { name: 'effect-bloom', renderers: ['webgl', 'webgpu'] },
+  { name: 'sprite-basic', renderers: ['dom', 'canvas', 'webgl', 'webgpu'] },
+];
+
+describe('assertCaptureSelectionNotEmpty', () => {
+  it('accepts when entries and renderers match', () => {
+    expect(() =>
+      assertCaptureSelectionNotEmpty(entriesWithRenderers, undefined, undefined, ['webgl'], 'capture'),
+    ).not.toThrow();
+  });
+
+  it('accepts when no renderer filter is given', () => {
+    expect(() =>
+      assertCaptureSelectionNotEmpty(entriesWithRenderers, undefined, undefined, [], 'capture'),
+    ).not.toThrow();
+  });
+
+  it('refuses --filter-exact that matched no entries', () => {
+    expect(() => assertCaptureSelectionNotEmpty([], undefined, 'nonexistent', [], 'capture')).toThrow(
+      /capture: --filter-exact 'nonexistent' matched no entries/,
+    );
+  });
+
+  it('refuses --filter that matched no entries', () => {
+    expect(() => assertCaptureSelectionNotEmpty([], 'zzz', undefined, [], 'validate')).toThrow(
+      /validate: --filter 'zzz' matched no entries/,
+    );
+  });
+
+  it('refuses when no entries exist and no filter was given', () => {
+    expect(() => assertCaptureSelectionNotEmpty([], undefined, undefined, [], 'capture')).toThrow(
+      /capture: no entries found/,
+    );
+  });
+
+  it('refuses --renderer that matched no renderers across all entries', () => {
+    expect(() =>
+      assertCaptureSelectionNotEmpty(entriesWithRenderers.slice(0, 2), undefined, undefined, ['dom'], 'capture'),
+    ).toThrow(/capture: --renderer 'dom' matched no renderers in 2 selected entries/);
+  });
+
+  it('accepts --renderer that matches at least one entry', () => {
+    expect(() =>
+      assertCaptureSelectionNotEmpty(entriesWithRenderers, undefined, undefined, ['dom'], 'capture'),
+    ).not.toThrow();
+  });
+});
 
 describe('selectCaptureEntriesByName', () => {
   it('returns every entry when neither selector is given', () => {

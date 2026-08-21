@@ -10,6 +10,27 @@
 // Substring stays the default because it is the useful thing for read-only exploration. Exactness is
 // opt-in, and it is what any writing operation should use.
 
+import { rendererMatchesFilter } from './captureEntries.js';
+
+export function assertCaptureSelectionNotEmpty<T extends { name: string; renderers: readonly string[] }>(
+  entries: readonly T[],
+  filter: string | undefined,
+  exact: string | undefined,
+  rendererFilter: readonly string[],
+  label: string,
+): void {
+  if (entries.length === 0) {
+    if (exact !== undefined) throw new Error(`${label}: --filter-exact '${exact}' matched no entries`);
+    if (filter !== undefined) throw new Error(`${label}: --filter '${filter}' matched no entries`);
+    throw new Error(`${label}: no entries found`);
+  }
+  if (rendererFilter.length === 0) return;
+  if (entries.some((e) => e.renderers.some((r) => rendererMatchesFilter(r, rendererFilter)))) return;
+  throw new Error(
+    `${label}: --renderer '${rendererFilter.join(',')}' matched no renderers in ${entries.length} selected entr${entries.length === 1 ? 'y' : 'ies'}`,
+  );
+}
+
 /** Selects entries by name: exact when `exact` is given, else substring. Both is a programmer error. */
 export function selectCaptureEntriesByName<T extends { name: string }>(
   entries: readonly T[],

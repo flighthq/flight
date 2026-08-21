@@ -53,7 +53,7 @@ import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
 import type { Entry } from './captureEntries.js';
 import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
 import { isTransientCaptureError } from './captureEntry.js';
-import { selectCaptureEntriesByName } from './captureEntryFilter.js';
+import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter.js';
 import { compareCaptureFixtureBackgrounds } from './captureFixtureBackground.js';
 import type { DetailTone } from './captureFormat.js';
 import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
@@ -1175,7 +1175,7 @@ export async function runCaptureValidation(
 ): Promise<CaptureValidationResult> {
   const startedAt = performance.now();
   const entries = selectCaptureEntriesByName(input.entries, input.filter, input.filterExact);
-  if (entries.length === 0) throw new Error(`No validation entries found subject=${input.subject}`);
+  assertCaptureSelectionNotEmpty(entries, input.filter, input.filterExact, input.rendererFilter ?? [], 'validate');
   // A filtered run cannot tell "this pinned target vanished" from "I excluded it", so it must not claim
   // an absence. It can still report a LOSS, because that is about a target it actually ran.
   const entryFiltered = (input.filter !== undefined && input.filter !== '') || input.filterExact !== undefined;
