@@ -19,11 +19,11 @@ It closes a category-level omission: a rendered-to-canvas Flight app is invisibl
 
 ## North star
 
-The complete accessibility bridge: a semantic node model (ARIA-aligned roles + states + value + label/description + bounds + parent link), focus control, and polite/assertive live announcements — published through a `get/set/createWebAccessibilityBackend` seam so a native host reflects the same node commands to its OS accessibility layer. Plain-data nodes, flat command functions, sentinels not throws — the platform-suite command-capability shape.
+The complete accessibility bridge: a semantic node model (ARIA-aligned roles + states + value + label/description + bounds + parent link), focus control, and polite/assertive live announcements — published through a `getAccessibilityBackend`/`setAccessibilityBackend` seam so a native host reflects the same node commands to its OS accessibility layer. The web implementation is installed explicitly via `enableHostWebAccessibility()` from `@flighthq/host-web`; resolution is custom > host > sentinel, order-independent. Plain-data nodes, flat command functions, sentinels not throws — the platform-suite command-capability shape.
 
 ## Boundaries
 
-- **Platform-suite command capability.** Flat free functions over a swappable `AccessibilityBackend`; the **backend holds the mirrored tree** (like `storage`'s backend holds the store), the app issues node/focus/announce commands. `get/set/createWebAccessibilityBackend`; web backend always available, lazy, import-side-effect-free; returns sentinels, never throws.
+- **Platform-suite command capability.** Flat free functions over a swappable `AccessibilityBackend`; the **backend holds the mirrored tree** (like `storage`'s backend holds the store), the app issues node/focus/announce commands. `getAccessibilityBackend`/`setAccessibilityBackend`; web backend installed explicitly via `enableHostWebAccessibility()` from `@flighthq/host-web` (custom > host > sentinel); returns sentinels, never throws.
 - **Depends on `@flighthq/types`** (+ the DOM in the web backend only). No display object, no renderer, no scene graph — the caller maps its UI (display objects, layout) onto accessibility nodes with `bounds`; accessibility does not read the scene graph.
 - **Semantics + focus + announce, not rendering.** It publishes what an element *is* (role/label/state) and where (bounds), not how it looks. Visual focus rings, hit-testing, and pointer/keyboard input are `@flighthq/interaction`/`@flighthq/input`'s; accessibility only reflects semantics to assistive tech.
 

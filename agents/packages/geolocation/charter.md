@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Device geolocation acquisition -- reading the device's current geographic position, watching position over time, and managing the location-permission lifecycle (query, request, live change). Flat free functions over a swappable `GeolocationBackend`, with a lazily-available web default (over `navigator.geolocation` / `navigator.permissions`) that a native host replaces via `setGeolocationBackend`. The domain ends at acquiring location from the host; geospatial computation (distance, bearing, geofencing, coordinate projection) lives outside this seam.
+Device geolocation acquisition -- reading the device's current geographic position, watching position over time, and managing the location-permission lifecycle (query, request, live change). Flat free functions over a swappable `GeolocationBackend`, with a web backend (over `navigator.geolocation` / `navigator.permissions`) installed explicitly via `enableHostWebGeolocation()` from `@flighthq/host-web`; native hosts replace via `setGeolocationBackend`. Resolution: custom > host > sentinel. The domain ends at acquiring location from the host; geospatial computation (distance, bearing, geofencing, coordinate projection) lives outside this seam.
 
 ## Decisions
 

@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-OS deep-link / custom-URI-scheme seam -- the capability an app uses to claim `myapp://...` with the operating system, to learn whether it is the default handler, to receive incoming deep-link opens (cold-start launch and warm subsequent opens), and to parse/build the deep-link URLs themselves. Command + event capability over a swappable `ProtocolBackend` with a web default returning sentinels. The `ProtocolHandler` event entity is wired through `attach*`/`detach*`/`dispose*`. Parse/build helpers (`parseProtocolUrl` / `createProtocolUrl`) live here as domain payload helpers, deliberately not split into a separate URL package.
+OS deep-link / custom-URI-scheme seam -- the capability an app uses to claim `myapp://...` with the operating system, to learn whether it is the default handler, to receive incoming deep-link opens (cold-start launch and warm subsequent opens), and to parse/build the deep-link URLs themselves. Command + event capability over a swappable `ProtocolBackend`; the web implementation is installed explicitly via `enableHostWebProtocol()` from `@flighthq/host-web`; resolution is custom (`setProtocolBackend`) > host > sentinel, order-independent. The `ProtocolHandler` event entity is wired through `attach*`/`detach*`/`dispose*`. Parse/build helpers (`parseProtocolUrl` / `createProtocolUrl`) live here as domain payload helpers, deliberately not split into a separate URL package.
 
 ## Decisions
 

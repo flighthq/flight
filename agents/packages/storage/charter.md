@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Synchronous persistent key/value storage over a swappable web/native `StorageBackend`, part of the platform-integration suite. The broadest API surface in the OS/device group (39 exports): namespacing, typed scalar accessors (string, number, boolean), JSON serialization, schema migrations, and quota reporting. The web default wraps `localStorage`; native hosts replace via `setStorageBackend`. All reads/writes are synchronous and side-effect-free at import.
+Synchronous persistent key/value storage over a swappable web/native `StorageBackend`, part of the platform-integration suite. The broadest API surface in the OS/device group (39 exports): namespacing, typed scalar accessors (string, number, boolean), JSON serialization, schema migrations, and quota reporting. The web backend (wrapping `localStorage`) is installed explicitly via `enableHostWebStorage()` from `@flighthq/host-web`; native hosts replace via `setStorageBackend`. Resolution: custom > host > sentinel. All reads/writes are synchronous and side-effect-free at import.
 
 ## Decisions
 

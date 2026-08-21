@@ -1,0 +1,645 @@
+# Host Architecture Record v9
+
+**Status:** design record — direction settled (user ruling), shape defined.
+
+Web backends are extracted from capability packages into `@flighthq/host-web`. Three capabilities (net, socket, textsegment) are ambient-language facilities — standard-JS implementations that stay inline in their capability packages, structurally unchanged. Phase 3 creates `host-web` only.
+
+App vocabulary: `enableHostWeb()`, `enableHostWebClipboard()`. Host-author seam: `set*Backend`, `*Backend` interfaces in `@flighthq/types`. 108 existing `enable*` exports; zero existing `enableHost*` — no collision.
+
+---
+
+## 1. Design Tension
+
+### Current shape (lazy self-install)
+
+37 packages carry 38 `createWeb*Backend` functions. Each capability package co-locates three functions:
+
+```
+getClipboardBackend()       → returns _backend ?? createWebClipboardBackend()
+setClipboardBackend(b)      → replaces _backend
+createWebClipboardBackend() → builds the navigator.clipboard implementation
+```
+
+The web implementation is coupled to the contract: importing `readClipboardText` forces `createWebClipboardBackend` into the bundle because `getClipboardBackend()` has a direct runtime reference to it. A bundler cannot tree-shake it.
+
+### AGENTS.md tension
+
+- **sideEffects: false** — the lazy self-install is implicit, not top-level, but the caller of `readClipboardText` did not ask for `createWebClipboardBackend` to execute.
+- **explicit opt-in** — the backend self-install mutates module-scoped `_backend` on first use, a hidden registration.
+- **C/C++ portability** — a C port expects `set*Backend` at init, not lazy binding.
+- **bundle invariant** — an Electron app importing `readClipboardText` pays for web code it never uses.
+
+### What extraction preserves
+
+Zero-config moves to one explicit line (`enableHostWeb()`). The word "Backend" does not appear in the app-facing setup surface.
+
+---
+
+## 2. Layer Model
+
+### Two layers
+
+| Layer | Package | Role | Example |
+|-------|---------|------|---------|
+| **Host** | `host-web`, future `host-node`, `host-electron`, `host-tauri`, `host-capacitor` | Platform-specific implementation requiring browser/OS/native APIs | `navigator.clipboard`, `window.localStorage`, Electron IPC |
+| **Capability** | `clipboard`, `storage`, `tray`, ... | Contract + sentinel + ambient-language facilities. Owns `get*Backend` / `set*Backend`. | `readClipboardText()` calls `getClipboardBackend().readText()` |
+
+### Ambient-language facilities
+
+Three capabilities use standard ECMA/WinterCG APIs available in all modern JS runtimes. Their implementations stay inline in the capability package — they are language facilities, not host-specific code. All three remain structurally unchanged: same function names, same lazy-install pattern, same file locations.
+
+| Capability | Factory | API used | Seam rationale |
+|------------|---------|----------|----------------|
+| net | `createWebNetBackend` | WHATWG fetch/Response/Headers/AbortController/Blob/TextDecoder | Native HTTP may differ (TLS, proxy, node:http) |
+| socket | `createWebSocketBackend` | WHATWG WebSocket | Native socket stack may differ (TLS, buffers, node:net) |
+| textsegment | `createWebTextSegmenterBackend` | Intl.Segmenter (ECMA-402) | Native ICU BreakIterator for C/C++ port |
+
+The `set*Backend` seam remains so a native host can override. No `enableHostWeb*` enabler needed — the implementation is already inline.
+
+### Precedence
+
+Three named layers:
+
+| Priority | Layer identity | Installed by | Semantics |
+|----------|---------------|-------------|-----------|
+| 1 (highest) | `custom` | direct `set*Backend()` by app or host author | Explicit override. Always wins. |
+| 2 | `host-web` / `host-node` | `enableHostWeb*()` / future `enableHostNode*()` | Platform-specific provider |
+| 3 (lowest) | (absent) | nothing installed | Capability sentinel serves |
+
+For the 3 ambient-language facilities, the lazy-install is the default (layer 3 is not a bare sentinel but the inline implementation). A host override via `set*Backend` still wins.
+
+**Order-independent:** `enableHostWeb*` installs only if no host backend is present. A native host that calls `registerElectronBackends()` first is not clobbered.
+
+**`set*Backend(null)` semantics:** Clears the custom slot. For host-web capabilities, the sentinel serves. For ambient-language capabilities, the inline implementation re-creates on next `get*Backend()` call (current lazy-install behavior preserved).
+
+---
+
+## 3. Precedence Implementation
+
+For host-web capabilities (23 of them), the slot model:
+
+```typescript
+let _customBackend: ClipboardBackend | null = null;
+let _hostBackend: ClipboardBackend | null = null;
+let _hostIdentity: 'host-web' | 'host-node' | null = null;
+
+export function getClipboardBackend(): ClipboardBackend {
+  return _customBackend ?? _hostBackend ?? _sentinel;
+}
+
+export function setClipboardBackend(backend: ClipboardBackend | null): void {
+  _customBackend = backend;
+}
+
+// Called internally by enableHostWebClipboard
+export function installClipboardHost(
+  backend: ClipboardBackend,
+  identity: 'host-web' | 'host-node',
+): void {
+  if (_hostBackend !== null && _hostIdentity !== identity) {
+    return;  // provider-conflict: explain* reports
+  }
+  _hostBackend = backend;
+  _hostIdentity = identity;
+}
+```
+
+**`set*Backend(null)` reveals the host layer:** If a custom backend is cleared, the host-web backend (if installed) becomes active. The host slot is separate from the custom slot.
+
+For ambient-language capabilities (3 of them), the existing pattern is structurally unchanged:
+
+```typescript
+let _backend: NetBackend | null = null;
+
+export function getNetBackend(): NetBackend {
+  if (_backend === null) _backend = createWebNetBackend();
+  return _backend;
+}
+
+export function setNetBackend(backend: NetBackend | null): void {
+  _backend = backend;
+}
+```
+
+`setNetBackend(null)` sets `_backend = null`, so next `getNetBackend()` re-creates the inline implementation. This is current behavior, preserved.
+
+---
+
+## 4. Mandatory 38-Row Classification
+
+### Method
+
+Each of the 38 `createWeb*Backend` functions was audited in full. The 38 factories implement 328 methods on their returned backend objects: 180 genuine, 148 sentinel. Strict-majority threshold: sentinel > genuine → NONE (no enabler for broad interface). 12 NONE rows. 32 genuine minority methods preserved via narrower split (section 5).
+
+### Three outcomes
+
+1. **host-web** (23): genuinely browser-required. Extracted to `@flighthq/host-web`.
+2. **ambient-language** (3): standard-JS implementations. Stay inline, structurally unchanged.
+3. **none** (12): 7 strict-majority no-op + 5 all-sentinel.
+
+### Complete table
+
+| # | Package | Function | G/S | Outcome | Sub | Evidence |
+|---|---------|----------|-----|---------|-----|----------|
+| 1 | accessibility | createWebAccessibilityBackend | 5/0 | **host-web** | DOM | document.createElement, element.setAttribute/focus, document.activeElement |
+| 2 | app | createWebAppBackend | 9/29 | **none** | — | 76.3% false. 9 genuine; 29 dock/process/login sentinels. |
+| 3 | application (loop) | createWebLoopBackend | 3/0 | **host-web** | window | requestAnimationFrame, cancelAnimationFrame, performance.now |
+| 4 | application (window) | createWebWindowBackend | 10/18 | **none** | — | 64.3% false. 10 genuine; 18 desktop-window sentinels. |
+| 5 | clipboard | createWebClipboardBackend | 18/5 | **host-web** | DOM+window | navigator.clipboard Clipboard API/ClipboardItem/Blob |
+| 6 | connectivity | createWebConnectivityBackend | 3/0 | **host-web** | DOM+window | navigator.onLine, fetch HEAD, online/offline events |
+| 7 | device | createWebDeviceBackend | 5/0 | **host-web** | window+nav | navigator/screen/devicePixelRatio/localStorage/crypto |
+| 8 | dialog | createWebDialogBackend | 6/0 | **host-web** | DOM | window.confirm/alert/prompt, File System Access pickers |
+| 9 | filesystem | createWebFileSystemBackend | 21/7 | **host-web** | window | File System Access, navigator.storage |
+| 10 | geolocation | createWebGeolocationBackend | 7/0 | **host-web** | nav | navigator.geolocation, navigator.permissions |
+| 11 | glyphatlas | createWebGlyphRasterizerBackend | 2/0 | **host-web** | canvas | OffscreenCanvas, Canvas 2D |
+| 12 | haptics | createWebHapticsBackend | 9/1 | **host-web** | nav | navigator.vibrate |
+| 13 | image | createWebImageBackend | 1/0 | **host-web** | DOM | new Image(), HTMLImageElement.decode/src |
+| 14 | interaction | createWebCursorBackend | 1/0 | **host-web** | DOM | HTMLElement.style.cursor |
+| 15 | ipc | createWebIpcBackend | 0/4 | **none** | — | ALL sentinel. |
+| 16 | keyboard | createWebSoftKeyboardBackend | 4/0 | **host-web** | DOM+window+nav | navigator.virtualKeyboard, Window.visualViewport |
+| 17 | lifecycle | createWebLifecycleBackend | 4/0 | **host-web** | DOM+window | document visibility, page lifecycle events |
+| 18 | log | createWebLogTransportBackend | 0/1 | **none** | — | ALL sentinel. |
+| 19 | mediasession | createWebMediaSessionBackend | 4/0 | **host-web** | nav | navigator.mediaSession, MediaMetadata |
+| 20 | menu | createWebMenuBackend | 1/2 | **none** | — | 66.7% false. |
+| 21 | net | createWebNetBackend | 1/0 | **ambient** | — | WHATWG fetch. Zero navigator/document/window refs. Stays inline, unchanged. |
+| 22 | notification | createWebNotificationBackend | 14/4 | **host-web** | window | Notification instances/permission/timers |
+| 23 | permissions | createWebPermissionBackend | 2/0 | **host-web** | nav | navigator.permissions.query |
+| 24 | platform | createWebPlatformBackend | 1/0 | **host-web** | window+nav | navigator UA/language/touch |
+| 25 | power | createWebPowerBackend | 6/7 | **none** | — | 53.8% false. |
+| 26 | protocol | createWebProtocolBackend | 3/7 | **none** | — | 70.0% false. |
+| 27 | screen | createWebScreenBackend | 5/0 | **host-web** | DOM+window | Window.screen/ScreenDetails |
+| 28 | sensors | createWebSensorsBackend | 17/4 | **host-web** | window | Generic Sensor API, devicemotion/deviceorientation |
+| 29 | share | createWebShareBackend | 4/0 | **host-web** | nav | navigator.canShare/share |
+| 30 | shell | createWebShellBackend | 1/8 | **none** | — | 88.9% false. |
+| 31 | shortcut | createWebShortcutBackend | 0/7 | **none** | — | ALL sentinel. |
+| 32 | socket | createWebSocketBackend | 1/0 | **ambient** | — | WHATWG WebSocket. Stays inline, unchanged. |
+| 33 | statusbar | createWebStatusBarBackend | 2/4 | **none** | — | 66.7% false. |
+| 34 | storage | createWebStorageBackend | 6/0 | **host-web** | DOM+window | localStorage, Window storage events |
+| 35 | textsegment | createWebTextSegmenterBackend | 1/0 | **ambient** | — | Intl.Segmenter (ECMA-402). Stays inline, unchanged. |
+| 36 | tray | createWebTrayBackend | 0/19 | **none** | — | ALL sentinel. |
+| 37 | updater | createWebUpdaterBackend | 0/21 | **none** | — | ALL sentinel. |
+| 38 | webcam | createWebWebcamBackend | 3/0 | **host-web** | DOM | file-input capture, FileReader, navigator.permissions |
+
+### Summary counts
+
+| Outcome | Count | Modules |
+|---------|-------|---------|
+| **host-web** | 23 | accessibility, application/loop, clipboard, connectivity, device, dialog, filesystem, geolocation, glyphatlas, haptics, image, interaction, keyboard, lifecycle, mediasession, notification, permissions, platform, screen, sensors, share, storage, webcam |
+| **ambient-language** | 3 | net, socket, textsegment |
+| **none / strict-majority** | 7 | app (9G/29S), application/window (10G/18S), menu (1G/2S), power (6G/7S), protocol (3G/7S), shell (1G/8S), statusbar (2G/4S) |
+| **none / all-sentinel** | 5 | ipc (0/4), log (0/1), shortcut (0/7), tray (0/19), updater (0/21) |
+
+**False concentration:** 12 NONE rows contain 159 methods: 32 genuine, 127 sentinel (79.9%). The other 26 rows: 21 sentinel among 169 (12.4%).
+
+---
+
+## 5. Split-Never-Delete: 32 Genuine Minority Methods
+
+The 7 strict-majority-no-op rows have 32 genuine methods. Each is placed into a narrower, honestly named capability.
+
+### 5.1 app genuine minority (9 methods)
+
+| Method | API evidence | Narrow semantic home |
+|--------|-------------|---------------------|
+| focus | window.focus | HOST-WEB — browser page/window control |
+| quit | window.close (best-effort) | HOST-WEB — attempted close, not process termination |
+| relaunch | location.reload | HOST-WEB — page lifecycle |
+| getName | document.title | HOST-WEB/DOM — document metadata |
+| subscribeReady | microtask / readyState | HOST-WEB/DOM — page lifecycle |
+| setBadgeCount | navigator.setAppBadge | HOST-WEB/Navigator — web-app-badge |
+| getLocale | navigator.language | HOST-WEB/Navigator — locale preference |
+| getPreferredSystemLanguages | navigator.languages | HOST-WEB/Navigator — locale preference |
+| getSystemLocale | Intl.DateTimeFormat().resolvedOptions().locale | Ambient-language (ECMA-402) |
+
+### 5.2 application/window genuine minority (10 methods)
+
+| Method | API evidence | Narrow semantic home |
+|--------|-------------|---------------------|
+| open | browsing context binding | HOST-WEB/Window |
+| close | window.close (best-effort) | HOST-WEB/Window |
+| focus | window.focus | HOST-WEB/Window |
+| setTitle | document.title | HOST-WEB/DOM — document metadata |
+| setIcon | favicon manipulation | HOST-WEB/DOM — document metadata |
+| getBounds | viewport/screen geometry | HOST-WEB/Window |
+| setPosition | window.moveTo (best-effort) | HOST-WEB/Window |
+| setSize | window.resizeTo (best-effort) | HOST-WEB/Window |
+| center | computed center + moveTo | HOST-WEB/Window |
+| setFullscreen | Element.requestFullscreen | HOST-WEB/DOM — fullscreen |
+
+### 5.3 menu genuine minority (1 method)
+
+| Method | API evidence | Narrow semantic home |
+|--------|-------------|---------------------|
+| popupContextMenu | createElement, getBoundingClientRect, keydown | HOST-WEB/DOM — context-menu popup |
+
+### 5.4 power genuine minority (6 methods)
+
+| Method | API evidence | Narrow semantic home |
+|--------|-------------|---------------------|
+| isKeepAwakeActive | navigator.wakeLock state | HOST-WEB/Navigator — Screen Wake Lock |
+| setKeepAwake | navigator.wakeLock.request | HOST-WEB/Navigator — Screen Wake Lock |
+| getStatus | navigator.getBattery | HOST-WEB/Navigator — Battery Status |
+| subscribe | BatteryManager events | HOST-WEB/Navigator — Battery Status |
+| subscribeResume | page lifecycle `resume` | HOST-WEB/DOM — page lifecycle |
+| subscribeSuspend | page lifecycle `freeze` | HOST-WEB/DOM — page lifecycle |
+
+Three families: wake-lock, battery, page-lifecycle. Must not recombine.
+
+### 5.5 protocol genuine minority (3 methods)
+
+| Method | API evidence | Narrow semantic home |
+|--------|-------------|---------------------|
+| register | navigator.registerProtocolHandler | HOST-WEB/Navigator — protocol registration |
+| getRegisteredSchemes | session-local record | HOST-WEB — protocol registration |
+| getLaunchUrl | URLSearchParams cold-start | HOST-WEB/Window |
+
+### 5.6 shell genuine minority (1 method)
+
+| Method | API evidence | Narrow semantic home |
+|--------|-------------|---------------------|
+| openExternal | window.open with scheme allowlist | HOST-WEB/Window — external-URL opener |
+
+### 5.7 statusbar genuine minority (2 methods)
+
+| Method | API evidence | Narrow semantic home |
+|--------|-------------|---------------------|
+| setBackgroundColor | document meta theme-color write | HOST-WEB/DOM — web theme-color |
+| getInfo | color read genuine; rest sentinel | HOST-WEB/DOM |
+
+---
+
+## 6. Open Disposition Questions
+
+Ten ownership/granularity questions from section 5 require a user decision. Each names the method(s) it governs, the candidate placements, and what the choice affects.
+
+1. **app.subscribeReady ownership**: Does `subscribeReady` (microtask / readyState) belong in host-web's app-lifecycle narrow capability, or in the existing `lifecycle` package? Affects which enabler installs it.
+
+2. **app.setBadgeCount granularity**: Does `setBadgeCount` (navigator.setAppBadge) get its own narrow enabler (`enableHostWebAppBadge`), or does it join the app-lifecycle narrow capability? Affects tree-shaking granularity — badge is a single API, not a family.
+
+3. **app.getSystemLocale ownership**: `getSystemLocale` uses `Intl.DateTimeFormat().resolvedOptions().locale` (ECMA-402, ambient-language). Does it stay in the app package as an ambient-language inline, or move to the `intl` package? It is the only method in the app backend that is not browser-requiring.
+
+4. **application/window.setFullscreen granularity**: Does `setFullscreen` (Element.requestFullscreen) get its own narrow enabler, or compose into the window-control narrow capability alongside open/close/focus/getBounds/setPosition/setSize/center? Fullscreen is a distinct browser API, but single-method enablers are overhead.
+
+5. **power.subscribeResume / subscribeSuspend ownership**: These use page lifecycle events (`resume`, `freeze`). Do they relocate into the existing `lifecycle` package, or stay as a narrow power-lifecycle capability in host-web? Affects whether page lifecycle events are consolidated.
+
+6. **protocol.getLaunchUrl ownership**: Does `getLaunchUrl` (URLSearchParams cold-start) stay with protocol registration, or move to an application-launch capability? It is not a protocol handler itself.
+
+7. **statusbar.getInfo granularity**: `getInfo` reads a genuine color value but returns sentinel values for height/visibility/style. Does the genuine color read belong in the theme-color narrow capability alongside `setBackgroundColor`, or does the mixed genuine/sentinel nature warrant a separate placement?
+
+8. **Shared document-metadata ownership**: `app.getName` reads `document.title`; `window.setTitle` writes `document.title`; `window.setIcon` writes the favicon. These are the same DOM surface (`document.title` / `<link rel="icon">`) split across two capability packages (app and application). Does document-metadata form one narrow capability spanning both, or does each package carry its own narrow slice? Affects whether a user who installs only the window-control enabler gets `setTitle`/`setIcon` without the rest of app's narrow capability, and vice versa.
+
+9. **Linked lifecycle membership**: `app.relaunch` uses `location.reload` — the same page-lifecycle domain as `app.subscribeReady` and `power.subscribeResume`/`subscribeSuspend`. Does `relaunch` belong in the same lifecycle narrow capability as `subscribeReady`, or does it stay with the app page/window-control group (alongside `focus` and `quit`, which also use `window.*`)? `relaunch` is a navigation act, not an event subscription, so the lifecycle grouping may be semantic rather than API-surface.
+
+10. **Mixed genuine/sentinel power.getStatus**: `getStatus(out: PowerStatus)` fills `batteryLevel`, `chargingTime`, `dischargingTime`, `isCharging` from `navigator.getBattery()` — genuine battery data. But `thermalState`, `isLowPower`, `isOnBattery`, `isBatteryLow` return sentinels (no web API). Does `getStatus` belong in the battery narrow capability despite its sentinel fields? The alternative is splitting `PowerStatus` into battery-genuine and native-only subsets, but `getStatus` is a single call that writes both. Recommendation: keep `getStatus` in the battery narrow capability and document the sentinel fields as platform-absent — the genuine fields are the API contract, and the sentinels are the honest answer for fields no browser can fill.
+
+---
+
+## 7. No False Host Implementations
+
+### Principle (user ruling)
+
+A host must not implement no-op methods merely to satisfy a full backend interface. Advertising a capability that does nothing is a lie.
+
+### Sentinel ownership
+
+The sentinel backend belongs to the **capability package**, not to any host:
+
+```typescript
+const _sentinel: TrayBackend = {
+  create: () => -1,
+  destroy: () => {},
+};
+
+let _backend: TrayBackend | null = null;
+
+export function getTrayBackend(): TrayBackend {
+  return _backend ?? _sentinel;
+}
+```
+
+### enableHostWeb() membership
+
+`enableHostWeb()` composes exactly the 23 genuine host-web enablers:
+
+```typescript
+export function enableHostWeb(): void {
+  enableHostWebAccessibility();
+  enableHostWebClipboard();
+  enableHostWebConnectivity();
+  enableHostWebDevice();
+  enableHostWebDialog();
+  enableHostWebFileSystem();
+  enableHostWebGeolocation();
+  enableHostWebGlyphRasterizer();
+  enableHostWebHaptics();
+  enableHostWebImage();
+  enableHostWebCursor();
+  enableHostWebSoftKeyboard();
+  enableHostWebLifecycle();
+  enableHostWebLoop();
+  enableHostWebMediaSession();
+  enableHostWebNotification();
+  enableHostWebPermission();
+  enableHostWebPlatform();
+  enableHostWebScreen();
+  enableHostWebSensors();
+  enableHostWebShare();
+  enableHostWebStorage();
+  enableHostWebWebcam();
+}
+```
+
+Not included: ipc, log, shortcut, tray, updater (all-sentinel), app, application-window, menu, power, protocol, shell, statusbar (strict-majority no-op), net, socket, textsegment (ambient-language, inline).
+
+---
+
+## 8. Idempotence and Teardown
+
+### Enabler idempotence
+
+```typescript
+export function enableHostWebClipboard(): void {
+  if (_hostBackend !== null) return;  // true no-op
+  installClipboardHost(createWebClipboardBackend(), 'host-web');
+}
+```
+
+Repeated calls allocate nothing, attach nothing, replace nothing.
+
+### Factory construction: proven lazy, closure state acknowledged
+
+All 38 `createWeb*Backend` factories were audited. None attach an `addEventListener`, start a `setTimeout`/`setInterval`, or initiate async work (`Promise`/`await`) at construction. Every factory returns an inert object whose methods are callable but passive until a consumer invokes them.
+
+Seven of the 38 factories allocate closure state — mutable variables captured by the returned object's method closures (not exhaustive per-variable — representative types shown):
+
+| Factory | Closure state (representative) | Types present |
+|---------|-------------------------------|---------------|
+| accessibility | `elements`, `liveRegions`, `root`, `rootResolved` | Maps (to HTMLElement), nullable DOM element ref, boolean |
+| screen | `_cursorX/Y`, `_cursorTracking`, `_cachedScreens`, `_screenDetails` | primitives, nullable array, nullable ScreenDetails object ref |
+| notification | `_live`, `_requests`, 5 listener callbacks, `_scheduled`, `_idCounter` | Maps (to Notification DOM instances), Sets, config objects (`{ timeout, entry }`), primitive |
+| lifecycle | `_windowFocused` | boolean |
+| power | `cachedLevel`, `cachedCharging`, `cachedChargingTime`, `cachedDischargingTime` | primitives (numbers, boolean) |
+| protocol | `_registeredSchemes` | string array |
+| updater | `_config`, `_channel` | config object (UpdaterConfig: 3 booleans), string |
+
+Closure state spans primitives, Maps, Sets, arrays, config objects, and retained DOM/object references. All are passive allocation — no listener registration, no timer, no I/O at construction. Listeners attach only when a consumer calls `subscribe*` methods, each returning an unsubscribe function. Teardown is consumer-owned, not enabler-owned. No deferred `dispose*Backend` needed for the enabler layer.
+
+---
+
+## 9. explain* Diagnostic
+
+### Return type
+
+```typescript
+export interface ClipboardBackendExplanation {
+  readonly capability: string;
+  readonly liveLayer: 'custom' | 'host-web' | 'host-node' | null;
+  readonly installedLayers: ReadonlyArray<'custom' | 'host-web' | 'host-node'>;
+  readonly reason: 'custom-provider' | 'host-specific-provider'
+    | 'not-enabled' | 'host-does-not-offer' | 'provider-conflict';
+}
+```
+
+### Field semantics
+
+- **`capability`**: the capability name (e.g. `'clipboard'`).
+- **`liveLayer`**: the layer identity of the currently active backend. `null` if nothing installed.
+- **`installedLayers`**: all layers with a backend installed, ordered by priority.
+- **`reason`**: why this layer is active:
+  - `'custom-provider'` — direct `set*Backend()` active.
+  - `'host-specific-provider'` — `enableHostWeb*` backend active.
+  - `'not-enabled'` — genuine adapter exists but not installed. Remediation names the enabler.
+  - `'host-does-not-offer'` — NONE row. Remediation points to `set*Backend`.
+  - `'provider-conflict'` — two host identities for same capability.
+
+For ambient-language capabilities (net, socket, textsegment), no explain*Backend is needed — the inline implementation always serves unless overridden by `set*Backend`. If overridden, the existing explain pattern covers it.
+
+### Distinct states
+
+| Observed state | explain* report |
+|---------------|-----------------|
+| Nothing installed, host-web has enabler | `{ liveLayer: null, installedLayers: [], reason: 'not-enabled' }` |
+| Nothing installed, NONE row | `{ liveLayer: null, installedLayers: [], reason: 'host-does-not-offer' }` |
+| Host-web active | `{ liveLayer: 'host-web', installedLayers: ['host-web'], reason: 'host-specific-provider' }` |
+| Custom over host-web | `{ liveLayer: 'custom', installedLayers: ['custom', 'host-web'], reason: 'custom-provider' }` |
+
+---
+
+## 10. Types Spine: lib.dom Census
+
+### Measured: 56 lib.dom-bearing files in packages/types/src/ (249 type-position sites)
+
+Partitioned: 40 render/backend headers carrying 224 sites (expected — these are the Canvas/GL/WGPU/DOM render-tier types). 16 nominal-neutral files carry 25 lib.dom sites (the extraction surface).
+
+### Disposition rule
+
+No lib.dom/lib.webworker symbols in neutral types files — including AbortSignal/Blob even though Node also exposes them. Replace with neutral protocols or opaque handles.
+
+### Complete table (16 files, 25 sites)
+
+| # | File | lib.dom types | Disposition |
+|---|------|--------------|-------------|
+| 1 | Scene2DResources.ts | AbortSignal (4), AudioContext (1) | AbortSignal → **neutral protocol**. AudioContext → **opaque handle**. |
+| 2 | Scene3DResources.ts | AbortController (1), AbortSignal (1) | → **neutral protocol**. |
+| 3 | ImageResourceReference.ts | AbortSignal (1) | → **neutral protocol**. |
+| 4 | AudioResourceReference.ts | AbortSignal (2) | → **neutral protocol**. |
+| 5 | AudioResource.ts | AudioBuffer (1) | → **opaque handle**. |
+| 6 | FontResource.ts | FontFace (1) | → **opaque handle**. |
+| 7 | ResourceLoadItem.ts | AbortSignal (1) | → **neutral protocol**. |
+| 8 | Connectivity.ts | AbortSignal (1) | → **neutral protocol**. |
+| 9 | Image.ts | AbortSignal (1) | → **neutral protocol**. (ImageBitmap appears only in a comment, not a type position.) |
+| 10 | Net.ts | AbortSignal (1), Blob (1) | AbortSignal → **neutral protocol**. Blob → **opaque handle**. |
+| 11 | FileSystem.ts | ReadableStream (1), WritableStream (1) | → **opaque handle** or **neutral protocol**. |
+| 12 | NativeText.ts | HTMLElement (1) | **Move** to render-tier. |
+| 13 | WebcamStreamRuntime.ts | MediaStream (1), HTMLVideoElement (1) | **Move** to host-web-tier. |
+| 14 | HtmlView.ts | HTMLElement (1) | **Move** to render-tier. |
+| 15 | ShapeRasterizer.ts | CanvasRenderingContext2D (1) | **Move** to render-tier. |
+| 16 | HostImageSource.ts | CanvasImageSource (1) | **Move** to render-tier. |
+
+### DOM-free proof
+
+```bash
+npx tsc --project packages/types/tsconfig.neutral.json --lib es2022 --noEmit
+```
+
+Defeating fixture ensures the check is real.
+
+---
+
+## 11. Target Shape: One Immediate Package
+
+### @flighthq/host-web (created in Phase 3)
+
+Contains 23 genuine browser-required web backend implementations, their `enableHostWeb*` enablers, and `enableHostWeb()`.
+
+```
+host-web/
+  src/
+    index.ts          — public lane: enableHostWeb, 23x enableHostWeb*
+    contract.ts       — contract lane: 23x createWeb*Backend factories
+    enableHostWeb.ts  — composes all 23 enablers
+    webAccessibility.ts
+    webClipboard.ts
+    ... (23 files, one per genuine capability)
+```
+
+DOM-requiring vs navigator-only is a classification INSIDE host-web. A later worker split is a file move, not a redesign.
+
+### Ambient-language capabilities (stay inline, unchanged)
+
+Net, socket, textsegment remain in their capability packages. No renames, no extraction, no enablers. The lazy-install pattern is preserved as-is.
+
+### host-node (charter only, sole reserved-for-construction host)
+
+Charter: `agents/packages/host-node/charter.md`. NOT created until first genuine backend. `host-node` is the sole host package reserved for construction in this monorepo — it is where the first headless (Node/Deno/Bun) backends will land when they are built.
+
+### Downstream hosts (chartered here, built elsewhere)
+
+`host-lime` (`downstream: flight-hx`) is chartered in this repo for naming and architecture authority, but its implementation is built in the `flight-hx` repository. This monorepo defines the charter and interface conventions; it does not create or populate the package.
+
+---
+
+## 12. Install Trigger
+
+Static explicit `enableHostWeb*()` calls at app startup. No lazy-install, no dynamic `import()`, no runtime detection.
+
+Zero dynamic `import()` calls exist in non-test production sources of capability and host packages (`packages/{capability,host-*}/src/*.ts`, excluding `*.test.ts`). Two exclusion categories: `tool-*` packages (`tool-capture` uses `await import('@playwright/test')` for Playwright integration), and test files within capability packages (`ipc.test.ts`, `notification.test.ts` use dynamic imports for test isolation). The zero-dynamic-import invariant is a design constraint on the production capability/host boundary, not a repo-wide absolute.
+
+---
+
+## 13. Bundle Evidence (Acceptance Blocker)
+
+Actual measured bundle sizes are an acceptance blocker.
+
+### Post-extraction measurement plan
+
+| Fixture | What it proves |
+|---------|---------------|
+| 1 granular enabler | `enableHostWebClipboard` + `readClipboardText` → only clipboard web backend + contract |
+| 3 granular enablers | clipboard + platform + storage → only those 3 |
+| enableHostWeb() | All 23 genuine → all 23 backends |
+| Native contract-only | `readClipboardText` without any enable call → contract only, zero web backend |
+| Isolation | `enableHostWebClipboard` only → must NOT pull any other enabler |
+
+**Method:** Disposable fixture examples, built with project Vite tooling, measured with `npm run size`.
+
+---
+
+## 14. Export and Policy
+
+### host-web exports
+
+| Lane | Exports |
+|------|---------|
+| Public (index.ts) | `enableHostWeb`, 23x `enableHostWeb*` |
+| Contract (contract.ts) | 23x `createWeb*Backend` factories |
+
+### Capability package changes
+
+Each of the 23 host-web capability packages:
+- **Removes** its `createWeb*Backend` function (moved to host-web contract).
+- **Keeps** `get*Backend` / `set*Backend` in its contract lane.
+- **Gains** `installHost` + `getHostIdentity` in contract lane.
+- **Changes** `get*Backend()` to use custom → host → sentinel precedence.
+
+The 3 ambient-language packages: no structural change.
+
+### SDK barrel re-exports
+
+`enableHostWeb` and all 23 `enableHostWeb*` re-exported from `@flighthq/sdk`. Factories NOT re-exported.
+
+### sideEffects
+
+`host-web`: `"sideEffects": false`.
+
+### Policy
+
+AGENTS.md host-* family adds host-web (future host-node). Both outside SDK barrel package. `scripts/sdk-policy.ts` enforces.
+
+### Repository gates
+
+| Gate | Enforces |
+|------|----------|
+| `npm run packages:check` | Package shape, manifests, exports |
+| `tsc --lib es2022` on neutral types | No lib.dom in neutral types |
+| `npm run size` (acceptance fixtures) | Measured isolation |
+| `npm run exports:check` | Every enabler has a colocated test |
+| `npm run portable:check` | No forbidden globals in capability roots |
+| Precedence invariant test | All call orderings produce same state |
+| Provider-conflict test | Two host identities for same capability reports conflict |
+
+---
+
+## 15. Migration Sequencing
+
+1. **Add precedence infrastructure to 23 host-web capability packages** — custom/host slots, `installHost`, `getHostIdentity`. Change `get*Backend` to custom → host → sentinel.
+
+2. **Delete the 5 all-sentinel backends** (ipc, log, shortcut, tray, updater) — factory removed, sentinel serves.
+
+3. **Create host-web package** — standard shape. `npm run packages:check`.
+
+4. **Extract 2 worked examples** (interaction, glyphatlas) into host-web. `npm run size`.
+
+5. **Extract remaining 21 host-web backends**.
+
+6. **Handle 7 strict-majority rows** — factories removed. Narrow-split disposition per section 6 questions.
+
+7. **Add enableHostWeb()** + 23 per-capability enablers.
+
+8. **Update SDK barrel**.
+
+9. **Types spine cleanup** — neutral protocols, opaque handles, render-tier moves. `tsc --lib es2022`.
+
+10. **Update AGENTS.md** — host-web, ambient-language clarification.
+
+11. **Acceptance fixtures** — 5 fixtures per section 13. Measured bytes.
+
+12. **Precedence tests** — order-independence, idempotence, reveal-on-clear, provider-conflict.
+
+13. **Final verification** — `npm run check`, `npm run test`, `npm run packages:check`, `npm run size`, `npm run api:check`.
+
+---
+
+## 16. Profiler Proposal (Later Only)
+
+Separately imported `enableHostWebProfiler()`, opt-in/shakeable. Zero tracking cost. Plain-data `explainHostWebUsage()` query. No implementation now.
+
+---
+
+## 17. Companion Document Patches (landed)
+
+Two prerequisite commits are now on base, completing the documentation reconciliation:
+
+- **`3a445a37c`** `docs(agents): reserve future Node host layer` — created the `host-node` charter at `agents/packages/host-node/charter.md`.
+- **`162e62b0f`** `docs: reconcile platform suite docs with host-web extraction model` — patched six repo files:
+
+### Always-available → explicit host installation (3 files)
+
+- **AGENTS.md** — Platform Integration Suite paragraph: "web backend is always available" → explicit `enableHostWeb*()` installation with custom > host > sentinel precedence.
+- **agents/packages/catalog.md** — Platform Integration Suite paragraph: same change.
+- **agents/packages/platform-integration.md** — Pattern section: same change.
+
+### host-node: soon/bedrock → reserve (charter-only) (3 files)
+
+- **agents/breadth-platform-variance.md** — line 11 (missing headless host), line 48 (candidate table), line 71 (strategic note): "soon" → "reserve (charter-only)" with charter reference.
+- **agents/breadth-synthesis.md** — line 65 (soon queue): same change.
+- **agents/packages/register.md** — line 254 (recommended candidates): "bedrock" → "reserve (charter-only)".
+
+---
+
+## 18. Decision Summary
+
+### Measured facts
+
+- 37 packages, 38 `createWeb*Backend` functions (application has 2).
+- 328 factory-implemented methods (methods on the objects the 38 factories return); 180 genuine, 148 sentinel (45.1% false).
+- 12 rows strict-majority no-op: 7 partial (32 genuine methods → narrow split), 5 all-sentinel.
+- 23 rows host-web (browser APIs required).
+- 3 rows ambient-language (standard JS: fetch, WebSocket, Intl.Segmenter). Structurally unchanged.
+- 56 lib.dom-bearing types files total (249 sites): 40 render-backend headers (224 sites, expected) + 16 nominal-neutral files (25 sites — the extraction surface). All 25 neutral sites resolved via neutral protocols, opaque handles, or render-tier moves.
+- 0 dynamic imports in non-test production capability and host package sources (test files and tool-* excluded).
+- All 38 factories confirmed: no addEventListener, no setTimeout/setInterval, no async/Promise at construction. 7 factories allocate passive closure state spanning primitives, Maps, Sets, arrays, config objects, and retained DOM/object references.
+
+### Design chosen
+
+Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine enablers extracted. 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions in section 6). Precedence: custom > host-web/host-node > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent. explain* returns runtime state with layer identity and reason. Bundle acceptance fixtures required.

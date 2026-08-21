@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Display/monitor enumeration and the seam for reacting to display-configuration changes. The package answers "what screens are attached, where are they, and how are they configured" — per-screen geometry (bounds, work area), scale/DPI, primary detection, orientation/rotation, color/HDR metrics, refresh rate, and display modes — plus coordinate converters, point/rect-to-screen lookups, cursor-position queries, and a change-event stream (callback and opt-in signals). It runs over a swappable `ScreenBackend`: a lazily-created web default (window/screen + matchMedia + the Window Management API for multi-monitor) that a native host replaces via `setScreenBackend`.
+Display/monitor enumeration and the seam for reacting to display-configuration changes. The package answers "what screens are attached, where are they, and how are they configured" — per-screen geometry (bounds, work area), scale/DPI, primary detection, orientation/rotation, color/HDR metrics, refresh rate, and display modes — plus coordinate converters, point/rect-to-screen lookups, cursor-position queries, and a change-event stream (callback and opt-in signals). It runs over a swappable `ScreenBackend`: a web backend (window/screen + matchMedia + the Window Management API for multi-monitor) installed explicitly via `enableHostWebScreen()` from `@flighthq/host-web`; native hosts replace via `setScreenBackend`. Resolution: custom > host > sentinel.
 
 ## Decisions
 

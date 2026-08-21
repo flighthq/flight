@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-`@flighthq/device` is the platform-suite command capability for static device/OS identity: a flat set of free functions (`getDeviceInfo`, `getDeviceCapabilities`, `getDeviceDisplayMetrics`, `getSafeAreaInsets`, `getDeviceId`, `refreshDeviceInfo`) over a swappable `DeviceBackend`, with a lazily-constructed web default and `setDeviceBackend` for native hosts. It answers "what hardware/OS is this and what are its fixed traits?" — model, manufacturer, OS name/version, arch, CPU cores, physical/total memory, GPU vendor/renderer, form factor, virtualization, low-end heuristic, safe-area insets, and a resettable install id. It is the snapshot layer — anything that changes at runtime (battery, connectivity, orientation streams) belongs to a neighbor's event capability.
+`@flighthq/device` is the platform-suite command capability for static device/OS identity: a flat set of free functions (`getDeviceInfo`, `getDeviceCapabilities`, `getDeviceDisplayMetrics`, `getSafeAreaInsets`, `getDeviceId`, `refreshDeviceInfo`) over a swappable `DeviceBackend`, with a web backend installed explicitly via `enableHostWebDevice()` from `@flighthq/host-web` and `setDeviceBackend` for native hosts. Resolution: custom > host > sentinel. It answers "what hardware/OS is this and what are its fixed traits?" — model, manufacturer, OS name/version, arch, CPU cores, physical/total memory, GPU vendor/renderer, form factor, virtualization, low-end heuristic, safe-area insets, and a resettable install id. It is the snapshot layer — anything that changes at runtime (battery, connectivity, orientation streams) belongs to a neighbor's event capability.
 
 ## Decisions
 

@@ -11,7 +11,7 @@ status: ./status.md
 
 # mediasession — Charter
 
-See [platform integration shared principles](../platform-integration.md) for the suite-wide decisions (flat free functions over a swappable `*Backend`; web backend always available; `get*Backend`/`set*Backend`/`createWeb*Backend`; sentinels not throws; `sideEffects:false`).
+See [platform integration shared principles](../platform-integration.md) for the suite-wide decisions (flat free functions over a swappable `*Backend`; web backend installed explicitly via `enableHostWebMediaSession()` from `@flighthq/host-web`; `get*Backend`/`set*Backend`; custom > host > sentinel; sentinels not throws; `sideEffects:false`).
 
 ## What it is
 
@@ -24,12 +24,12 @@ Flat functions over a `MediaSessionBackend`:
 - **Playback state**: `setMediaSessionPlaybackState('none' | 'paused' | 'playing')`.
 - **Position**: `setMediaSessionPositionState({ duration, playbackRate, position })` / `clearMediaSessionPositionState()` — the scrubber.
 - **Action handlers**: `setMediaSessionActionHandler(action, handler)` / `clearMediaSessionActionHandler(action)` where `MediaSessionAction = 'play'|'pause'|'stop'|'seekbackward'|'seekforward'|'seekto'|'previoustrack'|'nexttrack'|'skipad'|...` — the OS transport buttons calling back into the app.
-- Seam accessors `getMediaSessionBackend`/`setMediaSessionBackend`/`createWebMediaSessionBackend`. Types (`MediaSessionBackend`, `MediaSessionMetadata`, `MediaSessionArtwork`, `MediaSessionAction`, `MediaSessionPlaybackState`, `MediaSessionPositionState`) in `@flighthq/types`.
+- Seam accessors `getMediaSessionBackend`/`setMediaSessionBackend`; web backend installed via `enableHostWebMediaSession()` from `@flighthq/host-web` (custom > host > sentinel). Types (`MediaSessionBackend`, `MediaSessionMetadata`, `MediaSessionArtwork`, `MediaSessionAction`, `MediaSessionPlaybackState`, `MediaSessionPositionState`) in `@flighthq/types`.
 
 ## Boundaries
 
 - **The OS transport/metadata seam, not a player.** It reports state to the OS and forwards OS actions; it does NOT play audio/video (that's `@flighthq/media`) or own the timeline. A media app reads its player's state and calls these; the action handlers drive the player.
-- **`@flighthq/types` for the seam + data types; the package holds the functions + web backend.** Deps: `@flighthq/types` only (the web backend uses the global `navigator.mediaSession`). No dependency on `@flighthq/media` — the app wires the two.
+- **`@flighthq/types` for the seam + data types; the package holds the functions.** The web backend (wrapping `navigator.mediaSession`) is installed via `enableHostWebMediaSession()` from `@flighthq/host-web`. Deps: `@flighthq/types` only. No dependency on `@flighthq/media` — the app wires the two.
 - **Web sentinels.** On a host without `navigator.mediaSession`, the web backend no-ops / returns sentinels rather than throwing (suite rule).
 
 ## Decisions

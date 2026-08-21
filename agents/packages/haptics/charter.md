@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Haptic feedback as a platform-integration cell — the smallest package in the UI/shell group (13 exports). Covers device vibration and semantic tactile cues: impact (`heavy | light | medium | rigid | soft` with optional continuous intensity), notification (`error | success | warning`), and selection, plus raw vibration, Web-Vibration pattern arrays, amplitude-aware waveforms (Android `VibrationEffect`), capability query, support predicate, cancel, and a prepare warm-up hint. Everything routes through a swappable `HapticsBackend` with a lazily-created web default over `navigator.vibrate`. The boundary against neighbors: haptics owns "buzz the motor" and named feedback generators; it does not own app/dock badge (`@flighthq/app`) or motion sensors (`@flighthq/sensors`).
+Haptic feedback as a platform-integration cell — the smallest package in the UI/shell group (13 exports). Covers device vibration and semantic tactile cues: impact (`heavy | light | medium | rigid | soft` with optional continuous intensity), notification (`error | success | warning`), and selection, plus raw vibration, Web-Vibration pattern arrays, amplitude-aware waveforms (Android `VibrationEffect`), capability query, support predicate, cancel, and a prepare warm-up hint. Everything routes through a swappable `HapticsBackend` with a web backend (over `navigator.vibrate`) installed explicitly via `enableHostWebHaptics()` from `@flighthq/host-web` (custom > host > sentinel). The boundary against neighbors: haptics owns "buzz the motor" and named feedback generators; it does not own app/dock badge (`@flighthq/app`) or motion sensors (`@flighthq/sensors`).
 
 ## Decisions
 

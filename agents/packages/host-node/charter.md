@@ -30,4 +30,4 @@ Portable language facilities do not belong here. `fetch`, `Intl.Segmenter`, and 
 - Participates as a named host layer in the order-independent provider stack; a Node-specific provider does not win merely because its enable call ran last.
 - Remains outside the `@flighthq/sdk` barrel, following the host-package boundary.
 
-When the host-web architecture record lands, link it here so the host-web and host-node decisions remain readable as one architecture.
+The host-web extraction architecture — the 38-row census, precedence model, and types spine that shaped this charter — is documented in [host-web architecture](../../host-web-architecture.md).
