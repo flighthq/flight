@@ -47,27 +47,17 @@ export function recordReviewHolds(
   const normalizedReason = requireText(reason, 'hold reason');
   const normalizedAt = requireText(at, 'hold timestamp');
 
-  // ★ RELEASING IS A RATCHET, SO RE-HOLDING A RELEASED CELL IS REFUSED. A release is a signed statement
-  // that the question is settled and the cell may gate; if a later hold could quietly take that back, a
-  // hold becomes a way to make a red cell green again, and "held" stops meaning "not yet decided" and
-  // starts meaning "not looked at". Every failure would then have a one-word cure. The refusal names the
-  // release — who, when, why — so an intentional reversal is still possible by editing the ledger
-  // deliberately, which is a reviewed act with a diff rather than a click.
-  const released = new Map<string, ReviewHoldHistoryEntry>();
-  for (const entry of ledger.history ?? []) {
-    if (entry.action !== 'release') continue;
-    for (const key of entry.keys) released.set(key, entry);
-  }
-  const reversals = normalizedKeys.filter((key) => released.has(key) && ledger.held[key] === undefined);
-  if (reversals.length > 0) {
-    const detail = reversals
-      .map((key) => {
-        const entry = released.get(key)!;
-        return `${key} (released by ${entry.actor} on ${entry.at}: ${entry.reason})`;
-      })
-      .join(', ');
-    throw new Error(`cell was already released and releasing is one-way: ${detail}`);
-  }
+  // ★ RE-HOLDING A RELEASED CELL IS ALLOWED, AND THE RATCHET LIVES IN THE RECORD INSTEAD OF IN A REFUSAL.
+  // This used to throw: a release was treated as final, so a cell released once could never be held
+  // again. The rule it was enforcing — "removing a hold is a ratchet" — is about not letting a release be
+  // undone QUIETLY, not about forbidding a later hold outright. Holding again is an ordinary new decision
+  // made on new information, and in practice the refusal fired on exactly that: hold, undo, hold again,
+  // blocked with no way forward but hand-editing the ledger.
+  //
+  // What the ratchet actually needs is that the reversal be VISIBLE, and history gives that: every hold
+  // and release is appended with actor, timestamp and reason, so a cell that was released and later
+  // re-held reads as the sequence it was. Nothing is lost by allowing the write; what would be lost is
+  // the audit trail, and that is kept.
 
   for (const key of normalizedKeys) ledger.held[key] = normalizedReason;
   appendHistory(ledger, {
