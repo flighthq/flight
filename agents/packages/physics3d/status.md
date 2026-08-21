@@ -13,40 +13,39 @@ by: principal
 
 At file-level parity with `physics2d`. Bodies carry colliders, the step generates its own
 contacts through the 3D broadphase and narrow phase, `world.events` reports begin/end transitions, and
-queries, debug geometry, and a stress harness all ship. Integration, the contact solver, all six joint
+queries, debug geometry, and a stress harness all ship. Integration, the contact solver, all seven joint
 kinds, islands and sleeping, the composed step with its substep loop, and three `explain*` seams are
 built.
 
 - **Contact generation dispatches through registries the CALLER must populate.** `collideContactManifold3D`
   resolves a pair through `@flighthq/collision`'s support and face registries, so a world whose supports
-  were never registered steps perfectly and detects nothing — bodies fall through floors in silence. This
-  is the package's sharpest usability edge. `explainPhysics3DCollision` reports it as data and
-  `enablePhysics3DGuards` phrases it, but nothing forces the call, because registration is opt-in by
-  design. The 2D package has no equivalent trap: its manifold path is a closed switch.
+  were never registered steps perfectly and detects nothing — bodies fall through floors in silence, the
+  package's sharpest usability edge. `explainPhysics3DCollision` reports it as data and
+  `enablePhysics3DGuards` phrases it, but nothing forces the call: registration is opt-in by design. The
+  2D package has no equivalent trap, its manifold path being a closed switch.
 - **A hull is triangulated ON DEMAND, three times over.** Mass properties, raycast, and the debug
-  wireframe each call `writeCollisionConvexHullFaces3D` and each pay an O(n^2) build. That is correct and
-  it is not cached anywhere, because `CollisionConvex3D` is a bare point list by design and a stored face
-  set is a second source of truth that can disagree with its own points. A caller raycasting the same
-  hull every frame is paying the build every frame; the four closed-form kinds are the cheap path.
-- **`bullet` and `continuousCollision` are carried and unread.** CCD needs a swept 3D narrow phase.
-  `physics2d` has linear AND rotational CCD; this is the largest remaining parity gap.
+  wireframe each call `writeCollisionConvexHullFaces3D` and each pay an O(n^2) build. Uncached by design:
+  `CollisionConvex3D` is a bare point list, and a stored face set is a second source of truth that can
+  disagree with its own points. A caller raycasting one hull every frame pays the build every frame; the
+  four closed-form kinds are the cheap path.
 - **There is no triangle-mesh collider, and that is a boundary rather than a gap.** A support function
   determines a CONVEX shape, so a concave mesh cannot reach the narrow phase through the registry the way
   every built-in kind does. Adding one means a second dispatch path — mesh-vs-convex against a BVH of
   triangles — not a sixth entry in the support registry.
-- **A resting stack still compresses about 0.03 per contact against a 0.005 slop target.** Twelve boxes
-  stand 11.11 where the geometry says 11.5. That is ordinary projected-Gauss-Seidel behaviour under load
-  rather than a defect, and the stress harness bounds it — but it is the number to watch if stacking
-  quality is ever raised, and more position iterations buy very little of it back.
-- **CCD arrests tunnelling LINEARLY and applies no torque at the impact.** That is a deliberate bound,
-  not a shortcut: a swept query reaches a shape through its support function, which is ambiguous on a flat
-  face, so a squarely-struck box reports a CORNER as the contact. Measured, a corner five units off-axis
-  inflated the angular term by four orders of magnitude and reduced a 600-unit-per-second stop to a
-  velocity change of 0.05 — it tunnelled anyway, through a path that ran and reported success. The
-  continuous pass now removes the approach velocity through the centres of mass and leaves the pair
-  touching and awake; the next step's ordinary contact generation supplies real manifold points, real
-  lever arms, friction, and warm starting. Closing this properly needs GJK WITNESS POINTS (barycentric
-  weights applied to the stored per-vertex support points), which the distance query does not yet keep.
+- **A resting stack compresses about 0.03 per contact against a 0.005 slop target** — twelve boxes stand
+  11.11 where the geometry says 11.5. Ordinary projected-Gauss-Seidel behaviour under load, bounded by the
+  stress harness, and the number to watch if stacking quality is raised; more position iterations buy
+  little of it back.
+- **CCD arrests tunnelling LINEARLY and applies no torque at the impact.** A deliberate bound, and the
+  reason is now sharper than the support-function ambiguity it used to be: the impact carries a real GJK
+  WITNESS point, exact even where the closest feature is interior to an edge. The obstacle is that one
+  point cannot stand for a face-face contact — where two flat faces meet every point of the region ties,
+  the witness settles on a CORNER, and a box driven squarely into a wall would take `r x n` about that
+  corner and spin from a symmetric impact. (Measured earlier: a five-unit lever arm inflated the angular
+  term by four orders of magnitude and cut a 600-unit/s stop to a velocity change of 0.05.) The pass
+  removes approach velocity through the centres of mass and leaves the pair touching; the next step's
+  MANIFOLD supplies lever arms that cancel for a square hit and not for a glancing one. Giving the impact
+  torque means giving it a manifold, not a better point. `continuous.test.ts` pins the no-spin invariant.
 - **CCD is LINEAR only, where `physics2d` also sweeps rotation.** A body spinning fast enough to catch
   something with a limb within one step is not covered; `maxCcdRotationSubsteps` has no 3D counterpart.
 - **`preparePhysics3DContactConstraints` REQUIRES the island workspace.** It iterates the island contact
@@ -65,7 +64,15 @@ built.
   combined rotation, where a per-axis decomposition would need Euler extraction and an order convention
   with it.
 - **The gyroscopic term is explicit.** Standard at game timesteps, and why `substeps` is the lever for
-  fast spinners. An implicit form is the upgrade if a body turns its own momentum within a step.
+  fast spinners; an implicit form is the upgrade if a body turns its own momentum within a step.
+- **No 3D joint is SOFT except the distance joint.** Its `frequencyHz`/`dampingRatio` pair is the only
+  compliance in the package; hinge, slider, cone-twist, and 6-DOF limits are all hard stops, where
+  ragdolls and suspensions want springy ones. The soft-row machinery exists now in
+  `physics3DDistanceJointSolver`: stiffness and damping derived per-step from the pair's own effective
+  mass, which is what keeps a stated frequency meaning the same thing whatever it is attached to.
+- **No joint BREAKS, in either dimension.** No `breakForce`/`breakTorque` and no event lane to report one.
+  Every impulse the check would read is already accumulated per joint, so this is a threshold test plus a
+  way to tell the caller, not new solver math.
 - **The guard module covers the declined STEP and the undetectable COLLIDER, not yet the unregistered
   JOINT.** A joint whose kind has no registered solver is skipped without a word, and
   `explainPhysics3DJoints` already classifies it as `unregistered-kind`. Closing it means a third seam on
@@ -74,6 +81,21 @@ built.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — GJK witness points, and the 3D DISTANCE joint. `writeCollisionDistance3D` now reports
+  the closest point on each shape, recovered by applying the closest point's barycentric weights to the
+  per-shape support points the simplex was built from — which required the reduction to report surviving
+  vertices and weights instead of compacting the simplex in place. Two crossing capsules are closest
+  MID-SEGMENT, where the old support-along-the-normal call named a segment end two units adrift on a
+  four-unit capsule; the swept contact point uses the witness now. It buys nothing for PARALLEL faces,
+  measured and documented rather than assumed: every point ties, the search stops at the first vertex, and
+  the answer is a corner either way. One bug the existing tests caught: a head-on approach converges onto
+  exactly touching, so the last measurement with a gap can be a whole interval back, and the witness has
+  to be ADVANCED to the impact rather than carried as-is (the direction survives the trip; a position does
+  not). Then `Physics3DDistanceJointKind` — one row, three behaviours off two independent flags: rigid at
+  `length`, a spring toward it at a frequency and damping ratio, and one-sided `minLength`/`maxLength`
+  stops. Enabling the limit without the spring drops the rest-length row, which is what a rope means. The
+  limit rows read the UNSOFTENED effective mass so a stiff spring cannot stretch through its own stop.
 
 - **2026-08-21** — Continuous collision, the last parity gap. Three new pieces:
   `writeCollisionDistance3D` (GJK DISTANCE — a separate routine from the overlap test, because that one
