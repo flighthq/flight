@@ -213,6 +213,7 @@ export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWo
     jointSolvers: new Map(),
     jointCollisionSuppressions: new Map(),
     events: { began: [], ended: [] },
+    jointEvents: { broke: [] },
     contactHooks: { preSolve: null, postSolve: null },
     solver: { constraints: [], constraintByPair: new Map() },
     config: createPhysics3DSolverConfig(),
