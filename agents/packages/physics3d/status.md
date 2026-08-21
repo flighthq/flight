@@ -28,14 +28,15 @@ step with its substep loop, and three `explain*` seams are built.
   normally. Closing this needs a hull triangulation, which is also what a triangle-mesh collider wants.
 - **`bullet` and `continuousCollision` are carried and unread.** CCD needs a swept 3D narrow phase.
   `physics2d` has linear AND rotational CCD; this is the largest remaining parity gap.
-- **No spatial queries.** `physics2d` exposes seven (`queryPhysics2DPoint`, `-Ray`, `-RayClosest`,
-  `-Region`, and three result constructors) over the same index the step uses. The 3D index is now in
-  place and unused by any query.
-- **No stress or determinism harness.** `physics2d/src/stress.test.ts` runs a tall pile to settle over
-  900 steps, a driven joint chain over 1200, an exact-repeat determinism trace, and a contact-identity
-  retention check. `contactIntake.test.ts` covers a two-box stack and one determinism trace; that is a
-  smaller claim than the 2D harness makes.
-- **No debug geometry.** `physics2d/src/debugGeometry.ts` has no 3D counterpart.
+- **A convex hull cannot be RAYCAST either, for the same missing primitive.** `raycastCollisionShape3D`
+  supports a hull only for an origin already inside it, because intersecting a ray with a hull needs its
+  face planes. Hull mass properties and hull raycast are ONE gap, not two: a triangulation closes both.
+- **A resting stack still compresses about 0.03 per contact against a 0.005 slop target.** Twelve boxes
+  stand 11.11 where the geometry says 11.5. That is ordinary projected-Gauss-Seidel behaviour under load
+  rather than a defect, and the stress harness bounds it — but it is the number to watch if stacking
+  quality is ever raised, and more position iterations buy very little of it back.
+- **No debug geometry.** `physics2d/src/debugGeometry.ts` has no 3D counterpart. The last remaining
+  file-level gap against `physics2d`.
 - **`preparePhysics3DContactConstraints` REQUIRES the island workspace.** It iterates the island contact
   slices rather than `world.contacts`, so a world stepped without `buildPhysics3DSolveIslands` produces
   no constraints at all. That is what makes a settled world cost no contact scan per sub-interval, and it
@@ -61,6 +62,30 @@ step with its substep loop, and three `explain*` seams are built.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Stress and determinism harness, and the bug it found. `solvePhysics3DContactPositions`
+  was correcting penetration against the depth captured at INTAKE and never re-measuring, so every
+  position iteration drove a quantity that could not change — the classic stale-Gauss-Seidel failure. It
+  now regenerates each contact from the colliders immediately before solving it, exactly as `physics2d`
+  does, with lever arms recomputed from the current centres. A twelve-box pile went from 0.27 of sink at
+  its base to 0.47, and from 8.54 to 11.11 tall. Invisible to every single-contact test, which is why
+  the harness had to exist: six long-horizon claims (tall pile, driven joint chain, exact-repeat trace,
+  INSERTION-ORDER-independence, workspace retention, and a torque-free spinner). The spinner nearly
+  produced a false bug report — angular momentum appeared to grow 40% and to get worse with more
+  substeps, which was a WRONG-FRAME metric (world-frame omega against the local tensor), not a wrong
+  gyroscopic term; corrected, the drift halves as the sub-interval does, and the test now asserts that
+  convergence rather than a fixed bound.
+
+- **2026-08-21** — 3D spatial queries, at parity with `physics2d`'s seven: `queryPhysics3DPoint`,
+  `-Ray`, `-RayClosest`, `-Region`, plus the filter and two result constructors, all over the same index
+  the step drives and all synchronizing the broadphase first so a query between steps sees the current
+  pose. Needed two new `collision` primitives — `getCollisionShapeContainsPoint3D` and
+  `raycastCollisionShape3D` (with `CollisionRaycastHit3D`). Point containment is exact and
+  boundary-inclusive for sphere/aabb/box/capsule; a HULL is answered by GJK against a zero-radius sphere
+  rather than a fifth hand-rolled predicate, which makes its surface exclusive and gives it the only
+  registration dependency among the kinds. Raycast is closed-form for the four, with the capsule
+  decomposed into two cap spheres plus a finite cylinder rather than fused into one quadratic — the fused
+  form is where a capsule's caps go subtly wrong.
 
 - **2026-08-21** — Contact intake. `RigidBody3D` gained `colliders` and LOST its body-level
   `material`/`filter`, which nothing read and which a compound body cannot share; both now sit on

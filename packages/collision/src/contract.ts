@@ -20,3 +20,5 @@ export * from './shapeContact';
 export * from './sweepCollisionShape2D';
 export * from './testCollision2D';
 export * from './testCollision3D';
+export * from './pointContainment3D';
+export * from './raycastCollisionShape3D';

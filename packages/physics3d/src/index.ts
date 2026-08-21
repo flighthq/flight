@@ -75,3 +75,13 @@ export {
   wakePhysics3DBody,
   writeRigidBody3DWorldCenter,
 } from './world';
+export {
+  createPhysics3DQueryFilter,
+  createPhysics3DQueryResult,
+  createPhysics3DRayResult,
+  queryPhysics3DPoint,
+  queryPhysics3DRay,
+  queryPhysics3DRayClosest,
+  queryPhysics3DRegion,
+} from './worldQueries';
+export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';

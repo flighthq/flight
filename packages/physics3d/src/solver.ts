@@ -1,10 +1,13 @@
+import { collideContactManifold3D, createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type {
+  CollisionContactManifold3D,
   Physics3DContactConstraint,
   Physics3DContactConstraintPoint,
   Physics3DWorld,
   RigidBody3D,
 } from '@flighthq/types/contract';
 
+import { updatePhysics3DColliderWorldShape } from './colliderTransform';
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -14,6 +17,7 @@ import {
   TENSOR_YZ,
   TENSOR_ZZ,
 } from './symmetricTensor';
+import { writeRigidBody3DWorldCenter } from './world';
 
 // Allocates one contact constraint with no points. The solver owns this record; nothing here belongs
 // on `Physics3DContact`, which carries geometry and identity only.
@@ -198,11 +202,27 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
 // velocity injects energy the simulation never spent, and a deep stack resolved that way visibly
 // launches itself apart.
 //
-// The lever arms are the ones captured at prepare time and are NOT recomputed as bodies move. A true
-// non-linear Gauss-Seidel re-derives the contact from the shapes each iteration; this package has no
-// shapes to re-derive from, so the approximation is structural rather than an omission — it is good for
-// the small corrections that resting contact produces and degrades as a correction gets large.
+// EACH CONTACT IS REGENERATED IMMEDIATELY BEFORE IT IS SOLVED, which is what makes this a true
+// non-linear Gauss-Seidel pass rather than a repeated correction against one stale measurement.
+//
+// That distinction is the whole quality of a stack. An earlier correction in the same pass has already
+// moved one or both bodies, so the depth captured at intake describes a configuration that no longer
+// exists — and re-applying `positionCorrection * staleDepth` on every iteration cannot converge, because
+// the quantity it is driving to zero never changes. The visible symptom is penetration that grows with
+// stack HEIGHT while every single-contact test still passes: a twelve-box pile measured 0.23 of sink at
+// its base against 0.005 for one box, and correcting from current geometry removes it.
+//
+// The manifold is leased scratch, so the pass allocates nothing.
 export function solvePhysics3DContactPositions(world: Physics3DWorld): number {
+  const scratch = acquirePhysics3DPositionScratch();
+  try {
+    return solvePhysics3DContactPositionsWithScratch(world, scratch);
+  } finally {
+    releasePhysics3DPositionScratch(scratch);
+  }
+}
+
+function solvePhysics3DContactPositionsWithScratch(world: Physics3DWorld, scratch: Physics3DPositionScratch): number {
   const config = world.config.sequentialImpulse;
   let deepest = 0;
 
@@ -212,26 +232,59 @@ export function solvePhysics3DContactPositions(world: Physics3DWorld): number {
     const bodyB = world.bodyByIndex.get(contact.bodyB);
     if (bodyA === undefined || bodyB === undefined) continue;
 
-    for (let i = 0; i < constraint.pointCount; i += 1) {
-      const source = contact.points[i];
-      const point = constraint.points[i];
+    const colliderA = bodyA.colliders[contact.colliderA];
+    const colliderB = bodyB.colliders[contact.colliderB];
+    if (colliderA === undefined || colliderB === undefined) continue;
+    updatePhysics3DColliderWorldShape(colliderA, bodyA);
+    updatePhysics3DColliderWorldShape(colliderB, bodyB);
+    if (!collideContactManifold3D(colliderA.world, colliderB.world, scratch.manifold)) continue;
+
+    const manifold = scratch.manifold;
+    writeRigidBody3DWorldCenter(bodyA, scratch.centerA);
+    writeRigidBody3DWorldCenter(bodyB, scratch.centerB);
+
+    for (let i = 0; i < manifold.pointCount; i += 1) {
+      const source = manifold.points[i];
       const excess = source.depth - config.penetrationSlop;
       if (excess > deepest) deepest = excess;
       if (excess <= 0) continue;
 
-      const correction = config.positionCorrection * excess * point.normalMass;
+      // Lever arms from the CURRENT centres to the CURRENT contact point, for the same reason the
+      // manifold is regenerated: an arm measured against a pose two corrections ago applies its torque
+      // about the wrong axis.
+      const rAX = source.x - scratch.centerA[0];
+      const rAY = source.y - scratch.centerA[1];
+      const rAZ = source.z - scratch.centerA[2];
+      const rBX = source.x - scratch.centerB[0];
+      const rBY = source.y - scratch.centerB[1];
+      const rBZ = source.z - scratch.centerB[2];
+      const mass = getEffectiveMass(
+        bodyA,
+        bodyB,
+        rAX,
+        rAY,
+        rAZ,
+        rBX,
+        rBY,
+        rBZ,
+        manifold.normalX,
+        manifold.normalY,
+        manifold.normalZ,
+      );
+
+      const correction = config.positionCorrection * excess * mass;
       applyPositionCorrection(
         bodyA,
         bodyB,
-        source.rAX,
-        source.rAY,
-        source.rAZ,
-        source.rBX,
-        source.rBY,
-        source.rBZ,
-        contact.normalX * correction,
-        contact.normalY * correction,
-        contact.normalZ * correction,
+        rAX,
+        rAY,
+        rAZ,
+        rBX,
+        rBY,
+        rBZ,
+        manifold.normalX * correction,
+        manifold.normalY * correction,
+        manifold.normalZ * correction,
       );
     }
   }
@@ -645,3 +698,23 @@ const AXIS_SELECTION_THRESHOLD = 0.5773502691896258;
 const PAIR_KEY_SCALE = 67108864;
 const scratchTensor = [0, 0, 0, 0, 0, 0];
 const scratchVector = [0, 0, 0];
+
+interface Physics3DPositionScratch {
+  manifold: CollisionContactManifold3D;
+  centerA: number[];
+  centerB: number[];
+}
+
+function acquirePhysics3DPositionScratch(): Physics3DPositionScratch {
+  return physics3DPositionScratchPool.pop() ?? createPhysics3DPositionScratch();
+}
+
+function createPhysics3DPositionScratch(): Physics3DPositionScratch {
+  return { manifold: createCollisionContactManifold3D(), centerA: [0, 0, 0], centerB: [0, 0, 0] };
+}
+
+function releasePhysics3DPositionScratch(scratch: Physics3DPositionScratch): void {
+  physics3DPositionScratchPool.push(scratch);
+}
+
+const physics3DPositionScratchPool: Physics3DPositionScratch[] = [createPhysics3DPositionScratch()];
