@@ -6,7 +6,7 @@ import type {
   CollisionSegment2D,
 } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
 
 // Segment-vs-shape overlap queries. Segments are area-less, so these return a boolean rather than a
 // manifold (a swept/contact answer is a later phase). All are boundary-inclusive: a segment that
@@ -15,12 +15,12 @@ import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidatio
 const RELATIVE_EPSILON = 1e-9;
 
 // Whether a segment overlaps an axis-aligned box (Liang–Barsky slab clip; inclusive).
-export function testSegmentAabbCollision(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionAabb2D>): boolean {
+export function testSegmentAabbCollision2D(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionAabb2D>): boolean {
   return isSegmentOverlappingBox(a.x0, a.y0, a.x1, a.y1, b.minX, b.minY, b.maxX, b.maxY);
 }
 
 // Whether a segment overlaps a circle (nearest point on the segment within the radius; inclusive).
-export function testSegmentCircleCollision(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionCircle2D>): boolean {
+export function testSegmentCircleCollision2D(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionCircle2D>): boolean {
   const x0 = a.x0;
   const y0 = a.y0;
   const dx = a.x1 - x0;
@@ -40,7 +40,7 @@ export function testSegmentCircleCollision(a: Readonly<CollisionSegment2D>, b: R
 
 // Whether a segment overlaps an oriented box (transformed into the box's local frame, then tested as
 // segment-vs-AABB; inclusive).
-export function testSegmentObbCollision(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionObb2D>): boolean {
+export function testSegmentObbCollision2D(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionObb2D>): boolean {
   const cos = Math.cos(b.rotation);
   const sin = Math.sin(b.rotation);
   const d0x = a.x0 - b.x;
@@ -56,7 +56,10 @@ export function testSegmentObbCollision(a: Readonly<CollisionSegment2D>, b: Read
 
 // Whether a segment overlaps a convex polygon: true if either endpoint is inside, or the segment
 // crosses any polygon edge (inclusive). The polygon is assumed convex.
-export function testSegmentPolygonCollision(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionPolygon2D>): boolean {
+export function testSegmentPolygonCollision2D(
+  a: Readonly<CollisionSegment2D>,
+  b: Readonly<CollisionPolygon2D>,
+): boolean {
   const points = b.points;
   if (getCollisionPolygonValidationStatus2D(points) !== null) return false;
   const pn = points.length >> 1;
@@ -83,7 +86,10 @@ export function testSegmentPolygonCollision(a: Readonly<CollisionSegment2D>, b: 
 }
 
 // Whether two segments intersect, including touching endpoints and collinear overlap (inclusive).
-export function testSegmentSegmentCollision(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionSegment2D>): boolean {
+export function testSegmentSegmentCollision2D(
+  a: Readonly<CollisionSegment2D>,
+  b: Readonly<CollisionSegment2D>,
+): boolean {
   return isSegmentsIntersecting(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0, b.x1, b.y1);
 }
 

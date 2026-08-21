@@ -1,7 +1,7 @@
 import type { CollisionRaycastHit2D, CollisionBuiltInShape2D } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation';
-import { getCollisionShapeContainsPoint2D } from './pointContainment';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
+import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
 
 const RELATIVE_EPSILON = 1e-9;
 

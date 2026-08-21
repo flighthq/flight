@@ -15,12 +15,12 @@ import {
 } from '@flighthq/sdk';
 import {
   createCollisionManifold2D,
-  testAabbAabbCollision,
-  testAabbPolygonCollision,
-  testCircleAabbCollision,
-  testCircleCircleCollision,
-  testCirclePolygonCollision,
-  testPolygonPolygonCollision,
+  testAabbAabbCollision2D,
+  testAabbPolygonCollision2D,
+  testCircleAabbCollision2D,
+  testCircleCircleCollision2D,
+  testCirclePolygonCollision2D,
+  testPolygonPolygonCollision2D,
 } from '@flighthq/sdk/game';
 
 import { canvas, render, scale } from './render';
@@ -176,13 +176,13 @@ function isPointInsideCollider(c: Collider, px: number, py: number): boolean {
 // Test one pair for collision, dispatching on the two kinds.
 function testPairCollision(a: Collider, b: Collider, out: CollisionManifold2D): boolean {
   if (a.kind === 'circle' && b.kind === 'circle') {
-    return testCircleCircleCollision(a.collider, b.collider, out);
+    return testCircleCircleCollision2D(a.collider, b.collider, out);
   }
   if (a.kind === 'circle' && b.kind === 'aabb') {
-    return testCircleAabbCollision(a.collider, b.collider, out);
+    return testCircleAabbCollision2D(a.collider, b.collider, out);
   }
   if (a.kind === 'aabb' && b.kind === 'circle') {
-    const result = testCircleAabbCollision(b.collider, a.collider, out);
+    const result = testCircleAabbCollision2D(b.collider, a.collider, out);
     if (result) {
       out.normalX = -out.normalX;
       out.normalY = -out.normalY;
@@ -190,13 +190,13 @@ function testPairCollision(a: Collider, b: Collider, out: CollisionManifold2D): 
     return result;
   }
   if (a.kind === 'aabb' && b.kind === 'aabb') {
-    return testAabbAabbCollision(a.collider, b.collider, out);
+    return testAabbAabbCollision2D(a.collider, b.collider, out);
   }
   if (a.kind === 'circle' && b.kind === 'polygon') {
-    return testCirclePolygonCollision(a.collider, b.collider, out);
+    return testCirclePolygonCollision2D(a.collider, b.collider, out);
   }
   if (a.kind === 'polygon' && b.kind === 'circle') {
-    const result = testCirclePolygonCollision(b.collider, a.collider, out);
+    const result = testCirclePolygonCollision2D(b.collider, a.collider, out);
     if (result) {
       out.normalX = -out.normalX;
       out.normalY = -out.normalY;
@@ -204,13 +204,13 @@ function testPairCollision(a: Collider, b: Collider, out: CollisionManifold2D): 
     return result;
   }
   if (a.kind === 'polygon' && b.kind === 'polygon') {
-    return testPolygonPolygonCollision(a.collider, b.collider, out);
+    return testPolygonPolygonCollision2D(a.collider, b.collider, out);
   }
   if (a.kind === 'aabb' && b.kind === 'polygon') {
-    return testAabbPolygonCollision(a.collider, b.collider, out);
+    return testAabbPolygonCollision2D(a.collider, b.collider, out);
   }
   if (a.kind === 'polygon' && b.kind === 'aabb') {
-    const result = testAabbPolygonCollision(b.collider, a.collider, out);
+    const result = testAabbPolygonCollision2D(b.collider, a.collider, out);
     if (result) {
       out.normalX = -out.normalX;
       out.normalY = -out.normalY;

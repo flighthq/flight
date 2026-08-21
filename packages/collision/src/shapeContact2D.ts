@@ -8,15 +8,15 @@ import type {
 } from '@flighthq/types/contract';
 
 import { FEATURE_INDEX_LIMIT, packContactFeatureId } from './contactFeatureId';
-import { clearCollisionContactManifold2D } from './contactManifold';
-import { writeAabbVertices, writeObbVertices } from './convexVertices';
-import { createCollisionManifold2D } from './manifold';
+import { clearCollisionContactManifold2D } from './contactManifold2D';
+import { writeAabbVertices, writeObbVertices } from './convexVertices2D';
+import { createCollisionManifold2D } from './manifold2D';
 import {
-  testCircleAabbCollision,
-  testCircleCircleCollision,
-  testCircleObbCollision,
-  testCirclePolygonCollision,
-} from './shapeCollision';
+  testCircleAabbCollision2D,
+  testCircleCircleCollision2D,
+  testCircleObbCollision2D,
+  testCirclePolygonCollision2D,
+} from './shapeCollision2D';
 
 // The 2D narrow-phase contact tests — the same ten manifold-bearing pairs as the `test*Collision`
 // family, but resolving the full contact set instead of only the minimum-translation vector. Each
@@ -35,7 +35,7 @@ import {
 // one surface point.
 
 // Axis-aligned box vs axis-aligned box.
-export function collideAabbAabbContactManifold(
+export function collideAabbAabbContactManifold2D(
   a: Readonly<CollisionAabb2D>,
   b: Readonly<CollisionAabb2D>,
   out: CollisionContactManifold2D,
@@ -51,7 +51,7 @@ export function collideAabbAabbContactManifold(
 }
 
 // Axis-aligned box vs oriented box.
-export function collideAabbObbContactManifold(
+export function collideAabbObbContactManifold2D(
   a: Readonly<CollisionAabb2D>,
   b: Readonly<CollisionObb2D>,
   out: CollisionContactManifold2D,
@@ -67,7 +67,7 @@ export function collideAabbObbContactManifold(
 }
 
 // Axis-aligned box vs convex polygon.
-export function collideAabbPolygonContactManifold(
+export function collideAabbPolygonContactManifold2D(
   a: Readonly<CollisionAabb2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionContactManifold2D,
@@ -83,14 +83,14 @@ export function collideAabbPolygonContactManifold(
 }
 
 // Circle vs axis-aligned box. One contact point, on the circle's surface.
-export function collideCircleAabbContactManifold(
+export function collideCircleAabbContactManifold2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionAabb2D>,
   out: CollisionContactManifold2D,
 ): boolean {
   const scratch = acquireShapeContactScratch();
   try {
-    if (!testCircleAabbCollision(a, b, scratch.leanManifold)) {
+    if (!testCircleAabbCollision2D(a, b, scratch.leanManifold)) {
       clearCollisionContactManifold2D(out);
       return false;
     }
@@ -101,14 +101,14 @@ export function collideCircleAabbContactManifold(
 }
 
 // Circle vs circle. One contact point, on A's surface.
-export function collideCircleCircleContactManifold(
+export function collideCircleCircleContactManifold2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionCircle2D>,
   out: CollisionContactManifold2D,
 ): boolean {
   const scratch = acquireShapeContactScratch();
   try {
-    if (!testCircleCircleCollision(a, b, scratch.leanManifold)) {
+    if (!testCircleCircleCollision2D(a, b, scratch.leanManifold)) {
       clearCollisionContactManifold2D(out);
       return false;
     }
@@ -119,14 +119,14 @@ export function collideCircleCircleContactManifold(
 }
 
 // Circle vs oriented box. One contact point, on the circle's surface.
-export function collideCircleObbContactManifold(
+export function collideCircleObbContactManifold2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionObb2D>,
   out: CollisionContactManifold2D,
 ): boolean {
   const scratch = acquireShapeContactScratch();
   try {
-    if (!testCircleObbCollision(a, b, scratch.leanManifold)) {
+    if (!testCircleObbCollision2D(a, b, scratch.leanManifold)) {
       clearCollisionContactManifold2D(out);
       return false;
     }
@@ -137,14 +137,14 @@ export function collideCircleObbContactManifold(
 }
 
 // Circle vs convex polygon. One contact point, on the circle's surface.
-export function collideCirclePolygonContactManifold(
+export function collideCirclePolygonContactManifold2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionContactManifold2D,
 ): boolean {
   const scratch = acquireShapeContactScratch();
   try {
-    if (!testCirclePolygonCollision(a, b, scratch.leanManifold)) {
+    if (!testCirclePolygonCollision2D(a, b, scratch.leanManifold)) {
       clearCollisionContactManifold2D(out);
       return false;
     }
@@ -155,7 +155,7 @@ export function collideCirclePolygonContactManifold(
 }
 
 // Oriented box vs oriented box.
-export function collideObbObbContactManifold(
+export function collideObbObbContactManifold2D(
   a: Readonly<CollisionObb2D>,
   b: Readonly<CollisionObb2D>,
   out: CollisionContactManifold2D,
@@ -171,7 +171,7 @@ export function collideObbObbContactManifold(
 }
 
 // Oriented box vs convex polygon.
-export function collideObbPolygonContactManifold(
+export function collideObbPolygonContactManifold2D(
   a: Readonly<CollisionObb2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionContactManifold2D,
@@ -187,7 +187,7 @@ export function collideObbPolygonContactManifold(
 }
 
 // Convex polygon vs convex polygon — the general convex contact core.
-export function collidePolygonPolygonContactManifold(
+export function collidePolygonPolygonContactManifold2D(
   a: Readonly<CollisionPolygon2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionContactManifold2D,

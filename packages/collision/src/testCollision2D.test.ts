@@ -8,7 +8,7 @@ import {
   registerCollisionSupport2D,
   supportCollisionCircle2D,
 } from './collisionSupport2D';
-import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold';
+import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2D';
 import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
 import { setCollisionTestGuard2D, testCollision2D } from './testCollision2D';
 

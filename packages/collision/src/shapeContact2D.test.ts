@@ -1,26 +1,26 @@
 import type { CollisionAabb2D, CollisionCircle2D, CollisionObb2D, CollisionPolygon2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCollisionContactManifold2D } from './contactManifold';
-import { createCollisionManifold2D } from './manifold';
+import { createCollisionContactManifold2D } from './contactManifold2D';
+import { createCollisionManifold2D } from './manifold2D';
 import {
-  testAabbAabbCollision,
-  testCircleCircleCollision,
-  testObbObbCollision,
-  testPolygonPolygonCollision,
-} from './shapeCollision';
+  testAabbAabbCollision2D,
+  testCircleCircleCollision2D,
+  testObbObbCollision2D,
+  testPolygonPolygonCollision2D,
+} from './shapeCollision2D';
 import {
-  collideAabbAabbContactManifold,
-  collideAabbObbContactManifold,
-  collideAabbPolygonContactManifold,
-  collideCircleAabbContactManifold,
-  collideCircleCircleContactManifold,
-  collideCircleObbContactManifold,
-  collideCirclePolygonContactManifold,
-  collideObbObbContactManifold,
-  collideObbPolygonContactManifold,
-  collidePolygonPolygonContactManifold,
-} from './shapeContact';
+  collideAabbAabbContactManifold2D,
+  collideAabbObbContactManifold2D,
+  collideAabbPolygonContactManifold2D,
+  collideCircleAabbContactManifold2D,
+  collideCircleCircleContactManifold2D,
+  collideCircleObbContactManifold2D,
+  collideCirclePolygonContactManifold2D,
+  collideObbObbContactManifold2D,
+  collideObbPolygonContactManifold2D,
+  collidePolygonPolygonContactManifold2D,
+} from './shapeContact2D';
 
 // A wide, shallow ground slab every resting-contact case sits on.
 const ground: CollisionAabb2D = { minX: -5, minY: -1, maxX: 5, maxY: 0 };
@@ -36,12 +36,12 @@ function livePoints(manifold: ReturnType<typeof createCollisionContactManifold2D
   return manifold.points.slice(0, manifold.pointCount);
 }
 
-describe('collideAabbAabbContactManifold', () => {
+describe('collideAabbAabbContactManifold2D', () => {
   it('resolves a box resting on the ground to two points spanning the overlap', () => {
     const out = createCollisionContactManifold2D();
     // The box's underside dips 0.1 below the ground's top face across x[0,2].
     const box: CollisionAabb2D = { minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 };
-    expect(collideAabbAabbContactManifold(box, ground, out)).toBe(true);
+    expect(collideAabbAabbContactManifold2D(box, ground, out)).toBe(true);
     expect(out.overlapping).toBe(true);
     expect(out.normalX).toBeCloseTo(0);
     expect(out.normalY).toBeCloseTo(1);
@@ -64,8 +64,8 @@ describe('collideAabbAabbContactManifold', () => {
   it('gives the two points distinct feature ids that survive the box sliding along the ground', () => {
     const first = createCollisionContactManifold2D();
     const second = createCollisionContactManifold2D();
-    expect(collideAabbAabbContactManifold({ minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 }, ground, first)).toBe(true);
-    expect(collideAabbAabbContactManifold({ minX: 0.3, minY: -0.12, maxX: 2.3, maxY: 1.88 }, ground, second)).toBe(
+    expect(collideAabbAabbContactManifold2D({ minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 }, ground, first)).toBe(true);
+    expect(collideAabbAabbContactManifold2D({ minX: 0.3, minY: -0.12, maxX: 2.3, maxY: 1.88 }, ground, second)).toBe(
       true,
     );
 
@@ -80,8 +80,8 @@ describe('collideAabbAabbContactManifold', () => {
     const lean = createCollisionManifold2D();
     const a: CollisionAabb2D = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
     const b: CollisionAabb2D = { minX: 2, minY: 8, maxX: 8, maxY: 20 };
-    expect(collideAabbAabbContactManifold(a, b, contact)).toBe(true);
-    expect(testAabbAabbCollision(a, b, lean)).toBe(true);
+    expect(collideAabbAabbContactManifold2D(a, b, contact)).toBe(true);
+    expect(testAabbAabbCollision2D(a, b, lean)).toBe(true);
     expect(contact.normalX).toBeCloseTo(lean.normalX);
     expect(contact.normalY).toBeCloseTo(lean.normalY);
     expect(contact.depth).toBeCloseTo(lean.depth);
@@ -96,8 +96,8 @@ describe('collideAabbAabbContactManifold', () => {
     const forward = createCollisionContactManifold2D();
     const reversed = createCollisionContactManifold2D();
     const box: CollisionAabb2D = { minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 };
-    expect(collideAabbAabbContactManifold(box, ground, forward)).toBe(true);
-    expect(collideAabbAabbContactManifold(ground, box, reversed)).toBe(true);
+    expect(collideAabbAabbContactManifold2D(box, ground, forward)).toBe(true);
+    expect(collideAabbAabbContactManifold2D(ground, box, reversed)).toBe(true);
 
     expect(reversed.normalX).toBeCloseTo(-forward.normalX);
     expect(reversed.normalY).toBeCloseTo(-forward.normalY);
@@ -117,10 +117,10 @@ describe('collideAabbAabbContactManifold', () => {
 
   it('clears the manifold on a miss, so no stale point is left readable', () => {
     const out = createCollisionContactManifold2D();
-    expect(collideAabbAabbContactManifold({ minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 }, ground, out)).toBe(true);
+    expect(collideAabbAabbContactManifold2D({ minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 }, ground, out)).toBe(true);
     expect(out.pointCount).toBe(2);
 
-    expect(collideAabbAabbContactManifold({ minX: 0, minY: 5, maxX: 2, maxY: 7 }, ground, out)).toBe(false);
+    expect(collideAabbAabbContactManifold2D({ minX: 0, minY: 5, maxX: 2, maxY: 7 }, ground, out)).toBe(false);
     expect(out.overlapping).toBe(false);
     expect(out.pointCount).toBe(0);
     expect(out.depth).toBe(0);
@@ -128,17 +128,17 @@ describe('collideAabbAabbContactManifold', () => {
 
   it('treats exactly touching boxes as not overlapping, matching the lean test', () => {
     const out = createCollisionContactManifold2D();
-    expect(collideAabbAabbContactManifold({ minX: 0, minY: 0, maxX: 2, maxY: 2 }, ground, out)).toBe(false);
+    expect(collideAabbAabbContactManifold2D({ minX: 0, minY: 0, maxX: 2, maxY: 2 }, ground, out)).toBe(false);
     expect(out.pointCount).toBe(0);
   });
 });
 
-describe('collideAabbObbContactManifold', () => {
+describe('collideAabbObbContactManifold2D', () => {
   it('resolves a flat-lying oriented box under a box to a two-point face contact', () => {
     const out = createCollisionContactManifold2D();
     const box: CollisionAabb2D = { minX: -1, minY: -0.1, maxX: 1, maxY: 2 };
     const platform: CollisionObb2D = { x: 0, y: -1, halfW: 3, halfH: 1, rotation: 0 };
-    expect(collideAabbObbContactManifold(box, platform, out)).toBe(true);
+    expect(collideAabbObbContactManifold2D(box, platform, out)).toBe(true);
     expect(out.normalY).toBeCloseTo(1);
     expect(out.depth).toBeCloseTo(0.1);
     expect(out.pointCount).toBe(2);
@@ -153,7 +153,7 @@ describe('collideAabbObbContactManifold', () => {
     // A unit-ish diamond whose lowest corner just dips under the box's top face.
     const diamond: CollisionObb2D = { x: 0, y: 1 + half - 0.05, halfW: 0.5, halfH: 0.5, rotation: Math.PI / 4 };
     const box: CollisionAabb2D = { minX: -3, minY: -1, maxX: 3, maxY: 1 };
-    expect(collideAabbObbContactManifold(box, diamond, out)).toBe(true);
+    expect(collideAabbObbContactManifold2D(box, diamond, out)).toBe(true);
     expect(out.pointCount).toBe(1);
     expect(out.points[0].x).toBeCloseTo(0);
     expect(out.points[0].y).toBeCloseTo(1 - 0.05);
@@ -163,7 +163,7 @@ describe('collideAabbObbContactManifold', () => {
   it('is separated when the boxes are disjoint', () => {
     const out = createCollisionContactManifold2D();
     expect(
-      collideAabbObbContactManifold(
+      collideAabbObbContactManifold2D(
         { minX: 0, minY: 0, maxX: 1, maxY: 1 },
         { x: 9, y: 9, halfW: 1, halfH: 1, rotation: 0.3 },
         out,
@@ -173,15 +173,15 @@ describe('collideAabbObbContactManifold', () => {
   });
 });
 
-describe('collideAabbPolygonContactManifold', () => {
+describe('collideAabbPolygonContactManifold2D', () => {
   it('matches the all-polygon result for the same geometry', () => {
     const viaAabb = createCollisionContactManifold2D();
     const viaPolygon = createCollisionContactManifold2D();
     const box: CollisionAabb2D = { minX: 0, minY: -0.1, maxX: 2, maxY: 1.9 };
     // The ground slab restated as a polygon, so both routes see identical geometry.
     const slab: CollisionPolygon2D = { points: [-5, -1, 5, -1, 5, 0, -5, 0] };
-    expect(collideAabbPolygonContactManifold(box, slab, viaAabb)).toBe(true);
-    expect(collidePolygonPolygonContactManifold(square(0, -0.1, 2), slab, viaPolygon)).toBe(true);
+    expect(collideAabbPolygonContactManifold2D(box, slab, viaAabb)).toBe(true);
+    expect(collidePolygonPolygonContactManifold2D(square(0, -0.1, 2), slab, viaPolygon)).toBe(true);
 
     expect(viaAabb.normalX).toBeCloseTo(viaPolygon.normalX);
     expect(viaAabb.normalY).toBeCloseTo(viaPolygon.normalY);
@@ -192,7 +192,7 @@ describe('collideAabbPolygonContactManifold', () => {
   it('reports a clean miss rather than NaN for a degenerate polygon', () => {
     const out = createCollisionContactManifold2D();
     const degenerate: CollisionPolygon2D = { points: [0, 0, 1, 1] };
-    expect(collideAabbPolygonContactManifold({ minX: -1, minY: -1, maxX: 2, maxY: 2 }, degenerate, out)).toBe(false);
+    expect(collideAabbPolygonContactManifold2D({ minX: -1, minY: -1, maxX: 2, maxY: 2 }, degenerate, out)).toBe(false);
     expect(out.overlapping).toBe(false);
     expect(out.pointCount).toBe(0);
     expect(Number.isNaN(out.depth)).toBe(false);
@@ -200,11 +200,11 @@ describe('collideAabbPolygonContactManifold', () => {
   });
 });
 
-describe('collideCircleAabbContactManifold', () => {
+describe('collideCircleAabbContactManifold2D', () => {
   it('places the single point on the circle surface at its deepest penetration', () => {
     const out = createCollisionContactManifold2D();
     const circle: CollisionCircle2D = { x: 0, y: 0.9, radius: 1 };
-    expect(collideCircleAabbContactManifold(circle, ground, out)).toBe(true);
+    expect(collideCircleAabbContactManifold2D(circle, ground, out)).toBe(true);
     expect(out.normalY).toBeCloseTo(1);
     expect(out.depth).toBeCloseTo(0.1);
     expect(out.pointCount).toBe(1);
@@ -215,12 +215,12 @@ describe('collideCircleAabbContactManifold', () => {
 
   it('is separated when the circle clears the box', () => {
     const out = createCollisionContactManifold2D();
-    expect(collideCircleAabbContactManifold({ x: 0, y: 4, radius: 1 }, ground, out)).toBe(false);
+    expect(collideCircleAabbContactManifold2D({ x: 0, y: 4, radius: 1 }, ground, out)).toBe(false);
     expect(out.pointCount).toBe(0);
   });
 });
 
-describe('collideCircleCircleContactManifold', () => {
+describe('collideCircleCircleContactManifold2D', () => {
   it('keeps the lean manifold isolated from a nested contact triggered after the lean test', () => {
     let xReads = 0;
     let nestedCalls = 0;
@@ -229,7 +229,7 @@ describe('collideCircleCircleContactManifold', () => {
         xReads++;
         if (xReads === 3) {
           nestedCalls++;
-          collideCircleCircleContactManifold(
+          collideCircleCircleContactManifold2D(
             { x: 0, y: 0, radius: 1 },
             { x: 0.5, y: 0, radius: 1 },
             createCollisionContactManifold2D(),
@@ -242,7 +242,7 @@ describe('collideCircleCircleContactManifold', () => {
     };
     const out = createCollisionContactManifold2D();
 
-    expect(collideCircleCircleContactManifold(a, { x: 1.5, y: 0, radius: 1 }, out)).toBe(true);
+    expect(collideCircleCircleContactManifold2D(a, { x: 1.5, y: 0, radius: 1 }, out)).toBe(true);
     expect(nestedCalls).toBe(1);
     expect(out.depth).toBeCloseTo(0.5);
     expect(out.points[0].depth).toBeCloseTo(0.5);
@@ -253,7 +253,7 @@ describe('collideCircleCircleContactManifold', () => {
     const out = createCollisionContactManifold2D();
     const a: CollisionCircle2D = { x: 0, y: 0, radius: 1 };
     const b: CollisionCircle2D = { x: 1.5, y: 0, radius: 1 };
-    expect(collideCircleCircleContactManifold(a, b, out)).toBe(true);
+    expect(collideCircleCircleContactManifold2D(a, b, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-1);
     expect(out.depth).toBeCloseTo(0.5);
     expect(out.pointCount).toBe(1);
@@ -267,8 +267,8 @@ describe('collideCircleCircleContactManifold', () => {
     const lean = createCollisionManifold2D();
     const a: CollisionCircle2D = { x: 1, y: 2, radius: 3 };
     const b: CollisionCircle2D = { x: 4, y: 6, radius: 4 };
-    expect(collideCircleCircleContactManifold(a, b, contact)).toBe(true);
-    expect(testCircleCircleCollision(a, b, lean)).toBe(true);
+    expect(collideCircleCircleContactManifold2D(a, b, contact)).toBe(true);
+    expect(testCircleCircleCollision2D(a, b, lean)).toBe(true);
     expect(contact.normalX).toBeCloseTo(lean.normalX);
     expect(contact.normalY).toBeCloseTo(lean.normalY);
     expect(contact.depth).toBeCloseTo(lean.depth);
@@ -276,20 +276,22 @@ describe('collideCircleCircleContactManifold', () => {
 
   it('clears a previously populated manifold on a miss', () => {
     const out = createCollisionContactManifold2D();
-    expect(collideCircleCircleContactManifold({ x: 0, y: 0, radius: 1 }, { x: 1.5, y: 0, radius: 1 }, out)).toBe(true);
-    expect(collideCircleCircleContactManifold({ x: 0, y: 0, radius: 1 }, { x: 9, y: 0, radius: 1 }, out)).toBe(false);
+    expect(collideCircleCircleContactManifold2D({ x: 0, y: 0, radius: 1 }, { x: 1.5, y: 0, radius: 1 }, out)).toBe(
+      true,
+    );
+    expect(collideCircleCircleContactManifold2D({ x: 0, y: 0, radius: 1 }, { x: 9, y: 0, radius: 1 }, out)).toBe(false);
     expect(out.pointCount).toBe(0);
     expect(out.overlapping).toBe(false);
   });
 });
 
-describe('collideCircleObbContactManifold', () => {
+describe('collideCircleObbContactManifold2D', () => {
   it('places the point on the circle surface in the rotated box frame', () => {
     const out = createCollisionContactManifold2D();
     // The box is rotated a quarter turn, so its half-extents swap: it spans y[-1,1] about the origin.
     const box: CollisionObb2D = { x: 0, y: 0, halfW: 1, halfH: 4, rotation: Math.PI / 2 };
     const circle: CollisionCircle2D = { x: 0, y: 1.9, radius: 1 };
-    expect(collideCircleObbContactManifold(circle, box, out)).toBe(true);
+    expect(collideCircleObbContactManifold2D(circle, box, out)).toBe(true);
     expect(out.normalY).toBeCloseTo(1);
     expect(out.depth).toBeCloseTo(0.1);
     expect(out.pointCount).toBe(1);
@@ -299,7 +301,7 @@ describe('collideCircleObbContactManifold', () => {
   it('is separated when the circle clears the rotated box', () => {
     const out = createCollisionContactManifold2D();
     expect(
-      collideCircleObbContactManifold(
+      collideCircleObbContactManifold2D(
         { x: 0, y: 20, radius: 1 },
         { x: 0, y: 0, halfW: 1, halfH: 4, rotation: 0.7 },
         out,
@@ -309,11 +311,11 @@ describe('collideCircleObbContactManifold', () => {
   });
 });
 
-describe('collideCirclePolygonContactManifold', () => {
+describe('collideCirclePolygonContactManifold2D', () => {
   it('places the point on the circle surface below the polygon face', () => {
     const out = createCollisionContactManifold2D();
     const circle: CollisionCircle2D = { x: 2.5, y: 5.9, radius: 1 };
-    expect(collideCirclePolygonContactManifold(circle, square(0, 0, 5), out)).toBe(true);
+    expect(collideCirclePolygonContactManifold2D(circle, square(0, 0, 5), out)).toBe(true);
     expect(out.normalY).toBeCloseTo(1);
     expect(out.depth).toBeCloseTo(0.1);
     expect(out.pointCount).toBe(1);
@@ -325,19 +327,19 @@ describe('collideCirclePolygonContactManifold', () => {
     const out = createCollisionContactManifold2D();
     // Sitting diagonally off the square's top-right corner, just inside the radius.
     const circle: CollisionCircle2D = { x: 5.6, y: 5.6, radius: 1 };
-    expect(collideCirclePolygonContactManifold(circle, square(0, 0, 5), out)).toBe(true);
+    expect(collideCirclePolygonContactManifold2D(circle, square(0, 0, 5), out)).toBe(true);
     expect(out.pointCount).toBe(1);
     expect(out.normalX).toBeCloseTo(Math.SQRT1_2);
     expect(out.normalY).toBeCloseTo(Math.SQRT1_2);
   });
 });
 
-describe('collideObbObbContactManifold', () => {
+describe('collideObbObbContactManifold2D', () => {
   it('resolves two aligned oriented boxes to a two-point face contact', () => {
     const out = createCollisionContactManifold2D();
     const upper: CollisionObb2D = { x: 0, y: 0.9, halfW: 1, halfH: 1, rotation: 0 };
     const lower: CollisionObb2D = { x: 0, y: -1, halfW: 1, halfH: 1, rotation: 0 };
-    expect(collideObbObbContactManifold(upper, lower, out)).toBe(true);
+    expect(collideObbObbContactManifold2D(upper, lower, out)).toBe(true);
     expect(out.normalY).toBeCloseTo(1);
     expect(out.depth).toBeCloseTo(0.1);
     expect(out.pointCount).toBe(2);
@@ -353,8 +355,8 @@ describe('collideObbObbContactManifold', () => {
     const lean = createCollisionManifold2D();
     const a: CollisionObb2D = { x: 0, y: 0, halfW: 2, halfH: 1, rotation: 0.4 };
     const b: CollisionObb2D = { x: 2.5, y: 0.5, halfW: 1, halfH: 1.5, rotation: -0.2 };
-    expect(collideObbObbContactManifold(a, b, contact)).toBe(true);
-    expect(testObbObbCollision(a, b, lean)).toBe(true);
+    expect(collideObbObbContactManifold2D(a, b, contact)).toBe(true);
+    expect(testObbObbCollision2D(a, b, lean)).toBe(true);
     expect(contact.normalX).toBeCloseTo(lean.normalX);
     expect(contact.normalY).toBeCloseTo(lean.normalY);
     expect(contact.depth).toBeCloseTo(lean.depth);
@@ -364,7 +366,7 @@ describe('collideObbObbContactManifold', () => {
     const out = createCollisionContactManifold2D();
     const a: CollisionObb2D = { x: 0, y: 0, halfW: 2, halfH: 1, rotation: 0.4 };
     const b: CollisionObb2D = { x: 2.5, y: 0.5, halfW: 1, halfH: 1.5, rotation: -0.2 };
-    expect(collideObbObbContactManifold(a, b, out)).toBe(true);
+    expect(collideObbObbContactManifold2D(a, b, out)).toBe(true);
     expect(out.pointCount).toBeGreaterThan(0);
     for (const point of livePoints(out)) {
       expect(point.depth).toBeGreaterThan(0);
@@ -373,11 +375,11 @@ describe('collideObbObbContactManifold', () => {
   });
 });
 
-describe('collideObbPolygonContactManifold', () => {
+describe('collideObbPolygonContactManifold2D', () => {
   it('resolves an oriented box resting on a polygon slab to two points', () => {
     const out = createCollisionContactManifold2D();
     const box: CollisionObb2D = { x: 2.5, y: 5.9, halfW: 1, halfH: 1, rotation: 0 };
-    expect(collideObbPolygonContactManifold(box, square(0, 0, 5), out)).toBe(true);
+    expect(collideObbPolygonContactManifold2D(box, square(0, 0, 5), out)).toBe(true);
     expect(out.normalY).toBeCloseTo(1);
     expect(out.depth).toBeCloseTo(0.1);
     expect(out.pointCount).toBe(2);
@@ -386,16 +388,16 @@ describe('collideObbPolygonContactManifold', () => {
   it('is separated when the box clears the polygon', () => {
     const out = createCollisionContactManifold2D();
     expect(
-      collideObbPolygonContactManifold({ x: 50, y: 50, halfW: 1, halfH: 1, rotation: 0 }, square(0, 0, 5), out),
+      collideObbPolygonContactManifold2D({ x: 50, y: 50, halfW: 1, halfH: 1, rotation: 0 }, square(0, 0, 5), out),
     ).toBe(false);
     expect(out.pointCount).toBe(0);
   });
 });
 
-describe('collidePolygonPolygonContactManifold', () => {
+describe('collidePolygonPolygonContactManifold2D', () => {
   it('resolves a square resting on a slab to two points spanning the overlap', () => {
     const out = createCollisionContactManifold2D();
-    expect(collidePolygonPolygonContactManifold(square(0, 4.9, 2), square(0, 0, 5), out)).toBe(true);
+    expect(collidePolygonPolygonContactManifold2D(square(0, 4.9, 2), square(0, 0, 5), out)).toBe(true);
     expect(out.normalY).toBeCloseTo(1);
     expect(out.depth).toBeCloseTo(0.1);
     expect(out.pointCount).toBe(2);
@@ -411,8 +413,8 @@ describe('collidePolygonPolygonContactManifold', () => {
     const lean = createCollisionManifold2D();
     const a = square(0, 4.9, 2);
     const b = square(0, 0, 5);
-    expect(collidePolygonPolygonContactManifold(a, b, contact)).toBe(true);
-    expect(testPolygonPolygonCollision(a, b, lean)).toBe(true);
+    expect(collidePolygonPolygonContactManifold2D(a, b, contact)).toBe(true);
+    expect(testPolygonPolygonCollision2D(a, b, lean)).toBe(true);
     expect(contact.normalX).toBeCloseTo(lean.normalX);
     expect(contact.normalY).toBeCloseTo(lean.normalY);
     expect(contact.depth).toBeCloseTo(lean.depth);
@@ -421,7 +423,7 @@ describe('collidePolygonPolygonContactManifold', () => {
   it('resolves a triangle tip pressed into a face to a single point', () => {
     const out = createCollisionContactManifold2D();
     const triangle: CollisionPolygon2D = { points: [2, 4.9, 3, 7, 1, 7] };
-    expect(collidePolygonPolygonContactManifold(triangle, square(0, 0, 5), out)).toBe(true);
+    expect(collidePolygonPolygonContactManifold2D(triangle, square(0, 0, 5), out)).toBe(true);
     expect(out.pointCount).toBe(1);
     expect(out.points[0].x).toBeCloseTo(2);
     expect(out.points[0].y).toBeCloseTo(4.9);
@@ -433,8 +435,8 @@ describe('collidePolygonPolygonContactManifold', () => {
     const clockwise = createCollisionContactManifold2D();
     const slab = square(0, 0, 5);
     const reversedSlab: CollisionPolygon2D = { points: [0, 0, 0, 5, 5, 5, 5, 0] };
-    expect(collidePolygonPolygonContactManifold(square(0, 4.9, 2), slab, counterClockwise)).toBe(true);
-    expect(collidePolygonPolygonContactManifold(square(0, 4.9, 2), reversedSlab, clockwise)).toBe(true);
+    expect(collidePolygonPolygonContactManifold2D(square(0, 4.9, 2), slab, counterClockwise)).toBe(true);
+    expect(collidePolygonPolygonContactManifold2D(square(0, 4.9, 2), reversedSlab, clockwise)).toBe(true);
 
     expect(clockwise.normalY).toBeCloseTo(counterClockwise.normalY);
     expect(clockwise.depth).toBeCloseTo(counterClockwise.depth);
@@ -443,7 +445,7 @@ describe('collidePolygonPolygonContactManifold', () => {
 
   it('reports a clean miss rather than NaN for a polygon with too few vertices', () => {
     const out = createCollisionContactManifold2D();
-    expect(collidePolygonPolygonContactManifold({ points: [0, 0] }, square(0, 0, 5), out)).toBe(false);
+    expect(collidePolygonPolygonContactManifold2D({ points: [0, 0] }, square(0, 0, 5), out)).toBe(false);
     expect(out.pointCount).toBe(0);
     expect(Number.isNaN(out.depth)).toBe(false);
   });

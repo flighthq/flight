@@ -1,6 +1,6 @@
 import type { CollisionShape2D, CollisionTestExplanation2D } from '@flighthq/types/contract';
 
-import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation';
+import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D';
 import { getCollisionPairTest2D, getCollisionSupport2D } from './collisionSupport2D';
 import { testCollision2D } from './testCollision2D';
 
