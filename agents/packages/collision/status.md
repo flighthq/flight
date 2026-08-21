@@ -48,8 +48,8 @@ by: principal
 - **The 2D capsule is complete through the contact matrix.** `CollisionCapsule2D` reaches every seam —
   validation, containment, bounds, transform, mass/inertia, debug geometry, segment overlap, raycast —
   and `capsuleContact2D.ts` adds the five manifold pairs (circle, capsule, aabb, obb, polygon), so a
-  capsule is a usable rigid-body collider. `sweepCollisionShape2D` is the one arm still missing, which
-  means a capsule works for discrete contact and world queries but not as a CCD bullet.
+  capsule is a usable rigid-body collider, and `sweepCollisionShape2D` answers for it too, so it also
+  works as a CCD bullet. The capsule is done across every 2D seam.
   The manifold is a separating-axis search rather than a distance reduction, and the candidate set is
   what makes it exact: polygon face normals, the capsule's own two side normals, and the direction from
   each polygon VERTEX to the nearest point on the capsule's axis. The vertex axes are not optional — at
@@ -59,6 +59,15 @@ by: principal
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — The capsule sweep closed the last gap, by decomposing each capsule into the two discs
+  and the rectangle whose UNION it exactly is and taking the earliest impact among the pieces: the time of
+  impact of a union IS the minimum of its parts, so no new continuous geometry was written. Two defects
+  the differential march caught. The capsule branch sat AFTER the circle branches, so circle-versus-capsule
+  fell into the circle path, asked a capsule for polygon vertices, got none, and reported a clean miss —
+  a tunnelling bullet, and silent, because a sweep reporting no hit looks exactly like a clear path. And
+  the piece decomposition was first held in module SINGLETONS, which this file's own nested-sweep test
+  clobbers; it lives in the pooled scratch now, like everything else here, for exactly that reason.
 
 - **2026-08-21** — The capsule's contact manifolds landed, and a differential instrument found three real
   defects that hand-written expectations would not have. (1) capsule-capsule cannot reduce to the distance
