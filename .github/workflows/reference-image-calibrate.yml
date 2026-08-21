@@ -54,7 +54,7 @@ jobs:
       - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - if: matrix.host <= fromJSON(github.event.inputs.hosts || '2')
         run: npm ci
@@ -136,7 +136,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - run: npm ci
       - uses: actions/download-artifact@v4
