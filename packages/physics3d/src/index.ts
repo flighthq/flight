@@ -85,10 +85,12 @@ export {
   createPhysics3DQueryFilter,
   createPhysics3DQueryResult,
   createPhysics3DRayResult,
+  createPhysics3DShapeCastResult,
   queryPhysics3DPoint,
   queryPhysics3DRay,
   queryPhysics3DRayClosest,
   queryPhysics3DRegion,
+  queryPhysics3DShapeCast,
 } from './worldQueries';
 export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
 export { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';
