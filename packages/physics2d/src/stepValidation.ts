@@ -47,9 +47,25 @@ export function isPhysics2DContactValid(contact: Readonly<Physics2DContact>): bo
   for (let i = 0; i < contact.pointCount; i++) {
     const point = contact.points[i];
     if (point === undefined) return false;
-    for (const key in point) {
-      const value = point[key as keyof typeof point];
-      if (typeof value === 'number' && !Number.isFinite(value)) return false;
+    // Enumerated rather than walked with `for...in`: this runs over every point of every contact on
+    // every step, and the generic form allocates a key string per field. Adding a numeric field to
+    // `Physics2DContactPoint` means adding a line here.
+    if (
+      !Number.isFinite(point.x) ||
+      !Number.isFinite(point.y) ||
+      !Number.isFinite(point.depth) ||
+      !Number.isFinite(point.featureId) ||
+      !Number.isFinite(point.rAX) ||
+      !Number.isFinite(point.rAY) ||
+      !Number.isFinite(point.rBX) ||
+      !Number.isFinite(point.rBY) ||
+      !Number.isFinite(point.normalImpulse) ||
+      !Number.isFinite(point.tangentImpulse) ||
+      !Number.isFinite(point.normalMass) ||
+      !Number.isFinite(point.tangentMass) ||
+      !Number.isFinite(point.bias)
+    ) {
+      return false;
     }
   }
   return true;
