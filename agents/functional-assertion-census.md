@@ -7,8 +7,8 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 337 |
-| blind | 19 |
+| able | 340 |
+| blind | 16 |
 | gap | 0 |
 | exempt | 0 |
 | **total** | **356** |
@@ -71,9 +71,9 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/effect-dither.webgl.ts` | able | L107: measureHighFrequency thresholds spatial neighbourhood order via deltas |
 | `functional/scenes/effect-dither.webgpu.ts` | able | L109: measureHighFrequency thresholds spatial neighbourhood order via deltas |
 | `functional/scenes/effect-drop-shadow.webgl.ts` | able | L124: meanLuminance is thresholded across 4 distinct call-site regions (SQUARE_X + 40 \| SQUARE_Y + SQUARE + 4 \| SQUARE_X + SQUARE \| SQUARE_Y + SQUARE + 36 ; SQUARE_X + 40 \| SQUARE_Y - 36 \| SQUARE_X + SQUARE \| SQUARE_Y - 4 ; SQUARE_X + SQUARE + 4 \| SQUARE_Y + 40 \| SQUARE_X + SQUARE + 36 \| SQUARE_Y + SQUARE) |
-| `functional/scenes/effect-empty-passthrough.canvas.ts` | blind | L103: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-empty-passthrough.webgl.ts` | blind | L106: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-empty-passthrough.webgpu.ts` | blind | L107: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/effect-empty-passthrough.canvas.ts` | able | L142: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-empty-passthrough.webgl.ts` | able | L145: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-empty-passthrough.webgpu.ts` | able | L146: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
 | `functional/scenes/effect-exposure.webgl.ts` | able | L95: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
 | `functional/scenes/effect-exposure.webgpu.ts` | able | L93: getBitmapPixelRgb is thresholded at named coordinates (4, 4) |
 | `functional/scenes/effect-film-grain.canvas.ts` | able | L100: assertRender thresholds spatial neighbourhood order via highFrequency |
