@@ -1,4 +1,6 @@
 import {
+  createCollisionHeightfield3D,
+  createCollisionTriangleMesh3D,
   registerBuiltInCollisionFaceQueries3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
@@ -40,6 +42,15 @@ import {
 } from './world';
 
 describe('addPhysics3DBody', () => {
+  it('rejects static-surface geometry on a movable body', () => {
+    const world = createPhysics3DWorld();
+    const body = createRigidBody3D('dynamic');
+    body.colliders.push(createPhysics3DCollider(createCollisionTriangleMesh3D([0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2])));
+
+    expect(() => addPhysics3DBody(world, body)).toThrow(/static rigid body/);
+    expect(world.bodies).toHaveLength(0);
+  });
+
   it('assigns a persistent index and registers the body', () => {
     const world = createPhysics3DWorld();
     const body = createRigidBody3D();
@@ -120,6 +131,16 @@ describe('addPhysics3DBody', () => {
 });
 
 describe('addPhysics3DCollider', () => {
+  it('rejects a heightfield on an already-owned movable body', () => {
+    const world = createPhysics3DWorld();
+    const body = createRigidBody3D('dynamic');
+    addPhysics3DBody(world, body);
+
+    expect(() =>
+      addPhysics3DCollider(world, body, createPhysics3DCollider(createCollisionHeightfield3D(2, 2, [0, 0, 0, 0]))),
+    ).toThrow(/static rigid body/);
+  });
+
   it('attaches the collider and derives the body mass from its geometry', () => {
     const world = createPhysics3DWorld();
     const body = addColliderTestBody(world);
@@ -963,6 +984,14 @@ describe('setPhysics3DBodyTransform', () => {
 });
 
 describe('setPhysics3DBodyType', () => {
+  it('declines to make a static terrain body movable', () => {
+    const body = createRigidBody3D('static');
+    body.colliders.push(createPhysics3DCollider(createCollisionTriangleMesh3D([0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2])));
+
+    expect(setPhysics3DBodyType(body, 'dynamic')).toBe(false);
+    expect(body.type).toBe('static');
+  });
+
   it('makes a dynamic body immovable when it becomes static', () => {
     const body = sphere();
     body.velocityX = 5;

@@ -1,4 +1,6 @@
 import {
+  createCollisionHeightfield3D,
+  createCollisionTriangleMesh3D,
   registerBuiltInCollisionFaceQueries3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
@@ -56,6 +58,21 @@ describe('createPhysics3DDebugGeometry', () => {
 });
 
 describe('writePhysics3DDebugGeometry', () => {
+  it('draws explicit mesh triangles and heightfield grid edges', () => {
+    const world = createPhysics3DWorld();
+    const mesh = createRigidBody3D('static');
+    mesh.colliders.push(createPhysics3DCollider(createCollisionTriangleMesh3D([0, 0, 0, 1, 0, 0, 0, 0, 1], [0, 1, 2])));
+    addPhysics3DBody(world, mesh);
+    const heightfield = createRigidBody3D('static');
+    heightfield.colliders.push(createPhysics3DCollider(createCollisionHeightfield3D(2, 2, [0, 0, 0, 0])));
+    addPhysics3DBody(world, heightfield);
+    const out = createPhysics3DDebugGeometry();
+
+    writePhysics3DDebugGeometry(world, out, { drawColliders: true, drawCentersOfMass: false });
+
+    expect(liveLines(out).filter((line) => line.feature === 'collider')).toHaveLength(8);
+  });
+
   it('draws a box as its twelve edges', () => {
     const world = createPhysics3DWorld();
     addBody(world, unitBox);

@@ -1,4 +1,8 @@
-import { getCollisionShapeValidationStatus3D } from '@flighthq/collision/contract';
+import {
+  getCollisionHeightfieldValidationStatus3D,
+  getCollisionShapeValidationStatus3D,
+  getCollisionTriangleMeshValidationStatus3D,
+} from '@flighthq/collision/contract';
 import type {
   Physics3DCollider,
   Physics3DContact,
@@ -26,12 +30,17 @@ export function isPhysics3DBodyStateValid(world: Readonly<Physics3DWorld>): bool
     if (
       !isRigidBody3DStateValid(body) ||
       !Array.isArray(body.colliders) ||
+      (body.type !== 'static' && body.colliders.some(isPhysics3DStaticSurfaceCollider)) ||
       world.bodyByIndex.get(body.index) !== body
     ) {
       return false;
     }
   }
   return true;
+}
+
+function isPhysics3DStaticSurfaceCollider(collider: Readonly<Physics3DCollider>): boolean {
+  return collider.local.kind === 'triangle-mesh' || collider.local.kind === 'heightfield';
 }
 
 // Validates the data that will generate NEW contacts during this step. Keeping this separate from body
@@ -218,8 +227,8 @@ function isPhysics3DColliderValid(collider: Readonly<Physics3DCollider>): boolea
   const material = collider.material;
   const filter = collider.filter;
   return (
-    getCollisionShapeValidationStatus3D(collider.local) === null &&
-    getCollisionShapeValidationStatus3D(collider.world) === null &&
+    getPhysics3DColliderShapeValidationStatus(collider.local) === null &&
+    getPhysics3DColliderShapeValidationStatus(collider.world) === null &&
     isPhysics3DColliderWorldShapeCompatible(collider) &&
     Number.isFinite(material.density) &&
     material.density >= 0 &&
@@ -232,6 +241,14 @@ function isPhysics3DColliderValid(collider: Readonly<Physics3DCollider>): boolea
     Number.isSafeInteger(filter.groupIndex) &&
     typeof collider.sensor === 'boolean'
   );
+}
+
+function getPhysics3DColliderShapeValidationStatus(
+  shape: Readonly<Physics3DCollider['local']>,
+): ReturnType<typeof getCollisionShapeValidationStatus3D> {
+  if (shape.kind === 'triangle-mesh') return getCollisionTriangleMeshValidationStatus3D(shape);
+  if (shape.kind === 'heightfield') return getCollisionHeightfieldValidationStatus3D(shape);
+  return getCollisionShapeValidationStatus3D(shape);
 }
 
 function isPhysics3DColliderWorldShapeCompatible(collider: Readonly<Physics3DCollider>): boolean {

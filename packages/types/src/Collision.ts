@@ -393,6 +393,65 @@ export interface CollisionVendorShape3D {
 // Every 3D collider, built-in or vendor. `testCollision3D` and both 3D registries take this.
 export type CollisionShape3D = CollisionBuiltInShape3D | CollisionVendorShape3D;
 
+// A static triangle mesh. Vertices are stored in the mesh's local frame as a flat
+// `[x0,y0,z0,...]` list and `indices` names one triangle per three entries. The pose places that
+// local frame in the query world. Keeping the pose separate lets an acceleration structure remain in
+// local space when a static body is positioned or re-oriented.
+//
+// A triangle mesh is deliberately NOT a `CollisionShape3D`: that union is the convex support-function
+// family consumed by GJK/EPA. A concave mesh has no truthful support function — registering one would
+// collide its convex hull instead. It enters through the accelerated triangle-mesh query functions.
+//
+// `version` covers mutations to `points` and `indices`. Replace either array by identity or call
+// `invalidateCollisionTriangleMesh3D` after editing its contents; the next query then rebuilds the
+// private BVH. Pose fields do not affect that local-space acceleration and need no invalidation.
+export interface CollisionTriangleMesh3D {
+  kind: 'triangle-mesh';
+  points: number[];
+  indices: number[];
+  version: number;
+  x: number;
+  y: number;
+  z: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  rotationW: number;
+}
+
+// A regular X/Z height grid in a local frame. `columns * rows` samples are stored row-major; sample
+// `(column,row)` is `(column * cellSizeX, heights[row * columns + column], row * cellSizeZ)` before the
+// pose is applied. Each cell is split along its lower-left to upper-right diagonal. Queries accelerate
+// it through the same local-space triangle BVH as an authored mesh.
+//
+// `version` follows the same payload rule as `CollisionTriangleMesh3D`: call
+// `invalidateCollisionHeightfield3D` after editing height values in place. Pose changes need none.
+export interface CollisionHeightfield3D {
+  kind: 'heightfield';
+  columns: number;
+  rows: number;
+  heights: number[];
+  cellSizeX: number;
+  cellSizeZ: number;
+  version: number;
+  x: number;
+  y: number;
+  z: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  rotationW: number;
+}
+
+// Concave surface shapes use accelerated triangle queries rather than the convex support registry.
+// Physics accepts them only on static bodies; collision itself stays policy-free and can query either
+// descriptor wherever the caller needs a surface.
+export type CollisionStaticShape3D = CollisionTriangleMesh3D | CollisionHeightfield3D;
+
+// Every built-in descriptor a physics collider may own. The convex and static-concave halves remain
+// named so a function can ask for exactly the mathematical model it implements.
+export type CollisionColliderShape3D = CollisionBuiltInShape3D | CollisionStaticShape3D;
+
 // The result of a 3D narrow-phase test, written into an `out` parameter so a hot loop over thousands
 // of pairs allocates nothing. When `overlapping` is true, (`normalX`,`normalY`,`normalZ`) is the unit
 // minimum-translation axis oriented to push shape **A out of B**, and `depth` is the penetration

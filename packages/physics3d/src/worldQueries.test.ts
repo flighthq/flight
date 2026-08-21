@@ -1,4 +1,4 @@
-import { registerBuiltInCollisionSupports3D } from '@flighthq/collision/contract';
+import { createCollisionTriangleMesh3D, registerBuiltInCollisionSupports3D } from '@flighthq/collision/contract';
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -212,6 +212,22 @@ describe('queryPhysics3DPoint', () => {
 });
 
 describe('queryPhysics3DRay', () => {
+  it('raycasts static triangle mesh surfaces', () => {
+    const world = createPhysics3DWorld();
+    const terrain = createRigidBody3D('static');
+    terrain.colliders.push(
+      createPhysics3DCollider(createCollisionTriangleMesh3D([-5, 0, -5, 5, 0, -5, 0, 0, 5], [0, 1, 2])),
+    );
+    addPhysics3DBody(world, terrain);
+    const out = createPhysics3DRayResult();
+
+    queryPhysics3DRay(world, 0, 2, 0, 0, -1, 0, out);
+
+    expect(out.hitCount).toBe(1);
+    expect(out.hits[0].body).toBe(terrain);
+    expect(out.hits[0].fraction).toBeCloseTo(2, 12);
+  });
+
   it('finds every collider along the ray, nearest first', () => {
     const world = createPhysics3DWorld();
     const far = addBoxBody(world, 10, 0, 0);
@@ -417,6 +433,23 @@ describe('queryPhysics3DRegion', () => {
 });
 
 describe('queryPhysics3DShapeCast', () => {
+  it('casts convex shapes against static triangle mesh surfaces', () => {
+    const world = createPhysics3DWorld();
+    const terrain = createRigidBody3D('static');
+    terrain.colliders.push(
+      createPhysics3DCollider(createCollisionTriangleMesh3D([-5, 0, -5, 5, 0, -5, 0, 0, 5], [0, 1, 2])),
+    );
+    addPhysics3DBody(world, terrain);
+    const out = createPhysics3DShapeCastResult();
+    const sphere: CollisionBuiltInShape3D = { kind: 'sphere', x: 0, y: 2, z: 0, radius: 0.25 };
+
+    queryPhysics3DShapeCast(world, sphere, 0, -4, 0, out);
+
+    expect(out.hit).toBe(true);
+    expect(out.body).toBe(terrain);
+    expect(out.fraction).toBeCloseTo(0.4375, 5);
+  });
+
   it('stops a swept shape at the first collider and reports where', () => {
     const world = createPhysics3DWorld();
     addBoxBody(world, 10, 0, 0, 'static');

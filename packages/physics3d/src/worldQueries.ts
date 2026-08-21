@@ -2,8 +2,6 @@ import {
   createCollisionRaycastHit3D,
   createCollisionTimeOfImpact3D,
   getCollisionShapeContainsPoint3D,
-  raycastCollisionShape3D,
-  sweepCollisionShape3D,
 } from '@flighthq/collision/contract';
 import type {
   CollisionBuiltInShape3D,
@@ -21,6 +19,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { synchronizePhysics3DBroadphase } from './broadphase';
+import { raycastPhysics3DColliderShape, sweepPhysics3DColliderShapes } from './colliderCollision';
 import { writePhysics3DColliderBounds } from './colliderTransform';
 
 // Queries against the world's CURRENT pose. Every one of them synchronizes the broadphase first, so a
@@ -94,7 +93,9 @@ export function queryPhysics3DPoint(
       for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex += 1) {
         const collider = body.colliders[colliderIndex];
         if (!passesColliderFilter(collider, filter)) continue;
-        if (!getCollisionShapeContainsPoint3D(collider.world, x, y, z)) continue;
+        const shape = collider.world;
+        if (shape.kind === 'triangle-mesh' || shape.kind === 'heightfield') continue;
+        if (!getCollisionShapeContainsPoint3D(shape, x, y, z)) continue;
         writeQueryHit(out, body, collider, colliderIndex);
       }
     }
@@ -242,7 +243,9 @@ export function queryPhysics3DShapeCast(
         if (!passesColliderFilter(collider, filter)) continue;
         // The collider is stationary for the duration of the cast: this is a query about where the shape
         // can go against the world as it stands, not a prediction of the next step.
-        if (!sweepCollisionShape3D(shape, dx, dy, dz, collider.world, 0, 0, 0, scratch.timeOfImpact, maxFraction)) {
+        if (
+          !sweepPhysics3DColliderShapes(shape, dx, dy, dz, collider.world, 0, 0, 0, scratch.timeOfImpact, maxFraction)
+        ) {
           continue;
         }
         if (scratch.timeOfImpact.fraction >= bestFraction) continue;
@@ -304,7 +307,7 @@ function queryPhysics3DRayInternal(
         const collider = body.colliders[colliderIndex];
         if (!passesColliderFilter(collider, filter)) continue;
         if (
-          !raycastCollisionShape3D(
+          !raycastPhysics3DColliderShape(
             collider.world,
             originX,
             originY,

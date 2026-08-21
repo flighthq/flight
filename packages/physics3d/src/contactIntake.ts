@@ -1,4 +1,4 @@
-import { collideContactManifold3D, createCollisionContactManifold3D } from '@flighthq/collision/contract';
+import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type {
   CollisionContactManifold3D,
   Physics3DCollider,
@@ -9,6 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { synchronizePhysics3DBroadphase } from './broadphase';
+import { collidePhysics3DColliderShapes } from './colliderCollision';
 import { createPhysics3DContactPoint } from './contacts';
 import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
 import { isPhysics3DPairOrdered } from './jointRegistry';
@@ -105,7 +106,7 @@ function buildPhysics3DContactsWithScratch(
         // scenery would otherwise emit solid-vs-solid contacts against other static scenery, which nothing
         // can ever resolve.
         if (bothImmovable && !sensorPair) continue;
-        if (!collideContactManifold3D(colliderA.world, colliderB.world, scratch.manifold)) continue;
+        if (!collidePhysics3DColliderShapes(colliderA.world, colliderB.world, scratch.manifold)) continue;
         mergePhysics3DContact(
           world,
           bodyA.index,

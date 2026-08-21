@@ -1,4 +1,5 @@
 import {
+  createCollisionTriangleMesh3D,
   registerBuiltInCollisionFaceQueries3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
@@ -87,6 +88,22 @@ describe('hasActivePhysics3DBullet', () => {
 });
 
 describe('integratePhysics3DContinuous', () => {
+  it('stops a bullet at an accelerated static triangle mesh', () => {
+    const world = continuousWorld();
+    const wall = createRigidBody3D('static');
+    wall.colliders.push(
+      createPhysics3DCollider(
+        createCollisionTriangleMesh3D([0, -5, -5, 0, 5, -5, 0, 5, 5, 0, -5, 5], [0, 1, 2, 0, 2, 3]),
+      ),
+    );
+    addPhysics3DBody(world, wall);
+    const bullet = addBullet(world, -5, 600);
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(bullet.x).toBeLessThan(0);
+  });
+
   it('deflects a spinning bullet that would cross a peg between its start and end orientations', () => {
     const world = continuousWorld();
     world.config.maxCcdRotationSubsteps = 128;

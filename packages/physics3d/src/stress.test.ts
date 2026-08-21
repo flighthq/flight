@@ -1,4 +1,6 @@
 import {
+  createCollisionHeightfield3D,
+  createCollisionTriangleMesh3D,
   registerBuiltInCollisionFaceQueries3D,
   registerBuiltInCollisionSupports3D,
 } from '@flighthq/collision/contract';
@@ -132,6 +134,36 @@ function snapshotWorld(world: Readonly<Physics3DWorld>): number[][] {
 }
 
 describe('physics3d stress qualification', () => {
+  it('settles a distributed load across large accelerated mesh and heightfield terrain', () => {
+    for (const surface of [
+      createGridTriangleMesh(17, 17),
+      createCollisionHeightfield3D(17, 17, new Array(17 * 17).fill(0)),
+    ]) {
+      const world = createPhysics3DWorld();
+      const terrain = createRigidBody3D('static');
+      terrain.colliders.push(createPhysics3DCollider(surface, MATERIAL));
+      addPhysics3DBody(world, terrain);
+      const bodies: RigidBody3D[] = [];
+      for (let row = 0; row < 4; row += 1) {
+        for (let column = 0; column < 4; column += 1) {
+          bodies.push(addBox(world, 'dynamic', 2.25 + column * 3.5, 2 + ((row + column) % 3), 2.25 + row * 3.5));
+        }
+      }
+
+      run(world, 900);
+
+      for (const body of bodies) {
+        expectFiniteBody(body);
+        expect(body.y).toBeGreaterThan(0.49);
+        expect(body.y).toBeLessThan(0.52);
+        expect(
+          body.sleeping,
+          JSON.stringify([body.y, body.velocityX, body.velocityY, body.velocityZ, body.sleepTimer]),
+        ).toBe(true);
+      }
+    }
+  });
+
   it('keeps a tall pile finite, ordered, and supported over a long settle horizon', () => {
     const world = createPhysics3DWorld();
     world.gravityY = -10;
@@ -442,6 +474,29 @@ describe('physics3d stress qualification', () => {
     expect(drifts[2]).toBeLessThan(0.05);
   });
 });
+
+function createGridTriangleMesh(columns: number, rows: number) {
+  const points = new Array<number>(columns * rows * 3);
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const offset = (row * columns + column) * 3;
+      points[offset] = column;
+      points[offset + 1] = 0;
+      points[offset + 2] = row;
+    }
+  }
+  const indices: number[] = [];
+  for (let row = 0; row < rows - 1; row += 1) {
+    for (let column = 0; column < columns - 1; column += 1) {
+      const lowerLeft = row * columns + column;
+      const lowerRight = lowerLeft + 1;
+      const upperLeft = lowerLeft + columns;
+      const upperRight = upperLeft + 1;
+      indices.push(lowerLeft, upperRight, lowerRight, lowerLeft, upperLeft, upperRight);
+    }
+  }
+  return createCollisionTriangleMesh3D(points, indices);
+}
 
 // |I * omega|, which is conserved for torque-free motion.
 //
