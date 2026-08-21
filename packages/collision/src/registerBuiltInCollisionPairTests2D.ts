@@ -2,17 +2,17 @@ import type { CollisionAabb2D, CollisionCircle2D, CollisionObb2D, CollisionPolyg
 
 import { registerCollisionPairTest2D } from './collisionSupport2D';
 import {
-  testAabbAabbCollision,
-  testAabbObbCollision,
-  testAabbPolygonCollision,
-  testCircleAabbCollision,
-  testCircleCircleCollision,
-  testCircleObbCollision,
-  testCirclePolygonCollision,
-  testObbObbCollision,
-  testObbPolygonCollision,
-  testPolygonPolygonCollision,
-} from './shapeCollision';
+  testAabbAabbCollision2D,
+  testAabbObbCollision2D,
+  testAabbPolygonCollision2D,
+  testCircleAabbCollision2D,
+  testCircleCircleCollision2D,
+  testCircleObbCollision2D,
+  testCirclePolygonCollision2D,
+  testObbObbCollision2D,
+  testObbPolygonCollision2D,
+  testPolygonPolygonCollision2D,
+} from './shapeCollision2D';
 
 // Registers the ten SAT pairs over the generic support-function floor.
 //
@@ -33,33 +33,33 @@ import {
 // runtime on every call.
 export function registerBuiltInCollisionPairTests2D(): void {
   registerCollisionPairTest2D('aabb', 'aabb', (a, b, out) =>
-    testAabbAabbCollision(a as CollisionAabb2D, b as CollisionAabb2D, out),
+    testAabbAabbCollision2D(a as CollisionAabb2D, b as CollisionAabb2D, out),
   );
   registerCollisionPairTest2D('aabb', 'obb', (a, b, out) =>
-    testAabbObbCollision(a as CollisionAabb2D, b as CollisionObb2D, out),
+    testAabbObbCollision2D(a as CollisionAabb2D, b as CollisionObb2D, out),
   );
   registerCollisionPairTest2D('aabb', 'polygon', (a, b, out) =>
-    testAabbPolygonCollision(a as CollisionAabb2D, b as CollisionPolygon2D, out),
+    testAabbPolygonCollision2D(a as CollisionAabb2D, b as CollisionPolygon2D, out),
   );
   registerCollisionPairTest2D('circle', 'aabb', (a, b, out) =>
-    testCircleAabbCollision(a as CollisionCircle2D, b as CollisionAabb2D, out),
+    testCircleAabbCollision2D(a as CollisionCircle2D, b as CollisionAabb2D, out),
   );
   registerCollisionPairTest2D('circle', 'circle', (a, b, out) =>
-    testCircleCircleCollision(a as CollisionCircle2D, b as CollisionCircle2D, out),
+    testCircleCircleCollision2D(a as CollisionCircle2D, b as CollisionCircle2D, out),
   );
   registerCollisionPairTest2D('circle', 'obb', (a, b, out) =>
-    testCircleObbCollision(a as CollisionCircle2D, b as CollisionObb2D, out),
+    testCircleObbCollision2D(a as CollisionCircle2D, b as CollisionObb2D, out),
   );
   registerCollisionPairTest2D('circle', 'polygon', (a, b, out) =>
-    testCirclePolygonCollision(a as CollisionCircle2D, b as CollisionPolygon2D, out),
+    testCirclePolygonCollision2D(a as CollisionCircle2D, b as CollisionPolygon2D, out),
   );
   registerCollisionPairTest2D('obb', 'obb', (a, b, out) =>
-    testObbObbCollision(a as CollisionObb2D, b as CollisionObb2D, out),
+    testObbObbCollision2D(a as CollisionObb2D, b as CollisionObb2D, out),
   );
   registerCollisionPairTest2D('obb', 'polygon', (a, b, out) =>
-    testObbPolygonCollision(a as CollisionObb2D, b as CollisionPolygon2D, out),
+    testObbPolygonCollision2D(a as CollisionObb2D, b as CollisionPolygon2D, out),
   );
   registerCollisionPairTest2D('polygon', 'polygon', (a, b, out) =>
-    testPolygonPolygonCollision(a as CollisionPolygon2D, b as CollisionPolygon2D, out),
+    testPolygonPolygonCollision2D(a as CollisionPolygon2D, b as CollisionPolygon2D, out),
   );
 }

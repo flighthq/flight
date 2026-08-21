@@ -2,7 +2,7 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { CollisionShape2D, LogEntry } from '@flighthq/types/contract';
 
 import { areCollisionGuardsEnabled, disableCollisionGuards, enableCollisionGuards } from './enableCollisionGuards';
-import { createCollisionManifold2D } from './manifold';
+import { createCollisionManifold2D } from './manifold2D';
 import { createCollisionManifold3D } from './manifold3D';
 import { testCollision2D } from './testCollision2D';
 import { testCollision3D } from './testCollision3D';

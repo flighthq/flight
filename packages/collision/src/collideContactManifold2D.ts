@@ -4,19 +4,19 @@ import type {
   CollisionShapeKind2D,
 } from '@flighthq/types/contract';
 
-import { clearCollisionContactManifold2D } from './contactManifold';
+import { clearCollisionContactManifold2D } from './contactManifold2D';
 import {
-  collideAabbAabbContactManifold,
-  collideAabbObbContactManifold,
-  collideAabbPolygonContactManifold,
-  collideCircleAabbContactManifold,
-  collideCircleCircleContactManifold,
-  collideCircleObbContactManifold,
-  collideCirclePolygonContactManifold,
-  collideObbObbContactManifold,
-  collideObbPolygonContactManifold,
-  collidePolygonPolygonContactManifold,
-} from './shapeContact';
+  collideAabbAabbContactManifold2D,
+  collideAabbObbContactManifold2D,
+  collideAabbPolygonContactManifold2D,
+  collideCircleAabbContactManifold2D,
+  collideCircleCircleContactManifold2D,
+  collideCircleObbContactManifold2D,
+  collideCirclePolygonContactManifold2D,
+  collideObbObbContactManifold2D,
+  collideObbPolygonContactManifold2D,
+  collidePolygonPolygonContactManifold2D,
+} from './shapeContact2D';
 
 // Generic narrow-phase contact test: the `testCollision2D` dispatcher's contact-resolving twin.
 // Dispatches on the two shapes' `kind`s and writes the full contact manifold pushing **A out of B**.
@@ -65,45 +65,45 @@ export function collideContactManifold2D(
     case 'circle':
       switch (hi.kind) {
         case 'circle':
-          overlapping = collideCircleCircleContactManifold(lo, hi, out);
+          overlapping = collideCircleCircleContactManifold2D(lo, hi, out);
           break;
         case 'aabb':
-          overlapping = collideCircleAabbContactManifold(lo, hi, out);
+          overlapping = collideCircleAabbContactManifold2D(lo, hi, out);
           break;
         case 'obb':
-          overlapping = collideCircleObbContactManifold(lo, hi, out);
+          overlapping = collideCircleObbContactManifold2D(lo, hi, out);
           break;
         case 'polygon':
-          overlapping = collideCirclePolygonContactManifold(lo, hi, out);
+          overlapping = collideCirclePolygonContactManifold2D(lo, hi, out);
           break;
       }
       break;
     case 'aabb':
       switch (hi.kind) {
         case 'aabb':
-          overlapping = collideAabbAabbContactManifold(lo, hi, out);
+          overlapping = collideAabbAabbContactManifold2D(lo, hi, out);
           break;
         case 'obb':
-          overlapping = collideAabbObbContactManifold(lo, hi, out);
+          overlapping = collideAabbObbContactManifold2D(lo, hi, out);
           break;
         case 'polygon':
-          overlapping = collideAabbPolygonContactManifold(lo, hi, out);
+          overlapping = collideAabbPolygonContactManifold2D(lo, hi, out);
           break;
       }
       break;
     case 'obb':
       switch (hi.kind) {
         case 'obb':
-          overlapping = collideObbObbContactManifold(lo, hi, out);
+          overlapping = collideObbObbContactManifold2D(lo, hi, out);
           break;
         case 'polygon':
-          overlapping = collideObbPolygonContactManifold(lo, hi, out);
+          overlapping = collideObbPolygonContactManifold2D(lo, hi, out);
           break;
       }
       break;
     case 'polygon':
       if (hi.kind === 'polygon') {
-        overlapping = collidePolygonPolygonContactManifold(lo, hi, out);
+        overlapping = collidePolygonPolygonContactManifold2D(lo, hi, out);
       }
       break;
   }

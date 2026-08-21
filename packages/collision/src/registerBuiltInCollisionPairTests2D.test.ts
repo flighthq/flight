@@ -2,9 +2,9 @@ import type { CollisionShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { getCollisionPairTest2D } from './collisionSupport2D';
-import { createCollisionManifold2D } from './manifold';
+import { createCollisionManifold2D } from './manifold2D';
 import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
-import { testCircleAabbCollision } from './shapeCollision';
+import { testCircleAabbCollision2D } from './shapeCollision2D';
 
 registerBuiltInCollisionPairTests2D();
 
@@ -51,9 +51,9 @@ describe('registerBuiltInCollisionPairTests2D', () => {
     const entry = getCollisionPairTest2D('circle', 'aabb');
     expect(entry).not.toBeNull();
     expect(entry?.(circle, box, throughRegistry)).toBe(true);
-    expect(testCircleAabbCollision({ x: 15, y: 5, radius: 7 }, { minX: 0, minY: 0, maxX: 10, maxY: 10 }, direct)).toBe(
-      true,
-    );
+    expect(
+      testCircleAabbCollision2D({ x: 15, y: 5, radius: 7 }, { minX: 0, minY: 0, maxX: 10, maxY: 10 }, direct),
+    ).toBe(true);
 
     // The adapter casts rather than re-dispatching, so this is what proves the cast lands on the right
     // function: an adapter wired to the wrong pair would still typecheck and still return a manifold.

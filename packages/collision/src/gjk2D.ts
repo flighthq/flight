@@ -1,7 +1,7 @@
 import type { CollisionManifold2D, CollisionShape2D, CollisionSupport2D } from '@flighthq/types/contract';
 
 import { getCollisionSupport2D } from './collisionSupport2D';
-import { clearCollisionManifold2D } from './manifold';
+import { clearCollisionManifold2D } from './manifold2D';
 
 // The generic narrow-phase floor: GJK for overlap, EPA for the penetration that follows it.
 //

@@ -29,7 +29,7 @@ import {
   KeyCode,
   pushFlowState,
   replaceFlowState,
-  testAabbAabbCollision,
+  testAabbAabbCollision2D,
   updateCamera2DFollow,
   updateTweens,
 } from '@flighthq/sdk';
@@ -248,7 +248,7 @@ function updateGame(dt: number): void {
     platformAabb.maxX = plat.x + plat.width;
     platformAabb.maxY = plat.y + plat.height;
 
-    if (testAabbAabbCollision(playerAabb, platformAabb, manifold)) {
+    if (testAabbAabbCollision2D(playerAabb, platformAabb, manifold)) {
       playerX += manifold.normalX * manifold.depth;
       playerY += manifold.normalY * manifold.depth;
 

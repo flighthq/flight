@@ -1,7 +1,7 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getCollisionShapeContainsPoint2D } from './pointContainment';
+import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
 
 describe('getCollisionShapeContainsPoint2D', () => {
   it('tests a circle inside, outside, and on the boundary (inclusive)', () => {

@@ -3,11 +3,11 @@ import {
   createCollisionContactManifold2D,
   createCollisionTimeOfImpact2D,
   getCollisionShapeContainsPoint2D,
-  testSegmentAabbCollision,
-  testSegmentCircleCollision,
-  testSegmentObbCollision,
-  testSegmentPolygonCollision,
-  testSegmentSegmentCollision,
+  testSegmentAabbCollision2D,
+  testSegmentCircleCollision2D,
+  testSegmentObbCollision2D,
+  testSegmentPolygonCollision2D,
+  testSegmentSegmentCollision2D,
   sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
 import type {
@@ -155,15 +155,15 @@ function testPhysics2DSegmentOverlap(
 ): boolean {
   switch (other.kind) {
     case 'aabb':
-      return testSegmentAabbCollision(segment, other);
+      return testSegmentAabbCollision2D(segment, other);
     case 'circle':
-      return testSegmentCircleCollision(segment, other);
+      return testSegmentCircleCollision2D(segment, other);
     case 'obb':
-      return testSegmentObbCollision(segment, other);
+      return testSegmentObbCollision2D(segment, other);
     case 'polygon':
-      return testSegmentPolygonCollision(segment, other);
+      return testSegmentPolygonCollision2D(segment, other);
     case 'segment':
-      return testSegmentSegmentCollision(segment, other);
+      return testSegmentSegmentCollision2D(segment, other);
     case 'point':
       return getCollisionShapeContainsPoint2D(segment, other.x, other.y);
   }

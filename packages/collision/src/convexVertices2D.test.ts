@@ -1,7 +1,7 @@
 import type { CollisionAabb2D, CollisionObb2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { writeAabbVertices, writeObbVertices } from './convexVertices';
+import { writeAabbVertices, writeObbVertices } from './convexVertices2D';
 
 describe('writeAabbVertices', () => {
   it('writes the four corners counter-clockwise from the min corner', () => {

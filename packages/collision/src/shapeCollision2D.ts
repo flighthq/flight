@@ -7,9 +7,9 @@ import type {
   CollisionPolygon2D,
 } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation';
-import { writeAabbVertices, writeObbVertices } from './convexVertices';
-import { clearCollisionManifold2D } from './manifold';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
+import { writeAabbVertices, writeObbVertices } from './convexVertices2D';
+import { clearCollisionManifold2D } from './manifold2D';
 
 // The 2D narrow-phase pair tests. Each writes an `out` CollisionManifold2D and returns whether the
 // pair overlaps. On overlap the manifold normal is the unit minimum-translation axis oriented to
@@ -40,7 +40,7 @@ let axisOverlapSign = 1;
 
 // Axis-aligned box vs axis-aligned box. Direct min-overlap test (no SAT needed): the only candidate
 // separating axes are X and Y, and the manifold uses whichever has the smaller penetration.
-export function testAabbAabbCollision(
+export function testAabbAabbCollision2D(
   a: Readonly<CollisionAabb2D>,
   b: Readonly<CollisionAabb2D>,
   out: CollisionManifold2D,
@@ -82,7 +82,7 @@ export function testAabbAabbCollision(
 }
 
 // Axis-aligned box vs oriented box (SAT over both boxes' four corners).
-export function testAabbObbCollision(
+export function testAabbObbCollision2D(
   a: Readonly<CollisionAabb2D>,
   b: Readonly<CollisionObb2D>,
   out: CollisionManifold2D,
@@ -99,7 +99,7 @@ export function testAabbObbCollision(
 }
 
 // Axis-aligned box vs convex polygon (SAT).
-export function testAabbPolygonCollision(
+export function testAabbPolygonCollision2D(
   a: Readonly<CollisionAabb2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionManifold2D,
@@ -119,7 +119,7 @@ export function testAabbPolygonCollision(
 
 // Circle vs axis-aligned box. Closest-point when the center is outside the box; nearest-face
 // push-out when the center is inside it.
-export function testCircleAabbCollision(
+export function testCircleAabbCollision2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionAabb2D>,
   out: CollisionManifold2D,
@@ -130,7 +130,7 @@ export function testCircleAabbCollision(
 
 // Circle vs circle. Radial: overlapping when the centers are closer than the radius sum; the normal
 // points from B's center to A's center. Concentric centers fall back to a +X normal at full depth.
-export function testCircleCircleCollision(
+export function testCircleCircleCollision2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionCircle2D>,
   out: CollisionManifold2D,
@@ -167,7 +167,7 @@ export function testCircleCircleCollision(
 
 // Circle vs oriented box. The circle center is transformed into the box's local frame, tested as
 // circle-vs-AABB there, then the resulting normal is rotated back into world space.
-export function testCircleObbCollision(
+export function testCircleObbCollision2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionObb2D>,
   out: CollisionManifold2D,
@@ -198,7 +198,7 @@ export function testCircleObbCollision(
 
 // Circle vs convex polygon (SAT: polygon edge normals plus the axis from the circle center to its
 // nearest polygon vertex, the axis SAT would otherwise miss at a corner).
-export function testCirclePolygonCollision(
+export function testCirclePolygonCollision2D(
   a: Readonly<CollisionCircle2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionManifold2D,
@@ -216,7 +216,7 @@ export function testCirclePolygonCollision(
 }
 
 // Oriented box vs oriented box (SAT over both boxes' four corners).
-export function testObbObbCollision(
+export function testObbObbCollision2D(
   a: Readonly<CollisionObb2D>,
   b: Readonly<CollisionObb2D>,
   out: CollisionManifold2D,
@@ -233,7 +233,7 @@ export function testObbObbCollision(
 }
 
 // Oriented box vs convex polygon (SAT).
-export function testObbPolygonCollision(
+export function testObbPolygonCollision2D(
   a: Readonly<CollisionObb2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionManifold2D,
@@ -252,7 +252,7 @@ export function testObbPolygonCollision(
 }
 
 // Convex polygon vs convex polygon (SAT — the general convex core).
-export function testPolygonPolygonCollision(
+export function testPolygonPolygonCollision2D(
   a: Readonly<CollisionPolygon2D>,
   b: Readonly<CollisionPolygon2D>,
   out: CollisionManifold2D,

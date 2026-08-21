@@ -2,7 +2,7 @@ import type { CollisionShape2D } from '@flighthq/types/contract';
 
 import { registerBuiltInCollisionSupports2D } from './collisionSupport2D';
 import { testCollisionSupport2D, testCollisionSupportOverlap2D } from './gjk2D';
-import { createCollisionManifold2D } from './manifold';
+import { createCollisionManifold2D } from './manifold2D';
 import { testCollision2D } from './testCollision2D';
 
 registerBuiltInCollisionSupports2D();

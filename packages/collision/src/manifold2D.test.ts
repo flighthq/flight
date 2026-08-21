@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold';
+import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2D';
 
 describe('clearCollisionManifold2D', () => {
   it('resets every field to the non-overlapping state', () => {

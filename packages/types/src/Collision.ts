@@ -111,7 +111,7 @@ export interface CollisionVendorShape2D {
 export type CollisionVendorKind2D = `${string}.${string}`;
 
 // Every 2D collider, built-in or vendor. The generic `testCollision2D` and both registries take this;
-// the direct per-pair tests (`testCircleCircleCollision`, ...) take the bare untagged parameter types
+// the direct per-pair tests (`testCircleCircleCollision2D`, ...) take the bare untagged parameter types
 // and are the hot path.
 export type CollisionShape2D = CollisionBuiltInShape2D | CollisionVendorShape2D;
 

@@ -2,8 +2,8 @@ import type { CollisionShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { collideContactManifold2D } from './collideContactManifold2D';
-import { createCollisionContactManifold2D } from './contactManifold';
-import { collideAabbAabbContactManifold, collideCircleAabbContactManifold } from './shapeContact';
+import { createCollisionContactManifold2D } from './contactManifold2D';
+import { collideAabbAabbContactManifold2D, collideCircleAabbContactManifold2D } from './shapeContact2D';
 
 describe('collideContactManifold2D', () => {
   it('dispatches a box-box pair to the same contact as the direct function', () => {
@@ -13,7 +13,7 @@ describe('collideContactManifold2D', () => {
     const ground: CollisionShape2D = { kind: 'aabb', minX: -5, minY: -1, maxX: 5, maxY: 0 };
 
     expect(collideContactManifold2D(box, ground, dispatched)).toBe(true);
-    expect(collideAabbAabbContactManifold(box, ground, direct)).toBe(true);
+    expect(collideAabbAabbContactManifold2D(box, ground, direct)).toBe(true);
     expect(dispatched.normalY).toBeCloseTo(direct.normalY);
     expect(dispatched.depth).toBeCloseTo(direct.depth);
     expect(dispatched.pointCount).toBe(direct.pointCount);
@@ -30,7 +30,7 @@ describe('collideContactManifold2D', () => {
     const ground: CollisionShape2D = { kind: 'aabb', minX: -5, minY: -1, maxX: 5, maxY: 0 };
 
     expect(collideContactManifold2D(circle, ground, dispatched)).toBe(true);
-    expect(collideCircleAabbContactManifold(circle, ground, direct)).toBe(true);
+    expect(collideCircleAabbContactManifold2D(circle, ground, direct)).toBe(true);
     expect(dispatched.normalY).toBeCloseTo(direct.normalY);
     expect(dispatched.points[0].y).toBeCloseTo(direct.points[0].y);
   });
