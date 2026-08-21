@@ -3,6 +3,7 @@ import {
   assertSensitivityControls,
   classifyAssertionSource,
   formatAssertionSensitivityReport,
+  hasCurrentAssertionSensitivitySemantics,
   readAssertionSensitivityRows,
 } from './assertion-sensitivity.mjs';
 
@@ -117,11 +118,51 @@ describe('formatAssertionSensitivityReport', () => {
   });
 });
 
+describe('hasCurrentAssertionSensitivitySemantics', () => {
+  it('keeps a pure evidence-line shift green', () => {
+    const committed = formatAssertionSensitivityReport([
+      { evidence: 'named point', line: 12, path: 'functional/scenes/example.ts', verdict: 'able' },
+    ]);
+    const current = [
+      { evidence: 'named point', line: 47, path: 'functional/scenes/example.ts', verdict: 'able' as const },
+    ];
+
+    expect(formatAssertionSensitivityReport(current)).not.toBe(committed);
+    expect(hasCurrentAssertionSensitivitySemantics(current, committed)).toBe(true);
+  });
+
+  it('fails when a scene verdict changes', () => {
+    const committed = formatAssertionSensitivityReport([
+      { evidence: 'named point', line: 12, path: 'functional/scenes/example.ts', verdict: 'able' },
+    ]);
+    const current = [
+      { evidence: 'whole-frame aggregate', line: 12, path: 'functional/scenes/example.ts', verdict: 'blind' as const },
+    ];
+
+    expect(hasCurrentAssertionSensitivitySemantics(current, committed)).toBe(false);
+  });
+
+  it('fails when a scene identity changes', () => {
+    const committed = formatAssertionSensitivityReport([
+      { evidence: 'named point', line: 12, path: 'functional/scenes/example.ts', verdict: 'able' },
+    ]);
+    const current = [
+      { evidence: 'named point', line: 12, path: 'functional/scenes/renamed.ts', verdict: 'able' as const },
+    ];
+
+    expect(hasCurrentAssertionSensitivitySemantics(current, committed)).toBe(false);
+  });
+});
+
 describe('readAssertionSensitivityRows', () => {
   it('re-runs every current-tree control and retains every scene identity', () => {
     const rows = readAssertionSensitivityRows(process.cwd());
 
-    expect(rows.length).toBeGreaterThan(300);
+    expect(rows).toHaveLength(356);
+    expect(rows.filter((row) => row.verdict === 'able')).toHaveLength(337);
+    expect(rows.filter((row) => row.verdict === 'blind')).toHaveLength(19);
+    expect(rows.filter((row) => row.verdict === 'exempt')).toHaveLength(0);
+    expect(rows.filter((row) => row.verdict === 'gap')).toHaveLength(0);
     expect(new Set(rows.map((row) => row.path)).size).toBe(rows.length);
     expect(() => assertSensitivityControls(rows)).not.toThrow();
   });
