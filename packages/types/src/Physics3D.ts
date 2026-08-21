@@ -408,6 +408,11 @@ export interface Physics3DStepExplanation {
   readonly status: 'invalid-step' | 'ready';
 }
 
+// Installed by `enablePhysics3DGuards` and consulted only when `stepPhysics3D` declines its
+// preconditions. It takes the world and the timestep rather than a reason, so the guard can ask
+// `explainPhysics3DStep` for every simultaneous fault instead of being handed the first one.
+export type Physics3DStepGuard = (world: Readonly<Physics3DWorld>, dt: number) => void;
+
 // Why a joint cannot be solved, or that it can. `unregistered-kind` is the common one: a joint whose
 // kind has no registered solver is skipped in silence by the step, and this is how a caller finds out.
 export interface Physics3DJointExplanation {
