@@ -13,7 +13,7 @@ import {
 import type {
   CollisionContactManifold2D,
   CollisionSegment2D,
-  CollisionShape2D,
+  CollisionBuiltInShape2D,
   CollisionTimeOfImpact2D,
   Physics2DContact,
   Physics2DContactPoint,
@@ -138,7 +138,10 @@ function buildPhysics2DContacts(world: Physics2DWorld): void {
 // normal for the impulse solver to consume. A sensor needs only a boolean overlap, though, so it can use
 // collision's exact point-containment and segment-query lanes and persist a zero-point contact solely for
 // begin/end lifecycle. This fallback is sensor-only; a solid segment remains non-resolving by design.
-function testPhysics2DAreaLessSensorOverlap(a: Readonly<CollisionShape2D>, b: Readonly<CollisionShape2D>): boolean {
+function testPhysics2DAreaLessSensorOverlap(
+  a: Readonly<CollisionBuiltInShape2D>,
+  b: Readonly<CollisionBuiltInShape2D>,
+): boolean {
   if (a.kind === 'point') return getCollisionShapeContainsPoint2D(b, a.x, a.y);
   if (b.kind === 'point') return getCollisionShapeContainsPoint2D(a, b.x, b.y);
   if (a.kind === 'segment') return testPhysics2DSegmentOverlap(a, b);
@@ -148,7 +151,7 @@ function testPhysics2DAreaLessSensorOverlap(a: Readonly<CollisionShape2D>, b: Re
 
 function testPhysics2DSegmentOverlap(
   segment: Readonly<CollisionSegment2D & { kind: 'segment' }>,
-  other: Readonly<CollisionShape2D>,
+  other: Readonly<CollisionBuiltInShape2D>,
 ): boolean {
   switch (other.kind) {
     case 'aabb':
