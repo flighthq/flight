@@ -304,8 +304,11 @@ export interface Physics3DContact {
 }
 
 // This step's contact transitions. A per-step output buffer, not a second record of contact state: the
-// persistent contact list already knows which pairs are touching, and these are read off the moments it
-// gains and loses entries.
+// persistent contact list already knows which solid pairs are touching, and these are read off the
+// moments it gains and loses entries. A CCD impact joins that same list and emits `began` at TOI, in the
+// step where it happened. This includes a sensor crossing that exists only between discrete poses: its
+// record persists through the impact step and emits `ended` when the next contact intake proves that the
+// pair is no longer touching. The same record identity therefore spans both transitions.
 export interface Physics3DContactEvents {
   began: Physics3DContact[];
   ended: Physics3DContact[];
@@ -313,9 +316,14 @@ export interface Physics3DContactEvents {
 
 // A strict per-contact callback invoked by the explicit world step. Pre-solve runs after contact
 // intake and before constraint preparation, so it may adjust friction/restitution or set
-// `enabled=false` for this step. Post-solve runs once the step has committed. World lifecycle and
-// body-action helpers reject calls from either hook: contact fields are the hook's sole mutation
-// surface. Sensors invoke neither, because they produce no constraint to solve.
+// `enabled=false` for this step. A solid contact first discovered by CCD receives the same callback at
+// TOI, immediately before its impact impulse; changing friction, restitution, or enabled therefore
+// affects that impact. A throw from this late callback restores those override fields but leaves poses
+// at TOI and retains the newly published contact/begin event — discovering the contact necessarily
+// advanced the interval, so CCD cannot provide the initial intake callback's before-step exception
+// boundary. Post-solve runs once the step has committed and sees both ordinary and CCD solid contacts.
+// World lifecycle and body-action helpers reject calls from either hook: contact fields are the hook's
+// sole mutation surface. Sensors invoke neither, because they produce no constraint to solve.
 export type Physics3DContactCallback = (world: Physics3DWorld, contact: Physics3DContact) => void;
 
 export interface Physics3DContactHooks {
@@ -431,10 +439,28 @@ export interface Physics3DSolverConfig {
   maxCcdSubsteps: number;
   // Hard sampling budget for angular CCD. Rotation has no analytic convex sweep in the collision seam,
   // so a spinning bullet samples its pose in bounded increments and bisects the first overlapping one.
-  // Zero deliberately restores linear-only CCD.
+  // Zero deliberately restores linear-only CCD. The target spacing is one degree: the target is met
+  // when this budget is at least `ceil(maxAngularSpeed * substepDt / (PI / 180))`; otherwise the actual
+  // spacing is `maxAngularSpeed * substepDt / maxCcdRotationSubsteps`. At radius R the unsampled arc is
+  // at most R times that spacing. `writePhysics3DRotationalCcdEnvelope` makes the same bound executable.
+  // A feature whose entire overlap interval fits between two samples can still tunnel — bounded sampling
+  // cannot promise otherwise, so authored extent is part of the guarantee rather than an implicit claim.
   maxCcdRotationSubsteps: number;
 
   sequentialImpulse: Physics3DSequentialImpulseConfig;
+}
+
+// The exact sampling envelope implied by one angular speed, collider radius, interval, and budget.
+// `maxPointArcTravel` is an upper bound on how far the furthest point travels along its rotation arc
+// between tested poses. Any angular overlap interval at least `maxAngularIncrement` wide must contain a
+// sample; a narrower feature needs a larger budget. Zero samples with non-zero travel means rotational
+// CCD is disabled and both maxima are positive infinity.
+export interface Physics3DRotationalCcdEnvelope {
+  angularTravel: number;
+  sampleCount: number;
+  maxAngularIncrement: number;
+  maxPointArcTravel: number;
+  targetIncrementMet: boolean;
 }
 
 // Pure diagnosis of whether one explicit step can run. Individual flags keep simultaneous faults

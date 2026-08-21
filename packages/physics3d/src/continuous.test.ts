@@ -6,7 +6,11 @@ import {
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';
+import {
+  hasActivePhysics3DBullet,
+  integratePhysics3DContinuous,
+  writePhysics3DRotationalCcdEnvelope,
+} from './continuous';
 import { stepPhysics3D } from './step';
 import {
   addPhysics3DBody,
@@ -223,6 +227,142 @@ describe('integratePhysics3DContinuous', () => {
     expect(bullet.velocityX).toBeLessThan(1);
   });
 
+  it('publishes a persistent contact and runs both hooks in the impact step', () => {
+    const world = continuousWorld();
+    addWall(world);
+    const bullet = addBullet(world, -5, 600);
+    const phases: string[] = [];
+    world.contactHooks.preSolve = (_world, contact) => {
+      phases.push('pre');
+      expect(contact.bodyA).toBeLessThan(contact.bodyB);
+      expect(contact.pointCount).toBe(1);
+      expect(contact.points[0].depth).toBe(0);
+    };
+    world.contactHooks.postSolve = (_world, contact) => {
+      phases.push('post');
+      expect(contact.touching).toBe(true);
+    };
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(phases).toEqual(['pre', 'post']);
+    expect(world.events.began).toHaveLength(1);
+    expect(world.events.ended).toHaveLength(0);
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0]).toBe(world.events.began[0]);
+    expect(world.contacts[0].bodyA).not.toBe(bullet.index);
+    expect(world.contacts[0].bodyB).toBe(bullet.index);
+  });
+
+  it('lets an impact pre-solve hook disable resolution without losing its contact event', () => {
+    const world = continuousWorld();
+    addWall(world);
+    const bullet = addBullet(world, -5, 600);
+    world.contactHooks.preSolve = (_world, contact) => {
+      contact.enabled = false;
+    };
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(bullet.x).toBeGreaterThan(4);
+    expect(world.events.began).toHaveLength(1);
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0].enabled).toBe(false);
+  });
+
+  it('uses restitution selected by the impact pre-solve hook', () => {
+    const world = continuousWorld();
+    addWall(world);
+    const bullet = addBullet(world, -5, 600);
+    world.contactHooks.preSolve = (_inner, contact) => {
+      contact.restitution = 1;
+    };
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(bullet.velocityX).toBeLessThan(-500);
+  });
+
+  it('retains the TOI contact and restores its overrides when a late pre-solve hook throws', () => {
+    const world = continuousWorld();
+    addWall(world);
+    const bullet = addBullet(world, -5, 600);
+    const error = new Error('impact hook failed');
+    world.contactHooks.preSolve = (_inner, contact) => {
+      contact.friction = 99;
+      throw error;
+    };
+
+    expect(() => stepPhysics3D(world, 1 / 60)).toThrow(error);
+    expect(bullet.x).toBeGreaterThan(-5);
+    expect(bullet.x).toBeLessThan(0);
+    expect(world.contacts).toHaveLength(1);
+    expect(world.events.began).toEqual([world.contacts[0]]);
+    expect(world.contacts[0].friction).not.toBe(99);
+
+    world.contactHooks.preSolve = null;
+    expect(() => stepPhysics3D(world, 1 / 60)).not.toThrow();
+  });
+
+  it('applies Coulomb friction at TOI instead of preserving all tangential speed', () => {
+    function run(friction: number): RigidBody3D {
+      const world = continuousWorld();
+      const material = { density: 1, friction, restitution: 0 };
+      const wall = createRigidBody3D('static');
+      addPhysics3DBody(world, wall);
+      addPhysics3DCollider(world, wall, createPhysics3DCollider(THIN_WALL, material));
+      const bullet = createRigidBody3D('dynamic');
+      bullet.x = -5;
+      bullet.velocityX = 600;
+      bullet.velocityY = 60;
+      bullet.gravityScale = 0;
+      bullet.bullet = true;
+      addPhysics3DBody(world, bullet);
+      addPhysics3DCollider(
+        world,
+        bullet,
+        createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 0.1 }, material),
+      );
+      stepPhysics3D(world, 1 / 60);
+      return bullet;
+    }
+
+    const frictionless = run(0);
+    const gripping = run(1);
+    // GJK's first-touch normal may contain a small tangential component at its tolerance boundary, so
+    // the zero-friction control is deliberately a behavioural bound rather than a bit-exact 60 m/s.
+    expect(Math.abs(frictionless.velocityY)).toBeGreaterThan(59);
+    expect(Math.abs(gripping.velocityY)).toBeLessThan(1);
+    expect(Math.abs(gripping.velocityY)).toBeLessThan(Math.abs(frictionless.velocityY) * 0.02);
+  });
+
+  it('reports the end transition on the step after a restitutive impact separates', () => {
+    const world = continuousWorld();
+    const material = { density: 1, friction: 0, restitution: 1 };
+    const wall = createRigidBody3D('static');
+    addPhysics3DBody(world, wall);
+    addPhysics3DCollider(world, wall, createPhysics3DCollider(THIN_WALL, material));
+    const bullet = createRigidBody3D('dynamic');
+    bullet.x = -5;
+    bullet.velocityX = 600;
+    bullet.gravityScale = 0;
+    bullet.bullet = true;
+    addPhysics3DBody(world, bullet);
+    addPhysics3DCollider(
+      world,
+      bullet,
+      createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 0.1 }, material),
+    );
+
+    stepPhysics3D(world, 1 / 60);
+    const impact = world.events.began[0];
+    stepPhysics3D(world, 1 / 60);
+
+    expect(world.events.began).toHaveLength(0);
+    expect(world.events.ended).toEqual([impact]);
+    expect(world.contacts).toHaveLength(0);
+  });
+
   it('bounces a restitutive bullet back off the wall', () => {
     const world = continuousWorld();
     const wall = createRigidBody3D('static');
@@ -293,10 +433,64 @@ describe('integratePhysics3DContinuous', () => {
     addPhysics3DBody(world, trigger);
     addPhysics3DCollider(world, trigger, createPhysics3DCollider(THIN_WALL, undefined, undefined, true));
     const bullet = addBullet(world, -5, 600);
+    let preSolveCount = 0;
+    let postSolveCount = 0;
+    world.contactHooks.preSolve = () => {
+      preSolveCount += 1;
+    };
+    world.contactHooks.postSolve = () => {
+      postSolveCount += 1;
+    };
 
     stepPhysics3D(world, 1 / 60);
 
     expect(bullet.x).toBeGreaterThan(4);
+    expect(preSolveCount).toBe(0);
+    expect(postSolveCount).toBe(0);
+    expect(world.events.began).toHaveLength(1);
+    expect(world.events.ended).toHaveLength(0);
+    expect(world.contacts).toHaveLength(1);
+    expect(world.contacts[0]).toBe(world.events.began[0]);
+    expect(world.contacts[0].sensor).toBe(true);
+
+    const crossing = world.contacts[0];
+    stepPhysics3D(world, 1 / 60);
+
+    expect(world.events.began).toHaveLength(0);
+    expect(world.events.ended).toEqual([crossing]);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('pairs a sensor begin and end inside one public step when a later substep proves the crossing', () => {
+    const world = continuousWorld();
+    world.config.substeps = 2;
+    const trigger = createRigidBody3D('static');
+    addPhysics3DBody(world, trigger);
+    addPhysics3DCollider(world, trigger, createPhysics3DCollider(THIN_WALL, undefined, undefined, true));
+    addBullet(world, -5, 1200);
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(world.events.began).toHaveLength(1);
+    expect(world.events.ended).toHaveLength(1);
+    expect(world.events.ended[0]).toBe(world.events.began[0]);
+    expect(world.contacts).toHaveLength(0);
+  });
+
+  it('does not report a sensor behind a solid impact the bullet never reaches', () => {
+    const world = continuousWorld();
+    addWall(world);
+    const trigger = createRigidBody3D('static');
+    trigger.x = 3;
+    addPhysics3DBody(world, trigger);
+    addPhysics3DCollider(world, trigger, createPhysics3DCollider(THIN_WALL, undefined, undefined, true));
+    const bullet = addBullet(world, -5, 600);
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(bullet.x).toBeLessThan(0);
+    expect(world.events.began.some((contact) => contact.sensor)).toBe(false);
+    expect(world.contacts.every((contact) => !contact.sensor)).toBe(true);
   });
 
   it('ignores a wall the collision filter excludes', () => {
@@ -394,5 +588,92 @@ describe('integratePhysics3DContinuous', () => {
     integratePhysics3DContinuous(world, 1 / 60);
 
     expect(bullet.x).toBeLessThan(0);
+  });
+
+  it('keeps the world mutation boundary around a direct custom-loop impact hook', () => {
+    const world = continuousWorld();
+    addWall(world);
+    addBullet(world, -5, 600);
+    world.contactHooks.preSolve = (inner) => addPhysics3DBody(inner, createRigidBody3D('dynamic'));
+
+    expect(() => integratePhysics3DContinuous(world, 1 / 60)).toThrow(
+      'Cannot mutate a physics world while it is stepping',
+    );
+    expect(world.bodies).toHaveLength(2);
+  });
+
+  it('rejects recursive continuous integration from an impact hook', () => {
+    const world = continuousWorld();
+    addWall(world);
+    addBullet(world, -5, 600);
+    world.contactHooks.preSolve = (inner) => integratePhysics3DContinuous(inner, 1 / 60);
+
+    expect(() => integratePhysics3DContinuous(world, 1 / 60)).toThrow(
+      'Cannot integrate a physics world recursively while it is stepping',
+    );
+  });
+});
+
+describe('writePhysics3DRotationalCcdEnvelope', () => {
+  it('reports the one-degree target when the budget can cover the angular travel', () => {
+    const out = {
+      angularTravel: 0,
+      sampleCount: 0,
+      maxAngularIncrement: 0,
+      maxPointArcTravel: 0,
+      targetIncrementMet: false,
+    };
+    expect(writePhysics3DRotationalCcdEnvelope(120, 5, 1 / 60, 128, out)).toBe(true);
+    expect(out.angularTravel).toBeCloseTo(2, 12);
+    expect(out.sampleCount).toBe(115);
+    expect(out.maxAngularIncrement).toBeLessThanOrEqual(Math.PI / 180);
+    expect(out.maxPointArcTravel).toBeCloseTo((2 / 115) * 5, 12);
+    expect(out.targetIncrementMet).toBe(true);
+  });
+
+  it('publishes the wider angular and spatial gap when the hard budget binds', () => {
+    const out = {
+      angularTravel: 0,
+      sampleCount: 0,
+      maxAngularIncrement: 0,
+      maxPointArcTravel: 0,
+      targetIncrementMet: true,
+    };
+    expect(writePhysics3DRotationalCcdEnvelope(120, 5, 1 / 60, 10, out)).toBe(true);
+    expect(out.sampleCount).toBe(10);
+    expect(out.maxAngularIncrement).toBeCloseTo(0.2, 12);
+    expect(out.maxPointArcTravel).toBeCloseTo(1, 12);
+    expect(out.targetIncrementMet).toBe(false);
+  });
+
+  it('makes a disabled rotational lane explicit and rejects invalid authoring inputs', () => {
+    const out = {
+      angularTravel: 0,
+      sampleCount: 0,
+      maxAngularIncrement: 0,
+      maxPointArcTravel: 0,
+      targetIncrementMet: true,
+    };
+    expect(writePhysics3DRotationalCcdEnvelope(10, 2, 1 / 60, 0, out)).toBe(true);
+    expect(out.sampleCount).toBe(0);
+    expect(out.maxAngularIncrement).toBe(Number.POSITIVE_INFINITY);
+    expect(out.maxPointArcTravel).toBe(Number.POSITIVE_INFINITY);
+    expect(out.targetIncrementMet).toBe(false);
+    expect(writePhysics3DRotationalCcdEnvelope(-1, 2, 1 / 60, 10, out)).toBe(false);
+    expect(out).toEqual({
+      angularTravel: 0,
+      sampleCount: 0,
+      maxAngularIncrement: 0,
+      maxPointArcTravel: 0,
+      targetIncrementMet: false,
+    });
+    expect(writePhysics3DRotationalCcdEnvelope(Number.MAX_VALUE, 2, 2, 10, out)).toBe(false);
+    expect(out).toEqual({
+      angularTravel: 0,
+      sampleCount: 0,
+      maxAngularIncrement: 0,
+      maxPointArcTravel: 0,
+      targetIncrementMet: false,
+    });
   });
 });
