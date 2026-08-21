@@ -359,12 +359,21 @@ function solvePhysics2DPositionsOnce(world: Physics2DWorld, indices: number[], s
       const impulseX = impulse * normalX;
       const impulseY = impulse * normalY;
 
-      bodyA.x += impulseX * bodyA.inverseMass;
-      bodyA.y += impulseY * bodyA.inverseMass;
-      bodyA.angle += bodyA.inverseInertia * (rAX * impulseY - rAY * impulseX);
-      bodyB.x -= impulseX * bodyB.inverseMass;
-      bodyB.y -= impulseY * bodyB.inverseMass;
-      bodyB.angle -= bodyB.inverseInertia * (rBX * impulseY - rBY * impulseX);
+      // Both terms are already centre-of-mass quantities — `rAX`/`rBX` were measured from the centres
+      // computed just above — so they go through the same centre-preserving path the integrator uses
+      // rather than being added to the origin and the angle independently.
+      advancePhysics2DBodyTransform(
+        bodyA,
+        impulseX * bodyA.inverseMass,
+        impulseY * bodyA.inverseMass,
+        bodyA.inverseInertia * (rAX * impulseY - rAY * impulseX),
+      );
+      advancePhysics2DBodyTransform(
+        bodyB,
+        -impulseX * bodyB.inverseMass,
+        -impulseY * bodyB.inverseMass,
+        -bodyB.inverseInertia * (rBX * impulseY - rBY * impulseX),
+      );
     }
   }
 }
@@ -641,9 +650,48 @@ function advancePhysics2DSolveIslandBodies(world: Physics2DWorld, dt: number): v
 }
 
 function advancePhysics2DBody(body: RigidBody2D, dt: number): void {
-  body.x += body.velocityX * dt;
-  body.y += body.velocityY * dt;
-  if (!body.fixedRotation) body.angle += body.angularVelocity * dt;
+  advancePhysics2DBodyTransform(
+    body,
+    body.velocityX * dt,
+    body.velocityY * dt,
+    body.fixedRotation ? 0 : body.angularVelocity * dt,
+  );
+}
+
+// Moves a body by a displacement OF ITS CENTRE OF MASS plus a rotation ABOUT that centre, which is the
+// only frame the solver ever works in: `velocityX`/`velocityY` are the centre's velocity, and every
+// lever arm (`rAX`, `rBY`, ...) is measured from the centre outward.
+//
+// `body.x`/`body.y` are the body ORIGIN, not the centre, so the two coincide only when the colliders
+// happen to be symmetric about the origin. Adding the displacement straight to the origin and the
+// rotation straight to the angle is therefore wrong the moment `centerX`/`centerY` is non-zero: the
+// centre swings on the arm from the origin, so a body spinning in free space with zero linear velocity
+// TRANSLATES its own centre of mass — no force, no contact, momentum invented from nothing. The origin
+// has to be re-derived from where the centre ended up and which way the body is now facing.
+function advancePhysics2DBodyTransform(
+  body: RigidBody2D,
+  centerDeltaX: number,
+  centerDeltaY: number,
+  angleDelta: number,
+): void {
+  // A centred body needs none of this, and it is the overwhelmingly common case — every collider built
+  // symmetrically about its body origin lands here — so it keeps the four-trig path off the hot loop.
+  if (body.centerX === 0 && body.centerY === 0) {
+    body.x += centerDeltaX;
+    body.y += centerDeltaY;
+    body.angle += angleDelta;
+    return;
+  }
+  const cos = Math.cos(body.angle);
+  const sin = Math.sin(body.angle);
+  const centerX = body.x + body.centerX * cos - body.centerY * sin + centerDeltaX;
+  const centerY = body.y + body.centerX * sin + body.centerY * cos + centerDeltaY;
+  const angle = body.angle + angleDelta;
+  const nextCos = Math.cos(angle);
+  const nextSin = Math.sin(angle);
+  body.x = centerX - (body.centerX * nextCos - body.centerY * nextSin);
+  body.y = centerY - (body.centerX * nextSin + body.centerY * nextCos);
+  body.angle = angle;
 }
 
 function hasActivePhysics2DBullet(world: Readonly<Physics2DWorld>): boolean {
