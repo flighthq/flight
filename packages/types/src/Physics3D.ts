@@ -711,6 +711,11 @@ export interface Physics3DDistanceJoint extends Physics3DJoint {
   // The two limit rows' accumulators, carried across steps so a cable under sustained load warm-starts like
   // every other constraint. Non-negative MAGNITUDES, not signed coordinates: a one-sided row may only push,
   // so each is clamped at zero and its direction is carried by whichever row owns it.
+  //
+  // These stops are deliberately HARD, and this kind alone has no `enableLimitSpring`. Its compliance
+  // already lives on the rest row as `enableSpring`, and the limits exist to bound that spring: they
+  // read the UNSOFTENED effective mass precisely so a stiff spring cannot stretch through its own stop.
+  // Softening them too would remove the one thing keeping `minLength` and `maxLength` meaningful.
   lowerLimitImpulse: number;
   upperLimitImpulse: number;
 }
@@ -761,6 +766,19 @@ export interface Physics3DHingeJoint extends Physics3DJoint, Physics3DJointFrame
   // zero and its direction is carried by which row owns it. That is why `swapEnds` exchanges the two
   // without negating either, while the BOUNDS it exchanges are negated — bounds are positions on an axis
   // that reverses, these are pushes that do not.
+  // A COMPLIANT limit: once the bound is crossed, the stop pushes back like a spring of
+  // `limitFrequencyHz` and `limitDampingRatio` instead of arresting the coordinate outright. What a
+  // ragdoll wants at the end of a joint's range and a suspension wants at the end of its travel.
+  //
+  // The stop stays ONE-SIDED whichever it is: softening changes how hard the row resists being crossed,
+  // never whether it may pull the coordinate back the other way. A spring that could pull would be a
+  // rest length, which is the distance joint's job.
+  //
+  // Both parameters are ignored unless `enableLimitSpring` is true and the frequency is positive, so a
+  // joint that never sets them behaves exactly as a hard stop.
+  enableLimitSpring: boolean;
+  limitFrequencyHz: number;
+  limitDampingRatio: number;
   lowerLimitImpulse: number;
   upperLimitImpulse: number;
 }
@@ -772,6 +790,9 @@ export interface Physics3DHingeJointOptions extends Physics3DJointFrameOptions {
   enableMotor?: boolean;
   motorSpeed?: number;
   maxMotorTorque?: number;
+  enableLimitSpring?: boolean;
+  limitFrequencyHz?: number;
+  limitDampingRatio?: number;
 }
 
 // Confines relative motion to translation along the frame's X axis, locking the other two translations and
@@ -791,6 +812,19 @@ export interface Physics3DSliderJoint extends Physics3DJoint, Physics3DJointFram
 
   // The travel stops' accumulators. Same contract as the hinge's: non-negative magnitudes, exchanged
   // rather than negated by `swapEnds`.
+  // A COMPLIANT limit: once the bound is crossed, the stop pushes back like a spring of
+  // `limitFrequencyHz` and `limitDampingRatio` instead of arresting the coordinate outright. What a
+  // ragdoll wants at the end of a joint's range and a suspension wants at the end of its travel.
+  //
+  // The stop stays ONE-SIDED whichever it is: softening changes how hard the row resists being crossed,
+  // never whether it may pull the coordinate back the other way. A spring that could pull would be a
+  // rest length, which is the distance joint's job.
+  //
+  // Both parameters are ignored unless `enableLimitSpring` is true and the frequency is positive, so a
+  // joint that never sets them behaves exactly as a hard stop.
+  enableLimitSpring: boolean;
+  limitFrequencyHz: number;
+  limitDampingRatio: number;
   lowerLimitImpulse: number;
   upperLimitImpulse: number;
 }
@@ -802,6 +836,9 @@ export interface Physics3DSliderJointOptions extends Physics3DJointFrameOptions 
   enableMotor?: boolean;
   motorSpeed?: number;
   maxMotorForce?: number;
+  enableLimitSpring?: boolean;
+  limitFrequencyHz?: number;
+  limitDampingRatio?: number;
 }
 
 // Pins two anchors together and bounds relative rotation as a cone plus a twist — the ragdoll joint. A hip,
@@ -828,6 +865,19 @@ export interface Physics3DConeTwistJoint extends Physics3DJoint, Physics3DJointF
   // Three accumulators rather than two, because the swing limit is ONE one-sided row about whatever axis
   // the tilt is currently in — a cone has no lower bound to hold against. Same non-negative-magnitude
   // contract as the hinge's. This kind vetoes `swapEnds`, so no exchange rule is needed.
+  // A COMPLIANT limit: once the bound is crossed, the stop pushes back like a spring of
+  // `limitFrequencyHz` and `limitDampingRatio` instead of arresting the coordinate outright. What a
+  // ragdoll wants at the end of a joint's range and a suspension wants at the end of its travel.
+  //
+  // The stop stays ONE-SIDED whichever it is: softening changes how hard the row resists being crossed,
+  // never whether it may pull the coordinate back the other way. A spring that could pull would be a
+  // rest length, which is the distance joint's job.
+  //
+  // Both parameters are ignored unless `enableLimitSpring` is true and the frequency is positive, so a
+  // joint that never sets them behaves exactly as a hard stop.
+  enableLimitSpring: boolean;
+  limitFrequencyHz: number;
+  limitDampingRatio: number;
   swingLimitImpulse: number;
   lowerTwistImpulse: number;
   upperTwistImpulse: number;
@@ -840,6 +890,9 @@ export interface Physics3DConeTwistJointOptions extends Physics3DJointFrameOptio
   enableTwistLimit?: boolean;
   lowerTwistAngle?: number;
   upperTwistAngle?: number;
+  enableLimitSpring?: boolean;
+  limitFrequencyHz?: number;
+  limitDampingRatio?: number;
 }
 
 // Bounds each of the six degrees of freedom independently — the configurable joint every other kind is a
@@ -878,6 +931,19 @@ export interface Physics3DGeneric6DofJoint extends Physics3DJoint, Physics3DJoin
   //
   // Same non-negative-magnitude contract as the hinge's. A LOCKED axis (lower === upper) is solved as an
   // equality row and uses neither.
+  // A COMPLIANT limit: once the bound is crossed, the stop pushes back like a spring of
+  // `limitFrequencyHz` and `limitDampingRatio` instead of arresting the coordinate outright. What a
+  // ragdoll wants at the end of a joint's range and a suspension wants at the end of its travel.
+  //
+  // The stop stays ONE-SIDED whichever it is: softening changes how hard the row resists being crossed,
+  // never whether it may pull the coordinate back the other way. A spring that could pull would be a
+  // rest length, which is the distance joint's job.
+  //
+  // Both parameters are ignored unless `enableLimitSpring` is true and the frequency is positive, so a
+  // joint that never sets them behaves exactly as a hard stop.
+  enableLimitSpring: boolean;
+  limitFrequencyHz: number;
+  limitDampingRatio: number;
   lowerLimitImpulses: number[];
   upperLimitImpulses: number[];
 }
@@ -895,6 +961,9 @@ export interface Physics3DGeneric6DofJointOptions extends Physics3DJointFrameOpt
   upperAngularX?: number;
   upperAngularY?: number;
   upperAngularZ?: number;
+  enableLimitSpring?: boolean;
+  limitFrequencyHz?: number;
+  limitDampingRatio?: number;
 }
 
 // The simulation. A world owns its bodies, its contacts, its joints, and the solver state over them.
