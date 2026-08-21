@@ -2,7 +2,7 @@ import type { Physics3DWorld } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
+import { createPhysics3DBallAndSocketJoint, createPhysics3DDistanceJoint } from './jointFactories';
 import { addPhysics3DJoint } from './jointRegistry';
 import {
   isPhysics3DBodyStateValid,
@@ -128,6 +128,28 @@ describe('isPhysics3DGravityValid', () => {
 });
 
 describe('isPhysics3DJointStateValid', () => {
+  it('ACCEPTS THE INFINITE DEFAULTS every joint is born with', () => {
+    // `breakForce`/`breakTorque` default to infinity (never breaks) and a distance joint's `maxLength` to
+    // infinity (no far stop). A blanket finiteness walk rejects all three, which invalidates every
+    // ordinary joint and makes the world decline to step — silently, because an invalid step is skipped
+    // rather than thrown. The symptom is a motor that will not turn and contacts that never fire, with
+    // nothing naming the joint. This is the test that catches it.
+    const world = createPhysics3DWorld();
+    addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    addPhysics3DJoint(world, createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true }));
+
+    expect(isPhysics3DJointStateValid(world)).toBe(true);
+  });
+
+  it('still rejects a non-finite field that is NOT a declared bound', () => {
+    const world = createPhysics3DWorld();
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
+    joint.length = Number.NaN;
+
+    expect(isPhysics3DJointStateValid(world)).toBe(false);
+  });
+
   it('accepts a world with no joints', () => {
     expect(isPhysics3DJointStateValid(createTestWorld())).toBe(true);
   });

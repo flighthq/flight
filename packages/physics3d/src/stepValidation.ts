@@ -137,7 +137,15 @@ function isPhysics3DJointValid(joint: Readonly<Physics3DJoint>): boolean {
   // Every numeric field, whatever the kind added — a limit, a motor speed, a frame component. Walking the
   // object rather than a fixed key list is what makes this cover a user's own joint kind, which is the
   // point of an open registry.
+  //
+  // Except the fields where INFINITY IS THE VALUE, not a symptom. A `breakForce` of infinity is a joint
+  // that never breaks and a `maxLength` of infinity is a rope with no far stop, and both are the natural
+  // defaults — so a blanket finiteness walk declares every ordinary joint invalid and the world declines
+  // to step at all. That failure is silent by design (an invalid step is skipped, not thrown), so it
+  // presents as a motor that does not turn and contacts that never fire, with nothing pointing at the
+  // joint. Adding a field whose unset state is "no bound" means adding it here too.
   for (const key in joint) {
+    if (UNBOUNDED_JOINT_FIELDS.has(key)) continue;
     const value = joint[key as keyof typeof joint];
     if (typeof value === 'number' && !Number.isFinite(value)) return false;
   }
@@ -219,3 +227,7 @@ const rigidBody3DFiniteKeys = [
   'inverseInertiaWorldXZ',
   'inverseInertiaWorldYZ',
 ] as const;
+
+// Joint fields whose infinite value is meaningful rather than corrupt: a threshold that is never reached
+// and a bound that never stops anything.
+const UNBOUNDED_JOINT_FIELDS = new Set(['breakForce', 'breakTorque', 'maxLength']);
