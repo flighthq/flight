@@ -4,6 +4,7 @@ export * from './explainPhysics2DJoints';
 export * from './explainPhysics2DStep';
 export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
 export * from './jointFactories';
+export * from './jointReactions';
 export * from './jointRegistry';
 export * from './joints';
 export * from './massProperties';

@@ -651,6 +651,23 @@ export interface Physics2DJointSolver {
   // Discards the accumulated impulses, so a world with warm starting switched off does not keep
   // seeding each step from a cache it has been told not to use.
   clearAccumulatedImpulses?(joint: Physics2DJoint): void;
+  // Converts this kind's converged accumulators into the force and couple it applied to body B, scaling
+  // by `inverseTimestep` to turn impulses into forces. Reached through writePhysics2DJointReaction.
+  //
+  // The kind owns it for the same reason it owns warmStart: the impulse block is deliberately untyped,
+  // so only the kind knows whether `impulse0` is a scalar along an axis, a world-x component, or an
+  // angular impulse — and only the kind knows which of its per-step state slots carry the axes needed to
+  // put a scalar back into world space.
+  //
+  // Omitting it is a real answer, not an oversight, and writePhysics2DJointReaction returns false for a
+  // kind that does: a gear joint couples two scalar coordinates that may not even have the same units,
+  // so there is no single force it applies anywhere.
+  writeReaction?(
+    world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean;
 }
 
 // What happened to a contact this step, read off the contact cache rather than tracked alongside it.
@@ -728,6 +745,27 @@ export interface Physics2DJointResolutionExplanation {
   readonly joints: readonly Readonly<Physics2DJointResolution>[];
   readonly readyCount: number;
   readonly status: 'complete' | 'unresolved-joints';
+}
+
+// What a joint is doing to body B, as a world-space force at body B's anchor plus a scalar couple.
+//
+// ON BODY B, not on body A and not "in the joint". A constraint acts equally and oppositely on its two
+// ends, so one of them has to be named or the sign means nothing; B is the convention because a joint is
+// read as attaching B to A. Negate for body A's side.
+//
+// The split between `forceX`/`forceY` and `torque` is the split between a force acting AT the anchor and
+// a couple acting about it. A distance joint pulls along its axis and twists nothing, so its torque is
+// zero even though the pull plainly rotates a body it is attached to off-centre — that rotation is
+// `r x F` from the anchor force, which the caller already has, and counting it twice would make the pair
+// unusable for anything. A revolute joint is the mirror image: it holds two anchors together with a pure
+// force and adds a torque only when its motor or its limits are engaged.
+//
+// These are FORCES, already divided by the timestep, not the impulses the solver accumulates. A force is
+// what a breakable joint's threshold is authored in and what a reader compares against a weight.
+export interface Physics2DJointReaction {
+  forceX: number;
+  forceY: number;
+  torque: number;
 }
 
 // The diagnostics seam consulted only when `stepPhysics2D` declines to advance the world. Installed by

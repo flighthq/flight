@@ -1,5 +1,6 @@
 import type {
   Physics2DDistanceJoint,
+  Physics2DJointReaction,
   Physics2DGearJoint,
   Physics2DJoint,
   Physics2DMouseJoint,
@@ -111,6 +112,25 @@ export const physics2DDistanceJointSolver = {
     joint.impulse0 += lambda;
     applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -lambda * axisX, -lambda * axisY);
   },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // `impulse0` is a signed scalar along the anchor-to-anchor axis, negative when the joint is
+    // stretched and pulling its ends together.
+    return writePhysics2DReactionFromImpulses(
+      joint,
+      joint.impulse0 * state[3],
+      joint.impulse0 * state[4],
+      0,
+      inverseTimestep,
+      out,
+    );
+  },
 };
 
 // Couples two scalar coordinates measured against the world frame. Each coordinate contributes one
@@ -184,6 +204,28 @@ export const physics2DGearJointSolver = {
     const lambda = -state[6] * (velocityA + state[8] * velocityB + state[7]);
     joint.impulse0 += lambda;
     applyGearImpulse(bodyA, bodyB, state, lambda);
+  },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // A gear DOES have a reaction, and the same expression covers both coordinate kinds: `state[3..5]`
+    // is body B's Jacobian row, which is `(0,0,1)` for an angular coordinate — giving a pure torque and
+    // no force — and `(unit, r x unit)` for a translational one, giving a force along the axis and no
+    // couple beyond it. The ratio scales B's whole row, so it multiplies the impulse once here.
+    const impulse = joint.impulse0 * state[8];
+    return writePhysics2DReactionFromImpulses(
+      joint,
+      impulse * state[3],
+      impulse * state[4],
+      impulse * state[5],
+      inverseTimestep,
+      out,
+    );
   },
 };
 
@@ -294,6 +336,20 @@ export const physics2DMouseJointSolver = {
     bodyB.velocityX += impulseX * bodyB.inverseMass;
     bodyB.velocityY += impulseY * bodyB.inverseMass;
     bodyB.angularVelocity += bodyB.inverseInertia * (joint.rBX * impulseY - joint.rBY * impulseX);
+  },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // The one kind whose accumulators are already a world-space impulse on B, because the drag is
+    // applied to B directly rather than through the equal-and-opposite pair helper. There is no body A
+    // to push back on: the reaction goes to the world, which is what makes a mouse joint able to add
+    // momentum rather than only redistribute it.
+    return writePhysics2DReactionFromImpulses(joint, joint.impulse0, joint.impulse1, 0, inverseTimestep, out);
   },
 };
 
@@ -540,6 +596,28 @@ export const physics2DPrismaticJointSolver = {
       0,
     );
   },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // The rail carries three lanes and they are not interchangeable. `impulse0` resists sideways
+    // motion across the axis, `impulse2` plus the motor pushes ALONG it — a slider's motor is a linear
+    // drive, so it belongs in the force and not the torque — and `impulse1` is the only genuine couple,
+    // the one holding the two bodies at a fixed relative angle.
+    const axisImpulse = joint.impulse2 + ((joint as Physics2DPrismaticJoint).motorImpulse ?? 0);
+    return writePhysics2DReactionFromImpulses(
+      joint,
+      joint.impulse0 * state[2] + axisImpulse * state[0],
+      joint.impulse0 * state[3] + axisImpulse * state[1],
+      joint.impulse1,
+      inverseTimestep,
+      out,
+    );
+  },
 };
 
 // Couples two independently suspended anchor lengths through a fixed ratio. The two ground anchors are
@@ -624,6 +702,21 @@ export const physics2DPulleyJointSolver = {
     const lambda = -state[4] * (velocityA + state[6] * velocityB + state[5]);
     joint.impulse0 += lambda;
     applyPulleyImpulse(bodyA, bodyB, joint, state[0], state[1], state[2], state[3], state[6], lambda);
+  },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // Body B is pulled along ITS OWN rope segment, toward its own ground anchor — not toward body A.
+    // The two ends of a pulley are coupled through the rope rather than acting on each other, so this
+    // reaction is not the negative of body A's; the ground anchors take the difference. The ratio is
+    // the mechanical advantage on B's segment and multiplies the tension it sees.
+    const impulse = joint.impulse0 * state[6];
+    return writePhysics2DReactionFromImpulses(joint, impulse * state[2], impulse * state[3], 0, inverseTimestep, out);
   },
 };
 
@@ -793,6 +886,27 @@ export const physics2DRevoluteJointSolver = {
 
     solvePointConstraint(bodyA, bodyB, joint, state[0], state[1]);
   },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // The hinge itself is a pure force at the anchor: `impulse0`/`impulse1` are already world x and y.
+    // Everything angular is bolted on beside it — the motor, and the two one-sided limits, whose signs
+    // are OPPOSITE because the lower end pushes the relative angle up and the upper end pushes it down.
+    const limitImpulse = state[3] - state[4];
+    return writePhysics2DReactionFromImpulses(
+      joint,
+      joint.impulse0,
+      joint.impulse1,
+      ((joint as Physics2DRevoluteJoint).motorImpulse ?? 0) + limitImpulse,
+      inverseTimestep,
+      out,
+    );
+  },
 };
 
 // An inequality constraint that acts only at full extension. Slack within `maxLength`, caught at it.
@@ -862,6 +976,25 @@ export const physics2DRopeJointSolver = {
     joint.impulse0 = Math.min(0, previous + lambda);
     lambda = joint.impulse0 - previous;
     applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -lambda * axisX, -lambda * axisY);
+  },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // One-sided, so this reports zero for every step the rope spends slack — which is the honest
+    // answer and the one a breakable rope needs: a rope that is not taut is carrying no load.
+    return writePhysics2DReactionFromImpulses(
+      joint,
+      joint.impulse0 * state[3],
+      joint.impulse0 * state[4],
+      0,
+      inverseTimestep,
+      out,
+    );
   },
 };
 
@@ -1051,6 +1184,27 @@ export const physics2DWheelJointSolver = {
       0,
     );
   },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // A wheel leaves relative rotation free, so unlike the prismatic rail it has no angular constraint
+    // lane at all and its only couple is the drive motor. `impulse0` is the lateral grip that keeps the
+    // wheel from sliding sideways; `impulse1` is the suspension load along the axis, which is the one a
+    // caller usually wants.
+    return writePhysics2DReactionFromImpulses(
+      joint,
+      joint.impulse0 * state[2] + joint.impulse1 * state[0],
+      joint.impulse0 * state[3] + joint.impulse1 * state[1],
+      (joint as Physics2DWheelJoint).motorImpulse ?? 0,
+      inverseTimestep,
+      out,
+    );
+  },
 };
 
 // Pins the anchors together and locks the relative angle — rigid attachment.
@@ -1117,7 +1271,50 @@ export const physics2DWeldJointSolver = {
 
     solvePointConstraint(bodyA, bodyB, joint, state[0], state[1]);
   },
+  writeReaction(
+    _world: Readonly<Physics2DWorld>,
+    joint: Readonly<Physics2DJoint>,
+    inverseTimestep: number,
+    out: Physics2DJointReaction,
+  ): boolean {
+    const state = jointSolveStates.get(joint);
+    if (state === undefined) return false;
+    // The one built-in kind that resists both ways at once, which is why it is the natural thing to
+    // make breakable: `impulse0`/`impulse1` hold the anchors together and `impulse2` holds the angle.
+    return writePhysics2DReactionFromImpulses(
+      joint,
+      joint.impulse0,
+      joint.impulse1,
+      joint.impulse2,
+      inverseTimestep,
+      out,
+    );
+  },
 };
+
+// Scales one kind's total impulse on body B into the reaction pair, and is the single place the
+// impulse-to-force conversion happens.
+//
+// Callers pass the couple ALREADY separated from the anchor force, and every built-in kind can do that
+// by inspection rather than by arithmetic: each of the three shared appliers (`applyPhysics2DImpulse`,
+// `applyPrismaticImpulse`, `applyPulleyImpulse`) gives body B exactly `rB x F` of angular impulse for the
+// linear impulse it delivers, so a kind's couple is whatever it wrote to `bodyB.angularVelocity` BESIDES
+// that — a motor, a limit, an angle constraint — and zero for the kinds that only pull along a line.
+// That is why there are not nine torque formulas here, and why a new kind's author has one short
+// question to answer rather than a derivation to redo.
+function writePhysics2DReactionFromImpulses(
+  joint: Readonly<Physics2DJoint>,
+  linearX: number,
+  linearY: number,
+  angular: number,
+  inverseTimestep: number,
+  out: Physics2DJointReaction,
+): boolean {
+  out.forceX = linearX * inverseTimestep;
+  out.forceY = linearY * inverseTimestep;
+  out.torque = angular * inverseTimestep;
+  return true;
+}
 
 function writeGearJacobian(
   kind: Physics2DGearJoint['coordinateA'],
