@@ -1,4 +1,4 @@
-import type { CollisionShape2D } from './Collision';
+import type { CollisionBuiltInShape2D } from './Collision';
 import type { SpatialIndexBackend2D } from './Spatial';
 
 // 2D rigid-body dynamics header. `@flighthq/physics2d` is the solver that sits on top of
@@ -48,7 +48,7 @@ export interface Physics2DCollisionFilter {
 // One piece of a body's shape. A collider carries its shape in the body's LOCAL space and a
 // preallocated world-space copy that `stepPhysics2D` refreshes once per step.
 //
-// The two shapes exist because a `CollisionShape2D` is world-space by construction — a circle carries
+// The two shapes exist because a collision shape is world-space by construction — a circle carries
 // its centre, an oriented box its centre and rotation, and a polygon its absolute points with no
 // centre or rotation field to move at all — so a body's position and angle cannot live inside the
 // shape. Hence: author in local space, and let the step transform. `world` is owned by the collider
@@ -57,14 +57,19 @@ export interface Physics2DCollisionFilter {
 // A `sensor` collider is tested and reported but never resolved: it produces contact events without
 // producing an impulse, which is how a trigger volume is built. After mutating `local`, `material`,
 // `filter`, or `sensor`, call `invalidatePhysics2DCollider` so the world can rebuild all derived state.
+// Built-in shapes only, and that is a real bound rather than an oversight: this package CLONES a
+// collider's shape, transforms it local-to-world by kind, validates its fields, and generates contacts
+// for it — none of which a vendor kind can answer, because only the support function registered for that
+// kind knows what its parameters mean. A vendor collider reaches `testCollision2D` through the
+// registries; it does not become a rigid body here.
 export interface Physics2DCollider {
-  local: CollisionShape2D;
+  local: CollisionBuiltInShape2D;
   // The world-space shape, rewritten every step. Its KIND may differ from `local`'s: a rotated
   // axis-aligned box is not an axis-aligned box, so an `aabb` local shape carries an `obb` world shape.
   // The alternative — forbidding aabb colliders on rotating bodies — would make a legal authoring choice
   // depend on a runtime property, and would fail silently the first time a body was given angular
   // velocity. Local kind is what you author; world kind is what the narrow phase needs.
-  world: CollisionShape2D;
+  world: CollisionBuiltInShape2D;
   material: Physics2DMaterial;
   filter: Physics2DCollisionFilter;
   sensor: boolean;

@@ -1,4 +1,4 @@
-import type { CollisionShape2D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -27,7 +27,7 @@ describe('createPhysics2DColliderWorldShape', () => {
   });
 
   it('gives a polygon its own points array so the per-step transform cannot write through to the local shape', () => {
-    const local: CollisionShape2D = { kind: 'polygon', points: [0, 0, 1, 0, 0, 1] };
+    const local: CollisionBuiltInShape2D = { kind: 'polygon', points: [0, 0, 1, 0, 0, 1] };
     const world = createPhysics2DColliderWorldShape(local);
     expect(world.kind === 'polygon' && world.points).not.toBe(local.points);
   });
