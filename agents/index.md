@@ -83,6 +83,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [timeline cue model](timeline-cue-model.md) — authored frame cues as plain kind-dispatched data, not closures.
 - [texture source model](texture-source-model.md) — the flat `Texture`-over-`TextureSource` model.
 - [texture / surface / resource](texture-surface-resource.md) — the boundary between the three.
+- [version-keyed import model](version-keyed-import-model.md) — compatibility-field gates vs probe+registry for version-dependent wire layouts.
 - [basis transcode](basis-transcode.md) — Basis-Universal texture transcode.
 - [wgpu 3D parity spec](wgpu-3d-parity-spec.md) — each item cites the GL file it mirrors.
 
