@@ -1,4 +1,5 @@
 import { createCollisionContactManifold3D, createCollisionTimeOfImpact3D } from '@flighthq/collision/contract';
+import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type {
   CollisionContactManifold3D,
   CollisionTimeOfImpact3D,
@@ -1101,7 +1102,7 @@ function wakePhysics3DImpactBody(body: RigidBody3D): void {
 // Below this the pair is grazing rather than approaching, and stopping the world for it would halt a
 // body that was never going to collide.
 const APPROACH_EPSILON = 1e-9;
-const CCD_ROTATION_INCREMENT = Math.PI / 180;
+const CCD_ROTATION_INCREMENT = DEG_TO_RAD;
 const CCD_ROTATION_BISECTION_ITERATIONS = 12;
 const IMPACT_AXIS_SELECTION_THRESHOLD = 0.5773502691896258;
 const ROTATIONAL_IMPACT_ITERATIONS = 4;
