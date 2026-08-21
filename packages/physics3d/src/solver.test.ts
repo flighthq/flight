@@ -324,6 +324,21 @@ describe('solvePhysics3DContactVelocities', () => {
     expect(world.bodies[0].velocityX).toBeGreaterThan(0);
   });
 
+  it('applies friction to a new impact in its first velocity iteration', () => {
+    // A new point has no carried normal impulse. Friction must therefore run after the normal row in
+    // the same iteration; solving it first gives a zero Coulomb limit and a frictionless first impact.
+    const world = createBoxOnGroundWorld();
+    world.contacts[0].friction = 1;
+    world.bodies[0].velocityX = 3;
+    world.bodies[0].velocityY = -1;
+    preparePhysics3DContactConstraints(world);
+
+    solvePhysics3DContactVelocities(world);
+
+    expect(world.solver.constraints[0].points[0].normalImpulse).toBeGreaterThan(0);
+    expect(world.bodies[0].velocityX).toBeLessThan(3);
+  });
+
   it('clamps the two tangents as a coupled cone, not independently', () => {
     // The defect this guards: clamping each tangent to mu*normalImpulse on its own permits a combined
     // magnitude of sqrt(2)*mu*normalImpulse, so a box slides faster on the diagonal than on either axis.
