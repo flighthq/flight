@@ -13,7 +13,7 @@ describe('resolveReviewRequestSupersede', () => {
   // it claimed by two open requests and `request-overlap` failed CI. Ten accumulated that way.
   it('removes an older request the incoming one fully replaces', () => {
     const result = resolveReviewRequestSupersede('functional', cells('effect-sepia/webgl'), [
-      { id: 'old', subject: 'functional', targets: cells('effect-sepia/webgl') },
+      { id: 'old', subject: 'functional', released: false, targets: cells('effect-sepia/webgl') },
     ]);
 
     expect(result.remove).toEqual(['old']);
@@ -24,7 +24,12 @@ describe('resolveReviewRequestSupersede', () => {
   // than losing them to a re-commission of their sibling.
   it('narrows a partly overlapping request instead of deleting it', () => {
     const result = resolveReviewRequestSupersede('functional', cells('text-basic/webgl'), [
-      { id: 'old', subject: 'functional', targets: cells('text-basic/canvas', 'text-basic/webgl', 'text-basic/dom') },
+      {
+        id: 'old',
+        subject: 'functional',
+        released: false,
+        targets: cells('text-basic/canvas', 'text-basic/webgl', 'text-basic/dom'),
+      },
     ]);
 
     expect(result.remove).toEqual([]);
@@ -33,7 +38,7 @@ describe('resolveReviewRequestSupersede', () => {
 
   it('leaves an unrelated request alone', () => {
     const result = resolveReviewRequestSupersede('functional', cells('effect-sepia/webgl'), [
-      { id: 'other', subject: 'functional', targets: cells('effect-invert/webgl') },
+      { id: 'other', subject: 'functional', released: false, targets: cells('effect-invert/webgl') },
     ]);
 
     expect(result.remove).toEqual([]);
@@ -44,7 +49,7 @@ describe('resolveReviewRequestSupersede', () => {
   // across them would delete a request for a cell the commission never touched.
   it('does not supersede a same-named cell belonging to another subject', () => {
     const result = resolveReviewRequestSupersede('functional', cells('effect-sepia/webgl'), [
-      { id: 'examples', subject: 'examples', targets: cells('effect-sepia/webgl') },
+      { id: 'examples', subject: 'examples', released: false, targets: cells('effect-sepia/webgl') },
     ]);
 
     expect(result.remove).toEqual([]);
@@ -53,13 +58,24 @@ describe('resolveReviewRequestSupersede', () => {
 
   it('supersedes across several open requests at once', () => {
     const result = resolveReviewRequestSupersede('functional', cells('a/webgl', 'a/webgpu'), [
-      { id: 'one', subject: 'functional', targets: cells('a/webgl') },
-      { id: 'two', subject: 'functional', targets: cells('a/webgpu', 'b/webgl') },
-      { id: 'three', subject: 'functional', targets: cells('c/canvas') },
+      { id: 'one', subject: 'functional', released: false, targets: cells('a/webgl') },
+      { id: 'two', subject: 'functional', released: false, targets: cells('a/webgpu', 'b/webgl') },
+      { id: 'three', subject: 'functional', released: false, targets: cells('c/canvas') },
     ]);
 
     expect(result.remove).toEqual(['one']);
     expect(result.rewrite.get('two')).toEqual(cells('b/webgl'));
     expect(result.rewrite.has('three')).toBe(false);
+  });
+
+  // A released request is left whole: its bytes are what an approval is bound to, and narrowing one is
+  // what broke reconciliation when retirement did it. The new commission coexists until intake completes.
+  it('leaves a released request untouched even when it claims the same cell', () => {
+    const result = resolveReviewRequestSupersede('functional', cells('a/webgl'), [
+      { id: 'released', subject: 'functional', released: true, targets: cells('a/webgl') },
+    ]);
+
+    expect(result.remove).toEqual([]);
+    expect(result.rewrite.size).toBe(0);
   });
 });

@@ -2,6 +2,15 @@ export interface ReviewSupersedableRequest {
   id: string;
   subject: string;
   targets: readonly { entry: string; renderer: string }[];
+  /**
+   * Whether the approval store has already reviewed this request's bytes.
+   *
+   * ★ SAME HAZARD AS RETIREMENT, AND IT COST A BROKEN RECONCILIATION THERE. An approval binds to the exact
+   * bytes reviewed, so narrowing a RELEASED request changes its checksum and intake refuses to write the
+   * lock. Superseding rewrites in place for the same reason retirement did, so it needs the same rule: a
+   * released request is left whole, and the new commission simply coexists until intake completes it.
+   */
+  released: boolean;
 }
 
 export interface ReviewSupersedeResult {
@@ -36,6 +45,7 @@ export function resolveReviewRequestSupersede(
   const rewrite = new Map<string, readonly { entry: string; renderer: string }[]>();
 
   for (const request of open) {
+    if (request.released) continue;
     const kept = request.targets.filter(
       (target) => !claimed.has(`${request.subject}/${target.entry}/${target.renderer}`),
     );

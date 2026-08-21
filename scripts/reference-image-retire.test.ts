@@ -11,7 +11,7 @@ describe('resolveReferenceImageRetirement', () => {
   // these bare-UUID ids do not have.
   it('removes a request whose every cell is blessed with exactly the pinned pixels', () => {
     const result = resolveReferenceImageRetirement(
-      [{ id: 'done', subject: 'functional', targets: [target('a', 'webgl')] }],
+      [{ id: 'done', subject: 'functional', released: false, targets: [target('a', 'webgl')] }],
       new Map([['functional/a/webgl', 'a'.repeat(64)]]),
     );
 
@@ -23,7 +23,14 @@ describe('resolveReferenceImageRetirement', () => {
   // that are still waiting. Narrow instead.
   it('narrows a request to the cells that are still outstanding', () => {
     const result = resolveReferenceImageRetirement(
-      [{ id: 'partial', subject: 'functional', targets: [target('a', 'webgl'), target('a', 'webgpu')] }],
+      [
+        {
+          id: 'partial',
+          subject: 'functional',
+          released: false,
+          targets: [target('a', 'webgl'), target('a', 'webgpu')],
+        },
+      ],
       new Map([['functional/a/webgl', 'a'.repeat(64)]]),
     );
 
@@ -36,7 +43,7 @@ describe('resolveReferenceImageRetirement', () => {
   // reported and the request is left alone.
   it('reports a cell blessed with different pixels and does not retire it', () => {
     const result = resolveReferenceImageRetirement(
-      [{ id: 'other', subject: 'functional', targets: [target('a', 'webgl')] }],
+      [{ id: 'other', subject: 'functional', released: false, targets: [target('a', 'webgl')] }],
       new Map([['functional/a/webgl', 'b'.repeat(64)]]),
     );
 
@@ -47,7 +54,7 @@ describe('resolveReferenceImageRetirement', () => {
 
   it('leaves an unblessed request completely untouched', () => {
     const result = resolveReferenceImageRetirement(
-      [{ id: 'waiting', subject: 'functional', targets: [target('a', 'webgl')] }],
+      [{ id: 'waiting', subject: 'functional', released: false, targets: [target('a', 'webgl')] }],
       new Map(),
     );
 
@@ -60,11 +67,45 @@ describe('resolveReferenceImageRetirement', () => {
   // would retire a request for a cell that was never blessed.
   it('does not treat a same-named cell of another subject as blessed', () => {
     const result = resolveReferenceImageRetirement(
-      [{ id: 'fn', subject: 'functional', targets: [target('a', 'webgl')] }],
+      [{ id: 'fn', subject: 'functional', released: false, targets: [target('a', 'webgl')] }],
       new Map([['examples/a/webgl', 'a'.repeat(64)]]),
     );
 
     expect(result.remove).toEqual([]);
     expect(result.rewrite.size).toBe(0);
+  });
+
+  // ★ THE FAILURE THIS EXISTS TO PREVENT, and it happened: narrowing rewrote a RELEASED request in place,
+  // which changed the bytes Oracle's approval was bound to. Intake refused to write the lock — "one newly
+  // released Flight request changed after Oracle reviewed it" — and reconciliation stopped. A released
+  // request is immutable: restore its reviewed bytes and re-file the remainder under a new id.
+  it('never edits a released request, even when part of it is fulfilled', () => {
+    const result = resolveReferenceImageRetirement(
+      [
+        {
+          id: 'released',
+          subject: 'functional',
+          released: true,
+          targets: [target('a', 'webgl'), target('a', 'webgpu')],
+        },
+      ],
+      new Map([['functional/a/webgl', 'a'.repeat(64)]]),
+    );
+
+    expect(result.rewrite.size).toBe(0);
+    expect(result.remove).toEqual([]);
+    expect(result.frozen).toEqual(['released']);
+  });
+
+  // Nor is it deleted when every cell is fulfilled: intake removes it on completion, and deleting it here
+  // would strand the approval with nothing to complete against.
+  it('does not delete a fully fulfilled released request either', () => {
+    const result = resolveReferenceImageRetirement(
+      [{ id: 'released', subject: 'functional', released: true, targets: [target('a', 'webgl')] }],
+      new Map([['functional/a/webgl', 'a'.repeat(64)]]),
+    );
+
+    expect(result.remove).toEqual([]);
+    expect(result.frozen).toEqual(['released']);
   });
 });
