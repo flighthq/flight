@@ -115,7 +115,7 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/effect-motion-blur.webgpu.ts` | able | L170: luminance is checked by a throw threshold inside its sampling loop (frame, cx) |
 | `functional/scenes/effect-msaa-bloom.canvas.ts` | able | L138: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
 | `functional/scenes/effect-msaa-bloom.webgl.ts` | able | L135: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
-| `functional/scenes/effect-msaa-bloom.webgpu.ts` | able | L148: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
+| `functional/scenes/effect-msaa-bloom.webgpu.ts` | able | L149: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
 | `functional/scenes/effect-msaa.webgl.ts` | blind | L96: countPartialCoveragePixels supplies only rearrangement-invariant counts, averages, histograms, or coverage |
 | `functional/scenes/effect-msaa.webgpu.ts` | blind | L101: countPartialCoveragePixels supplies only rearrangement-invariant counts, averages, histograms, or coverage |
 | `functional/scenes/effect-outline.webgl.ts` | blind | L104: measureOutlineInk supplies only rearrangement-invariant counts, averages, histograms, or coverage |
@@ -239,19 +239,19 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/mesh-transform-rotation.webgpu.ts` | able | L135: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/mesh-transform-scale.webgl.ts` | able | L127: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/mesh-transform-scale.webgpu.ts` | able | L130: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/node-alpha.ts` | able | L75: at samples pixels from a named call site (BOTTOM_X + 40, BOTTOM_Y + 40) |
+| `functional/scenes/node-alpha.ts` | able | L76: at samples pixels from a named call site (BOTTOM_X + 40, BOTTOM_Y + 40) |
 | `functional/scenes/node-blend-modes-advanced.canvas.ts` | able | L87: at samples pixels from a named call site (MULTIPLY_X + OVERLAY_W / 2, cy) |
 | `functional/scenes/node-blend-modes-advanced.dom.ts` | able | L90: at samples pixels from a named call site (MULTIPLY_X + OVERLAY_W / 2, cy) |
 | `functional/scenes/node-blend-modes-fixed.webgpu.ts` | able | L103: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
-| `functional/scenes/node-blend-modes.canvas.ts` | able | L92: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
-| `functional/scenes/node-blend-modes.dom.ts` | able | L95: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
-| `functional/scenes/node-blend-modes.webgl.ts` | able | L92: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
-| `functional/scenes/node-blend-modes.webgpu.ts` | able | L76: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
-| `functional/scenes/node-hierarchy.ts` | able | L86: at samples pixels from a named call site (COMPOUND_X + SHAPE_SIZE / 2, COMPOUND_Y + SHAPE_SIZE / 2) |
+| `functional/scenes/node-blend-modes.canvas.ts` | able | L93: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
+| `functional/scenes/node-blend-modes.dom.ts` | able | L96: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
+| `functional/scenes/node-blend-modes.webgl.ts` | able | L93: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
+| `functional/scenes/node-blend-modes.webgpu.ts` | able | L77: at samples pixels from a named call site (BAND_X + 20, BAND_Y + 20) |
+| `functional/scenes/node-hierarchy.ts` | able | L87: at samples pixels from a named call site (COMPOUND_X + SHAPE_SIZE / 2, COMPOUND_Y + SHAPE_SIZE / 2) |
 | `functional/scenes/node-transform-mirror.ts` | able | L95: at samples pixels from a named call site (CONTROL_X + BAR_WIDTH + 40, ROW_Y + ARM_HEIGHT / 2) |
 | `functional/scenes/node-transform.ts` | able | L75: at samples pixels from a named call site (CENTER_X, CENTER_Y) |
-| `functional/scenes/node-visibility-inheritance.ts` | able | L91: at samples pixels from a named call site (VISIBLE_CHILD_X + SHAPE_W / 2, VISIBLE_CHILD_Y + SHAPE_H / 2) |
-| `functional/scenes/node-visibility.ts` | able | L79: at samples pixels from a named call site (VISIBLE_X + VISIBLE_W / 2, VISIBLE_Y + VISIBLE_H / 2) |
+| `functional/scenes/node-visibility-inheritance.ts` | able | L92: at samples pixels from a named call site (VISIBLE_CHILD_X + SHAPE_W / 2, VISIBLE_CHILD_Y + SHAPE_H / 2) |
+| `functional/scenes/node-visibility.ts` | able | L80: at samples pixels from a named call site (VISIBLE_X + VISIBLE_W / 2, VISIBLE_Y + VISIBLE_H / 2) |
 | `functional/scenes/node-z-order.canvas.ts` | able | L75: at samples pixels from a named call site (60, 60) |
 | `functional/scenes/particle-emitter-3d.webgl.ts` | able | L105: getBitmapPixel is checked by a throw threshold inside its sampling loop (Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5)) |
 | `functional/scenes/particle-emitter-3d.webgpu.ts` | able | L102: getBitmapPixel is checked by a throw threshold inside its sampling loop (Math.floor(bitmap.width * x), Math.floor(bitmap.height * 0.5)) |
@@ -281,14 +281,14 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/render-pass-viewport.webgl.ts` | able | L151: at samples pixels from a named call site (780, 580) |
 | `functional/scenes/render-target-axes.webgl.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
 | `functional/scenes/render-target-format-policy.webgl.ts` | able | L83: getBitmapPixelRgb is thresholded at named coordinates (bitmap.width >> 1, bitmap.height >> 1) |
-| `functional/scenes/render-target-node-2d.canvas.ts` | able | L108: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
-| `functional/scenes/render-target-node-2d.webgl.ts` | able | L125: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
-| `functional/scenes/render-target-node-2d.webgpu.ts` | able | L127: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
+| `functional/scenes/render-target-node-2d.canvas.ts` | able | L109: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
+| `functional/scenes/render-target-node-2d.webgl.ts` | able | L126: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
+| `functional/scenes/render-target-node-2d.webgpu.ts` | able | L128: at samples pixels from a named call site (NODE_X + NODE_WIDTH / 2, NODE_Y + NODE_HEIGHT / 2) |
 | `functional/scenes/render-texture-sprite-axes.webgl.ts` | able | L106: at samples pixels from a named call site (SPRITE_X + 20, SPRITE_Y + 16) |
 | `functional/scenes/render-texture-sprite-axes.webgpu.ts` | able | L104: at samples pixels from a named call site (SPRITE_X + 20, SPRITE_Y + 16) |
 | `functional/scenes/render-texture.webgl.ts` | able | L126: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.42)) |
 | `functional/scenes/rive-import.ts` | able | L21: at samples pixels from a named call site (LEFT_X - 70, CENTER_Y) |
-| `functional/scenes/scale9-stretch.ts` | able | L115: at samples pixels from a named call site (cx, PANEL_Y + inset) |
+| `functional/scenes/scale9-stretch.ts` | able | L116: at samples pixels from a named call site (cx, PANEL_Y + inset) |
 | `functional/scenes/scene-morph.webgl.ts` | able | L159: covered samples pixels from a named call site (0.5, 0.5) |
 | `functional/scenes/scene-morph.webgpu.ts` | able | L123: covered samples pixels from a named call site (0.5, 0.5) |
 | `functional/scenes/scene-skin-material-families.webgl.ts` | able | L191: getBitmapPixelLuminance is checked by a throw threshold inside its sampling loop (x, y) |
@@ -303,11 +303,11 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/scene-transparent-depth-write.webgl.ts` | able | L118: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (Math.floor(x), cy) |
 | `functional/scenes/scene-transparent-orthographic.webgl.ts` | able | L109: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
 | `functional/scenes/scene-transparent.webgpu.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (Math.floor(bitmap.width / 2), Math.floor(bitmap.height / 2)) |
-| `functional/scenes/scene2d-cache.ts` | able | L115: at samples pixels from a named call site (MAGENTA_X + RECT_SIZE / 2, MAGENTA_Y + RECT_SIZE / 2) |
+| `functional/scenes/scene2d-cache.ts` | able | L116: at samples pixels from a named call site (MAGENTA_X + RECT_SIZE / 2, MAGENTA_Y + RECT_SIZE / 2) |
 | `functional/scenes/scene2d-clip-contour-hdr.webgl.ts` | able | L118: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/scene2d-clip-contour-hdr.webgpu.ts` | able | L114: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/scene2d-clip-contour.ts` | able | L95: at samples pixels from a named call site (centroidX, centroidY) |
-| `functional/scenes/scene2d-clip-rect.ts` | able | L74: at samples pixels from a named call site (CLIP_X + CLIP_SIZE / 2, CLIP_Y + CLIP_SIZE / 2) |
+| `functional/scenes/scene2d-clip-contour.ts` | able | L96: at samples pixels from a named call site (centroidX, centroidY) |
+| `functional/scenes/scene2d-clip-rect.ts` | able | L75: at samples pixels from a named call site (CLIP_X + CLIP_SIZE / 2, CLIP_Y + CLIP_SIZE / 2) |
 | `functional/scenes/shading-globe.webgl.ts` | able | L184: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/shading-globe.webgpu.ts` | able | L146: getBitmapPixelLuminance is thresholded at named coordinates (centerX + offset, centerY) |
 | `functional/scenes/shading-normal-map.webgpu.ts` | able | L139: getBitmapPixelLuminance is thresholded at named coordinates (Math.floor(bitmap.width * 0.43), y) |
@@ -327,10 +327,10 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/shape-circle-fill.canvas.ts` | able | L64: at samples pixels from a named call site (150, 150) |
 | `functional/scenes/shape-curves.ts` | able | L74: at samples pixels from a named call site (CX, CY + 30) |
 | `functional/scenes/shape-ellipse-fill.canvas.ts` | able | L63: at samples pixels from a named call site (ECX, ECY) |
-| `functional/scenes/shape-fill-bitmap.ts` | able | L100: at is checked by a throw threshold inside its sampling loop (RECT_X + i * CELL + CELL / 2, cellCenterY) |
+| `functional/scenes/shape-fill-bitmap.ts` | able | L101: at is checked by a throw threshold inside its sampling loop (RECT_X + i * CELL + CELL / 2, cellCenterY) |
 | `functional/scenes/shape-fill-gradient.ts` | able | L67: at samples pixels from a named call site (RECT_X + 40, midY) |
 | `functional/scenes/shape-fill-radial.ts` | able | L94: cardinalLumas samples pixels from a named call site (A_CX, A_CY) |
-| `functional/scenes/shape-fill-solid.ts` | able | L86: at samples pixels from a named call site (RED_X + 60, RED_Y + 60) |
+| `functional/scenes/shape-fill-solid.ts` | able | L87: at samples pixels from a named call site (RED_X + 60, RED_Y + 60) |
 | `functional/scenes/shape-fill-stroke-combined.canvas.ts` | able | L67: at samples pixels from a named call site (RX + RW / 2, RY + RH / 2) |
 | `functional/scenes/shape-fill-stroke-combined.webgl.ts` | able | L58: at samples pixels from a named call site (RX + RW / 2, RY + RH / 2) |
 | `functional/scenes/shape-fill-stroke-combined.webgpu.ts` | able | L58: at samples pixels from a named call site (RX + RW / 2, RY + RH / 2) |

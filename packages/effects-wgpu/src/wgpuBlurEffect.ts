@@ -23,10 +23,6 @@ export function applyBlurEffectToWgpu(
   applyGaussianBlurToWgpu(state, source, dest, temp, { blurX: effect.blurX, blurY: effect.blurY });
 }
 
-// Applies a faithful separable Gaussian blur to `source`, writing to `dest`. `blurX`/`blurY` are the
-// Gaussian standard deviations in pixels (default 4). Runs two unconditional separable passes,
-// source → temp (X) then temp → dest (Y); a zero-radius axis copies through unchanged, so the result
-// always lands in `dest` without a separate blit. `temp` is a ping-pong scratch distinct from both.
 export function applyGaussianBlurToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuRenderTarget>,
@@ -34,8 +30,25 @@ export function applyGaussianBlurToWgpu(
   temp: Readonly<WgpuRenderTarget>,
   options: Readonly<{ blurX?: number; blurY?: number }>,
 ): void {
-  const sigmaX = options.blurX ?? 4;
-  const sigmaY = options.blurY ?? 4;
+  // ★ SIGMA IS IN LOGICAL PIXELS; THE PASS STEPS IN TEXELS. On a supersampled target those are not the
+  // same unit — a `sampleCount: 4` effect target is allocated at 2x per axis, so a sigma of 8 spanned
+  // only 4 logical pixels and every blur-based effect came out half as wide as its Gl twin. Bloom showed
+  // it most plainly: cores and background matched exactly while the halo ran 15.9 luminance short, with
+  // ZERO halo pixels brighter on Wgpu — a one-directional deficit, which is what a too-narrow blur looks
+  // like, not what a different blur looks like.
+  //
+  // Measured on effect-bloom: halo mean wgpu-webgl was -15.87 at sampleCount 4 and +1.02 with the same
+  // scene at sampleCount 1, where logical and texel units coincide. Scaling sigma by the supersample
+  // factor makes the two agree at any sample count, which is the contract the doc comment above states.
+  //
+  // ★ THE FACTOR IS MEASURED FROM THE TARGET, NOT READ OFF ITS sampleCount. The blur runs on POOL
+  // targets, and those are allocated from a descriptor that already carries the supersampled WIDTH while
+  // their own sampleCount is 1 — so asking `getWgpuRenderTargetSupersampleScale` gave 1 and the first
+  // version of this fix changed nothing at all. Texel density against the canvas is the thing that
+  // actually matters here, and it is true of any target however it was obtained.
+  const scale = getWgpuRenderTargetTexelScale(source.width, state.canvas.width);
+  const sigmaX = (options.blurX ?? 4) * scale;
+  const sigmaY = (options.blurY ?? 4) * scale;
   const radiusX = sigmaX > 0 ? Math.ceil(sigmaX * 3) : 0;
   const radiusY = sigmaY > 0 ? Math.ceil(sigmaY * 3) : 0;
   applyWgpuGaussianBlurPass(state, source, temp, sigmaX, radiusX, 1, 0);
@@ -48,6 +61,28 @@ export const defaultWgpuBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect)
   applyBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
   releaseWgpuRenderTarget(ctx.pool, temp);
 };
+
+// Applies a faithful separable Gaussian blur to `source`, writing to `dest`. `blurX`/`blurY` are the
+// Gaussian standard deviations in pixels (default 4). Runs two unconditional separable passes,
+// source → temp (X) then temp → dest (Y); a zero-radius axis copies through unchanged, so the result
+// always lands in `dest` without a separate blit. `temp` is a ping-pong scratch distinct from both.
+/**
+ * Texels per logical pixel in a target, used to keep a blur's width in LOGICAL units.
+ *
+ * `blurX`/`blurY` are Gaussian standard deviations in logical pixels — CSS `blur(Xpx)` semantics — while
+ * the blur pass steps in texels. Those coincide only at 1:1 density, and a `sampleCount: 4` effect target
+ * is allocated at 2x per axis, so an unscaled sigma covered half the intended distance and every
+ * blur-based Wgpu effect came out narrower than its Gl twin.
+ *
+ * ★ MEASURED FROM WIDTHS RATHER THAN READ OFF `sampleCount`, because the blur runs on POOL targets: those
+ * are allocated from a descriptor that already carries the supersampled width while their own sampleCount
+ * stays 1. A sampleCount-based factor returns 1 for exactly the targets that need scaling — the first
+ * version of this fix did that and changed nothing measurable.
+ */
+export function getWgpuRenderTargetTexelScale(targetWidth: number, canvasWidth: number): number {
+  if (!Number.isFinite(targetWidth) || !Number.isFinite(canvasWidth) || canvasWidth <= 0) return 1;
+  return Math.max(1, Math.round(targetWidth / canvasWidth));
+}
 
 export function registerWgpuBlurEffect(state: WgpuRenderState): void {
   registerWgpuRenderEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
