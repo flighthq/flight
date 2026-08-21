@@ -13,16 +13,25 @@ target's supersample scale with `getWgpuRenderTargetSupersampleScale`, publishes
 and still gives the render-pass encoder the physical `target.width` and `target.height`. Logical 2D
 coordinates therefore span the full physical supersample target.
 
-After `npm run build:functional`, this exact sequential reproduction completed successfully:
+After a clean `npm run build:functional` build, this exact sequential reproduction completed
+successfully:
 
 ```sh
 tsx packages/tool-capture/src/bin.ts validate --tool=functional --renderer=webgpu \
   --no-regression --no-parity --report --out=<sequential-output> --sequential
 ```
 
-The generated report (2026-08-21T09:01:59.217Z) recorded `loadFailures: 0`, `aborted: false`, and
-`shouldFail: false`. The 33 skips were out-of-scope renderers or entries without a WebGPU fingerprint,
-not hard failures. The historical diagnosis and its measured 25-cell census are preserved below.
+The validator's load-failure count subsumes render-verification failures, including a functional
+scene's `assertRender` failure. Therefore the generated report's `loadFailures: 0` entails **0
+`assertRender` failures**, not merely 0 page-load failures. That report (2026-08-21T09:01:59.217Z) also
+recorded `aborted: false` and `shouldFail: false`. The 33 skips were out-of-scope renderers or entries
+without a WebGPU fingerprint, not hard failures.
+
+The evidence trail is **41 → 12 → 0**: the historical run below found 41 affected WebGPU 2D effect
+cells configured with `sampleCount: 4`; the 2026-08-21 source census at the measured base found only 12
+WebGPU scene files still configured that way; and the clean current-base sequential run measured 0
+`assertRender` failures. The intermediate 12 is a configuration population, not an inferred failure
+count. The historical diagnosis and its measured 25-cell hard-failure census are preserved below.
 
 > **Historical record boundary:** everything from this point describes the original failure at
 > `50e987798904ae1243b2318d7b2517d840dc3a68`, not the current failure population.
