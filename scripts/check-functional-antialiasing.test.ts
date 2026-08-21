@@ -9,6 +9,7 @@ import {
   formatFunctionalAntialiasingReport,
   getFunctionalAntialiasingExitCode,
   readFunctionalAntialiasingRatchet,
+  sourceDrawsOnlyAxisAlignedFills,
 } from './check-functional-antialiasing';
 
 let root: string;
@@ -102,7 +103,35 @@ describe('analyzeFunctionalAntialiasing', () => {
     expect(byRenderer.canvas?.effective).toBe('aa');
     expect(byRenderer.webgl?.effective).toBe('aa');
     expect(byRenderer.webgpu).toMatchObject({ declared: 'aa', effective: 'no-aa', matches: false });
+    expect(formatFunctionalAntialiasingReport(report)).toContain(
+      'Cleanup baseline: 140 mismatch cell(s) (canvas 9, webgl 66, webgpu 65).',
+    );
+    expect(formatFunctionalAntialiasingReport(report)).toContain(
+      'Current mismatches by renderer: canvas 0, dom 0, webgl 0, webgpu 1.',
+    );
     expect(getFunctionalAntialiasingExitCode(report)).toBe(0);
+  });
+
+  it('recomputes Canvas AA from the current picture when antialiasable geometry appears', () => {
+    writeScene('geometry.canvas.ts', "declareAntialiasingPolicy('no-aa'); appendShapeRectangle(path, 0, 0, 10, 10);");
+
+    expect(analyzeFunctionalAntialiasing(root, []).cells[0]).toMatchObject({
+      declared: 'no-aa',
+      effective: 'no-aa',
+      matches: true,
+    });
+
+    writeScene(
+      'geometry.canvas.ts',
+      "declareAntialiasingPolicy('no-aa'); appendShapeRectangle(path, 0, 0, 10, 10); " +
+        'appendShapeCurve(path, 0, 0, 5, 10, 10, 0);',
+    );
+
+    expect(analyzeFunctionalAntialiasing(root, []).cells[0]).toMatchObject({
+      declared: 'no-aa',
+      effective: 'aa',
+      matches: false,
+    });
   });
 
   it('treats a final multisample GL target as AA when context AA is off', () => {
@@ -140,6 +169,25 @@ describe('analyzeFunctionalAntialiasing', () => {
 
     expect(report.cells[0]).toMatchObject({ declared: 'aa', effective: 'unknown', matches: null });
     expect(getFunctionalAntialiasingExitCode(report)).toBe(0);
+  });
+});
+
+describe('sourceDrawsOnlyAxisAlignedFills', () => {
+  it('fails safe when there is no recognized axis-aligned fill', () => {
+    expect(sourceDrawsOnlyAxisAlignedFills('customDrawingPrimitive(path);')).toBe(false);
+  });
+
+  it.each([
+    'rotation = Math.PI / 4;',
+    'appendShapeCircle(path, 5, 5, 5);',
+    'appendShapeLineStyle(path, 1);',
+    'appendShapeMoveTo(path, 0, 0); appendShapeLineTo(path, 10, 10);',
+    "createTextLabel('AA');",
+    'context.arc(5, 5, 5, 0, Math.PI * 2);',
+  ])('does not structurally exempt an AA-capable picture containing %s', (antialiasableGeometry) => {
+    expect(sourceDrawsOnlyAxisAlignedFills(`appendShapeRectangle(path, 0, 0, 10, 10); ${antialiasableGeometry}`)).toBe(
+      false,
+    );
   });
 });
 
