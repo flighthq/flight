@@ -57,13 +57,12 @@ describe('testCollisionSupport2D', () => {
       //   * On a curved boundary EPA terminates on a distance, and distance is second-order
       //     insensitive to angular error — a depth converged to 1e-10 still leaves a circle's normal a
       //     few parts in a thousand out on a deep overlap.
-      //   * When the minimum translation is the SAME both ways, which way is "out" is a genuine tie.
-      //     The incumbent breaks it with named machinery (`canonicalizeScratchAxis` and the
-      //     lexicographic preference in `isPreferredAxis`); the generic core does not yet, so it can
-      //     pick the opposite direction with an identical depth.
-      //
-      // The second is why this core is not yet wired in as the default fallback: a solver acts on the
-      // sign, and pushing bodies the wrong way is not a rounding difference.
+      //   * A residual SIGN disagreement, now down to the count below. EPA canonicalizes and
+      //     lexicographically tie-breaks its axis exactly as the SAT core does, and applies the same
+      //     centroid rule when the difference is genuinely as deep both ways. What is left is neither
+      //     a symmetry tie nor a rounding difference: the two methods pick opposite directions at an
+      //     identical depth, and which is right has not been settled. It is why this core is not yet
+      //     wired in as the default fallback — a solver acts on the sign.
       const alignment = generic.normalX * incumbent.normalX + generic.normalY * incumbent.normalY;
       expect(Math.abs(alignment)).toBeCloseTo(1, 2);
       if (alignment < 0) opposed += 1;
@@ -71,9 +70,10 @@ describe('testCollisionSupport2D', () => {
 
     // A differential test that never overlapped would pass while proving nothing.
     expect(overlaps).toBeGreaterThan(trials / 10);
-    // The tie-break gap, pinned to the size it is measured at today. It exists to fail if it grows —
-    // an untracked "known difference" is how a real regression gets absorbed into an exemption.
-    expect(opposed).toBeLessThan(overlaps / 100);
+    // Pinned at the count measured today rather than at a percentage. A budget expressed as a fraction
+    // quietly absorbs new failures as the corpus grows; an exact number fails the moment a third case
+    // appears, which is the only way an unresolved difference stays visible instead of becoming folklore.
+    expect(opposed).toBeLessThanOrEqual(OPPOSED_SIGN_BUDGET);
     // And the skipped boundary band has to stay a band. If this ever climbs, the two methods are
     // disagreeing about ordinary overlaps and hiding behind the exemption.
     expect(grazing).toBeLessThan(trials / 200);
@@ -180,6 +180,10 @@ describe('testCollisionSupportOverlap2D', () => {
     ).toBe(false);
   });
 });
+
+// The unresolved sign disagreements, as counted over this corpus. Two, both at an exactly equal depth
+// on a single axis, neither explained by a symmetry tie.
+const OPPOSED_SIGN_BUDGET = 2;
 
 // Below this penetration the pair is grazing, and the two methods answer different questions.
 const GRAZING_DEPTH = 1e-6;

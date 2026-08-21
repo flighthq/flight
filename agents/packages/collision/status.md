@@ -12,13 +12,17 @@ by: principal
 ## Open
 
 - **The generic GJK/EPA core is built and NOT yet wired in as the fallback.** `testCollisionSupport2D`
-  works and is differential-tested against all ten incumbent SAT pairs, but `testCollision2D` still
-  dispatches through its closed switch and reports an unregistered kind as non-overlapping. One thing
-  blocks the wiring, and it is measured rather than suspected: when the minimum translation is the
-  same both ways, which way is "out" is a genuine tie, and the incumbent breaks it with named
-  machinery (`canonicalizeScratchAxis`, the lexicographic preference in `isPreferredAxis`) that EPA
-  does not yet have. The differential test pins the current rate at under 1% of overlapping pairs and
-  fails if it grows. A solver acts on that sign, so this is the next thing to close.
+  works and is differential-tested against all ten incumbent SAT pairs over 4000 seeded pairs, but
+  `testCollision2D` still dispatches through its closed switch. EPA now canonicalizes its axis into a
+  half-plane and tie-breaks lexicographically exactly as `isPreferredAxis` does, and applies the
+  incumbent's centroid rule when the difference is genuinely as deep both ways — which took the sign
+  disagreements from a handful to **two out of roughly 1690 overlapping pairs**.
+  Those two are the blocker, and they are NOT explained: both sit at an exactly equal depth on a single
+  axis with the two methods choosing opposite directions, and neither a symmetry tie nor rounding
+  accounts for it. Which implementation is right has not been established. The differential test pins
+  the count at exactly two, so a third fails the build rather than widening a budget. A solver acts on
+  that sign, so wiring this in ahead of an answer would be trading a silent miss for a silent shove.
+
 - **EPA's normal on a CURVED boundary is accurate to about the square root of its tolerance** — a few
   parts in a thousand on a deep circle overlap, against a depth good to 1e-10. Inherent: EPA
   terminates on a distance, and distance is second-order insensitive to angular error. It is one of
@@ -37,6 +41,13 @@ by: principal
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — EPA tie-break: axis canonicalized into a half-plane and lexicographically
+  tie-broken, mirroring `canonicalizeScratchAxis` and `isPreferredAxis`, with the centroid rule applied
+  ONLY when the Minkowski difference is as deep both ways. The centroid rule applied unconditionally
+  was tried first and is wrong — it flips the sign in the many cases where EPA's outward normal is
+  already geometrically correct, taking the disagreements from 4 to 47. Sign disagreements now stand at
+  two, pinned exactly.
 
 - **2026-08-20** — The dimension boundary landed, and the support-function core behind it. Every type
   and every generic entry point now carries `2D` (`CollisionShape2D`, `CollisionManifold2D`,
