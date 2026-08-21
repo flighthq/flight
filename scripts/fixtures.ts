@@ -125,6 +125,10 @@ export interface FixtureTreeStampPack {
   pack: string;
   sha256: string;
   verifiedFixtureFiles: number;
+  // The exact manifest-owned paths proved present when this pack was extracted. Merge-group members
+  // overwrite each other's root manifest.json, so the shared tree stamp is the only durable place each
+  // member's declared set can survive.
+  verifiedFixturePaths: readonly string[];
 }
 
 // What an extracted pack actually put on disk, measured rather than assumed. Declared here rather than in
@@ -321,7 +325,9 @@ export async function verifyFixtureArchive(path: string, expected: string): Prom
 
 export function writeFixtureTreeStamp(treeDirectory: string, stamp: Readonly<FixtureTreeStamp>): void {
   mkdirSync(treeDirectory, { recursive: true });
-  const packs = [...stamp.packs].sort((a, b) => a.pack.localeCompare(b.pack));
+  const packs = stamp.packs
+    .map((pack) => ({ ...pack, verifiedFixturePaths: [...pack.verifiedFixturePaths].sort() }))
+    .sort((a, b) => a.pack.localeCompare(b.pack));
   writeFileSync(join(treeDirectory, FIXTURE_STAMP_FILE), `${JSON.stringify({ ...stamp, packs }, null, 2)}\n`, 'utf8');
 }
 
@@ -419,7 +425,7 @@ export function parseFixtureArguments(argv: readonly string[]): FixtureArguments
 
 // Fetch, verify, and unpack the plan. Extraction is per pack and on demand — the full corpus is 26,461
 // files and unpacking it speculatively is the file-descriptor hazard `FLIGHT_FIXTURES_DIR` exists for.
-async function realizeFixturePlan(plan: Readonly<FixturePlan>): Promise<void> {
+export async function realizeFixturePlan(plan: Readonly<FixturePlan>): Promise<void> {
   const cacheDirectory = resolveFixtureCacheDirectory();
   console.log(`Cache: ${cacheDirectory}`);
 
@@ -456,7 +462,8 @@ async function realizeFixturePlan(plan: Readonly<FixturePlan>): Promise<void> {
     // successful extraction is a local write problem.
     // The pack's own manifest is the list of paths that must be on disk. It travels inside the archive,
     // whose sha256 already verified, so it is as trustworthy as the bytes it describes.
-    const verified = verifyFixtureExtraction(archivePath, treeDirectory, readFixturePackManifestPaths(treeDirectory));
+    const manifestPaths = readFixturePackManifestPaths(treeDirectory);
+    const verified = verifyFixtureExtraction(archivePath, treeDirectory, manifestPaths);
     if (verified.presentFixtureFiles !== verified.declaredFixtureFiles) {
       throw new Error(
         `${entry.pack} [${entry.variant}] extraction is incomplete — ${verified.declaredFixtureFiles - verified.presentFixtureFiles} of ${verified.declaredFixtureFiles} declared files are absent from ${treeDirectory}\n  first missing: ${verified.missingSample.join(', ')}\n  a partial write on a constrained mount is the known cause; FLIGHT_FIXTURES_DIR moves the pool off it`,
@@ -472,6 +479,7 @@ async function realizeFixturePlan(plan: Readonly<FixturePlan>): Promise<void> {
           pack: entry.pack,
           sha256: entry.sha256,
           verifiedFixtureFiles: verified.presentFixtureFiles,
+          verifiedFixturePaths: manifestPaths,
         },
       ],
       tag: FIXTURE_RELEASE_TAG,
@@ -510,6 +518,10 @@ function isFixtureTreeStampPack(value: unknown): value is FixtureTreeStampPack {
     typeof pack.metadataFiles === 'number' &&
     typeof pack.pack === 'string' &&
     typeof pack.sha256 === 'string' &&
-    typeof pack.verifiedFixtureFiles === 'number'
+    typeof pack.verifiedFixtureFiles === 'number' &&
+    Array.isArray(pack.verifiedFixturePaths) &&
+    pack.verifiedFixturePaths.length === pack.verifiedFixtureFiles &&
+    pack.verifiedFixturePaths.every((path) => typeof path === 'string') &&
+    new Set(pack.verifiedFixturePaths).size === pack.verifiedFixturePaths.length
   );
 }

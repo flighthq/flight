@@ -97,6 +97,7 @@ function writeFixtureTree(root: string): void {
           pack: 'swf-ruffle-fixtures',
           sha256: 'a'.repeat(64),
           verifiedFixtureFiles: 1,
+          verifiedFixturePaths: ['minimal.swf'],
         },
       ],
       tag: FIXTURE_RELEASE_TAG,

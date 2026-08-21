@@ -34,7 +34,13 @@ describe('discoverConformanceFixtureTrees', () => {
     expect(discoverConformanceFixtureTrees(workspace, 'fixture-release')).toEqual([
       {
         directory: current,
-        packs: [{ id: 'sample-fixtures', verifiedFixtureFiles: 2 }],
+        packs: [
+          {
+            id: 'sample-fixtures',
+            verifiedFixtureFiles: 2,
+            verifiedFixturePaths: ['sample/a.asset', 'sample/b.asset'],
+          },
+        ],
         release: 'fixture-release',
         tree: 'shared-tree',
         variant: 'full',
@@ -53,6 +59,35 @@ describe('listConformanceFixtureReferences', () => {
     write(tree, 'NOTICE.md', 'metadata');
 
     expect(listConformanceFixtureReferences(tree)).toEqual(['models/NOTES.md', 'models/a.gltf']);
+  });
+
+  it('enumerates the union stamped by every shared-tree pack after the root manifest is overwritten', () => {
+    const tree = makeTree('full', 'shared-tree', 'fixture-release');
+    write(tree, 'alpha/a.asset', 'a');
+    write(tree, 'beta/b.asset', 'b');
+    write(tree, 'manifest.json', JSON.stringify({ files: [{ path: 'beta/b.asset' }] }));
+    const fixtureTree: ConformanceFixtureTree = {
+      directory: tree,
+      packs: [
+        { id: 'alpha-fixtures', verifiedFixtureFiles: 1, verifiedFixturePaths: ['alpha/a.asset'] },
+        { id: 'beta-fixtures', verifiedFixtureFiles: 1, verifiedFixturePaths: ['beta/b.asset'] },
+      ],
+      release: 'fixture-release',
+      tree: 'shared-tree',
+      variant: 'full',
+    };
+    const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
+      features: [],
+      id: 'sample',
+      implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
+      selects: () => true,
+    };
+
+    const plan = createConformanceFixturePlan([fixtureTree], [adapter]);
+
+    expect(plan.candidates.map((candidate) => candidate.input.reference)).toEqual(['alpha/a.asset', 'beta/b.asset']);
+    expect(plan.trees).toMatchObject([{ fixtureFiles: 2, stampedFixtureFiles: 2 }]);
   });
 });
 
@@ -470,9 +505,13 @@ describe('scoreConformanceFixturePlan', () => {
 });
 
 function fixtureTree(directory: string, verifiedFixtureFiles: number): ConformanceFixtureTree {
+  const verifiedFixturePaths = listConformanceFixtureReferences(directory);
+  while (verifiedFixturePaths.length < verifiedFixtureFiles) {
+    verifiedFixturePaths.push(`missing-${verifiedFixturePaths.length}.asset`);
+  }
   return {
     directory,
-    packs: [{ id: 'sample-fixtures', verifiedFixtureFiles }],
+    packs: [{ id: 'sample-fixtures', verifiedFixtureFiles, verifiedFixturePaths }],
     release: 'fixture-release',
     tree: 'tree',
     variant: 'full',
@@ -510,6 +549,7 @@ function makeTree(variant: string, tree: string, tag: string): string {
         pack: 'sample-fixtures',
         sha256: 'a'.repeat(64),
         verifiedFixtureFiles: 2,
+        verifiedFixturePaths: ['sample/a.asset', 'sample/b.asset'],
       },
     ],
     tag,
