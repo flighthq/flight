@@ -1,9 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { availableParallelism } from 'node:os';
 
 import pc from 'picocolors';
 
 import { createGateRegistry } from './gateRegistry';
-import { runGates } from './gateRunner';
+import { formatGateFailure, runGates } from './gateRunner';
 import {
   explainEmptyCheckSelection,
   getSelectors,
@@ -132,14 +133,22 @@ const configuredConcurrency = Number.parseInt(process.env.FLIGHT_CHECK_CONCURREN
 const concurrency = Number.isFinite(configuredConcurrency)
   ? Math.max(1, configuredConcurrency)
   : Math.min(6, Math.max(1, Math.ceil(availableParallelism() / 2)));
-const results = await runGates(gates, concurrency);
+const results = await runGates(gates, concurrency, {
+  progress: {
+    gateLabel: 'reachability:check',
+    onRecord: (record) => {
+      process.stderr.write(`[reachability:check] probing ${record.packageName}:${record.registrar}\n`);
+    },
+    token: randomUUID(),
+  },
+});
 const failed: string[] = [];
 
 for (const result of results) {
   process.stdout.write(`\n▶ ${result.label}\n`);
   process.stdout.write(result.output);
   if (!result.passed) {
-    process.stdout.write(`${pc.red('✗')} ${result.label} failed\n`);
+    process.stdout.write(`${pc.red('✗')} ${result.label} failed (${formatGateFailure(result)})\n`);
     failed.push(result.label);
   }
 }

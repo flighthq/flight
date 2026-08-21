@@ -24,6 +24,8 @@
 
 import { spawn } from 'node:child_process';
 
+import { CHECK_PROGRESS_TOKEN_ENV, RegistrarProgressDecoder } from './check-progress';
+import type { RegistrarProgressRecord } from './check-progress';
 import type { Gate } from './gateRegistry';
 
 export interface GateResult extends Gate {
@@ -36,6 +38,21 @@ export interface GateResult extends Gate {
    * was stopped — and without this the two are indistinguishable in a log that only says "failed".
    */
   signal: NodeJS.Signals | null;
+  /** The operating-system error code when the command could not be spawned. */
+  spawnErrorCode: string | null;
+  /** The spawn error message, distinct from a gate that ran and reported a violation. */
+  spawnErrorMessage: string | null;
+}
+
+export interface GateProgressOptions {
+  gateLabel: string;
+  onRecord: (record: RegistrarProgressRecord) => void;
+  token: string;
+}
+
+export interface GateRunOptions {
+  graceMs?: number;
+  progress?: GateProgressOptions;
 }
 
 /**
@@ -47,9 +64,33 @@ export interface GateResult extends Gate {
  */
 export const GATE_PIPE_GRACE_MS = 2_000;
 
-export async function runGate(gate: Gate, graceMs: number = GATE_PIPE_GRACE_MS): Promise<GateResult> {
+export function formatGateFailure(result: GateResult): string {
+  if (result.spawnErrorMessage !== null) {
+    return `spawn error${result.spawnErrorCode === null ? '' : ` ${result.spawnErrorCode}`}: ${result.spawnErrorMessage}`;
+  }
+  if (result.signal !== null) return `signal ${result.signal}`;
+  if (result.code !== null) return `exit code ${result.code}`;
+  return 'no exit code or signal';
+}
+
+export async function runGate(
+  gate: Gate,
+  graceMsOrOptions: number | GateRunOptions = GATE_PIPE_GRACE_MS,
+): Promise<GateResult> {
   return await new Promise((resolve) => {
-    const child = spawn(gate.command, gate.args, { env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const options = typeof graceMsOrOptions === 'number' ? { graceMs: graceMsOrOptions } : graceMsOrOptions;
+    const graceMs = options.graceMs ?? GATE_PIPE_GRACE_MS;
+    const progress = options.progress?.gateLabel === gate.label ? options.progress : null;
+    const child = spawn(gate.command, gate.args, {
+      env:
+        progress === null
+          ? process.env
+          : {
+              ...process.env,
+              [CHECK_PROGRESS_TOKEN_ENV]: progress.token,
+            },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
     // ★ DECODE PER STREAM, NOT PER CHUNK. `chunk.toString()` decodes each Buffer independently, so a
     // UTF-8 sequence split across a chunk boundary is destroyed on both sides of the split. Measured:
@@ -64,16 +105,29 @@ export async function runGate(gate: Gate, graceMs: number = GATE_PIPE_GRACE_MS):
 
     // One array in arrival order, so stdout and stderr stay interleaved the way the gate emitted them.
     const chunks: string[] = [];
+    const progressDecoder = progress === null ? null : new RegistrarProgressDecoder(progress.token);
     child.stdout.on('data', (chunk: string) => chunks.push(chunk));
-    child.stderr.on('data', (chunk: string) => chunks.push(chunk));
+    child.stderr.on('data', (chunk: string) => {
+      if (progressDecoder === null || progress === null) {
+        chunks.push(chunk);
+        return;
+      }
+      const decoded = progressDecoder.push(chunk);
+      if (decoded.ordinary.length > 0) chunks.push(decoded.ordinary);
+      for (const record of decoded.records) progress.onRecord(record);
+    });
 
     let settled = false;
     let graceTimer: NodeJS.Timeout | null = null;
+    let spawnErrorCode: string | null = null;
+    let spawnErrorMessage: string | null = null;
 
     const settle = (code: number | null, signal: NodeJS.Signals | null, pipesLeftOpen: boolean): void => {
       if (settled) return;
       settled = true;
       if (graceTimer !== null) clearTimeout(graceTimer);
+      const pendingProgress = progressDecoder?.finish() ?? '';
+      if (pendingProgress.length > 0) chunks.push(pendingProgress);
       if (pipesLeftOpen) {
         // Release the pipes we have stopped reading. A surviving grandchild holds the write ends, so
         // leaving the read ends attached keeps them as active handles on this process — which would
@@ -87,8 +141,10 @@ export async function runGate(gate: Gate, graceMs: number = GATE_PIPE_GRACE_MS):
         ...gate,
         code,
         output: chunks.join('') + explainGateDeath(code, signal, pipesLeftOpen, graceMs),
-        passed: code === 0,
+        passed: code === 0 && signal === null && spawnErrorMessage === null,
         signal,
+        spawnErrorCode,
+        spawnErrorMessage,
       });
     };
 
@@ -96,7 +152,11 @@ export async function runGate(gate: Gate, graceMs: number = GATE_PIPE_GRACE_MS):
     // would take down the sweep in place of the result we already hold.
     child.stdout.on('error', () => {});
     child.stderr.on('error', () => {});
-    child.on('error', (error) => chunks.push(`${error.message}\n`));
+    child.on('error', (error: NodeJS.ErrnoException) => {
+      spawnErrorCode = error.code ?? null;
+      spawnErrorMessage = error.message;
+      chunks.push(`${error.message}\n`);
+    });
     child.on('exit', (code, signal) => {
       graceTimer = setTimeout(() => settle(code, signal, true), graceMs);
       // While pipes are still open they keep the loop alive on their own, so the timer will fire; it
@@ -110,7 +170,7 @@ export async function runGate(gate: Gate, graceMs: number = GATE_PIPE_GRACE_MS):
 export async function runGates(
   items: readonly Gate[],
   limit: number,
-  graceMs: number = GATE_PIPE_GRACE_MS,
+  graceMsOrOptions: number | GateRunOptions = GATE_PIPE_GRACE_MS,
 ): Promise<GateResult[]> {
   const results = new Array<GateResult>(items.length);
   let next = 0;
@@ -120,7 +180,7 @@ export async function runGates(
         const index = next++;
         const gate = items[index];
         if (gate === undefined) return;
-        results[index] = await runGate(gate, graceMs);
+        results[index] = await runGate(gate, graceMsOrOptions);
       }
     }),
   );

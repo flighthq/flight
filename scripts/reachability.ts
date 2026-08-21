@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import pc from 'picocolors';
 
+import { CHECK_PROGRESS_TOKEN_ENV } from './check-progress';
 import {
   auditEffectBackend,
   collectRegistrarKindConstants,
@@ -236,15 +237,28 @@ if (!jsonMode) {
 // report-only `reachability:runtime` command rather than turning today's inventory into a new gate.
 if (checkMode && !jsonMode) {
   console.log(`\n${pc.bold('Runtime registrar reachability')}`);
-  const runtime = spawnSync(process.execPath, ['--import', 'tsx', join(root, 'scripts', 'registrar-runtime.ts')], {
-    cwd: root,
-    stdio: 'inherit',
-  });
+  const progressToken = process.env[CHECK_PROGRESS_TOKEN_ENV];
+  const runtime = spawnSync(
+    process.execPath,
+    [
+      '--import',
+      'tsx',
+      join(root, 'scripts', 'registrar-runtime.ts'),
+      ...(progressToken === undefined ? [] : ['--progress-token', progressToken]),
+    ],
+    {
+      cwd: root,
+      stdio: 'inherit',
+    },
+  );
   if (runtime.error !== undefined) {
     console.error(`${pc.red('✗')} Runtime registrar reachability could not start: ${runtime.error.message}`);
     process.exitCode = 1;
   } else if (runtime.status !== 0) {
     // A report process that cannot complete is not a finding about registrars; it is a broken fold-in.
+    console.error(
+      `${pc.red('✗')} Runtime registrar reachability stopped before completing: status=${runtime.status ?? 'none'}, signal=${runtime.signal ?? 'none'}`,
+    );
     process.exitCode = 1;
   }
 }

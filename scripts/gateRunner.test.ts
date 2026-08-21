@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { runGate, runGates } from './gateRunner';
+import { createRegistrarProgressFrame } from './check-progress';
+import { formatGateFailure, runGate, runGates } from './gateRunner';
 
 // The grace fallback is the subject of half these cases, so they drive it with a short window rather
 // than the two-second production floor. Still comfortably longer than the shells below take to fork.
@@ -17,6 +18,7 @@ describe('runGate', () => {
     expect(result.signal).toBeNull();
     expect(result.output).toContain('out');
     expect(result.output).toContain('err');
+    expect(formatGateFailure(result)).toBe('exit code 3');
   });
 
   it('records the signal that killed a gate, so a kill does not read as a violation it found', async () => {
@@ -28,6 +30,7 @@ describe('runGate', () => {
     expect(result.output).toContain('before');
     expect(result.output).toContain('killed by SIGKILL');
     expect(result.output).toContain('it reported no violation');
+    expect(formatGateFailure(result)).toBe('signal SIGKILL');
   });
 
   it('settles a signal-killed gate whose forked child still holds the pipes', async () => {
@@ -70,6 +73,32 @@ describe('runGate', () => {
     const result = outcome as Awaited<ReturnType<typeof runGate>>;
     expect(result.passed).toBe(false);
     expect(result.output).toContain('ENOENT');
+    expect(result.spawnErrorCode).toBe('ENOENT');
+    expect(formatGateFailure(result)).toContain('spawn error ENOENT');
+  });
+
+  it('streams and strips token-scoped progress only for the configured gate', async () => {
+    const token = '00000000-0000-4000-8000-000000000000';
+    const frame = createRegistrarProgressFrame(
+      { packageName: 'fixture', registrar: 'registerFixture', type: 'registrar' },
+      token,
+    );
+    const records: unknown[] = [];
+    const options = {
+      progress: { gateLabel: 'reachability:check', onRecord: (record: unknown) => records.push(record), token },
+    };
+    const streamed = await runGate(
+      { ...node(`process.stderr.write(${JSON.stringify(`before ${frame} after`)})`), label: 'reachability:check' },
+      options,
+    );
+    const ordinary = await runGate(
+      { ...node(`process.stderr.write(${JSON.stringify(`before ${frame} after`)})`), label: 'other:check' },
+      options,
+    );
+
+    expect(streamed.output).toBe('before  after');
+    expect(records).toEqual([{ packageName: 'fixture', registrar: 'registerFixture', type: 'registrar' }]);
+    expect(ordinary.output).toBe(`before ${frame} after`);
   });
 
   it('decodes multi-byte output whole across chunk boundaries', async () => {
