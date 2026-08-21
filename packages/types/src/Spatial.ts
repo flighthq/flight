@@ -11,10 +11,10 @@ import type { SpatialIndexingExplanation } from './SpatialIndexing';
 //
 // THE SEAM CARRIES ITS DIMENSION; THE POLICY VOCABULARY DOES NOT. 3D does not arrive by widening
 // these types — `SpatialAabb2D` has no z, and the point and ray queries take no third axis, so this
-// seam was never dimension-generic. It arrives as a sibling `SpatialIndexBackend3D` over
-// `SpatialAabb3D`, reached through `createSpatialIndex3D`. Widening one seam to three dimensions was
-// rejected because every current consumer — `camera`, `interaction`, `physics2d` — is 2D and would
-// pay for an axis it does not use, which is the bundle invariant.
+// seam was never dimension-generic. It arrives instead as the sibling `SpatialIndexBackend3D` over
+// `SpatialAabb3D`, reached through `createSpatialIndex3D`, both defined below. Widening one seam to
+// three dimensions was rejected because the 2D consumers — `camera`, `interaction`, `physics2d` —
+// would pay for an axis they do not use, which is the bundle invariant.
 //
 // What stays unsuffixed is what is genuinely dimension-free: object identity (`SpatialObjectId`,
 // `SpatialPair`), the indexing mode and decline reasons, `bucketCount`, and the cost bounds. So is
@@ -40,9 +40,26 @@ export interface SpatialAabb2D {
   maxY: number;
 }
 
+// An object's 3D axis-aligned bounds, as min/max corners. The sibling of `SpatialAabb2D`, not a
+// widening of it: 2D consumers must not carry a z they do not use. Structurally the same as
+// `@flighthq/geometry`'s `Aabb`, but defined here for the same reason the 2D one is — `@flighthq/spatial`
+// depends only on `@flighthq/geometry` + `@flighthq/types`, and the seam owns its own bounds type.
+export interface SpatialAabb3D {
+  minX: number;
+  minY: number;
+  minZ: number;
+  maxX: number;
+  maxY: number;
+  maxZ: number;
+}
+
 // One unordered candidate pair emitted by querySpatialPairs2D. `a` and `b` are distinct ids (never the
 // same object) and a given unordered pair is emitted at most once per query. It is a *candidate*:
 // the two objects share broadphase locality, which the caller confirms with a narrow-phase test.
+//
+// Deliberately UNSUFFIXED and shared by both dimensions. A pair carries two ids and no geometry, so
+// there is no axis in it to get wrong; suffixing it would double a vocabulary over a distinction that
+// does not exist. The dimension boundary is carried by the bounds types and the entry points.
 export interface SpatialPair {
   a: SpatialObjectId;
   b: SpatialObjectId;
@@ -98,4 +115,58 @@ export interface SpatialIndexRuntime2D {
 // functions. The backend swaps the underlying structure without changing this entity's shape.
 export interface SpatialIndex2D {
   runtime: SpatialIndexRuntime2D;
+}
+
+// The 3D swappable index seam — the sibling of `SpatialIndexBackend2D`, carrying the same operations
+// over three-dimensional bounds. A uniform grid is the first backend; an octree or a BVH slots in
+// behind this seam, which is the one they were always meant to arrive through. Every method matches
+// its 2D counterpart's contract exactly, including the `out`-array discipline (cleared then filled, so
+// a per-frame query loop allocates no new structure) and the insert/update sentinel.
+//
+// Method names carry no dimension suffix: a member already sits inside a dimension-suffixed interface,
+// so naming it twice tells a reader nothing the type it is reached through did not already say. The
+// free functions in `@flighthq/spatial` do carry the suffix, because their 2D twins are different
+// functions rather than overloads.
+export interface SpatialIndexBackend3D {
+  // Adds an object with its current bounds. The bounds are copied; the caller may reuse its own.
+  // Returns false when the bounds are not indexable at all (non-finite or inverted), in which case
+  // the object is not in the index and no query will return it — the expected-failure sentinel, not
+  // an error.
+  // Oversized-but-valid bounds still return true: a backend may index them by a different route, and
+  // the object remains fully queryable.
+  insertSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb3D>): boolean;
+  // Moves an already-inserted object to new bounds. Inserting a not-yet-present id is equivalent to
+  // insert. Returns the same sentinel as insert; a declined update leaves the object out of the index
+  // rather than at its previous bounds, so a caller that ignores the sentinel never reads a stale
+  // position as a current one.
+  updateSpatialObject(id: SpatialObjectId, bounds: Readonly<SpatialAabb3D>): boolean;
+  // Removes an object. A no-op if the id is not present.
+  removeSpatialObject(id: SpatialObjectId): void;
+  // Empties the index of all objects, keeping it reusable.
+  clearSpatialIndex(): void;
+  // Reports how `id` is currently held — the pull query behind explainSpatialIndexing3D.
+  explainSpatialIndexing(id: SpatialObjectId): SpatialIndexingExplanation;
+  // Fills `out` with every deduplicated candidate pair (each unordered pair once, never (a,a)).
+  querySpatialPairs(out: SpatialPair[]): void;
+  // Fills `out` with the ids whose bounds overlap `region`.
+  querySpatialRegion(region: Readonly<SpatialAabb3D>, out: SpatialObjectId[]): void;
+  // Fills `out` with the ids whose bounds contain the point (`x`,`y`,`z`).
+  querySpatialPoint(x: number, y: number, z: number, out: SpatialObjectId[]): void;
+  // Fills `out` with the ids whose bounds the ray from (`x`,`y`,`z`) along (`dx`,`dy`,`dz`) intersects.
+  querySpatialRay(x: number, y: number, z: number, dx: number, dy: number, dz: number, out: SpatialObjectId[]): void;
+}
+
+// Opaque per-index runtime: the active 3D backend the public operations dispatch through. Application
+// code treats this as internal; it is read and written only by the `@flighthq/spatial` functions.
+export interface SpatialIndexRuntime3D {
+  backend: SpatialIndexBackend3D;
+}
+
+// 3D broadphase index entity. It carries no data of its own — the indexed objects live inside the
+// opaque runtime's backend. Create with createSpatialIndex3D (defaulting to a uniform grid), drive it
+// with insertSpatialObject3D / updateSpatialObject3D / removeSpatialObject3D, and read it with the query
+// functions. This is what `@flighthq/physics3d` indexes its colliders in, and what a 3D scene culls
+// against.
+export interface SpatialIndex3D {
+  runtime: SpatialIndexRuntime3D;
 }
