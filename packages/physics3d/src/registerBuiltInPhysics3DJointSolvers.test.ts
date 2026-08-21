@@ -4,12 +4,14 @@ import { getPhysics3DJointSolver } from './jointRegistry';
 import {
   physics3DBallAndSocketJointSolver,
   physics3DConeTwistJointSolver,
+  physics3DDistanceJointSolver,
   physics3DFixedJointSolver,
   physics3DGeneric6DofJointSolver,
   physics3DHingeJointSolver,
   physics3DSliderJointSolver,
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
+  Physics3DDistanceJointKind,
   Physics3DFixedJointKind,
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
@@ -26,6 +28,7 @@ describe('registerBuiltInPhysics3DJointSolvers', () => {
 
     expect(getPhysics3DJointSolver(world, Physics3DBallAndSocketJointKind)).toBe(physics3DBallAndSocketJointSolver);
     expect(getPhysics3DJointSolver(world, Physics3DConeTwistJointKind)).toBe(physics3DConeTwistJointSolver);
+    expect(getPhysics3DJointSolver(world, Physics3DDistanceJointKind)).toBe(physics3DDistanceJointSolver);
     expect(getPhysics3DJointSolver(world, Physics3DFixedJointKind)).toBe(physics3DFixedJointSolver);
     expect(getPhysics3DJointSolver(world, Physics3DGeneric6DofJointKind)).toBe(physics3DGeneric6DofJointSolver);
     expect(getPhysics3DJointSolver(world, Physics3DHingeJointKind)).toBe(physics3DHingeJointSolver);
@@ -37,7 +40,7 @@ describe('registerBuiltInPhysics3DJointSolvers', () => {
 
     registerBuiltInPhysics3DJointSolvers(world);
 
-    expect(world.jointSolvers.size).toBe(6);
+    expect(world.jointSolvers.size).toBe(7);
   });
 
   it('leaves a world that never calls it with no solvers at all', () => {

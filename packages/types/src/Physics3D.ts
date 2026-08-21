@@ -630,6 +630,53 @@ export interface Physics3DJointFrameOptions extends Physics3DJointOptions {
 export type Physics3DBallAndSocketJoint = Physics3DJoint;
 export type Physics3DBallAndSocketJointOptions = Physics3DJointOptions;
 
+// Holds two anchors a distance apart along the line joining them, leaving every rotation free — a strut, a
+// spring, a rope, a cable, a suspension travel. ONE row: the separation, along the unit axis between the
+// anchors. The 3D counterpart of `Physics2DDistanceJoint`, widened with the travel limits a suspension and
+// a cable both need.
+//
+// THREE BEHAVIOURS, selected by two independent flags rather than by a mode field, because each flag
+// switches on one constraint row:
+//
+// - Neither flag: RIGID at `length`. One equality row; the strut, and the default.
+// - `enableSpring`: a soft row pulling toward `length` at `frequencyHz` with `dampingRatio`. Both are
+//   converted per-step against the pair's own effective mass, so a frequency means the same thing whatever
+//   it is attached to and whatever timestep the world runs at.
+// - `enableLimit`: one-sided rows at `minLength` and `maxLength` — the first may only push apart, the
+//   second only pull together, and between them the joint does nothing at all.
+//
+// Enabling the limit WITHOUT the spring drops the rest-length row, which is a decision rather than an
+// omission: a fixed rest length and a slack interval are contradictory demands on one axis, and the
+// interval is what a rope or a cable means. Enabling both keeps the spring inside the interval, which is a
+// suspension with travel stops.
+export interface Physics3DDistanceJoint extends Physics3DJoint {
+  length: number;
+
+  enableSpring: boolean;
+  frequencyHz: number;
+  dampingRatio: number;
+
+  enableLimit: boolean;
+  minLength: number;
+  maxLength: number;
+
+  // The two limit rows' accumulators, carried across steps so a cable under sustained load warm-starts like
+  // every other constraint. Non-negative MAGNITUDES, not signed coordinates: a one-sided row may only push,
+  // so each is clamped at zero and its direction is carried by whichever row owns it.
+  lowerLimitImpulse: number;
+  upperLimitImpulse: number;
+}
+
+export interface Physics3DDistanceJointOptions extends Physics3DJointOptions {
+  length?: number;
+  enableSpring?: boolean;
+  frequencyHz?: number;
+  dampingRatio?: number;
+  enableLimit?: boolean;
+  minLength?: number;
+  maxLength?: number;
+}
+
 // Pins two anchors together and locks all three rotational degrees of freedom — rigid attachment.
 //
 // Solved rather than exact, so it flexes under enough load. A truly rigid attachment is one body with two

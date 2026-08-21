@@ -7,9 +7,10 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { refreshRigidBody3DWorldInertia } from './integrate';
+import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate';
 import {
   createPhysics3DConeTwistJoint,
+  createPhysics3DDistanceJoint,
   createPhysics3DFixedJoint,
   createPhysics3DGeneric6DofJoint,
   createPhysics3DHingeJoint,
@@ -19,12 +20,14 @@ import { writePhysics3DJointAnchorVelocity, writePhysics3DJointAnchors } from '.
 import {
   physics3DBallAndSocketJointSolver,
   physics3DConeTwistJointSolver,
+  physics3DDistanceJointSolver,
   physics3DFixedJointSolver,
   physics3DGeneric6DofJointSolver,
   physics3DHingeJointSolver,
   physics3DSliderJointSolver,
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
+  Physics3DDistanceJointKind,
   Physics3DFixedJointKind,
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
@@ -38,6 +41,7 @@ describe('Physics3DBallAndSocketJointKind', () => {
     const kinds = [
       Physics3DBallAndSocketJointKind,
       Physics3DConeTwistJointKind,
+      Physics3DDistanceJointKind,
       Physics3DFixedJointKind,
       Physics3DGeneric6DofJointKind,
       Physics3DHingeJointKind,
@@ -150,6 +154,250 @@ describe('physics3DConeTwistJointSolver', () => {
     const joint = createPhysics3DConeTwistJoint({ bodyA: 1, bodyB: 0 });
 
     expect(physics3DConeTwistJointSolver.swapEnds?.(joint)).toBe(false);
+  });
+});
+
+describe('physics3DDistanceJointSolver', () => {
+  it('cancels the velocity changing the separation', () => {
+    const scene = createScene();
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    scene.bodyB.velocityX = 4;
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    expect(Math.abs(separationSpeed(scene))).toBeLessThan(1e-9);
+  });
+
+  it('leaves motion PERPENDICULAR to the axis alone', () => {
+    // The single row is what distinguishes this from a ball-and-socket. A pair swinging sideways keeps its
+    // distance, so the joint has nothing to resist, and a kind that quietly constrained the other two axes
+    // would turn a pendulum into a rigid rod right here.
+    const scene = createScene();
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    scene.bodyB.velocityY = 3;
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    expect(scene.bodyB.velocityY).toBeCloseTo(3, 9);
+  });
+
+  it('leaves relative rotation free', () => {
+    const scene = createScene();
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    scene.bodyB.angularVelocityY = 3;
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    expect(scene.bodyB.angularVelocityY).toBeCloseTo(3, 9);
+  });
+
+  it('pulls a stretched pair together and pushes a compressed pair apart', () => {
+    const stretched = createScene();
+    stretched.bodyB.x = 4;
+    const stretchedJoint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    solveJoint(stretched.world, stretchedJoint, physics3DDistanceJointSolver, 8);
+    expect(stretched.bodyB.velocityX).toBeLessThan(0);
+    expect(stretched.bodyA.velocityX).toBeGreaterThan(0);
+
+    const compressed = createScene();
+    compressed.bodyB.x = 1;
+    const compressedJoint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    solveJoint(compressed.world, compressedJoint, physics3DDistanceJointSolver, 8);
+    expect(compressed.bodyB.velocityX).toBeGreaterThan(0);
+    expect(compressed.bodyA.velocityX).toBeLessThan(0);
+  });
+
+  it('IS SLACK INSIDE ITS LIMIT INTERVAL, which is what makes it a rope', () => {
+    // The behaviour a cable exists for, and the reason enabling the limit drops the rest-length row: a joint
+    // that still held `length` here would be a strut wearing a rope's parameters.
+    const scene = createScene();
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2, enableLimit: true, maxLength: 5 });
+    scene.bodyB.velocityX = 4;
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    expect(scene.bodyB.velocityX).toBeCloseTo(4, 9);
+    expect(scene.bodyA.velocityX).toBeCloseTo(0, 9);
+  });
+
+  it('catches the pair at its maximum length', () => {
+    const scene = createScene();
+    scene.bodyB.x = 6;
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, maxLength: 5 });
+    scene.bodyB.velocityX = 4;
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    expect(scene.bodyB.velocityX).toBeLessThan(0);
+  });
+
+  it('holds the pair apart at its minimum length', () => {
+    const scene = createScene();
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, minLength: 4, maxLength: 9 });
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    // Two units apart against a floor of four, so the lower row must push rather than pull.
+    expect(scene.bodyB.velocityX).toBeGreaterThan(0);
+    expect(scene.bodyA.velocityX).toBeLessThan(0);
+  });
+
+  it('never PULLS at its maximum, only catches', () => {
+    // A one-sided row that acted in both directions would read as a working joint in every test above while
+    // silently making the interval rigid at whichever bound was nearest.
+    const scene = createScene();
+    scene.bodyB.x = 3;
+    scene.bodyB.velocityX = -4;
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, minLength: 0, maxLength: 5 });
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    expect(scene.bodyB.velocityX).toBeCloseTo(-4, 9);
+  });
+
+  it('yields under load where the rigid form does not', () => {
+    // The measurable difference a spring makes. Same displacement, same iterations: the soft row's
+    // compliance means it cannot remove the whole approach at once, and the rigid one can.
+    const rigid = createScene();
+    rigid.bodyB.x = 4;
+    const rigidJoint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    solveJoint(rigid.world, rigidJoint, physics3DDistanceJointSolver, 8);
+
+    const soft = createScene();
+    soft.bodyB.x = 4;
+    const softJoint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+      enableSpring: true,
+      frequencyHz: 2,
+      dampingRatio: 0.5,
+    });
+    solveJoint(soft.world, softJoint, physics3DDistanceJointSolver, 8);
+
+    expect(Math.abs(soft.bodyB.velocityX)).toBeLessThan(Math.abs(rigid.bodyB.velocityX));
+  });
+
+  it('SETTLES A SPRING AT ITS REST LENGTH over time', () => {
+    // The claim a frequency and a damping ratio actually make. A critically damped spring converges on the
+    // rest length; the assertion is convergence rather than a fixed path, because how it gets there is the
+    // spring's business and only the destination is the contract.
+    const scene = createScene();
+    makeStatic(scene.bodyA);
+    scene.bodyB.x = 5;
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+      enableSpring: true,
+      frequencyHz: 4,
+      dampingRatio: 1,
+    });
+
+    for (let step = 0; step < 240; step += 1) {
+      solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+      integrateRigidBody3DPose(scene.bodyB, 1 / 60);
+    }
+
+    expect(scene.bodyB.x).toBeCloseTo(2, 2);
+  });
+
+  it('settles a stiffer spring faster than a looser one', () => {
+    // Frequency has to be monotonic in stiffness, or it is a tuning knob rather than a unit.
+    const looseScene = createScene();
+    makeStatic(looseScene.bodyA);
+    looseScene.bodyB.x = 5;
+    const loose = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+      enableSpring: true,
+      frequencyHz: 1,
+      dampingRatio: 1,
+    });
+
+    const stiffScene = createScene();
+    makeStatic(stiffScene.bodyA);
+    stiffScene.bodyB.x = 5;
+    const stiff = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+      enableSpring: true,
+      frequencyHz: 6,
+      dampingRatio: 1,
+    });
+
+    for (let step = 0; step < 30; step += 1) {
+      solveJoint(looseScene.world, loose, physics3DDistanceJointSolver, 8);
+      integrateRigidBody3DPose(looseScene.bodyB, 1 / 60);
+      solveJoint(stiffScene.world, stiff, physics3DDistanceJointSolver, 8);
+      integrateRigidBody3DPose(stiffScene.bodyB, 1 / 60);
+    }
+
+    expect(Math.abs(stiffScene.bodyB.x - 2)).toBeLessThan(Math.abs(looseScene.bodyB.x - 2));
+  });
+
+  it('BOUNDS A SPRING BY ITS LIMITS rather than letting it stretch through them', () => {
+    // Spring and limit together is a suspension with travel stops, and the stop has to win. This is why the
+    // limit rows read the unsoftened effective mass: given the spring's compliance they would yield too.
+    const scene = createScene();
+    makeStatic(scene.bodyA);
+    scene.bodyB.x = 2;
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 20,
+      enableSpring: true,
+      frequencyHz: 6,
+      dampingRatio: 0.1,
+      enableLimit: true,
+      minLength: 0,
+      maxLength: 4,
+    });
+
+    for (let step = 0; step < 240; step += 1) {
+      solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+      integrateRigidBody3DPose(scene.bodyB, 1 / 60);
+    }
+
+    // The spring pulls toward 20 and the stop sits at 4, so the stop is what holds.
+    expect(scene.bodyB.x).toBeLessThan(4.1);
+  });
+
+  it('clears its limit accumulators on request', () => {
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, maxLength: 1 });
+    joint.impulse0 = 5;
+    joint.lowerLimitImpulse = 3;
+    joint.upperLimitImpulse = 7;
+
+    physics3DDistanceJointSolver.clearAccumulatedImpulses?.(joint);
+
+    expect(joint.impulse0).toBe(0);
+    expect(joint.lowerLimitImpulse).toBe(0);
+    expect(joint.upperLimitImpulse).toBe(0);
+  });
+
+  it('accepts an exchange of ends, having nothing signed to reverse', () => {
+    // A length reads the same from either end, which is why this kind's `swapEnds` reverses nothing. If it
+    // ever grows a signed quantity, this is the test that should stop being true.
+    const joint = createPhysics3DDistanceJoint({ bodyA: 1, bodyB: 0, length: 2 });
+
+    expect(physics3DDistanceJointSolver.swapEnds?.(joint)).toBe(true);
+  });
+
+  it('survives coincident anchors without producing NaN', () => {
+    // A zero separation leaves the axis undefined. Normalizing by it would put NaN into both bodies, and NaN
+    // in a solver never leaves — it spreads to every body the island touches.
+    const scene = createScene();
+    scene.bodyB.x = 0;
+    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+
+    solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
+
+    expect(Number.isFinite(scene.bodyB.velocityX)).toBe(true);
+    expect(Number.isFinite(scene.bodyB.velocityY)).toBe(true);
+    expect(Number.isFinite(scene.bodyB.velocityZ)).toBe(true);
   });
 });
 
@@ -602,6 +850,22 @@ function anchorSpeed(scene: Readonly<Scene>, joint: Physics3DJoint): number {
   const velocity = [0, 0, 0];
   writePhysics3DJointAnchorVelocity(scene.bodyA, scene.bodyB, joint, velocity);
   return Math.sqrt(velocity[0] * velocity[0] + velocity[1] * velocity[1] + velocity[2] * velocity[2]);
+}
+
+// The rate the two bodies' separation is changing, positive while they part. The distance joint constrains
+// exactly this one scalar, so it is what a solved joint has to have driven to zero.
+function separationSpeed(scene: Readonly<Scene>): number {
+  const axisX = scene.bodyB.x - scene.bodyA.x;
+  const axisY = scene.bodyB.y - scene.bodyA.y;
+  const axisZ = scene.bodyB.z - scene.bodyA.z;
+  const length = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+  if (length === 0) return 0;
+  return (
+    ((scene.bodyB.velocityX - scene.bodyA.velocityX) * axisX +
+      (scene.bodyB.velocityY - scene.bodyA.velocityY) * axisY +
+      (scene.bodyB.velocityZ - scene.bodyA.velocityZ) * axisZ) /
+    length
+  );
 }
 
 interface Scene {

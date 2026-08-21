@@ -13,6 +13,7 @@ export { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
 export {
   createPhysics3DBallAndSocketJoint,
   createPhysics3DConeTwistJoint,
+  createPhysics3DDistanceJoint,
   createPhysics3DFixedJoint,
   createPhysics3DGeneric6DofJoint,
   createPhysics3DHingeJoint,
@@ -28,12 +29,14 @@ export {
 export {
   physics3DBallAndSocketJointSolver,
   physics3DConeTwistJointSolver,
+  physics3DDistanceJointSolver,
   physics3DFixedJointSolver,
   physics3DGeneric6DofJointSolver,
   physics3DHingeJointSolver,
   physics3DSliderJointSolver,
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
+  Physics3DDistanceJointKind,
   Physics3DFixedJointKind,
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
