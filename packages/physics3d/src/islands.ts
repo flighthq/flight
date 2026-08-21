@@ -46,7 +46,7 @@ export function buildPhysics3DSolveIslands(world: Physics3DWorld): void {
   }
   for (const joint of world.joints) {
     const solver = world.jointSolvers.get(joint.kind);
-    if (solver === undefined) continue;
+    if (solver === undefined || joint.broken) continue;
     const island =
       solver.usesBodyA === false
         ? solveIslandForBody(world, joint.bodyB)
@@ -88,7 +88,7 @@ export function buildPhysics3DSolveIslands(world: Physics3DWorld): void {
   for (let i = 0; i < world.joints.length; i += 1) {
     const joint = world.joints[i];
     const solver = world.jointSolvers.get(joint.kind);
-    if (solver === undefined) continue;
+    if (solver === undefined || joint.broken) continue;
     const island =
       solver.usesBodyA === false
         ? solveIslandForBody(world, joint.bodyB)
@@ -147,7 +147,7 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
   }
   for (const joint of world.joints) {
     const solver = world.jointSolvers.get(joint.kind);
-    if (solver === undefined || solver.usesBodyA === false) continue;
+    if (solver === undefined || joint.broken || solver.usesBodyA === false) continue;
     unionDynamicPair(world, parents, joint.bodyA, joint.bodyB);
   }
 
@@ -181,7 +181,7 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
   // Reset after the stillness pass so even a timestep longer than timeToSleep cannot put one to sleep.
   for (const joint of world.joints) {
     const solver = world.jointSolvers.get(joint.kind);
-    if (solver?.keepsBodiesAwake !== true) continue;
+    if (solver?.keepsBodiesAwake !== true || joint.broken) continue;
     if (solver.usesBodyA !== false) keepBodyAwake(world, joint.bodyA);
     keepBodyAwake(world, joint.bodyB);
   }

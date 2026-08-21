@@ -17,6 +17,7 @@ import {
   refreshRigidBody3DWorldInertia,
 } from './integrate';
 import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands';
+import { evaluatePhysics3DJointBreakage } from './jointBreakage';
 import { steppingPhysics3DWorlds } from './ownership';
 import {
   preparePhysics3DContactConstraints,
@@ -140,6 +141,8 @@ export function stepPhysics3DInterval(world: Physics3DWorld, dt: number): void {
     forEachSolveIslandJoint(world, (joint, solver) => solver.solve(world, joint, dt));
     solvePhysics3DContactVelocities(world);
   }
+
+  evaluatePhysics3DJointBreakage(world, dt);
 
   forEachSolveIslandPose(world, dt);
 
@@ -287,6 +290,12 @@ function scalePhysics3DWarmStartCaches(world: Physics3DWorld, dt: number): void 
 // The body of one step whose preconditions already hold.
 function stepValidatedPhysics3D(world: Physics3DWorld, dt: number): void {
   const substepDt = dt / world.config.substeps;
+
+  // Break events are cleared once per STEP, not per sub-interval, so a joint that parted during the first
+  // substep is still reported after the last one. Clearing inside the substep loop would drop every break
+  // but the final sub-interval's, and would do it silently — the joint stays broken either way, so the
+  // simulation would look right and only the notification would go missing.
+  world.jointEvents.broke.length = 0;
 
   // Contacts are generated FIRST, from the poses the previous step left behind. Everything after this
   // point — hooks, islands, the solver — reads a contact set that describes where the bodies actually
