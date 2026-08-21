@@ -12,6 +12,13 @@ bracketed by forced full collections for retained heap growth, and a separate 12
 sample. CPU time is the failing timing metric because it excludes scheduler pauses on shared CI hosts;
 wall-clock p50/p95 is still reported so host contention remains visible.
 
+Absolute timing qualifies the named reference host under quiescent conditions. Process CPU time removes
+time while the process is descheduled, but it cannot remove CPU frequency/turbo changes, virtualization
+pressure, or V8 runtime-state variance; a materially different or contended machine may report red
+without identifying a source regression. A release lane enforcing the timing ceilings therefore needs a
+pinned runner. Allocation ceilings remain engine/version-specific for the same reason the report records
+Node and hardware metadata.
+
 The V8 sampling profiler is started only after the timed and retained-growth passes. Its
 `includeObjectsCollectedByMajorGC` and `includeObjectsCollectedByMinorGC` options deliberately report
 transient garbage as well as survivors. Sampling changes V8's observation environment, so its byte
@@ -24,7 +31,13 @@ steady-state growth ceiling.
 | Scene | p95 CPU time | sampled transient allocation/step | retained heap/step |
 | --- | ---: | ---: | ---: |
 | Contact stack | 12 ms | 5 MiB | 4 KiB |
-| Sparse moving | 2 ms | 320 KiB | 2 KiB |
+| Sparse moving | 3 ms | 320 KiB | 2 KiB |
+
+The sparse CPU ceiling began at 2 ms, but repeated runs of the unchanged tree on the reference host
+produced one 2.342 ms p95 beside a stable 0.525 ms median, followed immediately by a 0.908 ms p95. That
+tail is process runtime/collection variance rather than a scene-cost shift. The 3 ms ceiling remains a
+material regression gate against the 0.7–1.2 ms reference range without making an otherwise-identical
+run nondeterministically red.
 
 ## Reference run
 
