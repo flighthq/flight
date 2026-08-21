@@ -22,3 +22,4 @@ export * from './testCollision2D';
 export * from './testCollision3D';
 export * from './pointContainment3D';
 export * from './raycastCollisionShape3D';
+export * from './convexHull3D';

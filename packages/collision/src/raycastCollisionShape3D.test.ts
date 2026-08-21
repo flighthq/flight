@@ -279,16 +279,47 @@ describe('raycastCollisionShape3D', () => {
     expect(raycastCollisionShape3D(sphere, 0, 0, 0, 0, 0, 0, hit)).toBe(false);
   });
 
-  it('reports an origin inside a convex hull, and declines one outside', () => {
-    // The documented half-support: a hull has no face planes to intersect, so only the inside case is
-    // answerable. Pinned so the limitation is visible rather than mistaken for a miss.
+  it('hits a convex hull on the face the ray enters through', () => {
+    const cube: CollisionBuiltInShape3D = {
+      kind: 'convex',
+      points: [-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1],
+    };
+    expect(raycastCollisionShape3D(cube, 0, 5, 0, 0, -1, 0, hit)).toBe(true);
+    expect(hit.fraction).toBeCloseTo(4, 9);
+    expect(hit.normalY).toBeCloseTo(1, 9);
+    expectHitOnRay(0, 5, 0, 0, -1, 0);
+  });
+
+  it('agrees with the equivalent aabb about a hull that is one', () => {
+    // Two independent routes to the same surface: slab clipping on three axis pairs, and half-space
+    // clipping on twelve derived triangles.
+    const cube: CollisionBuiltInShape3D = {
+      kind: 'convex',
+      points: [-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1],
+    };
+    const box: CollisionBuiltInShape3D = { kind: 'aabb', minX: -1, minY: -1, minZ: -1, maxX: 1, maxY: 1, maxZ: 1 };
+    expect(raycastCollisionShape3D(cube, -5, 0.3, 0.2, 1, 0, 0, hit)).toBe(true);
+    const hullFraction = hit.fraction;
+    const hullNormalX = hit.normalX;
+    expect(raycastCollisionShape3D(box, -5, 0.3, 0.2, 1, 0, 0, hit)).toBe(true);
+    expect(hullFraction).toBeCloseTo(hit.fraction, 9);
+    expect(hullNormalX).toBeCloseTo(hit.normalX, 9);
+  });
+
+  it('misses a hull the ray passes beside', () => {
+    const tetra: CollisionBuiltInShape3D = { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] };
+    // Aimed through the region past the slanted face, inside the bounding box and outside the solid.
+    expect(raycastCollisionShape3D(tetra, 0.9, 0.9, 5, 0, 0, -1, hit)).toBe(false);
+    expect(raycastCollisionShape3D(tetra, 0.1, 0.1, 5, 0, 0, -1, hit)).toBe(true);
+  });
+
+  it('reports an origin inside a convex hull as a hit at zero', () => {
     const cube: CollisionBuiltInShape3D = {
       kind: 'convex',
       points: [-1, -1, -1, 1, -1, -1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1],
     };
     expect(raycastCollisionShape3D(cube, 0, 0, 0, 1, 0, 0, hit)).toBe(true);
     expect(hit.fraction).toBe(0);
-    expect(raycastCollisionShape3D(cube, 0, 5, 0, 0, -1, 0, hit)).toBe(false);
   });
 
   it('clears the hit record on a miss rather than leaving the previous result', () => {

@@ -44,6 +44,7 @@ export {
   computePhysics3DBoxMassData,
   computePhysics3DCapsuleMassData,
   computePhysics3DColliderMassData,
+  computePhysics3DConvexHullMassData,
   computePhysics3DSphereMassData,
   createPhysics3DMassData,
   setRigidBody3DMassData,

@@ -11,10 +11,11 @@ by: principal
 
 ## Open
 
-Feature-complete against the charter and now DETECTING: bodies carry colliders, the step generates its
-own contacts through the 3D broadphase and narrow phase, and `world.events` reports begin/end
-transitions. Integration, the contact solver, all six joint kinds, islands and sleeping, the composed
-step with its substep loop, and three `explain*` seams are built.
+At file-level parity with `physics2d` except for CCD. Bodies carry colliders, the step generates its own
+contacts through the 3D broadphase and narrow phase, `world.events` reports begin/end transitions, and
+queries, debug geometry, and a stress harness all ship. Integration, the contact solver, all six joint
+kinds, islands and sleeping, the composed step with its substep loop, and three `explain*` seams are
+built.
 
 - **Contact generation dispatches through registries the CALLER must populate.** `collideContactManifold3D`
   resolves a pair through `@flighthq/collision`'s support and face registries, so a world whose supports
@@ -22,21 +23,25 @@ step with its substep loop, and three `explain*` seams are built.
   is the package's sharpest usability edge. `explainPhysics3DCollision` reports it as data and
   `enablePhysics3DGuards` phrases it, but nothing forces the call, because registration is opt-in by
   design. The 2D package has no equivalent trap: its manifold path is a closed switch.
-- **A convex-hull collider has NO mass and acts as immovable scenery.** Its inertia is a volume integral
-  over a triangulation a bare point list does not carry, so `computePhysics3DColliderMassData` zeroes it
-  rather than substituting a bounding box's tensor — inert beats plausibly wrong. It still collides
-  normally. Closing this needs a hull triangulation, which is also what a triangle-mesh collider wants.
+- **A hull is triangulated ON DEMAND, three times over.** Mass properties, raycast, and the debug
+  wireframe each call `writeCollisionConvexHullFaces3D` and each pay an O(n^2) build. That is correct and
+  it is not cached anywhere, because `CollisionConvex3D` is a bare point list by design and a stored face
+  set is a second source of truth that can disagree with its own points. A caller raycasting the same
+  hull every frame is paying the build every frame; the four closed-form kinds are the cheap path.
 - **`bullet` and `continuousCollision` are carried and unread.** CCD needs a swept 3D narrow phase.
   `physics2d` has linear AND rotational CCD; this is the largest remaining parity gap.
-- **A convex hull cannot be RAYCAST either, for the same missing primitive.** `raycastCollisionShape3D`
-  supports a hull only for an origin already inside it, because intersecting a ray with a hull needs its
-  face planes. Hull mass properties and hull raycast are ONE gap, not two: a triangulation closes both.
+- **There is no triangle-mesh collider, and that is a boundary rather than a gap.** A support function
+  determines a CONVEX shape, so a concave mesh cannot reach the narrow phase through the registry the way
+  every built-in kind does. Adding one means a second dispatch path — mesh-vs-convex against a BVH of
+  triangles — not a sixth entry in the support registry.
 - **A resting stack still compresses about 0.03 per contact against a 0.005 slop target.** Twelve boxes
   stand 11.11 where the geometry says 11.5. That is ordinary projected-Gauss-Seidel behaviour under load
   rather than a defect, and the stress harness bounds it — but it is the number to watch if stacking
   quality is ever raised, and more position iterations buy very little of it back.
-- **No debug geometry.** `physics2d/src/debugGeometry.ts` has no 3D counterpart. The last remaining
-  file-level gap against `physics2d`.
+- **CCD is the last parity gap.** `bullet` and `continuousCollision` are carried on the body and the
+  config and read by nothing, so a fast 3D mover tunnels. `physics2d` has both linear and rotational CCD;
+  closing this needs a SWEPT 3D narrow phase, which the support registry can carry (a swept convex is a
+  convex) but which nothing yet calls.
 - **`preparePhysics3DContactConstraints` REQUIRES the island workspace.** It iterates the island contact
   slices rather than `world.contacts`, so a world stepped without `buildPhysics3DSolveIslands` produces
   no constraints at all. That is what makes a settled world cost no contact scan per sub-interval, and it
@@ -62,6 +67,17 @@ step with its substep loop, and three `explain*` seams are built.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Convex hulls, and the one primitive three gaps were waiting on.
+  `writeCollisionConvexHullFaces3D` (incremental hull, outward-wound) closes hull MASS PROPERTIES
+  (integrated over the triangulation by the divergence theorem — a cube hull reproduces the closed-form
+  box tensor exactly), hull RAYCAST (half-space clipping against the face planes, which also agrees with
+  the equivalent aabb), and the hull DEBUG WIREFRAME. Plus 3D debug geometry as a whole
+  (`writePhysics3DDebugGeometry`, lines and spheres only), and the stale physics rows in
+  `agents/maturity-gaps.md` marked resolved. One real bug caught by a differential test: the hull tensor
+  was shifted onto the centre of mass by negating the OFFSETS, which does nothing because they are
+  squared, so the parallel-axis term was doubled instead of removed — invisible for a centred hull, and
+  only an offset one shows it.
 
 - **2026-08-21** — Stress and determinism harness, and the bug it found. `solvePhysics3DContactPositions`
   was correcting penetration against the depth captured at INTAKE and never re-measuring, so every

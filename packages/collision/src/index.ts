@@ -25,6 +25,7 @@ export {
   createCollisionTimeOfImpact2D,
   raycastCollisionShape2D,
   raycastCollisionShape3D,
+  writeCollisionConvexHullFaces3D,
   sweepCollisionShape2D,
   testAabbAabbCollision,
   testAabbObbCollision,
