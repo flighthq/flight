@@ -1,22 +1,8 @@
 {
   "schemaVersion": 3,
-  "id": "4b8f53f9-e495-45eb-bea2-ad02aa4f66d2",
+  "id": "c4f7a2d1-5e83-4b96-9a17-2d6f8b4e0c35",
   "subject": "functional",
   "targets": [
-    {
-      "entry": "material-alpha-map-pbr",
-      "renderer": "webgl",
-      "pixelSha256": "95aec27eb262c9905785bf45e84858bec7287bbfb4ea8bcdb1c9b42207406d55",
-      "build": {
-        "commit": "c7d4e3aead78f5176595cb11de100de2d582cad4",
-        "dirty": [],
-        "dirtyOmitted": 0
-      },
-      "capture": {
-        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
-        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
-      }
-    },
     {
       "entry": "material-alpha-map-pbr",
       "renderer": "webgpu",
@@ -33,5 +19,6 @@
     }
   ],
   "frames": 1,
-  "reason": "Commissioned from review"
+  "reason": "Commissioned from review",
+  "createdAt": "2026-08-21T00:00:00.000Z"
 }

@@ -8,6 +8,17 @@ export interface RetirableRequest {
   id: string;
   subject: string;
   targets: readonly RetirableRequestTarget[];
+  /**
+   * Whether the approval store has already reviewed this request's bytes.
+   *
+   * ★ A REVIEWED REQUEST IS IMMUTABLE, AND LEARNING THAT COST A BROKEN RECONCILIATION. Narrowing rewrote
+   * request files in place, which is fine for a request nobody has looked at and fatal for one that has
+   * been released: the approval binds to the exact bytes reviewed, so dropping a fulfilled target changed
+   * the checksum and intake refused to write the lock — "one newly released Flight request changed after
+   * Oracle reviewed it". Released ids cannot be reused either, so the remedy is to restore the reviewed
+   * bytes and re-file the remainder under a new id, never to edit in place.
+   */
+  released: boolean;
 }
 
 export interface ReferenceImageRetirement {
@@ -17,6 +28,8 @@ export interface ReferenceImageRetirement {
   rewrite: ReadonlyMap<string, readonly RetirableRequestTarget[]>;
   /** Cells whose blessed image is NOT what the request pinned — reported, never retired. */
   mismatched: readonly string[];
+  /** Released requests left untouched: their bytes are what an approval is bound to. */
+  frozen: readonly string[];
 }
 
 /**
@@ -41,6 +54,7 @@ export function resolveReferenceImageRetirement(
   const remove: string[] = [];
   const rewrite = new Map<string, readonly RetirableRequestTarget[]>();
   const mismatched: string[] = [];
+  const frozen: string[] = [];
 
   for (const request of open) {
     const kept: RetirableRequestTarget[] = [];
@@ -59,8 +73,15 @@ export function resolveReferenceImageRetirement(
       // Fulfilled: the request asked for these pixels and these pixels are blessed. Drop the target.
     }
     if (kept.length === request.targets.length) continue;
+    // A released request is never edited and never deleted here: intake removes it once completion sees
+    // its reviewed bytes. Narrowing it would break the approval binding; deleting it would strand the
+    // approval with nothing to complete against.
+    if (request.released) {
+      frozen.push(request.id);
+      continue;
+    }
     if (kept.length === 0) remove.push(request.id);
     else rewrite.set(request.id, kept);
   }
-  return { remove, rewrite, mismatched };
+  return { remove, rewrite, mismatched, frozen };
 }
