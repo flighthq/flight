@@ -133,10 +133,21 @@ describe('getReferenceImageRequestMatrix', () => {
     }
   });
 
-  // The one failure that must still be fatal. With no listing there is no answer to give, degraded or
-  // otherwise, so this is the boundary between "cannot describe a request" and "cannot find the queue".
-  it('still throws when the directory itself cannot be listed', () => {
-    expect(() => getReferenceImageRequestMatrix(join(tmpdir(), 'reference-image-requests-absent'))).toThrow();
+  // ★ THIS USED TO REQUIRE AN ABSENT DIRECTORY TO THROW, AND THAT WAS THE BUG. The boundary it was drawing
+  // — "cannot describe a request" versus "cannot find the queue" — is real, but it put an ABSENT queue on
+  // the fatal side, and an absent queue is the ordinary state after the last request is deleted: the
+  // folder goes with it. CI went red with `ENOENT … scandir 'reference-image-requests'` on a repository
+  // that simply had no work.
+  //
+  // The distinction that survives is narrower and still worth keeping: a queue that cannot be READ is not
+  // a queue that is EMPTY. Reporting "nothing outstanding" for a permissions or I/O error would skip real
+  // work in silence, which is the failure this pipeline has hit before.
+  it('still throws when the queue path exists but cannot be listed', () => {
+    const root = mkdtempSync(join(tmpdir(), 'request-label-notdir-'));
+    const notADirectory = join(root, 'reference-image-requests');
+    writeFileSync(notADirectory, 'not a directory\n');
+
+    expect(() => getReferenceImageRequestMatrix(notADirectory)).toThrow();
   });
 });
 
@@ -556,3 +567,26 @@ function requestDirectory(requests: Readonly<Record<string, unknown>>): string {
   }
   return directory;
 }
+
+describe('getReferenceImageRequestMatrix with no queue directory', () => {
+  // ★ AN ABSENT DIRECTORY IS THE QUEUE BEING EMPTY, NOT A FAILURE TO READ IT. Deleting the last request
+  // removes the folder with it, and this threw — `ENOENT: no such file or directory, scandir
+  // 'reference-image-requests'`, exit 1 — turning "no work queued" into a red CI job. The workflow is
+  // already designed for an empty queue: it gates the capture matrix on `any == 'true'`, so the cheap
+  // enumerate job runs by itself and nothing else starts.
+  it('reports nothing outstanding instead of throwing', () => {
+    const root = mkdtempSync(join(tmpdir(), 'request-label-absent-'));
+
+    expect(getReferenceImageRequestMatrix(join(root, 'reference-image-requests'))).toEqual([]);
+  });
+
+  // The empty ANSWER and the empty DIRECTORY must agree, or the workflow's `any` flag would disagree with
+  // the matrix it guards.
+  it('agrees with an existing but empty directory', () => {
+    const root = mkdtempSync(join(tmpdir(), 'request-label-empty-'));
+    const directory = join(root, 'reference-image-requests');
+    mkdirSync(directory);
+
+    expect(getReferenceImageRequestMatrix(directory)).toEqual([]);
+  });
+});
