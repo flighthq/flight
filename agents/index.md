@@ -104,6 +104,8 @@ which is why they are not in the map.
 - [test depth review](test-depth-review.md) — the unit-test-depth review and its gap list.
 - [gate audit results](gate-audit-results.md) — fresh mutation specimens and observed failure output for
   all 29 non-advisory whole-repository gates.
+- [functional assertion census](functional-assertion-census.md) — generated location-sensitivity
+  classification for every functional scene source, with current-tree known-answer controls.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
 - [log sink cleanup audit](log-sink-cleanup-audit.md) — tracked-code census of `addLogSink`
   registrations, their cleanup lifetimes, and the one unresolved debug rollback ambiguity.
