@@ -271,10 +271,17 @@ function getEffectivePolicy(
   if (renderer === 'canvas') return { policy: 'aa', reason: 'Canvas 2D antialiases inherently' };
   if (renderer === 'dom') return { policy: 'aa', reason: 'DOM rasterization antialiases inherently' };
   if (renderer === 'webgpu') {
-    return {
-      policy: 'no-aa',
-      reason: 'WebGPU has no multisample path yet and normalizes requested sampleCount above 1 to 1',
-    };
+    // ★ THIS ANSWER NOW DEPENDS ON THE SOURCE, and saying otherwise was a stale fact reported as a
+    // measurement. WebGPU normalised effect-target sampleCount above 1 down to 1 until `7260ece8b`, which
+    // made it allocate a 2x-per-axis supersampled target instead. A census that keeps reciting the old
+    // behaviour reports `no-aa` for every WebGPU cell including the ones that now genuinely antialias —
+    // and it reports it in the column a reader consults precisely to find that kind of drift.
+    const samples = readMaxEffectTargetSampleCount(source, 'createWgpuRenderEffectPipeline');
+    if (samples === null)
+      return { policy: 'unknown', reason: 'WebGPU effect-target sampleCount is not a static number' };
+    return samples > 1
+      ? { policy: 'aa', reason: `WebGPU supersamples a sampleCount ${samples} effect target 2x per axis` }
+      : { policy: 'no-aa', reason: 'WebGPU does not antialias unless an effect target requests sampleCount > 1' };
   }
   if (renderer !== 'webgl') return { policy: 'unknown', reason: `unrecognized backend ${renderer}` };
 
@@ -328,6 +335,27 @@ function getEffectivePolicy(
     };
   }
   return { policy: 'no-aa', reason: 'WebGL context AA is off and the final target is single-sampled' };
+}
+
+function readMaxEffectTargetSampleCount(
+  source: Readonly<SourceAnalysis>,
+  ...callNames: readonly string[]
+): number | null {
+  const sourceFile = ts.createSourceFile(source.file, source.source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const values: ts.Expression[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && callNames.includes(getCallName(node) ?? '')) {
+      for (const argument of node.arguments) findNamedProperties(argument, 'sampleCount', values);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  let max = 1;
+  for (const value of values) {
+    if (!ts.isNumericLiteral(value)) return null;
+    max = Math.max(max, Number(value.text));
+  }
+  return max;
 }
 
 function parseSourceFileName(file: string): { backend: string | null; scene: string } {
