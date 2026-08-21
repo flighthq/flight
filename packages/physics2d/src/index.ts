@@ -8,6 +8,7 @@ export { arePhysics2DGuardsEnabled, disablePhysics2DGuards, enablePhysics2DGuard
 export { explainPhysics2DJoints } from './explainPhysics2DJoints';
 export { explainPhysics2DStep } from './explainPhysics2DStep';
 export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
+export { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions';
 export {
   createPhysics2DDistanceJoint,
   createPhysics2DGearJoint,
