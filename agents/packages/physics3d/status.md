@@ -11,58 +11,59 @@ by: principal
 
 ## Open
 
-At file-level parity with `physics2d`. Bodies carry colliders, the step generates its own
-contacts through the 3D broadphase and narrow phase, `world.events` reports begin/end transitions, and
-queries, debug geometry, and a stress harness all ship. Integration, the contact solver, all seven joint
-kinds, islands and sleeping, the composed step with its substep loop, and three `explain*` seams are
+At file-level parity with `physics2d`. Bodies carry colliders, the step generates its own contacts
+through the 3D broadphase and narrow phase, `world.events` reports begin/end transitions, and queries
+(point, ray, region, shapecast), debug geometry, and a stress harness all ship. Integration, the contact
+solver, all seven joint kinds, islands and sleeping, the substep loop, and three `explain*` seams are
 built.
 
-- **Contact generation dispatches through registries the CALLER must populate.** `collideContactManifold3D`
-  resolves a pair through `@flighthq/collision`'s support and face registries, so a world whose supports
-  were never registered steps perfectly and detects nothing — bodies fall through floors in silence, the
-  package's sharpest usability edge. `explainPhysics3DCollision` reports it as data and
-  `enablePhysics3DGuards` phrases it, but nothing forces the call: registration is opt-in by design. The
-  2D package has no equivalent trap, its manifold path being a closed switch.
+- **Contact generation dispatches through registries the CALLER must populate — diagnosable now, still
+  not prevented.** `collideContactManifold3D` resolves a pair through `@flighthq/collision`'s support and
+  face registries, so a world whose supports were never registered steps perfectly and detects nothing:
+  bodies fall through floors in silence, the package's sharpest usability edge. Registration stays opt-in
+  by design, but every layer now names it — `explainPhysics3DCollision` and `explainCollisionTest3D`
+  report it as data, and `enableCollisionGuards` warns with a message naming
+  `registerBuiltInCollisionSupports3D`. The 3D guard hook did not exist before this session. The 2D
+  package has no equivalent trap, its manifold path being a closed switch.
 - **A hull is triangulated ON DEMAND, three times over.** Mass properties, raycast, and the debug
-  wireframe each call `writeCollisionConvexHullFaces3D` and each pay an O(n^2) build. Uncached by design:
-  `CollisionConvex3D` is a bare point list, and a stored face set is a second source of truth that can
-  disagree with its own points. A caller raycasting one hull every frame pays the build every frame; the
-  four closed-form kinds are the cheap path.
+  wireframe each call `writeCollisionConvexHullFaces3D` and each pay an O(n^2) build. Uncached by
+  design: `CollisionConvex3D` is a bare point list, and a stored face set is a second source of truth
+  that can disagree with its own points. The six closed-form kinds are the cheap path.
 - **There is no triangle-mesh collider, and that is a boundary rather than a gap.** A support function
-  determines a CONVEX shape, so a concave mesh cannot reach the narrow phase through the registry the way
-  every built-in kind does. Adding one means a second dispatch path — mesh-vs-convex against a BVH of
-  triangles — not a sixth entry in the support registry.
-- **A resting stack compresses about 0.03 per contact against a 0.005 slop target** — twelve boxes stand
-  11.11 where the geometry says 11.5. Ordinary projected-Gauss-Seidel behaviour under load, bounded by the
-  stress harness, and the number to watch if stacking quality is raised; more position iterations buy
-  little of it back.
-- **CCD arrests tunnelling LINEARLY and applies no torque at the impact.** A deliberate bound, and the
-  reason is now sharper than the support-function ambiguity it used to be: the impact carries a real GJK
-  WITNESS point, exact even where the closest feature is interior to an edge. The obstacle is that one
-  point cannot stand for a face-face contact — where two flat faces meet every point of the region ties,
-  the witness settles on a CORNER, and a box driven squarely into a wall would take `r x n` about that
-  corner and spin from a symmetric impact. (Measured earlier: a five-unit lever arm inflated the angular
-  term by four orders of magnitude and cut a 600-unit/s stop to a velocity change of 0.05.) The pass
-  removes approach velocity through the centres of mass and leaves the pair touching; the next step's
-  MANIFOLD supplies lever arms that cancel for a square hit and not for a glancing one. Giving the impact
-  torque means giving it a manifold, not a better point. `continuous.test.ts` pins the no-spin invariant.
+  determines a CONVEX shape, so a concave mesh cannot reach the narrow phase through the registry the
+  way every built-in kind does. Adding one means a second dispatch path — mesh-vs-convex against a BVH
+  of triangles — not another entry in the support registry.
+- **A resting stack compresses about 0.03 per contact against a 0.005 slop target** — twelve boxes
+  stand 11.11 where the geometry says 11.5. Ordinary projected-Gauss-Seidel behaviour, bounded by the
+  stress harness; more position iterations buy little of it back.
+- **CCD arrests tunnelling LINEARLY and applies no torque at the impact.** A deliberate bound. The
+  impact carries a real GJK WITNESS point, exact where the closest feature is interior to an edge, but
+  one point cannot stand for a face-face contact: every point of the region ties, the witness settles on
+  a CORNER, and a box driven squarely into a wall would take `r x n` about it and spin from a symmetric
+  impact. (Measured: a five-unit lever arm inflated the angular term four orders of magnitude and cut a
+  600-unit/s stop to a velocity change of 0.05.) The pass removes approach velocity through the centres
+  of mass and leaves the pair touching; the next step's MANIFOLD supplies lever arms that cancel for a
+  square hit and not a glancing one. `continuous.test.ts` pins the no-spin invariant.
+- **Seven collider kinds.** Cylinder and cone joined sphere, aabb, box, capsule, and convex across every
+  seam. Their broadphase bounds come from the DISC extent rather than being padded by the full radius the
+  way a capsule's are, so an axis-aligned cylinder does not claim a box a radius too tall.
+- **`queryPhysics3DShapeCast` reports only the FIRST hit, unlike the ray queries.** Not a reduced
+  feature: a ray passes through a surface and continues, so "all hits along it" is well defined, while a
+  swept shape stops at first contact and everything past it is a position it never reached.
 - **CCD is LINEAR only, where `physics2d` also sweeps rotation.** A body spinning fast enough to catch
-  something with a limb within one step is not covered; `maxCcdRotationSubsteps` has no 3D counterpart.
+  something with a limb within a step is not covered; `maxCcdRotationSubsteps` has no 3D counterpart.
 - **`preparePhysics3DContactConstraints` REQUIRES the island workspace.** It iterates the island contact
   slices rather than `world.contacts`, so a world stepped without `buildPhysics3DSolveIslands` produces
-  no constraints at all. That is what makes a settled world cost no contact scan per sub-interval, and it
-  moved the `enabled`/`sensor` filter upstream into the island builder — `touching` stays prepare's,
-  because it changes without anything the workspace watches changing. The velocity and position passes
-  stay flat over the emitted list: with a fixed iteration count and disconnected islands, per-island
-  loops would be the same work in the same order.
+  no constraints at all. That is what makes a settled world cost no contact scan per sub-interval, and
+  it moved the `enabled`/`sensor` filter upstream into the island builder — `touching` stays prepare's,
+  because it changes without anything the workspace watches changing.
 - **Cone-twist and generic 6-DOF veto `swapEnds`**, so either kind authored with `bodyA > bodyB` stays
   out of canonical order. Exact rather than cautious: a kind may exchange its ends only when its own
   constraint holds the two frames aligned on the axes its parameters are measured against, and both
-  deliberately leave that alignment free. `physics2d`'s wheel and mouse joints likewise.
+  deliberately leave that alignment free.
 - **A 6-DOF angular bound is the axis-angle error projected onto one frame axis.** Exact for rotation
-  about a single axis — the dominant use, and the only one a locked axis reaches — approximate for a
-  combined rotation, where a per-axis decomposition would need Euler extraction and an order convention
-  with it.
+  about a single axis — the dominant use — approximate for a combined one, where a per-axis
+  decomposition would need Euler extraction and an order convention with it.
 - **The gyroscopic term is explicit.** Standard at game timesteps, and why `substeps` is the lever for
   fast spinners; an implicit form is the upgrade if a body turns its own momentum within a step.
 - **No 3D joint is SOFT except the distance joint.** Its `frequencyHz`/`dampingRatio` pair is the only
@@ -70,18 +71,25 @@ built.
   ragdolls and suspensions want springy ones. The soft-row machinery exists now in
   `physics3DDistanceJointSolver`: stiffness and damping derived per-step from the pair's own effective
   mass, which is what keeps a stated frequency meaning the same thing whatever it is attached to.
-- **A broken joint STAYS IN THE WORLD.** It constrains nothing and no longer binds its two bodies into
-  one island, but removing it is the caller's — what a break means (debris, a callback, a respawn) is not
-  the solver's to decide, and a joint that deleted itself would leave nothing to inspect. `physics2d` has
-  no breakage at all yet.
-- **The guard module covers the declined STEP and the undetectable COLLIDER, not yet the unregistered
-  JOINT.** A joint whose kind has no registered solver is skipped without a word, and
-  `explainPhysics3DJoints` already classifies it as `unregistered-kind`. Closing it means a third seam on
-  the joint pass, not a second module.
+- **A broken joint STAYS IN THE WORLD.** It constrains nothing and no longer binds its bodies into one
+  island, but removing it is the caller's: what a break means is not the solver's to decide, and a joint
+  that deleted itself would leave nothing to inspect. `physics2d` has no breakage at all yet.
+- **The guard module covers the declined STEP and the undetectable COLLIDER, not the unregistered
+  JOINT.** A joint whose kind has no registered solver is skipped without a word, though
+  `explainPhysics3DJoints` already classifies it. Closing it means a third seam, not a second module.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Cylinder and cone colliders, and `queryPhysics3DShapeCast`. The shapecast asks the
+  broadphase for the SWEPT bounds — the shape's box unioned with that box shifted by the displacement —
+  because querying the start box returns what the shape already touches and misses everything it is
+  about to reach, which is the whole question. Its swept box is derived by the same
+  `writePhysics3DColliderBounds` the broadphase indexes with, rather than a second bounds implementation
+  free to disagree the next time a kind is added. A cone's centroid is three quarters of the way from
+  apex to base, not the axis midpoint; using the midpoint would offset every cone body by an eighth of
+  its height.
 
 - **2026-08-21** — Joint REACTIONS and breakage. `writePhysics3DJointReaction` reports the force and
   torque a joint is carrying, measured at the ANCHOR so the two readings are independent — the row helper

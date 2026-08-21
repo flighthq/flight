@@ -23,12 +23,13 @@ unsuffixed because it is genuinely dimension-free. The seam split is ratified in
   overflow list. The charter's open directions name a quadtree (P2), sort-and-sweep (P3), and a BVH and
   octree behind the 3D seam. None is built. The seam itself is the finished part: a second backend is a
   new `create*SpatialBackend3D` and nothing else moves.
-- **Query coverage stops at point, ray, region, and pairs.** There is no sphere/radius query, which is
-  the natural form for an explosion, an aggro radius, or audio falloff, and no frustum query, which is
-  the single most common reason to keep a 3D index at all. Both are reachable over the existing region
-  query as conservative candidate sets, which is the package's standing contract anyway — a pair is
-  already documented as a candidate the caller narrow-phases. A frustum's own AABB is very loose for a
-  long view frustum, so a useful version slices it along depth rather than querying one box.
+- **3D has sphere and frustum queries; 2D has neither, so the dimensions are no longer at parity.**
+  `querySpatialSphere3D` and `querySpatialFrustum3D` are built over the region query rather than on new
+  backend methods, so the ratified eight-method seam did not widen and every future backend answers them
+  for free. Both return CANDIDATE sets, matching what `querySpatialPairs3D` already promises. The
+  frustum covers its volume with `slices` boxes taken along DEPTH rather than one box around the whole
+  thing: a long perspective frustum's own AABB approaches the whole world, so a single-box version culls
+  nothing. The 2D side has no circle query; whether it wants one is open.
 - **Ray results are unordered and carry no entry parameter.** Picking and line-of-sight both want the
   NEAREST hit, so today every caller re-tests and sorts what the index hands back. Adding an entry `t`
   to the result changes the seam signature, which is why the review parked it rather than the work
