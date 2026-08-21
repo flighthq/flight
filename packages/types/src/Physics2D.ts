@@ -761,6 +761,42 @@ export interface Physics2DRayResult {
   hitCount: number;
 }
 
+// Where a shape swept along a displacement first touches the world, or that it touched nothing.
+//
+// `hit` false leaves every other field zeroed and means the shape swept its whole displacement freely.
+// `fraction` is on the same normalized [0,1] interval as `CollisionTimeOfImpact2D` — the displacement
+// vector IS the sweep, so 0.25 means a quarter of the way along it, and there is no separate distance to
+// reconcile against the direction's length.
+//
+// TRANSLATIONAL. The shape is carried along the displacement without turning, and a rotating cast is a
+// different query rather than a parameter this one is missing: a rotating convex shape sweeps a region
+// no convex primitive describes, so it is found by substepping rather than in closed form. The step's
+// own continuous collision does sweep rotation, under `maxCcdRotationSubsteps`; this query does not.
+//
+// Only the FIRST hit is reported, where the ray queries report all of them. That is not a reduced version
+// of the same feature: a ray passes THROUGH a surface and keeps going, so "the hits along it" is well
+// defined, while a swept shape STOPS at first contact and everything past that point is a position it
+// never reached. A caller wanting what lies beyond resolves the contact and casts again.
+//
+// A shape that ALREADY overlaps something at the start is a hit at fraction 0, carrying that overlap's
+// contact normal. It is not a miss and not an error: "can I move from here" has the honest answer "you
+// are not free where you are", and a character controller depends on being told so rather than being
+// handed a clear path out of a wall.
+//
+// `body` and `collider` are null exactly when `hit` is false. They are references rather than indices,
+// matching the ray hits, so a caller acts on what it found without a second lookup.
+export interface Physics2DShapeCastResult {
+  body: RigidBody2D | null;
+  collider: Physics2DCollider | null;
+  colliderIndex: number;
+  hit: boolean;
+  fraction: number;
+  x: number;
+  y: number;
+  normalX: number;
+  normalY: number;
+}
+
 export type Physics2DJointResolutionStatus =
   | 'bodies-missing'
   | 'body-a-missing'

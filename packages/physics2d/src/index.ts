@@ -87,8 +87,10 @@ export {
   createPhysics2DQueryFilter,
   createPhysics2DQueryResult,
   createPhysics2DRayResult,
+  createPhysics2DShapeCastResult,
   queryPhysics2DPoint,
   queryPhysics2DRay,
   queryPhysics2DRayClosest,
   queryPhysics2DRegion,
+  queryPhysics2DShapeCast,
 } from './worldQueries';
