@@ -6,11 +6,11 @@ The considered-and-declined runtime package boundary is recorded in the [runtime
 
 ## Pattern
 
-Flat free functions over a swappable `*Backend`. Web backend is always available as the default; native hosts replace via `set*Backend`.
+Flat free functions over a swappable `*Backend`. Web backends are installed explicitly via `enableHostWeb()` (or per-capability `enableHostWeb*()`) from `@flighthq/host-web`; native hosts replace via `set*Backend`. Three ambient-language capabilities (net, socket, textsegment) stay inline with a lazy-install default. Precedence: custom (`set*Backend`) > host (`enableHostWeb*`) > sentinel.
 
-- **Command capabilities**: `get*Backend` / `set*Backend` / `createWeb*Backend`.
+- **Command capabilities**: `get*Backend` / `set*Backend`.
 - **Event capabilities**: signal entity with `create*` / `attach*` / `detach*` / `dispose*`.
-- Web backends return sentinels rather than throwing.
+- Sentinels serve when no backend is installed, never throw.
 - `"sideEffects": false` — no registration at import.
 
 ## Shared decisions
