@@ -20,12 +20,12 @@ vi.mock('@flighthq/render-gl/contract', async () => {
   };
 });
 
+import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 import {
   applyScanlinesEffectToGl,
   defaultGlScanlinesEffectRunner,
   registerGlScanlinesEffect,
 } from './glScanlinesEffect';
-import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
 function apply(effect: Readonly<Partial<ScanlinesEffect>> = {}): void {
