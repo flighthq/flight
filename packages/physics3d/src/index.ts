@@ -64,6 +64,7 @@ export {
   applyPhysics3DForce,
   applyPhysics3DForceAtPoint,
   applyPhysics3DLinearImpulse,
+  applyPhysics3DLinearImpulseAtPoint,
   applyPhysics3DTorque,
   createPhysics3DCollider,
   createPhysics3DSequentialImpulseConfig,
