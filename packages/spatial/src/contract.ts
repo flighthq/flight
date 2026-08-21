@@ -1,4 +1,5 @@
 export * from './explainSpatialIndexing2D';
+export * from './bvh3D';
 export * from './explainSpatialIndexing3D';
 export * from './formatSpatialIndexingNotice';
 export * from './spatialIndex';
