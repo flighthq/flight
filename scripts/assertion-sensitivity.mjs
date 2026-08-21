@@ -559,6 +559,26 @@ export function formatAssertionSensitivityReport(rows) {
   return lines.join('\n');
 }
 
+/** Read the gated identity and verdict from each census row, ignoring human-facing evidence details. */
+export function parseAssertionSensitivitySemantics(report) {
+  const rows = [];
+  for (const line of report.split('\n')) {
+    const match = /^\| `([^`]+)` \| (able|blind|exempt|gap) \|/.exec(line);
+    if (match !== null) rows.push({ path: match[1], verdict: match[2] });
+  }
+  return rows;
+}
+
+/** Gate committed census freshness on scene identity and verdict, not evidence wording or line movement. */
+export function hasCurrentAssertionSensitivitySemantics(rows, committedReport) {
+  const canonicalize = (items) =>
+    items.map(({ path, verdict }) => ({ path, verdict })).sort((left, right) => left.path.localeCompare(right.path));
+  return (
+    JSON.stringify(canonicalize(parseAssertionSensitivitySemantics(committedReport))) ===
+    JSON.stringify(canonicalize(rows))
+  );
+}
+
 function outputPath(root) {
   return join(root, OUTPUT_PATH);
 }
@@ -578,11 +598,16 @@ export function runAssertionSensitivity(root, argv) {
   }
   if (argv.includes('--check')) {
     const committed = readFileSync(outputPath(root), 'utf8');
-    if (committed !== report) {
-      console.error(`${OUTPUT_PATH} is stale; run npm run audit:assertions:baseline.`);
+    if (!hasCurrentAssertionSensitivitySemantics(rows, committed)) {
+      console.error(`${OUTPUT_PATH} has stale scene identities or verdicts; run npm run audit:assertions:baseline.`);
       return 1;
     }
-    console.log(`${OUTPUT_PATH} is current (${rows.length} scene sources; controls passed).`);
+    if (committed !== report) {
+      console.log(
+        `${OUTPUT_PATH} is semantically current; line locators or evidence details differ from the current tree.`,
+      );
+    }
+    console.log(`${OUTPUT_PATH} semantic census is current (${rows.length} scene sources; controls passed).`);
     return 0;
   }
   console.log(report);
