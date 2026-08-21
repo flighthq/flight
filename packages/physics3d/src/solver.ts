@@ -295,8 +295,10 @@ function solvePhysics3DContactPositionsWithScratch(world: Physics3DWorld, scratc
 
 // Runs one velocity iteration over every prepared constraint. Call `velocityIterations` times.
 //
-// Friction is solved before the normal, and the two tangents are clamped TOGETHER as a cone rather
-// than independently. Clamping each to `friction * normalImpulse` on its own admits a combined
+// The normal is solved before friction, so a NEW contact has a Coulomb limit in its first iteration.
+// Reversing them makes friction read the previous normal impulse: zero on first impact, and one
+// iteration behind thereafter. The two tangents are clamped TOGETHER as a cone rather than
+// independently. Clamping each to `friction * normalImpulse` on its own admits a combined
 // magnitude of `sqrt(2) * friction * normalImpulse` along the diagonal, which presents as a box that
 // slides measurably faster at 45 degrees than it does along either tangent — a bug that looks like bad
 // friction tuning rather than like a geometry error, and one that cannot occur in 2D because there is
@@ -311,6 +313,37 @@ export function solvePhysics3DContactVelocities(world: Physics3DWorld): void {
     for (let i = 0; i < constraint.pointCount; i += 1) {
       const source = contact.points[i];
       const point = constraint.points[i];
+
+      const normalVelocity = getRelativeNormalVelocity(
+        bodyA,
+        bodyB,
+        source.rAX,
+        source.rAY,
+        source.rAZ,
+        source.rBX,
+        source.rBY,
+        source.rBZ,
+        contact.normalX,
+        contact.normalY,
+        contact.normalZ,
+      );
+      const normalImpulse = Math.max(point.normalImpulse + (point.bias - normalVelocity) * point.normalMass, 0);
+      const deltaNormal = normalImpulse - point.normalImpulse;
+      point.normalImpulse = normalImpulse;
+
+      applyContactImpulse(
+        bodyA,
+        bodyB,
+        source.rAX,
+        source.rAY,
+        source.rAZ,
+        source.rBX,
+        source.rBY,
+        source.rBZ,
+        contact.normalX * deltaNormal,
+        contact.normalY * deltaNormal,
+        contact.normalZ * deltaNormal,
+      );
 
       const maxFriction = contact.friction * point.normalImpulse;
 
@@ -368,37 +401,6 @@ export function solvePhysics3DContactVelocities(world: Physics3DWorld): void {
         constraint.tangent0X * deltaTangent0 + constraint.tangent1X * deltaTangent1,
         constraint.tangent0Y * deltaTangent0 + constraint.tangent1Y * deltaTangent1,
         constraint.tangent0Z * deltaTangent0 + constraint.tangent1Z * deltaTangent1,
-      );
-
-      const normalVelocity = getRelativeNormalVelocity(
-        bodyA,
-        bodyB,
-        source.rAX,
-        source.rAY,
-        source.rAZ,
-        source.rBX,
-        source.rBY,
-        source.rBZ,
-        contact.normalX,
-        contact.normalY,
-        contact.normalZ,
-      );
-      const normalImpulse = Math.max(point.normalImpulse + (point.bias - normalVelocity) * point.normalMass, 0);
-      const deltaNormal = normalImpulse - point.normalImpulse;
-      point.normalImpulse = normalImpulse;
-
-      applyContactImpulse(
-        bodyA,
-        bodyB,
-        source.rAX,
-        source.rAY,
-        source.rAZ,
-        source.rBX,
-        source.rBY,
-        source.rBZ,
-        contact.normalX * deltaNormal,
-        contact.normalY * deltaNormal,
-        contact.normalZ * deltaNormal,
       );
     }
   }
