@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "4c8c2ac5-3cc8-4fe2-8c33-502bd45825fb",
+  "id": "330f0f20-2e4e-45fb-a5cd-76cc43a42cec",
   "subject": "functional",
   "targets": [
     {
-      "entry": "effect-chain",
+      "entry": "effect-msaa-bloom",
       "renderer": "canvas",
-      "pixelSha256": "360a1fbe8b7daf30e2da97d77c12a3d40901751b529b9be2c09d1b0a53a39c27",
+      "pixelSha256": "e0a2f7157a998dfffbf4f96f2303efff82324d672d3145b81d847bd2a4780a6c",
       "build": {
-        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -18,11 +18,11 @@
       }
     },
     {
-      "entry": "effect-chain",
+      "entry": "effect-msaa-bloom",
       "renderer": "webgl",
-      "pixelSha256": "65dffe47abbcef6417b3b1019c8cf47ecb8ec1886718e3cc28fb743799230685",
+      "pixelSha256": "e66a05a2623620f1e5def02721db3701e7abf8b595280788004262c08ae25c83",
       "build": {
-        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -32,11 +32,11 @@
       }
     },
     {
-      "entry": "effect-chain",
+      "entry": "effect-msaa-bloom",
       "renderer": "webgpu",
-      "pixelSha256": "2b1b7a0e094666951ddc48540569760186506ace0ee735f0327e7a61c8db2ab1",
+      "pixelSha256": "f198dc8776cbe8511b88fc03a934b2de9bc108d4db90b23f600cf4fa004dd1fe",
       "build": {
-        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -47,5 +47,6 @@
     }
   ],
   "frames": 1,
-  "reason": "Commissioned from review"
+  "reason": "Commissioned from review",
+  "createdAt": "2026-08-21T04:36:23.817Z"
 }
