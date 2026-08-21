@@ -135,7 +135,7 @@ function splitArguments(source, masked, open, close) {
   return arguments_;
 }
 
-function collectFunctions(source, masked) {
+function collectFunctions(masked) {
   const definitions = new Map();
   const declarations = /\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
   for (const match of masked.matchAll(declarations)) {
@@ -456,7 +456,7 @@ function indexedExpectationEvidence(source, masked, reachable, definitions) {
 /** Classify one scene source and retain the exact evidence line used for the verdict. */
 export function classifyAssertionSource(path, source) {
   const masked = maskTypeScript(source);
-  const definitions = collectFunctions(source, masked);
+  const definitions = collectFunctions(masked);
   const root = definitions.get('assertRender');
   if (root === undefined || !/\bexport\s+function\s+assertRender\b/.test(masked.slice(0, root.start + 40))) {
     return { evidence: 'no exported assertRender function', line: 1, path, verdict: 'gap' };
