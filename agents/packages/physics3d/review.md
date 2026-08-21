@@ -28,8 +28,8 @@ performance, complete CCD semantics, and native-target evidence remain release b
 
 | Gate | Evidence | Current result |
 | --- | --- | --- |
-| Package correctness | `npx vitest run packages/physics3d/src` | 31 files, 668 tests pass |
-| Collision integration | `npx vitest run packages/collision/src packages/physics3d/src` | 66 files, 1,125 tests pass |
+| Package correctness | `npx vitest run packages/physics3d/src` | 31 files, 669 tests pass |
+| Collision integration | `npx vitest run packages/collision/src packages/physics3d/src` | 66 files, 1,126 tests pass |
 | Static checks | `npm run typecheck`, `npm run exports:check`, `npm run order`, `npm run api:check` | pass |
 | Long stack | 12 unit boxes, four retaining walls, 900 steps at 60 Hz | finite, ordered, supported, asleep; top > 11 |
 | Mass ratios | fixed-rotation 2-box stack, 600 steps | 100:1 default and 1,000:1 at 4 substeps: separation > 0.99, asleep |
@@ -38,6 +38,7 @@ performance, complete CCD semantics, and native-target evidence remain release b
 | Joint endurance | 12-link driven 3D ball joint chain, 1,200 steps | finite; maximum link error < 0.025 |
 | Angular integration | asymmetric torque-free spinner at 1, 2, and 4 substeps | finite; drift shrinks by at least 30% per halving and ends < 5% |
 | Substep topology | one 1/30 step at 2 substeps versus two 1/60 steps through first impact | pose and velocity agree to 12 decimals |
+| Workspace retention | stable contacts, islands, solver constraints/points/maps, grid/BVH pair output | object identity retained across steady topology |
 | Determinism | exact repeat trace and reversed insertion-order trace | exact equality |
 | Linear CCD | 0.1-wide wall, bullet at 600 units/s over a 1/60 s step | remains on near side |
 | Rotational CCD | long blade crosses a peg only between start/end orientations | deflects and loses angular speed |
@@ -54,7 +55,8 @@ produces 11.438. These are declared qualification scenes, not a promise of arbit
    mesh-vs-convex path over accelerated triangles; a convex support registration cannot represent them.
 2. **Performance and allocation budgets.** Record bodies, contacts, broadphase distribution, hardware,
    p50/p95 step time, and steady-state allocations for both uniform-grid and BVH backends. A green stress
-   test without a frame budget does not qualify a game engine.
+   test without a frame budget does not qualify a game engine. Major solver and broadphase workspaces now
+   retain object identity, but that is evidence toward this gate rather than a substitute for measurement.
 3. **CCD impact semantics.** Translation and rotation prevent the demonstrated tunnelling cases, but
    impact-time friction, contact hooks, and persistent contact/event reporting need a declared contract
    and challenge scenes. Angular sampling is bounded and therefore must publish the speed/extent envelope
