@@ -221,6 +221,7 @@ export function createPhysics3DSolverConfig(): Physics3DSolverConfig {
     substeps: 1,
     continuousCollision: false,
     maxCcdSubsteps: 4,
+    maxCcdRotationSubsteps: 64,
     sequentialImpulse: createPhysics3DSequentialImpulseConfig(),
   };
 }
@@ -345,8 +346,9 @@ export function findPhysics3DBody(world: Readonly<Physics3DWorld>, index: number
 export function hydratePhysics3DWorld(world: Physics3DWorld): boolean {
   assertPhysics3DWorldNotStepping(world);
   const serializedVersion = (world as unknown as { version?: unknown }).version;
-  const version = serializedVersion === undefined ? 0 : serializedVersion;
-  if (!Number.isSafeInteger(version) || (version as number) < 0 || (version as number) > Physics3DWorldVersion) {
+  if (serializedVersion !== undefined && typeof serializedVersion !== 'number') return false;
+  const version = serializedVersion ?? 0;
+  if (!Number.isSafeInteger(version) || version < 0 || version > Physics3DWorldVersion) {
     return false;
   }
   if (version === Physics3DWorldVersion) return true;
@@ -356,6 +358,7 @@ export function hydratePhysics3DWorld(world: Physics3DWorld): boolean {
     jointEvents?: Physics3DWorld['jointEvents'];
     solver: Physics3DWorld['solver'] & { constraintByPair?: Map<number, Physics3DContactConstraint> };
   };
+  const legacyConfig = world.config as Physics3DSolverConfig & { maxCcdRotationSubsteps?: number };
   if (version < 2) {
     legacyWorld.index ??= createUniformGridSpatialBackend3D(1);
     for (const body of world.bodies) {
@@ -370,6 +373,7 @@ export function hydratePhysics3DWorld(world: Physics3DWorld): boolean {
   }
 
   legacyWorld.jointEvents ??= { broke: [] };
+  legacyConfig.maxCcdRotationSubsteps ??= createPhysics3DSolverConfig().maxCcdRotationSubsteps;
   world.solver.constraints = [];
   world.solver.constraintByContact = new Map();
   delete legacyWorld.solver.constraintByPair;
@@ -635,7 +639,7 @@ export function writeRigidBody3DWorldCenter(body: Readonly<RigidBody3D>, out: nu
 
 // The serializable-shape version of `Physics3DWorld`. Bumped when a field a format layer would have
 // written changes meaning, so a reconstructed world can be recognized as older and upgraded.
-export const Physics3DWorldVersion = 3;
+export const Physics3DWorldVersion = 4;
 
 // Copies an authored shape so a collider owns its own geometry. The point list is copied too — sharing
 // the array would let two colliders that look independent move together.

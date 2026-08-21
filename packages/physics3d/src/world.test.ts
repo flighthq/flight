@@ -424,6 +424,7 @@ describe('hydratePhysics3DWorld', () => {
     delete legacyBody.colliders;
     delete legacyContact.colliderA;
     delete legacyContact.colliderB;
+    delete (world.config as { maxCcdRotationSubsteps?: number }).maxCcdRotationSubsteps;
 
     expect(hydratePhysics3DWorld(world)).toBe(true);
 
@@ -435,6 +436,7 @@ describe('hydratePhysics3DWorld', () => {
     expect(world.jointEvents).toEqual({ broke: [] });
     expect(world.solver.constraintByContact).toBeInstanceOf(Map);
     expect(world.solver.constraintByContact.size).toBe(0);
+    expect(world.config.maxCcdRotationSubsteps).toBe(64);
     expect(legacyWorld.solver.constraintByPair).toBeUndefined();
   });
 

@@ -87,6 +87,78 @@ describe('hasActivePhysics3DBullet', () => {
 });
 
 describe('integratePhysics3DContinuous', () => {
+  it('deflects a spinning bullet that would cross a peg between its start and end orientations', () => {
+    const world = continuousWorld();
+    world.config.maxCcdRotationSubsteps = 128;
+    const peg = createRigidBody3D('static');
+    addPhysics3DBody(world, peg);
+    addPhysics3DCollider(world, peg, createPhysics3DCollider({ kind: 'sphere', x: 4, y: 0, z: 0, radius: 0.25 }));
+    const blade = createRigidBody3D('dynamic');
+    blade.orientationZ = -Math.sin(Math.PI / 8);
+    blade.orientationW = Math.cos(Math.PI / 8);
+    blade.angularVelocityZ = 120;
+    blade.gravityScale = 0;
+    blade.bullet = true;
+    addPhysics3DBody(world, blade);
+    addPhysics3DCollider(
+      world,
+      blade,
+      createPhysics3DCollider({ kind: 'aabb', minX: -5, minY: -0.1, minZ: -0.1, maxX: 5, maxY: 0.1, maxZ: 0.1 }),
+    );
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(Math.abs(blade.y)).toBeGreaterThan(0.1);
+    expect(Math.abs(blade.angularVelocityZ)).toBeLessThan(100);
+  });
+
+  it('allows the same rotational crossing when the angular CCD budget is zero', () => {
+    const world = continuousWorld();
+    world.config.maxCcdRotationSubsteps = 0;
+    const peg = createRigidBody3D('static');
+    addPhysics3DBody(world, peg);
+    addPhysics3DCollider(world, peg, createPhysics3DCollider({ kind: 'sphere', x: 4, y: 0, z: 0, radius: 0.25 }));
+    const blade = createRigidBody3D('dynamic');
+    blade.orientationZ = -Math.sin(Math.PI / 8);
+    blade.orientationW = Math.cos(Math.PI / 8);
+    blade.angularVelocityZ = 120;
+    blade.gravityScale = 0;
+    blade.bullet = true;
+    addPhysics3DBody(world, blade);
+    addPhysics3DCollider(
+      world,
+      blade,
+      createPhysics3DCollider({ kind: 'aabb', minX: -5, minY: -0.1, minZ: -0.1, maxX: 5, maxY: 0.1, maxZ: 0.1 }),
+    );
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(blade.y).toBe(0);
+    expect(blade.angularVelocityZ).toBeCloseTo(120, 9);
+    expect(blade.orientationZ).toBeGreaterThan(0.3);
+  });
+
+  it('keeps analytic linear CCD active when a fast bullet also has slight spin', () => {
+    const world = continuousWorld();
+    addWall(world);
+    const bullet = createRigidBody3D('dynamic');
+    bullet.x = -5;
+    bullet.velocityX = 600;
+    bullet.angularVelocityZ = 0.01;
+    bullet.gravityScale = 0;
+    bullet.bullet = true;
+    addPhysics3DBody(world, bullet);
+    addPhysics3DCollider(
+      world,
+      bullet,
+      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+    );
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(bullet.x).toBeLessThan(0);
+  });
+
   it('STOPS A BULLET AT A WALL IT WOULD OTHERWISE PASS THROUGH', () => {
     // The claim the whole path exists for. At 600 units/second and a 1/60 step, the body moves 10 units
     // in one step and the wall is 0.1 thick: discretely it is on one side before and the other side after,
