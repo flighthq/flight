@@ -143,8 +143,10 @@ function findNamedFunction(source: ts.SourceFile, name: string): ts.FunctionDecl
 function rethrowsCatchVariable(node: ts.Node): boolean {
   let found = false;
   visit(node, (candidate) => {
-    if (found || !ts.isCatchClause(candidate) || !ts.isIdentifier(candidate.variableDeclaration?.name)) return;
-    const name = candidate.variableDeclaration.name.text;
+    if (found || !ts.isCatchClause(candidate)) return;
+    const variableName = candidate.variableDeclaration?.name;
+    if (variableName === undefined || !ts.isIdentifier(variableName)) return;
+    const name = variableName.text;
     visit(candidate.block, (nested) => {
       if (ts.isThrowStatement(nested) && ts.isIdentifier(nested.expression) && nested.expression.text === name) {
         found = true;
