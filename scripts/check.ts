@@ -1,10 +1,9 @@
-import { spawn } from 'node:child_process';
 import { availableParallelism } from 'node:os';
 
 import pc from 'picocolors';
 
-import type { Gate } from './gateRegistry';
 import { createGateRegistry } from './gateRegistry';
+import { runGates } from './gateRunner';
 import {
   explainEmptyCheckSelection,
   getSelectors,
@@ -40,11 +39,6 @@ const projects = selectPackages(selectors).map((name) => `packages/${name}`);
 if (isCheckSelectionEmpty(selectors, projects, paths)) {
   console.error(pc.red(explainEmptyCheckSelection(selectors)));
   process.exit(1);
-}
-
-interface GateResult extends Gate {
-  output: string;
-  passed: boolean;
 }
 
 // Registration rejects a repeated stage name — see scripts/gateRegistry.ts for why that guard exists
@@ -169,30 +163,3 @@ process.stdout.write(`\n${pc.green('✓')} ${pc.bold('all check gates passed')}\
 process.stdout.write(
   pc.dim(`  ${results.length} gates, 0 tests — run \`${testCommand}\` to cover the packages this checked.\n`),
 );
-
-async function runGate(gate: Gate): Promise<GateResult> {
-  return await new Promise((resolve) => {
-    const child = spawn(gate.command, gate.args, { env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
-    const chunks: string[] = [];
-    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
-    child.stderr.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
-    child.on('error', (error) => chunks.push(`${error.message}\n`));
-    child.on('close', (code) => resolve({ ...gate, output: chunks.join(''), passed: code === 0 }));
-  });
-}
-
-async function runGates(items: readonly Gate[], limit: number): Promise<GateResult[]> {
-  const results = new Array<GateResult>(items.length);
-  let next = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, async () => {
-      for (;;) {
-        const index = next++;
-        const gate = items[index];
-        if (gate === undefined) return;
-        results[index] = await runGate(gate);
-      }
-    }),
-  );
-  return results;
-}
