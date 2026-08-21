@@ -2,6 +2,8 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Physics3DStepExplanation, Physics3DWorld } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import { setPhysics3DContactIntakeGuard } from './contactIntake';
+import { explainPhysics3DCollision } from './explainPhysics3DCollision';
 import { explainPhysics3DStep } from './explainPhysics3DStep';
 import { setPhysics3DStepGuard } from './step';
 
@@ -11,10 +13,11 @@ export function arePhysics3DGuardsEnabled(): boolean {
 
 export function disablePhysics3DGuards(): void {
   setPhysics3DStepGuard(null);
+  setPhysics3DContactIntakeGuard(null);
   physics3DGuardsEnabled = false;
 }
 
-// Installs opt-in diagnostics for a step that refuses to advance.
+// Installs opt-in diagnostics for the two ways a world can advance without simulating.
 //
 // `stepPhysics3D` declines silently on any failed precondition, which is the right behaviour — a NaN
 // velocity is a state a caller reaches by writing a field, and throwing would take down a frame loop over
@@ -22,9 +25,35 @@ export function disablePhysics3DGuards(): void {
 // stopped simulating looks exactly like a world where nothing happens to be moving. This is the seam that
 // tells them apart, and applications that omit this module shed both the message text and
 // `@flighthq/log`.
+// The second is worse than the first and needs its own seam: a step whose preconditions all hold still
+// detects NOTHING if the 3D collision registries were never populated, because the narrow phase
+// dispatches through them. That world steps, integrates, and reports success while its bodies fall
+// through every floor.
 export function enablePhysics3DGuards(): void {
   setPhysics3DStepGuard(warnOnUnsteppablePhysics3DWorld);
+  setPhysics3DContactIntakeGuard(warnOnUndetectablePhysics3DColliders);
   physics3DGuardsEnabled = true;
+}
+
+// Warns once per distinct set of undetectable collider kinds.
+//
+// Keyed on the kinds rather than logged per step, so a 60Hz loop says this once — and a world that later
+// gains a second unsupported kind still says so.
+function warnOnUndetectablePhysics3DColliders(world: Readonly<Physics3DWorld>): void {
+  const explanation = explainPhysics3DCollision(world);
+  if (explanation.status === 'ready') return;
+
+  const kinds = explanation.unsupportedKinds;
+  logOnce(
+    `physics3d:missing-support:${kinds.join(',')}`,
+    LogLevel.Warn,
+    {
+      kinds,
+      message: `buildPhysics3DContacts: no support function is registered for collider ${kinds.length === 1 ? 'kind' : 'kinds'} ${kinds.join(', ')}, so these generate no contacts and the bodies carrying them pass through everything — call registerBuiltInCollisionSupports3D() and registerBuiltInCollisionFaceQueries3D() from @flighthq/collision, or register your own support for a vendor kind.`,
+      status: explanation.status,
+    },
+    'physics3d',
+  );
 }
 
 // Warns once per distinct set of failing preconditions.

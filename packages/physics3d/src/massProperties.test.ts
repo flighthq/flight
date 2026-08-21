@@ -299,7 +299,6 @@ function testBody(type: RigidBody3D['type']): RigidBody3D {
     sleeping: false,
     sleepEnabled: true,
     sleepTimer: 0,
-    material: { density: 1, friction: 0.2, restitution: 0 },
-    filter: { categoryBits: 1, maskBits: 0xffff, groupIndex: 0 },
+    colliders: [],
   };
 }

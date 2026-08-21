@@ -1,7 +1,11 @@
+import {
+  registerBuiltInCollisionFaceQueries3D,
+  registerBuiltInCollisionSupports3D,
+} from '@flighthq/collision/contract';
 import type { Physics3DContact, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
+import { buildPhysics3DContacts } from './contactIntake';
 import { refreshRigidBody3DWorldInertia } from './integrate';
 import { createPhysics3DFixedJoint, createPhysics3DHingeJoint } from './jointFactories';
 import { addPhysics3DJoint, removePhysics3DJoint } from './jointRegistry';
@@ -10,12 +14,21 @@ import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3D
 import { setPhysics3DStepGuard, stepPhysics3D, stepPhysics3DInterval } from './step';
 import {
   addPhysics3DBody,
+  addPhysics3DCollider,
   applyPhysics3DForce,
+  createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
   removePhysics3DBody,
   setPhysics3DBodyType,
 } from './world';
+
+// Contact generation dispatches through the collision registries, so a world whose supports were never
+// registered detects nothing at all — see `explainPhysics3DCollision`.
+beforeEach(() => {
+  registerBuiltInCollisionSupports3D();
+  registerBuiltInCollisionFaceQueries3D();
+});
 
 describe('setPhysics3DStepGuard', () => {
   it('is consulted only when the step declines, and only while installed', () => {
@@ -137,7 +150,7 @@ describe('stepPhysics3D', () => {
     expect(Math.abs(fineBody.y - exact)).toBeLessThan(Math.abs(coarseBody.y - exact));
   });
 
-  it('resolves a supplied contact so a falling body does not pass through the ground', () => {
+  it('resolves a generated contact so a falling body does not pass through the ground', () => {
     const world = createTestWorld();
     const ground = addUnitBody(world);
     setPhysics3DBodyType(ground, 'static');
@@ -270,7 +283,12 @@ describe('stepPhysics3D', () => {
     const ground = addUnitBody(world);
     const box = addUnitBody(world);
     addRestingContact(world, box, ground);
-    const joint = addPhysics3DJoint(world, createPhysics3DFixedJoint({ bodyA: ground.index, bodyB: box.index }));
+    // `collideConnected` matters here: a joint suppresses its own pair's contact by default, and this test
+    // needs BOTH a joint to remove and a contact for the hook to run over.
+    const joint = addPhysics3DJoint(
+      world,
+      createPhysics3DFixedJoint({ bodyA: ground.index, bodyB: box.index, collideConnected: true }),
+    );
     world.contactHooks.preSolve = (inner) => removePhysics3DJoint(inner, joint);
 
     expect(() => stepPhysics3D(world, 1 / 60)).toThrow(/stepping/);
@@ -280,15 +298,16 @@ describe('stepPhysics3D', () => {
     const world = createTestWorld();
     const ground = addUnitBody(world);
     const box = addUnitBody(world);
-    const contact = addRestingContact(world, box, ground);
-    contact.friction = 0.5;
+    const contact = addRestingContact(world, box, ground, 0.5);
     world.contactHooks.preSolve = (_inner, edited) => {
       edited.friction = 9;
       throw new Error('hook failed');
     };
 
     expect(() => stepPhysics3D(world, 1 / 60)).toThrow(/hook failed/);
-    expect(contact.friction).toBe(0.5);
+    // Not exact: the pair's friction is the geometric mean of the two materials', and sqrt(0.5)*sqrt(0.5)
+    // lands one ulp off.
+    expect(contact.friction).toBeCloseTo(0.5, 12);
     expect(ground.index).toBe(0);
   });
 
@@ -358,17 +377,52 @@ describe('stepPhysics3DInterval', () => {
 // which the caller does not choose. Writing `normalY = 1` because "the ground is below" is right only when
 // the box happens to have been added first; the other way round it pushes the GROUND up out of the box,
 // which for a static ground is a no-op and reads as a solver that silently ignores the contact.
-function addRestingContact(world: Physics3DWorld, box: RigidBody3D, ground: RigidBody3D): Physics3DContact {
-  const contact = createPhysics3DContact(box.index, ground.index);
-  contact.normalY = contact.bodyA === box.index ? 1 : -1;
-  contact.touching = true;
-  const point = createPhysics3DContactPoint();
-  point.depth = 0.01;
-  point.featureId = 1;
-  contact.points.push(point);
-  contact.pointCount = 1;
-  world.contacts.push(contact);
-  return contact;
+// Puts real geometry on both bodies, overlapping slightly, and lets the step's own intake generate the
+// contact between them.
+//
+// Pushing a hand-built contact onto `world.contacts` USED to work here and must not be reintroduced:
+// contact lifetime belongs to intake, which retires every contact it does not re-find. A supplied one is
+// deleted by the very step it was meant to affect, and the hook under test never sees it.
+function addRestingContact(
+  world: Physics3DWorld,
+  box: RigidBody3D,
+  ground: RigidBody3D,
+  friction = 0,
+): Physics3DContact {
+  // A unit box spans half a unit either side of its centre, so this leaves the two overlapping by 0.01 —
+  // the same shallow resting penetration the hand-built fixture used to assert.
+  ground.y = box.y - 0.99;
+  attachUnitBoxCollider(world, box, friction);
+  attachUnitBoxCollider(world, ground, friction);
+  buildPhysics3DContacts(world);
+  return world.contacts[0];
+}
+
+// Gives a body a unit box and then puts the UNIT mass properties back.
+//
+// The restore is the load-bearing half. Mass is derived from geometry, and a unit box of density 1 has
+// mass 1 but inertia 1/6 — so leaving the derived tensor in place would move every angular expectation in
+// this file for a reason that has nothing to do with what those tests check.
+function attachUnitBoxCollider(world: Physics3DWorld, body: RigidBody3D, friction: number): void {
+  addPhysics3DCollider(
+    world,
+    body,
+    createPhysics3DCollider(
+      { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 },
+      {
+        density: 1,
+        friction,
+        restitution: 0,
+      },
+    ),
+  );
+  const data = createPhysics3DMassData();
+  data.mass = 1;
+  data.inertiaXX = 1;
+  data.inertiaYY = 1;
+  data.inertiaZZ = 1;
+  setRigidBody3DMassData(body, data);
+  refreshRigidBody3DWorldInertia(body);
 }
 
 function addUnitBody(world: Physics3DWorld): RigidBody3D {

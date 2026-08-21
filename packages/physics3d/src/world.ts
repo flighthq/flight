@@ -1,15 +1,23 @@
+import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
+  CollisionBuiltInShape3D,
   Physics3DBodyType,
+  Physics3DCollider,
+  Physics3DCollisionFilter,
+  Physics3DMaterial,
   Physics3DSequentialImpulseConfig,
   Physics3DSolverConfig,
   Physics3DWorld,
   RigidBody3D,
+  SpatialIndexBackend3D,
 } from '@flighthq/types/contract';
 
+import { synchronizePhysics3DBroadphase } from './broadphase';
+import { createPhysics3DColliderWorldShape } from './colliderTransform';
 import { refreshRigidBody3DWorldInertia } from './integrate';
 import { rebuildPhysics3DJointCollisionSuppressions } from './jointCollisionSuppression';
-import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { physics3DJointOwners } from './ownership';
+import { createPhysics3DMassData, setRigidBody3DMassData, updateRigidBody3DMassData } from './massProperties';
+import { assertPhysics3DWorldNotStepping, physics3DColliderOwners, physics3DJointOwners } from './ownership';
 
 // World and body lifecycle: allocation, membership, and the mutations that have to run through a
 // function because something derived follows from them.
@@ -32,7 +40,44 @@ export function addPhysics3DBody(world: Physics3DWorld, body: RigidBody3D): numb
   world.bodies.push(body);
   world.bodyByIndex.set(body.index, body);
   refreshRigidBody3DWorldInertia(body);
+  // Publish immediately rather than waiting for the next step, so a query made between insertion and
+  // the first step finds the body where the caller just put it.
+  synchronizePhysics3DBroadphase(world);
   return body.index;
+}
+
+// Attaches a collider to a body and rebuilds the mass properties that follow from it. Returns the
+// collider.
+//
+// Mass, centre of mass, and inertia are all derived from collider geometry, so adding one changes what
+// the body weighs and where it balances. Republishing the broadphase bounds in the same breath is what
+// keeps a query made between two steps from missing geometry that already exists.
+export function addPhysics3DCollider(
+  world: Physics3DWorld,
+  body: RigidBody3D,
+  collider: Physics3DCollider,
+): Physics3DCollider {
+  assertPhysics3DWorldNotStepping(world);
+  if (body.colliders.includes(collider)) {
+    throw new Error('Cannot add the same physics collider to a rigid body twice');
+  }
+  const owner = physics3DColliderOwners.get(collider);
+  if (owner !== undefined && owner !== body) {
+    throw new Error('Cannot share a physics collider between rigid bodies');
+  }
+
+  body.colliders.push(collider);
+  physics3DColliderOwners.set(collider, body);
+  updateRigidBody3DMassData(body);
+  refreshRigidBody3DWorldInertia(body);
+  if (world.bodyByIndex.get(body.index) === body) {
+    // The pair's contacts are dropped rather than kept: the body's centre of mass just moved, so every
+    // cached lever arm is measured from a point the body no longer balances on.
+    dropPhysics3DBodyContacts(world, body.index);
+    wakePhysics3DBody(body);
+    synchronizePhysics3DBroadphase(world);
+  }
+  return collider;
 }
 
 // Accumulates a force at the body's centre of mass, to be consumed by the next step. Ignored for a
@@ -90,6 +135,35 @@ export function applyPhysics3DTorque(body: RigidBody3D, x: number, y: number, z:
   body.torqueZ += z;
 }
 
+// Allocates a collider around an authored LOCAL shape, with its world-space counterpart sized and ready.
+//
+// The local shape is CLONED rather than referenced, because a caller reusing one shape object across
+// several colliders would otherwise have every one of them follow a later edit to it. The world shape is
+// allocated here and only ever mutated in place afterwards, which is what makes the per-step transform
+// allocation-free.
+export function createPhysics3DCollider(
+  local: Readonly<CollisionBuiltInShape3D>,
+  material?: Readonly<Physics3DMaterial>,
+  filter?: Readonly<Physics3DCollisionFilter>,
+  sensor = false,
+): Physics3DCollider {
+  return {
+    local: cloneCollisionBuiltInShape3D(local),
+    world: createPhysics3DColliderWorldShape(local),
+    material: {
+      density: material?.density ?? 1,
+      friction: material?.friction ?? 0.2,
+      restitution: material?.restitution ?? 0,
+    },
+    filter: {
+      categoryBits: filter?.categoryBits ?? 1,
+      maskBits: filter?.maskBits ?? 0xffff,
+      groupIndex: filter?.groupIndex ?? 0,
+    },
+    sensor,
+  };
+}
+
 // The default sequential-impulse tuning. Eight velocity iterations and three position iterations are
 // the values a Box2D-lineage solver converges acceptably at for ordinary scenes; a scene of tall stacks
 // wants more of the first, and one with deep initial overlap more of the second.
@@ -120,14 +194,20 @@ export function createPhysics3DSolverConfig(): Physics3DSolverConfig {
 
 // Allocates an empty world under earth gravity along -Y.
 //
-// The world owns no broadphase index, unlike `Physics2DWorld`. That is not an omission to be filled by
-// a physics-specific seam: `SpatialIndexBackend2D` is the swap point and its 3D counterpart does not
-// exist yet, so contacts are supplied by the caller until it does.
-export function createPhysics3DWorld(): Physics3DWorld {
+// The broadphase defaults to a uniform grid and is a constructor PARAMETER rather than a fixed choice:
+// `SpatialIndexBackend3D` is the swap point, so a caller with a scene the grid suits badly — a sparse
+// world spanning kilometres, say — hands over an octree or its own implementation without this package
+// changing.
+export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWorld {
   return {
     version: Physics3DWorldVersion,
     bodies: [],
     bodyByIndex: new Map(),
+    // One world unit per cell, matching `createPhysics2DWorld`. A physics world is authored in metres and
+    // its bodies are metre-scale, so `@flighthq/spatial`'s own 128-unit default — sized for a scene-graph
+    // culling index measured in pixels — would put an entire scene in one cell and reduce the broadphase
+    // to a full pairwise scan.
+    index: index ?? createUniformGridSpatialBackend3D(1),
     contacts: [],
     joints: [],
     jointSolvers: new Map(),
@@ -215,8 +295,7 @@ export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBod
     sleeping: false,
     sleepEnabled: true,
     sleepTimer: 0,
-    material: { density: 1, friction: 0.2, restitution: 0 },
-    filter: { categoryBits: 1, maskBits: 0xffff, groupIndex: 0 },
+    colliders: [],
   };
 }
 
@@ -224,6 +303,32 @@ export function createRigidBody3D(type: Physics3DBodyType = 'dynamic'): RigidBod
 // expected-failure sentinel: a caller holding an index across a removal gets null, not a throw.
 export function findPhysics3DBody(world: Readonly<Physics3DWorld>, index: number): RigidBody3D | null {
   return world.bodyByIndex.get(index) ?? null;
+}
+
+// Rebuilds a collider's derived state after its authored LOCAL shape has been edited in place. Returns
+// false when the collider does not belong to the body.
+//
+// This exists because the local shape is a plain mutable record, so a caller CAN edit it — and two
+// things then no longer follow: the world shape may need a different kind or a different-sized point
+// array, and the body's mass, centre, and inertia were all derived from the old geometry. Skipping this
+// leaves a body whose tensor describes a shape it no longer has.
+export function invalidatePhysics3DCollider(
+  world: Physics3DWorld,
+  body: RigidBody3D,
+  collider: Physics3DCollider,
+): boolean {
+  assertPhysics3DWorldNotStepping(world);
+  if (!body.colliders.includes(collider)) return false;
+
+  collider.world = createPhysics3DColliderWorldShape(collider.local);
+  updateRigidBody3DMassData(body);
+  refreshRigidBody3DWorldInertia(body);
+  if (world.bodyByIndex.get(body.index) === body) {
+    dropPhysics3DBodyContacts(world, body.index);
+    wakePhysics3DBody(body);
+    synchronizePhysics3DBroadphase(world);
+  }
+  return true;
 }
 
 // Removes a body and every contact and joint that referenced it. Returns false when the body is not in
@@ -259,6 +364,34 @@ export function removePhysics3DBody(world: Physics3DWorld, body: RigidBody3D): b
   }
   if (removedJoint) rebuildPhysics3DJointCollisionSuppressions(world);
   world.solver.constraintByPair.clear();
+  world.index.removeSpatialObject(index);
+  return true;
+}
+
+// Detaches a collider from a body and rebuilds what followed from it. Returns false when the collider
+// does not belong to the body.
+//
+// The remaining colliders' INDICES shift, which is why every contact naming this body is dropped rather
+// than repaired: a contact stores `colliderA`/`colliderB` as positions in the list, and a surviving
+// contact would silently come to name a different piece of geometry. They regenerate on the next step.
+export function removePhysics3DCollider(
+  world: Physics3DWorld,
+  body: RigidBody3D,
+  collider: Physics3DCollider,
+): boolean {
+  assertPhysics3DWorldNotStepping(world);
+  const at = body.colliders.indexOf(collider);
+  if (at < 0) return false;
+
+  body.colliders.splice(at, 1);
+  physics3DColliderOwners.delete(collider);
+  updateRigidBody3DMassData(body);
+  refreshRigidBody3DWorldInertia(body);
+  if (world.bodyByIndex.get(body.index) === body) {
+    dropPhysics3DBodyContacts(world, body.index);
+    wakePhysics3DBody(body);
+    synchronizePhysics3DBroadphase(world);
+  }
   return true;
 }
 
@@ -385,7 +518,24 @@ export function writeRigidBody3DWorldCenter(body: Readonly<RigidBody3D>, out: nu
 
 // The serializable-shape version of `Physics3DWorld`. Bumped when a field a format layer would have
 // written changes meaning, so a reconstructed world can be recognized as older and upgraded.
-export const Physics3DWorldVersion = 1;
+export const Physics3DWorldVersion = 2;
+
+// Copies an authored shape so a collider owns its own geometry. The point list is copied too — sharing
+// the array would let two colliders that look independent move together.
+function cloneCollisionBuiltInShape3D(shape: Readonly<CollisionBuiltInShape3D>): CollisionBuiltInShape3D {
+  if (shape.kind === 'convex') return { kind: 'convex', points: shape.points.slice() };
+  return { ...shape };
+}
+
+// Drops every contact naming `index`, along with the solver's cached constraints. Called from the
+// topology mutations that make an existing contact describe geometry the body no longer has.
+function dropPhysics3DBodyContacts(world: Physics3DWorld, index: number): void {
+  for (let i = world.contacts.length - 1; i >= 0; i--) {
+    const contact = world.contacts[i];
+    if (contact.bodyA === index || contact.bodyB === index) world.contacts.splice(i, 1);
+  }
+  world.solver.constraintByPair.clear();
+}
 
 // Recomputes the inverse mass and local inverse inertia after something that changes a body's
 // ELIGIBILITY to move rather than its geometry — a type change, a fixed-rotation change.

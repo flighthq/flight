@@ -102,6 +102,14 @@ rather than argument: `physics3d` generates no contacts at all — it consumes `
 caller supplies — and its real divergence from `physics2d` is the constraint math, which is what the row
 now says.
 
+**Superseded in its evidence, not its conclusion, 2026-08-21.** `physics3d` now DOES generate contacts: it
+carries colliders, a `SpatialIndexBackend3D`, and an intake pass over `@flighthq/collision`'s 3D narrow
+phase, exactly as `physics2d` does. The note above is kept because its reasoning is what settled the
+question and the correction it records is real — but the sentence starting "The built packages settle it"
+argued from a temporary state of the code. The conclusion survives the state changing, and is now better
+supported: both packages generate contacts through `collision`, so contact generation was never the
+difference, and the constraint math still is.
+
 ### Split (model differs)
 
 | 2D package | 3D package | Status | Why different models |

@@ -2,14 +2,16 @@ import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/co
 
 // Constructors for the contact records the step consumes.
 //
-// This package does not PRODUCE contacts and cannot: the 3D narrow phase and broadphase do not exist yet,
-// so a caller supplies them directly. That makes these constructors part of the ordinary API rather than a
-// test convenience — they are how a caller builds the input the solver is defined against, and they are
-// what stops every callsite from hand-writing a literal that happens to match the fields.
+// The step GENERATES contacts from a body's colliders, so these are not the ordinary path. They are the
+// escape hatch: the solver is defined against contact records rather than against a detector, so a caller
+// driving it from its own detection — a replayed trace, a fixture, a narrow phase this package does not
+// own — builds the input here rather than hand-writing a literal that happens to match the fields.
 //
 // A contact allocated here is inert until a caller fills in the geometry: no points, a zero normal, and
 // `touching` false. The solver skips exactly that shape, so a half-built contact costs nothing and moves
-// nothing.
+// nothing. Note that a contact the step does not re-find is retired at the end of the next step, because
+// contact lifetime is owned by intake — a hand-built contact survives only as long as the geometry that
+// justifies it does.
 
 // Allocates one contact between two bodies, in canonical order.
 //
@@ -18,13 +20,20 @@ import type { Physics3DContact, Physics3DContactPoint } from '@flighthq/types/co
 // its first argument, which means passing the same pair the other way round moves the points and renumbers
 // their feature ids — and the warm-start cache is keyed to those ids.
 //
+// The COLLIDER indices swap with the bodies, because they name a position in each body's own collider
+// list: leaving them behind would attach body A's contact to body B's geometry. They default to zero,
+// which is the right answer for the single-collider bodies a hand-built contact almost always names.
+//
 // The normal is NOT reordered with the bodies, because there is nothing yet to reorder: a fresh contact
 // carries a zero normal, and the caller writing the geometry is the one who knows which way it points. It
 // must point so that resolving pushes A out of B.
-export function createPhysics3DContact(bodyA: number, bodyB: number): Physics3DContact {
+export function createPhysics3DContact(bodyA: number, bodyB: number, colliderA = 0, colliderB = 0): Physics3DContact {
+  const ordered = bodyA <= bodyB;
   return {
-    bodyA: Math.min(bodyA, bodyB),
-    bodyB: Math.max(bodyA, bodyB),
+    bodyA: ordered ? bodyA : bodyB,
+    bodyB: ordered ? bodyB : bodyA,
+    colliderA: ordered ? colliderA : colliderB,
+    colliderB: ordered ? colliderB : colliderA,
     normalX: 0,
     normalY: 0,
     normalZ: 0,

@@ -5,6 +5,7 @@ export {
   refreshRigidBody3DWorldInertia,
 } from './integrate';
 export { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
+export { explainPhysics3DCollision } from './explainPhysics3DCollision';
 export { explainPhysics3DJoints } from './explainPhysics3DJoints';
 export { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards';
 export { explainPhysics3DStep } from './explainPhysics3DStep';
@@ -42,25 +43,32 @@ export {
   combinePhysics3DMassData,
   computePhysics3DBoxMassData,
   computePhysics3DCapsuleMassData,
+  computePhysics3DColliderMassData,
   computePhysics3DSphereMassData,
   createPhysics3DMassData,
   setRigidBody3DMassData,
+  updateRigidBody3DMassData,
 } from './massProperties';
+export { mixPhysics3DFriction, mixPhysics3DRestitution } from './material';
 export { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
 export { stepPhysics3D, stepPhysics3DInterval } from './step';
 export {
   addPhysics3DBody,
+  addPhysics3DCollider,
   applyPhysics3DForce,
   applyPhysics3DForceAtPoint,
   applyPhysics3DLinearImpulse,
   applyPhysics3DTorque,
+  createPhysics3DCollider,
   createPhysics3DSequentialImpulseConfig,
   createPhysics3DSolverConfig,
   createPhysics3DWorld,
   createRigidBody3D,
   findPhysics3DBody,
+  invalidatePhysics3DCollider,
   Physics3DWorldVersion,
   removePhysics3DBody,
+  removePhysics3DCollider,
   setPhysics3DBodyFixedRotation,
   setPhysics3DBodyTransform,
   setPhysics3DBodyType,

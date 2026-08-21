@@ -1,4 +1,8 @@
+export * from './broadphase';
+export * from './colliderTransform';
+export * from './contactIntake';
 export * from './contacts';
+export * from './explainPhysics3DCollision';
 export * from './explainPhysics3DJoints';
 export * from './enablePhysics3DGuards';
 export * from './explainPhysics3DStep';
@@ -9,6 +13,7 @@ export * from './jointFactories';
 export * from './jointRegistry';
 export * from './joints';
 export * from './massProperties';
+export * from './material';
 export * from './registerBuiltInPhysics3DJointSolvers';
 export * from './solver';
 export * from './step';

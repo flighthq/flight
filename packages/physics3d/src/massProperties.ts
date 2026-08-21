@@ -1,4 +1,4 @@
-import type { Physics3DMassData, RigidBody3D } from '@flighthq/types/contract';
+import type { Physics3DCollider, Physics3DMassData, RigidBody3D } from '@flighthq/types/contract';
 
 import {
   inverseSymmetricTensor,
@@ -15,8 +15,8 @@ import {
 //
 // Mass is derived from geometry and density rather than set directly, so a body's inertia can never
 // disagree with its shape. The primitives here are the ones whose inertia has a closed form; a convex
-// hull's and a triangle mesh's are integrals over their geometry, and arrive with the 3D narrow phase
-// that produces those shapes in the first place.
+// hull's and a triangle mesh's are volume integrals over a triangulation, which a bare point list does
+// not carry — see `computePhysics3DColliderMassData` for what a hull collider does instead.
 //
 // Every tensor produced here is about the primitive's OWN centre, in the frame the primitive is
 // described in. `combinePhysics3DMassData` is what shifts them onto a shared centre.
@@ -133,6 +133,74 @@ export function computePhysics3DCapsuleMassData(
   writeDiagonal(out, mass, transverse, axial, transverse);
 }
 
+// Writes `collider`'s mass, inertia tensor, and centroid into `out`, in the BODY's local frame — which
+// is the frame the collider's own `local` shape is described in, so an offset or rotated collider
+// contributes a tensor that is already offset and rotated.
+//
+// A convex hull carries NO mass. Its inertia is a volume integral over a triangulation this package
+// cannot derive from a bare point list, so a hull collider currently behaves as immovable scenery:
+// zero inverse mass, colliding normally, moved by nothing. That is deliberately inert rather than
+// plausibly wrong — a hull given its bounding box's tensor would fall and spin at rates nothing in the
+// solver could flag.
+export function computePhysics3DColliderMassData(collider: Readonly<Physics3DCollider>, out: Physics3DMassData): void {
+  const shape = collider.local;
+  const density = collider.material.density;
+  switch (shape.kind) {
+    case 'sphere':
+      computePhysics3DSphereMassData(shape.radius, density, out);
+      out.centerX = shape.x;
+      out.centerY = shape.y;
+      out.centerZ = shape.z;
+      return;
+    case 'aabb':
+      computePhysics3DBoxMassData(
+        (shape.maxX - shape.minX) / 2,
+        (shape.maxY - shape.minY) / 2,
+        (shape.maxZ - shape.minZ) / 2,
+        density,
+        out,
+      );
+      out.centerX = (shape.minX + shape.maxX) / 2;
+      out.centerY = (shape.minY + shape.maxY) / 2;
+      out.centerZ = (shape.minZ + shape.maxZ) / 2;
+      return;
+    case 'box':
+      computePhysics3DBoxMassData(shape.halfX, shape.halfY, shape.halfZ, density, out);
+      // A box rotated within the body has three DISTINCT principal moments, so its tensor stops being
+      // diagonal in the body frame. Skipping this rotation is the silent failure the whole tensor
+      // representation exists to prevent: the mass and the diagonal both stay plausible, and only the
+      // swing about an off-axis edge comes out wrong.
+      rotateDiagonalTensor(out, shape.rotationX, shape.rotationY, shape.rotationZ, shape.rotationW);
+      out.centerX = shape.x;
+      out.centerY = shape.y;
+      out.centerZ = shape.z;
+      return;
+    case 'capsule': {
+      const axisX = shape.x1 - shape.x0;
+      const axisY = shape.y1 - shape.y0;
+      const axisZ = shape.z1 - shape.z0;
+      const length = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+      computePhysics3DCapsuleMassData(shape.radius, length / 2, density, out);
+      if (length > 0) alignTensorAxisToY(out, axisX / length, axisY / length, axisZ / length);
+      out.centerX = (shape.x0 + shape.x1) / 2;
+      out.centerY = (shape.y0 + shape.y1) / 2;
+      out.centerZ = (shape.z0 + shape.z1) / 2;
+      return;
+    }
+    default:
+      out.mass = 0;
+      out.inertiaXX = 0;
+      out.inertiaYY = 0;
+      out.inertiaZZ = 0;
+      out.inertiaXY = 0;
+      out.inertiaXZ = 0;
+      out.inertiaYZ = 0;
+      out.centerX = 0;
+      out.centerY = 0;
+      out.centerZ = 0;
+  }
+}
+
 // Mass data for a solid sphere centred on the origin.
 export function computePhysics3DSphereMassData(radius: number, density: number, out: Physics3DMassData): void {
   const mass = (4 / 3) * Math.PI * radius * radius * radius * density;
@@ -198,6 +266,51 @@ export function setRigidBody3DMassData(body: RigidBody3D, data: Readonly<Physics
   body.inverseInertiaYZ = scratchTensorB[TENSOR_YZ];
 }
 
+// Recomputes `body`'s mass, inertia tensor, centre of mass, and the inverses the solver divides by,
+// from its colliders. Call after adding, removing, or reshaping a collider, or after changing a
+// material's density.
+//
+// Static and kinematic bodies keep their computed centre — the lever arms in a contact are measured from
+// it either way — but take zero inverse mass and inverse inertia. Zero is not a guard, it is the
+// arithmetic: an impulse scaled by an inverse mass of zero moves the body not at all, so "infinite mass"
+// needs no branch anywhere in the solver.
+export function updateRigidBody3DMassData(body: RigidBody3D): void {
+  const total = acquirePhysics3DMassData();
+  const one = acquirePhysics3DMassData();
+  try {
+    zeroPhysics3DMassData(total);
+    for (const collider of body.colliders) {
+      computePhysics3DColliderMassData(collider, one);
+      // Combining shifts BOTH tensors onto the running centre, so the accumulation is correct at every
+      // step rather than only at the end — which is why this needs no second pass over the colliders.
+      combinePhysics3DMassData(total, one);
+    }
+    setRigidBody3DMassData(body, total);
+  } finally {
+    releasePhysics3DMassData(one);
+    releasePhysics3DMassData(total);
+  }
+}
+
+// Re-expresses a tensor whose Y axis is its symmetry axis so that the axis points along the given unit
+// vector instead.
+//
+// The transverse moments are equal by symmetry, which collapses the general `R I R^T` to a form needing
+// no basis at all: `transverse * Identity + (axial - transverse) * (axis (x) axis)`. Picking arbitrary
+// perpendicular basis vectors would give the same answer with more arithmetic and one more chance to
+// get a handedness wrong.
+function alignTensorAxisToY(out: Physics3DMassData, axisX: number, axisY: number, axisZ: number): void {
+  const axial = out.inertiaYY;
+  const transverse = out.inertiaXX;
+  const difference = axial - transverse;
+  out.inertiaXX = transverse + difference * axisX * axisX;
+  out.inertiaYY = transverse + difference * axisY * axisY;
+  out.inertiaZZ = transverse + difference * axisZ * axisZ;
+  out.inertiaXY = difference * axisX * axisY;
+  out.inertiaXZ = difference * axisX * axisZ;
+  out.inertiaYZ = difference * axisY * axisZ;
+}
+
 function readTensor(data: Readonly<Physics3DMassData>, out: number[]): void {
   out[TENSOR_XX] = data.inertiaXX;
   out[TENSOR_YY] = data.inertiaYY;
@@ -205,6 +318,35 @@ function readTensor(data: Readonly<Physics3DMassData>, out: number[]): void {
   out[TENSOR_XY] = data.inertiaXY;
   out[TENSOR_XZ] = data.inertiaXZ;
   out[TENSOR_YZ] = data.inertiaYZ;
+}
+
+// Re-expresses a DIAGONAL tensor in a frame rotated by the given unit quaternion.
+//
+// A diagonal tensor is `sum(lambda_i * e_i (x) e_i)` over the local axes, so rotating it is the same sum
+// over the ROTATED axes — the columns of the quaternion's rotation matrix. That form is why this reads
+// as three outer products rather than an `R I R^T` triple product: with `I` diagonal, the general
+// product collapses to exactly this, at a third of the multiplications.
+function rotateDiagonalTensor(out: Physics3DMassData, x: number, y: number, z: number, w: number): void {
+  const a = out.inertiaXX;
+  const b = out.inertiaYY;
+  const c = out.inertiaZZ;
+
+  const c0X = 1 - 2 * (y * y + z * z);
+  const c0Y = 2 * (x * y + w * z);
+  const c0Z = 2 * (x * z - w * y);
+  const c1X = 2 * (x * y - w * z);
+  const c1Y = 1 - 2 * (x * x + z * z);
+  const c1Z = 2 * (y * z + w * x);
+  const c2X = 2 * (x * z + w * y);
+  const c2Y = 2 * (y * z - w * x);
+  const c2Z = 1 - 2 * (x * x + y * y);
+
+  out.inertiaXX = a * c0X * c0X + b * c1X * c1X + c * c2X * c2X;
+  out.inertiaYY = a * c0Y * c0Y + b * c1Y * c1Y + c * c2Y * c2Y;
+  out.inertiaZZ = a * c0Z * c0Z + b * c1Z * c1Z + c * c2Z * c2Z;
+  out.inertiaXY = a * c0X * c0Y + b * c1X * c1Y + c * c2X * c2Y;
+  out.inertiaXZ = a * c0X * c0Z + b * c1X * c1Z + c * c2X * c2Z;
+  out.inertiaYZ = a * c0Y * c0Z + b * c1Y * c1Z + c * c2Y * c2Z;
 }
 
 function writeDiagonal(
@@ -225,6 +367,31 @@ function writeDiagonal(
   out.centerY = 0;
   out.centerZ = 0;
 }
+
+function zeroPhysics3DMassData(out: Physics3DMassData): void {
+  out.mass = 0;
+  out.inertiaXX = 0;
+  out.inertiaYY = 0;
+  out.inertiaZZ = 0;
+  out.inertiaXY = 0;
+  out.inertiaXZ = 0;
+  out.inertiaYZ = 0;
+  out.centerX = 0;
+  out.centerY = 0;
+  out.centerZ = 0;
+}
+
+function acquirePhysics3DMassData(): Physics3DMassData {
+  return physics3DMassDataPool.pop() ?? createPhysics3DMassData();
+}
+
+function releasePhysics3DMassData(data: Physics3DMassData): void {
+  physics3DMassDataPool.push(data);
+}
+
+// A pool rather than two module scratch records, because `updateRigidBody3DMassData` holds two at once
+// and is itself reachable from a collider mutation inside a caller that is already holding one.
+const physics3DMassDataPool: Physics3DMassData[] = [];
 
 // Module scratch for the two tensors a combine or an inversion needs at once. Reused rather than
 // allocated because these run per body whenever mass properties change, and a rebuild of a large
