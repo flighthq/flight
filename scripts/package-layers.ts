@@ -82,6 +82,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/permissions',
     '@flighthq/physics2d',
     '@flighthq/physics3d',
+    '@flighthq/physics3d-abi',
     '@flighthq/picking',
     '@flighthq/platform',
     '@flighthq/power',

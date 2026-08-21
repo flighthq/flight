@@ -3,7 +3,7 @@ package: '@flighthq/physics3d'
 role: package
 crate: flighthq-physics3d
 draft: false
-lastDirection: 2026-07-15
+lastDirection: 2026-08-21
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -60,10 +60,13 @@ This is the 3D half of physics. 2D rigid-body dynamics is `@flighthq/physics2d`.
   heightfields are collision shapes but are not convex-support shapes. They own retained local triangle
   BVHs with explicit payload-version invalidation; transformed bounds, manifold generation, raycasts, and
   sweeps consume that acceleration, while physics3d enforces their static-only body contract.
+- **[2026-08-21] Native ownership is a separate public ABI package.** `@flighthq/physics3d` keeps its
+  ordinary plain-object world API. `@flighthq/physics3d-abi` owns persistent world handles, packed
+  mutation/readback buffers, hooks, and queries as an executable TypeScript contract. A future
+  `physics3d-abi-rs` may shadow that package while `physics3d-rs` separately shadows the standard API;
+  neither changes the other's promise. User-directed.
 
 ## Open directions
 
-1. **Native target contract.** The TypeScript target is the executable specification and passes its AAA
-   gates. Before Rust/WASM work starts, decide whether native callers receive only a standard-world facade
-   or also a lower-level persistent-world handle/buffer API. Either choice must preserve physics semantics
-   and differential evidence; synchronous contact hooks and JS/WASM ownership are the seam-defining cases.
+None. Native implementation and its differential/performance qualification remain deliberately downstream
+of the now-established TypeScript ABI contract.

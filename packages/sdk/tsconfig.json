@@ -340,6 +340,9 @@
       "path": "../physics3d"
     },
     {
+      "path": "../physics3d-abi"
+    },
+    {
       "path": "../spatial"
     },
     {

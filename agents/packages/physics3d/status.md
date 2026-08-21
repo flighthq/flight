@@ -11,9 +11,9 @@ by: auditor
 
 ## Open
 
-The TypeScript target passes its declared AAA qualification envelope. The package-wide charter is not
-yet honest to label unconditionally AAA-complete because the Rust/WASM performance target is deliberately
-paused pending an API/ownership decision and has no differential evidence. The measurable gate is in
+The TypeScript target passes its declared AAA qualification envelope. The native ownership decision is
+resolved by the separate public `@flighthq/physics3d-abi` package; Rust/WASM implementation and native
+differential evidence remain deliberately paused. The measurable TypeScript gate is in
 [review.md](./review.md); performance ceilings and the reference host are in
 [performance.md](./performance.md).
 
@@ -55,14 +55,14 @@ long-horizon stress scenes, and enforced performance/allocation budgets ship.
 - **Guards cover all silent omissions.** They report declined steps, missing collision support, and each
   unresolved joint. Collider geometry/material/filter/derived-kind validation occurs before intake, so a
   NaN material cannot poison a newly generated contact in the same frame.
-- **The remaining decision is native ownership and API shape, not physics scope.** A Rust/WASM target must
-  preserve the standard physics3d semantics and parity suite, but a persistent native world, packed
-  mutation/readback buffers, and synchronous pre-solve hooks may require a lower-level handle or split-step
-  execution seam beneath the ordinary TypeScript facade. No native implementation starts before that
-  boundary is decided.
+- **Native ownership no longer changes the standard API.** `physics3d-abi` now owns the persistent handle,
+  packed command/readback, synchronous hook, and query boundary as a public executable TypeScript contract.
+  A future native target conforms there while a standard object-world shadow remains a separate promise.
 
 ## Log
 
+- **2026-08-21** — Native API shape resolved into `@flighthq/physics3d-abi`; the standard object-world API
+  remains independent and adds no bundle edge for ordinary TypeScript consumers.
 - **2026-08-21** — TypeScript AAA gates completed: accelerated static mesh/heightfield terrain, enforced
   grid/BVH performance and allocation budgets, and CCD friction/hooks/persistent events/angular envelope;
   only the paused native-target qualification remains.

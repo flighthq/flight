@@ -577,6 +577,7 @@ export * from './SoftKeyboardEasingKind';
 export * from './SphereCollider';
 export * from './Physics2D';
 export * from './Physics3D';
+export * from './Physics3DAbi';
 export * from './Spatial';
 export * from './SpatialIndexing';
 export * from './SpecularGlossinessPbrMaterial';
