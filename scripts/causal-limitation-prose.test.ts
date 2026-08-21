@@ -183,8 +183,8 @@ describe('causal limitation prose', () => {
 
   it('pins the completed audit population and classification counts', () => {
     const audit = read('agents/causal-limitation-prose-audit.md');
-    expect(audit).toContain('**STILL TRUE 21 · NOW FALSE 38 · CANNOT TELL 5**');
-    expect(audit).toContain('12 functional claim sites');
+    expect(audit).toContain('**STILL TRUE 19 · NOW FALSE 40 · CANNOT TELL 5**');
+    expect(audit).toContain('10 functional claim sites');
     expect(audit).toContain('nine architecture gap groups');
     expect(audit.match(/Release\s+observation:/g)).toHaveLength(5);
     for (const releaseMarker of [
