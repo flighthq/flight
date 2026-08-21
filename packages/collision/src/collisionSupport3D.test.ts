@@ -10,16 +10,43 @@ import {
   supportCollisionAabb3D,
   supportCollisionBox3D,
   supportCollisionCapsule3D,
+  supportCollisionCone3D,
+  supportCollisionCylinder3D,
   supportCollisionConvex3D,
   supportCollisionSphere3D,
   writeVertexListSupport3D,
 } from './collisionSupport3D';
+import { getCollisionShapeContainsPoint3D } from './pointContainment3D';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();
 });
 
 const out: number[] = [];
+
+// The two round-sided kinds, shared by the describes below. A cylinder along Y from -2 to 2, and a cone
+// standing on the origin with its apex up.
+const cone: CollisionShape3D = {
+  apexX: 0,
+  apexY: 3,
+  apexZ: 0,
+  baseX: 0,
+  baseY: 0,
+  baseZ: 0,
+  kind: 'cone',
+  radius: 1.5,
+};
+const cylinder: CollisionShape3D = { kind: 'cylinder', radius: 1, x0: 0, x1: 0, y0: -2, y1: 2, z0: 0, z1: 0 };
+
+function createRandom(seed: number): () => number {
+  let state = seed | 0 || 1;
+  return () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return ((state >>> 0) % 100000) / 100000;
+  };
+}
 
 describe('getCollisionPairTest3D', () => {
   it('returns null for a pair with no registered specialization', () => {
@@ -179,6 +206,35 @@ describe('supportCollisionCapsule3D', () => {
   });
 });
 
+describe('supportCollisionCone3D', () => {
+  it('returns the apex when the direction favours it and a rim point otherwise', () => {
+    const out = [0, 0, 0];
+    supportCollisionCone3D(cone, 0, 1, 0, out);
+    expect(out).toEqual([0, 3, 0]);
+
+    supportCollisionCone3D(cone, 1, 0, 0, out);
+    expect(out[0]).toBeCloseTo(1.5, 10);
+    expect(out[1]).toBeCloseTo(0, 10);
+  });
+
+  it('agrees with containment: the support point is never outside the shape', () => {
+    const random = createRandom(4242);
+    const out = [0, 0, 0];
+    for (let i = 0; i < 300; i += 1) {
+      supportCollisionCone3D(cone, random() - 0.5, random() - 0.5, random() - 0.5, out);
+      // A support point sits ON the boundary, so containment is checked with a small inward pull toward
+      // the centroid rather than at the point itself, where floating point could land either side.
+      const towardX = -out[0] * 1e-6;
+      const towardY = (0.75 * 3 - out[1]) * 1e-6;
+      const towardZ = -out[2] * 1e-6;
+      expect(
+        getCollisionShapeContainsPoint3D(cone, out[0] + towardX, out[1] + towardY, out[2] + towardZ),
+        `direction ${String(i)} produced ${out.join(',')}`,
+      ).toBe(true);
+    }
+  });
+});
+
 describe('supportCollisionConvex3D', () => {
   it('finds the furthest vertex of a hull', () => {
     const hull: CollisionShape3D = { kind: 'convex', points: [0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 5] };
@@ -186,6 +242,23 @@ describe('supportCollisionConvex3D', () => {
     expect(out.slice(0, 3)).toEqual([5, 0, 0]);
     supportCollisionConvex3D(hull, 0, 0, 1, out);
     expect(out.slice(0, 3)).toEqual([0, 0, 5]);
+  });
+});
+
+describe('supportCollisionCylinder3D', () => {
+  it('returns a flat cap rim rather than a rounded offset', () => {
+    const out = [0, 0, 0];
+    // Diagonally up and out. A capsule would push a full radius along the direction and overshoot the cap
+    // plane; a cylinder offsets only within the plane, so the axial coordinate is exactly the cap's.
+    supportCollisionCylinder3D(cylinder, 1, 1, 0, out);
+    expect(out[1]).toBeCloseTo(2, 10);
+    expect(out[0]).toBeCloseTo(1, 10);
+  });
+
+  it('returns the cap centre when the direction is along the axis', () => {
+    const out = [0, 0, 0];
+    supportCollisionCylinder3D(cylinder, 0, 1, 0, out);
+    expect(out).toEqual([0, 2, 0]);
   });
 });
 

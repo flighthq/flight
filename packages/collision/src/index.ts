@@ -76,6 +76,8 @@ export {
   supportCollisionAabb3D,
   supportCollisionBox3D,
   supportCollisionCapsule3D,
+  supportCollisionCone3D,
+  supportCollisionCylinder3D,
   supportCollisionConvex3D,
   supportCollisionSphere3D,
 } from './collisionSupport3D';

@@ -5,7 +5,7 @@ import { testCollisionSupportOverlap3D } from './gjk3D';
 // Whether the point (`x`,`y`,`z`) lies inside a 3D collider. Unknown kinds return false. The hull is
 // assumed convex.
 //
-// The four closed-form kinds get exact, BOUNDARY-INCLUSIVE predicates and need nothing registered. A convex hull gets
+// The six closed-form kinds get exact, BOUNDARY-INCLUSIVE predicates and need nothing registered. A convex hull gets
 // NEITHER, and cannot from what it carries: containment in a hull is a question about its FACES, and a
 // bare point list has none. It is answered by GJK against a zero-radius sphere, which means a hull —
 // alone among the kinds — needs `registerBuiltInCollisionSupports3D` to have been called, and treats
@@ -63,6 +63,40 @@ export function getCollisionShapeContainsPoint3D(
       const dy = y - (shape.y0 + axisY * t);
       const dz = z - (shape.z0 + axisZ * t);
       return dx * dx + dy * dy + dz * dz <= shape.radius * shape.radius;
+    }
+    case 'cylinder': {
+      // Two independent conditions, unlike the capsule above: BETWEEN the caps along the axis, and
+      // within `radius` of the axis LINE. A capsule folds both into one distance-to-segment test because
+      // its ends are round; a cylinder's flat caps make the axial bound a separate clamp-free interval
+      // test, and reusing the capsule's clamped distance here would round the corners off the caps.
+      const axisX = shape.x1 - shape.x0;
+      const axisY = shape.y1 - shape.y0;
+      const axisZ = shape.z1 - shape.z0;
+      const lengthSquared = axisX * axisX + axisY * axisY + axisZ * axisZ;
+      if (lengthSquared <= 0) return false;
+      const t = ((x - shape.x0) * axisX + (y - shape.y0) * axisY + (z - shape.z0) * axisZ) / lengthSquared;
+      if (t < 0 || t > 1) return false;
+      const dx = x - (shape.x0 + axisX * t);
+      const dy = y - (shape.y0 + axisY * t);
+      const dz = z - (shape.z0 + axisZ * t);
+      return dx * dx + dy * dy + dz * dz <= shape.radius * shape.radius;
+    }
+    case 'cone': {
+      // The permitted radius TAPERS with the axial parameter — zero at the apex, `radius` at the base —
+      // which is the whole difference between a cone and a cylinder. Comparing against the full radius
+      // would describe the cylinder that circumscribes it.
+      const axisX = shape.baseX - shape.apexX;
+      const axisY = shape.baseY - shape.apexY;
+      const axisZ = shape.baseZ - shape.apexZ;
+      const lengthSquared = axisX * axisX + axisY * axisY + axisZ * axisZ;
+      if (lengthSquared <= 0) return false;
+      const t = ((x - shape.apexX) * axisX + (y - shape.apexY) * axisY + (z - shape.apexZ) * axisZ) / lengthSquared;
+      if (t < 0 || t > 1) return false;
+      const dx = x - (shape.apexX + axisX * t);
+      const dy = y - (shape.apexY + axisY * t);
+      const dz = z - (shape.apexZ + axisZ * t);
+      const permitted = shape.radius * t;
+      return dx * dx + dy * dy + dz * dz <= permitted * permitted;
     }
     case 'convex':
       return isPointInConvexHull3D(shape.points, x, y, z);

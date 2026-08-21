@@ -177,6 +177,47 @@ function writeCollider(
       );
       return;
     }
+    case 'cylinder': {
+      // The axis plus a ring at each cap. No spheres, unlike the capsule above — drawing one would show
+      // the rounded ends the cylinder deliberately does not have, and the two kinds would look identical
+      // in a debug view precisely where they differ.
+      writeBodyPoint(body, shape.x0, shape.y0, shape.z0, scratchAnchorA);
+      writeBodyPoint(body, shape.x1, shape.y1, shape.z1, scratchAnchorB);
+      writeAxialRing(out, body.index, scratchAnchorA, scratchAnchorB, shape.radius, 0);
+      writeAxialRing(out, body.index, scratchAnchorA, scratchAnchorB, shape.radius, 1);
+      writeLine(
+        out,
+        'collider',
+        body.index,
+        -1,
+        scratchAnchorA[0],
+        scratchAnchorA[1],
+        scratchAnchorA[2],
+        scratchAnchorB[0],
+        scratchAnchorB[1],
+        scratchAnchorB[2],
+      );
+      return;
+    }
+    case 'cone': {
+      // The base ring, plus the axis out to the apex. The apex is a point and needs no ring of its own.
+      writeBodyPoint(body, shape.apexX, shape.apexY, shape.apexZ, scratchAnchorA);
+      writeBodyPoint(body, shape.baseX, shape.baseY, shape.baseZ, scratchAnchorB);
+      writeAxialRing(out, body.index, scratchAnchorA, scratchAnchorB, shape.radius, 1);
+      writeLine(
+        out,
+        'collider',
+        body.index,
+        -1,
+        scratchAnchorA[0],
+        scratchAnchorA[1],
+        scratchAnchorA[2],
+        scratchAnchorB[0],
+        scratchAnchorB[1],
+        scratchAnchorB[2],
+      );
+      return;
+    }
     case 'convex': {
       // The hull's own triangulation, derived rather than stored: `CollisionConvex3D` carries no edges,
       // and drawing a guessed edge set would show a solid the simulation does not have. Each triangle
@@ -378,6 +419,72 @@ const BOX_EDGES: readonly (readonly [number, number])[] = [
 
 const HULL_VERTEX_RADIUS = 0.02;
 
+// A closed ring of `RING_SEGMENTS` line segments around the axis from `start` to `end`, at parameter
+// `t` along it. Used for the flat caps a cylinder and a cone have and a capsule does not.
+//
+// The two in-plane basis vectors come from crossing the axis with whichever cardinal direction it leans
+// on LEAST, so the cross product never collapses — the same rule the collision core uses to pick a
+// perpendicular, and for the same reason: crossing with a fixed axis fails exactly when the shape is
+// aligned to it, which is the common case rather than a rare one.
+function writeAxialRing(
+  out: Physics3DDebugGeometry,
+  bodyIndex: number,
+  start: readonly number[],
+  end: readonly number[],
+  radius: number,
+  t: number,
+): void {
+  const axisX = end[0] - start[0];
+  const axisY = end[1] - start[1];
+  const axisZ = end[2] - start[2];
+  const length = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+  if (!(length > 0)) return;
+  const unitX = axisX / length;
+  const unitY = axisY / length;
+  const unitZ = axisZ / length;
+
+  const absX = Math.abs(unitX);
+  const absY = Math.abs(unitY);
+  const absZ = Math.abs(unitZ);
+  const pickX = absX <= absY && absX <= absZ ? 1 : 0;
+  const pickY = pickX === 0 && absY <= absZ ? 1 : 0;
+  const pickZ = pickX === 0 && pickY === 0 ? 1 : 0;
+
+  let uX = unitY * pickZ - unitZ * pickY;
+  let uY = unitZ * pickX - unitX * pickZ;
+  let uZ = unitX * pickY - unitY * pickX;
+  const uLength = Math.sqrt(uX * uX + uY * uY + uZ * uZ);
+  if (!(uLength > 0)) return;
+  uX /= uLength;
+  uY /= uLength;
+  uZ /= uLength;
+
+  const vX = unitY * uZ - unitZ * uY;
+  const vY = unitZ * uX - unitX * uZ;
+  const vZ = unitX * uY - unitY * uX;
+
+  const centerX = start[0] + axisX * t;
+  const centerY = start[1] + axisY * t;
+  const centerZ = start[2] + axisZ * t;
+
+  let previousX = centerX + uX * radius;
+  let previousY = centerY + uY * radius;
+  let previousZ = centerZ + uZ * radius;
+  for (let i = 1; i <= RING_SEGMENTS; i += 1) {
+    const angle = (i / RING_SEGMENTS) * Math.PI * 2;
+    const cos = Math.cos(angle) * radius;
+    const sin = Math.sin(angle) * radius;
+    const nextX = centerX + uX * cos + vX * sin;
+    const nextY = centerY + uY * cos + vY * sin;
+    const nextZ = centerZ + uZ * cos + vZ * sin;
+    writeLine(out, 'collider', bodyIndex, -1, previousX, previousY, previousZ, nextX, nextY, nextZ);
+    previousX = nextX;
+    previousY = nextY;
+    previousZ = nextZ;
+  }
+}
+
+const RING_SEGMENTS = 16;
 const scratchAnchorA = [0, 0, 0];
 
 const scratchAnchorB = [0, 0, 0];

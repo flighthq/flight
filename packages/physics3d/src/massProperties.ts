@@ -184,12 +184,61 @@ export function computePhysics3DColliderMassData(collider: Readonly<Physics3DCol
       out.centerZ = (shape.z0 + shape.z1) / 2;
       return;
     }
+    case 'cylinder': {
+      const axisX = shape.x1 - shape.x0;
+      const axisY = shape.y1 - shape.y0;
+      const axisZ = shape.z1 - shape.z0;
+      const length = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+      computePhysics3DCylinderMassData(shape.radius, length / 2, density, out);
+      if (length > 0) alignTensorAxisToY(out, axisX / length, axisY / length, axisZ / length);
+      out.centerX = (shape.x0 + shape.x1) / 2;
+      out.centerY = (shape.y0 + shape.y1) / 2;
+      out.centerZ = (shape.z0 + shape.z1) / 2;
+      return;
+    }
+    case 'cone': {
+      const axisX = shape.baseX - shape.apexX;
+      const axisY = shape.baseY - shape.apexY;
+      const axisZ = shape.baseZ - shape.apexZ;
+      const length = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+      computePhysics3DConeMassData(shape.radius, length, density, out);
+      if (length > 0) alignTensorAxisToY(out, axisX / length, axisY / length, axisZ / length);
+      // A cone's centroid sits three QUARTERS of the way from apex to base, not at the midpoint: the
+      // solid is widest at the base, so that is where its volume is. Using the midpoint the cylinder
+      // above uses would offset every cone body's centre of mass by an eighth of its height and make it
+      // swing about the wrong point — a plausible-looking wrongness with nothing to flag it.
+      out.centerX = shape.apexX + axisX * 0.75;
+      out.centerY = shape.apexY + axisY * 0.75;
+      out.centerZ = shape.apexZ + axisZ * 0.75;
+      return;
+    }
     case 'convex':
       computePhysics3DConvexHullMassData(shape.points, density, out);
       return;
     default:
       zeroPhysics3DMassData(out);
   }
+}
+
+// Mass data for a solid cone of base `radius` and `height`, about its own CENTROID, with the symmetry
+// axis along +Y — the frame `alignTensorAxisToY` then rotates into place.
+//
+// The two moments are the standard closed forms for a solid cone, and the transverse one is stated
+// about the centroid rather than the apex. The apex form carries a `(3/5) m h^2` term; moving it down
+// to the centroid subtracts the parallel-axis term `m (3h/4)^2`, and `3/5 - 9/16` is `3/80`. Writing
+// the apex value here instead would inflate a tall cone's transverse inertia by a factor of sixteen and
+// look merely "stiff" rather than wrong.
+export function computePhysics3DConeMassData(
+  radius: number,
+  height: number,
+  density: number,
+  out: Physics3DMassData,
+): void {
+  const radius2 = radius * radius;
+  const mass = (Math.PI / 3) * radius2 * height * density;
+  const axial = 0.3 * mass * radius2;
+  const transverse = mass * ((3 / 20) * radius2 + (3 / 80) * height * height);
+  writeDiagonal(out, mass, transverse, axial, transverse);
 }
 
 // Mass data for the convex hull of a point list, by integrating over the hull's own triangulation.
@@ -294,6 +343,22 @@ export function computePhysics3DConvexHullMassData(
   out.inertiaXY = scratchTensorB[TENSOR_XY];
   out.inertiaXZ = scratchTensorB[TENSOR_XZ];
   out.inertiaYZ = scratchTensorB[TENSOR_YZ];
+}
+
+// Mass data for a solid cylinder of `radius` and half-height, about its centroid, symmetry axis along
+// +Y. The capsule above is this plus two hemispheres; this is the bare barrel.
+export function computePhysics3DCylinderMassData(
+  radius: number,
+  halfHeight: number,
+  density: number,
+  out: Physics3DMassData,
+): void {
+  const height = halfHeight + halfHeight;
+  const radius2 = radius * radius;
+  const mass = Math.PI * radius2 * height * density;
+  const axial = 0.5 * mass * radius2;
+  const transverse = mass * ((height * height) / 12 + radius2 / 4);
+  writeDiagonal(out, mass, transverse, axial, transverse);
 }
 
 // Mass data for a solid sphere centred on the origin.

@@ -33,6 +33,28 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionBuilt
         z1: local.z1,
         radius: local.radius,
       };
+    case 'cylinder':
+      return {
+        kind: 'cylinder',
+        x0: local.x0,
+        y0: local.y0,
+        z0: local.z0,
+        x1: local.x1,
+        y1: local.y1,
+        z1: local.z1,
+        radius: local.radius,
+      };
+    case 'cone':
+      return {
+        kind: 'cone',
+        apexX: local.apexX,
+        apexY: local.apexY,
+        apexZ: local.apexZ,
+        baseX: local.baseX,
+        baseY: local.baseY,
+        baseZ: local.baseZ,
+        radius: local.radius,
+      };
     case 'convex':
       return { kind: 'convex', points: local.points.slice() };
     default:
@@ -117,6 +139,32 @@ export function updatePhysics3DColliderWorldShape(collider: Physics3DCollider, b
     return;
   }
 
+  if (local.kind === 'cylinder' && world.kind === 'cylinder') {
+    rotatePhysics3DPoint(qX, qY, qZ, qW, local.x0, local.y0, local.z0, scratchPoint);
+    world.x0 = body.x + scratchPoint[0];
+    world.y0 = body.y + scratchPoint[1];
+    world.z0 = body.z + scratchPoint[2];
+    rotatePhysics3DPoint(qX, qY, qZ, qW, local.x1, local.y1, local.z1, scratchPoint);
+    world.x1 = body.x + scratchPoint[0];
+    world.y1 = body.y + scratchPoint[1];
+    world.z1 = body.z + scratchPoint[2];
+    world.radius = local.radius;
+    return;
+  }
+
+  if (local.kind === 'cone' && world.kind === 'cone') {
+    rotatePhysics3DPoint(qX, qY, qZ, qW, local.apexX, local.apexY, local.apexZ, scratchPoint);
+    world.apexX = body.x + scratchPoint[0];
+    world.apexY = body.y + scratchPoint[1];
+    world.apexZ = body.z + scratchPoint[2];
+    rotatePhysics3DPoint(qX, qY, qZ, qW, local.baseX, local.baseY, local.baseZ, scratchPoint);
+    world.baseX = body.x + scratchPoint[0];
+    world.baseY = body.y + scratchPoint[1];
+    world.baseZ = body.z + scratchPoint[2];
+    world.radius = local.radius;
+    return;
+  }
+
   if (local.kind === 'convex' && world.kind === 'convex') {
     const source = local.points;
     const target = world.points;
@@ -188,6 +236,38 @@ export function writePhysics3DColliderBounds(collider: Readonly<Physics3DCollide
       out.maxY = Math.max(shape.y0, shape.y1) + shape.radius;
       out.maxZ = Math.max(shape.z0, shape.z1) + shape.radius;
       return;
+    case 'cylinder': {
+      // A cylinder's cap is a DISC, not a sphere, so its extent along each axis is `radius` reduced by
+      // how much the axis lies along the cylinder's own. Padding by the full radius the way the capsule
+      // above does is valid but loose — an axis-aligned cylinder would claim a bounding box a full
+      // radius too tall, and every extra unit is broadphase pairs the narrow phase then has to reject.
+      writeDiscExtent(shape.x1 - shape.x0, shape.y1 - shape.y0, shape.z1 - shape.z0, shape.radius, scratchExtent);
+      out.minX = Math.min(shape.x0, shape.x1) - scratchExtent[0];
+      out.minY = Math.min(shape.y0, shape.y1) - scratchExtent[1];
+      out.minZ = Math.min(shape.z0, shape.z1) - scratchExtent[2];
+      out.maxX = Math.max(shape.x0, shape.x1) + scratchExtent[0];
+      out.maxY = Math.max(shape.y0, shape.y1) + scratchExtent[1];
+      out.maxZ = Math.max(shape.z0, shape.z1) + scratchExtent[2];
+      return;
+    }
+    case 'cone': {
+      // The union of a point and a disc: the apex contributes no extent at all, so padding it the way
+      // the base is padded would describe a cylinder rather than a cone.
+      writeDiscExtent(
+        shape.baseX - shape.apexX,
+        shape.baseY - shape.apexY,
+        shape.baseZ - shape.apexZ,
+        shape.radius,
+        scratchExtent,
+      );
+      out.minX = Math.min(shape.apexX, shape.baseX - scratchExtent[0]);
+      out.minY = Math.min(shape.apexY, shape.baseY - scratchExtent[1]);
+      out.minZ = Math.min(shape.apexZ, shape.baseZ - scratchExtent[2]);
+      out.maxX = Math.max(shape.apexX, shape.baseX + scratchExtent[0]);
+      out.maxY = Math.max(shape.apexY, shape.baseY + scratchExtent[1]);
+      out.maxZ = Math.max(shape.apexZ, shape.baseZ + scratchExtent[2]);
+      return;
+    }
     case 'convex': {
       const points = shape.points;
       if (points.length < 3) {
@@ -255,4 +335,31 @@ function rotatePhysics3DPoint(
   out[2] = z + qW * tZ + qX * tY - qY * tX;
 }
 
+// The per-axis half-extent of a disc of `radius` whose plane normal is `axis`, written as `[x, y, z]`.
+//
+// A disc reaches its full radius along an axis only when that axis lies IN its plane; along its own
+// normal it reaches nothing. `sqrt(1 - component^2)` is exactly that falloff, with `component` the
+// direction cosine between the world axis and the disc's normal. A degenerate (zero) axis has no plane,
+// so the full radius is returned on every axis — the conservative answer, matching what validation
+// would have rejected anyway.
+function writeDiscExtent(axisX: number, axisY: number, axisZ: number, radius: number, out: number[]): void {
+  const lengthSquared = axisX * axisX + axisY * axisY + axisZ * axisZ;
+  if (lengthSquared <= 0) {
+    out[0] = radius;
+    out[1] = radius;
+    out[2] = radius;
+    return;
+  }
+  const inverse = 1 / Math.sqrt(lengthSquared);
+  const nx = axisX * inverse;
+  const ny = axisY * inverse;
+  const nz = axisZ * inverse;
+  // Clamped at zero because 1 - n^2 can land a few ulps below it when the axis is exactly cardinal, and
+  // Math.sqrt of a negative would put NaN into a broadphase bound.
+  out[0] = radius * Math.sqrt(Math.max(0, 1 - nx * nx));
+  out[1] = radius * Math.sqrt(Math.max(0, 1 - ny * ny));
+  out[2] = radius * Math.sqrt(Math.max(0, 1 - nz * nz));
+}
+
+const scratchExtent = [0, 0, 0];
 const scratchPoint = [0, 0, 0];

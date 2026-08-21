@@ -5,6 +5,8 @@ import {
   combinePhysics3DMassData,
   computePhysics3DBoxMassData,
   computePhysics3DColliderMassData,
+  computePhysics3DConeMassData,
+  computePhysics3DCylinderMassData,
   computePhysics3DConvexHullMassData,
   computePhysics3DCapsuleMassData,
   computePhysics3DSphereMassData,
@@ -221,6 +223,67 @@ describe('computePhysics3DColliderMassData', () => {
   });
 });
 
+describe('computePhysics3DConeMassData', () => {
+  it('has exactly one third the mass of the cylinder that circumscribes it', () => {
+    // The cleanest independent check on the volume term: a cone is a third of its bounding cylinder, a
+    // relation that holds for every radius, height, and density.
+    const cone = createPhysics3DMassData();
+    const cylinder = createPhysics3DMassData();
+    computePhysics3DConeMassData(1.7, 4, 2.5, cone);
+    computePhysics3DCylinderMassData(1.7, 2, 2.5, cylinder);
+    expect(cone.mass).toBeCloseTo(cylinder.mass / 3, 10);
+  });
+
+  it('matches a numerically integrated cone about its own centroid', () => {
+    // The strong test, and the one worth the runtime. The transverse moment is the term most easily got
+    // wrong — the textbook value is usually quoted about the APEX, and using it here would inflate a tall
+    // cone's inertia by a factor of sixteen while still looking like a plausible number. This integrates
+    // the solid on a grid instead, sharing no algebra with the closed form.
+    const radius = 1.2;
+    const height = 3;
+    const density = 2;
+    const out = createPhysics3DMassData();
+    computePhysics3DConeMassData(radius, height, density, out);
+
+    // Centroid at the origin, symmetry axis along +Y, so apex sits at 3h/4 and the base at -h/4 — the
+    // frame the closed form reports in.
+    const apexY = 0.75 * height;
+    const baseY = -0.25 * height;
+    const steps = 90;
+    const step = (2 * radius) / steps;
+    const stepY = height / steps;
+    let mass = 0;
+    let axial = 0;
+    let transverse = 0;
+    for (let iy = 0; iy < steps; iy += 1) {
+      const y = baseY + (iy + 0.5) * stepY;
+      // The permitted radius tapers linearly from `radius` at the base to zero at the apex.
+      const permitted = radius * ((apexY - y) / height);
+      for (let ix = 0; ix < steps; ix += 1) {
+        const x = -radius + (ix + 0.5) * step;
+        for (let iz = 0; iz < steps; iz += 1) {
+          const z = -radius + (iz + 0.5) * step;
+          if (x * x + z * z > permitted * permitted) continue;
+          const cell = step * step * stepY * density;
+          mass += cell;
+          axial += cell * (x * x + z * z);
+          transverse += cell * (x * x + y * y);
+        }
+      }
+    }
+
+    expect(out.mass).toBeCloseTo(mass, 1);
+    expect(Math.abs(out.inertiaYY - axial) / axial).toBeLessThan(0.02);
+    expect(Math.abs(out.inertiaXX - transverse) / transverse).toBeLessThan(0.02);
+  });
+
+  it('is symmetric across the two axes orthogonal to its own', () => {
+    const out = createPhysics3DMassData();
+    computePhysics3DConeMassData(1.5, 3, 2, out);
+    expect(out.inertiaZZ).toBeCloseTo(out.inertiaXX, 10);
+  });
+});
+
 describe('computePhysics3DConvexHullMassData', () => {
   function boxPoints(halfX: number, halfY: number, halfZ: number, offsetX = 0): number[] {
     const points: number[] = [];
@@ -304,6 +367,32 @@ describe('computePhysics3DConvexHullMassData', () => {
     expect(out.mass).toBe(0);
     computePhysics3DConvexHullMassData([], 1, out);
     expect(out.mass).toBe(0);
+  });
+});
+
+describe('computePhysics3DCylinderMassData', () => {
+  it('is the capsule less its two hemispheres', () => {
+    const cylinder = createPhysics3DMassData();
+    const capsule = createPhysics3DMassData();
+    computePhysics3DCylinderMassData(2, 3, 1.5, cylinder);
+    computePhysics3DCapsuleMassData(2, 3, 1.5, capsule);
+    const hemispheres = (4 / 3) * Math.PI * 8 * 1.5;
+    expect(cylinder.mass).toBeCloseTo(capsule.mass - hemispheres, 10);
+  });
+
+  it('resists rotation least about its own axis', () => {
+    const out = createPhysics3DMassData();
+    computePhysics3DCylinderMassData(1, 4, 1, out);
+    expect(out.inertiaYY).toBeLessThan(out.inertiaXX);
+  });
+
+  it('matches the closed form for a solid cylinder', () => {
+    const out = createPhysics3DMassData();
+    computePhysics3DCylinderMassData(2, 1.5, 1, out);
+    const mass = Math.PI * 4 * 3;
+    expect(out.mass).toBeCloseTo(mass, 10);
+    expect(out.inertiaYY).toBeCloseTo(0.5 * mass * 4, 10);
+    expect(out.inertiaXX).toBeCloseTo(mass * (9 / 12 + 1), 10);
   });
 });
 

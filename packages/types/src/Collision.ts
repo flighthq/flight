@@ -257,7 +257,15 @@ export interface CollisionContactManifold2D {
 // mesh enters through decomposition instead: the caller (or a future mesh layer) tests the convex
 // pieces or the individual triangles it overlaps, each of which IS a shape here. Registering a mesh
 // support function would be the one way to make this core quietly wrong.
-export type CollisionShapeKind3D = 'sphere' | 'aabb' | 'box' | 'capsule' | 'convex' | (string & {});
+export type CollisionShapeKind3D =
+  | 'sphere'
+  | 'aabb'
+  | 'box'
+  | 'capsule'
+  | 'cylinder'
+  | 'cone'
+  | 'convex'
+  | (string & {});
 
 // A sphere collider: centre (`x`,`y`,`z`) and `radius`.
 export interface CollisionSphere3D {
@@ -325,11 +333,50 @@ export interface CollisionConvex3D {
   points: number[];
 }
 
+// A cylinder collider: the disc of `radius` swept along the segment from (`x0`,`y0`,`z0`) to
+// (`x1`,`y1`,`z1`), with flat caps at both ends.
+//
+// Stored as a segment plus a radius, exactly like `CollisionCapsule3D`, so the two differ by their END
+// TREATMENT alone — round for a capsule, flat for a cylinder — and a caller swapping one for the other
+// changes only the `kind` string. The support function needs no trigonometry: the furthest point is the
+// end cap the direction leans toward, offset by one radius along the direction's radial component.
+//
+// A zero-length segment is a degenerate cylinder (a flat disc) rather than the sphere a zero-length
+// capsule collapses to, which is why validation treats the two differently.
+export interface CollisionCylinder3D {
+  x0: number;
+  y0: number;
+  z0: number;
+  x1: number;
+  y1: number;
+  z1: number;
+  radius: number;
+}
+
+// A cone collider: the hull of an apex point and a base disc of `radius` centred at (`baseX`,`baseY`,
+// `baseZ`), lying in the plane perpendicular to the apex-to-base axis.
+//
+// Named ends rather than the `0`/`1` of capsule and cylinder, because a cone's two ends are NOT
+// interchangeable: swapping them inverts the shape. `x0`/`x1` would leave which end is the point to a
+// convention a reader has to remember, and getting it backwards produces a cone that still collides,
+// just pointing the wrong way.
+export interface CollisionCone3D {
+  apexX: number;
+  apexY: number;
+  apexZ: number;
+  baseX: number;
+  baseY: number;
+  baseZ: number;
+  radius: number;
+}
+
 export type CollisionBuiltInShape3D =
   | (CollisionSphere3D & { kind: 'sphere' })
   | (CollisionAabb3D & { kind: 'aabb' })
   | (CollisionBox3D & { kind: 'box' })
   | (CollisionCapsule3D & { kind: 'capsule' })
+  | (CollisionCylinder3D & { kind: 'cylinder' })
+  | (CollisionCone3D & { kind: 'cone' })
   | (CollisionConvex3D & { kind: 'convex' });
 
 // A vendor-namespaced 3D collider kind: any string containing a dot. The same rule as
