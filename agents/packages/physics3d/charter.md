@@ -56,10 +56,14 @@ This is the 3D half of physics. 2D rigid-body dynamics is `@flighthq/physics2d`.
 - **[2026-07-15] Rust-intended.** Primary performance target is the Rust crate; TS is the spec.
 - **[2026-08-20] Sequential impulses first, with no structural bar to another solver.** The rigid-body solver is sequential impulses. The data model must not encode that choice: solver-specific accumulators (effective masses, velocity bias, impulse caches) live in solver-owned storage rather than on the shared contact type; joint `solve` takes `dt`; `substeps` exists in the config from the first release, defaulting to 1; and the step ships as a composition of separately exported functions rather than a monolith. This is a **partitioning obligation on the data model, not a `SolverBackend` interface** — SI and XPBD differ in loop nesting rather than in the body of a per-constraint method, so a method-level seam would sit where they agree and miss where they differ, while costing a speculative abstraction with one implementation. "General rigid-body/contact/constraint model" means shared body state and shared vocabulary; contacts and joints remain separate solve paths, as they are in `physics2d`. Whether XPBD is ever built is deliberately left open. Relayed from the user. See [physics3d solver abstraction](../../physics3d-solver-abstraction.md).
 - **[2026-08-20] 3D narrow phase lives in `@flighthq/collision`; 3D broadphase in `@flighthq/spatial`.** Resolves former open directions 2 and 3. Both packages stay unified across dimensions with `2D`/`3D`-suffixed types and entry points, so this package consumes contacts and candidate pairs rather than generating them. See [collision support registry](../../collision-support-registry.md) and [spatial dimension seams](../../spatial-dimension-seams.md). User-directed.
+- **[2026-08-21] Static concave acceleration lives in `@flighthq/collision`.** Triangle meshes and
+  heightfields are collision shapes but are not convex-support shapes. They own retained local triangle
+  BVHs with explicit payload-version invalidation; transformed bounds, manifold generation, raycasts, and
+  sweeps consume that acceleration, while physics3d enforces their static-only body contract.
 
 ## Open directions
 
-1. **Static concave geometry architecture.** Convex-hull tensors are built and settled. Triangle mesh and
-   heightfield remain: mesh-vs-convex needs triangle acceleration and cannot enter through the convex
-   support registry, while static mesh mass is deliberately irrelevant. Decide whether triangle BVH
-   construction lives in `@flighthq/mesh`, `@flighthq/collision`, or a new shared seam.
+1. **Native target contract.** The TypeScript target is the executable specification and passes its AAA
+   gates. Before Rust/WASM work starts, decide whether native callers receive only a standard-world facade
+   or also a lower-level persistent-world handle/buffer API. Either choice must preserve physics semantics
+   and differential evidence; synchronous contact hooks and JS/WASM ownership are the seam-defining cases.

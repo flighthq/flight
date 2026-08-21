@@ -11,64 +11,64 @@ by: auditor
 
 ## Open
 
-The package has a production-capable convex rigid-body core and is materially beyond file-level parity
-with `physics2d`, but is not yet honest to label AAA-complete. The measurable gate and release blockers
-are in [review.md](./review.md).
+The TypeScript target passes its declared AAA qualification envelope. The package-wide charter is not
+yet honest to label unconditionally AAA-complete because the Rust/WASM performance target is deliberately
+paused pending an API/ownership decision and has no differential evidence. The measurable gate is in
+[review.md](./review.md); performance ceilings and the reference host are in
+[performance.md](./performance.md).
 
 Bodies own compound colliders; the step generates persistent contacts and begin/end events through a
-pluggable 3D spatial backend and collision narrow phase. Seven convex kinds, point/ray/region/shapecast
-queries, debug geometry, analytic linear plus bounded rotational CCD, all seven joint kinds, compliant
-limits, reactions/breakage, islands/sleeping, contact hooks, substeps, versioned hydration, lifecycle
-controls, opt-in guards, exact-repeat determinism, and long-horizon stress scenes ship.
+pluggable 3D spatial backend and collision narrow phase. Seven convex kinds plus static triangle meshes
+and heightfields, point/ray/region/shapecast queries, debug geometry, analytic linear plus bounded
+rotational CCD, all seven joint kinds, compliant limits, reactions/breakage, islands/sleeping, contact
+hooks, substeps, versioned hydration, lifecycle controls, opt-in guards, exact-repeat determinism,
+long-horizon stress scenes, and enforced performance/allocation budgets ship.
 
 - **Collision registration remains opt-in.** An unregistered support produces no contact. This is now
   diagnosable at every layer: `explainPhysics3DCollision`, `explainCollisionTest3D`, collision guards,
   and physics3d guards name the missing registration rather than leaving a falling body unexplained.
-- **Static triangle mesh and heightfield remain unbuilt charter features.** A support function represents
-  a convex shape, so concave terrain needs mesh-vs-convex dispatch over an accelerated triangle set; it
-  is not one more registry entry. This architectural boundary is still an AAA release blocker.
+- **Static concave terrain is complete.** Triangle meshes and heightfields dispatch outside the convex
+  support registry through a retained local BVH, rebuild after explicit payload invalidation, transform
+  without rebuilding local acceleration, reduce adjacent triangle contacts, and participate in world
+  bounds, raycasts, shapecasts, CCD, debug geometry, and long-horizon distributed-load scenes. Physics3d
+  rejects attaching either kind to a movable body.
 - **A numerical envelope is checked in.** The 12-box stack must retain a top centre above 11; fixed
   100:1 default and 1,000:1 four-substep stacks retain >99% spacing and sleep; 60-second restitution,
   friction isotropy, joint error, angular convergence, and contact-aware timestep scaling have bounds.
-- **CCD has two guarantees.** Translation always retains collision's analytic convex sweep, even while a
-  bullet spins. Rotation samples at a one-degree target under `maxCcdRotationSubsteps`, bisects its first
-  overlap, and resolves the manifold with angular effective mass. Linear impacts deliberately use a
-  centre-of-mass normal impulse because one GJK witness cannot represent a face-face region without false
-  torque. Impact-time friction, hooks, persistent event semantics, and the angular budget's guaranteed
-  speed/extent envelope remain unqualified.
-- **Convex hull faces are rebuilt on demand.** Mass properties, raycast, and debug geometry each pay the
-  O(n²) hull construction rather than caching a second face source that may disagree with mutable points.
-- **Shapecast returns the first hit.** Unlike a ray, a swept solid stops at first contact; positions beyond
-  that hit are not part of its realized path.
-- **The exported contact preparer requires solve-island workspace.** This is what lets sleeping islands
-  avoid a full contact scan; custom step composers must call `buildPhysics3DSolveIslands` first.
+- **CCD has explicit translation, rotation, and lifecycle guarantees.** Translation always retains
+  collision's analytic convex sweep, even while a bullet spins. Rotation samples at a one-degree target
+  under `maxCcdRotationSubsteps`, bisects its first overlap, and resolves manifold normal/friction impulses
+  with angular effective mass. Linear impacts deliberately use centre-of-mass normal/friction impulses
+  because one GJK witness cannot represent a face-face region without false torque. Solid TOIs run hooks
+  and publish persistent contacts in the impact step; sensors do not resolve or run hooks, retain identity
+  until an end transition, and do not fire behind an earlier solid impact. The exported envelope writer
+  reports the exact angular and furthest-point arc gap when the hard budget binds.
+- **Measured frame and allocation ceilings are checked in.** Both uniform-grid and BVH backends run a
+  256-contact stack and 256 sparse awake movers. Failing gates cover CPU p95, sampled transient bytes, and
+  retained heap per step; wall p50/p95 and machine metadata remain visible for interpretation.
+- **Deliberate costs and custom-loop contracts stay explicit.** Mutable convex hull faces rebuild on
+  demand rather than cache a second source; shapecast stops at the first realized hit; the exported
+  contact preparer requires `buildPhysics3DSolveIslands` first so sleeping islands avoid a full scan.
 - **Known joint approximations are explicit.** Cone-twist and generic 6-DOF cannot safely swap asymmetric
   frame ends. A 6-DOF combined angular bound projects axis-angle error per frame axis rather than adopting
   an Euler order. Gyroscopic integration is explicit; fast asymmetric spinners should use substeps.
 - **Guards cover all silent omissions.** They report declined steps, missing collision support, and each
   unresolved joint. Collider geometry/material/filter/derived-kind validation occurs before intake, so a
   NaN material cannot poison a newly generated contact in the same frame.
+- **The remaining decision is native ownership and API shape, not physics scope.** A Rust/WASM target must
+  preserve the standard physics3d semantics and parity suite, but a persistent native world, packed
+  mutation/readback buffers, and synchronous pre-solve hooks may require a lower-level handle or split-step
+  execution seam beneath the ordinary TypeScript facade. No native implementation starts before that
+  boundary is decided.
 
 ## Log
 
-- **2026-08-21** — Numerical qualification fixed iteration-lagged friction, corner-biased curved contacts,
-  and stale substep topology; solver constraints and grid/BVH pair records now retain steady-topology
-  workspace; 669 physics3d and 1,126 cross-package tests pass.
-- **2026-08-21** — AAA hardening: offset-COM integration, joint guards, compound warm-start identity,
-  coherent ownership/mutation/removal/cache lifecycle, hydration, rotational CCD, finite body controls,
-  at-point impulses, and pre-intake collider validation.
-- **2026-08-21** — Compliant limits landed for hinge, slider, cone-twist, and 6-DOF through shared soft-row
-  parameters; free-axis NaN propagation found and fixed.
-- **2026-08-21** — Cylinder/cone colliders and shapecast completed every convex seam.
-- **2026-08-21** — Joint reaction reporting and force/torque breakage landed; infinite default bounds were
-  exempted from validation so ordinary joints no longer make a step silently decline.
-- **2026-08-21** — GJK witness points and the distance joint landed, including rigid, spring, and rope modes.
-- **2026-08-21** — Analytic convex linear CCD landed with swept broadphase and bounded chronological TOI.
-- **2026-08-21** — Convex-hull mass properties, raycast, debug wireframe, and general 3D debug geometry landed.
-- **2026-08-21** — Stress/determinism qualification found and fixed stale-depth position solving.
-- **2026-08-21** — Point, ray, ray-closest, and region world queries landed over the live broadphase.
-- **2026-08-21** — Compound collider intake, mass derivation, filtering, sensors, events, and collision diagnosis landed.
-- **2026-08-21** — Solve islands began driving contacts; limited-joint warm starts and step guards landed.
-- **2026-08-20** — Explicit step, validation/explain seams, substeps, contact records, and lifecycle cleanup landed.
-- **2026-08-20** — Seven joint solvers, sleeping islands, tensor-aware integration, and contact solver landed.
-- **2026-08-20** — Package and plain-data type contract created under the ratified solver architecture.
+- **2026-08-21** — TypeScript AAA gates completed: accelerated static mesh/heightfield terrain, enforced
+  grid/BVH performance and allocation budgets, and CCD friction/hooks/persistent events/angular envelope;
+  only the paused native-target qualification remains.
+- **2026-08-21** — Numerical, determinism, long-horizon, lifecycle, diagnostic, substep, and retained-workspace
+  qualification completed; solver defects exposed by the scenes were fixed in place.
+- **2026-08-21** — Shape/query breadth, convex mass properties, linear/rotational CCD, joint reactions,
+  breakage, compliant limits, and distance-joint rigid/spring/rope modes completed.
+- **2026-08-20** — Plain-data world, compound contact pipeline, seven joint solvers, islands/sleeping,
+  explicit step composition, validation/explanation, substeps, and lifecycle controls established.
