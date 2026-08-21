@@ -7,6 +7,7 @@ lastDirection: 2026-07-15
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
+performance: ./performance.md
 ---
 
 # physics3d — Charter
