@@ -7,19 +7,27 @@ import { testCollision2D } from './testCollision2D';
 
 registerBuiltInCollisionSupports2D();
 
+// The widest gap between the generic core's normal and the incumbent's over this corpus, measured
+// rather than chosen: 3.3e-3, entirely from EPA's angular resolution on a curved boundary. Set just
+// above it so the bound is a real ceiling and a genuine regression cannot hide under a round number.
+const MAX_NORMAL_DEVIATION = 4e-3;
+
 describe('testCollisionSupport2D', () => {
   it('agrees with every incumbent SAT pair, on overlap and on the manifold itself', () => {
     // The differential test the collision charter sequences this work behind: ten hand-written pair
     // functions already encode years of degeneracy and orientation decisions, so the generic core is
     // measured against them rather than against a fresh set of expectations that could be wrong the
     // same way it is.
+    //
+    // It earned its keep. It found a real defect in the incumbent — the SAT paths oriented their normal
+    // by comparing shape centroids, which is only a heuristic and picks the wrong side whenever one
+    // projection nests inside the other asymmetrically. Both now read the side that actually won the
+    // penetration comparison, and the two agree exactly: NO exemptions, no tolerated boundary band.
     const random = createSeededRandom(0x5eed);
     const generic = createCollisionManifold2D();
     const incumbent = createCollisionManifold2D();
     let overlaps = 0;
     let trials = 0;
-    let grazing = 0;
-    let opposed = 0;
 
     for (let i = 0; i < 4000; i += 1) {
       const a = createRandomShape(random);
@@ -28,55 +36,24 @@ describe('testCollisionSupport2D', () => {
 
       const genericOverlapping = testCollisionSupport2D(a, b, generic);
       const incumbentOverlapping = testCollision2D(a, b, incumbent);
-
-      // A pair within a hair of exactly touching is where an iterative method and an analytic one are
-      // entitled to disagree, and asserting they do not would be asserting something neither promises:
-      // GJK stops when a support point fails to reach past the origin, SAT compares an overlap against
-      // zero, and at a penetration of 1e-9 those are different questions. Skipped and counted rather
-      // than silently tolerated, so the count itself is evidence the boundary is narrow.
-      if (
-        (genericOverlapping && generic.depth < GRAZING_DEPTH) ||
-        (incumbentOverlapping && incumbent.depth < GRAZING_DEPTH)
-      ) {
-        grazing += 1;
-        continue;
-      }
-
       expect({ i, overlapping: genericOverlapping }).toEqual({ i, overlapping: incumbentOverlapping });
       if (!genericOverlapping) continue;
 
       overlaps += 1;
-      // Depth first: a normal is only meaningful alongside the distance it carries, and a wrong depth
-      // with a right normal is the failure a solver turns into a body sinking or launching. This is the
-      // strong claim, and it holds to 1e-5 across every pair.
       expect(generic.depth).toBeCloseTo(incumbent.depth, 5);
-
-      // The normal is checked as an AXIS, and its SIGN is counted rather than asserted. Two separate
-      // and known gaps, both measured rather than assumed:
-      //
-      //   * On a curved boundary EPA terminates on a distance, and distance is second-order
-      //     insensitive to angular error — a depth converged to 1e-10 still leaves a circle's normal a
-      //     few parts in a thousand out on a deep overlap.
-      //   * A residual SIGN disagreement, now down to the count below. EPA canonicalizes and
-      //     lexicographically tie-breaks its axis exactly as the SAT core does, and applies the same
-      //     centroid rule when the difference is genuinely as deep both ways. What is left is neither
-      //     a symmetry tie nor a rounding difference: the two methods pick opposite directions at an
-      //     identical depth, and which is right has not been settled. It is why this core is not yet
-      //     wired in as the default fallback — a solver acts on the sign.
-      const alignment = generic.normalX * incumbent.normalX + generic.normalY * incumbent.normalY;
-      expect(Math.abs(alignment)).toBeCloseTo(1, 2);
-      if (alignment < 0) opposed += 1;
+      // The normal is held looser than the depth, and only because of EPA's own geometry: it terminates
+      // on a distance, and distance is second-order insensitive to angular error on a curved boundary,
+      // so a depth converged to 1e-10 still leaves a circle's normal a few parts in a thousand out. The
+      // SIGN is exact, which is what a solver acts on.
+      // Measured as one distance between the two unit normals rather than per component, so the bound
+      // means the same thing whichever way the axis happens to lie.
+      expect(Math.hypot(generic.normalX - incumbent.normalX, generic.normalY - incumbent.normalY)).toBeLessThan(
+        MAX_NORMAL_DEVIATION,
+      );
     }
 
     // A differential test that never overlapped would pass while proving nothing.
     expect(overlaps).toBeGreaterThan(trials / 10);
-    // Pinned at the count measured today rather than at a percentage. A budget expressed as a fraction
-    // quietly absorbs new failures as the corpus grows; an exact number fails the moment a third case
-    // appears, which is the only way an unresolved difference stays visible instead of becoming folklore.
-    expect(opposed).toBeLessThanOrEqual(OPPOSED_SIGN_BUDGET);
-    // And the skipped boundary band has to stay a band. If this ever climbs, the two methods are
-    // disagreeing about ordinary overlaps and hiding behind the exemption.
-    expect(grazing).toBeLessThan(trials / 200);
   });
 
   it('orients the normal to push A out of B', () => {
@@ -180,13 +157,6 @@ describe('testCollisionSupportOverlap2D', () => {
     ).toBe(false);
   });
 });
-
-// The unresolved sign disagreements, as counted over this corpus. Two, both at an exactly equal depth
-// on a single axis, neither explained by a symmetry tie.
-const OPPOSED_SIGN_BUDGET = 2;
-
-// Below this penetration the pair is grazing, and the two methods answer different questions.
-const GRAZING_DEPTH = 1e-6;
 
 // A small deterministic generator. Reproducibility is the point: a differential test that shuffles
 // differently each run reports a failure nobody can reproduce from the output.

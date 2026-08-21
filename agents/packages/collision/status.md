@@ -11,17 +11,11 @@ by: principal
 
 ## Open
 
-- **The generic GJK/EPA core is built and NOT yet wired in as the fallback.** `testCollisionSupport2D`
-  works and is differential-tested against all ten incumbent SAT pairs over 4000 seeded pairs, but
-  `testCollision2D` still dispatches through its closed switch. EPA now canonicalizes its axis into a
-  half-plane and tie-breaks lexicographically exactly as `isPreferredAxis` does, and applies the
-  incumbent's centroid rule when the difference is genuinely as deep both ways — which took the sign
-  disagreements from a handful to **two out of roughly 1690 overlapping pairs**.
-  Those two are the blocker, and they are NOT explained: both sit at an exactly equal depth on a single
-  axis with the two methods choosing opposite directions, and neither a symmetry tie nor rounding
-  accounts for it. Which implementation is right has not been established. The differential test pins
-  the count at exactly two, so a third fails the build rather than widening a budget. A solver acts on
-  that sign, so wiring this in ahead of an answer would be trading a silent miss for a silent shove.
+- **The generic GJK/EPA core is built and not yet wired in as the fallback.** `testCollisionSupport2D`
+  agrees with all ten incumbent SAT pairs EXACTLY over 4000 seeded pairs — same overlap decision, same
+  depth to 1e-5, same normal to the measured 4e-3 EPA ceiling, same sign, no exemptions. What remains
+  before `testCollision2D` can dispatch through the registries is assembly rather than correctness:
+  registering the ten pairs as specializations, which also closes the open kind / closed union defect.
 
 - **EPA's normal on a CURVED boundary is accurate to about the square root of its tolerance** — a few
   parts in a thousand on a deep circle overlap, against a depth good to 1e-10. Inherent: EPA
@@ -41,6 +35,17 @@ by: principal
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — The differential test found a real defect in the incumbent, and it is fixed. The SAT
+  paths oriented their manifold normal by comparing shape CENTROIDS, which is only a heuristic: it
+  picks the wrong side whenever one shape's projection nests inside the other's asymmetrically, because
+  the centroid can sit on the far side from the shallower exit. Both `polygonAxisOverlap` and
+  `circlePolygonAxisOverlap` already computed the two push distances and returned the smaller — the
+  winning SIDE was computed and thrown away. They now report it, and the callers use it instead of the
+  centroid. Verified independently of both implementations: translating A by `normal * depth` separates
+  the pair for the corrected normal and leaves it overlapping for the old one. `testAabbAabbCollision`
+  was never affected — it already used the side-based rule inline. Generic and incumbent now agree with
+  no tolerated exemptions at all; the 50 hardened SAT tests are unchanged and still pass.
 
 - **2026-08-21** — EPA tie-break: axis canonicalized into a half-plane and lexicographically
   tie-broken, mirroring `canonicalizeScratchAxis` and `isPreferredAxis`, with the centroid rule applied
