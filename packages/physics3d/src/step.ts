@@ -8,7 +8,7 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
-import { buildPhysics3DContacts } from './contactIntake';
+import { buildPhysics3DContacts, refreshPhysics3DContacts } from './contactIntake';
 import { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';
 import {
   clearRigidBody3DForces,
@@ -299,9 +299,9 @@ function stepValidatedPhysics3D(world: Physics3DWorld, dt: number): void {
   // simulation would look right and only the notification would go missing.
   world.jointEvents.broke.length = 0;
 
-  // Contacts are generated FIRST, from the poses the previous step left behind. Everything after this
-  // point — hooks, islands, the solver — reads a contact set that describes where the bodies actually
-  // are, and `world.events` names the pairs that began and ended touching during this call.
+  // Contacts are generated FIRST, from the poses the previous step left behind. The pre-solve hook is
+  // one transaction per public step: it runs before any interval commits, so a throw cannot leave half a
+  // substepped frame behind. Later interval refreshes retain its four mutable fields.
   buildPhysics3DContacts(world);
 
   // Pre-solve runs before anything is scaled or prepared, so a hook that disables a contact for this step
@@ -312,15 +312,22 @@ function stepValidatedPhysics3D(world: Physics3DWorld, dt: number): void {
   // then scale an already-scaled cache a second time.
   scalePhysics3DWarmStartCaches(world, substepDt);
 
-  // Sleep is decided HERE — before anything integrates — which is what makes every wake transition cost
-  // zero steps. A body woken by a force, by a new neighbour, or by the caller writing a velocity is awake
-  // in time to be integrated by this same step; deciding after integration would skip it once and move it
-  // a step late. It is decided once per STEP rather than per sub-interval, because stillness measured over
-  // a fraction of a frame is a different and much twitchier quantity than the one `timeToSleep` names.
+  // Sleep TIME is advanced once per step; later refreshes pass zero merely to rebuild the constraint
+  // graph and wake a sleeper reached by a body during an earlier interval. This preserves the meaning of
+  // `timeToSleep` while making a newly connected island live in the interval that discovered it.
   updatePhysics3DSleep(world, dt);
   buildPhysics3DSolveIslands(world);
 
   for (let substep = 0; substep < world.config.substeps; substep += 1) {
+    if (substep > 0) {
+      // A substep that only re-runs the solver against the outer step's original contact list is not a
+      // smaller timestep: bodies can cross into a collider in interval one and remain invisible through
+      // every interval after it. Refreshing here makes N substeps topologically equivalent to N calls at
+      // the sub-interval, while aggregating begin/end events across the one public call.
+      refreshPhysics3DContacts(world);
+      updatePhysics3DSleep(world, 0);
+      buildPhysics3DSolveIslands(world);
+    }
     stepPhysics3DInterval(world, substepDt);
   }
 

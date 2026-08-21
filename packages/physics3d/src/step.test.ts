@@ -163,6 +163,35 @@ describe('stepPhysics3D', () => {
     expect(Math.abs(fineBody.y - exact)).toBeLessThan(Math.abs(coarseBody.y - exact));
   });
 
+  it('refreshes contacts between substeps just like separate half-steps', () => {
+    function impactScene(): { readonly world: Physics3DWorld; readonly body: RigidBody3D } {
+      const world = createTestWorld();
+      const ground = addUnitBody(world);
+      ground.y = -0.5;
+      setPhysics3DBodyType(ground, 'static');
+      attachUnitBoxCollider(world, ground, 0);
+      const body = addUnitBody(world);
+      body.y = 0.51;
+      body.velocityY = -1;
+      body.fixedRotation = true;
+      attachUnitBoxCollider(world, body, 0);
+      return { world, body };
+    }
+
+    const combined = impactScene();
+    combined.world.config.substeps = 2;
+    stepPhysics3D(combined.world, 1 / 30);
+
+    const split = impactScene();
+    stepPhysics3D(split.world, 1 / 60);
+    stepPhysics3D(split.world, 1 / 60);
+
+    expect(combined.body.y).toBeCloseTo(split.body.y, 12);
+    expect(combined.body.velocityY).toBeCloseTo(split.body.velocityY, 12);
+    expect(combined.world.contacts).toHaveLength(1);
+    expect(combined.world.events.began).toHaveLength(1);
+  });
+
   it('resolves a generated contact so a falling body does not pass through the ground', () => {
     const world = createTestWorld();
     const ground = addUnitBody(world);
@@ -257,6 +286,7 @@ describe('stepPhysics3D', () => {
 
   it('lets a pre-solve hook disable a contact for the step', () => {
     const world = createTestWorld();
+    world.config.substeps = 2;
     const ground = addUnitBody(world);
     setPhysics3DBodyType(ground, 'static');
     refreshRigidBody3DWorldInertia(ground);
@@ -269,6 +299,8 @@ describe('stepPhysics3D', () => {
 
     stepPhysics3D(world, 1 / 60);
 
+    // The decision survives the between-interval geometry refresh; otherwise interval two silently
+    // re-enables the material contact and stops the box.
     expect(box.velocityY).toBeLessThan(-9);
   });
 

@@ -29,6 +29,18 @@ import { writeRigidBody3DWorldCenter } from './world';
 // Neither substitutes for the other: the first fixes contact identity, the second fixes solve order. A
 // determinism harness that shuffles only insertion order would pass with the first one broken.
 export function buildPhysics3DContacts(world: Physics3DWorld): void {
+  rebuildPhysics3DContacts(world, true, false);
+}
+
+// Refreshes contact geometry between solver sub-intervals without erasing transitions already emitted
+// by this outer step or overwriting the contact fields its pre-solve hook selected. A new contact still
+// receives its material defaults; an existing one retains friction, restitution, enabled, and sensor
+// until the next public step rebuild establishes a new hook transaction.
+export function refreshPhysics3DContacts(world: Physics3DWorld): void {
+  rebuildPhysics3DContacts(world, false, true);
+}
+
+function rebuildPhysics3DContacts(world: Physics3DWorld, clearEvents: boolean, preserveOverrides: boolean): void {
   // The diagnostics seam for the one failure this function cannot signal by its output. Null unless
   // `enablePhysics3DGuards` installed it, so a build that never enables guards links neither the check
   // nor the message text.
@@ -37,7 +49,7 @@ export function buildPhysics3DContacts(world: Physics3DWorld): void {
 
   const scratch = acquirePhysics3DIntakeScratch();
   try {
-    buildPhysics3DContactsWithScratch(world, scratch);
+    buildPhysics3DContactsWithScratch(world, scratch, clearEvents, preserveOverrides);
   } finally {
     releasePhysics3DIntakeScratch(scratch);
   }
@@ -49,11 +61,18 @@ export function setPhysics3DContactIntakeGuard(guard: Physics3DContactIntakeGuar
   physics3DIntakeGuard = guard;
 }
 
-function buildPhysics3DContactsWithScratch(world: Physics3DWorld, scratch: Physics3DIntakeScratch): void {
+function buildPhysics3DContactsWithScratch(
+  world: Physics3DWorld,
+  scratch: Physics3DIntakeScratch,
+  clearEvents: boolean,
+  preserveOverrides: boolean,
+): void {
   world.index.querySpatialPairs(scratch.pairs);
 
-  world.events.began.length = 0;
-  world.events.ended.length = 0;
+  if (clearEvents) {
+    world.events.began.length = 0;
+    world.events.ended.length = 0;
+  }
   for (const contact of world.contacts) contact.touching = false;
 
   for (const pair of scratch.pairs) {
@@ -97,6 +116,7 @@ function buildPhysics3DContactsWithScratch(world: Physics3DWorld, scratch: Physi
           sensorPair,
           mixPhysics3DFriction(colliderA.material.friction, colliderB.material.friction),
           mixPhysics3DRestitution(colliderA.material.restitution, colliderB.material.restitution),
+          preserveOverrides,
         );
       }
     }
@@ -158,6 +178,7 @@ function mergePhysics3DContact(
   sensor: boolean,
   friction: number,
   restitution: number,
+  preserveOverrides: boolean,
 ): void {
   let contact: Physics3DContact | null = null;
   for (const existing of world.contacts) {
@@ -172,6 +193,7 @@ function mergePhysics3DContact(
     }
   }
 
+  const existing = contact !== null;
   if (contact === null) {
     contact = {
       bodyA,
@@ -196,10 +218,12 @@ function mergePhysics3DContact(
   contact.normalX = manifold.normalX;
   contact.normalY = manifold.normalY;
   contact.normalZ = manifold.normalZ;
-  contact.friction = friction;
-  contact.restitution = restitution;
-  contact.enabled = true;
-  contact.sensor = sensor;
+  if (!existing || !preserveOverrides) {
+    contact.friction = friction;
+    contact.restitution = restitution;
+    contact.enabled = true;
+    contact.sensor = sensor;
+  }
   contact.touching = true;
 
   // Warm starting needs no snapshot-and-rematch here, unlike the 2D package: the 3D solver holds its
