@@ -33,9 +33,9 @@ built.
   determines a CONVEX shape, so a concave mesh cannot reach the narrow phase through the registry the
   way every built-in kind does. Adding one means a second dispatch path — mesh-vs-convex against a BVH
   of triangles — not another entry in the support registry.
-- **A resting stack compresses about 0.03 per contact against a 0.005 slop target** — twelve boxes
-  stand 11.11 where the geometry says 11.5. Ordinary projected-Gauss-Seidel behaviour, bounded by the
-  stress harness; more position iterations buy little of it back.
+- **A resting stack compresses about 0.03 per contact against a 0.005 slop target** — twelve boxes stand
+  11.11 where the geometry says 11.5. Ordinary projected-Gauss-Seidel behaviour; more position iterations
+  buy little of it back.
 - **CCD arrests tunnelling LINEARLY and applies no torque at the impact.** A deliberate bound. The
   impact carries a real GJK WITNESS point, exact where the closest feature is interior to an edge, but
   one point cannot stand for a face-face contact: every point of the region ties, the witness settles on
@@ -45,8 +45,8 @@ built.
   of mass and leaves the pair touching; the next step's MANIFOLD supplies lever arms that cancel for a
   square hit and not a glancing one. `continuous.test.ts` pins the no-spin invariant.
 - **Seven collider kinds.** Cylinder and cone joined sphere, aabb, box, capsule, and convex across every
-  seam. Their broadphase bounds come from the DISC extent rather than being padded by the full radius the
-  way a capsule's are, so an axis-aligned cylinder does not claim a box a radius too tall.
+  seam. Their broadphase bounds come from the DISC extent rather than the full radius, so an axis-aligned
+  cylinder does not claim a box a radius too tall.
 - **`queryPhysics3DShapeCast` reports only the FIRST hit, unlike the ray queries.** Not a reduced
   feature: a ray passes through a surface and continues, so "all hits along it" is well defined, while a
   swept shape stops at first contact and everything past it is a position it never reached.
@@ -66,21 +66,37 @@ built.
   decomposition would need Euler extraction and an order convention with it.
 - **The gyroscopic term is explicit.** Standard at game timesteps, and why `substeps` is the lever for
   fast spinners; an implicit form is the upgrade if a body turns its own momentum within a step.
-- **No 3D joint is SOFT except the distance joint.** Its `frequencyHz`/`dampingRatio` pair is the only
-  compliance in the package; hinge, slider, cone-twist, and 6-DOF limits are all hard stops, where
-  ragdolls and suspensions want springy ones. The soft-row machinery exists now in
-  `physics3DDistanceJointSolver`: stiffness and damping derived per-step from the pair's own effective
-  mass, which is what keeps a stated frequency meaning the same thing whatever it is attached to.
+- **Every limited joint can now be COMPLIANT, and the distance joint's limits deliberately cannot.**
+  Hinge, slider, cone-twist, and 6-DOF take `enableLimitSpring` with a frequency and damping ratio, all
+  routed through one `writePhysics3DSoftRowParameters`. The distance joint alone is excluded: its
+  compliance already lives on the rest row as `enableSpring`, and its limits exist to BOUND that spring
+  — they read the unsoftened effective mass precisely so a stiff spring cannot stretch through its own
+  stop. A soft limit stays one-sided; softening changes how hard a stop resists, never whether it may
+  pull back the other way.
+- **One bias slot serves rows of DIFFERENT masses, and that is exact rather than approximate.** The soft
+  bias factor works out to `w^2 / (2*z*w + dt*w^2)`, in which the mass cancels; only the softened mass
+  and gamma vary per row. Cone-twist's swing and twist share a slot on this basis, as do the 6-DOF axes.
+  The corollary bit once: a FREE 6-DOF axis never has its row mass written, so feeding it to the spring
+  produced NaN that the shared slot then spread to every other axis.
 - **A broken joint STAYS IN THE WORLD.** It constrains nothing and no longer binds its bodies into one
   island, but removing it is the caller's: what a break means is not the solver's to decide, and a joint
   that deleted itself would leave nothing to inspect. `physics2d` has no breakage at all yet.
 - **The guard module covers the declined STEP and the undetectable COLLIDER, not the unregistered
-  JOINT.** A joint whose kind has no registered solver is skipped without a word, though
-  `explainPhysics3DJoints` already classifies it. Closing it means a third seam, not a second module.
+  JOINT.** A joint whose kind has no solver is skipped without a word, though `explainPhysics3DJoints`
+  already classifies it. Closing it means a third seam, not a second module.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Compliant limits on hinge, slider, cone-twist, and 6-DOF, all through one
+  `writePhysics3DSoftRowParameters`; the distance joint's rest row was refactored onto the same helper
+  and its behaviour is unchanged. The helper takes the HARD bias factor as a parameter rather than
+  baking one in, because the two callers legitimately disagree — a two-sided rest row corrects at
+  `BAUMGARTE / dt` and a one-sided stop fully at `1 / dt` — and baking either in would have silently
+  changed the other's hard behaviour. A test caught the one real defect: a FREE 6-DOF axis has no row
+  mass written, so preparing a spring for it produced NaN that the shared bias slot then spread to every
+  other axis, turning a working joint into NaN wholesale.
 
 - **2026-08-21** — Cylinder and cone colliders, and `queryPhysics3DShapeCast`. The shapecast asks the
   broadphase for the SWEPT bounds — the shape's box unioned with that box shifted by the displacement —
