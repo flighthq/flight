@@ -28,9 +28,12 @@ import {
 } from './glScanlinesEffect';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
 
-function apply(effect: Readonly<Partial<ScanlinesEffect>> = {}): void {
+beforeEach(() => {
   programMock.getGlEffectProgram.mockClear();
   glMock.uniform1f.mockClear();
+});
+
+function apply(effect: Readonly<Partial<ScanlinesEffect>> = {}): void {
   const target = { height: 60, texture: {}, width: 80 } as unknown as GlRenderTarget;
   applyScanlinesEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
     kind: 'ScanlinesEffect',
