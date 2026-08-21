@@ -1,4 +1,4 @@
-import type { CollisionRaycastHit2D, CollisionShape2D } from '@flighthq/types/contract';
+import type { CollisionRaycastHit2D, CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createCollisionRaycastHit2D, raycastCollisionShape2D } from './raycastCollisionShape2D';
@@ -61,7 +61,7 @@ describe('raycastCollisionShape2D', () => {
     ['point', { kind: 'point', x: 2, y: 0 }, 2, 0, 0],
   ] as const)('hits a %s at its first exact fraction', (_name, shape, fraction, normalX, normalY) => {
     const out = hit();
-    expect(raycastCollisionShape2D(shape as CollisionShape2D, 0, 0, 1, 0, out)).toBe(true);
+    expect(raycastCollisionShape2D(shape as CollisionBuiltInShape2D, 0, 0, 1, 0, out)).toBe(true);
     expect(out.fraction).toBeCloseTo(fraction);
     expect(out.x).toBeCloseTo(fraction);
     expect(out.y).toBeCloseTo(0);
@@ -71,7 +71,7 @@ describe('raycastCollisionShape2D', () => {
 
   it('rotates an oriented-box hit normal back to world space', () => {
     const out = hit();
-    const shape: CollisionShape2D = { kind: 'obb', x: 3, y: 0, halfW: 1, halfH: 0.5, rotation: Math.PI / 4 };
+    const shape: CollisionBuiltInShape2D = { kind: 'obb', x: 3, y: 0, halfW: 1, halfH: 0.5, rotation: Math.PI / 4 };
     expect(raycastCollisionShape2D(shape, 0, 0, 1, 0, out)).toBe(true);
     expect(out.normalX).toBeCloseTo(-Math.SQRT1_2);
     expect(out.normalY).toBeCloseTo(Math.SQRT1_2);
@@ -96,7 +96,7 @@ describe('raycastCollisionShape2D', () => {
   });
 
   it('keeps point-ray tolerance invariant when direction is rescaled', () => {
-    const shape: CollisionShape2D = { kind: 'point', x: 2, y: 1e-6 };
+    const shape: CollisionBuiltInShape2D = { kind: 'point', x: 2, y: 1e-6 };
     expect(raycastCollisionShape2D(shape, 0, 0, 1, 0, hit())).toBe(false);
     expect(raycastCollisionShape2D(shape, 0, 0, 1e6, 0, hit())).toBe(false);
   });

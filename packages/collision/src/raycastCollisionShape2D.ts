@@ -1,4 +1,4 @@
-import type { CollisionRaycastHit2D, CollisionShape2D } from '@flighthq/types/contract';
+import type { CollisionRaycastHit2D, CollisionBuiltInShape2D } from '@flighthq/types/contract';
 
 import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation';
 import { getCollisionShapeContainsPoint2D } from './pointContainment';
@@ -13,7 +13,7 @@ export function createCollisionRaycastHit2D(): CollisionRaycastHit2D {
 // not be normalized; fraction therefore stays in the caller's parameterization. `maxFraction` bounds a
 // segment or sweep without changing the ray direction, and defaults to an unbounded forward ray.
 export function raycastCollisionShape2D(
-  shape: Readonly<CollisionShape2D>,
+  shape: Readonly<CollisionBuiltInShape2D>,
   originX: number,
   originY: number,
   directionX: number,
@@ -215,7 +215,7 @@ function raycastBox(
 }
 
 function raycastObb(
-  shape: Readonly<Extract<CollisionShape2D, { kind: 'obb' }>>,
+  shape: Readonly<Extract<CollisionBuiltInShape2D, { kind: 'obb' }>>,
   originX: number,
   originY: number,
   directionX: number,

@@ -49,6 +49,9 @@ export function getCollisionPolygonValidationStatus2D(points: readonly number[])
 
 // Returns the invalid/unsupported status that prevents a shape from participating in a manifold,
 // or null when it is a finite, positive-area member of the supported manifold shape set.
+// Takes the full `CollisionShape2D` rather than the built-in union, because naming an unrecognized kind
+// is the whole job: the registry-free queries beside it — containment, raycast, sweep, contact clipping
+// — take `CollisionBuiltInShape2D` and reject a vendor kind at compile time instead.
 export function getCollisionShapeValidationStatus2D(shape: Readonly<CollisionShape2D>): CollisionTestStatus | null {
   switch (shape.kind) {
     case 'circle':
