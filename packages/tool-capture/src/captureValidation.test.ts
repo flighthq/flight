@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { setBaselineField } from './baselineStore';
+import { getBaselineField, setBaselineField } from './baselineStore';
 import {
   readCaptureBaselineCoverageManifest,
   writeCaptureBaselineCoverageManifest,
@@ -262,6 +262,40 @@ function sha256(source: string): string {
   return createHash('sha256').update(source).digest('hex');
 }
 
+const UPDATE_PROVENANCE = {
+  computationId: 'grid-average-rgb-v1',
+  frames: 1,
+  sourceHash: 'a'.repeat(64),
+  targetKind: 'canvas',
+  verifyPublished: true,
+  warmupFrames: 0,
+} as const;
+
+function updateBrowserSession(fingerprint: string) {
+  const page = {
+    $eval: vi.fn(),
+    close: vi.fn().mockResolvedValue(undefined),
+    evaluate: vi.fn().mockResolvedValue({
+      coverage: 1,
+      fingerprint,
+      render: 'canvas',
+      state: 'passed',
+    }),
+    evaluateHandle: vi.fn().mockResolvedValue({ asElement: () => null, dispose: vi.fn() }),
+    goto: vi.fn(),
+    on: vi.fn(),
+    waitForFunction: vi.fn().mockResolvedValue(undefined),
+  };
+  const newPage = vi.fn().mockResolvedValue(page);
+  return {
+    newPage,
+    session: {
+      browser: { close: vi.fn() } as never,
+      context: { newPage } as never,
+    },
+  };
+}
+
 async function validateRegressionFixture(root: string, kill: () => void, fingerprint = '2:ffffffffffffffffff000000') {
   return runCaptureValidation({
     subject: 'functional',
@@ -301,6 +335,94 @@ async function validateParityFixture(input: Readonly<Record<string, unknown>>) {
 }
 
 describe('runCaptureValidation', () => {
+  it('refuses the known sha256-only bitmap-transform-rotation/canvas cell before browser work', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'tool-capture-update-unpinned-'));
+    try {
+      mkdirSync(join(root, 'scripts'), { recursive: true });
+      setBaselineField(
+        root,
+        'functional',
+        'bitmap-transform-rotation',
+        'canvas',
+        'sha256',
+        'b'.repeat(64),
+        UPDATE_PROVENANCE,
+      );
+      writeCaptureBaselineCoverageManifest(root, 'functional', {
+        'bitmap-transform-rotation/canvas': ['sceneAssertion', 'screenshot'],
+      });
+      const fingerprint = '2:000000000000000000ffffff';
+      const browser = updateBrowserSession(fingerprint);
+
+      const result = await runCaptureValidation({
+        subject: 'functional',
+        entries: [{ name: 'bitmap-transform-rotation', renderers: ['canvas'] }],
+        server: { url: 'http://unused.invalid', kill: vi.fn() },
+        root,
+        gateParity: false,
+        quiet: true,
+        updateFingerprints: true,
+        fingerprints: { 'bitmap-transform-rotation': { canvas: fingerprint } },
+        fingerprintProvenance: { 'bitmap-transform-rotation': { canvas: UPDATE_PROVENANCE } },
+        browserSession: browser.session,
+      });
+
+      expect(browser.newPage).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ shouldFail: true, updated: 0 });
+      expect(result.checks).toContainEqual(
+        expect.objectContaining({
+          entry: 'bitmap-transform-rotation',
+          kind: 'baseline',
+          status: 'failed',
+          message: expect.stringContaining('not authorized by the committed coverage manifest'),
+        }),
+      );
+      expect(getBaselineField(root, 'functional', 'bitmap-transform-rotation', 'canvas', 'fingerprint')).toBeNull();
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+
+  it('refreshes the manifested fingerprint for bitmap-color-transform/canvas', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'tool-capture-update-pinned-'));
+    try {
+      mkdirSync(join(root, 'scripts'), { recursive: true });
+      setBaselineField(
+        root,
+        'functional',
+        'bitmap-color-transform',
+        'canvas',
+        'fingerprint',
+        '2:ffffff000000000000000000',
+        UPDATE_PROVENANCE,
+      );
+      writeCaptureBaselineCoverageManifest(root, 'functional', {
+        'bitmap-color-transform/canvas': ['fingerprint', 'sceneAssertion', 'screenshot'],
+      });
+      const fingerprint = '2:000000000000000000ffffff';
+      const browser = updateBrowserSession(fingerprint);
+
+      const result = await runCaptureValidation({
+        subject: 'functional',
+        entries: [{ name: 'bitmap-color-transform', renderers: ['canvas'] }],
+        server: { url: 'http://unused.invalid', kill: vi.fn() },
+        root,
+        gateParity: false,
+        quiet: true,
+        updateFingerprints: true,
+        fingerprints: { 'bitmap-color-transform': { canvas: fingerprint } },
+        fingerprintProvenance: { 'bitmap-color-transform': { canvas: UPDATE_PROVENANCE } },
+        browserSession: browser.session,
+      });
+
+      expect(browser.newPage).toHaveBeenCalledOnce();
+      expect(result).toMatchObject({ shouldFail: false, updated: 1 });
+      expect(getBaselineField(root, 'functional', 'bitmap-color-transform', 'canvas', 'fingerprint')).toBe(fingerprint);
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+
   // ★ COMPOSED FROM TWO IMPLEMENTATIONS OF ONE CAPABILITY. The scenario, the message text and the
   // orientation-triage pointer came from the message-wiring side; the value they render came from the
   // resolver side. The assertion is on BOTH, because the point of the composition is that they cannot

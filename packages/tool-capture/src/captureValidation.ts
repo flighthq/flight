@@ -193,6 +193,8 @@ interface ResolvedCaptureValidationOptions {
   maxRetries: number;
   report: boolean;
   updateFingerprints: boolean;
+  /** Identities the committed coverage manifest authorizes this run to refresh. */
+  fingerprintUpdateAuthority: ReadonlySet<string>;
   updateCoverage: boolean;
   gateRegression: boolean;
   gateParity: boolean;
@@ -730,6 +732,20 @@ async function processEntry(
 
   for (const renderer of renderers) {
     if (isAborted()) break;
+    const identity = formatCaptureBaselineCoverageIdentity(entry.name, renderer);
+    if (options.updateFingerprints && !options.fingerprintUpdateAuthority.has(identity)) {
+      const note = 'baseline not written — fingerprint update is not authorized by the committed coverage manifest';
+      result.output.push(statusLine('fail', renderer, note));
+      result.loadFailures++;
+      result.checks.push({
+        entry: entry.name,
+        renderers: [renderer],
+        kind: 'baseline',
+        status: 'failed',
+        message: note,
+      });
+      continue;
+    }
     const supplied = options.fingerprints[entry.name]?.[renderer];
     const first = supplied
       ? { fingerprint: supplied, reason: '', unavailable: false, aborted: false }
@@ -1179,15 +1195,28 @@ export async function runCaptureValidation(
   // A filtered run cannot tell "this pinned target vanished" from "I excluded it", so it must not claim
   // an absence. It can still report a LOSS, because that is about a target it actually ran.
   const entryFiltered = (input.filter !== undefined && input.filter !== '') || input.filterExact !== undefined;
+  const root = resolve(input.root ?? process.cwd());
+  // Re-baselining refreshes accepted evidence; it does not mint a new support claim. In particular, a
+  // screenshot-only cell must stay screenshot-only until its fingerprint coverage is separately reviewed
+  // and accepted into the manifest. Read this only for the writing path: ordinary validation already reads
+  // the manifest at its coverage gate below, and combining those loads is unrelated to this authority check.
+  const fingerprintUpdateAuthority = new Set(
+    input.updateFingerprints
+      ? Object.entries(readCaptureBaselineCoverageManifest(root).subjects[input.subject] ?? {})
+          .filter(([, kinds]) => kinds.includes('fingerprint'))
+          .map(([identity]) => identity)
+      : [],
+  );
   const options: ResolvedCaptureValidationOptions = {
     subject: input.subject,
-    root: resolve(input.root ?? process.cwd()),
+    root,
     rendererFilter: input.rendererFilter ?? [],
     captureFrames: Math.max(1, input.captureFrames ?? 1),
     maxRetries: Math.max(0, input.maxRetries ?? 1),
     report: input.report ?? false,
     quiet: input.quiet ?? false,
     updateFingerprints: input.updateFingerprints ?? false,
+    fingerprintUpdateAuthority,
     updateCoverage: input.updateCoverage ?? false,
     gateRegression: input.gateRegression ?? true,
     gateParity: input.gateParity ?? true,
@@ -1236,8 +1265,10 @@ export async function runCaptureValidation(
       options.fingerprintSkip.has(entry.name)
         ? []
         : validationRenderers(entry, options.rendererFilter, options.parityGroups)
-            .filter(
-              (renderer) => options.updateFingerprints || options.fingerprints[entry.name]?.[renderer] === undefined,
+            .filter((renderer) =>
+              options.updateFingerprints
+                ? options.fingerprintUpdateAuthority.has(formatCaptureBaselineCoverageIdentity(entry.name, renderer))
+                : options.fingerprints[entry.name]?.[renderer] === undefined,
             )
             .map((renderer) => ({ entry, renderer })),
     );
