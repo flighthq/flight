@@ -49,11 +49,16 @@ const DESCRIPTOR_ONLY_EFFECTS = [
   'VolumetricLightEffect',
 ] as const;
 
+// ★ TWO ENTRIES LEFT THIS LIST BECAUSE THEIR GAP CLOSED, WHICH IS THE OUTCOME IT EXISTS TO PRODUCE.
+// `effect-msaa.webgpu` and `effect-msaa-bloom.webgpu` each asserted that Wgpu could not multisample, and
+// each carried a tripwire saying to fail loudly if that ever changed. It changed — the effect target now
+// honours sampleCount 4 — and both fired. Their assertions were INVERTED rather than deleted, so a
+// regression back to the single-sample fallback still goes red; but they no longer guard a gap, so this
+// registry is not where they belong. A closed gap must leave, or the list slowly becomes a record of
+// what used to be true while claiming to be a list of what still is.
 const DIRECT_FUNCTIONAL_GAP_GUARDS = [
   ['functional/scenes/color-adjustment.canvas.ts', 'capability landed and this cell'],
   ['functional/scenes/effect-bokeh-dof.webgpu.ts', 'now has a registered bokeh runner'],
-  ['functional/scenes/effect-msaa-bloom.webgpu.ts', 'multisampling has landed; update this cell'],
-  ['functional/scenes/effect-msaa.webgpu.ts', 'sampleCount is no longer a no-op on Wgpu'],
   ['functional/scenes/effect-ssr.webgl.ts', 'Gl now has a registered SSR runner'],
   ['functional/scenes/effect-ssr.webgpu.ts', 'Wgpu now has a registered SSR runner'],
   ['functional/scenes/effect-taa.webgl.ts', 'Gl now has a registered TAA runner'],
@@ -93,9 +98,14 @@ describe('causal limitation prose', () => {
     for (const kind of CANVAS_EFFECTS) expect(support).toContain(kind.replace(/Effect$/, ''));
   });
 
-  it('keeps the 10 STILL TRUE functional claim sites attached to assert-the-gap guards', () => {
-    expect(DIRECT_FUNCTIONAL_GAP_GUARDS).toHaveLength(10);
-    for (const [path, marker] of DIRECT_FUNCTIONAL_GAP_GUARDS) expect(read(path), path).toContain(marker);
+  it('keeps the 8 STILL TRUE functional claim sites attached to assert-the-gap guards', () => {
+    expect(DIRECT_FUNCTIONAL_GAP_GUARDS).toHaveLength(8);
+    // Collected rather than thrown one at a time: this loop reported only the FIRST mismatch, so when two
+    // entries went stale together the second was invisible until the first was fixed. A list whose job is
+    // to be complete should fail completely.
+    const stale = DIRECT_FUNCTIONAL_GAP_GUARDS.filter(([path, marker]) => !read(path).includes(marker));
+
+    expect(stale.map(([path]) => path)).toEqual([]);
   });
 
   it('fails when a descriptor-only effect gains a runner underneath the named seven-kind record', () => {

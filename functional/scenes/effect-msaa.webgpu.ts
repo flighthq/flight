@@ -31,11 +31,11 @@ declareExpectedImageDescription(
   'Four narrow colored bars (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 180×32 on dark background (0x101014), rotated 18°/42°/66°/90°. No post-process effects applied — empty effects array. Diagonal edges are smooth from the 2x-per-axis supersample-and-resolve the Wgpu effect target performs for sampleCount 4, matching the Gl cell.',
 );
 
-// Wgpu parity column for the MSAA reference scene. NOTE: sampleCount is honoured on the Wgpu
-// effect pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu
-// target is a follow-up, mirroring the Gl seam. We still render the same rotated shapes through the
-// pipeline with an empty effect list so the column exists for visual comparison; its edges may alias
-// more than Gl's until Wgpu MSAA lands.
+// Wgpu parity column for the MSAA reference scene. sampleCount 4 is HONOURED here: the effect target is
+// allocated at 2x per axis and resolved down, so the same rotated shapes come out antialiased as they do
+// on Gl. The two backends reach that by different means — Gl resolves a real multisample renderbuffer,
+// Wgpu supersamples — and the point of the pair is that the PICTURE agrees, not the mechanism. Rendered
+// through the pipeline with an empty effect list so nothing but the resolve is under test.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
