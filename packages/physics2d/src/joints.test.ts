@@ -419,6 +419,60 @@ describe('joints built without their impulse accumulators', () => {
 });
 
 describe('physics2DDistanceJointSolver', () => {
+  // A hanging spring whose only dynamic body's mass is set by `density`. Everything else — the authored
+  // frequency, the damping ratio, the stretch it starts from — is held identical between instances, so
+  // any difference in how it moves is a difference the mass caused.
+  function springWorld(density: number): { world: Physics2DWorld; bob: ReturnType<typeof box> } {
+    const material = { density, friction: 0, restitution: 0 };
+    const world = createPhysics2DWorld(0, 0);
+    registerPhysics2DJointSolver(world, Physics2DDistanceJointKind, physics2DDistanceJointSolver);
+    const anchor = createRigidBody2D('static', 0, 0);
+    anchor.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.1 }, material));
+    addPhysics2DBody(world, anchor);
+    const bob = createRigidBody2D('dynamic', 0, -2);
+    bob.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, material));
+    addPhysics2DBody(world, bob);
+    const joint: Physics2DDistanceJoint = {
+      ...baseJoint(Physics2DDistanceJointKind, anchor.index, bob.index),
+      length: 1,
+      frequencyHz: 2,
+      dampingRatio: 0.2,
+    };
+    addPhysics2DJoint(world, joint);
+    return { world, bob };
+  }
+
+  it('oscillates an authored spring at the same rate whatever mass hangs off it', () => {
+    // Authoring a spring by frequency instead of by stiffness is only worth anything if the frequency
+    // survives the mass changing — otherwise it is a stiffness under another name, and every tuned
+    // spring in a game retunes itself the moment an artist resizes the body.
+    const light = springWorld(1);
+    const heavy = springWorld(4);
+    expect(heavy.bob.mass).toBeCloseTo(light.bob.mass * 4, 12);
+
+    stepPhysics2D(light.world, 1 / 60);
+    stepPhysics2D(heavy.world, 1 / 60);
+    // Exactly equal, not close: mass has to cancel out of this completely, not mostly.
+    expect(heavy.bob.velocityY).toBe(light.bob.velocityY);
+
+    // Half a period, measured as the swing back through rest to the far side.
+    const halfPeriod = (spring: { world: Physics2DWorld; bob: ReturnType<typeof box> }): number => {
+      for (let step = 1; step < 600; step++) {
+        stepPhysics2D(spring.world, 1 / 60);
+        if (step > 2 && spring.bob.velocityY <= 0) return step;
+      }
+      return -1;
+    };
+    const lightHalfPeriod = halfPeriod(light);
+    expect(halfPeriod(heavy)).toBe(lightHalfPeriod);
+
+    // And it is the RIGHT rate, not merely a consistent one: a 2 Hz spring at damping ratio 0.2 has a
+    // damped half-period of 1 / (2 * 2 * sqrt(1 - 0.04)) seconds, which is 15.3 steps at 60 Hz. Pinning
+    // only the agreement between the two would pass just as well for two identically wrong springs.
+    expect(lightHalfPeriod).toBeGreaterThan(14);
+    expect(lightHalfPeriod).toBeLessThan(17);
+  });
+
   it('keeps prepared axis and mass local when a joint getter prepares another world', () => {
     const world = createPhysics2DWorld(0, 0);
     const anchor = box(world, 'static', 0, 0);
