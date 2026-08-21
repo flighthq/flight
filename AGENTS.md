@@ -229,7 +229,7 @@ Application: `application` (main loop and windowing) with `application-gl` (the 
 - UI and shell: `accessibility`, `clipboard`, `dialog`, `filesystem`, `notification`, `shell`, `menu`, `tray`, `shortcut`, `share`, `haptics`, `geolocation`, `webcam`, `statusbar`.
 - App and process: `app`, `protocol`, `updater`, `ipc`.
 
-Two package families are deliberately outside the `@flighthq/sdk` barrel and not tree-shakable: host backends (`host-<runtime>`: `host-electron`, `host-tauri`, `host-capacitor`) and the dev/CI tooling suite (`tool-*`, currently `tool-capture`). `scripts/sdk-policy.ts` enforces the exclusion.
+Two package families are deliberately outside the `@flighthq/sdk` barrel and not tree-shakable: host backends (`host-<runtime>`: `host-electron`, `host-tauri`, `host-capacitor`) and the dev/CI tooling suite (`tool-*`: `tool-capture`, `tool-registry`). `scripts/sdk-policy.ts` enforces the exclusion.
 
 ## Feature Lookup
 
