@@ -240,6 +240,132 @@
         "functional/effect-posterize/webgpu": "WebGPU silently normalizes the requested effect-target sampleCount 4 to 1 while WebGL renders at 4; release after the WebGPU sample-count seam is resolved and current parity passes"
       },
       "reason": "looks close"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:47:24.686Z",
+      "keys": [
+        "functional/text-basic/dom",
+        "functional/text-basic/canvas",
+        "functional/text-basic/webgl",
+        "functional/text-basic/webgpu"
+      ],
+      "reason": "appears to be different font in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:48:00.625Z",
+      "keys": [
+        "functional/text-bold/dom",
+        "functional/text-bold/canvas",
+        "functional/text-bold/webgl",
+        "functional/text-bold/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:48:11.978Z",
+      "keys": [
+        "functional/text-multiformat/dom",
+        "functional/text-multiformat/canvas",
+        "functional/text-multiformat/webgl",
+        "functional/text-multiformat/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:49:00.576Z",
+      "keys": [
+        "functional/text-align-center/dom",
+        "functional/text-align-center/canvas",
+        "functional/text-align-center/webgl",
+        "functional/text-align-center/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:49:14.878Z",
+      "keys": [
+        "functional/text-align-center/dom",
+        "functional/text-align-center/canvas",
+        "functional/text-align-center/webgl",
+        "functional/text-align-center/webgpu"
+      ],
+      "priorReasons": {
+        "functional/text-align-center/dom": "font differences in ci",
+        "functional/text-align-center/canvas": "font differences in ci",
+        "functional/text-align-center/webgl": "font differences in ci",
+        "functional/text-align-center/webgpu": "font differences in ci"
+      },
+      "reason": "temp"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:49:36.942Z",
+      "keys": [
+        "functional/text-align-right/dom",
+        "functional/text-align-right/canvas",
+        "functional/text-align-right/webgl",
+        "functional/text-align-right/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:49:51.119Z",
+      "keys": [
+        "functional/text-italic/dom",
+        "functional/text-italic/canvas",
+        "functional/text-italic/webgl",
+        "functional/text-italic/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:50:29.479Z",
+      "keys": [
+        "functional/text-vertical-align/dom",
+        "functional/text-vertical-align/canvas",
+        "functional/text-vertical-align/webgl",
+        "functional/text-vertical-align/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:50:40.328Z",
+      "keys": [
+        "functional/textlabel-basic/dom",
+        "functional/textlabel-basic/canvas",
+        "functional/textlabel-basic/webgl",
+        "functional/textlabel-basic/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T06:50:56.883Z",
+      "keys": [
+        "functional/text-wrap/dom",
+        "functional/text-wrap/canvas",
+        "functional/text-wrap/webgl",
+        "functional/text-wrap/webgpu"
+      ],
+      "reason": "font differences in ci"
     }
   ],
   "held": {
@@ -281,6 +407,38 @@
     "functional/text-underline/dom": "dom underline is different",
     "functional/text-underline/canvas": "dom underline is different",
     "functional/text-underline/webgl": "dom underline is different",
-    "functional/text-underline/webgpu": "dom underline is different"
+    "functional/text-underline/webgpu": "dom underline is different",
+    "functional/text-basic/dom": "appears to be different font in ci",
+    "functional/text-basic/canvas": "appears to be different font in ci",
+    "functional/text-basic/webgl": "appears to be different font in ci",
+    "functional/text-basic/webgpu": "appears to be different font in ci",
+    "functional/text-bold/dom": "font differences in ci",
+    "functional/text-bold/canvas": "font differences in ci",
+    "functional/text-bold/webgl": "font differences in ci",
+    "functional/text-bold/webgpu": "font differences in ci",
+    "functional/text-multiformat/dom": "font differences in ci",
+    "functional/text-multiformat/canvas": "font differences in ci",
+    "functional/text-multiformat/webgl": "font differences in ci",
+    "functional/text-multiformat/webgpu": "font differences in ci",
+    "functional/text-align-right/dom": "font differences in ci",
+    "functional/text-align-right/canvas": "font differences in ci",
+    "functional/text-align-right/webgl": "font differences in ci",
+    "functional/text-align-right/webgpu": "font differences in ci",
+    "functional/text-italic/dom": "font differences in ci",
+    "functional/text-italic/canvas": "font differences in ci",
+    "functional/text-italic/webgl": "font differences in ci",
+    "functional/text-italic/webgpu": "font differences in ci",
+    "functional/text-vertical-align/dom": "font differences in ci",
+    "functional/text-vertical-align/canvas": "font differences in ci",
+    "functional/text-vertical-align/webgl": "font differences in ci",
+    "functional/text-vertical-align/webgpu": "font differences in ci",
+    "functional/textlabel-basic/dom": "font differences in ci",
+    "functional/textlabel-basic/canvas": "font differences in ci",
+    "functional/textlabel-basic/webgl": "font differences in ci",
+    "functional/textlabel-basic/webgpu": "font differences in ci",
+    "functional/text-wrap/dom": "font differences in ci",
+    "functional/text-wrap/canvas": "font differences in ci",
+    "functional/text-wrap/webgl": "font differences in ci",
+    "functional/text-wrap/webgpu": "font differences in ci"
   }
 }
