@@ -91,6 +91,40 @@ describe('sweepCollisionShape3D', () => {
     expect(out.y).toBeCloseTo(0, 4);
   });
 
+  it('reports the contact point where the shapes MEET, not where they were closest beforehand', () => {
+    // A head-on approach converges onto exactly touching, so the last measurement with a gap to read a
+    // witness from can be a whole interval back. Reporting that witness unadvanced puts the contact at
+    // the point A was closest from while still far away — here x=1, its surface at the START of the
+    // sweep, rather than x=9 where it actually arrives.
+    expect(sweepCollisionShape3D(sphere(0, 0, 0, 1), 10, 0, 0, sphere(10, 0, 0, 1), 0, 0, 0, out)).toBe(true);
+    expect(out.x).toBeCloseTo(9, 4);
+    expect(out.x).not.toBeCloseTo(1, 1);
+    expect(out.x).not.toBeCloseTo(5, 1);
+  });
+
+  it('puts the contact point between the two surfaces when B is the one moving', () => {
+    // B carries the motion and A is still, which is the mirror of every other case here. The witnesses
+    // are measured in a frame that holds B fixed, so this is the arrangement where forgetting to add B's
+    // own translation back shows up.
+    expect(sweepCollisionShape3D(sphere(0, 0, 0, 1), 0, 0, 0, sphere(10, 0, 0, 1), -10, 0, 0, out)).toBe(true);
+    expect(out.fraction).toBeCloseTo(0.8, 5);
+    expect(out.x).toBeCloseTo(1, 4);
+  });
+
+  it('finds the mid-segment contact of two crossing capsules', () => {
+    // The witness case a support call cannot answer: the capsules meet at the middle of each segment, so
+    // a contact point at either END would be two units adrift.
+    const alongX: CollisionShape3D = { kind: 'capsule', x0: -2, y0: 0, z0: 0, x1: 2, y1: 0, z1: 0, radius: 0.5 };
+    const aboveAlongY: CollisionShape3D = { kind: 'capsule', x0: 0, y0: -2, z0: 5, x1: 0, y1: 2, z1: 5, radius: 0.5 };
+
+    expect(sweepCollisionShape3D(alongX, 0, 0, 10, aboveAlongY, 0, 0, 0, out)).toBe(true);
+    // Four units of gap over ten of travel.
+    expect(out.fraction).toBeCloseTo(0.4, 4);
+    expect(out.x).toBeCloseTo(0, 3);
+    expect(out.y).toBeCloseTo(0, 3);
+    expect(out.z).toBeCloseTo(4.5, 3);
+  });
+
   it('leaves the pair touching, not overlapping, when advanced to the reported fraction', () => {
     // The property that makes a fraction usable: a step may advance to it and then resolve discretely.
     const a = sphere(0, 0, 0, 1);
