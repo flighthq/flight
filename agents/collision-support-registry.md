@@ -204,6 +204,17 @@ corrected in the same change.
 
 ## Recommendation
 
+**Steps 1-4 and 6 are done as of 2026-08-21; step 5 (3D shapes) is the remaining work.** Two things
+landed differently from how they are described below, and the difference is the useful part:
+
+- **Step 3's "open kind / closed union" fix is NOT an open base contract.** Making `CollisionShape2D`
+  a bare `{ kind }` erases the dimension boundary this document calls load-bearing, because both
+  dimensions' kind types are `string` underneath and every 3D collider becomes assignable to
+  `testCollision2D`. The shipped fix makes the vendor prefix the type — a `` `${string}.${string}` ``
+  arm beside the six built-ins — which is open along vendor kinds and closed along dimension. See the
+  charter decision of 2026-08-21.
+- **The "three defects" section below is now history, not a work list.** All three are closed.
+
 Adopt the support-function registry, keep `@flighthq/collision` unified, and sequence it as:
 
 1. **Rule this proposal.** Nothing below is safe to start first.
@@ -216,7 +227,9 @@ Adopt the support-function registry, keep `@flighthq/collision` unified, and seq
 4. **Add the support registry with GJK/EPA as the 2D fallback**, behind the existing SAT
    specializations. 2D first, where there is an incumbent to differential-test against.
 5. **Add 3D shapes on the proven core**, which is the point of the exercise.
-6. **Correct the `register.md` contradiction** and the collision charter's Open direction 4.
+6. **Correct the `register.md` contradiction** and the collision charter's Open direction 4. *(Done
+   2026-08-21: the `physics2d`/`physics3d` split row no longer cites contact generation, which is
+   `collision`'s job in either dimension — the built `physics3d` generates no contacts at all.)*
 
 ## Proposed charter decision
 

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/collision'
-updated: 2026-08-08
+updated: 2026-08-21
 by: principal
 ---
 
@@ -11,20 +11,22 @@ by: principal
 
 ## Open
 
-- **The generic GJK/EPA core is built and not yet wired in as the fallback.** `testCollisionSupport2D`
-  agrees with all ten incumbent SAT pairs EXACTLY over 4000 seeded pairs — same overlap decision, same
-  depth to 1e-5, same normal to the measured 4e-3 EPA ceiling, same sign, no exemptions. What remains
-  before `testCollision2D` can dispatch through the registries is assembly rather than correctness:
-  registering the ten pairs as specializations, which also closes the open kind / closed union defect.
+- **3D shapes are the next arc, and the 2D core is proven under them.** `testCollision2D` now
+  dispatches through the pair registry then the support floor, the ten SAT pairs register via
+  `registerBuiltInCollisionPairTests2D`, and the generic core agrees with all ten incumbents EXACTLY
+  over 4000 seeded pairs — same overlap decision, same depth to 1e-5, same normal to the measured 4e-3
+  EPA ceiling, same sign, no exemptions. What is left is step 5 of the support-registry doc.
+
+- **Registration is now a precondition of the generic dispatcher, and nothing registers at module
+  load.** A caller that opens neither door gets `false` from every pair. That is deliberate — it is
+  what makes the ten SAT pairs tree-shakable — and `explainCollisionTest2D` reports
+  `'unsupported-shape-kind'` rather than `'separated'` for a valid shape whose kind has no binding, so
+  the mistake is diagnosable. The direct typed pair functions need no registration at all.
 
 - **EPA's normal on a CURVED boundary is accurate to about the square root of its tolerance** — a few
   parts in a thousand on a deep circle overlap, against a depth good to 1e-10. Inherent: EPA
   terminates on a distance, and distance is second-order insensitive to angular error. It is one of
   the two reasons a pair specialization earns its place, the other being speed.
-- **The open kind / closed shape union mismatch.** `CollisionShapeKind2D` admits any string but
-  `CollisionShape2D` is a closed tagged union, so a vendor kind needs a double cast — the collision
-  charter's open direction 2. Now half-closed in practice: the support registry accepts a vendor kind
-  and GJK will test it. The type still refuses to express one.
 - **The typed pair functions do not carry a dimension.** `testCircleCircleCollision` and the other
   nine keep their bare names while the types and the generic entry points are suffixed. Sphere and
   circle differ by word, but `testAabbAabbCollision` will collide with its 3D twin. Deliberately left

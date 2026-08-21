@@ -90,15 +90,23 @@ The standing rule for packages that span two and three dimensions. The test: **"
 | --- | --- | --- | --- | --- |
 | `camera` | `Camera2D` | `Camera3D` | unified; `camera2d` absorbed | Both pure math (matrix producers), no graph dep |
 | `particleemitter` | `ParticleEmitter2D` | `ParticleEmitter3D` | add 3D, rename existing | Dual `scene2d`+`scene` dep accepted; tree-shaking zeroes cost |
-| `collision` | 2D shapes (existing) | 3D shapes (future) | add 3D when built | GJK/EPA joins same package; vocabulary-distinct names (Circle/Sphere) need no suffix |
+| `collision` | 2D shapes (existing) | 3D shapes (future) | add 3D when built | One support-function/GJK core instantiated twice, so the model is shared; **every type carries a `2D`/`3D` suffix** and the dimension lives in the shape type and entry point (2026-08-20) |
 | `spatial` | 2D backends (existing) | 3D backends (future) | add 3D when built | BVH/octree behind same `SpatialIndexBackend` seam |
 | `velocity` | `Velocity2D` (existing) | `Velocity3D` (future) | add 3D when built | Same concept: position delta / dt |
+
+**Corrected 2026-08-21.** Both tables above used to cite the same fact in opposite directions: the split
+row justified `physics2d`/`physics3d` with *"contact generation (SAT vs GJK/EPA)"* while the unified row
+placed `collision` with *"GJK/EPA joins same package."* Contact generation is `collision`'s job in either
+dimension, so it could never have been a reason to split `physics`. The built packages settle it as fact
+rather than argument: `physics3d` generates no contacts at all — it consumes `Physics3DContact` records the
+caller supplies — and its real divergence from `physics2d` is the constraint math, which is what the row
+now says.
 
 ### Split (model differs)
 
 | 2D package | 3D package | Status | Why different models |
 | --- | --- | --- | --- |
-| `physics2d` | `physics3d` | both new (chartered) | Different solvers, constraint Jacobians, contact generation (SAT vs GJK/EPA), island strategies |
+| `physics2d` | `physics3d` | both new (chartered) | Different constraint Jacobians (scalar angular velocity vs quaternion + inertia tensor), different joint sets, different mass properties |
 | `skeleton2d` | `skeleton3d` | 3D renamed and built; 2D chartered | Different skinning math (CPU 2D mesh warp vs GPU skin palette), different IK, different blend strategies |
 
 ### Inherently single-dimension (no counterpart)
