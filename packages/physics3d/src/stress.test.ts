@@ -15,6 +15,7 @@ import {
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
+  setPhysics3DBodyFixedRotation,
 } from './world';
 
 // Long-horizon qualification. These do not test one function; they test that the ASSEMBLED step stays
@@ -32,6 +33,26 @@ function boxShape(halfX: number, halfY: number, halfZ: number): CollisionBuiltIn
   return { kind: 'aabb', minX: -halfX, minY: -halfY, minZ: -halfZ, maxX: halfX, maxY: halfY, maxZ: halfZ };
 }
 
+function addCuboid(
+  world: Physics3DWorld,
+  type: RigidBody3D['type'],
+  x: number,
+  y: number,
+  z: number,
+  halfX: number,
+  halfY: number,
+  halfZ: number,
+  material: Readonly<Physics3DMaterial> = MATERIAL,
+): RigidBody3D {
+  const body = createRigidBody3D(type);
+  body.x = x;
+  body.y = y;
+  body.z = z;
+  addPhysics3DBody(world, body);
+  addPhysics3DCollider(world, body, createPhysics3DCollider(boxShape(halfX, halfY, halfZ), material));
+  return body;
+}
+
 function addBox(
   world: Physics3DWorld,
   type: RigidBody3D['type'],
@@ -39,14 +60,9 @@ function addBox(
   y: number,
   z: number,
   half = 0.5,
+  material: Readonly<Physics3DMaterial> = MATERIAL,
 ): RigidBody3D {
-  const body = createRigidBody3D(type);
-  body.x = x;
-  body.y = y;
-  body.z = z;
-  addPhysics3DBody(world, body);
-  addPhysics3DCollider(world, body, createPhysics3DCollider(boxShape(half, half, half), MATERIAL));
-  return body;
+  return addCuboid(world, type, x, y, z, half, half, half, material);
 }
 
 function addSphere(
@@ -67,11 +83,7 @@ function addSphere(
 }
 
 function addSlab(world: Physics3DWorld, halfX: number, halfY: number, halfZ: number, y: number): RigidBody3D {
-  const body = createRigidBody3D('static');
-  body.y = y;
-  addPhysics3DBody(world, body);
-  addPhysics3DCollider(world, body, createPhysics3DCollider(boxShape(halfX, halfY, halfZ), MATERIAL));
-  return body;
+  return addCuboid(world, 'static', 0, y, 0, halfX, halfY, halfZ);
 }
 
 function run(world: Physics3DWorld, steps: number): void {
@@ -183,13 +195,100 @@ describe('physics3d stress qualification', () => {
     run(world, 1200);
 
     for (const body of links) expectFiniteBody(body);
+    let maximumLinkError = 0;
     for (let i = 1; i < links.length; i += 1) {
       const dx = links[i].x - links[i - 1].x;
       const dy = links[i].y - links[i - 1].y;
       const dz = links[i].z - links[i - 1].z;
-      expect(Math.hypot(dx, dy, dz)).toBeCloseTo(1, 1);
+      maximumLinkError = Math.max(maximumLinkError, Math.abs(Math.hypot(dx, dy, dz) - 1));
     }
+    // Measured worst case is about 0.0214 world units at the driven end of the chain.
+    expect(maximumLinkError).toBeLessThan(0.025);
     expect(Math.hypot(links[links.length - 1].x, links[links.length - 1].z)).toBeLessThan(15);
+  });
+
+  it('supports ordinary and adversarial mass ratios within a declared compression envelope', () => {
+    function stackedPair(ratio: number, substeps: number): readonly [RigidBody3D, RigidBody3D] {
+      const world = createPhysics3DWorld();
+      world.gravityY = -10;
+      world.config.substeps = substeps;
+      addSlab(world, 5, 1, 5, -1);
+      const lower = addBox(world, 'dynamic', 0, 0.5, 0);
+      const upper = addBox(world, 'dynamic', 0, 1.5, 0, 0.5, {
+        density: ratio,
+        friction: MATERIAL.friction,
+        restitution: 0,
+      });
+      // This is a mass-ratio test, not a balance test: removing rotation isolates the normal rows from
+      // the physically legitimate top-heavy stack tipping under microscopic lateral perturbations.
+      setPhysics3DBodyFixedRotation(lower, true);
+      setPhysics3DBodyFixedRotation(upper, true);
+      run(world, 600);
+      return [lower, upper];
+    }
+
+    // Default tuning owns the ordinary envelope; four substeps are the published lever for the 1000:1
+    // adversarial case. Both retain at least 99% of the one-unit centre separation and come to rest.
+    for (const [ratio, substeps] of [
+      [100, 1],
+      [1000, 4],
+    ] as const) {
+      const [lower, upper] = stackedPair(ratio, substeps);
+      expectFiniteBody(lower);
+      expectFiniteBody(upper);
+      expect(lower.y).toBeGreaterThan(0.49);
+      expect(upper.y - lower.y).toBeGreaterThan(0.99);
+      expect(lower.sleeping).toBe(true);
+      expect(upper.sleeping).toBe(true);
+    }
+  });
+
+  it('keeps restitution energy and a centred contact torque bounded over sixty seconds', () => {
+    const world = createPhysics3DWorld();
+    world.gravityY = 0;
+    const elastic: Physics3DMaterial = { density: 1, friction: 0, restitution: 1 };
+    addCuboid(world, 'static', -5.25, 0, 0, 0.25, 5, 5, elastic);
+    addCuboid(world, 'static', 5.25, 0, 0, 0.25, 5, 5, elastic);
+    const ball = createRigidBody3D('dynamic');
+    ball.sleepEnabled = false;
+    ball.velocityX = 6;
+    addPhysics3DBody(world, ball);
+    addPhysics3DCollider(
+      world,
+      ball,
+      createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 0.25 }, elastic),
+    );
+
+    run(world, 3600);
+
+    expectFiniteBody(ball);
+    expect(Math.abs(ball.x)).toBeLessThanOrEqual(4.81);
+    expect(Math.hypot(ball.velocityX, ball.velocityY, ball.velocityZ)).toBeCloseTo(6, 9);
+    // A centre-line hit has no torque. This bound caught the flat face's arbitrary support corner being
+    // averaged into the fallback point, which spun the sphere and let it escape the corridor.
+    expect(Math.hypot(ball.angularVelocityX, ball.angularVelocityY, ball.angularVelocityZ)).toBeLessThan(1e-9);
+  });
+
+  it('makes long-horizon Coulomb friction isotropic in the contact plane', () => {
+    function slide(diagonal: boolean): readonly [number, number, number] {
+      const world = createPhysics3DWorld();
+      world.gravityY = -10;
+      addSlab(world, 100, 1, 100, -1);
+      const body = addBox(world, 'dynamic', 0, 0.5, 0);
+      setPhysics3DBodyFixedRotation(body, true);
+      const component = diagonal ? 5 / Math.SQRT2 : 5;
+      body.velocityX = component;
+      body.velocityZ = diagonal ? component : 0;
+      run(world, 240);
+      expect(Math.hypot(body.velocityX, body.velocityZ)).toBeLessThan(1e-9);
+      return [body.x, body.z, Math.hypot(body.x, body.z)];
+    }
+
+    const axis = slide(false);
+    const diagonal = slide(true);
+    expect(Math.abs(axis[1])).toBeLessThan(0.001);
+    expect(Math.abs(diagonal[0] - diagonal[1])).toBeLessThan(0.001);
+    expect(Math.abs(axis[2] - diagonal[2])).toBeLessThan(0.005);
   });
 
   it('produces an exact repeat trace for a mixed pile, joint, and sleep scene', () => {
