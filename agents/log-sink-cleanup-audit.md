@@ -7,7 +7,7 @@ npx tsx scripts/audit-log-sink-cleanup.ts --write
 npx tsx scripts/audit-log-sink-cleanup.ts --check
 ```
 
-The current tree contains **83 registrations across 42 files**: 50 locally bracketed by `finally`, 31 cleared by failure-safe test hooks, 0 immediately removed/replaced, 1 owned by an explicit API lifetime, and 1 without a shorter-lifetime cleanup.
+The current tree contains **84 registrations across 43 files**: 51 locally bracketed by `finally`, 31 cleared by failure-safe test hooks, 0 immediately removed/replaced, 1 owned by an explicit API lifetime, and 1 without a shorter-lifetime cleanup.
 
 The check fails for every new unbracketed registration. The one named exception is the size fixture:
 its console sink deliberately lives for the document lifetime and becomes unreachable at page teardown.
@@ -19,14 +19,12 @@ its console sink deliberately lives for the document lifetime and becomes unreac
 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `test-hook-cleanup` | Guaranteed after every test, including failures, by an `afterEach` hook that removes or clears registered sinks. |
 | `direct-cleanup` | Guaranteed on the straight-line path: the registration is immediately removed, cleared, or replaced before assertions can abort the owner. |
-| `lifecycle-owned` | Owned by an explicit API lifetime: `disableDebug` removes the sink installed by `enableDebug`. It remains reachable for the intended debug session. |
+| `lifecycle-owned` | Owned by an explicit API lifetime: a failed `enableDebug` rolls back the sink, while `disableDebug` removes it after a successful enable. |
 | `missing-cleanup` | Missing an exception-safe shorter-lifetime teardown. The sink and anything its closure captures remain reachable and can receive later log entries. |
 
-The `lifecycle-owned` debug registration has one unresolved exception path: `enableDebug` installs
-the sink before running subsystem `enableGuards` callbacks, but sets its enabled flag only after all
-callbacks return. If one callback throws, `disableDebug` is a no-op and cannot close the partially
-opened lifetime. Rolling back already-enabled subsystem guards is a lifetime-policy decision, so this
-audit records and escalates it rather than choosing teardown semantics locally.
+The `lifecycle-owned` debug registration is checked on both sides of its lifetime. A failed
+`enableDebug` unwinds the throwing and earlier subsystem hooks, removes the sink, restores levels,
+and rethrows the original enable error. After a successful enable, `disableDebug` owns teardown.
 
 ## Every registration
 
@@ -35,7 +33,7 @@ audit records and escalates it rather than choosing teardown semantics locally.
 | `packages/assets/src/enableAssetGuards.test.ts` | 9 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/clip/src/enableClipGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/collision/src/enableCollisionGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
-| `packages/debug/src/debug.ts` | 111 | 1 | `lifecycle-owned` | Owned by an explicit API lifetime: `disableDebug` removes the sink installed by `enableDebug`. It remains reachable for the intended debug session. |
+| `packages/debug/src/debug.ts` | 144 | 1 | `lifecycle-owned` | Owned by an explicit API lifetime: a failed `enableDebug` rolls back the sink, while `disableDebug` removes it after a successful enable. |
 | `packages/debug/src/debugTiming.test.ts` | 67, 97 | 2 | `test-hook-cleanup` | Guaranteed after every test, including failures, by an `afterEach` hook that removes or clears registered sinks. |
 | `packages/easing/src/enableEasingGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/effects-gl/src/enableGlRenderEffectGuards.test.ts` | 206 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
@@ -43,10 +41,11 @@ audit records and escalates it rather than choosing teardown semantics locally.
 | `packages/entity/src/enableEntityRuntimeGuards.test.ts` | 12 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/geometry/src/enableGeometryPoolGuards.test.ts` | 20 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/interaction/src/enableInteractionGuards.test.ts` | 24, 43, 57, 73 | 4 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
-| `packages/log/src/log.test.ts` | 76, 100, 110, 111, 207, 217, 276, 286, 295, 421, 433, 442, 451, 464, 538, 547, 559, 570, 584, 601, 619, 627, 791, 998, 999, 1214, 1354 | 27 | `test-hook-cleanup` | Guaranteed after every test, including failures, by an `afterEach` hook that removes or clears registered sinks. |
+| `packages/log/src/log.test.ts` | 77, 101, 111, 112, 220, 230, 289, 299, 308, 434, 446, 455, 464, 477, 551, 560, 572, 583, 597, 614, 632, 640, 804, 1011, 1012, 1227, 1367 | 27 | `test-hook-cleanup` | Guaranteed after every test, including failures, by an `afterEach` hook that removes or clears registered sinks. |
 | `packages/media/src/enableAudioMixerGuards.test.ts` | 30 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/movieclip/src/enableMovieClipGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/permissions/src/enablePermissionGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
+| `packages/physics3d/src/enablePhysics3DGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/render-gl/src/enableGlTextureResolverGuards.test.ts` | 32 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/render-gl/src/glRenderState.test.ts` | 521 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/render-gl/src/glRenderTexture.test.ts` | 75 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
