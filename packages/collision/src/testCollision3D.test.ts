@@ -1,17 +1,46 @@
 import type { CollisionShape3D } from '@flighthq/types/contract';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { registerBuiltInCollisionSupports3D, registerCollisionPairTest3D } from './collisionSupport3D';
 import { createCollisionManifold3D } from './manifold3D';
-import { testCollision3D } from './testCollision3D';
+import { setCollisionTestGuard3D, testCollision3D } from './testCollision3D';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();
 });
 
+afterEach(() => {
+  setCollisionTestGuard3D(null);
+});
+
 function sphere(x: number, radius: number): CollisionShape3D {
   return { kind: 'sphere', x, y: 0, z: 0, radius };
 }
+
+describe('setCollisionTestGuard3D', () => {
+  it('consults the installed guard on every dispatch and stops once cleared', () => {
+    const seen: string[] = [];
+    setCollisionTestGuard3D((a, b) => seen.push(`${a.kind}:${b.kind}`));
+
+    testCollision3D(sphere(0, 1), sphere(1.5, 1), createCollisionManifold3D());
+    expect(seen).toEqual(['sphere:sphere']);
+
+    setCollisionTestGuard3D(null);
+    testCollision3D(sphere(0, 1), sphere(1.5, 1), createCollisionManifold3D());
+    expect(seen).toEqual(['sphere:sphere']);
+  });
+
+  it('runs the guard before dispatch, so an unresolvable pair still reaches it', () => {
+    // The guard has to fire on the pairs that FAIL, which are the ones worth warning about. Consulting it
+    // after dispatch would skip exactly the case it exists for.
+    let called = false;
+    setCollisionTestGuard3D(() => {
+      called = true;
+    });
+    expect(testCollision3D({ kind: 'acme.unregistered' }, sphere(0, 1), createCollisionManifold3D())).toBe(false);
+    expect(called).toBe(true);
+  });
+});
 
 describe('testCollision3D', () => {
   it('falls through to the generic GJK/EPA floor when no specialization is registered', () => {

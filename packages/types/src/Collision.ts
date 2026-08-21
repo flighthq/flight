@@ -382,6 +382,27 @@ export type CollisionPairTest3D = (
   out: CollisionManifold3D,
 ) => boolean;
 
+// Installed by enableCollisionGuards and consulted only by the generic testCollision3D dispatcher, so
+// the direct support and face-query lanes stay allocation-free. The 3D twin of `CollisionTestGuard2D`.
+export type CollisionTestGuard3D = (a: Readonly<CollisionShape3D>, b: Readonly<CollisionShape3D>) => void;
+
+// Plain-data answer to "why did testCollision3D return false?", carrying the same fields as its 2D twin
+// and sharing `CollisionTestStatus` with it.
+//
+// It shares the status union but cannot produce every member: `'non-convex-polygon'` is unreachable in
+// 3D, and that is a real difference between the dimensions rather than a hole here. A 2D `polygon` feeds
+// its EDGE list to SAT, so a concave vertex produces a wrong answer and is worth naming. A 3D `convex`
+// is reached only through its support scan, which takes the max over the point list and therefore never
+// returns an interior vertex at all — a concave point set behaves as its convex hull, exactly as
+// `CollisionConvex3D` documents. There is nothing to warn about, and a status that could never be
+// emitted would be a promise this seam does not keep.
+export interface CollisionTestExplanation3D {
+  readonly kind: CollisionShapeKind3D | null;
+  readonly overlapping: boolean;
+  readonly shapeIndex: 0 | 1 | null;
+  readonly status: CollisionTestStatus;
+}
+
 // One point of a 3D contact manifold: a world-space position on the shared surface and the penetration
 // depth measured along the manifold's normal. `featureId` identifies WHICH feature pair produced the
 // point, stably across frames, so a solver can match this step's points to last step's accumulators
