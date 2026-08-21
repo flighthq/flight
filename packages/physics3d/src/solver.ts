@@ -86,7 +86,7 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
   const constraints = state.constraints;
   // `contact = -1` is the inactive mark while the same high-water objects are gathered back into solve
   // order. The map cannot be cleared first because it is also how the contact finds its prior impulses.
-  for (const constraint of constraints) constraint.contact = -1;
+  for (let i = 0; i < constraints.length; i += 1) constraints[i].contact = -1;
   constraints.length = 0;
   const config = world.config.sequentialImpulse;
 
@@ -210,9 +210,9 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
 
   // Retire constraints whose contacts were omitted from the awake solve without replacing the map.
   // Deleting while iterating a Map is defined to leave the remaining entries visitable.
-  for (const [contact, constraint] of previousByContact) {
+  previousByContact.forEach((constraint, contact) => {
     if (constraint.contact < 0) previousByContact.delete(contact);
-  }
+  });
 }
 
 // Resolves penetration by moving bodies directly, leaving `penetrationSlop` of overlap deliberately
@@ -247,7 +247,9 @@ function solvePhysics3DContactPositionsWithScratch(world: Physics3DWorld, scratc
   const config = world.config.sequentialImpulse;
   let deepest = 0;
 
-  for (const constraint of world.solver.constraints) {
+  const constraints = world.solver.constraints;
+  for (let constraintIndex = 0; constraintIndex < constraints.length; constraintIndex += 1) {
+    const constraint = constraints[constraintIndex];
     const contact = world.contacts[constraint.contact];
     const bodyA = world.bodyByIndex.get(contact.bodyA);
     const bodyB = world.bodyByIndex.get(contact.bodyB);
@@ -324,7 +326,9 @@ function solvePhysics3DContactPositionsWithScratch(world: Physics3DWorld, scratc
 // friction tuning rather than like a geometry error, and one that cannot occur in 2D because there is
 // only one tangent to clamp.
 export function solvePhysics3DContactVelocities(world: Physics3DWorld): void {
-  for (const constraint of world.solver.constraints) {
+  const constraints = world.solver.constraints;
+  for (let constraintIndex = 0; constraintIndex < constraints.length; constraintIndex += 1) {
+    const constraint = constraints[constraintIndex];
     const contact = world.contacts[constraint.contact];
     const bodyA = world.bodyByIndex.get(contact.bodyA);
     const bodyB = world.bodyByIndex.get(contact.bodyB);
@@ -434,7 +438,9 @@ export function solvePhysics3DContactVelocities(world: Physics3DWorld): void {
 export function warmStartPhysics3DContacts(world: Physics3DWorld): void {
   if (!world.config.sequentialImpulse.warmStarting) return;
 
-  for (const constraint of world.solver.constraints) {
+  const constraints = world.solver.constraints;
+  for (let constraintIndex = 0; constraintIndex < constraints.length; constraintIndex += 1) {
+    const constraint = constraints[constraintIndex];
     const contact = world.contacts[constraint.contact];
     const bodyA = world.bodyByIndex.get(contact.bodyA);
     const bodyB = world.bodyByIndex.get(contact.bodyB);

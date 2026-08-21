@@ -352,9 +352,9 @@ function queryBvh3DPairs(tree: Readonly<Bvh3D>, out: SpatialPair[]): void {
     out.length = 0;
     return;
   }
-  for (const [id, leaf] of tree.leafByObject) {
+  tree.leafByObject.forEach((leaf, id) => {
     const exact = tree.bounds.get(id);
-    if (exact === undefined) continue;
+    if (exact === undefined) return;
     const stack = tree.stack;
     stack.length = 0;
     stack.push(tree.root);
@@ -382,7 +382,7 @@ function queryBvh3DPairs(tree: Readonly<Bvh3D>, out: SpatialPair[]): void {
       stack.push(tree.child1[node]);
       stack.push(tree.child2[node]);
     }
-  }
+  });
   out.length = written;
 }
 

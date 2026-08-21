@@ -11,9 +11,10 @@ beforeEach(() => {
 });
 
 describe('registerBuiltInCollisionPairTests3D', () => {
-  it('registers exactly the six canonical orders', () => {
+  it('registers exactly the seven canonical orders', () => {
     for (const [kindA, kindB] of [
       ['aabb', 'aabb'],
+      ['box', 'box'],
       ['capsule', 'capsule'],
       ['sphere', 'aabb'],
       ['sphere', 'box'],
@@ -30,12 +31,6 @@ describe('registerBuiltInCollisionPairTests3D', () => {
     expect(getCollisionPairTest3D('aabb', 'sphere')).toBeNull();
     expect(getCollisionPairTest3D('capsule', 'sphere')).toBeNull();
     expect(getCollisionPairTest3D('box', 'sphere')).toBeNull();
-  });
-
-  it('leaves box-box on the generic floor deliberately', () => {
-    // A box boundary is FLAT, so EPA's normal on it is already exact and only speed would argue for a
-    // hand-written fifteen-axis SAT. The conditioning case that justifies the other five does not apply.
-    expect(getCollisionPairTest3D('box', 'box')).toBeNull();
   });
 
   it('routes a reversed pair through the dispatcher with the normal negated', () => {

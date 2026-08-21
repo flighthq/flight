@@ -26,7 +26,8 @@ import type {
 
 export function isPhysics3DBodyStateValid(world: Readonly<Physics3DWorld>): boolean {
   if (!Number.isSafeInteger(world.nextBodyIndex) || world.nextBodyIndex < 0) return false;
-  for (const body of world.bodies) {
+  for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
+    const body = world.bodies[bodyIndex];
     if (
       !isRigidBody3DStateValid(body) ||
       !Array.isArray(body.colliders) ||
@@ -46,18 +47,19 @@ function isPhysics3DStaticSurfaceCollider(collider: Readonly<Physics3DCollider>)
 // Validates the data that will generate NEW contacts during this step. Keeping this separate from body
 // state is diagnostic: a NaN material is repaired at a collider, not in the body's pose or inertia.
 export function isPhysics3DColliderStateValid(world: Readonly<Physics3DWorld>): boolean {
-  for (const body of world.bodies) {
+  for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
+    const body = world.bodies[bodyIndex];
     if (!Array.isArray(body.colliders)) return false;
-    for (const collider of body.colliders) {
-      if (!isPhysics3DColliderValid(collider)) return false;
+    for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex += 1) {
+      if (!isPhysics3DColliderValid(body.colliders[colliderIndex])) return false;
     }
   }
   return true;
 }
 
 export function isPhysics3DContactStateValid(world: Readonly<Physics3DWorld>): boolean {
-  for (const contact of world.contacts) {
-    if (!isPhysics3DContactValid(contact)) return false;
+  for (let contactIndex = 0; contactIndex < world.contacts.length; contactIndex += 1) {
+    if (!isPhysics3DContactValid(world.contacts[contactIndex])) return false;
   }
   return true;
 }
@@ -91,9 +93,20 @@ export function isPhysics3DContactValid(contact: Readonly<Physics3DContact>): bo
   for (let i = 0; i < contact.pointCount; i += 1) {
     const point = contact.points[i];
     if (point === undefined) return false;
-    for (const key in point) {
-      const value = point[key as keyof typeof point];
-      if (typeof value === 'number' && !Number.isFinite(value)) return false;
+    if (
+      !Number.isFinite(point.x) ||
+      !Number.isFinite(point.y) ||
+      !Number.isFinite(point.z) ||
+      !Number.isFinite(point.depth) ||
+      !Number.isFinite(point.featureId) ||
+      !Number.isFinite(point.rAX) ||
+      !Number.isFinite(point.rAY) ||
+      !Number.isFinite(point.rAZ) ||
+      !Number.isFinite(point.rBX) ||
+      !Number.isFinite(point.rBY) ||
+      !Number.isFinite(point.rBZ)
+    ) {
+      return false;
     }
   }
   return true;
@@ -104,8 +117,8 @@ export function isPhysics3DGravityValid(world: Readonly<Physics3DWorld>): boolea
 }
 
 export function isPhysics3DJointStateValid(world: Readonly<Physics3DWorld>): boolean {
-  for (const joint of world.joints) {
-    if (!isPhysics3DJointValid(joint)) return false;
+  for (let jointIndex = 0; jointIndex < world.joints.length; jointIndex += 1) {
+    if (!isPhysics3DJointValid(world.joints[jointIndex])) return false;
   }
   return true;
 }
@@ -217,8 +230,8 @@ function isRigidBody3DStateValid(body: Readonly<RigidBody3D>): boolean {
   ) {
     return false;
   }
-  for (const key of rigidBody3DFiniteKeys) {
-    if (!Number.isFinite(body[key])) return false;
+  for (let keyIndex = 0; keyIndex < rigidBody3DFiniteKeys.length; keyIndex += 1) {
+    if (!Number.isFinite(body[rigidBody3DFiniteKeys[keyIndex]])) return false;
   }
   return true;
 }

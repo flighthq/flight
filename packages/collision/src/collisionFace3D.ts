@@ -301,15 +301,22 @@ function writeBoxFaceCorners(
   else if (absZ >= absX && absZ >= absY) axis = 2;
   const sign = (axis === 0 ? localX : axis === 1 ? localY : localZ) >= 0 ? 1 : -1;
 
-  const half = [halfX, halfY, halfZ];
-  const uAxis = (axis + 1) % 3;
-  const vAxis = (axis + 2) % 3;
   for (let corner = 0; corner < 4; corner += 1) {
     const uSign = corner === 0 || corner === 3 ? -1 : 1;
     const vSign = corner < 2 ? -1 : 1;
-    localFaceCorner[axis] = half[axis] * sign;
-    localFaceCorner[uAxis] = half[uAxis] * uSign;
-    localFaceCorner[vAxis] = half[vAxis] * vSign;
+    if (axis === 0) {
+      localFaceCorner[0] = halfX * sign;
+      localFaceCorner[1] = halfY * uSign;
+      localFaceCorner[2] = halfZ * vSign;
+    } else if (axis === 1) {
+      localFaceCorner[0] = halfX * vSign;
+      localFaceCorner[1] = halfY * sign;
+      localFaceCorner[2] = halfZ * uSign;
+    } else {
+      localFaceCorner[0] = halfX * uSign;
+      localFaceCorner[1] = halfY * vSign;
+      localFaceCorner[2] = halfZ * sign;
+    }
     rotateFaceVector(localFaceCorner[0], localFaceCorner[1], localFaceCorner[2], quaternion, false, rotatedCorner);
     out[corner * 3] = centreX + rotatedCorner[0];
     out[corner * 3 + 1] = centreY + rotatedCorner[1];
