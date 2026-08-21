@@ -26,6 +26,7 @@ import {
   physics3DColliderOwners,
   physics3DJointOwners,
 } from './ownership';
+import { withdrawPhysics3DBroadphaseBody } from './physics3DBroadphasePublication';
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -302,8 +303,8 @@ export function createPhysics3DSolverConfig(): Physics3DSolverConfig {
 //
 // The broadphase defaults to a uniform grid and is a constructor PARAMETER rather than a fixed choice:
 // `SpatialIndexBackend3D` is the swap point, so a caller with a scene the grid suits badly — a sparse
-// world spanning kilometres, say — hands over an octree or its own implementation without this package
-// changing.
+// world spanning kilometres or carrying bodies at widely different scales, say — hands over the BVH or
+// its own implementation without this package changing.
 export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWorld {
   return {
     version: Physics3DWorldVersion,
@@ -518,7 +519,7 @@ export function removePhysics3DBody(world: Physics3DWorld, body: RigidBody3D): b
     physics3DJointOwners.delete(joint);
   }
   rebuildPhysics3DJointCollisionSuppressions(world);
-  world.index.removeSpatialObject(index);
+  withdrawPhysics3DBroadphaseBody(world, index);
   body.index = -1;
   physics3DBodyOwners.delete(body);
   return true;

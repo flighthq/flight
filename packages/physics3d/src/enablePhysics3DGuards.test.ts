@@ -1,6 +1,7 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import type { LogEntry, Physics3DWorld } from '@flighthq/types/contract';
 
+import { synchronizePhysics3DBroadphase } from './broadphase';
 import { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards';
 import { createPhysics3DHingeJoint } from './jointFactories';
 import { addPhysics3DJoint } from './jointRegistry';
@@ -56,6 +57,15 @@ describe('disablePhysics3DGuards', () => {
     addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
 
     const entries = captureLog(() => stepPhysics3D(world, 1 / 60));
+
+    expect(entries).toHaveLength(0);
+  });
+
+  it('removes the spatial-indexing seam', () => {
+    enablePhysics3DGuards();
+    disablePhysics3DGuards();
+
+    const entries = captureLog(() => addPhysics3DBody(createPhysics3DWorld(), createOverflowBody()));
 
     expect(entries).toHaveLength(0);
   });
@@ -141,6 +151,27 @@ describe('enablePhysics3DGuards', () => {
       { index: 1, kind: 'Hinge', status: 'invalid-bodies' },
     ]);
   });
+
+  it('reports a body routed through spatial overflow once and stays silent for ordinary indexing', () => {
+    enablePhysics3DGuards();
+    const world = createPhysics3DWorld();
+
+    const entries = captureLog(() => {
+      const ordinary = createRigidBody3D('dynamic');
+      ordinary.colliders.push(createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 0.5 }));
+      addPhysics3DBody(world, ordinary);
+      addPhysics3DBody(world, createOverflowBody());
+      addPhysics3DBody(world, createOverflowBody());
+      synchronizePhysics3DBroadphase(world);
+      synchronizePhysics3DBroadphase(world);
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      channel: 'physics3d',
+      data: { bodyIndices: [1], status: 'spatial-overflow' },
+    });
+  });
 });
 
 // `LogData` is deliberately `string | Record<string, unknown>`, so a structured entry's fields are only
@@ -164,4 +195,12 @@ function createTestWorld(): Physics3DWorld {
   addPhysics3DBody(world, createRigidBody3D('dynamic'));
   addPhysics3DBody(world, createRigidBody3D('dynamic'));
   return world;
+}
+
+function createOverflowBody() {
+  const body = createRigidBody3D('static');
+  body.colliders.push(
+    createPhysics3DCollider({ kind: 'aabb', minX: -16, minY: -16, minZ: -16, maxX: 16, maxY: 16, maxZ: 16 }),
+  );
+  return body;
 }

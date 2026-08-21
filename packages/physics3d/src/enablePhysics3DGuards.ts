@@ -7,6 +7,7 @@ import { explainPhysics3DCollision } from './explainPhysics3DCollision';
 import { explainPhysics3DJoints } from './explainPhysics3DJoints';
 import { explainPhysics3DStep } from './explainPhysics3DStep';
 import { setPhysics3DJointResolutionGuard } from './islands';
+import { setPhysics3DSpatialIndexingGuard } from './physics3DSpatialIndexingGuards';
 import { setPhysics3DStepGuard } from './step';
 
 export function arePhysics3DGuardsEnabled(): boolean {
@@ -17,11 +18,12 @@ export function disablePhysics3DGuards(): void {
   setPhysics3DStepGuard(null);
   setPhysics3DContactIntakeGuard(null);
   setPhysics3DJointResolutionGuard(null);
+  setPhysics3DSpatialIndexingGuard(null);
   physics3DGuardsEnabled = false;
 }
 
-// Installs opt-in diagnostics for the three ways a world can advance without simulating what its data
-// appears to describe.
+// Installs opt-in diagnostics for the ways a world can advance without simulating what its data appears
+// to describe, plus the broadphase cost fallback that preserves results while defeating spatial pruning.
 //
 // `stepPhysics3D` declines silently on any failed precondition, which is the right behaviour — a NaN
 // velocity is a state a caller reaches by writing a field, and throwing would take down a frame loop over
@@ -36,11 +38,49 @@ export function disablePhysics3DGuards(): void {
 // The third is a stored joint omitted from the solve because its kind has no solver or an endpoint no
 // longer resolves. Deserializing ahead of registration is supported, so storing it stays silent; stepping
 // while it remains inert is the moment the opt-in guard names it.
+// The fourth is a body routed through a backend's overflow path. Collision remains correct, but every
+// broadphase query scans that body linearly, so a mixed-scale world can retain the right contacts while
+// silently shedding the pruning its index exists to provide.
 export function enablePhysics3DGuards(): void {
   setPhysics3DStepGuard(warnOnUnsteppablePhysics3DWorld);
   setPhysics3DContactIntakeGuard(warnOnUndetectablePhysics3DColliders);
   setPhysics3DJointResolutionGuard(warnOnUnresolvedPhysics3DJoints);
+  setPhysics3DSpatialIndexingGuard(warnOnPhysics3DSpatialIndexing);
   physics3DGuardsEnabled = true;
+}
+
+// Reports the broadphase fallback that preserves correctness while materially changing cost. Reading the
+// world's own backend keeps this diagnostic scoped to physics3d instead of taking ownership of spatial's
+// process-wide caller-composed guard.
+function warnOnPhysics3DSpatialIndexing(world: Readonly<Physics3DWorld>): void {
+  const overflowBodyIndices: number[] = [];
+  for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
+    const index = world.bodies[bodyIndex].index;
+    const explanation = world.index.explainSpatialIndexing(index);
+    if (explanation.mode === 'overflow') overflowBodyIndices.push(index);
+  }
+
+  if (overflowBodyIndices.length > 0) {
+    logOnce(
+      `physics3d:spatial-overflow:${getPhysics3DGuardWorldId(world)}`,
+      LogLevel.Warn,
+      {
+        bodyIndices: overflowBodyIndices,
+        message: `synchronizePhysics3DBroadphase: ${overflowBodyIndices.length} ${overflowBodyIndices.length === 1 ? 'body is' : 'bodies are'} held in the spatial backend's overflow path, so broadphase queries scan ${overflowBodyIndices.length === 1 ? 'it' : 'them'} linearly — pass createBvhSpatialBackend3D() to createPhysics3DWorld(index) for a mixed-scale world, or tune createUniformGridSpatialBackend3D(cellSize) to the workload's typical body size.`,
+        status: 'spatial-overflow',
+      },
+      'physics3d',
+    );
+  }
+}
+
+function getPhysics3DGuardWorldId(world: Readonly<Physics3DWorld>): number {
+  const existing = physics3DGuardWorldIds.get(world);
+  if (existing !== undefined) return existing;
+  const created = nextPhysics3DGuardWorldId;
+  nextPhysics3DGuardWorldId += 1;
+  physics3DGuardWorldIds.set(world, created);
+  return created;
 }
 
 // Warns once per distinct set of undetectable collider kinds.
@@ -140,3 +180,5 @@ const physics3DPreconditionFlags = [
 ] as const;
 
 let physics3DGuardsEnabled = false;
+let nextPhysics3DGuardWorldId = 0;
+const physics3DGuardWorldIds = new WeakMap<Readonly<Physics3DWorld>, number>();
