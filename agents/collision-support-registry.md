@@ -230,6 +230,9 @@ Adopt the support-function registry, keep `@flighthq/collision` unified, and seq
 6. **Correct the `register.md` contradiction** and the collision charter's Open direction 4. *(Done
    2026-08-21: the `physics2d`/`physics3d` split row no longer cites contact generation, which is
    `collision`'s job in either dimension — the built `physics3d` generates no contacts at all.)*
+   *(Superseded later the same day: `physics3d` now DOES generate contacts, through this registry. The
+   conclusion is unchanged and better supported — both packages reach contact generation through
+   `collision`, so it was never what separated them. See `agents/packages/register.md`.)*
 
 ## Proposed charter decision
 

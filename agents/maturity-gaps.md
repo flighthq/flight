@@ -11,6 +11,11 @@ Companion docs: [quality-plan](quality-plan.md), [test-depth-review](test-depth-
 [wgpu-3d-parity-spec](wgpu-3d-parity-spec.md), and the guarded
 [causal-limitation-prose audit](causal-limitation-prose-audit.md).
 
+**2026-08-21 update:** the physics rows are stale and are marked RESOLVED in place. `physics2d` and
+`physics3d` are both built, `collision` has a 3D narrow phase with contact manifolds, and `spatial` has a
+3D index. This doc is a synthesized punch-list from a dated audit, so read a row's marker before trusting
+its claim; the per-package `status.md` files under `agents/packages/` are the current source.
+
 **2026-07 update:** the AAA workflow closed many gaps below (GPU skinning across all material families on
 both GPU backends, morph on gl/wgpu, ShadedMaterial + modifiers on both GPU backends, advanced blend on gl/wgpu,
 glTF/OBJ/3DS/MD5/AWD import, and video + compressed textures on gl/wgpu). Rows it closed are marked
@@ -70,9 +75,13 @@ Ranked, worst first. Each is something a user assumes works and it does not.
    all emit materials + `MeshSubset`s. The remaining gap is **downstream**: emitted texture refs stay
    `Unresolved` (`image: null`) until the asset pipeline decodes the bytes — no scene-formats example wires
    that, so a caller ignoring the resolved-material step renders untextured. Draco/meshopt deferred.
-8. **There is no physics engine.** `physics2d`/`physics3d` are empty charters; `collision` returns an MTV but
-   never resolves, integrates, or owns a world, and has no swept/TOI (fast movers tunnel) and no contact sets.
-   "collision + spring + spatial" is detection, not dynamics — the user writes the entire solver.
+8. **~~There is no physics engine.~~ RESOLVED 2026-08-21.** Both packages are built. `physics2d` and
+   `physics3d` each own a world, a sequential-impulse solver, joints, islands and sleeping, contact
+   generation over a `@flighthq/spatial` broadphase and a `@flighthq/collision` narrow phase, spatial
+   queries, and debug geometry. `collision` returns contact manifolds as well as an MTV, in both
+   dimensions. What remains is named per package in `agents/packages/physics3d/status.md`: 3D has no CCD
+   (2D has linear and rotational), and a 3D convex hull has no mass properties or raycast because a bare
+   point list carries no triangulation.
 
 ---
 
@@ -262,10 +271,10 @@ no equivalent diagnostic seam.
 
 | What a user assumes works | Reality + cite | Backends | Bite |
 | --- | --- | --- | --- |
-| collision+spring+spatial = physics | No solver/joints/integration; `physics2d`/`physics3d` empty charters (no package dir); collision returns MTV, doesn't resolve | n/a | SURPRISE |
+| collision+spring+spatial = physics | **RESOLVED 2026-08-21.** `physics2d` and `physics3d` are both built and shipped: worlds, sequential-impulse solvers, joints, islands/sleeping, generated contacts, queries, debug geometry | headless | RESOLVED |
 | 3D particles / real 3D physics | Rendering is realized on Gl and Wgpu, but simulation forces/collisions remain planar — only spawn velocity and `gravityZ` touch z (`stepParticleEmitter3D.ts:21-30`) | gl/wgpu render; CPU sim | SURPRISE |
-| collision is a complete narrow-phase | Discrete-overlap + MTV only; no swept/TOI (fast movers tunnel), no contact sets, no capsule/concave, no 3D despite "unified 2D+3D" charter | headless | MAJOR |
-| spatial: pick index, get trigger events | Uniform grid only (quadtree/sweep-and-prune unbuilt); no persistent enter/stay/exit pair tracking; no 3D backends | headless | MAJOR |
+| collision is a complete narrow-phase | **Mostly resolved 2026-08-21.** Contact manifolds in 2D and 3D, capsule and convex hull in 3D over a GJK/EPA support registry, 2D swept/TOI. Remaining: no 3D swept (fast 3D movers tunnel), no concave, and a 3D hull cannot be raycast from outside | headless | MINOR |
+| spatial: pick index, get trigger events | Uniform grid only in both dimensions (quadtree/octree/sweep-and-prune unbuilt); no persistent enter/stay/exit pair tracking. The 3D seam and its grid backend landed 2026-08-21 | headless | MINOR |
 | GPU-backed animation renders correctly | Particle emitters now have Gl/Wgpu functional cells and orthographic Wgpu rendering is covered. Spritesheet/movieclip and most Camera2D behavior remain unit- or Canvas-only. | gl/wgpu | MAJOR |
 | snapshot interpolate/restore robust | Different-shape, number↔non-number, dotted-path schema, extra-key restore untested — netcode/replay hits these | headless | MAJOR |
 | Spritesheet seek is correct | `seekSpritesheetPlayerToFrame` broken for non-forward directions — ping-pong/reverse land wrong frame | canvas/gl/wgpu | MAJOR |
