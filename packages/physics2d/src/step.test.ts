@@ -371,6 +371,149 @@ describe('bullet continuous collision detection', () => {
   });
 });
 
+// Every assertion here is against a law of motion rather than against the integrator's arithmetic, so
+// none of them can be satisfied by a wrong implementation that happens to be self-consistent. They are
+// also the ONLY tests in this package built on an off-centre body: the whole suite passed both before
+// and after the defect they pin was fixed, because every other fixture puts its colliders symmetrically
+// about the body origin, where origin and centre of mass coincide and the bug is invisible.
+describe('centre of mass integration', () => {
+  // A collider offset from the body origin, so `centerX`/`centerY` are non-zero and the origin sits on
+  // a lever arm from the centre of mass.
+  function offCentreBody(world: Physics2DWorld, offsetX: number, offsetY: number): RigidBody2D {
+    const body = createRigidBody2D('dynamic', 0, 0);
+    body.colliders.push(createPhysics2DCollider({ kind: 'circle', x: offsetX, y: offsetY, radius: 0.25 }, STONE));
+    return addPhysics2DBody(world, body);
+  }
+
+  function centreOfMassX(body: Readonly<RigidBody2D>): number {
+    return body.x + body.centerX * Math.cos(body.angle) - body.centerY * Math.sin(body.angle);
+  }
+
+  function centreOfMassY(body: Readonly<RigidBody2D>): number {
+    return body.y + body.centerX * Math.sin(body.angle) + body.centerY * Math.cos(body.angle);
+  }
+
+  it('leaves the centre of mass exactly where it was when a free body only spins', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = offCentreBody(world, 1, 0);
+    expect([body.centerX, body.centerY]).toEqual([1, 0]);
+    body.angularVelocity = 1;
+
+    for (let step = 0; step < 50; step++) stepPhysics2D(world, 0.1);
+
+    // No gravity, no contacts, no linear velocity: nothing in the world can move this centre. A body
+    // that translates here is manufacturing momentum out of its own rotation.
+    expect(centreOfMassX(body)).toBeCloseTo(1, 12);
+    expect(centreOfMassY(body)).toBeCloseTo(0, 12);
+    // The origin, by contrast, must have swung right around the centre — it is one unit away from it.
+    expect(body.angle).toBeCloseTo(5, 12);
+    expect(body.x).toBeCloseTo(1 - Math.cos(5), 12);
+    expect(body.y).toBeCloseTo(-Math.sin(5), 12);
+  });
+
+  it('drops an off-centre spinning body along the same path as a centred one', () => {
+    // Two bodies, identical mass and gravity, differing only in where their collider sits and how fast
+    // they spin. Gravity is a uniform field, so it accelerates a centre of mass without any reference to
+    // the body's shape or rotation: the two centres must trace the SAME curve, step for step.
+    const world = createPhysics2DWorld(0, -10);
+    const spinning = offCentreBody(world, 0.75, -0.5);
+    spinning.angularVelocity = 7;
+    const centred = offCentreBody(world, 0, 0);
+
+    const startX = centreOfMassX(spinning);
+    const startY = centreOfMassY(spinning);
+    for (let step = 0; step < 60; step++) stepPhysics2D(world, 1 / 60);
+
+    expect(centreOfMassX(spinning) - startX).toBeCloseTo(centred.x, 12);
+    expect(centreOfMassY(spinning) - startY).toBeCloseTo(centred.y, 12);
+  });
+
+  it('translates an off-centre body by exactly its velocity when it is not rotating', () => {
+    // The general path must reduce to plain addition when there is no rotation to swing the origin
+    // around — the case where the centre-preserving correction is required to do nothing at all.
+    const world = createPhysics2DWorld(0, 0);
+    const body = offCentreBody(world, 2, -3);
+    body.velocityX = 5;
+    body.velocityY = -2;
+
+    stepPhysics2D(world, 0.25);
+
+    expect(body.x).toBeCloseTo(1.25, 12);
+    expect(body.y).toBeCloseTo(-0.5, 12);
+    expect(body.angle).toBe(0);
+  });
+
+  it('translates a fixed-rotation off-centre body without swinging its origin', () => {
+    // `fixedRotation` pins the angle, so the offset from origin to centre never turns and the two move
+    // together. Getting this wrong in the other direction — applying a correction anyway — would drag
+    // the origin off a body that is not allowed to rotate.
+    const world = createPhysics2DWorld(0, 0);
+    const body = offCentreBody(world, 1.5, 0.5);
+    body.fixedRotation = true;
+    body.angularVelocity = 3;
+    body.velocityX = 4;
+
+    stepPhysics2D(world, 0.5);
+
+    expect(body.angle).toBe(0);
+    expect(body.x).toBeCloseTo(2, 12);
+    expect(body.y).toBeCloseTo(0, 12);
+  });
+
+  it('never moves the centre of mass sideways when every force on it points straight up', () => {
+    // The positional correction pass is the OTHER place a body's transform advances, and it carries the
+    // same angular term the integrator does. Here the only thing acting on the body is a flat floor with
+    // no friction, no gravity, and no restitution, so every impulse and every correction points along
+    // +y — which makes any lateral movement of the centre of mass illegal, at any magnitude.
+    const slick = { density: 1, friction: 0, restitution: 0 };
+    const world = createPhysics2DWorld(0, 0);
+    const floor = createRigidBody2D('static', 0, 0);
+    floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -50, minY: -1, maxX: 50, maxY: 0 }, slick));
+    addPhysics2DBody(world, floor);
+
+    // The contacting box sits at the body origin, so tilting the body lands it on one corner and gives
+    // the correction a real torque; a second, distant collider drags the centre of mass away from that
+    // contact, which is what turns the torque into a lateral swing if the origin is moved first.
+    const body = createRigidBody2D('dynamic', 0, 0.5);
+    body.angle = 0.3;
+    body.colliders.push(
+      createPhysics2DCollider({ kind: 'polygon', points: [-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5] }, slick),
+    );
+    body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: 3, minY: 3, maxX: 4, maxY: 4 }, slick));
+    addPhysics2DBody(world, body);
+
+    const startX = centreOfMassX(body);
+    for (let step = 0; step < 8; step++) {
+      stepPhysics2D(world, 1 / 60);
+      // Exactly equal, not merely close: a purely vertical impulse has no x component to round off.
+      expect(centreOfMassX(body)).toBe(startX);
+    }
+    // The torque is real — the body must actually be rotating, or the test proves nothing.
+    expect(body.angle).toBeLessThan(0.29);
+  });
+
+  it('conserves the centre of mass of an off-centre body resting on the ground', () => {
+    // The positional correction pass pushes bodies apart along a contact normal, and its angular term is
+    // a rotation about the centre of mass exactly as the integrator's is. A body settled on the floor
+    // should stay settled; if the correction swings the centre instead of the origin, the body creeps
+    // sideways along a flat floor with nothing pushing it.
+    const world = createPhysics2DWorld(0, -10);
+    ground(world);
+    const body = createRigidBody2D('dynamic', 0, 1);
+    body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: 1.5, minY: -0.5, maxX: 2.5, maxY: 0.5 }, STONE));
+    addPhysics2DBody(world, body);
+    expect(body.centerX).toBeCloseTo(2, 12);
+
+    for (let step = 0; step < 400; step++) stepPhysics2D(world, 1 / 60);
+
+    // Settled: resting on the floor, not still falling, and not sliding along it.
+    expect(centreOfMassY(body)).toBeGreaterThan(0.4);
+    expect(centreOfMassY(body)).toBeLessThan(0.6);
+    expect(Math.abs(centreOfMassX(body) - 2)).toBeLessThan(0.05);
+    expect(Math.abs(body.angle)).toBeLessThan(0.05);
+  });
+});
+
 describe('collision filtering', () => {
   function filteredBox(
     world: Physics2DWorld,
