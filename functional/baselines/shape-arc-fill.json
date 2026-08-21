@@ -2,8 +2,9 @@
   "canvas": {
     "sha256": "ef27dc273c83f46e13796bc2ad092bfa296f16671b15762223135f85369dc61d",
     "sha256Provenance": {
+      "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "29708628ecd0654d20b259535482290c9bf0dc1d0a95641091bff1896627eed9",
+      "sourceHash": "5514c649f2e57cf89fd581c2910abc3fdec1fcd643b0d5dc505f6077fa5ca26c",
       "targetKind": "canvas",
       "verifyPublished": true,
       "warmupFrames": 0

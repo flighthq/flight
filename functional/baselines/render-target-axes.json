@@ -2,8 +2,9 @@
   "webgl": {
     "sha256": "bbc444177437c85af12c9e60a5b0171e8c722a95607f5662b09dd4187106c089",
     "sha256Provenance": {
+      "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "332a103d88009b13092d50b5b44cced18c69677ed618151e11dfc7c365f58279",
+      "sourceHash": "f113791a370fdb7410acfd490becf28a4b8530edee4cb46ea0602e5b9b479f03",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
