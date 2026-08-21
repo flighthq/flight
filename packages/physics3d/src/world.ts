@@ -1,6 +1,6 @@
 import { createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
 import type {
-  CollisionBuiltInShape3D,
+  CollisionColliderShape3D,
   Physics3DBodyType,
   Physics3DCollider,
   Physics3DCollisionFilter,
@@ -62,6 +62,9 @@ export function addPhysics3DBody(world: Physics3DWorld, body: RigidBody3D): numb
     if (owner !== undefined && owner !== body) {
       throw new Error('Cannot share a physics collider between rigid bodies');
     }
+    if (body.type !== 'static' && isPhysics3DStaticSurfaceCollider(collider)) {
+      throw new Error('Triangle-mesh and heightfield colliders require a static rigid body');
+    }
   }
 
   body.index = world.nextBodyIndex;
@@ -102,6 +105,9 @@ export function addPhysics3DCollider(
   const owner = physics3DColliderOwners.get(collider);
   if (owner !== undefined && owner !== body) {
     throw new Error('Cannot share a physics collider between rigid bodies');
+  }
+  if (body.type !== 'static' && isPhysics3DStaticSurfaceCollider(collider)) {
+    throw new Error('Triangle-mesh and heightfield colliders require a static rigid body');
   }
 
   body.colliders.push(collider);
@@ -240,14 +246,15 @@ export function applyPhysics3DTorque(body: RigidBody3D, x: number, y: number, z:
 // allocated here and only ever mutated in place afterwards, which is what makes the per-step transform
 // allocation-free.
 export function createPhysics3DCollider(
-  local: Readonly<CollisionBuiltInShape3D>,
+  local: Readonly<CollisionColliderShape3D>,
   material?: Readonly<Physics3DMaterial>,
   filter?: Readonly<Physics3DCollisionFilter>,
   sensor = false,
 ): Physics3DCollider {
+  const ownedLocal = cloneCollisionColliderShape3D(local);
   return {
-    local: cloneCollisionBuiltInShape3D(local),
-    world: createPhysics3DColliderWorldShape(local),
+    local: ownedLocal,
+    world: createPhysics3DColliderWorldShape(ownedLocal),
     material: {
       density: material?.density ?? 1,
       friction: material?.friction ?? 0.2,
@@ -656,6 +663,7 @@ export function setPhysics3DBodyTransform(
 export function setPhysics3DBodyType(body: RigidBody3D, type: Physics3DBodyType): boolean {
   assertPhysics3DBodyNotStepping(body);
   if (type !== 'dynamic' && type !== 'kinematic' && type !== 'static') return false;
+  if (type !== 'static' && body.colliders.some(isPhysics3DStaticSurfaceCollider)) return false;
   if (body.type === type) return true;
   const world = physics3DBodyOwners.get(body);
   if (world !== undefined) invalidatePhysics3DBodyConstraints(world, body.index);
@@ -724,9 +732,17 @@ export const Physics3DWorldVersion = 4;
 
 // Copies an authored shape so a collider owns its own geometry. The point list is copied too — sharing
 // the array would let two colliders that look independent move together.
-function cloneCollisionBuiltInShape3D(shape: Readonly<CollisionBuiltInShape3D>): CollisionBuiltInShape3D {
+function cloneCollisionColliderShape3D(shape: Readonly<CollisionColliderShape3D>): CollisionColliderShape3D {
   if (shape.kind === 'convex') return { kind: 'convex', points: shape.points.slice() };
+  if (shape.kind === 'triangle-mesh') {
+    return { ...shape, points: shape.points.slice(), indices: shape.indices.slice() };
+  }
+  if (shape.kind === 'heightfield') return { ...shape, heights: shape.heights.slice() };
   return { ...shape };
+}
+
+function isPhysics3DStaticSurfaceCollider(collider: Readonly<Physics3DCollider>): boolean {
+  return collider.local.kind === 'triangle-mesh' || collider.local.kind === 'heightfield';
 }
 
 // Drops every contact naming `index`, along with the solver's cached constraints. Called from the

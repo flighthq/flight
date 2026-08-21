@@ -1,4 +1,4 @@
-import { collideContactManifold3D, createCollisionContactManifold3D } from '@flighthq/collision/contract';
+import { createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type {
   CollisionContactManifold3D,
   Physics3DContactConstraint,
@@ -7,6 +7,7 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
+import { collidePhysics3DColliderShapes } from './colliderCollision';
 import { updatePhysics3DColliderWorldShape } from './colliderTransform';
 import {
   applySymmetricTensor,
@@ -257,7 +258,7 @@ function solvePhysics3DContactPositionsWithScratch(world: Physics3DWorld, scratc
     if (colliderA === undefined || colliderB === undefined) continue;
     updatePhysics3DColliderWorldShape(colliderA, bodyA);
     updatePhysics3DColliderWorldShape(colliderB, bodyB);
-    if (!collideContactManifold3D(colliderA.world, colliderB.world, scratch.manifold)) continue;
+    if (!collidePhysics3DColliderShapes(colliderA.world, colliderB.world, scratch.manifold)) continue;
 
     const manifold = scratch.manifold;
     writeRigidBody3DWorldCenter(bodyA, scratch.centerA);

@@ -1,6 +1,8 @@
 import { writeCollisionConvexHullFaces3D } from '@flighthq/collision/contract';
 import type {
-  CollisionBuiltInShape3D,
+  CollisionColliderShape3D,
+  CollisionHeightfield3D,
+  CollisionTriangleMesh3D,
   Physics3DDebugFeature,
   Physics3DDebugGeometry,
   Physics3DDebugGeometryOptions,
@@ -98,7 +100,7 @@ export function writePhysics3DDebugGeometry(
 
 function writeCollider(
   out: Physics3DDebugGeometry,
-  shape: Readonly<CollisionBuiltInShape3D>,
+  shape: Readonly<CollisionColliderShape3D>,
   body: Readonly<RigidBody3D>,
 ): void {
   switch (shape.kind) {
@@ -263,8 +265,147 @@ function writeCollider(
           );
         }
       }
+      return;
+    }
+    case 'triangle-mesh':
+      writeTriangleMeshWireframe(out, shape, body);
+      return;
+    case 'heightfield':
+      writeHeightfieldWireframe(out, shape, body);
+      return;
+  }
+}
+
+function writeHeightfieldWireframe(
+  out: Physics3DDebugGeometry,
+  shape: Readonly<CollisionHeightfield3D>,
+  body: Readonly<RigidBody3D>,
+): void {
+  for (let row = 0; row < shape.rows; row += 1) {
+    for (let column = 0; column < shape.columns; column += 1) {
+      const index = row * shape.columns + column;
+      if (column + 1 < shape.columns) {
+        writeStaticSurfacePoint(
+          body,
+          shape,
+          column * shape.cellSizeX,
+          shape.heights[index],
+          row * shape.cellSizeZ,
+          scratchAnchorA,
+        );
+        writeStaticSurfacePoint(
+          body,
+          shape,
+          (column + 1) * shape.cellSizeX,
+          shape.heights[index + 1],
+          row * shape.cellSizeZ,
+          scratchAnchorB,
+        );
+        writeColliderLineBetweenScratchAnchors(out, body.index);
+      }
+      if (row + 1 < shape.rows) {
+        writeStaticSurfacePoint(
+          body,
+          shape,
+          column * shape.cellSizeX,
+          shape.heights[index],
+          row * shape.cellSizeZ,
+          scratchAnchorA,
+        );
+        writeStaticSurfacePoint(
+          body,
+          shape,
+          column * shape.cellSizeX,
+          shape.heights[index + shape.columns],
+          (row + 1) * shape.cellSizeZ,
+          scratchAnchorB,
+        );
+        writeColliderLineBetweenScratchAnchors(out, body.index);
+      }
+      if (column + 1 < shape.columns && row + 1 < shape.rows) {
+        writeStaticSurfacePoint(
+          body,
+          shape,
+          column * shape.cellSizeX,
+          shape.heights[index],
+          row * shape.cellSizeZ,
+          scratchAnchorA,
+        );
+        writeStaticSurfacePoint(
+          body,
+          shape,
+          (column + 1) * shape.cellSizeX,
+          shape.heights[index + shape.columns + 1],
+          (row + 1) * shape.cellSizeZ,
+          scratchAnchorB,
+        );
+        writeColliderLineBetweenScratchAnchors(out, body.index);
+      }
     }
   }
+}
+
+function writeStaticSurfacePoint(
+  body: Readonly<RigidBody3D>,
+  shape: Readonly<CollisionHeightfield3D | CollisionTriangleMesh3D>,
+  x: number,
+  y: number,
+  z: number,
+  out: number[],
+): void {
+  rotatePoint(shape.rotationX, shape.rotationY, shape.rotationZ, shape.rotationW, x, y, z, scratchSurfacePoint);
+  writeBodyPoint(
+    body,
+    shape.x + scratchSurfacePoint[0],
+    shape.y + scratchSurfacePoint[1],
+    shape.z + scratchSurfacePoint[2],
+    out,
+  );
+}
+
+function writeTriangleMeshWireframe(
+  out: Physics3DDebugGeometry,
+  shape: Readonly<CollisionTriangleMesh3D>,
+  body: Readonly<RigidBody3D>,
+): void {
+  for (let triangle = 0; triangle + 2 < shape.indices.length; triangle += 3) {
+    for (let edge = 0; edge < 3; edge += 1) {
+      const from = shape.indices[triangle + edge] * 3;
+      const to = shape.indices[triangle + ((edge + 1) % 3)] * 3;
+      writeStaticSurfacePoint(
+        body,
+        shape,
+        shape.points[from],
+        shape.points[from + 1],
+        shape.points[from + 2],
+        scratchAnchorA,
+      );
+      writeStaticSurfacePoint(
+        body,
+        shape,
+        shape.points[to],
+        shape.points[to + 1],
+        shape.points[to + 2],
+        scratchAnchorB,
+      );
+      writeColliderLineBetweenScratchAnchors(out, body.index);
+    }
+  }
+}
+
+function writeColliderLineBetweenScratchAnchors(out: Physics3DDebugGeometry, bodyIndex: number): void {
+  writeLine(
+    out,
+    'collider',
+    bodyIndex,
+    -1,
+    scratchAnchorA[0],
+    scratchAnchorA[1],
+    scratchAnchorA[2],
+    scratchAnchorB[0],
+    scratchAnchorB[1],
+    scratchAnchorB[2],
+  );
 }
 
 // The twelve edges of a box, each corner rotated by the collider's own rotation and then by the body's.
@@ -505,3 +646,5 @@ const scratchCorners = [
 ];
 
 const scratchPoint = [0, 0, 0];
+
+const scratchSurfacePoint = [0, 0, 0];

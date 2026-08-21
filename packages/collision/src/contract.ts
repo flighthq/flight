@@ -25,6 +25,7 @@ export * from './shapeContact2D';
 export * from './sweepCollisionShape2D';
 export * from './testCollision2D';
 export * from './testCollision3D';
+export * from './triangleMesh3D';
 export * from './pointContainment3D';
 export * from './raycastCollisionShape3D';
 export * from './convexHull3D';

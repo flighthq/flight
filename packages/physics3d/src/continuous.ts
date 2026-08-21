@@ -1,9 +1,4 @@
-import {
-  collideContactManifold3D,
-  createCollisionContactManifold3D,
-  createCollisionTimeOfImpact3D,
-  sweepCollisionShape3D,
-} from '@flighthq/collision/contract';
+import { createCollisionContactManifold3D, createCollisionTimeOfImpact3D } from '@flighthq/collision/contract';
 import type {
   CollisionContactManifold3D,
   CollisionTimeOfImpact3D,
@@ -13,6 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase';
+import { collidePhysics3DColliderShapes, sweepPhysics3DColliderShapes } from './colliderCollision';
 import { updatePhysics3DColliderWorldShape } from './colliderTransform';
 import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate';
 import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
@@ -137,7 +133,7 @@ function findEarliestPhysics3DImpact(world: Physics3DWorld, dt: number, scratch:
         // Preserve the analytic translation sweep even while the body spins. Replacing it with angular
         // samples would let a fast, slightly rotating bullet cross a thin wall between those samples.
         if (
-          sweepCollisionShape3D(
+          sweepPhysics3DColliderShapes(
             colliderA.world,
             translationAX,
             translationAY,
@@ -276,7 +272,7 @@ function testPhysics3DColliderOverlapAtFraction(
     integrateRigidBody3DPose(bodyB, dt * fraction);
     updatePhysics3DColliderWorldShape(colliderA, bodyA);
     updatePhysics3DColliderWorldShape(colliderB, bodyB);
-    const overlapping = collideContactManifold3D(colliderA.world, colliderB.world, scratch.rotationalManifold);
+    const overlapping = collidePhysics3DColliderShapes(colliderA.world, colliderB.world, scratch.rotationalManifold);
     if (overlapping) {
       writeRigidBody3DWorldCenter(bodyA, scratch.candidateCenterA);
       writeRigidBody3DWorldCenter(bodyB, scratch.candidateCenterB);

@@ -15,6 +15,7 @@ export function explainPhysics3DCollision(world: Readonly<Physics3DWorld>): Phys
   for (const body of world.bodies) {
     for (const collider of body.colliders) {
       const kind = collider.world.kind;
+      if (kind === 'triangle-mesh' || kind === 'heightfield') continue;
       if (getCollisionSupport3D(kind) === null) unsupported.add(kind);
     }
   }

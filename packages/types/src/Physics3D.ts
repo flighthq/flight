@@ -1,4 +1,4 @@
-import type { CollisionBuiltInShape3D } from './Collision';
+import type { CollisionColliderShape3D } from './Collision';
 import type { SpatialIndexBackend3D } from './Spatial';
 
 // 3D rigid-body dynamics header. `@flighthq/physics3d` owns integration and constraint resolution in
@@ -61,19 +61,20 @@ export interface Physics3DCollisionFilter {
 // ordinary things to build, and both are unrepresentable if these fields sit one level up.
 //
 // Built-in shapes only, matching `Physics2DCollider` and for the same reason: this package clones a
-// collider's shape, transforms it local-to-world by kind, derives its bounds and mass properties, and
-// generates contacts for it — none of which a vendor kind can answer, because only the support function
-// registered for that kind knows what its parameters mean. A vendor shape still reaches
-// `testCollision3D` through the registries; it does not become a rigid body here.
+// collider's shape, transforms it local-to-world by kind, derives its bounds, and generates contacts for
+// it — none of which a vendor kind can answer, because only the function registered for that kind knows
+// what its parameters mean. The convex built-ins carry mass; triangle mesh and heightfield are static
+// surfaces with no mass contribution and are rejected on dynamic or kinematic bodies. A vendor shape
+// still reaches `testCollision3D` through the registries; it does not become a rigid body here.
 export interface Physics3DCollider {
   // The authored shape, in the body's LOCAL frame.
-  local: CollisionBuiltInShape3D;
+  local: CollisionColliderShape3D;
   // The world-space shape, rewritten every step. Its KIND may differ from `local`'s: a rotated
   // axis-aligned box is not an axis-aligned box, so an `aabb` local shape carries a `box` world shape.
   // The alternative — forbidding aabb colliders on rotating bodies — would make a legal authoring choice
   // depend on a runtime property, and would fail silently the first time a body was given angular
   // velocity. Local kind is what you author; world kind is what the narrow phase needs.
-  world: CollisionBuiltInShape3D;
+  world: CollisionColliderShape3D;
   material: Physics3DMaterial;
   filter: Physics3DCollisionFilter;
   // A sensor reports its overlaps through the contact events and generates no impulse: a trigger volume.

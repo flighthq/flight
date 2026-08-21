@@ -1,9 +1,10 @@
-import type { CollisionBuiltInShape3D, Physics3DCollider, RigidBody3D, SpatialAabb3D } from '@flighthq/types/contract';
+import { writeCollisionHeightfieldBounds3D, writeCollisionTriangleMeshBounds3D } from '@flighthq/collision/contract';
+import type { CollisionColliderShape3D, Physics3DCollider, RigidBody3D, SpatialAabb3D } from '@flighthq/types/contract';
 
 // Allocates the world-space shape a collider needs for `local`, choosing the kind the transform can
 // actually express. Every field is filled at creation so the shape is never read half-initialised, and
 // convex-hull storage is sized once here so the per-step transform can write in place.
-export function createPhysics3DColliderWorldShape(local: Readonly<CollisionBuiltInShape3D>): CollisionBuiltInShape3D {
+export function createPhysics3DColliderWorldShape(local: Readonly<CollisionColliderShape3D>): CollisionColliderShape3D {
   switch (local.kind) {
     case 'sphere':
       return { kind: 'sphere', x: local.x, y: local.y, z: local.z, radius: local.radius };
@@ -57,6 +58,37 @@ export function createPhysics3DColliderWorldShape(local: Readonly<CollisionBuilt
       };
     case 'convex':
       return { kind: 'convex', points: local.points.slice() };
+    case 'triangle-mesh':
+      return {
+        kind: 'triangle-mesh',
+        points: local.points,
+        indices: local.indices,
+        version: local.version,
+        x: local.x,
+        y: local.y,
+        z: local.z,
+        rotationX: local.rotationX,
+        rotationY: local.rotationY,
+        rotationZ: local.rotationZ,
+        rotationW: local.rotationW,
+      };
+    case 'heightfield':
+      return {
+        kind: 'heightfield',
+        columns: local.columns,
+        rows: local.rows,
+        heights: local.heights,
+        cellSizeX: local.cellSizeX,
+        cellSizeZ: local.cellSizeZ,
+        version: local.version,
+        x: local.x,
+        y: local.y,
+        z: local.z,
+        rotationX: local.rotationX,
+        rotationY: local.rotationY,
+        rotationZ: local.rotationZ,
+        rotationW: local.rotationW,
+      };
     default:
       return { kind: 'sphere', x: 0, y: 0, z: 0, radius: 0 };
   }
@@ -174,6 +206,25 @@ export function updatePhysics3DColliderWorldShape(collider: Physics3DCollider, b
       target[i + 1] = body.y + scratchPoint[1];
       target[i + 2] = body.z + scratchPoint[2];
     }
+    return;
+  }
+
+  if (local.kind === 'triangle-mesh' && world.kind === 'triangle-mesh') {
+    updatePhysics3DStaticSurfacePose(local, world, body);
+    world.points = local.points;
+    world.indices = local.indices;
+    world.version = local.version;
+    return;
+  }
+
+  if (local.kind === 'heightfield' && world.kind === 'heightfield') {
+    updatePhysics3DStaticSurfacePose(local, world, body);
+    world.columns = local.columns;
+    world.rows = local.rows;
+    world.heights = local.heights;
+    world.cellSizeX = local.cellSizeX;
+    world.cellSizeZ = local.cellSizeZ;
+    world.version = local.version;
   }
 }
 
@@ -304,6 +355,12 @@ export function writePhysics3DColliderBounds(collider: Readonly<Physics3DCollide
       out.maxZ = maxZ;
       return;
     }
+    case 'triangle-mesh':
+      writeCollisionTriangleMeshBounds3D(shape, out);
+      return;
+    case 'heightfield':
+      writeCollisionHeightfieldBounds3D(shape, out);
+      return;
     default:
       out.minX = 0;
       out.minY = 0;
@@ -312,6 +369,46 @@ export function writePhysics3DColliderBounds(collider: Readonly<Physics3DCollide
       out.maxY = 0;
       out.maxZ = 0;
   }
+}
+
+function updatePhysics3DStaticSurfacePose(
+  local: Readonly<Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' | 'heightfield' }>>,
+  world: Extract<CollisionColliderShape3D, { kind: 'triangle-mesh' | 'heightfield' }>,
+  body: Readonly<RigidBody3D>,
+): void {
+  rotatePhysics3DPoint(
+    body.orientationX,
+    body.orientationY,
+    body.orientationZ,
+    body.orientationW,
+    local.x,
+    local.y,
+    local.z,
+    scratchPoint,
+  );
+  world.x = body.x + scratchPoint[0];
+  world.y = body.y + scratchPoint[1];
+  world.z = body.z + scratchPoint[2];
+  world.rotationX =
+    body.orientationW * local.rotationX +
+    body.orientationX * local.rotationW +
+    body.orientationY * local.rotationZ -
+    body.orientationZ * local.rotationY;
+  world.rotationY =
+    body.orientationW * local.rotationY -
+    body.orientationX * local.rotationZ +
+    body.orientationY * local.rotationW +
+    body.orientationZ * local.rotationX;
+  world.rotationZ =
+    body.orientationW * local.rotationZ +
+    body.orientationX * local.rotationY -
+    body.orientationY * local.rotationX +
+    body.orientationZ * local.rotationW;
+  world.rotationW =
+    body.orientationW * local.rotationW -
+    body.orientationX * local.rotationX -
+    body.orientationY * local.rotationY -
+    body.orientationZ * local.rotationZ;
 }
 
 // Rotates (`x`,`y`,`z`) by the unit quaternion, writing three components into `out`. The two-cross-product
