@@ -51,24 +51,67 @@ describe('addPhysics3DBody', () => {
     const world = createPhysics3DWorld();
     const first = createRigidBody3D();
     addPhysics3DBody(world, first);
+    const removedIndex = first.index;
     removePhysics3DBody(world, first);
 
     const second = createRigidBody3D();
     const index = addPhysics3DBody(world, second);
 
-    expect(index).not.toBe(first.index);
-    expect(findPhysics3DBody(world, first.index)).toBeNull();
+    expect(index).not.toBe(removedIndex);
+    expect(first.index).toBe(-1);
+    expect(findPhysics3DBody(world, removedIndex)).toBeNull();
   });
 
-  it('is idempotent for a body already in the world', () => {
+  it('permits a removed body to enter another world under a fresh index', () => {
+    const firstWorld = createPhysics3DWorld();
+    const secondWorld = createPhysics3DWorld();
+    const body = createRigidBody3D();
+    addPhysics3DBody(firstWorld, body);
+    removePhysics3DBody(firstWorld, body);
+
+    expect(() => addPhysics3DBody(secondWorld, body)).not.toThrow();
+    expect(secondWorld.bodies).toEqual([body]);
+  });
+
+  it('rejects duplicate and cross-world insertion without corrupting either world', () => {
+    const world = createPhysics3DWorld();
+    const otherWorld = createPhysics3DWorld();
+    const body = createRigidBody3D();
+    const index = addPhysics3DBody(world, body);
+
+    expect(() => addPhysics3DBody(world, body)).toThrow();
+    expect(() => addPhysics3DBody(otherWorld, body)).toThrow();
+    expect(world.bodies).toEqual([body]);
+    expect(world.bodyByIndex.get(index)).toBe(body);
+    expect(otherWorld.bodies).toHaveLength(0);
+  });
+
+  it('derives mass and claims colliders authored before insertion', () => {
     const world = createPhysics3DWorld();
     const body = createRigidBody3D();
-    const first = addPhysics3DBody(world, body);
+    const collider = createPhysics3DCollider(colliderUnitBox());
+    body.colliders.push(collider);
 
-    const second = addPhysics3DBody(world, body);
+    addPhysics3DBody(world, body);
 
-    expect(second).toBe(first);
-    expect(world.bodies).toHaveLength(1);
+    expect(body.mass).toBeCloseTo(1, 12);
+    expect(body.inverseMass).toBeCloseTo(1, 12);
+
+    const second = createRigidBody3D();
+    second.colliders.push(collider);
+    expect(() => addPhysics3DBody(world, second)).toThrow(/share/);
+    expect(second.index).toBe(-1);
+  });
+
+  it('rejects the same pre-authored collider twice before mutating the world', () => {
+    const world = createPhysics3DWorld();
+    const body = createRigidBody3D();
+    const collider = createPhysics3DCollider(colliderUnitBox());
+    body.colliders.push(collider, collider);
+
+    expect(() => addPhysics3DBody(world, body)).toThrow(/same collider twice/);
+    expect(body.index).toBe(-1);
+    expect(world.bodies).toHaveLength(0);
   });
 });
 
@@ -154,6 +197,15 @@ describe('addPhysics3DCollider', () => {
     addPhysics3DCollider(world, addColliderTestBody(world), collider);
 
     expect(() => addPhysics3DCollider(world, addColliderTestBody(world), collider)).toThrow(/share/);
+  });
+
+  it('refuses to mutate a body through a world that does not own it', () => {
+    const owner = createPhysics3DWorld();
+    const foreign = createPhysics3DWorld();
+    const body = addColliderTestBody(owner);
+
+    expect(() => addPhysics3DCollider(foreign, body, createPhysics3DCollider(colliderUnitBox()))).toThrow(/own/);
+    expect(body.colliders).toHaveLength(0);
   });
 });
 
@@ -395,6 +447,39 @@ describe('invalidatePhysics3DCollider', () => {
 });
 
 describe('removePhysics3DBody', () => {
+  it('wakes a sleeping neighbour whose support was removed', () => {
+    const world = createPhysics3DWorld();
+    const support = createRigidBody3D('static');
+    const sleeper = createRigidBody3D('dynamic');
+    addPhysics3DBody(world, support);
+    addPhysics3DBody(world, sleeper);
+    world.contacts.push(contact(support.index, sleeper.index));
+    sleeper.sleeping = true;
+    sleeper.sleepTimer = 1;
+
+    removePhysics3DBody(world, support);
+
+    expect(sleeper.sleeping).toBe(false);
+    expect(sleeper.sleepTimer).toBe(0);
+  });
+
+  it('drops pending contact events that name the removed body', () => {
+    const world = createPhysics3DWorld();
+    const removed = createRigidBody3D();
+    const survivor = createRigidBody3D();
+    addPhysics3DBody(world, removed);
+    addPhysics3DBody(world, survivor);
+    const began = contact(removed.index, survivor.index);
+    const ended = contact(removed.index, survivor.index);
+    world.events.began.push(began);
+    world.events.ended.push(ended);
+
+    removePhysics3DBody(world, removed);
+
+    expect(world.events.began).toHaveLength(0);
+    expect(world.events.ended).toHaveLength(0);
+  });
+
   it('releases the ownership of every joint it drops', () => {
     const world = createPhysics3DWorld();
     registerBuiltInPhysics3DJointSolvers(world);
@@ -576,6 +661,21 @@ describe('setPhysics3DBodyFixedRotation', () => {
 
     expect(body.inverseInertiaXX).toBeCloseTo(before, 10);
   });
+
+  it('invalidates owned-body constraints whose effective mass just changed', () => {
+    const world = createPhysics3DWorld();
+    const body = sphere();
+    const neighbour = sphere();
+    addPhysics3DBody(world, body);
+    addPhysics3DBody(world, neighbour);
+    world.contacts.push(contact(body.index, neighbour.index));
+    neighbour.sleeping = true;
+
+    setPhysics3DBodyFixedRotation(body, true);
+
+    expect(world.contacts).toHaveLength(0);
+    expect(neighbour.sleeping).toBe(false);
+  });
 });
 
 function contact(bodyA: number, bodyB: number): Physics3DWorld['contacts'][number] {
@@ -656,6 +756,28 @@ describe('setPhysics3DBodyTransform', () => {
 
     expect(body.sleeping).toBe(false);
   });
+
+  it('invalidates contacts and joint caches and wakes the other endpoints', () => {
+    const world = createPhysics3DWorld();
+    registerBuiltInPhysics3DJointSolvers(world);
+    const body = sphere();
+    const neighbour = sphere();
+    addPhysics3DBody(world, body);
+    addPhysics3DBody(world, neighbour);
+    world.contacts.push(contact(body.index, neighbour.index));
+    const joint = addPhysics3DJoint(
+      world,
+      createPhysics3DBallAndSocketJoint({ bodyA: body.index, bodyB: neighbour.index }),
+    );
+    joint.impulse0 = 9;
+    neighbour.sleeping = true;
+
+    setPhysics3DBodyTransform(body, 10, 0, 0, 0, 0, 0, 1);
+
+    expect(world.contacts).toHaveLength(0);
+    expect(joint.impulse0).toBe(0);
+    expect(neighbour.sleeping).toBe(false);
+  });
 });
 
 describe('setPhysics3DBodyType', () => {
@@ -706,6 +828,21 @@ describe('setPhysics3DBodyType', () => {
     setPhysics3DBodyType(body, 'dynamic');
 
     expect(body.forceX).toBe(9);
+  });
+
+  it('invalidates owned-body contacts whose mass participation just changed', () => {
+    const world = createPhysics3DWorld();
+    const body = sphere();
+    const neighbour = sphere();
+    addPhysics3DBody(world, body);
+    addPhysics3DBody(world, neighbour);
+    world.contacts.push(contact(body.index, neighbour.index));
+    neighbour.sleeping = true;
+
+    setPhysics3DBodyType(body, 'static');
+
+    expect(world.contacts).toHaveLength(0);
+    expect(neighbour.sleeping).toBe(false);
   });
 });
 

@@ -17,7 +17,13 @@ import { createPhysics3DColliderWorldShape } from './colliderTransform';
 import { refreshRigidBody3DWorldInertia } from './integrate';
 import { rebuildPhysics3DJointCollisionSuppressions } from './jointCollisionSuppression';
 import { createPhysics3DMassData, setRigidBody3DMassData, updateRigidBody3DMassData } from './massProperties';
-import { assertPhysics3DWorldNotStepping, physics3DColliderOwners, physics3DJointOwners } from './ownership';
+import {
+  assertPhysics3DBodyNotStepping,
+  assertPhysics3DWorldNotStepping,
+  physics3DBodyOwners,
+  physics3DColliderOwners,
+  physics3DJointOwners,
+} from './ownership';
 
 // World and body lifecycle: allocation, membership, and the mutations that have to run through a
 // function because something derived follows from them.
@@ -33,12 +39,29 @@ import { assertPhysics3DWorldNotStepping, physics3DColliderOwners, physics3DJoin
 // a body never lets a later one inherit its identity — which is what stops a stale contact or joint
 // from being revived against a different body that happened to take its slot.
 export function addPhysics3DBody(world: Physics3DWorld, body: RigidBody3D): number {
-  if (world.bodyByIndex.has(body.index) && world.bodyByIndex.get(body.index) === body) return body.index;
+  assertPhysics3DWorldNotStepping(world);
+  if (physics3DBodyOwners.has(body) || body.index !== -1 || world.bodies.includes(body)) {
+    throw new Error('Cannot add a rigid body that already belongs to a physics world');
+  }
+  const colliders = new Set<Physics3DCollider>();
+  for (const collider of body.colliders) {
+    if (colliders.has(collider)) throw new Error('Cannot add a rigid body containing the same collider twice');
+    colliders.add(collider);
+    const owner = physics3DColliderOwners.get(collider);
+    if (owner !== undefined && owner !== body) {
+      throw new Error('Cannot share a physics collider between rigid bodies');
+    }
+  }
 
   body.index = world.nextBodyIndex;
   world.nextBodyIndex += 1;
   world.bodies.push(body);
   world.bodyByIndex.set(body.index, body);
+  physics3DBodyOwners.set(body, world);
+  for (const collider of colliders) physics3DColliderOwners.set(collider, body);
+  // A collider-authored body derives its tensor here; a colliderless body may deliberately carry mass
+  // supplied through `setRigidBody3DMassData`, which is the custom-narrow-phase escape hatch.
+  if (colliders.size > 0) updateRigidBody3DMassData(body);
   refreshRigidBody3DWorldInertia(body);
   // Publish immediately rather than waiting for the next step, so a query made between insertion and
   // the first step finds the body where the caller just put it.
@@ -58,6 +81,10 @@ export function addPhysics3DCollider(
   collider: Physics3DCollider,
 ): Physics3DCollider {
   assertPhysics3DWorldNotStepping(world);
+  const bodyOwner = physics3DBodyOwners.get(body);
+  if (bodyOwner !== undefined && bodyOwner !== world) {
+    throw new Error('Cannot mutate a rigid body through a physics world that does not own it');
+  }
   if (body.colliders.includes(collider)) {
     throw new Error('Cannot add the same physics collider to a rigid body twice');
   }
@@ -73,7 +100,7 @@ export function addPhysics3DCollider(
   if (world.bodyByIndex.get(body.index) === body) {
     // The pair's contacts are dropped rather than kept: the body's centre of mass just moved, so every
     // cached lever arm is measured from a point the body no longer balances on.
-    dropPhysics3DBodyContacts(world, body.index);
+    invalidatePhysics3DBodyConstraints(world, body.index);
     wakePhysics3DBody(body);
     synchronizePhysics3DBroadphase(world);
   }
@@ -83,6 +110,7 @@ export function addPhysics3DCollider(
 // Accumulates a force at the body's centre of mass, to be consumed by the next step. Ignored for a
 // body that cannot respond to one.
 export function applyPhysics3DForce(body: RigidBody3D, x: number, y: number, z: number): void {
+  assertPhysics3DBodyNotStepping(body);
   if (body.type !== 'dynamic') return;
   wakePhysics3DBody(body);
   body.forceX += x;
@@ -101,6 +129,7 @@ export function applyPhysics3DForceAtPoint(
   pointY: number,
   pointZ: number,
 ): void {
+  assertPhysics3DBodyNotStepping(body);
   if (body.type !== 'dynamic') return;
   wakePhysics3DBody(body);
   body.forceX += x;
@@ -119,6 +148,7 @@ export function applyPhysics3DForceAtPoint(
 // Applies an instantaneous change in momentum at the centre of mass, bypassing the force accumulator.
 // An impulse is what a jump or a hit is: a velocity change now, not a force integrated over the step.
 export function applyPhysics3DLinearImpulse(body: RigidBody3D, x: number, y: number, z: number): void {
+  assertPhysics3DBodyNotStepping(body);
   if (body.type !== 'dynamic' || body.inverseMass === 0) return;
   wakePhysics3DBody(body);
   body.velocityX += x * body.inverseMass;
@@ -128,6 +158,7 @@ export function applyPhysics3DLinearImpulse(body: RigidBody3D, x: number, y: num
 
 // Accumulates a torque about the centre of mass, to be consumed by the next step.
 export function applyPhysics3DTorque(body: RigidBody3D, x: number, y: number, z: number): void {
+  assertPhysics3DBodyNotStepping(body);
   if (body.type !== 'dynamic') return;
   wakePhysics3DBody(body);
   body.torqueX += x;
@@ -319,13 +350,15 @@ export function invalidatePhysics3DCollider(
   collider: Physics3DCollider,
 ): boolean {
   assertPhysics3DWorldNotStepping(world);
+  const bodyOwner = physics3DBodyOwners.get(body);
+  if (bodyOwner !== undefined && bodyOwner !== world) return false;
   if (!body.colliders.includes(collider)) return false;
 
   collider.world = createPhysics3DColliderWorldShape(collider.local);
   updateRigidBody3DMassData(body);
   refreshRigidBody3DWorldInertia(body);
   if (world.bodyByIndex.get(body.index) === body) {
-    dropPhysics3DBodyContacts(world, body.index);
+    invalidatePhysics3DBodyConstraints(world, body.index);
     wakePhysics3DBody(body);
     synchronizePhysics3DBroadphase(world);
   }
@@ -344,6 +377,7 @@ export function invalidatePhysics3DCollider(
 // no world holds but that every world still refuses to accept, and leaves the pair it connected suppressed
 // against a joint that no longer exists — a contact that silently never reports.
 export function removePhysics3DBody(world: Physics3DWorld, body: RigidBody3D): boolean {
+  assertPhysics3DWorldNotStepping(world);
   const at = world.bodies.indexOf(body);
   if (at < 0) return false;
 
@@ -351,21 +385,26 @@ export function removePhysics3DBody(world: Physics3DWorld, body: RigidBody3D): b
   world.bodyByIndex.delete(body.index);
 
   const index = body.index;
-  for (let i = world.contacts.length - 1; i >= 0; i--) {
-    const contact = world.contacts[i];
-    if (contact.bodyA === index || contact.bodyB === index) world.contacts.splice(i, 1);
-  }
-  let removedJoint = false;
+  invalidatePhysics3DBodyContacts(world, index);
   for (let i = world.joints.length - 1; i >= 0; i--) {
     const joint = world.joints[i];
-    if (joint.bodyA !== index && joint.bodyB !== index) continue;
+    const solver = world.jointSolvers.get(joint.kind);
+    const usesBodyA = solver?.usesBodyA !== false;
+    const removesBodyA = usesBodyA && joint.bodyA === index;
+    const removesBodyB = joint.bodyB === index;
+    if (!removesBodyA && !removesBodyB) continue;
+    if (solver !== undefined && usesBodyA) {
+      const otherIndex = removesBodyA ? joint.bodyB : joint.bodyA;
+      const other = findPhysics3DBody(world, otherIndex);
+      if (other !== null) wakePhysics3DBody(other);
+    }
     world.joints.splice(i, 1);
     physics3DJointOwners.delete(joint);
-    removedJoint = true;
   }
-  if (removedJoint) rebuildPhysics3DJointCollisionSuppressions(world);
-  world.solver.constraintByContact.clear();
+  rebuildPhysics3DJointCollisionSuppressions(world);
   world.index.removeSpatialObject(index);
+  body.index = -1;
+  physics3DBodyOwners.delete(body);
   return true;
 }
 
@@ -381,6 +420,8 @@ export function removePhysics3DCollider(
   collider: Physics3DCollider,
 ): boolean {
   assertPhysics3DWorldNotStepping(world);
+  const bodyOwner = physics3DBodyOwners.get(body);
+  if (bodyOwner !== undefined && bodyOwner !== world) return false;
   const at = body.colliders.indexOf(collider);
   if (at < 0) return false;
 
@@ -389,7 +430,7 @@ export function removePhysics3DCollider(
   updateRigidBody3DMassData(body);
   refreshRigidBody3DWorldInertia(body);
   if (world.bodyByIndex.get(body.index) === body) {
-    dropPhysics3DBodyContacts(world, body.index);
+    invalidatePhysics3DBodyConstraints(world, body.index);
     wakePhysics3DBody(body);
     synchronizePhysics3DBroadphase(world);
   }
@@ -403,14 +444,21 @@ export function removePhysics3DCollider(
 // angular velocity is cleared, because leaving one behind would let a body that cannot be rotated by
 // anything keep spinning forever from whatever it had before.
 export function setPhysics3DBodyFixedRotation(body: RigidBody3D, fixedRotation: boolean): void {
+  assertPhysics3DBodyNotStepping(body);
   if (body.fixedRotation === fixedRotation) return;
+  const world = physics3DBodyOwners.get(body);
+  if (world !== undefined) invalidatePhysics3DBodyConstraints(world, body.index);
   body.fixedRotation = fixedRotation;
   if (fixedRotation) {
     body.angularVelocityX = 0;
     body.angularVelocityY = 0;
     body.angularVelocityZ = 0;
+    body.torqueX = 0;
+    body.torqueY = 0;
+    body.torqueZ = 0;
   }
   refreshRigidBody3DMass(body);
+  wakePhysics3DBody(body);
 }
 
 // Teleports a body, refreshing the world-space inertia its new orientation implies.
@@ -428,6 +476,9 @@ export function setPhysics3DBodyTransform(
   orientationZ: number,
   orientationW: number,
 ): void {
+  assertPhysics3DBodyNotStepping(body);
+  const world = physics3DBodyOwners.get(body);
+  if (world !== undefined) invalidatePhysics3DBodyConstraints(world, body.index);
   body.x = x;
   body.y = y;
   body.z = z;
@@ -452,6 +503,7 @@ export function setPhysics3DBodyTransform(
 
   wakePhysics3DBody(body);
   refreshRigidBody3DWorldInertia(body);
+  if (world !== undefined) synchronizePhysics3DBroadphase(world);
 }
 
 // Changes how a body participates, rebuilding the mass properties that follow from it.
@@ -460,7 +512,10 @@ export function setPhysics3DBodyTransform(
 // the velocities are cleared; becoming dynamic keeps them, since a body that was being pushed as
 // kinematic is plausibly still moving.
 export function setPhysics3DBodyType(body: RigidBody3D, type: Physics3DBodyType): void {
+  assertPhysics3DBodyNotStepping(body);
   if (body.type === type) return;
+  const world = physics3DBodyOwners.get(body);
+  if (world !== undefined) invalidatePhysics3DBodyConstraints(world, body.index);
   body.type = type;
   if (type === 'static') {
     body.velocityX = 0;
@@ -479,11 +534,13 @@ export function setPhysics3DBodyType(body: RigidBody3D, type: Physics3DBodyType)
   body.torqueZ = 0;
   refreshRigidBody3DMass(body);
   refreshRigidBody3DWorldInertia(body);
+  wakePhysics3DBody(body);
 }
 
 // Wakes a body and resets its stillness timer. A no-op for a static body, which is neither awake nor
 // asleep.
 export function wakePhysics3DBody(body: RigidBody3D): void {
+  assertPhysics3DBodyNotStepping(body);
   if (body.type === 'static') return;
   body.sleeping = false;
   body.sleepTimer = 0;
@@ -530,12 +587,66 @@ function cloneCollisionBuiltInShape3D(shape: Readonly<CollisionBuiltInShape3D>):
 
 // Drops every contact naming `index`, along with the solver's cached constraints. Called from the
 // topology mutations that make an existing contact describe geometry the body no longer has.
-function dropPhysics3DBodyContacts(world: Physics3DWorld, index: number): void {
+function invalidatePhysics3DBodyConstraints(world: Physics3DWorld, bodyIndex: number): void {
+  invalidatePhysics3DBodyContacts(world, bodyIndex);
+  for (const joint of world.joints) {
+    const solver = world.jointSolvers.get(joint.kind);
+    const usesBodyA = solver?.usesBodyA !== false;
+    const connectedA = usesBodyA && joint.bodyA === bodyIndex;
+    const connectedB = joint.bodyB === bodyIndex;
+    if (!connectedA && !connectedB) continue;
+    solver?.clearAccumulatedImpulses?.(joint);
+    joint.impulse0 = 0;
+    joint.impulse1 = 0;
+    joint.impulse2 = 0;
+    joint.impulse3 = 0;
+    joint.impulse4 = 0;
+    joint.impulse5 = 0;
+    if (solver === undefined || !usesBodyA) continue;
+    const otherIndex = connectedA ? joint.bodyB : joint.bodyA;
+    if (otherIndex === bodyIndex) continue;
+    const other = findPhysics3DBody(world, otherIndex);
+    if (other !== null) wakePhysics3DBody(other);
+  }
+}
+
+function invalidatePhysics3DBodyContacts(world: Physics3DWorld, index: number): void {
   for (let i = world.contacts.length - 1; i >= 0; i--) {
     const contact = world.contacts[i];
-    if (contact.bodyA === index || contact.bodyB === index) world.contacts.splice(i, 1);
+    if (contact.bodyA !== index && contact.bodyB !== index) continue;
+    if (contact.enabled && !contact.sensor) {
+      const otherIndex = contact.bodyA === index ? contact.bodyB : contact.bodyA;
+      const other = findPhysics3DBody(world, otherIndex);
+      if (other !== null) wakePhysics3DBody(other);
+    }
+    world.contacts.splice(i, 1);
   }
+  removePhysics3DContactEventsForBody(world.events.began, index);
+  removePhysics3DContactEventsForBody(world.events.ended, index);
+  world.solver.constraints.length = 0;
   world.solver.constraintByContact.clear();
+  clearPhysics3DSolveWorkspace(world);
+}
+
+function removePhysics3DContactEventsForBody(events: Physics3DWorld['events']['began'], bodyIndex: number): void {
+  for (let i = events.length - 1; i >= 0; i--) {
+    if (events[i].bodyA === bodyIndex || events[i].bodyB === bodyIndex) events.splice(i, 1);
+  }
+}
+
+function clearPhysics3DSolveWorkspace(world: Physics3DWorld): void {
+  world.solveIslandByRoot.clear();
+  world.solveIslandRoots.length = 0;
+  world.solveIslandBodyStarts.length = 0;
+  world.solveIslandBodyCounts.length = 0;
+  world.solveIslandContactStarts.length = 0;
+  world.solveIslandContactCounts.length = 0;
+  world.solveIslandJointStarts.length = 0;
+  world.solveIslandJointCounts.length = 0;
+  world.solveIslandBodyIndices.length = 0;
+  world.solveIslandContactIndices.length = 0;
+  world.solveIslandJointIndices.length = 0;
+  world.solveIslandCursors.length = 0;
 }
 
 // Recomputes the inverse mass and local inverse inertia after something that changes a body's
