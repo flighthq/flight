@@ -7,6 +7,7 @@ export * from './gjk2D';
 export * from './manifold';
 export * from './pointContainment';
 export * from './raycastCollisionShape2D';
+export * from './registerBuiltInCollisionPairTests2D';
 export * from './segmentCollision';
 export * from './shapeCollision';
 export * from './shapeContact';
