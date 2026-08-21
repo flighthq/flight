@@ -22,9 +22,21 @@ import { clearCollisionManifold2D } from './manifold';
 // exclusively leased scratch buffers and the manifold is written last, after all inputs are read.
 //
 // Polygons are assumed convex; `points` is a flat `[x0,y0,...]` list. Winding does not matter — the
-// core orients the manifold by comparing shape centroids.
+// core orients the manifold by the side that won the penetration comparison, which is computed anyway.
 
 const RELATIVE_EPSILON = 1e-9;
+
+// Which side of the canonicalized axis the minimum penetration was on: -1 to push A along -axis, +1
+// along +axis. Written by the two axis-overlap helpers and read by their caller on the very next line,
+// which is why a single module-level relay is safe — the helpers are leaves and nothing re-enters them
+// between the write and the read.
+//
+// It exists because the direction was ALREADY COMPUTED and thrown away. Both helpers evaluate the two
+// push distances and return the smaller; the caller then re-derived the direction from the shapes'
+// centroids, which is only a heuristic and is wrong whenever one projection nests inside the other
+// asymmetrically — the centroid can sit on the far side from the shallower exit. Reporting the side
+// that actually won replaces a guess with the answer.
+let axisOverlapSign = 1;
 
 // Axis-aligned box vs axis-aligned box. Direct min-overlap test (no SAT needed): the only candidate
 // separating axes are X and Y, and the manifold uses whichever has the smaller penetration.
@@ -339,6 +351,7 @@ function satCircleConvexOverlap(
 ): boolean {
   const epsilon = relativeEpsilon(Math.max(getPolygonExtent(px, pn), radius));
   let minOverlap = Infinity;
+  let minOverlapSign = 1;
   let normalX = 0;
   let normalY = 0;
 
@@ -362,6 +375,7 @@ function satCircleConvexOverlap(
     }
     if (isPreferredAxis(overlap, axisX, axisY, minOverlap, normalX, normalY, epsilon)) {
       minOverlap = overlap;
+      minOverlapSign = axisOverlapSign;
       normalX = axisX;
       normalY = axisY;
     }
@@ -397,6 +411,7 @@ function satCircleConvexOverlap(
     }
     if (isPreferredAxis(overlap, axisX, axisY, minOverlap, normalX, normalY, epsilon)) {
       minOverlap = overlap;
+      minOverlapSign = axisOverlapSign;
       normalX = axisX;
       normalY = axisY;
     }
@@ -407,20 +422,9 @@ function satCircleConvexOverlap(
     return false;
   }
 
-  const originX = px[0];
-  const originY = px[1];
-  let centroidX = 0;
-  let centroidY = 0;
-  for (let i = 0; i < pn; i++) {
-    centroidX += px[i << 1] - originX;
-    centroidY += px[(i << 1) + 1] - originY;
-  }
-  centroidX /= pn;
-  centroidY /= pn;
-  if (normalX * (cx - originX - centroidX) + normalY * (cy - originY - centroidY) < -epsilon) {
-    normalX = -normalX;
-    normalY = -normalY;
-  }
+  // The sign comes from the side that actually won the penetration comparison, not from the centroids.
+  normalX *= minOverlapSign;
+  normalY *= minOverlapSign;
 
   out.normalX = normalX === 0 ? 0 : normalX;
   out.normalY = normalY === 0 ? 0 : normalY;
@@ -452,10 +456,17 @@ function circlePolygonAxisOverlap(
   const c = (cx - originX) * axisX + (cy - originY) * axisY;
   const cMin = c - radius;
   const cMax = c + radius;
-  // Separation penetration (min of the two push directions), not the intersection length.
-  const penLow = maxP - cMin;
-  const penHigh = cMax - minP;
-  return penLow < penHigh ? penLow : penHigh;
+  // Separation penetration (min of the two push directions), not the intersection length. The circle is
+  // A and the polygon is B, so pushing A along -axis clears `cMax - minP` and pushing it along +axis
+  // clears `maxP - cMin`.
+  const penNegative = cMax - minP;
+  const penPositive = maxP - cMin;
+  if (penNegative < penPositive) {
+    axisOverlapSign = -1;
+    return penNegative;
+  }
+  axisOverlapSign = 1;
+  return penPositive;
 }
 
 // SAT for two convex polygons given as flat vertex lists. Tests each polygon's edge normals,
@@ -470,6 +481,7 @@ function satConvexOverlap(
 ): boolean {
   const epsilon = relativeEpsilon(Math.max(getPolygonExtent(ax, an), getPolygonExtent(bx, bn)));
   scratch.minOverlapAxis.overlap = Infinity;
+  scratch.minOverlapAxis.sign = 1;
   scratch.minOverlapAxis.x = 0;
   scratch.minOverlapAxis.y = 0;
   if (!accumulatePolygonAxes(ax, an, ax, an, bx, bn, epsilon, out, scratch)) return false;
@@ -479,31 +491,9 @@ function satConvexOverlap(
     return false;
   }
 
-  const originX = ax[0];
-  const originY = ax[1];
-  let aCentroidX = 0;
-  let aCentroidY = 0;
-  for (let i = 0; i < an; i++) {
-    aCentroidX += ax[i << 1] - originX;
-    aCentroidY += ax[(i << 1) + 1] - originY;
-  }
-  aCentroidX /= an;
-  aCentroidY /= an;
-  let bCentroidX = 0;
-  let bCentroidY = 0;
-  for (let i = 0; i < bn; i++) {
-    bCentroidX += bx[i << 1] - originX;
-    bCentroidY += bx[(i << 1) + 1] - originY;
-  }
-  bCentroidX /= bn;
-  bCentroidY /= bn;
-
-  let normalX = scratch.minOverlapAxis.x;
-  let normalY = scratch.minOverlapAxis.y;
-  if (normalX * (aCentroidX - bCentroidX) + normalY * (aCentroidY - bCentroidY) < -epsilon) {
-    normalX = -normalX;
-    normalY = -normalY;
-  }
+  // The sign comes from the side that actually won the penetration comparison, not from the centroids.
+  const normalX = scratch.minOverlapAxis.x * scratch.minOverlapAxis.sign;
+  const normalY = scratch.minOverlapAxis.y * scratch.minOverlapAxis.sign;
   out.normalX = normalX === 0 ? 0 : normalX;
   out.normalY = normalY === 0 ? 0 : normalY;
   out.depth = scratch.minOverlapAxis.overlap;
@@ -555,6 +545,7 @@ function accumulatePolygonAxes(
       )
     ) {
       scratch.minOverlapAxis.overlap = overlap;
+      scratch.minOverlapAxis.sign = axisOverlapSign;
       scratch.minOverlapAxis.x = axisX;
       scratch.minOverlapAxis.y = axisY;
     }
@@ -588,10 +579,16 @@ function polygonAxisOverlap(
     if (d < minB) minB = d;
     if (d > maxB) maxB = d;
   }
-  // Separation penetration (min of the two push directions), not the intersection length.
-  const penLow = maxA - minB;
-  const penHigh = maxB - minA;
-  return penLow < penHigh ? penLow : penHigh;
+  // Separation penetration (min of the two push directions), not the intersection length. Pushing A
+  // along -axis clears `maxA - minB`; pushing it along +axis clears `maxB - minA`.
+  const penNegative = maxA - minB;
+  const penPositive = maxB - minA;
+  if (penNegative < penPositive) {
+    axisOverlapSign = -1;
+    return penNegative;
+  }
+  axisOverlapSign = 1;
+  return penPositive;
 }
 
 function canonicalizeScratchAxis(scratch: ShapeCollisionScratch): void {
@@ -672,7 +669,7 @@ interface ShapeCollisionScratch {
   verticesA: Float64Array;
   verticesB: Float64Array;
   axis: ReturnType<typeof createVector2>;
-  minOverlapAxis: { overlap: number; x: number; y: number };
+  minOverlapAxis: { overlap: number; sign: number; x: number; y: number };
 }
 
 function acquireShapeCollisionScratch(): ShapeCollisionScratch {
@@ -684,7 +681,7 @@ function createShapeCollisionScratch(): ShapeCollisionScratch {
     verticesA: new Float64Array(8),
     verticesB: new Float64Array(8),
     axis: createVector2(),
-    minOverlapAxis: { overlap: Infinity, x: 0, y: 0 },
+    minOverlapAxis: { overlap: Infinity, sign: 1, x: 0, y: 0 },
   };
 }
 
