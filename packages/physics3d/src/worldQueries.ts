@@ -1,15 +1,20 @@
 import {
   createCollisionRaycastHit3D,
+  createCollisionTimeOfImpact3D,
   getCollisionShapeContainsPoint3D,
   raycastCollisionShape3D,
+  sweepCollisionShape3D,
 } from '@flighthq/collision/contract';
 import type {
+  CollisionBuiltInShape3D,
   CollisionRaycastHit3D,
+  CollisionTimeOfImpact3D,
   Physics3DCollider,
   Physics3DQueryFilter,
   Physics3DQueryResult,
   Physics3DRayHit,
   Physics3DRayResult,
+  Physics3DShapeCastResult,
   Physics3DWorld,
   RigidBody3D,
   SpatialAabb3D,
@@ -46,6 +51,22 @@ export function createPhysics3DQueryResult(): Physics3DQueryResult {
 
 export function createPhysics3DRayResult(): Physics3DRayResult {
   return { hits: [], hitCount: 0 };
+}
+
+export function createPhysics3DShapeCastResult(): Physics3DShapeCastResult {
+  return {
+    body: null,
+    collider: null,
+    colliderIndex: -1,
+    fraction: 0,
+    hit: false,
+    normalX: 0,
+    normalY: 0,
+    normalZ: 0,
+    x: 0,
+    y: 0,
+    z: 0,
+  };
 }
 
 // Writes every collider containing the world-space point. Broadphase candidates are confirmed by the
@@ -142,9 +163,6 @@ export function queryPhysics3DRayClosest(
   );
 }
 
-// Writes every collider whose current world-space bounds overlap `region`. The spatial index holds
-// aggregate BODY bounds, so its candidates are refined per collider before publication: a region in the
-// empty gap between two colliders on one body must not report either of them.
 export function queryPhysics3DRegion(
   world: Physics3DWorld,
   region: Readonly<SpatialAabb3D>,
@@ -168,6 +186,78 @@ export function queryPhysics3DRegion(
         writePhysics3DColliderBounds(collider, scratch.colliderBounds);
         if (!boundsOverlap(scratch.colliderBounds, region)) continue;
         writeQueryHit(out, body, collider, colliderIndex);
+      }
+    }
+  } finally {
+    releasePhysics3DQueryScratch(scratch);
+  }
+}
+
+// Writes every collider whose current world-space bounds overlap `region`. The spatial index holds
+// aggregate BODY bounds, so its candidates are refined per collider before publication: a region in the
+// empty gap between two colliders on one body must not report either of them.
+// Sweeps `shape` — a WORLD-space collider, positioned where the sweep begins — along the displacement
+// (`dx`,`dy`,`dz`) and writes the first collider it reaches.
+//
+// The query a character controller runs and a raycast cannot answer: a ray finds the first surface its
+// line touches, so a capsule's shoulders pass through a gap its centre line clears. `maxFraction`
+// bounds the sweep on the same normalized interval the displacement defines.
+//
+// The broadphase is asked for the SWEPT bounds — the shape's box at the start unioned with its box at
+// the end — rather than for the start box. Querying only the start would return the candidates already
+// touching the shape and miss every one it is about to reach, which is the entire question being asked.
+//
+// Candidates are then swept exactly and the earliest fraction wins. Ties break on body index then
+// collider index, matching the ray queries, so a shape driven squarely into the seam between two
+// colliders reports the same one every run rather than following broadphase insertion history.
+export function queryPhysics3DShapeCast(
+  world: Physics3DWorld,
+  shape: Readonly<CollisionBuiltInShape3D>,
+  dx: number,
+  dy: number,
+  dz: number,
+  out: Physics3DShapeCastResult,
+  maxFraction = 1,
+  filter?: Readonly<Physics3DQueryFilter>,
+): void {
+  clearShapeCastResult(out);
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || !Number.isFinite(dz)) return;
+  if (!Number.isFinite(maxFraction) || maxFraction < 0) return;
+
+  const scratch = acquirePhysics3DQueryScratch();
+  try {
+    synchronizePhysics3DBroadphase(world);
+    if (!writeSweptShapeBounds(shape, dx * maxFraction, dy * maxFraction, dz * maxFraction, scratch.colliderBounds)) {
+      return;
+    }
+    world.index.querySpatialRegion(scratch.colliderBounds, scratch.candidateBodies);
+    scratch.candidateBodies.sort(compareNumbers);
+
+    let bestFraction = Number.POSITIVE_INFINITY;
+    for (const bodyIndex of scratch.candidateBodies) {
+      const body = world.bodyByIndex.get(bodyIndex);
+      if (body === undefined || !passesBodyFilter(body, filter)) continue;
+      for (let colliderIndex = 0; colliderIndex < body.colliders.length; colliderIndex += 1) {
+        const collider = body.colliders[colliderIndex];
+        if (!passesColliderFilter(collider, filter)) continue;
+        // The collider is stationary for the duration of the cast: this is a query about where the shape
+        // can go against the world as it stands, not a prediction of the next step.
+        if (!sweepCollisionShape3D(shape, dx, dy, dz, collider.world, 0, 0, 0, scratch.timeOfImpact, maxFraction)) {
+          continue;
+        }
+        if (scratch.timeOfImpact.fraction >= bestFraction) continue;
+        bestFraction = scratch.timeOfImpact.fraction;
+        out.hit = true;
+        out.body = body;
+        out.collider = collider;
+        out.colliderIndex = colliderIndex;
+        out.fraction = scratch.timeOfImpact.fraction;
+        out.x = scratch.timeOfImpact.x;
+        out.y = scratch.timeOfImpact.y;
+        out.z = scratch.timeOfImpact.z;
+        out.normalX = scratch.timeOfImpact.normalX;
+        out.normalY = scratch.timeOfImpact.normalY;
+        out.normalZ = scratch.timeOfImpact.normalZ;
       }
     }
   } finally {
@@ -384,10 +474,52 @@ function writeRayHit(
   out.hitCount += 1;
 }
 
+function clearShapeCastResult(out: Physics3DShapeCastResult): void {
+  out.hit = false;
+  out.body = null;
+  out.collider = null;
+  out.colliderIndex = -1;
+  out.fraction = 0;
+  out.x = 0;
+  out.y = 0;
+  out.z = 0;
+  out.normalX = 0;
+  out.normalY = 0;
+  out.normalZ = 0;
+}
+
+// The bounds a shape passes through while being displaced: its own box unioned with that box shifted by
+// the displacement. Returns false when the shape has no usable bounds.
+//
+// Reuses the collider-bounds writer by wrapping the bare shape in the shape of a collider, so the swept
+// box is derived by the SAME code the broadphase indexes bodies with. A second bounds implementation
+// here would be a second source of truth about what a cylinder's extent is, free to disagree with the
+// first the next time a kind is added.
+function writeSweptShapeBounds(
+  shape: Readonly<CollisionBuiltInShape3D>,
+  dx: number,
+  dy: number,
+  dz: number,
+  out: SpatialAabb3D,
+): boolean {
+  shapeCastProbe.world = shape as CollisionBuiltInShape3D;
+  writePhysics3DColliderBounds(shapeCastProbe, out);
+  if (!Number.isFinite(out.minX) || !Number.isFinite(out.maxZ)) return false;
+
+  if (dx < 0) out.minX += dx;
+  else out.maxX += dx;
+  if (dy < 0) out.minY += dy;
+  else out.maxY += dy;
+  if (dz < 0) out.minZ += dz;
+  else out.maxZ += dz;
+  return true;
+}
+
 interface Physics3DQueryScratch {
   candidateBodies: number[];
   colliderBounds: SpatialAabb3D;
   raycastHit: CollisionRaycastHit3D;
+  timeOfImpact: CollisionTimeOfImpact3D;
 }
 
 function acquirePhysics3DQueryScratch(): Physics3DQueryScratch {
@@ -401,6 +533,7 @@ function createPhysics3DQueryScratch(): Physics3DQueryScratch {
     candidateBodies: [],
     colliderBounds: { minX: 0, minY: 0, minZ: 0, maxX: 0, maxY: 0, maxZ: 0 },
     raycastHit: createCollisionRaycastHit3D(),
+    timeOfImpact: createCollisionTimeOfImpact3D(),
   };
 }
 
@@ -408,5 +541,15 @@ function releasePhysics3DQueryScratch(scratch: Physics3DQueryScratch): void {
   scratch.candidateBodies.length = 0;
   physics3DQueryScratchPool.push(scratch);
 }
+
+// A stand-in collider so a bare shape can reuse `writePhysics3DColliderBounds`. Only `world` is read by
+// that function; the rest is filled to keep the object one shape rather than a partial.
+const shapeCastProbe: Physics3DCollider = {
+  filter: { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff },
+  local: { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 },
+  material: { density: 0, friction: 0, restitution: 0 },
+  sensor: false,
+  world: { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 },
+};
 
 const physics3DQueryScratchPool: Physics3DQueryScratch[] = [createPhysics3DQueryScratch()];

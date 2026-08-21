@@ -1022,6 +1022,39 @@ export interface Physics3DRayResult {
   hitCount: number;
 }
 
+// The first collider a swept SHAPE reaches, and where.
+//
+// What a character controller, a camera collision probe, and a projectile with volume all need and a ray
+// cannot give: a ray finds the first surface a LINE touches, so a body's shoulders pass through a gap
+// its centre line clears.
+//
+// `hit` false leaves every other field zeroed and means the shape swept its whole displacement freely.
+// `fraction` is on the same normalized [0,1] interval as `CollisionTimeOfImpact3D` — the displacement
+// vector IS the sweep, so 0.25 means a quarter of the way along it, and there is no separate distance
+// to reconcile against the direction's length.
+//
+// Only the FIRST hit is reported, where the ray queries report all of them. That is not a reduced
+// version of the same feature: a ray passes THROUGH a surface and keeps going, so "the hits along it"
+// is well defined, while a swept shape STOPS at first contact and everything past that point is a
+// position it never reached. A caller wanting what lies beyond resolves the contact and casts again.
+// `body` and `collider` are null exactly when `hit` is false. They are references rather than indices,
+// matching the ray hits, so a caller acts on what it found without a second lookup — but this result is
+// ONE slot rather than a list, so there is no un-published entry to leave stale and the miss has to be
+// representable in the slot itself.
+export interface Physics3DShapeCastResult {
+  body: RigidBody3D | null;
+  collider: Physics3DCollider | null;
+  colliderIndex: number;
+  hit: boolean;
+  fraction: number;
+  x: number;
+  y: number;
+  z: number;
+  normalX: number;
+  normalY: number;
+  normalZ: number;
+}
+
 export type Physics3DDebugFeature = 'center-of-mass' | 'collider' | 'contact-normal' | 'joint';
 
 // Renderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a

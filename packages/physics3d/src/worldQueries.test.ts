@@ -13,10 +13,12 @@ import {
   createPhysics3DQueryFilter,
   createPhysics3DQueryResult,
   createPhysics3DRayResult,
+  createPhysics3DShapeCastResult,
   queryPhysics3DPoint,
   queryPhysics3DRay,
   queryPhysics3DRayClosest,
   queryPhysics3DRegion,
+  queryPhysics3DShapeCast,
 } from './worldQueries';
 
 beforeEach(() => {
@@ -66,6 +68,16 @@ describe('createPhysics3DQueryResult', () => {
 describe('createPhysics3DRayResult', () => {
   it('starts empty', () => {
     expect(createPhysics3DRayResult()).toEqual({ hits: [], hitCount: 0 });
+  });
+});
+
+describe('createPhysics3DShapeCastResult', () => {
+  it('starts as a miss with no body', () => {
+    const out = createPhysics3DShapeCastResult();
+    expect(out.hit).toBe(false);
+    expect(out.body).toBeNull();
+    expect(out.collider).toBeNull();
+    expect(out.colliderIndex).toBe(-1);
   });
 });
 
@@ -401,5 +413,120 @@ describe('queryPhysics3DRegion', () => {
     expect(out.hitCount).toBe(1);
     queryPhysics3DRegion(world, { minX: -1, minY: -1, minZ: -1, maxX: 1, maxY: 1, maxZ: 1 }, out, filter);
     expect(out.hitCount).toBe(0);
+  });
+});
+
+describe('queryPhysics3DShapeCast', () => {
+  it('stops a swept shape at the first collider and reports where', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 10, 0, 0, 'static');
+    const out = createPhysics3DShapeCastResult();
+
+    // A unit box at the origin swept 20 along +x. The target's near face is at 9.5 and the caster's own
+    // half-extent is 0.5, so contact is at 9 of 20.
+    queryPhysics3DShapeCast(world, unitBox(), 20, 0, 0, out);
+
+    expect(out.hit).toBe(true);
+    expect(out.fraction).toBeCloseTo(9 / 20, 4);
+    expect(out.body?.x).toBe(10);
+  });
+
+  it('reports a clean miss when nothing is in the swept path', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 0, 50, 0, 'static');
+    const out = createPhysics3DShapeCastResult();
+
+    queryPhysics3DShapeCast(world, unitBox(), 20, 0, 0, out);
+
+    expect(out.hit).toBe(false);
+    expect(out.body).toBeNull();
+    expect(out.fraction).toBe(0);
+  });
+
+  it('finds a collider the sweep reaches but the start position does not touch', () => {
+    // The whole reason the broadphase is asked for the SWEPT bounds. Querying the start box alone would
+    // return only what the shape is already touching — nothing — and report a miss.
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 30, 0, 0, 'static');
+    const out = createPhysics3DShapeCastResult();
+
+    queryPhysics3DShapeCast(world, unitBox(), 100, 0, 0, out);
+
+    expect(out.hit).toBe(true);
+    expect(out.body?.x).toBe(30);
+  });
+
+  it('reports the NEAREST of several colliders along the sweep', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 30, 0, 0, 'static');
+    const near = addBoxBody(world, 10, 0, 0, 'static');
+    addBoxBody(world, 20, 0, 0, 'static');
+    const out = createPhysics3DShapeCastResult();
+
+    queryPhysics3DShapeCast(world, unitBox(), 100, 0, 0, out);
+
+    // Added out of order on purpose: the answer must come from the fraction, not from insertion order.
+    expect(out.body).toBe(near);
+  });
+
+  it('respects maxFraction, stopping short of a collider beyond it', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 10, 0, 0, 'static');
+    const out = createPhysics3DShapeCastResult();
+
+    // Contact would be at 0.45 of the full displacement; bounding the sweep at 0.2 must not reach it.
+    queryPhysics3DShapeCast(world, unitBox(), 20, 0, 0, out, 0.2);
+    expect(out.hit).toBe(false);
+
+    queryPhysics3DShapeCast(world, unitBox(), 20, 0, 0, out, 0.5);
+    expect(out.hit).toBe(true);
+  });
+
+  it('honours the query filter', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 10, 0, 0, 'static');
+    const out = createPhysics3DShapeCastResult();
+    const filter = createPhysics3DQueryFilter();
+    filter.includeStatic = false;
+
+    queryPhysics3DShapeCast(world, unitBox(), 20, 0, 0, out, 1, filter);
+    expect(out.hit).toBe(false);
+  });
+
+  it('returns a miss for a non-finite displacement rather than throwing', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 10, 0, 0, 'static');
+    const out = createPhysics3DShapeCastResult();
+
+    queryPhysics3DShapeCast(world, unitBox(), NaN, 0, 0, out);
+    expect(out.hit).toBe(false);
+    queryPhysics3DShapeCast(world, unitBox(), 20, 0, 0, out, Number.POSITIVE_INFINITY);
+    expect(out.hit).toBe(false);
+  });
+
+  it('finds a gap a raycast would pass straight through', () => {
+    // The case that justifies the query existing. Two walls leave a 0.8-tall gap that the centre LINE
+    // clears; the swept box is 1.0 tall and does not fit. The gap has to be narrower than the caster or
+    // the correct answer is a miss — which is what a first version of this test actually asserted
+    // against, with a 1.4 gap and a 1.0 box.
+    const world = createPhysics3DWorld();
+    const low = createRigidBody3D('static');
+    low.x = 10;
+    low.y = -0.9;
+    addPhysics3DBody(world, low);
+    addPhysics3DCollider(world, low, createPhysics3DCollider(unitBox()));
+    const high = createRigidBody3D('static');
+    high.x = 10;
+    high.y = 0.9;
+    addPhysics3DBody(world, high);
+    addPhysics3DCollider(world, high, createPhysics3DCollider(unitBox()));
+
+    const rayOut = createPhysics3DRayResult();
+    queryPhysics3DRay(world, 0, 0, 0, 20, 0, 0, rayOut);
+    expect(rayOut.hitCount).toBe(0);
+
+    const out = createPhysics3DShapeCastResult();
+    queryPhysics3DShapeCast(world, unitBox(), 20, 0, 0, out);
+    expect(out.hit).toBe(true);
   });
 });
