@@ -1,4 +1,10 @@
-import type { Physics3DJoint, Physics3DJointSolver, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
+import type {
+  Physics3DHingeJoint,
+  Physics3DJoint,
+  Physics3DJointSolver,
+  Physics3DWorld,
+  RigidBody3D,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate';
@@ -278,6 +284,29 @@ describe('physics3DGeneric6DofJointSolver', () => {
 
     expect(physics3DGeneric6DofJointSolver.swapEnds?.(joint)).toBe(false);
   });
+
+  it('carries a limited axis accumulator but drops it when the axis stops being limited', () => {
+    const scene = createScene();
+    makeStatic(scene.bodyA);
+    const joint = createPhysics3DGeneric6DofJoint({
+      bodyA: 0,
+      bodyB: 1,
+      lowerAngularX: -0.05,
+      upperAngularX: 0.05,
+    });
+    setAxisAngle(scene.bodyB, 1, 0, 0, 0.2);
+
+    scene.bodyB.angularVelocityX = 1;
+    solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 4);
+    expect(joint.upperLimitImpulses[3]).toBeGreaterThan(0);
+
+    // Widening the bounds past the pose makes the axis FREE, and an accumulator describing a bound the
+    // joint is no longer anywhere near must not survive into the next prepare.
+    joint.lowerAngularX = 1;
+    joint.upperAngularX = -1;
+    solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 1);
+    expect(joint.upperLimitImpulses[3]).toBe(0);
+  });
 });
 
 describe('physics3DHingeJointSolver', () => {
@@ -373,6 +402,62 @@ describe('physics3DHingeJointSolver', () => {
     solveJoint(scene.world, joint, physics3DHingeJointSolver, 16);
 
     expect(scene.bodyB.angularVelocityX - scene.bodyA.angularVelocityX).toBeLessThan(0);
+  });
+
+  it('carries a limit impulse across steps and reapplies it before the first iteration', () => {
+    const { scene, joint } = createLoadedHingeStop();
+    scene.bodyB.angularVelocityX = 1;
+    solveJoint(scene.world, joint, physics3DHingeJointSolver, 4);
+    expect(joint.upperLimitImpulse).toBeGreaterThan(0);
+
+    // A whole step with ZERO velocity iterations, so nothing but warm starting can move the body. This is
+    // the assertion that the carried value is actually reapplied rather than merely stored — deliberately
+    // not a "converges in fewer iterations" comparison, because an isolated one-sided row has an exact
+    // effective mass and reaches the same answer from any starting point in a single iteration. Warm
+    // starting pays off where the limit competes with the point and lock rows, not here.
+    const before = scene.bodyB.angularVelocityX;
+    solveJoint(scene.world, joint, physics3DHingeJointSolver, 0);
+
+    expect(scene.bodyB.angularVelocityX).toBeLessThan(before);
+  });
+
+  it('drops a carried limit impulse when the limit is turned off', () => {
+    const { scene, joint } = createLoadedHingeStop();
+    scene.bodyB.angularVelocityX = 1;
+    solveJoint(scene.world, joint, physics3DHingeJointSolver, 4);
+    expect(joint.upperLimitImpulse).toBeGreaterThan(0);
+
+    // Same rule the motor already followed: a cached impulse is valid only while the row that produced it is
+    // still solved, or a disabled stop keeps pushing forever with nothing to cancel it.
+    joint.enableLimit = false;
+    solveJoint(scene.world, joint, physics3DHingeJointSolver, 1);
+    expect(joint.upperLimitImpulse).toBe(0);
+  });
+
+  it('exchanges rather than negates the limit accumulators when its ends are swapped', () => {
+    const joint = createPhysics3DHingeJoint({ bodyA: 1, bodyB: 0, enableLimit: true, lowerAngle: -1, upperAngle: 1 });
+    joint.lowerLimitImpulse = 3;
+    joint.upperLimitImpulse = 7;
+
+    physics3DHingeJointSolver.swapEnds?.(joint);
+
+    // Both stay non-negative: each is a magnitude whose direction is carried by the row that owns it, so the
+    // push that held the lower bound is the one that now holds the upper.
+    expect(joint.lowerLimitImpulse).toBe(7);
+    expect(joint.upperLimitImpulse).toBe(3);
+  });
+
+  it('rescales carried limit accumulators with the timestep', () => {
+    const joint = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1, enableLimit: true });
+    joint.lowerLimitImpulse = 2;
+    joint.upperLimitImpulse = 5;
+
+    physics3DHingeJointSolver.scaleAccumulatedImpulses?.(joint, 0.5);
+
+    // An accumulated impulse has force-times-time units, so reusing one across a different interval applies
+    // the wrong force before the first iteration can correct it.
+    expect(joint.lowerLimitImpulse).toBe(1);
+    expect(joint.upperLimitImpulse).toBe(2.5);
   });
 
   it('does not brake a hinge that is nowhere near its limits', () => {
@@ -533,6 +618,22 @@ function createScene(): Scene {
   addPhysics3DBody(world, bodyA);
   addPhysics3DBody(world, bodyB);
   return { world, bodyA, bodyB };
+}
+
+// A hinge held past its upper stop against a static end — the pose a warm-started limit is for. The angle
+// never changes here because nothing integrates the pose, so the stop stays loaded step after step.
+function createLoadedHingeStop(): { scene: Scene; joint: Physics3DHingeJoint } {
+  const scene = createScene();
+  makeStatic(scene.bodyA);
+  setAxisAngle(scene.bodyB, 1, 0, 0, 0.2);
+  const joint = createPhysics3DHingeJoint({
+    bodyA: 0,
+    bodyB: 1,
+    enableLimit: true,
+    lowerAngle: -0.05,
+    upperAngle: 0.05,
+  });
+  return { scene, joint };
 }
 
 function createUnitBody(): RigidBody3D {

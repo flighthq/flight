@@ -595,6 +595,17 @@ export interface Physics3DHingeJoint extends Physics3DJoint, Physics3DJointFrame
   // the block's six slots are spoken for by the point and angular rows, and because a motor impulse is
   // scaled and cleared on its own schedule — see `scaleAccumulatedImpulses`.
   motorImpulse: number;
+
+  // The two limit rows' accumulators, carried across steps so a limit under sustained load warm-starts
+  // like every other constraint. Without them a hinge resting against its stop re-converges from zero
+  // every step, and a loaded stop sags and buzzes at the exact pose it is meant to hold still.
+  //
+  // Non-negative MAGNITUDES, not signed coordinates: a one-sided row may only push, so each is clamped at
+  // zero and its direction is carried by which row owns it. That is why `swapEnds` exchanges the two
+  // without negating either, while the BOUNDS it exchanges are negated — bounds are positions on an axis
+  // that reverses, these are pushes that do not.
+  lowerLimitImpulse: number;
+  upperLimitImpulse: number;
 }
 
 export interface Physics3DHingeJointOptions extends Physics3DJointFrameOptions {
@@ -620,6 +631,11 @@ export interface Physics3DSliderJoint extends Physics3DJoint, Physics3DJointFram
   motorSpeed: number;
   maxMotorForce: number;
   motorImpulse: number;
+
+  // The travel stops' accumulators. Same contract as the hinge's: non-negative magnitudes, exchanged
+  // rather than negated by `swapEnds`.
+  lowerLimitImpulse: number;
+  upperLimitImpulse: number;
 }
 
 export interface Physics3DSliderJointOptions extends Physics3DJointFrameOptions {
@@ -651,6 +667,13 @@ export interface Physics3DConeTwistJoint extends Physics3DJoint, Physics3DJointF
   enableTwistLimit: boolean;
   lowerTwistAngle: number;
   upperTwistAngle: number;
+
+  // Three accumulators rather than two, because the swing limit is ONE one-sided row about whatever axis
+  // the tilt is currently in — a cone has no lower bound to hold against. Same non-negative-magnitude
+  // contract as the hinge's. This kind vetoes `swapEnds`, so no exchange rule is needed.
+  swingLimitImpulse: number;
+  lowerTwistImpulse: number;
+  upperTwistImpulse: number;
 }
 
 export interface Physics3DConeTwistJointOptions extends Physics3DJointFrameOptions {
@@ -690,6 +713,16 @@ export interface Physics3DGeneric6DofJoint extends Physics3DJoint, Physics3DJoin
   upperAngularX: number;
   upperAngularY: number;
   upperAngularZ: number;
+
+  // The twelve limit accumulators, as two fixed six-element arrays indexed by axis — linear X, Y, Z then
+  // angular X, Y, Z, the same order the bounds above are read in. Arrays rather than twelve named fields
+  // because the solver loops the axes and would otherwise need a twelve-way switch to reach a field per
+  // iteration; a fixed-length array lowers to `float[6]` and keeps that loop.
+  //
+  // Same non-negative-magnitude contract as the hinge's. A LOCKED axis (lower === upper) is solved as an
+  // equality row and uses neither.
+  lowerLimitImpulses: number[];
+  upperLimitImpulses: number[];
 }
 
 export interface Physics3DGeneric6DofJointOptions extends Physics3DJointFrameOptions {

@@ -54,6 +54,9 @@ export function createPhysics3DConeTwistJoint(
     enableTwistLimit: options.enableTwistLimit ?? false,
     lowerTwistAngle: options.lowerTwistAngle ?? 0,
     upperTwistAngle: options.upperTwistAngle ?? 0,
+    swingLimitImpulse: 0,
+    lowerTwistImpulse: 0,
+    upperTwistImpulse: 0,
   };
 }
 
@@ -83,6 +86,8 @@ export function createPhysics3DGeneric6DofJoint(
     upperAngularX: options.upperAngularX ?? -1,
     upperAngularY: options.upperAngularY ?? -1,
     upperAngularZ: options.upperAngularZ ?? -1,
+    lowerLimitImpulses: [0, 0, 0, 0, 0, 0],
+    upperLimitImpulses: [0, 0, 0, 0, 0, 0],
   };
 }
 
@@ -98,6 +103,8 @@ export function createPhysics3DHingeJoint(options: Readonly<Physics3DHingeJointO
     motorSpeed: options.motorSpeed ?? 0,
     maxMotorTorque: options.maxMotorTorque ?? 0,
     motorImpulse: 0,
+    lowerLimitImpulse: 0,
+    upperLimitImpulse: 0,
   };
 }
 
@@ -113,6 +120,8 @@ export function createPhysics3DSliderJoint(options: Readonly<Physics3DSliderJoin
     motorSpeed: options.motorSpeed ?? 0,
     maxMotorForce: options.maxMotorForce ?? 0,
     motorImpulse: 0,
+    lowerLimitImpulse: 0,
+    upperLimitImpulse: 0,
   };
 }
 
