@@ -15,8 +15,8 @@
 // in the kind string, and never in a runtime `dimension` field. Passing a sphere to `testCollision2D`
 // is a compile error because the two shape unions never unify.
 //
-// The 3D half does not exist yet. When it lands it is a sibling set of types with the same shape and a
-// `3D` suffix, plus `testCollision3D`; nothing here becomes shared. See
+// The 3D half is the sibling set below: the same types with a `3D` suffix, reached through
+// `testCollision3D`, sharing nothing with these but the design. See
 // `agents/collision-support-registry.md`.
 
 // The identifier for a 2D collider shape. Open union: the six built-in kinds plus any string, so a
@@ -240,4 +240,172 @@ export interface CollisionContactManifold2D {
   depth: number;
   pointCount: number;
   points: CollisionContactPoint2D[];
+}
+
+// The identifier for a 3D collider shape. Open union with the same shape as its 2D twin: five built-in
+// kinds plus any string, so a vendor can add a namespaced collider kind (e.g. `'acme.cone'`).
+//
+// The built-in names are deliberately disjoint from the 2D set — `'sphere'` is not a 2D kind and
+// `'circle'` is not a 3D one — so the two literal unions never unify and the dimension boundary holds
+// at compile time. `'aabb'` is the one name both dimensions use, which is exactly why the SHAPE types
+// rather than the kind strings carry the boundary: `CollisionAabb2D` has no z, so a 3D AABB cannot be
+// passed to a 2D entry point even though the two kinds share a spelling.
+//
+// TRIANGLE MESH AND HEIGHTFIELD ARE ABSENT, and not by omission. Every kind here is CONVEX, because a
+// support function answers "furthest point in a direction" and that only determines a shape when the
+// shape is convex — GJK against a concave hull silently reports the hull's answer, not the shape's. A
+// mesh enters through decomposition instead: the caller (or a future mesh layer) tests the convex
+// pieces or the individual triangles it overlaps, each of which IS a shape here. Registering a mesh
+// support function would be the one way to make this core quietly wrong.
+export type CollisionShapeKind3D = 'sphere' | 'aabb' | 'box' | 'capsule' | 'convex' | (string & {});
+
+// A sphere collider: centre (`x`,`y`,`z`) and `radius`.
+export interface CollisionSphere3D {
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+}
+
+// An axis-aligned box collider, as min/max corners. Distinct from `@flighthq/geometry`'s `Aabb` and
+// from `SpatialAabb3D`: those are bounds, this is a collider, and the three are kept apart so the
+// packages do not depend on each other.
+export interface CollisionAabb3D {
+  minX: number;
+  minY: number;
+  minZ: number;
+  maxX: number;
+  maxY: number;
+  maxZ: number;
+}
+
+// An oriented box collider: centre (`x`,`y`,`z`), half extents along its own axes, and a rotation.
+//
+// The rotation is a QUATERNION rather than Euler angles, matching `RigidBody3D.orientation*` exactly,
+// so a physics body's pose transfers to its collider with no conversion and no order convention to
+// agree on. It is expected to be unit-length; a non-unit quaternion scales the box, which is a caller
+// error rather than something this package normalizes on every support call.
+export interface CollisionBox3D {
+  x: number;
+  y: number;
+  z: number;
+  halfX: number;
+  halfY: number;
+  halfZ: number;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  rotationW: number;
+}
+
+// A capsule collider: the swept sphere of `radius` along the segment from (`x0`,`y0`,`z0`) to
+// (`x1`,`y1`,`z1`).
+//
+// Stored as a segment plus a radius rather than as a centre, height, and axis, because that is the
+// form its support function wants — the furthest point is the furthest ENDPOINT pushed one radius
+// along the direction, with no trigonometry and no degenerate case when the segment has zero length
+// (which is then simply a sphere).
+export interface CollisionCapsule3D {
+  x0: number;
+  y0: number;
+  z0: number;
+  x1: number;
+  y1: number;
+  z1: number;
+  radius: number;
+}
+
+// A convex hull collider: a flat `[x0,y0,z0,x1,y1,z1,...]` list of world-space vertices.
+//
+// Flat rather than an array of points, matching `CollisionPolygon2D` and for the same reasons: one
+// allocation, cache-friendly to scan, and it lowers to a `float*` with no per-vertex object. CONVEXITY
+// IS THE CALLER'S GUARANTEE — the support scan cannot detect a concave vertex, it just never returns
+// it, so a concave hull silently behaves as its convex hull rather than failing.
+export interface CollisionConvex3D {
+  points: number[];
+}
+
+export type CollisionBuiltInShape3D =
+  | (CollisionSphere3D & { kind: 'sphere' })
+  | (CollisionAabb3D & { kind: 'aabb' })
+  | (CollisionBox3D & { kind: 'box' })
+  | (CollisionCapsule3D & { kind: 'capsule' })
+  | (CollisionConvex3D & { kind: 'convex' });
+
+// A vendor-namespaced 3D collider kind: any string containing a dot. The same rule as
+// `CollisionVendorKind2D`, and load-bearing for the same reason — see `CollisionVendorShape2D`.
+export type CollisionVendorKind3D = `${string}.${string}`;
+
+// A 3D collider of a kind this package does not define, reached entirely through the registries. Its
+// parameters are deliberately absent: only the support function registered for that kind knows how to
+// read them, and it is the one that casts.
+export interface CollisionVendorShape3D {
+  kind: CollisionVendorKind3D;
+}
+
+// Every 3D collider, built-in or vendor. `testCollision3D` and both 3D registries take this.
+export type CollisionShape3D = CollisionBuiltInShape3D | CollisionVendorShape3D;
+
+// The result of a 3D narrow-phase test, written into an `out` parameter so a hot loop over thousands
+// of pairs allocates nothing. When `overlapping` is true, (`normalX`,`normalY`,`normalZ`) is the unit
+// minimum-translation axis oriented to push shape **A out of B**, and `depth` is the penetration
+// distance along it — moving A by `normal * depth` just separates the pair. When `overlapping` is
+// false the pair is disjoint (or merely touching, which is treated as non-overlapping) and the normal
+// and depth are left at 0.
+export interface CollisionManifold3D {
+  overlapping: boolean;
+  normalX: number;
+  normalY: number;
+  normalZ: number;
+  depth: number;
+}
+
+// A support function: writes the furthest point on `shape` along (`dirX`,`dirY`,`dirZ`) into `out` as
+// `[x,y,z]`. The direction need not be normalized.
+//
+// THE ARITY IS THE BOUNDARY. A 2D support takes two direction components and a 3D one takes three, so
+// the two registries could not be crossed even if the kind strings collided. `out` is a caller-owned
+// scratch array, never retained.
+export type CollisionSupport3D = (
+  shape: Readonly<CollisionShape3D>,
+  dirX: number,
+  dirY: number,
+  dirZ: number,
+  out: number[],
+) => void;
+
+// A registered specialization for one ORDERED pair of 3D kinds, written to beat the generic GJK/EPA
+// path on speed or conditioning. Returns whether the pair overlaps, writing the manifold when it does.
+export type CollisionPairTest3D = (
+  a: Readonly<CollisionShape3D>,
+  b: Readonly<CollisionShape3D>,
+  out: CollisionManifold3D,
+) => boolean;
+
+// One point of a 3D contact manifold: a world-space position on the shared surface and the penetration
+// depth measured along the manifold's normal. `featureId` identifies WHICH feature pair produced the
+// point, stably across frames, so a solver can match this step's points to last step's accumulators
+// and warm-start. The value itself means nothing; only its stability is contracted.
+export interface CollisionContactPoint3D {
+  x: number;
+  y: number;
+  z: number;
+  depth: number;
+  featureId: number;
+}
+
+// A full 3D contact manifold: one shared normal plus up to `MAX_COLLISION_CONTACT_POINTS_3D` points.
+//
+// This is the second lane, distinct from `CollisionManifold3D`, and the distinction is the same one
+// the 2D half draws: the cheap overlap path must not start linking clipping machinery. A single
+// deepest point is enough to know a pair touches and nowhere near enough to rest a box on a floor —
+// that needs a polygon of contact, which is what face clipping produces and what a support function
+// cannot, because a support function hides face topology by construction.
+export interface CollisionContactManifold3D {
+  overlapping: boolean;
+  normalX: number;
+  normalY: number;
+  normalZ: number;
+  pointCount: number;
+  points: CollisionContactPoint3D[];
 }
