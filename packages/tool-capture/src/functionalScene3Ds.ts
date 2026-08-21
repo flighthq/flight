@@ -48,11 +48,28 @@ export function discoverFunctionalScene3Ds(scenesDir: string): FunctionalScene3D
   return scenes.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+export type FunctionalTestRouteResult =
+  | { readonly kind: 'serve'; readonly test: Readonly<FunctionalScene3D> }
+  | { readonly kind: 'unavailable'; readonly scene: Readonly<FunctionalScene3D> }
+  | { readonly kind: 'unknown' };
+
 // The scene file backing one capture target: the backend-specific file when it exists, else the
 // backend-agnostic file.
 export function functionalScene3DFile(scenesDir: string, name: string, backend: string): string {
   const specific = join(scenesDir, `${name}.${backend}.ts`);
   return existsSync(specific) ? specific : join(scenesDir, `${name}.ts`);
+}
+
+export function resolveFunctionalTestRoute(
+  tests: readonly Readonly<FunctionalScene3D>[],
+  name: string,
+  renderer: string,
+): FunctionalTestRouteResult {
+  const test = tests.find((t) => t.name === name && t.renderers.includes(renderer));
+  if (test) return { kind: 'serve', test };
+  const scene = tests.find((t) => t.name === name);
+  if (scene) return { kind: 'unavailable', scene };
+  return { kind: 'unknown' };
 }
 
 function parseScene3DFile(file: string): { name: string; backend: FunctionalBackend | null } | null {

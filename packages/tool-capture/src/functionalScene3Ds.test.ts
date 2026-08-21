@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { discoverFunctionalScene3Ds, functionalScene3DFile } from './functionalScene3Ds';
+import { discoverFunctionalScene3Ds, functionalScene3DFile, resolveFunctionalTestRoute } from './functionalScene3Ds';
 
 let dir: string;
 
@@ -58,5 +58,30 @@ describe('functionalScene3DFile', () => {
   it('falls back to the backend-agnostic file', () => {
     touch('bar.ts');
     expect(functionalScene3DFile(dir, 'bar', 'webgl')).toBe(join(dir, 'bar.ts'));
+  });
+});
+
+describe('resolveFunctionalTestRoute', () => {
+  it('returns serve when the scene has the requested backend', () => {
+    touch('bar.webgl.ts');
+    touch('bar.canvas.ts');
+    const tests = discoverFunctionalScene3Ds(dir);
+    const result = resolveFunctionalTestRoute(tests, 'bar', 'webgl');
+    expect(result).toEqual({ kind: 'serve', test: { name: 'bar', renderers: ['canvas', 'webgl'] } });
+  });
+
+  it('returns unavailable when the scene exists but lacks the requested backend', () => {
+    touch('bar.webgl.ts');
+    touch('bar.canvas.ts');
+    const tests = discoverFunctionalScene3Ds(dir);
+    const result = resolveFunctionalTestRoute(tests, 'bar', 'dom');
+    expect(result.kind).toBe('unavailable');
+    expect(result.kind === 'unavailable' && result.scene.renderers).toEqual(['canvas', 'webgl']);
+  });
+
+  it('returns unknown when no scene matches the name', () => {
+    touch('bar.webgl.ts');
+    const tests = discoverFunctionalScene3Ds(dir);
+    expect(resolveFunctionalTestRoute(tests, 'nonexistent', 'webgl').kind).toBe('unknown');
   });
 });
