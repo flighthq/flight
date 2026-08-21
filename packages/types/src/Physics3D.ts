@@ -374,9 +374,10 @@ export interface Physics3DContactConstraint {
 // these fields or renaming them.
 export interface Physics3DSequentialImpulseState {
   constraints: Physics3DContactConstraint[];
-  // Constraints surviving from the previous step, keyed by the contact's canonical body pair, so warm
-  // starting can find last step's accumulators after the contact list has been rebuilt.
-  constraintByPair: Map<number, Physics3DContactConstraint>;
+  // Constraints surviving from the previous step, keyed by the persistent contact record. A body pair
+  // may have several simultaneous collider-pair contacts, so the body indices alone cannot identify
+  // which accumulator belongs to which piece of compound geometry.
+  constraintByContact: Map<Physics3DContact, Physics3DContactConstraint>;
 }
 
 // The knobs specific to the sequential-impulse solver.

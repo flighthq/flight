@@ -215,7 +215,7 @@ export function createPhysics3DWorld(index?: SpatialIndexBackend3D): Physics3DWo
     events: { began: [], ended: [] },
     jointEvents: { broke: [] },
     contactHooks: { preSolve: null, postSolve: null },
-    solver: { constraints: [], constraintByPair: new Map() },
+    solver: { constraints: [], constraintByContact: new Map() },
     config: createPhysics3DSolverConfig(),
     islandParents: new Map(),
     islandSleepTimers: new Map(),
@@ -364,7 +364,7 @@ export function removePhysics3DBody(world: Physics3DWorld, body: RigidBody3D): b
     removedJoint = true;
   }
   if (removedJoint) rebuildPhysics3DJointCollisionSuppressions(world);
-  world.solver.constraintByPair.clear();
+  world.solver.constraintByContact.clear();
   world.index.removeSpatialObject(index);
   return true;
 }
@@ -535,7 +535,7 @@ function dropPhysics3DBodyContacts(world: Physics3DWorld, index: number): void {
     const contact = world.contacts[i];
     if (contact.bodyA === index || contact.bodyB === index) world.contacts.splice(i, 1);
   }
-  world.solver.constraintByPair.clear();
+  world.solver.constraintByContact.clear();
 }
 
 // Recomputes the inverse mass and local inverse inertia after something that changes a body's
