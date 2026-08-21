@@ -188,6 +188,23 @@ describe('preparePhysics3DContactConstraints', () => {
     expect(world.solver.constraints[0].points[1].normalImpulse).toBe(7);
   });
 
+  it('keeps compound-collider accumulators with their own contact', () => {
+    const world = createFallingBoxWorld();
+    const second = createContact(world.bodies[0].index, world.bodies[1].index);
+    second.colliderA = 1;
+    second.colliderB = 1;
+    world.contacts.push(second);
+    buildSolveWorkspace(world);
+    preparePhysics3DContactConstraints(world);
+    world.solver.constraints[0].points[0].normalImpulse = 3;
+    world.solver.constraints[1].points[0].normalImpulse = 11;
+
+    preparePhysics3DContactConstraints(world);
+
+    expect(world.solver.constraints[0].points[0].normalImpulse).toBe(3);
+    expect(world.solver.constraints[1].points[0].normalImpulse).toBe(11);
+  });
+
   it('does not carry accumulators when warm starting is disabled', () => {
     const world = createFallingBoxWorld();
     preparePhysics3DContactConstraints(world);

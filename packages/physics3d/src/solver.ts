@@ -1,6 +1,7 @@
 import { collideContactManifold3D, createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type {
   CollisionContactManifold3D,
+  Physics3DContact,
   Physics3DContactConstraint,
   Physics3DContactConstraintPoint,
   Physics3DWorld,
@@ -81,9 +82,9 @@ export function createPhysics3DContactConstraintPoint(): Physics3DContactConstra
 // what lets joints and contacts share one interleaved pass.
 export function preparePhysics3DContactConstraints(world: Physics3DWorld): void {
   const state = world.solver;
-  const previousByPair = state.constraintByPair;
+  const previousByContact = state.constraintByContact;
   const constraints: Physics3DContactConstraint[] = [];
-  const nextByPair = new Map<number, Physics3DContactConstraint>();
+  const nextByContact = new Map<Physics3DContact, Physics3DContactConstraint>();
   const config = world.config.sequentialImpulse;
 
   for (let island = 0; island < world.solveIslandRoots.length; island += 1) {
@@ -110,7 +111,7 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
       constraint.contact = contactIndex;
       writeFrictionBasis(contact.normalX, contact.normalY, contact.normalZ, constraint);
 
-      const previous = previousByPair.get(getContactPairKey(contact.bodyA, contact.bodyB));
+      const previous = previousByContact.get(contact);
 
       for (let i = 0; i < contact.pointCount; i += 1) {
         const source = contact.points[i];
@@ -186,12 +187,12 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
       }
 
       constraints.push(constraint);
-      nextByPair.set(getContactPairKey(contact.bodyA, contact.bodyB), constraint);
+      nextByContact.set(contact, constraint);
     }
   }
 
   state.constraints = constraints;
-  state.constraintByPair = nextByPair;
+  state.constraintByContact = nextByContact;
 }
 
 // Resolves penetration by moving bodies directly, leaving `penetrationSlop` of overlap deliberately
@@ -569,15 +570,6 @@ function findPointByFeatureId(
   return null;
 }
 
-// Packs a canonical body pair into one number by positional multiplication rather than bit shifting.
-// `<<` truncates to 32 bits, so a shift-packed key would silently alias two unrelated pairs onto one
-// entry once an index passed its field width — and the symptom would be a contact warm-started with an
-// impulse belonging to a different pair entirely, which reads as jitter rather than as a fault. The
-// widest key here is under 2^52, so every key is an exactly representable integer.
-function getContactPairKey(bodyA: number, bodyB: number): number {
-  return bodyA * PAIR_KEY_SCALE + bodyB;
-}
-
 // The constraint denominator along one direction: the scalar mass a unit impulse in that direction
 // acts against, including both bodies' resistance to being spun about the contact.
 //
@@ -695,7 +687,6 @@ function writeFrictionBasis(normalX: number, normalY: number, normalZ: number, o
 }
 
 const AXIS_SELECTION_THRESHOLD = 0.5773502691896258;
-const PAIR_KEY_SCALE = 67108864;
 const scratchTensor = [0, 0, 0, 0, 0, 0];
 const scratchVector = [0, 0, 0];
 
