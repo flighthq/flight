@@ -204,6 +204,15 @@ describe('isPhysics3DSolverConfigValid', () => {
     expect(isPhysics3DSolverConfigValid(createTestWorld().config)).toBe(true);
   });
 
+  it('rejects a negative or fractional angular CCD budget', () => {
+    const world = createTestWorld();
+    world.config.maxCcdRotationSubsteps = -1;
+    expect(isPhysics3DSolverConfigValid(world.config)).toBe(false);
+
+    world.config.maxCcdRotationSubsteps = 1.5;
+    expect(isPhysics3DSolverConfigValid(world.config)).toBe(false);
+  });
+
   it('rejects a position correction outside zero to one', () => {
     const world = createTestWorld();
     world.config.sequentialImpulse.positionCorrection = 1.5;

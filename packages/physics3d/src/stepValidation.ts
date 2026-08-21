@@ -102,6 +102,8 @@ export function isPhysics3DSolverConfigValid(config: Readonly<Physics3DSolverCon
     typeof config.continuousCollision === 'boolean' &&
     Number.isSafeInteger(config.maxCcdSubsteps) &&
     config.maxCcdSubsteps >= 0 &&
+    Number.isSafeInteger(config.maxCcdRotationSubsteps) &&
+    config.maxCcdRotationSubsteps >= 0 &&
     Number.isFinite(sequential.penetrationSlop) &&
     sequential.penetrationSlop >= 0 &&
     Number.isFinite(sequential.positionCorrection) &&

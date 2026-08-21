@@ -424,10 +424,14 @@ export interface Physics3DSolverConfig {
   // field and a loop that runs once.
   substeps: number;
 
-  // Opts the world into continuous collision detection for bodies flagged `bullet`. Carried and
-  // reported but not yet consumed: CCD needs a swept 3D narrow phase, which does not exist.
+  // Opts the world into continuous collision detection for bodies flagged `bullet`. Translation uses
+  // collision's analytic convex sweep; rotation uses the separately bounded sampling path below.
   continuousCollision: boolean;
   maxCcdSubsteps: number;
+  // Hard sampling budget for angular CCD. Rotation has no analytic convex sweep in the collision seam,
+  // so a spinning bullet samples its pose in bounded increments and bisects the first overlapping one.
+  // Zero deliberately restores linear-only CCD.
+  maxCcdRotationSubsteps: number;
 
   sequentialImpulse: Physics3DSequentialImpulseConfig;
 }
