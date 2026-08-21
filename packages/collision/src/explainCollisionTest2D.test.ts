@@ -1,8 +1,31 @@
 import type { CollisionShape2D } from '@flighthq/types/contract';
 
 import { explainCollisionTest2D } from './explainCollisionTest2D';
+import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
+
+registerBuiltInCollisionPairTests2D();
 
 describe('explainCollisionTest2D', () => {
+  it('names an unregistered kind rather than calling the pair separated', async () => {
+    // A fresh module registry, so the two collision registries are genuinely empty — the state a caller
+    // who forgot to register is in. Reached this way rather than by ordering this test before the
+    // registrar above, so it cannot be silently broken by moving tests around.
+    vi.resetModules();
+    const { explainCollisionTest2D: explainUnregistered } = await import('./explainCollisionTest2D');
+
+    // A circle is a valid circle whether or not anything is registered for it, so shape validation passes
+    // and the dispatcher returns its silent false. Reporting `separated` for two clearly overlapping
+    // circles would be the seam repeating the dispatcher's silence instead of explaining it.
+    expect(
+      explainUnregistered({ kind: 'circle', radius: 2, x: 0, y: 0 }, { kind: 'circle', radius: 2, x: 1, y: 0 }),
+    ).toEqual({
+      kind: 'circle',
+      overlapping: false,
+      shapeIndex: 0,
+      status: 'unsupported-shape-kind',
+    });
+  });
+
   it('distinguishes overlap from ordinary separation', () => {
     const circle: CollisionShape2D = { kind: 'circle', radius: 2, x: 0, y: 0 };
     expect(explainCollisionTest2D(circle, { kind: 'circle', radius: 2, x: 1, y: 0 })).toEqual({

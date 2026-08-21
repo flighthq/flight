@@ -52,3 +52,4 @@ export {
   supportCollisionPolygon2D,
 } from './collisionSupport2D';
 export { testCollisionSupport2D, testCollisionSupportOverlap2D } from './gjk2D';
+export { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';

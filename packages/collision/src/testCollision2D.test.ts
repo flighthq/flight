@@ -1,8 +1,22 @@
 import type { CollisionShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCollisionManifold2D } from './manifold';
+import {
+  getCollisionPairTest2D,
+  registerBuiltInCollisionSupports2D,
+  registerCollisionPairTest2D,
+  registerCollisionSupport2D,
+  supportCollisionCircle2D,
+} from './collisionSupport2D';
+import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold';
+import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
 import { setCollisionTestGuard2D, testCollision2D } from './testCollision2D';
+
+// Both doors, because this dispatcher is the one place their precedence is observable. Nothing is
+// registered at module load, so a caller that opens neither gets `false` from every pair — which is what
+// `answers nothing at all until a door is opened` below pins down.
+registerBuiltInCollisionPairTests2D();
+registerBuiltInCollisionSupports2D();
 
 afterEach(() => {
   setCollisionTestGuard2D(null);
@@ -76,6 +90,70 @@ describe('testCollision2D', () => {
     expect(testCollision2D(segment, circle, out)).toBe(false);
     expect(testCollision2D(circle, point, out)).toBe(false);
     expect(out.overlapping).toBe(false);
+  });
+
+  it('answers nothing at all until a door is opened', () => {
+    const out = createCollisionManifold2D();
+    // A vendor kind with neither a support function nor a pair specialization. This is also the state
+    // EVERY pair is in before the registrars run, which is the behavioural cost of making the ten SAT
+    // pairs tree-shakable: registration is the whole of the dispatcher's knowledge.
+    const capsule: CollisionShape2D = { kind: 'acme.capsule' };
+    const circle: CollisionShape2D = { kind: 'circle', x: 0, y: 0, radius: 1 };
+    expect(testCollision2D(capsule, circle, out)).toBe(false);
+    expect(out).toEqual({ depth: 0, normalX: 0, normalY: 0, overlapping: false });
+  });
+
+  it('prefers a registered specialization over the generic support floor, in both orders', () => {
+    const out = createCollisionManifold2D();
+    const calls: string[] = [];
+    // Registered for ONE order only. The reverse call must reach the same specialization with its
+    // arguments swapped and the normal negated, which is what keeps the registry at ten entries.
+    registerCollisionPairTest2D('circle', 'acme.wall', (_a, _b, manifold) => {
+      calls.push('specialized');
+      manifold.overlapping = true;
+      manifold.normalX = 1;
+      manifold.normalY = 0;
+      manifold.depth = 4;
+      return true;
+    });
+    const circle: CollisionShape2D = { kind: 'circle', x: 0, y: 0, radius: 1 };
+    const wall: CollisionShape2D = { kind: 'acme.wall' };
+
+    expect(testCollision2D(circle, wall, out)).toBe(true);
+    expect(out.normalX).toBe(1);
+
+    expect(testCollision2D(wall, circle, out)).toBe(true);
+    expect(out.normalX).toBe(-1);
+    expect(out.depth).toBe(4);
+    expect(calls).toEqual(['specialized', 'specialized']);
+  });
+
+  it('does not negate a zero normal when the reverse specialization reports no overlap', () => {
+    const out = createCollisionManifold2D();
+    registerCollisionPairTest2D('circle', 'acme.void', (_a, _b, manifold) => {
+      clearCollisionManifold2D(manifold);
+      return false;
+    });
+    const circle: CollisionShape2D = { kind: 'circle', x: 0, y: 0, radius: 1 };
+
+    expect(testCollision2D({ kind: 'acme.void' }, circle, out)).toBe(false);
+    // Negating unconditionally would leave `-0` here, which is not `0` under Object.is and would reach
+    // any caller comparing the field against a literal zero.
+    expect(Object.is(out.normalX, 0)).toBe(true);
+    expect(Object.is(out.normalY, 0)).toBe(true);
+  });
+
+  it('falls through to GJK for a pair with supports but no specialization', () => {
+    const out = createCollisionManifold2D();
+    // A vendor kind whose support function is a circle's: registering ONE function makes it work against
+    // every other registered kind immediately, which is the whole claim of the support floor.
+    registerCollisionSupport2D('acme.blob', supportCollisionCircle2D);
+    const blob = { kind: 'acme.blob', x: 1, y: 0, radius: 1 } as CollisionShape2D;
+    const box: CollisionShape2D = { kind: 'aabb', minX: -1, minY: -1, maxX: 0.5, maxY: 1 };
+
+    expect(getCollisionPairTest2D('acme.blob', 'aabb')).toBeNull();
+    expect(testCollision2D(blob, box, out)).toBe(true);
+    expect(out.depth).toBeGreaterThan(0);
   });
 
   it('fully clears one reused manifold across hit, miss, unsupported, and hit calls', () => {

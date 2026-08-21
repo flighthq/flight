@@ -23,6 +23,10 @@
     },
     {
       "packageName": "collision",
+      "registrar": "registerBuiltInCollisionPairTests2D"
+    },
+    {
+      "packageName": "collision",
       "registrar": "registerBuiltInCollisionSupports2D"
     },
     {
