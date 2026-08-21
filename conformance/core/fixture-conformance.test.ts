@@ -205,6 +205,37 @@ describe('runConformanceFixtureAdapters', () => {
     expect(score.acceptedImport).toEqual({ denominator: 6, numerator: 1, state: 'measured', value: 1 / 6 });
   });
 
+  it('keeps the audited glTF, MD5, and Spine substring populations degraded by severity', async () => {
+    const directory = makeTree('full', 'tree', 'fixture-release');
+    const gltfReferences = Array.from({ length: 3 }, (_, index) => `gltf/model-${index}.gltf`);
+    const md5References = Array.from({ length: 12 }, (_, index) => `md5/model-${index}.md5mesh`);
+    const spineReferences = Array.from({ length: 13 }, (_, index) => `spine/model-${index}.json`);
+    for (const reference of [...gltfReferences, ...md5References, ...spineReferences]) write(directory, reference, 'x');
+
+    const adapters: ConformanceFixtureAdapter[] = [
+      diagnosticAdapter('gltf', '.gltf', [diagnostic('Recover', 'gltf.unsupported-version')]),
+      diagnosticAdapter('md5-mesh', '.md5mesh', [diagnostic('Recover', 'md5mesh.unsupported-version')]),
+      diagnosticAdapter('skeleton2d-json', '.json', [
+        diagnostic('Skip', 'spine.path-timeline-unsupported'),
+        diagnostic('Drop', 'spine.draworder-keyframe-unresolved'),
+      ]),
+    ];
+    const results = await runConformanceFixturePlan(
+      createConformanceFixturePlan([fixtureTree(directory, 28)], adapters),
+    );
+
+    expect(
+      Object.fromEntries(
+        adapters.map((adapter) => [
+          adapter.id,
+          results.filter((result) => result.adapter === adapter.id && result.state === 'degraded').length,
+        ]),
+      ),
+    ).toEqual({ gltf: 3, 'md5-mesh': 12, 'skeleton2d-json': 13 });
+    expect(results).toHaveLength(28);
+    expect(results.every((result) => result.state === 'degraded')).toBe(true);
+  });
+
   it('applies a deterministic global limit after sorting candidates', async () => {
     const directory = makeTree('full', 'tree', 'fixture-release');
     write(directory, 'b.asset', 'b');
@@ -445,6 +476,20 @@ function fixtureTree(directory: string, verifiedFixtureFiles: number): Conforman
     release: 'fixture-release',
     tree: 'tree',
     variant: 'full',
+  };
+}
+
+function diagnosticAdapter(
+  id: string,
+  extension: string,
+  diagnostics: readonly { kind: string; origin: string; severity: 'Drop' | 'Recover' | 'Reject' | 'Skip' }[],
+): ConformanceFixtureAdapter {
+  return {
+    diagnosticKindDispositions: [],
+    features: [],
+    id,
+    implementation: { run: async () => ({ diagnostics, imported: true }), state: 'available' },
+    selects: (_tree, reference) => reference.endsWith(extension),
   };
 }
 
