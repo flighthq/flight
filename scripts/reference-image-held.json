@@ -391,6 +391,17 @@
       "reason": "font differences in ci"
     },
     {
+      "action": "release",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T10:26:40.700Z",
+      "keys": ["functional/material-wireframe/webgl", "functional/material-wireframe/webgpu"],
+      "priorReasons": {
+        "functional/material-wireframe/webgl": "gl and webgpu disagree, webgpu appears to be showing additional lines on the reverse/back side?",
+        "functional/material-wireframe/webgpu": "gl and webgpu disagree, webgpu appears to be showing additional lines on the reverse/back side?"
+      },
+      "reason": "the controlled-pixel cube pose repeated at zero differing decoded RGBA pixels across WebGL and WebGPU"
+    },
+    {
       "action": "hold",
       "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
       "at": "2026-08-21T11:17:53.607Z",
@@ -497,8 +508,6 @@
     "functional/effect-pixelate/webgpu": "canvas, webgl and webgpu do not agree",
     "functional/light-many-point/webgl": "gl and wgpu disagree",
     "functional/light-many-point/webgpu": "gl and wgpu disagree",
-    "functional/material-wireframe/webgl": "gl and webgpu disagree, webgpu appears to be showing additional lines on the reverse/back side?",
-    "functional/material-wireframe/webgpu": "gl and webgpu disagree, webgpu appears to be showing additional lines on the reverse/back side?",
     "functional/text-strikethrough/dom": "line is in different position on dom",
     "functional/text-strikethrough/canvas": "line is in different position on dom",
     "functional/text-strikethrough/webgl": "line is in different position on dom",

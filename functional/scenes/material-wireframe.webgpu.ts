@@ -32,7 +32,7 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x0a0c10) with a white (0xffffff) wireframe cube centered at (0.5*W, 0.5*H) = (400, 300). The cube uses a deliberate one-point perspective pose, not an arbitrary rotation: the camera is 2.5 units from a unit cube and its 480 px focal length projects the near face to a 240×240 square and the far face to a separate 160×160 square. Their corresponding corners join on four depth edges, so all 12 outer edges remain distinguishable instead of collapsing into one straight-on square. Every outer corner and edge midpoint lands on a controlled integer pixel coordinate before a deliberate half-pixel projection phase. Only thin triangle edges are visible against the dark background — no filled faces or shading gradient; the six face diagonals are visible because the cube faces are triangulated. Frame corners are dark background.',
+  'An 800×600 dark field (0x0a0c10) with a white (0xffffff) wireframe cube centered at (0.5*W, 0.5*H) = (400, 300). The cube uses a deliberate one-point perspective pose, not an arbitrary rotation: the camera is 2.5 units from a unit cube and its 480 px focal length projects the near face to a 240×240 square and the far face to a separate 160×160 square. Their corresponding corners join on four depth edges, so all 12 outer edges remain distinguishable instead of collapsing into one straight-on square. Every outer corner and edge midpoint lands on an integer pixel coordinate before a controlled 1/2-pixel horizontal and 9/20-pixel vertical projection phase. Only thin triangle edges are visible against the dark background — no filled faces or shading gradient; the six face diagonals are visible because the cube faces are triangulated. Frame corners are dark background.',
 );
 
 // drawWgpuScene3D collides in the @flighthq/sdk barrel (scene-gl + scene-wgpu both export it), so import
@@ -102,7 +102,7 @@ addNodeChild(scene, mesh);
 // The one-point perspective is derived for the pixel lattice. A 480 px focal length with the camera at
 // z=2.5 projects the near z=+0.5 face to half-size 120 px and the far z=-0.5 face to half-size 80 px.
 // The nested squares are distinct, their four depth edges have slopes ±5 and ±1/5, and all outer
-// endpoints are integers before the shared half-pixel phase.
+// endpoints are integers before the shared controlled subpixel phase.
 const camera = createCamera3D({
   far: 100,
   near: 0.1,
@@ -112,7 +112,9 @@ const camera = createCamera3D({
   }),
 });
 setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 2.5), createVector3(0, 0, 0), createVector3(0, 1, 0));
-setCamera3DJitter(camera, 1 / logicalWidth, -1 / logicalHeight);
+// Shift the integer lattice by exactly 1/2 screen pixel in x and 9/20 screen pixel in y. The slightly
+// asymmetric rational phase keeps line endpoint ownership identical between Gl and Wgpu.
+setCamera3DJitter(camera, 1 / logicalWidth, -9 / (10 * logicalHeight));
 
 // The same directional + ambient rig as material-standard-pbr. WireframeMaterial ignores both — they are
 // passed through unused so the scaffold matches the lit materials.
