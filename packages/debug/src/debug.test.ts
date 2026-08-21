@@ -6,6 +6,7 @@ import {
   getLogLevel,
   getMemoryLogSinkEntries,
   log,
+  setLogChannelLevel,
   setLogLevel,
 } from '@flighthq/log/contract';
 import {
@@ -156,6 +157,52 @@ describe('enableDebug', () => {
     expect(enableGuards).toHaveBeenCalledTimes(1);
     log(LogLevel.Debug, 'once', 'render');
     expect(readMemory(memory)).toHaveLength(1);
+  });
+
+  it('unwinds a partially enabled guard transaction without masking its original error', () => {
+    const memory = createMemoryLogSink(16);
+    const originalError = new Error('audio guard enable failed');
+    const rollbackError = new Error('input guard rollback failed');
+    const activeGuards = new Set<string>();
+    const rollbackOrder: string[] = [];
+    const hooks = (name: string, failEnable = false, failRollback = false) => ({
+      channels: [name],
+      disableGuards: (): void => {
+        activeGuards.delete(name);
+        rollbackOrder.push(name);
+        if (failRollback) throw rollbackError;
+      },
+      enableGuards: (): void => {
+        activeGuards.add(name);
+        if (failEnable) throw originalError;
+      },
+    });
+    registerDebugSubsystem('render', hooks('render'));
+    registerDebugSubsystem('input', hooks('input', false, true));
+    registerDebugSubsystem('audio', hooks('audio', true));
+    setLogLevel(LogLevel.Warn);
+    setLogChannelLevel('render', LogLevel.Error);
+    setLogChannelLevel('input', LogLevel.Info);
+    setLogChannelLevel('unrelated', LogLevel.Verbose);
+
+    let thrown: unknown;
+    try {
+      enableDebug({ subsystems: ['render', 'input', 'audio'], sink: memory.sink });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBe(originalError);
+    expect(isDebugEnabled()).toBe(false);
+    expect([...activeGuards]).toEqual([]);
+    expect(rollbackOrder).toEqual(['audio', 'input', 'render']);
+    expect(getLogLevel()).toBe(LogLevel.Warn);
+    expect(getLogChannelLevel('render')).toBe(LogLevel.Error);
+    expect(getLogChannelLevel('input')).toBe(LogLevel.Info);
+    expect(getLogChannelLevel('audio')).toBeNull();
+    expect(getLogChannelLevel('unrelated')).toBe(LogLevel.Verbose);
+    log(LogLevel.Error, 'after failed enable');
+    expect(readMemory(memory)).toEqual([]);
   });
 });
 
