@@ -1,6 +1,7 @@
 export * from './broadphase';
 export * from './colliderTransform';
 export * from './contactIntake';
+export * from './continuous';
 export * from './contacts';
 export * from './explainPhysics3DCollision';
 export * from './explainPhysics3DJoints';

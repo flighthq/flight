@@ -1,7 +1,7 @@
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D, SpatialPair } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { synchronizePhysics3DBroadphase } from './broadphase';
+import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -143,5 +143,93 @@ describe('synchronizePhysics3DBroadphase', () => {
     synchronizePhysics3DBroadphase(world);
 
     expect(pairs(world)).toHaveLength(1);
+  });
+});
+
+describe('synchronizePhysics3DSweptBroadphase', () => {
+  it('pairs bodies that will only meet PART WAY through the interval', () => {
+    // The whole reason a swept publication exists: at the current pose these two are 20 apart, so an
+    // ordinary sync reports no candidate and a continuous pass would never even test the pair.
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 0, 0, 0);
+    const mover = addBoxBody(world, 20, 0, 0);
+    mover.velocityX = -1200;
+    synchronizePhysics3DBroadphase(world);
+    expect(pairs(world)).toHaveLength(0);
+
+    synchronizePhysics3DSweptBroadphase(world, 1 / 60);
+
+    expect(pairs(world)).toHaveLength(1);
+  });
+
+  it('leaves a body that is not moving where it was', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 0, 0, 0);
+    addBoxBody(world, 20, 0, 0);
+
+    synchronizePhysics3DSweptBroadphase(world, 1 / 60);
+
+    expect(pairs(world)).toHaveLength(0);
+  });
+
+  it('does not widen a STATIC body, which cannot move however fast its velocity field reads', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 0, 0, 0);
+    const stuck = createRigidBody3D('static');
+    stuck.x = 20;
+    stuck.velocityX = -1200;
+    addPhysics3DBody(world, stuck);
+    addPhysics3DCollider(world, stuck, createPhysics3DCollider(unitBox()));
+
+    synchronizePhysics3DSweptBroadphase(world, 1 / 60);
+
+    expect(pairs(world)).toHaveLength(0);
+  });
+
+  it('does not widen a SLEEPING body', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 0, 0, 0);
+    const asleep = addBoxBody(world, 20, 0, 0);
+    asleep.velocityX = -1200;
+    asleep.sleeping = true;
+
+    synchronizePhysics3DSweptBroadphase(world, 1 / 60);
+
+    expect(pairs(world)).toHaveLength(0);
+  });
+
+  it('covers every orientation a SPINNING body could reach, not just its translation', () => {
+    // A rotating body's colliders swing through space its straight-line sweep never enters, so the
+    // widened volume has to be the sphere its geometry can reach rather than the box it currently fills.
+    const world = createPhysics3DWorld();
+    const spinner = createRigidBody3D('dynamic');
+    addPhysics3DBody(world, spinner);
+    // A long arm reaching out along x; spun about y its far end sweeps to z.
+    addPhysics3DCollider(
+      world,
+      spinner,
+      createPhysics3DCollider({ kind: 'aabb', minX: -0.25, minY: -0.25, minZ: -0.25, maxX: 4, maxY: 0.25, maxZ: 0.25 }),
+    );
+    spinner.angularVelocityY = 30;
+    addBoxBody(world, 0, 0, 3.5);
+
+    synchronizePhysics3DBroadphase(world);
+    expect(pairs(world)).toHaveLength(0);
+    synchronizePhysics3DSweptBroadphase(world, 1 / 60);
+
+    expect(pairs(world)).toHaveLength(1);
+  });
+
+  it('restores the ordinary bounds when the plain sync runs after it', () => {
+    const world = createPhysics3DWorld();
+    addBoxBody(world, 0, 0, 0);
+    const mover = addBoxBody(world, 20, 0, 0);
+    mover.velocityX = -1200;
+
+    synchronizePhysics3DSweptBroadphase(world, 1 / 60);
+    expect(pairs(world)).toHaveLength(1);
+    synchronizePhysics3DBroadphase(world);
+
+    expect(pairs(world)).toHaveLength(0);
   });
 });

@@ -8,7 +8,22 @@ import { updatePhysics3DColliderWorldShape, writePhysics3DColliderBounds } from 
 export function synchronizePhysics3DBroadphase(world: Physics3DWorld): void {
   const scratch = acquirePhysics3DBroadphaseScratch();
   try {
-    synchronizePhysics3DBroadphaseWithScratch(world, scratch);
+    synchronizePhysics3DBroadphaseWithScratch(world, scratch, 0);
+  } finally {
+    releasePhysics3DBroadphaseScratch(scratch);
+  }
+}
+
+// Publishes the union of every body's current bounds and the bounds it would have after `dt` of its
+// current motion — the volume it sweeps through, which is what a continuous pass must find candidates in.
+//
+// The ORDINARY index is reused rather than a second swept one. A continuous step queries the candidate
+// pairs immediately and then restores the current bounds, so nothing observes the widened state, and the
+// backend swap point stays single.
+export function synchronizePhysics3DSweptBroadphase(world: Physics3DWorld, dt: number): void {
+  const scratch = acquirePhysics3DBroadphaseScratch();
+  try {
+    synchronizePhysics3DBroadphaseWithScratch(world, scratch, dt);
   } finally {
     releasePhysics3DBroadphaseScratch(scratch);
   }
@@ -18,7 +33,11 @@ export function synchronizePhysics3DBroadphase(world: Physics3DWorld): void {
 // query returns pairs of them. Indexing colliders would need a composite id, and the step already
 // refines a body pair down to its collider pairs — which is where the filter and sensor decisions live
 // anyway.
-function synchronizePhysics3DBroadphaseWithScratch(world: Physics3DWorld, scratch: Physics3DBroadphaseScratch): void {
+function synchronizePhysics3DBroadphaseWithScratch(
+  world: Physics3DWorld,
+  scratch: Physics3DBroadphaseScratch,
+  dt: number,
+): void {
   for (const body of world.bodies) {
     let minX = Infinity;
     let minY = Infinity;
@@ -26,6 +45,7 @@ function synchronizePhysics3DBroadphaseWithScratch(world: Physics3DWorld, scratc
     let maxX = -Infinity;
     let maxY = -Infinity;
     let maxZ = -Infinity;
+    let rotationRadiusSquared = 0;
     for (const collider of body.colliders) {
       updatePhysics3DColliderWorldShape(collider, body);
       writePhysics3DColliderBounds(collider, scratch.bounds);
@@ -35,6 +55,13 @@ function synchronizePhysics3DBroadphaseWithScratch(world: Physics3DWorld, scratc
       if (scratch.bounds.maxX > maxX) maxX = scratch.bounds.maxX;
       if (scratch.bounds.maxY > maxY) maxY = scratch.bounds.maxY;
       if (scratch.bounds.maxZ > maxZ) maxZ = scratch.bounds.maxZ;
+      if (dt > 0) {
+        const radiusX = Math.max(Math.abs(scratch.bounds.minX - body.x), Math.abs(scratch.bounds.maxX - body.x));
+        const radiusY = Math.max(Math.abs(scratch.bounds.minY - body.y), Math.abs(scratch.bounds.maxY - body.y));
+        const radiusZ = Math.max(Math.abs(scratch.bounds.minZ - body.z), Math.abs(scratch.bounds.maxZ - body.z));
+        const radiusSquared = radiusX * radiusX + radiusY * radiusY + radiusZ * radiusZ;
+        if (radiusSquared > rotationRadiusSquared) rotationRadiusSquared = radiusSquared;
+      }
     }
     if (minX > maxX) {
       // No collider produced bounds, so there is nothing to index. Withdraw rather than skip: the id may
@@ -42,6 +69,31 @@ function synchronizePhysics3DBroadphaseWithScratch(world: Physics3DWorld, scratc
       // lost its geometry.
       world.index.removeSpatialObject(body.index);
       continue;
+    }
+    if (dt > 0 && body.type !== 'static' && !body.sleeping) {
+      const translationX = body.velocityX * dt;
+      const translationY = body.velocityY * dt;
+      const translationZ = body.velocityZ * dt;
+      const spinning = body.angularVelocityX !== 0 || body.angularVelocityY !== 0 || body.angularVelocityZ !== 0;
+      if (spinning) {
+        // A SPHERE around the body origin encloses every orientation of every collider, so sweeping that
+        // sphere along the origin's translation is conservative for arbitrary rotation — including an
+        // offset collider whose centre follows an arc rather than the straight line a shape sweep assumes.
+        const radius = Math.sqrt(rotationRadiusSquared);
+        minX = Math.min(minX, body.x - radius, body.x + translationX - radius);
+        minY = Math.min(minY, body.y - radius, body.y + translationY - radius);
+        minZ = Math.min(minZ, body.z - radius, body.z + translationZ - radius);
+        maxX = Math.max(maxX, body.x + radius, body.x + translationX + radius);
+        maxY = Math.max(maxY, body.y + radius, body.y + translationY + radius);
+        maxZ = Math.max(maxZ, body.z + radius, body.z + translationZ + radius);
+      } else {
+        if (translationX < 0) minX += translationX;
+        else maxX += translationX;
+        if (translationY < 0) minY += translationY;
+        else maxY += translationY;
+        if (translationZ < 0) minZ += translationZ;
+        else maxZ += translationZ;
+      }
     }
     // The spatial package bounds its own indexing cost. This second limit expresses the physics world's
     // stricter judgement that a non-finite or ten-million-unit body has diverged and should no longer
