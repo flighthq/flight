@@ -3,13 +3,14 @@ import type {
   SpatialIndexBackend2D,
   SpatialDeclineReason,
   SpatialIndexingExplanation,
-  SpatialIndexingGuard,
   SpatialIndexingMode,
   SpatialIndexingOperation,
   SpatialIndexingReason,
   SpatialObjectId,
   SpatialPair,
 } from '@flighthq/types/contract';
+
+import { reportSpatialIndexing } from './spatialIndexingGuard';
 
 // The per-object cell budget. An object whose AABB covers more cells than this is held in the flat
 // overflow list instead of being written into every cell it spans.
@@ -91,13 +92,6 @@ export function createUniformGridSpatialBackend2D(cellSize: number): SpatialInde
       _queryGridRay(grid, x, y, dx, dy, out);
     },
   };
-}
-
-// Installs the indexing guard consulted for invalid configuration or bounds, missing-id operations,
-// and overflow routing; null uninstalls it. Module-scoped rather than per-grid: it is a development
-// diagnostic, and an application debugging an index wants it on for every grid at once.
-export function setSpatialIndexingGuard(guard: SpatialIndexingGuard | null): void {
-  _indexingGuard = guard;
 }
 
 // One occupied cell: its integer cell coordinates and the ids whose bounds cover it. The coordinates
@@ -449,8 +443,7 @@ function _reportGridIndexing(
   reason: SpatialIndexingReason | null,
   wouldOccupyBucketCount: number,
 ): void {
-  if (_indexingGuard === null) return;
-  _indexingGuard({ cellSize: grid.cellSize, id, mode, operation, reason, wouldOccupyBucketCount });
+  reportSpatialIndexing({ cellSize: grid.cellSize, id, mode, operation, reason, wouldOccupyBucketCount });
 }
 
 // Gathers the ids in the cell containing the point, then confirms each against its real bounds. A
@@ -622,7 +615,3 @@ function _spannedCellCount(cellSize: number, aabb: Readonly<SpatialAabb2D>): num
   const cy1 = _cellIndex(aabb.maxY, cellSize);
   return (cx1 - cx0 + 1) * (cy1 - cy0 + 1);
 }
-
-// Diagnostics seam filled by setSpatialIndexingGuard. Caller-facing text stays in the separate
-// formatSpatialIndexingNotice module, so production pays only the null checks at noteworthy sites.
-let _indexingGuard: SpatialIndexingGuard | null = null;
