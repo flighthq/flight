@@ -2,6 +2,7 @@ import type { Physics3DContact, Physics3DContactPoint, Physics3DWorld, RigidBody
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate';
+import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands';
 import { computePhysics3DBoxMassData, createPhysics3DMassData } from './massProperties';
 import { setRigidBody3DMassData } from './massProperties';
 import {
@@ -117,7 +118,16 @@ describe('preparePhysics3DContactConstraints', () => {
     expect(world.solver.constraints[0].points[0].bias).toBe(0);
   });
 
-  it('skips disabled, sensor, and non-touching contacts', () => {
+  it('skips a non-touching contact, which is its own filter to apply', () => {
+    // `touching` is prepare's to check, because it can change without anything the island workspace
+    // watches changing: the same pair stays in the same island while the narrow phase reports it apart.
+    const world = createFallingBoxWorld();
+    world.contacts[0].touching = false;
+    preparePhysics3DContactConstraints(world);
+    expect(world.solver.constraints).toHaveLength(0);
+  });
+
+  it('skips disabled and sensor contacts, which the island workspace excludes upstream', () => {
     for (const mutate of [
       (c: Physics3DContact) => {
         c.enabled = false;
@@ -125,12 +135,13 @@ describe('preparePhysics3DContactConstraints', () => {
       (c: Physics3DContact) => {
         c.sensor = true;
       },
-      (c: Physics3DContact) => {
-        c.touching = false;
-      },
     ]) {
       const world = createFallingBoxWorld();
       mutate(world.contacts[0]);
+      // Rebuilt because these two are read when the islands are built, not when prepare runs. A real
+      // step gets this for free: the pre-solve hook — the supported place to disable a contact — runs
+      // before `buildPhysics3DSolveIslands`, so a contact it turns off is gone from the slices.
+      buildSolveWorkspace(world);
       preparePhysics3DContactConstraints(world);
       expect(world.solver.constraints).toHaveLength(0);
     }
@@ -429,6 +440,19 @@ function createUnitBox(world: Physics3DWorld): RigidBody3D {
   return body;
 }
 
+// The solver reads the SOLVE ISLAND contact slices rather than `world.contacts`, so a world assembled
+// by hand needs the same workspace `stepPhysics3D` builds before it reaches the solver. Without it every
+// prepare finds nothing to do — which is the correct answer for a world with no awake islands, and the
+// reason this is a factory step rather than something prepare rebuilds for itself.
+//
+// A test that changes what belongs in an island AFTER this — putting a body to sleep, disabling a
+// contact, making a body static — has to call it again, exactly as a real step rebuilds every step.
+function buildSolveWorkspace(world: Physics3DWorld): Physics3DWorld {
+  updatePhysics3DSleep(world, 1 / 60);
+  buildPhysics3DSolveIslands(world);
+  return world;
+}
+
 // One dynamic box whose single contact point references a body that is not in the world's contact
 // partner slot — used for the basis and mass-denominator tests, where only body A matters.
 function createFallingBoxWorld(): Physics3DWorld {
@@ -436,7 +460,7 @@ function createFallingBoxWorld(): Physics3DWorld {
   const box = createUnitBox(world);
   const other = createUnitBox(world);
   world.contacts.push(createContact(box.index, other.index));
-  return world;
+  return buildSolveWorkspace(world);
 }
 
 function createBoxOnGroundWorld(): Physics3DWorld {
@@ -445,7 +469,7 @@ function createBoxOnGroundWorld(): Physics3DWorld {
   const ground = createUnitBox(world);
   setPhysics3DBodyType(ground, 'static');
   world.contacts.push(createContact(box.index, ground.index));
-  return world;
+  return buildSolveWorkspace(world);
 }
 
 function createTwoDynamicBodyWorld(): Physics3DWorld {
@@ -453,5 +477,5 @@ function createTwoDynamicBodyWorld(): Physics3DWorld {
   const upper = createUnitBox(world);
   const lower = createUnitBox(world);
   world.contacts.push(createContact(upper.index, lower.index));
-  return world;
+  return buildSolveWorkspace(world);
 }
