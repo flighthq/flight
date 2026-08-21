@@ -13,6 +13,7 @@ import type {
   RigidBody2D,
 } from '@flighthq/types/contract';
 
+import { writePhysics2DSoftRowParameters } from './jointRows';
 import { applyPhysics2DImpulse } from './solver';
 import { findPhysics2DBody } from './world';
 
@@ -78,30 +79,21 @@ export const physics2DDistanceJointSolver = {
       normalizedAxisY = 0;
     }
 
-    const mass = axisEffectiveMass(bodyA, bodyB, joint, normalizedAxisX, normalizedAxisY);
+    const inverseMass = axisInverseEffectiveMass(bodyA, bodyB, joint, normalizedAxisX, normalizedAxisY);
     const separation = length - distance.length;
-    let effectiveMass: number;
-    let bias: number;
-    let gamma: number;
-    if (distance.frequencyHz > 0) {
-      const angular = 2 * Math.PI * distance.frequencyHz;
-      const damp = 2 * mass * distance.dampingRatio * angular;
-      const spring = mass * angular * angular;
-      const gammaDenominator = dt * (damp + dt * spring);
-      gamma = gammaDenominator > 0 ? 1 / gammaDenominator : 0;
-      bias = separation * dt * spring * gamma;
-      const softMass = mass + gamma;
-      effectiveMass = softMass > 0 ? 1 / softMass : 0;
-    } else {
-      effectiveMass = mass > 0 ? 1 / mass : 0;
-      bias = separation * (BAUMGARTE / dt);
-      gamma = 0;
-    }
+    writePhysics2DSoftRowParameters(
+      inverseMass > 0 ? 1 / inverseMass : 0,
+      distance.frequencyHz,
+      distance.dampingRatio,
+      dt,
+      BAUMGARTE / dt,
+      softRowScratch,
+    );
     distance.rAX = joint.rAX;
     const distanceState = beginJointSolve(distance, 5);
-    distanceState[0] = effectiveMass;
-    distanceState[1] = bias;
-    distanceState[2] = gamma;
+    distanceState[0] = softRowScratch[0];
+    distanceState[1] = separation * softRowScratch[1];
+    distanceState[2] = softRowScratch[2];
     distanceState[3] = normalizedAxisX;
     distanceState[4] = normalizedAxisY;
   },
@@ -233,13 +225,22 @@ export const physics2DMouseJointSolver = {
     joint.rAX = 0;
     joint.rAY = 0;
 
-    const mass = bodyB.inverseMass > 0 ? 1 / bodyB.inverseMass : 0;
-    const angular = 2 * Math.PI * (mouse.frequencyHz > 0 ? mouse.frequencyHz : 5);
-    const damp = 2 * mass * mouse.dampingRatio * angular;
-    const spring = mass * angular * angular;
-    const softDenominator = dt * (damp + dt * spring);
-    const gamma = softDenominator > 0 ? 1 / softDenominator : 0;
-    const biasFactor = dt * spring * gamma;
+    // The mouse spring is tuned against the body's own mass rather than a row denominator: it drags a
+    // free body toward a target rather than constraining a pair, so there is no lever arm to fold in.
+    // Only `gamma` and the bias factor are taken from the derivation — the row mass it returns is scalar
+    // and this constraint is a 2x2 block, so softness enters on the matrix diagonal below instead.
+    writePhysics2DSoftRowParameters(
+      bodyB.inverseMass > 0 ? 1 / bodyB.inverseMass : 0,
+      mouse.frequencyHz > 0 ? mouse.frequencyHz : DEFAULT_MOUSE_FREQUENCY_HZ,
+      mouse.dampingRatio,
+      dt,
+      // Unreachable: the frequency above is always positive, so only a non-positive timestep takes the
+      // hard path, and a step of no duration should correct nothing.
+      0,
+      softRowScratch,
+    );
+    const biasFactor = softRowScratch[1];
+    const gamma = softRowScratch[2];
     const k11 = bodyB.inverseMass + bodyB.inverseInertia * joint.rBY * joint.rBY + gamma;
     const k12 = -bodyB.inverseInertia * joint.rBX * joint.rBY;
     const k22 = bodyB.inverseMass + bodyB.inverseInertia * joint.rBX * joint.rBX + gamma;
@@ -833,13 +834,13 @@ export const physics2DRopeJointSolver = {
     const length = Math.sqrt(axisX * axisX + axisY * axisY);
     const unitX = length > EPSILON ? axisX / length : 1;
     const unitY = length > EPSILON ? axisY / length : 0;
-    const mass = axisEffectiveMass(bodyA, bodyB, joint, unitX, unitY);
+    const inverseMass = axisInverseEffectiveMass(bodyA, bodyB, joint, unitX, unitY);
     const excess = length - rope.maxLength;
     // Slack: no constraint at all this step, which is what a rope IS. Marked by a zero effective mass so
     // the iterations skip it without a second flag to keep in sync.
     const active = excess > 0;
     const ropeState = beginJointSolve(rope, 5);
-    ropeState[0] = active && mass > 0 ? 1 / mass : 0;
+    ropeState[0] = active && inverseMass > 0 ? 1 / inverseMass : 0;
     ropeState[1] = active ? excess * (BAUMGARTE / dt) : 0;
     ropeState[2] = 0;
     ropeState[3] = unitX;
@@ -947,14 +948,19 @@ export const physics2DWheelJointSolver = {
     let gamma = 0;
     let springBias = 0;
     if (wheel.frequencyHz > 0 && axisDenominator > 0) {
-      const effectiveMass = 1 / axisDenominator;
-      const angular = 2 * Math.PI * wheel.frequencyHz;
-      const dampingCoefficient = 2 * effectiveMass * wheel.dampingRatio * angular;
-      const spring = effectiveMass * angular * angular;
-      const soft = dt * (dampingCoefficient + dt * spring);
-      gamma = soft > 0 ? 1 / soft : 0;
-      springBias = (translation - wheel.restTranslation) * dt * spring * gamma;
-      springMass = 1 / (axisDenominator + gamma);
+      // A zero frequency disables the suspension row outright below rather than stiffening it, so the
+      // hard fallback is unreachable from here.
+      writePhysics2DSoftRowParameters(
+        1 / axisDenominator,
+        wheel.frequencyHz,
+        wheel.dampingRatio,
+        dt,
+        0,
+        softRowScratch,
+      );
+      springMass = softRowScratch[0];
+      springBias = (translation - wheel.restTranslation) * softRowScratch[1];
+      gamma = softRowScratch[2];
     } else {
       joint.impulse1 = 0;
     }
@@ -1244,15 +1250,15 @@ function solvePointConstraint(
   biasX: number,
   biasY: number,
 ): void {
-  const massX = axisEffectiveMass(bodyA, bodyB, joint, 1, 0);
+  const inverseMassX = axisInverseEffectiveMass(bodyA, bodyB, joint, 1, 0);
   const velocityX = axisRelativeVelocity(bodyA, bodyB, joint, 1, 0);
-  const lambdaX = massX > 0 ? -(velocityX + biasX) / massX : 0;
+  const lambdaX = inverseMassX > 0 ? -(velocityX + biasX) / inverseMassX : 0;
   joint.impulse0 += lambdaX;
   applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, -lambdaX, 0);
 
-  const massY = axisEffectiveMass(bodyA, bodyB, joint, 0, 1);
+  const inverseMassY = axisInverseEffectiveMass(bodyA, bodyB, joint, 0, 1);
   const velocityY = axisRelativeVelocity(bodyA, bodyB, joint, 0, 1);
-  const lambdaY = massY > 0 ? -(velocityY + biasY) / massY : 0;
+  const lambdaY = inverseMassY > 0 ? -(velocityY + biasY) / inverseMassY : 0;
   joint.impulse1 += lambdaY;
   applyPhysics2DImpulse(bodyA, bodyB, joint.rAX, joint.rAY, joint.rBX, joint.rBY, 0, -lambdaY);
 }
@@ -1270,9 +1276,11 @@ function writeJointAnchors(bodyA: Readonly<RigidBody2D>, bodyB: Readonly<RigidBo
   joint.rBY = (joint.localAnchorBX - bodyB.centerX) * sinB + (joint.localAnchorBY - bodyB.centerY) * cosB;
 }
 
-// The pair's inverse effective mass along `axis` at the joint anchors — the same quantity a contact
-// constraint uses, over the joint's lever arms instead of a contact point's.
-function axisEffectiveMass(
+// The pair's INVERSE effective mass along `axis` at the joint anchors — the same quantity a contact
+// constraint uses, over the joint's lever arms instead of a contact point's. Every caller divides by it
+// or reciprocates it; nothing may use it as a mass. The name says `Inverse` because the previous one did
+// not, and a spring built on it silently authored the wrong stiffness for years.
+function axisInverseEffectiveMass(
   bodyA: Readonly<RigidBody2D>,
   bodyB: Readonly<RigidBody2D>,
   joint: Readonly<Physics2DJoint>,
@@ -1360,7 +1368,13 @@ function beginJointSolve(joint: Physics2DJoint, length: number): number[] {
 // Keying weakly makes the retention question disappear rather than answering it — the entry goes when
 // the joint does, at every exit path, including ones nobody has written yet.
 const jointSolveStates = new WeakMap<Physics2DJoint, number[]>();
+const DEFAULT_MOUSE_FREQUENCY_HZ = 5;
+
 const EPSILON = 1e-9;
 // The fraction of a joint's positional error corrected per step. Matches the contact solver's rationale:
 // correcting all of it at once turns a deep error into an explosion.
 const BAUMGARTE = 0.2;
+
+// Reused across every joint prepared this step: `prepare` runs in one synchronous pass per solver and
+// reads these three numbers out before the next call, and the world already rejects a recursive step.
+const softRowScratch = [0, 0, 0];
