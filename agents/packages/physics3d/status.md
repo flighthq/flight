@@ -52,7 +52,8 @@ controls, opt-in guards, exact-repeat determinism, and long-horizon stress scene
 ## Log
 
 - **2026-08-21** — Numerical qualification fixed iteration-lagged friction, corner-biased curved contacts,
-  and stale substep topology; 668 physics3d and 1,125 cross-package tests pass.
+  and stale substep topology; solver constraints and grid/BVH pair records now retain steady-topology
+  workspace; 669 physics3d and 1,126 cross-package tests pass.
 - **2026-08-21** — AAA hardening: offset-COM integration, joint guards, compound warm-start identity,
   coherent ownership/mutation/removal/cache lifecycle, hydration, rotational CCD, finite body controls,
   at-point impulses, and pre-intake collider validation.
