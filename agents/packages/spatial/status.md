@@ -17,12 +17,24 @@ operation has a 3D counterpart with the signature dimensionally extended (point 
 unsuffixed because it is genuinely dimension-free. The seam split is ratified in
 [spatial dimension seams](../../spatial-dimension-seams.md).
 
-- **A uniform grid is the ONLY index structure, in either dimension.** That is the package's largest
-  gap, and it bites hardest in 3D: a grid is pathological when object sizes vary widely or the world is
-  unbounded, because an oversized object either spans a punishing number of cells or falls to the flat
-  overflow list. The charter's open directions name a quadtree (P2), sort-and-sweep (P3), and a BVH and
-  octree behind the 3D seam. None is built. The seam itself is the finished part: a second backend is a
-  new `create*SpatialBackend3D` and nothing else moves.
+- **3D has two backends; 2D still has one.** `createBvhSpatialBackend3D` is a dynamic bounding-volume
+  hierarchy beside the uniform grid, and it is the structure to reach for when object sizes vary widely
+  or the world is unbounded — the cases where a fixed cell length is wrong everywhere. Leaves carry FAT
+  bounds so a small move needs no reinsertion, which is what makes it usable as a physics broadphase;
+  traversal uses the fat box and the leaf test uses the exact one, so results match the grid rather than
+  reporting the margin as overlap. 2D still has only the grid, and the charter's quadtree (P2),
+  sort-and-sweep (P3), and octree remain unbuilt.
+- **The two backends agree on QUERIES and deliberately not on PAIRS.** Region, point, and ray return the
+  same sets, down to the shared boundary conventions — strict inequality for region overlap, half-open
+  `[min, max)` for point containment. `querySpatialPairs` is different in kind: the grid emits every
+  object sharing a cell WITHOUT testing bounds, so its answer is a strict superset, while the tree tests
+  overlap at the leaf and returns the true set. Both satisfy the contract, which promises candidates and
+  not a particular approximation. A test asserting the two produce equal pair sets is asserting
+  something the seam never said.
+- **The indexing MODE vocabulary is grid-shaped.** A BVH reports `'cells'` with a bucket count of zero,
+  because `'cells'` is the only member meaning "indexed normally" and the explanation type already
+  anticipates a bucketless structure. The name is wrong for a tree; renaming it would change a
+  vocabulary both dimensions and every backend share, so it is left as an open naming question.
 - **3D has sphere and frustum queries; 2D has neither, so the dimensions are no longer at parity.**
   `querySpatialSphere3D` and `querySpatialFrustum3D` are built over the region query rather than on new
   backend methods, so the ratified eight-method seam did not widen and every future backend answers them
@@ -43,6 +55,13 @@ unsuffixed because it is genuinely dimension-free. The seam split is ratified in
   per-grid is open in the charter.
 
 ## Log
+
+- 2026-08-21 — `createBvhSpatialBackend3D` landed, the seam's first second backend. Tested
+  DIFFERENTIALLY against the uniform grid rather than against itself, which caught two things a
+  self-consistent test would not: the grid uses strict inequality for region overlap and half-open
+  `[min, max)` for point containment, so an inclusive tree disagreed with it on every exactly-touching
+  boundary; and `querySpatialPairs` is a candidate set the two backends legitimately approximate
+  differently, so the equality the test first asserted was never owed.
 
 - 2026-08-21 — Status file created. It had been the header and nothing else, with `updated: null`, so
   every session re-derived the package's shape and its gaps from source. Content here is from a survey
