@@ -5,7 +5,6 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
-import { isRigidBody3DPairAwake } from './islands';
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -50,7 +49,10 @@ export function createPhysics3DContactConstraintPoint(): Physics3DContactConstra
 // Rebuilds the solver's working set from the world's contact list and prepares every constraint row:
 // the friction basis, the three effective masses, and the restitution bias.
 //
-// Call once per substep, before `warmStartPhysics3DContacts`.
+// Call once per sub-interval, after `buildPhysics3DSolveIslands` and before
+// `warmStartPhysics3DContacts`. The island order is a real precondition rather than a convention: this
+// reads the island contact slices, so a world whose workspace was never built has no contacts to
+// prepare and produces no constraints at all.
 //
 // Two things happen here that cannot happen anywhere else. The restitution bias is captured from the
 // approach speed BEFORE any impulse is applied — once the first iteration runs, the velocity it would
@@ -62,6 +64,17 @@ export function createPhysics3DContactConstraintPoint(): Physics3DContactConstra
 // Contacts that are disabled, sensors, non-touching, asleep, or between two bodies that both have
 // infinite mass produce no constraint: they are skipped rather than emitted with zero rows, so the
 // iteration loops never see work that cannot move anything.
+//
+// The disabled, sensor, and sleeping ones are already gone before this runs, because the iteration is
+// over the SOLVE ISLAND contact slices rather than `world.contacts`. That is what makes a settled world
+// cost nothing here: a sleeping island contributes no slice, so a thousand-body pile at rest is not
+// re-scanned every sub-interval merely to discover there is nothing to do. It also groups the emitted
+// constraints island-major, which disconnected islands cannot perturb for each other.
+//
+// The remaining velocity and position passes stay global over the emitted list rather than looping per
+// island. With a fixed iteration count and no convergence test the two are the same work in the same
+// order — islands are disconnected, so interleaving them cannot change a result — and the flat list is
+// what lets joints and contacts share one interleaved pass.
 export function preparePhysics3DContactConstraints(world: Physics3DWorld): void {
   const state = world.solver;
   const previousByPair = state.constraintByPair;
@@ -69,108 +82,108 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
   const nextByPair = new Map<number, Physics3DContactConstraint>();
   const config = world.config.sequentialImpulse;
 
-  for (let contactIndex = 0; contactIndex < world.contacts.length; contactIndex += 1) {
-    const contact = world.contacts[contactIndex];
-    if (!contact.enabled || contact.sensor || !contact.touching || contact.pointCount === 0) continue;
+  for (let island = 0; island < world.solveIslandRoots.length; island += 1) {
+    const islandStart = world.solveIslandContactStarts[island];
+    const islandEnd = islandStart + world.solveIslandContactCounts[island];
+    for (let at = islandStart; at < islandEnd; at += 1) {
+      const contactIndex = world.solveIslandContactIndices[at];
+      const contact = world.contacts[contactIndex];
+      if (!contact.touching || contact.pointCount === 0) continue;
 
-    const bodyA = world.bodyByIndex.get(contact.bodyA);
-    const bodyB = world.bodyByIndex.get(contact.bodyB);
-    if (bodyA === undefined || bodyB === undefined) continue;
-    if (
-      bodyA.inverseMass === 0 &&
-      bodyB.inverseMass === 0 &&
-      !hasRotationalFreedom(bodyA) &&
-      !hasRotationalFreedom(bodyB)
-    ) {
-      continue;
-    }
-    // A pair with no live end is skipped, and that is not merely an optimisation. A resting contact
-    // usually carries penetration beyond the slop, so the position pass would move a sleeping pair, and
-    // the end-of-step stillness test would then read that motion and wake them again: a settled stack
-    // would twitch itself awake every step and never rest.
-    if (!isRigidBody3DPairAwake(bodyA, bodyB)) continue;
-
-    const constraint = createPhysics3DContactConstraint();
-    constraint.contact = contactIndex;
-    writeFrictionBasis(contact.normalX, contact.normalY, contact.normalZ, constraint);
-
-    const previous = previousByPair.get(getContactPairKey(contact.bodyA, contact.bodyB));
-
-    for (let i = 0; i < contact.pointCount; i += 1) {
-      const source = contact.points[i];
-      const point = createPhysics3DContactConstraintPoint();
-      point.featureId = source.featureId;
-
-      if (config.warmStarting && previous !== undefined) {
-        const carried = findPointByFeatureId(previous, source.featureId);
-        if (carried !== null) {
-          point.normalImpulse = carried.normalImpulse;
-          point.tangentImpulse0 = carried.tangentImpulse0;
-          point.tangentImpulse1 = carried.tangentImpulse1;
-        }
+      const bodyA = world.bodyByIndex.get(contact.bodyA);
+      const bodyB = world.bodyByIndex.get(contact.bodyB);
+      if (bodyA === undefined || bodyB === undefined) continue;
+      if (
+        bodyA.inverseMass === 0 &&
+        bodyB.inverseMass === 0 &&
+        !hasRotationalFreedom(bodyA) &&
+        !hasRotationalFreedom(bodyB)
+      ) {
+        continue;
       }
 
-      point.normalMass = getEffectiveMass(
-        bodyA,
-        bodyB,
-        source.rAX,
-        source.rAY,
-        source.rAZ,
-        source.rBX,
-        source.rBY,
-        source.rBZ,
-        contact.normalX,
-        contact.normalY,
-        contact.normalZ,
-      );
-      point.tangentMass0 = getEffectiveMass(
-        bodyA,
-        bodyB,
-        source.rAX,
-        source.rAY,
-        source.rAZ,
-        source.rBX,
-        source.rBY,
-        source.rBZ,
-        constraint.tangent0X,
-        constraint.tangent0Y,
-        constraint.tangent0Z,
-      );
-      point.tangentMass1 = getEffectiveMass(
-        bodyA,
-        bodyB,
-        source.rAX,
-        source.rAY,
-        source.rAZ,
-        source.rBX,
-        source.rBY,
-        source.rBZ,
-        constraint.tangent1X,
-        constraint.tangent1Y,
-        constraint.tangent1Z,
-      );
+      const constraint = createPhysics3DContactConstraint();
+      constraint.contact = contactIndex;
+      writeFrictionBasis(contact.normalX, contact.normalY, contact.normalZ, constraint);
 
-      const approach = getRelativeNormalVelocity(
-        bodyA,
-        bodyB,
-        source.rAX,
-        source.rAY,
-        source.rAZ,
-        source.rBX,
-        source.rBY,
-        source.rBZ,
-        contact.normalX,
-        contact.normalY,
-        contact.normalZ,
-      );
-      point.bias = approach < -config.restitutionThreshold ? -contact.restitution * approach : 0;
+      const previous = previousByPair.get(getContactPairKey(contact.bodyA, contact.bodyB));
 
-      constraint.points.push(point);
-      constraint.pointCount += 1;
+      for (let i = 0; i < contact.pointCount; i += 1) {
+        const source = contact.points[i];
+        const point = createPhysics3DContactConstraintPoint();
+        point.featureId = source.featureId;
+
+        if (config.warmStarting && previous !== undefined) {
+          const carried = findPointByFeatureId(previous, source.featureId);
+          if (carried !== null) {
+            point.normalImpulse = carried.normalImpulse;
+            point.tangentImpulse0 = carried.tangentImpulse0;
+            point.tangentImpulse1 = carried.tangentImpulse1;
+          }
+        }
+
+        point.normalMass = getEffectiveMass(
+          bodyA,
+          bodyB,
+          source.rAX,
+          source.rAY,
+          source.rAZ,
+          source.rBX,
+          source.rBY,
+          source.rBZ,
+          contact.normalX,
+          contact.normalY,
+          contact.normalZ,
+        );
+        point.tangentMass0 = getEffectiveMass(
+          bodyA,
+          bodyB,
+          source.rAX,
+          source.rAY,
+          source.rAZ,
+          source.rBX,
+          source.rBY,
+          source.rBZ,
+          constraint.tangent0X,
+          constraint.tangent0Y,
+          constraint.tangent0Z,
+        );
+        point.tangentMass1 = getEffectiveMass(
+          bodyA,
+          bodyB,
+          source.rAX,
+          source.rAY,
+          source.rAZ,
+          source.rBX,
+          source.rBY,
+          source.rBZ,
+          constraint.tangent1X,
+          constraint.tangent1Y,
+          constraint.tangent1Z,
+        );
+
+        const approach = getRelativeNormalVelocity(
+          bodyA,
+          bodyB,
+          source.rAX,
+          source.rAY,
+          source.rAZ,
+          source.rBX,
+          source.rBY,
+          source.rBZ,
+          contact.normalX,
+          contact.normalY,
+          contact.normalZ,
+        );
+        point.bias = approach < -config.restitutionThreshold ? -contact.restitution * approach : 0;
+
+        constraint.points.push(point);
+        constraint.pointCount += 1;
+      }
+
+      constraints.push(constraint);
+      nextByPair.set(getContactPairKey(contact.bodyA, contact.bodyB), constraint);
     }
-
-    constraints.push(constraint);
-    nextByPair.set(getContactPairKey(contact.bodyA, contact.bodyB), constraint);
   }
 
   state.constraints = constraints;
