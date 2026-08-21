@@ -58,4 +58,7 @@ This is the 3D half of physics. 2D rigid-body dynamics is `@flighthq/physics2d`.
 
 ## Open directions
 
-1. **Inertia tensor computation from mesh geometry.** Convex hull and triangle-mesh tensors — does this live here or in `@flighthq/mesh`? The primitive tensors (sphere, box, capsule) are built here and settled.
+1. **Static concave geometry architecture.** Convex-hull tensors are built and settled. Triangle mesh and
+   heightfield remain: mesh-vs-convex needs triangle acceleration and cannot enter through the convex
+   support registry, while static mesh mass is deliberately irrelevant. Decide whether triangle BVH
+   construction lives in `@flighthq/mesh`, `@flighthq/collision`, or a new shared seam.
