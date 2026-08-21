@@ -226,6 +226,7 @@ describe('reference-image request presentation workflow', () => {
                   name: `reference-image-candidate-first-label-${firstId}`,
                 },
               ],
+              total_count: 2,
             },
           }),
         },
@@ -296,6 +297,213 @@ describe('reference-image request presentation workflow', () => {
         repo: 'flight-reference-images',
       },
     ]);
+  });
+
+  it.each([30, 31, 205])(
+    'forwards all %i labeled candidates exactly once across every artifact page',
+    async (candidateCount) => {
+      const workflow = parse(
+        readFileSync(join(ROOT, '.github', 'workflows', 'reference-image-bridge.yml'), 'utf8'),
+      ) as {
+        jobs: { dispatch: { steps: Array<Record<string, unknown>> } };
+      };
+      const script = (
+        workflow.jobs.dispatch.steps.find((step) => step['id'] === 'dispatch') as { with: { script: string } }
+      ).with.script;
+      const requests = new Map<string, string>();
+      const artifacts = Array.from({ length: candidateCount }, (_, index) => {
+        const sequence = index + 1;
+        const requestId = `00000000-0000-4000-8000-${String(sequence).padStart(12, '0')}`;
+        const requestPath = `reference-image-requests/${requestId}.json`;
+        requests.set(requestPath, `${JSON.stringify({ id: requestId })}\n`);
+        return {
+          digest: `sha256:${sequence.toString(16).padStart(64, '0')}`,
+          id: 10_000 + sequence,
+          name: `reference-image-candidate-readable-label-${sequence}-${requestId}`,
+        };
+      }).reverse();
+      const artifactPageRequests: Array<{ page?: number; per_page?: number }> = [];
+      const dispatches: unknown[] = [];
+      const outputs = new Map<string, string>();
+      const failures: string[] = [];
+      const github = {
+        rest: {
+          actions: {
+            listWorkflowRunArtifacts: async (parameters: { page?: number; per_page?: number }) => {
+              artifactPageRequests.push({ page: parameters.page, per_page: parameters.per_page });
+              const page = parameters.page ?? 1;
+              // Preserve the API's incident-producing default in the mock: the pre-fix workflow omitted
+              // page/per_page and therefore sees only 30. The fixed workflow must explicitly fetch every
+              // 100-entry page, including the third page in the 205-candidate control.
+              const pageSize = parameters.per_page ?? 30;
+              const offset = (page - 1) * pageSize;
+              return {
+                data: {
+                  artifacts: artifacts.slice(offset, offset + pageSize),
+                  total_count: artifacts.length,
+                },
+              };
+            },
+          },
+          repos: {
+            createDispatchEvent: async (value: unknown) => {
+              dispatches.push(value);
+            },
+            getContent: async ({ path }: { path: string }) => {
+              const request = requests.get(path);
+              if (request === undefined) throw new Error(`missing test request ${path}`);
+              return { data: { content: Buffer.from(request).toString('base64'), encoding: 'base64' } };
+            },
+          },
+        },
+      };
+      const core = {
+        info: () => undefined,
+        setFailed: (message: string) => failures.push(message),
+        setOutput: (key: string, value: string) => outputs.set(key, value),
+        warning: () => undefined,
+      };
+      const execute = new Function(
+        'github',
+        'context',
+        'core',
+        'require',
+        `return (async () => {\n${script}\n})();`,
+      ) as (...args: unknown[]) => Promise<void>;
+
+      await execute(
+        github,
+        {
+          payload: { workflow_run: { head_sha: 'a'.repeat(40), id: 456 } },
+          repo: { owner: 'flighthq', repo: 'flight' },
+        },
+        core,
+        createRequire(import.meta.url),
+      );
+
+      expect(failures).toEqual([]);
+      expect(artifactPageRequests).toEqual(
+        Array.from({ length: Math.ceil(candidateCount / 100) }, (_, index) => ({ page: index + 1, per_page: 100 })),
+      );
+      expect(outputs.get('sent')).toBe(String(candidateCount));
+      expect(outputs.get('dispatches')).toBe('1');
+      expect(dispatches).toHaveLength(1);
+      const dispatch = dispatches[0] as {
+        client_payload: { candidates: Array<{ artifactId: number; requestPath: string }> };
+        event_type: string;
+      };
+      expect(dispatch.event_type).toBe('flight-reference-image-candidate-batch');
+      expect(dispatch.client_payload.candidates).toHaveLength(candidateCount);
+      expect(dispatch.client_payload.candidates.map((candidate) => candidate.requestPath)).toEqual(
+        [...requests.keys()].sort((left, right) => left.localeCompare(right)),
+      );
+      expect(
+        [...new Set(dispatch.client_payload.candidates.map((candidate) => candidate.artifactId))].sort(
+          (left, right) => left - right,
+        ),
+      ).toEqual(artifacts.map((artifact) => artifact.id).sort((left, right) => left - right));
+    },
+  );
+
+  it('fails with collected and reported counts when pagination repeats an artifact', async () => {
+    const workflow = parse(readFileSync(join(ROOT, '.github', 'workflows', 'reference-image-bridge.yml'), 'utf8')) as {
+      jobs: { dispatch: { steps: Array<Record<string, unknown>> } };
+    };
+    const script = (
+      workflow.jobs.dispatch.steps.find((step) => step['id'] === 'dispatch') as { with: { script: string } }
+    ).with.script;
+    const requestId = '00000000-0000-4000-8000-000000000001';
+    const repeatedArtifact = {
+      digest: `sha256:${'1'.repeat(64)}`,
+      id: 101,
+      name: `reference-image-candidate-readable-label-${requestId}`,
+    };
+    const artifactPages: number[] = [];
+    const dispatches: unknown[] = [];
+    const failures: string[] = [];
+    const infos: string[] = [];
+    const github = {
+      rest: {
+        actions: {
+          listWorkflowRunArtifacts: async ({ page }: { page: number }) => {
+            artifactPages.push(page);
+            return { data: { artifacts: [repeatedArtifact], total_count: 2 } };
+          },
+        },
+        repos: {
+          createDispatchEvent: async (value: unknown) => dispatches.push(value),
+          getContent: async () => {
+            throw new Error('completeness must be established before reading any request');
+          },
+        },
+      },
+    };
+    const core = {
+      info: (message: string) => infos.push(message),
+      setFailed: (message: string) => failures.push(message),
+      setOutput: () => undefined,
+      warning: () => undefined,
+    };
+    const execute = new Function('github', 'context', 'core', 'require', `return (async () => {\n${script}\n})();`) as (
+      ...args: unknown[]
+    ) => Promise<void>;
+
+    await execute(
+      github,
+      { payload: { workflow_run: { head_sha: 'a'.repeat(40), id: 456 } }, repo: { owner: 'flighthq', repo: 'flight' } },
+      core,
+      createRequire(import.meta.url),
+    );
+
+    expect(artifactPages).toEqual([1, 2]);
+    expect(failures).toEqual(['artifact pagination collected 1 unique artifact(s), API reports 2']);
+    expect(infos).not.toContain('no candidate artifact on this run — nothing was commissioned');
+    expect(dispatches).toEqual([]);
+  });
+
+  it('fails a truncated empty listing before announcing that nothing was commissioned', async () => {
+    const workflow = parse(readFileSync(join(ROOT, '.github', 'workflows', 'reference-image-bridge.yml'), 'utf8')) as {
+      jobs: { dispatch: { steps: Array<Record<string, unknown>> } };
+    };
+    const script = (
+      workflow.jobs.dispatch.steps.find((step) => step['id'] === 'dispatch') as { with: { script: string } }
+    ).with.script;
+    const dispatches: unknown[] = [];
+    const failures: string[] = [];
+    const infos: string[] = [];
+    const github = {
+      rest: {
+        actions: {
+          listWorkflowRunArtifacts: async () => ({ data: { artifacts: [], total_count: 1 } }),
+        },
+        repos: {
+          createDispatchEvent: async (value: unknown) => dispatches.push(value),
+          getContent: async () => {
+            throw new Error('completeness must be established before reading any request');
+          },
+        },
+      },
+    };
+    const core = {
+      info: (message: string) => infos.push(message),
+      setFailed: (message: string) => failures.push(message),
+      setOutput: () => undefined,
+      warning: () => undefined,
+    };
+    const execute = new Function('github', 'context', 'core', 'require', `return (async () => {\n${script}\n})();`) as (
+      ...args: unknown[]
+    ) => Promise<void>;
+
+    await execute(
+      github,
+      { payload: { workflow_run: { head_sha: 'a'.repeat(40), id: 456 } }, repo: { owner: 'flighthq', repo: 'flight' } },
+      core,
+      createRequire(import.meta.url),
+    );
+
+    expect(failures).toEqual(['artifact pagination collected 0 unique artifact(s), API reports 1']);
+    expect(infos).not.toContain('no candidate artifact on this run — nothing was commissioned');
+    expect(dispatches).toEqual([]);
   });
 
   // The same rule as the enumeration, at the second site: an unreadable NAME is a cosmetic problem and
