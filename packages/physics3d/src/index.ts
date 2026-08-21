@@ -86,3 +86,4 @@ export {
   queryPhysics3DRegion,
 } from './worldQueries';
 export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
+export { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';

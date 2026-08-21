@@ -23,3 +23,5 @@ export * from './testCollision3D';
 export * from './pointContainment3D';
 export * from './raycastCollisionShape3D';
 export * from './convexHull3D';
+export * from './gjkDistance3D';
+export * from './sweepCollisionShape3D';

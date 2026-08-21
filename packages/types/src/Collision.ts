@@ -456,3 +456,32 @@ export interface CollisionRaycastHit3D {
   normalY: number;
   normalZ: number;
 }
+
+// The gap between two convex shapes and the axis along which it is measured.
+//
+// `direction` is a UNIT vector pointing from B toward A — the same orientation a contact normal uses, so
+// a caller does not have to remember which way a distance query happens to face. It is left zeroed when
+// `overlapping` is true, because a pair that already intersects has no gap and no unique axis; the
+// penetration case is `CollisionManifold3D`'s.
+export interface CollisionDistance3D {
+  distance: number;
+  directionX: number;
+  directionY: number;
+  directionZ: number;
+  overlapping: boolean;
+}
+
+// The first moment two shapes touch under linear translation, as a fraction of the swept interval.
+//
+// `fraction` is 0 when they already touch at the start and 1 when they touch only at the very end.
+// (`x`,`y`,`z`) is where contact happens and the normal points from B toward A, matching
+// `CollisionDistance3D` and the contact normal convention.
+export interface CollisionTimeOfImpact3D {
+  fraction: number;
+  x: number;
+  y: number;
+  z: number;
+  normalX: number;
+  normalY: number;
+  normalZ: number;
+}

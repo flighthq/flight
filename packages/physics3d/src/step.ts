@@ -9,6 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { buildPhysics3DContacts } from './contactIntake';
+import { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';
 import {
   clearRigidBody3DForces,
   integrateRigidBody3DPose,
@@ -193,7 +194,17 @@ function forEachSolveIslandJoint(
 // about to read. Two passes rather than one, because a body's pose must not move between another body's
 // integration and its own: a single fused loop would have the second body's constraint arms measured
 // against a world the first body had already left.
+//
+// Routes through the CONTINUOUS path when the world asks for it and some body is actually flagged. That
+// path integrates in chronological order of impact instead of in one jump, which is the only way a body
+// fast enough to cross a wall within the interval generates a contact at all. It is checked here rather
+// than inside the continuous pass so a world with the config on and no bullets pays one scan of the body
+// list rather than a swept broadphase.
 function forEachSolveIslandPose(world: Physics3DWorld, dt: number): void {
+  if (world.config.continuousCollision && hasActivePhysics3DBullet(world)) {
+    integratePhysics3DContinuous(world, dt);
+    return;
+  }
   forEachSolveIslandBody(world, (body) => integrateRigidBody3DPose(body, dt));
   forEachSolveIslandBody(world, refreshRigidBody3DWorldInertia);
 }
