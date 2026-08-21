@@ -366,6 +366,29 @@
         "functional/text-wrap/webgpu"
       ],
       "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T07:04:56.048Z",
+      "keys": [
+        "functional/text-align-center/dom",
+        "functional/text-align-center/canvas",
+        "functional/text-align-center/webgl",
+        "functional/text-align-center/webgpu"
+      ],
+      "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T07:05:23.724Z",
+      "keys": [
+        "functional/text-markup-color/canvas",
+        "functional/text-markup-color/webgl",
+        "functional/text-markup-color/webgpu"
+      ],
+      "reason": "font differences in ci"
     }
   ],
   "held": {
@@ -439,6 +462,13 @@
     "functional/text-wrap/dom": "font differences in ci",
     "functional/text-wrap/canvas": "font differences in ci",
     "functional/text-wrap/webgl": "font differences in ci",
-    "functional/text-wrap/webgpu": "font differences in ci"
+    "functional/text-wrap/webgpu": "font differences in ci",
+    "functional/text-align-center/dom": "font differences in ci",
+    "functional/text-align-center/canvas": "font differences in ci",
+    "functional/text-align-center/webgl": "font differences in ci",
+    "functional/text-align-center/webgpu": "font differences in ci",
+    "functional/text-markup-color/canvas": "font differences in ci",
+    "functional/text-markup-color/webgl": "font differences in ci",
+    "functional/text-markup-color/webgpu": "font differences in ci"
   }
 }
