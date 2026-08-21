@@ -5,6 +5,34 @@
   "targets": [
     {
       "entry": "effect-hue-saturation",
+      "renderer": "canvas",
+      "pixelSha256": "82bad21b200a1d9d9ae15516d004d0174a884677974696b97dd47323df75cbd8",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "effect-hue-saturation",
+      "renderer": "webgl",
+      "pixelSha256": "92e5eaab3dcacddbd36f98788eeb24a66e80a46bb1e012d695709759034c73ca",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "effect-hue-saturation",
       "renderer": "webgpu",
       "pixelSha256": "db5f201fc99a0e9232f6fae3de84eef4a97352e50f7c79fc848c581b3d06f348",
       "build": {

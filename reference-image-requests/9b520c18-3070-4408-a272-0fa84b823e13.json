@@ -5,7 +5,49 @@
   "targets": [
     {
       "entry": "scene2d-clip-contour",
+      "renderer": "dom",
+      "pixelSha256": "f697d660e43aeae0d04cd0f6ad18923a6504f7c05a826e95edccf1b521c94c34",
+      "build": {
+        "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "scene2d-clip-contour",
+      "renderer": "canvas",
+      "pixelSha256": "0df5eca47cbaf46be36fbc484a8e3dfdac05e5aab1c9e43228dc4ad16a3d0a3b",
+      "build": {
+        "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "scene2d-clip-contour",
       "renderer": "webgl",
+      "pixelSha256": "0438d59322f49e67dc7e6274d07b6147a5a335fbbd06da0cd0703c8191dfebea",
+      "build": {
+        "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "scene2d-clip-contour",
+      "renderer": "webgpu",
       "pixelSha256": "0438d59322f49e67dc7e6274d07b6147a5a335fbbd06da0cd0703c8191dfebea",
       "build": {
         "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
