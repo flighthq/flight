@@ -115,7 +115,7 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/effect-motion-blur.webgpu.ts` | able | L170: luminance is checked by a throw threshold inside its sampling loop (frame, cx) |
 | `functional/scenes/effect-msaa-bloom.canvas.ts` | able | L138: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
 | `functional/scenes/effect-msaa-bloom.webgl.ts` | able | L135: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
-| `functional/scenes/effect-msaa-bloom.webgpu.ts` | able | L146: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
+| `functional/scenes/effect-msaa-bloom.webgpu.ts` | able | L148: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
 | `functional/scenes/effect-msaa.webgl.ts` | blind | L96: countPartialCoveragePixels supplies only rearrangement-invariant counts, averages, histograms, or coverage |
 | `functional/scenes/effect-msaa.webgpu.ts` | blind | L101: countPartialCoveragePixels supplies only rearrangement-invariant counts, averages, histograms, or coverage |
 | `functional/scenes/effect-outline.webgl.ts` | blind | L104: measureOutlineInk supplies only rearrangement-invariant counts, averages, histograms, or coverage |
