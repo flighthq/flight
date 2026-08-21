@@ -11,7 +11,7 @@ by: principal
 
 ## Open
 
-At file-level parity with `physics2d` except for CCD. Bodies carry colliders, the step generates its own
+At file-level parity with `physics2d`. Bodies carry colliders, the step generates its own
 contacts through the 3D broadphase and narrow phase, `world.events` reports begin/end transitions, and
 queries, debug geometry, and a stress harness all ship. Integration, the contact solver, all six joint
 kinds, islands and sleeping, the composed step with its substep loop, and three `explain*` seams are
@@ -38,10 +38,17 @@ built.
   stand 11.11 where the geometry says 11.5. That is ordinary projected-Gauss-Seidel behaviour under load
   rather than a defect, and the stress harness bounds it — but it is the number to watch if stacking
   quality is ever raised, and more position iterations buy very little of it back.
-- **CCD is the last parity gap.** `bullet` and `continuousCollision` are carried on the body and the
-  config and read by nothing, so a fast 3D mover tunnels. `physics2d` has both linear and rotational CCD;
-  closing this needs a SWEPT 3D narrow phase, which the support registry can carry (a swept convex is a
-  convex) but which nothing yet calls.
+- **CCD arrests tunnelling LINEARLY and applies no torque at the impact.** That is a deliberate bound,
+  not a shortcut: a swept query reaches a shape through its support function, which is ambiguous on a flat
+  face, so a squarely-struck box reports a CORNER as the contact. Measured, a corner five units off-axis
+  inflated the angular term by four orders of magnitude and reduced a 600-unit-per-second stop to a
+  velocity change of 0.05 — it tunnelled anyway, through a path that ran and reported success. The
+  continuous pass now removes the approach velocity through the centres of mass and leaves the pair
+  touching and awake; the next step's ordinary contact generation supplies real manifold points, real
+  lever arms, friction, and warm starting. Closing this properly needs GJK WITNESS POINTS (barycentric
+  weights applied to the stored per-vertex support points), which the distance query does not yet keep.
+- **CCD is LINEAR only, where `physics2d` also sweeps rotation.** A body spinning fast enough to catch
+  something with a limb within one step is not covered; `maxCcdRotationSubsteps` has no 3D counterpart.
 - **`preparePhysics3DContactConstraints` REQUIRES the island workspace.** It iterates the island contact
   slices rather than `world.contacts`, so a world stepped without `buildPhysics3DSolveIslands` produces
   no constraints at all. That is what makes a settled world cost no contact scan per sub-interval, and it
@@ -67,6 +74,18 @@ built.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Continuous collision, the last parity gap. Three new pieces:
+  `writeCollisionDistance3D` (GJK DISTANCE — a separate routine from the overlap test, because that one
+  reduces its simplex to a search direction and this needs a closest POINT with barycentric weights),
+  `sweepCollisionShape3D` (conservative advancement, which cannot skip a thin wall the way sampling does),
+  and `continuous.ts` (swept broadphase, chronological impact ordering, `maxCcdSubsteps` as a hard bound).
+  A bullet at 600 units/second now stops at a 0.1-thick wall it previously crossed in one step, with the
+  CCD-off control pinned alongside it. Two bugs found on the way: the distance query's convergence test had
+  `v.v + v.w` where the derivation gives `v.v - v.w`, which made it wrong in BOTH directions at once
+  (penetrating pairs reported a gap, separated pairs never converged); and the swept contact point was
+  offset by the RELATIVE translation rather than A's own, putting a static wall's corner five units from
+  the wall.
 
 - **2026-08-21** — Convex hulls, and the one primitive three gaps were waiting on.
   `writeCollisionConvexHullFaces3D` (incremental hull, outward-wound) closes hull MASS PROPERTIES
