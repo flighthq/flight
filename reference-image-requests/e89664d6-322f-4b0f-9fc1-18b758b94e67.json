@@ -5,20 +5,6 @@
   "targets": [
     {
       "entry": "effect-scanlines",
-      "renderer": "webgl",
-      "pixelSha256": "4224c8757937181bd9bb508abe9d9ae89252269dee31213a6d22516796b7bc11",
-      "build": {
-        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
-        "dirty": [],
-        "dirtyOmitted": 0
-      },
-      "capture": {
-        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
-        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
-      }
-    },
-    {
-      "entry": "effect-scanlines",
       "renderer": "webgpu",
       "pixelSha256": "e65bf0cb58b4888ded48b68a991158202d55768c1e086f19a45898c93f592805",
       "build": {

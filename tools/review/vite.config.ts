@@ -699,6 +699,18 @@ function reviewPlugin(): Plugin[] {
           });
         });
 
+        // ★ A REQUEST LEAVING THE QUEUE IS A STATE CHANGE TOO, AND ONLY ARRIVALS WERE WATCHED. Clearing
+        // the queue left every affected cell reading "Request pending" with its Commission button
+        // disabled until the dev server was restarted — the tool reporting a queue that no longer
+        // existed. `unlink` cannot say which cells were freed, because the file is already gone by the
+        // time we hear about it, so this invalidates and reloads rather than sending a targeted update.
+        server.watcher.on('unlink', (file: string) => {
+          if (!file.startsWith(requestsDir) || !file.endsWith('.json')) return;
+          const mod = server.moduleGraph.getModuleById('\0virtual:review-manifest');
+          if (mod) server.moduleGraph.invalidateModule(mod);
+          server.ws.send({ type: 'full-reload' });
+        });
+
         server.watcher.add(tolerancePaths.manifestPath);
         server.watcher.on('change', (file: string) => {
           if (file !== tolerancePaths.manifestPath) return;
@@ -760,16 +772,13 @@ function reviewPlugin(): Plugin[] {
                 // held cells out of the payload, but a hold recorded after the page loaded — or by another
                 // reviewer — would otherwise be commissioned by a stale tab. Dropping them here costs one
                 // read and makes the held file the single place the answer comes from.
-                // ★ A HOLD IS REPORTED HERE, NOT ENFORCED. This used to drop held cells from the
-                // commission, which made the user's own rule — a scene stays held UNTIL it has a passing
-                // commission — impossible to satisfy: the only way to progress a held cell was to release
-                // its hold first, and releasing is the deliberate move. Commissioning pins what this build
-                // renders; the hold still governs whether the gate treats the cell's failure as a failure.
                 const heldNow = readHeldCells();
-                const heldCommissioned = payload.cells
+                const heldSkipped = payload.cells
                   .filter((c) => heldNow.has(`${payload.tool}/${payload.entry}/${c.renderer}`))
                   .map((c) => c.renderer);
-                const openCells = payload.cells;
+                const openCells = payload.cells.filter(
+                  (c) => !heldNow.has(`${payload.tool}/${payload.entry}/${c.renderer}`),
+                );
                 const capturedCells = openCells.filter((c) => c.pixelSha256 !== null);
                 const noBuild = capturedCells.filter((c) => c.build === null).length;
                 const unstamped = capturedCells.filter((c) => c.build?.commit === null).length;
@@ -798,9 +807,11 @@ function reviewPlugin(): Plugin[] {
                   res.end(
                     JSON.stringify({
                       error:
-                        noHash === openCells.length
-                          ? `no reference pixel hash for any cell of ${payload.entry} — the screenshot is absent or cannot be decoded. Capture the cells before commissioning`
-                          : 'no eligible cells: every cell needs a reference pixel hash and a host identity',
+                        openCells.length === 0
+                          ? `every cell of ${payload.entry} is held (${heldSkipped.join(', ')}) — release a hold, or commission a scene with an open cell`
+                          : noHash === openCells.length
+                            ? `no reference pixel hash for any cell of ${payload.entry} — the screenshot is absent or cannot be decoded. Capture the cells before commissioning`
+                            : 'no eligible cells: every cell needs a reference pixel hash and a host identity',
                     }),
                   );
                   return;
@@ -892,7 +903,7 @@ function reviewPlugin(): Plugin[] {
                     committed: eligible.length,
                     coverageAdded,
                     total: payload.cells.length,
-                    held: heldCommissioned,
+                    held: heldSkipped,
                     skipped: openCells.filter((c) => c.pixelSha256 === null).map((c) => c.renderer),
                     buildCommit: build.commit,
                     dirty: build.dirty,
