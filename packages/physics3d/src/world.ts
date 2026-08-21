@@ -4,6 +4,8 @@ import type {
   Physics3DBodyType,
   Physics3DCollider,
   Physics3DCollisionFilter,
+  Physics3DContact,
+  Physics3DContactConstraint,
   Physics3DMaterial,
   Physics3DSequentialImpulseConfig,
   Physics3DSolverConfig,
@@ -337,6 +339,44 @@ export function findPhysics3DBody(world: Readonly<Physics3DWorld>, index: number
   return world.bodyByIndex.get(index) ?? null;
 }
 
+// Upgrades a reconstructed serialized world to the current plain-data shape. Runtime registries remain
+// the format layer's responsibility; this function owns only versioned physics fields and replaces
+// solver caches, which are answers about a previous process and must never survive a load.
+export function hydratePhysics3DWorld(world: Physics3DWorld): boolean {
+  assertPhysics3DWorldNotStepping(world);
+  const serializedVersion = (world as unknown as { version?: unknown }).version;
+  const version = serializedVersion === undefined ? 0 : serializedVersion;
+  if (!Number.isSafeInteger(version) || (version as number) < 0 || (version as number) > Physics3DWorldVersion) {
+    return false;
+  }
+  if (version === Physics3DWorldVersion) return true;
+
+  const legacyWorld = world as unknown as {
+    index?: SpatialIndexBackend3D;
+    jointEvents?: Physics3DWorld['jointEvents'];
+    solver: Physics3DWorld['solver'] & { constraintByPair?: Map<number, Physics3DContactConstraint> };
+  };
+  if (version < 2) {
+    legacyWorld.index ??= createUniformGridSpatialBackend3D(1);
+    for (const body of world.bodies) {
+      const legacyBody = body as RigidBody3D & { colliders?: Physics3DCollider[] };
+      legacyBody.colliders ??= [];
+    }
+    for (const contact of world.contacts) {
+      const legacyContact = contact as Physics3DContact & { colliderA?: number; colliderB?: number };
+      legacyContact.colliderA ??= 0;
+      legacyContact.colliderB ??= 0;
+    }
+  }
+
+  legacyWorld.jointEvents ??= { broke: [] };
+  world.solver.constraints = [];
+  world.solver.constraintByContact = new Map();
+  delete legacyWorld.solver.constraintByPair;
+  world.version = Physics3DWorldVersion;
+  return true;
+}
+
 // Rebuilds a collider's derived state after its authored LOCAL shape has been edited in place. Returns
 // false when the collider does not belong to the body.
 //
@@ -437,6 +477,16 @@ export function removePhysics3DCollider(
   return true;
 }
 
+// Changes whether a dynamic body receives continuous collision treatment. The policy is retained across
+// body-type changes, and either transition wakes an owned body so a newly enabled bullet cannot remain
+// outside the continuous path until something else disturbs it.
+export function setPhysics3DBodyBullet(body: RigidBody3D, bullet: boolean): void {
+  assertPhysics3DBodyNotStepping(body);
+  if (body.bullet === bullet) return;
+  body.bullet = bullet;
+  wakePhysics3DBody(body);
+}
+
 // Opts a dynamic body into or out of rotating at all, rebuilding its inverse inertia.
 //
 // A fixed-rotation body keeps its translational mass and exposes a zero inverse inertia tensor to every
@@ -458,6 +508,15 @@ export function setPhysics3DBodyFixedRotation(body: RigidBody3D, fixedRotation: 
     body.torqueZ = 0;
   }
   refreshRigidBody3DMass(body);
+  wakePhysics3DBody(body);
+}
+
+// Changes whether this body may participate in sleeping. Both transitions reset stillness so enabling
+// sleep still requires one new uninterrupted quiet interval, and disabling it cannot leave a body frozen.
+export function setPhysics3DBodySleepEnabled(body: RigidBody3D, sleepEnabled: boolean): void {
+  assertPhysics3DBodyNotStepping(body);
+  if (body.sleepEnabled === sleepEnabled) return;
+  body.sleepEnabled = sleepEnabled;
   wakePhysics3DBody(body);
 }
 
@@ -576,7 +635,7 @@ export function writeRigidBody3DWorldCenter(body: Readonly<RigidBody3D>, out: nu
 
 // The serializable-shape version of `Physics3DWorld`. Bumped when a field a format layer would have
 // written changes meaning, so a reconstructed world can be recognized as older and upgraded.
-export const Physics3DWorldVersion = 2;
+export const Physics3DWorldVersion = 3;
 
 // Copies an authored shape so a collider owns its own geometry. The point list is copied too — sharing
 // the array would let two colliders that look independent move together.

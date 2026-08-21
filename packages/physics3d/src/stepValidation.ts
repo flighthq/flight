@@ -39,6 +39,10 @@ export function isPhysics3DContactValid(contact: Readonly<Physics3DContact>): bo
   if (
     !Number.isSafeInteger(contact.bodyA) ||
     !Number.isSafeInteger(contact.bodyB) ||
+    !Number.isSafeInteger(contact.colliderA) ||
+    contact.colliderA < 0 ||
+    !Number.isSafeInteger(contact.colliderB) ||
+    contact.colliderB < 0 ||
     !Number.isSafeInteger(contact.pointCount) ||
     contact.pointCount < 0 ||
     contact.pointCount > contact.points.length ||
