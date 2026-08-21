@@ -1,10 +1,12 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { Physics3DStepExplanation, Physics3DWorld } from '@flighthq/types/contract';
+import type { Physics3DJointExplanation, Physics3DStepExplanation, Physics3DWorld } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setPhysics3DContactIntakeGuard } from './contactIntake';
 import { explainPhysics3DCollision } from './explainPhysics3DCollision';
+import { explainPhysics3DJoints } from './explainPhysics3DJoints';
 import { explainPhysics3DStep } from './explainPhysics3DStep';
+import { setPhysics3DJointResolutionGuard } from './islands';
 import { setPhysics3DStepGuard } from './step';
 
 export function arePhysics3DGuardsEnabled(): boolean {
@@ -14,10 +16,12 @@ export function arePhysics3DGuardsEnabled(): boolean {
 export function disablePhysics3DGuards(): void {
   setPhysics3DStepGuard(null);
   setPhysics3DContactIntakeGuard(null);
+  setPhysics3DJointResolutionGuard(null);
   physics3DGuardsEnabled = false;
 }
 
-// Installs opt-in diagnostics for the two ways a world can advance without simulating.
+// Installs opt-in diagnostics for the three ways a world can advance without simulating what its data
+// appears to describe.
 //
 // `stepPhysics3D` declines silently on any failed precondition, which is the right behaviour — a NaN
 // velocity is a state a caller reaches by writing a field, and throwing would take down a frame loop over
@@ -29,9 +33,13 @@ export function disablePhysics3DGuards(): void {
 // detects NOTHING if the 3D collision registries were never populated, because the narrow phase
 // dispatches through them. That world steps, integrates, and reports success while its bodies fall
 // through every floor.
+// The third is a stored joint omitted from the solve because its kind has no solver or an endpoint no
+// longer resolves. Deserializing ahead of registration is supported, so storing it stays silent; stepping
+// while it remains inert is the moment the opt-in guard names it.
 export function enablePhysics3DGuards(): void {
   setPhysics3DStepGuard(warnOnUnsteppablePhysics3DWorld);
   setPhysics3DContactIntakeGuard(warnOnUndetectablePhysics3DColliders);
+  setPhysics3DJointResolutionGuard(warnOnUnresolvedPhysics3DJoints);
   physics3DGuardsEnabled = true;
 }
 
@@ -51,6 +59,30 @@ function warnOnUndetectablePhysics3DColliders(world: Readonly<Physics3DWorld>): 
       kinds,
       message: `buildPhysics3DContacts: no support function is registered for collider ${kinds.length === 1 ? 'kind' : 'kinds'} ${kinds.join(', ')}, so these generate no contacts and the bodies carrying them pass through everything — call registerBuiltInCollisionSupports3D() and registerBuiltInCollisionFaceQueries3D() from @flighthq/collision, or register your own support for a vendor kind.`,
       status: explanation.status,
+    },
+    'physics3d',
+  );
+}
+
+// Warns once per distinct world-list set of unresolved joints. Index belongs in the key: two joints of
+// one kind may fail independently, and repairing the first must not suppress the second's later warning.
+function warnOnUnresolvedPhysics3DJoints(world: Readonly<Physics3DWorld>): void {
+  const explanations = explainPhysics3DJoints(world);
+  const joints: Pick<Physics3DJointExplanation, 'index' | 'kind' | 'status'>[] = [];
+  for (const explanation of explanations) {
+    if (explanation.status === 'solvable') continue;
+    joints.push({ index: explanation.index, kind: explanation.kind, status: explanation.status });
+  }
+  if (joints.length === 0) return;
+
+  const key = joints.map((joint) => `${joint.index}:${joint.kind}:${joint.status}`).join(',');
+  logOnce(
+    `physics3d:unresolved-joints:${key}`,
+    LogLevel.Warn,
+    {
+      joints,
+      message: `buildPhysics3DSolveIslands: ${joints.length} ${joints.length === 1 ? 'joint was' : 'joints were'} omitted from the solve because its kind is unregistered or a body endpoint is missing — call explainPhysics3DJoints(world), then registerBuiltInPhysics3DJointSolvers(world) or registerPhysics3DJointSolver(world, kind, solver) for an unregistered kind, and removePhysics3DJoint(world, joint) or repair an invalid endpoint.`,
+      status: 'unresolved-joints',
     },
     'physics3d',
   );

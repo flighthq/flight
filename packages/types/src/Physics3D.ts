@@ -470,6 +470,11 @@ export type Physics3DStepGuard = (world: Readonly<Physics3DWorld>, dt: number) =
 // null otherwise, so the check and its message text are absent from a build that never enables guards.
 export type Physics3DContactIntakeGuard = (world: Readonly<Physics3DWorld>) => void;
 
+// The diagnostics seam consulted before solve islands omit unresolved joints. Installed by
+// `enablePhysics3DGuards` and null otherwise, so the explanation walk and its message text are absent
+// from a build that never enables guards.
+export type Physics3DJointResolutionGuard = (world: Readonly<Physics3DWorld>) => void;
+
 // Why a joint cannot be solved, or that it can. `unregistered-kind` is the common one: a joint whose
 // kind has no registered solver is skipped in silence by the step, and this is how a caller finds out.
 export interface Physics3DJointExplanation {

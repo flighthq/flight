@@ -2,7 +2,12 @@ import type { Physics3DContact, Physics3DWorld, RigidBody3D } from '@flighthq/ty
 import { describe, expect, it } from 'vitest';
 
 import { refreshRigidBody3DWorldInertia } from './integrate';
-import { buildPhysics3DSolveIslands, isRigidBody3DPairAwake, updatePhysics3DSleep } from './islands';
+import {
+  buildPhysics3DSolveIslands,
+  isRigidBody3DPairAwake,
+  setPhysics3DJointResolutionGuard,
+  updatePhysics3DSleep,
+} from './islands';
 import { computePhysics3DBoxMassData, createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
 import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world';
 
@@ -145,6 +150,26 @@ describe('isRigidBody3DPairAwake', () => {
     body.sleeping = true;
 
     expect(isRigidBody3DPairAwake(body, ground)).toBe(false);
+  });
+});
+
+describe('setPhysics3DJointResolutionGuard', () => {
+  it('installs and clears the optional island-build seam', () => {
+    const world = createPhysics3DWorld();
+    createBox(world);
+    let calls = 0;
+    setPhysics3DJointResolutionGuard(() => {
+      calls += 1;
+    });
+
+    try {
+      buildPhysics3DSolveIslands(world);
+    } finally {
+      setPhysics3DJointResolutionGuard(null);
+    }
+    buildPhysics3DSolveIslands(world);
+
+    expect(calls).toBe(1);
   });
 });
 
