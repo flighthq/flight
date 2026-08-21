@@ -105,6 +105,8 @@ which is why they are not in the map.
 - [gate audit results](gate-audit-results.md) — fresh mutation specimens and observed failure output for
   all 29 non-advisory whole-repository gates.
 - [inert gate audit](inert-gate-audit.md) — gates that pass without checking anything.
+- [log sink cleanup audit](log-sink-cleanup-audit.md) — tracked-code census of `addLogSink`
+  registrations, their cleanup lifetimes, and the one unresolved debug rollback ambiguity.
 - [boundary-only checks](boundary-only-checks.md) — its mirror: checks that verify exactly what they
   claim and that CI cannot run, because each one's subject is a parcel and a parcel is not in the tree.
   An index, not a gate — it cannot make them run, only make their disappearance visible.
