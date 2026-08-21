@@ -157,6 +157,10 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+function sizesDiffer(a: HTMLImageElement, b: HTMLImageElement): boolean {
+  return a.naturalWidth !== b.naturalWidth || a.naturalHeight !== b.naturalHeight;
+}
+
 function computeDelta(
   candidateImg: HTMLImageElement,
   referenceImg: HTMLImageElement,
@@ -1113,14 +1117,8 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     return;
   }
 
-  if (compareMode === 'side-by-side') {
+  if (compareMode === 'side-by-side' || (compareMode === 'onion-skin' && sizesDiffer(candidateImg, referenceImg))) {
     const delta = computeDelta(candidateImg, referenceImg, cell.comparisonPolicy?.channelTolerance ?? 0);
-
-    if (delta.dimMismatch) {
-      container.innerHTML = `<div class="compare-message">${delta.dimMismatch}</div>`;
-      preview.appendChild(container);
-      return;
-    }
 
     const grid = document.createElement('div');
     grid.className = 'compare-grid';
@@ -1130,8 +1128,20 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     const refClone = referenceImg.cloneNode(true) as HTMLImageElement;
     refClone.className = 'compare-img';
     grid.appendChild(makeComparePanel('Blessed reference', refClone));
-    delta.canvas.className = 'compare-img';
-    grid.appendChild(makeComparePanel('Delta', delta.canvas));
+    // ★ ONLY THE DELTA IS IMPOSSIBLE AT DIFFERENT SIZES — THE PICTURES ARE FINE. This used to replace the
+    // WHOLE view with one line of text, so a scene that had been resized showed no image of any kind:
+    // not the capture, not the blessed reference, not the authored context columns. The reviewer was
+    // shown nothing at precisely the moment they most needed to look, and the remedy — re-commission from
+    // the new size — is a judgement that needs the two pictures side by side to make.
+    if (delta.dimMismatch) {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'compare-placeholder';
+      placeholder.textContent = `${delta.dimMismatch} — the pictures are shown at their own sizes; a per-pixel delta needs equal dimensions`;
+      grid.appendChild(makeComparePanel('Delta', placeholder));
+    } else {
+      delta.canvas.className = 'compare-img';
+      grid.appendChild(makeComparePanel('Delta', delta.canvas));
+    }
     setCompareGridColumns(grid);
 
     container.appendChild(grid);
@@ -1141,14 +1151,8 @@ async function showCompareView(t: ReviewTest, cell: ReviewCell): Promise<void> {
     stats.textContent = comparisonStats(cell);
     container.appendChild(stats);
   } else if (compareMode === 'onion-skin') {
-    const delta = computeDelta(candidateImg, referenceImg, cell.comparisonPolicy?.channelTolerance ?? 0);
-
-    if (delta.dimMismatch) {
-      container.innerHTML = `<div class="compare-message">${delta.dimMismatch}</div>`;
-      preview.appendChild(container);
-      return;
-    }
-
+    // Sizes are known equal here: the branch above claims the mismatched case and falls back to the
+    // side-by-side layout, because stacking two differently-sized images teaches a reviewer nothing.
     const onionWrap = document.createElement('div');
     onionWrap.className = 'onion-wrap';
     candidateImg.className = 'onion-layer onion-candidate';
