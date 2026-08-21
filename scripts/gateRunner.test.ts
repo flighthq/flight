@@ -71,6 +71,17 @@ describe('runGate', () => {
     expect(result.passed).toBe(false);
     expect(result.output).toContain('ENOENT');
   });
+
+  it('decodes multi-byte output whole across chunk boundaries', async () => {
+    // ★ 200 KB of three-byte glyphs so the boundaries land mid-character. Decoding each Buffer on its
+    // own introduced 22 U+FFFD here; the assertion is exact equality rather than a replacement count,
+    // because the count depends on where the chunk boundaries happen to fall.
+    const expected = '✓★—'.repeat(70_000);
+    const result = await runGate(node('process.stdout.write("✓★—".repeat(70000))'), GRACE_MS);
+    expect(result.passed).toBe(true);
+    expect(result.output).toBe(expected);
+    expect(result.output).not.toContain('�');
+  });
 });
 
 describe('runGates', () => {
