@@ -4,6 +4,13 @@ import type {
   CollisionShapeKind2D,
 } from '@flighthq/types/contract';
 
+import {
+  collideCapsuleAabbContactManifold2D,
+  collideCapsuleCapsuleContactManifold2D,
+  collideCapsuleObbContactManifold2D,
+  collideCapsulePolygonContactManifold2D,
+  collideCircleCapsuleContactManifold2D,
+} from './capsuleContact2D';
 import { clearCollisionContactManifold2D } from './contactManifold2D';
 import {
   collideAabbAabbContactManifold2D,
@@ -67,6 +74,9 @@ export function collideContactManifold2D(
         case 'circle':
           overlapping = collideCircleCircleContactManifold2D(lo, hi, out);
           break;
+        case 'capsule':
+          overlapping = collideCircleCapsuleContactManifold2D(lo, hi, out);
+          break;
         case 'aabb':
           overlapping = collideCircleAabbContactManifold2D(lo, hi, out);
           break;
@@ -75,6 +85,24 @@ export function collideContactManifold2D(
           break;
         case 'polygon':
           overlapping = collideCirclePolygonContactManifold2D(lo, hi, out);
+          break;
+      }
+      break;
+    case 'capsule':
+      switch (hi.kind) {
+        case 'capsule':
+          overlapping = collideCapsuleCapsuleContactManifold2D(lo, hi, out);
+          break;
+        case 'aabb':
+          overlapping = collideCapsuleAabbContactManifold2D(lo, hi, out);
+          break;
+        case 'obb':
+          overlapping = collideCapsuleObbContactManifold2D(lo, hi, out);
+          break;
+        case 'polygon':
+          overlapping = collideCapsulePolygonContactManifold2D(lo, hi, out);
+          break;
+        default:
           break;
       }
       break;
@@ -122,12 +150,18 @@ function contactShapeKindRank(kind: CollisionShapeKind2D): number {
   switch (kind) {
     case 'circle':
       return 0;
-    case 'aabb':
+    // Ranked beside the circle rather than beside the boxes, because rank orders the pair by how ROUND
+    // the shape is and a capsule is a circle swept along a line. The absolute numbers are internal —
+    // only the relative order decides which shape owns the reference face, and inserting here leaves
+    // every existing pair's ordering exactly as it was.
+    case 'capsule':
       return 1;
-    case 'obb':
+    case 'aabb':
       return 2;
-    case 'polygon':
+    case 'obb':
       return 3;
+    case 'polygon':
+      return 4;
     default:
       return -1;
   }

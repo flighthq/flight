@@ -11,14 +11,11 @@ by: principal
 
 ## Open
 
-- **The capsule is the one unfinished thread, and it is unfinished on purpose.** `CollisionCapsule2D`
-  reaches every seam in this package — validation, transform, bounds, mass/inertia, debug geometry — but
-  `collideContactManifold2D` has no arms for it, so `contactShapeKindRank` returns -1 and **a capsule is
-  not yet usable as a rigid-body collider**. The gap is loud rather than silent: `explainPhysics2DCollision`
-  names it and `enablePhysics2DGuards` warns, distinguishing an unimplemented pair from an area-less
-  shape. What is left is the manifold matrix and `sweepCollisionShape2D` — and the hard part there is a
-  HORIZONTAL capsule resting on a floor, which needs a stable two-point manifold with stable feature ids.
-  A support function alone would give overlap and penetration and still leave a capsule that rocks.
+- **The capsule is usable, with CCD the one gap.** It reaches every seam in this package and the contact
+  dispatcher answers for it, so a capsule body collides, rests, and stacks: a horizontal capsule settles
+  flat on a floor at an angle of 1.75e-10 and falls asleep, which is the two-point manifold doing what it
+  exists for. What is missing is `sweepCollisionShape2D`'s capsule arm, so a capsule cannot be a CCD
+  bullet — `continuousCollision` silently finds no impact for one and it tunnels at speed.
 - **Broad qualification is not established.** The suite covers a 16-body tall pile and an exact-repeat
   mixed scene, and every claim below is measured — but nothing here yet spans wide mass ratios, timestep
   variation, pathological stacking, or cross-platform determinism, and none of those should be assumed.
@@ -29,6 +26,12 @@ by: principal
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Capsule colliders became real: the manifold pairs landed in `@flighthq/collision`, so
+  `explainPhysics2DCollision` stopped naming the capsule and the contact-intake guard stopped warning
+  about it. Both are now down to the area-less kinds, which is the honest remaining case — a `segment` on
+  a rigid body is a modelling mistake with no fix in this package. The guard's second advice branch was
+  removed rather than left unreachable.
 
 - **2026-08-21** — Compliant revolute and prismatic limits, built on the consolidated soft-row math.
   Verified by statics rather than by recorded numbers: a 20 Hz stop settles at 0.3% of the analytic

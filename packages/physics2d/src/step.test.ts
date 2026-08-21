@@ -1611,6 +1611,76 @@ describe('stepPhysics2D with breakable joints', () => {
   });
 });
 
+describe('stepPhysics2D with capsule colliders', () => {
+  // The behaviour the capsule's two-point floor manifold exists for. A capsule held by a single contact
+  // point pivots about it, and a player sees a character that will not stand still — which is why this is
+  // tested through the STEP rather than only at the manifold.
+  it('settles a horizontal capsule flat on the ground without rocking, and lets it sleep', () => {
+    const world = createPhysics2DWorld(0, -10);
+    const floor = createRigidBody2D('static', 0, 0);
+    floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -20, minY: -1, maxX: 20, maxY: 0 }, STONE));
+    addPhysics2DBody(world, floor);
+    const capsule = createRigidBody2D('dynamic', 0, 2);
+    capsule.colliders.push(
+      createPhysics2DCollider({ kind: 'capsule', x0: -1, y0: 0, x1: 1, y1: 0, radius: 0.5 }, STONE),
+    );
+    addPhysics2DBody(world, capsule);
+
+    let worstAngleAfterSettling = 0;
+    for (let step = 0; step < 900; step++) {
+      stepPhysics2D(world, 1 / 240);
+      if (step > 500) worstAngleAfterSettling = Math.max(worstAngleAfterSettling, Math.abs(capsule.angle));
+    }
+
+    // Resting on its radius, less the solver's penetration slop.
+    expect(capsule.y).toBeCloseTo(0.5, 2);
+    // Flat, and not merely flat at the last sample: nothing after settling rotated it either.
+    expect(worstAngleAfterSettling).toBeLessThan(1e-6);
+    expect(capsule.sleeping).toBe(true);
+  });
+
+  it('rolls a capsule down a slope rather than sticking on a corner', () => {
+    // A rounded end on an inclined face is the corner case the vertex axes exist for. With the wrong
+    // contact normal the capsule catches on the slope instead of sliding down it.
+    const world = createPhysics2DWorld(0, -10);
+    const slope = createRigidBody2D('static', 0, 0);
+    slope.angle = -0.3;
+    slope.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -20, minY: -1, maxX: 20, maxY: 0 }, STONE));
+    addPhysics2DBody(world, slope);
+    const capsule = createRigidBody2D('dynamic', -2, 2);
+    capsule.colliders.push(
+      createPhysics2DCollider({ kind: 'capsule', x0: -0.4, y0: 0, x1: 0.4, y1: 0, radius: 0.3 }, STONE),
+    );
+    addPhysics2DBody(world, capsule);
+
+    for (let step = 0; step < 600; step++) stepPhysics2D(world, 1 / 240);
+
+    expect(Number.isFinite(capsule.x)).toBe(true);
+    // Downhill is +x for a slope tilted this way, and it must not have sunk through.
+    expect(capsule.x).toBeGreaterThan(-2);
+    expect(capsule.y).toBeGreaterThan(-2);
+  });
+
+  it('stacks a capsule on a capsule without either falling through', () => {
+    const world = createPhysics2DWorld(0, -10);
+    const floor = createRigidBody2D('static', 0, 0);
+    floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -20, minY: -1, maxX: 20, maxY: 0 }, STONE));
+    addPhysics2DBody(world, floor);
+    const lower = createRigidBody2D('dynamic', 0, 1);
+    lower.colliders.push(createPhysics2DCollider({ kind: 'capsule', x0: -1, y0: 0, x1: 1, y1: 0, radius: 0.5 }, STONE));
+    addPhysics2DBody(world, lower);
+    const upper = createRigidBody2D('dynamic', 0, 2.5);
+    upper.colliders.push(createPhysics2DCollider({ kind: 'capsule', x0: -1, y0: 0, x1: 1, y1: 0, radius: 0.5 }, STONE));
+    addPhysics2DBody(world, upper);
+
+    for (let step = 0; step < 1200; step++) stepPhysics2D(world, 1 / 240);
+
+    expect(lower.y).toBeCloseTo(0.5, 1);
+    expect(upper.y).toBeCloseTo(1.5, 1);
+    expect(upper.y).toBeGreaterThan(lower.y + 0.9);
+  });
+});
+
 describe('stepPhysics2D with joints', () => {
   const DISTANCE = 'Distance';
 

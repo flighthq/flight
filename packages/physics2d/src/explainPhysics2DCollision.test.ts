@@ -24,6 +24,7 @@ describe('explainPhysics2DCollision', () => {
     const world = worldWith(
       { kind: 'circle', x: 0, y: 0, radius: 1 },
       { kind: 'aabb', minX: -1, minY: -1, maxX: 1, maxY: 1 },
+      { kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.5 },
       { kind: 'polygon', points: [0, 0, 1, 0, 1, 1] },
     );
     expect(explainPhysics2DCollision(world)).toEqual({ status: 'ready', unsupportedKinds: [] });
@@ -33,12 +34,12 @@ describe('explainPhysics2DCollision', () => {
     expect(explainPhysics2DCollision(createPhysics2DWorld(0, -10)).status).toBe('ready');
   });
 
-  it('names a capsule, whose pair functions are not written yet', () => {
+  it('reports ready for a capsule, which the dispatcher now answers for', () => {
+    // This test previously asserted the opposite, and the change is the point: the capsule was named
+    // here while its pair functions were missing, and it stopped being named when they landed. That is
+    // the seam doing its job in both directions rather than a list someone has to remember to edit.
     const world = worldWith({ kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.5 });
-    expect(explainPhysics2DCollision(world)).toEqual({
-      status: 'missing-contact-support',
-      unsupportedKinds: ['capsule'],
-    });
+    expect(explainPhysics2DCollision(world)).toEqual({ status: 'ready', unsupportedKinds: [] });
   });
 
   it('names the area-less kinds too, since they are equally invisible to the solver', () => {
@@ -50,11 +51,11 @@ describe('explainPhysics2DCollision', () => {
     // A level with four hundred capsules is one mistake. Sorted so the answer does not depend on the
     // order bodies were added, which would make the same world report differently twice.
     const world = worldWith(
+      { kind: 'point', x: 0, y: 0 },
       { kind: 'segment', x0: 0, y0: 0, x1: 1, y1: 0 },
-      { kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.5 },
-      { kind: 'capsule', x0: 2, y0: 0, x1: 3, y1: 0, radius: 0.5 },
+      { kind: 'segment', x0: 2, y0: 0, x1: 3, y1: 0 },
       { kind: 'circle', x: 0, y: 0, radius: 1 },
     );
-    expect(explainPhysics2DCollision(world).unsupportedKinds).toEqual(['capsule', 'segment']);
+    expect(explainPhysics2DCollision(world).unsupportedKinds).toEqual(['point', 'segment']);
   });
 });
