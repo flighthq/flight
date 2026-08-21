@@ -9,7 +9,7 @@ import type {
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
-import { physics2DDistanceJointSolver } from './joints';
+import { physics2DDistanceJointSolver, physics2DWeldJointSolver } from './joints';
 import { setPhysics2DJointResolutionGuard, setPhysics2DStepGuard, stepPhysics2D } from './step';
 import {
   addPhysics2DBody,
@@ -889,6 +889,8 @@ describe('setPhysics2DJointResolutionGuard', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,
@@ -915,6 +917,8 @@ describe('setPhysics2DJointResolutionGuard', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,
@@ -946,6 +950,8 @@ describe('setPhysics2DJointResolutionGuard', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,
@@ -1413,6 +1419,155 @@ describe('stepPhysics2D contact events', () => {
   });
 });
 
+describe('stepPhysics2D with breakable joints', () => {
+  const GRAVITY = -10;
+  const DT = 1 / 240;
+
+  // A bob hanging from a rigid distance joint. Its weight is the only load, so the threshold can be set
+  // relative to a number the test computes rather than to one read off the implementation.
+  function hangingWorld(breakForce: number, breakTorque = Number.POSITIVE_INFINITY) {
+    const world = createPhysics2DWorld(0, GRAVITY);
+    registerPhysics2DJointSolver(world, 'Distance', physics2DDistanceJointSolver);
+    const anchor = createRigidBody2D('static', 0, 0);
+    anchor.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.1 }, STONE));
+    addPhysics2DBody(world, anchor);
+    const bob = createRigidBody2D('dynamic', 0, -2);
+    bob.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.4 }, STONE));
+    addPhysics2DBody(world, bob);
+    const joint: Physics2DJoint = {
+      kind: 'Distance',
+      bodyA: anchor.index,
+      bodyB: bob.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      breakForce,
+      breakTorque,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    };
+    Object.assign(joint, { length: 2, frequencyHz: 0, dampingRatio: 0 });
+    addPhysics2DJoint(world, joint);
+    return { world, bob, joint, weight: bob.mass * -GRAVITY };
+  }
+
+  it('holds a load under its threshold indefinitely', () => {
+    const { world, joint, weight } = hangingWorld(0);
+    // Threshold set from the measured weight, so this is "twice what it has to carry" rather than a
+    // number that happens to be large.
+    joint.breakForce = weight * 2;
+
+    for (let step = 0; step < 600; step++) stepPhysics2D(world, DT);
+
+    expect(world.joints).toHaveLength(1);
+    expect(world.jointEvents.broke).toHaveLength(0);
+  });
+
+  it('breaks a joint whose load exceeds its threshold and removes it from the world', () => {
+    const { world, bob, joint, weight } = hangingWorld(0);
+    joint.breakForce = weight / 2;
+
+    stepPhysics2D(world, DT);
+
+    expect(world.joints).toHaveLength(0);
+    expect(world.jointEvents.broke).toHaveLength(1);
+    expect(world.jointEvents.broke[0].joint).toBe(joint);
+    // The recorded load is the one that broke it, not a rounded flag: it is what a caller scales debris,
+    // sound, or damage by.
+    expect(world.jointEvents.broke[0].forceY).toBeGreaterThan(weight / 2);
+
+    // And it is really gone: the bob falls freely from here.
+    const before = bob.y;
+    for (let step = 0; step < 60; step++) stepPhysics2D(world, DT);
+    expect(bob.y).toBeLessThan(before - 0.01);
+  });
+
+  it('never breaks a joint whose thresholds are both infinite, which is the default', () => {
+    const { world, joint } = hangingWorld(Number.POSITIVE_INFINITY);
+    expect(joint.breakForce).toBe(Number.POSITIVE_INFINITY);
+
+    for (let step = 0; step < 600; step++) stepPhysics2D(world, DT);
+
+    expect(world.joints).toHaveLength(1);
+  });
+
+  it('breaks on torque alone, independently of the force threshold', () => {
+    // A weld holding an off-centre weight: the force it carries is the weight, and the couple it carries
+    // is the moment about the anchor. With an infinite force threshold, only the torque can break it —
+    // which is the whole reason the two are separate fields.
+    const world = createPhysics2DWorld(0, GRAVITY);
+    registerPhysics2DJointSolver(world, 'Weld', physics2DWeldJointSolver);
+    const post = createRigidBody2D('static', 0, 0);
+    post.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.1 }, STONE));
+    addPhysics2DBody(world, post);
+    const arm = createRigidBody2D('dynamic', 0, 0);
+    arm.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 1.5, y: 0, radius: 0.4 }, STONE));
+    addPhysics2DBody(world, arm);
+    const moment = arm.mass * -GRAVITY * 1.5;
+    const joint: Physics2DJoint = {
+      kind: 'Weld',
+      bodyA: post.index,
+      bodyB: arm.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: moment / 2,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    };
+    Object.assign(joint, { referenceAngle: 0 });
+    addPhysics2DJoint(world, joint);
+
+    // Stop AT the break: the event list names only the step that produced it, so stepping past would
+    // find it already cleared.
+    for (let step = 0; step < 240 && world.jointEvents.broke.length === 0; step++) stepPhysics2D(world, DT);
+
+    expect(world.jointEvents.broke).toHaveLength(1);
+    expect(Math.abs(world.jointEvents.broke[0].torque)).toBeGreaterThan(moment / 2);
+    // Broken by the couple while the force threshold was never in play at all.
+    expect(world.jointEvents.broke[0].joint.breakForce).toBe(Number.POSITIVE_INFINITY);
+  });
+
+  it('clears the broken list at the start of each step, so it names only this step', () => {
+    const { world, weight, joint } = hangingWorld(0);
+    joint.breakForce = weight / 2;
+
+    stepPhysics2D(world, DT);
+    expect(world.jointEvents.broke).toHaveLength(1);
+
+    stepPhysics2D(world, DT);
+    expect(world.jointEvents.broke).toHaveLength(0);
+  });
+
+  it('lets a caller re-add a broken joint, because breaking only removes it', () => {
+    const { world, joint, weight } = hangingWorld(0);
+    joint.breakForce = weight / 2;
+    stepPhysics2D(world, DT);
+    expect(world.joints).toHaveLength(0);
+
+    joint.breakForce = Number.POSITIVE_INFINITY;
+    addPhysics2DJoint(world, joint);
+    for (let step = 0; step < 60; step++) stepPhysics2D(world, DT);
+
+    expect(world.joints).toHaveLength(1);
+  });
+});
+
 describe('stepPhysics2D with joints', () => {
   const DISTANCE = 'Distance';
 
@@ -1440,6 +1595,8 @@ describe('stepPhysics2D with joints', () => {
         localAnchorBX: 0,
         localAnchorBY: 0,
         collideConnected: false,
+        breakForce: Number.POSITIVE_INFINITY,
+        breakTorque: Number.POSITIVE_INFINITY,
         impulse0: 0,
         impulse1: 0,
         impulse2: 0,
@@ -1480,6 +1637,8 @@ describe('stepPhysics2D with joints', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,
@@ -1543,6 +1702,8 @@ describe('stepPhysics2D with joints', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,
@@ -1572,6 +1733,8 @@ describe('stepPhysics2D with joints', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,
@@ -1653,6 +1816,8 @@ describe('stepPhysics2D with sleeping', () => {
       localAnchorBX: 0,
       localAnchorBY: 0,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
       impulse0: 0,
       impulse1: 0,
       impulse2: 0,
@@ -1719,11 +1884,16 @@ describe('stepPhysics2D with sleeping', () => {
     ground(world);
     const left = box(world, -1, 2);
     const right = box(world, 1, 2);
+    // The break thresholds are spelled out even though the rest of the joint is not, because the step's
+    // validator reads them: a joint missing them is invalid data, and one invalid joint declines the
+    // WHOLE step, so the bodies below would never settle and never fall asleep.
     addPhysics2DJoint(world, {
       kind: 'Recording',
       bodyA: left.index,
       bodyB: right.index,
       collideConnected: true,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
     } as never);
     runSteps(world, 240);
     expect(left.sleeping).toBe(true);

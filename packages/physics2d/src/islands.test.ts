@@ -259,6 +259,8 @@ describe('updatePhysics2DSleep', () => {
       bodyA: shoved.index,
       bodyB: settled.index,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
     } as never);
 
     updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
@@ -282,6 +284,8 @@ describe('updatePhysics2DSleep', () => {
       bodyA: unused.index,
       bodyB: driven.index,
       collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
     } as never);
 
     updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);

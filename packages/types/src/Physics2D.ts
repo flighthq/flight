@@ -316,6 +316,7 @@ export interface Physics2DWorld {
   // record of contact state: the persistent cache already knows which pairs are touching, and these are
   // read off the moments it gains and loses entries.
   events: Physics2DContactEvents;
+  jointEvents: Physics2DJointEvents;
   contactHooks: Physics2DContactHooks;
   index: SpatialIndexBackend2D;
   config: Physics2DSolverConfig;
@@ -398,6 +399,38 @@ export interface Physics2DJoint {
   rAY: number;
   rBX: number;
   rBY: number;
+
+  // The load this joint fails at, compared each step against what it actually applied — the force and
+  // couple `writePhysics2DJointReaction` reports. Exceeding either one breaks the joint: the step
+  // removes it from the world and records it in `world.jointEvents.broke` with the load that did it.
+  //
+  // `Infinity` means unbreakable, and is the default. It reads as what it is where a flag plus a
+  // threshold would need two fields kept consistent with each other, and where a magic -1 would need
+  // explaining. It is also the ONE place a joint may hold a non-finite number: the step's validator
+  // rejects every other non-finite field, and admits these two by name.
+  //
+  // The two are independent rather than combined into one scalar, because a joint can fail either way
+  // and the two are not comparable — a weld holding a heavy sign may be nowhere near its shear limit
+  // while the wind twists it apart.
+  breakForce: number;
+  breakTorque: number;
+}
+
+// A joint that broke this step, kept with the load that broke it so a caller can scale what it does
+// about it. The `joint` is the caller's own object, already removed from the world; re-adding it with
+// `addPhysics2DJoint` is a legitimate way to repair one.
+export interface Physics2DBrokenJoint {
+  joint: Physics2DJoint;
+  forceX: number;
+  forceY: number;
+  torque: number;
+}
+
+// What happened to the world's joints this step. Separate from `Physics2DContactEvents` rather than
+// folded into it because a contact's life is a pairing the solver discovers, while a joint's is
+// authored — the two are read by different code for different reasons.
+export interface Physics2DJointEvents {
+  broke: Physics2DBrokenJoint[];
 }
 
 // A distance joint: holds two anchors a fixed distance apart. Zero `frequencyHz` makes a rigid bar;
@@ -424,8 +457,9 @@ export interface Physics2DRevoluteJoint extends Physics2DJoint {
 }
 
 // A weld joint: pins the anchors together AND locks the relative angle. Rigid attachment — a crate nailed
-// to a cart. Not the same as a body with two colliders: a weld can be broken at runtime, and it is solved
-// rather than exact, so it flexes under enough load.
+// to a cart. Not the same as a body with two colliders: a weld is solved rather than exact, so it flexes
+// under enough load, and being a joint it carries `breakForce`/`breakTorque` and can fail outright. It is
+// the kind those two thresholds fit best, because it is the only built-in that resists both ways at once.
 export interface Physics2DWeldJoint extends Physics2DJoint {
   referenceAngle: number;
 }
@@ -521,6 +555,9 @@ export interface Physics2DJointOptions {
   localAnchorBX?: number;
   localAnchorBY?: number;
   collideConnected?: boolean;
+  // Both default to `Infinity` — unbreakable.
+  breakForce?: number;
+  breakTorque?: number;
 }
 
 export interface Physics2DDistanceJointOptions extends Physics2DJointOptions {
@@ -601,6 +638,10 @@ export interface Physics2DMouseJointOptions {
   localAnchorY?: number;
   frequencyHz?: number;
   dampingRatio?: number;
+  // Both default to `Infinity` — unbreakable. A mouse joint's `maxForce` CLAMPS what it applies;
+  // these destroy it instead, which is a different thing to want.
+  breakForce?: number;
+  breakTorque?: number;
 }
 
 // The two halves of a joint's solve, registered together under a kind.

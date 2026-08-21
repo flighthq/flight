@@ -48,6 +48,10 @@ function createJointBase(options: Readonly<Physics2DJointOptions>): Physics2DJoi
     localAnchorBX: options.localAnchorBX ?? 0,
     localAnchorBY: options.localAnchorBY ?? 0,
     collideConnected: options.collideConnected ?? false,
+    // Unbreakable unless the caller says otherwise: a joint that silently failed under load would be a
+    // worse default than one that never does.
+    breakForce: options.breakForce ?? Number.POSITIVE_INFINITY,
+    breakTorque: options.breakTorque ?? Number.POSITIVE_INFINITY,
     impulse0: 0,
     impulse1: 0,
     impulse2: 0,
@@ -93,6 +97,8 @@ export function createPhysics2DMouseJoint(options: Readonly<Physics2DMouseJointO
     localAnchorBX: options.localAnchorX ?? 0,
     localAnchorBY: options.localAnchorY ?? 0,
     collideConnected: false,
+    breakForce: options.breakForce ?? Number.POSITIVE_INFINITY,
+    breakTorque: options.breakTorque ?? Number.POSITIVE_INFINITY,
     impulse0: 0,
     impulse1: 0,
     impulse2: 0,

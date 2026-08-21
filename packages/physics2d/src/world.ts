@@ -247,6 +247,7 @@ export function createPhysics2DWorld(gravityX = 0, gravityY = -9.81, index?: Spa
     jointSolvers: new Map(),
     jointCollisionSuppressions: new Map(),
     events: { began: [], ended: [] },
+    jointEvents: { broke: [] },
     contactHooks: { preSolve: null, postSolve: null },
     index: index ?? createUniformGridSpatialBackend2D(1),
     config: createPhysics2DSolverConfig(),
