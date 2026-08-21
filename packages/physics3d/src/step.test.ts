@@ -97,6 +97,19 @@ describe('stepPhysics3D', () => {
     expect(body.velocityY).toBe(0);
   });
 
+  it('declines before an invalid collider can generate a poisoned contact', () => {
+    const world = createTestWorld();
+    const body = addUnitBody(world);
+    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    addPhysics3DCollider(world, body, collider);
+    collider.material.friction = Number.NaN;
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(body.velocityY).toBe(0);
+    expect(world.contacts).toHaveLength(0);
+  });
+
   it('declines when substeps would advance nothing', () => {
     const world = createTestWorld();
     const body = addUnitBody(world);

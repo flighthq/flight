@@ -455,6 +455,7 @@ export interface Physics3DCollisionExplanation {
 
 export interface Physics3DStepExplanation {
   readonly bodyStateValid: boolean;
+  readonly colliderStateValid: boolean;
   readonly contactStateValid: boolean;
   readonly gravityValid: boolean;
   readonly jointStateValid: boolean;

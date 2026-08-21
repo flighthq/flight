@@ -6,6 +6,7 @@ import { createPhysics3DBallAndSocketJoint, createPhysics3DDistanceJoint } from 
 import { addPhysics3DJoint } from './jointRegistry';
 import {
   isPhysics3DBodyStateValid,
+  isPhysics3DColliderStateValid,
   isPhysics3DContactStateValid,
   isPhysics3DContactValid,
   isPhysics3DGravityValid,
@@ -16,7 +17,13 @@ import {
   isPhysics3DTimestepValid,
   isPhysics3DVelocityIterationsValid,
 } from './stepValidation';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+import {
+  addPhysics3DBody,
+  addPhysics3DCollider,
+  createPhysics3DCollider,
+  createPhysics3DWorld,
+  createRigidBody3D,
+} from './world';
 
 describe('isPhysics3DBodyStateValid', () => {
   it('accepts a freshly built world', () => {
@@ -55,6 +62,45 @@ describe('isPhysics3DBodyStateValid', () => {
     const mass = createTestWorld();
     mass.bodies[0].mass = -1;
     expect(isPhysics3DBodyStateValid(mass)).toBe(false);
+  });
+});
+
+describe('isPhysics3DColliderStateValid', () => {
+  it('accepts valid collider geometry, material, filter, and derived shape', () => {
+    const world = createTestWorld();
+    addPhysics3DCollider(
+      world,
+      world.bodies[0],
+      createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 }),
+    );
+
+    expect(isPhysics3DColliderStateValid(world)).toBe(true);
+  });
+
+  it('rejects degenerate authored geometry and a poisoned material', () => {
+    const shape = createTestWorld();
+    const shapeCollider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    addPhysics3DCollider(shape, shape.bodies[0], shapeCollider);
+    if (shapeCollider.local.kind === 'sphere') shapeCollider.local.radius = 0;
+    expect(isPhysics3DColliderStateValid(shape)).toBe(false);
+
+    const material = createTestWorld();
+    const materialCollider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    addPhysics3DCollider(material, material.bodies[0], materialCollider);
+    materialCollider.material.friction = Number.NaN;
+    expect(isPhysics3DColliderStateValid(material)).toBe(false);
+  });
+
+  it('rejects an incompatible derived kind and a fractional filter bitfield', () => {
+    const world = createTestWorld();
+    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    addPhysics3DCollider(world, world.bodies[0], collider);
+    collider.world = { kind: 'aabb', minX: -1, minY: -1, minZ: -1, maxX: 1, maxY: 1, maxZ: 1 };
+    expect(isPhysics3DColliderStateValid(world)).toBe(false);
+
+    collider.world = { kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 };
+    collider.filter.maskBits = 1.5;
+    expect(isPhysics3DColliderStateValid(world)).toBe(false);
   });
 });
 

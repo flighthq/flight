@@ -27,6 +27,7 @@ import {
 } from './solver';
 import {
   isPhysics3DBodyStateValid,
+  isPhysics3DColliderStateValid,
   isPhysics3DContactStateValid,
   isPhysics3DContactValid,
   isPhysics3DGravityValid,
@@ -70,6 +71,7 @@ export function stepPhysics3D(world: Physics3DWorld, dt: number): void {
     !isPhysics3DSolverConfigValid(config) ||
     !isPhysics3DGravityValid(world) ||
     !isPhysics3DBodyStateValid(world) ||
+    !isPhysics3DColliderStateValid(world) ||
     !isPhysics3DContactStateValid(world) ||
     !isPhysics3DJointStateValid(world)
   ) {

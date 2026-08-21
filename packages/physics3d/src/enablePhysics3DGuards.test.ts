@@ -6,7 +6,13 @@ import { createPhysics3DHingeJoint } from './jointFactories';
 import { addPhysics3DJoint } from './jointRegistry';
 import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
 import { stepPhysics3D } from './step';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+import {
+  addPhysics3DBody,
+  addPhysics3DCollider,
+  createPhysics3DCollider,
+  createPhysics3DWorld,
+  createRigidBody3D,
+} from './world';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
@@ -99,6 +105,19 @@ describe('enablePhysics3DGuards', () => {
     });
     expect(widened).toHaveLength(1);
     expect(readFailing(widened[0])).toContain('gravityValid');
+  });
+
+  it('names invalid collider state before contact intake can consume it', () => {
+    enablePhysics3DGuards();
+    const world = createTestWorld();
+    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    addPhysics3DCollider(world, world.bodies[0], collider);
+    collider.material.restitution = Number.NaN;
+
+    const entries = captureLog(() => stepPhysics3D(world, 1 / 60));
+
+    expect(entries).toHaveLength(1);
+    expect(readFailing(entries[0])).toEqual(['colliderStateValid']);
   });
 
   it('names every joint the solve skips and distinguishes why', () => {

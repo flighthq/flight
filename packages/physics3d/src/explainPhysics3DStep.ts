@@ -2,6 +2,7 @@ import type { Physics3DStepExplanation, Physics3DWorld } from '@flighthq/types/c
 
 import {
   isPhysics3DBodyStateValid,
+  isPhysics3DColliderStateValid,
   isPhysics3DContactStateValid,
   isPhysics3DGravityValid,
   isPhysics3DJointStateValid,
@@ -28,6 +29,7 @@ import {
 export function explainPhysics3DStep(world: Readonly<Physics3DWorld>, dt: number): Physics3DStepExplanation {
   const config = world.config;
   const bodyStateValid = isPhysics3DBodyStateValid(world);
+  const colliderStateValid = isPhysics3DColliderStateValid(world);
   const contactStateValid = isPhysics3DContactStateValid(world);
   const gravityValid = isPhysics3DGravityValid(world);
   const jointStateValid = isPhysics3DJointStateValid(world);
@@ -39,6 +41,7 @@ export function explainPhysics3DStep(world: Readonly<Physics3DWorld>, dt: number
 
   const ready =
     bodyStateValid &&
+    colliderStateValid &&
     contactStateValid &&
     gravityValid &&
     jointStateValid &&
@@ -50,6 +53,7 @@ export function explainPhysics3DStep(world: Readonly<Physics3DWorld>, dt: number
 
   return {
     bodyStateValid,
+    colliderStateValid,
     contactStateValid,
     gravityValid,
     jointStateValid,
