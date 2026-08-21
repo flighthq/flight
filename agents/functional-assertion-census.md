@@ -98,8 +98,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/effect-invert.canvas.ts` | able | L93: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/effect-invert.webgl.ts` | able | L96: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/effect-invert.webgpu.ts` | able | L101: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
-| `functional/scenes/effect-kuwahara.webgl.ts` | able | L104: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-kuwahara.webgpu.ts` | able | L107: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-kuwahara.webgl.ts` | able | L103: measureHighFrequency thresholds spatial neighbourhood order via deltas |
+| `functional/scenes/effect-kuwahara.webgpu.ts` | able | L106: measureHighFrequency thresholds spatial neighbourhood order via deltas |
 | `functional/scenes/effect-lens-distortion.canvas.ts` | able | L107: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
 | `functional/scenes/effect-lens-distortion.webgl.ts` | able | L104: getBitmapPixelRgb is thresholded at named coordinates (x, y) |
 | `functional/scenes/effect-lens-distortion.webgpu.ts` | able | L104: getBitmapPixelRgb is thresholded at named coordinates (x, y) |

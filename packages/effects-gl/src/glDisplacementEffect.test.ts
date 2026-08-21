@@ -32,10 +32,13 @@ import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderT
 const SOURCE_WIDTH = 128;
 const SOURCE_HEIGHT = 64;
 
-function apply(effect: Readonly<Partial<DisplacementEffect>> = {}): void {
+beforeEach(() => {
   programMock.getGlEffectProgram.mockClear();
   glMock.uniform1f.mockClear();
   glMock.uniform2f.mockClear();
+});
+
+function apply(effect: Readonly<Partial<DisplacementEffect>> = {}): void {
   const target = { height: SOURCE_HEIGHT, texture: {}, width: SOURCE_WIDTH } as unknown as GlRenderTarget;
   applyDisplacementEffectToGl({ gl: {} } as unknown as GlRenderState, target, target, {
     kind: 'DisplacementEffect',
