@@ -1,17 +1,86 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { readCaptureBaselineCoverageManifest } from '../packages/tool-capture/src/captureBaselineCoverageManifest';
 import type { FunctionalBackend } from '../packages/tool-capture/src/functionalScene3Ds';
 import {
   buildGroups,
+  cellGlyph,
   classifyBackendSupport,
   findFunctionalBackendSupport,
   findOrphanedBaselineFingerprints,
+  loadBaselineCoverage,
   loadRealizationCoverage,
   renderJson,
   renderMarkdown,
 } from './support';
+
+const REPO_ROOT = join(import.meta.dirname, '..');
+const FUNCTIONAL_BASELINES = join(REPO_ROOT, 'functional', 'baselines');
+
+function loadBackendObjectCoverage(directory: string): Map<string, Set<FunctionalBackend>> {
+  const coverage = new Map<string, Set<FunctionalBackend>>();
+  for (const file of readdirSync(directory).filter((name) => name.endsWith('.json'))) {
+    const baseline = JSON.parse(readFileSync(join(directory, file), 'utf8')) as Record<string, unknown>;
+    coverage.set(
+      file.replace(/\.json$/, ''),
+      backends(...(['canvas', 'dom', 'webgl', 'webgpu'] as const).filter((backend) => baseline[backend] != null)),
+    );
+  }
+  return coverage;
+}
+
+function supportGlyphs(groups: ReturnType<typeof buildGroups>): Map<string, string> {
+  return new Map(
+    groups.flatMap((group) =>
+      group.scenes.flatMap((scene) =>
+        scene.backends.map((backend) => [`${scene.scene}/${backend.backend}`, cellGlyph(backend)] as const),
+      ),
+    ),
+  );
+}
+
+describe('loadBaselineCoverage', () => {
+  it('requires a fingerprint rather than counting a sha256-only backend object', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'support-baselines-'));
+    try {
+      writeFileSync(
+        join(directory, 'mixed.json'),
+        JSON.stringify({
+          canvas: { sha256: 'a'.repeat(64) },
+          dom: null,
+          webgl: { fingerprint: '1:010203', sha256: 'b'.repeat(64) },
+          webgpu: { fingerprintProvenance: { sourceHash: 'c'.repeat(64) } },
+        }),
+      );
+
+      expect([...loadBaselineCoverage(directory).get('mixed')!]).toEqual(['webgl']);
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  });
+
+  it('changes exactly the manifest 88 unpinned identities from ticks to dots, by name', () => {
+    const realizations = loadRealizationCoverage();
+    const before = supportGlyphs(buildGroups(loadBackendObjectCoverage(FUNCTIONAL_BASELINES), realizations));
+    const after = supportGlyphs(buildGroups(loadBaselineCoverage(FUNCTIONAL_BASELINES), realizations));
+    const changedIdentities = [...before.keys()]
+      .filter((identity) => before.get(identity) !== after.get(identity))
+      .sort();
+    const manifestRows = readCaptureBaselineCoverageManifest(REPO_ROOT).subjects.functional ?? {};
+    const unpinnedIdentities = Object.entries(manifestRows)
+      .filter(([, kinds]) => kinds.includes('screenshot') && !kinds.includes('fingerprint'))
+      .map(([identity]) => identity)
+      .sort();
+
+    expect(changedIdentities).toHaveLength(88);
+    expect(changedIdentities).toEqual(unpinnedIdentities);
+    for (const identity of changedIdentities) {
+      expect([before.get(identity), after.get(identity)]).toEqual(['✓', '·']);
+    }
+  });
+});
 
 describe('buildGroups', () => {
   it('keeps fingerprint and realization as separate facts', () => {
