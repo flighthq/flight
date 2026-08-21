@@ -62,6 +62,25 @@ describe('collideContactManifold3D', () => {
     expect(collideContactManifold3D(ball, floor, out)).toBe(true);
     expect(out.pointCount).toBe(1);
     expect(out.points[0].y).toBeCloseTo(-0.05, 2);
+    expect(out.points[0].x).toBeCloseTo(ball.x, 12);
+    expect(out.points[0].z).toBeCloseTo(ball.z, 12);
+  });
+
+  it('does not turn a centred sphere-to-face impact into a corner impact', () => {
+    const wall = aabb(5, -5, -5, 5.5, 5, 5);
+    const ball: CollisionShape3D = { kind: 'sphere', x: 4.8, y: 0, z: 0, radius: 0.25 };
+
+    for (const [a, b] of [
+      [wall, ball],
+      [ball, wall],
+    ] as const) {
+      const out = createCollisionContactManifold3D();
+      expect(collideContactManifold3D(a, b, out)).toBe(true);
+      expect(out.pointCount).toBe(1);
+      expect(out.points[0].x).toBeCloseTo(5.025, 12);
+      expect(out.points[0].y).toBeCloseTo(0, 12);
+      expect(out.points[0].z).toBeCloseTo(0, 12);
+    }
   });
 
   it('gives a capsule lying on its side two points, so it cannot roll on one', () => {

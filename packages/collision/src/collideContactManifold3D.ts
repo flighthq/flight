@@ -54,7 +54,7 @@ export function collideContactManifold3D(
   const countB = faceQueryB === null ? 0 : faceQueryB(b, normalX, normalY, normalZ, faceB);
 
   if (countA < 2 || countB < 2) {
-    writeSingleContactPoint(a, b, normalX, normalY, normalZ, depth, out);
+    writeSingleContactPoint(a, b, normalX, normalY, normalZ, depth, countA, countB, out);
     return true;
   }
 
@@ -86,7 +86,7 @@ export function collideContactManifold3D(
     planeZ,
   );
   if (clippedCount === 0) {
-    writeSingleContactPoint(a, b, normalX, normalY, normalZ, depth, out);
+    writeSingleContactPoint(a, b, normalX, normalY, normalZ, depth, countA, countB, out);
     return true;
   }
 
@@ -108,7 +108,7 @@ export function collideContactManifold3D(
     out.pointCount += 1;
   }
 
-  if (out.pointCount === 0) writeSingleContactPoint(a, b, normalX, normalY, normalZ, depth, out);
+  if (out.pointCount === 0) writeSingleContactPoint(a, b, normalX, normalY, normalZ, depth, countA, countB, out);
   return true;
 }
 
@@ -250,8 +250,14 @@ function packContactFeatureId3D(referenceIsA: boolean, slot: number): number {
   return (referenceIsA ? MAX_COLLISION_CONTACT_POINTS_3D : 0) + slot;
 }
 
-// Writes the single-point fallback: the midpoint of the two shapes' surfaces along the contact normal.
-// Used when either shape is curved along the contact direction, and when clipping leaves nothing.
+// Writes the single-point fallback: halfway between the two surfaces ALONG the contact normal.
+//
+// The tangential coordinates cannot blindly be averaged between support points. A flat face has
+// infinitely many supports along its normal, and the support registry deliberately resolves that tie
+// to one corner. Averaging that arbitrary corner with a sphere's unique support invents an off-centre
+// contact and therefore an enormous torque on a head-on impact. When exactly one shape lacks a face,
+// its unique curved support owns the tangential coordinates; only its normal coordinate moves to the
+// mid-plane. With two point-like features, averaging remains the symmetric answer.
 function writeSingleContactPoint(
   a: Readonly<CollisionShape3D>,
   b: Readonly<CollisionShape3D>,
@@ -259,6 +265,8 @@ function writeSingleContactPoint(
   normalY: number,
   normalZ: number,
   depth: number,
+  faceCountA: number,
+  faceCountB: number,
   out: CollisionContactManifold3D,
 ): void {
   const supportA = getCollisionSupport3D(a.kind);
@@ -270,9 +278,24 @@ function writeSingleContactPoint(
   supportA(a, -normalX, -normalY, -normalZ, surfaceA);
   supportB(b, normalX, normalY, normalZ, surfaceB);
   const point = out.points[0];
-  point.x = (surfaceA[0] + surfaceB[0]) / 2;
-  point.y = (surfaceA[1] + surfaceB[1]) / 2;
-  point.z = (surfaceA[2] + surfaceB[2]) / 2;
+  const projectionA = surfaceA[0] * normalX + surfaceA[1] * normalY + surfaceA[2] * normalZ;
+  const projectionB = surfaceB[0] * normalX + surfaceB[1] * normalY + surfaceB[2] * normalZ;
+  const middleProjection = (projectionA + projectionB) / 2;
+  if (faceCountA < 2 && faceCountB >= 2) {
+    const shift = middleProjection - projectionA;
+    point.x = surfaceA[0] + normalX * shift;
+    point.y = surfaceA[1] + normalY * shift;
+    point.z = surfaceA[2] + normalZ * shift;
+  } else if (faceCountB < 2 && faceCountA >= 2) {
+    const shift = middleProjection - projectionB;
+    point.x = surfaceB[0] + normalX * shift;
+    point.y = surfaceB[1] + normalY * shift;
+    point.z = surfaceB[2] + normalZ * shift;
+  } else {
+    point.x = (surfaceA[0] + surfaceB[0]) / 2;
+    point.y = (surfaceA[1] + surfaceB[1]) / 2;
+    point.z = (surfaceA[2] + surfaceB[2]) / 2;
+  }
   point.depth = depth;
   point.featureId = 0;
   out.pointCount = 1;
