@@ -1,6 +1,7 @@
 export {
   addLogSink,
   beginLogGroup,
+  clearLogChannelLevel,
   clearLogChannelLevels,
   clearLogGroups,
   clearLogOnceKeys,

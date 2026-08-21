@@ -45,6 +45,11 @@ export function beginLogGroup(label: string, channel: string | null = null): voi
   _emitToSinks({ level: LogLevel.Debug, channel, data: { msg: label, group: 'begin', depth: _groupDepth } });
 }
 
+// Listener side. Clears one per-channel level override so the channel inherits the global level.
+export function clearLogChannelLevel(channel: string): void {
+  _channelLevels.delete(channel);
+}
+
 // Listener side. Clears all per-channel level overrides.
 export function clearLogChannelLevels(): void {
   _channelLevels.clear();

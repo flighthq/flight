@@ -5,6 +5,7 @@ import { LogLevel } from '@flighthq/types/contract';
 import {
   addLogSink,
   beginLogGroup,
+  clearLogChannelLevel,
   clearLogChannelLevels,
   clearLogGroups,
   clearLogOnceKeys,
@@ -140,6 +141,18 @@ describe('beginLogGroup', () => {
 
     expect(entries).toHaveLength(0);
     clearLogGroups();
+  });
+});
+
+describe('clearLogChannelLevel', () => {
+  it('removes only the named channel override', () => {
+    setLogChannelLevel('render', LogLevel.Error);
+    setLogChannelLevel('input', LogLevel.Warn);
+
+    clearLogChannelLevel('render');
+
+    expect(getLogChannelLevel('render')).toBeNull();
+    expect(getLogChannelLevel('input')).toBe(LogLevel.Warn);
   });
 });
 

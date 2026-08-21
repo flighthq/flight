@@ -20,8 +20,10 @@ export type DebugSubsystemName =
 // The wiring a subsystem contributes to the debug umbrella: the log channels whose verbosity is
 // raised when the subsystem is enabled, and its guard-enabler / -disabler bindings (the owning
 // package's own `enable*Guards` / `disable*Guards`, wired in without @flighthq/debug importing the
-// package). All fields are optional — a subsystem may contribute channels only, guards only, or
-// both. Registered as a unit via registerDebugSubsystem.
+// package). `disableGuards` must be safe and a no-op when `enableGuards` was absent or stopped after
+// partially enabling the subsystem, so enableDebug can unwind a failed transaction. All fields are
+// optional — a subsystem may contribute channels only, guards only, or both. Registered as a unit
+// via registerDebugSubsystem.
 export interface DebugSubsystemHooks {
   channels?: readonly string[];
   enableGuards?: () => void;

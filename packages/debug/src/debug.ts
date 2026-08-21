@@ -1,7 +1,9 @@
 import {
   addLogSink,
+  clearLogChannelLevel,
   clearLogChannelLevels,
   createConsoleLogSink,
+  getLogChannelLevel,
   getLogLevel,
   removeLogSink,
   setLogChannelLevel,
@@ -44,11 +46,42 @@ export function enableDebug(options: Readonly<DebugOptions> = {}): void {
   const channels = _collectDebugChannels(subsystems, options.channels);
 
   _savedGlobalLevel = getLogLevel();
-  _applyDebugLevels(level, channels);
-  _installDebugSink(options.sink ?? createConsoleLogSink());
-  for (const hooks of subsystems) {
-    hooks.enableGuards?.();
-    _enabledSubsystems.push(hooks);
+  const savedChannelLevels = new Map(channels.map((channel) => [channel, getLogChannelLevel(channel)]));
+  try {
+    _applyDebugLevels(level, channels);
+    _installDebugSink(options.sink ?? createConsoleLogSink());
+    for (const hooks of subsystems) {
+      _enabledSubsystems.push(hooks);
+      hooks.enableGuards?.();
+    }
+  } catch (error) {
+    for (let index = _enabledSubsystems.length - 1; index >= 0; index--) {
+      try {
+        _enabledSubsystems[index].disableGuards?.();
+      } catch {
+        // Keep unwinding; the original enable error owns this failed transaction.
+      }
+    }
+    _enabledSubsystems.length = 0;
+    try {
+      _removeDebugSink();
+    } catch {
+      // Keep restoring levels; the original enable error must not be masked.
+    }
+    for (const [channel, savedLevel] of savedChannelLevels) {
+      try {
+        if (savedLevel === null) clearLogChannelLevel(channel);
+        else setLogChannelLevel(channel, savedLevel);
+      } catch {
+        // Keep restoring the remaining levels; the original enable error must survive.
+      }
+    }
+    try {
+      setLogLevel(_savedGlobalLevel);
+    } catch {
+      // The original enable error remains the public failure even if rollback also fails.
+    }
+    throw error;
   }
   _enabled = true;
 }
