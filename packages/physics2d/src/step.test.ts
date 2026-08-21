@@ -6,11 +6,11 @@ import type {
   SpatialIndexBackend2D,
   SpatialPair,
 } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
 import { physics2DDistanceJointSolver } from './joints';
-import { stepPhysics2D } from './step';
+import { setPhysics2DJointResolutionGuard, setPhysics2DStepGuard, stepPhysics2D } from './step';
 import {
   addPhysics2DBody,
   applyPhysics2DForce,
@@ -857,6 +857,149 @@ describe('sensor reporting between immovable bodies', () => {
     stepPhysics2D(world, 1 / 60);
     expect(world.events.ended).toHaveLength(1);
     expect(world.contacts).toHaveLength(0);
+  });
+});
+
+// The seams themselves, tested for installation and removal only. What the installed guards SAY is
+// enablePhysics2DGuards.test.ts's subject; what the step promises is that it consults them at the right
+// moments and not otherwise.
+describe('setPhysics2DJointResolutionGuard', () => {
+  afterEach(() => {
+    setPhysics2DJointResolutionGuard(null);
+  });
+
+  it('consults the seam once per step that will actually run', () => {
+    const world = createPhysics2DWorld(0, -10);
+    box(world, 0, 0);
+    let calls = 0;
+    setPhysics2DJointResolutionGuard(() => {
+      calls++;
+    });
+
+    // No joints at all: nothing to resolve, so nothing to ask about.
+    stepPhysics2D(world, 1 / 60);
+    expect(calls).toBe(0);
+
+    const joint: Physics2DJoint = {
+      kind: 'acme.Unregistered',
+      bodyA: world.bodies[0].index,
+      bodyB: world.bodies[0].index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    };
+    addPhysics2DJoint(world, joint);
+    stepPhysics2D(world, 1 / 60);
+    stepPhysics2D(world, 1 / 60);
+    expect(calls).toBe(2);
+  });
+
+  it('leaves the joint seam alone on a step that declines its preconditions', () => {
+    const world = createPhysics2DWorld(0, -10);
+    box(world, 0, 0);
+    addPhysics2DJoint(world, {
+      kind: 'acme.Unregistered',
+      bodyA: world.bodies[0].index,
+      bodyB: world.bodies[0].index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    } satisfies Physics2DJoint);
+    world.config.velocityIterations = -1;
+    let calls = 0;
+    setPhysics2DJointResolutionGuard(() => {
+      calls++;
+    });
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(calls).toBe(0);
+  });
+
+  it('removes the seam when passed null', () => {
+    const world = createPhysics2DWorld(0, -10);
+    box(world, 0, 0);
+    addPhysics2DJoint(world, {
+      kind: 'acme.Unregistered',
+      bodyA: world.bodies[0].index,
+      bodyB: world.bodies[0].index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    } satisfies Physics2DJoint);
+    let calls = 0;
+    setPhysics2DJointResolutionGuard(() => {
+      calls++;
+    });
+    setPhysics2DJointResolutionGuard(null);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(calls).toBe(0);
+  });
+});
+
+describe('setPhysics2DStepGuard', () => {
+  afterEach(() => {
+    setPhysics2DStepGuard(null);
+  });
+
+  it('consults the seam with the rejected timestep only when the step declines', () => {
+    const world = createPhysics2DWorld(0, -10);
+    box(world, 0, 0);
+    const seen: number[] = [];
+    setPhysics2DStepGuard((_world, dt) => {
+      seen.push(dt);
+    });
+
+    stepPhysics2D(world, 1 / 60);
+    expect(seen).toEqual([]);
+
+    // The guard receives the dt that was rejected, not a sanitized one, or a caller cannot tell which
+    // value its own frame loop produced.
+    stepPhysics2D(world, Number.NaN);
+    expect(seen).toHaveLength(1);
+    expect(Number.isNaN(seen[0])).toBe(true);
+  });
+
+  it('removes the seam when passed null', () => {
+    const world = createPhysics2DWorld(0, -10);
+    let calls = 0;
+    setPhysics2DStepGuard(() => {
+      calls++;
+    });
+    setPhysics2DStepGuard(null);
+
+    stepPhysics2D(world, -1);
+
+    expect(calls).toBe(0);
   });
 });
 

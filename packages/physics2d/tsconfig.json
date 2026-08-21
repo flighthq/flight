@@ -13,6 +13,9 @@
       "path": "../collision"
     },
     {
+      "path": "../log"
+    },
+    {
       "path": "../math"
     },
     {

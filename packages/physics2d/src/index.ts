@@ -4,6 +4,7 @@ export {
   writePhysics2DColliderBounds,
 } from './colliderTransform';
 export { createPhysics2DDebugGeometry, writePhysics2DDebugGeometry } from './debugGeometry';
+export { arePhysics2DGuardsEnabled, disablePhysics2DGuards, enablePhysics2DGuards } from './enablePhysics2DGuards';
 export { explainPhysics2DJoints } from './explainPhysics2DJoints';
 export { explainPhysics2DStep } from './explainPhysics2DStep';
 export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';
