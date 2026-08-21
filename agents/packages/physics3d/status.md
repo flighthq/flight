@@ -70,9 +70,10 @@ built.
   ragdolls and suspensions want springy ones. The soft-row machinery exists now in
   `physics3DDistanceJointSolver`: stiffness and damping derived per-step from the pair's own effective
   mass, which is what keeps a stated frequency meaning the same thing whatever it is attached to.
-- **No joint BREAKS, in either dimension.** No `breakForce`/`breakTorque` and no event lane to report one.
-  Every impulse the check would read is already accumulated per joint, so this is a threshold test plus a
-  way to tell the caller, not new solver math.
+- **A broken joint STAYS IN THE WORLD.** It constrains nothing and no longer binds its two bodies into
+  one island, but removing it is the caller's — what a break means (debris, a callback, a respawn) is not
+  the solver's to decide, and a joint that deleted itself would leave nothing to inspect. `physics2d` has
+  no breakage at all yet.
 - **The guard module covers the declined STEP and the undetectable COLLIDER, not yet the unregistered
   JOINT.** A joint whose kind has no registered solver is skipped without a word, and
   `explainPhysics3DJoints` already classifies it as `unregistered-kind`. Closing it means a third seam on
@@ -81,6 +82,20 @@ built.
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Joint REACTIONS and breakage. `writePhysics3DJointReaction` reports the force and
+  torque a joint is carrying, measured at the ANCHOR so the two readings are independent — the row helper
+  subtracts `rB x direction`, which is exactly the torque a linear row exerts about the centre purely by
+  acting at an offset, and leaving it in would make a hanging weight register as twist. Each of the seven
+  kinds reports its own, because the `impulse0..5` slots mean different things per kind (three world axes
+  for a point block, one axial scalar for a distance joint) and only the kind that wrote them can say what
+  they sum to. `breakForce`/`breakTorque` then read that same public number, so a threshold fires on a
+  value the caller could have inspected first. One real bug, and it was already shipped in the distance
+  joint: `isPhysics3DJointValid` walks every numeric field and rejects non-finite, so the infinite defaults
+  (`breakForce`, and `maxLength` on a rope) made every joint invalid and the world DECLINED TO STEP —
+  silently, since an invalid step is skipped rather than thrown. It presented as a hinge motor that would
+  not turn and contacts that never fired, with nothing naming the joint. The validator now exempts the
+  fields where infinity is the value; `stepValidation.test.ts` pins it.
 
 - **2026-08-21** — GJK witness points, and the 3D DISTANCE joint. `writeCollisionDistance3D` now reports
   the closest point on each shape, recovered by applying the closest point's barycentric weights to the
