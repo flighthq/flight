@@ -5,6 +5,7 @@ import type {
   Physics3DGeneric6DofJoint,
   Physics3DHingeJoint,
   Physics3DJoint,
+  Physics3DJointReaction,
   Physics3DJointSolver,
   Physics3DSliderJoint,
   Physics3DWorld,
@@ -17,6 +18,7 @@ import {
   writePhysics3DJointRotationError,
   writePhysics3DJointSeparation,
 } from './jointMath';
+import { accumulatePhysics3DJointRowReaction, clearPhysics3DJointReaction } from './jointReaction';
 import {
   applyRow,
   beginJointSolve,
@@ -75,6 +77,16 @@ export const physics3DBallAndSocketJointSolver: Physics3DJointSolver = {
       return;
     }
     preparePointBlock(bodyA, bodyB, joint, beginJointSolve(joint, POINT_LENGTH), dt);
+  },
+
+  // A point block's three rows ARE the world axes acting at the anchor, so its accumulators are already
+  // the world-space linear impulse and no row arithmetic is needed. It reports no torque because it
+  // constrains no rotation — a zero here is a measurement, not a gap.
+  writeReaction(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean {
+    if (getJointSolveState(joint) === undefined) return false;
+    clearPhysics3DJointReaction(out);
+    writePointBlockForce(joint, inverseDt, out);
+    return true;
   },
 
   solve(world: Physics3DWorld, joint: Physics3DJoint): void {
@@ -240,6 +252,19 @@ export const physics3DDistanceJointSolver: Physics3DJointSolver = {
     }
   },
 
+  // One axial row carrying up to three accumulators, which sum because they act along the SAME direction:
+  // the rest-length impulse and the two one-sided limits are all pushes or pulls on the one axis.
+  writeReaction(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean {
+    const distance = joint as Physics3DDistanceJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return false;
+    clearPhysics3DJointReaction(out);
+    let axial = state[DISTANCE_REST_ACTIVE] === 1 ? joint.impulse0 : 0;
+    if (distance.enableLimit) axial += (distance.lowerLimitImpulse ?? 0) - (distance.upperLimitImpulse ?? 0);
+    accumulatePhysics3DJointRowReaction(joint, state, DISTANCE_ROW, axial * inverseDt, out);
+    return true;
+  },
+
   // Nothing to reverse. Every quantity this kind carries is an unsigned scalar along a line, and a line has
   // the same length read from either end — unlike a hinge's angles, which are positions on an axis that
   // reverses with the ends. The two limit accumulators are magnitudes of "push apart" and "pull together",
@@ -303,6 +328,14 @@ export const physics3DFixedJointSolver: Physics3DJointSolver = {
     if (bodyA === null || bodyB === null) return;
     solveAngularBlock(bodyA, bodyB, joint, state, FIXED_ANGULAR_MASS, FIXED_ANGULAR_BIAS);
     solvePointBlock(bodyA, bodyB, joint, state);
+  },
+
+  writeReaction(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean {
+    if (getJointSolveState(joint) === undefined) return false;
+    clearPhysics3DJointReaction(out);
+    writePointBlockForce(joint, inverseDt, out);
+    writeAngularBlockTorque(joint, inverseDt, out);
+    return true;
   },
 
   warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
@@ -504,6 +537,22 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
     solvePointBlock(bodyA, bodyB, joint, state);
   },
 
+  // Two lock rows plus the axis row, each read against the accumulator its own `warmStart` reapplies.
+  // The motor and the limits share the axis row and therefore add: both are torques about the hinge.
+  writeReaction(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean {
+    const hinge = joint as Physics3DHingeJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return false;
+    clearPhysics3DJointReaction(out);
+    writePointBlockForce(joint, inverseDt, out);
+    accumulatePhysics3DJointRowReaction(joint, state, HINGE_LOCK_ROW0, joint.impulse3 * inverseDt, out);
+    accumulatePhysics3DJointRowReaction(joint, state, HINGE_LOCK_ROW1, joint.impulse4 * inverseDt, out);
+    let axial = hinge.enableMotor ? (hinge.motorImpulse ?? 0) : 0;
+    if (hinge.enableLimit) axial += (hinge.lowerLimitImpulse ?? 0) - (hinge.upperLimitImpulse ?? 0);
+    accumulatePhysics3DJointRowReaction(joint, state, HINGE_AXIS_ROW, axial * inverseDt, out);
+    return true;
+  },
+
   warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
     const hinge = joint as Physics3DHingeJoint;
     const state = getJointSolveState(joint);
@@ -675,6 +724,31 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
     }
 
     solvePointBlock(bodyA, bodyB, joint, state);
+  },
+
+  // The swing row is read only while it is the ACTIVE side of the cone, matching `warmStart`: outside
+  // that the row was never built this sub-interval and its axis is stale, so reading it would attribute a
+  // real load to an arbitrary direction.
+  writeReaction(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean {
+    const cone = joint as Physics3DConeTwistJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return false;
+    clearPhysics3DJointReaction(out);
+    writePointBlockForce(joint, inverseDt, out);
+    if (cone.enableSwingLimit && state[CONE_SWING_ACTIVE] === 1) {
+      accumulatePhysics3DJointRowReaction(
+        joint,
+        state,
+        CONE_SWING_ROW,
+        -(cone.swingLimitImpulse ?? 0) * inverseDt,
+        out,
+      );
+    }
+    if (cone.enableTwistLimit) {
+      const twist = (cone.lowerTwistImpulse ?? 0) - (cone.upperTwistImpulse ?? 0);
+      accumulatePhysics3DJointRowReaction(joint, state, CONE_TWIST_ROW, twist * inverseDt, out);
+    }
+    return true;
   },
 
   warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
@@ -857,6 +931,27 @@ export const physics3DGeneric6DofJointSolver: Physics3DJointSolver = {
   // Locked axes reapply the equality block's slot; limited axes reapply their own pair of one-sided
   // accumulators. The two come from different places because a locked axis is one signed row while a limited
   // axis is two rows that may only push, and neither can be read out of the other's storage.
+  // Six rows, each read against the accumulator its MODE selects — a free axis carries nothing, a locked
+  // one its equality impulse, a limited one the difference of its two stops. The first three rows are
+  // linear and the last three angular, and the row arithmetic sorts that out without a special case.
+  writeReaction(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean {
+    const dof = joint as Physics3DGeneric6DofJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return false;
+    clearPhysics3DJointReaction(out);
+    for (let axis = 0; axis < 6; axis += 1) {
+      const mode = state[DOF_MODE + axis];
+      const rowOffset = DOF_ROWS + axis * ROW_LENGTH;
+      if (mode === DOF_LOCKED) {
+        accumulatePhysics3DJointRowReaction(joint, state, rowOffset, readJointImpulse(joint, axis) * inverseDt, out);
+      } else if (mode === DOF_LIMITED) {
+        const limited = dof.lowerLimitImpulses[axis] - dof.upperLimitImpulses[axis];
+        accumulatePhysics3DJointRowReaction(joint, state, rowOffset, limited * inverseDt, out);
+      }
+    }
+    return true;
+  },
+
   warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
     const dof = joint as Physics3DGeneric6DofJoint;
     const state = getJointSolveState(joint);
@@ -1042,6 +1137,22 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
     );
   },
 
+  // Two perpendicular LINEAR rows carry the load across the rail, and the axis row carries the motor and
+  // the stops ALONG it. The angular block is the rotation lock, read as a world-axis triple.
+  writeReaction(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): boolean {
+    const slider = joint as Physics3DSliderJoint;
+    const state = getJointSolveState(joint);
+    if (state === undefined) return false;
+    clearPhysics3DJointReaction(out);
+    accumulatePhysics3DJointRowReaction(joint, state, SLIDER_PERP_ROW0, joint.impulse0 * inverseDt, out);
+    accumulatePhysics3DJointRowReaction(joint, state, SLIDER_PERP_ROW1, joint.impulse1 * inverseDt, out);
+    let axial = slider.enableMotor ? (slider.motorImpulse ?? 0) : 0;
+    if (slider.enableLimit) axial += (slider.lowerLimitImpulse ?? 0) - (slider.upperLimitImpulse ?? 0);
+    accumulatePhysics3DJointRowReaction(joint, state, SLIDER_AXIS_ROW, axial * inverseDt, out);
+    writeAngularBlockTorque(joint, inverseDt, out);
+    return true;
+  },
+
   warmStart(world: Physics3DWorld, joint: Physics3DJoint): void {
     const slider = joint as Physics3DSliderJoint;
     const state = getJointSolveState(joint);
@@ -1078,6 +1189,26 @@ function getSignedAxisAngle(basisA: readonly number[], basisB: readonly number[]
   const crossZ = basisA[3] * basisB[4] - basisA[4] * basisB[3];
   const sine = crossX * basisA[0] + crossY * basisA[1] + crossZ * basisA[2];
   return Math.atan2(sine, dot(basisA, 3, basisB, 3));
+}
+
+// The linear force a point block carried. Its accumulators are world-axis impulses, so this is a scale
+// rather than a projection.
+function writePointBlockForce(joint: Readonly<Physics3DJoint>, inverseDt: number, out: Physics3DJointReaction): void {
+  out.forceX += joint.impulse0 * inverseDt;
+  out.forceY += joint.impulse1 * inverseDt;
+  out.forceZ += joint.impulse2 * inverseDt;
+}
+
+// The torque an angular block carried. Like the point block, its three accumulators are already world-axis
+// impulses — the block is built from the summed inverse inertia tensors rather than from named rows.
+function writeAngularBlockTorque(
+  joint: Readonly<Physics3DJoint>,
+  inverseDt: number,
+  out: Physics3DJointReaction,
+): void {
+  out.torqueX += joint.impulse3 * inverseDt;
+  out.torqueY += joint.impulse4 * inverseDt;
+  out.torqueZ += joint.impulse5 * inverseDt;
 }
 
 const BAUMGARTE = 0.2;

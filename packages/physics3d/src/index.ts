@@ -90,3 +90,13 @@ export {
 } from './worldQueries';
 export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
 export { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';
+
+export { breakPhysics3DJoint, evaluatePhysics3DJointBreakage, isPhysics3DJointBreakable } from './jointBreakage';
+export {
+  accumulatePhysics3DJointRowReaction,
+  clearPhysics3DJointReaction,
+  createPhysics3DJointReaction,
+  getPhysics3DJointReactionForce,
+  getPhysics3DJointReactionTorque,
+  writePhysics3DJointReaction,
+} from './jointReaction';
