@@ -28,10 +28,10 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
-  'Four narrow colored bars (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 180×32 on dark background (0x101014), rotated 18°/42°/66°/90°. No post-process effects applied — empty effects array. Edges show visible aliasing stair-steps (sampleCount currently no-ops on Wgpu — the offscreen target is single-sampled).',
+  'Four narrow colored bars (pink 0xff5c7c, green 0x5cff9c, blue 0x5c9cff, gold 0xffd25c) of 180×32 on dark background (0x101014), rotated 18°/42°/66°/90°. No post-process effects applied — empty effects array. Diagonal edges are smooth from the 2x-per-axis supersample-and-resolve the Wgpu effect target performs for sampleCount 4, matching the Gl cell.',
 );
 
-// Wgpu parity column for the MSAA reference scene. NOTE: sampleCount currently no-ops on the Wgpu
+// Wgpu parity column for the MSAA reference scene. NOTE: sampleCount is honoured on the Wgpu
 // effect pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu
 // target is a follow-up, mirroring the Gl seam. We still render the same rotated shapes through the
 // pipeline with an empty effect list so the column exists for visual comparison; its edges may alias
@@ -110,22 +110,24 @@ function countPartialCoveragePixels(frame: Readonly<Bitmap>): number {
   return partial;
 }
 
-// ★ THIS CELL ASSERTS THE ABSENCE ITS DESCRIPTION CLAIMS, and that is deliberate. Wgpu silently
-// downgrades any sampleCount above 1 to 1, so the identical scene that antialiases on Gl comes out with
-// hard stair-stepped edges here. Measured: 0 partial pixels, against 258 on Gl.
+// ★ THIS CELL USED TO ASSERT THE ABSENCE OF ANTIALIASING, AND ITS TRIPWIRE FIRED AS DESIGNED. Wgpu
+// silently downgraded any sampleCount above 1 to 1, so the scene that antialiased on Gl came out hard
+// here — measured 0 partial pixels against 258 on Gl. The old assertion said, in as many words, that if
+// multisampling ever landed it should go red and point at this file. It did: `7260ece8b` made the effect
+// target honour sampleCount 4 and `433491851` fixed the projection that had it rendering into a quarter
+// of that target, and this cell reported 424 partial pixels.
 //
-// If multisampling ever lands on Wgpu this assertion FAILS, which is the behaviour it should have — the
-// description above says the edges are aliased, and a picture that quietly stopped matching its own
-// description is worse than a red cell pointing at the file to update.
-const MAX_ALIASED_EDGE_PIXELS = 40;
+// So the cell now asserts the PRESENCE of the antialiasing, on the same threshold as its Gl sibling. The
+// two backends reach it differently — Gl resolves a real multisample renderbuffer, Wgpu supersamples 2x
+// per axis and resolves — and the point of the pair is that the PICTURE agrees, not the mechanism.
+const MIN_ANTIALIASED_EDGE_PIXELS = 80;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
   const partial = countPartialCoveragePixels(frame);
-  if (partial > MAX_ALIASED_EDGE_PIXELS) {
+  if (partial < MIN_ANTIALIASED_EDGE_PIXELS) {
     throw new Error(
-      `[effect-msaa] ${partial} partial-coverage pixels (expected at most ${MAX_ALIASED_EDGE_PIXELS}) — ` +
-        `the edges are antialiased, so sampleCount is no longer a no-op on Wgpu; update this cell and ` +
-        `its description, which both state that it is`,
+      `[effect-msaa] ${partial} partial-coverage pixels (expected at least ${MIN_ANTIALIASED_EDGE_PIXELS}) — ` +
+        `the edges are aliased, so the Wgpu effect target stopped honouring sampleCount 4`,
     );
   }
 }

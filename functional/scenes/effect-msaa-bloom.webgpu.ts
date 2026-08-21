@@ -29,10 +29,10 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 declareAntialiasingPolicy('aa');
 
 declareExpectedImageDescription(
-  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Soft glowing halos bleeding outward from the bloom effect (threshold 0.6, intensity 1.4, rgba16f pipeline). Edges show visible aliasing stair-steps (sampleCount currently no-ops on Wgpu — the offscreen target is single-sampled).',
+  'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Soft glowing halos bleeding outward from the bloom effect (threshold 0.6, intensity 1.4, rgba16f pipeline). Edges are smooth: the Wgpu effect target honours sampleCount 4 by supersampling 2x per axis and resolving, matching the Gl cell.',
 );
 
-// Wgpu parity column for MSAA + bloom. NOTE: sampleCount currently no-ops on the Wgpu effect
+// Wgpu parity column for MSAA + bloom. NOTE: sampleCount is honoured on the Wgpu effect
 // pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu target
 // is a follow-up, mirroring the Gl seam. The bloom scene2d still runs over the HDR rgba16f scene, so
 // this column verifies effect compose; its edges may alias more than Gl's until Wgpu MSAA lands.
@@ -107,15 +107,17 @@ const MIN_GRADIENT_RATIO = 0.1;
 const MAX_FIELD_CENTRE_LUMINANCE = 15;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
-  // ★ ASSERT THE GAP THE DESCRIPTION NAMES. Bloom makes partial-pixel counts unsuitable for detecting
-  // MSAA in this cell, but the pipeline records the sample count it actually applied. When Wgpu starts
-  // honoring the requested four samples, fail before the aliased-edge prose can silently become false.
+  // ★ ASSERT THE SAMPLE COUNT THE DESCRIPTION NAMES. Bloom makes partial-pixel counts unsuitable for
+  // detecting MSAA in this cell, but the pipeline records the sample count it actually applied — so that
+  // is what this reads. It used to assert the OPPOSITE, that Wgpu fell back to a single sample, with a
+  // note saying to fail loudly if multisampling ever landed. It landed, this fired, and the direction
+  // flipped rather than the check being deleted: the prose above now says the edges are smooth, and this
+  // is what keeps that claim honest if the fallback ever returns.
   const appliedSampleCount = pipeline.options.sampleCount ?? 1;
-  if (appliedSampleCount !== 1) {
+  if (appliedSampleCount !== 4) {
     throw new Error(
       `[effect-msaa-bloom] the Wgpu pipeline applied sampleCount ${appliedSampleCount}, not the ` +
-        `single-sample fallback — multisampling has landed; update this cell and its description, which ` +
-        `both say the edges remain aliased`,
+        `requested 4 — the effect target stopped honouring multisampling and these edges are now aliased`,
     );
   }
 
