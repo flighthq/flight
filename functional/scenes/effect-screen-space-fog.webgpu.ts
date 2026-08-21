@@ -26,7 +26,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 field shows four 140×140 rotated squares in a 2×2 arrangement: white at (224,180), ' +
@@ -48,7 +48,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuScreenSpaceFogEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba8' });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba8' });
 
 export const scale = pixelRatio;
 export const width = 800;

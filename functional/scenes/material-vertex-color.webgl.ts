@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with a blue-tinted (0x40a0e0) sphere centered at (0.5*W, 0.5*H) = (400, 300), tangent-silhouette radius H*tan(asin(0.5/3))/(2*tan(PI/8)) ≈ 122 px (spanning x 278–522, y 178–422). The geometry has no per-vertex color data, so the tint appears as a flat uniform color across the sphere. A directional light from the upper right illuminates the right hemisphere while the left hemisphere falls into shadow. Frame corners are dark background.',
@@ -44,7 +44,7 @@ export const state = createGlRenderState(canvas, {
 registerGlVertexColorMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

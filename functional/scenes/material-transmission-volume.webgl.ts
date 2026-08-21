@@ -37,7 +37,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with a translucent sphere centered at (0.5*W, 0.5*H) = (400, 300), tangent-silhouette radius H*tan(asin(0.5/3))/(2*tan(PI/8)) ≈ 122 px (spanning x 278–522, y 178–422), over a backdrop of five vertical color stripes (red, cyan, yellow, purple, green) placed behind the sphere. The sphere refracts and tints the striped backdrop through its volume — the stripes are visible through the sphere but distorted and color-shifted by a blue attenuation. The sphere base color is mid-gray (0x808080). Frame corners are dark background.',
@@ -57,7 +57,7 @@ registerGlExtendedPbrMaterial(state);
 registerGlUnlitMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });
@@ -66,7 +66,7 @@ const opaqueSceneTarget = createGlRenderTarget(state, {
   depth: 'depth-stencil',
   format: 'rgba8',
   height: canvas.height,
-  sampleCount: 4,
+  sampleCount: 1,
   width: canvas.width,
 });
 

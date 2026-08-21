@@ -31,7 +31,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'A top-down 800×600 view is filled edge to edge by a large light-grey ground plane. Three similar ' +
@@ -60,7 +60,7 @@ registerGlBlinnPhongMaterial(state);
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
-  sampleCount: 4,
+  sampleCount: 1,
 });
 
 export const scale = pixelRatio;

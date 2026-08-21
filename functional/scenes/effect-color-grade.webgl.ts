@@ -25,7 +25,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 
 // Color grade: a single grade pass pushes saturation, contrast, and a warm temperature shift across
 // the whole frame. Colorful source shapes make the saturation and contrast changes easy to read.
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with six upright rectangles of about 120 x 160, in ' +
@@ -50,7 +50,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

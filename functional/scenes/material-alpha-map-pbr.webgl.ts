@@ -31,7 +31,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field filled edge to edge by a single camera-facing PBR quad over a deep blue background ' +
@@ -71,7 +71,7 @@ registerStandardGlTextureResolvers(state);
 registerGlStandardPbrMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

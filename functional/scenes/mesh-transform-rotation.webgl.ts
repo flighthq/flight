@@ -30,7 +30,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit rust (0xc06030) bar-shaped box rotated 90 degrees about the Z axis, so it stands vertical. The front face (depth 3.825, scale s = H/(7.65*tan(PI/8)) ≈ 189 px/unit) spans x W/2 ± 0.175*s ≈ 367–433 (narrow) by y H/2 ± 0.8*s ≈ 149–451 (tall), centered at (0.5*W, 0.5*H) = (400, 300). The bar extends above and below center but not left and right.',
@@ -48,7 +48,7 @@ export const state = createGlRenderState(canvas, {
 registerGlUnlitMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

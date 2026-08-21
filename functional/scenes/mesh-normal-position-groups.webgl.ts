@@ -29,7 +29,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x080b12) with two perpendicular triangles forming a V-shape sharing a vertical edge. The shape is centered at (0.5*W, 0.5*H) = (400, 300), spanning x 0.27*W–0.73*W ≈ 219–581, y 0.16*H–0.84*H ≈ 95–505, with the shared vertical edge at the center and the two wings extending to the left and right. The normal computation gives both copies of the shared edge the same diagonal normal, so lighting transitions smoothly across the seam. A directional light brightens the right face and darkens the left face. The material is a light gray (0xd8dde8) with no specular highlight.',
@@ -48,7 +48,7 @@ registerStandardGlTextureResolvers(state);
 registerGlBlinnPhongMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

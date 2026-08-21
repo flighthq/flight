@@ -25,7 +25,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 
 // exposure scales linear light by 2^exposure through an HDR (rgba16f) pipeline, brightening the
 // whole frame uniformly before display.
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
@@ -49,7 +49,7 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
 });
 

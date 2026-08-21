@@ -24,7 +24,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'A white 80×80 square centered at (400,240) surrounded by four colored 100×100 squares (yellow 0xfff05c at ' +
@@ -55,7 +55,7 @@ registerGlStandardMaterial(state);
 registerGlGodRaysEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
 });
 

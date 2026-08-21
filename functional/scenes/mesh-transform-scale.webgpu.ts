@@ -32,7 +32,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit violet (0x8040d0) cube scaled 2× uniformly. The front face at depth 3, scale s = H/(6*tan(PI/8)) ≈ 241 px/unit, spans x W/2 ± s ≈ 159–641, y H/2 ± s ≈ 59–541, filling most of the frame but leaving the corners as background.',
@@ -54,7 +54,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerWgpuUnlitMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

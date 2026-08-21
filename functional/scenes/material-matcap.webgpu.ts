@@ -28,7 +28,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with a single sphere centred in it, about 245 px across — D = ' +
@@ -54,7 +54,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerWgpuMatcapMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

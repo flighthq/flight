@@ -29,7 +29,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit teal (0x30c0b0) flat plane in the XZ plane viewed from above and in front. The front face reads as a filled tilted trapezoid: the top (far) edge runs x 0.24*W–0.76*W ≈ 192–608 at y 0.28*H ≈ 166 and the bottom (near) edge runs x 0.04*W–0.96*W ≈ 31–769 at y 0.90*H ≈ 539. No shading gradient — the material is unlit. Frame corners are background.',
@@ -51,7 +51,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerWgpuUnlitMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

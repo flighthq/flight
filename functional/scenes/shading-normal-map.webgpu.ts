@@ -40,7 +40,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black navy field (about R8 G11 B18), one large pale blue, shallow box faces ' +
@@ -64,7 +64,7 @@ registerWgpuShadedMaterial(state);
 registerBuiltInWgpuModifierSnippets(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

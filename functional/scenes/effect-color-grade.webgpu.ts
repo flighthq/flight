@@ -27,7 +27,7 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same color-grade intent as render.webgl.ts. Wgpu render-state init
 // is async; the effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with six upright rectangles of about 120 x 160, in ' +
@@ -48,7 +48,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

@@ -37,7 +37,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field, one flat orange bar rises from a stationary vertical base near ' +
@@ -58,7 +58,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerWgpuUnlitMaterial(state);
 registerWgpuGpuSkinning(state);
 const pipeline = createWgpuRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

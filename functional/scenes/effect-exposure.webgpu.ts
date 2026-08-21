@@ -27,7 +27,7 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for exposure. The HDR rgba16f scene target is multiplied by 2^exposure; init
 // is async so createWgpuRenderState is awaited.
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 140 px on a side, turned 12, 32, 52 and ' +
@@ -46,7 +46,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba16f' });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba16f' });
 
 export const scale = pixelRatio;
 export const width = 800;

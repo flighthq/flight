@@ -26,7 +26,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 
 // Directional blur: the full frame is smeared along a fixed angle, so the mid-screen shapes
 // streak uniformly in the configured direction.
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 110 px on a side, turned 10, 28, 46 and ' +
@@ -51,7 +51,7 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 registerGlDirectionalBlurEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

@@ -27,7 +27,7 @@ import type { Bitmap, GlRenderState, Viewport } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark navy field contains four separated proof areas. At top left, a green 300×220 ' +
@@ -63,7 +63,7 @@ const target = createGlRenderTarget(state, {
   colorSpace: 'srgb',
   depth: 'depth-stencil',
   height: canvas.height,
-  sampleCount: 4,
+  sampleCount: 1,
   width: canvas.width,
 });
 const solid = createSolidProgram(state);
