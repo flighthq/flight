@@ -164,15 +164,24 @@ describe('readAssertionSensitivityRows', () => {
   //
   // The direction is what matters: `blind` may fall and must never rise. That still catches an assertion
   // being weakened, which is the thing worth catching, and stops charging for the opposite.
+  // Both bounds were proved able to fail by mutation rather than by a live-corpus test: moving each one
+  // step past the tree fails the assertion (blind 16 -> 15 red; floor 356 -> 357 red). A test that
+  // asserted the same thing against the REAL corpus would itself go red the moment a scene was added,
+  // which is the friction these bounds exist to remove.
   const BLIND_CEILING = 16;
+  const SCENE_FLOOR = 356;
 
   it('re-runs every current-tree control and retains every scene identity', () => {
     const rows = readAssertionSensitivityRows(process.cwd());
 
-    expect(rows).toHaveLength(356);
+    // ★ A FLOOR, FOR THE SAME REASON `blind` IS A CEILING. `rows.length` is definitionally the number of
+    // .ts files in functional/scenes — readdir, filter, one row each — so an exact total meant that ADDING
+    // A SCENE turned this red, and the remedy was editing an audit test the scene's author had no reason
+    // to open. Growth is the normal act; shrinkage is the one worth noticing, because a scene file
+    // disappearing is how coverage leaves without anyone deciding it should.
+    expect(rows.length).toBeGreaterThanOrEqual(SCENE_FLOOR);
     expect(rows.filter((row) => row.verdict === 'blind').length).toBeLessThanOrEqual(BLIND_CEILING);
-    // Total is still exact, so a scene silently leaving the census is a failure rather than a smaller
-    // number nobody reads; able is whatever the other two are not.
+    // `able` is whatever the other verdicts are not, so it needs no number of its own.
     expect(rows.filter((row) => row.verdict === 'able').length).toBe(
       rows.length - rows.filter((row) => row.verdict === 'blind').length,
     );
@@ -180,14 +189,5 @@ describe('readAssertionSensitivityRows', () => {
     expect(rows.filter((row) => row.verdict === 'gap')).toHaveLength(0);
     expect(new Set(rows.map((row) => row.path)).size).toBe(rows.length);
     expect(() => assertSensitivityControls(rows)).not.toThrow();
-  });
-
-  // The ceiling has to be able to fail, or it is a comment. Lowering it below the current count is the
-  // same shape as a scene regressing from `able` to `blind`.
-  it('fails when blind scenes outnumber the ceiling', () => {
-    const rows = readAssertionSensitivityRows(process.cwd());
-    const blind = rows.filter((row) => row.verdict === 'blind').length;
-
-    expect(blind).toBeGreaterThan(BLIND_CEILING - 1);
   });
 });
