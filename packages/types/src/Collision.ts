@@ -77,16 +77,43 @@ export interface CollisionPoint2D {
   y: number;
 }
 
-// The tagged union over every built-in collider, discriminated by `kind`. The generic
-// `testCollision2D` dispatches on the two shapes' kinds; the direct per-pair tests
-// (`testCircleCircleCollision`, ...) take the bare shape types and are the hot path.
-export type CollisionShape2D =
+// The closed union over the six built-in colliders, discriminated by `kind`. This is what the queries
+// with NO registry behind them take — containment, raycast, sweep, contact clipping — because a vendor
+// kind has nothing to answer them with, and a compile error says so better than a silent `false`.
+export type CollisionBuiltInShape2D =
   | (CollisionCircle2D & { kind: 'circle' })
   | (CollisionAabb2D & { kind: 'aabb' })
   | (CollisionObb2D & { kind: 'obb' })
   | (CollisionPolygon2D & { kind: 'polygon' })
   | (CollisionSegment2D & { kind: 'segment' })
   | (CollisionPoint2D & { kind: 'point' });
+
+// A collider of a kind this package does not define, reached entirely through the registries. Its
+// parameters are deliberately absent: only the support function registered for that kind knows how to
+// read them, and it is the one that casts.
+//
+// THE VENDOR PREFIX IS THE TYPE, not merely a convention. `'acme.capsule'` is admitted because it has
+// a dot; `'capsule'` is not. That one rule is what lets this arm be open without dissolving the two
+// boundaries the package depends on:
+//   - Narrowing survives. No built-in kind contains a dot, so `case 'circle':` cannot also select this
+//     arm, and the exhaustive switches keep working with no cast.
+//   - THE DIMENSION BOUNDARY SURVIVES. This is the load-bearing one. An arm typed `{ kind: string }`
+//     would make every 3D collider assignable to `testCollision2D`, silently — `'sphere'` is a string.
+//     Requiring the dot keeps the built-in 2D and 3D kind sets disjoint literals, so passing a sphere
+//     to a 2D entry point stays the compile error `agents/collision-support-registry.md` promises.
+// The registration functions still take the wider `CollisionShapeKind2D`: registration is a runtime map
+// and stays permissive, so the prefix is enforced where it buys type safety and nowhere else.
+export interface CollisionVendorShape2D {
+  kind: CollisionVendorKind2D;
+}
+
+// A vendor-namespaced collider kind: any string containing a dot.
+export type CollisionVendorKind2D = `${string}.${string}`;
+
+// Every 2D collider, built-in or vendor. The generic `testCollision2D` and both registries take this;
+// the direct per-pair tests (`testCircleCircleCollision`, ...) take the bare untagged parameter types
+// and are the hot path.
+export type CollisionShape2D = CollisionBuiltInShape2D | CollisionVendorShape2D;
 
 // The result of a narrow-phase test, written into an `out` parameter so a hot loop over thousands of
 // pairs allocates nothing. When `overlapping` is true, (`normalX`,`normalY`) is the unit

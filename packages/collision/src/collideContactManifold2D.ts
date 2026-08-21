@@ -1,4 +1,8 @@
-import type { CollisionContactManifold2D, CollisionShape2D, CollisionShapeKind2D } from '@flighthq/types/contract';
+import type {
+  CollisionContactManifold2D,
+  CollisionBuiltInShape2D,
+  CollisionShapeKind2D,
+} from '@flighthq/types/contract';
 
 import { clearCollisionContactManifold2D } from './contactManifold';
 import {
@@ -41,8 +45,8 @@ import {
 // Area-less kinds (`segment`, `point`) and unknown kinds carry no contact — the pair is reported as
 // non-overlapping. The direct per-pair functions remain the hot path.
 export function collideContactManifold2D(
-  a: Readonly<CollisionShape2D>,
-  b: Readonly<CollisionShape2D>,
+  a: Readonly<CollisionBuiltInShape2D>,
+  b: Readonly<CollisionBuiltInShape2D>,
   out: CollisionContactManifold2D,
 ): boolean {
   const rankA = contactShapeKindRank(a.kind);

@@ -1,4 +1,4 @@
-import type { CollisionShape2D, CollisionTimeOfImpact2D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape2D, CollisionTimeOfImpact2D } from '@flighthq/types/contract';
 
 import { collideContactManifold2D } from './collideContactManifold2D';
 import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation';
@@ -14,10 +14,10 @@ export function createCollisionTimeOfImpact2D(): CollisionTimeOfImpact2D {
 // use continuous SAT. Those are the complete convex area-shape combinations supported by the discrete
 // manifold dispatcher; point/segment and invalid/custom kinds fail closed and fully clear `out`.
 export function sweepCollisionShape2D(
-  shapeA: Readonly<CollisionShape2D>,
+  shapeA: Readonly<CollisionBuiltInShape2D>,
   translationAX: number,
   translationAY: number,
-  shapeB: Readonly<CollisionShape2D>,
+  shapeB: Readonly<CollisionBuiltInShape2D>,
   translationBX: number,
   translationBY: number,
   out: CollisionTimeOfImpact2D,
@@ -56,10 +56,10 @@ export function sweepCollisionShape2D(
 }
 
 function sweepCollisionShapeWithScratch(
-  shapeA: Readonly<CollisionShape2D>,
+  shapeA: Readonly<CollisionBuiltInShape2D>,
   translationAX: number,
   translationAY: number,
-  shapeB: Readonly<CollisionShape2D>,
+  shapeB: Readonly<CollisionBuiltInShape2D>,
   translationBX: number,
   translationBY: number,
   out: CollisionTimeOfImpact2D,
@@ -307,7 +307,7 @@ function rayCircleFraction(
   return (-b - Math.sqrt(discriminant)) / (2 * a);
 }
 
-function writeShapeVertices(shape: Readonly<CollisionShape2D>, scratch: Float64Array): ArrayLike<number> | null {
+function writeShapeVertices(shape: Readonly<CollisionBuiltInShape2D>, scratch: Float64Array): ArrayLike<number> | null {
   switch (shape.kind) {
     case 'aabb':
       writeAabbVertices(shape, scratch);
@@ -323,7 +323,7 @@ function writeShapeVertices(shape: Readonly<CollisionShape2D>, scratch: Float64A
 }
 
 function writeShapeASupport(
-  shape: Readonly<CollisionShape2D>,
+  shape: Readonly<CollisionBuiltInShape2D>,
   translationX: number,
   translationY: number,
   out: CollisionTimeOfImpact2D,
