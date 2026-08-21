@@ -177,6 +177,19 @@ describe('querySpatialPairs3D', () => {
     grid.querySpatialPairs(out);
     expect(out).toEqual([{ a: 1, b: 2 }]);
   });
+
+  it('retains pair objects across a steady-topology query', () => {
+    const grid = createUniformGridSpatialBackend3D(10);
+    grid.insertSpatialObject(1, box(0, 0, 0, 5));
+    grid.insertSpatialObject(2, box(1, 1, 1, 5));
+    const out: SpatialPair[] = [];
+    grid.querySpatialPairs(out);
+    const pair = out[0];
+
+    grid.querySpatialPairs(out);
+
+    expect(out[0]).toBe(pair);
+  });
 });
 
 describe('querySpatialPoint3D', () => {

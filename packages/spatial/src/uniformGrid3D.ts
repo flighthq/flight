@@ -267,7 +267,7 @@ function _isSpatialAabb3DOverlapping(a: Readonly<SpatialAabb3D>, b: Readonly<Spa
 // pairs are enumerated here instead: against every other indexed object, which is what "spans nearly
 // the whole world" already means. Unlike the cell path these are filtered by a real AABB overlap test
 // rather than emitted as bare locality candidates.
-function _queryGrid3DOverflowPairs(grid: UniformGrid3D, out: SpatialPair[]): void {
+function _queryGrid3DOverflowPairs(grid: UniformGrid3D, out: SpatialPair[], written: number): number {
   for (const id of grid.overflow) {
     const bounds = grid.bounds.get(id);
     if (bounds === undefined) continue;
@@ -277,9 +277,11 @@ function _queryGrid3DOverflowPairs(grid: UniformGrid3D, out: SpatialPair[]): voi
       // the lower id emits it once. An overflow×celled pair reaches this test from one side only.
       if (grid.overflow.has(otherId) && otherId < id) continue;
       if (!_isSpatialAabb3DOverlapping(bounds, otherBounds)) continue;
-      out.push(id < otherId ? { a: id, b: otherId } : { a: otherId, b: id });
+      written =
+        id < otherId ? _writeGrid3DPair(out, written, id, otherId) : _writeGrid3DPair(out, written, otherId, id);
     }
   }
+  return written;
 }
 
 // Enumerates candidate pairs. Within each cell every co-occupant pair is a candidate, but a pair may
@@ -289,7 +291,7 @@ function _queryGrid3DOverflowPairs(grid: UniformGrid3D, out: SpatialPair[]): voi
 // is never (a,a). The pair is a broadphase candidate (shared cell locality); the caller confirms real
 // overlap.
 function _queryGrid3DPairs(grid: UniformGrid3D, out: SpatialPair[]): void {
-  out.length = 0;
+  let written = 0;
   const cs = grid.cellSize;
   const list = grid.pairIds;
   for (const cell of grid.cells.values()) {
@@ -312,11 +314,27 @@ function _queryGrid3DPairs(grid: UniformGrid3D, out: SpatialPair[]): void {
         const canonicalX = Math.max(_cellIndex3D(ab.minX, cs), _cellIndex3D(bb.minX, cs));
         const canonicalY = Math.max(_cellIndex3D(ab.minY, cs), _cellIndex3D(bb.minY, cs));
         const canonicalZ = Math.max(_cellIndex3D(ab.minZ, cs), _cellIndex3D(bb.minZ, cs));
-        if (cell.cx === canonicalX && cell.cy === canonicalY && cell.cz === canonicalZ) out.push({ a, b });
+        if (cell.cx === canonicalX && cell.cy === canonicalY && cell.cz === canonicalZ) {
+          written = _writeGrid3DPair(out, written, a, b);
+        }
       }
     }
   }
-  if (grid.overflow.size !== 0) _queryGrid3DOverflowPairs(grid, out);
+  if (grid.overflow.size !== 0) written = _queryGrid3DOverflowPairs(grid, out, written);
+  out.length = written;
+}
+
+// Rewrites a caller-owned high-water pair object instead of allocating one on every broadphase query.
+// `out.length` is trimmed only after the gather, so every slot that survives from the previous query is
+// still reachable while this one fills it.
+function _writeGrid3DPair(out: SpatialPair[], index: number, a: SpatialObjectId, b: SpatialObjectId): number {
+  const pair = out[index];
+  if (pair === undefined) out.push({ a, b });
+  else {
+    pair.a = a;
+    pair.b = b;
+  }
+  return index + 1;
 }
 
 // Gathers the ids in the cell containing the point, then confirms each against its real bounds. A

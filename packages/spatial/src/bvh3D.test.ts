@@ -34,6 +34,19 @@ function sortedPairs(pairs: readonly SpatialPair[]): string[] {
 }
 
 describe('createBvhSpatialBackend3D', () => {
+  it('retains pair objects across a steady-topology query', () => {
+    const bvh = createBvhSpatialBackend3D(1);
+    bvh.insertSpatialObject(1, box(0, 0, 0, 2));
+    bvh.insertSpatialObject(2, box(1, 1, 1, 2));
+    const out: SpatialPair[] = [];
+    bvh.querySpatialPairs(out);
+    const pair = out[0];
+
+    bvh.querySpatialPairs(out);
+
+    expect(out[0]).toBe(pair);
+  });
+
   it('answers every query exactly as the uniform grid does, over a seeded scene', () => {
     const random = createRandom(6112026);
     const bvh = createBvhSpatialBackend3D(2);
