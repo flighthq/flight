@@ -1,8 +1,13 @@
-import type { CollisionManifold3D, CollisionShape3D } from '@flighthq/types/contract';
+import type { CollisionManifold3D, CollisionShape3D, CollisionTestGuard3D } from '@flighthq/types/contract';
 
 import { getCollisionPairTest3D } from './collisionSupport3D';
 import { testCollisionSupport3D } from './gjk3D';
 import { clearCollisionManifold3D } from './manifold3D';
+
+// Installs the optional diagnostics seam consulted before testCollision3D dispatches its shape pair.
+export function setCollisionTestGuard3D(guard: CollisionTestGuard3D | null): void {
+  collisionTestGuard = guard;
+}
 
 // The generic 3D narrow-phase entry point. Returns whether the two colliders overlap, writing the
 // A-out-of-B manifold into `out` when they do and clearing it when they do not.
@@ -22,6 +27,8 @@ export function testCollision3D(
   b: Readonly<CollisionShape3D>,
   out: CollisionManifold3D,
 ): boolean {
+  if (collisionTestGuard !== null) collisionTestGuard(a, b);
+
   const direct = getCollisionPairTest3D(a.kind, b.kind);
   if (direct !== null) return direct(a, b, out);
 
@@ -41,3 +48,5 @@ export function testCollision3D(
 
   return testCollisionSupport3D(a, b, out);
 }
+
+let collisionTestGuard: CollisionTestGuard3D | null = null;

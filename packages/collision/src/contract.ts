@@ -7,6 +7,7 @@ export * from './contactManifold';
 export * from './contactManifold3D';
 export * from './enableCollisionGuards';
 export * from './explainCollisionTest2D';
+export * from './explainCollisionTest3D';
 export * from './gjk2D';
 export * from './gjk3D';
 export * from './manifold';

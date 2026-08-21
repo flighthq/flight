@@ -3,7 +3,9 @@ import type { CollisionShape2D, LogEntry } from '@flighthq/types/contract';
 
 import { areCollisionGuardsEnabled, disableCollisionGuards, enableCollisionGuards } from './enableCollisionGuards';
 import { createCollisionManifold2D } from './manifold';
+import { createCollisionManifold3D } from './manifold3D';
 import { testCollision2D } from './testCollision2D';
+import { testCollision3D } from './testCollision3D';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
@@ -110,5 +112,78 @@ describe('enableCollisionGuards', () => {
       shapeIndex: 1,
       status: 'non-convex-polygon',
     });
+  });
+
+  it('guards the 3D dispatcher from the same switch, naming the registrar', () => {
+    // One verb covers both dimensions. A caller who asked for warnings and got them for only half the
+    // package would have no way to notice the other half was silent.
+    //
+    // A VENDOR kind rather than an unregistered sphere, deliberately. The support registry is
+    // process-global mutable state shared by every test file in a worker, so whether the built-in
+    // supports are registered here depends on which other files have run — a built-in shape is not a
+    // reliable stand-in for "nothing is registered". A dotted kind nothing ever registers reaches the
+    // same arm deterministically.
+    enableCollisionGuards();
+    const entries = captureLog(() => {
+      testCollision3D(
+        { kind: 'acme.unregistered' },
+        { kind: 'sphere', radius: 2, x: 1, y: 0, z: 0 },
+        createCollisionManifold3D(),
+      );
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].channel).toBe('collision');
+    expect(entries[0].data).toMatchObject({
+      kind: 'acme.unregistered',
+      shapeIndex: 0,
+      status: 'unsupported-shape-kind',
+    });
+
+    // The message names the REPAIR, not just the fault. An unregistered 3D kind is physics3d's sharpest
+    // usability edge — a world detects nothing and its bodies fall through its floors in silence — and
+    // the overwhelmingly likely cause is that the registrar was never called.
+    expect(String((entries[0].data as Record<string, unknown>).message)).toContain(
+      'registerBuiltInCollisionSupports3D',
+    );
+  });
+
+  it('warns for a degenerate 3D shape and points at the 3D explain seam', () => {
+    enableCollisionGuards();
+    const entries = captureLog(() => {
+      testCollision3D(
+        { kind: 'capsule', radius: 0, x0: 0, x1: 1, y0: 0, y1: 0, z0: 0, z1: 0 },
+        { kind: 'sphere', radius: 1, x: 0, y: 0, z: 0 },
+        createCollisionManifold3D(),
+      );
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].data).toMatchObject({ kind: 'capsule', shapeIndex: 0, status: 'degenerate-shape' });
+    expect(String((entries[0].data as Record<string, unknown>).message)).toContain('explainCollisionTest3D');
+  });
+
+  it('does not let one dimension suppress the other dimension first warning', () => {
+    // logOnce dedupes by key, so the dimension has to be IN the key. Without it, a 2D degenerate-shape
+    // warning would silence the first 3D one for a caller running both worlds — the guard going quiet
+    // about a real fault because an unrelated one was already reported.
+    enableCollisionGuards();
+    const entries = captureLog(() => {
+      testCollision2D(
+        { kind: 'aabb', maxX: 0, maxY: 0, minX: 0, minY: 0 },
+        { kind: 'circle', radius: 1, x: 0, y: 0 },
+        createCollisionManifold2D(),
+      );
+      testCollision3D(
+        { kind: 'aabb', maxX: 0, maxY: 0, maxZ: 0, minX: 0, minY: 0, minZ: 0 },
+        { kind: 'sphere', radius: 1, x: 0, y: 0, z: 0 },
+        createCollisionManifold3D(),
+      );
+    });
+
+    // Same kind string, same status, same shape index — everything but the dimension.
+    expect(entries).toHaveLength(2);
+    expect(entries.map((entry) => (entry.data as Record<string, unknown>).status)).toEqual([
+      'degenerate-shape',
+      'degenerate-shape',
+    ]);
   });
 });

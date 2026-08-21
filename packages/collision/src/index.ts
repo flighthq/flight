@@ -18,6 +18,7 @@ export {
   disableCollisionGuards,
   enableCollisionGuards,
   explainCollisionTest2D,
+  explainCollisionTest3D,
   getCollisionShapeContainsPoint2D,
   getCollisionShapeContainsPoint3D,
   createCollisionRaycastHit2D,
