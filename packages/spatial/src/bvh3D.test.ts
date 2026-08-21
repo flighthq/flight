@@ -2,6 +2,7 @@ import type { SpatialAabb3D, SpatialIndexBackend3D, SpatialObjectId, SpatialPair
 import { describe, expect, it } from 'vitest';
 
 import { createBvhSpatialBackend3D } from './bvh3D';
+import { setSpatialIndexingGuard } from './spatialIndexingGuard';
 import { createUniformGridSpatialBackend3D } from './uniformGrid3D';
 
 // The BVH is tested against the UNIFORM GRID, not against itself. The grid is the proven incumbent and
@@ -240,5 +241,54 @@ describe('createBvhSpatialBackend3D', () => {
       return sorted(out);
     });
     expect(results[0]).toEqual(results[1]);
+  });
+
+  // The queries were compared against the grid from the start; the NOTICES were not, which is how a
+  // backend that reported every ordinary success shipped. Same differential method, applied to the
+  // other half of the seam.
+  it('reports the same indexing notices as the grid, for the same operations', () => {
+    const script = (backend: SpatialIndexBackend3D): void => {
+      backend.insertSpatialObject(1, box(0, 0, 0, 1));
+      backend.updateSpatialObject(1, box(0.1, 0, 0, 1));
+      backend.updateSpatialObject(1, box(50, 0, 0, 1));
+      backend.removeSpatialObject(1);
+      backend.removeSpatialObject(404);
+      backend.updateSpatialObject(505, box(0, 0, 0, 1));
+      backend.insertSpatialObject(2, box(NaN, 0, 0, 1));
+      const inverted: SpatialAabb3D = { minX: 5, minY: 0, minZ: 0, maxX: 1, maxY: 1, maxZ: 1 };
+      backend.insertSpatialObject(3, inverted);
+    };
+    // Mode and bucket count are structural — a tree has no cells to count — so this compares the part
+    // the seam does promise: which operation on which id was worth telling the caller about, and why.
+    const record = (backend: SpatialIndexBackend3D): string[] => {
+      const seen: string[] = [];
+      setSpatialIndexingGuard((notice) => seen.push(`${notice.operation}:${notice.id}:${notice.reason ?? 'null'}`));
+      script(backend);
+      setSpatialIndexingGuard(null);
+      return seen;
+    };
+    const bvh = record(createBvhSpatialBackend3D());
+    expect(bvh).toEqual(record(createUniformGridSpatialBackend3D(16)));
+    // Pinned literally too, so a change that made BOTH backends noisy could not pass by agreeing.
+    expect(bvh).toEqual([
+      'remove:404:missing-id',
+      'update:505:missing-id',
+      'insert:2:non-finite-bounds',
+      'insert:3:inverted-bounds',
+    ]);
+  });
+
+  it('says nothing at all while healthy objects are indexed and moved', () => {
+    // The cost of getting this wrong is not a wrong answer, it is a guard that fires once per object
+    // per step and buries the one notice that matters in thousands that do not.
+    const notices: string[] = [];
+    setSpatialIndexingGuard((notice) => notices.push(notice.operation));
+    const bvh = createBvhSpatialBackend3D();
+    for (let id = 0; id < 20; id += 1) bvh.insertSpatialObject(id, box(id * 4, 0, 0, 1));
+    for (let step = 0; step < 100; step += 1) {
+      for (let id = 0; id < 20; id += 1) bvh.updateSpatialObject(id, box(id * 4 + step * 0.5, 0, 0, 1));
+    }
+    setSpatialIndexingGuard(null);
+    expect(notices).toEqual([]);
   });
 });

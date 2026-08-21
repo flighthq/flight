@@ -35,6 +35,14 @@ unsuffixed because it is genuinely dimension-free. The seam split is ratified in
   because `'cells'` is the only member meaning "indexed normally" and the explanation type already
   anticipates a bucketless structure. The name is wrong for a tree; renaming it would change a
   vocabulary both dimensions and every backend share, so it is left as an open naming question.
+- **A backend reports only FAULTS to the guard, never ordinary success.** Both grids did; the BVH also
+  reported every successful insert and update, which made the guard fire once per object per step —
+  2,000 notices for 20 bodies over 100 steps, against the grid's zero — and burying the one notice that
+  matters is the same failure as omitting it. It also stayed silent on `remove` of an id it never held,
+  where both grids report `missing-id`. Both are fixed and now pinned DIFFERENTIALLY against the grid:
+  the queries were compared across backends from the start, the notices were not, which is how this
+  shipped. The notice text names the unsuffixed backend methods, since a notice carries no axis from
+  which to pick a dimensioned name and 3D notices were being described with 2D function names.
 - **3D has sphere and frustum queries; 2D has neither, so the dimensions are no longer at parity.**
   `querySpatialSphere3D` and `querySpatialFrustum3D` are built over the region query rather than on new
   backend methods, so the ratified eight-method seam did not widen and every future backend answers them
@@ -56,6 +64,10 @@ unsuffixed because it is genuinely dimension-free. The seam split is ratified in
 
 ## Log
 
+- 2026-08-21 — BVH guard behaviour brought to grid parity: no notice for ordinary success, a
+  `missing-id` notice for `remove` and `update` of an id the tree never held. Notice text is now
+  dimension-neutral. Found by counting notices under an ordinary physics3d step loop rather than by
+  reading the code.
 - 2026-08-21 — `createBvhSpatialBackend3D` landed, the seam's first second backend. Tested
   DIFFERENTIALLY against the uniform grid rather than against itself, which caught two things a
   self-consistent test would not: the grid uses strict inequality for region overlap and half-open

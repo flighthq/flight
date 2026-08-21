@@ -2,7 +2,9 @@ import type {
   SpatialAabb3D,
   SpatialIndexBackend3D,
   SpatialIndexingExplanation,
+  SpatialIndexingMode,
   SpatialIndexingOperation,
+  SpatialIndexingReason,
   SpatialObjectId,
   SpatialPair,
 } from '@flighthq/types/contract';
@@ -43,8 +45,17 @@ export function createBvhSpatialBackend3D(margin = DEFAULT_BVH_MARGIN_3D): Spati
     querySpatialPoint: (x, y, z, out) => queryBvh3DPoint(tree, x, y, z, out),
     querySpatialRay: (x, y, z, dx, dy, dz, out) => queryBvh3DRay(tree, x, y, z, dx, dy, dz, out),
     querySpatialRegion: (region, out) => queryBvh3DRegion(tree, region, out),
-    removeSpatialObject: (id) => removeBvh3D(tree, id),
-    updateSpatialObject: (id, bounds) => insertBvh3D(tree, id, bounds, 'update'),
+    removeSpatialObject: (id) => {
+      const wasMissing = !tree.leafByObject.has(id) && !tree.declined.has(id);
+      removeBvh3D(tree, id);
+      if (wasMissing) reportBvh3DIndexing(tree, id, 'absent', 'remove', 'missing-id');
+    },
+    updateSpatialObject: (id, bounds) => {
+      const wasMissing = !tree.leafByObject.has(id) && !tree.declined.has(id);
+      const inserted = insertBvh3D(tree, id, bounds, 'update');
+      if (wasMissing) reportBvh3DIndexing(tree, id, explainBvh3D(tree, id).mode, 'update', 'missing-id');
+      return inserted;
+    },
   };
 }
 
@@ -170,7 +181,6 @@ function insertBvh3D(
       bounds.maxZ <= tree.maxZ[existing]
     ) {
       copyBounds3D(bounds, tree.bounds.get(id) as SpatialAabb3D);
-      reportBvh3DIndexing(tree, id, 'cells', operation, null);
       return true;
     }
     removeBvh3D(tree, id);
@@ -200,7 +210,6 @@ function insertBvh3D(
   tree.count += 1;
 
   insertBvh3DLeaf(tree, leaf);
-  reportBvh3DIndexing(tree, id, 'cells', operation, null);
   return true;
 }
 
@@ -629,10 +638,19 @@ function raySlabsHit(
 function reportBvh3DIndexing(
   tree: Readonly<Bvh3D>,
   id: SpatialObjectId,
-  mode: SpatialIndexingExplanation['mode'],
+  mode: SpatialIndexingMode,
   operation: SpatialIndexingOperation,
-  reason: SpatialIndexingExplanation['reason'],
+  // Wider than the EXPLANATION's reason, which carries only decline causes. A notice also reports
+  // `missing-id`, which is a fault in the operation rather than a property of the stored object, so
+  // there is nothing for a later `explainSpatialIndexing` to return. Matches the grids' reporter.
+  reason: SpatialIndexingReason | null,
 ): void {
+  // Only ever called for a fault: a declined insert, or an operation naming an id the tree does not
+  // hold. An ordinary successful insert or update reports NOTHING, which is what both grids do and what
+  // the shared formatter is written against — it has no advice for `cells` because no backend is
+  // supposed to raise it. Reporting success instead makes the guard fire once per object per step, so
+  // the one notice that matters arrives buried in thousands that do not.
+  //
   // `cellSize` is the grid's tuning constant and a tree has none, so the margin is reported in its
   // place: it is the number a caller would tune for the same reason, and leaving the field at zero
   // would tell a diagnostic reader the structure was misconfigured.
