@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Mobile status-bar control -- foreground style (`light`/`dark`/`default`), visibility (with `fade`/`slide`/`none` animation), background color (packed `0xRRGGBBAA`), and content-overlay behavior. Includes a read side (`getStatusBarInfo` / `getStatusBarHeight`), a `StatusBar` event entity (`onChange`), and a restorable style stack (`pushStatusBarStyleEntry` / `popStatusBarStyleEntry` / `hasStatusBarStyleEntry` / `clearStatusBarStyleStack`). All over a swappable `StatusBarBackend` seam: a lazily-created web default (where only `setBackgroundColor` is observable via a `<meta name="theme-color">` hint) that a native host replaces with `setStatusBarBackend`. Safe-area / layout insets are owned by `@flighthq/device`, not here.
+Mobile status-bar control -- foreground style (`light`/`dark`/`default`), visibility (with `fade`/`slide`/`none` animation), background color (packed `0xRRGGBBAA`), and content-overlay behavior. Includes a read side (`getStatusBarInfo` / `getStatusBarHeight`), a `StatusBar` event entity (`onChange`), and a restorable style stack (`pushStatusBarStyleEntry` / `popStatusBarStyleEntry` / `hasStatusBarStyleEntry` / `clearStatusBarStyleStack`). All over a swappable `StatusBarBackend` seam; the web implementation (where only `setBackgroundColor` is observable via a `<meta name="theme-color">` hint) is installed explicitly via `enableHostWebStatusBar()` from `@flighthq/host-web`; resolution is custom (`setStatusBarBackend`) > host > sentinel, order-independent. Safe-area / layout insets are owned by `@flighthq/device`, not here.
 
 ## Decisions
 

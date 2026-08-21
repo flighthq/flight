@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-On-screen (soft) keyboard integration — the platform-integration event capability that reports the soft keyboard's visibility, height, and frame rect, emits will/did show/hide/resize signals over the lifecycle quartet (`create`/`attach`/`detach`/`dispose`), and exposes show/hide requests plus native-control extensions (resize mode, style, accessory bar, scroll assist) over a swappable web/native `SoftKeyboardBackend`. The web default integrates the Chromium VirtualKeyboard API with a `visualViewport` fallback. This is explicitly not a physical-key input library — raw key codes, modifiers, and IME composition belong to `@flighthq/input`.
+On-screen (soft) keyboard integration — the platform-integration event capability that reports the soft keyboard's visibility, height, and frame rect, emits will/did show/hide/resize signals over the lifecycle quartet (`create`/`attach`/`detach`/`dispose`), and exposes show/hide requests plus native-control extensions (resize mode, style, accessory bar, scroll assist) over a swappable web/native `SoftKeyboardBackend`. The web backend, installed explicitly via `enableHostWebSoftKeyboard()` from `@flighthq/host-web` (custom > host > sentinel), integrates the Chromium VirtualKeyboard API with a `visualViewport` fallback. This is explicitly not a physical-key input library — raw key codes, modifiers, and IME composition belong to `@flighthq/input`.
 
 ## Decisions
 

@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Renderer/app-side seam onto a host's inter-process messaging channel -- the Flight-facing API for talking to a split-process host's other side (Electron renderer-to-main, or any runtime with a main/worker/host process boundary). Exposes flat command verbs (`sendIpcMessage`, `invokeIpc`, `onIpcMessage`, plus responder/targeted/event/timeout/signal arms) over a single swappable `IpcBackend`, with a lazily-installed web default that inertly no-ops every transport call. 17 exports covering send, invoke, subscribe, targeted send, timeout wrapper, listener introspection, and the backend seam.
+Renderer/app-side seam onto a host's inter-process messaging channel -- the Flight-facing API for talking to a split-process host's other side (Electron renderer-to-main, or any runtime with a main/worker/host process boundary). Exposes flat command verbs (`sendIpcMessage`, `invokeIpc`, `onIpcMessage`, plus responder/targeted/event/timeout/signal arms) over a single swappable `IpcBackend`, with a web implementation installed explicitly via `enableHostWebIpc()` from `@flighthq/host-web` (resolution is custom (`setIpcBackend`) > host > sentinel, order-independent); without a host, the sentinel inertly no-ops every transport call. 17 exports covering send, invoke, subscribe, targeted send, timeout wrapper, listener introspection, and the backend seam.
 
 ## Decisions
 

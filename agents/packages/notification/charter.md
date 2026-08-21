@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-System/OS notifications over a swappable backend — permission introspection, show/identity/update/close, scheduling, Android-class channels, and lifecycle subscriptions (`onNotificationShow / Click / Dismiss / Action / Reply`). Ships a lazy web `Notification`-API backend plus a service-worker backend (the only web path that can deliver action buttons). The cross-package type header (`NotificationRequest`, `NotificationBackend`, enums, capabilities) lives in `@flighthq/types`. Native delivery (Electron/Tauri/Capacitor) fills the seam via `host-*` packages.
+System/OS notifications over a swappable backend — permission introspection, show/identity/update/close, scheduling, Android-class channels, and lifecycle subscriptions (`onNotificationShow / Click / Dismiss / Action / Reply`). Ships a web `Notification`-API backend installed explicitly via `enableHostWebNotification()` from `@flighthq/host-web` (custom > host > sentinel) plus a service-worker backend (the only web path that can deliver action buttons). The cross-package type header (`NotificationRequest`, `NotificationBackend`, enums, capabilities) lives in `@flighthq/types`. Native delivery (Electron/Tauri/Capacitor) fills the seam via `host-*` packages.
 
 ## Decisions
 

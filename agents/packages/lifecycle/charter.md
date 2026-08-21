@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-`@flighthq/lifecycle` is the event capability for application lifecycle: the foreground/background/active-inactive state of the app and the transition events an app reacts to — resume/pause, the Android-style hardware back button, OS memory-pressure warnings, and save/restore-state across a web or native host. It follows the platform-suite event-capability shape: an `AppLifecycle` entity of inert signals, with `createAppLifecycle`/`attachAppLifecycle`/`detachAppLifecycle`/`disposeAppLifecycle` for delivery, and a swappable `LifecycleBackend`. Highest suite review score (58). SSR-safe — the web default guards every API and degrades to sentinels in non-browser environments.
+`@flighthq/lifecycle` is the event capability for application lifecycle: the foreground/background/active-inactive state of the app and the transition events an app reacts to — resume/pause, the Android-style hardware back button, OS memory-pressure warnings, and save/restore-state across a web or native host. It follows the platform-suite event-capability shape: an `AppLifecycle` entity of inert signals, with `createAppLifecycle`/`attachAppLifecycle`/`detachAppLifecycle`/`disposeAppLifecycle` for delivery, and a swappable `LifecycleBackend`. Highest suite review score (58). SSR-safe — the web backend, installed explicitly via `enableHostWebLifecycle()` from `@flighthq/host-web` (custom > host > sentinel), guards every API and degrades to sentinels in non-browser environments.
 
 ## Decisions
 

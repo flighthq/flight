@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-The **Capacitor (mobile) host adapter** — concrete implementations of Flight's platform/host capability seams (`*Backend` traits in `@flighthq/types`) realized over Capacitor's JavaScript plugin API (`@capacitor/core` + official plugins). An adapter, not a domain library: only the translation between a Flight seam and a Capacitor plugin call. `registerCapacitorBackends(capacitor)` calls `set*Backend` for the **mobile seams Capacitor provides**; seams it doesn't cover keep their web defaults. The Capacitor plugins are **injected** (typed against a local `CapacitorApi` interface), so the package carries no `@capacitor/*` dependency and is fake-testable — host-electron's `ElectronApi` pattern. Not re-exported from `@flighthq/sdk`. `crate: null` (Capacitor's substrate is the native iOS/Android host, not the Rust box).
+The **Capacitor (mobile) host adapter** — concrete implementations of Flight's platform/host capability seams (`*Backend` traits in `@flighthq/types`) realized over Capacitor's JavaScript plugin API (`@capacitor/core` + official plugins). An adapter, not a domain library: only the translation between a Flight seam and a Capacitor plugin call. `registerCapacitorBackends(capacitor)` calls `set*Backend` for the **mobile seams Capacitor provides**; seams it doesn't cover return sentinel and `explain*` reports `'host-does-not-offer'`; the host does not silently substitute web. The Capacitor plugins are **injected** (typed against a local `CapacitorApi` interface), so the package carries no `@capacitor/*` dependency and is fake-testable — host-electron's `ElectronApi` pattern. Not re-exported from `@flighthq/sdk`. `crate: null` (Capacitor's substrate is the native iOS/Android host, not the Rust box).
 
 ## North star
 
@@ -25,7 +25,7 @@ The **Capacitor (mobile) host adapter** — concrete implementations of Flight's
 
 - **A `host-*` package** (`crate: null`, TS-only, not in the sdk barrel). Injected `CapacitorApi`, no `@capacitor` hard dep.
 - **Adapter only** — provides backends to capability packages; not itself a `*Backend`.
-- **Mobile seam subset; sentinel the rest.** Desktop-only capabilities (menu, tray, window-management, updater, global shortcuts) are outside Capacitor's model — do NOT fabricate them; leave the web default (honest sentinel). This is why the covered set differs from host-electron/host-tauri.
+- **Mobile seam subset; sentinel the rest.** Desktop-only capabilities (menu, tray, window-management, updater, global shortcuts) are outside Capacitor's model — do NOT fabricate them; return sentinel; `explain*` reports `'host-does-not-offer'`, never silently substituting web. This is why the covered set differs from host-electron/host-tauri.
 
 ## Decisions
 
@@ -37,5 +37,5 @@ _Append-only, dated, blessed rulings._
 ## Open directions
 
 1. **Capacitor community plugins.** Beyond the official core plugins, community plugins (e.g. in-app-purchase, biometrics) could back `purchase`/`biometrics` seams once those capability packages exist.
-2. **Web fallback overlap.** Capacitor plugins themselves fall back to web on the web platform; document the interaction with Flight's own web backends so double-wrapping is avoided.
+2. **Web fallback overlap.** Capacitor plugins themselves fall back to web on the web platform; document the interaction with Flight's `enableHostWeb*()` backends (which are explicitly installed, not implicit defaults) so double-wrapping is prevented by not calling both.
 3. **Seam-coverage audit table.** Seam→plugin-call (or documented-omission) completeness table, as host-electron flags.

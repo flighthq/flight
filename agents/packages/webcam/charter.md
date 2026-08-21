@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Device camera media capture -- take a photo, record a video, and pick an existing image from the photo library, over a swappable `WebcamBackend`. The web default wraps `navigator.mediaDevices` / `getUserMedia`; a native host replaces via `setWebcamBackend`. Distinct from `@flighthq/camera` (3D view/projection camera); this package is the OS/host camera-roll + capture capability, in the mold of Capacitor Camera / Cordova camera.
+Device camera media capture -- take a photo, record a video, and pick an existing image from the photo library, over a swappable `WebcamBackend`. The web backend (wrapping `navigator.mediaDevices` / `getUserMedia`) is installed explicitly via `enableHostWebWebcam()` from `@flighthq/host-web`; a native host replaces via `setWebcamBackend`. Resolution: custom > host > sentinel. Distinct from `@flighthq/camera` (3D view/projection camera); this package is the OS/host camera-roll + capture capability, in the mold of Capacitor Camera / Cordova camera.
 
 ## Decisions
 

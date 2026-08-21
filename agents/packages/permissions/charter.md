@@ -17,11 +17,11 @@ status: ./status.md
 
 ## North star
 
-The complete permission surface: query the current state of a named permission, request it (triggering the OS prompt), and observe changes — over a `get/set/createWebPermissionBackend` seam so a native host maps the same names to its OS permission model. Plain string permission names + a three-state result (`granted`/`denied`/`prompt`), flat async functions, sentinels not throws.
+The complete permission surface: query the current state of a named permission, request it (triggering the OS prompt), and observe changes — over a `getPermissionBackend`/`setPermissionBackend` seam with the web backend installed via `enableHostWebPermission()` from `@flighthq/host-web` (custom > host > sentinel), so a native host maps the same names to its OS permission model. Plain string permission names + a three-state result (`granted`/`denied`/`prompt`), flat async functions, sentinels not throws.
 
 ## Boundaries
 
-- **Platform-suite command capability.** Flat free functions over a swappable `PermissionBackend`; web backend always available, lazy, import-side-effect-free. `get/set/createWebPermissionBackend`. Web backend queries via the Permissions API and maps `request*` to each permission's concrete web request path; unknown/unsupported names return a `'prompt'`/sentinel rather than throwing.
+- **Platform-suite command capability.** Flat free functions over a swappable `PermissionBackend`; web backend installed explicitly via `enableHostWebPermission()` from `@flighthq/host-web` (custom > host > sentinel), import-side-effect-free. `getPermissionBackend`/`setPermissionBackend`. Web backend queries via the Permissions API and maps `request*` to each permission's concrete web request path; unknown/unsupported names return a `'prompt'`/sentinel rather than throwing.
 - **Depends on `@flighthq/types`** (+ the DOM in the web backend). No display, no device I/O of its own — it only reports and requests permission *state*; actually using the camera/mic/location is the respective capability package's job.
 - **State + request, not the capability.** permission never opens a stream, reads a location, or shows a notification; it answers "granted/denied/prompt" and triggers the prompt. The capability packages consume it.
 

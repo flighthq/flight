@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Process-level application identity and OS integration -- the layer that answers "what the running application is to the OS." Owns application identity (name, version, locale triad, install paths via `AppPathKind`), process lifecycle control (quit + quit-veto, relaunch, focus, hide/show, activation policy), single-instance locking, dock/taskbar badging and attention, recent-document and login-item registration, and OS-level app events (`onActivate`, `onAllWindowsClosed`, `onOpenFile`, `onQuitRequest`, `onReady`, `onSecondInstance`). Distinct from `@flighthq/application` (main loop + windowing): `app` = who you are, `application` = how you run. Command + event capability over a swappable `AppBackend` seam with a lazy web default returning sentinels.
+Process-level application identity and OS integration -- the layer that answers "what the running application is to the OS." Owns application identity (name, version, locale triad, install paths via `AppPathKind`), process lifecycle control (quit + quit-veto, relaunch, focus, hide/show, activation policy), single-instance locking, dock/taskbar badging and attention, recent-document and login-item registration, and OS-level app events (`onActivate`, `onAllWindowsClosed`, `onOpenFile`, `onQuitRequest`, `onReady`, `onSecondInstance`). Distinct from `@flighthq/application` (main loop + windowing): `app` = who you are, `application` = how you run. Command + event capability over a swappable `AppBackend` seam; the web implementation is installed explicitly via `enableHostWebApp()` from `@flighthq/host-web`; resolution is custom (`setAppBackend`) > host > sentinel, order-independent.
 
 ## Decisions
 

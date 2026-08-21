@@ -22,7 +22,7 @@ It also owns **`ApplicationRenderView`** — the batteries-included harness that
 ## North star
 
 1. **Entry-point orchestrator, not a monolith.** Application orchestrates subsystems (loop, windowing, input). When a subsystem grows, it should extract to its own primitive package, with application composing it.
-2. **Swappable backends.** Both loop and windowing use explicit `*Backend` seams. The web backends are in-box defaults; native hosts replace them.
+2. **Swappable backends.** Both loop and windowing use explicit `*Backend` seams. The web backends are installed explicitly via `enableHostWebLoop()` and the window narrow capabilities from `@flighthq/host-web`; native hosts replace via `set*Backend`. Resolution: custom > host > sentinel.
 3. **Explicit lifecycle.** No magic startup. `createApplication`, `startApplicationLoop`, and `createApplicationWindow` are all explicit calls the user makes.
 
 ## Boundaries

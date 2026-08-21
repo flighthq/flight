@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-The **Tauri (v2) host adapter** — concrete implementations of Flight's platform/host capability seams (`*Backend` traits in `@flighthq/types`) realized over Tauri's JavaScript API (`@tauri-apps/api` + its official plugins). An adapter, not a domain library: it owns no capability semantics, only the translation between a Flight seam and a Tauri API call. `registerTauriBackends(tauri)` calls `set*Backend` for the **desktop seams Tauri provides**; seams Tauri doesn't cover are left to their web defaults (not registered). The Tauri API is **injected** (typed against a local `TauriApi` interface), so the package carries no `@tauri-apps/*` dependency and is fake-testable — exactly host-electron's `ElectronApi` pattern. Not re-exported from `@flighthq/sdk`. `crate: null` — Tauri's JS substrate has no Rust-box mirror (the Rust side is the app's own Tauri backend).
+The **Tauri (v2) host adapter** — concrete implementations of Flight's platform/host capability seams (`*Backend` traits in `@flighthq/types`) realized over Tauri's JavaScript API (`@tauri-apps/api` + its official plugins). An adapter, not a domain library: it owns no capability semantics, only the translation between a Flight seam and a Tauri API call. `registerTauriBackends(tauri)` calls `set*Backend` for the **desktop seams Tauri provides**; seams Tauri doesn't cover return sentinel and `explain*` reports `'host-does-not-offer'`; the host does not silently substitute web. The Tauri API is **injected** (typed against a local `TauriApi` interface), so the package carries no `@tauri-apps/*` dependency and is fake-testable — exactly host-electron's `ElectronApi` pattern. Not re-exported from `@flighthq/sdk`. `crate: null` — Tauri's JS substrate has no Rust-box mirror (the Rust side is the app's own Tauri backend).
 
 ## North star
 
@@ -25,14 +25,14 @@ The **Tauri (v2) host adapter** — concrete implementations of Flight's platfor
 
 - **A `host-*` package** (`crate: null`, TS-only, not tree-shaken into a browser bundle, not in the sdk barrel). Injected API, no `@tauri-apps` hard dep.
 - **Adapter only.** It provides backends to capability packages; it is not itself a `*Backend` and owns no capability semantics — same distinction host-electron draws.
-- **Cover the real Tauri surface, sentinel the rest.** Map only seams with a genuine Tauri call; don't fabricate a backend for a capability Tauri lacks (leave the web default). Web backends already return sentinels, so an uncovered seam degrades honestly.
+- **Cover the real Tauri surface, sentinel the rest.** Map only seams with a genuine Tauri call; don't fabricate a backend for a capability Tauri lacks — return sentinel; `explain*` reports `'host-does-not-offer'`. Uncovered seams degrade to sentinel, never silently substituting web.
 
 ## Decisions
 
 _Append-only, dated, blessed rulings._
 
 - **[2026-07-11] Injected `TauriApi`, no hard dep.** Mirror host-electron: the Tauri modules are passed to `registerTauriBackends`, typed against a local `TauriApi` interface, so the package builds and fake-tests without `@tauri-apps/*` installed.
-- **[2026-07-11] Desktop seam subset; uncovered seams keep the web default.** Tauri v2's surface (window/app/dialog/clipboard/notification/shell/menu/tray/updater/os/shortcut/store/deep-link) is the coverage target; mobile-only or absent capabilities are not forced.
+- **[2026-07-11] Desktop seam subset; uncovered seams return sentinel.** Tauri v2's surface (window/app/dialog/clipboard/notification/shell/menu/tray/updater/os/shortcut/store/deep-link) is the coverage target; mobile-only or absent capabilities are not forced.
 
 ## Open directions
 

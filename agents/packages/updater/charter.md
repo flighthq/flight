@@ -15,7 +15,7 @@ See [platform integration shared principles](../platform-integration.md) for the
 
 ## What it is
 
-Application auto-update lifecycle -- checking for, downloading, and installing a new version of a desktop/native application, with progress and error events surfaced to the app. Covers the Squirrel / electron-updater / Sparkle / WinSparkle / Tauri-updater problem space. Command + event capability over a swappable `UpdaterBackend` with a web default returning sentinels. 23 exports covering check, download, install, progress subscription, channel selection, and rollback.
+Application auto-update lifecycle -- checking for, downloading, and installing a new version of a desktop/native application, with progress and error events surfaced to the app. Covers the Squirrel / electron-updater / Sparkle / WinSparkle / Tauri-updater problem space. Command + event capability over a swappable `UpdaterBackend`; the web implementation is installed explicitly via `enableHostWebUpdater()` from `@flighthq/host-web`; resolution is custom (`setUpdaterBackend`) > host > sentinel, order-independent. 23 exports covering check, download, install, progress subscription, channel selection, and rollback.
 
 ## Decisions
 
