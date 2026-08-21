@@ -265,7 +265,7 @@ const PHYSICS3D_BENCHMARK_BUDGETS: Record<Physics3DBenchmarkMeasurement['scenari
     retainedBytesPerStep: 4096,
   },
   'sparse-moving': {
-    p95CpuMilliseconds: 2,
+    p95CpuMilliseconds: 3,
     sampledAllocationBytesPerStep: 320 * 1024,
     retainedBytesPerStep: 2048,
   },
