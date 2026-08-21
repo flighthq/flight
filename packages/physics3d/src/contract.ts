@@ -1,5 +1,6 @@
 export * from './contacts';
 export * from './explainPhysics3DJoints';
+export * from './enablePhysics3DGuards';
 export * from './explainPhysics3DStep';
 export * from './integrate';
 export * from './islands';

@@ -3,6 +3,7 @@ import type {
   Physics3DContactCallback,
   Physics3DJoint,
   Physics3DJointSolver,
+  Physics3DStepGuard,
   Physics3DWorld,
   RigidBody3D,
 } from '@flighthq/types/contract';
@@ -34,6 +35,13 @@ import {
   isPhysics3DVelocityIterationsValid,
 } from './stepValidation';
 
+// Installs the optional diagnostics seam consulted when a step declines its preconditions. Null by
+// default and set only by `enablePhysics3DGuards`, so a build that never enables guards links neither the
+// message text nor `@flighthq/log`.
+export function setPhysics3DStepGuard(guard: Physics3DStepGuard | null): void {
+  physics3DStepGuard = guard;
+}
+
 // Advances the simulation by `dt` seconds. Everything the step does, it does because the caller asked:
 // no implicit accumulation, no fixed-timestep loop hidden inside, and no allocation once the world's
 // bodies, contacts, and joints exist.
@@ -62,6 +70,10 @@ export function stepPhysics3D(world: Physics3DWorld, dt: number): void {
     !isPhysics3DContactStateValid(world) ||
     !isPhysics3DJointStateValid(world)
   ) {
+    // The one place the silent decline is observable from outside. The seam takes the world and the
+    // timestep rather than a reason, so the guard asks `explainPhysics3DStep` for ALL of them — a world
+    // with two faults reported one at a time would be repaired one frame at a time.
+    physics3DStepGuard?.(world, dt);
     return;
   }
 
@@ -291,3 +303,5 @@ function stepValidatedPhysics3D(world: Physics3DWorld, dt: number): void {
   // cleanup, or the timestep agreement above, so the next call never resumes a half-finished step.
   runPhysics3DContactHook(world, world.contactHooks.postSolve, 'post-solve');
 }
+
+let physics3DStepGuard: Physics3DStepGuard | null = null;

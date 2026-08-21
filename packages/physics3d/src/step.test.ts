@@ -7,7 +7,7 @@ import { createPhysics3DFixedJoint, createPhysics3DHingeJoint } from './jointFac
 import { addPhysics3DJoint, removePhysics3DJoint } from './jointRegistry';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
 import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
-import { stepPhysics3D, stepPhysics3DInterval } from './step';
+import { setPhysics3DStepGuard, stepPhysics3D, stepPhysics3DInterval } from './step';
 import {
   addPhysics3DBody,
   applyPhysics3DForce,
@@ -16,6 +16,31 @@ import {
   removePhysics3DBody,
   setPhysics3DBodyType,
 } from './world';
+
+describe('setPhysics3DStepGuard', () => {
+  it('is consulted only when the step declines, and only while installed', () => {
+    const seen: number[] = [];
+    setPhysics3DStepGuard((_world, dt) => seen.push(dt));
+    try {
+      const world = createPhysics3DWorld();
+      addPhysics3DBody(world, createRigidBody3D('dynamic'));
+
+      // A step that runs must not reach the seam: the guard's message means the simulation stopped, so
+      // firing it on a healthy step would make the one signal it carries meaningless.
+      stepPhysics3D(world, 1 / 60);
+      expect(seen).toEqual([]);
+
+      stepPhysics3D(world, 0);
+      expect(seen).toEqual([0]);
+
+      setPhysics3DStepGuard(null);
+      stepPhysics3D(world, 0);
+      expect(seen).toEqual([0]);
+    } finally {
+      setPhysics3DStepGuard(null);
+    }
+  });
+});
 
 describe('stepPhysics3D', () => {
   it('advances a free body by gravity over the interval', () => {

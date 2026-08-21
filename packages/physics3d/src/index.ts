@@ -6,6 +6,7 @@ export {
 } from './integrate';
 export { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
 export { explainPhysics3DJoints } from './explainPhysics3DJoints';
+export { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards';
 export { explainPhysics3DStep } from './explainPhysics3DStep';
 export { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
 export {
