@@ -405,19 +405,18 @@ describe('reference-image request presentation workflow', () => {
     },
   );
 
-  it('fails with collected and reported counts when pagination repeats an artifact', async () => {
+  it('fails overlapping pages even when their unique artifact count matches the reported total', async () => {
     const workflow = parse(readFileSync(join(ROOT, '.github', 'workflows', 'reference-image-bridge.yml'), 'utf8')) as {
       jobs: { dispatch: { steps: Array<Record<string, unknown>> } };
     };
     const script = (
       workflow.jobs.dispatch.steps.find((step) => step['id'] === 'dispatch') as { with: { script: string } }
     ).with.script;
-    const requestId = '00000000-0000-4000-8000-000000000001';
-    const repeatedArtifact = {
-      digest: `sha256:${'1'.repeat(64)}`,
-      id: 101,
-      name: `reference-image-candidate-readable-label-${requestId}`,
-    };
+    const artifacts = [1, 2, 3].map((sequence) => ({
+      digest: `sha256:${String(sequence).repeat(64)}`,
+      id: 100 + sequence,
+      name: `reference-image-candidate-readable-label-00000000-0000-4000-8000-${String(sequence).padStart(12, '0')}`,
+    }));
     const artifactPages: number[] = [];
     const dispatches: unknown[] = [];
     const failures: string[] = [];
@@ -427,7 +426,12 @@ describe('reference-image request presentation workflow', () => {
         actions: {
           listWorkflowRunArtifacts: async ({ page }: { page: number }) => {
             artifactPages.push(page);
-            return { data: { artifacts: [repeatedArtifact], total_count: 2 } };
+            return {
+              data: {
+                artifacts: page === 1 ? [artifacts[0], artifacts[1]] : [artifacts[1], artifacts[2]],
+                total_count: 3,
+              },
+            };
           },
         },
         repos: {
@@ -456,7 +460,7 @@ describe('reference-image request presentation workflow', () => {
     );
 
     expect(artifactPages).toEqual([1, 2]);
-    expect(failures).toEqual(['artifact pagination collected 1 unique artifact(s), API reports 2']);
+    expect(failures).toEqual(['artifact pagination collected 4 artifact membership(s) (3 unique), API reports 3']);
     expect(infos).not.toContain('no candidate artifact on this run — nothing was commissioned');
     expect(dispatches).toEqual([]);
   });
@@ -501,7 +505,7 @@ describe('reference-image request presentation workflow', () => {
       createRequire(import.meta.url),
     );
 
-    expect(failures).toEqual(['artifact pagination collected 0 unique artifact(s), API reports 1']);
+    expect(failures).toEqual(['artifact pagination collected 0 artifact membership(s) (0 unique), API reports 1']);
     expect(infos).not.toContain('no candidate artifact on this run — nothing was commissioned');
     expect(dispatches).toEqual([]);
   });

@@ -158,9 +158,10 @@ jobs:
               }
               if (receivedArtifactCount >= totalArtifactCount || data.artifacts.length === 0) break;
             }
-            if (artifactsById.size !== totalArtifactCount) {
+            if (receivedArtifactCount !== totalArtifactCount || artifactsById.size !== totalArtifactCount) {
               core.setFailed(
-                `artifact pagination collected ${artifactsById.size} unique artifact(s), API reports ${totalArtifactCount}`,
+                `artifact pagination collected ${receivedArtifactCount} artifact membership(s) ` +
+                  `(${artifactsById.size} unique), API reports ${totalArtifactCount}`,
               );
               return;
             }
