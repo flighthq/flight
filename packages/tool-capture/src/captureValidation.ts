@@ -1393,8 +1393,8 @@ export async function runCaptureValidation(
             activeRenderers: options.rendererFilter.length > 0 ? [...options.rendererFilter] : null,
             undetermined: [...new Set(undeterminedIdentities)],
             // Validation observes the FINGERPRINT column and nothing else. Without this the screenshot
-            // and oracle pins would read as lost on every validate run — absence of observation reported
-            // as absence of evidence, which is the defect this manifest exists to prevent.
+            // and sceneAssertion pins would read as lost on every validate run — absence of observation
+            // reported as absence of evidence, which is the defect this manifest exists to prevent.
             kinds: ['fingerprint'],
           },
         )
