@@ -114,6 +114,8 @@ which is why they are not in the map.
 - [wgpu backlog](wgpu-backlog.md) — confirmed WebGPU defects and coverage surface, accumulated while
   WGPU work is deferred behind other work. Deferral is scheduling, not severity: read the per-entry
   severity, not the file's position in this list.
+- [WGPU 2D supersample blocker](wgpu-2d-supersample-blocker.md) — deterministic failure census and
+  source-level diagnosis for the physical-target versus logical-viewport regression.
 - [depth review: codec formats](depth-codec-formats.md) — the codec-format cluster in depth.
 - [swf video import decision](swf-video-import-proposal.md) — Stage A is ratified and implemented as
   structural import through a sourceless `Sprite`; payload preservation and decode remain unratified.
