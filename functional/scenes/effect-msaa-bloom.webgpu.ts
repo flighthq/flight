@@ -32,10 +32,9 @@ declareExpectedImageDescription(
   'Four bright rotated rectangles (white 0xffffff, yellow 0xfff05c, cyan 0x5cffe0, magenta 0xff5ce0) of 140×140 each in a 2×2 arrangement on near-black (0x05060a), rotated 27°/44°/61°/78°. Soft glowing halos bleeding outward from the bloom effect (threshold 0.6, intensity 1.4, rgba16f pipeline). Edges are smooth: the Wgpu effect target honours sampleCount 4 by supersampling 2x per axis and resolving, matching the Gl cell.',
 );
 
-// Wgpu parity column for MSAA + bloom. NOTE: sampleCount is honoured on the Wgpu effect
-// pipeline (the offscreen scene target is single-sampled today) — wiring a multisampled Wgpu target
-// is a follow-up, mirroring the Gl seam. The bloom scene2d still runs over the HDR rgba16f scene, so
-// this column verifies effect compose; its edges may alias more than Gl's until Wgpu MSAA lands.
+// Wgpu parity column for MSAA + bloom. sampleCount 4 is HONOURED here: the effect target is allocated at
+// 2x per axis and resolved down, so the edges are antialiased as they are on Gl. The bloom runs over the
+// HDR rgba16f scene, so this column verifies the resolve and the effect compose together.
 const pixelRatio = window.devicePixelRatio || 1;
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
@@ -97,7 +96,9 @@ render(root);
 // ANTIALIASING claim, and this scene cannot separate it. The bloom's own gradient occupies exactly the
 // intermediate-luminance band that a multisample resolve would show up in, so any measurement of one
 // is contaminated by the other. `effect-msaa` tests that claim in isolation — same tiles, no bloom —
-// and does distinguish the backends (258 partial-coverage pixels on Gl against 0 on Wgpu).
+// and does distinguish the two (258 partial-coverage pixels on Gl, 424 on Wgpu — both antialiased since
+// the Wgpu effect target began honouring sampleCount 4; it read 0 there while the request was normalised
+// away).
 //
 // The hue claim is likewise left to `effect-bloom`: its tiles are rotated less, so a point outside the
 // silhouette still sits in coloured halo, whereas here the tile corners reach that far.
