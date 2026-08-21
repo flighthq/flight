@@ -1,4 +1,5 @@
 export * from './colliderTransform';
+export * from './enablePhysics2DGuards';
 export * from './explainPhysics2DJoints';
 export * from './explainPhysics2DStep';
 export { isRigidBody2DPairAwake, updatePhysics2DSleep, wakePhysics2DBody } from './islands';

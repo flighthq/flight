@@ -11,6 +11,8 @@ import {
   sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
 import type {
+  Physics2DJointResolutionGuard,
+  Physics2DStepGuard,
   CollisionContactManifold2D,
   CollisionSegment2D,
   CollisionBuiltInShape2D,
@@ -410,6 +412,19 @@ function effectiveMass(
 // their bounds; the contact set must be built before impulses can warm-start from it; velocities are
 // solved before positions are integrated, so the integration moves bodies that have already had their
 // constraints applied rather than moving them and correcting afterwards.
+// Installs the diagnostics seam consulted once per successful step, before joints are prepared. Pass
+// `null` to remove it. Called by `enablePhysics2DGuards`; nothing in the solver path installs one, which
+// is what keeps the message text out of a build that never opts in.
+export function setPhysics2DJointResolutionGuard(guard: Physics2DJointResolutionGuard | null): void {
+  physics2DJointResolutionGuard = guard;
+}
+
+// Installs the diagnostics seam consulted when a step declines its preconditions. Pass `null` to remove
+// it. Called by `enablePhysics2DGuards`.
+export function setPhysics2DStepGuard(guard: Physics2DStepGuard | null): void {
+  physics2DStepGuard = guard;
+}
+
 export function stepPhysics2D(world: Physics2DWorld, dt: number): void {
   if (steppingPhysics2DWorlds.has(world)) {
     throw new Error('Cannot step a physics world recursively');
@@ -442,8 +457,13 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
     !isPhysics2DContactStateValid(world) ||
     !isPhysics2DJointStateValid(world)
   ) {
+    physics2DStepGuard?.(world, dt);
     return;
   }
+
+  // Only on a step that will actually run. A declined step already spoke above, and repeating the joint
+  // complaint underneath it would bury the reason nothing moved at all.
+  if (world.joints.length > 0) physics2DJointResolutionGuard?.(world);
 
   synchronizePhysics2DBroadphase(world);
   buildPhysics2DContacts(world);
@@ -1301,6 +1321,8 @@ function releasePhysics2DStepScratch(scratch: Physics2DStepScratch): void {
 }
 
 let activePhysics2DStepScratch: Physics2DStepScratch | null = null;
+let physics2DJointResolutionGuard: Physics2DJointResolutionGuard | null = null;
+let physics2DStepGuard: Physics2DStepGuard | null = null;
 const physics2DStepScratchPool: Physics2DStepScratch[] = [createPhysics2DStepScratch()];
 const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
 const CCD_ROTATION_INCREMENT = Math.PI / 90;

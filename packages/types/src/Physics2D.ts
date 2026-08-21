@@ -730,6 +730,20 @@ export interface Physics2DJointResolutionExplanation {
   readonly status: 'complete' | 'unresolved-joints';
 }
 
+// The diagnostics seam consulted only when `stepPhysics2D` declines to advance the world. Installed by
+// `enablePhysics2DGuards` and null otherwise, which is what keeps the message text and `@flighthq/log`
+// out of a build that never asks for them.
+export type Physics2DStepGuard = (world: Readonly<Physics2DWorld>, dt: number) => void;
+
+// The diagnostics seam consulted once per SUCCESSFUL step, before the joint solvers are prepared.
+// Installed by `enablePhysics2DGuards` and null otherwise.
+//
+// Deliberately separate from `Physics2DStepGuard` rather than folded into it, because the two describe
+// opposite situations. A declined step advanced nothing and says so once. An unresolved joint is worse
+// disguised: the step succeeds, the bodies move, and only that one constraint is quietly absent — a rope
+// that does not pull, a hinge that does not hold — with no failure anywhere for a caller to notice.
+export type Physics2DJointResolutionGuard = (world: Readonly<Physics2DWorld>) => void;
+
 export type Physics2DDebugFeature = 'center-of-mass' | 'collider' | 'contact-normal' | 'joint';
 
 // Renderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a
