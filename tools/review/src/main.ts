@@ -583,12 +583,6 @@ async function writeTolerance(
   }
 }
 
-async function holdCurrentTest(): Promise<void> {
-  const t = currentTest();
-  if (!t) return;
-  await holdRenderers(reviewableCells(t.cells).map((c) => c.renderer));
-}
-
 async function commissionCurrentTest(): Promise<void> {
   const t = currentTest();
   if (!t) return;
@@ -767,21 +761,15 @@ function buildRendererBar(): void {
   });
 
   const summary = testCommissionSummary(t);
-  // ★ A HELD SIBLING NO LONGER BLOCKS THE TEST. Holding and commissioning answer different questions —
-  // "is this picture one to bless" versus "capture what this build renders" — so a hold subtracts its own
-  // cell from the commission and leaves the rest of the row alone. Only a fully held test has nothing left
-  // to commission, and that is a fact about the row being empty, not a policy about holds.
+  // ★ A HOLD DOES NOT GATE THIS BUTTON AT ALL. Holding and commissioning answer different questions —
+  // "must the gate treat this cell's failure as a failure" versus "capture what this build renders" — and
+  // the rule is that a scene stays held UNTIL it has a passing commission, which requires commissioning a
+  // held cell to be possible. Held cells are still NAMED on the button so the reviewer knows what travels.
   const heldCells = reviewable.filter((c) => c.holdReason !== null);
-  const allHeld = reviewable.length > 0 && heldCells.length === reviewable.length;
   const commissionBtn = document.createElement('button');
   commissionBtn.className = 'commission-btn';
 
-  if (allHeld) {
-    commissionBtn.textContent = 'Every cell held — nothing to commission';
-    commissionBtn.title = 'Every reviewable cell is held, so no cell is left to commission';
-    commissionBtn.disabled = true;
-    commissionBtn.setAttribute('data-commission', 'held');
-  } else if (summary.state === 'included') {
+  if (summary.state === 'included') {
     commissionBtn.textContent = 'Already included';
     commissionBtn.title = 'All cells match their locked reference images';
     commissionBtn.disabled = true;
@@ -852,22 +840,29 @@ function buildRendererBar(): void {
 
   rendererBar.appendChild(commissionBtn);
 
-  const anyHeld = reviewable.some((c) => c.holdReason !== null);
-  const holdBtn = document.createElement('button');
-  holdBtn.className = 'hold-btn';
-  if (anyHeld) {
-    const heldRenderers = reviewable.filter((cell) => cell.holdReason !== null).map((cell) => cell.renderer);
-    holdBtn.textContent = heldRenderers.length === 1 ? 'Release hold' : `Release ${heldRenderers.length} holds`;
-    holdBtn.title = 'Release the held cell(s) after recording who released them and why';
-    holdBtn.setAttribute('data-held', 'true');
-    holdBtn.addEventListener('click', () => void releaseHeldRenderers(heldRenderers));
-  } else {
-    holdBtn.textContent = 'Hold';
-    holdBtn.title =
-      "Hold this render — marks all cells as not ready for commissioning, requires a reason ('h' holds just the current cell)";
-    holdBtn.addEventListener('click', () => void holdCurrentTest());
+  // ★ HOLDING AND RELEASING ARE SEPARATE ACTIONS AND BOTH MUST STAY REACHABLE. One button that flipped to
+  // "Release" the moment ANY cell was held meant a scene with one held backend could never have its other
+  // backends held — the only offered action was to undo the decision already made. A scene is usually
+  // partly held precisely because the reviewer is working through it one cell at a time.
+  const heldRenderers = reviewable.filter((cell) => cell.holdReason !== null).map((cell) => cell.renderer);
+  const openRenderers = reviewable.filter((cell) => cell.holdReason === null).map((cell) => cell.renderer);
+  if (openRenderers.length > 0) {
+    const holdBtn = document.createElement('button');
+    holdBtn.className = 'hold-btn';
+    holdBtn.textContent = heldRenderers.length === 0 ? 'Hold' : `Hold ${openRenderers.length} remaining`;
+    holdBtn.title = `Hold ${openRenderers.join(', ')} — records a reason and stops the cell being blessed ('h' holds just the current cell)`;
+    holdBtn.addEventListener('click', () => void holdRenderers(openRenderers));
+    rendererBar.appendChild(holdBtn);
   }
-  rendererBar.appendChild(holdBtn);
+  if (heldRenderers.length > 0) {
+    const releaseBtn = document.createElement('button');
+    releaseBtn.className = 'hold-btn';
+    releaseBtn.textContent = heldRenderers.length === 1 ? 'Release hold' : `Release ${heldRenderers.length} holds`;
+    releaseBtn.title = `Release ${heldRenderers.join(', ')} after recording who released them and why`;
+    releaseBtn.setAttribute('data-held', 'true');
+    releaseBtn.addEventListener('click', () => void releaseHeldRenderers(heldRenderers));
+    rendererBar.appendChild(releaseBtn);
+  }
 
   const tolerancePolicy = reviewable.find((cell) => cell.comparisonPolicy !== null)?.comparisonPolicy;
   const toleranceBtn = document.createElement('button');

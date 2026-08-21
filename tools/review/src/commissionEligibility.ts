@@ -10,19 +10,20 @@ export interface ReviewCommissionCandidate {
 
 export type ReviewCommissionIneligibility =
   | 'reference-cell'
-  | 'held'
   | 'missing-capture'
   | 'missing-build-stamp'
   | 'missing-host-identity';
 
 export function reviewCommissionIneligibility(cell: ReviewCommissionCandidate): ReviewCommissionIneligibility | null {
   if (cell.role === 'reference') return 'reference-cell';
-  // A hold is per-cell, and it excludes only the cell it names. It used to disable the whole test's
-  // commission button, which fused two decisions that are not the same one: holding says "this picture is
-  // not one to bless", commissioning says "capture what this build renders". A scene with one bad backend
-  // then could not have its other three backends commissioned at all, so the way out of a hold was to
-  // release it — which is the one move that is not supposed to be casual.
-  if (cell.holdReason !== null) return 'held';
+  // ★ A HOLD DOES NOT BLOCK COMMISSIONING, AND MAKING IT DO SO WAS AN OVERREACH. The two answer different
+  // questions — commissioning says "capture what this build renders under a new id", holding says "the
+  // gate must not treat this cell's failure as a failure yet" — and the user's rule is that a scene stays
+  // held UNTIL it has a passing commission. Blocking the commission made that rule unreachable: the only
+  // way to progress a held cell was to release the hold, which is the one move meant to be deliberate.
+  //
+  // A hold still excludes the cell from an APPROVED-cell selection in the UI and still demotes its
+  // verdict in the gate; it just no longer stops a new capture being pinned.
   if (cell.referencePixelSha256 === null) return 'missing-capture';
   if (cell.build === null || cell.build.commit === null) return 'missing-build-stamp';
   if (cell.provenance === null || cell.provenance.hostInstanceId === null) return 'missing-host-identity';
@@ -36,9 +37,6 @@ export function isReviewCommissionEligible(cell: ReviewCommissionCandidate): boo
 export function reviewCommissionIneligibilityMessage(reason: ReviewCommissionIneligibility): string {
   if (reason === 'reference-cell') {
     return 'Reference cell — shown as context, never approved or commissioned.';
-  }
-  if (reason === 'held') {
-    return 'Held — this cell is excluded from the commission; its siblings can still be commissioned.';
   }
   if (reason === 'missing-capture') {
     return 'No capture available — capture this cell before commissioning.';
