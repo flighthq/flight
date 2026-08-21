@@ -16,7 +16,7 @@ import {
   writeCaptureBaselineCoverageManifest,
 } from './captureBaselineCoverageManifest';
 
-const ALL = ['fingerprint', 'oracle', 'screenshot'] as const;
+const ALL = ['fingerprint', 'sceneAssertion', 'screenshot'] as const;
 const manifest = createCaptureBaselineCoverageManifest({
   functional: {
     'svg-image/webgl': ALL,
@@ -27,7 +27,7 @@ const manifest = createCaptureBaselineCoverageManifest({
 });
 const everything = (
   identities: readonly string[],
-): Record<string, readonly ('fingerprint' | 'oracle' | 'screenshot')[]> =>
+): Record<string, readonly ('fingerprint' | 'sceneAssertion' | 'screenshot')[]> =>
   Object.fromEntries(identities.map((identity) => [identity, ALL]));
 
 describe('CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION', () => {
@@ -38,7 +38,7 @@ describe('CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION', () => {
 
 describe('CAPTURE_BASELINE_EVIDENCE_KINDS', () => {
   it('is the three evidence kinds, sorted', () => {
-    expect(CAPTURE_BASELINE_EVIDENCE_KINDS).toEqual(['fingerprint', 'oracle', 'referenceImage', 'screenshot']);
+    expect(CAPTURE_BASELINE_EVIDENCE_KINDS).toEqual(['fingerprint', 'referenceImage', 'sceneAssertion', 'screenshot']);
   });
 });
 
@@ -58,7 +58,7 @@ describe('createCaptureBaselineCoverageManifest', () => {
   });
 
   it('keeps subjects separate', () => {
-    expect(manifest.subjects.examples).toEqual({ 'text/canvas': ['fingerprint', 'oracle', 'screenshot'] });
+    expect(manifest.subjects.examples).toEqual({ 'text/canvas': ['fingerprint', 'sceneAssertion', 'screenshot'] });
   });
 });
 
@@ -78,7 +78,11 @@ describe('diffCaptureBaselineCoverage', () => {
   it('NAMES a target that ran but is no longer covered', () => {
     const covered = ['svg-image/canvas', 'node-alpha/canvas'];
     const diff = diffCaptureBaselineCoverage(manifest, 'functional', everything(covered), all, WHOLE);
-    expect(diff.lost).toEqual(['svg-image/webgl#fingerprint', 'svg-image/webgl#oracle', 'svg-image/webgl#screenshot']);
+    expect(diff.lost).toEqual([
+      'svg-image/webgl#fingerprint',
+      'svg-image/webgl#sceneAssertion',
+      'svg-image/webgl#screenshot',
+    ]);
     expect(isCaptureBaselineCoverageFailure(diff)).toBe(true);
   });
 
@@ -86,7 +90,11 @@ describe('diffCaptureBaselineCoverage', () => {
   it('names new coverage as a gain AND fails on it', () => {
     const covered = [...all, 'svg-text/webgl'];
     const diff = diffCaptureBaselineCoverage(manifest, 'functional', everything(covered), covered, WHOLE);
-    expect(diff.gained).toEqual(['svg-text/webgl#fingerprint', 'svg-text/webgl#oracle', 'svg-text/webgl#screenshot']);
+    expect(diff.gained).toEqual([
+      'svg-text/webgl#fingerprint',
+      'svg-text/webgl#sceneAssertion',
+      'svg-text/webgl#screenshot',
+    ]);
     expect(diff.lost).toEqual([]);
     expect(isCaptureBaselineCoverageFailure(diff)).toBe(true);
   });
@@ -103,8 +111,16 @@ describe('diffCaptureBaselineCoverage', () => {
       WHOLE,
     );
     expect(covered.length).toBe(Object.keys(manifest.subjects.functional).length);
-    expect(diff.lost).toEqual(['svg-image/webgl#fingerprint', 'svg-image/webgl#oracle', 'svg-image/webgl#screenshot']);
-    expect(diff.gained).toEqual(['svg-text/webgl#fingerprint', 'svg-text/webgl#oracle', 'svg-text/webgl#screenshot']);
+    expect(diff.lost).toEqual([
+      'svg-image/webgl#fingerprint',
+      'svg-image/webgl#sceneAssertion',
+      'svg-image/webgl#screenshot',
+    ]);
+    expect(diff.gained).toEqual([
+      'svg-text/webgl#fingerprint',
+      'svg-text/webgl#sceneAssertion',
+      'svg-text/webgl#screenshot',
+    ]);
     expect(isCaptureBaselineCoverageFailure(diff)).toBe(true);
   });
 
@@ -115,7 +131,7 @@ describe('diffCaptureBaselineCoverage', () => {
     const visited = covered;
     expect(diffCaptureBaselineCoverage(manifest, 'functional', everything(covered), visited, WHOLE).absent).toEqual([
       'node-alpha/canvas#fingerprint',
-      'node-alpha/canvas#oracle',
+      'node-alpha/canvas#sceneAssertion',
       'node-alpha/canvas#screenshot',
     ]);
     expect(diffCaptureBaselineCoverage(manifest, 'functional', everything(covered), visited, FILTERED).absent).toEqual(
@@ -126,7 +142,11 @@ describe('diffCaptureBaselineCoverage', () => {
   // A scoped run must still be able to fail: it visited the target and found no baseline.
   it('still reports a loss on a scoped run for a target it actually visited', () => {
     const diff = diffCaptureBaselineCoverage(manifest, 'functional', {}, ['svg-image/webgl'], FILTERED);
-    expect(diff.lost).toEqual(['svg-image/webgl#fingerprint', 'svg-image/webgl#oracle', 'svg-image/webgl#screenshot']);
+    expect(diff.lost).toEqual([
+      'svg-image/webgl#fingerprint',
+      'svg-image/webgl#sceneAssertion',
+      'svg-image/webgl#screenshot',
+    ]);
     expect(isCaptureBaselineCoverageFailure(diff)).toBe(true);
   });
 
@@ -168,7 +188,7 @@ describe('diffCaptureBaselineCoverage', () => {
   it('treats an unknown subject as an empty pin rather than throwing', () => {
     const diff = diffCaptureBaselineCoverage(manifest, 'reference', everything(['a/canvas']), ['a/canvas'], WHOLE);
     expect(diff).toEqual({
-      gained: ['a/canvas#fingerprint', 'a/canvas#oracle', 'a/canvas#screenshot'],
+      gained: ['a/canvas#fingerprint', 'a/canvas#sceneAssertion', 'a/canvas#screenshot'],
       lost: [],
       absent: [],
     });
@@ -189,7 +209,7 @@ describe('diffCaptureBaselineCoverage · unobservable kinds', () => {
     const diff = diffCaptureBaselineCoverage(manifest, 'functional', { 'a/webgl': ['fingerprint'] }, ['a/webgl'], {
       activeRenderers: null,
       entryFiltered: false,
-      kinds: ['fingerprint', 'oracle', 'screenshot'],
+      kinds: ['fingerprint', 'sceneAssertion', 'screenshot'],
     });
 
     expect(diff.lost).toEqual([]);
@@ -219,7 +239,7 @@ describe('diffCaptureBaselineCoverage · unobservable kinds', () => {
     const diff = diffCaptureBaselineCoverage(manifest, 'functional', { 'a/webgl': ['fingerprint'] }, ['a/webgl'], {
       activeRenderers: null,
       entryFiltered: false,
-      kinds: ['fingerprint', 'oracle', 'screenshot'],
+      kinds: ['fingerprint', 'sceneAssertion', 'screenshot'],
     });
 
     expect(diff.lost).toEqual(['a/webgl#screenshot']);
@@ -230,7 +250,7 @@ describe('evidence-kind scope', () => {
   const all = ['svg-image/webgl', 'svg-image/canvas', 'node-alpha/canvas'];
 
   // ★ The rule that makes ONE manifest over three tiers safe. A validate run observes fingerprints and
-  // nothing else; without this it would report every screenshot and oracle pin as lost on every run —
+  // nothing else; without this it would report every screenshot and sceneAssertion pin as lost on every run —
   // absence of OBSERVATION reported as absence of EVIDENCE, which is the defect being fixed.
   it('does not report a kind the run never observed', () => {
     const diff = diffCaptureBaselineCoverage(
@@ -253,14 +273,14 @@ describe('evidence-kind scope', () => {
       all,
       { entryFiltered: false, activeRenderers: null },
     );
-    expect(diff.lost).toContain('svg-image/webgl#oracle');
+    expect(diff.lost).toContain('svg-image/webgl#sceneAssertion');
     expect(diff.lost).toContain('svg-image/webgl#screenshot');
     expect(diff.lost).not.toContain('svg-image/webgl#fingerprint');
   });
 
   // One target losing ONE of its three columns is the erosion this consolidation must still catch.
   it('names the single lost column, not the whole target', () => {
-    const covered: Record<string, readonly ('fingerprint' | 'oracle' | 'screenshot')[]> = {
+    const covered: Record<string, readonly ('fingerprint' | 'sceneAssertion' | 'screenshot')[]> = {
       'svg-image/webgl': ['fingerprint', 'screenshot'],
       'svg-image/canvas': ALL,
       'node-alpha/canvas': ALL,
@@ -269,7 +289,7 @@ describe('evidence-kind scope', () => {
       entryFiltered: false,
       activeRenderers: null,
     });
-    expect(diff.lost).toEqual(['svg-image/webgl#oracle']);
+    expect(diff.lost).toEqual(['svg-image/webgl#sceneAssertion']);
     expect(isCaptureBaselineCoverageFailure(diff)).toBe(true);
   });
 });
@@ -284,8 +304,8 @@ describe('formatCaptureBaselineEvidenceIdentity', () => {
   // `#`, not `:` — a renderer id may itself contain a colon (`flight:webgl`), so a colon separator
   // would make the target and the kind ambiguous to split.
   it('joins target and kind with a separator no renderer id contains', () => {
-    expect(formatCaptureBaselineEvidenceIdentity('svg-image/flight:webgl', 'oracle')).toBe(
-      'svg-image/flight:webgl#oracle',
+    expect(formatCaptureBaselineEvidenceIdentity('svg-image/flight:webgl', 'sceneAssertion')).toBe(
+      'svg-image/flight:webgl#sceneAssertion',
     );
   });
 });
@@ -293,7 +313,7 @@ describe('formatCaptureBaselineEvidenceIdentity', () => {
 describe('isCaptureBaselineCoverageFailure', () => {
   it('is true in every direction and false only for an exact match', () => {
     expect(isCaptureBaselineCoverageFailure({ gained: [], lost: [], absent: [] })).toBe(false);
-    expect(isCaptureBaselineCoverageFailure({ gained: ['x/canvas#oracle'], lost: [], absent: [] })).toBe(true);
+    expect(isCaptureBaselineCoverageFailure({ gained: ['x/canvas#sceneAssertion'], lost: [], absent: [] })).toBe(true);
     expect(isCaptureBaselineCoverageFailure({ gained: [], lost: ['x/canvas#fingerprint'], absent: [] })).toBe(true);
     expect(isCaptureBaselineCoverageFailure({ gained: [], lost: [], absent: ['x/canvas#screenshot'] })).toBe(true);
   });
@@ -303,7 +323,7 @@ describe('listCaptureBaselineEvidence', () => {
   it('flattens every pinned target into its individual evidence units', () => {
     expect(listCaptureBaselineEvidence(manifest, 'examples')).toEqual([
       'text/canvas#fingerprint',
-      'text/canvas#oracle',
+      'text/canvas#sceneAssertion',
       'text/canvas#screenshot',
     ]);
   });
@@ -329,7 +349,7 @@ describe('readCaptureBaselineCoverageManifest', () => {
 
 describe('schema 1 migration', () => {
   // Schema 1 knew only fingerprints, so a bare identity list means fingerprint-only. Reading it as all
-  // three would manufacture screenshot and oracle pins nobody ever accepted, and the next run would
+  // three would manufacture screenshot and sceneAssertion pins nobody ever accepted, and the next run would
   // report them as losses.
   it('reads a v1 identity list as fingerprint evidence only', () => {
     const root = mkdtempSync(join(tmpdir(), 'flight-coverage-v1-'));
@@ -339,8 +359,27 @@ describe('schema 1 migration', () => {
       JSON.stringify({ schemaVersion: 1, subjects: { functional: ['a/webgl', 'b/canvas'] } }),
     );
     const read = readCaptureBaselineCoverageManifest(root);
-    expect(read.schemaVersion).toBe(2);
+    expect(read.schemaVersion).toBe(3);
     expect(read.subjects.functional).toEqual({ 'a/webgl': ['fingerprint'], 'b/canvas': ['fingerprint'] });
+  });
+});
+
+describe('schema 2 migration', () => {
+  it('remaps oracle to sceneAssertion when reading a v2 manifest', () => {
+    const root = mkdtempSync(join(tmpdir(), 'flight-coverage-v2-'));
+    mkdirSync(join(root, 'scripts'));
+    writeFileSync(
+      join(root, 'scripts', 'capture-baseline-coverage-manifest.json'),
+      JSON.stringify({
+        schemaVersion: 2,
+        subjects: { functional: { 'a/webgl': ['fingerprint', 'oracle', 'screenshot'] } },
+      }),
+    );
+    const read = readCaptureBaselineCoverageManifest(root);
+    expect(read.schemaVersion).toBe(3);
+    expect(read.subjects.functional).toEqual({
+      'a/webgl': ['fingerprint', 'sceneAssertion', 'screenshot'],
+    });
   });
 });
 
@@ -362,7 +401,7 @@ describe('writeCaptureBaselineCoverageManifest', () => {
       { 'a/webgl': ['fingerprint'] },
       null,
       ['a/webgl'],
-      ['fingerprint', 'oracle', 'screenshot'],
+      ['fingerprint', 'sceneAssertion', 'screenshot'],
     );
 
     expect(manifest.subjects['functional']?.['a/webgl']).toEqual(['fingerprint', 'referenceImage']);
@@ -381,7 +420,7 @@ describe('writeCaptureBaselineCoverageManifest', () => {
       { 'a/webgl': ['fingerprint'] },
       null,
       ['a/webgl'],
-      ['fingerprint', 'oracle', 'screenshot'],
+      ['fingerprint', 'sceneAssertion', 'screenshot'],
     );
 
     expect(manifest.subjects['functional']?.['a/webgl']).toEqual(['fingerprint']);
@@ -475,17 +514,19 @@ describe('writeCaptureBaselineCoverageManifest', () => {
     writeCaptureBaselineCoverageManifest(
       root,
       'functional',
-      { 'a/canvas': ['fingerprint', 'oracle', 'screenshot'] },
+      { 'a/canvas': ['fingerprint', 'sceneAssertion', 'screenshot'] },
       null,
       ['a/canvas'],
-      ['fingerprint', 'oracle', 'screenshot'],
+      ['fingerprint', 'sceneAssertion', 'screenshot'],
     );
 
     expect(readFileSync(path, 'utf8')).toBe(
-      before.replace(
-        '      "a/canvas": ["fingerprint", "screenshot"],',
-        '      "a/canvas": ["fingerprint", "oracle", "screenshot"],',
-      ),
+      before
+        .replace('"schemaVersion": 2', '"schemaVersion": 3')
+        .replace(
+          '      "a/canvas": ["fingerprint", "screenshot"],',
+          '      "a/canvas": ["fingerprint", "sceneAssertion", "screenshot"],',
+        ),
     );
   });
 

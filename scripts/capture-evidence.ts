@@ -3,18 +3,18 @@
 //
 // ★ WHY THIS IS A SEPARATE PROCESS FROM `validate`. A validate run observes ONE evidence kind — the
 // fingerprint — because that is the only kind it measures, and it correctly declares as much so the other
-// columns are never reported lost. That leaves the screenshot and oracle columns pinned but unread: the
-// manifest knows a target should carry an oracle, and nothing ever checks that it still does. This census
+// columns are never reported lost. That leaves the screenshot and sceneAssertion columns pinned but unread:
+// the manifest knows a target should carry a sceneAssertion, and nothing ever checks that it still does. This census
 // reads all three from the tree itself, so a pin that stops being true becomes a named diff.
 //
 // It needs NO BROWSER: fingerprint and screenshot evidence are fields in the committed baseline, and
-// oracle evidence is an export in the scene source. That is what makes it cheap enough to gate on rather
+// sceneAssertion evidence is an export in the scene source. That is what makes it cheap enough to gate on rather
 // than to run only at acceptance time.
 //
-// ★ WHAT IT CANNOT ANSWER. This is a STATIC scan, so the oracle column means "the scene exports an
-// oracle", never "the verifier called it". Those are different claims and only the verifier can settle
-// the second — it records that per target as `oracle` in its own status artifact. Do not read a green
-// census as evidence that oracles ran.
+// ★ WHAT IT CANNOT ANSWER. This is a STATIC scan, so the sceneAssertion column means "the scene exports
+// an assertRender", never "the verifier called it". Those are different claims and only the verifier can
+// settle the second — it records that per target as `oracle` in its own status artifact. Do not read a
+// green census as evidence that scene assertions ran.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -71,7 +71,7 @@ function collectFunctional(): Record<string, CaptureBaselineEvidenceKind[]> {
       const scenePath = existsSync(specific) ? specific : join(scenesDir, `${name}.ts`);
       const kinds: CaptureBaselineEvidenceKind[] = [];
       if (baselineField('functional', name, backend, 'fingerprint')) kinds.push('fingerprint');
-      if (existsSync(scenePath) && ORACLE_EXPORT.test(readFileSync(scenePath, 'utf8'))) kinds.push('oracle');
+      if (existsSync(scenePath) && ORACLE_EXPORT.test(readFileSync(scenePath, 'utf8'))) kinds.push('sceneAssertion');
       if (baselineField('functional', name, backend, 'sha256')) kinds.push('screenshot');
       if (kinds.length > 0) out[`${name}/${backend}`] = kinds;
     }
@@ -90,7 +90,7 @@ function collectExamples(): Record<string, CaptureBaselineEvidenceKind[]> {
       const kinds: CaptureBaselineEvidenceKind[] = [];
       if (baselineField('examples', name, backend, 'fingerprint')) kinds.push('fingerprint');
       const app = join(sourceDir, 'app.ts');
-      if (existsSync(app) && ORACLE_EXPORT.test(readFileSync(app, 'utf8'))) kinds.push('oracle');
+      if (existsSync(app) && ORACLE_EXPORT.test(readFileSync(app, 'utf8'))) kinds.push('sceneAssertion');
       if (baselineField('examples', name, backend, 'sha256')) kinds.push('screenshot');
       if (kinds.length > 0) out[`${name}/${backend}`] = kinds;
     }
@@ -107,7 +107,11 @@ function collectExamples(): Record<string, CaptureBaselineEvidenceKind[]> {
 // reached only the `--update` path, and the diff path then reported every pinned `referenceImage` as
 // "pinned, no longer carried" — a coverage LOSS, blocking a merge, for a kind no run was ever able to
 // carry. One constant, two uses, so the two cannot drift apart again.
-const LOCALLY_OBSERVABLE_KINDS: readonly CaptureBaselineEvidenceKind[] = ['fingerprint', 'oracle', 'screenshot'];
+const LOCALLY_OBSERVABLE_KINDS: readonly CaptureBaselineEvidenceKind[] = [
+  'fingerprint',
+  'sceneAssertion',
+  'screenshot',
+];
 
 const observed: Record<string, Record<string, CaptureBaselineEvidenceKind[]>> = {
   examples: collectExamples(),
@@ -148,7 +152,7 @@ for (const subject of subjects) {
     const counts: Partial<Record<CaptureBaselineEvidenceKind, number>> = {};
     for (const kinds of Object.values(targets)) for (const kind of kinds) counts[kind] = (counts[kind] ?? 0) + 1;
     console.log(
-      `${subject}: ${Object.keys(targets).length} targets — ${counts.fingerprint ?? 0} fingerprint, ${counts.screenshot ?? 0} screenshot, ${counts.oracle ?? 0} oracle`,
+      `${subject}: ${Object.keys(targets).length} targets — ${counts.fingerprint ?? 0} fingerprint, ${counts.screenshot ?? 0} screenshot, ${counts.sceneAssertion ?? 0} sceneAssertion`,
     );
     for (const lost of diff.lost) console.error(`  - ${lost}  (pinned, no longer carried)`);
     for (const absent of diff.absent) console.error(`  - ${absent}  (pinned, target no longer exists)`);

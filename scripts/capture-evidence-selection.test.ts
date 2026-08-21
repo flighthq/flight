@@ -19,14 +19,14 @@ describe('selectCaptureEvidenceTargets', () => {
   const observed = {
     functional: {
       'material-depth-orthographic/webgl': ['fingerprint'] as const,
-      'material-depth/webgl': ['fingerprint', 'oracle'] as const,
+      'material-depth/webgl': ['fingerprint', 'sceneAssertion'] as const,
     },
   };
 
   it('selects only the exact identity named, never its longer neighbour', () => {
     expect(selectCaptureEvidenceTargets(['functional/material-depth/webgl'], observed, {})).toEqual({
       functional: {
-        covered: { 'material-depth/webgl': ['fingerprint', 'oracle'] },
+        covered: { 'material-depth/webgl': ['fingerprint', 'sceneAssertion'] },
         determined: ['material-depth/webgl'],
       },
     });

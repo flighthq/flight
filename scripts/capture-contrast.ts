@@ -98,7 +98,7 @@ function readContrastRows(): ContrastRow[] {
       const contrast = getCaptureFingerprintContrast(record.fingerprint);
       if (contrast === null) continue;
       const target = `${name}/${backend}`;
-      rows.push({ contrast, hasOracle: (pinned[target] ?? []).includes('oracle'), target });
+      rows.push({ contrast, hasOracle: (pinned[target] ?? []).includes('sceneAssertion'), target });
     }
   }
   return rows.sort((a, b) => a.contrast - b.contrast || a.target.localeCompare(b.target));

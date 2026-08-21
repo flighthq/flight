@@ -28,7 +28,7 @@
 // satisfaction. That surfaced independently in three tiers over the SAME target set — a missing
 // fingerprint skips the regression comparison, a missing `sha256` leaves `changed` null so
 // `--fail-on-changed` cannot fire, and a missing (or misspelled) `assertRender` export silently runs no
-// oracle. They are not three defects: they are three kinds of evidence about one row, and a target's
+// scene assertion. They are not three defects: they are three kinds of evidence about one row, and a target's
 // evidence profile is ONE fact. Three parallel manifests would be three places for that fact to drift
 // apart, so the kinds are COLUMNS on one row here, and a loss is named as `target#kind`.
 
@@ -48,14 +48,15 @@ import { join } from 'node:path';
  * retire the entire tier's requirements simply because it could not see them, which is precisely the
  * "make CI green by deleting the thing CI was meant to require" failure §5 exists to prevent.
  *
- * ★ NOT NAMED `oracle`. `oracle` already means the scene's in-page `assertRender` mechanism in this very
- * union. Reusing it would let a static scan finding an `assertRender` export be mistaken for proof that a
- * blessed reference image exists — two different claims about two different artifacts.
+ * ★ NOT NAMED `sceneAssertion`. `sceneAssertion` already means the scene's in-page `assertRender`
+ * mechanism in this very union. Reusing it would let a static scan finding an `assertRender` export be
+ * mistaken for proof that a blessed reference image exists — two different claims about two different
+ * artifacts.
  */
-export type CaptureBaselineEvidenceKind = 'fingerprint' | 'oracle' | 'referenceImage' | 'screenshot';
+export type CaptureBaselineEvidenceKind = 'fingerprint' | 'referenceImage' | 'sceneAssertion' | 'screenshot';
 
 export interface CaptureBaselineCoverageManifest {
-  schemaVersion: 2;
+  schemaVersion: 3;
   /**
    * Per subject (`functional`, `examples`): each `entry/renderer` identity mapped to the sorted evidence
    * kinds it carries. A target with no evidence at all is absent rather than mapped to an empty list.
@@ -72,12 +73,12 @@ export interface CaptureBaselineCoverageDiff {
   absent: string[];
 }
 
-export const CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION = 2;
+export const CAPTURE_BASELINE_COVERAGE_MANIFEST_VERSION = 3;
 
 export const CAPTURE_BASELINE_EVIDENCE_KINDS: readonly CaptureBaselineEvidenceKind[] = [
   'fingerprint',
-  'oracle',
   'referenceImage',
+  'sceneAssertion',
   'screenshot',
 ];
 
@@ -215,9 +216,14 @@ export function readCaptureBaselineCoverageManifest(root: string): CaptureBaseli
     // Schema 1 pinned a bare identity list, and every identity in it meant "has a comparable fingerprint"
     // because that was the only evidence kind the manifest knew about. Read it as exactly that claim
     // rather than as a target with all three, which would manufacture pins nobody ever accepted.
-    migrated[subject] = Array.isArray(value)
+    const asRecord: Record<string, CaptureBaselineEvidenceKind[]> = Array.isArray(value)
       ? Object.fromEntries((value as string[]).map((identity) => [identity, ['fingerprint' as const]]))
       : (value as Record<string, CaptureBaselineEvidenceKind[]>);
+    // Schema 2 used 'oracle' for the scene-assertion evidence kind; schema 3 renamed it.
+    for (const [identity, kinds] of Object.entries(asRecord)) {
+      asRecord[identity] = kinds.map((k) => (k === ('oracle' as string) ? 'sceneAssertion' : k));
+    }
+    migrated[subject] = asRecord;
   }
   return createCaptureBaselineCoverageManifest(migrated);
 }

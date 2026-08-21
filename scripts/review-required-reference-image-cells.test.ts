@@ -12,8 +12,8 @@ describe('readRequiredReferenceImageCells', () => {
       {
         subjects: {
           functional: {
-            'effect-bokeh-dof/webgl': ['fingerprint', 'oracle', 'referenceImage', 'screenshot'],
-            'effect-bokeh-dof/webgpu': ['fingerprint', 'oracle', 'screenshot'],
+            'effect-bokeh-dof/webgl': ['fingerprint', 'sceneAssertion', 'referenceImage', 'screenshot'],
+            'effect-bokeh-dof/webgpu': ['fingerprint', 'sceneAssertion', 'screenshot'],
           },
         },
       },
