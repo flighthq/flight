@@ -116,7 +116,7 @@ function classifyRegistration(
 
 function findEnclosingFunction(node: ts.Node): ts.FunctionLikeDeclaration | null {
   for (let parent = node.parent; parent !== undefined; parent = parent.parent) {
-    if (ts.isFunctionLike(parent)) return parent;
+    if (isFunctionLikeDeclaration(parent)) return parent;
   }
   return null;
 }
@@ -149,11 +149,12 @@ function hasDirectCleanup(
   let found = false;
   visitOwned(owner, owner, (node) => {
     if (found || !ts.isCallExpression(node) || node.getStart(source) <= registration.getStart(source)) return;
-    if (isNamedCall(node, 'clearLogSinks') || isNamedCall(node, 'setLogSink')) {
+    const name = ts.isIdentifier(node.expression) ? node.expression.text : null;
+    if (name === 'clearLogSinks' || name === 'setLogSink') {
       found = true;
       return;
     }
-    if (isNamedCall(node, 'removeLogSink') && node.arguments[0]?.getText(source) === argument) found = true;
+    if (name === 'removeLogSink' && node.arguments[0]?.getText(source) === argument) found = true;
   });
   return found;
 }
@@ -190,6 +191,18 @@ function isNamedCall(node: ts.Node, name: string): node is ts.CallExpression {
   return ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === name;
 }
 
+function isFunctionLikeDeclaration(node: ts.Node): node is ts.FunctionLikeDeclaration {
+  return (
+    ts.isFunctionDeclaration(node) ||
+    ts.isMethodDeclaration(node) ||
+    ts.isGetAccessorDeclaration(node) ||
+    ts.isSetAccessorDeclaration(node) ||
+    ts.isConstructorDeclaration(node) ||
+    ts.isFunctionExpression(node) ||
+    ts.isArrowFunction(node)
+  );
+}
+
 function isPageLifetimeRegistration(registration: Readonly<LogSinkRegistration>): boolean {
   return (
     registration.path === 'tools/size/fixtures/log-console/src/render.canvas.ts' &&
@@ -205,7 +218,7 @@ function visit(node: ts.Node, callback: (node: ts.Node) => void): void {
 function visitOwned(node: ts.Node, owner: ts.FunctionLikeDeclaration, callback: (node: ts.Node) => void): void {
   callback(node);
   node.forEachChild((child) => {
-    if (child !== owner && ts.isFunctionLike(child)) return;
+    if (child !== owner && isFunctionLikeDeclaration(child)) return;
     visitOwned(child, owner, callback);
   });
 }
