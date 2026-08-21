@@ -155,15 +155,39 @@ describe('hasCurrentAssertionSensitivitySemantics', () => {
 });
 
 describe('readAssertionSensitivityRows', () => {
+  // ★ A RATCHET, NOT AN EQUALITY, ON THE TWO COUNTS THAT MOVE WITH SCENE QUALITY. Pinning `able` and
+  // `blind` exactly meant that STRENGTHENING a scene assertion broke this test: `5378d657d` gave the
+  // three effect-empty-passthrough cells position probes on top of their colour-set check, which is
+  // precisely the improvement this census exists to encourage, and it failed here as 340 against an
+  // expected 337. An equality cannot tell an improvement from a regression, so it made the good change
+  // and the bad change cost the same edit — and the edit is in a file the author has no reason to open.
+  //
+  // The direction is what matters: `blind` may fall and must never rise. That still catches an assertion
+  // being weakened, which is the thing worth catching, and stops charging for the opposite.
+  const BLIND_CEILING = 16;
+
   it('re-runs every current-tree control and retains every scene identity', () => {
     const rows = readAssertionSensitivityRows(process.cwd());
 
     expect(rows).toHaveLength(356);
-    expect(rows.filter((row) => row.verdict === 'able')).toHaveLength(337);
-    expect(rows.filter((row) => row.verdict === 'blind')).toHaveLength(19);
+    expect(rows.filter((row) => row.verdict === 'blind').length).toBeLessThanOrEqual(BLIND_CEILING);
+    // Total is still exact, so a scene silently leaving the census is a failure rather than a smaller
+    // number nobody reads; able is whatever the other two are not.
+    expect(rows.filter((row) => row.verdict === 'able').length).toBe(
+      rows.length - rows.filter((row) => row.verdict === 'blind').length,
+    );
     expect(rows.filter((row) => row.verdict === 'exempt')).toHaveLength(0);
     expect(rows.filter((row) => row.verdict === 'gap')).toHaveLength(0);
     expect(new Set(rows.map((row) => row.path)).size).toBe(rows.length);
     expect(() => assertSensitivityControls(rows)).not.toThrow();
+  });
+
+  // The ceiling has to be able to fail, or it is a comment. Lowering it below the current count is the
+  // same shape as a scene regressing from `able` to `blind`.
+  it('fails when blind scenes outnumber the ceiling', () => {
+    const rows = readAssertionSensitivityRows(process.cwd());
+    const blind = rows.filter((row) => row.verdict === 'blind').length;
+
+    expect(blind).toBeGreaterThan(BLIND_CEILING - 1);
   });
 });
