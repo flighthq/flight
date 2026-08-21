@@ -443,3 +443,16 @@ export type CollisionFaceQuery3D = (
   dirZ: number,
   out: number[],
 ) => number;
+
+// Exact first intersection of a parametric ray `origin + direction * fraction` with one 3D shape.
+// `raycastCollisionShape3D` rewrites this record and returns whether it is live. A zero normal means
+// the origin was already inside the shape, where no outward-facing side was crossed.
+export interface CollisionRaycastHit3D {
+  fraction: number;
+  x: number;
+  y: number;
+  z: number;
+  normalX: number;
+  normalY: number;
+  normalZ: number;
+}

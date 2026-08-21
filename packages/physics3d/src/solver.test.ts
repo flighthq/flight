@@ -1,6 +1,11 @@
+import {
+  registerBuiltInCollisionFaceQueries3D,
+  registerBuiltInCollisionSupports3D,
+} from '@flighthq/collision/contract';
 import type { Physics3DContact, Physics3DContactPoint, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { buildPhysics3DContacts } from './contactIntake';
 import { refreshRigidBody3DWorldInertia } from './integrate';
 import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands';
 import { computePhysics3DBoxMassData, createPhysics3DMassData } from './massProperties';
@@ -13,7 +18,19 @@ import {
   solvePhysics3DContactVelocities,
   warmStartPhysics3DContacts,
 } from './solver';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world';
+import {
+  addPhysics3DBody,
+  addPhysics3DCollider,
+  createPhysics3DCollider,
+  createPhysics3DWorld,
+  createRigidBody3D,
+  setPhysics3DBodyType,
+} from './world';
+
+beforeEach(() => {
+  registerBuiltInCollisionSupports3D();
+  registerBuiltInCollisionFaceQueries3D();
+});
 
 describe('createPhysics3DContactConstraint', () => {
   it('allocates an unbound constraint with no points', () => {
@@ -184,8 +201,9 @@ describe('preparePhysics3DContactConstraints', () => {
 
 describe('solvePhysics3DContactPositions', () => {
   it('pushes a penetrating body out along the normal', () => {
-    const world = createFallingBoxWorld();
-    world.contacts[0].points[0].depth = 0.1;
+    // Real geometry, overlapping by 0.1. The position pass regenerates the contact from the shapes each
+    // iteration, so a hand-written `depth` on a body with no colliders describes nothing it can read.
+    const world = createOverlappingBoxWorld(0.1);
     preparePhysics3DContactConstraints(world);
 
     const before = world.bodies[0].y;
@@ -204,28 +222,24 @@ describe('solvePhysics3DContactPositions', () => {
   });
 
   it('reports the deepest remaining penetration so a caller can stop iterating', () => {
-    const world = createFallingBoxWorld();
-    world.contacts[0].points[0].depth = 0.25;
+    const world = createOverlappingBoxWorld(0.25);
     preparePhysics3DContactConstraints(world);
 
     const deepest = solvePhysics3DContactPositions(world);
-    expect(deepest).toBeCloseTo(0.25 - world.config.sequentialImpulse.penetrationSlop, 12);
+    expect(deepest).toBeCloseTo(0.25 - world.config.sequentialImpulse.penetrationSlop, 6);
   });
 
   it('converges toward the slop over repeated iterations', () => {
-    const world = createFallingBoxWorld();
-    world.contacts[0].points[0].depth = 0.2;
+    // The pass re-measures from the shapes, so repeated iterations genuinely converge rather than
+    // re-applying one stale correction. Nothing here has to feed the depth back by hand.
+    const world = createOverlappingBoxWorld(0.2);
     preparePhysics3DContactConstraints(world);
 
-    // Depth is an input the narrow phase would refresh; drive it from the body's own motion instead.
-    const startY = world.bodies[0].y;
-    for (let i = 0; i < 40; i += 1) {
-      world.contacts[0].points[0].depth = 0.2 - (world.bodies[0].y - startY);
-      solvePhysics3DContactPositions(world);
-    }
-    const remaining = 0.2 - (world.bodies[0].y - startY);
-    expect(remaining).toBeLessThan(0.2);
-    expect(remaining).toBeGreaterThan(0);
+    let remaining = 0.2;
+    for (let i = 0; i < 40; i += 1) remaining = solvePhysics3DContactPositions(world);
+
+    expect(remaining).toBeLessThan(0.01);
+    expect(remaining).toBeGreaterThanOrEqual(0);
   });
 
   it('never moves a static body', () => {
@@ -462,6 +476,26 @@ function createFallingBoxWorld(): Physics3DWorld {
   const box = createUnitBox(world);
   const other = createUnitBox(world);
   world.contacts.push(createContact(box.index, other.index));
+  return buildSolveWorkspace(world);
+}
+
+// Two unit boxes with REAL colliders, overlapping vertically by `depth`, with contacts generated the
+// way a step generates them. The position pass reads geometry, so this is the only fixture shape its
+// tests can be written against.
+function createOverlappingBoxWorld(depth: number): Physics3DWorld {
+  const world = createPhysics3DWorld();
+  const upper = createUnitBox(world);
+  const lower = createUnitBox(world);
+  setPhysics3DBodyType(lower, 'static');
+  for (const body of [upper, lower]) {
+    addPhysics3DCollider(
+      world,
+      body,
+      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+    );
+  }
+  upper.y = 1 - depth;
+  buildPhysics3DContacts(world);
   return buildSolveWorkspace(world);
 }
 

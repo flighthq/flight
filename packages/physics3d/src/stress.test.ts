@@ -1,0 +1,374 @@
+import {
+  registerBuiltInCollisionFaceQueries3D,
+  registerBuiltInCollisionSupports3D,
+} from '@flighthq/collision/contract';
+import type { CollisionBuiltInShape3D, Physics3DMaterial, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { createPhysics3DBallAndSocketJoint } from './jointFactories';
+import { addPhysics3DJoint } from './jointRegistry';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
+import { stepPhysics3D } from './step';
+import {
+  addPhysics3DBody,
+  addPhysics3DCollider,
+  createPhysics3DCollider,
+  createPhysics3DWorld,
+  createRigidBody3D,
+} from './world';
+
+// Long-horizon qualification. These do not test one function; they test that the ASSEMBLED step stays
+// finite, stays deterministic, and reuses its storage over thousands of solves — the failures that only
+// appear after hundreds of steps and that a per-function test cannot reach.
+
+beforeEach(() => {
+  registerBuiltInCollisionSupports3D();
+  registerBuiltInCollisionFaceQueries3D();
+});
+
+const MATERIAL: Physics3DMaterial = { density: 1, friction: 0.4, restitution: 0 };
+
+function boxShape(halfX: number, halfY: number, halfZ: number): CollisionBuiltInShape3D {
+  return { kind: 'aabb', minX: -halfX, minY: -halfY, minZ: -halfZ, maxX: halfX, maxY: halfY, maxZ: halfZ };
+}
+
+function addBox(
+  world: Physics3DWorld,
+  type: RigidBody3D['type'],
+  x: number,
+  y: number,
+  z: number,
+  half = 0.5,
+): RigidBody3D {
+  const body = createRigidBody3D(type);
+  body.x = x;
+  body.y = y;
+  body.z = z;
+  addPhysics3DBody(world, body);
+  addPhysics3DCollider(world, body, createPhysics3DCollider(boxShape(half, half, half), MATERIAL));
+  return body;
+}
+
+function addSphere(
+  world: Physics3DWorld,
+  type: RigidBody3D['type'],
+  x: number,
+  y: number,
+  z: number,
+  radius = 0.25,
+): RigidBody3D {
+  const body = createRigidBody3D(type);
+  body.x = x;
+  body.y = y;
+  body.z = z;
+  addPhysics3DBody(world, body);
+  addPhysics3DCollider(world, body, createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius }, MATERIAL));
+  return body;
+}
+
+function addSlab(world: Physics3DWorld, halfX: number, halfY: number, halfZ: number, y: number): RigidBody3D {
+  const body = createRigidBody3D('static');
+  body.y = y;
+  addPhysics3DBody(world, body);
+  addPhysics3DCollider(world, body, createPhysics3DCollider(boxShape(halfX, halfY, halfZ), MATERIAL));
+  return body;
+}
+
+function run(world: Physics3DWorld, steps: number): void {
+  for (let i = 0; i < steps; i += 1) stepPhysics3D(world, 1 / 60);
+}
+
+// Every field the integrator writes. A NaN in ONE of them spreads to the rest within a step, so
+// checking a subset would report health a step before the world dies.
+function expectFiniteBody(body: Readonly<RigidBody3D>): void {
+  expect([
+    body.x,
+    body.y,
+    body.z,
+    body.orientationX,
+    body.orientationY,
+    body.orientationZ,
+    body.orientationW,
+    body.velocityX,
+    body.velocityY,
+    body.velocityZ,
+    body.angularVelocityX,
+    body.angularVelocityY,
+    body.angularVelocityZ,
+  ]).toSatisfy((values: number[]) => values.every(Number.isFinite));
+}
+
+function snapshotWorld(world: Readonly<Physics3DWorld>): number[][] {
+  return world.bodies.map((body) => [
+    body.index,
+    body.x,
+    body.y,
+    body.z,
+    body.orientationX,
+    body.orientationY,
+    body.orientationZ,
+    body.orientationW,
+    body.velocityX,
+    body.velocityY,
+    body.velocityZ,
+    body.angularVelocityX,
+    body.angularVelocityY,
+    body.angularVelocityZ,
+    body.sleeping ? 1 : 0,
+    body.sleepTimer,
+  ]);
+}
+
+describe('physics3d stress qualification', () => {
+  it('keeps a tall pile finite, ordered, and supported over a long settle horizon', () => {
+    const world = createPhysics3DWorld();
+    world.gravityY = -10;
+    addSlab(world, 20, 1, 20, -1);
+    // Boxed in on four sides, so the pile cannot walk sideways out of the test over 900 steps. The 2D
+    // harness needs two walls; three dimensions need four.
+    for (const [x, z, halfX, halfZ] of [
+      [-1.02, 0, 0.5, 3],
+      [1.02, 0, 0.5, 3],
+      [0, -1.02, 3, 0.5],
+      [0, 1.02, 3, 0.5],
+    ]) {
+      const wall = createRigidBody3D('static');
+      wall.x = x;
+      wall.z = z;
+      wall.y = 10;
+      addPhysics3DBody(world, wall);
+      addPhysics3DCollider(world, wall, createPhysics3DCollider(boxShape(halfX, 11, halfZ), MATERIAL));
+    }
+    const pile: RigidBody3D[] = [];
+    for (let i = 0; i < 12; i += 1) pile.push(addBox(world, 'dynamic', 0, 0.5 + i, 0));
+
+    run(world, 900);
+
+    for (const body of pile) expectFiniteBody(body);
+    // Still stacked in the order they were built: nothing tunnelled past a neighbour.
+    for (let i = 1; i < pile.length; i += 1) expect(pile[i].y).toBeGreaterThan(pile[i - 1].y);
+    // The bottom box still rests on the floor rather than having sunk into it.
+    expect(pile[0].y).toBeGreaterThan(0.45);
+    // And the pile has not collapsed: twelve unit boxes stand about twelve units tall. The shortfall
+    // from the ideal 11.5 is accumulated resting penetration — about 0.03 per contact against a 0.005
+    // slop target, which is what a projected Gauss-Seidel position pass leaves under a twelve-box load.
+    // This bound is deliberately tight: it caught the position pass correcting against a STALE depth,
+    // which cost 3 units of compression here while every single-contact test still passed.
+    expect(pile[pile.length - 1].y).toBeGreaterThan(11);
+    expect(pile.every((body) => body.sleeping)).toBe(true);
+  });
+
+  it('keeps a driven ball-and-socket chain bounded over thousands of constraint solves', () => {
+    const world = createPhysics3DWorld();
+    world.gravityY = -10;
+    registerBuiltInPhysics3DJointSolvers(world);
+    const links: RigidBody3D[] = [addSphere(world, 'static', 0, 8, 0)];
+    for (let i = 1; i <= 12; i += 1) {
+      const link = addSphere(world, 'dynamic', 0, 8 - i, 0);
+      links.push(link);
+      addPhysics3DJoint(
+        world,
+        createPhysics3DBallAndSocketJoint({
+          bodyA: links[i - 1].index,
+          bodyB: link.index,
+          localAnchorAY: -0.5,
+          localAnchorBY: 0.5,
+        }),
+      );
+    }
+    // Pushed sideways AND out of plane, so a chain that only stayed bounded in a plane would fail here.
+    links[links.length - 1].velocityX = 4;
+    links[links.length - 1].velocityZ = 3;
+
+    run(world, 1200);
+
+    for (const body of links) expectFiniteBody(body);
+    for (let i = 1; i < links.length; i += 1) {
+      const dx = links[i].x - links[i - 1].x;
+      const dy = links[i].y - links[i - 1].y;
+      const dz = links[i].z - links[i - 1].z;
+      expect(Math.hypot(dx, dy, dz)).toBeCloseTo(1, 1);
+    }
+    expect(Math.hypot(links[links.length - 1].x, links[links.length - 1].z)).toBeLessThan(15);
+  });
+
+  it('produces an exact repeat trace for a mixed pile, joint, and sleep scene', () => {
+    // EXACT equality, not approximate. Determinism is a property of the arithmetic and the iteration
+    // order; a tolerance here would pass with the contact sort removed, which is precisely the bug this
+    // is watching for.
+    function scene(): Physics3DWorld {
+      const world = createPhysics3DWorld();
+      world.gravityY = -10;
+      registerBuiltInPhysics3DJointSolvers(world);
+      addSlab(world, 10, 1, 10, -1);
+      const first = addBox(world, 'dynamic', -1, 0.5, 0);
+      const second = addBox(world, 'dynamic', -1, 1.5, 0);
+      addPhysics3DJoint(
+        world,
+        createPhysics3DBallAndSocketJoint({
+          bodyA: first.index,
+          bodyB: second.index,
+          localAnchorAY: 0.5,
+          localAnchorBY: -0.5,
+        }),
+      );
+      addBox(world, 'dynamic', 2, 0.5, 0);
+      addBox(world, 'dynamic', 2, 0.5, 2);
+      const thrown = addSphere(world, 'dynamic', -8, 3, 0);
+      thrown.gravityScale = 0;
+      thrown.velocityX = 20;
+      return world;
+    }
+
+    const first = scene();
+    const second = scene();
+    for (let i = 0; i < 480; i += 1) {
+      stepPhysics3D(first, 1 / 60);
+      stepPhysics3D(second, 1 / 60);
+    }
+
+    expect(snapshotWorld(first)).toEqual(snapshotWorld(second));
+  });
+
+  it('produces the same trace whichever order two independent piles were inserted in', () => {
+    // The other half of determinism, and the one an exact-repeat test cannot see: the contact LIST is
+    // sorted precisely so that insertion history stops mattering. Two disjoint piles built in opposite
+    // orders must settle identically.
+    function scene(reversed: boolean): number[] {
+      const world = createPhysics3DWorld();
+      world.gravityY = -10;
+      addSlab(world, 20, 1, 20, -1);
+      const columns = reversed ? [6, -6] : [-6, 6];
+      const tracked: RigidBody3D[] = [];
+      for (const x of columns) {
+        for (let i = 0; i < 3; i += 1) tracked.push(addBox(world, 'dynamic', x, 0.5 + i, 0));
+      }
+      run(world, 300);
+      // Reported by POSITION rather than by insertion index, since the two scenes number their bodies
+      // differently on purpose.
+      return tracked
+        .map((body) => [Math.round(body.x), body.y] as const)
+        .sort((a, b) => a[0] - b[0] || a[1] - b[1])
+        .map(([, y]) => y);
+    }
+
+    const forward = scene(false);
+    const backward = scene(true);
+    expect(forward).toHaveLength(6);
+    for (let i = 0; i < forward.length; i += 1) expect(backward[i]).toBeCloseTo(forward[i], 9);
+  });
+
+  it('retains stable-topology contacts and every world-owned island workspace object', () => {
+    const world = createPhysics3DWorld();
+    world.gravityY = -10;
+    addSlab(world, 5, 1, 5, -1);
+    addBox(world, 'dynamic', 0, 0.5, 0);
+    run(world, 240);
+    expect(world.contacts).toHaveLength(1);
+    const contact = world.contacts[0];
+    const points = contact.points;
+    const workspace = [
+      world.islandParents,
+      world.islandSleepTimers,
+      world.solveIslandByRoot,
+      world.solveIslandRoots,
+      world.solveIslandBodyStarts,
+      world.solveIslandBodyCounts,
+      world.solveIslandContactStarts,
+      world.solveIslandContactCounts,
+      world.solveIslandJointStarts,
+      world.solveIslandJointCounts,
+      world.solveIslandBodyIndices,
+      world.solveIslandContactIndices,
+      world.solveIslandJointIndices,
+      world.solveIslandCursors,
+    ];
+
+    run(world, 600);
+
+    // Contact IDENTITY survives: the same record and the same point array, which is what the solver's
+    // warm-start accumulators are matched against. A contact rebuilt each step would settle far slower
+    // while every per-step assertion still passed.
+    expect(world.contacts[0]).toBe(contact);
+    expect(world.contacts[0].points).toBe(points);
+    const retained = [
+      world.islandParents,
+      world.islandSleepTimers,
+      world.solveIslandByRoot,
+      world.solveIslandRoots,
+      world.solveIslandBodyStarts,
+      world.solveIslandBodyCounts,
+      world.solveIslandContactStarts,
+      world.solveIslandContactCounts,
+      world.solveIslandJointStarts,
+      world.solveIslandJointCounts,
+      world.solveIslandBodyIndices,
+      world.solveIslandContactIndices,
+      world.solveIslandJointIndices,
+      world.solveIslandCursors,
+    ];
+    for (let i = 0; i < workspace.length; i += 1) expect(retained[i]).toBe(workspace[i]);
+  });
+
+  it('keeps a spinning asymmetric body finite, with a drift that halves as the timestep does', () => {
+    // The 3D-only failure mode, with no 2D counterpart: a body whose inertia tensor is not isotropic
+    // precesses, and the gyroscopic term that produces it is integrated EXPLICITLY. So the test is not
+    // that angular momentum is conserved — it is not, at a game timestep — but that the error behaves
+    // like discretization error and not like a wrong term. Halving the sub-interval must roughly halve
+    // the drift; a wrong term converges to the wrong answer instead, however fine the steps.
+    const drifts = [1, 2, 4].map((substeps) => {
+      const world = createPhysics3DWorld();
+      world.gravityY = 0;
+      world.config.substeps = substeps;
+      const body = createRigidBody3D('dynamic');
+      addPhysics3DBody(world, body);
+      addPhysics3DCollider(world, body, createPhysics3DCollider(boxShape(2, 0.5, 1), MATERIAL));
+      body.sleepEnabled = false;
+      body.angularVelocityX = 3;
+      body.angularVelocityY = 0.2;
+      body.angularVelocityZ = 0.1;
+
+      const initial = angularMomentumMagnitude(body);
+      run(world, 1200);
+
+      expectFiniteBody(body);
+      // The quaternion must stay on the unit sphere; renormalization drift shows up here first.
+      expect(Math.hypot(body.orientationX, body.orientationY, body.orientationZ, body.orientationW)).toBeCloseTo(1, 6);
+      return Math.abs(angularMomentumMagnitude(body) / initial - 1);
+    });
+
+    // Roughly first order: each halving of the sub-interval cuts the drift at least a third.
+    expect(drifts[1]).toBeLessThan(drifts[0] * 0.7);
+    expect(drifts[2]).toBeLessThan(drifts[1] * 0.7);
+    expect(drifts[2]).toBeLessThan(0.05);
+  });
+});
+
+// |I * omega|, which is conserved for torque-free motion.
+//
+// OMEGA IS ROTATED INTO THE BODY FRAME FIRST, and that step is the whole correctness of this function.
+// `body.angularVelocity*` is world-frame while `body.inertia*` is the LOCAL tensor; multiplying them
+// directly mixes two frames and produces a quantity that is conserved by nothing. It reads as a 40%
+// growth that gets WORSE with more substeps — a signature that looks exactly like a wrong gyroscopic
+// term and is really a wrong observable.
+function angularMomentumMagnitude(body: Readonly<RigidBody3D>): number {
+  const qX = -body.orientationX;
+  const qY = -body.orientationY;
+  const qZ = -body.orientationZ;
+  const qW = body.orientationW;
+  const x = body.angularVelocityX;
+  const y = body.angularVelocityY;
+  const z = body.angularVelocityZ;
+  const tX = 2 * (qY * z - qZ * y);
+  const tY = 2 * (qZ * x - qX * z);
+  const tZ = 2 * (qX * y - qY * x);
+  const wX = x + qW * tX + qY * tZ - qZ * tY;
+  const wY = y + qW * tY + qZ * tX - qX * tZ;
+  const wZ = z + qW * tZ + qX * tY - qY * tX;
+
+  return Math.hypot(
+    body.inertiaXX * wX + body.inertiaXY * wY + body.inertiaXZ * wZ,
+    body.inertiaXY * wX + body.inertiaYY * wY + body.inertiaYZ * wZ,
+    body.inertiaXZ * wX + body.inertiaYZ * wY + body.inertiaZZ * wZ,
+  );
+}

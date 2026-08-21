@@ -875,3 +875,101 @@ export interface Physics3DWorld {
   // stale contact can never be revived against a different body that inherited its slot.
   nextBodyIndex: number;
 }
+
+// One collider a query selected, named by the body that owns it and its position in that body's list.
+//
+// The INDEX travels beside the reference because it is the durable half: a collider reference is only
+// valid while the body still holds it, and the index is what a caller stores to route back through
+// `body.colliders` after a step.
+export interface Physics3DQueryHit {
+  body: RigidBody3D;
+  collider: Physics3DCollider;
+  colliderIndex: number;
+}
+
+// A reusable query buffer. Entries stay allocated at their HIGH-WATER MARK and only `hitCount` is
+// published, so a pointer-picking loop that runs every frame allocates nothing after its first busy
+// frame. Entries at or beyond `hitCount` hold stale values by design and must not be read.
+export interface Physics3DQueryResult {
+  hits: Physics3DQueryHit[];
+  hitCount: number;
+}
+
+// Which colliders a query will consider. Category and mask select colliders whose corresponding
+// authored filter field shares at least one bit; the body-type flags admit or exclude a whole class of
+// body, which is how a ground-check ray ignores other characters without giving every character a
+// bespoke category.
+export interface Physics3DQueryFilter {
+  categoryBits: number;
+  maskBits: number;
+  includeSensors: boolean;
+  includeDynamic: boolean;
+  includeKinematic: boolean;
+  includeStatic: boolean;
+}
+
+// A query hit that also carries where along the ray it happened. `fraction` is in the CALLER's
+// parameterization — the direction is not normalized on the way in — so a hit at `fraction` is exactly
+// at `origin + direction * fraction`.
+export interface Physics3DRayHit extends Physics3DQueryHit {
+  fraction: number;
+  x: number;
+  y: number;
+  z: number;
+  normalX: number;
+  normalY: number;
+  normalZ: number;
+}
+
+export interface Physics3DRayResult {
+  hits: Physics3DRayHit[];
+  hitCount: number;
+}
+
+export type Physics3DDebugFeature = 'center-of-mass' | 'collider' | 'contact-normal' | 'joint';
+
+// Renderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a
+// renderer can style or inspect a primitive without geometry knowing anything about colors, cameras, or
+// a graphics backend. `bodyB` is -1 for a primitive sourced from one body.
+export interface Physics3DDebugLine {
+  feature: Physics3DDebugFeature;
+  bodyA: number;
+  bodyB: number;
+  x0: number;
+  y0: number;
+  z0: number;
+  x1: number;
+  y1: number;
+  z1: number;
+}
+
+// A sphere, where the 2D twin emits a circle. Every curved 3D collider reduces to lines plus spheres: a
+// capsule is two of these joined by four lines, which is what lets a debug renderer draw the whole
+// package with exactly two primitive kinds rather than one per collider kind.
+export interface Physics3DDebugSphere {
+  feature: Physics3DDebugFeature;
+  bodyA: number;
+  bodyB: number;
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+}
+
+// Arrays retain their high-water capacity; only entries below the corresponding count are live. That
+// lets a caller keep one buffer and refill it every frame without allocating as the scene fluctuates.
+export interface Physics3DDebugGeometry {
+  lines: Physics3DDebugLine[];
+  lineCount: number;
+  spheres: Physics3DDebugSphere[];
+  sphereCount: number;
+}
+
+export interface Physics3DDebugGeometryOptions {
+  drawCentersOfMass: boolean;
+  drawColliders: boolean;
+  drawContacts: boolean;
+  drawJoints: boolean;
+  centerOfMassRadius: number;
+  contactNormalLength: number;
+}

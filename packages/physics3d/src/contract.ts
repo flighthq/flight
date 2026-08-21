@@ -19,3 +19,5 @@ export * from './solver';
 export * from './step';
 export * from './stepValidation';
 export * from './world';
+export * from './worldQueries';
+export * from './debugGeometry';
