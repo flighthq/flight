@@ -5,10 +5,12 @@ import {
   createPhysics2DQueryFilter,
   createPhysics2DQueryResult,
   createPhysics2DRayResult,
+  createPhysics2DShapeCastResult,
   queryPhysics2DPoint,
   queryPhysics2DRay,
   queryPhysics2DRayClosest,
   queryPhysics2DRegion,
+  queryPhysics2DShapeCast,
 } from './worldQueries';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
@@ -35,6 +37,22 @@ describe('createPhysics2DQueryResult', () => {
 describe('createPhysics2DRayResult', () => {
   it('starts with no live hits', () => {
     expect(createPhysics2DRayResult()).toEqual({ hits: [], hitCount: 0 });
+  });
+});
+
+describe('createPhysics2DShapeCastResult', () => {
+  it('starts as a miss with nothing referenced', () => {
+    expect(createPhysics2DShapeCastResult()).toEqual({
+      body: null,
+      collider: null,
+      colliderIndex: -1,
+      hit: false,
+      fraction: 0,
+      x: 0,
+      y: 0,
+      normalX: 0,
+      normalY: 0,
+    });
   });
 });
 
@@ -335,5 +353,199 @@ describe('queryPhysics2DRegion', () => {
     expect(out.hitCount).toBe(0);
     queryPhysics2DRegion(world, { minX: -1, minY: -1, maxX: 1, maxY: 1 }, out, filter);
     expect(out.hits.slice(0, out.hitCount).map((hit) => hit.body)).toEqual([body]);
+  });
+});
+
+describe('queryPhysics2DShapeCast', () => {
+  // A world with one static wall, so the analytic answer for a box sweeping into it is arithmetic the
+  // test can do rather than a number read off the implementation.
+  function walledWorld(): ReturnType<typeof createPhysics2DWorld> {
+    const world = createPhysics2DWorld(0, 0);
+    const wall = createRigidBody2D('static', 0, 0);
+    wall.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: 5, minY: -10, maxX: 6, maxY: 10 }, STONE));
+    addPhysics2DBody(world, wall);
+    return world;
+  }
+
+  const unitBox = { kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 } as const;
+
+  it('stops the sweep exactly where the shape first touches', () => {
+    // The box's leading face starts at x = 0.5 and the wall's near face is at x = 5, so it is free for
+    // 4.5 units of a 10-unit sweep. That is 0.45, computed from the geometry and not from the result.
+    const world = walledWorld();
+    const out = createPhysics2DShapeCastResult();
+
+    queryPhysics2DShapeCast(world, unitBox, 10, 0, out);
+
+    expect(out.hit).toBe(true);
+    expect(out.fraction).toBeCloseTo(0.45, 9);
+    expect(out.body).toBe(world.bodies[0]);
+    expect(out.colliderIndex).toBe(0);
+    // Pushing the swept shape back out of the wall, so it points along -x.
+    expect(out.normalX).toBeCloseTo(-1, 9);
+    expect(out.normalY).toBeCloseTo(0, 9);
+  });
+
+  it('reports a clean miss when the sweep is too short to reach anything', () => {
+    const world = walledWorld();
+    const out = createPhysics2DShapeCastResult();
+
+    queryPhysics2DShapeCast(world, unitBox, 3, 0, out);
+
+    expect(out).toEqual({
+      body: null,
+      collider: null,
+      colliderIndex: -1,
+      hit: false,
+      fraction: 0,
+      x: 0,
+      y: 0,
+      normalX: 0,
+      normalY: 0,
+    });
+  });
+
+  it('reports a hit at fraction zero for a shape that already overlaps where it starts', () => {
+    // The honest answer to "can I move from here" when the caller is already inside something. Returning
+    // a miss would hand a character controller a clear path out of a wall it is buried in.
+    const world = walledWorld();
+    const out = createPhysics2DShapeCastResult();
+
+    queryPhysics2DShapeCast(world, { kind: 'aabb', minX: 5.2, minY: -0.5, maxX: 5.8, maxY: 0.5 }, 10, 0, out);
+
+    expect(out.hit).toBe(true);
+    expect(out.fraction).toBe(0);
+  });
+
+  it('agrees with a brute-force march of the discrete overlap test', () => {
+    // The instrument is deliberately not the sweep: it steps the shape along the displacement in small
+    // increments and asks the ordinary point-in-shape query where it first overlaps. That shares no code
+    // with the continuous sweep, so agreement between them is evidence rather than tautology.
+    const world = createPhysics2DWorld(0, 0);
+    for (const [x, y] of [
+      [4, 0.2],
+      [7, -3],
+      [9, 0.1],
+    ]) {
+      const blocker = createRigidBody2D('static', 0, 0);
+      blocker.colliders.push(createPhysics2DCollider({ kind: 'circle', x, y, radius: 0.6 }, STONE));
+      addPhysics2DBody(world, blocker);
+    }
+    const out = createPhysics2DShapeCastResult();
+    queryPhysics2DShapeCast(world, { kind: 'circle', x: 0, y: 0, radius: 0.3 }, 12, 0, out);
+
+    const SAMPLES = 20000;
+    let marchedFraction = -1;
+    for (let sample = 0; sample <= SAMPLES && marchedFraction < 0; sample += 1) {
+      const fraction = sample / SAMPLES;
+      const probe = { kind: 'circle', x: 12 * fraction, y: 0, radius: 0.3 } as const;
+      const region = createPhysics2DQueryResult();
+      queryPhysics2DRegion(world, { minX: probe.x - 0.3, minY: -0.3, maxX: probe.x + 0.3, maxY: 0.3 }, region);
+      for (let at = 0; at < region.hitCount; at += 1) {
+        const shape = region.hits[at].collider.world;
+        if (shape.kind !== 'circle') continue;
+        const dx = shape.x - probe.x;
+        const dy = shape.y - probe.y;
+        if (dx * dx + dy * dy <= (shape.radius + 0.3) * (shape.radius + 0.3)) marchedFraction = fraction;
+      }
+    }
+
+    expect(marchedFraction).toBeGreaterThan(0);
+    expect(out.hit).toBe(true);
+    // Within one march increment, which is what a sampled instrument can resolve.
+    expect(Math.abs(out.fraction - marchedFraction)).toBeLessThan(2 / SAMPLES);
+  });
+
+  it('breaks a tie between two equally distant colliders by body order, every time', () => {
+    // Two identical walls the same distance away. Which one is reported must not depend on broadphase
+    // traversal order, or a caller doing anything deterministic with the result drifts between runs.
+    const world = createPhysics2DWorld(0, 0);
+    for (const y of [-2, 2]) {
+      const wall = createRigidBody2D('static', 0, 0);
+      wall.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: 5, minY: y - 1, maxX: 6, maxY: y + 1 }, STONE));
+      addPhysics2DBody(world, wall);
+    }
+    const tall = { kind: 'aabb', minX: -0.5, minY: -3, maxX: 0.5, maxY: 3 } as const;
+    const out = createPhysics2DShapeCastResult();
+
+    queryPhysics2DShapeCast(world, tall, 10, 0, out);
+    const first = out.body;
+    for (let repeat = 0; repeat < 5; repeat += 1) {
+      queryPhysics2DShapeCast(world, tall, 10, 0, out);
+      expect(out.body).toBe(first);
+    }
+    // And it is the lower body index rather than an arbitrary one.
+    expect(first).toBe(world.bodies[0]);
+  });
+
+  it('honours maxFraction without changing what a fraction means', () => {
+    const world = walledWorld();
+    const out = createPhysics2DShapeCastResult();
+
+    queryPhysics2DShapeCast(world, unitBox, 10, 0, out, 0.4);
+    expect(out.hit).toBe(false);
+
+    // Still 0.45 of the FULL displacement, not 0.9 of the shortened one.
+    queryPhysics2DShapeCast(world, unitBox, 10, 0, out, 0.5);
+    expect(out.hit).toBe(true);
+    expect(out.fraction).toBeCloseTo(0.45, 9);
+  });
+
+  it('applies the query filter to bodies and colliders alike', () => {
+    const world = walledWorld();
+    const out = createPhysics2DShapeCastResult();
+    const filter = createPhysics2DQueryFilter();
+
+    filter.includeStatic = false;
+    queryPhysics2DShapeCast(world, unitBox, 10, 0, out, 1, filter);
+    expect(out.hit).toBe(false);
+
+    filter.includeStatic = true;
+    filter.maskBits = 0;
+    queryPhysics2DShapeCast(world, unitBox, 10, 0, out, 1, filter);
+    expect(out.hit).toBe(false);
+  });
+
+  it('clears a reused result rather than leaving the previous cast in it', () => {
+    // The failure this prevents is a loop of casts where a miss silently reports the last hit.
+    const world = walledWorld();
+    const out = createPhysics2DShapeCastResult();
+    queryPhysics2DShapeCast(world, unitBox, 10, 0, out);
+    expect(out.hit).toBe(true);
+
+    queryPhysics2DShapeCast(world, unitBox, -10, 0, out);
+    expect(out.hit).toBe(false);
+    expect(out.body).toBeNull();
+    expect(out.collider).toBeNull();
+    expect(out.colliderIndex).toBe(-1);
+  });
+
+  it('declines a non-finite displacement or a negative maxFraction instead of searching', () => {
+    const world = walledWorld();
+    const out = createPhysics2DShapeCastResult();
+
+    for (const [dx, dy] of [
+      [Number.NaN, 0],
+      [0, Number.POSITIVE_INFINITY],
+    ]) {
+      queryPhysics2DShapeCast(world, unitBox, dx, dy, out);
+      expect(out.hit).toBe(false);
+    }
+    queryPhysics2DShapeCast(world, unitBox, 10, 0, out, -1);
+    expect(out.hit).toBe(false);
+  });
+
+  it('sweeps backwards as readily as forwards, so the bounds union is not one-sided', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const wall = createRigidBody2D('static', 0, 0);
+    wall.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -6, minY: -10, maxX: -5, maxY: 10 }, STONE));
+    addPhysics2DBody(world, wall);
+    const out = createPhysics2DShapeCastResult();
+
+    queryPhysics2DShapeCast(world, unitBox, -10, 0, out);
+
+    expect(out.hit).toBe(true);
+    expect(out.fraction).toBeCloseTo(0.45, 9);
+    expect(out.normalX).toBeCloseTo(1, 9);
   });
 });
