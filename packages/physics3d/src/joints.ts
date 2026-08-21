@@ -42,6 +42,7 @@ import {
   solveMotorRow,
   solvePointBlock,
   solveUpperLimitRow,
+  writePhysics3DSoftRowParameters,
   readJointImpulse,
   warmStartAngularBlock,
   warmStartPointBlock,
@@ -173,23 +174,20 @@ export const physics3DDistanceJointSolver: Physics3DJointSolver = {
     state[DISTANCE_REST_ACTIVE] = restActive ? 1 : 0;
     const error = separation - distance.length;
 
-    if (restActive && distance.enableSpring && distance.frequencyHz > 0) {
-      // A frequency and a damping ratio describe the motion the caller wants; stiffness and damping are what
-      // the solver needs, and converting between them requires the mass being moved. Deriving them here,
-      // per-step and per-pair, is what makes a 2 Hz spring oscillate at 2 Hz whatever it is attached to —
-      // an authored stiffness would change frequency the moment either body's mass did.
-      const angular = TAU * distance.frequencyHz;
-      const damping = 2 * mass * distance.dampingRatio * angular;
-      const stiffness = mass * angular * angular;
-      const gammaDenominator = dt * (damping + dt * stiffness);
-      const gamma = gammaDenominator > 0 ? 1 / gammaDenominator : 0;
-      state[DISTANCE_GAMMA] = gamma;
-      state[DISTANCE_BIAS] = error * dt * stiffness * gamma;
-      // Compliance adds to the INVERSE mass, which is why this cannot reuse `mass` directly: softening is
-      // making the constraint easier to violate, and that is an addition on the reciprocal side.
-      const inverseMass = mass > 0 ? 1 / mass : 0;
-      const softened = inverseMass + gamma;
-      state[DISTANCE_MASS] = softened > 0 ? 1 / softened : 0;
+    if (restActive && distance.enableSpring) {
+      // The rest row's hard fallback is `BAUMGARTE / dt`, not the `1 / dt` its LIMIT rows use: this row is
+      // two-sided and corrects gently, where a one-sided stop corrects fully.
+      writePhysics3DSoftRowParameters(
+        mass,
+        distance.frequencyHz,
+        distance.dampingRatio,
+        dt,
+        BAUMGARTE / dt,
+        softRowScratch,
+      );
+      state[DISTANCE_MASS] = softRowScratch[0];
+      state[DISTANCE_BIAS] = error * softRowScratch[1];
+      state[DISTANCE_GAMMA] = softRowScratch[2];
     } else {
       state[DISTANCE_GAMMA] = 0;
       state[DISTANCE_BIAS] = error * (BAUMGARTE / dt);
@@ -438,7 +436,17 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
     state[HINGE_ANGLE] = getSignedAxisAngle(frameABasis, frameBBasis);
 
     state[HINGE_LOCK_BIAS] = BAUMGARTE / dt;
-    state[HINGE_LIMIT_BIAS] = 1 / dt;
+    writeLimitRowParameters(
+      state,
+      HINGE_LIMIT_MASS,
+      HINGE_LIMIT_GAMMA,
+      HINGE_LIMIT_BIAS,
+      state[HINGE_AXIS_MASS],
+      hinge.enableLimitSpring,
+      hinge.limitFrequencyHz,
+      hinge.limitDampingRatio,
+      dt,
+    );
     state[HINGE_MAX_MOTOR] = Math.max(0, dt * hinge.maxMotorTorque);
     // Seeded from the carried accumulators rather than zeroed, which is what makes the limit rows warm
     // start. Gated on the CURRENT `enableLimit` for the same reason the motor is: a cached impulse is only
@@ -490,20 +498,22 @@ export const physics3DHingeJointSolver: Physics3DJointSolver = {
         bodyB,
         state,
         HINGE_AXIS_ROW,
-        state[HINGE_AXIS_MASS],
+        state[HINGE_LIMIT_MASS],
         angle - hinge.lowerAngle,
         state[HINGE_LIMIT_BIAS],
         HINGE_LOWER_IMPULSE,
+        state[HINGE_LIMIT_GAMMA],
       );
       solveUpperLimitRow(
         bodyA,
         bodyB,
         state,
         HINGE_AXIS_ROW,
-        state[HINGE_AXIS_MASS],
+        state[HINGE_LIMIT_MASS],
         hinge.upperAngle - angle,
         state[HINGE_LIMIT_BIAS],
         HINGE_UPPER_IMPULSE,
+        state[HINGE_LIMIT_GAMMA],
       );
       // Written back every iteration, not once at the end of the step: the solve state is per-sub-interval
       // scratch that `beginJointSolve` reallocates, so the joint field is the only place a value survives to
@@ -658,7 +668,31 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
     );
     state[CONE_TWIST_ANGLE] = 2 * Math.atan2(relativeRotation[0], relativeRotation[3]);
 
-    state[CONE_LIMIT_BIAS] = 1 / dt;
+    writeLimitRowParameters(
+      state,
+      CONE_SWING_SOFT_MASS,
+      CONE_SWING_GAMMA,
+      CONE_LIMIT_BIAS,
+      state[CONE_SWING_MASS],
+      cone.enableLimitSpring,
+      cone.limitFrequencyHz,
+      cone.limitDampingRatio,
+      dt,
+    );
+    // The twist group writes the SAME bias slot, which is exact rather than a last-write-wins accident:
+    // the soft bias factor is mass-independent, so swing and twist agree on it even though their row
+    // masses differ. Only the softened mass and gamma need a slot each.
+    writeLimitRowParameters(
+      state,
+      CONE_TWIST_SOFT_MASS,
+      CONE_TWIST_GAMMA,
+      CONE_LIMIT_BIAS,
+      state[CONE_TWIST_MASS],
+      cone.enableLimitSpring,
+      cone.limitFrequencyHz,
+      cone.limitDampingRatio,
+      dt,
+    );
     // The swing row's AXIS moves with the tilt direction, so its carried impulse is reapplied along a
     // slightly different axis than the one that earned it — the same approximation contact warm starting
     // makes when a normal rotates, and it converges for the same reason: one iteration corrects it.
@@ -689,10 +723,11 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
         bodyB,
         state,
         CONE_SWING_ROW,
-        state[CONE_SWING_MASS],
+        state[CONE_SWING_SOFT_MASS],
         state[CONE_SWING_ERROR],
         state[CONE_LIMIT_BIAS],
         CONE_SWING_IMPULSE,
+        state[CONE_SWING_GAMMA],
       );
       cone.swingLimitImpulse = state[CONE_SWING_IMPULSE];
     }
@@ -704,20 +739,22 @@ export const physics3DConeTwistJointSolver: Physics3DJointSolver = {
         bodyB,
         state,
         CONE_TWIST_ROW,
-        state[CONE_TWIST_MASS],
+        state[CONE_TWIST_SOFT_MASS],
         twist - cone.lowerTwistAngle,
         state[CONE_LIMIT_BIAS],
         CONE_LOWER_TWIST_IMPULSE,
+        state[CONE_TWIST_GAMMA],
       );
       solveUpperLimitRow(
         bodyA,
         bodyB,
         state,
         CONE_TWIST_ROW,
-        state[CONE_TWIST_MASS],
+        state[CONE_TWIST_SOFT_MASS],
         cone.upperTwistAngle - twist,
         state[CONE_LIMIT_BIAS],
         CONE_UPPER_TWIST_IMPULSE,
+        state[CONE_TWIST_GAMMA],
       );
       cone.lowerTwistImpulse = state[CONE_LOWER_TWIST_IMPULSE];
       cone.upperTwistImpulse = state[CONE_UPPER_TWIST_IMPULSE];
@@ -870,7 +907,29 @@ export const physics3DGeneric6DofJointSolver: Physics3DJointSolver = {
     }
 
     state[DOF_LOCK_BIAS] = BAUMGARTE / dt;
-    state[DOF_LIMIT_BIAS] = 1 / dt;
+    // Per-axis mass and gamma, one shared bias. The six rows have six different masses, but the soft bias
+    // factor is mass-independent, so every LIMITED axis writes the same value into the one slot.
+    //
+    // Only limited axes, and that is load-bearing rather than an optimization. A free axis never had its
+    // row mass written — the loop above skips it — so its slot holds whatever was there before, and on a
+    // freshly allocated state array that is `undefined`. Feeding it to the spring produces NaN, and
+    // because the BIAS slot is shared, one free axis poisons the stop on every other axis. A locked axis
+    // is excluded for a different reason: softening a lock would make it a spring, which its mode says it
+    // is not.
+    for (let axis = 0; axis < 6; axis += 1) {
+      if (state[DOF_MODE + axis] !== DOF_LIMITED) continue;
+      writeLimitRowParameters(
+        state,
+        DOF_LIMIT_MASS + axis,
+        DOF_LIMIT_GAMMA + axis,
+        DOF_LIMIT_BIAS,
+        state[DOF_MASS + axis],
+        dof.enableLimitSpring,
+        dof.limitFrequencyHz,
+        dof.limitDampingRatio,
+        dt,
+      );
+    }
   },
 
   solve(world: Physics3DWorld, joint: Physics3DJoint): void {
@@ -908,20 +967,22 @@ export const physics3DGeneric6DofJointSolver: Physics3DJointSolver = {
         bodyB,
         state,
         rowOffset,
-        state[DOF_MASS + axis],
+        state[DOF_LIMIT_MASS + axis],
         value - dofLower[axis],
         state[DOF_LIMIT_BIAS],
         DOF_LOWER_IMPULSE + axis,
+        state[DOF_LIMIT_GAMMA + axis],
       );
       solveUpperLimitRow(
         bodyA,
         bodyB,
         state,
         rowOffset,
-        state[DOF_MASS + axis],
+        state[DOF_LIMIT_MASS + axis],
         dofUpper[axis] - value,
         state[DOF_LIMIT_BIAS],
         DOF_UPPER_IMPULSE + axis,
+        state[DOF_LIMIT_GAMMA + axis],
       );
       dof.lowerLimitImpulses[axis] = state[DOF_LOWER_IMPULSE + axis];
       dof.upperLimitImpulses[axis] = state[DOF_UPPER_IMPULSE + axis];
@@ -1046,7 +1107,17 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
     prepareAngularBlock(bodyA, bodyB, state, SLIDER_ANGULAR_MASS, SLIDER_ANGULAR_BIAS, dt);
 
     state[SLIDER_LOCK_BIAS] = BAUMGARTE / dt;
-    state[SLIDER_LIMIT_BIAS] = 1 / dt;
+    writeLimitRowParameters(
+      state,
+      SLIDER_LIMIT_MASS,
+      SLIDER_LIMIT_GAMMA,
+      SLIDER_LIMIT_BIAS,
+      state[SLIDER_AXIS_MASS],
+      slider.enableLimitSpring,
+      slider.limitFrequencyHz,
+      slider.limitDampingRatio,
+      dt,
+    );
     state[SLIDER_MAX_MOTOR] = Math.max(0, dt * slider.maxMotorForce);
     slider.lowerLimitImpulse ??= 0;
     slider.upperLimitImpulse ??= 0;
@@ -1093,20 +1164,22 @@ export const physics3DSliderJointSolver: Physics3DJointSolver = {
         bodyB,
         state,
         SLIDER_AXIS_ROW,
-        state[SLIDER_AXIS_MASS],
+        state[SLIDER_LIMIT_MASS],
         translation - slider.lowerTranslation,
         state[SLIDER_LIMIT_BIAS],
         SLIDER_LOWER_IMPULSE,
+        state[SLIDER_LIMIT_GAMMA],
       );
       solveUpperLimitRow(
         bodyA,
         bodyB,
         state,
         SLIDER_AXIS_ROW,
-        state[SLIDER_AXIS_MASS],
+        state[SLIDER_LIMIT_MASS],
         slider.upperTranslation - translation,
         state[SLIDER_LIMIT_BIAS],
         SLIDER_UPPER_IMPULSE,
+        state[SLIDER_LIMIT_GAMMA],
       );
       slider.lowerLimitImpulse = state[SLIDER_LOWER_IMPULSE];
       slider.upperLimitImpulse = state[SLIDER_UPPER_IMPULSE];
@@ -1211,9 +1284,41 @@ function writeAngularBlockTorque(
   out.torqueZ += joint.impulse5 * inverseDt;
 }
 
-const BAUMGARTE = 0.2;
+// Fills a limit row group's mass, bias, and gamma slots, choosing a hard stop or a compliant one.
+//
+// One BIAS slot serves every row of a joint even when the rows have different masses, and that is exact
+// rather than an approximation: the soft bias factor works out to `w^2 / (2*z*w + dt*w^2)`, in which the
+// mass cancels completely. Only the softened mass and gamma carry it, which is why those get a slot per
+// row and the bias does not.
+//
+// The hard fallback is `1 / dt`, the limit rows' own full-correction factor, NOT the `BAUMGARTE / dt` a
+// two-sided row uses. Passing the wrong one would leave hard stops behaving differently than before the
+// spring existed.
+function writeLimitRowParameters(
+  state: number[],
+  massSlot: number,
+  gammaSlot: number,
+  biasSlot: number,
+  rowMass: number,
+  soft: boolean,
+  frequencyHz: number,
+  dampingRatio: number,
+  dt: number,
+): void {
+  if (soft && frequencyHz > 0) {
+    writePhysics3DSoftRowParameters(rowMass, frequencyHz, dampingRatio, dt, 1 / dt, softRowScratch);
+    state[massSlot] = softRowScratch[0];
+    state[biasSlot] = softRowScratch[1];
+    state[gammaSlot] = softRowScratch[2];
+    return;
+  }
+  state[massSlot] = rowMass;
+  state[biasSlot] = 1 / dt;
+  state[gammaSlot] = 0;
+}
 
-const TAU = 2 * Math.PI;
+const BAUMGARTE = 0.2;
+const softRowScratch = [0, 0, 0];
 
 const DISTANCE_ROW = 0;
 const DISTANCE_MASS = DISTANCE_ROW + ROW_LENGTH;
@@ -1247,7 +1352,9 @@ const HINGE_LIMIT_BIAS = HINGE_LOCK_BIAS + 1;
 const HINGE_MAX_MOTOR = HINGE_LIMIT_BIAS + 1;
 const HINGE_LOWER_IMPULSE = HINGE_MAX_MOTOR + 1;
 const HINGE_UPPER_IMPULSE = HINGE_LOWER_IMPULSE + 1;
-const HINGE_LENGTH = HINGE_UPPER_IMPULSE + 1;
+const HINGE_LIMIT_MASS = HINGE_UPPER_IMPULSE + 1;
+const HINGE_LIMIT_GAMMA = HINGE_LIMIT_MASS + 1;
+const HINGE_LENGTH = HINGE_LIMIT_GAMMA + 1;
 
 // The effective cone half-angle in the direction the twist axis has actually tilted. Equal limits give a
 // circular cone; unequal ones give an ellipse, and the blend below is the ellipse in polar form — it returns
@@ -1331,7 +1438,11 @@ const CONE_LIMIT_BIAS = CONE_TWIST_ANGLE + 1;
 const CONE_SWING_IMPULSE = CONE_LIMIT_BIAS + 1;
 const CONE_LOWER_TWIST_IMPULSE = CONE_SWING_IMPULSE + 1;
 const CONE_UPPER_TWIST_IMPULSE = CONE_LOWER_TWIST_IMPULSE + 1;
-const CONE_LENGTH = CONE_UPPER_TWIST_IMPULSE + 1;
+const CONE_SWING_SOFT_MASS = CONE_UPPER_TWIST_IMPULSE + 1;
+const CONE_SWING_GAMMA = CONE_SWING_SOFT_MASS + 1;
+const CONE_TWIST_SOFT_MASS = CONE_SWING_GAMMA + 1;
+const CONE_TWIST_GAMMA = CONE_TWIST_SOFT_MASS + 1;
+const CONE_LENGTH = CONE_TWIST_GAMMA + 1;
 
 const DOF_FREE = 0;
 const DOF_LOCKED = 1;
@@ -1344,7 +1455,9 @@ const DOF_LOWER_IMPULSE = DOF_MODE + 6;
 const DOF_UPPER_IMPULSE = DOF_LOWER_IMPULSE + 6;
 const DOF_LOCK_BIAS = DOF_UPPER_IMPULSE + 6;
 const DOF_LIMIT_BIAS = DOF_LOCK_BIAS + 1;
-const DOF_LENGTH = DOF_LIMIT_BIAS + 1;
+const DOF_LIMIT_MASS = DOF_LIMIT_BIAS + 1;
+const DOF_LIMIT_GAMMA = DOF_LIMIT_MASS + 6;
+const DOF_LENGTH = DOF_LIMIT_GAMMA + 6;
 
 const SLIDER_PERP_ROW0 = 0;
 const SLIDER_PERP_ROW1 = SLIDER_PERP_ROW0 + ROW_LENGTH;
@@ -1362,7 +1475,9 @@ const SLIDER_LIMIT_BIAS = SLIDER_LOCK_BIAS + 1;
 const SLIDER_MAX_MOTOR = SLIDER_LIMIT_BIAS + 1;
 const SLIDER_LOWER_IMPULSE = SLIDER_MAX_MOTOR + 1;
 const SLIDER_UPPER_IMPULSE = SLIDER_LOWER_IMPULSE + 1;
-const SLIDER_LENGTH = SLIDER_UPPER_IMPULSE + 1;
+const SLIDER_LIMIT_MASS = SLIDER_UPPER_IMPULSE + 1;
+const SLIDER_LIMIT_GAMMA = SLIDER_LIMIT_MASS + 1;
+const SLIDER_LENGTH = SLIDER_LIMIT_GAMMA + 1;
 
 const dofLower = [0, 0, 0, 0, 0, 0];
 const dofUpper = [0, 0, 0, 0, 0, 0];

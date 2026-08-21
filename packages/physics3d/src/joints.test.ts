@@ -1,7 +1,10 @@
 import type {
+  Physics3DConeTwistJoint,
+  Physics3DGeneric6DofJoint,
   Physics3DHingeJoint,
   Physics3DJoint,
   Physics3DJointSolver,
+  Physics3DSliderJoint,
   Physics3DWorld,
   RigidBody3D,
 } from '@flighthq/types/contract';
@@ -749,6 +752,128 @@ describe('physics3DHingeJointSolver', () => {
     physics3DHingeJointSolver.scaleAccumulatedImpulses?.(joint, 0.5);
 
     expect(joint.motorImpulse).toBe(3);
+  });
+});
+
+describe('physics3DJointSoftLimits', () => {
+  // A loaded hinge stop, solved once as a hard limit and once as a spring. Everything else is identical,
+  // so any difference is the compliance.
+  function solveLoadedStop(soft: boolean, frequencyHz = 4, dampingRatio = 0.7): Physics3DHingeJoint {
+    const { scene, joint } = createLoadedHingeStop();
+    joint.enableLimitSpring = soft;
+    joint.limitFrequencyHz = frequencyHz;
+    joint.limitDampingRatio = dampingRatio;
+    solveJoint(scene.world, joint, physics3DHingeJointSolver, 8);
+    return joint;
+  }
+
+  it('yields more than a hard stop under the same load', () => {
+    // The whole point of a spring stop: it resists, but it gives. A compliant row reaching for the same
+    // impulse as a hard one would mean the softening never took effect.
+    const hard = solveLoadedStop(false);
+    const soft = solveLoadedStop(true);
+    expect(soft.upperLimitImpulse).toBeGreaterThan(0);
+    expect(soft.upperLimitImpulse).toBeLessThan(hard.upperLimitImpulse);
+  });
+
+  it('stiffens toward the hard stop as frequency rises', () => {
+    // Monotonic in frequency, which is what makes the parameter tunable rather than merely present.
+    const slack = solveLoadedStop(true, 2);
+    const stiff = solveLoadedStop(true, 30);
+    const hard = solveLoadedStop(false);
+    expect(slack.upperLimitImpulse).toBeLessThan(stiff.upperLimitImpulse);
+    expect(stiff.upperLimitImpulse).toBeLessThanOrEqual(hard.upperLimitImpulse + 1e-9);
+  });
+
+  it('degrades EXACTLY to a hard stop when the frequency is zero', () => {
+    // "Spring enabled but never configured" must not be a third behaviour. Exact equality rather than a
+    // tolerance: the code path is supposed to be the same one, not merely a close one.
+    const hard = solveLoadedStop(false);
+    const unconfigured = solveLoadedStop(true, 0);
+    expect(unconfigured.upperLimitImpulse).toBe(hard.upperLimitImpulse);
+    expect(unconfigured.lowerLimitImpulse).toBe(hard.lowerLimitImpulse);
+  });
+
+  it('stays ONE-SIDED, never pulling the coordinate back through the bound', () => {
+    // Softening changes how hard a stop resists, never whether it may reverse. A spring that could pull
+    // would be a rest length, which is a different joint.
+    const soft = solveLoadedStop(true);
+    expect(soft.lowerLimitImpulse).toBe(0);
+    expect(soft.upperLimitImpulse).toBeGreaterThanOrEqual(0);
+  });
+
+  it('softens a slider travel stop the same way', () => {
+    function solveSlider(soft: boolean): Physics3DSliderJoint {
+      const scene = createScene();
+      makeStatic(scene.bodyA);
+      scene.bodyB.x = 3;
+      const joint = createPhysics3DSliderJoint({
+        bodyA: 0,
+        bodyB: 1,
+        enableLimit: true,
+        lowerTranslation: -0.5,
+        upperTranslation: 0.5,
+      });
+      joint.enableLimitSpring = soft;
+      joint.limitFrequencyHz = 4;
+      joint.limitDampingRatio = 0.7;
+      solveJoint(scene.world, joint, physics3DSliderJointSolver, 8);
+      return joint;
+    }
+    const hard = solveSlider(false);
+    const soft = solveSlider(true);
+    expect(Math.abs(soft.upperLimitImpulse)).toBeLessThan(Math.abs(hard.upperLimitImpulse));
+  });
+
+  it('softens a cone-twist twist stop, whose bias slot it shares with the swing stop', () => {
+    // Swing and twist write the SAME bias slot from two different row masses. That is only sound because
+    // the soft bias factor is mass-independent; if it were not, the second write would corrupt the first.
+    function solveCone(soft: boolean): Physics3DConeTwistJoint {
+      const scene = createScene();
+      makeStatic(scene.bodyA);
+      setAxisAngle(scene.bodyB, 1, 0, 0, 0.4);
+      const joint = createPhysics3DConeTwistJoint({
+        bodyA: 0,
+        bodyB: 1,
+        enableTwistLimit: true,
+        lowerTwistAngle: -0.05,
+        upperTwistAngle: 0.05,
+      });
+      joint.enableLimitSpring = soft;
+      joint.limitFrequencyHz = 4;
+      joint.limitDampingRatio = 0.7;
+      solveJoint(scene.world, joint, physics3DConeTwistJointSolver, 8);
+      return joint;
+    }
+    const hard = solveCone(false);
+    const soft = solveCone(true);
+    const hardTotal = hard.lowerTwistImpulse + hard.upperTwistImpulse;
+    const softTotal = soft.lowerTwistImpulse + soft.upperTwistImpulse;
+    expect(softTotal).toBeGreaterThan(0);
+    expect(softTotal).toBeLessThan(hardTotal);
+  });
+
+  it('softens a 6-DOF axis limit', () => {
+    function solveDof(soft: boolean): Physics3DGeneric6DofJoint {
+      const scene = createScene();
+      makeStatic(scene.bodyA);
+      scene.bodyB.x = 3;
+      const joint = createPhysics3DGeneric6DofJoint({
+        bodyA: 0,
+        bodyB: 1,
+        lowerLinearX: -0.5,
+        upperLinearX: 0.5,
+      });
+      joint.enableLimitSpring = soft;
+      joint.limitFrequencyHz = 4;
+      joint.limitDampingRatio = 0.7;
+      solveJoint(scene.world, joint, physics3DGeneric6DofJointSolver, 8);
+      return joint;
+    }
+    const hard = solveDof(false);
+    const soft = solveDof(true);
+    expect(soft.upperLimitImpulses[0]).toBeGreaterThan(0);
+    expect(soft.upperLimitImpulses[0]).toBeLessThan(hard.upperLimitImpulses[0]);
   });
 });
 

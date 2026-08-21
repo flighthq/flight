@@ -336,6 +336,10 @@ export function solveEqualityRow(
 // joint authored out of range and sitting still is never pushed back. `min(error, 0)` corrects but cannot
 // suppress: it zeroes the bias while INSIDE the interval, and the row then brakes any approach to the bound
 // from a distance — a motor at speed held at a standstill by a limit it was nowhere near.
+// `gamma` is the row's COMPLIANCE, zero for a hard stop. It multiplies the ACCUMULATED impulse rather
+// than this iteration's, because a soft constraint is one that gives way in proportion to how hard it
+// has already been pushing — a statement about the total, not the increment. The non-negative clamp
+// survives softening untouched: a compliant stop still may only push back through the bound.
 export function solveLowerLimitRow(
   bodyA: RigidBody3D,
   bodyB: RigidBody3D,
@@ -345,10 +349,11 @@ export function solveLowerLimitRow(
   error: number,
   biasFactor: number,
   accumulatorSlot: number,
+  gamma = 0,
 ): void {
   const velocity = getRowVelocity(bodyA, bodyB, state, offset);
   const previous = state[accumulatorSlot];
-  const total = Math.max(previous - mass * (velocity + error * biasFactor), 0);
+  const total = Math.max(previous - mass * (velocity + error * biasFactor + gamma * previous), 0);
   state[accumulatorSlot] = total;
   applyRow(bodyA, bodyB, state, offset, total - previous);
 }
@@ -431,10 +436,11 @@ export function solveUpperLimitRow(
   error: number,
   biasFactor: number,
   accumulatorSlot: number,
+  gamma = 0,
 ): void {
   const velocity = -getRowVelocity(bodyA, bodyB, state, offset);
   const previous = state[accumulatorSlot];
-  const total = Math.max(previous - mass * (velocity + error * biasFactor), 0);
+  const total = Math.max(previous - mass * (velocity + error * biasFactor + gamma * previous), 0);
   state[accumulatorSlot] = total;
   applyRow(bodyA, bodyB, state, offset, -(total - previous));
 }
@@ -489,6 +495,53 @@ export function writeJointImpulse(joint: Physics3DJoint, slot: number, value: nu
       joint.impulse5 = value;
       break;
   }
+}
+
+// Derives the three numbers a SOFT constraint row needs from the motion a caller described, writing
+// `[mass, biasFactor, gamma]`.
+//
+// A frequency and a damping ratio describe the motion wanted; stiffness and damping are what the solver
+// needs, and converting between them requires the mass being moved. Deriving them here, per-step and
+// per-pair, is what makes a 2 Hz spring oscillate at 2 Hz whatever it is attached to — an authored
+// stiffness would change frequency the moment either body's mass did.
+//
+// `biasFactor` is returned in the position a hard row's own bias factor occupies, so a row solves
+// identically either way and the only difference between a stop and a spring is which three numbers it
+// was handed.
+//
+// `hardBiasFactor` is what to fall back to when the spring cannot be computed, and it is a PARAMETER
+// rather than a constant because the two callers legitimately disagree about it: a two-sided rest row
+// corrects at `BAUMGARTE / dt`, while a one-sided limit row corrects fully at `1 / dt`. Baking either
+// in would silently change the other's hard behaviour the first time it took this path.
+//
+// Compliance adds to the INVERSE mass, which is why the returned mass is not a scaled version of the
+// input: softening makes a constraint easier to violate, and that is an addition on the reciprocal side.
+// A non-positive frequency or timestep returns the HARD parameters, so "spring enabled with no
+// frequency set" degrades to the stop it replaced rather than to a constraint that does nothing.
+export function writePhysics3DSoftRowParameters(
+  mass: number,
+  frequencyHz: number,
+  dampingRatio: number,
+  dt: number,
+  hardBiasFactor: number,
+  out: number[],
+): void {
+  if (!(frequencyHz > 0) || !(dt > 0)) {
+    out[0] = mass;
+    out[1] = hardBiasFactor;
+    out[2] = 0;
+    return;
+  }
+  const angular = TAU * frequencyHz;
+  const damping = 2 * mass * dampingRatio * angular;
+  const stiffness = mass * angular * angular;
+  const gammaDenominator = dt * (damping + dt * stiffness);
+  const gamma = gammaDenominator > 0 ? 1 / gammaDenominator : 0;
+  const inverseMass = mass > 0 ? 1 / mass : 0;
+  const softened = inverseMass + gamma;
+  out[0] = softened > 0 ? 1 / softened : 0;
+  out[1] = dt * stiffness * gamma;
+  out[2] = gamma;
 }
 
 // Writes one constraint row into a joint's per-step state.
@@ -552,6 +605,7 @@ function writeBlock(state: number[], offset: number, source: readonly number[]):
 // The fraction of a joint's positional error corrected per step. Matches the contact solver's rationale:
 // correcting all of it at once turns a deep error into an explosion.
 const BAUMGARTE = 0.2;
+const TAU = 2 * Math.PI;
 // The world-space frames the prepare pass leaves for the kind that asked for them. Module scratch rather than
 // per-joint state because they are consumed within one `prepare`, never across two.
 export const frameABasis = new Array<number>(9).fill(0);

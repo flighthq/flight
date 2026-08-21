@@ -34,6 +34,7 @@ import {
   writeAngularRow,
   writeJointImpulse,
   writeRow,
+  writePhysics3DSoftRowParameters,
 } from './jointRows';
 import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
 import { createRigidBody3D } from './world';
@@ -444,13 +445,66 @@ describe('writeJointImpulse', () => {
   });
 });
 
-describe('writeRow', () => {
-  it('lays the direction and the two arms out in one block', () => {
-    const state = newState();
+describe('writePhysics3DSoftRowParameters', () => {
+  it('returns the hard parameters unchanged for a non-positive frequency', () => {
+    // "Spring enabled but never configured" must not be a third behaviour. This is what makes an
+    // unconfigured spring degrade to exactly the stop it replaced.
+    const out = [0, 0, 0];
+    writePhysics3DSoftRowParameters(4, 0, 0.7, 1 / 60, 60, out);
+    expect(out).toEqual([4, 60, 0]);
+    writePhysics3DSoftRowParameters(4, -1, 0.7, 1 / 60, 60, out);
+    expect(out).toEqual([4, 60, 0]);
+  });
 
-    writeRow(state, ROW_LENGTH, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+  it('uses the caller HARD bias factor rather than a baked-in constant', () => {
+    // The two callers legitimately disagree: a two-sided rest row corrects at BAUMGARTE/dt, a one-sided
+    // limit row fully at 1/dt. Baking either in would silently change the other's hard behaviour.
+    const out = [0, 0, 0];
+    writePhysics3DSoftRowParameters(1, 0, 0, 1 / 60, 12, out);
+    expect(out[1]).toBe(12);
+    writePhysics3DSoftRowParameters(1, 0, 0, 1 / 60, 60, out);
+    expect(out[1]).toBe(60);
+  });
 
-    expect(state.slice(ROW_LENGTH, ROW_LENGTH * 2)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  it('softens the mass, which is an addition on the RECIPROCAL side', () => {
+    // Compliance makes a constraint easier to violate, so it adds to the inverse mass. The softened mass
+    // is therefore always below the rigid one, never a scaled-up version of it.
+    const out = [0, 0, 0];
+    const mass = 5;
+    writePhysics3DSoftRowParameters(mass, 4, 0.7, 1 / 60, 60, out);
+    expect(out[0]).toBeGreaterThan(0);
+    expect(out[0]).toBeLessThan(mass);
+    const gamma = out[2];
+    expect(out[0]).toBeCloseTo(1 / (1 / mass + gamma), 12);
+  });
+
+  it('produces a bias factor INDEPENDENT of mass', () => {
+    // The property the cone-twist and 6-DOF solvers rely on when several rows of different masses share
+    // one bias slot. If this were false, the last row prepared would corrupt the others.
+    const light = [0, 0, 0];
+    const heavy = [0, 0, 0];
+    writePhysics3DSoftRowParameters(0.25, 4, 0.7, 1 / 60, 60, light);
+    writePhysics3DSoftRowParameters(400, 4, 0.7, 1 / 60, 60, heavy);
+    expect(heavy[1]).toBeCloseTo(light[1], 12);
+    // Gamma is NOT mass-independent — it scales as the reciprocal — which is why it gets a slot per row.
+    expect(heavy[2]).toBeLessThan(light[2]);
+  });
+
+  it('stiffens toward the rigid mass as frequency rises', () => {
+    const slack = [0, 0, 0];
+    const stiff = [0, 0, 0];
+    writePhysics3DSoftRowParameters(2, 1, 0.7, 1 / 60, 60, slack);
+    writePhysics3DSoftRowParameters(2, 200, 0.7, 1 / 60, 60, stiff);
+    expect(stiff[0]).toBeGreaterThan(slack[0]);
+    expect(stiff[0]).toBeLessThanOrEqual(2);
+  });
+
+  it('stays finite for a zero mass rather than dividing by it', () => {
+    const out = [0, 0, 0];
+    writePhysics3DSoftRowParameters(0, 4, 0.7, 1 / 60, 60, out);
+    expect(Number.isFinite(out[0])).toBe(true);
+    expect(Number.isFinite(out[1])).toBe(true);
+    expect(Number.isFinite(out[2])).toBe(true);
   });
 });
 
@@ -482,3 +536,13 @@ function setAxisAngle(body: RigidBody3D, x: number, y: number, z: number, angle:
   body.orientationW = Math.cos(angle / 2);
   refreshRigidBody3DWorldInertia(body);
 }
+
+describe('writeRow', () => {
+  it('lays the direction and the two arms out in one block', () => {
+    const state = newState();
+
+    writeRow(state, ROW_LENGTH, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+    expect(state.slice(ROW_LENGTH, ROW_LENGTH * 2)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+});
