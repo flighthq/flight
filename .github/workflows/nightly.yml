@@ -66,7 +66,7 @@ jobs:
           ref: ${{ needs.resolve.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - run: npm ci
       - uses: ./.github/actions/setup-playwright
@@ -91,7 +91,7 @@ jobs:
           ref: ${{ needs.resolve.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - run: npm ci
       - run: npm run size:minified
@@ -107,7 +107,7 @@ jobs:
           ref: ${{ needs.resolve.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
       - run: npm ci
       - run: npm run api
