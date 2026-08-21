@@ -99,8 +99,10 @@ path runs.
 wgpu still has discrete gaps, but the old cluster is gone: GPU skinning, morph deformation,
 ShadedMaterial modifiers, `CustomShaderMaterial`, 3D particles, punctual lighting/shadows/IBL, and the
 advanced-blend `BlendEffect` all render on both GPU backends with functional cells. `CustomShaderEffect`
-still has no Wgpu runner and Wgpu effect targets remain single-sampled when a scene requests MSAA. Treat
-those named gaps as the boundary rather than the former blanket "second-class" description.
+still has no Wgpu runner. Wgpu effect targets now honour `sampleCount` > 1 by supersampling 2× per axis
+and resolving, matching the Gl cell's visual output; plain 2D WebGPU scenes without an effect pipeline
+still lack context-level MSAA. Treat those named gaps as the boundary rather than the former blanket
+"second-class" description.
 
 ### C. Backend feature-parity is silently uneven for 2D too
 Beyond wgpu, several 2D features remain asymmetric: per-instance **ColorTransform tint** is gl/wgpu-only

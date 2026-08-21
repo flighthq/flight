@@ -11,11 +11,11 @@ A claim site is one file-level causal passage. Duplicated sibling passages count
 copy can stale independently. Architecture summaries and tables that repeat the same mechanism inside one
 record count as one claim group.
 
-**STILL TRUE 21 · NOW FALSE 38 · CANNOT TELL 5**
+**STILL TRUE 19 · NOW FALSE 40 · CANNOT TELL 5**
 
-## STILL TRUE — 21
+## STILL TRUE — 19
 
-The 12 functional claim sites all have an assert-the-gap guard. Ten guard the limitation directly in their
+The 10 functional claim sites all have an assert-the-gap guard. Eight guard the limitation directly in their
 `assertRender`; the two Kuwahara sites use a source-formula tripwire because their current raster oracle
 cannot isolate the quadrant defect.
 
@@ -23,14 +23,12 @@ cannot isolate the quadrant defect.
 2. `effect-bokeh-dof.webgpu.ts` — Wgpu has no bokeh runner.
 3. `effect-kuwahara.webgl.ts` — three Gl sector formulas still degenerate.
 4. `effect-kuwahara.webgpu.ts` — three Wgpu sector formulas still degenerate.
-5. `effect-msaa.webgpu.ts` — requested effect-pipeline MSAA still resolves single-sampled.
-6. `effect-msaa-bloom.webgpu.ts` — the same single-sample limitation under bloom.
-7. `effect-ssr.webgl.ts` — no Gl SSR runner.
-8. `effect-ssr.webgpu.ts` — no Wgpu SSR runner.
-9. `effect-taa.webgl.ts` — no Gl TAA runner.
-10. `effect-taa.webgpu.ts` — no Wgpu TAA runner.
-11. `material-blend-modes.webgl.ts` — fixed-function Darken still blackens zero coverage.
-12. `material-blend-modes.webgpu.ts` — the same MIN/coverage limitation on Wgpu.
+5. `effect-ssr.webgl.ts` — no Gl SSR runner.
+6. `effect-ssr.webgpu.ts` — no Wgpu SSR runner.
+7. `effect-taa.webgl.ts` — no Gl TAA runner.
+8. `effect-taa.webgpu.ts` — no Wgpu TAA runner.
+9. `material-blend-modes.webgl.ts` — fixed-function Darken still blackens zero coverage.
+10. `material-blend-modes.webgpu.ts` — the same MIN/coverage limitation on Wgpu.
 
 The nine architecture gap groups are source-guarded in `scripts/causal-limitation-prose.test.ts`:
 
@@ -44,9 +42,9 @@ The nine architecture gap groups are source-guarded in `scripts/causal-limitatio
 8. `InstancedMesh` and `LodMesh` remain type-only and absent from the scene barrel.
 9. Wgpu has `CustomShaderMaterial`, but still no `CustomShaderEffect` runner.
 
-## NOW FALSE — 38
+## NOW FALSE — 40
 
-Fourteen functional claim sites described repaired limitations. The current wording now describes the
+Sixteen functional claim sites described repaired limitations. The current wording now describes the
 measured result; items already repaired in the integration line are listed so the census includes the seeded
 examples without duplicating their patches.
 
@@ -64,6 +62,8 @@ examples without duplicating their patches.
 12. `effect-posterize.canvas.ts` — Canvas now has a real posterize runner.
 13. `effect-lens-distortion.canvas.ts` — Canvas now has a real lens-distortion runner.
 14. `effect-camera-motion-blur.webgpu.ts` — this scene uses the radial recipe, not an absent velocity-buffer path.
+15. `effect-msaa.webgpu.ts` — Wgpu effect targets now honour sampleCount > 1 via 2×-per-axis supersample-and-resolve.
+16. `effect-msaa-bloom.webgpu.ts` — the same MSAA capability under bloom.
 
 Twenty-four architecture claim groups were stale:
 
@@ -122,6 +122,6 @@ so they are bounded rather than asserted as gaps:
    supported child-level blend as the positive control. A group result matching the once-flattened reference
    establishes support; byte identity with Normal while the control changes establishes absence.
 
-`scripts/causal-limitation-prose.test.ts` pins the classification total, the ten direct functional guard
+`scripts/causal-limitation-prose.test.ts` pins the classification total, the eight direct functional guard
 markers, the two Kuwahara source tripwires, and all nine architecture absence groups. A capability repair
 therefore fails with the stale prose owner named instead of silently aging this record.
