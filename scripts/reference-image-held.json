@@ -389,6 +389,77 @@
         "functional/text-markup-color/webgpu"
       ],
       "reason": "font differences in ci"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T11:17:53.607Z",
+      "keys": [
+        "functional/effect-scanlines/canvas",
+        "functional/effect-scanlines/webgl",
+        "functional/effect-scanlines/webgpu"
+      ],
+      "reason": "canvas lines different"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T11:19:24.341Z",
+      "keys": ["functional/bitmap-downscale-smoothing/dom", "functional/bitmap-downscale-smoothing/canvas"],
+      "reason": "only canvas shows difference"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T11:19:57.242Z",
+      "keys": [
+        "functional/effect-film-grain/canvas",
+        "functional/effect-film-grain/webgl",
+        "functional/effect-film-grain/webgpu"
+      ],
+      "reason": "wgpu looks flipped and canvas looks too small"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T11:20:20.103Z",
+      "keys": ["functional/effect-lensdirt/webgl", "functional/effect-lensdirt/webgpu"],
+      "reason": "wgpu looks flipped"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T11:21:07.524Z",
+      "keys": [
+        "functional/render-target-node-2d/canvas",
+        "functional/render-target-node-2d/webgl",
+        "functional/render-target-node-2d/webgpu"
+      ],
+      "reason": "canvas should be removed"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T11:21:30.983Z",
+      "keys": [
+        "functional/shape-stroke-caps/dom",
+        "functional/shape-stroke-caps/canvas",
+        "functional/shape-stroke-caps/webgl",
+        "functional/shape-stroke-caps/webgpu"
+      ],
+      "reason": "issue with middle stroke on gl/wgpu"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T11:22:02.369Z",
+      "keys": [
+        "functional/text-border-box/dom",
+        "functional/text-border-box/canvas",
+        "functional/text-border-box/webgl",
+        "functional/text-border-box/webgpu"
+      ],
+      "reason": "visual weight of stroke does not agree between dom, canvas and hw"
     }
   ],
   "held": {
@@ -469,6 +540,27 @@
     "functional/text-align-center/webgpu": "font differences in ci",
     "functional/text-markup-color/canvas": "font differences in ci",
     "functional/text-markup-color/webgl": "font differences in ci",
-    "functional/text-markup-color/webgpu": "font differences in ci"
+    "functional/text-markup-color/webgpu": "font differences in ci",
+    "functional/effect-scanlines/canvas": "canvas lines different",
+    "functional/effect-scanlines/webgl": "canvas lines different",
+    "functional/effect-scanlines/webgpu": "canvas lines different",
+    "functional/bitmap-downscale-smoothing/dom": "only canvas shows difference",
+    "functional/bitmap-downscale-smoothing/canvas": "only canvas shows difference",
+    "functional/effect-film-grain/canvas": "wgpu looks flipped and canvas looks too small",
+    "functional/effect-film-grain/webgl": "wgpu looks flipped and canvas looks too small",
+    "functional/effect-film-grain/webgpu": "wgpu looks flipped and canvas looks too small",
+    "functional/effect-lensdirt/webgl": "wgpu looks flipped",
+    "functional/effect-lensdirt/webgpu": "wgpu looks flipped",
+    "functional/render-target-node-2d/canvas": "canvas should be removed",
+    "functional/render-target-node-2d/webgl": "canvas should be removed",
+    "functional/render-target-node-2d/webgpu": "canvas should be removed",
+    "functional/shape-stroke-caps/dom": "issue with middle stroke on gl/wgpu",
+    "functional/shape-stroke-caps/canvas": "issue with middle stroke on gl/wgpu",
+    "functional/shape-stroke-caps/webgl": "issue with middle stroke on gl/wgpu",
+    "functional/shape-stroke-caps/webgpu": "issue with middle stroke on gl/wgpu",
+    "functional/text-border-box/dom": "visual weight of stroke does not agree between dom, canvas and hw",
+    "functional/text-border-box/canvas": "visual weight of stroke does not agree between dom, canvas and hw",
+    "functional/text-border-box/webgl": "visual weight of stroke does not agree between dom, canvas and hw",
+    "functional/text-border-box/webgpu": "visual weight of stroke does not agree between dom, canvas and hw"
   }
 }
