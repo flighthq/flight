@@ -271,6 +271,32 @@ describe('integratePhysics3DContinuous', () => {
     expect(ids).toHaveLength(0);
   });
 
+  it('GIVES A SQUARELY-STRUCK BODY NO SPIN', () => {
+    // The invariant behind resolving the impact linearly. A box driven straight into a flat wall is a
+    // symmetric collision and must come away with no rotation. The impact does carry a contact point, but
+    // where two faces meet it names a CORNER of the shared region, and using that as a lever arm would
+    // spin the box about it. If a future revision gives the impulse an angular term, this is what tells
+    // it that a single witness is not enough and the case needs a manifold.
+    const world = continuousWorld();
+    addWall(world);
+    const bullet = createRigidBody3D('dynamic');
+    bullet.x = -5;
+    bullet.velocityX = 600;
+    bullet.gravityScale = 0;
+    bullet.bullet = true;
+    addPhysics3DBody(world, bullet);
+    addPhysics3DCollider(
+      world,
+      bullet,
+      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+    );
+
+    stepPhysics3D(world, 1 / 60);
+
+    expect(bullet.x).toBeLessThan(0);
+    expect(Math.hypot(bullet.angularVelocityX, bullet.angularVelocityY, bullet.angularVelocityZ)).toBeCloseTo(0, 9);
+  });
+
   it('runs directly without a step, for a caller assembling its own loop', () => {
     const world = continuousWorld();
     addWall(world);

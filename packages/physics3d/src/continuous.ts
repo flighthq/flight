@@ -192,18 +192,23 @@ function getRelativeNormalVelocity(
 
 // Removes the approach velocity with a single LINEAR normal impulse through the centres of mass.
 //
-// NO LEVER ARM, and that omission is deliberate rather than a shortcut taken for speed. A swept query
-// reaches a shape through its support function, which is ambiguous wherever a face is flat: a box struck
-// squarely reports one of its CORNERS as the contact, not the middle of the face actually hit. Feeding
-// that in as a lever arm is not slightly wrong, it is catastrophically wrong — measured here, a corner
-// five units off-axis inflated the angular term by four orders of magnitude, the effective mass collapsed,
-// and the impulse that should have stopped a 600-unit-per-second bullet changed its velocity by 0.05. It
-// tunnelled anyway, through a path that ran and reported success.
+// NO LEVER ARM, and that omission is deliberate rather than a shortcut taken for speed. The impact
+// carries a contact point, and it is a genuine one — the sweep reports the GJK witness, which is exact
+// even where the closest feature is interior to an edge. The problem is not the point's accuracy, it is
+// that one point cannot stand for a face-face contact. Where two flat faces meet, every point of the
+// shared region is equally close and the witness settles on a CORNER of it; a box driven squarely into a
+// wall would pick up `r x n` about that corner and come away spinning, from an impact that is symmetric
+// and must produce no rotation at all. An earlier revision measured the other half of the same problem:
+// a lever arm five units off-axis inflated the angular term by four orders of magnitude, the effective
+// mass collapsed, and the impulse meant to stop a 600-unit-per-second bullet changed its velocity by
+// 0.05. It tunnelled anyway, through a path that ran and reported success.
 //
 // So this arrests the approach and nothing else. The pair is left touching and awake, and the ORDINARY
-// contact generation on the next step produces real manifold points with real lever arms, applying the
-// torque, friction, and warm starting a rotating impact needs. What continuous collision has to guarantee
-// is only that the body is still on the near side for that step to find it.
+// contact generation on the next step produces a real MANIFOLD — several points whose lever arms cancel
+// for a square hit and do not for a glancing one — applying the torque, friction, and warm starting a
+// rotating impact needs. What continuous collision has to guarantee is only that the body is still on the
+// near side for that step to find it. Giving the impact its own angular response means giving it a
+// manifold, not a better point.
 function resolvePhysics3DImpact(world: Physics3DWorld, scratch: Physics3DContinuousScratch): void {
   const bodyA = world.bodyByIndex.get(scratch.bodyA);
   const bodyB = world.bodyByIndex.get(scratch.bodyB);
