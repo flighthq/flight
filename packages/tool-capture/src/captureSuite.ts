@@ -12,7 +12,7 @@ import type { CaptureBrowserSession } from './captureBrowser.js';
 import type { Entry } from './captureEntries.js';
 import { captureParallel, isVerifiedCaptureTool } from './captureEntry.js';
 import type { CaptureTargetReport } from './captureEntry.js';
-import { selectCaptureEntriesByName } from './captureEntryFilter.js';
+import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter.js';
 import { formatSummaryCount, formatSummaryLine } from './captureFormat.js';
 import { installAbortHandler } from './captureInterrupt.js';
 import { writeCaptureReport } from './captureReport.js';
@@ -77,7 +77,7 @@ export async function runCaptureSuite(options: Readonly<CaptureSuiteOptions>): P
   const outBase = resolve(root, options.outBase ?? '.artifacts');
   const rendererFilter = [...(options.rendererFilter ?? [])];
   const entries = selectCaptureEntriesByName(options.entries, options.filter, options.filterExact);
-  if (entries.length === 0) throw new Error(`No capture entries found  subject=${options.subject}`);
+  assertCaptureSelectionNotEmpty(entries, options.filter, options.filterExact, rendererFilter, 'capture');
 
   const captureFrames = options.captureFrames ?? 0;
   // Ask the SUBJECT whether its pages register a verifier, rather than hardcoding one subject's name.
