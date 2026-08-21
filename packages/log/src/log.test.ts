@@ -90,6 +90,10 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
+afterEach(() => {
+  clearLogSinks();
+});
+
 describe('addLogSink', () => {
   it('adds a sink that receives emitted entries', () => {
     const entries: LogEntry[] = [];

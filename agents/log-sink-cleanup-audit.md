@@ -7,7 +7,7 @@ npx tsx scripts/audit-log-sink-cleanup.ts --write
 npx tsx scripts/audit-log-sink-cleanup.ts --check
 ```
 
-The current tree contains **83 registrations across 42 files**: 50 locally bracketed by `finally`, 4 cleared by failure-safe test hooks, 3 immediately removed/replaced, 1 owned by an explicit API lifetime, and 25 without a shorter-lifetime cleanup.
+The current tree contains **83 registrations across 42 files**: 50 locally bracketed by `finally`, 31 cleared by failure-safe test hooks, 0 immediately removed/replaced, 1 owned by an explicit API lifetime, and 1 without a shorter-lifetime cleanup.
 
 The check fails for every new unbracketed registration. The one named exception is the size fixture:
 its console sink deliberately lives for the document lifetime and becomes unreachable at page teardown.
@@ -43,8 +43,7 @@ audit records and escalates it rather than choosing teardown semantics locally.
 | `packages/entity/src/enableEntityRuntimeGuards.test.ts` | 12 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/geometry/src/enableGeometryPoolGuards.test.ts` | 20 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/interaction/src/enableInteractionGuards.test.ts` | 24, 43, 57, 73 | 4 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
-| `packages/log/src/log.test.ts` | 203, 1210, 1350 | 3 | `direct-cleanup` | Guaranteed on the straight-line path: the registration is immediately removed, cleared, or replaced before assertions can abort the owner. |
-| `packages/log/src/log.test.ts` | 76, 96, 106, 107, 213, 272, 282, 291, 417, 429, 438, 447, 460, 534, 543, 555, 566, 580, 597, 615, 623, 787, 994, 995 | 24 | `missing-cleanup` | Missing an exception-safe shorter-lifetime teardown. The sink and anything its closure captures remain reachable and can receive later log entries. |
+| `packages/log/src/log.test.ts` | 76, 100, 110, 111, 207, 217, 276, 286, 295, 421, 433, 442, 451, 464, 538, 547, 559, 570, 584, 601, 619, 627, 791, 998, 999, 1214, 1354 | 27 | `test-hook-cleanup` | Guaranteed after every test, including failures, by an `afterEach` hook that removes or clears registered sinks. |
 | `packages/media/src/enableAudioMixerGuards.test.ts` | 30 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/movieclip/src/enableMovieClipGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
 | `packages/permissions/src/enablePermissionGuards.test.ts` | 10 | 1 | `finally-cleanup` | Guaranteed on success and failure: a local `finally` removes the same sink registration. |
