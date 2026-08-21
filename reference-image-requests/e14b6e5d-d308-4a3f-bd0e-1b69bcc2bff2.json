@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 3,
+  "id": "e14b6e5d-d308-4a3f-bd0e-1b69bcc2bff2",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "material-specular-glossiness",
+      "renderer": "webgl",
+      "pixelSha256": "74adb78cb07adeb443cbc2b5a59d804ef3b3a90846d5f7f84cfdb79abc6b3770",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "material-specular-glossiness",
+      "renderer": "webgpu",
+      "pixelSha256": "74adb78cb07adeb443cbc2b5a59d804ef3b3a90846d5f7f84cfdb79abc6b3770",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review"
+}

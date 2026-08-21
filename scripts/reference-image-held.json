@@ -68,6 +68,71 @@
         "functional/text-background-box/webgpu"
       ],
       "reason": "text is rendering slightly differently"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:25:28.365Z",
+      "keys": ["functional/effect-bloom/canvas", "functional/effect-bloom/webgl", "functional/effect-bloom/webgpu"],
+      "reason": "wgpu bloom has less glow"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:26:19.876Z",
+      "keys": ["functional/effect-chain/canvas", "functional/effect-chain/webgl", "functional/effect-chain/webgpu"],
+      "reason": "bloom on webgpu is less glow"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:27:13.905Z",
+      "keys": ["functional/effect-dither/webgl", "functional/effect-dither/webgpu"],
+      "reason": "dither pattern varies between gl and webgpu (off by one? upside down?)"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:28:14.738Z",
+      "keys": [
+        "functional/effect-pixelate/canvas",
+        "functional/effect-pixelate/webgl",
+        "functional/effect-pixelate/webgpu"
+      ],
+      "reason": "canvas, webgl and webgpu do not agree"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:29:38.424Z",
+      "keys": ["functional/light-many-point/webgl", "functional/light-many-point/webgpu"],
+      "reason": "gl and wgpu disagree"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:30:38.767Z",
+      "keys": ["functional/material-wireframe/webgl", "functional/material-wireframe/webgpu"],
+      "reason": "gl and webgpu disagree, webgpu appears to be showing additional lines on the reverse/back side?"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:32:44.087Z",
+      "keys": [
+        "functional/text-strikethrough/dom",
+        "functional/text-strikethrough/canvas",
+        "functional/text-strikethrough/webgl",
+        "functional/text-strikethrough/webgpu"
+      ],
+      "reason": "line is in different position on dom"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T00:34:27.120Z",
+      "keys": ["functional/material-blend-modes/webgl", "functional/material-blend-modes/webgpu"],
+      "reason": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check"
     }
   ],
   "held": {
@@ -103,6 +168,27 @@
     "functional/text-background-box/dom": "text is rendering slightly differently",
     "functional/text-background-box/canvas": "text is rendering slightly differently",
     "functional/text-background-box/webgl": "text is rendering slightly differently",
-    "functional/text-background-box/webgpu": "text is rendering slightly differently"
+    "functional/text-background-box/webgpu": "text is rendering slightly differently",
+    "functional/effect-bloom/canvas": "wgpu bloom has less glow",
+    "functional/effect-bloom/webgl": "wgpu bloom has less glow",
+    "functional/effect-bloom/webgpu": "wgpu bloom has less glow",
+    "functional/effect-chain/canvas": "bloom on webgpu is less glow",
+    "functional/effect-chain/webgl": "bloom on webgpu is less glow",
+    "functional/effect-chain/webgpu": "bloom on webgpu is less glow",
+    "functional/effect-dither/webgl": "dither pattern varies between gl and webgpu (off by one? upside down?)",
+    "functional/effect-dither/webgpu": "dither pattern varies between gl and webgpu (off by one? upside down?)",
+    "functional/effect-pixelate/canvas": "canvas, webgl and webgpu do not agree",
+    "functional/effect-pixelate/webgl": "canvas, webgl and webgpu do not agree",
+    "functional/effect-pixelate/webgpu": "canvas, webgl and webgpu do not agree",
+    "functional/light-many-point/webgl": "gl and wgpu disagree",
+    "functional/light-many-point/webgpu": "gl and wgpu disagree",
+    "functional/material-wireframe/webgl": "gl and webgpu disagree, webgpu appears to be showing additional lines on the reverse/back side?",
+    "functional/material-wireframe/webgpu": "gl and webgpu disagree, webgpu appears to be showing additional lines on the reverse/back side?",
+    "functional/text-strikethrough/dom": "line is in different position on dom",
+    "functional/text-strikethrough/canvas": "line is in different position on dom",
+    "functional/text-strikethrough/webgl": "line is in different position on dom",
+    "functional/text-strikethrough/webgpu": "line is in different position on dom",
+    "functional/material-blend-modes/webgl": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check",
+    "functional/material-blend-modes/webgpu": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check"
   }
 }

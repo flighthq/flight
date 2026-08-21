@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 3,
+  "id": "c210e53f-52a9-47b1-996c-1c0e6629332e",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "effect-screen-space-fog",
+      "renderer": "webgl",
+      "pixelSha256": "fc8a7c6549edd382d070fe54bf881427c453f7b265b24d96590334a5f1a1a686",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "effect-screen-space-fog",
+      "renderer": "webgpu",
+      "pixelSha256": "2aec5a513bf6350ba660a1cffe378f19971cbaa223963824d139efe317ade785",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review"
+}
