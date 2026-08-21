@@ -41,6 +41,12 @@ function beginWgpuRenderPassEncoder(
   return pass;
 }
 
+// Begins a render pass into `target`: opens a wgpu render pass encoder that CLEARS every aspect by
+// default (the loadOp 'clear' the pass previously always used). `preserve` switches an aspect's
+// loadOp to 'load'; the clear VALUES are fixed on the target (WgpuRenderTarget.clearColors / clearDepth).
+// Pair with endWgpuRenderPass. Carries no 2D transform — that is a display-object draw concern; a 2D pass
+// that needs a specific root transform calls setWgpuRenderTransform2D after begin (saved/restored by the
+// bracket). Mirrors beginGlRenderPass.
 export function beginWgpuRenderPass(
   state: WgpuRenderState,
   target: WgpuRenderTarget,
@@ -244,12 +250,6 @@ export function endWgpuRenderPass(state: WgpuRenderState): void {
   }
 }
 
-// Begins a render pass into `target`: opens a wgpu render pass encoder that CLEARS every aspect by
-// default (the loadOp 'clear' the pass previously always used). `preserve` switches an aspect's
-// loadOp to 'load'; the clear VALUES are fixed on the target (WgpuRenderTarget.clearColors / clearDepth).
-// Pair with endWgpuRenderPass. Carries no 2D transform — that is a display-object draw concern; a 2D pass
-// that needs a specific root transform calls setWgpuRenderTransform2D after begin (saved/restored by the
-// bracket). Mirrors beginGlRenderPass.
 /**
  * Device pixels per logical pixel in this target — 2 when it is supersampled, 1 otherwise.
  *
