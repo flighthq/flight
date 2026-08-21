@@ -65,6 +65,23 @@ export interface SpatialPair {
   b: SpatialObjectId;
 }
 
+// A view volume for `querySpatialFrustum3D`, as its eight world-space corners in a flat
+// `[x0,y0,z0,x1,y1,z1,...]` list — the four NEAR-plane corners first, then the four FAR-plane corners,
+// with the two quads in the SAME winding so corner `i` of the near quad pairs with corner `i` of the
+// far one.
+//
+// Corners rather than six planes, for two reasons. A corner list describes a perspective and an
+// orthographic volume with one shape and no special case, and — the load-bearing one — the query slices
+// the volume along its depth and interpolates near corner to far corner to do it. Six planes carry no
+// such correspondence, so recovering it would mean intersecting plane triples to get the corners back.
+//
+// The pairing is a real precondition rather than a tidiness rule: a near quad wound opposite its far
+// quad interpolates into a bow-tie whose bounds are far larger than the volume it should describe, and
+// nothing detects it — the query still returns a superset, so it stays correct while going quietly slow.
+export interface SpatialFrustum3D {
+  corners: number[];
+}
+
 // The swappable index seam. A concrete backend (uniform grid in P1; quadtree / sweep-and-prune later)
 // stores objects by id + bounds and answers the broadphase queries. All query results are written
 // into a caller-provided `out` array — cleared then filled — so a per-frame query loop allocates no
