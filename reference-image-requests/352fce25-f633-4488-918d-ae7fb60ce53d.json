@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 3,
+  "id": "352fce25-f633-4488-918d-ae7fb60ce53d",
+  "subject": "functional",
+  "targets": [
+    {
+      "entry": "effect-scanlines",
+      "renderer": "canvas",
+      "pixelSha256": "4679964677b34540c9837f1dadd7322f4df4b741ca36f93792d9d3bf5eba4659",
+      "build": {
+        "commit": "1b52cb3e87c4d2a7ef4f90518f4a2fc668946fc1",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "effect-scanlines",
+      "renderer": "webgl",
+      "pixelSha256": "4224c8757937181bd9bb508abe9d9ae89252269dee31213a6d22516796b7bc11",
+      "build": {
+        "commit": "1b52cb3e87c4d2a7ef4f90518f4a2fc668946fc1",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    },
+    {
+      "entry": "effect-scanlines",
+      "renderer": "webgpu",
+      "pixelSha256": "e65bf0cb58b4888ded48b68a991158202d55768c1e086f19a45898c93f592805",
+      "build": {
+        "commit": "1b52cb3e87c4d2a7ef4f90518f4a2fc668946fc1",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
+    }
+  ],
+  "frames": 1,
+  "reason": "Commissioned from review",
+  "createdAt": "2026-08-21T11:17:44.732Z"
+}
