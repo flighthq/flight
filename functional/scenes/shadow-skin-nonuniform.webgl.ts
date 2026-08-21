@@ -35,7 +35,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'On an 800×600 view of a medium-grey ground plane, a bright horizontal bar floats above the ' +
@@ -76,7 +76,7 @@ registerGlBlinnPhongMaterial(state);
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
-  sampleCount: 4,
+  sampleCount: 1,
 });
 
 export const scale = pixelRatio;

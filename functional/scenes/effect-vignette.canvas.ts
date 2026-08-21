@@ -25,7 +25,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'The entire 800×600 field is one pale blue-white fill (authored R232 G236 B244) with a smooth ' +

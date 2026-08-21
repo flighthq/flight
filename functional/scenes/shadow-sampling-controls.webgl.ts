@@ -31,7 +31,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 near-black sky frames a light-grey ground plane receding toward mid-field and a ' +
@@ -57,7 +57,7 @@ export const state = createGlRenderState(canvas, {
 registerGlBlinnPhongMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

@@ -25,7 +25,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'The 800×600 field is exactly filled by a gapless 3×2 grid of six flat colour panels, each one third of the ' +

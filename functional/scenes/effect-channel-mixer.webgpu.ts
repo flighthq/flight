@@ -25,7 +25,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field completely covered by a 3-by-2 grid of six flat colour blocks, each W/3 x H/2 = 266.7 x 300 ' +
@@ -47,7 +47,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

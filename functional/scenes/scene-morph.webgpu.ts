@@ -30,7 +30,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field (about R10 G12 B16), one flat orange, screen-aligned ' +
@@ -50,7 +50,7 @@ document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x0a0c10ff });
 registerWgpuUnlitMaterial(state);
 const pipeline = createWgpuRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

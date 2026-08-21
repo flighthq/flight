@@ -32,7 +32,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with a quad centered at (0.5*W, 0.5*H) = (400, 300), spanning x W/2 ± H/(6*tan(PI/8)) ≈ 159–641, y H/2 ± 0.75*H/(6*tan(PI/8)) ≈ 119–481, filled with per-vertex colors interpolated across its surface: red at one corner, green at another, blue and yellow at the remaining two. The four colors blend smoothly into each other — no discrete boundaries, just a continuous bilinear gradient filling the quad.',
@@ -50,7 +50,7 @@ export const state = createGlRenderState(canvas, {
 registerGlVertexColorMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

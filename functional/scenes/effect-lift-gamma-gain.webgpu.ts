@@ -34,7 +34,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'Six rectangles in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300; source colors red 0xff3030, green 0x30c040, blue 0x3060ff, yellow 0xffd030, magenta 0xff30c0, cyan 0x30d0d0) with a warm-shadow / cool-highlight split-tone grade applied. Shadows are pushed warm (amber tint from lift 0x8a7860) while highlights are pushed cool (blue-gray tint from gain 0x7088a0). Blues are notably suppressed. No gaps between cells.',
@@ -52,7 +52,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

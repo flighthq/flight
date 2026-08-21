@@ -30,7 +30,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 environment backdrop surrounds two large spheres centred near (243,300) and ' +
@@ -59,7 +59,7 @@ export const state = createGlRenderState(canvas, {
 registerGlStandardPbrMaterial(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

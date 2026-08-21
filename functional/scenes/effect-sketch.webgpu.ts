@@ -26,7 +26,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 near-black field carries the stroke-like remains of 18 narrow rectangles in four ' +
@@ -49,7 +49,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuSketchEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

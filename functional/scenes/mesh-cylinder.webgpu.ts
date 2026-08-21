@@ -29,7 +29,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 dark field (0x0a0c10) with an unlit violet (0x9050e0) cylinder viewed from a slight side angle. The tangent silhouette spans x 0.315*W–0.685*W ≈ 252–548, y 0.19*H–0.86*H ≈ 114–517 — a tall vertically-extended shape with straight sides and no taper, both top and bottom full-width. No shading gradient — the material is unlit. Frame corners are background.',
@@ -51,7 +51,7 @@ export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroun
 registerWgpuUnlitMaterial(state);
 
 const pipeline = createWgpuRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

@@ -24,7 +24,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 field shows four 140×140 rotated squares in a 2×2 arrangement: white at (224,180), ' +
@@ -51,7 +51,7 @@ registerGlStandardMaterial(state);
 registerGlScreenSpaceFogEffect(state);
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba8',
 });
 

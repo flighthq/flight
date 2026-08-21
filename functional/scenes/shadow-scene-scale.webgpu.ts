@@ -34,7 +34,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'A top-down 800×600 view is filled edge to edge by a large light-grey ground plane. Three similar ' +
@@ -61,7 +61,7 @@ registerWgpuBlinnPhongMaterial(state);
 const pipeline = createWgpuRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
-  sampleCount: 4,
+  sampleCount: 1,
 });
 
 export const scale = pixelRatio;

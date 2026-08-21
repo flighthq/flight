@@ -33,7 +33,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'A uniform mid-gray field (0x808080) filling the entire 800×600 frame — a single full-frame rectangle with no distinct geometry or base-color variation — overlaid with fine random speckle noise from the film grain effect (intensity 0.3, grain size 1.5, seed 7). Only the grain texture over flat gray. The noise is subtle: individual specks are visible at full resolution but average to gray at a distance.',
@@ -55,7 +55,7 @@ registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 registerGlFilmGrainEffect(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

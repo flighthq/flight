@@ -39,7 +39,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800×600 view shows a light-grey ground plane and a narrow light-grey bar rising near the ' +
@@ -66,7 +66,7 @@ registerGlBlinnPhongMaterial(state);
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
-  sampleCount: 4,
+  sampleCount: 1,
 });
 
 export const scale = pixelRatio;

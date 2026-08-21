@@ -23,7 +23,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a very dark blue background (0x081020) with a single sphere centred at (0.5*W, 0.5*H) = ' +
@@ -58,7 +58,7 @@ registerGlDepthMaterial(state);
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
-  sampleCount: 4,
+  sampleCount: 1,
 });
 
 export const height = 600;

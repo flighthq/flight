@@ -26,7 +26,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 
 // Canvas parity column for the same color-grade intent as render.webgl.ts: saturation, contrast, and
 // a warm temperature shift across the whole frame — realized with Canvas 2D compositing.
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background with six upright rectangles of about 120 x 160, in ' +

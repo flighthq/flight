@@ -26,7 +26,7 @@ import {
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field (about R5 G6 B10), four unrotated 160×160 squares form a 2×2 ' +
@@ -50,7 +50,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuToneMapEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4, format: 'rgba16f' });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba16f' });
 
 export const scale = pixelRatio;
 export const width = 800;

@@ -23,7 +23,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'Six rectangles in a 3×2 grid filling the 800×600 frame (cells ~267×300 px; columns at x 0/267/533, rows at y 0/300), showing complementary colors of the source: red (0xff3030) inverts to cyan, green (0x30c040) to magenta, blue (0x3060ff) to yellow, yellow (0xffd030) to dark blue, magenta (0xff30c0) to green, cyan (0x30d0d0) to warm red. Originally bright cells appear darker; originally dark cells appear lighter. No gaps between cells.',
@@ -43,7 +43,7 @@ export const state = createGlRenderState(canvas, {
 registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
 registerGlStandardMaterial(state);
 
-const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black field, two aligned half-transparent square boxes overlap at the centre. ' +
@@ -48,7 +48,7 @@ export const state = createGlRenderState(canvas, {
 registerGlUnlitMaterial(state);
 
 const pipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

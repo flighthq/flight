@@ -28,7 +28,7 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column. The directional smear is a color-only/uniform full-frame blur along the
 // configured angle (no depth/velocity G-buffer is involved).
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background with four square tiles 110 px on a side, turned 10, 28, 46 and ' +
@@ -49,7 +49,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuDirectionalBlurEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

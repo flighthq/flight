@@ -25,7 +25,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background (0x0a0c10) with a single sphere centred at (0.5*W, 0.5*H) = ' +
@@ -86,7 +86,7 @@ void main() {
 });
 
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
-  sampleCount: 4,
+  sampleCount: 1,
   format: 'rgba16f',
   depth: 'depth-stencil',
 });

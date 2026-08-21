@@ -29,7 +29,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'On an 800×600 near-black navy field (about R8 G11 B18), a large perspective box is centred in ' +
@@ -114,7 +114,7 @@ setCamera3DViewMatrix4FromLookAt(
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
-  sampleCount: 4,
+  sampleCount: 1,
 });
 beginGlRenderEffectPipeline(state, pipeline, 'linear');
 renderGlBackground(state);

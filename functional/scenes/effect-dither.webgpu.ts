@@ -28,7 +28,7 @@ import { registerWgpuFunctionalTarget } from '@ft/verify';
 
 // Wgpu parity column for the same dither intent as render.webgl.ts. Wgpu render-state init is
 // async; the full-frame effect pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a very dark background carrying EIGHTEEN small bars of about 56 x 20, each turned by a ' +
@@ -50,7 +50,7 @@ registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuStandardMaterial(state);
 registerWgpuDitherEffect(state);
 
-const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 4 });
+const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;
 export const width = 800;

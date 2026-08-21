@@ -28,7 +28,7 @@ import {
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
   'An 800x600 field on a near-black background (0x080a10) carrying TWELVE SEPARATE SQUARE TILES in a 4-by-3 ' +
@@ -70,7 +70,7 @@ registerGlBlinnPhongMaterial(state);
 const pipeline: GlRenderEffectPipeline = createGlRenderEffectPipeline(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',
-  sampleCount: 4,
+  sampleCount: 1,
 });
 
 export const scale = pixelRatio;
