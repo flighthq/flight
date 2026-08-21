@@ -26,6 +26,7 @@ import { createGlOffscreenRenderState } from '../packages/render-gl/src/glRender
 import { createGlState } from '../packages/render-gl/src/glTestHelper';
 import { createWgpuOffscreenRenderState } from '../packages/render-wgpu/src/wgpuRenderState';
 import { createWgpuRenderStateForTest, installWgpuMock } from '../packages/render-wgpu/src/wgpuTestHelper';
+import { createRegistrarProgressFrame } from './check-progress';
 import {
   collectRegistrarKindConstants,
   collectRegistrarOwnership,
@@ -36,6 +37,12 @@ import type {
   RegistrarRuntimeDeclaration,
   RegistrarRuntimeParameter,
 } from './reachability-core';
+import {
+  diagnoseRegistrarChildProcess,
+  formatRegistrarChildFailure,
+  summarizeRegistrarProbeDurations,
+} from './registrar-child-process';
+import type { RegistrarChildProcessDiagnostic, RegistrarProbeDuration } from './registrar-child-process';
 import {
   captureRegistrarPairs,
   classifyPairDerivation,
@@ -65,7 +72,7 @@ interface RuntimePairResult {
   tableShape: 'map' | 'ordered-array';
 }
 
-interface RuntimeProbeResult {
+interface RuntimeProbeOutcome {
   baselineAssertions: readonly { keysBefore: readonly string[]; table: string }[];
   diffedRoots: string[];
   diffedTables: string[];
@@ -77,6 +84,11 @@ interface RuntimeProbeResult {
   registrar: string;
   requiredState: string | null;
   status: 'PROBED' | 'PROBED-EMPTY' | 'UNPROBED';
+}
+
+interface RuntimeProbeResult extends RuntimeProbeOutcome {
+  childProcess: RegistrarChildProcessDiagnostic | null;
+  durationMs: number;
 }
 
 interface RuntimeRegistrarClassification {
@@ -397,6 +409,8 @@ const COLLISION_AUDITS = new Map<string, CollisionAudit>([
 async function main(): Promise<void> {
   const jsonMode = process.argv.includes('--json');
   const checkMode = process.argv.includes('--check');
+  const progressTokenIndex = process.argv.indexOf('--progress-token');
+  const progressToken = progressTokenIndex === -1 ? null : (process.argv[progressTokenIndex + 1] ?? null);
   installDomAndGpuMocks();
 
   const singleJsonIndex = process.argv.indexOf('--single-json');
@@ -444,14 +458,27 @@ async function main(): Promise<void> {
 
   for (const declaration of declarations) {
     if (classificationByRegistrar.get(registrarKey(declaration))?.role === 'generic-door') continue;
-    if (process.argv.includes('--progress')) {
+    if (progressToken !== null) {
+      process.stderr.write(
+        createRegistrarProgressFrame(
+          { packageName: declaration.packageName, registrar: declaration.registrar, type: 'registrar' },
+          progressToken,
+        ),
+      );
+    } else if (process.argv.includes('--progress')) {
       console.error(`probing ${declaration.packageName}:${declaration.registrar}`);
     }
-    results.push(
-      requiresFreshModuleInstance(declaration)
-        ? probeRegistrarInFreshProcess(declaration, doors)
-        : await probeRegistrar(declaration, doors, 'fresh-state'),
-    );
+    if (requiresFreshModuleInstance(declaration)) {
+      results.push(probeRegistrarInFreshProcess(declaration, doors));
+    } else {
+      const startedAt = performance.now();
+      const result = await probeRegistrar(declaration, doors, 'fresh-state');
+      results.push({
+        ...result,
+        childProcess: null,
+        durationMs: Math.round((performance.now() - startedAt) * 1_000) / 1_000,
+      });
+    }
   }
 
   const unprobed = results.filter((result) => result.status === 'UNPROBED');
@@ -573,6 +600,18 @@ async function main(): Promise<void> {
     unit: 'leaf write site',
     wgpuBitmapImageClaimantMembership,
   };
+  const durationRows: RegistrarProbeDuration[] = results.map((result) => ({
+    durationMs: result.durationMs,
+    isolation: result.isolation,
+    packageName: result.packageName,
+    registrar: result.registrar,
+  }));
+  const timings = {
+    all: summarizeRegistrarProbeDurations(durationRows),
+    freshProcess: summarizeRegistrarProbeDurations(
+      durationRows.filter((duration) => duration.isolation === 'fresh-process-module-instance'),
+    ),
+  };
   const moduleGlobalRegistryCensus = {
     clear: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.clear !== null).length,
     clearOrUnregister: MODULE_GLOBAL_REGISTRIES.filter((entry) => entry.clear !== null || entry.unregister !== null)
@@ -638,6 +677,7 @@ async function main(): Promise<void> {
           orderSensitivity,
           moduleGlobalRegistries: MODULE_GLOBAL_REGISTRIES,
           moduleGlobalRegistryCensus,
+          timings,
         },
         null,
         2,
@@ -650,6 +690,14 @@ async function main(): Promise<void> {
     console.log(
       `${summary.lost} lost among ${summary.assessedPairs} assessed pairs (${summary.comparablePairs} compared + ${summary.structurallyNotComparable} correctly not-comparable); ${summary.instrumentLimited} not assessed — probe limitation, not a property of the subject; ${summary.collisions} order-independent collision keys (${collisionCoverage.floor ? 'floor, coverage incomplete' : 'complete coverage'})`,
     );
+    console.log(
+      `Probe durations (ms): all n=${timings.all.count} p50=${timings.all.p50Ms} p95=${timings.all.p95Ms} p99=${timings.all.p99Ms} max=${timings.all.maxMs}; fresh children n=${timings.freshProcess.count} p50=${timings.freshProcess.p50Ms} p95=${timings.freshProcess.p95Ms} p99=${timings.freshProcess.p99Ms} max=${timings.freshProcess.maxMs}`,
+    );
+    for (const duration of timings.all.slowest) {
+      console.log(
+        `  SLOW ${duration.packageName}:${duration.registrar} ${duration.durationMs} ms [${duration.isolation}]`,
+      );
+    }
     for (const result of results) {
       if (result.status !== 'PROBED') {
         console.log(
@@ -678,8 +726,8 @@ async function main(): Promise<void> {
 async function probeRegistrar(
   declaration: RegistrarRuntimeDeclaration,
   directDoors: ReadonlySet<string>,
-  isolation: RuntimeProbeResult['isolation'],
-): Promise<RuntimeProbeResult> {
+  isolation: RuntimeProbeOutcome['isolation'],
+): Promise<RuntimeProbeOutcome> {
   const prepared: PreparedArgument[] = [];
   try {
     for (const parameter of declaration.parameters) prepared.push(await prepareArgument(declaration, parameter));
@@ -923,6 +971,7 @@ function probeRegistrarInFreshProcess(
 ): RuntimeProbeResult {
   const scriptPath = process.argv[1];
   if (scriptPath === undefined) throw new Error('Cannot locate registrar runtime script');
+  const startedAt = performance.now();
   const child = spawnSync(
     process.execPath,
     [
@@ -936,28 +985,41 @@ function probeRegistrarInFreshProcess(
     ],
     { cwd: root, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, timeout: 30_000 },
   );
+  const childProcess = diagnoseRegistrarChildProcess(
+    { packageName: declaration.packageName, registrar: declaration.registrar },
+    performance.now() - startedAt,
+    child,
+  );
   if (child.status !== 0) {
     return {
       baselineAssertions: [],
+      childProcess,
       diffedRoots: [],
       diffedTables: [],
+      durationMs: childProcess.elapsedMs,
       isolation: 'fresh-process-module-instance',
       outsideDiffedTables: [],
       packageName: declaration.packageName,
       pairs: [],
-      reason: child.stderr.trim() || `fresh process exited ${child.status ?? 'without a status'}`,
+      reason: formatRegistrarChildFailure(childProcess, child.stderr),
       registrar: declaration.registrar,
       requiredState: requiredStateName(declaration.parameters),
       status: 'UNPROBED',
     };
   }
   try {
-    return JSON.parse(child.stdout) as RuntimeProbeResult;
+    return {
+      ...(JSON.parse(child.stdout ?? '') as RuntimeProbeOutcome),
+      childProcess,
+      durationMs: childProcess.elapsedMs,
+    };
   } catch (error) {
     return {
       baselineAssertions: [],
+      childProcess,
       diffedRoots: [],
       diffedTables: [],
+      durationMs: childProcess.elapsedMs,
       isolation: 'fresh-process-module-instance',
       outsideDiffedTables: [],
       packageName: declaration.packageName,
