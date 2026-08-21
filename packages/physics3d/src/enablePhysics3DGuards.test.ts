@@ -2,6 +2,9 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { LogEntry, Physics3DWorld } from '@flighthq/types/contract';
 
 import { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards';
+import { createPhysics3DHingeJoint } from './jointFactories';
+import { addPhysics3DJoint } from './jointRegistry';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
 import { stepPhysics3D } from './step';
 import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
 
@@ -34,6 +37,17 @@ describe('disablePhysics3DGuards', () => {
     disablePhysics3DGuards();
     const world = createTestWorld();
     world.config.sequentialImpulse.positionIterations = -3;
+
+    const entries = captureLog(() => stepPhysics3D(world, 1 / 60));
+
+    expect(entries).toHaveLength(0);
+  });
+
+  it('removes the unresolved-joint seam', () => {
+    enablePhysics3DGuards();
+    disablePhysics3DGuards();
+    const world = createTestWorld();
+    addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
 
     const entries = captureLog(() => stepPhysics3D(world, 1 / 60));
 
@@ -86,6 +100,28 @@ describe('enablePhysics3DGuards', () => {
     expect(widened).toHaveLength(1);
     expect(readFailing(widened[0])).toContain('gravityValid');
   });
+
+  it('names every joint the solve skips and distinguishes why', () => {
+    enablePhysics3DGuards();
+    const world = createTestWorld();
+    const unregistered = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 });
+    unregistered.kind = 'guard.unregistered';
+    addPhysics3DJoint(world, unregistered);
+    registerBuiltInPhysics3DJointSolvers(world);
+    const invalidBodies = addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
+    invalidBodies.bodyB = 99;
+
+    const entries = captureLog(() => {
+      stepPhysics3D(world, 1 / 60);
+      stepPhysics3D(world, 1 / 60);
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(readJointIssues(entries[0])).toEqual([
+      { index: 0, kind: 'guard.unregistered', status: 'unregistered-kind' },
+      { index: 1, kind: 'Hinge', status: 'invalid-bodies' },
+    ]);
+  });
 });
 
 // `LogData` is deliberately `string | Record<string, unknown>`, so a structured entry's fields are only
@@ -96,10 +132,17 @@ function readFailing(entry: Readonly<LogEntry>): readonly string[] {
   return (data.failing as readonly string[] | undefined) ?? [];
 }
 
+function readJointIssues(entry: Readonly<LogEntry>): readonly Record<string, unknown>[] {
+  const data = entry.data;
+  if (typeof data === 'string' || data === undefined) return [];
+  return (data.joints as readonly Record<string, unknown>[] | undefined) ?? [];
+}
+
 // Steppable as built: every fault in these tests is one the test introduces, so a case that expects
 // silence is asserting the guard's judgement rather than a world that happens to be fine.
 function createTestWorld(): Physics3DWorld {
   const world = createPhysics3DWorld();
+  addPhysics3DBody(world, createRigidBody3D('dynamic'));
   addPhysics3DBody(world, createRigidBody3D('dynamic'));
   return world;
 }

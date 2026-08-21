@@ -1,4 +1,4 @@
-import type { Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
+import type { Physics3DJointResolutionGuard, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 
 import { findPhysics3DBody } from './world';
 
@@ -13,6 +13,7 @@ import { findPhysics3DBody } from './world';
 // Runs after `updatePhysics3DSleep`, never before: the workspace admits only awake bodies, so building
 // it against an unresolved sleep state would hand the solver islands it is about to put to sleep.
 export function buildPhysics3DSolveIslands(world: Physics3DWorld): void {
+  physics3DJointResolutionGuard?.(world);
   const roots = world.solveIslandRoots;
   const byRoot = world.solveIslandByRoot;
   const bodyCounts = world.solveIslandBodyCounts;
@@ -112,6 +113,12 @@ export function buildPhysics3DSolveIslands(world: Physics3DWorld): void {
 // read that motion and wake them again. A stack would twitch itself awake every step and never rest.
 export function isRigidBody3DPairAwake(a: Readonly<RigidBody3D>, b: Readonly<RigidBody3D>): boolean {
   return isBodyLive(a) || isBodyLive(b);
+}
+
+// Installs the optional diagnostics seam consulted before unresolved joints are omitted from the solve
+// workspace. Null by default and set only by `enablePhysics3DGuards`.
+export function setPhysics3DJointResolutionGuard(guard: Physics3DJointResolutionGuard | null): void {
+  physics3DJointResolutionGuard = guard;
 }
 
 // Advances every body's sleep state for one step.
@@ -319,3 +326,5 @@ function unionDynamicPair(world: Readonly<Physics3DWorld>, parents: Map<number, 
   const rootB = islandRootOf(parents, b);
   if (rootA !== rootB) parents.set(rootA, rootB);
 }
+
+let physics3DJointResolutionGuard: Physics3DJointResolutionGuard | null = null;
