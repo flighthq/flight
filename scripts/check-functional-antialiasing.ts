@@ -18,6 +18,7 @@ import { functionalScene3DFile } from '../packages/tool-capture/src/functionalSc
 const scriptPath = fileURLToPath(import.meta.url);
 const POLICY_CALL = 'declareAntialiasingPolicy';
 const POLICIES = new Set(['aa', 'no-aa']);
+const CLEANUP_BASELINE_MISMATCHES = { canvas: 9, webgl: 66, webgpu: 65 } as const;
 
 export interface FunctionalAntialiasingCellAnalysis {
   declared: 'aa' | 'no-aa' | null;
@@ -172,13 +173,22 @@ export function formatFunctionalAntialiasingReport(report: Readonly<FunctionalAn
   const mismatched = compared.filter((cell) => cell.matches === false);
   const pending = report.cells.filter((cell) => cell.declared === null);
   const unknown = report.cells.filter((cell) => cell.declared !== null && cell.effective === 'unknown');
+  const mismatchRenderers = [...new Set(report.cells.map((cell) => cell.renderer))].sort();
+  const mismatchesByRenderer = mismatchRenderers.map(
+    (renderer) => `${renderer} ${mismatched.filter((cell) => cell.renderer === renderer).length}`,
+  );
+  const cleanupBaseline = Object.values(CLEANUP_BASELINE_MISMATCHES).reduce((sum, count) => sum + count, 0);
   lines.push(
     '',
     'Effective-AA comparison (REPORT ONLY until WebGPU has an AA path):',
     '  This per-cell census is the answer to the requirement that each test explicitly name aa or no-aa;',
     '  mismatches are reported rather than suppressed, but do not set the process exit code yet.',
+    `  Cleanup baseline: ${cleanupBaseline} mismatch cell(s) ` +
+      `(canvas ${CLEANUP_BASELINE_MISMATCHES.canvas}, webgl ${CLEANUP_BASELINE_MISMATCHES.webgl}, ` +
+      `webgpu ${CLEANUP_BASELINE_MISMATCHES.webgpu}).`,
     `  ${report.cells.length} cell(s): ${matched.length} match, ${mismatched.length} mismatch, ` +
       `${pending.length} awaiting declaration, ${unknown.length} unknown effective configuration.`,
+    `  Current mismatches by renderer: ${mismatchesByRenderer.join(', ')}.`,
   );
   for (const cell of mismatched) {
     lines.push(
