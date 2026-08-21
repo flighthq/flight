@@ -31,11 +31,23 @@
     },
     {
       "packageName": "collision",
+      "registrar": "registerBuiltInCollisionSupports3D"
+    },
+    {
+      "packageName": "collision",
       "registrar": "registerCollisionPairTest2D"
     },
     {
       "packageName": "collision",
+      "registrar": "registerCollisionPairTest3D"
+    },
+    {
+      "packageName": "collision",
       "registrar": "registerCollisionSupport2D"
+    },
+    {
+      "packageName": "collision",
+      "registrar": "registerCollisionSupport3D"
     },
     {
       "packageName": "compression",
