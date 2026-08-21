@@ -11,9 +11,9 @@ import {
   createGlCanvasElement,
   createGlRenderEffectPipeline,
   createGlRenderState,
+  createBoxMeshGeometry,
   createMesh,
   createPerspectiveProjection,
-  createSphereMeshGeometry,
   createVector3,
   createWireframeMaterial,
   endGlRenderEffectPipeline,
@@ -22,6 +22,7 @@ import {
   prepareScene3DRender,
   registerGlWireframeMaterial,
   renderGlBackground,
+  setCamera3DJitter,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -29,7 +30,7 @@ import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/
 declareAntialiasingPolicy('no-aa');
 
 declareExpectedImageDescription(
-  'An 800×600 dark field (0x0a0c10) with a white (0xffffff) wireframe sphere centered at (0.5*W, 0.5*H) = (400, 300), tangent-silhouette radius H*tan(asin(0.5/3))/(2*tan(PI/8)) ≈ 122 px (spanning x 278–522, y 178–422). Only the triangle edges are visible as thin white lines against the dark background — no filled faces, no shading gradient. The wireframe reveals the spherical tessellation pattern. Frame corners are dark background.',
+  'An 800×600 dark field (0x0a0c10) with a white (0xffffff) wireframe cube centered at (0.5*W, 0.5*H) = (400, 300). The cube uses a deliberate one-point perspective pose, not an arbitrary rotation: the camera is 2.5 units from a unit cube and its 480 px focal length projects the near face to a 240×240 square and the far face to a separate 160×160 square. Their corresponding corners join on four depth edges, so all 12 outer edges remain distinguishable instead of collapsing into one straight-on square. Every outer corner and edge midpoint lands on a controlled integer pixel coordinate before a deliberate half-pixel projection phase. Only thin triangle edges are visible against the dark background — no filled faces or shading gradient; the six face diagonals are visible because the cube faces are triangulated. Frame corners are dark background.',
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -68,18 +69,17 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 }
 
 // material-wireframe — proves a WireframeMaterial mesh renders only its triangle EDGES as lines on the
-// Gl and Wgpu forward renderers, independent of scene lighting. A single sphere sits at the origin;
+// Gl and Wgpu forward renderers, independent of scene lighting. A single cube sits at the origin;
 // WireframeMaterial ignores lighting and draws each triangle's edges as 1px lines in a solid color,
 // leaving the triangle interiors empty (background). The result is a mesh of bright lines over the dark
-// background — NOT a solid filled disk.
+// background — NOT solid filled faces.
 //
 // thickness > 1 is unsupported (the backends draw 1px lines), so the wireframe reads as thin bright
 // strokes separated by dark interior pixels.
 //
-// The signature the assertion checks: scanning a horizontal row across the sphere, SOME samples are bright
-// (lines render) but NOT ALL are bright (it is edges, not a solid fill). A solid fill — the failure mode
-// if the material drew filled triangles — would make every sample bright; a blank surface would make
-// none bright.
+// The signature the assertion checks: every one of the 12 outer-edge midpoints has a bright line nearby,
+// while the projected cube bounds still contain dark interior samples. A solid fill would remove the dark
+// samples; a blank surface or collapsed edge would miss a midpoint.
 //
 // app.ts is backend-agnostic: it builds the scene/camera/lights once and hands them to render(), whose
 // per-backend implementation lives in render.webgl.ts / render.webgpu.ts.
@@ -87,9 +87,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
-// A smooth unit sphere at the origin. Many segments so the wireframe shows many thin edges across the
-// row the assertion scans (dense bright lines separated by dark interiors).
-const geometry = createSphereMeshGeometry(0.5, 48, 32);
+const geometry = createBoxMeshGeometry(1, 1, 1);
 
 // White edges, 1px thick (thickness > 1 is unsupported; the backends draw 1px lines). Lighting-independent.
 const material = createWireframeMaterial({ color: 0xffffffff });
@@ -98,14 +96,20 @@ const scene = createScene3D().root;
 const mesh = createMesh(geometry, [material]);
 addNodeChild(scene, mesh);
 
-// Perspective camera dead-on the sphere from +z, looking at the origin. Aspect matches the target so
-// the sphere stays circular.
+// The one-point perspective is derived for the pixel lattice. A 480 px focal length with the camera at
+// z=2.5 projects the near z=+0.5 face to half-size 120 px and the far z=-0.5 face to half-size 80 px.
+// The nested squares are distinct, their four depth edges have slopes ±5 and ±1/5, and all outer
+// endpoints are integers before the shared half-pixel phase.
 const camera = createCamera3D({
   far: 100,
   near: 0.1,
-  projection: createPerspectiveProjection({ aspect: logicalWidth / logicalHeight, fovY: Math.PI / 4 }),
+  projection: createPerspectiveProjection({
+    aspect: logicalWidth / logicalHeight,
+    fovY: 2 * Math.atan(5 / 8),
+  }),
 });
-setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 3), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DViewMatrix4FromLookAt(camera, createVector3(0, 0, 2.5), createVector3(0, 0, 0), createVector3(0, 1, 0));
+setCamera3DJitter(camera, 1 / logicalWidth, -1 / logicalHeight);
 
 // The same directional + ambient rig as material-standard-pbr. WireframeMaterial ignores both — they are
 // passed through unused so the scaffold matches the lit materials.
@@ -122,42 +126,50 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Assertion: edges render, but it is not a solid fill. Sample a small grid inside the sphere and count
-// bright and dark samples. A single equator row can land on a dense run of meridian edges, so use a 2D
-// distribution instead: real wireframe has both bright edges and dark interiors; solid fill has no dark
-// interior samples; blank output has no bright samples.
+// Assertion: all 12 cube edges render as separate projected segments, but the cube is not a solid fill.
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);
   const cy = Math.floor(bitmap.height / 2);
-  // The sphere is ~width * 0.13 in screen radius; stay inside that circle while sampling.
-  const r = Math.floor(bitmap.width * 0.13);
-
-  let brightCount = 0;
-  let darkCount = 0;
-  let sampleCount = 0;
-  const step = 6;
-  for (let y = cy - r; y <= cy + r; y += step) {
-    for (let x = cx - r; x <= cx + r; x += step) {
-      const dx = x - cx;
-      const dy = y - cy;
-      if (dx * dx + dy * dy > r * r) continue;
-      sampleCount++;
-      const luminance = getBitmapPixelLuminance(bitmap, x, y);
-      if (luminance > 40) brightCount++;
-      if (luminance <= 20) darkCount++;
+  let edgeCount = 0;
+  for (const varyingAxis of [0, 1, 2]) {
+    for (const firstSign of [-1, 1]) {
+      for (const secondSign of [-1, 1]) {
+        const point: [number, number, number] = [0, 0, 0];
+        point[(varyingAxis + 1) % 3] = firstSign * 0.5;
+        point[(varyingAxis + 2) % 3] = secondSign * 0.5;
+        const distance = 2.5 - point[2];
+        const expectedX = Math.round(cx + (480 * point[0]) / distance);
+        const expectedY = Math.round(cy - (480 * point[1]) / distance);
+        if (hasBrightPixel(bitmap, expectedX, expectedY, 2)) edgeCount++;
+      }
     }
   }
-
-  if (brightCount === 0) {
+  if (edgeCount !== 12) {
     throw new Error(
-      `[material-wireframe] no bright samples inside the sphere (of ${sampleCount}) — wireframe lines did not render`,
+      `[material-wireframe] only ${edgeCount}/12 distinguishable cube edges reached their projected midpoints`,
     );
+  }
+
+  let darkCount = 0;
+  for (let y = cy - 108; y <= cy + 108; y += 12) {
+    for (let x = cx - 108; x <= cx + 108; x += 12) {
+      if (getBitmapPixelLuminance(bitmap, x, y) <= 20) darkCount++;
+    }
   }
   if (darkCount === 0) {
     throw new Error(
-      `[material-wireframe] no dark interior samples inside the sphere (${brightCount}/${sampleCount} bright) — bitmap appears to be a solid fill, not edges`,
+      '[material-wireframe] no dark samples inside the projected cube bounds — bitmap appears solid-filled',
     );
   }
+}
+
+function hasBrightPixel(bitmap: Readonly<Bitmap>, cx: number, cy: number, radius: number): boolean {
+  for (let y = cy - radius; y <= cy + radius; y++) {
+    for (let x = cx - radius; x <= cx + radius; x++) {
+      if (getBitmapPixelLuminance(bitmap, x, y) > 40) return true;
+    }
+  }
+  return false;
 }
 
 // Barrel so TypeScript resolves the `./render` import in app.ts; the functional harness routes it to the
