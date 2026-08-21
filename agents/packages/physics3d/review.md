@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/physics3d'
 status: solid
-score: 84
+score: 88
 updated: 2026-08-21
 ingested:
   - charter.md
@@ -21,43 +21,45 @@ known charter hole inside it.
 
 **Production-capable convex rigid-body core; not yet AAA-complete.** The core now exceeds physics2d in
 joint breadth, breakage/reaction reporting, 3D broadphase choice, convex shape breadth, and diagnostic
-coverage. It is still blocked by static concave terrain and by missing numerical/performance acceptance
-budgets. Those are release blockers, not reasons to discount the evidence already present.
+coverage. The first numerical acceptance envelope is now checked in. Static concave terrain, measured
+performance, complete CCD semantics, and native-target evidence remain release blockers.
 
 ## Passing evidence
 
 | Gate | Evidence | Current result |
 | --- | --- | --- |
-| Package correctness | `npx vitest run packages/physics3d/src` | 31 files, 662 tests pass |
-| Collision integration | `npx vitest run packages/collision/src packages/physics3d/src` | 66 files, 1,118 tests pass |
+| Package correctness | `npx vitest run packages/physics3d/src` | 31 files, 668 tests pass |
+| Collision integration | `npx vitest run packages/collision/src packages/physics3d/src` | 66 files, 1,125 tests pass |
 | Static checks | `npm run typecheck`, `npm run exports:check`, `npm run order`, `npm run api:check` | pass |
 | Long stack | 12 unit boxes, four retaining walls, 900 steps at 60 Hz | finite, ordered, supported, asleep; top > 11 |
-| Joint endurance | 12-link driven 3D ball joint chain, 1,200 steps | finite and bounded |
+| Mass ratios | fixed-rotation 2-box stack, 600 steps | 100:1 default and 1,000:1 at 4 substeps: separation > 0.99, asleep |
+| Restitution | elastic sphere between flat walls, 3,600 steps | speed 6 within 9 decimals, angular speed < 1e-9, contained |
+| Friction isotropy | fixed box at speed 5, axis and diagonal, 240 steps | both stop; travel differs < 0.005, cross-axis drift < 0.001 |
+| Joint endurance | 12-link driven 3D ball joint chain, 1,200 steps | finite; maximum link error < 0.025 |
+| Angular integration | asymmetric torque-free spinner at 1, 2, and 4 substeps | finite; drift shrinks by at least 30% per halving and ends < 5% |
+| Substep topology | one 1/30 step at 2 substeps versus two 1/60 steps through first impact | pose and velocity agree to 12 decimals |
 | Determinism | exact repeat trace and reversed insertion-order trace | exact equality |
 | Linear CCD | 0.1-wide wall, bullet at 600 units/s over a 1/60 s step | remains on near side |
 | Rotational CCD | long blade crosses a peg only between start/end orientations | deflects and loses angular speed |
 | Lifecycle | duplicate/cross-world ownership, removal wakeup, cache/event cleanup, step mutation barriers | regression-covered |
 | Invalid input | non-finite controls, malformed collider geometry/material/filter/derived kind | rejected before mutation/intake |
 
-The stack's geometric target is a top centre at 11.5. The measured default is about 11.11; raising
-position iterations from 3 to 8 produces 11.388 and 20 produces 11.438. This demonstrates convergence,
-but no product tolerance has yet declared which result is sufficient.
+The stack's geometric target is a top centre at 11.5. The accepted default regression floor is 11;
+the measured result is about 11.11. Raising position iterations from 3 to 8 produces 11.388 and 20
+produces 11.438. These are declared qualification scenes, not a promise of arbitrary scale or mass ratio.
 
 ## Blocking gates
 
 1. **Static triangle mesh and heightfield collision.** Both are in the charter. They require a
    mesh-vs-convex path over accelerated triangles; a convex support registration cannot represent them.
-2. **Numerical acceptance envelope.** Set and pass thresholds for stack height/error, mass ratios,
-   restitution energy drift, friction drift, joint error, high angular speed, and timestep/substep scaling.
-   Cover at least ordinary, stress, and adversarial scenes with fixed seeds and exact configuration.
-3. **Performance and allocation budgets.** Record bodies, contacts, broadphase distribution, hardware,
+2. **Performance and allocation budgets.** Record bodies, contacts, broadphase distribution, hardware,
    p50/p95 step time, and steady-state allocations for both uniform-grid and BVH backends. A green stress
    test without a frame budget does not qualify a game engine.
-4. **CCD impact semantics.** Translation and rotation prevent the demonstrated tunnelling cases, but
+3. **CCD impact semantics.** Translation and rotation prevent the demonstrated tunnelling cases, but
    impact-time friction, contact hooks, and persistent contact/event reporting need a declared contract
    and challenge scenes. Angular sampling is bounded and therefore must publish the speed/extent envelope
    its configured budget guarantees.
-5. **Platform evidence.** The TypeScript implementation is the executable specification. The charter's
+4. **Platform evidence.** The TypeScript implementation is the executable specification. The charter's
    Rust/WASM performance target has no parity or differential suite yet; do not imply native-target
    qualification until it does.
 
