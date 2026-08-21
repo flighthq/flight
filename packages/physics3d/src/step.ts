@@ -8,6 +8,7 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
+import { buildPhysics3DContacts } from './contactIntake';
 import {
   clearRigidBody3DForces,
   integrateRigidBody3DPose,
@@ -275,6 +276,11 @@ function scalePhysics3DWarmStartCaches(world: Physics3DWorld, dt: number): void 
 // The body of one step whose preconditions already hold.
 function stepValidatedPhysics3D(world: Physics3DWorld, dt: number): void {
   const substepDt = dt / world.config.substeps;
+
+  // Contacts are generated FIRST, from the poses the previous step left behind. Everything after this
+  // point — hooks, islands, the solver — reads a contact set that describes where the bodies actually
+  // are, and `world.events` names the pairs that began and ended touching during this call.
+  buildPhysics3DContacts(world);
 
   // Pre-solve runs before anything is scaled or prepared, so a hook that disables a contact for this step
   // does so before the constraint that would have resolved it is built.

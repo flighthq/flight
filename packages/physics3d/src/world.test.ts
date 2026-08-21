@@ -490,6 +490,8 @@ function contact(bodyA: number, bodyB: number): Physics3DWorld['contacts'][numbe
   return {
     bodyA,
     bodyB,
+    colliderA: 0,
+    colliderB: 0,
     normalX: 0,
     normalY: 1,
     normalZ: 0,

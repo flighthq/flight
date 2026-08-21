@@ -329,6 +329,8 @@ function createContact(bodyA: number, bodyB: number): Physics3DContact {
   return {
     bodyA,
     bodyB,
+    colliderA: 0,
+    colliderB: 0,
     enabled: true,
     friction: 0,
     normalX: 0,

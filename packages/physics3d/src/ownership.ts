@@ -1,4 +1,4 @@
-import type { Physics3DJoint, Physics3DWorld } from '@flighthq/types/contract';
+import type { Physics3DCollider, Physics3DJoint, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 
 // Ownership is RUNTIME state rather than serialized entity data. Weak keys make membership follow the
 // explicit add/remove lifecycle without keeping a detached entity alive, and map directly to an owner
@@ -6,6 +6,11 @@ import type { Physics3DJoint, Physics3DWorld } from '@flighthq/types/contract';
 // it — from participating in two solve lists at once, where each world's iterations would overwrite the
 // other's accumulators every step.
 export const physics3DJointOwners = new WeakMap<Physics3DJoint, Physics3DWorld>();
+
+// The same rule one level down. A collider carries the world-space shape its body's pose is written
+// into, so sharing one between two bodies would have each step's transform overwrite the other's — and
+// the narrow phase would then test both bodies against whichever pose happened to be written last.
+export const physics3DColliderOwners = new WeakMap<Physics3DCollider, RigidBody3D>();
 
 // A world step is a strict mutation boundary. Contact hooks run inside it and may change only the contact
 // fields their contract names: adding or removing a body, contact, or joint while an array is being solved
