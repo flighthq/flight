@@ -133,6 +133,18 @@
       "at": "2026-08-21T00:34:27.120Z",
       "keys": ["functional/material-blend-modes/webgl", "functional/material-blend-modes/webgpu"],
       "reason": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check"
+    },
+    {
+      "action": "hold",
+      "actor": "Joshua Granick <jgranick@users.noreply.github.com>",
+      "at": "2026-08-21T04:32:52.615Z",
+      "keys": [
+        "functional/text-underline/dom",
+        "functional/text-underline/canvas",
+        "functional/text-underline/webgl",
+        "functional/text-underline/webgpu"
+      ],
+      "reason": "dom underline is different"
     }
   ],
   "held": {
@@ -189,6 +201,10 @@
     "functional/text-strikethrough/webgl": "line is in different position on dom",
     "functional/text-strikethrough/webgpu": "line is in different position on dom",
     "functional/material-blend-modes/webgl": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check",
-    "functional/material-blend-modes/webgpu": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check"
+    "functional/material-blend-modes/webgpu": "darken results are visually different between gl and wgpu on fifth square, making the test unsuitable for a standard parity check",
+    "functional/text-underline/dom": "dom underline is different",
+    "functional/text-underline/canvas": "dom underline is different",
+    "functional/text-underline/webgl": "dom underline is different",
+    "functional/text-underline/webgpu": "dom underline is different"
   }
 }
