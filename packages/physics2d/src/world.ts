@@ -202,6 +202,8 @@ function clonePhysics2DLocalShape(local: Readonly<CollisionBuiltInShape2D>): Col
         halfH: local.halfH,
         rotation: local.rotation,
       };
+    case 'capsule':
+      return { kind: 'capsule', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1, radius: local.radius };
     case 'polygon':
       return { kind: 'polygon', points: local.points.slice() };
     case 'segment':

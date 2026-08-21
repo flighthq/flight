@@ -24,6 +24,31 @@ export function computePhysics2DColliderMassData(collider: Readonly<Physics2DCol
       out.centerY = shape.y;
       return;
     }
+    case 'capsule': {
+      // A stadium: a rectangle `length` by `2r`, plus the two half-discs at its ends, which together are
+      // exactly one disc of radius `r`.
+      //
+      // The inertia is NOT the rectangle's plus a disc's about the centre. Each half-disc sits at the end
+      // of the axis, and its own centroid is a further `4r/(3*pi)` outboard of the circle centre it is
+      // drawn about — so shifting its moment to the capsule's centre leaves a cross term `2*d*m*4r/(3pi)`
+      // that a naive parallel-axis step drops. Dropping it under-reports a long thin capsule's inertia,
+      // which reads as a capsule that spins up too easily and never looks obviously wrong.
+      const axisX = shape.x1 - shape.x0;
+      const axisY = shape.y1 - shape.y0;
+      const length = Math.sqrt(axisX * axisX + axisY * axisY);
+      const radius = shape.radius;
+      const rectangleMass = 2 * radius * length * density;
+      const discMass = Math.PI * radius * radius * density;
+      out.mass = rectangleMass + discMass;
+      out.inertia =
+        (rectangleMass * (length * length + 4 * radius * radius)) / 12 +
+        discMass * ((radius * radius) / 2 + (length * length) / 4 + (4 * radius * length) / (3 * Math.PI));
+      // The axis midpoint, which is the centroid by symmetry about both the axis and its perpendicular
+      // bisector.
+      out.centerX = (shape.x0 + shape.x1) / 2;
+      out.centerY = (shape.y0 + shape.y1) / 2;
+      return;
+    }
     case 'aabb': {
       const width = shape.maxX - shape.minX;
       const height = shape.maxY - shape.minY;

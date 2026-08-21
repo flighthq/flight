@@ -10,7 +10,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
 import { physics2DDistanceJointSolver, physics2DWeldJointSolver } from './joints';
-import { setPhysics2DJointResolutionGuard, setPhysics2DStepGuard, stepPhysics2D } from './step';
+import {
+  setPhysics2DContactIntakeGuard,
+  setPhysics2DJointResolutionGuard,
+  setPhysics2DStepGuard,
+  stepPhysics2D,
+} from './step';
 import {
   addPhysics2DBody,
   applyPhysics2DForce,
@@ -863,6 +868,44 @@ describe('sensor reporting between immovable bodies', () => {
 // The seams themselves, tested for installation and removal only. What the installed guards SAY is
 // enablePhysics2DGuards.test.ts's subject; what the step promises is that it consults them at the right
 // moments and not otherwise.
+describe('setPhysics2DContactIntakeGuard', () => {
+  afterEach(() => {
+    setPhysics2DContactIntakeGuard(null);
+  });
+
+  it('consults the seam once per step that will actually run, and not on one that declines', () => {
+    const world = createPhysics2DWorld(0, -10);
+    box(world, 0, 0);
+    let calls = 0;
+    setPhysics2DContactIntakeGuard(() => {
+      calls++;
+    });
+
+    stepPhysics2D(world, 1 / 60);
+    stepPhysics2D(world, 1 / 60);
+    expect(calls).toBe(2);
+
+    // A declined step builds no contacts, so there is no intake to describe.
+    world.config.velocityIterations = -1;
+    stepPhysics2D(world, 1 / 60);
+    expect(calls).toBe(2);
+  });
+
+  it('removes the seam when passed null', () => {
+    const world = createPhysics2DWorld(0, -10);
+    box(world, 0, 0);
+    let calls = 0;
+    setPhysics2DContactIntakeGuard(() => {
+      calls++;
+    });
+    setPhysics2DContactIntakeGuard(null);
+
+    stepPhysics2D(world, 1 / 60);
+
+    expect(calls).toBe(0);
+  });
+});
+
 describe('setPhysics2DJointResolutionGuard', () => {
   afterEach(() => {
     setPhysics2DJointResolutionGuard(null);

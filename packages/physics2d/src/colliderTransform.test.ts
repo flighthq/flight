@@ -34,6 +34,23 @@ describe('createPhysics2DColliderWorldShape', () => {
 });
 
 describe('updatePhysics2DColliderWorldShape', () => {
+  it('carries a capsule by its endpoints and leaves its radius alone', () => {
+    // Unlike an axis-aligned box, a capsule does not promote to another kind under rotation: a rotation
+    // cannot change a distance, so the radius is invariant and the two endpoints carry the whole pose.
+    const collider = createPhysics2DCollider({ kind: 'capsule', x0: 1, y0: 0, x1: 3, y1: 0, radius: 0.5 }, STONE);
+    const body = createRigidBody2D('dynamic', 10, -4);
+    body.angle = Math.PI / 2;
+    updatePhysics2DColliderWorldShape(collider, body);
+
+    expect(collider.world.kind).toBe('capsule');
+    const world = collider.world as Extract<CollisionBuiltInShape2D, { kind: 'capsule' }>;
+    expect(world.x0).toBeCloseTo(10, 9);
+    expect(world.y0).toBeCloseTo(-3, 9);
+    expect(world.x1).toBeCloseTo(10, 9);
+    expect(world.y1).toBeCloseTo(-1, 9);
+    expect(world.radius).toBe(0.5);
+  });
+
   it('rotates and translates a circle offset from the body origin', () => {
     const collider = createPhysics2DCollider({ kind: 'circle', x: 1, y: 0, radius: 0.5 }, STONE);
     const body = createRigidBody2D('dynamic', 10, 5, Math.PI / 2);
@@ -94,6 +111,14 @@ describe('updatePhysics2DColliderWorldShape', () => {
 });
 
 describe('writePhysics2DColliderBounds', () => {
+  it('grows a capsule bound by its radius on every side', () => {
+    const collider = createPhysics2DCollider({ kind: 'capsule', x0: -2, y0: 1, x1: 4, y1: -3, radius: 0.5 }, STONE);
+    updatePhysics2DColliderWorldShape(collider, createRigidBody2D('dynamic', 0, 0));
+    const out = bounds();
+    writePhysics2DColliderBounds(collider, out);
+    expect(out).toEqual({ minX: -2.5, minY: -3.5, maxX: 4.5, maxY: 1.5 });
+  });
+
   it('bounds a circle by its radius', () => {
     const collider = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 2 }, STONE);
     updatePhysics2DColliderWorldShape(collider, createRigidBody2D('dynamic', 1, 1));

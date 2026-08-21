@@ -6,9 +6,10 @@ import type {
 } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
+import { explainPhysics2DCollision } from './explainPhysics2DCollision';
 import { explainPhysics2DJoints } from './explainPhysics2DJoints';
 import { explainPhysics2DStep } from './explainPhysics2DStep';
-import { setPhysics2DJointResolutionGuard, setPhysics2DStepGuard } from './step';
+import { setPhysics2DContactIntakeGuard, setPhysics2DJointResolutionGuard, setPhysics2DStepGuard } from './step';
 
 export function arePhysics2DGuardsEnabled(): boolean {
   return physics2DGuardsEnabled;
@@ -17,6 +18,7 @@ export function arePhysics2DGuardsEnabled(): boolean {
 export function disablePhysics2DGuards(): void {
   setPhysics2DStepGuard(null);
   setPhysics2DJointResolutionGuard(null);
+  setPhysics2DContactIntakeGuard(null);
   physics2DGuardsEnabled = false;
 }
 
@@ -36,15 +38,51 @@ export function disablePhysics2DGuards(): void {
 // precisely so unused solvers tree-shake out, which makes forgetting `registerBuiltInPhysics2DJointSolvers`
 // an ordinary mistake rather than an exotic one.
 //
-// There is deliberately no third guard for collision registration, which is where the 3D twin needs one.
-// `collideContactManifold2D` dispatches through a closed switch over the built-in shape kinds, so a 2D
-// collider cannot fail to be detectable by having gone unregistered — there is nothing to register.
+// The third is a collider the contact dispatcher has no arm for. `collideContactManifold2D` is a closed
+// switch, so unlike 3D there is nothing to REGISTER and no way to forget to — but its coverage is
+// narrower than the collider type allows, and a kind it does not answer for is reported as
+// non-overlapping. A body carrying one falls through the floor with nothing failing anywhere.
 //
 // Applications that never import this module shed both the message text and `@flighthq/log`.
 export function enablePhysics2DGuards(): void {
   setPhysics2DStepGuard(warnOnUnsteppablePhysics2DWorld);
   setPhysics2DJointResolutionGuard(warnOnUnresolvedPhysics2DJoints);
+  setPhysics2DContactIntakeGuard(warnOnUndetectablePhysics2DColliders);
   physics2DGuardsEnabled = true;
+}
+
+// Warns once per distinct set of undetectable collider kinds.
+//
+// The advice differs by kind, because the two causes are not the same problem. `segment` and `point` are
+// area-less by definition and carry no contact to find, so putting one on a rigid body is a modelling
+// mistake with no fix in this package. A `capsule` has no pair functions YET, which is a gap rather than
+// a rule — and a caller deserves to be told which of the two it has hit.
+function warnOnUndetectablePhysics2DColliders(world: Readonly<Physics2DWorld>): void {
+  const explanation = explainPhysics2DCollision(world);
+  if (explanation.status === 'ready') return;
+
+  const kinds = explanation.unsupportedKinds;
+  const arealess = kinds.filter((kind) => kind === 'segment' || kind === 'point');
+  const unimplemented = kinds.filter((kind) => kind !== 'segment' && kind !== 'point');
+  const areaFix =
+    arealess.length > 0
+      ? ` ${arealess.join(' and ')} carr${arealess.length === 1 ? 'ies' : 'y'} no area and so no contact, and cannot be a rigid body's collider — give the body a shape with area.`
+      : '';
+  const gapFix =
+    unimplemented.length > 0
+      ? ` collideContactManifold2D has no pair functions for ${unimplemented.join(', ')} yet, so ${unimplemented.length === 1 ? 'it is' : 'they are'} usable for queries and raycasts but not as a simulated collider.`
+      : '';
+
+  logOnce(
+    `physics2d:${explanation.status}:${kinds.join(',')}`,
+    LogLevel.Warn,
+    {
+      kinds,
+      message: `stepPhysics2D: collider kind${kinds.length === 1 ? '' : 's'} ${kinds.join(', ')} generate${kinds.length === 1 ? 's' : ''} no contacts, so the bodies carrying ${kinds.length === 1 ? 'it' : 'them'} pass through everything.${areaFix}${gapFix} Call explainPhysics2DCollision(world) for the same finding as data.`,
+      status: explanation.status,
+    },
+    'physics2d',
+  );
 }
 
 // The names of the flags that are false, in the explanation's own field order so the key is stable for a

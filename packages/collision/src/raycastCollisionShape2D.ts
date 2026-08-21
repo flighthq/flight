@@ -68,6 +68,18 @@ export function raycastCollisionShape2D(
           maxFraction,
           out,
         );
+      case 'capsule':
+        return raycastCapsule(
+          shape,
+          originX,
+          originY,
+          directionX,
+          directionY,
+          directionLengthSquared,
+          maxFraction,
+          out,
+          scratch,
+        );
       case 'obb':
         return raycastObb(shape, originX, originY, directionX, directionY, maxFraction, out, scratch);
       case 'polygon':
@@ -212,6 +224,93 @@ function raycastBox(
   if (lower < 0 || lower > maxFraction) return false;
   writeRaycastHit(out, originX, originY, directionX, directionY, lower, normalX, normalY);
   return true;
+}
+
+// A capsule is EXACTLY the union of its two end discs and the rectangle between them, so this is the
+// nearest of three hits against shapes that already have proven raycasts rather than a fourth quadratic
+// written out by hand.
+//
+// The rectangle's flat END faces are not a leak, which is the only thing that makes the union safe to
+// take naively: a ray crossing the face at `x = 0` does so at some `|y| < radius`, and that point is
+// inside the first disc — so the disc was entered strictly earlier and wins the minimum. There is no
+// case where an end face is the true first surface.
+function raycastCapsule(
+  shape: Readonly<Extract<CollisionBuiltInShape2D, { kind: 'capsule' }>>,
+  originX: number,
+  originY: number,
+  directionX: number,
+  directionY: number,
+  directionLengthSquared: number,
+  maxFraction: number,
+  out: CollisionRaycastHit2D,
+  scratch: RaycastScratch,
+): boolean {
+  if (
+    !Number.isFinite(shape.x0) ||
+    !Number.isFinite(shape.y0) ||
+    !Number.isFinite(shape.x1) ||
+    !Number.isFinite(shape.y1) ||
+    !Number.isFinite(shape.radius) ||
+    !(shape.radius > 0)
+  ) {
+    return false;
+  }
+
+  let best = Number.POSITIVE_INFINITY;
+  let hit = false;
+  const axisX = shape.x1 - shape.x0;
+  const axisY = shape.y1 - shape.y0;
+  const length = Math.sqrt(axisX * axisX + axisY * axisY);
+
+  if (length > 0) {
+    capsuleRectangleProbe.x = (shape.x0 + shape.x1) / 2;
+    capsuleRectangleProbe.y = (shape.y0 + shape.y1) / 2;
+    capsuleRectangleProbe.halfW = length / 2;
+    capsuleRectangleProbe.halfH = shape.radius;
+    capsuleRectangleProbe.rotation = Math.atan2(axisY, axisX);
+    if (
+      raycastObb(capsuleRectangleProbe, originX, originY, directionX, directionY, maxFraction, capsuleHit, scratch) &&
+      capsuleHit.fraction < best
+    ) {
+      best = capsuleHit.fraction;
+      hit = true;
+      copyRaycastHit(capsuleHit, out);
+    }
+  }
+
+  for (const [centerX, centerY] of [
+    [shape.x0, shape.y0],
+    [shape.x1, shape.y1],
+  ]) {
+    if (
+      raycastCircle(
+        centerX,
+        centerY,
+        shape.radius,
+        originX,
+        originY,
+        directionX,
+        directionY,
+        directionLengthSquared,
+        maxFraction,
+        capsuleHit,
+      ) &&
+      capsuleHit.fraction < best
+    ) {
+      best = capsuleHit.fraction;
+      hit = true;
+      copyRaycastHit(capsuleHit, out);
+    }
+  }
+  return hit;
+}
+
+function copyRaycastHit(source: Readonly<CollisionRaycastHit2D>, out: CollisionRaycastHit2D): void {
+  out.fraction = source.fraction;
+  out.x = source.x;
+  out.y = source.y;
+  out.normalX = source.normalX;
+  out.normalY = source.normalY;
 }
 
 function raycastObb(
@@ -501,3 +600,14 @@ function releaseRaycastScratch(scratch: RaycastScratch): void {
 }
 
 const raycastScratchPool: RaycastScratch[] = [createRaycastScratch()];
+
+// Reused across capsule raycasts so the three sub-shape tests allocate nothing. Rebound per call.
+const capsuleHit: CollisionRaycastHit2D = { fraction: 0, x: 0, y: 0, normalX: 0, normalY: 0 };
+const capsuleRectangleProbe: Extract<CollisionBuiltInShape2D, { kind: 'obb' }> = {
+  kind: 'obb',
+  x: 0,
+  y: 0,
+  halfW: 0,
+  halfH: 0,
+  rotation: 0,
+};

@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   testSegmentAabbCollision2D,
+  testSegmentCapsuleCollision2D,
   testSegmentCircleCollision2D,
   testSegmentObbCollision2D,
   testSegmentPolygonCollision2D,
@@ -41,6 +42,37 @@ describe('testSegmentAabbCollision2D', () => {
   it('treats a zero-length segment as a point', () => {
     expect(testSegmentAabbCollision2D(segment(5, 5, 5, 5), box)).toBe(true);
     expect(testSegmentAabbCollision2D(segment(20, 20, 20, 20), box)).toBe(false);
+  });
+});
+
+describe('testSegmentCapsuleCollision2D', () => {
+  const capsule = { x0: 0, y0: 0, x1: 4, y1: 0, radius: 1 };
+
+  it('overlaps a segment crossing the capsule body', () => {
+    expect(testSegmentCapsuleCollision2D({ x0: 2, y0: -3, x1: 2, y1: 3 }, capsule)).toBe(true);
+  });
+
+  it('overlaps a segment that only reaches a rounded end', () => {
+    // Past the axis entirely, so a rectangle-only test would miss it.
+    expect(testSegmentCapsuleCollision2D({ x0: 4.7, y0: -2, x1: 4.7, y1: 2 }, capsule)).toBe(true);
+  });
+
+  it('does not overlap a segment outside the rounded end', () => {
+    expect(testSegmentCapsuleCollision2D({ x0: 5.2, y0: -2, x1: 5.2, y1: 2 }, capsule)).toBe(false);
+  });
+
+  it('counts a grazing touch as overlapping, like the rest of this family', () => {
+    expect(testSegmentCapsuleCollision2D({ x0: -3, y0: 1, x1: 7, y1: 1 }, capsule)).toBe(true);
+  });
+
+  it('overlaps a segment lying entirely inside the capsule', () => {
+    expect(testSegmentCapsuleCollision2D({ x0: 1, y0: 0, x1: 3, y1: 0 }, capsule)).toBe(true);
+  });
+
+  it('treats a zero-length capsule as the circle it degenerates to', () => {
+    const point = { x0: 1, y0: 1, x1: 1, y1: 1, radius: 0.5 };
+    expect(testSegmentCapsuleCollision2D({ x0: -5, y0: 1, x1: 5, y1: 1 }, point)).toBe(true);
+    expect(testSegmentCapsuleCollision2D({ x0: -5, y0: 2, x1: 5, y1: 2 }, point)).toBe(false);
   });
 });
 

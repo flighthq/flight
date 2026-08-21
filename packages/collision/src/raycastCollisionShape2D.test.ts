@@ -1,6 +1,7 @@
 import type { CollisionRaycastHit2D, CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
 import { createCollisionRaycastHit2D, raycastCollisionShape2D } from './raycastCollisionShape2D';
 
 function hit(): CollisionRaycastHit2D {
@@ -99,5 +100,76 @@ describe('raycastCollisionShape2D', () => {
     const shape: CollisionBuiltInShape2D = { kind: 'point', x: 2, y: 1e-6 };
     expect(raycastCollisionShape2D(shape, 0, 0, 1, 0, hit())).toBe(false);
     expect(raycastCollisionShape2D(shape, 0, 0, 1e6, 0, hit())).toBe(false);
+  });
+
+  // The instrument is the CONTAINMENT predicate, marched along the ray in small steps. It shares no
+  // algebra with the raycast — a different function, a different derivation — so agreement is evidence.
+  // This is the shape of test that caught the 3D cylinder's inverted cap normal, which no unit test had.
+  it('agrees with a brute-force containment march over a seeded sweep of capsules', () => {
+    let state = 20260821;
+    const next = (): number => {
+      state ^= state << 13;
+      state ^= state >>> 17;
+      state ^= state << 5;
+      return ((state >>> 0) % 100000) / 100000;
+    };
+
+    const out = hit();
+    const SAMPLES = 40000;
+    let compared = 0;
+    let worstFraction = 0;
+
+    for (let trial = 0; trial < 700; trial++) {
+      const capsule: CollisionBuiltInShape2D = {
+        kind: 'capsule',
+        x0: (next() - 0.5) * 6,
+        y0: (next() - 0.5) * 6,
+        x1: (next() - 0.5) * 6,
+        y1: (next() - 0.5) * 6,
+        radius: 0.2 + next() * 1.5,
+      };
+      const originX = (next() - 0.5) * 20;
+      const originY = (next() - 0.5) * 20;
+      // Aimed near the capsule so most trials are real hits, with enough scatter to produce grazes.
+      const directionX = (capsule.x0 + capsule.x1) / 2 + (next() - 0.5) * 6 - originX;
+      const directionY = (capsule.y0 + capsule.y1) / 2 + (next() - 0.5) * 6 - originY;
+      if (getCollisionShapeContainsPoint2D(capsule, originX, originY)) continue;
+
+      // Bounded at 1 so the march, which walks fractions 0..1, is asked the same question. Left
+      // unbounded, the raycast legitimately reports hits past the end of the marched interval and the
+      // instrument reads its own blind spot as a defect.
+      const found = raycastCollisionShape2D(capsule, originX, originY, directionX, directionY, out, 1);
+
+      let marched = -1;
+      for (let sample = 0; sample <= SAMPLES; sample++) {
+        const fraction = sample / SAMPLES;
+        if (
+          getCollisionShapeContainsPoint2D(capsule, originX + directionX * fraction, originY + directionY * fraction)
+        ) {
+          marched = fraction;
+          break;
+        }
+      }
+
+      expect(found, `trial ${String(trial)} hit/miss`).toBe(marched >= 0);
+      if (!found) continue;
+      compared++;
+      worstFraction = Math.max(worstFraction, Math.abs(out.fraction - marched));
+
+      // Stepping OUT along the reported normal must leave the capsule and stepping IN must stay inside,
+      // which pins the normal's direction without recomputing it.
+      expect(
+        getCollisionShapeContainsPoint2D(capsule, out.x + out.normalX * 1e-4, out.y + out.normalY * 1e-4),
+        `trial ${String(trial)} normal points outward`,
+      ).toBe(false);
+      expect(
+        getCollisionShapeContainsPoint2D(capsule, out.x - out.normalX * 1e-4, out.y - out.normalY * 1e-4),
+        `trial ${String(trial)} normal points inward`,
+      ).toBe(true);
+    }
+
+    expect(compared).toBeGreaterThan(200);
+    // One march increment, which is all a sampled instrument can resolve.
+    expect(worstFraction).toBeLessThan(2 / SAMPLES);
   });
 });
