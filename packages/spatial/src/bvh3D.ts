@@ -347,8 +347,11 @@ function rotateBvh3D(tree: Bvh3D, index: number, heavy: number): number {
 }
 
 function queryBvh3DPairs(tree: Readonly<Bvh3D>, out: SpatialPair[]): void {
-  out.length = 0;
-  if (tree.root === NIL) return;
+  let written = 0;
+  if (tree.root === NIL) {
+    out.length = 0;
+    return;
+  }
   for (const [id, leaf] of tree.leafByObject) {
     const exact = tree.bounds.get(id);
     if (exact === undefined) continue;
@@ -365,13 +368,22 @@ function queryBvh3DPairs(tree: Readonly<Bvh3D>, out: SpatialPair[]): void {
         // allocation-free, and it is why a pair is emitted by the lower-id member only.
         if (other <= id) continue;
         const otherExact = tree.bounds.get(other);
-        if (otherExact !== undefined && boundsOverlap3D(exact, otherExact)) out.push({ a: id, b: other });
+        if (otherExact !== undefined && boundsOverlap3D(exact, otherExact)) {
+          const pair = out[written];
+          if (pair === undefined) out.push({ a: id, b: other });
+          else {
+            pair.a = id;
+            pair.b = other;
+          }
+          written += 1;
+        }
         continue;
       }
       stack.push(tree.child1[node]);
       stack.push(tree.child2[node]);
     }
   }
+  out.length = written;
 }
 
 function queryBvh3DPoint(tree: Readonly<Bvh3D>, x: number, y: number, z: number, out: SpatialObjectId[]): void {
