@@ -1210,10 +1210,30 @@ pixels; its controlled-pixel cube replacement then repeated with zero cross-back
 same-backend differing pixels. The hold was released and the stale sphere baseline retired rather than
 recaptured. No cube baseline or reference image was commissioned by that repair.
 
-**A CONFIRMED-CORRECT CAUSE CLEARS ONLY A TARGET THAT OWES NOTHING ELSE.** Of the 52 failing targets, 30
-owe both candidate causes, 21 owe `e2b99fc68` alone, **0 owe `b467652e8` alone** — its set is a strict
-subset. Shares of a failing set overlap and are not disjoint groups, so "this commit accounts for 58% of
-failures" never licenses "confirming it clears 58% of targets."
+**CAUSE A/B: CLOSED AT 50 COMPARED HISTORICAL IDENTITIES, NEVER 52/52.** A fresh sequential
+WebGL+WebGPU regression report compared 50 members of the historical failing set at an exact distance
+of 0 against threshold 5: all 30 that owed both candidate causes and 20 that owed `e2b99fc68` alone.
+There were 0 targets that owed `b467652e8` alone. Cause A is therefore independently cleared by the 20
+compared A-only identities plus the 30 compared both-cause identities; Cause B is cleared by those same
+30 both-cause identities. The report had 0 over-threshold comparisons, 0 load failures, 0 updates, and
+did not abort.
+
+The other 2 historical identities were **retired-uncovered, not compared**. `material-wireframe/webgpu`
+was historically A-only; its missing sphere fingerprint supplies no current regression result.
+`material-wireframe/webgl` historically owed neither cause, so it supplied no evidence about A or B in
+the first place. Its missing fingerprint likewise supplies no current regression result. These two
+retired cells make the honest coverage statement 50/52, never 52/52, without reopening the causal
+conclusion. The replacement cube's evidence is separate: two production captures each measured exactly
+0 decoded-RGBA WebGL-vs-WebGPU differing pixels, and both same-backend repeats were also exactly 0. The
+old sphere baseline was retired without recapture, and no cube baseline or reference image was
+commissioned.
+
+The same report named 65 regression-uncovered cells in total: 6 under an active hold or explicit
+retirement (both `light-many-point` cells, both `material-blend-modes` cells, and the 2
+`material-wireframe` cells), plus 59 realized renderer cells with a committed screenshot `sha256` but no
+fingerprint baseline. Exactly 0 of the 65 lacked a renderer, and 0 had another uncovered reason. An
+uncovered cell is not a passing comparison; this classification prevents the report's 0 failures from
+being misquoted as universal regression coverage.
 
 **PARITY TIER: STILL OPEN.** The 43/324 parity units that form no comparison are not covered by this
 mechanism; the manifest pins regression evidence only. A parity-side equivalent is unbuilt.
