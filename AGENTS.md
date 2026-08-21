@@ -223,7 +223,7 @@ Input and text: `input`, `textinput`, `textlayout`, `textshaper` with `textshape
 
 Application: `application` (main loop and windowing) with `application-gl` (the WebGL `ApplicationRenderView` assembly), `intl`, `log`, `debug`, `useragent`, `xml`, `media`, `mediasession` (OS now-playing/transport), `sdk` (convenience barrel).
 
-**Platform Integration Suite** — flat free functions over a swappable `*Backend`; the web backend is always available and native hosts replace it via `set*Backend`. Command capabilities expose `get*Backend` / `set*Backend` / `createWeb*Backend`; event capabilities expose a signal entity with `create*` / `attach*` / `detach*` / `dispose*`. Web backends return sentinels, never throw.
+**Platform Integration Suite** — flat free functions over a swappable `*Backend`; web backends are installed explicitly via `enableHostWeb()` (or per-capability `enableHostWeb*()`) from `@flighthq/host-web`, and native hosts replace via `set*Backend`. Three ambient-language capabilities (net, socket, textsegment) stay inline with a lazy-install default. Precedence: custom (`set*Backend`) > host (`enableHostWeb*`) > sentinel. Command capabilities expose `get*Backend` / `set*Backend`; event capabilities expose a signal entity with `create*` / `attach*` / `detach*` / `dispose*`. Sentinels serve when no backend is installed, never throw.
 
 - OS and device: `platform`, `screen`, `device`, `storage`, `net` (HTTP), `socket` (persistent connections), `connectivity`, `permissions`, `power`, `lifecycle`, `keyboard`, `sensors`.
 - UI and shell: `accessibility`, `clipboard`, `dialog`, `filesystem`, `notification`, `shell`, `menu`, `tray`, `shortcut`, `share`, `haptics`, `geolocation`, `webcam`, `statusbar`.

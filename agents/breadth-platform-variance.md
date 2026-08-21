@@ -8,7 +8,7 @@ _2026-07-13. Raw breadth analysis — which execution environments Flight needs 
 
 The DOM-free chain (`image-codec` → `bitmap` → `capture` → `tool-capture`) is real and functional, BUT `bitmap` leaks DOM in two files (`bitmapFrom.ts`, `bitmapEncode.ts` — 4x `document.createElement('canvas')`). These need routing through `image-codec`'s seam.
 
-Missing: a headless app-layer host (`host-node`).
+Missing: a headless app-layer host (`host-node`). Charter reserved at `agents/packages/host-node/charter.md`; not created until first genuine backend.
 
 ### Workers / OffscreenCanvas
 
@@ -45,7 +45,7 @@ Mostly covered by existing platform suite. Service Worker registration is margin
 | Candidate | Priority | Notes |
 |-----------|----------|-------|
 | **`focus`** | **now** | Spatial dpad/LRUD focus navigation over plain-data `{id, bounds}` regions. ReferenceImage: BBC LRUD / Norigin. TV + console + gamepad + keyboard-a11y all converge on this one missing primitive |
-| **`host-node`** | soon | Node/Deno/Bun host: timer `LoopBackend`, fs storage/filesystem, file log sink. Unlocks the headless chain |
+| **`host-node`** | reserve (charter-only) | Node/Deno/Bun host: timer `LoopBackend`, fs storage/filesystem, file log sink. Charter at `agents/packages/host-node/charter.md`; not created until first genuine backend |
 | **`worker`** | soon (after) | Typed cross-context channel with explicit transferables. comlink-minus-proxy-magic. Lean distinct from `ipc`: transferables don't exist in process IPC |
 | `xr` | later | Session/reference-space/input-source data + `XrBackend`. Gated on 3D maturity |
 | `host-tizen` / `host-webos` | reserve | |
@@ -68,6 +68,6 @@ Mostly covered by existing platform suite. Service Worker registration is margin
 ## Strategic Notes
 
 - The architecture already paid the porting tax — only **two genuinely missing primitives** for new environments: `focus` (spatial nav) and `worker` (typed channel).
-- Headless is 90% built, 0% assembled — a `host-node` cell + the surface DOM-leak fix makes it work.
+- Headless is 90% built, 0% assembled — a `host-node` cell (charter reserved, not yet created) + the surface DOM-leak fix makes it work.
 - Codify "entity crosses, runtime rebuilds" now as a documented contract.
 - A generated backend-seam matrix would make console/native portability auditable like `packages:check`.

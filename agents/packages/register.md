@@ -251,7 +251,7 @@ Net-new candidates from the four-angle breadth review ([synthesis](../breadth-sy
 
 | Candidate | Subject · layer | Source | Verdict |
 | --- | --- | --- | --- |
-| `host-node` | host · `-backend` | [platform](../breadth-platform-variance.md) | **bedrock** — Node/Deno/Bun host: timer LoopBackend, fs storage/filesystem, file log sink. Unlocks headless chain |
+| `host-node` | host · `-backend` | [platform](../breadth-platform-variance.md) | **reserve (charter-only)** — Node/Deno/Bun host: timer LoopBackend, fs storage/filesystem, file log sink. Charter at `agents/packages/host-node/charter.md`; not created until first genuine backend |
 | `worker` | worker · primitive | [platform](../breadth-platform-variance.md) | **bedrock** — typed cross-context channel with explicit transferables. comlink-minus-proxy-magic. Lean distinct from ipc: transferables don't exist in process IPC |
 
 ### Media codecs (soon)

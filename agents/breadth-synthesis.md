@@ -62,7 +62,7 @@ Four proposals should be formally rejected to prevent re-proposal:
 | Candidate | Source Reports | Notes |
 |-----------|---------------|-------|
 | `serialize` | cloud | Bytes/schema codec. Unblocks ipc, socket, snapshot wire |
-| `host-node` | platform | Timer/fs/log for headless. Unlocks server chain |
+| `host-node` | platform | Timer/fs/log for headless. Charter reserved; not created until first genuine backend |
 | `telemetry` | cloud | Event envelope + offline batch. Resolves log's fork |
 | `flags` | cloud | Remote config seam. OpenFeature-shaped |
 | `video-codec` | adjacent | WebCodecs mux/demux. Encode = differentiator |
