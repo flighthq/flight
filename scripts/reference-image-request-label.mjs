@@ -51,19 +51,40 @@ export function getReferenceImageRequestLabel(value) {
  * validator must be added on purpose, as a gate that fails at authoring time where a hard failure is
  * correct — not inherited by whichever code happens to parse these files first.
  *
- * Listing the directory is the one thing that may still throw: with no listing there is no answer to
- * give, degraded or otherwise.
+ * Listing the directory may still throw, with ONE exception. An absent directory is not a failure to
+ * read the queue — it IS the queue, and the answer is "nothing outstanding". Deleting the last request
+ * removes the folder with it, and treating that as fatal turned the ordinary empty state into a red CI
+ * job: `ENOENT: no such file or directory, scandir 'reference-image-requests'`, exit 1, on a repository
+ * that simply had no work queued. The workflow is already built for an empty queue — it gates the
+ * capture matrix on `any == 'true'` so the cheap enumerate job runs alone — and this was the one thing
+ * standing between it and that design.
+ *
+ * Every OTHER listing error still throws. A permissions failure or an I/O error means the queue could
+ * not be read, which is not the same as the queue being empty, and reporting "nothing outstanding" for
+ * one of those would skip real work silently — the exact failure this pipeline has hit before.
  *
  * @param {string} directory
  * @param {string} [requestedPath]
  */
+/**
+ * The request filenames in `directory`, or none when the directory does not exist.
+ *
+ * @param {string} directory
+ * @returns {string[]}
+ */
+function listRequestFiles(directory) {
+  try {
+    return readdirSync(directory)
+      .filter((file) => file.endsWith('.json'))
+      .sort();
+  } catch (error) {
+    if (error instanceof Error && /** @type {NodeJS.ErrnoException} */ (error).code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
 export function getReferenceImageRequestMatrix(directory, requestedPath = '') {
-  const files =
-    requestedPath === ''
-      ? readdirSync(directory)
-          .filter((file) => file.endsWith('.json'))
-          .sort()
-      : [`${basename(requestedPath, '.json')}.json`];
+  const files = requestedPath === '' ? listRequestFiles(directory) : [`${basename(requestedPath, '.json')}.json`];
 
   return files.map((file) => {
     // The stem is the identity: it is what every path is built from, so it is known before the file
