@@ -394,7 +394,13 @@ export interface CollisionContactPoint3D {
   featureId: number;
 }
 
-// A full 3D contact manifold: one shared normal plus up to `MAX_COLLISION_CONTACT_POINTS_3D` points.
+// A full 3D contact manifold: one shared normal plus the world-space points the two surfaces meet at.
+//
+// `points` is an array owned by the manifold and reused across calls; `pointCount` says how many
+// leading entries are live, and entries beyond it hold stale values that must not be read. Where the
+// 2D twin caps at two — the most a convex face-face pair can produce in the plane — a 3D face-face
+// pair clips a POLYGON against a polygon, so the cap is four: enough to rest a box flat on a floor,
+// which is the case the second lane exists for.
 //
 // This is the second lane, distinct from `CollisionManifold3D`, and the distinction is the same one
 // the 2D half draws: the cheap overlap path must not start linking clipping machinery. A single
