@@ -80,15 +80,19 @@ function writeEpa2DPenetration(
   // entry points contradict each other about that, which is worse than a normal converged one
   // iteration short. Only a polytope with no measurable edge at all is a real failure.
   let bestDistance = Number.POSITIVE_INFINITY;
+  let bestAxisX = 0;
+  let bestAxisY = 0;
+  // The winning edge's TRUE outward normal, kept alongside the canonicalized axis the comparison uses.
+  // The canonical form exists to make the choice deterministic; it is not the answer, because
+  // canonicalizing throws away a sign that is geometrically correct everywhere except in a tie.
   let bestNormalX = 0;
   let bestNormalY = 0;
   let found = false;
 
   for (let iteration = 0; iteration < MAX_EPA_ITERATIONS; iteration += 1) {
-    // The closest edge of the current polytope, and its outward normal. Outward is decided per edge by
-    // the sign of its own distance rather than against an interior point: the polytope contains the
-    // origin, so flipping any perpendicular that points inward is enough.
     let bestEdge = -1;
+    let searchNormalX = 0;
+    let searchNormalY = 0;
     bestDistance = Number.POSITIVE_INFINITY;
     for (let i = 0; i < count; i += 1) {
       const j = (i + 1) % count;
@@ -108,18 +112,34 @@ function writeEpa2DPenetration(
         normalY = -normalY;
         distance = -distance;
       }
-      if (distance < bestDistance) {
+
+      // The axis is CANONICALIZED into a half-plane before it is compared, exactly as the incumbent
+      // SAT core does: flipped so x is positive, or so y is when x vanishes. That makes the comparison
+      // independent of edge winding and of which shape arrived as A — and it deliberately DISCARDS the
+      // outward sign, which the centroid step below restores. Without it, two opposite edges at the
+      // same distance are two different axes and whichever the scan reaches first wins.
+      let axisX = normalX;
+      let axisY = normalY;
+      if (axisX < -AXIS_EPSILON || (Math.abs(axisX) <= AXIS_EPSILON && axisY < 0)) {
+        axisX = -axisX;
+        axisY = -axisY;
+      }
+      if (!found || isPreferredEpaAxis(distance, axisX, axisY, bestDistance, bestAxisX, bestAxisY)) {
         bestDistance = distance;
+        bestAxisX = axisX;
+        bestAxisY = axisY;
         bestNormalX = normalX;
         bestNormalY = normalY;
+        searchNormalX = normalX;
+        searchNormalY = normalY;
         bestEdge = j;
         found = true;
       }
     }
     if (bestEdge < 0) break;
 
-    writeMinkowskiSupport2D(a, supportA, b, supportB, bestNormalX, bestNormalY, minkowski);
-    const reach = minkowski[0] * bestNormalX + minkowski[1] * bestNormalY;
+    writeMinkowskiSupport2D(a, supportA, b, supportB, searchNormalX, searchNormalY, minkowski);
+    const reach = minkowski[0] * searchNormalX + minkowski[1] * searchNormalY;
     // Converged: the boundary in this direction is where the polytope already says it is, so no new
     // vertex can push the edge further out.
     if (reach - bestDistance <= EPA_TOLERANCE || count + 1 >= MAX_POLYTOPE_VERTICES) break;
@@ -135,15 +155,79 @@ function writeEpa2DPenetration(
   }
 
   if (!found) return false;
-  // Reported as overlapping even at a vanishing depth, because GJK already decided that and the two
-  // entry points must not disagree. A grazing pair puts the origin almost exactly on the Minkowski
-  // boundary; the direction there is still defined by the closest edge, and the depth is honestly near
-  // zero rather than absent.
+
+  // The outward normal EPA derived is the answer almost everywhere: for a genuine penetration the
+  // minimum-translation direction is geometrically determined, and overriding it would be wrong.
+  //
+  // A TIE is the exception, and the only place a sign is actually free to choose. It happens when the
+  // difference is as deep the other way — two opposite edges the same distance from the origin — and
+  // then whichever edge the scan reached first would decide, which makes the answer depend on argument
+  // order. One extra support call detects it, and only then does the incumbent's rule apply: the normal
+  // points from B toward A, read off the Minkowski difference's own interior, which IS
+  // `centroidA - centroidB` without either shape having to expose a centroid.
+  writeMinkowskiSupport2D(a, supportA, b, supportB, -bestNormalX, -bestNormalY, minkowski);
+  const opposite = -(minkowski[0] * bestNormalX + minkowski[1] * bestNormalY);
+  let normalX = bestNormalX;
+  let normalY = bestNormalY;
+  if (Math.abs(opposite - bestDistance) <= TIE_TOLERANCE) {
+    writeMinkowskiInterior2D(a, supportA, b, supportB, interior);
+    if (bestAxisX * interior[0] + bestAxisY * interior[1] < 0) {
+      normalX = -bestAxisX;
+      normalY = -bestAxisY;
+    } else {
+      normalX = bestAxisX;
+      normalY = bestAxisY;
+    }
+    // The manifold normal is the negated EPA normal, so flip back into EPA's sense before the write
+    // below negates it again.
+    normalX = -normalX;
+    normalY = -normalY;
+  }
+
   out.overlapping = true;
-  out.normalX = -bestNormalX;
-  out.normalY = -bestNormalY;
+  out.normalX = -normalX;
+  out.normalY = -normalY;
   out.depth = bestDistance;
   return true;
+}
+
+// Whether a candidate axis beats the incumbent one: strictly shallower wins, and an exact tie is
+// broken lexicographically on the canonicalized axis. The mirror of the SAT core's `isPreferredAxis`,
+// and it exists for the same reason — a tie resolved by scan order makes the answer depend on which
+// shape was passed first.
+function isPreferredEpaAxis(
+  distance: number,
+  axisX: number,
+  axisY: number,
+  bestDistance: number,
+  bestAxisX: number,
+  bestAxisY: number,
+): boolean {
+  if (distance < bestDistance - AXIS_EPSILON) return true;
+  if (Math.abs(distance - bestDistance) > AXIS_EPSILON) return false;
+  if (axisX > bestAxisX + AXIS_EPSILON) return true;
+  return Math.abs(axisX - bestAxisX) <= AXIS_EPSILON && axisY > bestAxisY;
+}
+
+// An interior point of the Minkowski difference, as the mean of its supports along the four axes.
+// Equal to `centroidA - centroidB` for a symmetric shape and close enough for any convex one, since
+// only its DIRECTION is read.
+function writeMinkowskiInterior2D(
+  a: Readonly<CollisionShape2D>,
+  supportA: CollisionSupport2D,
+  b: Readonly<CollisionShape2D>,
+  supportB: CollisionSupport2D,
+  out: number[],
+): void {
+  out[0] = 0;
+  out[1] = 0;
+  for (let i = 0; i < 4; i += 1) {
+    writeMinkowskiSupport2D(a, supportA, b, supportB, INTERIOR_AXES[i * 2], INTERIOR_AXES[i * 2 + 1], minkowski);
+    out[0] += minkowski[0];
+    out[1] += minkowski[1];
+  }
+  out[0] /= 4;
+  out[1] /= 4;
 }
 
 // Runs GJK until it encloses the origin or proves it cannot, leaving the final simplex in `simplex`.
@@ -288,7 +372,17 @@ const MAX_EPA_ITERATIONS = 32;
 const MAX_POLYTOPE_VERTICES = 40;
 const EPA_TOLERANCE = 1e-9;
 const EPSILON = 1e-12;
+// The band within which two axes count as the same, for both the distance comparison and the
+// lexicographic tie-break. Matches the SAT core's own relative epsilon so the two agree about what a
+// tie IS, not only about how to break one.
+const AXIS_EPSILON = 1e-9;
+// How close the two opposite directions have to be before the penetration counts as ambiguous. Looser
+// than AXIS_EPSILON on purpose: EPA converges its distance to about 1e-10, so a tie that is exact in
+// the geometry arrives here a little off, and a band tighter than that noise would miss it.
+const TIE_TOLERANCE = 1e-6;
 
+const INTERIOR_AXES = [1, 0, -1, 0, 0, 1, 0, -1];
+const interior = [0, 0];
 const minkowski = [0, 0];
 const polytope = new Float64Array(MAX_POLYTOPE_VERTICES * 2 + 2);
 const simplex = [0, 0, 0, 0, 0, 0];
