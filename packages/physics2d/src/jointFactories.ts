@@ -130,6 +130,9 @@ export function createPhysics2DPrismaticJoint(
     enableLimit: options.enableLimit ?? false,
     lowerTranslation: options.lowerTranslation ?? 0,
     upperTranslation: options.upperTranslation ?? 0,
+    enableLimitSpring: options.enableLimitSpring ?? false,
+    limitFrequencyHz: options.limitFrequencyHz ?? 0,
+    limitDampingRatio: options.limitDampingRatio ?? 0,
   };
 }
 
@@ -158,6 +161,9 @@ export function createPhysics2DRevoluteJoint(options: Readonly<Physics2DRevolute
     lowerAngle: options.lowerAngle ?? 0,
     upperAngle: options.upperAngle ?? 0,
     referenceAngle: options.referenceAngle ?? 0,
+    enableLimitSpring: options.enableLimitSpring ?? false,
+    limitFrequencyHz: options.limitFrequencyHz ?? 0,
+    limitDampingRatio: options.limitDampingRatio ?? 0,
   };
 }
 

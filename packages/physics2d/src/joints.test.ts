@@ -963,6 +963,98 @@ describe('physics2DMouseJointSolver', () => {
 });
 
 describe('physics2DPrismaticJointSolver', () => {
+  // A vertical rail with a stop below it, so a slider falls onto the stop and how far it sinks past is
+  // the compliance. Same shape as the hinge's test, one dimension over.
+  const RAIL_LOWER = -1;
+  const RAIL_DT = 1 / 480;
+
+  function limitedSlider(density: number, frequencyHz: number, enableLimitSpring: boolean) {
+    const material = { density, friction: 0, restitution: 0 };
+    const world = createPhysics2DWorld(0, -10);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = createRigidBody2D('static', 0, 0);
+    rail.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.1 }, material));
+    addPhysics2DBody(world, rail);
+    const slider = createRigidBody2D('dynamic', 0, -0.5);
+    slider.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.3 }, material));
+    addPhysics2DBody(world, slider);
+    const joint: Physics2DPrismaticJoint = {
+      ...baseJoint(Physics2DPrismaticJointKind, rail.index, slider.index),
+      localAxisAX: 0,
+      localAxisAY: 1,
+      referenceAngle: 0,
+      enableMotor: false,
+      motorSpeed: 0,
+      maxMotorForce: 0,
+      motorImpulse: 0,
+      enableLimit: true,
+      lowerTranslation: RAIL_LOWER,
+      upperTranslation: 1,
+      enableLimitSpring,
+      limitFrequencyHz: frequencyHz,
+      limitDampingRatio: 1,
+    };
+    addPhysics2DJoint(world, joint);
+    for (let step = 0; step < 2400; step++) stepPhysics2D(world, RAIL_DT);
+    // Statics again, on the linear axis: weight over a spring rate of `m * (2*pi*f)^2`, so mass cancels
+    // and the sink depth is `g / omega^2`.
+    const predictedSink = 10 / (2 * Math.PI * frequencyHz) ** 2;
+    return { sink: RAIL_LOWER - slider.y, predictedSink, slider };
+  }
+
+  it('arrests the slider at a hard travel stop', () => {
+    expect(limitedSlider(1, 0, false).sink).toBeLessThan(0.02);
+  });
+
+  it('sinks past a compliant travel stop by the depth its authored frequency predicts', () => {
+    for (const frequency of [20, 40]) {
+      const soft = limitedSlider(1, frequency, true);
+      expect(soft.sink, `${String(frequency)} Hz`).toBeCloseTo(soft.predictedSink, 3);
+    }
+  });
+
+  it('sinks the same depth whatever the slider weighs', () => {
+    const light = limitedSlider(1, 20, true);
+    const heavy = limitedSlider(4, 20, true);
+    expect(heavy.slider.mass).toBeCloseTo(light.slider.mass * 4, 9);
+    expect(heavy.sink).toBe(light.sink);
+  });
+
+  it('leaves a pinned rail hard, because a zero-width range has no side to yield toward', () => {
+    // Coincident bounds make the axis row a two-sided equality rather than a stop, and a spring there
+    // would be a rest length on a coordinate that is not allowed to move at all.
+    const material = { density: 1, friction: 0, restitution: 0 };
+    const world = createPhysics2DWorld(0, -10);
+    registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
+    const rail = createRigidBody2D('static', 0, 0);
+    rail.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.1 }, material));
+    addPhysics2DBody(world, rail);
+    const slider = createRigidBody2D('dynamic', 0, -0.5);
+    slider.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.3 }, material));
+    addPhysics2DBody(world, slider);
+    const pinned: Physics2DPrismaticJoint = {
+      ...baseJoint(Physics2DPrismaticJointKind, rail.index, slider.index),
+      localAxisAX: 0,
+      localAxisAY: 1,
+      referenceAngle: 0,
+      enableMotor: false,
+      motorSpeed: 0,
+      maxMotorForce: 0,
+      motorImpulse: 0,
+      enableLimit: true,
+      lowerTranslation: -0.5,
+      upperTranslation: -0.5,
+      enableLimitSpring: true,
+      limitFrequencyHz: 20,
+      limitDampingRatio: 1,
+    };
+    addPhysics2DJoint(world, pinned);
+
+    for (let step = 0; step < 1200; step++) stepPhysics2D(world, RAIL_DT);
+
+    expect(slider.y).toBeCloseTo(-0.5, 3);
+  });
+
   it('allows motion along its axis while removing perpendicular motion and relative rotation', () => {
     const world = createPhysics2DWorld(0, 0);
     registerPhysics2DJointSolver(world, Physics2DPrismaticJointKind, physics2DPrismaticJointSolver);
@@ -1184,6 +1276,93 @@ describe('physics2DPulleyJointSolver', () => {
 });
 
 describe('physics2DRevoluteJointSolver', () => {
+  // A hinged arm whose mass hangs 1.5 to the side, limited below at LIMIT_ANGLE, so gravity drives it
+  // into the lower stop and how far past it settles is the compliance under test. The frequencies are
+  // deliberately stiff relative to this load: a spring soft enough to be overwhelmed does not settle at
+  // all, and measuring one at an arbitrary moment reads a swinging pendulum as a sag.
+  const LIMIT_ANGLE = -0.05;
+  const LIMIT_DT = 1 / 480;
+
+  function limitedArm(density: number, frequencyHz: number, enableLimitSpring: boolean) {
+    const material = { density, friction: 0, restitution: 0 };
+    const world = createPhysics2DWorld(0, -10);
+    registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);
+    const post = createRigidBody2D('static', 0, 0);
+    post.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.1 }, material));
+    addPhysics2DBody(world, post);
+    const arm = createRigidBody2D('dynamic', 0, 0);
+    arm.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 1.5, y: 0, radius: 0.3 }, material));
+    addPhysics2DBody(world, arm);
+    const joint: Physics2DRevoluteJoint = {
+      ...baseJoint(Physics2DRevoluteJointKind, post.index, arm.index),
+      enableMotor: false,
+      motorSpeed: 0,
+      maxMotorTorque: 0,
+      motorImpulse: 0,
+      enableLimit: true,
+      lowerAngle: LIMIT_ANGLE,
+      upperAngle: 1,
+      referenceAngle: 0,
+      enableLimitSpring,
+      limitFrequencyHz: frequencyHz,
+      limitDampingRatio: 1,
+    };
+    addPhysics2DJoint(world, joint);
+    for (let step = 0; step < 2400; step++) stepPhysics2D(world, LIMIT_DT);
+    // Statics: the arm's weight applies this moment about the hinge, and an angular spring of frequency
+    // `f` resists it with stiffness `I * (2*pi*f)^2`. Mass cancels from the ratio, which is what makes
+    // the authored frequency mean something.
+    const predictedSag = (arm.mass * 10 * 1.5) / (arm.inertia * (2 * Math.PI * frequencyHz) ** 2);
+    return { sag: LIMIT_ANGLE - arm.angle, predictedSag, arm };
+  }
+
+  it('arrests the arm at a hard limit, which is what a joint that sets no spring still gets', () => {
+    const hard = limitedArm(1, 0, false);
+    expect(hard.sag).toBeLessThan(0.001);
+  });
+
+  it('lets a compliant limit sag by the deflection its authored frequency predicts', () => {
+    // Checked against statics rather than against a recorded number, so a change to how the row is
+    // derived has to still describe a spring of the frequency the caller asked for.
+    for (const frequency of [20, 40]) {
+      const soft = limitedArm(1, frequency, true);
+      expect(soft.sag, `${String(frequency)} Hz`).toBeCloseTo(soft.predictedSag, 3);
+    }
+  });
+
+  it('sags four times as far when the limit spring is half the frequency', () => {
+    // Deflection goes as 1 / omega^2, so halving the frequency quadruples it. A row that merely got
+    // "softer with a smaller number" would pass a monotonicity check and fail this one.
+    const stiff = limitedArm(1, 40, true);
+    const soft = limitedArm(1, 20, true);
+    expect(soft.sag / stiff.sag).toBeCloseTo(4, 1);
+  });
+
+  it('sags the same distance whatever the arm weighs', () => {
+    // The point of authoring a stop by frequency. Both the driving moment and the stiffness scale with
+    // mass, so it cancels — and it must cancel EXACTLY, not approximately.
+    const light = limitedArm(1, 20, true);
+    const heavy = limitedArm(4, 20, true);
+    expect(heavy.arm.mass).toBeCloseTo(light.arm.mass * 4, 9);
+    expect(heavy.sag).toBe(light.sag);
+  });
+
+  it('stays one-sided when softened, and never pulls the arm back inside the range', () => {
+    // Softening changes how hard a stop resists being crossed, never whether it may pull. A row that
+    // gained a rest length would hoist the arm back above the limit it is resting against.
+    const soft = limitedArm(1, 20, true);
+    expect(soft.sag).toBeGreaterThan(0);
+    expect(soft.arm.angle).toBeLessThan(LIMIT_ANGLE);
+  });
+
+  it('behaves exactly as a hard stop when the spring is enabled with no frequency', () => {
+    // The degenerate authoring case — a caller flips the flag and forgets the number. It must degrade to
+    // the stop it replaced rather than to a constraint that does nothing.
+    const hard = limitedArm(1, 0, false);
+    const frequencyless = limitedArm(1, 0, true);
+    expect(frequencyless.arm.angle).toBe(hard.arm.angle);
+  });
+
   it('keeps the pinned anchors together while leaving rotation free', () => {
     const world = createPhysics2DWorld();
     registerPhysics2DJointSolver(world, Physics2DRevoluteJointKind, physics2DRevoluteJointSolver);

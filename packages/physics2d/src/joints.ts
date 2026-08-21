@@ -441,7 +441,7 @@ export const physics2DPrismaticJointSolver = {
     const k22 = bodyA.inverseInertia + bodyB.inverseInertia;
     const axisMass =
       bodyA.inverseMass + bodyB.inverseMass + bodyA.inverseInertia * a1 * a1 + bodyB.inverseInertia * a2 * a2;
-    const state = beginJointSolve(prismatic, 17);
+    const state = beginJointSolve(prismatic, 19);
     state[0] = axisX;
     state[1] = axisY;
     state[2] = perpendicularX;
@@ -456,9 +456,24 @@ export const physics2DPrismaticJointSolver = {
     state[11] = axisMass > 0 ? 1 / axisMass : 0;
     state[12] = (distanceX * perpendicularX + distanceY * perpendicularY) * (BAUMGARTE / dt);
     state[13] = (bodyB.angle - bodyA.angle - prismatic.referenceAngle) * (BAUMGARTE / dt);
-    state[14] = BAUMGARTE / dt;
     state[15] = Math.max(0, dt * prismatic.maxMotorForce);
     state[16] = distanceX * axisX + distanceY * axisY;
+    // The travel stop's three numbers, derived exactly as the hinge's are: `state[14]` is the bias
+    // factor, `state[17]` the row mass, `state[18]` the compliance. A hard stop keeps `BAUMGARTE / dt`
+    // rather than the hinge's `1 / dt` because a slider's stop has always corrected at that gentler rate
+    // here, and changing it would retune every existing rail under the guise of adding a feature.
+    const prismaticAxisMass = state[11];
+    writePhysics2DSoftRowParameters(
+      prismatic.enableLimitSpring ? prismaticAxisMass : 0,
+      prismatic.enableLimitSpring ? prismatic.limitFrequencyHz : 0,
+      prismatic.limitDampingRatio,
+      dt,
+      BAUMGARTE / dt,
+      softRowScratch,
+    );
+    state[14] = softRowScratch[1];
+    state[17] = prismatic.enableLimitSpring ? softRowScratch[0] : prismaticAxisMass;
+    state[18] = softRowScratch[2];
     prismatic.motorImpulse ??= 0;
     if (prismatic.enableMotor) {
       prismatic.motorImpulse = Math.min(Math.max(prismatic.motorImpulse, -state[15]), state[15]);
@@ -523,18 +538,25 @@ export const physics2DPrismaticJointSolver = {
       const translation = state[16];
       const velocity = prismaticAxisVelocity(bodyA, bodyB, axisX, axisY, a1, a2);
       const previous = joint.impulse2;
+      const bias = state[14];
+      const limitMass = state[17];
+      // The compliance term, bleeding the accumulated impulse back in proportion to how soft the stop is.
+      // Zero for a hard stop, which leaves every line below exactly what it was.
+      const limitGamma = state[18];
       let total = previous;
       if (Math.abs(prismatic.upperTranslation - prismatic.lowerTranslation) < EPSILON) {
+        // A pinned rail: the two bounds coincide, so this is a two-sided equality row and not a stop at
+        // all. It stays hard whatever the spring settings say, because there is no side to yield toward.
         const error = translation - prismatic.lowerTranslation;
         total += -axisMass * (velocity + error * state[14]);
       } else if (translation < prismatic.lowerTranslation) {
         const lowerPrevious = previous < 0 ? 0 : previous;
         const error = translation - prismatic.lowerTranslation;
-        total = Math.max(0, lowerPrevious - axisMass * (velocity + error * state[14]));
+        total = Math.max(0, lowerPrevious - limitMass * (velocity + error * bias + limitGamma * lowerPrevious));
       } else if (translation > prismatic.upperTranslation) {
         const upperPrevious = previous > 0 ? 0 : previous;
         const error = translation - prismatic.upperTranslation;
-        total = Math.min(0, upperPrevious - axisMass * (velocity + error * state[14]));
+        total = Math.min(0, upperPrevious - limitMass * (velocity + error * bias + limitGamma * upperPrevious));
       } else {
         total = 0;
       }
@@ -807,14 +829,28 @@ export const physics2DRevoluteJointSolver = {
     const angularMass = inverseInertiaSum > 0 ? 1 / inverseInertiaSum : 0;
     // The motor accumulator is revolute-specific, so the shared entry point above cannot reach it.
     revolute.motorImpulse ??= 0;
-    const revoluteState = beginJointSolve(joint, 7);
+    const revoluteState = beginJointSolve(joint, 9);
     revoluteState[0] = errorX * (BAUMGARTE / dt);
     revoluteState[1] = errorY * (BAUMGARTE / dt);
     revoluteState[2] = angularMass;
     revoluteState[3] = 0;
     revoluteState[4] = 0;
     revoluteState[5] = dt * revolute.maxMotorTorque;
-    revoluteState[6] = 1 / dt;
+    // The LIMIT row's three numbers. A hard stop corrects its whole violation in one step — bias factor
+    // `1 / dt`, no compliance, and the row's own mass — and a compliant one trades that for the spring the
+    // author described. Both leave the row's arithmetic below identical, which is the point of deriving
+    // them here rather than branching in `solve`.
+    writePhysics2DSoftRowParameters(
+      revolute.enableLimitSpring ? angularMass : 0,
+      revolute.enableLimitSpring ? revolute.limitFrequencyHz : 0,
+      revolute.limitDampingRatio,
+      dt,
+      1 / dt,
+      softRowScratch,
+    );
+    revoluteState[6] = softRowScratch[1];
+    revoluteState[7] = revolute.enableLimitSpring ? softRowScratch[0] : angularMass;
+    revoluteState[8] = softRowScratch[2];
   },
 
   solve(world: Physics2DWorld, joint: Physics2DJoint): void {
@@ -845,6 +881,8 @@ export const physics2DRevoluteJointSolver = {
 
       if (revolute.enableLimit) {
         const bias = state[6];
+        const limitMass = state[7];
+        const limitGamma = state[8];
         const angle = bodyB.angle - bodyA.angle - revolute.referenceAngle;
         // Each end is a one-sided constraint: the non-negative clamp on the running impulse lets a
         // limit push the angle back inside the interval and never pull it in.
@@ -865,8 +903,13 @@ export const physics2DRevoluteJointSolver = {
         // negative and the clamp holds the accumulator at zero, so the limit contributes nothing.
         // Outside it is negative, which drives the desired impulse positive and pushes the angle back.
         const lowerError = angle - revolute.lowerAngle;
-        const lowerDesired = -angularMass * (bodyB.angularVelocity - bodyA.angularVelocity + lowerError * bias);
         const lowerPrevious = state[3];
+        // `gamma * previous` is the compliance term, and it is what makes a soft stop yield: it bleeds the
+        // accumulated impulse back each iteration in proportion to how compliant the row is, so the row
+        // converges on a spring force instead of on whatever it takes to arrest the coordinate. At
+        // `gamma` zero this is exactly the hard row it replaced.
+        const lowerDesired =
+          -limitMass * (bodyB.angularVelocity - bodyA.angularVelocity + lowerError * bias + limitGamma * lowerPrevious);
         const lowerTotal = Math.max(lowerPrevious + lowerDesired, 0);
         state[3] = lowerTotal;
         const lowerApplied = lowerTotal - lowerPrevious;
@@ -874,8 +917,9 @@ export const physics2DRevoluteJointSolver = {
         bodyB.angularVelocity += bodyB.inverseInertia * lowerApplied;
 
         const upperError = revolute.upperAngle - angle;
-        const upperDesired = -angularMass * (bodyA.angularVelocity - bodyB.angularVelocity + upperError * bias);
         const upperPrevious = state[4];
+        const upperDesired =
+          -limitMass * (bodyA.angularVelocity - bodyB.angularVelocity + upperError * bias + limitGamma * upperPrevious);
         const upperTotal = Math.max(upperPrevious + upperDesired, 0);
         state[4] = upperTotal;
         const upperApplied = upperTotal - upperPrevious;

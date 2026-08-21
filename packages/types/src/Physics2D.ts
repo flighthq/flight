@@ -454,6 +454,19 @@ export interface Physics2DRevoluteJoint extends Physics2DJoint {
   lowerAngle: number;
   upperAngle: number;
   referenceAngle: number;
+  // A COMPLIANT limit: once the bound is crossed, the stop pushes back like a spring of
+  // `limitFrequencyHz` and `limitDampingRatio` instead of arresting the coordinate outright. What a
+  // ragdoll wants at the end of a joint's range and a suspension wants at the end of its travel.
+  //
+  // The stop stays ONE-SIDED whichever it is: softening changes how hard the row resists being crossed,
+  // never whether it may pull the coordinate back the other way. A spring that could pull would be a
+  // rest length, which is the distance joint's job.
+  //
+  // Both parameters are ignored unless `enableLimitSpring` is true and the frequency is positive, so a
+  // joint that never sets them behaves exactly as the hard stop it replaced.
+  enableLimitSpring: boolean;
+  limitFrequencyHz: number;
+  limitDampingRatio: number;
 }
 
 // A weld joint: pins the anchors together AND locks the relative angle. Rigid attachment — a crate nailed
@@ -514,6 +527,19 @@ export interface Physics2DPrismaticJoint extends Physics2DJoint {
   enableLimit: boolean;
   lowerTranslation: number;
   upperTranslation: number;
+  // A COMPLIANT limit: once the bound is crossed, the stop pushes back like a spring of
+  // `limitFrequencyHz` and `limitDampingRatio` instead of arresting the coordinate outright. What a
+  // ragdoll wants at the end of a joint's range and a suspension wants at the end of its travel.
+  //
+  // The stop stays ONE-SIDED whichever it is: softening changes how hard the row resists being crossed,
+  // never whether it may pull the coordinate back the other way. A spring that could pull would be a
+  // rest length, which is the distance joint's job.
+  //
+  // Both parameters are ignored unless `enableLimitSpring` is true and the frequency is positive, so a
+  // joint that never sets them behaves exactly as the hard stop it replaced.
+  enableLimitSpring: boolean;
+  limitFrequencyHz: number;
+  limitDampingRatio: number;
 }
 
 // A wheel joint: constrains the anchors laterally while allowing suspension travel along body A's
@@ -574,6 +600,9 @@ export interface Physics2DRevoluteJointOptions extends Physics2DJointOptions {
   lowerAngle?: number;
   upperAngle?: number;
   referenceAngle?: number;
+  enableLimitSpring?: boolean;
+  limitFrequencyHz?: number;
+  limitDampingRatio?: number;
 }
 
 export interface Physics2DWeldJointOptions extends Physics2DJointOptions {
@@ -614,6 +643,9 @@ export interface Physics2DPrismaticJointOptions extends Physics2DJointOptions {
   enableLimit?: boolean;
   lowerTranslation?: number;
   upperTranslation?: number;
+  enableLimitSpring?: boolean;
+  limitFrequencyHz?: number;
+  limitDampingRatio?: number;
 }
 
 export interface Physics2DWheelJointOptions extends Physics2DJointOptions {
