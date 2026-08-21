@@ -22,6 +22,18 @@
       "registrar": "registerAudioDecoder"
     },
     {
+      "packageName": "collision",
+      "registrar": "registerBuiltInCollisionSupports2D"
+    },
+    {
+      "packageName": "collision",
+      "registrar": "registerCollisionPairTest2D"
+    },
+    {
+      "packageName": "collision",
+      "registrar": "registerCollisionSupport2D"
+    },
+    {
       "packageName": "compression",
       "registrar": "registerDecompressor"
     },
