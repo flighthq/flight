@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "4b8f53f9-e495-45eb-bea2-ad02aa4f66d2",
+  "id": "706eac6a-630d-403e-a9fb-ae2f7c6f2789",
   "subject": "functional",
   "targets": [
     {
-      "entry": "material-alpha-map-pbr",
-      "renderer": "webgpu",
-      "pixelSha256": "7a25521bce3e5b8015ac6e68d4b566e06ae34104930c82cac650446cbbba1834",
+      "entry": "scene-skin-two-skeletons",
+      "renderer": "webgl",
+      "pixelSha256": "73ee40351e3f1fefd3d48154b3e4cddf3e09201dd6ec675078e8f12bcb38ff4c",
       "build": {
-        "commit": "c7d4e3aead78f5176595cb11de100de2d582cad4",
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
         "dirty": [],
         "dirtyOmitted": 0
       },

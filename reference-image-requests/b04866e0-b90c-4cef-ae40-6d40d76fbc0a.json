@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "4b8f53f9-e495-45eb-bea2-ad02aa4f66d2",
+  "id": "b04866e0-b90c-4cef-ae40-6d40d76fbc0a",
   "subject": "functional",
   "targets": [
     {
-      "entry": "material-alpha-map-pbr",
+      "entry": "effect-fxaa",
       "renderer": "webgpu",
-      "pixelSha256": "7a25521bce3e5b8015ac6e68d4b566e06ae34104930c82cac650446cbbba1834",
+      "pixelSha256": "c2771bb9e35dd0c0a351571dcb501e28aeaee180c28bc92ba3a949ae8202b1e0",
       "build": {
-        "commit": "c7d4e3aead78f5176595cb11de100de2d582cad4",
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
         "dirty": [],
         "dirtyOmitted": 0
       },

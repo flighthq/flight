@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "4b8f53f9-e495-45eb-bea2-ad02aa4f66d2",
+  "id": "9b520c18-3070-4408-a272-0fa84b823e13",
   "subject": "functional",
   "targets": [
     {
-      "entry": "material-alpha-map-pbr",
-      "renderer": "webgpu",
-      "pixelSha256": "7a25521bce3e5b8015ac6e68d4b566e06ae34104930c82cac650446cbbba1834",
+      "entry": "scene2d-clip-contour",
+      "renderer": "webgl",
+      "pixelSha256": "0438d59322f49e67dc7e6274d07b6147a5a335fbbd06da0cd0703c8191dfebea",
       "build": {
-        "commit": "c7d4e3aead78f5176595cb11de100de2d582cad4",
+        "commit": "b1183ff1d20ea6dd5ed4b6d8d9cbbbdda2d4128d",
         "dirty": [],
         "dirtyOmitted": 0
       },
@@ -19,5 +19,6 @@
     }
   ],
   "frames": 1,
-  "reason": "Commissioned from review"
+  "reason": "Commissioned from review",
+  "createdAt": "2026-08-21T04:31:13.195Z"
 }

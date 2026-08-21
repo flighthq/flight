@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "4b8f53f9-e495-45eb-bea2-ad02aa4f66d2",
+  "id": "c1ef2667-ce66-4c9c-b398-26a3bb2cd6f1",
   "subject": "functional",
   "targets": [
     {
-      "entry": "material-alpha-map-pbr",
-      "renderer": "webgpu",
-      "pixelSha256": "7a25521bce3e5b8015ac6e68d4b566e06ae34104930c82cac650446cbbba1834",
+      "entry": "mesh-transform-rotation",
+      "renderer": "webgl",
+      "pixelSha256": "05df607b4f15e141a0517bb33bed28d39fa7bf509da52589265d5be58846c81b",
       "build": {
-        "commit": "c7d4e3aead78f5176595cb11de100de2d582cad4",
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
         "dirty": [],
         "dirtyOmitted": 0
       },

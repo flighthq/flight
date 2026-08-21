@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
-  "id": "4b8f53f9-e495-45eb-bea2-ad02aa4f66d2",
+  "id": "67c6ec71-e394-4dfd-9138-7b75fe8f390b",
   "subject": "functional",
   "targets": [
     {
-      "entry": "material-alpha-map-pbr",
-      "renderer": "webgpu",
-      "pixelSha256": "7a25521bce3e5b8015ac6e68d4b566e06ae34104930c82cac650446cbbba1834",
+      "entry": "mesh-tangent-mirrored-uv",
+      "renderer": "webgl",
+      "pixelSha256": "779eee23c1d17fa76cfb3fe0fa87d0f74d523fcf0c9f3ca6fbd08532751e1fa9",
       "build": {
-        "commit": "c7d4e3aead78f5176595cb11de100de2d582cad4",
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
         "dirty": [],
         "dirtyOmitted": 0
       },
