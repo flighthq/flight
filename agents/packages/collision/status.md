@@ -37,18 +37,28 @@ by: principal
   converged depth can sit on a facet pointing measurably the wrong way. That tail, not the median, is
   what a closed-form pair buys, and it is why the five curved 3D pairs earn their place on conditioning
   as well as speed. `shapeCollision3D.test.ts` carries the numbers and the tolerances derived from them.
-- **The typed 2D pair functions do not carry a dimension, and the collision has now arrived.**
-  `testCircleCircleCollision` and the other nine keep their bare names, plus five `testSegment*`
-  functions and ten `collide*ContactManifold` functions — 25 unsuffixed exports. This was parked
-  "until 3D shapes land"; they have landed, and `testAabbAabbCollision` now sits beside
-  `testAabbAabbCollision3D`. The 3D set was suffixed rather than renaming 25 public names and two
-  examples unilaterally, so the asymmetry is deliberate and open: a decision for the user, not a gap.
+- **Every dimension-specific name in this package now carries its dimension, identifiers AND modules.**
+  The 25 formerly bare exports — ten SAT pairs, five `testSegment*`, ten `collide*ContactManifold` —
+  are suffixed `2D`, and eight files moved alongside them (`manifold.ts` to `manifold2D.ts`,
+  `shapeCollision.ts` to `shapeCollision2D.ts`, and so on), so every 2D module sits beside its 3D twin
+  under the same name. Module names are public API in the port — a file maps to one Haxe module — so an
+  unsuffixed `manifold.ts` would have exported a type named for the concept rather than the dimension.
+  `contactFeatureId.ts` deliberately keeps its bare name: packing two feature indices into one integer
+  is dimension-free, and suffixing it would make a reusable utility look 2D-only.
 - **More shapes.** 2D capsule, rounded polygon, and a general concave-as-convex-decomposition path.
   A capsule now costs one support function rather than a column of the pair matrix.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — The 2D naming asymmetry is closed: 25 exports and 8 modules took a `2D` suffix, so
+  the package's rule is now uniform in both dimensions. The rename was done with a negative lookahead
+  (`\bNAME(?![A-Za-z0-9])`) rather than a plain substitution, because every 3D name has its 2D twin as a
+  prefix — a naive sweep turns `testAabbAabbCollision3D` into `testAabbAabbCollision2D3D`. Import paths
+  were rewritten quote-delimited (`'./manifold'`) for the same reason: unquoted, `./manifold` matches
+  `./manifold3D`. Verified with the whole-repo `npm run check` (32 gates) because the rename crosses
+  into physics2d and two examples.
 
 - **2026-08-21** — Cylinder and cone landed across every 3D seam, and the raycasts were verified by an
   instrument that shares no code with them: a brute-force scan of the containment predicate along each
