@@ -2,8 +2,9 @@
   "webgpu": {
     "sha256": "f26f572ad6fd4f001dc27a699ff05b2cd063fa07c39f78f854a6495071fee85b",
     "sha256Provenance": {
+      "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "2d045d4f02a11116b74565ffd6573484283baf2304f20550e6605d04799c5f99",
+      "sourceHash": "7f47a09a9a40b8699b7bf4b43444ebcd722ccef40c0efafb22e2b3ab8be99dc6",
       "targetKind": "webgpu",
       "verifyPublished": true,
       "warmupFrames": 0
