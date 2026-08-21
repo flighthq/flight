@@ -2643,31 +2643,6 @@
               "realization": true
             }
           }
-        },
-        {
-          "scene": "material-wireframe",
-          "backends": {
-            "canvas": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "dom": {
-              "status": "unbaselined",
-              "fingerprint": false,
-              "realization": false
-            },
-            "webgl": {
-              "status": "realized",
-              "fingerprint": true,
-              "realization": true
-            },
-            "webgpu": {
-              "status": "realized",
-              "fingerprint": true,
-              "realization": true
-            }
-          }
         }
       ]
     },

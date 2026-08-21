@@ -1202,10 +1202,13 @@ explanation, and every clean-but-failing target is a candidate rendering regress
 never be batch-recaptured; recapture would bless the regression as the new reference and destroy the
 evidence.
 
-**CONFIRMED, DO NOT RECAPTURE: `material-wireframe/webgl`.** Zero scene-source change since its baseline
-(recorded hash matches the current file exactly), yet a regression distance of 18.04 against a tolerance
-of 5. The baseline is the honest party here; the output is the suspect. It is the only one of the 52
-failing functional targets that owes neither of the two candidate causes.
+**HISTORICAL HOLD CLOSED: `material-wireframe/webgl`.** The former sphere had zero scene-source change
+since its baseline (the recorded hash matched exactly), yet a regression distance of 18.04 against a
+tolerance of 5. It was the only one of the historical 52 failing functional targets that owed neither
+candidate cause. A decoded-RGBA positive control reproduced the sphere's 2,096 WebGL/WebGPU differing
+pixels; its controlled-pixel cube replacement then repeated with zero cross-backend and zero
+same-backend differing pixels. The hold was released and the stale sphere baseline retired rather than
+recaptured. No cube baseline or reference image was commissioned by that repair.
 
 **A CONFIRMED-CORRECT CAUSE CLEARS ONLY A TARGET THAT OWES NOTHING ELSE.** Of the 52 failing targets, 30
 owe both candidate causes, 21 owe `e2b99fc68` alone, **0 owe `b467652e8` alone** — its set is a strict
