@@ -85,6 +85,16 @@ describe('isPhysics3DContactValid', () => {
     expect(isPhysics3DContactValid(contact)).toBe(false);
   });
 
+  it('rejects invalid collider indices before the solver indexes a body', () => {
+    const contact = createPhysics3DContact(0, 1);
+    contact.colliderA = -1;
+    expect(isPhysics3DContactValid(contact)).toBe(false);
+
+    contact.colliderA = 0;
+    contact.colliderB = 1.5;
+    expect(isPhysics3DContactValid(contact)).toBe(false);
+  });
+
   it('rejects a negative friction or restitution', () => {
     const friction = createPhysics3DContact(0, 1);
     friction.friction = -0.1;

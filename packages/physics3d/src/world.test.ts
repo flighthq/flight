@@ -24,11 +24,14 @@ import {
   createPhysics3DWorld,
   createRigidBody3D,
   findPhysics3DBody,
+  hydratePhysics3DWorld,
   invalidatePhysics3DCollider,
   Physics3DWorldVersion,
   removePhysics3DBody,
   removePhysics3DCollider,
+  setPhysics3DBodyBullet,
   setPhysics3DBodyFixedRotation,
+  setPhysics3DBodySleepEnabled,
   setPhysics3DBodyTransform,
   setPhysics3DBodyType,
   wakePhysics3DBody,
@@ -394,6 +397,60 @@ describe('findPhysics3DBody', () => {
   });
 });
 
+describe('hydratePhysics3DWorld', () => {
+  it('upgrades the pre-collider world shape and clears unserializable solver caches', () => {
+    const world = createPhysics3DWorld();
+    const first = createRigidBody3D();
+    const second = createRigidBody3D();
+    addPhysics3DBody(world, first);
+    addPhysics3DBody(world, second);
+    world.contacts.push(contact(first.index, second.index));
+    const legacyWorld = world as unknown as {
+      version?: number;
+      index?: Physics3DWorld['index'];
+      jointEvents?: Physics3DWorld['jointEvents'];
+      solver: {
+        constraintByContact?: Physics3DWorld['solver']['constraintByContact'];
+        constraintByPair?: Map<number, unknown>;
+      };
+    };
+    const legacyBody = first as unknown as { colliders?: RigidBody3D['colliders'] };
+    const legacyContact = world.contacts[0] as unknown as { colliderA?: number; colliderB?: number };
+    legacyWorld.version = 1;
+    delete legacyWorld.index;
+    delete legacyWorld.jointEvents;
+    delete legacyWorld.solver.constraintByContact;
+    legacyWorld.solver.constraintByPair = new Map([[1, {}]]);
+    delete legacyBody.colliders;
+    delete legacyContact.colliderA;
+    delete legacyContact.colliderB;
+
+    expect(hydratePhysics3DWorld(world)).toBe(true);
+
+    expect(world.version).toBe(Physics3DWorldVersion);
+    expect(world.index).toBeDefined();
+    expect(first.colliders).toEqual([]);
+    expect(world.contacts[0].colliderA).toBe(0);
+    expect(world.contacts[0].colliderB).toBe(0);
+    expect(world.jointEvents).toEqual({ broke: [] });
+    expect(world.solver.constraintByContact).toBeInstanceOf(Map);
+    expect(world.solver.constraintByContact.size).toBe(0);
+    expect(legacyWorld.solver.constraintByPair).toBeUndefined();
+  });
+
+  it('preserves current values and rejects an unknown future version', () => {
+    const current = createPhysics3DWorld();
+    current.config.maxCcdSubsteps = 19;
+    expect(hydratePhysics3DWorld(current)).toBe(true);
+    expect(current.config.maxCcdSubsteps).toBe(19);
+
+    const future = createPhysics3DWorld();
+    future.version = Physics3DWorldVersion + 1;
+    expect(hydratePhysics3DWorld(future)).toBe(false);
+    expect(future.version).toBe(Physics3DWorldVersion + 1);
+  });
+});
+
 describe('invalidatePhysics3DCollider', () => {
   it('rebuilds the mass properties after the local shape is edited in place', () => {
     const world = createPhysics3DWorld();
@@ -640,6 +697,20 @@ describe('removePhysics3DCollider', () => {
   });
 });
 
+describe('setPhysics3DBodyBullet', () => {
+  it('changes continuous-collision policy and wakes an owned body', () => {
+    const world = createPhysics3DWorld();
+    const body = sphere();
+    addPhysics3DBody(world, body);
+    body.sleeping = true;
+
+    setPhysics3DBodyBullet(body, true);
+
+    expect(body.bullet).toBe(true);
+    expect(body.sleeping).toBe(false);
+  });
+});
+
 describe('setPhysics3DBodyFixedRotation', () => {
   it('zeroes the inverse inertia and clears angular velocity while keeping inverse mass', () => {
     const body = sphere();
@@ -675,6 +746,20 @@ describe('setPhysics3DBodyFixedRotation', () => {
 
     expect(world.contacts).toHaveLength(0);
     expect(neighbour.sleeping).toBe(false);
+  });
+});
+
+describe('setPhysics3DBodySleepEnabled', () => {
+  it('wakes the body on either policy transition', () => {
+    const body = sphere();
+    body.sleeping = true;
+    body.sleepTimer = 2;
+
+    setPhysics3DBodySleepEnabled(body, false);
+
+    expect(body.sleepEnabled).toBe(false);
+    expect(body.sleeping).toBe(false);
+    expect(body.sleepTimer).toBe(0);
   });
 });
 
