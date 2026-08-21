@@ -79,9 +79,11 @@ Ranked, worst first. Each is something a user assumes works and it does not.
    `physics3d` each own a world, a sequential-impulse solver, joints, islands and sleeping, contact
    generation over a `@flighthq/spatial` broadphase and a `@flighthq/collision` narrow phase, spatial
    queries, and debug geometry. `collision` returns contact manifolds as well as an MTV, in both
-   dimensions. What remains is named per package in `agents/packages/physics3d/status.md`: 3D has no CCD
-   (2D has linear and rotational), and a 3D convex hull has no mass properties or raycast because a bare
-   point list carries no triangulation.
+   dimensions. Physics3d now has analytic linear and bounded rotational CCD, convex-hull mass properties
+   and raycast, shapecast queries, joint reaction/breakage, and long-horizon stress coverage. Remaining
+   qualification boundaries are measured in `agents/packages/physics3d/review.md`: static triangle
+   mesh/heightfield collision, explicit solver-quality and performance budgets, and impact-time CCD
+   friction/hooks/reporting.
 
 ---
 
