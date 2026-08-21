@@ -6,7 +6,13 @@ import { explainPhysics3DStep } from './explainPhysics3DStep';
 import { createPhysics3DBallAndSocketJoint } from './jointFactories';
 import { addPhysics3DJoint } from './jointRegistry';
 import { stepPhysics3D } from './step';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+import {
+  addPhysics3DBody,
+  addPhysics3DCollider,
+  createPhysics3DCollider,
+  createPhysics3DWorld,
+  createRigidBody3D,
+} from './world';
 
 describe('explainPhysics3DStep', () => {
   it('reports a ready world', () => {
@@ -33,6 +39,19 @@ describe('explainPhysics3DStep', () => {
     const explanation = explainPhysics3DStep(world, 1 / 60);
 
     expect(explanation.bodyStateValid).toBe(false);
+    expect(explanation.status).toBe('invalid-step');
+  });
+
+  it('names an invalid collider independently from body state', () => {
+    const world = createTestWorld();
+    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    addPhysics3DCollider(world, world.bodies[0], collider);
+    collider.material.friction = Number.NaN;
+
+    const explanation = explainPhysics3DStep(world, 1 / 60);
+
+    expect(explanation.bodyStateValid).toBe(true);
+    expect(explanation.colliderStateValid).toBe(false);
     expect(explanation.status).toBe('invalid-step');
   });
 

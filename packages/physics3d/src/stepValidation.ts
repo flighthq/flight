@@ -1,4 +1,6 @@
+import { getCollisionShapeValidationStatus3D } from '@flighthq/collision/contract';
 import type {
+  Physics3DCollider,
   Physics3DContact,
   Physics3DJoint,
   Physics3DSolverConfig,
@@ -21,7 +23,25 @@ import type {
 export function isPhysics3DBodyStateValid(world: Readonly<Physics3DWorld>): boolean {
   if (!Number.isSafeInteger(world.nextBodyIndex) || world.nextBodyIndex < 0) return false;
   for (const body of world.bodies) {
-    if (!isRigidBody3DStateValid(body) || world.bodyByIndex.get(body.index) !== body) return false;
+    if (
+      !isRigidBody3DStateValid(body) ||
+      !Array.isArray(body.colliders) ||
+      world.bodyByIndex.get(body.index) !== body
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Validates the data that will generate NEW contacts during this step. Keeping this separate from body
+// state is diagnostic: a NaN material is repaired at a collider, not in the body's pose or inertia.
+export function isPhysics3DColliderStateValid(world: Readonly<Physics3DWorld>): boolean {
+  for (const body of world.bodies) {
+    if (!Array.isArray(body.colliders)) return false;
+    for (const collider of body.colliders) {
+      if (!isPhysics3DColliderValid(collider)) return false;
+    }
   }
   return true;
 }
@@ -185,6 +205,30 @@ function isRigidBody3DStateValid(body: Readonly<RigidBody3D>): boolean {
     if (!Number.isFinite(body[key])) return false;
   }
   return true;
+}
+
+function isPhysics3DColliderValid(collider: Readonly<Physics3DCollider>): boolean {
+  const material = collider.material;
+  const filter = collider.filter;
+  return (
+    getCollisionShapeValidationStatus3D(collider.local) === null &&
+    getCollisionShapeValidationStatus3D(collider.world) === null &&
+    isPhysics3DColliderWorldShapeCompatible(collider) &&
+    Number.isFinite(material.density) &&
+    material.density >= 0 &&
+    Number.isFinite(material.friction) &&
+    material.friction >= 0 &&
+    Number.isFinite(material.restitution) &&
+    material.restitution >= 0 &&
+    Number.isSafeInteger(filter.categoryBits) &&
+    Number.isSafeInteger(filter.maskBits) &&
+    Number.isSafeInteger(filter.groupIndex) &&
+    typeof collider.sensor === 'boolean'
+  );
+}
+
+function isPhysics3DColliderWorldShapeCompatible(collider: Readonly<Physics3DCollider>): boolean {
+  return collider.world.kind === (collider.local.kind === 'aabb' ? 'box' : collider.local.kind);
 }
 
 // Every field that has to be a real number for the step to mean anything: the pose, the velocities, the

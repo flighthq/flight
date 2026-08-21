@@ -128,6 +128,7 @@ function getFailingPhysics3DPreconditions(explanation: Readonly<Physics3DStepExp
 // precondition — cannot be swept in, and so a flag added to the explanation is a deliberate addition here.
 const physics3DPreconditionFlags = [
   'bodyStateValid',
+  'colliderStateValid',
   'contactStateValid',
   'gravityValid',
   'jointStateValid',
