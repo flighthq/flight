@@ -46,7 +46,7 @@ document.body.appendChild(canvas);
 const view = createGlApplicationRenderView(applicationWindow, canvas, {
   render: {
     backgroundColor: 0x101522ff,
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+    contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   },
   target: {
     colorSpace: 'srgb',

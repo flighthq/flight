@@ -38,9 +38,10 @@ const CLIP_X = SHAPE_X;
 const CLIP_Y = SHAPE_Y;
 const CLIP_SIZE = 160;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA, low byte = alpha)

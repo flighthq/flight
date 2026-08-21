@@ -40,9 +40,10 @@ const BLUE_Y = 120;
 const BLUE_W = 180;
 const BLUE_H = 180;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

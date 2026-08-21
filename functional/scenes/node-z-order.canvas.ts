@@ -27,7 +27,7 @@ const WIDTH = 400;
 const HEIGHT = 300;
 const SIZE = 120;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
   width: WIDTH,

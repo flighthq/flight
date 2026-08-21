@@ -37,9 +37,10 @@ const INNER_DY = 90;
 const COMPOUND_X = OUTER_X + INNER_DX;
 const COMPOUND_Y = OUTER_Y + INNER_DY;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

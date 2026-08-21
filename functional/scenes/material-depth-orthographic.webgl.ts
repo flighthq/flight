@@ -50,7 +50,7 @@ document.body.appendChild(canvas);
 
 export const state = createGlRenderState(canvas, {
   backgroundColor: 0x081020ff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
   pixelRatio,
 });
 registerGlDepthMaterial(state);

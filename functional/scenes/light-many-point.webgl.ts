@@ -63,7 +63,7 @@ document.body.appendChild(canvas);
 export const state = createGlRenderState(canvas, {
   pixelRatio,
   backgroundColor: 0x080a10ff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  contextAttributes: { alpha: false, antialias: false, preserveDrawingBuffer: true },
 });
 registerGlBlinnPhongMaterial(state);
 

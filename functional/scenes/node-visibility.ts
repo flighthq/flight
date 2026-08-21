@@ -39,9 +39,10 @@ const HIDDEN_W = 200;
 const HIDDEN_H = 200;
 const HIDDEN_FILL = 0x00ff00ff; // green
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff, // opaque black (packed RGBA)

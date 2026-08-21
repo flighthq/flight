@@ -5,7 +5,7 @@
     "fingerprintProvenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "8df07ba97b7d2b89a9f4374cfd94e34575c8b75177e1dbbfb68b70aaea370ba0",
+      "sourceHash": "c374263b06c17dbccde0442a7dc42ec95af82b78ed898393d0aa33c679f1100c",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0
@@ -13,7 +13,7 @@
     "sha256Provenance": {
       "computationId": "grid-average-rgb-v1",
       "frames": 1,
-      "sourceHash": "8df07ba97b7d2b89a9f4374cfd94e34575c8b75177e1dbbfb68b70aaea370ba0",
+      "sourceHash": "c374263b06c17dbccde0442a7dc42ec95af82b78ed898393d0aa33c679f1100c",
       "targetKind": null,
       "verifyPublished": true,
       "warmupFrames": 0

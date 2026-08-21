@@ -268,8 +268,25 @@ function getEffectivePolicy(
   renderer: string,
   source: Readonly<SourceAnalysis>,
 ): { policy: 'aa' | 'no-aa' | 'unknown'; reason: string } {
-  if (renderer === 'canvas') return { policy: 'aa', reason: 'Canvas 2D antialiases inherently' };
-  if (renderer === 'dom') return { policy: 'aa', reason: 'DOM rasterization antialiases inherently' };
+  if (renderer === 'canvas' || renderer === 'dom') {
+    const backend = renderer === 'canvas' ? 'Canvas 2D' : 'DOM rasterization';
+    // ★ "ANTIALIASES INHERENTLY" IS A FACT ABOUT THE BACKEND, NOT ABOUT THE PICTURE. Canvas and DOM have
+    // no AA switch, so this reported `aa` for every such cell unconditionally — and then flagged nine
+    // scenes that draw nothing but axis-aligned filled rectangles, where there is no diagonal for the
+    // rasterizer to soften and the rendered result carries no antialiasing at all. Measured on those
+    // nine: four at 0.00% soft-edge pixels and the rest under 1%, which is tile boundaries rather than AA.
+    //
+    // Nine permanent false lines in a report-only census is worse than none: it is the column a reader
+    // consults to find real drift, and noise trains them to skim it. So the question is asked of the
+    // GEOMETRY, per the user's rule — a square is fine, a stroke or text is not.
+    //
+    // Fail-safe toward `aa`: ANY antialiasing-capable primitive returns `aa`, and `no-aa` needs both the
+    // absence of all of them and the presence of a fill. A scene that grows a curve later recomputes from
+    // source on the next run and starts reporting the mismatch again on its own.
+    return sourceDrawsOnlyAxisAlignedFills(source.source)
+      ? { policy: 'no-aa', reason: `${backend} antialiases, but this scene draws only axis-aligned fills` }
+      : { policy: 'aa', reason: `${backend} antialiases inherently` };
+  }
   if (renderer === 'webgpu') {
     // ★ THIS ANSWER NOW DEPENDS ON THE SOURCE, and saying otherwise was a stale fact reported as a
     // measurement. WebGPU normalised effect-target sampleCount above 1 down to 1 until `7260ece8b`, which
@@ -285,19 +302,22 @@ function getEffectivePolicy(
   }
   if (renderer !== 'webgl') return { policy: 'unknown', reason: `unrecognized backend ${renderer}` };
 
-  // Backend-agnostic sources use createFunctionalTarget, whose GL factory inherits the render-gl
-  // context default (antialias:true). This is an applied default, not a textual guess.
-  if (source.backend === null) {
-    return { policy: 'aa', reason: 'functional WebGL harness applies the antialias:true context default' };
-  }
-
   const sourceFile = ts.createSourceFile(source.file, source.source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const antialiasValues: ts.Expression[] = [];
   const sampleCountValues: ts.Expression[] = [];
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node)) {
       const callName = getCallName(node);
-      if (callName === 'createGlRenderState' || callName === 'createGlApplicationRenderView') {
+      // ★ `createFunctionalTarget` BELONGS HERE AND WAS MISSING, WHICH MADE THE ANSWER UNCONDITIONAL.
+      // The harness forwards `contextAttributes` to its GL factory, so a scene CAN turn context AA off
+      // through it — but this scan only knew the two direct constructors, and a separate early return
+      // declared every backend-agnostic source `aa` without reading it at all. Both together meant the
+      // census reported the harness default as fact for 12 scenes that had explicitly overridden it.
+      if (
+        callName === 'createGlRenderState' ||
+        callName === 'createGlApplicationRenderView' ||
+        callName === 'createFunctionalTarget'
+      ) {
         for (const argument of node.arguments) findNamedProperties(argument, 'antialias', antialiasValues);
       }
       if (
@@ -312,6 +332,8 @@ function getEffectivePolicy(
   };
   visit(sourceFile);
 
+  // The harness applies GL's `antialias: true` default, so silence still means AA — but it is now a
+  // default observed after reading the source, not an answer given instead of reading it.
   let contextAntialias = true;
   for (const value of antialiasValues) {
     if (value.kind === ts.SyntaxKind.FalseKeyword) contextAntialias = false;
@@ -356,6 +378,28 @@ function readMaxEffectTargetSampleCount(
     max = Math.max(max, Number(value.text));
   }
   return max;
+}
+
+/**
+ * Whether a scene's drawing can produce an antialiased edge on a rasterizing backend.
+ *
+ * Canvas and DOM soften diagonals, curves, strokes and glyphs; they have nothing to soften on an
+ * axis-aligned filled rectangle. Enumerated as a DENY list of primitives that can antialias, so an
+ * unrecognised drawing call falls through to `aa` rather than being quietly declared safe.
+ */
+export function sourceDrawsOnlyAxisAlignedFills(source: string): boolean {
+  const antialiasing = [
+    /\brotation\b/,
+    /\brotate[A-Z(]/,
+    /appendShape(Curve|CubicCurve|Circle|Ellipse|RoundRect|Polygon)/,
+    /appendShapeLineStyle/,
+    /appendShapeLineGradientStyle/,
+    /appendShapeMoveTo|appendShapeLineTo/,
+    /createRichText|RichTextKind|BitmapText|TextLabel|createTextLabel/,
+    /drawCircle|arc\(/,
+  ];
+  if (antialiasing.some((pattern) => pattern.test(source))) return false;
+  return /appendShapeRectangle/.test(source);
 }
 
 function parseSourceFileName(file: string): { backend: string | null; scene: string } {

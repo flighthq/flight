@@ -31,9 +31,10 @@ const OVERLAY_W = 180;
 const NORMAL_X = 180;
 const ADD_X = 440;
 
-declareAntialiasingPolicy('aa');
+declareAntialiasingPolicy('no-aa');
 
 const { render, width } = await createFunctionalTarget({
+  contextAttributes: { antialias: false },
   width: WIDTH,
   height: HEIGHT,
   background: 0x000000ff,
