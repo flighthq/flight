@@ -46,7 +46,7 @@ portable TypeScript implementation for evidence from that target.
 | Determinism | exact repeat trace and reversed insertion-order trace | exact equality |
 | Static concave terrain | 17 x 17 accelerated mesh and heightfield, 16 distributed boxes, 900 steps | all finite, supported at y 0.49–0.52, asleep |
 | Terrain seams | transformed/version-invalidated local BVH, manifold reduction, raycast, shapecast, CCD, debug geometry | regression-covered |
-| Performance | `npm run benchmark:physics3d`; 256-contact stack and 256 sparse movers on grid/BVH | all checked-in CPU p95 and heap ceilings pass |
+| Performance | `npm run benchmark:physics3d`; 256-contact stack, 256 sparse movers, and a 256-body 64:1 mixed-scale scene on default/tuned grid and BVH | all checked-in CPU p95, heap, exact indexing-mode, and candidate-pair ceilings pass |
 | Linear CCD | 0.1-wide wall, bullet at 600 units/s over a 1/60 s step | remains on near side |
 | Rotational CCD | long blade crosses a peg only between start/end orientations | deflects and loses angular speed |
 | CCD impact semantics | TOI friction/restitution, pre/post hooks, persistent begin/end identity, pass-through sensor and occluded sensor | regression-covered |

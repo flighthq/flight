@@ -1,4 +1,11 @@
-import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D, SpatialPair } from '@flighthq/types/contract';
+import { setSpatialIndexingGuard } from '@flighthq/spatial/contract';
+import type {
+  CollisionBuiltInShape3D,
+  Physics3DWorld,
+  RigidBody3D,
+  SpatialIndexingNotice,
+  SpatialPair,
+} from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase';
@@ -8,7 +15,12 @@ import {
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
+  removePhysics3DBody,
 } from './world';
+
+afterEach(() => {
+  setSpatialIndexingGuard(null);
+});
 
 function unitBox(): CollisionBuiltInShape3D {
   return { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 };
@@ -31,6 +43,24 @@ function pairs(world: Readonly<Physics3DWorld>): SpatialPair[] {
 }
 
 describe('synchronizePhysics3DBroadphase', () => {
+  it('uses insert, update, and remove without false missing-id lifecycle notices', () => {
+    const notices: SpatialIndexingNotice[] = [];
+    setSpatialIndexingGuard((notice) => notices.push({ ...notice }));
+    const world = createPhysics3DWorld();
+    const body = createRigidBody3D('dynamic');
+
+    addPhysics3DBody(world, body);
+    for (let step = 0; step < 100; step += 1) synchronizePhysics3DBroadphase(world);
+    addPhysics3DCollider(world, body, createPhysics3DCollider(unitBox()));
+    synchronizePhysics3DBroadphase(world);
+    body.colliders.length = 0;
+    synchronizePhysics3DBroadphase(world);
+    synchronizePhysics3DBroadphase(world);
+    removePhysics3DBody(world, body);
+
+    expect(notices.filter((notice) => notice.reason === 'missing-id')).toEqual([]);
+  });
+
   it('publishes a body so an overlapping neighbour becomes a candidate pair', () => {
     const world = createPhysics3DWorld();
     addBoxBody(world, 0, 0, 0);

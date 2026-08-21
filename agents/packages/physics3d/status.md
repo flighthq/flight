@@ -43,18 +43,22 @@ long-horizon stress scenes, and enforced performance/allocation budgets ship.
   and publish persistent contacts in the impact step; sensors do not resolve or run hooks, retain identity
   until an end transition, and do not fire behind an earlier solid impact. The exported envelope writer
   reports the exact angular and furthest-point arc gap when the hard budget binds.
-- **Measured frame and allocation ceilings are checked in.** Both uniform-grid and BVH backends run a
-  256-contact stack and 256 sparse awake movers. Failing gates cover CPU p95, sampled transient bytes, and
-  retained heap per step; wall p50/p95 and machine metadata remain visible for interpretation.
+- **Measured frame, allocation, and spatial-workload ceilings are checked in.** Both uniform-grid and BVH
+  backends run a 256-contact stack and 256 sparse awake movers. A 256-body 64:1 mixed-scale scene also
+  compares the default grid, a tuned grid, and the BVH; exact mode and candidate-pair gates prove the
+  default's 96 overflow bodies and the tuned grid's 3.17x candidate expansion independently of host
+  timing. Failing gates also cover CPU p95, sampled transient bytes, and retained heap per step.
 - **Deliberate costs and custom-loop contracts stay explicit.** Mutable convex hull faces rebuild on
   demand rather than cache a second source; shapecast stops at the first realized hit; the exported
   contact preparer requires `buildPhysics3DSolveIslands` first so sleeping islands avoid a full scan.
 - **Known joint approximations are explicit.** Cone-twist and generic 6-DOF cannot safely swap asymmetric
   frame ends. A 6-DOF combined angular bound projects axis-angle error per frame axis rather than adopting
   an Euler order. Gyroscopic integration is explicit; fast asymmetric spinners should use substeps.
-- **Guards cover all silent omissions.** They report declined steps, missing collision support, and each
-  unresolved joint. Collider geometry/material/filter/derived-kind validation occurs before intake, so a
-  NaN material cannot poison a newly generated contact in the same frame.
+- **Guards cover all silent omissions and broadphase cost fallback.** They report declined steps, missing
+  collision support, each unresolved joint, and bodies routed through spatial overflow. The Physics3D
+  guard reads only its world's backend rather than taking over spatial's process-wide caller-composed
+  guard. Collider geometry/material/filter/derived-kind validation occurs before intake, so a NaN
+  material cannot poison a newly generated contact in the same frame.
 - **Native ownership no longer changes the standard API.** `physics3d-abi` now owns the persistent handle,
   packed command/readback, synchronous hook, and query boundary as a public executable TypeScript contract.
   A future native target conforms there while a standard object-world shadow remains a separate promise.

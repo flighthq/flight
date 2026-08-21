@@ -14,7 +14,10 @@ import {
 } from '@flighthq/physics3d/contract';
 import { stepPhysics3D } from '@flighthq/physics3d/contract';
 import { createBvhSpatialBackend3D, createUniformGridSpatialBackend3D } from '@flighthq/spatial/contract';
-import type { Physics3DWorld } from '@flighthq/types/contract';
+import type { Physics3DWorld, SpatialIndexBackend3D, SpatialIndexingMode, SpatialPair } from '@flighthq/types/contract';
+
+type Physics3DBenchmarkBackend = 'bvh' | 'uniform-grid' | 'uniform-grid-tuned';
+type Physics3DBenchmarkScenario = 'contact-stack' | 'mixed-scale' | 'sparse-moving';
 
 interface AllocationProfileNode {
   selfSize: number;
@@ -33,11 +36,14 @@ interface Physics3DBenchmarkBudget {
 }
 
 interface Physics3DBenchmarkMeasurement {
-  backend: 'bvh' | 'uniform-grid';
-  scenario: 'contact-stack' | 'sparse-moving';
+  backend: Physics3DBenchmarkBackend;
+  backendConfiguration: string;
+  scenario: Physics3DBenchmarkScenario;
   bodies: number;
   contacts: number;
   distribution: string;
+  initialCandidatePairs: number;
+  initialSpatialModes: Record<SpatialIndexingMode, number>;
   p50WallMilliseconds: number;
   p95WallMilliseconds: number;
   p50CpuMilliseconds: number;
@@ -59,6 +65,9 @@ async function main(): Promise<void> {
     for (const scenario of ['contact-stack', 'sparse-moving'] as const) {
       measurements.push(await benchmarkPhysics3DScene(backend, scenario));
     }
+  }
+  for (const backend of ['uniform-grid', 'uniform-grid-tuned', 'bvh'] as const) {
+    measurements.push(await benchmarkPhysics3DScene(backend, 'mixed-scale'));
   }
 
   const report = {
@@ -92,6 +101,7 @@ async function benchmarkPhysics3DScene(
   scenario: Physics3DBenchmarkMeasurement['scenario'],
 ): Promise<Physics3DBenchmarkMeasurement> {
   const world = createPhysics3DBenchmarkWorld(backend, scenario);
+  const initialSpatialProfile = measurePhysics3DSpatialProfile(world);
   const settleSteps = scenario === 'contact-stack' ? STACK_SETTLE_STEPS : SPARSE_WARMUP_STEPS;
   for (let step = 0; step < settleSteps; step += 1) stepPhysics3D(world, TIMESTEP);
   for (let step = 0; step < TIMING_WARMUP_STEPS; step += 1) stepPhysics3D(world, TIMESTEP);
@@ -117,13 +127,18 @@ async function benchmarkPhysics3DScene(
   const p95CpuMilliseconds = percentile(cpuTimes, 0.95);
   return {
     backend,
+    backendConfiguration: describePhysics3DBenchmarkBackend(backend, scenario),
     scenario,
     bodies: world.bodies.length,
     contacts: world.contacts.filter((contact) => contact.touching).length,
     distribution:
       scenario === 'contact-stack'
         ? '8 x 8 footprint, four dynamic box layers over one static floor'
-        : '16 x 4 x 4 dynamic boxes separated by eight world units, no contacts',
+        : scenario === 'sparse-moving'
+          ? '16 x 4 x 4 dynamic boxes separated by eight world units, no contacts'
+          : '256 dynamic boxes on a 25-unit lattice; half-extents 0.5, 1, 2, 4, 8, 16, and 32',
+    initialCandidatePairs: initialSpatialProfile.candidatePairs,
+    initialSpatialModes: initialSpatialProfile.modes,
     p50WallMilliseconds: round(p50WallMilliseconds),
     p95WallMilliseconds: round(p95WallMilliseconds),
     p50CpuMilliseconds: round(p50CpuMilliseconds),
@@ -135,7 +150,8 @@ async function benchmarkPhysics3DScene(
     passed:
       p95CpuMilliseconds <= budget.p95CpuMilliseconds &&
       allocations.sampledPerStep <= budget.sampledAllocationBytesPerStep &&
-      allocations.retainedPerStep <= budget.retainedBytesPerStep,
+      allocations.retainedPerStep <= budget.retainedBytesPerStep &&
+      passesPhysics3DSpatialProfile(backend, scenario, initialSpatialProfile),
   };
 }
 
@@ -143,7 +159,7 @@ function createPhysics3DBenchmarkWorld(
   backend: Physics3DBenchmarkMeasurement['backend'],
   scenario: Physics3DBenchmarkMeasurement['scenario'],
 ): Physics3DWorld {
-  const index = backend === 'uniform-grid' ? createUniformGridSpatialBackend3D(1.5) : createBvhSpatialBackend3D(0.25);
+  const index = createPhysics3DBenchmarkBackend(backend, scenario);
   const world = createPhysics3DWorld(index);
   world.config.allowSleeping = false;
 
@@ -169,6 +185,30 @@ function createPhysics3DBenchmarkWorld(
   }
 
   world.gravityY = 0;
+  if (scenario === 'mixed-scale') {
+    for (let i = 0; i < 256; i += 1) {
+      const body = createRigidBody3D('dynamic');
+      body.x = (i % 16) * 25;
+      body.y = (Math.floor(i / 16) % 4) * 25;
+      body.z = Math.floor(i / 64) * 25;
+      body.velocityX = (i & 1) === 0 ? 0.5 : -0.5;
+      const halfExtent = 0.5 * 2 ** (Math.floor(i / 32) % 7);
+      body.colliders.push(
+        createPhysics3DCollider({
+          kind: 'aabb',
+          minX: -halfExtent,
+          minY: -halfExtent,
+          minZ: -halfExtent,
+          maxX: halfExtent,
+          maxY: halfExtent,
+          maxZ: halfExtent,
+        }),
+      );
+      addPhysics3DBody(world, body);
+    }
+    return world;
+  }
+
   for (let i = 0; i < 256; i += 1) {
     const body = createRigidBody3D('dynamic');
     body.x = (i % 16) * 8;
@@ -179,6 +219,52 @@ function createPhysics3DBenchmarkWorld(
     addPhysics3DBody(world, body);
   }
   return world;
+}
+
+function createPhysics3DBenchmarkBackend(
+  backend: Physics3DBenchmarkBackend,
+  scenario: Physics3DBenchmarkScenario,
+): SpatialIndexBackend3D {
+  if (backend === 'bvh') return createBvhSpatialBackend3D(0.25);
+  if (backend === 'uniform-grid-tuned') return createUniformGridSpatialBackend3D(32);
+  return createUniformGridSpatialBackend3D(scenario === 'mixed-scale' ? 1 : 1.5);
+}
+
+function describePhysics3DBenchmarkBackend(
+  backend: Physics3DBenchmarkBackend,
+  scenario: Physics3DBenchmarkScenario,
+): string {
+  if (backend === 'bvh') return 'margin=0.25';
+  if (backend === 'uniform-grid-tuned') return 'cellSize=32';
+  return `cellSize=${scenario === 'mixed-scale' ? 1 : 1.5}`;
+}
+
+function measurePhysics3DSpatialProfile(world: Readonly<Physics3DWorld>): {
+  candidatePairs: number;
+  modes: Record<SpatialIndexingMode, number>;
+} {
+  const pairs: SpatialPair[] = [];
+  world.index.querySpatialPairs(pairs);
+  const modes: Record<SpatialIndexingMode, number> = { absent: 0, cells: 0, declined: 0, overflow: 0 };
+  for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
+    modes[world.index.explainSpatialIndexing(world.bodies[bodyIndex].index).mode] += 1;
+  }
+  return { candidatePairs: pairs.length, modes };
+}
+
+function passesPhysics3DSpatialProfile(
+  backend: Physics3DBenchmarkBackend,
+  scenario: Physics3DBenchmarkScenario,
+  profile: Readonly<{ candidatePairs: number; modes: Readonly<Record<SpatialIndexingMode, number>> }>,
+): boolean {
+  if (scenario !== 'mixed-scale') return true;
+  if (backend === 'uniform-grid') {
+    return profile.candidatePairs === 484 && profile.modes.cells === 160 && profile.modes.overflow === 96;
+  }
+  if (backend === 'uniform-grid-tuned') {
+    return profile.candidatePairs === 1536 && profile.modes.cells === 256 && profile.modes.overflow === 0;
+  }
+  return profile.candidatePairs === 484 && profile.modes.cells === 256 && profile.modes.overflow === 0;
 }
 
 async function measurePhysics3DAllocations(world: Physics3DWorld): Promise<{
@@ -263,6 +349,11 @@ const PHYSICS3D_BENCHMARK_BUDGETS: Record<Physics3DBenchmarkMeasurement['scenari
     p95CpuMilliseconds: 12,
     sampledAllocationBytesPerStep: 5 * 1024 * 1024,
     retainedBytesPerStep: 4096,
+  },
+  'mixed-scale': {
+    p95CpuMilliseconds: 20,
+    sampledAllocationBytesPerStep: 4 * 1024 * 1024,
+    retainedBytesPerStep: 2048,
   },
   'sparse-moving': {
     p95CpuMilliseconds: 3,

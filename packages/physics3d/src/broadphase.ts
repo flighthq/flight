@@ -1,6 +1,12 @@
 import type { Physics3DWorld, SpatialAabb3D } from '@flighthq/types/contract';
 
 import { updatePhysics3DColliderWorldShape, writePhysics3DColliderBounds } from './colliderTransform';
+import {
+  getPhysics3DBroadphaseBodyIndices,
+  publishPhysics3DBroadphaseBody,
+  withdrawPhysics3DBroadphaseBody,
+} from './physics3DBroadphasePublication';
+import { reportPhysics3DSpatialIndexing } from './physics3DSpatialIndexingGuards';
 
 // Refreshes every collider's world shape and republishes its body's bounds to the broadphase index. The
 // step and the public world queries share this path, so a query observes the body's current authored
@@ -38,6 +44,7 @@ function synchronizePhysics3DBroadphaseWithScratch(
   scratch: Physics3DBroadphaseScratch,
   dt: number,
 ): void {
+  const publishedBodyIndices = getPhysics3DBroadphaseBodyIndices(world);
   for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
     const body = world.bodies[bodyIndex];
     let minX = Infinity;
@@ -69,7 +76,7 @@ function synchronizePhysics3DBroadphaseWithScratch(
       // No collider produced bounds, so there is nothing to index. Withdraw rather than skip: the id may
       // have been indexed on a previous step, and stale bounds would keep returning a body that has since
       // lost its geometry.
-      world.index.removeSpatialObject(body.index);
+      withdrawPhysics3DBroadphaseBody(world, body.index, publishedBodyIndices);
       continue;
     }
     if (dt > 0 && body.type !== 'static' && !body.sleeping) {
@@ -111,7 +118,7 @@ function synchronizePhysics3DBroadphaseWithScratch(
       maxY - minY > MAX_SIMULATED_EXTENT ||
       maxZ - minZ > MAX_SIMULATED_EXTENT
     ) {
-      world.index.removeSpatialObject(body.index);
+      withdrawPhysics3DBroadphaseBody(world, body.index, publishedBodyIndices);
       continue;
     }
     scratch.bodyBounds.minX = minX;
@@ -123,8 +130,9 @@ function synchronizePhysics3DBroadphaseWithScratch(
     scratch.bodyBounds.maxX = paddedUpperBound(maxX);
     scratch.bodyBounds.maxY = paddedUpperBound(maxY);
     scratch.bodyBounds.maxZ = paddedUpperBound(maxZ);
-    world.index.updateSpatialObject(body.index, scratch.bodyBounds);
+    publishPhysics3DBroadphaseBody(world, body.index, scratch.bodyBounds, publishedBodyIndices);
   }
+  reportPhysics3DSpatialIndexing(world);
 }
 
 function paddedUpperBound(value: number): number {
