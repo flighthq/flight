@@ -27,9 +27,9 @@ controls, opt-in guards, exact-repeat determinism, and long-horizon stress scene
 - **Static triangle mesh and heightfield remain unbuilt charter features.** A support function represents
   a convex shape, so concave terrain needs mesh-vs-convex dispatch over an accelerated triangle set; it
   is not one more registry entry. This architectural boundary is still an AAA release blocker.
-- **Resting-stack error is measured.** Twelve unit boxes target a top centre at 11.5 and settle at about
-  11.11 with the default three position iterations; 8 iterations produce 11.388 and 20 produce 11.438.
-  The solver converges and remains bounded, but the product still needs to declare its shipping tolerance.
+- **A numerical envelope is checked in.** The 12-box stack must retain a top centre above 11; fixed
+  100:1 default and 1,000:1 four-substep stacks retain >99% spacing and sleep; 60-second restitution,
+  friction isotropy, joint error, angular convergence, and contact-aware timestep scaling have bounds.
 - **CCD has two guarantees.** Translation always retains collision's analytic convex sweep, even while a
   bullet spins. Rotation samples at a one-degree target under `maxCcdRotationSubsteps`, bisects its first
   overlap, and resolves the manifold with angular effective mass. Linear impacts deliberately use a
@@ -51,9 +51,11 @@ controls, opt-in guards, exact-repeat determinism, and long-horizon stress scene
 
 ## Log
 
+- **2026-08-21** — Numerical qualification fixed iteration-lagged friction, corner-biased curved contacts,
+  and stale substep topology; 668 physics3d and 1,125 cross-package tests pass.
 - **2026-08-21** — AAA hardening: offset-COM integration, joint guards, compound warm-start identity,
   coherent ownership/mutation/removal/cache lifecycle, hydration, rotational CCD, finite body controls,
-  at-point impulses, and pre-intake collider validation; 662 physics3d and 1,118 cross-package tests pass.
+  at-point impulses, and pre-intake collider validation.
 - **2026-08-21** — Compliant limits landed for hinge, slider, cone-twist, and 6-DOF through shared soft-row
   parameters; free-axis NaN propagation found and fixed.
 - **2026-08-21** — Cylinder/cone colliders and shapecast completed every convex seam.
