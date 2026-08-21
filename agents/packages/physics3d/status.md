@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/physics3d'
-updated: 2026-08-20
+updated: 2026-08-21
 by: principal
 ---
 
@@ -23,15 +23,13 @@ its substep loop, and both `explain*` seams are built.
   phase inside this package.
 - **`world.events` is allocated and never written.** Begin/end transitions are read off a persistent
   contact list gaining and losing entries, and the caller owns that list. Fills with contact intake.
-- **The solve islands' CONTACT slices are built and unread.** The step drives bodies and joints from
-  the island workspace; the contact solve is a flat pass over `world.solver.constraints`. Same
-  contacts either way — `preparePhysics3DContactConstraints` skips any pair with no live end — only
-  the ORDER differs, and island-major order is a convergence improvement, not a correctness one.
-  Closing it means partitioning the constraint list by island.
-- **One-sided joint limits are not warm-started.** Limit accumulators live in per-step scratch and
-  start each sub-interval from zero; only equality rows and the point/angular blocks carry across in
-  `impulse0..5`. Uniform across all six kinds, matching `physics2d`. Revisit if a loaded ragdoll
-  visibly sags into its stops.
+- **`preparePhysics3DContactConstraints` now REQUIRES the island workspace.** It iterates the island
+  contact slices rather than `world.contacts`, so a world stepped without `buildPhysics3DSolveIslands`
+  produces no constraints at all. That is what makes a settled world cost no contact scan per
+  sub-interval, and it moved the `enabled`/`sensor` filter upstream into the island builder —
+  `touching` stays prepare's, because it changes without anything the workspace watches changing. The
+  velocity and position passes stay flat over the emitted list: with a fixed iteration count and
+  disconnected islands, per-island loops would be the same work in the same order.
 - **Cone-twist and generic 6-DOF veto `swapEnds`**, so either kind authored with `bodyA > bodyB`
   stays out of canonical order. Exact rather than cautious: a kind may exchange its ends only when
   its own constraint holds the two frames aligned on the axes its parameters are measured against,
@@ -45,13 +43,23 @@ its substep loop, and both `explain*` seams are built.
   geometry and arrive with the narrow phase that produces those shapes.
 - **The gyroscopic term is explicit.** Standard at game timesteps, and why `substeps` is the lever
   for fast spinners. An implicit form is the upgrade if a body turns its own momentum within a step.
-- **No guard module.** The diagnostics inversion is half-built: both `explain*` queries exist, the
-  `enable*Guards` half emitting through `@flighthq/log` does not. The silent sentinel most worth a
-  warning is a joint whose kind has no registered solver.
+- **The guard module covers the declined STEP, not yet the unregistered JOINT.**
+  `enablePhysics3DGuards` installs a seam on `stepPhysics3D`'s silent decline and reports every failing
+  precondition in one message, keyed on the failing set so a frame loop logs once. The other silent
+  sentinel is still unwarned: a joint whose kind has no registered solver is skipped without a word,
+  and `explainPhysics3DJoints` already classifies it as `unregistered-kind`. Closing it means a second
+  seam on the joint pass, not a second module.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
+
+- **2026-08-21** — Solve islands now drive contact constraint building (`solver.ts` iterates the island
+  contact slices, so a settled world costs no per-sub-interval scan and `prepare` requires the
+  workspace); one-sided joint limits warm-start across steps on all four limited kinds via new
+  persisted accumulators on the joint types (`swapEnds` exchanges rather than negates them, because
+  they are magnitudes and the bounds are coordinates); `enablePhysics3DGuards` added over a new
+  `setPhysics3DStepGuard` seam.
 
 - **2026-08-20** — `stepPhysics3D` composed, plus `stepValidation.ts`, `explainPhysics3DStep`,
   `explainPhysics3DJoints`, and `contacts.ts` (the constructors a caller needs, since nothing produces
