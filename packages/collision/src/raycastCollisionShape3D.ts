@@ -1,5 +1,6 @@
 import type { CollisionBuiltInShape3D, CollisionRaycastHit3D } from '@flighthq/types/contract';
 
+import { writeCollisionConvexHullFaces3D } from './convexHull3D';
 import { getCollisionShapeContainsPoint3D } from './pointContainment3D';
 
 export function createCollisionRaycastHit3D(): CollisionRaycastHit3D {
@@ -14,9 +15,9 @@ export function createCollisionRaycastHit3D(): CollisionRaycastHit3D {
 // `raycastCollisionShape2D`: no outward-facing side was crossed, so there is no surface normal to
 // report, and a caller picking with a point inside a solid still gets that solid.
 //
-// A convex HULL is supported only for that inside case. Intersecting a ray with a hull needs its face
-// planes, and a bare point list carries none — the same missing primitive that leaves a hull collider
-// without mass properties. See `computePhysics3DColliderMassData`; one triangulation closes both.
+// A convex hull is clipped against the face planes of a triangulation derived on the spot, so it costs
+// more per call than the four closed-form kinds. A caller raycasting the same hull every frame is paying
+// that build every frame; the closed forms are the cheap path.
 export function raycastCollisionShape3D(
   shape: Readonly<CollisionBuiltInShape3D>,
   originX: number,
@@ -97,9 +98,114 @@ export function raycastCollisionShape3D(
       return raycastBox3D(shape, originX, originY, originZ, directionX, directionY, directionZ, out, maxFraction);
     case 'capsule':
       return raycastCapsule3D(shape, originX, originY, originZ, directionX, directionY, directionZ, out, maxFraction);
+    case 'convex':
+      return raycastConvexHull3D(
+        shape.points,
+        originX,
+        originY,
+        originZ,
+        directionX,
+        directionY,
+        directionZ,
+        out,
+        maxFraction,
+      );
     default:
       return false;
   }
+}
+
+// Ray against a convex hull, by clipping the ray against every face plane of its own triangulation.
+//
+// A convex solid is the intersection of the half-spaces behind its faces, so the entry parameter is the
+// LARGEST of the per-plane entry parameters and the exit is the SMALLEST of the exits — the same slab
+// logic the box uses, generalised from three axis-aligned pairs to one plane per face. The hull misses
+// exactly when entry passes exit.
+//
+// The triangulation is derived here rather than carried on the shape, because `CollisionConvex3D` is a
+// bare point list by design: a stored face set is a second source of truth that can disagree with the
+// points it was built from.
+function raycastConvexHull3D(
+  points: readonly number[],
+  originX: number,
+  originY: number,
+  originZ: number,
+  directionX: number,
+  directionY: number,
+  directionZ: number,
+  out: CollisionRaycastHit3D,
+  maxFraction: number,
+): boolean {
+  const triangleCount = writeCollisionConvexHullFaces3D(points, scratchHullFaces);
+  if (triangleCount === 0) return false;
+
+  let near = 0;
+  let far = maxFraction;
+  let normalX = 0;
+  let normalY = 0;
+  let normalZ = 0;
+  let entered = false;
+
+  for (let f = 0; f < triangleCount; f += 1) {
+    const a = scratchHullFaces[f * 3] * 3;
+    const b = scratchHullFaces[f * 3 + 1] * 3;
+    const c = scratchHullFaces[f * 3 + 2] * 3;
+    const aX = points[a];
+    const aY = points[a + 1];
+    const aZ = points[a + 2];
+    const e1X = points[b] - aX;
+    const e1Y = points[b + 1] - aY;
+    const e1Z = points[b + 2] - aZ;
+    const e2X = points[c] - aX;
+    const e2Y = points[c + 1] - aY;
+    const e2Z = points[c + 2] - aZ;
+    // Outward by construction: the triangulation winds every face away from the interior.
+    const planeX = e1Y * e2Z - e1Z * e2Y;
+    const planeY = e1Z * e2X - e1X * e2Z;
+    const planeZ = e1X * e2Y - e1Y * e2X;
+
+    const denominator = directionX * planeX + directionY * planeY + directionZ * planeZ;
+    const distance = (originX - aX) * planeX + (originY - aY) * planeY + (originZ - aZ) * planeZ;
+
+    if (denominator === 0) {
+      // Parallel to this face. Outside its plane means outside the solid, whatever the other faces say.
+      if (distance > 0) return false;
+      continue;
+    }
+
+    const fraction = -distance / denominator;
+    if (denominator < 0) {
+      // Approaching this face from outside: it is an entry plane.
+      if (fraction > near) {
+        near = fraction;
+        normalX = planeX;
+        normalY = planeY;
+        normalZ = planeZ;
+        entered = true;
+      }
+    } else if (fraction < far) {
+      far = fraction;
+    }
+    if (near > far) return false;
+  }
+
+  if (!entered || near > maxFraction) return false;
+
+  const length = Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
+  if (!(length > 0)) return false;
+  return writeRaycastHit3D(
+    out,
+    originX,
+    originY,
+    originZ,
+    directionX,
+    directionY,
+    directionZ,
+    near,
+    normalX / length,
+    normalY / length,
+    normalZ / length,
+  );
 }
 
 // Ray against an oriented box, by moving the RAY into the box's frame rather than the box into the
@@ -463,6 +569,8 @@ interface SlabHit {
   normalY: number;
   normalZ: number;
 }
+
+const scratchHullFaces: number[] = [];
 
 const scratchSlab: SlabHit = { fraction: 0, normalX: 0, normalY: 0, normalZ: 0 };
 

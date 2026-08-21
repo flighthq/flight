@@ -132,17 +132,28 @@ describe('writePhysics3DDebugGeometry', () => {
     expect(Math.hypot(axis[0].x1 - axis[0].x0, axis[0].y1 - axis[0].y0, axis[0].z1 - axis[0].z0)).toBeCloseTo(4, 9);
   });
 
-  it('draws a hull as its vertices and invents no edges', () => {
-    // A bare point list carries no topology. A wireframe here would be a guess, and a guessed edge draws
-    // a solid the simulation does not have.
+  it('draws a hull as the wireframe of its own triangulation', () => {
     const world = createPhysics3DWorld();
     addBody(world, { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] });
     const out = createPhysics3DDebugGeometry();
 
     writePhysics3DDebugGeometry(world, out, { drawCentersOfMass: false });
 
-    expect(liveSpheres(out).filter((sphere) => sphere.feature === 'collider')).toHaveLength(4);
+    // A tetrahedron triangulates to four faces, three edges each.
+    expect(liveLines(out).filter((line) => line.feature === 'collider')).toHaveLength(12);
+    expect(liveSpheres(out).filter((sphere) => sphere.feature === 'collider')).toHaveLength(0);
+  });
+
+  it('falls back to vertices for a DEGENERATE hull, which has no surface to wire', () => {
+    // Coplanar: there is no solid, so any edge drawn would bound a face the simulation does not have.
+    const world = createPhysics3DWorld();
+    addBody(world, { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0] });
+    const out = createPhysics3DDebugGeometry();
+
+    writePhysics3DDebugGeometry(world, out, { drawCentersOfMass: false });
+
     expect(liveLines(out).filter((line) => line.feature === 'collider')).toHaveLength(0);
+    expect(liveSpheres(out).filter((sphere) => sphere.feature === 'collider')).toHaveLength(4);
   });
 
   it('draws a contact normal from each contact point', () => {

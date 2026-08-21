@@ -1,3 +1,4 @@
+import { writeCollisionConvexHullFaces3D } from '@flighthq/collision/contract';
 import type {
   CollisionBuiltInShape3D,
   Physics3DDebugFeature,
@@ -177,23 +178,49 @@ function writeCollider(
       return;
     }
     case 'convex': {
-      // A bare point list carries no edges, so a hull is drawn as its VERTICES rather than as a
-      // wireframe. Inventing edges would need the same triangulation a hull's mass properties and
-      // raycast are both waiting on, and a guessed edge set is worse than none: it draws a solid the
-      // simulation does not have.
+      // The hull's own triangulation, derived rather than stored: `CollisionConvex3D` carries no edges,
+      // and drawing a guessed edge set would show a solid the simulation does not have. Each triangle
+      // contributes its three edges; shared edges are drawn twice, which costs a few lines and avoids a
+      // dedup pass in a debug path.
       const points = shape.points;
-      for (let i = 0; i + 2 < points.length; i += 3) {
-        writeBodyPoint(body, points[i], points[i + 1], points[i + 2], scratchPoint);
-        writeSphere(
-          out,
-          'collider',
-          body.index,
-          -1,
-          scratchPoint[0],
-          scratchPoint[1],
-          scratchPoint[2],
-          HULL_VERTEX_RADIUS,
-        );
+      const triangleCount = writeCollisionConvexHullFaces3D(points, scratchHullFaces);
+      if (triangleCount === 0) {
+        // Degenerate — coplanar or fewer than four points — so there is no surface. Fall back to the
+        // vertices, which are the only thing that is still true about it.
+        for (let i = 0; i + 2 < points.length; i += 3) {
+          writeBodyPoint(body, points[i], points[i + 1], points[i + 2], scratchPoint);
+          writeSphere(
+            out,
+            'collider',
+            body.index,
+            -1,
+            scratchPoint[0],
+            scratchPoint[1],
+            scratchPoint[2],
+            HULL_VERTEX_RADIUS,
+          );
+        }
+        return;
+      }
+      for (let f = 0; f < triangleCount; f += 1) {
+        for (let e = 0; e < 3; e += 1) {
+          const from = scratchHullFaces[f * 3 + e] * 3;
+          const to = scratchHullFaces[f * 3 + ((e + 1) % 3)] * 3;
+          writeBodyPoint(body, points[from], points[from + 1], points[from + 2], scratchAnchorA);
+          writeBodyPoint(body, points[to], points[to + 1], points[to + 2], scratchAnchorB);
+          writeLine(
+            out,
+            'collider',
+            body.index,
+            -1,
+            scratchAnchorA[0],
+            scratchAnchorA[1],
+            scratchAnchorA[2],
+            scratchAnchorB[0],
+            scratchAnchorB[1],
+            scratchAnchorB[2],
+          );
+        }
       }
     }
   }
@@ -356,6 +383,8 @@ const scratchAnchorA = [0, 0, 0];
 const scratchAnchorB = [0, 0, 0];
 
 const scratchCenter = [0, 0, 0];
+
+const scratchHullFaces: number[] = [];
 
 const scratchCorners = [
   [0, 0, 0],

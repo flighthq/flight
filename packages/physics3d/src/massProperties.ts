@@ -1,3 +1,4 @@
+import { writeCollisionConvexHullFaces3D } from '@flighthq/collision/contract';
 import type { Physics3DCollider, Physics3DMassData, RigidBody3D } from '@flighthq/types/contract';
 
 import {
@@ -14,9 +15,8 @@ import {
 // Mass properties for 3D primitives, and the combination of several into one body's.
 //
 // Mass is derived from geometry and density rather than set directly, so a body's inertia can never
-// disagree with its shape. The primitives here are the ones whose inertia has a closed form; a convex
-// hull's and a triangle mesh's are volume integrals over a triangulation, which a bare point list does
-// not carry — see `computePhysics3DColliderMassData` for what a hull collider does instead.
+// disagree with its shape. Sphere, box, and capsule have closed forms; a convex hull is integrated over
+// the triangulation `@flighthq/collision` derives from its bare point list.
 //
 // Every tensor produced here is about the primitive's OWN centre, in the frame the primitive is
 // described in. `combinePhysics3DMassData` is what shifts them onto a shared centre.
@@ -137,11 +137,8 @@ export function computePhysics3DCapsuleMassData(
 // is the frame the collider's own `local` shape is described in, so an offset or rotated collider
 // contributes a tensor that is already offset and rotated.
 //
-// A convex hull carries NO mass. Its inertia is a volume integral over a triangulation this package
-// cannot derive from a bare point list, so a hull collider currently behaves as immovable scenery:
-// zero inverse mass, colliding normally, moved by nothing. That is deliberately inert rather than
-// plausibly wrong — a hull given its bounding box's tensor would fall and spin at rates nothing in the
-// solver could flag.
+// A convex hull is integrated over its own triangulation, which `@flighthq/collision` derives from the
+// bare point list. Every other kind has a closed form.
 export function computePhysics3DColliderMassData(collider: Readonly<Physics3DCollider>, out: Physics3DMassData): void {
   const shape = collider.local;
   const density = collider.material.density;
@@ -187,18 +184,116 @@ export function computePhysics3DColliderMassData(collider: Readonly<Physics3DCol
       out.centerZ = (shape.z0 + shape.z1) / 2;
       return;
     }
+    case 'convex':
+      computePhysics3DConvexHullMassData(shape.points, density, out);
+      return;
     default:
-      out.mass = 0;
-      out.inertiaXX = 0;
-      out.inertiaYY = 0;
-      out.inertiaZZ = 0;
-      out.inertiaXY = 0;
-      out.inertiaXZ = 0;
-      out.inertiaYZ = 0;
-      out.centerX = 0;
-      out.centerY = 0;
-      out.centerZ = 0;
+      zeroPhysics3DMassData(out);
   }
+}
+
+// Mass data for the convex hull of a point list, by integrating over the hull's own triangulation.
+//
+// EACH SURFACE TRIANGLE FORMS A TETRAHEDRON WITH THE ORIGIN, and the solid is the signed sum of them —
+// the divergence theorem, so triangles facing away contribute negative volume and cancel the parts that
+// are not inside. That is why the triangulation's outward winding is load-bearing here and not merely
+// tidy: one inverted face subtracts a region that should have been added, and the result is a plausible
+// smaller mass rather than an error.
+//
+// The origin is used as the apex rather than the centroid because it needs no first pass to find, and
+// the cancellation makes the choice irrelevant to the answer. The tensor comes out about the ORIGIN and
+// is shifted onto the centre of mass at the end.
+export function computePhysics3DConvexHullMassData(
+  points: readonly number[],
+  density: number,
+  out: Physics3DMassData,
+): void {
+  zeroPhysics3DMassData(out);
+  const triangleCount = writeCollisionConvexHullFaces3D(points, scratchHullFaces);
+  if (triangleCount === 0) return;
+
+  let volume = 0;
+  let momentX = 0;
+  let momentY = 0;
+  let momentZ = 0;
+  for (let i = 0; i < 6; i += 1) scratchTensorA[i] = 0;
+
+  for (let f = 0; f < triangleCount; f += 1) {
+    const a = scratchHullFaces[f * 3] * 3;
+    const b = scratchHullFaces[f * 3 + 1] * 3;
+    const c = scratchHullFaces[f * 3 + 2] * 3;
+    const aX = points[a];
+    const aY = points[a + 1];
+    const aZ = points[a + 2];
+    const bX = points[b];
+    const bY = points[b + 1];
+    const bZ = points[b + 2];
+    const cX = points[c];
+    const cY = points[c + 1];
+    const cZ = points[c + 2];
+
+    // Six times the tetrahedron's signed volume.
+    const determinant = aX * (bY * cZ - bZ * cY) + aY * (bZ * cX - bX * cZ) + aZ * (bX * cY - bY * cX);
+    const tetrahedronVolume = determinant / 6;
+    volume += tetrahedronVolume;
+    momentX += tetrahedronVolume * ((aX + bX + cX) / 4);
+    momentY += tetrahedronVolume * ((aY + bY + cY) / 4);
+    momentZ += tetrahedronVolume * ((aZ + bZ + cZ) / 4);
+
+    // The second moments of one tetrahedron with a vertex at the origin. `determinant / 120` scales the
+    // canonical unit tetrahedron's moments onto this one.
+    const scale = determinant / 120;
+    const sumX = aX + bX + cX;
+    const sumY = aY + bY + cY;
+    const sumZ = aZ + bZ + cZ;
+    scratchTensorA[TENSOR_XX] += scale * (aX * aX + bX * bX + cX * cX + sumX * sumX);
+    scratchTensorA[TENSOR_YY] += scale * (aY * aY + bY * bY + cY * cY + sumY * sumY);
+    scratchTensorA[TENSOR_ZZ] += scale * (aZ * aZ + bZ * bZ + cZ * cZ + sumZ * sumZ);
+    scratchTensorA[TENSOR_XY] += scale * (aX * aY + bX * bY + cX * cY + sumX * sumY);
+    scratchTensorA[TENSOR_XZ] += scale * (aX * aZ + bX * bZ + cX * cZ + sumX * sumZ);
+    scratchTensorA[TENSOR_YZ] += scale * (aY * aZ + bY * bZ + cY * cZ + sumY * sumZ);
+  }
+
+  if (!(volume > 0)) return;
+
+  const mass = volume * density;
+  const centerX = momentX / volume;
+  const centerY = momentY / volume;
+  const centerZ = momentZ / volume;
+
+  // The accumulated products are volume-weighted covariances; density scales them, and the inertia
+  // tensor is the covariance's complement — a diagonal term is the sum of the OTHER two, and an
+  // off-diagonal term is the negated product.
+  const xx = scratchTensorA[TENSOR_XX] * density;
+  const yy = scratchTensorA[TENSOR_YY] * density;
+  const zz = scratchTensorA[TENSOR_ZZ] * density;
+  scratchTensorB[TENSOR_XX] = yy + zz;
+  scratchTensorB[TENSOR_YY] = xx + zz;
+  scratchTensorB[TENSOR_ZZ] = xx + yy;
+  scratchTensorB[TENSOR_XY] = -scratchTensorA[TENSOR_XY] * density;
+  scratchTensorB[TENSOR_XZ] = -scratchTensorA[TENSOR_XZ] * density;
+  scratchTensorB[TENSOR_YZ] = -scratchTensorA[TENSOR_YZ] * density;
+
+  // About the origin so far. Shift onto the centre of mass, which is where every consumer expects it.
+  //
+  // The mass is NEGATED rather than the offset, and that is the whole of the correction rather than a
+  // trick: `translateSymmetricTensor` moves a tensor AWAY from its centre, so its diagonal term is
+  // `mass * (d^2 + d^2)` and negating the offsets changes nothing at all — the offsets are squared.
+  // Only a negative mass runs the parallel-axis theorem backwards. Passing `-centerX` instead reads as
+  // correct and silently doubles the term, which a CENTRED hull cannot reveal because its offset is
+  // zero; it takes an offset one to show at all.
+  translateSymmetricTensor(scratchTensorB, -mass, centerX, centerY, centerZ, scratchTensorB);
+
+  out.mass = mass;
+  out.centerX = centerX;
+  out.centerY = centerY;
+  out.centerZ = centerZ;
+  out.inertiaXX = scratchTensorB[TENSOR_XX];
+  out.inertiaYY = scratchTensorB[TENSOR_YY];
+  out.inertiaZZ = scratchTensorB[TENSOR_ZZ];
+  out.inertiaXY = scratchTensorB[TENSOR_XY];
+  out.inertiaXZ = scratchTensorB[TENSOR_XZ];
+  out.inertiaYZ = scratchTensorB[TENSOR_YZ];
 }
 
 // Mass data for a solid sphere centred on the origin.
@@ -396,5 +491,7 @@ const physics3DMassDataPool: Physics3DMassData[] = [];
 // Module scratch for the two tensors a combine or an inversion needs at once. Reused rather than
 // allocated because these run per body whenever mass properties change, and a rebuild of a large
 // world's bodies would otherwise churn two arrays per primitive.
+const scratchHullFaces: number[] = [];
+
 const scratchTensorA = [0, 0, 0, 0, 0, 0];
 const scratchTensorB = [0, 0, 0, 0, 0, 0];

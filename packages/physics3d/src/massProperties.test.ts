@@ -1,14 +1,18 @@
-import type { RigidBody3D } from '@flighthq/types/contract';
+import type { CollisionBuiltInShape3D, Physics3DCollider, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
   combinePhysics3DMassData,
   computePhysics3DBoxMassData,
+  computePhysics3DColliderMassData,
+  computePhysics3DConvexHullMassData,
   computePhysics3DCapsuleMassData,
   computePhysics3DSphereMassData,
   createPhysics3DMassData,
+  updateRigidBody3DMassData,
   setRigidBody3DMassData,
 } from './massProperties';
+import { addPhysics3DBody, createPhysics3DCollider, createPhysics3DWorld, createRigidBody3D } from './world';
 
 describe('combinePhysics3DMassData', () => {
   it('starts from the zero identity, adopting the addend outright', () => {
@@ -150,6 +154,159 @@ describe('computePhysics3DCapsuleMassData', () => {
   });
 });
 
+describe('computePhysics3DColliderMassData', () => {
+  function colliderOf(local: CollisionBuiltInShape3D, density = 1): Physics3DCollider {
+    return createPhysics3DCollider(local, { density, friction: 0.2, restitution: 0 });
+  }
+
+  it('places the centroid at an offset collider rather than at the body origin', () => {
+    const out = createPhysics3DMassData();
+    computePhysics3DColliderMassData(colliderOf({ kind: 'sphere', x: 3, y: -2, z: 1, radius: 1 }), out);
+    expect(out.centerX).toBe(3);
+    expect(out.centerY).toBe(-2);
+    expect(out.centerZ).toBe(1);
+  });
+
+  it('gives an aabb the same tensor as the equivalent box', () => {
+    const collider = createPhysics3DMassData();
+    const box = createPhysics3DMassData();
+    computePhysics3DColliderMassData(
+      colliderOf({ kind: 'aabb', minX: -1, minY: -2, minZ: -3, maxX: 1, maxY: 2, maxZ: 3 }),
+      collider,
+    );
+    computePhysics3DBoxMassData(1, 2, 3, 1, box);
+    expect(collider.mass).toBeCloseTo(box.mass, 9);
+    expect(collider.inertiaXX).toBeCloseTo(box.inertiaXX, 9);
+  });
+
+  it('makes a LOCALLY ROTATED box non-diagonal in the body frame', () => {
+    // The silent-failure case the tensor representation exists for: skipping this rotation leaves the
+    // mass and the diagonal both plausible and only the off-axis swing wrong.
+    const out = createPhysics3DMassData();
+    computePhysics3DColliderMassData(
+      colliderOf({
+        kind: 'box',
+        x: 0,
+        y: 0,
+        z: 0,
+        halfX: 3,
+        halfY: 1,
+        halfZ: 1,
+        rotationX: 0,
+        rotationY: 0,
+        rotationZ: Math.sin(Math.PI / 8),
+        rotationW: Math.cos(Math.PI / 8),
+      }),
+      out,
+    );
+    expect(Math.abs(out.inertiaXY)).toBeGreaterThan(0);
+  });
+
+  it('realigns a capsule that is not on the Y axis', () => {
+    // The closed form is written for a Y-axis capsule. One lying along X must end up with its SMALL
+    // moment on x, not on y.
+    const out = createPhysics3DMassData();
+    computePhysics3DColliderMassData(
+      colliderOf({ kind: 'capsule', x0: -2, y0: 0, z0: 0, x1: 2, y1: 0, z1: 0, radius: 0.5 }),
+      out,
+    );
+    expect(out.inertiaXX).toBeLessThan(out.inertiaYY);
+    expect(out.inertiaYY).toBeCloseTo(out.inertiaZZ, 9);
+  });
+
+  it('integrates a convex hull rather than zeroing it', () => {
+    const out = createPhysics3DMassData();
+    computePhysics3DColliderMassData(colliderOf({ kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] }), out);
+    expect(out.mass).toBeCloseTo(1 / 6, 9);
+  });
+});
+
+describe('computePhysics3DConvexHullMassData', () => {
+  function boxPoints(halfX: number, halfY: number, halfZ: number, offsetX = 0): number[] {
+    const points: number[] = [];
+    for (const x of [-halfX, halfX]) {
+      for (const y of [-halfY, halfY]) {
+        for (const z of [-halfZ, halfZ]) points.push(x + offsetX, y, z);
+      }
+    }
+    return points;
+  }
+
+  it('reproduces the closed-form box tensor exactly for a box-shaped hull', () => {
+    // The strongest check available: two completely independent routes to the same six numbers. The
+    // closed form is algebra on the extents; the hull integrates over a triangulation it derived itself.
+    const hull = createPhysics3DMassData();
+    const box = createPhysics3DMassData();
+    computePhysics3DConvexHullMassData(boxPoints(1.5, 0.75, 2.25), 3, hull);
+    computePhysics3DBoxMassData(1.5, 0.75, 2.25, 3, box);
+
+    expect(hull.mass).toBeCloseTo(box.mass, 9);
+    expect(hull.inertiaXX).toBeCloseTo(box.inertiaXX, 9);
+    expect(hull.inertiaYY).toBeCloseTo(box.inertiaYY, 9);
+    expect(hull.inertiaZZ).toBeCloseTo(box.inertiaZZ, 9);
+    expect(hull.inertiaXY).toBeCloseTo(0, 9);
+    expect(hull.inertiaXZ).toBeCloseTo(0, 9);
+    expect(hull.inertiaYZ).toBeCloseTo(0, 9);
+  });
+
+  it('reports the tensor about the CENTRE OF MASS for an offset hull', () => {
+    // The case a centred hull cannot test, and the one that caught the parallel-axis shift being applied
+    // in the wrong direction: the tensor came out with twice the offset term rather than none of it,
+    // which is invisible at an offset of zero.
+    const hull = createPhysics3DMassData();
+    const reference = createPhysics3DMassData();
+    computePhysics3DConvexHullMassData(boxPoints(1, 1, 1, 5), 1, hull);
+    computePhysics3DBoxMassData(1, 1, 1, 1, reference);
+
+    expect(hull.centerX).toBeCloseTo(5, 9);
+    expect(hull.centerY).toBeCloseTo(0, 9);
+    // A cube's tensor about its own centre does not depend on where that centre is.
+    expect(hull.inertiaXX).toBeCloseTo(reference.inertiaXX, 9);
+    expect(hull.inertiaYY).toBeCloseTo(reference.inertiaYY, 9);
+    expect(hull.inertiaZZ).toBeCloseTo(reference.inertiaZZ, 9);
+  });
+
+  it('approaches the closed-form sphere from below as the sample gets denser', () => {
+    // An inscribed hull is strictly smaller than the sphere it samples, so this is a bound with a
+    // direction rather than a tolerance — a formula that were merely close could sit on either side.
+    const hull = createPhysics3DMassData();
+    const sphere = createPhysics3DMassData();
+    const points: number[] = [];
+    for (let i = 0; i < 400; i += 1) {
+      const z = 1 - (2 * i) / 399;
+      const radius = Math.sqrt(Math.max(0, 1 - z * z));
+      const theta = i * 2.399963;
+      points.push(radius * Math.cos(theta), radius * Math.sin(theta), z);
+    }
+    computePhysics3DConvexHullMassData(points, 1, hull);
+    computePhysics3DSphereMassData(1, 1, sphere);
+
+    expect(hull.mass).toBeLessThan(sphere.mass);
+    expect(hull.mass).toBeGreaterThan(sphere.mass * 0.98);
+    expect(hull.inertiaXX).toBeLessThan(sphere.inertiaXX);
+    expect(hull.inertiaXX).toBeGreaterThan(sphere.inertiaXX * 0.96);
+  });
+
+  it('scales linearly with density', () => {
+    const single = createPhysics3DMassData();
+    const triple = createPhysics3DMassData();
+    computePhysics3DConvexHullMassData(boxPoints(1, 1, 1), 1, single);
+    computePhysics3DConvexHullMassData(boxPoints(1, 1, 1), 3, triple);
+
+    expect(triple.mass).toBeCloseTo(single.mass * 3, 9);
+    expect(triple.inertiaXX).toBeCloseTo(single.inertiaXX * 3, 9);
+  });
+
+  it('gives a degenerate hull no mass rather than a plausible wrong one', () => {
+    const out = createPhysics3DMassData();
+    // Coplanar, so there is no solid.
+    computePhysics3DConvexHullMassData([0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0], 1, out);
+    expect(out.mass).toBe(0);
+    computePhysics3DConvexHullMassData([], 1, out);
+    expect(out.mass).toBe(0);
+  });
+});
+
 describe('computePhysics3DSphereMassData', () => {
   it('derives mass from volume and density', () => {
     const out = createPhysics3DMassData();
@@ -165,6 +322,64 @@ describe('computePhysics3DSphereMassData', () => {
     expect(out.inertiaZZ).toBeCloseTo(out.inertiaXX, 12);
   });
 });
+
+function testBody(type: RigidBody3D['type']): RigidBody3D {
+  return {
+    index: 0,
+    type,
+    x: 0,
+    y: 0,
+    z: 0,
+    orientationX: 0,
+    orientationY: 0,
+    orientationZ: 0,
+    orientationW: 1,
+    velocityX: 0,
+    velocityY: 0,
+    velocityZ: 0,
+    angularVelocityX: 0,
+    angularVelocityY: 0,
+    angularVelocityZ: 0,
+    forceX: 0,
+    forceY: 0,
+    forceZ: 0,
+    torqueX: 0,
+    torqueY: 0,
+    torqueZ: 0,
+    mass: 0,
+    inverseMass: 0,
+    inertiaXX: 0,
+    inertiaYY: 0,
+    inertiaZZ: 0,
+    inertiaXY: 0,
+    inertiaXZ: 0,
+    inertiaYZ: 0,
+    inverseInertiaXX: 0,
+    inverseInertiaYY: 0,
+    inverseInertiaZZ: 0,
+    inverseInertiaXY: 0,
+    inverseInertiaXZ: 0,
+    inverseInertiaYZ: 0,
+    inverseInertiaWorldXX: 0,
+    inverseInertiaWorldYY: 0,
+    inverseInertiaWorldZZ: 0,
+    inverseInertiaWorldXY: 0,
+    inverseInertiaWorldXZ: 0,
+    inverseInertiaWorldYZ: 0,
+    centerX: 0,
+    centerY: 0,
+    centerZ: 0,
+    linearDamping: 0,
+    angularDamping: 0,
+    gravityScale: 1,
+    fixedRotation: false,
+    bullet: false,
+    sleeping: false,
+    sleepEnabled: true,
+    sleepTimer: 0,
+    colliders: [],
+  };
+}
 
 describe('createPhysics3DMassData', () => {
   it('is the additive identity — all zero', () => {
@@ -245,60 +460,63 @@ describe('setRigidBody3DMassData', () => {
   });
 });
 
-function testBody(type: RigidBody3D['type']): RigidBody3D {
-  return {
-    index: 0,
-    type,
-    x: 0,
-    y: 0,
-    z: 0,
-    orientationX: 0,
-    orientationY: 0,
-    orientationZ: 0,
-    orientationW: 1,
-    velocityX: 0,
-    velocityY: 0,
-    velocityZ: 0,
-    angularVelocityX: 0,
-    angularVelocityY: 0,
-    angularVelocityZ: 0,
-    forceX: 0,
-    forceY: 0,
-    forceZ: 0,
-    torqueX: 0,
-    torqueY: 0,
-    torqueZ: 0,
-    mass: 0,
-    inverseMass: 0,
-    inertiaXX: 0,
-    inertiaYY: 0,
-    inertiaZZ: 0,
-    inertiaXY: 0,
-    inertiaXZ: 0,
-    inertiaYZ: 0,
-    inverseInertiaXX: 0,
-    inverseInertiaYY: 0,
-    inverseInertiaZZ: 0,
-    inverseInertiaXY: 0,
-    inverseInertiaXZ: 0,
-    inverseInertiaYZ: 0,
-    inverseInertiaWorldXX: 0,
-    inverseInertiaWorldYY: 0,
-    inverseInertiaWorldZZ: 0,
-    inverseInertiaWorldXY: 0,
-    inverseInertiaWorldXZ: 0,
-    inverseInertiaWorldYZ: 0,
-    centerX: 0,
-    centerY: 0,
-    centerZ: 0,
-    linearDamping: 0,
-    angularDamping: 0,
-    gravityScale: 1,
-    fixedRotation: false,
-    bullet: false,
-    sleeping: false,
-    sleepEnabled: true,
-    sleepTimer: 0,
-    colliders: [],
-  };
-}
+describe('updateRigidBody3DMassData', () => {
+  it('derives a body mass from its colliders', () => {
+    const world = createPhysics3DWorld();
+    const body = createRigidBody3D('dynamic');
+    addPhysics3DBody(world, body);
+    body.colliders.push(
+      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+    );
+
+    updateRigidBody3DMassData(body);
+
+    expect(body.mass).toBeCloseTo(1, 9);
+    expect(body.inverseMass).toBeCloseTo(1, 9);
+  });
+
+  it('balances a body between two colliders', () => {
+    const world = createPhysics3DWorld();
+    const body = createRigidBody3D('dynamic');
+    addPhysics3DBody(world, body);
+    for (const offset of [-2, 2]) {
+      body.colliders.push(
+        createPhysics3DCollider({
+          kind: 'aabb',
+          minX: offset - 0.5,
+          minY: -0.5,
+          minZ: -0.5,
+          maxX: offset + 0.5,
+          maxY: 0.5,
+          maxZ: 0.5,
+        }),
+      );
+    }
+
+    updateRigidBody3DMassData(body);
+
+    expect(body.mass).toBeCloseTo(2, 9);
+    expect(body.centerX).toBeCloseTo(0, 9);
+    // Two masses held 2 apart swing far harder about y and z than one box does.
+    expect(body.inertiaYY).toBeGreaterThan(body.inertiaXX);
+  });
+
+  it('leaves a body with no colliders massless', () => {
+    const body = createRigidBody3D('dynamic');
+    updateRigidBody3DMassData(body);
+    expect(body.mass).toBe(0);
+    expect(body.inverseMass).toBe(0);
+  });
+
+  it('gives a static body zero inverse mass while keeping its forward mass', () => {
+    const body = createRigidBody3D('static');
+    body.colliders.push(
+      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+    );
+
+    updateRigidBody3DMassData(body);
+
+    expect(body.mass).toBeCloseTo(1, 9);
+    expect(body.inverseMass).toBe(0);
+  });
+});

@@ -5,7 +5,7 @@ import {
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildPhysics3DContacts } from './contactIntake';
+import { buildPhysics3DContacts, setPhysics3DContactIntakeGuard } from './contactIntake';
 import { stepPhysics3D } from './step';
 import {
   addPhysics3DBody,
@@ -244,6 +244,32 @@ describe('buildPhysics3DContacts', () => {
     let sum = 0;
     for (let i = 0; i < contact.pointCount; i += 1) sum += contact.points[i].rBX;
     expect(sum / contact.pointCount).toBeCloseTo(0, 6);
+  });
+});
+
+describe('setPhysics3DContactIntakeGuard', () => {
+  it('is consulted on every rebuild, and only while installed', () => {
+    const seen: number[] = [];
+    setPhysics3DContactIntakeGuard((world) => seen.push(world.bodies.length));
+    try {
+      const world = createPhysics3DWorld();
+      addFloor(world);
+      addCrate(world, 0, 3);
+
+      buildPhysics3DContacts(world);
+      expect(seen).toEqual([2]);
+
+      // Unlike the step guard, this one fires on a HEALTHY rebuild too: the failure it reports — no
+      // registered support, so nothing can ever touch — is invisible in the output of a successful call.
+      buildPhysics3DContacts(world);
+      expect(seen).toEqual([2, 2]);
+
+      setPhysics3DContactIntakeGuard(null);
+      buildPhysics3DContacts(world);
+      expect(seen).toEqual([2, 2]);
+    } finally {
+      setPhysics3DContactIntakeGuard(null);
+    }
   });
 });
 
