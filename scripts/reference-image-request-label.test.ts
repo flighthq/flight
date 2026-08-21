@@ -190,15 +190,16 @@ describe('reference-image request presentation workflow', () => {
     expect(dispatch.with.script).toContain('const requestPath = `reference-image-requests/${requestId}.json`;');
   });
 
-  it('sends one exact v2 batch and keeps the selected-off v1 rollback executable', async () => {
-    // Pre-fix regression control: selecting the v1 branch failed this test with
-    // `Expected "dispatches" => "1" / Received "dispatches" => "2"`.
+  it('sends one exact v2 batch with no legacy per-candidate dispatch path', async () => {
     const workflow = parse(readFileSync(join(ROOT, '.github', 'workflows', 'reference-image-bridge.yml'), 'utf8')) as {
       jobs: { dispatch: { steps: Array<Record<string, unknown>> } };
     };
     const script = (
       workflow.jobs.dispatch.steps.find((step) => step['id'] === 'dispatch') as { with: { script: string } }
     ).with.script;
+    expect(script).not.toContain('useBatchDispatch');
+    expect(script).not.toContain('legacyCandidates');
+    expect(script).not.toContain("event_type: 'flight-reference-image-candidate',");
     const firstId = '00000000-0000-4000-8000-000000000001';
     const secondId = '00000000-0000-4000-8000-000000000002';
     const requests = new Map([
@@ -295,51 +296,6 @@ describe('reference-image request presentation workflow', () => {
         repo: 'flight-reference-images',
       },
     ]);
-
-    dispatches.length = 0;
-    outputs.clear();
-    failures.length = 0;
-    const legacyScript = script.replace('const useBatchDispatch = true;', 'const useBatchDispatch = false;');
-    expect(legacyScript, 'test must actually select the temporary v1 rollback branch').not.toBe(script);
-    const executeLegacy = new Function(
-      'github',
-      'context',
-      'core',
-      'require',
-      `return (async () => {\n${legacyScript}\n})();`,
-    ) as (...args: unknown[]) => Promise<void>;
-    await executeLegacy(
-      github,
-      { payload: { workflow_run: { head_sha: 'a'.repeat(40), id: 456 } }, repo: { owner: 'flighthq', repo: 'flight' } },
-      core,
-      createRequire(import.meta.url),
-    );
-
-    expect(failures).toEqual([]);
-    expect(outputs).toEqual(
-      new Map([
-        ['dispatches', '2'],
-        ['sent', '2'],
-      ]),
-    );
-    expect(dispatches).toHaveLength(2);
-    expect(
-      dispatches.map((value) => (value as { event_type: string }).event_type),
-      'manual rollback keeps sending only the already-exercised v1 event',
-    ).toEqual(['flight-reference-image-candidate', 'flight-reference-image-candidate']);
-    for (const value of dispatches) {
-      const dispatch = value as { client_payload: Record<string, unknown> };
-      expect(Object.keys(dispatch.client_payload).sort()).toEqual([
-        'artifactDigest',
-        'artifactExpiresAt',
-        'artifactId',
-        'flightCommit',
-        'repository',
-        'requestPath',
-        'requestSha256',
-        'workflowRunId',
-      ]);
-    }
   });
 
   // The same rule as the enumeration, at the second site: an unreadable NAME is a cosmetic problem and

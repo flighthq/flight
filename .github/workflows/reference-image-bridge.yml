@@ -146,7 +146,6 @@ jobs:
             }
 
             const batchCandidates = [];
-            const legacyCandidates = [];
             const requestPaths = new Set();
             const artifactIds = new Set();
             const unnamed = [];
@@ -206,60 +205,32 @@ jobs:
                 artifactId: artifact.id,
                 artifactDigest: artifact.digest,
               });
-              legacyCandidates.push({ artifact, requestPath, requestSha256 });
             }
 
-            // ★ TEMPORARY CUTOVER SEAM. Exactly one branch runs. Keep the already-exercised v1 sender
-            // available for a manual rollback until a real v2 repository_dispatch starts intake-batch.yml
-            // in flight-reference-images; then delete the false branch in a separate commit. This is not
-            // a downstream compatibility guarantee — their v1 handler merely makes rollback our code change.
-            const useBatchDispatch = true;
             batchCandidates.sort((left, right) => left.requestPath.localeCompare(right.requestPath));
-            if (useBatchDispatch) {
-              if (batchCandidates.length > 256) {
-                core.setFailed(`batch has ${batchCandidates.length} candidates; schema maximum is 256`);
-                return;
-              }
-              if (batchCandidates.length > 0) {
-                await github.rest.repos.createDispatchEvent({
-                  owner: 'flighthq',
-                  repo: 'flight-reference-images',
-                  // ★ MUST MATCH THE ORACLE BATCH INTAKE TRIGGER EXACTLY. GitHub accepts an unmatched
-                  // repository_dispatch with a 204 and creates no run and no warning — a silent success on
-                  // both sides, which cost a full round when this said `flight-candidate`.
-                  event_type: 'flight-reference-image-candidate-batch',
-                  client_payload: {
-                    schemaVersion: 2,
-                    repository,
-                    flightCommit: run.head_sha,
-                    workflowRunId: run.id,
-                    candidates: batchCandidates,
-                  },
-                });
-                core.info(`dispatched one batch containing ${batchCandidates.length} candidate(s)`);
-              }
-              core.setOutput('dispatches', batchCandidates.length > 0 ? '1' : '0');
-            } else {
-              for (const { artifact, requestPath, requestSha256 } of legacyCandidates) {
-                await github.rest.repos.createDispatchEvent({
-                  owner: 'flighthq',
-                  repo: 'flight-reference-images',
-                  event_type: 'flight-reference-image-candidate',
-                  client_payload: {
-                    repository,
-                    flightCommit: run.head_sha,
-                    requestPath,
-                    requestSha256,
-                    workflowRunId: String(run.id),
-                    artifactId: String(artifact.id),
-                    artifactDigest: artifact.digest ?? '',
-                    artifactExpiresAt: artifact.expires_at ?? '',
-                  },
-                });
-                core.info(`dispatched ${requestPath} with artifact ${artifact.id} (${artifact.name})`);
-              }
-              core.setOutput('dispatches', String(legacyCandidates.length));
+            if (batchCandidates.length > 256) {
+              core.setFailed(`batch has ${batchCandidates.length} candidates; schema maximum is 256`);
+              return;
             }
+            if (batchCandidates.length > 0) {
+              await github.rest.repos.createDispatchEvent({
+                owner: 'flighthq',
+                repo: 'flight-reference-images',
+                // ★ MUST MATCH THE ORACLE BATCH INTAKE TRIGGER EXACTLY. GitHub accepts an unmatched
+                // repository_dispatch with a 204 and creates no run and no warning — a silent success on
+                // both sides, which cost a full round when this said `flight-candidate`.
+                event_type: 'flight-reference-image-candidate-batch',
+                client_payload: {
+                  schemaVersion: 2,
+                  repository,
+                  flightCommit: run.head_sha,
+                  workflowRunId: run.id,
+                  candidates: batchCandidates,
+                },
+              });
+              core.info(`dispatched one batch containing ${batchCandidates.length} candidate(s)`);
+            }
+            core.setOutput('dispatches', batchCandidates.length > 0 ? '1' : '0');
             core.setOutput('sent', String(batchCandidates.length));
             if (unnamed.length > 0) {
               core.setFailed(`candidate artifact(s) with no request UUID were skipped: ${unnamed.join(', ')}`);
