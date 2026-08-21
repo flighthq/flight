@@ -179,6 +179,11 @@ function isPhysics3DJointValid(joint: Readonly<Physics3DJoint>): boolean {
 }
 
 function isRigidBody3DStateValid(body: Readonly<RigidBody3D>): boolean {
+  const orientationLengthSquared =
+    body.orientationX * body.orientationX +
+    body.orientationY * body.orientationY +
+    body.orientationZ * body.orientationZ +
+    body.orientationW * body.orientationW;
   if (
     !Number.isSafeInteger(body.index) ||
     body.index < 0 ||
@@ -197,7 +202,9 @@ function isRigidBody3DStateValid(body: Readonly<RigidBody3D>): boolean {
     !Number.isFinite(body.mass) ||
     body.mass < 0 ||
     !Number.isFinite(body.inverseMass) ||
-    body.inverseMass < 0
+    body.inverseMass < 0 ||
+    !Number.isFinite(orientationLengthSquared) ||
+    Math.abs(orientationLengthSquared - 1) > PHYSICS3D_QUATERNION_LENGTH_TOLERANCE
   ) {
     return false;
   }
@@ -281,3 +288,4 @@ const rigidBody3DFiniteKeys = [
 // Joint fields whose infinite value is meaningful rather than corrupt: a threshold that is never reached
 // and a bound that never stops anything.
 const UNBOUNDED_JOINT_FIELDS = new Set(['breakForce', 'breakTorque', 'maxLength']);
+const PHYSICS3D_QUATERNION_LENGTH_TOLERANCE = 1e-6;
