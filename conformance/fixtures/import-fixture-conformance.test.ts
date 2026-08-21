@@ -65,7 +65,7 @@ describe('runImportFixtureConformance', () => {
   });
 
   it('records an unavailable Flight implementation as a zero implementation score rather than failing', async () => {
-    const directory = makeTree('model-fixtures', 1);
+    const directory = makeTree('model-fixtures', ['source.fbx']);
     write(directory, 'source.fbx', 'fixture');
     const args = parseImportFixtureConformanceArguments(['--pack', 'model-fixtures', '--adapter', 'fbx']);
 
@@ -96,7 +96,7 @@ describe('runImportFixtureConformance', () => {
   });
 
   it('records a verified tree with no matching family as a not-measured score', async () => {
-    const directory = makeTree('future-fixtures', 1);
+    const directory = makeTree('future-fixtures', ['source.future']);
     write(directory, 'source.future', 'fixture');
     const args = parseImportFixtureConformanceArguments(['--pack', 'future-fixtures']);
 
@@ -125,7 +125,7 @@ describe('runImportFixtureConformance', () => {
   });
 
   it('rejects a tree whose live fixture count differs from its verified stamp', async () => {
-    const directory = makeTree('model-fixtures', 2);
+    const directory = makeTree('model-fixtures', ['source.fbx', 'missing.fbx']);
     write(directory, 'source.fbx', 'fixture');
     const args = parseImportFixtureConformanceArguments(['--pack', 'model-fixtures']);
 
@@ -133,7 +133,7 @@ describe('runImportFixtureConformance', () => {
   });
 });
 
-function makeTree(pack: string, verifiedFixtureFiles: number): string {
+function makeTree(pack: string, verifiedFixturePaths: readonly string[]): string {
   fixtureCache = mkdtempSync(join(tmpdir(), 'flight-fixture-conformance-present-'));
   process.env['FLIGHT_FIXTURES_DIR'] = fixtureCache;
   const directory = join(fixtureCache, 'extracted', 'full', pack);
@@ -144,7 +144,8 @@ function makeTree(pack: string, verifiedFixtureFiles: number): string {
         metadataFiles: 0,
         pack,
         sha256: 'a'.repeat(64),
-        verifiedFixtureFiles,
+        verifiedFixtureFiles: verifiedFixturePaths.length,
+        verifiedFixturePaths,
       },
     ],
     tag: FIXTURE_RELEASE_TAG,

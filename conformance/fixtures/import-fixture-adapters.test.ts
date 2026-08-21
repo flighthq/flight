@@ -102,7 +102,7 @@ function input(directory: string, reference: string, references: readonly string
 function tree(id: string, directory = workspace): ConformanceFixtureTree {
   return {
     directory,
-    packs: [{ id, verifiedFixtureFiles: 1 }],
+    packs: [{ id, verifiedFixtureFiles: 1, verifiedFixturePaths: ['fixture.asset'] }],
     release: 'fixture-release',
     tree: id,
     variant: 'full',

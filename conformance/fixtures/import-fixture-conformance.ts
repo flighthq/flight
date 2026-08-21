@@ -128,7 +128,7 @@ export async function runImportFixtureConformance(
         candidateRuns: census.eligibleCandidateRuns,
         fixtureFiles: census.fixtureFiles,
         matchedFixtureFiles: census.matchedFixtureFiles,
-        packs: tree.packs,
+        packs: tree.packs.map(({ id, verifiedFixtureFiles }) => ({ id, verifiedFixtureFiles })),
         path: relative(REPOSITORY_ROOT, tree.directory).replaceAll('\\', '/'),
         selectedCandidateRuns: census.selectedCandidateRuns,
         stampedFixtureFiles: census.stampedFixtureFiles,

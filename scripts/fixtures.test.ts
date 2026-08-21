@@ -17,6 +17,7 @@ import {
   hashFixtureFile,
   parseFixtureArguments,
   readFixtureTreeStamp,
+  realizeFixturePlan,
   resolveFixtureCacheDirectory,
   verifyFixtureArchive,
   verifyFixtureExtraction,
@@ -144,6 +145,54 @@ describe('readFixtureTreeStamp', () => {
     // The tag is deliberately pin-independent: absence of variant must reject even an otherwise arbitrary stamp.
     writeFileSync(join(treeDirectory, FIXTURE_STAMP_FILE), JSON.stringify({ packs: [], tag: '0.1.0' }), 'utf8');
     expect(readFixtureTreeStamp(treeDirectory)).toBeNull();
+  });
+
+  it('treats a count-only legacy stamp as stale so cached archives are re-extracted', () => {
+    const treeDirectory = join(workspace, 'tree');
+    mkdirSync(treeDirectory, { recursive: true });
+    writeFileSync(
+      join(treeDirectory, FIXTURE_STAMP_FILE),
+      JSON.stringify({
+        packs: [
+          {
+            file: 'legacy.tar.gz',
+            metadataFiles: 0,
+            pack: 'legacy-fixtures',
+            sha256: 'a'.repeat(64),
+            verifiedFixtureFiles: 1,
+          },
+        ],
+        tag: FIXTURE_RELEASE_TAG,
+        variant: 'full',
+      }),
+      'utf8',
+    );
+
+    expect(readFixtureTreeStamp(treeDirectory)).toBeNull();
+  });
+
+  it('rejects path arrays that do not agree with their count or repeat a path', () => {
+    const treeDirectory = join(workspace, 'tree');
+    mkdirSync(treeDirectory, { recursive: true });
+    const base = {
+      file: 'invalid.tar.gz',
+      metadataFiles: 0,
+      pack: 'invalid-fixtures',
+      sha256: 'a'.repeat(64),
+      verifiedFixtureFiles: 2,
+    };
+    for (const verifiedFixturePaths of [['one.asset'], ['one.asset', 'one.asset']]) {
+      writeFileSync(
+        join(treeDirectory, FIXTURE_STAMP_FILE),
+        JSON.stringify({
+          packs: [{ ...base, verifiedFixturePaths }],
+          tag: FIXTURE_RELEASE_TAG,
+          variant: 'full',
+        }),
+        'utf8',
+      );
+      expect(readFixtureTreeStamp(treeDirectory)).toBeNull();
+    }
   });
 });
 
@@ -304,6 +353,7 @@ describe('writeFixtureTreeStamp', () => {
           pack: 'b-fixtures',
           sha256: 'b'.repeat(64),
           verifiedFixtureFiles: 2,
+          verifiedFixturePaths: ['b.asset', 'a.asset'],
         },
       ],
       tag: '0.1.0',
@@ -317,6 +367,7 @@ describe('writeFixtureTreeStamp', () => {
           pack: 'b-fixtures',
           sha256: 'b'.repeat(64),
           verifiedFixtureFiles: 2,
+          verifiedFixturePaths: ['a.asset', 'b.asset'],
         },
       ],
       tag: '0.1.0',
@@ -334,6 +385,7 @@ describe('writeFixtureTreeStamp', () => {
         pack: 'z-fixtures',
         sha256: 'c'.repeat(64),
         verifiedFixtureFiles: 1,
+        verifiedFixturePaths: ['z.asset'],
       },
       {
         file: 'a-full-0.1.0.tar.gz',
@@ -341,12 +393,77 @@ describe('writeFixtureTreeStamp', () => {
         pack: 'a-fixtures',
         sha256: 'a'.repeat(64),
         verifiedFixtureFiles: 1,
+        verifiedFixturePaths: ['a.asset'],
       },
     ];
     writeFixtureTreeStamp(treeDirectory, { packs, tag: '0.1.0', variant: 'full' });
     expect(readFixtureTreeStamp(treeDirectory)?.packs.map((pack) => pack.pack)).toEqual(['a-fixtures', 'z-fixtures']);
   });
 });
+
+describe('realizeFixturePlan cache migration', () => {
+  it('re-extracts a legacy shared tree from cached archives and stamps every member path set', async () => {
+    process.env['FLIGHT_FIXTURES_DIR'] = workspace;
+    const alphaArchive = buildTarball('alpha', {
+      'alpha/a.asset': 'a',
+      'manifest.json': JSON.stringify({ files: [{ path: 'alpha/a.asset' }] }),
+    });
+    const betaArchive = buildTarball('beta', {
+      'beta/b.asset': 'b',
+      'manifest.json': JSON.stringify({ files: [{ path: 'beta/b.asset' }] }),
+    });
+    const alphaHash = sha256Of(alphaArchive);
+    const betaHash = sha256Of(betaArchive);
+    mkdirSync(join(workspace, 'packs'), { recursive: true });
+    writeFileSync(getFixtureArchivePath(workspace, alphaHash), readFileSync(alphaArchive));
+    writeFileSync(getFixtureArchivePath(workspace, betaHash), readFileSync(betaArchive));
+
+    const treeDirectory = getFixtureTreePath(workspace, 'full', 'shared-tree');
+    mkdirSync(treeDirectory, { recursive: true });
+    writeFileSync(
+      join(treeDirectory, FIXTURE_STAMP_FILE),
+      JSON.stringify({
+        packs: [
+          legacyPack('alpha-fixtures', 'alpha.tar.gz', alphaHash),
+          legacyPack('beta-fixtures', 'beta.tar.gz', betaHash),
+        ],
+        tag: FIXTURE_RELEASE_TAG,
+        variant: 'full',
+      }),
+      'utf8',
+    );
+
+    await realizeFixturePlan({
+      entries: [
+        plannedPack('alpha-fixtures', 'alpha.tar.gz', alphaHash),
+        plannedPack('beta-fixtures', 'beta.tar.gz', betaHash),
+      ],
+      errors: [],
+      totalBytes: 2,
+      totalFiles: 2,
+      variant: 'full',
+    });
+
+    expect(readFixtureTreeStamp(treeDirectory)?.packs).toMatchObject([
+      { pack: 'alpha-fixtures', verifiedFixtureFiles: 1, verifiedFixturePaths: ['alpha/a.asset'] },
+      { pack: 'beta-fixtures', verifiedFixtureFiles: 1, verifiedFixturePaths: ['beta/b.asset'] },
+    ]);
+    expect(readFileSync(join(treeDirectory, 'alpha', 'a.asset'), 'utf8')).toBe('a');
+    expect(readFileSync(join(treeDirectory, 'beta', 'b.asset'), 'utf8')).toBe('b');
+  });
+});
+
+function legacyPack(pack: string, file: string, sha256: string) {
+  return { file, metadataFiles: 1, pack, sha256, verifiedFixtureFiles: 1 };
+}
+
+function plannedPack(pack: string, file: string, sha256: string) {
+  return {
+    entry: { file, files: 1, mergeGroup: 'shared-tree', pack, sha256, size: 1, variant: 'full' },
+    requested: true,
+    tree: 'shared-tree',
+  };
+}
 
 describe('isFixturePackMetadataEntry nested metadata', () => {
   // Synthetic path strings throughout: no pack is fetched, no file is opened, and nothing here depends

@@ -14,6 +14,7 @@ import {
 export interface ConformanceFixturePack {
   id: string;
   verifiedFixtureFiles: number;
+  verifiedFixturePaths: readonly string[];
 }
 
 export interface ConformanceFixtureTree {
@@ -235,7 +236,11 @@ export function discoverConformanceFixtureTrees(
       trees.push({
         directory,
         packs: stamp.packs
-          .map((pack) => ({ id: pack.pack, verifiedFixtureFiles: pack.verifiedFixtureFiles }))
+          .map((pack) => ({
+            id: pack.pack,
+            verifiedFixtureFiles: pack.verifiedFixtureFiles,
+            verifiedFixturePaths: pack.verifiedFixturePaths,
+          }))
           .sort((left, right) => left.id.localeCompare(right.id)),
         release: stamp.tag,
         tree: treeEntry.name,
@@ -250,19 +255,22 @@ export function getConformanceFixtureTreeLabel(tree: Readonly<ConformanceFixture
   return `${tree.variant}/${basename(tree.directory)}`;
 }
 
-// ★ THE PACK'S MANIFEST DECIDES WHAT IS A FIXTURE, not a rule applied to a directory walk. Classifying
-// the walk required this reader and each pack's author to reach the same verdict on every file, and the
-// first pack filing a per-project licence beside its assets showed they need not: the walk counted 1,144
-// where the manifest declared 1,126, and the stamp comparison below rejected a tree that was perfectly
-// intact. Reading the declared set removes the disagreement instead of adjudicating it — the same change
-// made in `scripts/fixtures.ts` for extraction, applied here to enumeration.
+// ★ THE PACK MANIFESTS DECIDE WHAT IS A FIXTURE, not a rule applied to a directory walk. Each manifest's
+// verified path set is persisted in the tree stamp at extraction time: merge-group members share a root,
+// so the last archive overwrites manifest.json and that live file cannot represent the whole tree.
+// Classifying the walk independently required this reader and each pack's author to agree on every file;
+// the stamped union removes that disagreement without losing the earlier members of a shared tree.
 //
 // The walk is still what finds files, because it is what proves they are ON DISK; the manifest only says
-// which of them count. A tree with no manifest keeps the old classifier, so any pack shape not seen here
-// behaves as before.
-export function listConformanceFixtureReferences(treeDirectory: string): string[] {
+// which of them count. The optional fallback remains for direct callers that have no discovered stamp.
+export function listConformanceFixtureReferences(
+  treeDirectory: string,
+  stampedFixturePaths?: readonly string[],
+): string[] {
   let declared: ReadonlySet<string> | null = null;
-  if (existsSync(join(treeDirectory, 'manifest.json'))) {
+  if (stampedFixturePaths !== undefined) {
+    declared = new Set(stampedFixturePaths);
+  } else if (existsSync(join(treeDirectory, 'manifest.json'))) {
     declared = new Set(readFixturePackManifestPaths(treeDirectory));
   }
   const references: string[] = [];
@@ -331,8 +339,9 @@ export function createConformanceFixturePlan(
   const treeReferences = new Map<Readonly<ConformanceFixtureTree>, readonly string[]>();
   const matchedReferences = new Map<Readonly<ConformanceFixtureTree>, Set<string>>();
   for (const tree of trees) {
-    const references = listConformanceFixtureReferences(tree.directory);
-    const stampedFixtureFiles = tree.packs.reduce((total, pack) => total + pack.verifiedFixtureFiles, 0);
+    const stampedFixturePaths = [...new Set(tree.packs.flatMap((pack) => pack.verifiedFixturePaths))].sort();
+    const references = listConformanceFixtureReferences(tree.directory, stampedFixturePaths);
+    const stampedFixtureFiles = stampedFixturePaths.length;
     if (references.length !== stampedFixtureFiles) {
       throw new Error(
         `Fixture tree ${getConformanceFixtureTreeLabel(tree)} no longer matches its verified stamp: expected ${stampedFixtureFiles} fixture files, found ${references.length}. Reacquire with npm run fixtures -- ${tree.packs.map((pack) => pack.id).join(' ')} --variant ${tree.variant}`,
@@ -368,7 +377,7 @@ export function createConformanceFixturePlan(
       fixtureFiles: treeReferences.get(tree)!.length,
       matchedFixtureFiles: matchedReferences.get(tree)!.size,
       selectedCandidateRuns: candidates.filter((candidate) => candidate.input.tree === tree).length,
-      stampedFixtureFiles: tree.packs.reduce((total, pack) => total + pack.verifiedFixtureFiles, 0),
+      stampedFixtureFiles: new Set(tree.packs.flatMap((pack) => pack.verifiedFixturePaths)).size,
       tree: tree.tree,
       variant: tree.variant,
     })),
