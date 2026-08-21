@@ -112,7 +112,7 @@ export async function runImportFixtureConformance(
   return {
     fixtureRelease: FIXTURE_RELEASE_TAG,
     results,
-    schemaVersion: 4,
+    schemaVersion: 5,
     score,
     selection: {
       adapters: adapters.map((adapter) => adapter.id),
@@ -142,7 +142,7 @@ export async function runImportFixtureConformance(
 export interface FixtureImportConformanceReport {
   fixtureRelease: string;
   results: readonly Readonly<ConformanceFixtureResult>[];
-  schemaVersion: 4;
+  schemaVersion: 5;
   score: Readonly<ConformanceFixtureScore>;
   selection: {
     adapters: readonly string[];
@@ -217,7 +217,8 @@ function formatReport(report: Readonly<FixtureImportConformanceReport>, output: 
     `Features tested: ${score.features.testedFeatures}; observed ${score.features.observedFeatures}; declared ${score.features.declaredFeatures}`,
     `Feature checks: passed ${score.features.checks.passed}, failed ${score.features.checks.failed}, not-run ${score.features.checks['not-run']}`,
     `Supporting importer evidence: accepted among attempted files ${formatFractionScore(score.files.acceptedOfAttempted)}, selected runs ${formatFractionScore(score.selectionCoverage)}, implementation ${formatFractionScore(score.implementationCoverage)}, execution ${formatFractionScore(score.executionCoverage)}, diagnostic-clean import ${formatFractionScore(score.acceptedImport)}`,
-    `Outcome populations: imported ${score.outcomes.imported}, degraded ${score.outcomes.degraded}, unsupported ${score.outcomes.unsupported}, rejected ${score.outcomes.rejected}, threw ${score.outcomes.threw}, not-run ${score.outcomes['not-run']}`,
+    `Intentional choices: ${score.intentionalChoices.total} choice-bearing; ${score.intentionalChoices.exclusive} otherwise clean; ${score.intentionalChoices.mixed} also carrying a primary finding`,
+    `Outcome populations: imported ${score.outcomes.imported}, intentional-choice ${score.outcomes['intentional-choice']}, degraded ${score.outcomes.degraded}, unsupported ${score.outcomes.unsupported}, rejected ${score.outcomes.rejected}, threw ${score.outcomes.threw}, not-run ${score.outcomes['not-run']}`,
   ];
   for (const feature of score.features.rows.filter((candidate) => candidate.state !== 'conforming').slice(0, 20)) {
     lines.push(

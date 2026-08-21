@@ -17,6 +17,8 @@ The generated, gitignored report leads with three questions:
 
 Selection, implementation, execution, accepted-import, and diagnostic populations remain supporting evidence. Accepted import does not establish semantic correctness and therefore never creates a feature outcome. A format adapter must explicitly declare a feature and emit `passed`, `failed`, or `not-run` evidence from its own probe/oracle. Until that is wired, the honest feature score is not measured rather than inferred from parser silence.
 
+Diagnostic outcome precedence and every reviewed exact kind are recorded in [`diagnostic-kind-dispositions.md`](diagnostic-kind-dispositions.md). Only its ten explicitly approved choice kinds can produce an otherwise-clean `intentional-choice` outcome; a reviewed choice remains an orthogonal facet when a stronger primary finding is present. Unknown input-derived Skeleton2D kinds and every other `Skip` remain ordinary unsupported findings. `acceptedImport` counts only diagnostic-clean `imported` results.
+
 ## Wiring a fixture family
 
 Every declared source family has one entry in `createImportFixtureAdapters`. Families without a Flight importer use an `unavailableAdapter` or `unavailablePackAdapter` entry, so their fixtures already become scored `not-run` cases. To wire support:
