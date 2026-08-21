@@ -68,3 +68,14 @@ export {
 export { testCollisionSupport3D, testCollisionSupportOverlap3D } from './gjk3D';
 export { clearCollisionManifold3D, createCollisionManifold3D } from './manifold3D';
 export { testCollision3D } from './testCollision3D';
+export { collideContactManifold3D } from './collideContactManifold3D';
+export {
+  getCollisionFaceQuery3D,
+  queryCollisionAabbFace3D,
+  queryCollisionBoxFace3D,
+  queryCollisionCapsuleFace3D,
+  queryCollisionConvexFace3D,
+  registerBuiltInCollisionFaceQueries3D,
+  registerCollisionFaceQuery3D,
+} from './collisionFace3D';
+export { clearCollisionContactManifold3D, createCollisionContactManifold3D } from './contactManifold3D';

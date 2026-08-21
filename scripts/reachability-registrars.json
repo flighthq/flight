@@ -23,6 +23,10 @@
     },
     {
       "packageName": "collision",
+      "registrar": "registerBuiltInCollisionFaceQueries3D"
+    },
+    {
+      "packageName": "collision",
       "registrar": "registerBuiltInCollisionPairTests2D"
     },
     {
@@ -32,6 +36,10 @@
     {
       "packageName": "collision",
       "registrar": "registerBuiltInCollisionSupports3D"
+    },
+    {
+      "packageName": "collision",
+      "registrar": "registerCollisionFaceQuery3D"
     },
     {
       "packageName": "collision",

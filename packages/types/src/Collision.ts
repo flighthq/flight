@@ -415,3 +415,31 @@ export interface CollisionContactManifold3D {
   pointCount: number;
   points: CollisionContactPoint3D[];
 }
+
+// The most contact points a 3D convex pair can produce. Four, where the 2D twin caps at two: in the
+// plane a convex face-face contact is a segment with two ends, and in space it is a POLYGON clipped
+// against a polygon. Four is what rests a box flat on a floor — one per corner — which is the case the
+// contact lane exists for, and clipping is capped there rather than at the clip's true maximum because
+// a solver gains nothing from a fifth point on a coplanar face and pays an iteration for it.
+export const MAX_COLLISION_CONTACT_POINTS_3D = 4;
+
+// Writes the face of `shape` most aligned with a direction, as a flat `[x0,y0,z0,...]` polygon, and
+// returns how many vertices it wrote.
+//
+// THIS IS THE SEAM A SUPPORT FUNCTION CANNOT FILL, and the reason the generic core is a floor rather
+// than the whole package. GJK and EPA reach a shape only through "furthest point in a direction",
+// which yields one point and one normal — enough to know a pair touches, and never enough to rest a
+// box on a floor, because a resting box needs the four corners of a face and a support function hides
+// face topology by construction.
+//
+// Returning 0 means the shape has no face along that direction and is not a coding error: a sphere is
+// curved everywhere and touches at a point, which the contact layer handles by falling back to the
+// single deepest point rather than by refusing the pair. A count of 2 is an edge — a capsule seen from
+// the side — and clips exactly like a polygon with two vertices.
+export type CollisionFaceQuery3D = (
+  shape: Readonly<CollisionShape3D>,
+  dirX: number,
+  dirY: number,
+  dirZ: number,
+  out: number[],
+) => number;
