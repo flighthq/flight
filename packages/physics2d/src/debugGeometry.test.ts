@@ -43,6 +43,41 @@ describe('createPhysics2DDebugGeometry', () => {
 });
 
 describe('writePhysics2DDebugGeometry', () => {
+  it('draws a capsule as two end discs and the two lines tangent to them', () => {
+    // Its actual silhouette. Two circles alone would leave the straight sides missing, and a single
+    // line through the axis would draw a shape the collider does not have.
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 0, 0);
+    body.colliders.push(createPhysics2DCollider({ kind: 'capsule', x0: -2, y0: 0, x1: 2, y1: 0, radius: 1 }, STONE));
+    addPhysics2DBody(world, body);
+    const out = createPhysics2DDebugGeometry();
+
+    writePhysics2DDebugGeometry(world, out, ONLY_COLLIDERS);
+
+    expect(out.circleCount).toBe(2);
+    expect(out.lineCount).toBe(2);
+    expect(out.circles.slice(0, 2).map((circle) => [circle.x, circle.y, circle.radius])).toEqual([
+      [-2, 0, 1],
+      [2, 0, 1],
+    ]);
+    // The sides sit one radius either side of the axis, which is what makes them tangent to both discs.
+    const sides = out.lines.slice(0, 2).map((line) => line.y0);
+    expect(sides.slice().sort((a, b) => a - b)).toEqual([-1, 1]);
+  });
+
+  it('draws only the two discs for a zero-length capsule, which has no sides', () => {
+    const world = createPhysics2DWorld(0, 0);
+    const body = createRigidBody2D('dynamic', 3, 4);
+    body.colliders.push(createPhysics2DCollider({ kind: 'capsule', x0: 0, y0: 0, x1: 0, y1: 0, radius: 0.5 }, STONE));
+    addPhysics2DBody(world, body);
+    const out = createPhysics2DDebugGeometry();
+
+    writePhysics2DDebugGeometry(world, out, ONLY_COLLIDERS);
+
+    expect(out.circleCount).toBe(2);
+    expect(out.lineCount).toBe(0);
+  });
+
   it('extracts circle, box, and polygon collider outlines in world space', () => {
     const world = createPhysics2DWorld(0, 0);
     const circle = createRigidBody2D('dynamic', 2, 3);

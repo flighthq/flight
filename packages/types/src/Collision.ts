@@ -27,7 +27,15 @@
 // name disjoint sets — `'circle'` is not a 3D kind and `'sphere'` is not a 2D one — and the support
 // registries they key are separate for the same reason: a 2D support function takes a 2-vector
 // direction and a 3D one takes a 3-vector, so they could not share a registry even by accident.
-export type CollisionShapeKind2D = 'circle' | 'aabb' | 'obb' | 'polygon' | 'segment' | 'point' | (string & {});
+export type CollisionShapeKind2D =
+  | 'circle'
+  | 'aabb'
+  | 'obb'
+  | 'capsule'
+  | 'polygon'
+  | 'segment'
+  | 'point'
+  | (string & {});
 
 // A circle collider: center (`x`,`y`) and `radius`.
 export interface CollisionCircle2D {
@@ -55,6 +63,28 @@ export interface CollisionObb2D {
   rotation: number;
 }
 
+// A capsule collider: every point within `radius` of the segment from (`x0`,`y0`) to (`x1`,`y1`). A
+// stadium — two half-discs joined by a rectangle — and the shape a 2D character controller is usually
+// built from, because its rounded ends do not catch on the seams between floor tiles the way a box's
+// corners do.
+//
+// The segment is stored in the same space as the shape, exactly like `CollisionSegment2D` and unlike
+// `CollisionObb2D`: there is no separate centre and rotation, because two endpoints already carry both
+// and carrying them twice invites the two to disagree. A body transforms a capsule by transforming its
+// two endpoints, and `radius` is unchanged by rotation.
+//
+// A ZERO-LENGTH capsule is a circle and is valid, which is deliberate: it is what a capsule degenerates
+// to under a scale that collapses its axis, and answering that with a circle is more useful than
+// answering it with an error. A zero or negative `radius` is not valid — that would be a bare segment,
+// which is a different collider with different rules.
+export interface CollisionCapsule2D {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  radius: number;
+}
+
 // A convex polygon collider. `points` is a flat `[x0,y0,x1,y1,...]` list of at least three vertices.
 // The polygon is assumed **convex** and simple; concave input produces undefined manifolds. Winding
 // (CW or CCW) does not matter — the tests are winding-agnostic and orient the manifold by centroid.
@@ -77,13 +107,14 @@ export interface CollisionPoint2D {
   y: number;
 }
 
-// The closed union over the six built-in colliders, discriminated by `kind`. This is what the queries
+// The closed union over the seven built-in colliders, discriminated by `kind`. This is what the queries
 // with NO registry behind them take — containment, raycast, sweep, contact clipping — because a vendor
 // kind has nothing to answer them with, and a compile error says so better than a silent `false`.
 export type CollisionBuiltInShape2D =
   | (CollisionCircle2D & { kind: 'circle' })
   | (CollisionAabb2D & { kind: 'aabb' })
   | (CollisionObb2D & { kind: 'obb' })
+  | (CollisionCapsule2D & { kind: 'capsule' })
   | (CollisionPolygon2D & { kind: 'polygon' })
   | (CollisionSegment2D & { kind: 'segment' })
   | (CollisionPoint2D & { kind: 'point' });

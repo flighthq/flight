@@ -77,6 +77,17 @@ export function getCollisionShapeValidationStatus2D(shape: Readonly<CollisionSha
         shape.halfH > 0
         ? null
         : 'degenerate-shape';
+    case 'capsule':
+      // A zero-LENGTH capsule is a circle and is valid; a zero RADIUS would be a bare segment, which is
+      // a different collider answering different queries.
+      return Number.isFinite(shape.x0) &&
+        Number.isFinite(shape.y0) &&
+        Number.isFinite(shape.x1) &&
+        Number.isFinite(shape.y1) &&
+        Number.isFinite(shape.radius) &&
+        shape.radius > 0
+        ? null
+        : 'degenerate-shape';
     case 'polygon':
       return getCollisionPolygonValidationStatus2D(shape.points);
     case 'segment':

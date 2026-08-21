@@ -829,6 +829,16 @@ export interface Physics2DShapeCastResult {
   normalY: number;
 }
 
+// Which collider kinds in a world produce no contacts, because the 2D contact dispatcher has no arm for
+// them. A body carrying one of these falls through everything with nothing failing.
+//
+// The list is of KINDS rather than of colliders: a level with four hundred capsules is one mistake, and
+// four hundred indices read as four hundred.
+export interface Physics2DCollisionExplanation {
+  readonly unsupportedKinds: readonly string[];
+  readonly status: 'missing-contact-support' | 'ready';
+}
+
 export type Physics2DJointResolutionStatus =
   | 'bodies-missing'
   | 'body-a-missing'
@@ -881,6 +891,10 @@ export interface Physics2DJointReaction {
 // `enablePhysics2DGuards` and null otherwise, which is what keeps the message text and `@flighthq/log`
 // out of a build that never asks for them.
 export type Physics2DStepGuard = (world: Readonly<Physics2DWorld>, dt: number) => void;
+
+// The diagnostics seam consulted once per successful step, before contacts are built. Installed by
+// `enablePhysics2DGuards` and null otherwise.
+export type Physics2DContactIntakeGuard = (world: Readonly<Physics2DWorld>) => void;
 
 // The diagnostics seam consulted once per SUCCESSFUL step, before the joint solvers are prepared.
 // Installed by `enablePhysics2DGuards` and null otherwise.

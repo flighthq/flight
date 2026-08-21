@@ -4,6 +4,7 @@ import {
   createCollisionTimeOfImpact2D,
   getCollisionShapeContainsPoint2D,
   testSegmentAabbCollision2D,
+  testSegmentCapsuleCollision2D,
   testSegmentCircleCollision2D,
   testSegmentObbCollision2D,
   testSegmentPolygonCollision2D,
@@ -11,6 +12,7 @@ import {
   sweepCollisionShape2D,
 } from '@flighthq/collision/contract';
 import type {
+  Physics2DContactIntakeGuard,
   Physics2DJointResolutionGuard,
   Physics2DStepGuard,
   CollisionContactManifold2D,
@@ -162,6 +164,8 @@ function testPhysics2DSegmentOverlap(
       return testSegmentAabbCollision2D(segment, other);
     case 'circle':
       return testSegmentCircleCollision2D(segment, other);
+    case 'capsule':
+      return testSegmentCapsuleCollision2D(segment, other);
     case 'obb':
       return testSegmentObbCollision2D(segment, other);
     case 'polygon':
@@ -406,6 +410,12 @@ function effectiveMass(
   return total > 0 ? 1 / total : 0;
 }
 
+// Installs the diagnostics seam consulted once per successful step, before contacts are built. Pass
+// `null` to remove it. Called by `enablePhysics2DGuards`.
+export function setPhysics2DContactIntakeGuard(guard: Physics2DContactIntakeGuard | null): void {
+  physics2DContactIntakeGuard = guard;
+}
+
 // Installs the diagnostics seam consulted once per successful step, before joints are prepared. Pass
 // `null` to remove it. Called by `enablePhysics2DGuards`; nothing in the solver path installs one, which
 // is what keeps the message text out of a build that never opts in.
@@ -470,6 +480,7 @@ function stepPhysics2DOnce(world: Physics2DWorld, dt: number): void {
   }
 
   world.jointEvents.broke.length = 0;
+  physics2DContactIntakeGuard?.(world);
 
   // Only on a step that will actually run. A declined step already spoke above, and repeating the joint
   // complaint underneath it would bury the reason nothing moved at all.
@@ -1359,6 +1370,7 @@ function releasePhysics2DStepScratch(scratch: Physics2DStepScratch): void {
 
 let activePhysics2DStepScratch: Physics2DStepScratch | null = null;
 const physics2DBreakScratch = createPhysics2DJointReaction();
+let physics2DContactIntakeGuard: Physics2DContactIntakeGuard | null = null;
 let physics2DJointResolutionGuard: Physics2DJointResolutionGuard | null = null;
 let physics2DStepGuard: Physics2DStepGuard | null = null;
 const physics2DStepScratchPool: Physics2DStepScratch[] = [createPhysics2DStepScratch()];

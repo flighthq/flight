@@ -150,6 +150,29 @@ function writeCollider(
       }
       return;
     }
+    case 'capsule': {
+      // Drawn as its two end discs plus the two lines that bound the body between them, which is the
+      // capsule's actual silhouette. A single line with two circles would leave the straight sides
+      // missing, and a bounding box would draw a shape the collider does not have.
+      const x0 = body.x + shape.x0 * cos - shape.y0 * sin;
+      const y0 = body.y + shape.x0 * sin + shape.y0 * cos;
+      const x1 = body.x + shape.x1 * cos - shape.y1 * sin;
+      const y1 = body.y + shape.x1 * sin + shape.y1 * cos;
+      writeCircle(out, 'collider', body.index, -1, x0, y0, shape.radius);
+      writeCircle(out, 'collider', body.index, -1, x1, y1, shape.radius);
+      const axisX = x1 - x0;
+      const axisY = y1 - y0;
+      const length = Math.sqrt(axisX * axisX + axisY * axisY);
+      if (length > 0) {
+        // The outward perpendicular, scaled to the radius: the two sides sit exactly one radius either
+        // side of the axis, which is what makes them tangent to both end discs.
+        const offsetX = (-axisY / length) * shape.radius;
+        const offsetY = (axisX / length) * shape.radius;
+        writeLine(out, 'collider', body.index, -1, x0 + offsetX, y0 + offsetY, x1 + offsetX, y1 + offsetY);
+        writeLine(out, 'collider', body.index, -1, x0 - offsetX, y0 - offsetY, x1 - offsetX, y1 - offsetY);
+      }
+      return;
+    }
     case 'segment': {
       const x0 = body.x + shape.x0 * cos - shape.y0 * sin;
       const y0 = body.y + shape.x0 * sin + shape.y0 * cos;

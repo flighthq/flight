@@ -4,6 +4,25 @@ import { describe, expect, it } from 'vitest';
 import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
 
 describe('getCollisionShapeContainsPoint2D', () => {
+  it('contains a point within the radius of a capsule anywhere along it, ends included', () => {
+    const capsule = { kind: 'capsule', x0: 0, y0: 0, x1: 4, y1: 0, radius: 1 } as const;
+    // Body, both rounded ends, and just outside each.
+    expect(getCollisionShapeContainsPoint2D(capsule, 2, 0.9)).toBe(true);
+    expect(getCollisionShapeContainsPoint2D(capsule, 2, 1.1)).toBe(false);
+    expect(getCollisionShapeContainsPoint2D(capsule, -0.9, 0)).toBe(true);
+    expect(getCollisionShapeContainsPoint2D(capsule, -1.1, 0)).toBe(false);
+    expect(getCollisionShapeContainsPoint2D(capsule, 4.9, 0)).toBe(true);
+    expect(getCollisionShapeContainsPoint2D(capsule, 5.1, 0)).toBe(false);
+    // The corner a rectangle-plus-discs decomposition gets wrong: diagonally off the end, inside the
+    // box that bounds the shape but outside the round cap.
+    expect(getCollisionShapeContainsPoint2D(capsule, 4.8, 0.8)).toBe(false);
+  });
+
+  it('treats the capsule surface as inside, matching the other closed-form kinds', () => {
+    const capsule = { kind: 'capsule', x0: 0, y0: 0, x1: 2, y1: 0, radius: 1 } as const;
+    expect(getCollisionShapeContainsPoint2D(capsule, 1, 1)).toBe(true);
+  });
+
   it('tests a circle inside, outside, and on the boundary (inclusive)', () => {
     const circle: CollisionBuiltInShape2D = { kind: 'circle', x: 0, y: 0, radius: 5 };
     expect(getCollisionShapeContainsPoint2D(circle, 1, 1)).toBe(true);

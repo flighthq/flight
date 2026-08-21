@@ -45,87 +45,54 @@ by: principal
   unsuffixed `manifold.ts` would have exported a type named for the concept rather than the dimension.
   `contactFeatureId.ts` deliberately keeps its bare name: packing two feature indices into one integer
   is dimension-free, and suffixing it would make a reusable utility look 2D-only.
-- **More shapes.** 2D capsule, rounded polygon, and a general concave-as-convex-decomposition path.
-  A capsule now costs one support function rather than a column of the pair matrix.
+- **The 2D capsule exists everywhere EXCEPT the contact-manifold matrix, and that is the whole
+  remaining job.** `CollisionCapsule2D` is in the built-in union with validation, containment, bounds,
+  transform, mass/inertia, debug geometry, segment overlap, and an exact raycast — the last two verified
+  against instruments that share no algebra with them (grid integration for the inertia including the
+  `4rL/(3*pi)` end-cap cross term, and a containment march for the raycast: 311 rays, zero hit/miss
+  disagreements, every normal correct in both directions). What is NOT written is
+  `collideContactManifold2D`'s capsule arms and `sweepCollisionShape2D`'s, so `contactShapeKindRank`
+  still returns -1 for it and **a capsule is not yet usable as a rigid-body collider**. That gap is loud
+  rather than silent: `explainPhysics2DCollision` names it and `enablePhysics2DGuards` warns, telling a
+  caller it is an unimplemented pair rather than an area-less shape. The hard part left is a horizontal
+  capsule's floor contact, which needs a stable TWO-POINT manifold with stable feature ids — a support
+  function would give overlap and penetration and still leave a capsule that rocks on one point.
+- **More shapes.** 2D rounded polygon, and a general concave-as-convex-decomposition path.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
-- **2026-08-21** — The 2D naming asymmetry is closed: 25 exports and 8 modules took a `2D` suffix, so
-  the package's rule is now uniform in both dimensions. The rename was done with a negative lookahead
-  (`\bNAME(?![A-Za-z0-9])`) rather than a plain substitution, because every 3D name has its 2D twin as a
-  prefix — a naive sweep turns `testAabbAabbCollision3D` into `testAabbAabbCollision2D3D`. Import paths
-  were rewritten quote-delimited (`'./manifold'`) for the same reason: unquoted, `./manifold` matches
-  `./manifold3D`. Verified with the whole-repo `npm run check` (32 gates) because the rename crosses
-  into physics2d and two examples.
+- **2026-08-21** — The 2D capsule landed as far as the contact matrix, deliberately stopping short of it
+  rather than shipping a shape the solver silently ignores. Two findings worth keeping. The inertia is
+  NOT the rectangle's plus a disc's about the centre: each end cap's centroid is a further `4r/(3*pi)`
+  outboard of the circle centre it is drawn about, leaving a cross term that a naive parallel-axis step
+  drops and that under-reports a long capsule — grid integration agrees with the corrected form to 0.001%
+  across axis-aligned, diagonal, degenerate, and long-thin cases. And the raycast is the union of two
+  discs and a rectangle rather than a fourth hand-rolled quadratic, which is only safe because the
+  rectangle's flat END faces can never be the first surface: a ray crossing `x = 0` does so inside the
+  first disc, which it therefore entered strictly earlier.
 
-- **2026-08-21** — Cylinder and cone landed across every 3D seam, and the raycasts were verified by an
-  instrument that shares no code with them: a brute-force scan of the containment predicate along each
-  seeded ray. It caught a real defect no unit test had — the cylinder CAP normal was inverted, because
-  the sign was derived from the ray direction and flipped on the near/far swap rather than read off
-  which plane the near parameter belonged to. The fraction was correct throughout, so a ray stopped in
-  exactly the right place while reporting a surface facing into the solid. The cone's inertia tensor is
-  likewise checked against a grid integration, since the textbook transverse moment is quoted about the
-  APEX and using it about the centroid inflates a tall cone by a factor of sixteen.
-
-- **2026-08-21** — `explainCollisionTest3D` now exists. Two source comments had cited it for some time
-  as the seam that classifies `testCollision3D`'s silent false, and it had never been written;
-  `getCollisionShapeValidationStatus3D` was likewise absent, and `enableCollisionGuards` wired only the
-  2D dispatcher, so a 3D world whose supports were never registered warned nobody while its bodies fell
-  through its floors. All three landed together. There is deliberately no `'non-convex-polygon'` status
-  in 3D: a hull is reached only through a support scan that cannot return an interior vertex, so a
-  concave point set is not wrong, it simply IS its own convex hull.
-
-- **2026-08-21** — The differential test found a real defect in the incumbent, and it is fixed. The SAT
-  paths oriented their manifold normal by comparing shape CENTROIDS, which is only a heuristic: it
-  picks the wrong side whenever one shape's projection nests inside the other's asymmetrically, because
-  the centroid can sit on the far side from the shallower exit. Both `polygonAxisOverlap` and
-  `circlePolygonAxisOverlap` already computed the two push distances and returned the smaller — the
-  winning SIDE was computed and thrown away. They now report it, and the callers use it instead of the
-  centroid. Verified independently of both implementations: translating A by `normal * depth` separates
-  the pair for the corrected normal and leaves it overlapping for the old one. `testAabbAabbCollision`
-  was never affected — it already used the side-based rule inline. Generic and incumbent now agree with
-  no tolerated exemptions at all; the 50 hardened SAT tests are unchanged and still pass.
-
-- **2026-08-21** — EPA tie-break: axis canonicalized into a half-plane and lexicographically
-  tie-broken, mirroring `canonicalizeScratchAxis` and `isPreferredAxis`, with the centroid rule applied
-  ONLY when the Minkowski difference is as deep both ways. The centroid rule applied unconditionally
-  was tried first and is wrong — it flips the sign in the many cases where EPA's outward normal is
-  already geometrically correct, taking the disagreements from 4 to 47. Sign disagreements now stand at
-  two, pinned exactly.
-
-- **2026-08-20** — The dimension boundary landed, and the support-function core behind it. Every type
-  and every generic entry point now carries `2D` (`CollisionShape2D`, `CollisionManifold2D`,
-  `testCollision2D`, `collideContactManifold2D`, ...), which is what a 3D half can be added beside
-  rather than by widening. Then `collisionSupport2D.ts` (two registries: support by kind, pair
-  specialization by ordered kind pair) and `gjk2D.ts` (GJK for overlap, EPA for penetration). Three
-  bugs the tests caught, each worth the test that found it: GJK treated the origin lying ON a
-  1-simplex as separation, which reports two overlapping circles whose centres share an axis as
-  disjoint; the triangle case oriented its edge perpendiculars by the signed area, which is correct
-  for one winding and inverted for the other; and the differential test's own polygon generator
-  overshot 2*pi and produced self-intersecting polygons the incumbent is documented not to answer for
-  — a generator bug that looked exactly like a solver bug. Also closed the guard's missing
-  `'unsupported-shape-kind'` arm: with guards enabled, an unrecognized kind used to return a silent
-  false and log nothing, which is the worst sentinel available.
-
-- **2026-08-08** — Rewritten to the `Open` + `Log` contract. **All five previously-open items checked
-  out false and were deleted.** (1) "No guard layer yet" — `enableCollisionGuards.ts:19` installs a
-  `logOnce` warning through the `setCollisionTestGuard` seam, with `explainCollisionTest.ts:9` as the
-  plain-data query. (2) "Degenerate shapes documented-but-untuned, best-effort paths" —
-  `collisionShapeValidation.ts` classifies them and every pair test rejects them up front
-  (`shapeCollision.ts:36`, `:597-616`). (3) "Segment edge cases use magnitude-absolute epsilons" —
-  `segmentCollision.ts:229` and `pointContainment.ts` scale by shape extent. (4) "Deep-containment
-  MTV direction is not deterministic when centroids coincide" — `canonicalizeScratchAxis`
-  (`shapeCollision.ts:554`) plus the lexicographic tie-break in `isPreferredAxis` (`:582`) fix it,
-  pinned by tests at `shapeCollision.test.ts:87`, `:203`, `:294`, `:380`. (5) "Phase 2 and phase 3
-  pending" — `sweepCollisionShape.ts`, `shapeContact.ts`, `collideContactManifold.ts`, and
-  `contactFeatureId.ts` all exist; only capsule/rounded shapes are left, kept above.
-- **2026-07-29** — Contact manifolds landed as a parallel lane (`CollisionContactManifold` +
-  `collide*ContactManifold`), with feature ids packed by positional multiplication in the private
-  `contactFeatureId.ts` and argument-order invariance holding only across kinds.
-- **2026-07-10** — Phase 1 built: the ten manifold pair tests over a shared SAT core, the kind-ranked
-  `testCollision` dispatcher, point containment, and the five boolean segment queries. Frozen
-  conventions: the normal pushes **A out of B**; touching is exclusive for manifold tests and
-  inclusive for containment/segment queries; SAT uses min-of-both-directions separation, not
-  intersection length.
+- **2026-08-21** — 25 exports and 8 modules took a `2D` suffix, closing the naming asymmetry; renamed with
+  a negative lookahead because every 3D name has its 2D twin as a prefix.
+- **2026-08-21** — Cylinder and cone landed across every 3D seam; a brute-force containment scan caught an
+  inverted cylinder CAP normal that no unit test had, and the cone's inertia is checked against a grid
+  integration because the textbook transverse moment is quoted about the APEX.
+- **2026-08-21** — `explainCollisionTest3D` and `getCollisionShapeValidationStatus3D` now exist; both had
+  been cited by source comments for some time without being written.
+- **2026-08-21** — The differential test found a real defect in the incumbent: the SAT paths oriented their
+  manifold normal by comparing centroids, a heuristic, while the winning side was already computed and
+  thrown away. Fixed at `polygonAxisOverlap` and `circlePolygonAxisOverlap`.
+- **2026-08-21** — EPA tie-break canonicalized into a half-plane with a lexicographic fallback; the
+  centroid rule applied unconditionally was tried first and took disagreements from 4 to 47.
+- **2026-08-20** — The dimension boundary and the support-function core landed: every 2D type and generic
+  entry point took a `2D` suffix, then `collisionSupport2D.ts` and `gjk2D.ts`. Three bugs the tests caught
+  — GJK reading the origin ON a 1-simplex as separation, the triangle case oriented by signed area, and
+  the test's own polygon generator overshooting 2*pi.
+- **2026-08-08** — Rewritten to the `Open` + `Log` contract; all five previously-open items checked out
+  false and were deleted.
+- **2026-07-29** — Contact manifolds landed as a parallel lane, with feature ids packed by positional
+  multiplication in the private `contactFeatureId.ts`.
+- **2026-07-10** — Phase 1 built: ten manifold pair tests over a shared SAT core, the kind-ranked
+  dispatcher, point containment, and five boolean segment queries. Frozen conventions: the normal pushes
+  **A out of B**; touching is exclusive for manifolds and inclusive for containment/segment queries.

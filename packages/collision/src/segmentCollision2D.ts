@@ -1,5 +1,6 @@
 import type {
   CollisionAabb2D,
+  CollisionCapsule2D,
   CollisionCircle2D,
   CollisionObb2D,
   CollisionPolygon2D,
@@ -17,6 +18,17 @@ const RELATIVE_EPSILON = 1e-9;
 // Whether a segment overlaps an axis-aligned box (Liang–Barsky slab clip; inclusive).
 export function testSegmentAabbCollision2D(a: Readonly<CollisionSegment2D>, b: Readonly<CollisionAabb2D>): boolean {
   return isSegmentOverlappingBox(a.x0, a.y0, a.x1, a.y1, b.minX, b.minY, b.maxX, b.maxY);
+}
+
+// Whether a segment overlaps a capsule: the distance between the two segments within the radius
+// (inclusive). A capsule IS a thickened segment, so this reduces to segment-to-segment distance rather
+// than needing separate body and cap cases the way a rectangle-plus-two-discs decomposition would.
+export function testSegmentCapsuleCollision2D(
+  a: Readonly<CollisionSegment2D>,
+  b: Readonly<CollisionCapsule2D>,
+): boolean {
+  const distanceSquared = segmentSegmentDistanceSquared(a.x0, a.y0, a.x1, a.y1, b.x0, b.y0, b.x1, b.y1);
+  return distanceSquared <= b.radius * b.radius;
 }
 
 // Whether a segment overlaps a circle (nearest point on the segment within the radius; inclusive).
@@ -236,3 +248,43 @@ function relativeEpsilon(extent: number): number {
 }
 
 const clipRange = { t0: 0, t1: 1 };
+
+// The squared distance between two segments. Zero when they cross, which is the case the clamped
+// projections below cannot reach on their own: two crossing segments have no pair of endpoints closer
+// than their intersection, so the endpoint scan alone would report a positive distance for a pair that
+// actually touches.
+function segmentSegmentDistanceSquared(
+  ax0: number,
+  ay0: number,
+  ax1: number,
+  ay1: number,
+  bx0: number,
+  by0: number,
+  bx1: number,
+  by1: number,
+): number {
+  if (testSegmentSegmentCollision2D({ x0: ax0, y0: ay0, x1: ax1, y1: ay1 }, { x0: bx0, y0: by0, x1: bx1, y1: by1 })) {
+    return 0;
+  }
+  return Math.min(
+    pointSegmentDistanceSquared(ax0, ay0, bx0, by0, bx1, by1),
+    pointSegmentDistanceSquared(ax1, ay1, bx0, by0, bx1, by1),
+    pointSegmentDistanceSquared(bx0, by0, ax0, ay0, ax1, ay1),
+    pointSegmentDistanceSquared(bx1, by1, ax0, ay0, ax1, ay1),
+  );
+}
+
+// The squared distance from a point to a segment, with the projection clamped to the segment's ends.
+function pointSegmentDistanceSquared(px: number, py: number, x0: number, y0: number, x1: number, y1: number): number {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const lengthSquared = dx * dx + dy * dy;
+  let t = 0;
+  if (lengthSquared > 0) {
+    t = ((px - x0) * dx + (py - y0) * dy) / lengthSquared;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+  }
+  const cx = px - (x0 + t * dx);
+  const cy = py - (y0 + t * dy);
+  return cx * cx + cy * cy;
+}

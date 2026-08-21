@@ -15,6 +15,36 @@ describe('getCollisionPolygonValidationStatus2D', () => {
 });
 
 describe('getCollisionShapeValidationStatus2D', () => {
+  it('accepts a zero-length capsule, which is a circle, and rejects a zero-radius one, which is not', () => {
+    // The asymmetry is the design: collapsing the axis leaves a usable shape, collapsing the radius
+    // leaves a bare segment, and a segment is a different collider with different rules.
+    expect(
+      getCollisionShapeValidationStatus2D({ kind: 'capsule', x0: 1, y0: 1, x1: 1, y1: 1, radius: 0.5 }),
+    ).toBeNull();
+    expect(getCollisionShapeValidationStatus2D({ kind: 'capsule', x0: 0, y0: 0, x1: 3, y1: 0, radius: 0 })).toBe(
+      'degenerate-shape',
+    );
+    expect(getCollisionShapeValidationStatus2D({ kind: 'capsule', x0: 0, y0: 0, x1: 3, y1: 0, radius: -1 })).toBe(
+      'degenerate-shape',
+    );
+  });
+
+  it('rejects a capsule with a non-finite endpoint or radius', () => {
+    expect(
+      getCollisionShapeValidationStatus2D({ kind: 'capsule', x0: Number.NaN, y0: 0, x1: 3, y1: 0, radius: 1 }),
+    ).toBe('degenerate-shape');
+    expect(
+      getCollisionShapeValidationStatus2D({
+        kind: 'capsule',
+        x0: 0,
+        y0: 0,
+        x1: 3,
+        y1: 0,
+        radius: Number.POSITIVE_INFINITY,
+      }),
+    ).toBe('degenerate-shape');
+  });
+
   it('rejects every degenerate manifold shape', () => {
     const shapes: CollisionShape2D[] = [
       { kind: 'circle', x: 0, y: 0, radius: 0 },

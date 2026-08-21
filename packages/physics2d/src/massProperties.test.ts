@@ -26,7 +26,82 @@ function massData(): Physics2DMassData {
   return { mass: 0, inertia: 0, centerX: 0, centerY: 0 };
 }
 
+// Grid integration over the capsule's own containment predicate. It shares no algebra with the closed
+// form, so agreement between the two is evidence rather than restatement — and the capsule's inertia is
+// exactly the kind of derivation where a dropped term reads as plausible.
+function integrateCapsule(x0: number, y0: number, x1: number, y1: number, radius: number) {
+  const CELLS = 1200;
+  const minX = Math.min(x0, x1) - radius;
+  const minY = Math.min(y0, y1) - radius;
+  const stepX = (Math.max(x0, x1) + radius - minX) / CELLS;
+  const stepY = (Math.max(y0, y1) + radius - minY) / CELLS;
+  const cellArea = stepX * stepY;
+  const inside: number[] = [];
+  let area = 0;
+  let sumX = 0;
+  let sumY = 0;
+  for (let ix = 0; ix < CELLS; ix++) {
+    const px = minX + (ix + 0.5) * stepX;
+    for (let iy = 0; iy < CELLS; iy++) {
+      const py = minY + (iy + 0.5) * stepY;
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+      const lengthSquared = dx * dx + dy * dy;
+      let t = 0;
+      if (lengthSquared > 0) {
+        t = ((px - x0) * dx + (py - y0) * dy) / lengthSquared;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+      }
+      const cx = px - (x0 + t * dx);
+      const cy = py - (y0 + t * dy);
+      if (cx * cx + cy * cy > radius * radius) continue;
+      inside.push(px, py);
+      area += cellArea;
+      sumX += px * cellArea;
+      sumY += py * cellArea;
+    }
+  }
+  const centerX = sumX / area;
+  const centerY = sumY / area;
+  let second = 0;
+  for (let at = 0; at < inside.length; at += 2) {
+    const rx = inside[at] - centerX;
+    const ry = inside[at + 1] - centerY;
+    second += (rx * rx + ry * ry) * cellArea;
+  }
+  return { area, centerX, centerY, second };
+}
+
 describe('computePhysics2DColliderMassData', () => {
+  it('derives a capsule to match a numerical integration of its own area', () => {
+    // Four capsules covering the cases the closed form could get wrong in different ways: axis-aligned,
+    // degenerate to a disc, diagonal, and long-and-thin where the end-cap cross term dominates.
+    for (const [x0, y0, x1, y1, radius] of [
+      [-1, 0, 1, 0, 0.5],
+      [0, 0, 0, 0, 0.7],
+      [-2, -1, 3, 2, 0.4],
+      [0, -3, 0, 3, 1.2],
+    ]) {
+      const out = massData();
+      computePhysics2DColliderMassData(collider({ kind: 'capsule', x0, y0, x1, y1, radius }), out);
+      const truth = integrateCapsule(x0, y0, x1, y1, radius);
+      const label = `capsule ${String(x0)},${String(y0)}-${String(x1)},${String(y1)} r${String(radius)}`;
+      // A tenth of a percent, which is the grid's own resolution rather than a tolerance for the formula.
+      expect(Math.abs(out.mass - truth.area) / truth.area, label).toBeLessThan(1e-3);
+      expect(Math.abs(out.inertia - truth.second) / truth.second, label).toBeLessThan(1e-3);
+      expect(out.centerX, label).toBeCloseTo(truth.centerX, 3);
+      expect(out.centerY, label).toBeCloseTo(truth.centerY, 3);
+    }
+  });
+
+  it('reduces a zero-length capsule to the disc it is', () => {
+    const capsule = massData();
+    const disc = massData();
+    computePhysics2DColliderMassData(collider({ kind: 'capsule', x0: 2, y0: 5, x1: 2, y1: 5, radius: 0.9 }), capsule);
+    computePhysics2DColliderMassData(collider({ kind: 'circle', x: 2, y: 5, radius: 0.9 }), disc);
+    expect(capsule).toEqual(disc);
+  });
+
   it('derives a disc from its area and half its mass-radius-squared', () => {
     const out = massData();
     computePhysics2DColliderMassData(collider({ kind: 'circle', x: 3, y: -2, radius: 2 }, 4), out);

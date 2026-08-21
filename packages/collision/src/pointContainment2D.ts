@@ -30,6 +30,22 @@ export function getCollisionShapeContainsPoint2D(
       const localY = -dx * sin + dy * cos;
       return Math.abs(localX) <= shape.halfW && Math.abs(localY) <= shape.halfH;
     }
+    case 'capsule': {
+      // Distance to the SEGMENT, not to a rectangle plus two discs: the capsule is by definition the set
+      // of points within `radius` of it, so one clamped projection answers the body and both caps at
+      // once with no seam between them to get wrong.
+      const dx = shape.x1 - shape.x0;
+      const dy = shape.y1 - shape.y0;
+      const lengthSquared = dx * dx + dy * dy;
+      let t = 0;
+      if (lengthSquared > 0) {
+        t = ((x - shape.x0) * dx + (y - shape.y0) * dy) / lengthSquared;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+      }
+      const cx = x - (shape.x0 + t * dx);
+      const cy = y - (shape.y0 + t * dy);
+      return cx * cx + cy * cy <= shape.radius * shape.radius;
+    }
     case 'polygon':
       if (getCollisionPolygonValidationStatus2D(shape.points) !== null) return false;
       return isPointInConvexPolygon(x, y, shape.points, shape.points.length >> 1);

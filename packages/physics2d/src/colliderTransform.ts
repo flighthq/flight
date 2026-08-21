@@ -10,6 +10,8 @@ export function createPhysics2DColliderWorldShape(local: Readonly<CollisionBuilt
     case 'aabb':
     case 'obb':
       return { kind: 'obb', x: 0, y: 0, halfW: 0, halfH: 0, rotation: 0 };
+    case 'capsule':
+      return { kind: 'capsule', x0: 0, y0: 0, x1: 0, y1: 0, radius: local.radius };
     case 'polygon':
       return { kind: 'polygon', points: local.points.slice() };
     case 'segment':
@@ -74,6 +76,18 @@ export function updatePhysics2DColliderWorldShape(collider: Physics2DCollider, b
       target[i] = body.x + x * cos - y * sin;
       target[i + 1] = body.y + x * sin + y * cos;
     }
+    return;
+  }
+
+  // A capsule transforms by moving its two endpoints, and `radius` is untouched: a rotation cannot
+  // change a distance, so unlike the box below there is no promotion to a different kind and no extent
+  // to recompute.
+  if (local.kind === 'capsule' && world.kind === 'capsule') {
+    world.x0 = body.x + local.x0 * cos - local.y0 * sin;
+    world.y0 = body.y + local.x0 * sin + local.y0 * cos;
+    world.x1 = body.x + local.x1 * cos - local.y1 * sin;
+    world.y1 = body.y + local.x1 * sin + local.y1 * cos;
+    world.radius = local.radius;
     return;
   }
 
@@ -151,6 +165,12 @@ export function writePhysics2DColliderBounds(
       out.maxY = maxY;
       return;
     }
+    case 'capsule':
+      out.minX = Math.min(shape.x0, shape.x1) - shape.radius;
+      out.minY = Math.min(shape.y0, shape.y1) - shape.radius;
+      out.maxX = Math.max(shape.x0, shape.x1) + shape.radius;
+      out.maxY = Math.max(shape.y0, shape.y1) + shape.radius;
+      return;
     case 'segment':
       out.minX = Math.min(shape.x0, shape.x1);
       out.minY = Math.min(shape.y0, shape.y1);

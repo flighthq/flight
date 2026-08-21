@@ -134,6 +134,17 @@ function isCollisionShapeStateValid(shape: Readonly<CollisionBuiltInShape2D>): b
         shape.halfW > 0 &&
         shape.halfH > 0
       );
+    case 'capsule':
+      // A zero-LENGTH capsule is a circle and stays valid; a zero RADIUS is a bare segment, which is a
+      // different collider with different rules and not one a body may be built from.
+      return (
+        Number.isFinite(shape.x0) &&
+        Number.isFinite(shape.y0) &&
+        Number.isFinite(shape.x1) &&
+        Number.isFinite(shape.y1) &&
+        Number.isFinite(shape.radius) &&
+        shape.radius > 0
+      );
     case 'polygon':
       if (shape.points.length < 6 || (shape.points.length & 1) !== 0) return false;
       for (const coordinate of shape.points) {
