@@ -27,6 +27,7 @@ import { recordReviewHoldReleases, recordReviewHolds } from './src/holdLedger';
 import type { ReviewHoldLedger } from './src/holdLedger';
 import {
   createReferenceImageRequestTarget,
+  isReviewRequestStillPending,
   resolveReferenceImageCommissionState,
 } from './src/referenceImageCommission';
 import { resolveReviewRequestSupersede } from './src/requestSupersede';
@@ -248,15 +249,23 @@ function readOpenReviewRequests(
   return open;
 }
 
-function readRequestedCells(): Set<string> {
-  const requested = new Set<string>();
+/**
+ * The cell -> pinned pixel hash of every open request.
+ *
+ * ★ THE PIN IS THE POINT AND IT USED TO BE THROWN AWAY. This returned a bare Set of cell names, so a cell
+ * with any open request reported `requested` and the UI disabled its Commission button with "Request
+ * pending" — whether or not the pinned pixels still described what the tree renders. Re-commissioning a
+ * scene after it changed is the normal reason to come back, and it was the one thing the tool refused.
+ * Keeping the hash lets a STALE request be told apart from a live one.
+ */
+function readRequestedCells(): Map<string, string> {
+  const requested = new Map<string, string>();
   if (!existsSync(requestsDir)) return requested;
   for (const file of readdirSync(requestsDir).filter((f) => f.endsWith('.json'))) {
     const result = readOracleRequest(join(requestsDir, file));
-    if ('request' in result) {
-      for (const cell of getOracleRequestCells(result.request)) {
-        requested.add(cell);
-      }
+    if (!('request' in result)) continue;
+    for (const target of result.request.targets) {
+      requested.set(`${result.request.subject}/${target.entry}/${target.renderer}`, target.pixelSha256);
     }
   }
   return requested;
@@ -390,12 +399,16 @@ function resolveCommissionState(
   renderer: string,
   cell: Pick<ReviewCell, 'hash' | 'referencePixelSha256'>,
   locked: ReadonlyMap<string, string>,
-  requested: ReadonlySet<string>,
+  requested: ReadonlyMap<string, string>,
   comparisonMatches: boolean | null,
 ): CommissionState {
   const imageKey = `${tool}/${name}/${renderer}`;
   const lockedHash = locked.get(imageKey);
-  return resolveReferenceImageCommissionState(cell, lockedHash, requested.has(imageKey), comparisonMatches);
+  // A request whose pinned pixels no longer match this capture has been overtaken by the tree; it is not
+  // a pending decision, it is a stale one, and the reviewer needs to be able to replace it. Superseding
+  // makes that safe — the newer commission retires the older request rather than stacking a duplicate.
+  const stillPending = isReviewRequestStillPending(requested.get(imageKey), cell.referencePixelSha256);
+  return resolveReferenceImageCommissionState(cell, lockedHash, stillPending, comparisonMatches);
 }
 
 function discoverReviewTests(): ReviewTest[] {

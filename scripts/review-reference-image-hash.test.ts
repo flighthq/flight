@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 import {
   createReferenceImageRequestTarget,
+  isReviewRequestStillPending,
   createReviewCommissionPayloadCell,
   markReviewCommissionRequested,
   resolveReferenceImageCommissionState,
@@ -83,5 +84,30 @@ describe('review reference-image pixel identity', () => {
     expect(markReviewCommissionRequested(tests, ['functional/text-basic/canvas'])).toBe(1);
     expect(tests[0]!.cells.map((cell) => cell.commissionState)).toEqual(['requested', null, 'not-commissioned']);
     expect(markReviewCommissionRequested(tests, ['functional/text-basic/canvas'])).toBe(0);
+  });
+});
+
+describe('isReviewRequestStillPending', () => {
+  // ★ THE REPORTED SYMPTOM: a scene resized since it was commissioned showed "Request pending" with the
+  // Commission button disabled — so the one action that would fix it was the one the tool refused, and
+  // the stale pin went on to bless a picture the tree no longer produces. Probed on text-wrap before this
+  // change: all four cells read commissionState=requested with dimensionMismatch=true; after, differs.
+  it('calls a request stale once the capture no longer matches its pin', () => {
+    expect(isReviewRequestStillPending('a'.repeat(64), 'b'.repeat(64))).toBe(false);
+  });
+
+  it('leaves a request pending while the capture still matches its pin', () => {
+    expect(isReviewRequestStillPending('a'.repeat(64), 'a'.repeat(64))).toBe(true);
+  });
+
+  it('is not pending when there is no request at all', () => {
+    expect(isReviewRequestStillPending(undefined, 'a'.repeat(64))).toBe(false);
+    expect(isReviewRequestStillPending(undefined, null)).toBe(false);
+  });
+
+  // An undecodable capture cannot show the pin is wrong, and enabling a commission whose pixels we could
+  // not read would replace a good pin with nothing. Fail toward leaving the existing request alone.
+  it('treats an undecodable capture as still pending rather than stale', () => {
+    expect(isReviewRequestStillPending('a'.repeat(64), null)).toBe(true);
   });
 });
