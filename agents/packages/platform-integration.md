@@ -2,6 +2,8 @@
 
 Blessed 2026-07-02. These apply to every package in the platform integration suite unless a per-package charter overrides.
 
+The considered-and-declined runtime package boundary is recorded in the [runtime package review](../runtime-package-review.md). Read it before proposing a substrate package or classifying an ambient language facility as a host backend.
+
 ## Pattern
 
 Flat free functions over a swappable `*Backend`. Web backend is always available as the default; native hosts replace via `set*Backend`.
