@@ -5,7 +5,7 @@ import {
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildPhysics3DContacts, setPhysics3DContactIntakeGuard } from './contactIntake';
+import { buildPhysics3DContacts, refreshPhysics3DContacts, setPhysics3DContactIntakeGuard } from './contactIntake';
 import { stepPhysics3D } from './step';
 import {
   addPhysics3DBody,
@@ -244,6 +244,33 @@ describe('buildPhysics3DContacts', () => {
     let sum = 0;
     for (let i = 0; i < contact.pointCount; i += 1) sum += contact.points[i].rBX;
     expect(sum / contact.pointCount).toBeCloseTo(0, 6);
+  });
+});
+
+describe('refreshPhysics3DContacts', () => {
+  it('appends transitions and preserves the pre-solve fields on an existing contact', () => {
+    const world = createPhysics3DWorld();
+    addFloor(world);
+    const crate = addCrate(world, 0, 3);
+    buildPhysics3DContacts(world);
+
+    crate.y = 0.45;
+    refreshPhysics3DContacts(world);
+    expect(world.events.began).toHaveLength(1);
+    const contact = world.contacts[0];
+    contact.friction = 0.9;
+    contact.restitution = 0.8;
+    contact.enabled = false;
+    contact.sensor = true;
+
+    refreshPhysics3DContacts(world);
+
+    expect(world.events.began).toHaveLength(1);
+    expect(world.contacts[0]).toBe(contact);
+    expect(contact.friction).toBe(0.9);
+    expect(contact.restitution).toBe(0.8);
+    expect(contact.enabled).toBe(false);
+    expect(contact.sensor).toBe(true);
   });
 });
 
