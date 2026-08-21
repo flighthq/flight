@@ -16,6 +16,20 @@
         "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
         "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
       }
+    },
+    {
+      "entry": "effect-crt",
+      "renderer": "webgpu",
+      "pixelSha256": "d9bae41cb5c9e36a5b52365fc941e8070ece27e34a8de77f96d3b86e4e60f696",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
     }
   ],
   "frames": 1,

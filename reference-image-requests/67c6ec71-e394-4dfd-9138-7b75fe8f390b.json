@@ -16,6 +16,20 @@
         "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
         "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
       }
+    },
+    {
+      "entry": "mesh-tangent-mirrored-uv",
+      "renderer": "webgpu",
+      "pixelSha256": "779eee23c1d17fa76cfb3fe0fa87d0f74d523fcf0c9f3ca6fbd08532751e1fa9",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
     }
   ],
   "frames": 1,

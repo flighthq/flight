@@ -16,6 +16,20 @@
         "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
         "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
       }
+    },
+    {
+      "entry": "scene-skin-two-skeletons",
+      "renderer": "webgpu",
+      "pixelSha256": "73ee40351e3f1fefd3d48154b3e4cddf3e09201dd6ec675078e8f12bcb38ff4c",
+      "build": {
+        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
+        "dirty": [],
+        "dirtyOmitted": 0
+      },
+      "capture": {
+        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
+        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
+      }
     }
   ],
   "frames": 1,

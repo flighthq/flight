@@ -1,22 +1,8 @@
 {
   "schemaVersion": 3,
-  "id": "e89664d6-322f-4b0f-9fc1-18b758b94e67",
+  "id": "d7e3b915-46a2-4c08-8f51-3ab9c0d2e764",
   "subject": "functional",
   "targets": [
-    {
-      "entry": "effect-scanlines",
-      "renderer": "webgl",
-      "pixelSha256": "4224c8757937181bd9bb508abe9d9ae89252269dee31213a6d22516796b7bc11",
-      "build": {
-        "commit": "a009b3e6fe0dd61c4c07a39c74b3a4713ca88db5",
-        "dirty": [],
-        "dirtyOmitted": 0
-      },
-      "capture": {
-        "hostInstanceId": "joshua-ASUSLaptop-Q540VJ",
-        "environmentId": "sha256-48ce42bae26460428ad4bcc1bb526ddd00abc7a5960f62919bb88026bdb1a084"
-      }
-    },
     {
       "entry": "effect-scanlines",
       "renderer": "webgpu",
@@ -33,5 +19,6 @@
     }
   ],
   "frames": 1,
-  "reason": "Commissioned from review"
+  "reason": "Commissioned from review",
+  "createdAt": "2026-08-21T00:00:00.000Z"
 }
