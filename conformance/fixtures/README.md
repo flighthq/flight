@@ -9,6 +9,12 @@ npm run fixtures -- --all
 npm run conformance:fixtures
 ```
 
+## Pending multi-pack recovery acceptance
+
+The shared-tree manifest-path fix is covered by unit and conformance tests, but its real-corpus result remains unverified because the fixture cache was unavailable when the fix landed. The measured defect hid 1,994 paths; the count guard then rejected both whole trees, excluding all 3,062 files (10.2% of the corpus). The exclusion was 55% larger than the underlying defect because the safety check compounded a partial loss into a total one and reported it as verification failure rather than data loss.
+
+Integration owns the acceptance run when the fixture cache is next available: run `npm run conformance:fixtures`, confirm the previously excluded count drops to zero, and confirm the enumerated total rises by exactly 3,062. Until that measured delta is recorded, the 3,062-file recovery is not verified.
+
 The generated, gitignored report leads with three questions:
 
 - files — over the complete selected corpus, how many matched, how many were attempted, how many completed without a throw/not-run, and how many imported without a diagnostic finding; unmatched files remain in every headline denominator;
