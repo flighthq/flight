@@ -102,6 +102,12 @@ render(root);
 // MISSING colour means a tile did not draw at all, which a "no unexpected colours" check alone would
 // call clean on an empty screen.
 const EXPECTED_COLORS = [...COLORS.map((rgba) => (rgba >>> 8) & 0xffffff), BACKGROUND_COLOR >>> 8];
+const EXPECTED_TILE_PROBES = [
+  [0.28, 0.3, 0xff5c5c],
+  [0.72, 0.3, 0x5cff5c],
+  [0.28, 0.7, 0x5c5cff],
+  [0.72, 0.7, 0xffff5c],
+] as const;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
   const seen = new Set<number>();
@@ -126,6 +132,22 @@ export function assertRender(frame: Readonly<Bitmap>): void {
       throw new Error(
         `[effect-empty-passthrough] #${color.toString(16).padStart(6, '0')} is absent from the frame — ` +
           `a tile or the background did not draw, which a check for unexpected colours alone would miss`,
+      );
+    }
+  }
+
+  // The exact colour set is intentionally total, but a set cannot distinguish where those colours
+  // landed. These independently-authored centres make a tile permutation fail without weakening the
+  // every-pixel identity check above.
+  for (const [xFraction, yFraction, expected] of EXPECTED_TILE_PROBES) {
+    const x = Math.round(frame.width * xFraction);
+    const y = Math.round(frame.height * yFraction);
+    const actual = getBitmapPixelRgb(frame, x, y) & 0xffffff;
+    if (actual !== expected) {
+      throw new Error(
+        `[effect-empty-passthrough] tile centre (${x}, ${y}) is #${actual.toString(16).padStart(6, '0')}, ` +
+          `expected #${expected.toString(16).padStart(6, '0')} — the empty pipeline preserved the palette ` +
+          `but not the authored picture`,
       );
     }
   }
