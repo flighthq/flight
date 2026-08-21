@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
@@ -29,6 +29,7 @@ import {
   createReferenceImageRequestTarget,
   resolveReferenceImageCommissionState,
 } from './src/referenceImageCommission';
+import { resolveReviewRequestSupersede } from './src/requestSupersede';
 import { readRequiredReferenceImageCells } from './src/requiredReferenceImageCells';
 import type { ReviewCoverageManifest } from './src/requiredReferenceImageCells';
 import {
@@ -226,6 +227,25 @@ function reviewActor(): string {
     // Fall through to the local account identity only when this checkout has no Git identity.
   }
   return process.env['USER']?.trim() || 'unknown reviewer';
+}
+
+function readOpenReviewRequests(
+  queueDir: string,
+): { id: string; subject: string; targets: { entry: string; renderer: string }[] }[] {
+  if (!existsSync(queueDir)) return [];
+  const open: { id: string; subject: string; targets: { entry: string; renderer: string }[] }[] = [];
+  for (const file of readdirSync(queueDir).filter((name) => name.endsWith('.json'))) {
+    const parsed = readOracleRequest(join(queueDir, file));
+    // An unreadable request is left strictly alone: superseding what we cannot parse would delete a file
+    // on a guess, and the reader that validates the queue will report it on its own terms.
+    if ('problems' in parsed) continue;
+    open.push({
+      id: parsed.request.id,
+      subject: parsed.request.subject,
+      targets: parsed.request.targets.map((target) => ({ entry: target.entry, renderer: target.renderer })),
+    });
+  }
+  return open;
 }
 
 function readRequestedCells(): Set<string> {
@@ -799,10 +819,29 @@ function reviewPlugin(): Plugin[] {
                   ),
                   frames: 1,
                   reason: payload.reason || 'Commissioned from review',
+                  // Orders two requests that claim one cell, so the gate can prefer the newer instead of
+                  // failing. File mtime cannot serve — a fresh checkout stamps every file with today.
+                  createdAt: new Date().toISOString(),
                 };
 
                 const queueDir = join(projectRoot, 'reference-image-requests');
                 mkdirSync(queueDir, { recursive: true });
+
+                // Retire the pins this commission replaces BEFORE writing the new one, so the queue is
+                // never momentarily in the double-claimed state a concurrent read would see as an overlap.
+                const supersede = resolveReviewRequestSupersede(
+                  request.subject,
+                  request.targets,
+                  readOpenReviewRequests(queueDir),
+                );
+                for (const staleId of supersede.remove) rmSync(join(queueDir, `${staleId}.json`), { force: true });
+                for (const [staleId, keptTargets] of supersede.rewrite) {
+                  const stalePath = join(queueDir, `${staleId}.json`);
+                  const stale = JSON.parse(readFileSync(stalePath, 'utf8')) as { targets: unknown };
+                  stale.targets = keptTargets;
+                  writeFileSync(stalePath, JSON.stringify(stale, null, 2) + '\n');
+                }
+
                 const outPath = join(queueDir, `${id}.json`);
                 writeFileSync(outPath, JSON.stringify(request, null, 2) + '\n');
 

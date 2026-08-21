@@ -49,6 +49,13 @@ export interface ReferenceImageRequest {
   targets: readonly ReferenceImageRequestTarget[];
   frames: number;
   reason: string;
+  /**
+   * ISO-8601 instant the request was written. OPTIONAL because the queue predates it, and a reader must
+   * keep accepting the files already in flight. It exists so that two requests claiming one cell can be
+   * ordered: the newer supersedes the older, since a re-commission replaces the pin it stands on. File
+   * mtime cannot serve — a fresh checkout stamps every file with today.
+   */
+  createdAt?: string;
 }
 
 export interface ReferenceImageRequestBuildIdentity {
