@@ -62,14 +62,27 @@ export type ConformanceFixtureAdapterImplementation =
       state: 'unavailable';
     };
 
+export interface ConformanceFixtureDiagnosticKindDisposition {
+  disposition: 'intentional-choice';
+  kind: string;
+}
+
 export interface ConformanceFixtureAdapter {
+  diagnosticKindDispositions: readonly Readonly<ConformanceFixtureDiagnosticKindDisposition>[];
   features: readonly Readonly<ConformanceFixtureFeatureDefinition>[];
   id: string;
   implementation: ConformanceFixtureAdapterImplementation;
   selects(tree: Readonly<ConformanceFixtureTree>, reference: string): boolean;
 }
 
-export type ConformanceFixtureState = 'degraded' | 'imported' | 'not-run' | 'rejected' | 'threw' | 'unsupported';
+export type ConformanceFixtureState =
+  | 'degraded'
+  | 'imported'
+  | 'intentional-choice'
+  | 'not-run'
+  | 'rejected'
+  | 'threw'
+  | 'unsupported';
 
 export interface ConformanceFixtureResult {
   adapter: string;
@@ -77,6 +90,7 @@ export interface ConformanceFixtureResult {
   diagnostics: Readonly<Record<'Drop' | 'Recover' | 'Reject' | 'Skip', number>>;
   errorName?: string;
   featureOutcomes: readonly Readonly<ConformanceFixtureFeatureOutcome>[];
+  intentionalChoiceDiagnosticKinds: readonly string[];
   notRunReason?: string;
   packs: readonly string[];
   reference: string;
@@ -131,9 +145,16 @@ export interface ConformanceFixtureFamilyScore {
   executionCoverage: ConformanceFixtureFractionScore;
   implementation: 'available' | 'unavailable';
   implementationCoverage: ConformanceFixtureFractionScore;
+  intentionalChoices: Readonly<ConformanceFixtureIntentionalChoiceScore>;
   outcomes: Readonly<Record<ConformanceFixtureState, number>>;
   selectedCandidateRuns: number;
   selectionCoverage: ConformanceFixtureFractionScore;
+}
+
+export interface ConformanceFixtureIntentionalChoiceScore {
+  exclusive: number;
+  mixed: number;
+  total: number;
 }
 
 export interface ConformanceFixtureFileScore {
@@ -178,6 +199,7 @@ export interface ConformanceFixtureScore {
     executionCoverage: string;
     fileCoverage: string;
     implementationCoverage: string;
+    intentionalChoices: string;
     outcomeStates: Readonly<Record<ConformanceFixtureState, string>>;
     selectionCoverage: string;
     workingAsExpected: string;
@@ -187,6 +209,7 @@ export interface ConformanceFixtureScore {
   features: Readonly<ConformanceFixtureFeatureScore>;
   files: Readonly<ConformanceFixtureFileScore>;
   implementationCoverage: ConformanceFixtureFractionScore;
+  intentionalChoices: Readonly<ConformanceFixtureIntentionalChoiceScore>;
   outcomes: Readonly<Record<ConformanceFixtureState, number>>;
   selectionCoverage: ConformanceFixtureFractionScore;
 }
@@ -277,6 +300,19 @@ export function createConformanceFixturePlan(
     if (adapterIds.has(adapter.id)) throw new Error(`Duplicate fixture conformance adapter id ${adapter.id}`);
     if (adapter.implementation.state === 'unavailable' && adapter.implementation.reason.trim() === '') {
       throw new Error(`Unavailable fixture conformance adapter ${adapter.id} must name its reason`);
+    }
+    let previousDispositionKind = '';
+    for (const disposition of adapter.diagnosticKindDispositions) {
+      if (!isDiagnosticKindIdentifier(disposition.kind)) {
+        throw new Error(`Fixture conformance adapter ${adapter.id} has invalid diagnostic disposition kind`);
+      }
+      if (disposition.kind <= previousDispositionKind) {
+        throw new Error(`Fixture conformance adapter ${adapter.id} diagnostic dispositions must be sorted and unique`);
+      }
+      if (disposition.disposition !== 'intentional-choice') {
+        throw new Error(`Fixture conformance adapter ${adapter.id} has invalid diagnostic disposition`);
+      }
+      previousDispositionKind = disposition.kind;
     }
     for (const feature of adapter.features) {
       if (!isConformanceIdentifier(feature.id)) {
@@ -403,6 +439,7 @@ export function scoreConformanceFixturePlan(
         executionCoverage: fractionScore(executed, implemented),
         implementation: adapter.implementation.state,
         implementationCoverage: fractionScore(implemented, selectedCandidateRuns),
+        intentionalChoices: summarizeIntentionalChoices(familyResults),
         outcomes: summarizeOutcomes(familyResults),
         selectedCandidateRuns,
         selectionCoverage: fractionScore(selectedCandidateRuns, eligibleCandidateRuns),
@@ -423,6 +460,7 @@ export function scoreConformanceFixturePlan(
     features: scoreConformanceFixtureFeatures(plan, results),
     files: scoreConformanceFixtureFiles(plan, results),
     implementationCoverage: fractionScore(implemented, plan.candidates.length),
+    intentionalChoices: summarizeIntentionalChoices(results),
     outcomes: summarizeOutcomes(results),
     selectionCoverage: fractionScore(plan.candidates.length, plan.eligibleCandidateRuns),
   };
@@ -527,6 +565,15 @@ function assertConformanceFixtureResultIdentity(
   ) {
     throw new Error(`Fixture conformance result ${index} does not match its unavailable adapter outcome`);
   }
+  const expectedChoiceKinds = candidate.adapter.diagnosticKindDispositions
+    .filter((disposition) => result.diagnosticKinds.includes(disposition.kind))
+    .map((disposition) => disposition.kind);
+  if (
+    result.intentionalChoiceDiagnosticKinds.length !== expectedChoiceKinds.length ||
+    result.intentionalChoiceDiagnosticKinds.some((kind, kindIndex) => kind !== expectedChoiceKinds[kindIndex])
+  ) {
+    throw new Error(`Fixture conformance result ${index} does not match its adapter diagnostic dispositions`);
+  }
 }
 
 async function runConformanceFixtureAdapter(
@@ -546,6 +593,7 @@ async function runConformanceFixtureAdapter(
       diagnosticKinds: [],
       diagnostics: { Drop: 0, Recover: 0, Reject: 0, Skip: 0 },
       featureOutcomes: [],
+      intentionalChoiceDiagnosticKinds: [],
       notRunReason: adapter.implementation.reason,
       state: 'not-run',
     };
@@ -554,11 +602,15 @@ async function runConformanceFixtureAdapter(
     const observation = await adapter.implementation.run(input);
     const diagnostics = summarizeDiagnostics(observation.diagnostics);
     const featureOutcomes = normalizeFeatureOutcomes(adapter, observation.featureOutcomes ?? []);
+    const intentionalChoiceDiagnosticKinds = adapter.diagnosticKindDispositions
+      .filter((disposition) => diagnostics.diagnosticKinds.includes(disposition.kind))
+      .map((disposition) => disposition.kind);
     if (observation.notRunReason !== undefined) {
       return {
         ...identity,
         ...diagnostics,
         featureOutcomes,
+        intentionalChoiceDiagnosticKinds,
         notRunReason: observation.notRunReason,
         state: 'not-run',
       };
@@ -567,21 +619,28 @@ async function runConformanceFixtureAdapter(
     const degraded = observation.diagnostics.some(
       (diagnostic) => diagnostic.severity === 'Drop' || diagnostic.severity === 'Recover',
     );
-    const unsupported = observation.diagnostics.some((diagnostic) => diagnostic.kind.includes('unsupported'));
     const skipped = observation.diagnostics.some((diagnostic) => diagnostic.severity === 'Skip');
+    const intentionalChoiceKindSet = new Set(intentionalChoiceDiagnosticKinds);
+    const unreviewedSkip = observation.diagnostics.some(
+      (diagnostic) => diagnostic.severity === 'Skip' && !intentionalChoiceKindSet.has(diagnostic.kind),
+    );
     return {
       ...identity,
       ...diagnostics,
       featureOutcomes,
-      state: unsupported
-        ? 'unsupported'
-        : !observation.imported || rejected
+      intentionalChoiceDiagnosticKinds,
+      state:
+        !observation.imported || rejected
           ? 'rejected'
           : degraded
             ? 'degraded'
-            : skipped
+            : unreviewedSkip
               ? 'unsupported'
-              : 'imported',
+              : intentionalChoiceDiagnosticKinds.length > 0
+                ? 'intentional-choice'
+                : skipped
+                  ? 'unsupported'
+                  : 'imported',
     };
   } catch (error) {
     return {
@@ -590,6 +649,7 @@ async function runConformanceFixtureAdapter(
       diagnostics: { Drop: 0, Recover: 0, Reject: 0, Skip: 0 },
       errorName: error instanceof Error ? error.name : typeof error,
       featureOutcomes: [],
+      intentionalChoiceDiagnosticKinds: [],
       state: 'threw',
     };
   }
@@ -654,9 +714,25 @@ function fractionScore(numerator: number, denominator: number): ConformanceFixtu
 function summarizeOutcomes(
   results: readonly Readonly<ConformanceFixtureResult>[],
 ): Record<ConformanceFixtureState, number> {
-  const outcomes = { degraded: 0, imported: 0, 'not-run': 0, rejected: 0, threw: 0, unsupported: 0 };
+  const outcomes = {
+    degraded: 0,
+    imported: 0,
+    'intentional-choice': 0,
+    'not-run': 0,
+    rejected: 0,
+    threw: 0,
+    unsupported: 0,
+  };
   for (const result of results) outcomes[result.state] += 1;
   return outcomes;
+}
+
+function summarizeIntentionalChoices(
+  results: readonly Readonly<ConformanceFixtureResult>[],
+): ConformanceFixtureIntentionalChoiceScore {
+  const total = results.filter((result) => result.intentionalChoiceDiagnosticKinds.length > 0).length;
+  const exclusive = results.filter((result) => result.state === 'intentional-choice').length;
+  return { exclusive, mixed: total - exclusive, total };
 }
 
 function summarizeFeatureOutcomes(
@@ -669,6 +745,10 @@ function summarizeFeatureOutcomes(
 
 function isConformanceIdentifier(value: string): boolean {
   return /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(value);
+}
+
+function isDiagnosticKindIdentifier(value: string): boolean {
+  return /^[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*$/.test(value);
 }
 
 function compareFixtureTree(left: Readonly<ConformanceFixtureTree>, right: Readonly<ConformanceFixtureTree>): number {
@@ -684,15 +764,19 @@ const CONFORMANCE_FIXTURE_SCORE_DEFINITIONS = {
     'Unique files accepted, attempted, or completed divided by every fixture file in the selected verified trees. Unmatched files stay in the denominator rather than disappearing.',
   implementationCoverage:
     'Selected candidate runs assigned to an available fixture adapter divided by all selected candidate runs, including declared fixture families whose Flight implementation is unavailable.',
+  intentionalChoices:
+    'Results carrying an adapter-reviewed intentional-choice diagnostic kind, split between an exclusive otherwise-clean outcome and an orthogonal facet on another primary outcome.',
   outcomeStates: {
     degraded:
-      'The Flight method returned an import but reported at least one Drop or Recover diagnostic without an unsupported diagnostic taking precedence.',
+      'The Flight method returned an import but reported at least one Drop or Recover diagnostic and no Reject diagnostic.',
     imported: 'The Flight method returned an import with no Drop, Recover, Reject, or Skip diagnostic.',
+    'intentional-choice':
+      'The Flight method returned an import whose only findings were adapter-reviewed intentional choices.',
     'not-run':
       'The candidate did not reach its target Flight method, including a declared family with no implementation or an unavailable prerequisite.',
-    rejected: 'The Flight method returned no import or reported a Reject diagnostic not classified as unsupported.',
+    rejected: 'The Flight method returned no import or reported a Reject diagnostic.',
     threw: 'The Flight adapter threw; only its error name is retained.',
-    unsupported: 'A diagnostic named unsupported input, or a Skip diagnostic remained after earlier branches.',
+    unsupported: 'A Skip diagnostic remained after the rejected and degraded branches.',
   },
   selectionCoverage:
     'Candidate runs selected after the optional deterministic limit divided by all adapter-matched candidate runs in the verified corpus.',

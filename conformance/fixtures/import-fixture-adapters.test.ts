@@ -39,6 +39,30 @@ describe('createImportFixtureAdapters', () => {
     ]);
   });
 
+  it('publishes only the ten exact reviewed intentional-choice kinds', () => {
+    const adapters = createImportFixtureAdapters();
+    const choices = Object.fromEntries(
+      adapters
+        .filter((adapter) => adapter.diagnosticKindDispositions.length > 0)
+        .map((adapter) => [adapter.id, adapter.diagnosticKindDispositions.map((disposition) => disposition.kind)]),
+    );
+
+    expect(choices).toEqual({
+      'md5-animation': ['md5anim.bounds-unsupported'],
+      svg: [
+        'svg.unsupported-animate',
+        'svg.unsupported-animateMotion',
+        'svg.unsupported-animateTransform',
+        'svg.unsupported-filter',
+        'svg.unsupported-foreignObject',
+        'svg.unsupported-script',
+        'svg.unsupported-set',
+      ],
+      swf: ['swf.define-binary-data', 'swf.frame-script-declined'],
+    });
+    expect(adapters.find((adapter) => adapter.id === 'skeleton2d-json')?.diagnosticKindDispositions).toEqual([]);
+  });
+
   it('routes current and future fixture families without cross-claiming ambiguous JSON', () => {
     const adapters = createImportFixtureAdapters();
     const selected = (tree: ConformanceFixtureTree, reference: string): string[] =>

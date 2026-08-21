@@ -71,6 +71,7 @@ describe('runConformanceFixtureAdapters', () => {
     }
     const tree = fixtureTree(directory, 6);
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'sample',
       implementation: {
@@ -112,7 +113,7 @@ describe('runConformanceFixtureAdapters', () => {
       'not-run.asset': 'not-run',
       'rejected.asset': 'rejected',
       'threw.asset': 'threw',
-      'unsupported.asset': 'unsupported',
+      'unsupported.asset': 'rejected',
     });
     expect(results.find((result) => result.reference === 'threw.asset')).toMatchObject({ errorName: 'TypeError' });
     expect(JSON.stringify(results)).not.toContain('fixture-derived message');
@@ -124,11 +125,92 @@ describe('runConformanceFixtureAdapters', () => {
     });
   });
 
+  it('keeps reviewed choices orthogonal to primary findings without laundering accepted imports', async () => {
+    const directory = makeTree('full', 'tree', 'fixture-release');
+    for (const reference of [
+      'imported.asset',
+      'choice.asset',
+      'degraded.asset',
+      'rejected.asset',
+      'unbounded.asset',
+      'unsupported.asset',
+    ]) {
+      write(directory, reference, reference);
+    }
+    const choice = diagnostic('Skip', 'sample.author-choice');
+    const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [{ disposition: 'intentional-choice', kind: choice.kind }],
+      features: [],
+      id: 'sample',
+      implementation: {
+        run: async ({ reference }) => {
+          if (reference === 'choice.asset') return { diagnostics: [choice], imported: true };
+          if (reference === 'degraded.asset') {
+            return { diagnostics: [choice, diagnostic('Drop', 'sample.value-dropped')], imported: true };
+          }
+          if (reference === 'rejected.asset') {
+            return { diagnostics: [choice, diagnostic('Reject', 'sample.document-invalid')], imported: true };
+          }
+          if (reference === 'unbounded.asset') {
+            return {
+              diagnostics: [
+                diagnostic('Skip', 'dragonbones.vendor-display-unsupported'),
+                diagnostic('Skip', 'spine.vendor-attachment-unsupported'),
+                diagnostic('Skip', 'spine.slot-vendor-timeline-unsupported'),
+              ],
+              imported: true,
+            };
+          }
+          if (reference === 'unsupported.asset') {
+            return { diagnostics: [diagnostic('Skip', 'sample.unreviewed-gap')], imported: true };
+          }
+          return { diagnostics: [], imported: true };
+        },
+        state: 'available',
+      },
+      selects: () => true,
+    };
+    const plan = createConformanceFixturePlan([fixtureTree(directory, 6)], [adapter]);
+    const results = await runConformanceFixturePlan(plan);
+    const score = scoreConformanceFixturePlan(plan, results);
+
+    expect(Object.fromEntries(results.map((result) => [result.reference, result.state]))).toEqual({
+      'choice.asset': 'intentional-choice',
+      'degraded.asset': 'degraded',
+      'imported.asset': 'imported',
+      'rejected.asset': 'rejected',
+      'unbounded.asset': 'unsupported',
+      'unsupported.asset': 'unsupported',
+    });
+    expect(
+      Object.fromEntries(results.map((result) => [result.reference, result.intentionalChoiceDiagnosticKinds])),
+    ).toEqual({
+      'choice.asset': ['sample.author-choice'],
+      'degraded.asset': ['sample.author-choice'],
+      'imported.asset': [],
+      'rejected.asset': ['sample.author-choice'],
+      'unbounded.asset': [],
+      'unsupported.asset': [],
+    });
+    expect(score.intentionalChoices).toEqual({ exclusive: 1, mixed: 2, total: 3 });
+    expect(score.outcomes).toEqual({
+      degraded: 1,
+      imported: 1,
+      'intentional-choice': 1,
+      'not-run': 0,
+      rejected: 1,
+      threw: 0,
+      unsupported: 2,
+    });
+    expect(score.acceptedImport).toEqual({ denominator: 6, numerator: 1, state: 'measured', value: 1 / 6 });
+  });
+
   it('applies a deterministic global limit after sorting candidates', async () => {
     const directory = makeTree('full', 'tree', 'fixture-release');
     write(directory, 'b.asset', 'b');
     write(directory, 'a.asset', 'a');
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'sample',
       implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
@@ -143,6 +225,7 @@ describe('runConformanceFixtureAdapters', () => {
     const directory = makeTree('full', 'tree', 'fixture-release');
     write(directory, 'only-one.asset', 'one');
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'sample',
       implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
@@ -161,6 +244,7 @@ describe('scoreConformanceFixturePlan', () => {
     write(directory, 'one.asset', 'one');
     write(directory, 'two.txt', 'two');
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'available',
       implementation: {
@@ -185,6 +269,7 @@ describe('scoreConformanceFixturePlan', () => {
     write(directory, 'one.asset', 'one');
     write(directory, 'two.asset', 'two');
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [{ id: 'sample.geometry', label: 'Geometry survives import' }],
       id: 'available',
       implementation: {
@@ -236,6 +321,7 @@ describe('scoreConformanceFixturePlan', () => {
     write(directory, 'one.asset', 'one');
     write(directory, 'sidecar.bin', 'two');
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'available',
       implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
@@ -262,6 +348,7 @@ describe('scoreConformanceFixturePlan', () => {
     write(directory, 'one.asset', 'one');
     write(directory, 'two.txt', 'two');
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'available',
       implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
@@ -273,6 +360,11 @@ describe('scoreConformanceFixturePlan', () => {
     expect(() => scoreConformanceFixturePlan(plan, [{ ...results[0]!, reference: 'different.asset' }])).toThrow(
       'does not match its selected candidate identity',
     );
+    expect(() =>
+      scoreConformanceFixturePlan(plan, [
+        { ...results[0]!, intentionalChoiceDiagnosticKinds: ['sample.undeclared-choice'] },
+      ]),
+    ).toThrow('does not match its adapter diagnostic dispositions');
   });
 
   it('retains zero-candidate families as not-measured score rows', async () => {
@@ -280,6 +372,7 @@ describe('scoreConformanceFixturePlan', () => {
     write(directory, 'one.txt', 'one');
     write(directory, 'two.txt', 'two');
     const adapter: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'future',
       implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
@@ -297,7 +390,16 @@ describe('scoreConformanceFixturePlan', () => {
         executionCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
         implementation: 'unavailable',
         implementationCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
-        outcomes: { degraded: 0, imported: 0, 'not-run': 0, rejected: 0, threw: 0, unsupported: 0 },
+        intentionalChoices: { exclusive: 0, mixed: 0, total: 0 },
+        outcomes: {
+          degraded: 0,
+          imported: 0,
+          'intentional-choice': 0,
+          'not-run': 0,
+          rejected: 0,
+          threw: 0,
+          unsupported: 0,
+        },
         selectedCandidateRuns: 0,
         selectionCoverage: { denominator: 0, numerator: 0, state: 'not-measured', value: null },
       },
@@ -309,12 +411,14 @@ describe('scoreConformanceFixturePlan', () => {
     write(directory, 'one.asset', 'one');
     write(directory, 'two.txt', 'two');
     const available: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'available',
       implementation: { run: async () => ({ diagnostics: [], imported: true }), state: 'available' },
       selects: (_tree, reference) => reference.endsWith('.asset'),
     };
     const unavailable: ConformanceFixtureAdapter = {
+      diagnosticKindDispositions: [],
       features: [],
       id: 'unavailable',
       implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
@@ -342,6 +446,13 @@ function fixtureTree(directory: string, verifiedFixtureFiles: number): Conforman
     tree: 'tree',
     variant: 'full',
   };
+}
+
+function diagnostic(
+  severity: 'Drop' | 'Recover' | 'Reject' | 'Skip',
+  kind: string,
+): { kind: string; origin: string; severity: 'Drop' | 'Recover' | 'Reject' | 'Skip' } {
+  return { kind, origin: 'fixture-conformance-test', severity };
 }
 
 function makeTree(variant: string, tree: string, tag: string): string {

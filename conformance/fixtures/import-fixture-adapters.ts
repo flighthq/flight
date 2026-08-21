@@ -46,11 +46,31 @@ import type {
 
 import type {
   ConformanceFixtureAdapter,
+  ConformanceFixtureDiagnosticKindDisposition,
   ConformanceFixtureFeatureDefinition,
   ConformanceFixtureInput,
   ConformanceFixtureObservation,
   ConformanceFixtureTree,
 } from '../core/fixture-conformance';
+
+const MD5_ANIMATION_DIAGNOSTIC_KIND_DISPOSITIONS = [
+  { disposition: 'intentional-choice', kind: 'md5anim.bounds-unsupported' },
+] as const satisfies readonly ConformanceFixtureDiagnosticKindDisposition[];
+
+const SVG_DIAGNOSTIC_KIND_DISPOSITIONS = [
+  { disposition: 'intentional-choice', kind: 'svg.unsupported-animate' },
+  { disposition: 'intentional-choice', kind: 'svg.unsupported-animateMotion' },
+  { disposition: 'intentional-choice', kind: 'svg.unsupported-animateTransform' },
+  { disposition: 'intentional-choice', kind: 'svg.unsupported-filter' },
+  { disposition: 'intentional-choice', kind: 'svg.unsupported-foreignObject' },
+  { disposition: 'intentional-choice', kind: 'svg.unsupported-script' },
+  { disposition: 'intentional-choice', kind: 'svg.unsupported-set' },
+] as const satisfies readonly ConformanceFixtureDiagnosticKindDisposition[];
+
+const SWF_DIAGNOSTIC_KIND_DISPOSITIONS = [
+  { disposition: 'intentional-choice', kind: 'swf.define-binary-data' },
+  { disposition: 'intentional-choice', kind: 'swf.frame-script-declined' },
+] as const satisfies readonly ConformanceFixtureDiagnosticKindDisposition[];
 
 export function createImportFixtureAdapters(): ConformanceFixtureAdapter[] {
   // Fixture parsing is an explicit assembly. Both compressed SWF and compressed AWD2 go through the same
@@ -75,7 +95,7 @@ export function createImportFixtureAdapters(): ConformanceFixtureAdapter[] {
     unavailableAdapter('lightwave', ['.lwo']),
     packAdapter('lottie', ['lottie', 'bodymovin'], ['.json'], runLottie),
     adapter('md2', ['.md2'], runMd2),
-    adapter('md5-animation', ['.md5anim'], runMd5Animation),
+    adapter('md5-animation', ['.md5anim'], runMd5Animation, [], MD5_ANIMATION_DIAGNOSTIC_KIND_DISPOSITIONS),
     adapter('md5-mesh', ['.md5mesh'], runMd5Mesh),
     adapter('obj', ['.obj'], runObj),
     adapter('obj-material', ['.mtl'], runObjMaterial),
@@ -86,8 +106,8 @@ export function createImportFixtureAdapters(): ConformanceFixtureAdapter[] {
     packAdapter('skeleton2d-json', ['dragon-bones', 'dragonbones', 'spine'], ['.json'], runSkeleton2D, ['particle']),
     adapter('spine-binary', ['.skel', '.skel.bytes'], runSpineBinary),
     unavailableAdapter('stl', ['.stl']),
-    adapter('svg', ['.svg'], runSvg),
-    adapter('swf', ['.swf'], runSwf),
+    adapter('svg', ['.svg'], runSvg, [], SVG_DIAGNOSTIC_KIND_DISPOSITIONS),
+    adapter('swf', ['.swf'], runSwf, [], SWF_DIAGNOSTIC_KIND_DISPOSITIONS),
     adapter('three-ds', ['.3ds'], runThreeDs),
     unavailableAdapter('three-ds-max', ['.max']),
     unavailableAdapter('usd', ['.usd', '.usda', '.usdc']),
@@ -100,8 +120,10 @@ function adapter(
   extensions: readonly string[],
   run: Extract<ConformanceFixtureAdapter['implementation'], { state: 'available' }>['run'],
   features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
+  diagnosticKindDispositions: readonly Readonly<ConformanceFixtureDiagnosticKindDisposition>[] = [],
 ): ConformanceFixtureAdapter {
   return {
+    diagnosticKindDispositions,
     features,
     id,
     implementation: { run, state: 'available' },
@@ -118,6 +140,7 @@ function packAdapter(
   features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
 ): ConformanceFixtureAdapter {
   return {
+    diagnosticKindDispositions: [],
     features,
     id,
     implementation: { run, state: 'available' },
@@ -132,6 +155,7 @@ function unavailableAdapter(
   features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
 ): ConformanceFixtureAdapter {
   return {
+    diagnosticKindDispositions: [],
     features,
     id,
     implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
@@ -146,6 +170,7 @@ function unavailablePackAdapter(
   features: readonly Readonly<ConformanceFixtureFeatureDefinition>[] = [],
 ): ConformanceFixtureAdapter {
   return {
+    diagnosticKindDispositions: [],
     features,
     id,
     implementation: { reason: 'flight-importer-unavailable', state: 'unavailable' },
