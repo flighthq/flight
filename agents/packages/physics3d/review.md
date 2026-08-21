@@ -24,9 +24,9 @@ known charter hole inside it.
 target.** Every feature, numerical, terrain, performance/allocation, lifecycle, diagnostic, determinism,
 and CCD gate in the executable TypeScript target now has a checked-in challenge. The core exceeds
 physics2d in joint breadth, breakage/reaction reporting, broadphase choice, shape breadth, and diagnostic
-coverage. The sole remaining charter blocker is the explicitly paused Rust/WASM target and its parity
-evidence; this review does not turn a portable TypeScript implementation into evidence for a target that
-does not exist.
+coverage. `@flighthq/physics3d-abi` now establishes the native ownership contract, but the explicitly
+paused Rust/WASM target and its parity evidence do not exist yet; this review does not substitute a
+portable TypeScript implementation for evidence from that target.
 
 ## Passing evidence
 
@@ -64,10 +64,11 @@ from the convex support registry, and physics3d permits them only on static bodi
 
 ## Blocking gate
 
-1. **Platform evidence.** The TypeScript implementation is the executable specification. The charter's
-   Rust/WASM performance target has no implementation, parity suite, ownership measurements, or JS/WASM
-   crossing budget yet. Native work is paused pending a contract decision; do not imply target-wide AAA
-   qualification until that decision is made and its differential gates pass.
+1. **Platform evidence.** The TypeScript implementation is the executable specification, and
+   `@flighthq/physics3d-abi` now fixes the persistent handle/buffer boundary. The charter's Rust/WASM
+   performance target still has no implementation, parity suite, ownership measurements, or JS/WASM
+   crossing budget. Native work remains paused by user direction; do not imply target-wide AAA
+   qualification until its differential and performance gates pass.
 
 ## Qualification rule
 
