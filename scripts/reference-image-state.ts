@@ -107,6 +107,35 @@ export interface ReferenceImageJoinResult {
   pendingCount: number;
   /** Cells whose picture-failure a hold demoted. Never counted as compared, never counted as pending. */
   heldCount: number;
+  /** Cells claimed by more than one open request, resolved to the newest rather than failed. */
+  overlaps: readonly ReferenceImageRequestOverlap[];
+}
+
+export interface ReferenceImageRequestOverlap {
+  identity: string;
+  /** The request that wins the cell — the newest, because a re-commission supersedes the pin it replaces. */
+  winner: string;
+  superseded: readonly string[];
+}
+
+/**
+ * The newest of several requests claiming one cell.
+ *
+ * `createdAt` is the ordering signal and is optional, because the queue predates it. A request without
+ * one is treated as OLDER than any request with one — a writer that records the field is newer than the
+ * queue that did not have it. Among requests that are indistinguishable (all missing, or equal stamps)
+ * the id breaks the tie, so the winner is deterministic and two runs over the same queue agree.
+ */
+export function selectNewestOracleRequestId(
+  ids: readonly string[],
+  recordById: ReadonlyMap<string, ReferenceImageRequestRecord>,
+): string {
+  return [...ids].sort((a, b) => {
+    const at = recordById.get(a)?.request.createdAt ?? '';
+    const bt = recordById.get(b)?.request.createdAt ?? '';
+    if (at !== bt) return at < bt ? 1 : -1;
+    return a < b ? 1 : -1;
+  })[0]!;
 }
 
 export interface ReferenceImageJoinFailure {
@@ -189,10 +218,23 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
   };
 
   // Which cells are legitimately demoted, and by which request. Expired requests demote nothing — an
-  // unbounded queue is a skip list — and a cell claimed twice is rejected rather than arbitrated, since
-  // picking a winner would make the overlap invisible in exactly the case it matters.
+  // unbounded queue is a skip list.
+  //
+  // ★ A CELL CLAIMED TWICE NOW RESOLVES TO THE NEWER REQUEST INSTEAD OF FAILING THE RUN. It used to be
+  // rejected on the reasoning that picking a winner would hide the overlap — but the overlap turned out
+  // to be the NORMAL shape of a correct action: re-commissioning a cell after its scene changed is
+  // exactly right, and the tool had no way to express it except by adding a second request. Failing the
+  // gate punished the right instinct and left ten dead files to delete by hand.
+  //
+  // Newer wins because a re-commission supersedes the pin it replaces — the older request names pixels
+  // the tree no longer renders. The overlap is still REPORTED, on the cell's own row, so resolving it
+  // silently is not the same as hiding it.
   const demotedBy = new Map<string, string>();
   const claimants = new Map<string, string[]>();
+  const recordById = new Map<string, ReferenceImageRequestRecord>();
+  for (const record of input.requests) {
+    recordById.set(record.request.id, record);
+  }
   for (const record of input.requests) {
     const expired = record.ageDays > input.maxPendingDays;
     if (expired) {
@@ -217,13 +259,17 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
       if (!expired) demotedBy.set(cell, record.request.id);
     }
   }
+  const overlaps: ReferenceImageRequestOverlap[] = [];
   for (const [cell, ids] of claimants) {
     if (ids.length > 1) {
-      failures.push({
-        kind: 'request-overlap',
+      const winner = selectNewestOracleRequestId(ids, recordById);
+      if (demotedBy.has(cell)) demotedBy.set(cell, winner);
+      overlaps.push({
         identity: cell,
-        detail: `${cell} is claimed by ${ids.length} open requests: ${ids.join(', ')}`,
+        winner,
+        superseded: ids.filter((id) => id !== winner),
       });
+      continue;
     }
   }
 
@@ -355,7 +401,7 @@ export function joinOracleState(input: Readonly<ReferenceImageJoinInput>): Refer
     });
   }
 
-  return { cells, failures, comparedCount, pendingCount, heldCount };
+  return { cells, failures, comparedCount, pendingCount, heldCount, overlaps };
 }
 
 /** Stable one-line summary of a comparison, so a report row and a failure detail cannot disagree. */

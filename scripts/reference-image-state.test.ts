@@ -254,13 +254,48 @@ describe('joinOracleState', () => {
     expect(kinds(result)).toContain('regression');
   });
 
-  it('fires request-overlap when two open requests claim one cell', () => {
+  // ★ AN OVERLAP IS THE NORMAL SHAPE OF A CORRECT ACTION, NOT A DEFECT. Re-commissioning a cell after its
+  // scene changed is exactly right, and the tool had no way to say so except by adding a second request.
+  // This used to fail the run, which punished the right instinct and left dead files to delete by hand.
+  it('resolves two requests claiming one cell to the newer instead of failing', () => {
     const result = join(
-      [cell('functional/a/webgl', { comparison: moved() })],
-      [record(request('r1', 'functional', 'a')), record(request('r2', 'functional', 'a'))],
+      [cell('functional/a/webgl', { comparison: spikeComparison() })],
+      [
+        record(stamped(request('old', 'functional', 'a'), '2026-08-01T00:00:00.000Z')),
+        record(stamped(request('new', 'functional', 'a'), '2026-08-20T00:00:00.000Z')),
+      ],
     );
 
-    expect(kinds(result)).toContain('request-overlap');
+    expect(result.failures.map((failure) => failure.kind)).not.toContain('request-overlap');
+    expect(verdicts(result)['functional/a/webgl']).toBe('pending-changed');
+    expect(result.cells.find((c) => c.identity === 'functional/a/webgl')?.requestId).toBe('new');
+  });
+
+  // Resolved is not hidden: the overlap is still reported, so a queue quietly accumulating duplicates
+  // stays visible instead of being absorbed.
+  it('still reports the overlap and names what it superseded', () => {
+    const result = join(
+      [cell('functional/a/webgl', { comparison: spikeComparison() })],
+      [
+        record(stamped(request('old', 'functional', 'a'), '2026-08-01T00:00:00.000Z')),
+        record(stamped(request('new', 'functional', 'a'), '2026-08-20T00:00:00.000Z')),
+      ],
+    );
+
+    expect(result.overlaps).toEqual([{ identity: 'functional/a/webgl', winner: 'new', superseded: ['old'] }]);
+  });
+
+  // A request with no createdAt predates the field, so any stamped request outranks it.
+  it('treats an unstamped request as older than a stamped one', () => {
+    const result = join(
+      [cell('functional/a/webgl', { comparison: spikeComparison() })],
+      [
+        record(request('unstamped', 'functional', 'a')),
+        record(stamped(request('stamped', 'functional', 'a'), '2026-08-20T00:00:00.000Z')),
+      ],
+    );
+
+    expect(result.overlaps[0]?.winner).toBe('stamped');
   });
 
   it('fires request-off-target when a request names a cell that is not required and live', () => {
@@ -332,6 +367,10 @@ function kinds(result: {
 
 function moved(): ReferenceImageCellComparison {
   return { dimensionMismatch: false, fraction: 0.04, maxChannelDelta: 90 };
+}
+
+function stamped(base: ReferenceImageRequest, createdAt: string): ReferenceImageRequest {
+  return { ...base, createdAt };
 }
 
 function record(request: ReferenceImageRequest, ageDays = 1): ReferenceImageRequestRecord {

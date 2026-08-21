@@ -26,6 +26,7 @@
     "tools/review/src/holdLedger.ts",
     "tools/review/src/referenceImageCommission.ts",
     "tools/review/src/requiredReferenceImageCells.ts",
+    "tools/review/src/requestSupersede.ts",
     "tools/review/src/reviewFilter.ts",
     "tools/review/src/reviewOrder.ts"
   ],
