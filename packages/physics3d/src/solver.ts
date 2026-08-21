@@ -1,7 +1,6 @@
 import { collideContactManifold3D, createCollisionContactManifold3D } from '@flighthq/collision/contract';
 import type {
   CollisionContactManifold3D,
-  Physics3DContact,
   Physics3DContactConstraint,
   Physics3DContactConstraintPoint,
   Physics3DWorld,
@@ -83,8 +82,11 @@ export function createPhysics3DContactConstraintPoint(): Physics3DContactConstra
 export function preparePhysics3DContactConstraints(world: Physics3DWorld): void {
   const state = world.solver;
   const previousByContact = state.constraintByContact;
-  const constraints: Physics3DContactConstraint[] = [];
-  const nextByContact = new Map<Physics3DContact, Physics3DContactConstraint>();
+  const constraints = state.constraints;
+  // `contact = -1` is the inactive mark while the same high-water objects are gathered back into solve
+  // order. The map cannot be cleared first because it is also how the contact finds its prior impulses.
+  for (const constraint of constraints) constraint.contact = -1;
+  constraints.length = 0;
   const config = world.config.sequentialImpulse;
 
   for (let island = 0; island < world.solveIslandRoots.length; island += 1) {
@@ -107,23 +109,41 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
         continue;
       }
 
-      const constraint = createPhysics3DContactConstraint();
+      let constraint = previousByContact.get(contact);
+      if (constraint === undefined) {
+        constraint = createPhysics3DContactConstraint();
+        previousByContact.set(contact, constraint);
+      }
+      const previousPointCount = constraint.pointCount;
+      for (let i = 0; i < previousPointCount; i += 1) {
+        const point = constraint.points[i];
+        previousFeatures[i] = point.featureId;
+        previousNormalImpulses[i] = point.normalImpulse;
+        previousTangentImpulses0[i] = point.tangentImpulse0;
+        previousTangentImpulses1[i] = point.tangentImpulse1;
+      }
       constraint.contact = contactIndex;
+      constraint.pointCount = contact.pointCount;
       writeFrictionBasis(contact.normalX, contact.normalY, contact.normalZ, constraint);
-
-      const previous = previousByContact.get(contact);
 
       for (let i = 0; i < contact.pointCount; i += 1) {
         const source = contact.points[i];
-        const point = createPhysics3DContactConstraintPoint();
+        let point = constraint.points[i];
+        if (point === undefined) {
+          point = createPhysics3DContactConstraintPoint();
+          constraint.points.push(point);
+        }
         point.featureId = source.featureId;
+        point.normalImpulse = 0;
+        point.tangentImpulse0 = 0;
+        point.tangentImpulse1 = 0;
 
-        if (config.warmStarting && previous !== undefined) {
-          const carried = findPointByFeatureId(previous, source.featureId);
-          if (carried !== null) {
-            point.normalImpulse = carried.normalImpulse;
-            point.tangentImpulse0 = carried.tangentImpulse0;
-            point.tangentImpulse1 = carried.tangentImpulse1;
+        if (config.warmStarting) {
+          const carried = findPreviousPointByFeatureId(source.featureId, previousPointCount);
+          if (carried >= 0) {
+            point.normalImpulse = previousNormalImpulses[carried];
+            point.tangentImpulse0 = previousTangentImpulses0[carried];
+            point.tangentImpulse1 = previousTangentImpulses1[carried];
           }
         }
 
@@ -181,18 +201,17 @@ export function preparePhysics3DContactConstraints(world: Physics3DWorld): void 
           contact.normalZ,
         );
         point.bias = approach < -config.restitutionThreshold ? -contact.restitution * approach : 0;
-
-        constraint.points.push(point);
-        constraint.pointCount += 1;
       }
 
       constraints.push(constraint);
-      nextByContact.set(contact, constraint);
     }
   }
 
-  state.constraints = constraints;
-  state.constraintByContact = nextByContact;
+  // Retire constraints whose contacts were omitted from the awake solve without replacing the map.
+  // Deleting while iterating a Map is defined to leave the remaining entries visitable.
+  for (const [contact, constraint] of previousByContact) {
+    if (constraint.contact < 0) previousByContact.delete(contact);
+  }
 }
 
 // Resolves penetration by moving bodies directly, leaving `penetrationSlop` of overlap deliberately
@@ -562,14 +581,11 @@ function applyBodyPositionCorrection(
 
 // Locates last step's accumulators for a feature. Linear because a manifold holds at most a handful of
 // points and a map per contact would cost more than the scan.
-function findPointByFeatureId(
-  constraint: Readonly<Physics3DContactConstraint>,
-  featureId: number,
-): Physics3DContactConstraintPoint | null {
-  for (let i = 0; i < constraint.pointCount; i += 1) {
-    if (constraint.points[i].featureId === featureId) return constraint.points[i];
+function findPreviousPointByFeatureId(featureId: number, pointCount: number): number {
+  for (let i = 0; i < pointCount; i += 1) {
+    if (previousFeatures[i] === featureId) return i;
   }
-  return null;
+  return -1;
 }
 
 // The constraint denominator along one direction: the scalar mass a unit impulse in that direction
@@ -691,6 +707,10 @@ function writeFrictionBasis(normalX: number, normalY: number, normalZ: number, o
 const AXIS_SELECTION_THRESHOLD = 0.5773502691896258;
 const scratchTensor = [0, 0, 0, 0, 0, 0];
 const scratchVector = [0, 0, 0];
+const previousFeatures: number[] = [];
+const previousNormalImpulses: number[] = [];
+const previousTangentImpulses0: number[] = [];
+const previousTangentImpulses1: number[] = [];
 
 interface Physics3DPositionScratch {
   manifold: CollisionContactManifold3D;
