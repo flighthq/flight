@@ -25,6 +25,12 @@ describe('createCollisionDistance3D', () => {
       directionX: 0,
       directionY: 0,
       directionZ: 0,
+      pointAX: 0,
+      pointAY: 0,
+      pointAZ: 0,
+      pointBX: 0,
+      pointBY: 0,
+      pointBZ: 0,
       overlapping: false,
     });
   });
@@ -152,5 +158,68 @@ describe('writeCollisionDistance3D', () => {
       writeCollisionDistance3D(sphere(0, 0, 0, scale), sphere(10 * scale, 0, 0, scale), out);
       expect(out.distance / scale).toBeCloseTo(8, 6);
     }
+  });
+
+  it('puts the witness points on each sphere surface along the line of centres', () => {
+    writeCollisionDistance3D(sphere(0, 0, 0, 1), sphere(10, 0, 0, 1), out);
+    expect(out.pointAX).toBeCloseTo(1, 6);
+    expect(out.pointAY).toBeCloseTo(0, 6);
+    expect(out.pointBX).toBeCloseTo(9, 6);
+  });
+
+  it('separates the witness points by exactly the reported distance along the reported direction', () => {
+    // The invariant tying the three outputs together. Any of them can be individually plausible while
+    // disagreeing with the others, and this is the only assertion that catches that.
+    for (const b of [sphere(10, 0, 0, 1), sphere(6, 8, 0, 2), aabb(4, 4, 4, 5, 5, 5)]) {
+      expect(writeCollisionDistance3D(sphere(0, 0, 0, 1), b, out)).toBe(true);
+      expect(out.pointAX - out.pointBX).toBeCloseTo(out.directionX * out.distance, 6);
+      expect(out.pointAY - out.pointBY).toBeCloseTo(out.directionY * out.distance, 6);
+      expect(out.pointAZ - out.pointBZ).toBeCloseTo(out.directionZ * out.distance, 6);
+    }
+  });
+
+  it('FINDS A CLOSEST POINT INTERIOR TO AN EDGE, WHICH NO SUPPORT CALL CAN NAME', () => {
+    // The reason witness points exist. Two capsules crossing at right angles are closest at the MIDDLE of
+    // each segment, and a support function returns extreme points only — queried along the normal it
+    // reports a segment END, two units adrift on a four-unit capsule. The barycentric weights of the
+    // simplex are what recover the interior point.
+    const alongX: CollisionShape3D = { kind: 'capsule', x0: -2, y0: 0, z0: 0, x1: 2, y1: 0, z1: 0, radius: 0.5 };
+    const aboveAlongY: CollisionShape3D = { kind: 'capsule', x0: 0, y0: -2, z0: 5, x1: 0, y1: 2, z1: 5, radius: 0.5 };
+
+    expect(writeCollisionDistance3D(alongX, aboveAlongY, out)).toBe(true);
+    expect(out.distance).toBeCloseTo(4, 6);
+    expect(out.pointAX).toBeCloseTo(0, 6);
+    expect(out.pointAY).toBeCloseTo(0, 6);
+    expect(out.pointAZ).toBeCloseTo(0.5, 6);
+    expect(out.pointBZ).toBeCloseTo(4.5, 6);
+  });
+
+  it('settles on a corner of the shared region when the closest features are PARALLEL', () => {
+    // Pinning the documented limitation, not an accident. Every point of two parallel faces is equally
+    // close, so the search converges on the first vertex it finds and stops. The point it names is one
+    // the shapes really do touch at, but it is a corner of the contact area rather than its centre —
+    // which is why a face-face contact needs a manifold and not this.
+    writeCollisionDistance3D(aabb(-1, -1, -1, 1, 1, 1), aabb(5, -20, -20, 6, 20, 20), out);
+    expect(out.distance).toBeCloseTo(4, 6);
+    expect(out.pointAX).toBeCloseTo(1, 6);
+    expect(Math.abs(out.pointAY)).toBeCloseTo(1, 6);
+    expect(Math.abs(out.pointAZ)).toBeCloseTo(1, 6);
+  });
+
+  it('reports the witness on A in the OFFSET frame', () => {
+    // The offset is A's, so a caller reading the witness back has to find A where it asked for it. A sweep
+    // that assumed otherwise put a static wall's contact point five units off the wall.
+    writeCollisionDistance3D(sphere(0, 0, 0, 1), sphere(10, 0, 0, 1), out, 3, 0, 0);
+    expect(out.distance).toBeCloseTo(5, 6);
+    expect(out.pointAX).toBeCloseTo(4, 6);
+    expect(out.pointBX).toBeCloseTo(9, 6);
+  });
+
+  it('zeroes the witness points for an overlapping pair, alongside the distance', () => {
+    writeCollisionDistance3D(sphere(0, 0, 0, 1), sphere(10, 0, 0, 1), out);
+    expect(writeCollisionDistance3D(sphere(0, 0, 0, 2), sphere(1, 0, 0, 2), out)).toBe(false);
+    // Stale witnesses from the previous call would read as a legitimate contact point.
+    expect(out.pointAX).toBe(0);
+    expect(out.pointBX).toBe(0);
   });
 });

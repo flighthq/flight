@@ -463,11 +463,31 @@ export interface CollisionRaycastHit3D {
 // a caller does not have to remember which way a distance query happens to face. It is left zeroed when
 // `overlapping` is true, because a pair that already intersects has no gap and no unique axis; the
 // penetration case is `CollisionManifold3D`'s.
+// The WITNESS POINTS (`pointA*` and `pointB*`) are the closest points on each shape's surface: the pair
+// that realizes `distance`, so `pointA - pointB` is `distance` along `direction`. They are reported in
+// the frame the query was posed in, which for an offset query means A already carries the offset.
+//
+// They are EXACT where the closest feature is interior to an edge or a face — two crossing capsules meet
+// mid-segment, and a witness lands there, where a support function queried along the normal returns a
+// segment END and misplaces the point by half the shape.
+//
+// They are NOT a substitute for a manifold. When the closest features are parallel every point of the
+// shared region is equally close, the search settles on whichever one the support function's tie-break
+// names, and that is a CORNER of the region rather than its centre. So a witness is a point the shapes
+// genuinely touch at, but a face-face contact is an area, and no single point represents it: reading one
+// as a lever arm gives a squarely-struck box a spin it should not have. Use `CollisionContactManifold3D`
+// where the contact patch matters, and a witness where a single closest point is the actual question.
 export interface CollisionDistance3D {
   distance: number;
   directionX: number;
   directionY: number;
   directionZ: number;
+  pointAX: number;
+  pointAY: number;
+  pointAZ: number;
+  pointBX: number;
+  pointBY: number;
+  pointBZ: number;
   overlapping: boolean;
 }
 
