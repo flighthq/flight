@@ -2,7 +2,9 @@ import type {
   CollisionAabb3D,
   CollisionBox3D,
   CollisionCapsule3D,
+  CollisionCone3D,
   CollisionConvex3D,
+  CollisionCylinder3D,
   CollisionPairTest3D,
   CollisionShape3D,
   CollisionShapeKind3D,
@@ -38,13 +40,15 @@ export function getCollisionSupport3D(kind: CollisionShapeKind3D): CollisionSupp
   return collisionSupports3D.get(kind) ?? null;
 }
 
-// Installs the five built-in convex kinds' support functions. Kept an explicit assembly rather than
+// Installs the seven built-in convex kinds' support functions. Kept an explicit assembly rather than
 // part of module load, so a caller that never runs a 3D test links none of this.
 export function registerBuiltInCollisionSupports3D(): void {
   registerCollisionSupport3D('aabb', supportCollisionAabb3D);
   registerCollisionSupport3D('box', supportCollisionBox3D);
   registerCollisionSupport3D('capsule', supportCollisionCapsule3D);
+  registerCollisionSupport3D('cone', supportCollisionCone3D);
   registerCollisionSupport3D('convex', supportCollisionConvex3D);
+  registerCollisionSupport3D('cylinder', supportCollisionCylinder3D);
   registerCollisionSupport3D('sphere', supportCollisionSphere3D);
 }
 
@@ -153,6 +157,46 @@ export function supportCollisionCapsule3D(
   out[2] = baseZ + dirZ * scale;
 }
 
+// The furthest point on a cone: the better of the apex and the base rim, compared directly.
+//
+// A cone is the convex hull of a point and a disc, so its support is the max over those two pieces and
+// nothing else — no case analysis on which side of the shape the direction is on. The rim's value is
+// the base centre's projection plus `radius` times the direction's RADIAL magnitude, which is exactly
+// how far out the rim can reach along the direction.
+export function supportCollisionCone3D(
+  shape: Readonly<CollisionShape3D>,
+  dirX: number,
+  dirY: number,
+  dirZ: number,
+  out: number[],
+): void {
+  const cone = shape as CollisionCone3D;
+  const apexProjection = cone.apexX * dirX + cone.apexY * dirY + cone.apexZ * dirZ;
+
+  writeRadialComponent3D(
+    cone.baseX - cone.apexX,
+    cone.baseY - cone.apexY,
+    cone.baseZ - cone.apexZ,
+    dirX,
+    dirY,
+    dirZ,
+    radialScratch,
+  );
+  const radialLength = radialScratch[3];
+  const rimProjection = cone.baseX * dirX + cone.baseY * dirY + cone.baseZ * dirZ + cone.radius * radialLength;
+
+  if (apexProjection >= rimProjection) {
+    out[0] = cone.apexX;
+    out[1] = cone.apexY;
+    out[2] = cone.apexZ;
+    return;
+  }
+  const scale = radialLength > 0 ? cone.radius / radialLength : 0;
+  out[0] = cone.baseX + radialScratch[0] * scale;
+  out[1] = cone.baseY + radialScratch[1] * scale;
+  out[2] = cone.baseZ + radialScratch[2] * scale;
+}
+
 // The furthest vertex of a convex hull, by linear scan. Linear rather than by hill-climbing the
 // adjacency graph: a collider hull is a handful of vertices, and a scan needs no adjacency data the
 // flat point list does not carry.
@@ -165,6 +209,37 @@ export function supportCollisionConvex3D(
 ): void {
   const points = (shape as CollisionConvex3D).points;
   writeVertexListSupport3D(points, Math.floor(points.length / 3), dirX, dirY, dirZ, out);
+}
+
+// The furthest point on a cylinder: the end cap the direction leans toward, pushed one radius along the
+// direction's RADIAL component.
+//
+// The radial split is what separates this from the capsule beside it. A capsule offsets its chosen
+// endpoint along the whole direction, which rounds its ends; a cylinder offsets only within the cap
+// plane, which leaves them flat. Same segment-and-radius parameters, one term different.
+export function supportCollisionCylinder3D(
+  shape: Readonly<CollisionShape3D>,
+  dirX: number,
+  dirY: number,
+  dirZ: number,
+  out: number[],
+): void {
+  const cylinder = shape as CollisionCylinder3D;
+  const axisX = cylinder.x1 - cylinder.x0;
+  const axisY = cylinder.y1 - cylinder.y0;
+  const axisZ = cylinder.z1 - cylinder.z0;
+
+  const useSecond = axisX * dirX + axisY * dirY + axisZ * dirZ > 0;
+  const baseX = useSecond ? cylinder.x1 : cylinder.x0;
+  const baseY = useSecond ? cylinder.y1 : cylinder.y0;
+  const baseZ = useSecond ? cylinder.z1 : cylinder.z0;
+
+  writeRadialComponent3D(axisX, axisY, axisZ, dirX, dirY, dirZ, radialScratch);
+  const radialLength = radialScratch[3];
+  const scale = radialLength > 0 ? cylinder.radius / radialLength : 0;
+  out[0] = baseX + radialScratch[0] * scale;
+  out[1] = baseY + radialScratch[1] * scale;
+  out[2] = baseZ + radialScratch[2] * scale;
 }
 
 // The furthest point on a sphere: its centre pushed one radius along the direction.
@@ -253,7 +328,41 @@ function rotateVectorByQuaternion(
   out[2] = vectorZ + 2 * (quaternionX * tempY - quaternionY * tempX);
 }
 
+// The part of a direction perpendicular to an axis, written as `[x, y, z, length]`.
+//
+// The shared term behind both round-sided kinds: it is how far, and which way, a cap rim can reach out
+// from the axis along the direction. `axis` need not be unit and neither need `dir`.
+//
+// A ZERO axis leaves the direction untouched, which makes a degenerate cylinder or cone behave as a
+// sphere of the same radius rather than producing NaN. Validation rejects both shapes before a caller
+// gets there; this only keeps a degenerate GJK step finite.
+function writeRadialComponent3D(
+  axisX: number,
+  axisY: number,
+  axisZ: number,
+  dirX: number,
+  dirY: number,
+  dirZ: number,
+  out: number[],
+): void {
+  const axisLengthSquared = axisX * axisX + axisY * axisY + axisZ * axisZ;
+  let radialX = dirX;
+  let radialY = dirY;
+  let radialZ = dirZ;
+  if (axisLengthSquared > 0) {
+    const projection = (dirX * axisX + dirY * axisY + dirZ * axisZ) / axisLengthSquared;
+    radialX -= axisX * projection;
+    radialY -= axisY * projection;
+    radialZ -= axisZ * projection;
+  }
+  out[0] = radialX;
+  out[1] = radialY;
+  out[2] = radialZ;
+  out[3] = Math.sqrt(radialX * radialX + radialY * radialY + radialZ * radialZ);
+}
+
 const collisionPairTests3D = new Map<string, CollisionPairTest3D>();
 const collisionSupports3D = new Map<CollisionShapeKind3D, CollisionSupport3D>();
 const localCorner = [0, 0, 0];
 const localDirection = [0, 0, 0];
+const radialScratch = [0, 0, 0, 0];

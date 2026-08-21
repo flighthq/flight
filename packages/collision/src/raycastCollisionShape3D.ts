@@ -98,6 +98,10 @@ export function raycastCollisionShape3D(
       return raycastBox3D(shape, originX, originY, originZ, directionX, directionY, directionZ, out, maxFraction);
     case 'capsule':
       return raycastCapsule3D(shape, originX, originY, originZ, directionX, directionY, directionZ, out, maxFraction);
+    case 'cylinder':
+      return raycastCylinder3D(shape, originX, originY, originZ, directionX, directionY, directionZ, out, maxFraction);
+    case 'cone':
+      return raycastCone3D(shape, originX, originY, originZ, directionX, directionY, directionZ, out, maxFraction);
     case 'convex':
       return raycastConvexHull3D(
         shape.points,
@@ -281,6 +285,281 @@ function raycastBox3D(
 // classic source of a capsule whose caps are subtly wrong, because the axial-range test and the root
 // selection interact; here each piece is separately checkable and the only shared step is taking a
 // minimum.
+// A cone, as the ray interval surviving TWO constraints: the axial band from apex to base, and the
+// lateral quadratic.
+//
+// The quadratic `dot(w,w) * cos^2 = dot(w,u)^2` describes a DOUBLE cone — both nappes, the real one and
+// its mirror through the apex. That surface is not convex and its two roots do not bracket an interval,
+// which is why the axial band is applied as a filter on each root rather than intersected as a slab the
+// way the cylinder below does. A root on the mirror nappe has a negative axial coordinate and is
+// dropped there; treating the pair as an interval would let a ray that misses the cone entirely report
+// a hit on the phantom one behind the apex.
+function raycastCone3D(
+  shape: Readonly<CollisionBuiltInShape3D & { kind: 'cone' }>,
+  originX: number,
+  originY: number,
+  originZ: number,
+  directionX: number,
+  directionY: number,
+  directionZ: number,
+  out: CollisionRaycastHit3D,
+  maxFraction: number,
+): boolean {
+  const axisX = shape.baseX - shape.apexX;
+  const axisY = shape.baseY - shape.apexY;
+  const axisZ = shape.baseZ - shape.apexZ;
+  const height = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+  if (height <= 0) return false;
+  const unitX = axisX / height;
+  const unitY = axisY / height;
+  const unitZ = axisZ / height;
+
+  const wX = originX - shape.apexX;
+  const wY = originY - shape.apexY;
+  const wZ = originZ - shape.apexZ;
+
+  const slope = shape.radius / height;
+  const factor = 1 + slope * slope;
+  const dirAxial = directionX * unitX + directionY * unitY + directionZ * unitZ;
+  const originAxial = wX * unitX + wY * unitY + wZ * unitZ;
+
+  const a = directionX * directionX + directionY * directionY + directionZ * directionZ - factor * dirAxial * dirAxial;
+  const b = 2 * (wX * directionX + wY * directionY + wZ * directionZ - factor * originAxial * dirAxial);
+  const c = wX * wX + wY * wY + wZ * wZ - factor * originAxial * originAxial;
+
+  let best = Infinity;
+  let lateral = false;
+  if (Math.abs(a) > CONE_EPSILON) {
+    const discriminant = b * b - 4 * a * c;
+    if (discriminant >= 0) {
+      const root = Math.sqrt(discriminant);
+      for (const t of [(-b - root) / (2 * a), (-b + root) / (2 * a)]) {
+        if (t < 0 || t > maxFraction || t >= best) continue;
+        const axial = originAxial + dirAxial * t;
+        if (axial < 0 || axial > height) continue;
+        best = t;
+        lateral = true;
+      }
+    }
+  } else if (Math.abs(b) > CONE_EPSILON) {
+    // The ray runs parallel to a lateral generator, so the quadratic degenerates to a line and meets the
+    // surface exactly once.
+    const t = -c / b;
+    const axial = originAxial + dirAxial * t;
+    if (t >= 0 && t <= maxFraction && axial >= 0 && axial <= height) {
+      best = t;
+      lateral = true;
+    }
+  }
+
+  if (Math.abs(dirAxial) > 0) {
+    const t = (height - originAxial) / dirAxial;
+    if (t >= 0 && t <= maxFraction && t < best) {
+      const hitX = wX + directionX * t - unitX * height;
+      const hitY = wY + directionY * t - unitY * height;
+      const hitZ = wZ + directionZ * t - unitZ * height;
+      if (hitX * hitX + hitY * hitY + hitZ * hitZ <= shape.radius * shape.radius) {
+        best = t;
+        lateral = false;
+      }
+    }
+  }
+
+  if (best === Infinity) return false;
+
+  if (!lateral) {
+    return writeRaycastHit3D(
+      out,
+      originX,
+      originY,
+      originZ,
+      directionX,
+      directionY,
+      directionZ,
+      best,
+      unitX,
+      unitY,
+      unitZ,
+    );
+  }
+
+  // The lateral normal leans out by the cone's own slope: the radial direction scaled by the height, less
+  // the axis scaled by the radius, which is perpendicular to the generator through the hit. Using the
+  // bare radial direction — the cylinder's normal — would be wrong by exactly the half-angle and tilt
+  // every bounce off a cone toward the base.
+  const axial = originAxial + dirAxial * best;
+  const radialX = wX + directionX * best - unitX * axial;
+  const radialY = wY + directionY * best - unitY * axial;
+  const radialZ = wZ + directionZ * best - unitZ * axial;
+  const radialLength = Math.sqrt(radialX * radialX + radialY * radialY + radialZ * radialZ);
+  if (radialLength <= 0) {
+    return writeRaycastHit3D(
+      out,
+      originX,
+      originY,
+      originZ,
+      directionX,
+      directionY,
+      directionZ,
+      best,
+      -unitX,
+      -unitY,
+      -unitZ,
+    );
+  }
+  const normalX = (radialX / radialLength) * height - unitX * shape.radius;
+  const normalY = (radialY / radialLength) * height - unitY * shape.radius;
+  const normalZ = (radialZ / radialLength) * height - unitZ * shape.radius;
+  const normalLength = Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
+  return writeRaycastHit3D(
+    out,
+    originX,
+    originY,
+    originZ,
+    directionX,
+    directionY,
+    directionZ,
+    best,
+    normalX / normalLength,
+    normalY / normalLength,
+    normalZ / normalLength,
+  );
+}
+
+// A cylinder, as the ray interval surviving the intersection of an infinite cylinder and an axial slab.
+//
+// Both constraints are CONVEX, so each contributes an entry and an exit and the survivors intersect as
+// intervals — no case analysis over which cap or side the ray met first, and the winning constraint at
+// the entry is what names the normal. The classic branch-per-region routine computes the same answer
+// with far more places to get a sign wrong.
+function raycastCylinder3D(
+  shape: Readonly<CollisionBuiltInShape3D & { kind: 'cylinder' }>,
+  originX: number,
+  originY: number,
+  originZ: number,
+  directionX: number,
+  directionY: number,
+  directionZ: number,
+  out: CollisionRaycastHit3D,
+  maxFraction: number,
+): boolean {
+  const axisX = shape.x1 - shape.x0;
+  const axisY = shape.y1 - shape.y0;
+  const axisZ = shape.z1 - shape.z0;
+  const height = Math.sqrt(axisX * axisX + axisY * axisY + axisZ * axisZ);
+  if (height <= 0) return false;
+  const unitX = axisX / height;
+  const unitY = axisY / height;
+  const unitZ = axisZ / height;
+
+  const wX = originX - shape.x0;
+  const wY = originY - shape.y0;
+  const wZ = originZ - shape.z0;
+  const dirAxial = directionX * unitX + directionY * unitY + directionZ * unitZ;
+  const originAxial = wX * unitX + wY * unitY + wZ * unitZ;
+
+  let enter = 0;
+  let exit = maxFraction;
+  let enterOnCap = 0;
+
+  // The axial slab, as a pair of parallel planes.
+  if (Math.abs(dirAxial) <= CONE_EPSILON) {
+    if (originAxial < 0 || originAxial > height) return false;
+  } else {
+    // Each cap plane carries its own outward normal, and the sign is read off WHICH plane the near
+    // parameter belongs to rather than derived from the direction. Deriving it from `dirAxial` and
+    // flipping on the swap gets it exactly backwards, which shows up only as an inverted normal on a cap
+    // hit — the fraction stays right, so a ray still stops in the correct place while reporting a
+    // surface facing into the solid.
+    const atStartCap = -originAxial / dirAxial;
+    const atEndCap = (height - originAxial) / dirAxial;
+    let near = atStartCap;
+    let far = atEndCap;
+    let sign = -1;
+    if (atStartCap > atEndCap) {
+      near = atEndCap;
+      far = atStartCap;
+      sign = 1;
+    }
+    if (near > enter) {
+      enter = near;
+      enterOnCap = sign;
+    }
+    if (far < exit) exit = far;
+    if (enter > exit) return false;
+  }
+
+  // The infinite cylinder, as a quadratic on the RADIAL parts of the origin and direction.
+  const radialOriginX = wX - unitX * originAxial;
+  const radialOriginY = wY - unitY * originAxial;
+  const radialOriginZ = wZ - unitZ * originAxial;
+  const radialDirX = directionX - unitX * dirAxial;
+  const radialDirY = directionY - unitY * dirAxial;
+  const radialDirZ = directionZ - unitZ * dirAxial;
+
+  const a = radialDirX * radialDirX + radialDirY * radialDirY + radialDirZ * radialDirZ;
+  const c =
+    radialOriginX * radialOriginX +
+    radialOriginY * radialOriginY +
+    radialOriginZ * radialOriginZ -
+    shape.radius * shape.radius;
+  if (a <= CONE_EPSILON) {
+    // Parallel to the axis: the ray either runs inside the infinite cylinder forever or never enters it.
+    if (c > 0) return false;
+  } else {
+    const b = 2 * (radialOriginX * radialDirX + radialOriginY * radialDirY + radialOriginZ * radialDirZ);
+    const discriminant = b * b - 4 * a * c;
+    if (discriminant < 0) return false;
+    const root = Math.sqrt(discriminant);
+    const near = (-b - root) / (2 * a);
+    const far = (-b + root) / (2 * a);
+    if (near > enter) {
+      enter = near;
+      enterOnCap = 0;
+    }
+    if (far < exit) exit = far;
+    if (enter > exit) return false;
+  }
+
+  if (enter < 0 || enter > maxFraction) return false;
+
+  if (enterOnCap !== 0) {
+    return writeRaycastHit3D(
+      out,
+      originX,
+      originY,
+      originZ,
+      directionX,
+      directionY,
+      directionZ,
+      enter,
+      unitX * enterOnCap,
+      unitY * enterOnCap,
+      unitZ * enterOnCap,
+    );
+  }
+
+  const axial = originAxial + dirAxial * enter;
+  const radialX = wX + directionX * enter - unitX * axial;
+  const radialY = wY + directionY * enter - unitY * axial;
+  const radialZ = wZ + directionZ * enter - unitZ * axial;
+  const radialLength = Math.sqrt(radialX * radialX + radialY * radialY + radialZ * radialZ);
+  if (radialLength <= 0) return false;
+  return writeRaycastHit3D(
+    out,
+    originX,
+    originY,
+    originZ,
+    directionX,
+    directionY,
+    directionZ,
+    enter,
+    radialX / radialLength,
+    radialY / radialLength,
+    radialZ / radialLength,
+  );
+}
+
 function raycastCapsule3D(
   shape: Readonly<CollisionBuiltInShape3D & { kind: 'capsule' }>,
   originX: number,
@@ -581,3 +860,8 @@ const scratchLocalOrigin = [0, 0, 0];
 const scratchLocalDirection = [0, 0, 0];
 
 const scratchWorldNormal = [0, 0, 0];
+
+// The threshold separating a genuinely degenerate quadratic from a merely small leading coefficient.
+// Below it, the ray is treated as parallel to the surface it is being tested against, which is the
+// branch that has a closed-form answer rather than a division by something near zero.
+const CONE_EPSILON = 1e-12;

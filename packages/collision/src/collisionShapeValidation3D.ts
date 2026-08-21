@@ -96,6 +96,35 @@ export function getCollisionShapeValidationStatus3D(shape: Readonly<CollisionSha
         shape.radius > 0
         ? null
         : 'degenerate-shape';
+    case 'cylinder':
+      // Unlike a capsule, a ZERO-LENGTH cylinder is degenerate. A capsule with coincident endpoints is
+      // still a solid (a sphere); a cylinder with coincident caps is a flat disc with no interior, and
+      // its axis — which its support function needs to separate cap from side — is undefined.
+      return Number.isFinite(shape.x0) &&
+        Number.isFinite(shape.y0) &&
+        Number.isFinite(shape.z0) &&
+        Number.isFinite(shape.x1) &&
+        Number.isFinite(shape.y1) &&
+        Number.isFinite(shape.z1) &&
+        Number.isFinite(shape.radius) &&
+        shape.radius > 0 &&
+        (shape.x0 !== shape.x1 || shape.y0 !== shape.y1 || shape.z0 !== shape.z1)
+        ? null
+        : 'degenerate-shape';
+    case 'cone':
+      // Same rule as the cylinder, and for the same reason: apex and base centre coinciding leaves a
+      // flat disc with no axis to measure the rim against.
+      return Number.isFinite(shape.apexX) &&
+        Number.isFinite(shape.apexY) &&
+        Number.isFinite(shape.apexZ) &&
+        Number.isFinite(shape.baseX) &&
+        Number.isFinite(shape.baseY) &&
+        Number.isFinite(shape.baseZ) &&
+        Number.isFinite(shape.radius) &&
+        shape.radius > 0 &&
+        (shape.apexX !== shape.baseX || shape.apexY !== shape.baseY || shape.apexZ !== shape.baseZ)
+        ? null
+        : 'degenerate-shape';
     case 'convex':
       return getCollisionConvexValidationStatus3D(shape.points);
     default:
