@@ -32,7 +32,8 @@ The **Tauri (v2) host adapter** — concrete implementations of Flight's platfor
 _Append-only, dated, blessed rulings._
 
 - **[2026-07-11] Injected `TauriApi`, no hard dep.** Mirror host-electron: the Tauri modules are passed to `registerTauriBackends`, typed against a local `TauriApi` interface, so the package builds and fake-tests without `@tauri-apps/*` installed.
-- **[2026-07-11] Desktop seam subset; uncovered seams return sentinel.** Tauri v2's surface (window/app/dialog/clipboard/notification/shell/menu/tray/updater/os/shortcut/store/deep-link) is the coverage target; mobile-only or absent capabilities are not forced.
+- **[2026-07-11] Desktop seam subset; uncovered seams keep the web default.** Tauri v2's surface (window/app/dialog/clipboard/notification/shell/menu/tray/updater/os/shortcut/store/deep-link) is the coverage target; mobile-only or absent capabilities are not forced.
+- **[2026-08-21] Uncovered seams have no implementation; host-web installation is explicit.** The 2026-07-11 web-default clause is superseded under the no-no-op rule: a capability Tauri does not cover has no host implementation, returns a sentinel with `explain*` reporting `'host-does-not-offer'`, and never silently substitutes web. This is the 2026-08-21 user ruling; rationale is recorded in the [host-web architecture](../../host-web-architecture.md).
 
 ## Open directions
 
