@@ -17,9 +17,7 @@ describe('assertSensitivityControls', () => {
     const expected = ASSERTION_SENSITIVITY_CONTROLS[path]!;
     const wrong = expected === 'able' ? 'blind' : 'able';
 
-    expect(() => assertSensitivityControls([{ evidence: 'mutant', line: 1, path, verdict: wrong }])).toThrow(
-      path,
-    );
+    expect(() => assertSensitivityControls([{ evidence: 'mutant', line: 1, path, verdict: wrong }])).toThrow(path);
   });
 });
 

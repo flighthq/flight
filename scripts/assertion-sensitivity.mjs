@@ -296,7 +296,10 @@ function reachableFunctions(source, masked, root, definitions) {
 }
 
 function thresholdCount(masked, reachable) {
-  return reachable.reduce((count, definition) => count + (functionBody(masked, definition).match(/\bthrow\s+new\s+Error\b/g)?.length ?? 0), 0);
+  return reachable.reduce(
+    (count, definition) => count + (functionBody(masked, definition).match(/\bthrow\s+new\s+Error\b/g)?.length ?? 0),
+    0,
+  );
 }
 
 function regionEvidence(source, masked, reachable, definitions) {
@@ -396,9 +399,7 @@ function loopThresholdEvidence(source, masked, reachable, definitions) {
       if (!samplesPixel) continue;
       const thresholdLoop = ranges.find(
         ([start, end]) =>
-          call.offset >= start &&
-          call.offset <= end &&
-          /\bthrow\s+new\s+Error\b/.test(masked.slice(start, end + 1)),
+          call.offset >= start && call.offset <= end && /\bthrow\s+new\s+Error\b/.test(masked.slice(start, end + 1)),
       );
       if (thresholdLoop === undefined) continue;
       return {
@@ -464,7 +465,12 @@ export function classifyAssertionSource(path, source) {
   const reachable = reachableFunctions(source, masked, root, definitions);
   const thresholds = thresholdCount(masked, reachable);
   if (thresholds === 0) {
-    return { evidence: 'assertRender reaches no throw threshold', line: lineAt(source, root.start), path, verdict: 'gap' };
+    return {
+      evidence: 'assertRender reaches no throw threshold',
+      line: lineAt(source, root.start),
+      path,
+      verdict: 'gap',
+    };
   }
 
   // More specific evidence wins. Region calls come first to make the call-site argument proof visible
