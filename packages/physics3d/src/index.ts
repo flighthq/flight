@@ -97,7 +97,11 @@ export {
   queryPhysics3DShapeCast,
 } from './worldQueries';
 export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
-export { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';
+export {
+  hasActivePhysics3DBullet,
+  integratePhysics3DContinuous,
+  writePhysics3DRotationalCcdEnvelope,
+} from './continuous';
 
 export { breakPhysics3DJoint, evaluatePhysics3DJointBreakage, isPhysics3DJointBreakable } from './jointBreakage';
 export {

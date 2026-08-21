@@ -337,11 +337,26 @@ function stepValidatedPhysics3D(world: Physics3DWorld, dt: number): void {
   for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
     clearRigidBody3DForces(world.bodies[bodyIndex]);
   }
+  // CCD contacts are appended at TOI so they cannot shift the contact indices held by constraints that
+  // were prepared earlier in the interval. Those indices have expired now, so restore the canonical
+  // identity order before publishing the committed world and invoking post-solve hooks. The active-
+  // bullet condition is the same condition that can enter the CCD path; sorting every ordinary settled
+  // contact here added an O(n log n) tax to worlds that could not possibly have appended anything.
+  if (world.config.continuousCollision && hasActivePhysics3DBullet(world)) {
+    world.contacts.sort(comparePhysics3DContactIdentity);
+  }
   world.previousTimestep = substepDt;
 
   // Post-solve observes a committed step. A hook that throws here cannot prevent pose integration, force
   // cleanup, or the timestep agreement above, so the next call never resumes a half-finished step.
   runPhysics3DContactHook(world, world.contactHooks.postSolve, 'post-solve');
+}
+
+function comparePhysics3DContactIdentity(left: Readonly<Physics3DContact>, right: Readonly<Physics3DContact>): number {
+  if (left.bodyA !== right.bodyA) return left.bodyA - right.bodyA;
+  if (left.bodyB !== right.bodyB) return left.bodyB - right.bodyB;
+  if (left.colliderA !== right.colliderA) return left.colliderA - right.colliderA;
+  return left.colliderB - right.colliderB;
 }
 
 let physics3DStepGuard: Physics3DStepGuard | null = null;
