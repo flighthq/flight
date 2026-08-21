@@ -41,12 +41,6 @@ function beginWgpuRenderPassEncoder(
   return pass;
 }
 
-// Begins a render pass into `target`: opens a wgpu render pass encoder that CLEARS every aspect by
-// default (the loadOp 'clear' the pass previously always used). `preserve` switches an aspect's
-// loadOp to 'load'; the clear VALUES are fixed on the target (WgpuRenderTarget.clearColors / clearDepth).
-// Pair with endWgpuRenderPass. Carries no 2D transform — that is a display-object draw concern; a 2D pass
-// that needs a specific root transform calls setWgpuRenderTransform2D after begin (saved/restored by the
-// bracket). Mirrors beginGlRenderPass.
 export function beginWgpuRenderPass(
   state: WgpuRenderState,
   target: WgpuRenderTarget,
@@ -70,7 +64,10 @@ export function beginWgpuRenderPass(
     renderTarget: runtime.currentRenderTarget,
   });
 
-  runtime.renderTargetViewport = { width: target.width, height: target.height };
+  // LOGICAL extent, not physical: this field feeds the 2D projection, which must map logical coordinates
+  // across the whole target. The GPU viewport below stays physical so the draw covers every device pixel.
+  const supersample = getWgpuRenderTargetSupersampleScale(target);
+  runtime.renderTargetViewport = { width: target.width / supersample, height: target.height / supersample };
   // Scene3D pipelines drawn into this target must match its color format (e.g. rgba16float for HDR).
   runtime.currentColorFormat = target.format;
   runtime.currentRenderTarget = target;
@@ -247,6 +244,29 @@ export function endWgpuRenderPass(state: WgpuRenderState): void {
   }
 }
 
+// Begins a render pass into `target`: opens a wgpu render pass encoder that CLEARS every aspect by
+// default (the loadOp 'clear' the pass previously always used). `preserve` switches an aspect's
+// loadOp to 'load'; the clear VALUES are fixed on the target (WgpuRenderTarget.clearColors / clearDepth).
+// Pair with endWgpuRenderPass. Carries no 2D transform — that is a display-object draw concern; a 2D pass
+// that needs a specific root transform calls setWgpuRenderTransform2D after begin (saved/restored by the
+// bracket). Mirrors beginGlRenderPass.
+/**
+ * Device pixels per logical pixel in this target — 2 when it is supersampled, 1 otherwise.
+ *
+ * ★ THE ALLOCATOR AND THE PROJECTION MUST AGREE, AND THEY DID NOT. `resolveWgpuRenderTargetExtent` grows a
+ * `sampleCount: 4` target to 2x per axis, while the 2D projection divides by `renderTargetViewport.width`
+ * to reach NDC. With the physical extent in that field, logical x = 800 mapped to NDC 0 — the middle — so
+ * the scene filled exactly the left half and top half of its own target and the present then downsampled
+ * the lot, landing the picture at quarter size in the top-left corner. Measured on effect-sepia: the
+ * WebGPU frame equalled the WebGL frame sampled at (2x, 2y) on 12 of 12 grid points.
+ *
+ * The scale is DERIVED from sampleCount rather than stored, so there is one rule and no second field to
+ * fall out of step with the texture that was actually allocated.
+ */
+export function getWgpuRenderTargetSupersampleScale(target: Readonly<WgpuRenderTarget>): number {
+  return target.sampleCount === 4 ? WGPU_RENDER_TARGET_SUPERSAMPLE_SCALE : 1;
+}
+
 export function resizeWgpuRenderTarget(
   state: WgpuRenderState,
   target: WgpuRenderTarget,
@@ -321,7 +341,7 @@ function resolveWgpuRenderTargetExtent(
   sampleCount: number,
 ): { height: number; sampleCount: number; width: number } {
   const samples = sampleCount > 1 ? 4 : 1;
-  const scale = samples === 4 ? 2 : 1;
+  const scale = samples === 4 ? WGPU_RENDER_TARGET_SUPERSAMPLE_SCALE : 1;
   return {
     height: Math.max(1, Math.ceil(height)) * scale,
     sampleCount: samples,
@@ -338,3 +358,7 @@ export function setWgpuRenderTransform2D(state: WgpuRenderState, transform: Read
   copyMatrix(next, transform);
   state.renderTransform2D = next;
 }
+
+// One place decides how much bigger a supersampled target is than its logical extent. `wgpuAntialias.ts`
+// carries the same number for the main surface; they are the same concept applied to two surfaces.
+const WGPU_RENDER_TARGET_SUPERSAMPLE_SCALE = 2;

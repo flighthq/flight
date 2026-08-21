@@ -1,8 +1,10 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import type { WgpuRenderTarget } from '@flighthq/types/contract';
 
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 import {
+  getWgpuRenderTargetSupersampleScale,
   beginWgpuRenderPass,
   createWgpuRenderTarget,
   declareWgpuRenderTargetColorSpace,
@@ -161,6 +163,34 @@ describe('endWgpuRenderPass', () => {
     endWgpuRenderPass(state);
     expect(getWgpuRenderStateRuntime(state).renderTargetViewport).toBeNull();
     submitWgpuRenderPass(state);
+  });
+});
+
+describe('getWgpuRenderTargetSupersampleScale', () => {
+  // ★ THE ALLOCATOR AND THE PROJECTION HAVE TO AGREE. A sampleCount-4 target is allocated at 2x per axis;
+  // if the 2D projection divides by that physical width it maps logical x = 800 to NDC 0, and the scene
+  // fills a quarter of its own target. Measured on effect-sepia before the repair: the WebGPU frame
+  // equalled the WebGL frame sampled at (2x, 2y) on 12 of 12 grid points; after, 48 of 48 matched 1:1.
+  it('reports 2 for a supersampled target and 1 for a single-sample one', () => {
+    expect(getWgpuRenderTargetSupersampleScale({ sampleCount: 4 } as WgpuRenderTarget)).toBe(2);
+    expect(getWgpuRenderTargetSupersampleScale({ sampleCount: 1 } as WgpuRenderTarget)).toBe(1);
+  });
+
+  // Dividing the physical extent by the scale has to land back on the logical extent exactly, or the
+  // projection drifts by a pixel at odd sizes. The allocator ceils BEFORE scaling, which is what makes
+  // this exact rather than approximately right.
+  it('inverts the allocator exactly, including at an odd logical size', () => {
+    for (const [logical, sampleCount] of [
+      [801, 4],
+      [599, 4],
+      [800, 1],
+      [1, 4],
+    ] as const) {
+      const physical = Math.max(1, Math.ceil(logical)) * (sampleCount === 4 ? 2 : 1);
+      const scale = getWgpuRenderTargetSupersampleScale({ sampleCount } as WgpuRenderTarget);
+
+      expect(physical / scale).toBe(logical);
+    }
   });
 });
 
