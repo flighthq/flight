@@ -17,6 +17,7 @@ import {
   applyPhysics3DForce,
   applyPhysics3DForceAtPoint,
   applyPhysics3DLinearImpulse,
+  applyPhysics3DLinearImpulseAtPoint,
   applyPhysics3DTorque,
   createPhysics3DCollider,
   createPhysics3DSequentialImpulseConfig,
@@ -225,8 +226,19 @@ describe('applyPhysics3DForce', () => {
 
   it('ignores a static body', () => {
     const body = createRigidBody3D('static');
-    applyPhysics3DForce(body, 1, 2, 3);
+    expect(applyPhysics3DForce(body, 1, 2, 3)).toBe(false);
     expect(body.forceY).toBe(0);
+  });
+
+  it('rejects a non-finite force without partially mutating or waking the body', () => {
+    const body = sphere();
+    body.sleeping = true;
+
+    expect(applyPhysics3DForce(body, 1, Number.NaN, 3)).toBe(false);
+
+    expect(body.forceX).toBe(0);
+    expect(body.forceY).toBe(0);
+    expect(body.sleeping).toBe(true);
   });
 });
 
@@ -260,6 +272,15 @@ describe('applyPhysics3DForceAtPoint', () => {
 
     expect(body.torqueZ).toBeCloseTo(0, 12);
   });
+
+  it('rejects a non-finite point before accumulating any force', () => {
+    const body = sphere();
+
+    expect(applyPhysics3DForceAtPoint(body, 1, 2, 3, Number.POSITIVE_INFINITY, 0, 0)).toBe(false);
+
+    expect(body.forceX).toBe(0);
+    expect(body.torqueZ).toBe(0);
+  });
 });
 
 describe('applyPhysics3DLinearImpulse', () => {
@@ -273,8 +294,45 @@ describe('applyPhysics3DLinearImpulse', () => {
 
   it('ignores an immovable body', () => {
     const body = createRigidBody3D('static');
-    applyPhysics3DLinearImpulse(body, 100, 0, 0);
+    expect(applyPhysics3DLinearImpulse(body, 100, 0, 0)).toBe(false);
     expect(body.velocityX).toBe(0);
+  });
+
+  it('rejects a non-finite impulse without poisoning velocity', () => {
+    const body = sphere();
+
+    expect(applyPhysics3DLinearImpulse(body, Number.NaN, 0, 0)).toBe(false);
+
+    expect(body.velocityX).toBe(0);
+  });
+});
+
+describe('applyPhysics3DLinearImpulseAtPoint', () => {
+  it('changes linear and angular velocity through the world inverse inertia', () => {
+    const body = sphere();
+
+    expect(applyPhysics3DLinearImpulseAtPoint(body, 1, 0, 0, 0, 1, 0)).toBe(true);
+
+    expect(body.velocityX).toBeGreaterThan(0);
+    expect(body.angularVelocityZ).toBeLessThan(0);
+  });
+
+  it('uses the world centre of mass for the lever arm', () => {
+    const body = sphere();
+    body.centerY = 1;
+
+    applyPhysics3DLinearImpulseAtPoint(body, 1, 0, 0, 0, 1, 0);
+
+    expect(body.angularVelocityZ).toBeCloseTo(0, 12);
+  });
+
+  it('rejects invalid input atomically', () => {
+    const body = sphere();
+
+    expect(applyPhysics3DLinearImpulseAtPoint(body, 1, 0, 0, 0, Number.NaN, 0)).toBe(false);
+
+    expect(body.velocityX).toBe(0);
+    expect(body.angularVelocityZ).toBe(0);
   });
 });
 
@@ -283,6 +341,14 @@ describe('applyPhysics3DTorque', () => {
     const body = sphere();
     applyPhysics3DTorque(body, 0, 0, 4);
     expect(body.torqueZ).toBe(4);
+  });
+
+  it('rejects non-finite torque and a body with fixed rotation', () => {
+    const body = sphere();
+    expect(applyPhysics3DTorque(body, 0, 0, Number.NaN)).toBe(false);
+    setPhysics3DBodyFixedRotation(body, true);
+    expect(applyPhysics3DTorque(body, 0, 0, 4)).toBe(false);
+    expect(body.torqueZ).toBe(0);
   });
 });
 
@@ -711,6 +777,13 @@ describe('setPhysics3DBodyBullet', () => {
     expect(body.bullet).toBe(true);
     expect(body.sleeping).toBe(false);
   });
+
+  it('rejects a non-boolean runtime value', () => {
+    const body = sphere();
+
+    expect(setPhysics3DBodyBullet(body, 1 as never)).toBe(false);
+    expect(body.bullet).toBe(false);
+  });
 });
 
 describe('setPhysics3DBodyFixedRotation', () => {
@@ -762,6 +835,13 @@ describe('setPhysics3DBodySleepEnabled', () => {
     expect(body.sleepEnabled).toBe(false);
     expect(body.sleeping).toBe(false);
     expect(body.sleepTimer).toBe(0);
+  });
+
+  it('rejects a non-boolean runtime value', () => {
+    const body = sphere();
+
+    expect(setPhysics3DBodySleepEnabled(body, 'no' as never)).toBe(false);
+    expect(body.sleepEnabled).toBe(true);
   });
 });
 
@@ -833,6 +913,21 @@ describe('setPhysics3DBodyTransform', () => {
     setPhysics3DBodyTransform(body, 0, 0, 0, 0, 0, 0, 0);
 
     expect(body.orientationW).toBe(1);
+  });
+
+  it('rejects a non-finite transform without invalidating the current world state', () => {
+    const world = createPhysics3DWorld();
+    const body = sphere();
+    const neighbour = sphere();
+    addPhysics3DBody(world, body);
+    addPhysics3DBody(world, neighbour);
+    world.contacts.push(contact(body.index, neighbour.index));
+
+    expect(setPhysics3DBodyTransform(body, Number.NaN, 2, 3, 0, 0, 0, 1)).toBe(false);
+
+    expect(body.x).toBe(0);
+    expect(body.y).toBe(0);
+    expect(world.contacts).toHaveLength(1);
   });
 
   it('wakes the body', () => {
@@ -915,6 +1010,13 @@ describe('setPhysics3DBodyType', () => {
     setPhysics3DBodyType(body, 'dynamic');
 
     expect(body.forceX).toBe(9);
+  });
+
+  it('rejects an unknown runtime body type', () => {
+    const body = sphere();
+
+    expect(setPhysics3DBodyType(body, 'ghost' as never)).toBe(false);
+    expect(body.type).toBe('dynamic');
   });
 
   it('invalidates owned-body contacts whose mass participation just changed', () => {

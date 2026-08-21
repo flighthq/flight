@@ -26,6 +26,15 @@ import {
   physics3DColliderOwners,
   physics3DJointOwners,
 } from './ownership';
+import {
+  applySymmetricTensor,
+  TENSOR_XX,
+  TENSOR_XY,
+  TENSOR_XZ,
+  TENSOR_YY,
+  TENSOR_YZ,
+  TENSOR_ZZ,
+} from './symmetricTensor';
 
 // World and body lifecycle: allocation, membership, and the mutations that have to run through a
 // function because something derived follows from them.
@@ -109,15 +118,16 @@ export function addPhysics3DCollider(
   return collider;
 }
 
-// Accumulates a force at the body's centre of mass, to be consumed by the next step. Ignored for a
-// body that cannot respond to one.
-export function applyPhysics3DForce(body: RigidBody3D, x: number, y: number, z: number): void {
+// Accumulates a finite force at the body's centre of mass, to be consumed by the next step. Returning
+// false makes an ignored non-dynamic or invalid action observable without letting it poison the world.
+export function applyPhysics3DForce(body: RigidBody3D, x: number, y: number, z: number): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.type !== 'dynamic') return;
-  wakePhysics3DBody(body);
+  if (body.type !== 'dynamic' || !isFinitePhysics3DVector(x, y, z)) return false;
   body.forceX += x;
   body.forceY += y;
   body.forceZ += z;
+  if (x !== 0 || y !== 0 || z !== 0) wakePhysics3DBody(body);
+  return true;
 }
 
 // Accumulates a force at a world-space point, which produces both a force at the centre of mass and the
@@ -130,42 +140,97 @@ export function applyPhysics3DForceAtPoint(
   pointX: number,
   pointY: number,
   pointZ: number,
-): void {
+): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.type !== 'dynamic') return;
-  wakePhysics3DBody(body);
+  if (
+    body.type !== 'dynamic' ||
+    !isFinitePhysics3DVector(x, y, z) ||
+    !isFinitePhysics3DVector(pointX, pointY, pointZ)
+  ) {
+    return false;
+  }
   body.forceX += x;
   body.forceY += y;
   body.forceZ += z;
 
-  writeRigidBody3DWorldCenter(body, scratchCenter);
-  const rX = pointX - scratchCenter[0];
-  const rY = pointY - scratchCenter[1];
-  const rZ = pointZ - scratchCenter[2];
-  body.torqueX += rY * z - rZ * y;
-  body.torqueY += rZ * x - rX * z;
-  body.torqueZ += rX * y - rY * x;
+  if (!body.fixedRotation) {
+    writeRigidBody3DWorldCenter(body, scratchCenter);
+    const rX = pointX - scratchCenter[0];
+    const rY = pointY - scratchCenter[1];
+    const rZ = pointZ - scratchCenter[2];
+    body.torqueX += rY * z - rZ * y;
+    body.torqueY += rZ * x - rX * z;
+    body.torqueZ += rX * y - rY * x;
+  }
+  if (x !== 0 || y !== 0 || z !== 0) wakePhysics3DBody(body);
+  return true;
 }
 
 // Applies an instantaneous change in momentum at the centre of mass, bypassing the force accumulator.
 // An impulse is what a jump or a hit is: a velocity change now, not a force integrated over the step.
-export function applyPhysics3DLinearImpulse(body: RigidBody3D, x: number, y: number, z: number): void {
+export function applyPhysics3DLinearImpulse(body: RigidBody3D, x: number, y: number, z: number): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.type !== 'dynamic' || body.inverseMass === 0) return;
-  wakePhysics3DBody(body);
+  if (body.type !== 'dynamic' || !isFinitePhysics3DVector(x, y, z)) return false;
   body.velocityX += x * body.inverseMass;
   body.velocityY += y * body.inverseMass;
   body.velocityZ += z * body.inverseMass;
+  if (x !== 0 || y !== 0 || z !== 0) wakePhysics3DBody(body);
+  return true;
+}
+
+// Applies a finite instantaneous impulse at a world-space point. The linear half changes momentum at
+// the centre; the lever arm's cross product is transformed through the current world inverse inertia
+// to produce angular velocity. This is the impulse counterpart to `applyPhysics3DForceAtPoint`.
+export function applyPhysics3DLinearImpulseAtPoint(
+  body: RigidBody3D,
+  x: number,
+  y: number,
+  z: number,
+  pointX: number,
+  pointY: number,
+  pointZ: number,
+): boolean {
+  assertPhysics3DBodyNotStepping(body);
+  if (
+    body.type !== 'dynamic' ||
+    !isFinitePhysics3DVector(x, y, z) ||
+    !isFinitePhysics3DVector(pointX, pointY, pointZ)
+  ) {
+    return false;
+  }
+  body.velocityX += x * body.inverseMass;
+  body.velocityY += y * body.inverseMass;
+  body.velocityZ += z * body.inverseMass;
+  if (!body.fixedRotation) {
+    writeRigidBody3DWorldCenter(body, scratchCenter);
+    const rX = pointX - scratchCenter[0];
+    const rY = pointY - scratchCenter[1];
+    const rZ = pointZ - scratchCenter[2];
+    const angularImpulseX = rY * z - rZ * y;
+    const angularImpulseY = rZ * x - rX * z;
+    const angularImpulseZ = rX * y - rY * x;
+    // Mass data can be authored before insertion, when there is no world step to refresh this derived
+    // tensor. Refresh here so an immediate at-point impulse observes the body the caller just authored.
+    refreshRigidBody3DWorldInertia(body);
+    readRigidBody3DWorldInverseInertia(body, scratchInverseInertia);
+    applySymmetricTensor(scratchInverseInertia, angularImpulseX, angularImpulseY, angularImpulseZ, scratchVector);
+    body.angularVelocityX += scratchVector[0];
+    body.angularVelocityY += scratchVector[1];
+    body.angularVelocityZ += scratchVector[2];
+  }
+  if (x !== 0 || y !== 0 || z !== 0) wakePhysics3DBody(body);
+  return true;
 }
 
 // Accumulates a torque about the centre of mass, to be consumed by the next step.
-export function applyPhysics3DTorque(body: RigidBody3D, x: number, y: number, z: number): void {
+export function applyPhysics3DTorque(body: RigidBody3D, x: number, y: number, z: number): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.type !== 'dynamic') return;
-  wakePhysics3DBody(body);
+  if (body.type !== 'dynamic' || body.fixedRotation || !isFinitePhysics3DVector(x, y, z)) return false;
   body.torqueX += x;
   body.torqueY += y;
   body.torqueZ += z;
+  if (x !== 0 || y !== 0 || z !== 0) wakePhysics3DBody(body);
+  return true;
 }
 
 // Allocates a collider around an authored LOCAL shape, with its world-space counterpart sized and ready.
@@ -484,11 +549,13 @@ export function removePhysics3DCollider(
 // Changes whether a dynamic body receives continuous collision treatment. The policy is retained across
 // body-type changes, and either transition wakes an owned body so a newly enabled bullet cannot remain
 // outside the continuous path until something else disturbs it.
-export function setPhysics3DBodyBullet(body: RigidBody3D, bullet: boolean): void {
+export function setPhysics3DBodyBullet(body: RigidBody3D, bullet: boolean): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.bullet === bullet) return;
+  if (typeof bullet !== 'boolean') return false;
+  if (body.bullet === bullet) return true;
   body.bullet = bullet;
   wakePhysics3DBody(body);
+  return true;
 }
 
 // Opts a dynamic body into or out of rotating at all, rebuilding its inverse inertia.
@@ -497,9 +564,10 @@ export function setPhysics3DBodyBullet(body: RigidBody3D, bullet: boolean): void
 // contact and joint equation — the same sentinel a static body uses, applied to rotation alone. Its
 // angular velocity is cleared, because leaving one behind would let a body that cannot be rotated by
 // anything keep spinning forever from whatever it had before.
-export function setPhysics3DBodyFixedRotation(body: RigidBody3D, fixedRotation: boolean): void {
+export function setPhysics3DBodyFixedRotation(body: RigidBody3D, fixedRotation: boolean): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.fixedRotation === fixedRotation) return;
+  if (typeof fixedRotation !== 'boolean') return false;
+  if (body.fixedRotation === fixedRotation) return true;
   const world = physics3DBodyOwners.get(body);
   if (world !== undefined) invalidatePhysics3DBodyConstraints(world, body.index);
   body.fixedRotation = fixedRotation;
@@ -513,15 +581,18 @@ export function setPhysics3DBodyFixedRotation(body: RigidBody3D, fixedRotation: 
   }
   refreshRigidBody3DMass(body);
   wakePhysics3DBody(body);
+  return true;
 }
 
 // Changes whether this body may participate in sleeping. Both transitions reset stillness so enabling
 // sleep still requires one new uninterrupted quiet interval, and disabling it cannot leave a body frozen.
-export function setPhysics3DBodySleepEnabled(body: RigidBody3D, sleepEnabled: boolean): void {
+export function setPhysics3DBodySleepEnabled(body: RigidBody3D, sleepEnabled: boolean): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.sleepEnabled === sleepEnabled) return;
+  if (typeof sleepEnabled !== 'boolean') return false;
+  if (body.sleepEnabled === sleepEnabled) return true;
   body.sleepEnabled = sleepEnabled;
   wakePhysics3DBody(body);
+  return true;
 }
 
 // Teleports a body, refreshing the world-space inertia its new orientation implies.
@@ -538,8 +609,15 @@ export function setPhysics3DBodyTransform(
   orientationY: number,
   orientationZ: number,
   orientationW: number,
-): void {
+): boolean {
   assertPhysics3DBodyNotStepping(body);
+  if (
+    !isFinitePhysics3DVector(x, y, z) ||
+    !isFinitePhysics3DVector(orientationX, orientationY, orientationZ) ||
+    !Number.isFinite(orientationW)
+  ) {
+    return false;
+  }
   const world = physics3DBodyOwners.get(body);
   if (world !== undefined) invalidatePhysics3DBodyConstraints(world, body.index);
   body.x = x;
@@ -567,6 +645,7 @@ export function setPhysics3DBodyTransform(
   wakePhysics3DBody(body);
   refreshRigidBody3DWorldInertia(body);
   if (world !== undefined) synchronizePhysics3DBroadphase(world);
+  return true;
 }
 
 // Changes how a body participates, rebuilding the mass properties that follow from it.
@@ -574,9 +653,10 @@ export function setPhysics3DBodyTransform(
 // Leaving a body's velocity behind when it becomes static would strand motion nothing can consume, so
 // the velocities are cleared; becoming dynamic keeps them, since a body that was being pushed as
 // kinematic is plausibly still moving.
-export function setPhysics3DBodyType(body: RigidBody3D, type: Physics3DBodyType): void {
+export function setPhysics3DBodyType(body: RigidBody3D, type: Physics3DBodyType): boolean {
   assertPhysics3DBodyNotStepping(body);
-  if (body.type === type) return;
+  if (type !== 'dynamic' && type !== 'kinematic' && type !== 'static') return false;
+  if (body.type === type) return true;
   const world = physics3DBodyOwners.get(body);
   if (world !== undefined) invalidatePhysics3DBodyConstraints(world, body.index);
   body.type = type;
@@ -598,6 +678,7 @@ export function setPhysics3DBodyType(body: RigidBody3D, type: Physics3DBodyType)
   refreshRigidBody3DMass(body);
   refreshRigidBody3DWorldInertia(body);
   wakePhysics3DBody(body);
+  return true;
 }
 
 // Wakes a body and resets its stillness timer. A no-op for a static body, which is neither awake nor
@@ -733,5 +814,20 @@ function refreshRigidBody3DMass(body: RigidBody3D): void {
   setRigidBody3DMassData(body, scratchMassData);
 }
 
+function isFinitePhysics3DVector(x: number, y: number, z: number): boolean {
+  return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
+}
+
+function readRigidBody3DWorldInverseInertia(body: Readonly<RigidBody3D>, out: number[]): void {
+  out[TENSOR_XX] = body.inverseInertiaWorldXX;
+  out[TENSOR_YY] = body.inverseInertiaWorldYY;
+  out[TENSOR_ZZ] = body.inverseInertiaWorldZZ;
+  out[TENSOR_XY] = body.inverseInertiaWorldXY;
+  out[TENSOR_XZ] = body.inverseInertiaWorldXZ;
+  out[TENSOR_YZ] = body.inverseInertiaWorldYZ;
+}
+
 const scratchCenter = [0, 0, 0];
+const scratchInverseInertia = [0, 0, 0, 0, 0, 0];
 const scratchMassData = createPhysics3DMassData();
+const scratchVector = [0, 0, 0];
