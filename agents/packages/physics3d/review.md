@@ -28,8 +28,8 @@ budgets. Those are release blockers, not reasons to discount the evidence alread
 
 | Gate | Evidence | Current result |
 | --- | --- | --- |
-| Package correctness | `npx vitest run packages/physics3d/src` | 31 files, 661 tests pass |
-| Collision integration | `npx vitest run packages/collision/src packages/physics3d/src` | 66 files, 1,117 tests pass |
+| Package correctness | `npx vitest run packages/physics3d/src` | 31 files, 662 tests pass |
+| Collision integration | `npx vitest run packages/collision/src packages/physics3d/src` | 66 files, 1,118 tests pass |
 | Static checks | `npm run typecheck`, `npm run exports:check`, `npm run order`, `npm run api:check` | pass |
 | Long stack | 12 unit boxes, four retaining walls, 900 steps at 60 Hz | finite, ordered, supported, asleep; top > 11 |
 | Joint endurance | 12-link driven 3D ball joint chain, 1,200 steps | finite and bounded |
