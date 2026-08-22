@@ -4,7 +4,6 @@ import type {
   ApplicationLoopOptions,
   ApplicationStepOptions,
   ApplicationWindow,
-  BackendExplanation,
   LoopBackend,
 } from '@flighthq/types/contract';
 
@@ -77,11 +76,11 @@ export function createApplication(): Application {
 
 export function createWebLoopBackend(): LoopBackend {
   return {
-    requestFrame(callback: (time: number) => void): number {
+    requestFrame(callback: (time: number) => void): unknown {
       return requestAnimationFrame(callback);
     },
-    cancelFrame(handle: number): void {
-      cancelAnimationFrame(handle);
+    cancelFrame(handle: unknown): void {
+      cancelAnimationFrame(handle as number);
     },
     now(): number {
       return performance.now();
@@ -110,31 +109,6 @@ export function enableApplicationLifecycleSignals(app: Application): void {
   if (app.onDeactivate === null) app.onDeactivate = createSignal();
   if (app.onError === null) app.onError = createSignal();
   if (app.onFixedUpdate === null) app.onFixedUpdate = createSignal();
-}
-
-export function explainLoopBackend(): BackendExplanation {
-  if (_loopCustom !== null) {
-    return {
-      conflict: _loopHostConflict,
-      layer: 'custom',
-      operation: null,
-      viability: 'unobserved',
-    };
-  }
-  if (_loopHost !== null) {
-    return {
-      conflict: _loopHostConflict,
-      layer: 'host',
-      operation: _loopHostObservation !== null ? _loopHostObservation.operation : null,
-      viability: _loopHostObservation !== null ? _loopHostObservation.viability : 'unobserved',
-    };
-  }
-  return {
-    conflict: false,
-    layer: 'host-not-enabled',
-    operation: null,
-    viability: 'unobserved',
-  };
 }
 
 // Iterates over all registered application windows, calling fn for each. Does not allocate.
@@ -175,27 +149,13 @@ export function getApplicationWindows(app: Readonly<Application>): readonly Appl
   return app.windows.slice();
 }
 
-export function getLoopBackend(): LoopBackend | null {
-  return _loopCustom ?? _loopHost ?? null;
-}
-
-export function installLoopHostBackend(backend: LoopBackend): void {
-  if (_loopHost !== null) {
-    if (_loopHost !== backend) _loopHostConflict = true;
-    return;
-  }
-  _loopHost = backend;
+export function getLoopBackend(): LoopBackend {
+  if (_loopBackend === null) _loopBackend = createWebLoopBackend();
+  return _loopBackend;
 }
 
 export function isApplicationRunning(app: Readonly<Application>): boolean {
   return app.isRunning;
-}
-
-export function observeLoopHostResult(operation: 'cancelFrame' | 'requestFrame', succeeded: boolean): void {
-  _loopHostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
 }
 
 export function pauseApplicationLoop(app: Application): void {
@@ -210,13 +170,6 @@ export function pauseApplicationLoop(app: Application): void {
 export function registerApplicationWindow(app: Application, win: ApplicationWindow): void {
   if (app.windows.includes(win)) return;
   app.windows.push(win);
-}
-
-export function resetLoopBackendForTest(): void {
-  _loopCustom = null;
-  _loopHost = null;
-  _loopHostConflict = false;
-  _loopHostObservation = null;
 }
 
 export function resumeApplicationLoop(app: Application): void {
@@ -240,8 +193,9 @@ export function setApplicationMainWindow(app: Application, win: ApplicationWindo
   _mainWindows.set(app, win);
 }
 
+// Installs a host loop backend. Pass null to fall back to the web default (requestAnimationFrame).
 export function setLoopBackend(backend: LoopBackend | null): void {
-  _loopCustom = backend;
+  _loopBackend = backend;
 }
 
 export function startApplicationLoop(app: Application, options: Readonly<ApplicationLoopOptions> = {}): void {
@@ -250,9 +204,7 @@ export function startApplicationLoop(app: Application, options: Readonly<Applica
   observers.get(kLoop)?.();
   observers.delete(kPaused);
 
-  const resolved = getLoopBackend();
-  if (resolved === null) return;
-  const backend: LoopBackend = resolved;
+  const backend = getLoopBackend();
   const maxDeltaTime = options.maxDeltaTime ?? DEFAULT_MAX_DELTA_TIME;
   const targetFrameRate = options.targetFrameRate ?? 0;
   const backgroundFrameRate = options.backgroundFrameRate ?? DEFAULT_BACKGROUND_FRAME_RATE;
@@ -362,20 +314,14 @@ const _mainWindows = new WeakMap<Application, ApplicationWindow>();
 
 const ROLLING_FPS_WINDOW = 60;
 
-let _loopCustom: LoopBackend | null = null;
-let _loopHost: LoopBackend | null = null;
-let _loopHostConflict = false;
-let _loopHostObservation: {
-  operation: 'cancelFrame' | 'requestFrame';
-  viability: 'available' | 'runtime-api-unavailable';
-} | null = null;
+let _loopBackend: LoopBackend | null = null;
 
 interface LoopState {
   fixedAccumulator: number;
   fixedTimeStep: number;
   fpsBuffer: number[];
   fpsHead: number;
-  frameHandle: number;
+  frameHandle: unknown;
   frameRateAccumulated: number;
   lastTime: number;
   maxDeltaTime: number;
@@ -436,7 +382,7 @@ function createLoopState(fixedTimeStep: number, maxDeltaTime: number, maxUpdates
     fixedTimeStep,
     fpsBuffer: [],
     fpsHead: 0,
-    frameHandle: 0,
+    frameHandle: null as unknown,
     frameRateAccumulated: 0,
     lastTime: -1,
     maxDeltaTime,
