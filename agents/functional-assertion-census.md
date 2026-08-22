@@ -7,8 +7,8 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 349 |
-| blind | 7 |
+| able | 351 |
+| blind | 5 |
 | gap | 0 |
 | exempt | 0 |
 | **total** | **356** |
@@ -164,8 +164,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/env-skybox.webgpu.ts` | able | L124: getBitmapPixel is thresholded at named coordinates (Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.12)) |
 | `functional/scenes/light-hemisphere.webgl.ts` | able | L110: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy - offset) |
 | `functional/scenes/light-hemisphere.webgpu.ts` | able | L86: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy - offset) |
-| `functional/scenes/light-many-point.webgl.ts` | blind | L164: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/light-many-point.webgpu.ts` | blind | L142: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/light-many-point.webgl.ts` | able | L184: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/light-many-point.webgpu.ts` | able | L162: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
 | `functional/scenes/light-point.webgl.ts` | able | L113: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/light-point.webgpu.ts` | able | L97: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
 | `functional/scenes/light-spot.webgl.ts` | able | L137: getBitmapPixelLuminance is thresholded at named coordinates (cx + offset, cy) |
