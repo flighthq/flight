@@ -93,10 +93,14 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
+const EXPECTED_CELL_RGB = [0xff0000, 0x00ff55, 0x0055ff, 0xffff00, 0xff00ff, 0x00ffff] as const;
+
 // Posterize quantizes each channel to 4 levels. The 6 input cells have 5 unique blue channel values
 // (48, 64, 255, 192, 208). After quantization to 4 levels, at most 4 unique B values remain —
 // verified in both sRGB and linear quantization paths. Without the effect, the original 5 unique B
-// values exceed the threshold.
+// values exceed the threshold. Location-indexed centers independently prove that the six quantized
+// colors still occupy the intended cells; permuting whole panels leaves the aggregate blue set unchanged.
+// MEASURED defeat: swapping cells 0 and 1 failed at (133, 150), #00ff55 versus expected #ff0000.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;
   const rows = 2;
@@ -108,6 +112,18 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     const cx = Math.round(((col + 0.5) * frame.width) / cols);
     const cy = Math.round(((row + 0.5) * frame.height) / rows);
     const rgb = getBitmapPixelRgb(frame, cx, cy);
+    const expected = EXPECTED_CELL_RGB[i]!;
+    const channelDelta = Math.max(
+      Math.abs(((rgb >> 16) & 255) - ((expected >> 16) & 255)),
+      Math.abs(((rgb >> 8) & 255) - ((expected >> 8) & 255)),
+      Math.abs((rgb & 255) - (expected & 255)),
+    );
+    if (channelDelta > 4) {
+      throw new Error(
+        `[effect-posterize] cell ${i} center at (${cx}, ${cy}) is #${rgb.toString(16).padStart(6, '0')} ` +
+          `(expected #${expected.toString(16).padStart(6, '0')}) — the quantized panels moved or changed`,
+      );
+    }
     const b = rgb & 0xff;
     let found = false;
     for (const existing of blues) {
