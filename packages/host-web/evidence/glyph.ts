@@ -1,3 +1,5 @@
+import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas';
 import { enableHostWebGlyphRasterizer } from '@flighthq/host-web';
 
-(globalThis as Record<string, unknown>).__evidence = enableHostWebGlyphRasterizer;
+enableHostWebGlyphRasterizer();
+(globalThis as Record<string, unknown>).__evidence = getGlyphRasterizerBackend();
