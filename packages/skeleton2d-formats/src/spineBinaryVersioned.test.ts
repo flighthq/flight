@@ -103,6 +103,32 @@ describe('parseSpineSkeletonBinaryVersioned', () => {
   });
 });
 
+describe('registerSpineSkeletonBinaryParser', () => {
+  it('makes a previously refused version dispatch, and only that version', () => {
+    // Registration IS the gate, so the observable effect of registering is that one version stops being
+    // refused. Asserting the before/after pair pins that the gate is the registry contents rather than
+    // anything the file itself asserts.
+    const before: ImportDiagnostic[] = [];
+    expect(parseSpineSkeletonBinaryVersioned(spine4xHeader('8.1.0'), before)).toBeNull();
+    expect(before[0]).toMatchObject({ kind: 'spine.binary-version-unsupported' });
+
+    const result = emptyImport();
+    registerSpineSkeletonBinaryParser('8.1', () => result);
+
+    const after: ImportDiagnostic[] = [];
+    expect(parseSpineSkeletonBinaryVersioned(spine4xHeader('8.1.0'), after)).toBe(result);
+    expect(after).toEqual([]);
+    // The neighbouring version is untouched — registering never widens.
+    expect(parseSpineSkeletonBinaryVersioned(spine4xHeader('8.2.0'))).toBeNull();
+  });
+
+  it('accepts a full version string and folds it to the layout key', () => {
+    const result = emptyImport();
+    registerSpineSkeletonBinaryParser('8.3.42', () => result);
+    expect(parseSpineSkeletonBinaryVersioned(spine4xHeader('8.3.7'))).toBe(result);
+  });
+});
+
 describe('toSpineBinaryLayoutKey', () => {
   it('folds a full version to its major.minor layout key', () => {
     expect(toSpineBinaryLayoutKey('4.1.17')).toBe('4.1');
