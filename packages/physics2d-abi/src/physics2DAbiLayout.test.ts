@@ -1,3 +1,5 @@
+import { collideContactManifold2D, createCollisionContactManifold2D } from '@flighthq/collision/contract';
+import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -184,6 +186,44 @@ describe('Physics2DAbiJointKind', () => {
   });
 });
 
+describe('Physics2DAbiMaxContactPoints', () => {
+  it('is not exceeded by any built-in 2D manifold, swept rather than argued', () => {
+    // The hook buffer reserves exactly this many point slots, and `writeContact` clamps to it. That the
+    // planar bound is two is a geometric argument in a comment; collision exports no 2D counterpart to
+    // MAX_COLLISION_CONTACT_POINTS_3D to check it against, so this sweeps the pair matrix instead. If a
+    // future shape or manifold change produces a third point, a contact hook would silently see a
+    // truncated manifold, and this is what would say so.
+    const shapes: CollisionBuiltInShape2D[] = [
+      { kind: 'circle', x: 0, y: 0, radius: 0.6 },
+      { kind: 'aabb', minX: -0.6, minY: -0.6, maxX: 0.6, maxY: 0.6 },
+      { kind: 'obb', x: 0, y: 0, halfW: 0.6, halfH: 0.4, rotation: 0 },
+      { kind: 'capsule', x0: -0.5, y0: 0, x1: 0.5, y1: 0, radius: 0.35 },
+      { kind: 'polygon', points: [-0.6, -0.5, 0.6, -0.5, 0.7, 0.4, -0.4, 0.6] },
+    ];
+    const manifold = createCollisionContactManifold2D();
+    let widest = 0;
+    let overlaps = 0;
+    for (const a of shapes) {
+      for (const b of shapes) {
+        // Slide one shape across the other on both axes and at several angles, so face-face,
+        // face-vertex, and end-on arrangements are all reached rather than one lucky pose.
+        for (let step = -12; step <= 12; step += 1) {
+          const offset = step * 0.1;
+          for (const rotation of [0, 0.37, Math.PI / 4, 1.2]) {
+            const moved = translateShape(b, offset, offset * 0.5, rotation);
+            if (!collideContactManifold2D(a, moved, manifold)) continue;
+            overlaps += 1;
+            widest = Math.max(widest, manifold.pointCount);
+          }
+        }
+      }
+    }
+    // The sweep has to actually collide things, or "never exceeded" is a statement about no manifolds.
+    expect(overlaps).toBeGreaterThan(100);
+    expect(widest).toBe(Physics2DAbiMaxContactPoints);
+  });
+});
+
 describe('Physics2DAbiQueryValue', () => {
   it('carries fraction, point, and normal in five slots', () => {
     expect(Physics2DAbiQueryValueStride).toBe(5);
@@ -220,3 +260,34 @@ describe('Physics2DAbiSolverConfigFlag', () => {
     expect(Object.values(Physics2DAbiSolverConfigValue)).toEqual([0, 1, 2, 3, 4, 5]);
   });
 });
+
+// Moves a shape by (dx, dy), additionally rotating the kinds that carry an angle so the sweep reaches
+// arrangements an axis-aligned slide never would.
+function translateShape(shape: Readonly<CollisionBuiltInShape2D>, dx: number, dy: number, rotation: number) {
+  if (shape.kind === 'circle') return { ...shape, x: shape.x + dx, y: shape.y + dy };
+  if (shape.kind === 'aabb') {
+    return { ...shape, minX: shape.minX + dx, minY: shape.minY + dy, maxX: shape.maxX + dx, maxY: shape.maxY + dy };
+  }
+  if (shape.kind === 'obb') return { ...shape, x: shape.x + dx, y: shape.y + dy, rotation };
+  if (shape.kind === 'capsule') {
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    return {
+      ...shape,
+      x0: shape.x0 * cos - shape.y0 * sin + dx,
+      y0: shape.x0 * sin + shape.y0 * cos + dy,
+      x1: shape.x1 * cos - shape.y1 * sin + dx,
+      y1: shape.x1 * sin + shape.y1 * cos + dy,
+    };
+  }
+  if (shape.kind !== 'polygon') return shape;
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+  const points: number[] = [];
+  for (let i = 0; i < shape.points.length; i += 2) {
+    const x = shape.points[i];
+    const y = shape.points[i + 1];
+    points.push(x * cos - y * sin + dx, x * sin + y * cos + dy);
+  }
+  return { ...shape, points };
+}

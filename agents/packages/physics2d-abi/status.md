@@ -29,6 +29,13 @@ package is built ahead of its consumer on purpose.
   the second contact, so a caller that grew its buffer would get a different set rather than a superset.
   Found by reviewing `physics3d-abi`, which had it right; pinned by a box-then-circle scene, since the
   distinction is invisible unless a narrower manifold follows a wider one.
+- **The two-point manifold bound is now measured, not argued.** Collision exports no 2D counterpart to
+  `MAX_COLLISION_CONTACT_POINTS_3D`, so `Physics2DAbiMaxContactPoints` rested on a geometric claim in a
+  comment while `writeContact` silently clamps to it. A sweep over the five contact-capable shape kinds
+  — sliding and rotating each pair through face-face, face-vertex, and end-on arrangements, >100 real
+  overlaps — asserts the widest manifold equals the constant exactly. Two-sided: raising the constant
+  to 3 fails it. Worth exporting a `MAX_COLLISION_CONTACT_POINTS_2D` from collision so the two numbers
+  are linked rather than merely agreeing; that is a change in another package and was not made here.
 - **`physics2d/contract` gained its step-validation predicates.** They were exported from neither lane,
   so an ABI owning the step seam could not ask the question the standard step asks. The remaining
   asymmetry is unaddressed: `physics2d/contract` still does not export `broadphase`, and
