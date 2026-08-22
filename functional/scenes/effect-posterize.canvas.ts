@@ -93,11 +93,14 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
+const EXPECTED_CELL_RGB = [0xff0000, 0x00ff55, 0x0055ff, 0xffff00, 0xff00ff, 0x00ffff] as const;
+
 // This cell is no longer a backend control: canvas now realizes posterize through
 // registerCanvasPosterizeEffect, so it asserts the SAME quantisation its Gl and Wgpu siblings do.
 // The previous assertion here required 5 distinct levels — the unquantised picture — and would
 // now fail against a correct render, which is what a control assertion becomes once the backend
-// grows the capability.
+// grows the capability. MEASURED defeat: swapping cells 0 and 1 preserves the aggregate blue set,
+// but fails this backend at (133, 150), #00ff55 versus the independently expected #ff0000.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const cols = 3;
   const rows = 2;
@@ -109,6 +112,18 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     const cx = Math.round(((col + 0.5) * frame.width) / cols);
     const cy = Math.round(((row + 0.5) * frame.height) / rows);
     const rgb = getBitmapPixelRgb(frame, cx, cy);
+    const expected = EXPECTED_CELL_RGB[i]!;
+    const channelDelta = Math.max(
+      Math.abs(((rgb >> 16) & 255) - ((expected >> 16) & 255)),
+      Math.abs(((rgb >> 8) & 255) - ((expected >> 8) & 255)),
+      Math.abs((rgb & 255) - (expected & 255)),
+    );
+    if (channelDelta > 4) {
+      throw new Error(
+        `[effect-posterize] cell ${i} center at (${cx}, ${cy}) is #${rgb.toString(16).padStart(6, '0')} ` +
+          `(expected #${expected.toString(16).padStart(6, '0')}) — the quantized panels moved or changed`,
+      );
+    }
     const b = rgb & 0xff;
     let found = false;
     for (const existing of blues) {
