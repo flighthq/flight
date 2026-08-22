@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/mesh'
-updated: 2026-08-12
-by: principal
+updated: 2026-08-21
+by: builder5
 ---
 
 # mesh — Status
@@ -60,26 +60,6 @@ A file:line here is a claim about this tree, not about a session.
   `contract.ts` but not re-exported from `index.ts`, unlike its `refreshMeshGeometryBounds` sibling.
   Confirm the lane split is deliberate.
 
-- **No functional scene can fail on a winding or facing error, and the fix for that is a scene
-  DESIGN, not a camera tweak.** Six builders shipped inside-out (capsule, circle, cone and cylinder
-  caps, 9 of 36 dodecahedron faces, torus knot) and every render baseline was unchanged by the
-  remedy, because the two scenes that draw those builders cannot detect facing. Measured, not
-  assumed: `DEFAULT_DOUBLE_SIDED = false` (`materials/src/surfaceMaterial.ts:48`) and
-  `beginGlMeshDraw` enables `CULL_FACE`/`cullFace(BACK)` (`scene3d-gl/src/glMeshProgram.ts:34-39`),
-  and NO functional scene sets `doubleSided: true` — so culling is genuinely on and double-sidedness
-  is not the cause. The cause is that every cap faces away from its own camera (mesh-cone eye
-  `(1.4, 0.8, 2.6)` vs base cap `-Y`, dot `-1.500`; mesh-cylinder eye `(1.6, 0.4, 2.6)` sits BELOW
-  its own `+Y` top cap, dot `-0.300`), so a correctly wound cap is culled and an inverted one is
-  drawn but occluded — identical pixels either way. Both scenes also use `createUnlitMaterial`, so
-  orientation cannot reach shading, and their assertions sample centre, a ring, two taper points and
-  the four corners: none is anywhere a cap can appear.
-  THE RECIPE, so it is not re-derived later: put the cap where it is the NEAREST surface (look up at
-  the base rather than down past it), use a LIGHTING-DEPENDENT material rather than unlit so a
-  flipped normal changes colour rather than nothing, and assert the CAP'S OWN COLOUR rather than the
-  silhouette — a silhouette assertion passes whether the cap is present, absent, inverted or culled.
-  Reframing the camera alone does not fix this; the assertion has to be one only a correctly-facing
-  surface can satisfy.
-
 - **Triangle strips are excluded from two mirror-related operations, deliberately and in two
   places, and the exclusion is not yet resolved.** Both exclusions exist because a strip shares each
   vertex between up to three triangles, so anything expressed as a per-triple edit does not describe
@@ -103,6 +83,9 @@ A file:line here is a claim about this tree, not about a session.
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-21** — `mesh-cone` now observes bottom-cap facing on Gl/Wgpu: correct captures agree at
+  cap `#ffbb28`, side `#251a03`; locally reverting only the bottom fan to `(center,b,a)` made both
+  oracles fail with cap `#0a0c10`, and restoring `(center,a,b)` returned both green.
 - **2026-08-12** — the `destroyMeshGeometryGPUData` header references in
   `packages/types/src/MeshGeometry.ts` now name the two functions that exist,
   `destroyMeshGeometryGlData` and `destroyMeshGeometryWgpuData`. Closes the `Open` item.
