@@ -94,12 +94,13 @@ addNodeChild(root, styled);
 
 render(root);
 
-// Two whole-frame ink fractions, no coordinates: the counts are what the style colors CLAIM, so a color
-// that survives as a plausible-looking wrong color still fails. Both blocks below collapse under either
-// half of a producer/consumer encoding mismatch — the 24-bit reading of `0xc0392bff` keeps `0x392bff`
-// (blue, not red-dominant), and the RGBA reading of a bare `0xc0392b` puts 0x2b in alpha (faint, not
-// dark). Measured on a correct render: dark 0.0141, red 0.0062; the floors sit near half of each, which
-// leaves room for anti-aliasing and font-metric drift while still catching a channel shift outright.
+// The whole-frame fractions prove the authored color populations, while three independent logical boxes
+// prove WHERE those populations landed. Moving the styled run to y=440 preserves both whole-frame fractions
+// exactly, but empties its authored box and fails the red-box threshold. Correct-box measurements on the
+// capture host are heading dark 0.101, paragraph dark 0.036, and styled red 0.061; the lower floors leave
+// room for host-font metrics and anti-aliasing. The color checks also collapse under either half of a
+// producer/consumer encoding mismatch — the 24-bit reading of `0xc0392bff` keeps `0x392bff` (blue, not
+// red-dominant), and the RGBA reading of a bare `0xc0392b` puts 0x2b in alpha (faint, not dark).
 export function assertRender(frame: Readonly<Bitmap>): void {
   const { dark, red } = measureInkFractions(frame);
   if (dark < 0.006) {
@@ -114,6 +115,57 @@ export function assertRender(frame: Readonly<Bitmap>): void {
         `(expected >= 0.25%) — the 0xc0392bff run is not drawn in a red the packed RGBA encoding implies`,
     );
   }
+
+  const headingInk = measureInkInRegion(frame, 50, 45, 620, 105);
+  const paragraphInk = measureInkInRegion(frame, 50, 120, 760, 250);
+  const styledInk = measureInkInRegion(frame, 50, 325, 500, 385);
+  if (headingInk.dark < 0.04) {
+    throw new Error(
+      `[text-native/dom] the heading box contains only ${(headingInk.dark * 100).toFixed(2)}% near-black ` +
+        `ink (expected >= 4.00%) — the heading did not land near its authored top-left position`,
+    );
+  }
+  if (paragraphInk.dark < 0.015) {
+    throw new Error(
+      `[text-native/dom] the paragraph box contains only ${(paragraphInk.dark * 100).toFixed(2)}% near-black ` +
+        `ink (expected >= 1.50%) — the wrapped paragraph did not land in its authored middle band`,
+    );
+  }
+  if (styledInk.red < 0.025) {
+    throw new Error(
+      `[text-native/dom] the styled-run box contains only ${(styledInk.red * 100).toFixed(2)}% red-dominant ` +
+        `ink (expected >= 2.50%) — the italic red run did not land near its authored lower position`,
+    );
+  }
+}
+
+function measureInkInRegion(
+  frame: Readonly<Bitmap>,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+): { dark: number; red: number } {
+  const frameScaleX = frame.width / width;
+  const frameScaleY = frame.height / height;
+  const fromX = Math.round(x0 * frameScaleX);
+  const fromY = Math.round(y0 * frameScaleY);
+  const toX = Math.round(x1 * frameScaleX);
+  const toY = Math.round(y1 * frameScaleY);
+  let dark = 0;
+  let red = 0;
+  for (let y = fromY; y < toY; y += 1) {
+    for (let x = fromX; x < toX; x += 1) {
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const r = (rgb >> 16) & 255;
+      const g = (rgb >> 8) & 255;
+      const b = rgb & 255;
+      if (r < 100 && g < 100 && b < 100) dark += 1;
+      if (r > g + 60 && r > b + 60) red += 1;
+    }
+  }
+  const total = (toX - fromX) * (toY - fromY);
+  return { dark: dark / total, red: red / total };
 }
 
 function measureInkFractions(frame: Readonly<Bitmap>): { dark: number; red: number } {

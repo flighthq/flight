@@ -7,8 +7,8 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 355 |
-| blind | 1 |
+| able | 356 |
+| blind | 0 |
 | gap | 0 |
 | exempt | 0 |
 | **total** | **356** |
@@ -365,7 +365,7 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/text-italic.ts` | able | L143: measureSlant samples pixels from a named call site (at, xMin, gapMid) |
 | `functional/scenes/text-markup-color.ts` | able | L115: count samples pixels from a named call site (at, isFirstColor, MIXED_Y) |
 | `functional/scenes/text-multiformat.ts` | able | L81: countColorPixels samples pixels from a named call site (at, isRed, FIELD_X + 6) |
-| `functional/scenes/text-native.dom.ts` | blind | L119: measureInkFractions supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/text-native.dom.ts` | able | L119: measureInkInRegion is thresholded across 3 distinct call-site regions (50 \| 45 \| 620 \| 105 ; 50 \| 120 \| 760 \| 250 ; 50 \| 325 \| 500 \| 385) |
 | `functional/scenes/text-strikethrough.dom.ts` | able | L84: findWidestInkRunInBand samples pixels from a named call site (at, FIELD_X, FIELD_X + FIELD_W) |
 | `functional/scenes/text-strikethrough.ts` | able | L91: findWidestInkRunInBand samples pixels from a named call site (at, FIELD_X, FIELD_X + FIELD_W) |
 | `functional/scenes/text-underline.ts` | able | L90: findWidestInkRunInBand samples pixels from a named call site (at, FIELD_X, FIELD_X + FIELD_W) |

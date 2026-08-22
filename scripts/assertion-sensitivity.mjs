@@ -42,7 +42,7 @@ export const ASSERTION_SENSITIVITY_CONTROLS = {
   'functional/scenes/particle-motion-blur.webgl.ts': 'able',
   'functional/scenes/particle-motion-blur.webgpu.ts': 'able',
   'functional/scenes/shape-stroke.ts': 'able',
-  'functional/scenes/text-native.dom.ts': 'blind',
+  'functional/scenes/text-native.dom.ts': 'able',
 };
 
 /** Replace comments and string contents with spaces while retaining every offset and newline. */
