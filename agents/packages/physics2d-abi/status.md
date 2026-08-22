@@ -24,6 +24,11 @@ package is built ahead of its consumer on purpose.
   are readback-only because Physics2D derives them; a broken joint is reported through the joint buffer
   because breaking removes it from the world; and two contact-point slots is the exact planar bound
   rather than a halved default. Each is called out in [wire.md](./wire.md) under a "2D differs" note.
+- **Contact readback publishes a PREFIX, not a subsequence.** Once one contact does not fit, publishing
+  stops. Skipping it and taking a narrower one behind it would make `count` claim a prefix while holding
+  the second contact, so a caller that grew its buffer would get a different set rather than a superset.
+  Found by reviewing `physics3d-abi`, which had it right; pinned by a box-then-circle scene, since the
+  distinction is invisible unless a narrower manifold follows a wider one.
 - **`physics2d/contract` gained its step-validation predicates.** They were exported from neither lane,
   so an ABI owning the step seam could not ask the question the standard step asks. The remaining
   asymmetry is unaddressed: `physics2d/contract` still does not export `broadphase`, and

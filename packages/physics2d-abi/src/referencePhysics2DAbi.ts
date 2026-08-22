@@ -1023,6 +1023,10 @@ function readContacts(
   let written = 0;
   let pointsWritten = 0;
   let requiredPoints = 0;
+  // Once one contact does not fit, publishing stops. Skipping it and continuing would write a
+  // SUBSEQUENCE while `count` claims a prefix, so a caller that grew its buffer and re-read would get
+  // a different set rather than a superset — and a wide contact could hide behind a narrow one that
+  // happened to fit after it.
   let prefixFits = true;
   for (const contact of source) {
     requiredPoints += contact.pointCount;
