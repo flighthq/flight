@@ -1,23 +1,11 @@
-import type {
-  GlyphMetrics,
-  GlyphRasterizedBitmap,
-  GlyphRasterizeOptions,
-  GlyphRasterizerBackend,
-} from '@flighthq/types/contract';
+import type { BackendExplanation, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
 
-// Builds a deterministic, font-independent rasterizer backend for headless/jsdom use. Every codepoint
-// rasterizes to a solid opaque-white box sized from the requested `fontSize` (never a font lookup, never
-// a canvas), so `updateBitmapText`/`getGlyphAtlasEntry` produce non-blank glyphs with no `FontFace`
-// loaded and no `whenFontsReady()` await. Install it with `setGlyphRasterizerBackend`. This is the
-// test/CI sibling of the web backend, using the same swappable seam a native host replaces — not a
-// production text renderer (every glyph is the same box; there are no real outlines).
 export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
   return {
     rasterize(_codepoint, options): GlyphRasterizedBitmap | null {
       const size = Math.max(1, Math.round(options.fontSize));
       const width = Math.max(1, Math.round(size * 0.6));
       const height = Math.max(1, Math.round(size * 0.7));
-      // Fully opaque white so a text renderer can tint the box; straight-alpha RGBA, width*height*4.
       const pixels = new Uint8ClampedArray(width * height * 4);
       pixels.fill(255);
       return {
@@ -32,132 +20,52 @@ export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
   };
 }
 
-// Builds the default web backend, which rasterizes a glyph on an offscreen canvas: it sets the font,
-// measures the glyph box + advance with `measureText`, fills the glyph with `fillText`, and reads the
-// pixels back with `getImageData`. Nothing touches the DOM at construction time — the canvas is
-// acquired lazily on the first `rasterize` — so importing the package has no side effect. When no
-// canvas is available (a headless/native host, or jsdom without a 2D context) `rasterize` returns
-// null rather than throwing; a native host installs its own backend via `setGlyphRasterizerBackend`.
-export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend {
-  return {
-    // Real font metrics from the canvas, rather than a fraction of the font size. fontBoundingBox*
-    // describes the font's own ascent and descent at this size, which is what line layout needs; the
-    // actualBoundingBox* fields describe only the sampled string's ink and would vary by which
-    // characters were measured. Returns null when the platform omits fontBoundingBox* (Firefox before
-    // 116, older Safari) so the caller keeps its heuristic rather than inventing a number.
-    measureMetrics(options): GlyphMetrics | null {
-      const context = _acquireGlyphRasterContext();
-      if (context === null) return null;
-      _applyGlyphRasterFont(context, options);
-      const metrics = context.measureText('Hg');
-      const ascent = metrics.fontBoundingBoxAscent;
-      const descent = metrics.fontBoundingBoxDescent;
-      // Guarded on a positive ascent rather than on the fields being present. A platform without
-      // fontBoundingBox* support reports them as 0 rather than undefined (jsdom does exactly this), and
-      // a font with zero ascent does not exist — so 0 means "not measured", and returning it would give
-      // the atlas zero line height instead of falling back to the heuristic. The comparison also
-      // rejects NaN, since every comparison with NaN is false.
-      if (!(ascent > 0) || !(descent >= 0)) return null;
-      // The canvas exposes no line gap, so the shared metric stays 0 and callers space lines by
-      // ascent + descent. Reporting a guess here would be worse than reporting none.
-      return { ascent, descent, lineGap: 0 };
-    },
-    rasterize(codepoint, options): GlyphRasterizedBitmap | null {
-      const context = _acquireGlyphRasterContext();
-      if (context === null) return null;
-      return _rasterizeGlyphOnContext(context, codepoint, options);
-    },
-  };
-}
-
-// The active rasterizer backend, lazily defaulting to the web canvas backend. There is always a
-// backend; `getGlyphAtlasEntry` asks this one to render a missing glyph.
-export function getGlyphRasterizerBackend(): GlyphRasterizerBackend {
-  if (_backend === null) _backend = createWebGlyphRasterizerBackend();
-  return _backend;
-}
-
-// Installs a native host rasterizer backend; pass null to fall back to the lazy web default.
-export function setGlyphRasterizerBackend(backend: GlyphRasterizerBackend | null): void {
-  _backend = backend;
-}
-
-let _backend: GlyphRasterizerBackend | null = null;
-
-// Acquires a 2D drawing context from whichever canvas the host offers — an `OffscreenCanvas` first,
-// then a DOM `<canvas>` — or null when neither exists (or has no 2D context). The whole acquisition
-// is guarded so a host that throws on `getContext` degrades to the null sentinel instead of failing.
-function _acquireGlyphRasterContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null {
-  try {
-    if (typeof OffscreenCanvas !== 'undefined') {
-      const context = new OffscreenCanvas(1, 1).getContext('2d');
-      if (context !== null) return context;
-    }
-    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-      const context = document.createElement('canvas').getContext('2d');
-      if (context !== null) return context;
-    }
-  } catch {
-    return null;
+export function explainGlyphRasterizerBackend(): BackendExplanation {
+  if (_custom !== null) return { layer: 'custom', viability: 'available' };
+  if (_host !== null) {
+    if (_hostConflict) return { layer: 'host', viability: 'provider-conflict' };
+    return { layer: 'host', viability: _hostViable ? 'available' : 'runtime-api-unavailable' };
   }
-  return null;
+  return { layer: 'host-not-enabled', viability: 'available' };
 }
 
-// Renders one glyph onto `context` and reads it back as a straight-alpha RGBA bitmap. The context's
-// canvas is resized to the measured ink box (plus a 1px guard on each side so anti-aliased edges are
-// not clipped); the glyph is filled in opaque white at the baseline so a text renderer can tint it.
-// Returns null for a zero-area glyph (whitespace with no ink) so the caller records only real glyphs.
-function _rasterizeGlyphOnContext(
-  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-  codepoint: number,
-  options: Readonly<GlyphRasterizeOptions>,
-): GlyphRasterizedBitmap | null {
-  const text = String.fromCodePoint(codepoint);
-  _applyGlyphRasterFont(context, options);
-  context.textBaseline = 'alphabetic';
-  context.textAlign = 'left';
-
-  const metrics = context.measureText(text);
-  const advance = metrics.width;
-  const left = metrics.actualBoundingBoxLeft ?? 0;
-  const right = metrics.actualBoundingBoxRight ?? advance;
-  const ascent = metrics.actualBoundingBoxAscent ?? options.fontSize;
-  const descent = metrics.actualBoundingBoxDescent ?? 0;
-
-  const guard = 1;
-  const width = Math.max(0, Math.ceil(left + right)) + guard * 2;
-  const height = Math.max(0, Math.ceil(ascent + descent)) + guard * 2;
-  if (width <= guard * 2 || height <= guard * 2) return null;
-
-  const canvas = context.canvas;
-  canvas.width = width;
-  canvas.height = height;
-  // font resets when the canvas is resized, so restore it before drawing.
-  _applyGlyphRasterFont(context, options);
-  context.textBaseline = 'alphabetic';
-  context.textAlign = 'left';
-  context.clearRect(0, 0, width, height);
-  context.fillStyle = '#ffffff';
-  context.fillText(text, guard + left, guard + ascent);
-
-  const image = context.getImageData(0, 0, width, height);
-  return {
-    advance,
-    bearingX: -left,
-    bearingY: ascent,
-    height,
-    pixels: new Uint8ClampedArray(image.data),
-    width,
-  };
+export function getGlyphRasterizerBackend(): GlyphRasterizerBackend {
+  return _custom ?? _host ?? _sentinel;
 }
 
-// Sets the canvas font from the atlas's rasterize options. Shared so measurement and rasterization can
-// never disagree about which font they are describing.
-function _applyGlyphRasterFont(
-  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-  options: Readonly<GlyphRasterizeOptions>,
-): void {
-  const fontStyle = options.fontStyle ?? 'normal';
-  const fontWeight = options.fontWeight ?? 'normal';
-  context.font = `${fontStyle} ${fontWeight} ${options.fontSize}px ${options.fontFamily}`;
+// Installs a host-layer backend. The first install wins: a second call with the same backend
+// reference is a silent no-op (idempotence); a second call with a distinct backend sets the
+// provider-conflict flag and preserves the original host — explain reports provider-conflict,
+// custom still wins, and clearing custom reveals the original.
+export function installGlyphRasterizerHostBackend(backend: GlyphRasterizerBackend, viable: boolean): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+  _hostViable = viable;
 }
+
+export function resetGlyphRasterizerBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostViable = false;
+  _hostConflict = false;
+}
+
+export function setGlyphRasterizerBackend(backend: GlyphRasterizerBackend | null): void {
+  _custom = backend;
+}
+
+let _custom: GlyphRasterizerBackend | null = null;
+let _host: GlyphRasterizerBackend | null = null;
+let _hostViable = false;
+let _hostConflict = false;
+
+// Sentinel omits the optional measureMetrics — advertising an optional capability it does not
+// support would be a false power claim.
+const _sentinel: GlyphRasterizerBackend = {
+  rasterize(): null {
+    return null;
+  },
+};

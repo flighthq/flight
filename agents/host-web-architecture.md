@@ -1,4 +1,4 @@
-# Host Architecture Record v9
+# Host Architecture Record v10
 
 **Status:** design record — direction settled (user ruling), shape defined.
 
@@ -76,35 +76,35 @@ For the 3 ambient-language facilities, the lazy-install is the default (layer 3 
 
 ## 3. Precedence Implementation
 
-For host-web capabilities (23 of them), the slot model:
+For host-web capabilities (22 global singletons), the slot model:
 
 ```typescript
-let _customBackend: ClipboardBackend | null = null;
-let _hostBackend: ClipboardBackend | null = null;
-let _hostIdentity: 'host-web' | 'host-node' | null = null;
+let _custom: ClipboardBackend | null = null;
+let _host: ClipboardBackend | null = null;
+let _hostViable = false;
+let _hostConflict = false;
 
 export function getClipboardBackend(): ClipboardBackend {
-  return _customBackend ?? _hostBackend ?? _sentinel;
+  return _custom ?? _host ?? _sentinel;
 }
 
 export function setClipboardBackend(backend: ClipboardBackend | null): void {
-  _customBackend = backend;
+  _custom = backend;
 }
 
-// Called internally by enableHostWebClipboard
-export function installClipboardHost(
-  backend: ClipboardBackend,
-  identity: 'host-web' | 'host-node',
-): void {
-  if (_hostBackend !== null && _hostIdentity !== identity) {
-    return;  // provider-conflict: explain* reports
+export function installClipboardHostBackend(backend: ClipboardBackend, viable: boolean): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
   }
-  _hostBackend = backend;
-  _hostIdentity = identity;
+  _host = backend;
+  _hostViable = viable;
 }
 ```
 
-**`set*Backend(null)` reveals the host layer:** If a custom backend is cleared, the host-web backend (if installed) becomes active. The host slot is separate from the custom slot.
+**First host wins.** `installClipboardHostBackend` never overwrites a previously installed host — same reference is idempotent (no-op), distinct reference sets the conflict flag and preserves the original. `set*Backend(null)` reveals the host layer beneath custom. The host slot is separate from the custom slot.
+
+**Runtime viability probed at enable time.** The enabler probes for the runtime API (e.g. OffscreenCanvas, canvas 2D context) and passes `viable: true/false`. When viable is false, a real backend object is installed (not null) that returns null for all operations — `get` returns it, `explain` reports `{ layer: 'host', viability: 'runtime-api-unavailable' }`. This is distinct from `installHost(null)`, which was a prior design that conflated "API absent" with "no host".
 
 For ambient-language capabilities (3 of them), the existing pattern is structurally unchanged:
 
@@ -268,9 +268,9 @@ Three families: wake-lock, battery, page-lifecycle. Must not recombine.
 
 ---
 
-## 6. Open Disposition Questions
+## 6. Disposition Questions (settled)
 
-Ten ownership/granularity questions from section 5 require a user decision. Each names the method(s) it governs, the candidate placements, and what the choice affects.
+Ten ownership/granularity questions from section 5, all settled.
 
 1. **app.subscribeReady ownership**: Does `subscribeReady` (microtask / readyState) belong in host-web's app-lifecycle narrow capability, or in the existing `lifecycle` package? Affects which enabler installs it.
 
@@ -284,7 +284,7 @@ Ten ownership/granularity questions from section 5 require a user decision. Each
 
 6. **protocol.getLaunchUrl ownership**: Does `getLaunchUrl` (URLSearchParams cold-start) stay with protocol registration, or move to an application-launch capability? It is not a protocol handler itself.
 
-7. **statusbar.getInfo granularity**: `getInfo` reads a genuine color value but returns sentinel values for height/visibility/style. Does the genuine color read belong in the theme-color narrow capability alongside `setBackgroundColor`, or does the mixed genuine/sentinel nature warrant a separate placement?
+7. **statusbar.getInfo granularity** (settled: option b): host-web exports/enables only the genuine `setBackgroundColor` (theme-color write). `getInfo` is not exported, not installed, stays sentinel. `explainStatusBarBackend()` reports `{ layer: 'no-host-implementation', viability: 'available' }` for the statusbar capability as a whole — the genuine `setBackgroundColor` is a narrow theme-color capability, not a statusbar host.
 
 8. **Shared document-metadata ownership**: `app.getName` reads `document.title`; `window.setTitle` writes `document.title`; `window.setIcon` writes the favicon. These are the same DOM surface (`document.title` / `<link rel="icon">`) split across two capability packages (app and application). Does document-metadata form one narrow capability spanning both, or does each package carry its own narrow slice? Affects whether a user who installs only the window-control enabler gets `setTitle`/`setIcon` without the rest of app's narrow capability, and vice versa.
 
@@ -317,9 +317,22 @@ export function getTrayBackend(): TrayBackend {
 }
 ```
 
+### Capability classification: global-singleton vs per-instance
+
+23 web implementations. 22 are **global singletons** with no-arg enablers; 1 is **per-instance**.
+
+| Category | Count | Pattern | Enabler signature |
+|----------|-------|---------|-------------------|
+| Global singleton | 22 | `enableHostWeb*()` no-arg, installs one global backend | `enableHostWebClipboard()` |
+| Per-instance | 1 (Cursor) | Factory takes a caller-owned resource, returns a backend | `createWebCursorBackend(element)` |
+
+Cursor requires an `HTMLElement` owned by the caller (per-`InteractionManager`). A global slot cannot hold it — each interaction manager has its own element. Cursor is a **public factory in host-web's app lane**, not an enabler and not in the umbrella.
+
+Accessibility is a global singleton (umbrella membership = 22). Its `enableHostWebAccessibility()` is a no-arg enabler that installs the global accessibility backend. The factory `createWebAccessibilityBackend(container?)` with optional container is contract-only. Design C lifecycle (optional `dispose` + transition cleanup, sticky-latch fix) is approved but deferred from Stage 1 — the current accessibility enabler does not have dispose behavior; the migration requires 2 commits and is tracked separately.
+
 ### enableHostWeb() membership
 
-`enableHostWeb()` composes exactly the 23 genuine host-web enablers:
+`enableHostWeb()` composes the 22 global-singleton enablers. Cursor is excluded (per-instance).
 
 ```typescript
 export function enableHostWeb(): void {
@@ -333,7 +346,6 @@ export function enableHostWeb(): void {
   enableHostWebGlyphRasterizer();
   enableHostWebHaptics();
   enableHostWebImage();
-  enableHostWebCursor();
   enableHostWebSoftKeyboard();
   enableHostWebLifecycle();
   enableHostWebLoop();
@@ -349,7 +361,7 @@ export function enableHostWeb(): void {
 }
 ```
 
-Not included: ipc, log, shortcut, tray, updater (all-sentinel), app, application-window, menu, power, protocol, shell, statusbar (strict-majority no-op), net, socket, textsegment (ambient-language, inline).
+Not included: Cursor (per-instance factory, not an enabler), ipc, log, shortcut, tray, updater (all-sentinel), app, application-window, menu, power, protocol, shell, statusbar (strict-majority no-op), net, socket, textsegment (ambient-language, inline).
 
 ---
 
@@ -358,13 +370,17 @@ Not included: ipc, log, shortcut, tray, updater (all-sentinel), app, application
 ### Enabler idempotence
 
 ```typescript
+let _enabled = false;
 export function enableHostWebClipboard(): void {
-  if (_hostBackend !== null) return;  // true no-op
-  installClipboardHost(createWebClipboardBackend(), 'host-web');
+  if (_enabled) return;
+  _enabled = true;
+  const viable = _probeClipboardViability();
+  const backend = viable ? createWebClipboardBackend() : _unavailableBackend;
+  installClipboardHostBackend(backend, viable);
 }
 ```
 
-Repeated calls allocate nothing, attach nothing, replace nothing.
+Second call allocates nothing, preserves provider identity. The enabler's own `_enabled` flag prevents even the allocation of a backend object on repeated calls. The install function's first-host-wins semantics provide a second layer of idempotence at the capability level.
 
 ### Factory construction: proven lazy, closure state acknowledged
 
@@ -388,40 +404,43 @@ Closure state spans primitives, Maps, Sets, arrays, config objects, and retained
 
 ## 9. explain* Diagnostic
 
-### Return type
+### Orthogonal return type
 
 ```typescript
-export interface ClipboardBackendExplanation {
-  readonly capability: string;
-  readonly liveLayer: 'custom' | 'host-web' | 'host-node' | null;
-  readonly installedLayers: ReadonlyArray<'custom' | 'host-web' | 'host-node'>;
-  readonly reason: 'custom-provider' | 'host-specific-provider'
-    | 'not-enabled' | 'host-does-not-offer' | 'provider-conflict';
+export interface BackendExplanation {
+  readonly layer: 'custom' | 'host' | 'host-not-enabled' | 'no-host-implementation';
+  readonly viability: 'available' | 'provider-conflict' | 'runtime-api-unavailable';
 }
 ```
 
-### Field semantics
+Two orthogonal families: **layer** identifies which provider slot is active; **viability** reports whether that provider can serve. The type is shared across all capabilities in `@flighthq/types`.
 
-- **`capability`**: the capability name (e.g. `'clipboard'`).
-- **`liveLayer`**: the layer identity of the currently active backend. `null` if nothing installed.
-- **`installedLayers`**: all layers with a backend installed, ordered by priority.
-- **`reason`**: why this layer is active:
-  - `'custom-provider'` — direct `set*Backend()` active.
-  - `'host-specific-provider'` — `enableHostWeb*` backend active.
-  - `'not-enabled'` — genuine adapter exists but not installed. Remediation names the enabler.
-  - `'host-does-not-offer'` — NONE row. Remediation points to `set*Backend`.
-  - `'provider-conflict'` — two host identities for same capability.
+### Layer semantics
 
-For ambient-language capabilities (net, socket, textsegment), no explain*Backend is needed — the inline implementation always serves unless overridden by `set*Backend`. If overridden, the existing explain pattern covers it.
+- **`custom`** — direct `set*Backend()` active. Always wins (highest priority).
+- **`host`** — `enableHostWeb*()` installed a host backend.
+- **`host-not-enabled`** — a genuine web implementation exists but has not been enabled. Sentinel serves.
+- **`no-host-implementation`** — no web implementation exists for this capability (NONE rows: ipc, log, shortcut, tray, updater, and statusbar.getInfo). Sentinel serves.
 
-### Distinct states
+### Viability semantics
 
-| Observed state | explain* report |
-|---------------|-----------------|
-| Nothing installed, host-web has enabler | `{ liveLayer: null, installedLayers: [], reason: 'not-enabled' }` |
-| Nothing installed, NONE row | `{ liveLayer: null, installedLayers: [], reason: 'host-does-not-offer' }` |
-| Host-web active | `{ liveLayer: 'host-web', installedLayers: ['host-web'], reason: 'host-specific-provider' }` |
-| Custom over host-web | `{ liveLayer: 'custom', installedLayers: ['custom', 'host-web'], reason: 'custom-provider' }` |
+- **`available`** — the active provider can serve requests.
+- **`runtime-api-unavailable`** — the enabler probed the environment and the required runtime API is absent (e.g. no OffscreenCanvas / no canvas 2D context). A real backend object is installed (not null), but it returns null for all operations. Distinct from `host-not-enabled`: the app called the enabler, but the platform cannot deliver.
+- **`provider-conflict`** — two distinct host backends attempted to install for the same capability. The first host is preserved; the second was silently rejected. Custom still wins; clearing custom reveals the original host.
+
+### Five reachable states
+
+| # | Observed state | explain* report |
+|---|---------------|-----------------|
+| 1 | `set*Backend()` active | `{ layer: 'custom', viability: 'available' }` |
+| 2 | `enableHostWeb*()` active, runtime API present | `{ layer: 'host', viability: 'available' }` |
+| 3 | `enableHostWeb*()` active, runtime API absent | `{ layer: 'host', viability: 'runtime-api-unavailable' }` |
+| 4 | Nothing installed, host-web has enabler | `{ layer: 'host-not-enabled', viability: 'available' }` |
+| 5 | Nothing installed, NONE row | `{ layer: 'no-host-implementation', viability: 'available' }` |
+
+A sixth state (`{ layer: 'host', viability: 'provider-conflict' }`) is reachable when two distinct host backends install for the same capability.
+
+For ambient-language capabilities (net, socket, textsegment), no explain*Backend is needed — the inline implementation always serves unless overridden by `set*Backend`.
 
 ---
 
@@ -470,16 +489,17 @@ Defeating fixture ensures the check is real.
 
 ### @flighthq/host-web (created in Phase 3)
 
-Contains 23 genuine browser-required web backend implementations, their `enableHostWeb*` enablers, and `enableHostWeb()`.
+Contains 23 genuine browser-required web backend implementations: 22 global-singleton enablers, 1 per-instance factory (Cursor), and `enableHostWeb()`.
 
 ```
 host-web/
   src/
-    index.ts          — public lane: enableHostWeb, 23x enableHostWeb*
+    index.ts          — public lane: enableHostWeb, 22x enableHostWeb*, createWebCursorBackend
     contract.ts       — contract lane: 23x createWeb*Backend factories
-    enableHostWeb.ts  — composes all 23 enablers
+    enableHostWeb.ts  — composes all 22 global-singleton enablers
     webAccessibility.ts
     webClipboard.ts
+    webCursor.ts      — per-instance factory only (no enabler)
     ... (23 files, one per genuine capability)
 ```
 
@@ -531,7 +551,7 @@ Actual measured bundle sizes are an acceptance blocker.
 
 | Lane | Exports |
 |------|---------|
-| Public (index.ts) | `enableHostWeb`, 23x `enableHostWeb*` |
+| Public (index.ts) | `enableHostWeb`, 22x `enableHostWeb*`, `createWebCursorBackend` |
 | Contract (contract.ts) | 23x `createWeb*Backend` factories |
 
 ### Capability package changes
@@ -546,7 +566,7 @@ The 3 ambient-language packages: no structural change.
 
 ### SDK barrel re-exports
 
-`enableHostWeb` and all 23 `enableHostWeb*` re-exported from `@flighthq/sdk`. Factories NOT re-exported.
+`enableHostWeb` and all 22 `enableHostWeb*` re-exported from `@flighthq/sdk`. `createWebCursorBackend` NOT re-exported (host-* packages are outside the SDK barrel). Factories NOT re-exported.
 
 ### sideEffects
 
@@ -642,4 +662,4 @@ Two prerequisite commits are now on base, completing the documentation reconcili
 
 ### Design chosen
 
-Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine enablers extracted. 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions in section 6). Precedence: custom > host-web/host-node > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent. explain* returns runtime state with layer identity and reason. Bundle acceptance fixtures required.
+Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine implementations: 22 global-singleton enablers + 1 per-instance factory (Cursor). Cursor excluded from `enableHostWeb()` umbrella (umbrella membership = 22). 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions settled in section 6). Precedence: custom > host > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent (second call allocates nothing, preserves provider identity). Distinct second host does not last-write-win — original preserved, explain reports provider-conflict. explain* returns orthogonal `{ layer, viability }` from shared `BackendExplanation` type. Runtime viability probed at enable time. Bundle acceptance fixtures required.
