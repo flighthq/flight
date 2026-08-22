@@ -132,8 +132,10 @@ function hasBasisSignature(bytes: Readonly<Uint8Array>): boolean {
 const basisTotalSlicesOffset = 14;
 const basisTexFormatOffset = 20;
 const basisTexTypeOffset = 23;
-const basisSliceDescOffsetField = 63;
-const basisHeaderMinSize = 67; // through m_slice_desc_file_ofs (offset 63, 4 bytes)
+// Both codebook byte lengths are packed U24 fields. Accounting for those six bytes places
+// m_tables_file_size at 61..64 and m_slice_desc_file_ofs immediately after it, at 65..68.
+const basisSliceDescOffsetField = 65;
+const basisHeaderMinSize = 69; // through m_slice_desc_file_ofs (offset 65, 4 bytes)
 const basisSliceDescSize = 23;
 
 const basisTextureType2d = 0;

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { ConformanceFixtureInput, ConformanceFixtureTree } from '../core/fixture-conformance';
+import { runConformanceFixtureAdapters } from '../core/fixture-conformance';
 import { createImportFixtureAdapters } from './import-fixture-adapters';
 
 let workspace = '';
@@ -88,7 +89,50 @@ describe('createImportFixtureAdapters', () => {
 
     expect(observation.diagnostics.map((diagnostic) => diagnostic.kind)).toContain('mtl.color-malformed');
   });
+
+  it('distinguishes parsed Basis files from unsupported Basis variants', async () => {
+    const directory = join(workspace, 'tree');
+    writeBytes(directory, 'supported.basis', basisBytes(0));
+    writeBytes(directory, 'unsupported.basis', basisBytes(2));
+    const adapter = createImportFixtureAdapters().find((candidate) => candidate.id === 'basis')!;
+    if (adapter.implementation.state !== 'available') throw new Error('Basis fixture adapter must be available');
+
+    const results = await runConformanceFixtureAdapters(
+      [tree('basis-fixtures', directory, 2, ['supported.basis', 'unsupported.basis'])],
+      [adapter],
+    );
+
+    expect(
+      Object.fromEntries(
+        results.map((result) => [result.reference, { notRunReason: result.notRunReason, state: result.state }]),
+      ),
+    ).toEqual({
+      'supported.basis': { notRunReason: undefined, state: 'imported' },
+      'unsupported.basis': { notRunReason: 'basis-format-unsupported', state: 'not-run' },
+    });
+  });
 });
+
+function basisBytes(texFormat: number): Uint8Array {
+  const bytes = new Uint8Array(108);
+  const view = new DataView(bytes.buffer);
+  bytes.set([0x73, 0x42]);
+  setU24(view, 14, 1); // m_total_slices
+  setU24(view, 17, 1); // m_total_images
+  bytes[20] = texFormat;
+  view.setUint32(65, 77, true); // m_slice_desc_file_ofs
+  view.setUint16(82, 4, true); // m_orig_width
+  view.setUint16(84, 4, true); // m_orig_height
+  view.setUint32(90, 100, true); // m_file_ofs
+  view.setUint32(94, 8, true); // m_file_size
+  return bytes;
+}
+
+function setU24(view: DataView, offset: number, value: number): void {
+  view.setUint8(offset, value & 0xff);
+  view.setUint8(offset + 1, (value >>> 8) & 0xff);
+  view.setUint8(offset + 2, (value >>> 16) & 0xff);
+}
 
 function input(directory: string, reference: string, references: readonly string[]): ConformanceFixtureInput {
   return {
@@ -99,10 +143,15 @@ function input(directory: string, reference: string, references: readonly string
   };
 }
 
-function tree(id: string, directory = workspace): ConformanceFixtureTree {
+function tree(
+  id: string,
+  directory = workspace,
+  verifiedFixtureFiles = 1,
+  verifiedFixturePaths: readonly string[] = ['fixture.asset'],
+): ConformanceFixtureTree {
   return {
     directory,
-    packs: [{ id, verifiedFixtureFiles: 1, verifiedFixturePaths: ['fixture.asset'] }],
+    packs: [{ id, verifiedFixtureFiles, verifiedFixturePaths }],
     release: 'fixture-release',
     tree: id,
     variant: 'full',
@@ -113,4 +162,10 @@ function write(root: string, reference: string, text: string): void {
   const path = join(root, ...reference.split('/'));
   mkdirSync(join(path, '..'), { recursive: true });
   writeFileSync(path, text, 'utf8');
+}
+
+function writeBytes(root: string, reference: string, bytes: Readonly<Uint8Array>): void {
+  const path = join(root, ...reference.split('/'));
+  mkdirSync(join(path, '..'), { recursive: true });
+  writeFileSync(path, bytes);
 }
