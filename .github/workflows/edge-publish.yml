@@ -1,0 +1,180 @@
+name: Edge publish
+
+# Publishes the `edge` snapshot for a commit Promote has just adopted as `main`.
+#
+# ★ WHY THIS WORKFLOW EXISTS AT ALL: A GITHUB_TOKEN PUSH CREATES NO WORKFLOW RUN.
+# `promote.yml` fast-forwards main with the default `GITHUB_TOKEN`, and GitHub deliberately does not
+# start a workflow run from events raised by that token — the recursion guard. So `tests.yml` never
+# fires on `main`, its `edge-publish` job never runs there, and the `edge` dist-tag silently stops
+# advancing. Nothing reports this: there is no failed run to look at, only an absence.
+#
+# ★ WHY `workflow_dispatch` AND NOT `workflow_run`. `workflow_run` chains off a *run*, and the whole
+# problem is that no run is created. `workflow_dispatch` and `repository_dispatch` are the two
+# documented exceptions to the recursion guard — GITHUB_TOKEN CAN raise them — so an explicit dispatch
+# is the one mechanism that closes the gap without a new credential. A PAT or GitHub App would also
+# work and is deliberately not used: it means a long-lived secret whose only purpose is to defeat a
+# guard the platform already exempts this event from.
+#
+# THIS FILE MUST LIVE ON THE DEFAULT BRANCH (`main`) TO BE DISPATCHABLE, for the same reason
+# promote.yml documents: Actions registers `workflow_dispatch` from the default branch only.
+run-name: Edge publish · ${{ inputs.sha }} · from promote run ${{ inputs.promote_run_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: The exact promoted commit to publish. Must already be on main.
+        required: true
+        type: string
+      promote_run_id:
+        description: The promote.yml run that dispatched this, for run correlation.
+        required: false
+        type: string
+        default: ''
+
+concurrency:
+  # ★ KEYED ON THE CANDIDATE, NOT THE BRANCH. Two dispatches for the same promoted commit — a retry, a
+  # duplicate catch-up — serialize instead of racing, and the second finds the version already
+  # published and exits as a no-op (see the idempotency guard below). Keying on `main` instead would
+  # serialize unrelated candidates behind each other for no benefit. Never cancel mid-publish.
+  group: edge-publish-candidate-${{ inputs.sha }}
+  cancel-in-progress: false
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+jobs:
+  publish:
+    name: Publish edge snapshot for ${{ inputs.sha }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read tests.yml run conclusions for the dispatched sha
+      id-token: write # npm provenance
+    steps:
+      # ★ CHECK OUT THE INPUT, THEN VERIFY IT. The sha arrives as a dispatch input, which is caller-
+      # supplied data — this workflow is dispatchable by hand as well as by promote.yml. Everything
+      # below re-establishes from the repository what the input only claims.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+          # edge-version derives its sortable build number from `git rev-list --count`, and the
+          # ancestry check below needs origin/main.
+          fetch-depth: 0
+
+      - name: Verify the checkout is the dispatched commit and is on main
+        env:
+          CANDIDATE: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+
+          # `actions/checkout` resolves a ref; assert what it actually landed on rather than assuming.
+          head=$(git rev-parse HEAD)
+          if [ "$head" != "$CANDIDATE" ]; then
+            echo "::error::checkout resolved to ${head}, not the dispatched ${CANDIDATE}; refusing to publish a commit nobody asked for."
+            exit 1
+          fi
+
+          # The edge channel means "what main points at". A commit that is not on main — a develop-only
+          # commit, or one promotion has not adopted — must not be published under that tag, however it
+          # was dispatched.
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$CANDIDATE" refs/remotes/origin/main; then
+            echo "::error::${CANDIDATE} is not an ancestor of origin/main; edge publishes only commits main has adopted."
+            exit 1
+          fi
+          echo "${CANDIDATE} is on main and checked out."
+
+      # The same gate release.yml applies to a tag: prove THIS tree passed CI. Promote already resolved
+      # the candidate from green runs, but this workflow is independently dispatchable, so it re-proves
+      # it rather than trusting the caller. Absence of a run is never treated as green.
+      - name: Verify the dispatched commit passed CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+
+          ci_result=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/tests.yml/runs?head_sha=${CANDIDATE}" \
+            --jq '[.total_count, ([.workflow_runs[] | select(.conclusion == "success")] | length), ([.workflow_runs[] | (.conclusion // .status)] | join(", "))] | .[]')
+          mapfile -t ci_fields <<<"${ci_result}"
+          run_count=${ci_fields[0]:-0}
+          success_count=${ci_fields[1]:-0}
+          run_states=${ci_fields[2]:-unknown}
+
+          if (( run_count == 0 )); then
+            echo "::error::no tests.yml run exists for ${CANDIDATE}; refusing to publish an untested commit to edge."
+            exit 1
+          fi
+          if (( success_count == 0 )); then
+            echo "::error::tests.yml ran for ${CANDIDATE} but no run succeeded (states: ${run_states}); refusing to publish to edge."
+            exit 1
+          fi
+          echo "tests.yml has a successful run for ${CANDIDATE}."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          # Writes an .npmrc pointing at public npm and wires NODE_AUTH_TOKEN for the publish.
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+
+      # tests.yml's edge-publish reuses its own run's `build` artifact. This workflow is a separate run
+      # with no such artifact, so it builds the graph itself. That is the cost of decoupling the publish
+      # from the run that tested the commit, and it is the reason the CI gate above is a hard check
+      # rather than an inherited `needs:`.
+      - run: npm run build
+
+      # ★ AN EXPLICIT BRANCH ARGUMENT, BECAUSE THIS CHECKOUT IS DETACHED. edge-version falls back to
+      # GITHUB_REF_NAME / the current git branch to pick the channel, and neither names `main` on a
+      # detached checkout of a sha. Passing it explicitly is what keeps the dist-tag `edge` rather than
+      # whatever the fallback happened to resolve.
+      - name: Compute snapshot version and dist-tag
+        id: edge
+        run: npx tsx scripts/edge-version.ts main >> "$GITHUB_OUTPUT"
+
+      # ★ IDEMPOTENCY. The version is a pure function of the commit (count + short sha), so a second
+      # dispatch of the same candidate computes the same version. Publishing it again would fail with a
+      # registry conflict — a red run for work that is already correctly done. Check first and exit as a
+      # clean no-op, so a retried or duplicated dispatch is harmless rather than noisy.
+      - name: Skip if this candidate is already on the registry
+        id: published
+        run: |
+          set -euo pipefail
+          version='${{ steps.edge.outputs.version }}'
+          if npm view "@flighthq/sdk@${version}" version >/dev/null 2>&1; then
+            echo "@flighthq/sdk@${version} is already published; nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stamp the graph to the snapshot version
+        if: ${{ steps.published.outputs.skip == 'false' }}
+        run: npm run version:packages ${{ steps.edge.outputs.version }}
+      - name: Publish snapshot to npm
+        if: ${{ steps.published.outputs.skip == 'false' }}
+        run: npm run release -- --no-build --tag ${{ steps.edge.outputs.tag }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+
+      # Correlation in the direction that is fully supported: this run names the promote run that asked
+      # for it, in `run-name` above and in the summary here. The reverse link is best-effort on the
+      # promote side, because the dispatch API returns no run id.
+      - name: Record what was published
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### Edge publish"
+            echo ""
+            echo "| field | value |"
+            echo "| --- | --- |"
+            echo "| candidate | \`${{ inputs.sha }}\` |"
+            echo "| version | \`${{ steps.edge.outputs.version }}\` |"
+            echo "| dist-tag | \`${{ steps.edge.outputs.tag }}\` |"
+            echo "| already published | \`${{ steps.published.outputs.skip }}\` |"
+            echo "| dispatched by | promote run \`${{ inputs.promote_run_id }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
