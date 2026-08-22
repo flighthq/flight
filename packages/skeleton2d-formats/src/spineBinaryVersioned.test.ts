@@ -22,6 +22,11 @@ function spineString(value: string): number[] {
   return [...varint(bytes.length + 1), ...bytes];
 }
 
+/** v3.8 header: varint-prefixed printable-ASCII hash, then the varint-prefixed version. */
+function spine38Header(version: string, hash = 'aBcDeFgHiJkLmNoPqRsTuVwXyZ0'): Uint8Array {
+  return new Uint8Array([...spineString(hash), ...spineString(version), 0, 0, 0, 0]);
+}
+
 function spine4xHeader(version: string): Uint8Array {
   return new Uint8Array([0x8a, 0xd7, 0xc5, 0x11, 0x20, 0xe3, 0x33, 0x57, ...spineString(version), 0, 0, 0, 0]);
 }
@@ -139,5 +144,53 @@ describe('toSpineBinaryLayoutKey', () => {
   it('returns a minor-less version unchanged rather than inventing .0', () => {
     // Padding "4" to "4.0" would dispatch it to a layout nobody registered for it.
     expect(toSpineBinaryLayoutKey('4')).toBe('4');
+  });
+});
+
+// ★ THE RULED STATE OF 3.8 AND 4.2: RECOGNIZED VERSION, LAYOUT UNSUPPORTED.
+// Neither body layout is implemented and neither is registered — deliberately, because no corpus
+// evidences them and a guessed layout does not fail loudly (23 real 4.2 exports read through the 4.1
+// body produced a valid-looking import with zero bones). What IS settled is how they must be REFUSED,
+// so it is pinned here rather than left as a property of an empty registry that a later registration
+// could quietly change.
+//
+// The distinction these assert is the load-bearing one: `version-unsupported` says "this is Spine, we
+// know exactly which, we have no layout for it" and carries the real version; `header-unreadable` says
+// "this may not be a Spine binary at all". Before the independent probe a 3.8 file could hit the first
+// path carrying a GARBAGE version string decoded through the 4.x header — that is the gap the record
+// names, and these are the tests that keep it closed.
+describe('unsupported-but-recognized Spine layouts', () => {
+  const cases = [
+    { header: () => spine38Header('3.8.55'), label: '3.8', version: '3.8.55' },
+    { header: () => spine4xHeader('4.2.22'), label: '4.2', version: '4.2.22' },
+  ] as const;
+
+  for (const { header, label, version } of cases) {
+    it(`refuses ${label} as version-unsupported carrying its REAL version, not a garbage decode`, () => {
+      const diagnostics: ImportDiagnostic[] = [];
+      expect(parseSpineSkeletonBinaryVersioned(header(), diagnostics)).toBeNull();
+      expect(diagnostics).toHaveLength(1);
+      expect(diagnostics[0]).toMatchObject({ kind: 'spine.binary-version-unsupported' });
+      // The exact string is the point — a scorer categorizes "3.8, known unimplemented" differently
+      // from "unknown format", and it can only do that if the version survives intact.
+      expect(diagnostics[0].detail).toMatchObject({ version });
+    });
+
+    it(`does NOT report ${label} as header-unreadable — the header was read fine`, () => {
+      const diagnostics: ImportDiagnostic[] = [];
+      parseSpineSkeletonBinaryVersioned(header(), diagnostics);
+      expect(diagnostics.map((entry) => entry.kind)).not.toContain('spine.binary-header-unreadable');
+    });
+  }
+
+  it('a file that is not Spine at all still reports header-unreadable, so the two stay separable', () => {
+    // The contrast case. Without it, "3.8 reports version-unsupported" would be consistent with an
+    // implementation that reports version-unsupported for everything.
+    const diagnostics: ImportDiagnostic[] = [];
+    parseSpineSkeletonBinaryVersioned(
+      new Uint8Array([0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8, 0xf7, 0xf6]),
+      diagnostics,
+    );
+    expect(diagnostics.map((entry) => entry.kind)).toEqual(['spine.binary-header-unreadable']);
   });
 });
