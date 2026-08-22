@@ -211,11 +211,23 @@ jobs:
         run: |
           set -uo pipefail
 
+          # ★ `displayTitle`, NOT `title` — `gh run list --json` HAS NO `title` FIELD.
+          # Its schema is conclusion, createdAt, databaseId, displayTitle, event, headBranch, headSha,
+          # name, number, startedAt, status, updatedAt, url, workflowDatabaseId, workflowName. Asking
+          # for `title` makes gh exit non-zero listing the valid fields, so the previous form could
+          # never have produced a link — and because this step is `continue-on-error`, it would have
+          # failed invisibly every time. A correlation step that silently never correlates is the same
+          # class of defect as the missing publish it exists to make visible.
+          #
+          # `headSha` is matched as well as `displayTitle`: the dispatch runs `--ref main` immediately
+          # after main was fast-forwarded to the candidate, so the run's headSha IS the candidate. That
+          # is an exact field comparison rather than a substring search over a display string, and the
+          # two together mean a run-name change cannot quietly break the link either.
           url=''
           for _ in 1 2 3 4 5 6; do
             url=$(gh run list --workflow=edge-publish.yml --event=workflow_dispatch --limit 20 \
-              --json url,title \
-              --jq "[.[] | select(.title | contains(\"${CANDIDATE}\"))] | .[0].url // empty" || true)
+              --json url,displayTitle,headSha \
+              --jq "[.[] | select(.headSha == \"${CANDIDATE}\" or (.displayTitle | contains(\"${CANDIDATE}\")))] | .[0].url // empty" || true)
             [ -n "$url" ] && break
             sleep 5
           done

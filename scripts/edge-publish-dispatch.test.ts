@@ -85,6 +85,23 @@ describe('edge-publish dispatch contract', () => {
     expect(link['continue-on-error']).toBe(true);
   });
 
+  it('correlation asks gh for fields it actually returns', () => {
+    const run = String(stepNamed(promoteSteps(), 'Link the dispatched edge-publish run').run);
+    // ★ `gh run list --json` HAS NO `title`. Requesting it exits non-zero, and since this step is
+    // `continue-on-error` that failure is invisible — a correlation step that never correlates. The
+    // supported field is `displayTitle`; `headSha` is the exact one, since the dispatch runs `--ref
+    // main` right after main was moved to the candidate.
+    // Comment lines are stripped first: the rationale above the command necessarily names the wrong
+    // field, and matching prose would fail on the explanation rather than on the code.
+    const commands = run
+      .split('\n')
+      .filter((line) => !line.trim().startsWith('#'))
+      .join('\n');
+    expect(commands).toContain('displayTitle');
+    expect(commands).toContain('headSha');
+    expect(commands).not.toMatch(/--json[^\n]*(^|[,\s])title([,\s]|$)/m);
+  });
+
   it('the receiver is dispatch-only — not workflow_run, not push', () => {
     const receiver = parseWorkflow('edge-publish') as { on: Record<string, unknown> };
     expect(Object.keys(receiver.on)).toEqual(['workflow_dispatch']);
