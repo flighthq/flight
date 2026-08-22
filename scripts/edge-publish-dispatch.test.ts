@@ -145,6 +145,37 @@ describe('edge-publish dispatch contract', () => {
     expect(source).not.toMatch(/outputs\.skip/);
   });
 
+  it('no run: block interpolates a workflow expression directly', () => {
+    // ★ THE CLASS, NOT THE SITES. `${{ inputs.sha }}` inside a `run:` block is substituted by Actions
+    // BEFORE bash parses the script, so the value becomes shell source rather than data — the standard
+    // script-injection shape, and a Markdown summary table is no safer than a command line. Every value
+    // must arrive through `env`, where bash sees it as an ordinary variable. Asserting over every step
+    // of both workflows means a new step cannot reintroduce it at a site nobody thought to check.
+    for (const name of ['promote', 'edge-publish']) {
+      const doc = parseWorkflow(name) as { jobs: Record<string, { steps?: { name?: string; run?: string }[] }> };
+      for (const job of Object.values(doc.jobs)) {
+        for (const step of job.steps ?? []) {
+          if (typeof step.run !== 'string') continue;
+          expect({ step: step.name, workflow: name, interpolations: step.run.match(/\$\{\{[^}]*\}\}/g) }).toEqual({
+            step: step.name,
+            workflow: name,
+            interpolations: null,
+          });
+        }
+      }
+    }
+  });
+
+  it('the values that carry candidate data are quoted where they are used', () => {
+    const receiver = readWorkflow('edge-publish');
+    const promote = readWorkflow('promote');
+    // Unquoted, a value containing whitespace word-splits and a later argument becomes a separate one.
+    // These three carry caller-influenced or computed data into commands.
+    expect(promote).toContain('--field "sha=${CANDIDATE}"');
+    expect(receiver).toContain('npm run version:packages "${EDGE_VERSION}"');
+    expect(receiver).toContain('--tag "${EDGE_TAG}"');
+  });
+
   it('no credential beyond the default token is introduced', () => {
     const receiver = readWorkflow('edge-publish');
     const promote = readWorkflow('promote');
