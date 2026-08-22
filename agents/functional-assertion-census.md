@@ -7,8 +7,8 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 351 |
-| blind | 5 |
+| able | 353 |
+| blind | 3 |
 | gap | 0 |
 | exempt | 0 |
 | **total** | **356** |
@@ -213,8 +213,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/material-vertex-color.webgpu.ts` | able | L136: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-video-map.webgl.ts` | able | L90: sample samples pixels from a named call site (0.35) |
 | `functional/scenes/material-video-map.webgpu.ts` | able | L88: sample samples pixels from a named call site (0.35) |
-| `functional/scenes/material-wireframe.webgl.ts` | blind | L132: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/material-wireframe.webgpu.ts` | blind | L135: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/material-wireframe.webgl.ts` | able | L155: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (sample.x, sample.y) |
+| `functional/scenes/material-wireframe.webgpu.ts` | able | L158: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (sample.x, sample.y) |
 | `functional/scenes/mesh-cone.webgl.ts` | able | L121: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/mesh-cone.webgpu.ts` | able | L124: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/mesh-cylinder.webgl.ts` | able | L122: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
