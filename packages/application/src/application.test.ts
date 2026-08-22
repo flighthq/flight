@@ -9,14 +9,18 @@ import {
   detachApplicationExit,
   disposeApplication,
   enableApplicationLifecycleSignals,
+  explainLoopBackend,
   forEachApplicationWindow,
   getApplicationFrameRate,
   getApplicationMainWindow,
   getApplicationWindows,
   getLoopBackend,
+  installLoopHostBackend,
   isApplicationRunning,
+  observeLoopHostResult,
   pauseApplicationLoop,
   registerApplicationWindow,
+  resetLoopBackendForTest,
   resumeApplicationLoop,
   setApplicationMainWindow,
   setLoopBackend,
@@ -32,7 +36,7 @@ function makeManualLoopBackend(): LoopBackend & { tick: (time: number) => void; 
   let cancelCount = 0;
   return {
     cancelCount,
-    requestFrame(cb: (time: number) => void): unknown {
+    requestFrame(cb: (time: number) => void): number {
       callback = cb;
       return 1;
     },
@@ -50,7 +54,7 @@ function makeManualLoopBackend(): LoopBackend & { tick: (time: number) => void; 
   };
 }
 
-afterEach(() => setLoopBackend(null));
+afterEach(() => resetLoopBackendForTest());
 
 describe('attachApplicationExit', () => {
   it('emits onExit on beforeunload', () => {
@@ -226,6 +230,48 @@ describe('enableApplicationLifecycleSignals', () => {
   });
 });
 
+describe('explainLoopBackend', () => {
+  it('reports host-not-enabled when no backend is installed', () => {
+    expect(explainLoopBackend()).toEqual({
+      conflict: false,
+      layer: 'host-not-enabled',
+      operation: null,
+      viability: 'unobserved',
+    });
+  });
+
+  it('reports custom layer when custom backend is set', () => {
+    setLoopBackend(makeManualLoopBackend());
+    expect(explainLoopBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer after install', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    expect(explainLoopBackend().layer).toBe('host');
+    expect(explainLoopBackend().viability).toBe('unobserved');
+  });
+
+  it('reports conflict when a distinct host is installed twice', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    installLoopHostBackend(createWebLoopBackend());
+    expect(explainLoopBackend().conflict).toBe(true);
+  });
+
+  it('preserves first host on conflict', () => {
+    const first = createWebLoopBackend();
+    installLoopHostBackend(first);
+    installLoopHostBackend(createWebLoopBackend());
+    expect(getLoopBackend()).toBe(first);
+  });
+
+  it('is idempotent — same reference does not conflict', () => {
+    const backend = createWebLoopBackend();
+    installLoopHostBackend(backend);
+    installLoopHostBackend(backend);
+    expect(explainLoopBackend().conflict).toBe(false);
+  });
+});
+
 describe('forEachApplicationWindow', () => {
   it('iterates all registered windows', () => {
     const app = createApplication();
@@ -305,18 +351,44 @@ describe('getApplicationWindows', () => {
 });
 
 describe('getLoopBackend', () => {
-  it('falls back to a web backend', () => {
-    vi.stubGlobal('requestAnimationFrame', vi.fn());
-    vi.stubGlobal('cancelAnimationFrame', vi.fn());
-    const backend = getLoopBackend();
-    expect(backend).not.toBeNull();
-    vi.unstubAllGlobals();
+  it('returns null when no backend is installed', () => {
+    expect(getLoopBackend()).toBeNull();
   });
 
-  it('returns the registered backend', () => {
-    const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+  it('returns custom backend over host', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    const custom = makeManualLoopBackend();
+    setLoopBackend(custom);
+    expect(getLoopBackend()).toBe(custom);
+  });
+
+  it('returns host backend when no custom is set', () => {
+    const host = createWebLoopBackend();
+    installLoopHostBackend(host);
+    expect(getLoopBackend()).toBe(host);
+  });
+});
+
+describe('installLoopHostBackend', () => {
+  it('installs a host backend retrievable via getLoopBackend', () => {
+    const backend = createWebLoopBackend();
+    installLoopHostBackend(backend);
     expect(getLoopBackend()).toBe(backend);
+  });
+
+  it('first-host-wins — second distinct backend sets conflict', () => {
+    const first = createWebLoopBackend();
+    installLoopHostBackend(first);
+    installLoopHostBackend(createWebLoopBackend());
+    expect(getLoopBackend()).toBe(first);
+    expect(explainLoopBackend().conflict).toBe(true);
+  });
+
+  it('same reference is idempotent — no conflict', () => {
+    const backend = createWebLoopBackend();
+    installLoopHostBackend(backend);
+    installLoopHostBackend(backend);
+    expect(explainLoopBackend().conflict).toBe(false);
   });
 });
 
@@ -342,6 +414,58 @@ describe('isApplicationRunning', () => {
     startApplicationLoop(app);
     stopApplicationLoop(app);
     expect(isApplicationRunning(app)).toBe(false);
+  });
+});
+
+describe('observeLoopHostResult', () => {
+  it('records available after success', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    observeLoopHostResult('requestFrame', true);
+    expect(explainLoopBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: 'requestFrame',
+      viability: 'available',
+    });
+  });
+
+  it('records runtime-api-unavailable after failure', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    observeLoopHostResult('requestFrame', false);
+    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
+  });
+
+  it('later observation replaces prior — loss then recovery', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    observeLoopHostResult('requestFrame', false);
+    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
+    observeLoopHostResult('requestFrame', true);
+    expect(explainLoopBackend().viability).toBe('available');
+  });
+
+  it('recovery then loss — available reverts to unavailable', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    observeLoopHostResult('requestFrame', true);
+    expect(explainLoopBackend().viability).toBe('available');
+    observeLoopHostResult('requestFrame', false);
+    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
+  });
+
+  it('cancelFrame observation is recorded independently', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    observeLoopHostResult('requestFrame', true);
+    expect(explainLoopBackend().operation).toBe('requestFrame');
+    observeLoopHostResult('cancelFrame', true);
+    expect(explainLoopBackend().operation).toBe('cancelFrame');
+    expect(explainLoopBackend().viability).toBe('available');
+  });
+
+  it('cancelFrame failure overwrites prior requestFrame success', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    observeLoopHostResult('requestFrame', true);
+    observeLoopHostResult('cancelFrame', false);
+    expect(explainLoopBackend().operation).toBe('cancelFrame');
+    expect(explainLoopBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -392,6 +516,17 @@ describe('registerApplicationWindow', () => {
   });
 });
 
+describe('resetLoopBackendForTest', () => {
+  it('clears all state', () => {
+    installLoopHostBackend(createWebLoopBackend());
+    observeLoopHostResult('requestFrame', true);
+    setLoopBackend(makeManualLoopBackend());
+    resetLoopBackendForTest();
+    expect(explainLoopBackend().layer).toBe('host-not-enabled');
+    expect(getLoopBackend()).toBeNull();
+  });
+});
+
 describe('resumeApplicationLoop', () => {
   it('resumes emission after pause without dumping the gap delta', () => {
     const backend = makeManualLoopBackend();
@@ -435,18 +570,30 @@ describe('setApplicationMainWindow', () => {
 });
 
 describe('setLoopBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    const backend = makeManualLoopBackend();
-    setLoopBackend(backend);
+  it('clears custom back to host or null when passed null', () => {
+    const custom = makeManualLoopBackend();
+    setLoopBackend(custom);
+    expect(getLoopBackend()).toBe(custom);
     setLoopBackend(null);
-    vi.stubGlobal('requestAnimationFrame', vi.fn());
-    vi.stubGlobal('cancelAnimationFrame', vi.fn());
-    expect(getLoopBackend()).not.toBeNull();
-    vi.unstubAllGlobals();
+    expect(getLoopBackend()).toBeNull();
+  });
+
+  it('clears custom but keeps host when passed null', () => {
+    const host = createWebLoopBackend();
+    installLoopHostBackend(host);
+    setLoopBackend(makeManualLoopBackend());
+    setLoopBackend(null);
+    expect(getLoopBackend()).toBe(host);
   });
 });
 
 describe('startApplicationLoop', () => {
+  it('is a no-op when no backend is installed', () => {
+    const app = createApplication();
+    startApplicationLoop(app);
+    expect(app.isRunning).toBe(false);
+  });
+
   it('sets isRunning to true', () => {
     const backend = makeManualLoopBackend();
     setLoopBackend(backend);
