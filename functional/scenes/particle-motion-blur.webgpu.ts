@@ -1,10 +1,10 @@
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
-// committed contrast is 0.57-0.62. `assertRender` requires >= 0.8% mid-dim coverage and <= 0.05% of the frame
-// left at full particle brightness, which does see the smear.
+// committed contrast is 0.57-0.62. `assertRender` checks both the aggregate smear population and the radial
+// orientation of that population in a window around every authored particle location.
 //
-// There is nothing here to close. The limitation is structural — the fingerprint cannot represent this
-// subject — rather than a missing capability, so this must never be filed later as an unfixed gap.
+// The limitation is structural — the fingerprint cannot represent this subject — rather than a missing
+// capability, so this must never be filed later as an unfixed gap.
 //
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
@@ -160,11 +160,10 @@ render(root);
 // same scene rendered with the pipeline bypassed: mid-dim 0.01170 vs 0.00401, bright cores 0.00000 vs
 // 0.00312. The floors sit between the two arms.
 //
-// LIMIT, stated because the scene's purpose is narrower than what this proves: this verifies the blur was
-// APPLIED, not that each particle was smeared along its OWN vector. A single shared blur direction — the
-// bug per-particle velocity exists to prevent — also erases the cores and also fills the mid band, so it
-// would pass. Radial extent cannot separate them here either: the smear is a few pixels against a ring
-// radius of ~0.42 of the frame, so both arms measure the ring, not the streak.
+// The location-sensitive arm samples a rotated cross at each authored particle center. On a correct render,
+// every cross contains far more mid-dim pixels in its radial wings than its tangential wings. A shared
+// horizontal velocity preserves both whole-frame fractions below, but makes the top and bottom crosses
+// tangentially dominant and therefore fails the per-particle proof.
 export function assertRender(frame: Readonly<Bitmap>): void {
   const { brightCores, midDim } = measureSmear(frame);
   if (midDim < 0.008) {
@@ -179,6 +178,46 @@ export function assertRender(frame: Readonly<Bitmap>): void {
         `brightness (expected <= 0.05%) — the cores were never spread along their velocity`,
     );
   }
+
+  for (let particleIndex = 0; particleIndex < PARTICLE_COUNT; particleIndex += 1) {
+    const { radialMidDim, tangentialMidDim } = measureParticleDirection(frame, particleIndex);
+    if (radialMidDim < 90 || radialMidDim < tangentialMidDim * 2) {
+      throw new Error(
+        `[particle-motion-blur] particle ${particleIndex} has ${radialMidDim} radial mid-dim samples and ` +
+          `${tangentialMidDim} tangential samples (expected >= 90 radial and >= 2× tangential) — its smear ` +
+          `does not follow the authored ring-radial velocity`,
+      );
+    }
+  }
+}
+
+function measureParticleDirection(
+  frame: Readonly<Bitmap>,
+  particleIndex: number,
+): { radialMidDim: number; tangentialMidDim: number } {
+  const angle = (particleIndex / PARTICLE_COUNT) * Math.PI * 2;
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  const centerX = width / 2 + cosine * RING_RADIUS;
+  const centerY = height / 2 + sine * RING_RADIUS;
+  const frameScaleX = frame.width / width;
+  const frameScaleY = frame.height / height;
+  let radialMidDim = 0;
+  let tangentialMidDim = 0;
+
+  for (let radial = -20; radial <= 20; radial += 1) {
+    for (let tangential = -20; tangential <= 20; tangential += 1) {
+      const x = Math.round((centerX + radial * cosine - tangential * sine) * frameScaleX);
+      const y = Math.round((centerY + radial * sine + tangential * cosine) * frameScaleY);
+      const rgb = getBitmapPixelRgb(frame, x, y);
+      const value = (((rgb >> 16) & 255) + ((rgb >> 8) & 255) + (rgb & 255)) / 3;
+      if (value <= 40 || value > 90) continue;
+      if (Math.abs(tangential) <= 4 && Math.abs(radial) >= 9) radialMidDim += 1;
+      if (Math.abs(radial) <= 4 && Math.abs(tangential) >= 9) tangentialMidDim += 1;
+    }
+  }
+
+  return { radialMidDim, tangentialMidDim };
 }
 
 function measureSmear(frame: Readonly<Bitmap>): { brightCores: number; midDim: number } {

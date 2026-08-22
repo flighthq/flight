@@ -7,8 +7,8 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 353 |
-| blind | 3 |
+| able | 355 |
+| blind | 1 |
 | gap | 0 |
 | exempt | 0 |
 | **total** | **356** |
@@ -260,8 +260,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/particle-emitter.canvas.ts` | able | L131: at is checked by a throw threshold inside its sampling loop (cx, cy) |
 | `functional/scenes/particle-emitter.webgl.ts` | able | L131: at is checked by a throw threshold inside its sampling loop (cx, cy) |
 | `functional/scenes/particle-emitter.webgpu.ts` | able | L131: at is checked by a throw threshold inside its sampling loop (cx, cy) |
-| `functional/scenes/particle-motion-blur.webgl.ts` | blind | L185: measureSmear supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/particle-motion-blur.webgpu.ts` | blind | L184: measureSmear supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/particle-motion-blur.webgl.ts` | able | L184: radialMidDim carries a thresholded spatial bound |
+| `functional/scenes/particle-motion-blur.webgpu.ts` | able | L183: radialMidDim carries a thresholded spatial bound |
 | `functional/scenes/path-boolean-difference.canvas.ts` | able | L67: at samples pixels from a named call site (75, 75) |
 | `functional/scenes/path-boolean-intersection.canvas.ts` | able | L67: at samples pixels from a named call site (125, 125) |
 | `functional/scenes/path-boolean-union.canvas.ts` | able | L72: at samples pixels from a named call site (125, 125) |
