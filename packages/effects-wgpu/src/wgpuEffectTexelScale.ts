@@ -1,6 +1,6 @@
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-export interface WgpuEffectLogicalResolution {
+interface WgpuEffectLogicalResolution {
   readonly height: number;
   readonly texelsPerLogicalPixel: number;
   readonly width: number;
