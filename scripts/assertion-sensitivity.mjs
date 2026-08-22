@@ -29,16 +29,16 @@ const SPATIAL_NEIGHBOUR =
   /\b(?:adjacent|delta|deltas|gradient|highFrequency|neighbou?r|previous|steepSteps?|transitions?)\b/i;
 
 // Hand-reviewed known answers are executable controls, not overrides that silently bless arbitrary rows.
-// Every invocation re-analyses the source and fails if any answer changes. material-wireframe is the
-// important negative: its circular loop looks positional, but both thresholds consume only bright/dark
-// population counts and are invariant under rearrangement within the sampled sphere.
+// Every invocation re-analyses the source and fails if any answer changes. material-wireframe used to be
+// the important negative: its circular loop looked positional while both thresholds consumed only bright/dark
+// population counts. Its direct per-edge color samples are now positive controls for the repaired oracle.
 export const ASSERTION_SENSITIVITY_CONTROLS = {
   'functional/scenes/effect-film-grain.webgl.ts': 'able',
   'functional/scenes/effect-god-rays.webgl.ts': 'able',
   'functional/scenes/effect-inner-shadow.webgl.ts': 'able',
   'functional/scenes/effect-radial-blur.webgl.ts': 'able',
-  'functional/scenes/material-wireframe.webgl.ts': 'blind',
-  'functional/scenes/material-wireframe.webgpu.ts': 'blind',
+  'functional/scenes/material-wireframe.webgl.ts': 'able',
+  'functional/scenes/material-wireframe.webgpu.ts': 'able',
   'functional/scenes/shape-stroke.ts': 'able',
   'functional/scenes/text-native.dom.ts': 'blind',
 };
