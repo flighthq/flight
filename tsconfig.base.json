@@ -40,6 +40,8 @@
       "@flighthq/host-electron/*": ["./packages/host-electron/src/*"],
       "@flighthq/host-tauri": ["./packages/host-tauri/src/index.ts"],
       "@flighthq/host-tauri/*": ["./packages/host-tauri/src/*"],
+      "@flighthq/host-web": ["./packages/host-web/src/index.ts"],
+      "@flighthq/host-web/*": ["./packages/host-web/src/*"],
       "@flighthq/tool-capture": ["./packages/tool-capture/src/index.ts"],
       "@flighthq/tool-capture/*": ["./packages/tool-capture/src/*"],
       "@flighthq/notification": ["./packages/notification/src/index.ts"],

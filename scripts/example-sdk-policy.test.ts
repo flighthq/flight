@@ -29,4 +29,13 @@ describe('example SDK consumption policy', () => {
       ['@flighthq/scene3d-gl'],
     );
   });
+
+  it('allows host-* packages as dependencies and import specifiers', () => {
+    expect(
+      getInvalidExampleFlightDependencies(['@flighthq/sdk', '@flighthq/host-web', '@flighthq/host-electron']),
+    ).toEqual([]);
+    expect(
+      getInvalidExampleFlightImportSpecifiers(['@flighthq/sdk', '@flighthq/host-web', '@flighthq/host-electron']),
+    ).toEqual([]);
+  });
 });

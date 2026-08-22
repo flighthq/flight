@@ -1,3 +1,4 @@
+import { createWebCursorBackend } from '@flighthq/host-web';
 import type { AudioChannel, AudioResource, Shape } from '@flighthq/sdk';
 import {
   addAudioBusToMixer,
@@ -17,7 +18,6 @@ import {
   createInteractionManager,
   createShape,
   createTextLabel,
-  createWebCursorBackend,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   playAudioResource,

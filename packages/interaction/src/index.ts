@@ -8,7 +8,6 @@ export {
   createFocusManager,
   createInteractionManager,
   createNodeInteractionState,
-  createWebCursorBackend,
   describeGraphHit,
   disableInteractionGuards,
   disconnectInteractionSignal,
