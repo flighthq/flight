@@ -21,12 +21,28 @@ export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
 }
 
 export function explainGlyphRasterizerBackend(): BackendExplanation {
-  if (_custom !== null) return { layer: 'custom', viability: 'available' };
-  if (_host !== null) {
-    if (_hostConflict) return { layer: 'host', viability: 'provider-conflict' };
-    return { layer: 'host', viability: _hostViable ? 'available' : 'runtime-api-unavailable' };
+  if (_custom !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'custom',
+      operation: null,
+      viability: 'unobserved',
+    };
   }
-  return { layer: 'host-not-enabled', viability: 'available' };
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return {
+    conflict: false,
+    layer: 'host-not-enabled',
+    operation: null,
+    viability: 'unobserved',
+  };
 }
 
 export function getGlyphRasterizerBackend(): GlyphRasterizerBackend {
@@ -35,22 +51,31 @@ export function getGlyphRasterizerBackend(): GlyphRasterizerBackend {
 
 // Installs a host-layer backend. The first install wins: a second call with the same backend
 // reference is a silent no-op (idempotence); a second call with a distinct backend sets the
-// provider-conflict flag and preserves the original host — explain reports provider-conflict,
-// custom still wins, and clearing custom reveals the original.
-export function installGlyphRasterizerHostBackend(backend: GlyphRasterizerBackend, viable: boolean): void {
+// conflict flag and preserves the original host — explain reports conflict:true, custom still
+// wins, and clearing custom reveals the original.
+export function installGlyphRasterizerHostBackend(backend: GlyphRasterizerBackend): void {
   if (_host !== null) {
     if (_host !== backend) _hostConflict = true;
     return;
   }
   _host = backend;
-  _hostViable = viable;
+}
+
+// Records an observation from a host backend operation. Called by the host backend's rasterize
+// and measureMetrics methods after each real call. Later calls replace the prior observation,
+// so both loss and recovery are reflected.
+export function observeGlyphRasterizerHostResult(operation: 'measureMetrics' | 'rasterize', succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 export function resetGlyphRasterizerBackendForTest(): void {
   _custom = null;
   _host = null;
-  _hostViable = false;
   _hostConflict = false;
+  _hostObservation = null;
 }
 
 export function setGlyphRasterizerBackend(backend: GlyphRasterizerBackend | null): void {
@@ -59,8 +84,11 @@ export function setGlyphRasterizerBackend(backend: GlyphRasterizerBackend | null
 
 let _custom: GlyphRasterizerBackend | null = null;
 let _host: GlyphRasterizerBackend | null = null;
-let _hostViable = false;
 let _hostConflict = false;
+let _hostObservation: {
+  operation: 'measureMetrics' | 'rasterize';
+  viability: 'available' | 'runtime-api-unavailable';
+} | null = null;
 
 // Sentinel omits the optional measureMetrics — advertising an optional capability it does not
 // support would be a false power claim.
