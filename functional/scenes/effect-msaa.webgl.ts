@@ -108,8 +108,11 @@ function countPartialCoveragePixels(frame: Readonly<Bitmap>): number {
 // Measured on this scene: 258 partial pixels with the resolve working, against 0 on a backend that
 // silently drops to a single sample. The threshold sits far from both.
 const MIN_ANTIALIASED_EDGE_PIXELS = 80;
+const EXPECTED_BAR_RGB = [0xff5c7c, 0x5cff9c, 0x5c9cff, 0xffd25c] as const;
 
 export function assertRender(frame: Readonly<Bitmap>): void {
+  assertBarCenters(frame);
+
   const partial = countPartialCoveragePixels(frame);
   if (partial < MIN_ANTIALIASED_EDGE_PIXELS) {
     throw new Error(
@@ -117,5 +120,29 @@ export function assertRender(frame: Readonly<Bitmap>): void {
         `${MIN_ANTIALIASED_EDGE_PIXELS}) — the bars' diagonal edges are hard, so the pipeline's ` +
         `sampleCount 4 did not resolve; this cell exists to show that it does`,
     );
+  }
+}
+
+// The aggregate edge count above proves the resolve is antialiased, while these location-indexed centers
+// prove those edges still belong to the four intended bars. Without this half, moving or permuting whole
+// bars preserves the exact partial-pixel count and the assertion is blind to the corrupted picture.
+// MEASURED defeat: swapping bars 0 and 1 failed both backends at (200, 180), #5cff9c vs #ff5c7c.
+function assertBarCenters(frame: Readonly<Bitmap>): void {
+  for (let i = 0; i < colors.length; i++) {
+    const x = Math.round(frame.width * (0.25 + 0.5 * (i % 2)));
+    const y = Math.round(frame.height * (0.3 + 0.25 * Math.floor(i / 2)));
+    const actual = getBitmapPixelRgb(frame, x, y);
+    const expected = EXPECTED_BAR_RGB[i]!;
+    const delta = Math.max(
+      Math.abs(((actual >> 16) & 255) - ((expected >> 16) & 255)),
+      Math.abs(((actual >> 8) & 255) - ((expected >> 8) & 255)),
+      Math.abs((actual & 255) - (expected & 255)),
+    );
+    if (delta > 4) {
+      throw new Error(
+        `[effect-msaa] bar ${i} center at (${x}, ${y}) is #${actual.toString(16).padStart(6, '0')} ` +
+          `(expected #${expected.toString(16).padStart(6, '0')}) — the antialiased bars moved or changed`,
+      );
+    }
   }
 }
