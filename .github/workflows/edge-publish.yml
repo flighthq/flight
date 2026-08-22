@@ -17,6 +17,37 @@ name: Edge publish
 #
 # THIS FILE MUST LIVE ON THE DEFAULT BRANCH (`main`) TO BE DISPATCHABLE, for the same reason
 # promote.yml documents: Actions registers `workflow_dispatch` from the default branch only.
+#
+# ★ FIRST ROLLOUT IS NOT SELF-STARTING, AND THE FIRST PROMOTION MUST NOT BE ASSUMED PUBLISHED.
+# This workflow becomes dispatchable only once it is ON main. The promotion that CARRIES it to main is
+# therefore the one promotion that cannot dispatch it: at the moment `promote.yml` runs its dispatch
+# step, main does not yet have the file registered, and `gh workflow run edge-publish.yml` fails with
+# "could not find any workflows named edge-publish.yml".
+#
+# That failure is loud, not silent — the dispatch step is fail-closed, so the promotion goes RED and
+# says so. Which is the correct behaviour and also the trap: the red is expected exactly once, and an
+# operator who dismisses it as a rollout artifact will also have skipped the edge publish for that
+# commit without noticing. THE FIRST PROMOTION AFTER THIS LANDS PUBLISHES NOTHING TO `edge`.
+#
+# The one-time bootstrap, to be performed by a human and NOT automated (an auto-retry here would hide
+# the very case that needs looking at):
+#
+#   1. Land promote.yml + edge-publish.yml on `main` — through the normal promotion, whose dispatch
+#      step is expected to fail. Record that run; it is the known-red one.
+#   2. Confirm the workflow is registered: `gh workflow list` should now show "Edge publish".
+#   3. Dispatch it once, by hand, for the commit main now points at:
+#        gh workflow run edge-publish.yml --ref main -f sha="$(git rev-parse origin/main)"
+#      Watch that run to completion. This is the visible, deliberate act that closes the gap the
+#      failed step left, and it exercises the whole receiver path once before anything depends on it.
+#   4. Verify the channel actually moved — `npm dist-tag ls @flighthq/sdk` should show `edge` at the
+#      version this run published. That check is the real acceptance for the whole mechanism; every
+#      local gate up to here proves only that the wiring is right, never that a package was published.
+#   5. From the NEXT promotion onward the dispatch is automatic and no further manual step exists.
+#
+# A staged alternative, if the red promotion is unacceptable: land edge-publish.yml on main FIRST, on
+# its own, and only then land the promote.yml dispatch step. The receiver is inert until something
+# dispatches it, so shipping it early costs nothing and removes the known-red run entirely. This is the
+# safer order and is preferred where the branch protection allows two passes.
 run-name: Edge publish · ${{ inputs.sha }} · from promote run ${{ inputs.promote_run_id }}
 
 on:
