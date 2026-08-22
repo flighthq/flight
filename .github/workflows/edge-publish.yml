@@ -33,11 +33,17 @@ on:
         default: ''
 
 concurrency:
-  # ★ KEYED ON THE CANDIDATE, NOT THE BRANCH. Two dispatches for the same promoted commit — a retry, a
-  # duplicate catch-up — serialize instead of racing, and the second finds the version already
-  # published and exits as a no-op (see the idempotency guard below). Keying on `main` instead would
-  # serialize unrelated candidates behind each other for no benefit. Never cancel mid-publish.
-  group: edge-publish-candidate-${{ inputs.sha }}
+  # ★ CHANNEL-GLOBAL, NOT CANDIDATE-KEYED. `edge` is ONE npm dist-tag and every publish stamps the
+  # whole ~141-package graph to a single version, so two publishes are never independent work however
+  # different their candidates are — they contend for the same pointer. A candidate-keyed group let two
+  # promotions in the same minute publish CONCURRENTLY and race on that tag, and because a dist-tag is
+  # last-write-wins the OLDER build could land on `edge` and stay there. Serializing per channel is the
+  # only key that makes the tag's final value a function of promotion order.
+  #
+  # Retries and duplicate dispatches of one candidate are handled by the publisher being idempotent per
+  # package, not by the concurrency key. Never cancel mid-publish: a cancelled run leaves the graph
+  # half-published.
+  group: edge-publish-main
   cancel-in-progress: false
 
 env:
