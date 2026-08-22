@@ -7,8 +7,8 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 340 |
-| blind | 16 |
+| able | 346 |
+| blind | 10 |
 | gap | 0 |
 | exempt | 0 |
 | **total** | **356** |
@@ -107,8 +107,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/effect-lens-flare.webgpu.ts` | able | L139: meanOf samples pixels from a named call site (0, 0, PROBE) |
 | `functional/scenes/effect-lensdirt.webgl.ts` | able | L99: getBitmapPixelRgb is thresholded at named coordinates (blockCx, blockCy) |
 | `functional/scenes/effect-lensdirt.webgpu.ts` | able | L90: getBitmapPixelRgb is thresholded at named coordinates (blockCx, blockCy) |
-| `functional/scenes/effect-lift-gamma-gain.webgl.ts` | blind | L121: measureMeanBlue supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-lift-gamma-gain.webgpu.ts` | blind | L124: measureMeanBlue supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/effect-lift-gamma-gain.webgl.ts` | able | L137: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-lift-gamma-gain.webgpu.ts` | able | L140: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
 | `functional/scenes/effect-lut-grade.webgl.ts` | able | L109: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/effect-lut-grade.webgpu.ts` | able | L112: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/effect-motion-blur.webgl.ts` | able | L167: luminance is checked by a throw threshold inside its sampling loop (frame, cx) |
@@ -116,10 +116,10 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/effect-msaa-bloom.canvas.ts` | able | L138: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
 | `functional/scenes/effect-msaa-bloom.webgl.ts` | able | L135: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
 | `functional/scenes/effect-msaa-bloom.webgpu.ts` | able | L149: luminance samples pixels from a named call site (Math.round(frame.width * 0.5), Math.round(frame.height * 0.5)) |
-| `functional/scenes/effect-msaa.webgl.ts` | blind | L96: countPartialCoveragePixels supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-msaa.webgpu.ts` | blind | L101: countPartialCoveragePixels supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-outline.webgl.ts` | blind | L104: measureOutlineInk supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-outline.webgpu.ts` | blind | L112: measureOutlineInk supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/effect-msaa.webgl.ts` | able | L134: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-msaa.webgpu.ts` | able | L146: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (x, y) |
+| `functional/scenes/effect-outline.webgl.ts` | able | L117: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (centerX, centerY) |
+| `functional/scenes/effect-outline.webgpu.ts` | able | L125: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (centerX, centerY) |
 | `functional/scenes/effect-pixelate.canvas.ts` | able | L105: measureHighFrequency thresholds spatial neighbourhood order via deltas |
 | `functional/scenes/effect-pixelate.webgl.ts` | able | L107: measureHighFrequency thresholds spatial neighbourhood order via deltas |
 | `functional/scenes/effect-pixelate.webgpu.ts` | able | L110: measureHighFrequency thresholds spatial neighbourhood order via deltas |
@@ -213,8 +213,8 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/material-vertex-color.webgpu.ts` | able | L136: getBitmapPixelLuminance is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/material-video-map.webgl.ts` | able | L90: sample samples pixels from a named call site (0.35) |
 | `functional/scenes/material-video-map.webgpu.ts` | able | L88: sample samples pixels from a named call site (0.35) |
-| `functional/scenes/material-wireframe.webgl.ts` | blind | L129: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/material-wireframe.webgpu.ts` | blind | L132: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/material-wireframe.webgl.ts` | blind | L132: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/material-wireframe.webgpu.ts` | blind | L135: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
 | `functional/scenes/mesh-cone.webgl.ts` | able | L121: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/mesh-cone.webgpu.ts` | able | L124: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
 | `functional/scenes/mesh-cylinder.webgl.ts` | able | L122: getBitmapPixelRgb is thresholded at named coordinates (cx, cy) |
