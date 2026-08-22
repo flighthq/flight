@@ -18,6 +18,7 @@ import {
   createSpotLight,
   createVector3,
   endGlRenderEffectPipeline,
+  getBitmapPixelRgb,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
@@ -161,12 +162,39 @@ const forwardLights = prepareGlScene3DForwardLights(state, renderList, lights);
 drawGlScene3D(state, scene, camera, lights, forwardLights);
 endGlRenderEffectPipeline(state, pipeline, []);
 
+// Independently recorded row-major center fingerprint. Two clean captures were byte-identical at all
+// twelve centers; the tolerance leaves room for small cross-driver float differences without accepting
+// a neighbouring light color. The aggregate lit count below still proves that per-object selection beat
+// first-four truncation, while these positions prove the selected lights remained attached to their tiles.
+// MEASURED defeat: swapping the red and blue light definitions preserved all twelve lit centers but failed
+// tile 0 as #c4f4ff versus expected #ffadca.
+const EXPECTED_TILE_RGB = [
+  0xffadca, 0xaaffff, 0xd6ffec, 0xffffa8, 0xbdffff, 0xffffff, 0xffffb5, 0xffcabc, 0xb5fff9, 0xffffb3, 0xffc49e,
+  0xc4f3ff,
+] as const;
+const MAX_TILE_CHANNEL_DELTA = 24;
+
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   let litCount = 0;
   for (let row = 0; row < zPositions.length; row++) {
     for (let column = 0; column < xPositions.length; column++) {
       const x = Math.round((0.5 + xPositions[column] / 12) * bitmap.width);
       const y = Math.round((0.5 + zPositions[row] / 9) * bitmap.height);
+      const index = row * xPositions.length + column;
+      const actual = getBitmapPixelRgb(bitmap, x, y);
+      const expected = EXPECTED_TILE_RGB[index]!;
+      const channelDelta = Math.max(
+        Math.abs(((actual >> 16) & 255) - ((expected >> 16) & 255)),
+        Math.abs(((actual >> 8) & 255) - ((expected >> 8) & 255)),
+        Math.abs((actual & 255) - (expected & 255)),
+      );
+      if (channelDelta > MAX_TILE_CHANNEL_DELTA) {
+        throw new Error(
+          `[light-many-point] tile ${index} at (${x}, ${y}) is #${actual.toString(16).padStart(6, '0')} ` +
+            `(expected #${expected.toString(16).padStart(6, '0')} within ${MAX_TILE_CHANNEL_DELTA} per channel) — ` +
+            `the light colors moved between tiles or their contribution changed`,
+        );
+      }
       if (getBitmapPixelLuminance(bitmap, x, y) > 48) litCount++;
     }
   }
