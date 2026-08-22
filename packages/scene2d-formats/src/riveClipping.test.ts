@@ -76,6 +76,22 @@ describe('applyRiveClipping', () => {
     expect(clip!.contours![0].slice(0, 2)).toEqual([95, 0]);
   });
 
+  it('inherits a transform from a parent that follows it in the component stream', () => {
+    const scene = build([
+      object(ARTBOARD, {}),
+      object(SHAPE, { [X]: 5 }),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 4 }),
+      object(NODE, { [X]: 40 }),
+      object(SHAPE, { [X]: 100 }),
+    ]);
+    // Index 1 is a legal forward reference: its parent is component 3, which appears later in the
+    // flat stream. Its own x=5 composes after the parent's x=40.
+    scene.parents = [-1, 3, 1, 0, 0];
+    const clip = run(scene, { 4: [square()] });
+
+    expect(clip!.contours![0].slice(0, 2)).toEqual([55, 0]);
+  });
+
   // A non-node component holds no transform of its own, so a node beneath one must still inherit
   // what that component's own parent carries rather than restarting at the identity.
   it('passes an ancestor transform through a component that holds none', () => {
@@ -132,6 +148,30 @@ describe('applyRiveClipping', () => {
     run(scene, {}, diagnostics);
 
     expect(diagnostics.map((diagnostic) => diagnostic.kind)).toEqual(['rive.unresolved-clipping-source']);
+  });
+
+  it('throws for a parent cycle instead of substituting the root transform', () => {
+    const scene = build([
+      object(ARTBOARD, {}),
+      object(SHAPE, {}),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 3 }),
+      object(SHAPE, {}),
+    ]);
+    scene.parents = [-1, 3, 1, 1];
+
+    expect(() => run(scene, { 3: [square()] })).toThrow('Rive component parent cycle');
+  });
+
+  it('throws for an unresolved transform parent instead of substituting the root transform', () => {
+    const scene = build([
+      object(ARTBOARD, {}),
+      object(SHAPE, {}),
+      object(CLIPPING_SHAPE, { [SOURCE_ID]: 3 }),
+      object(SHAPE, {}),
+    ]);
+    scene.parents = [-1, 99, 1, 0];
+
+    expect(() => run(scene, { 3: [square()] })).toThrow('Rive component 1 has unresolved parent 99');
   });
 
   it('intersects several clipping shapes on one node', () => {
