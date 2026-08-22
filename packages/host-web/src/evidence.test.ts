@@ -111,17 +111,20 @@ describe('evidence: tree-shaking isolation', () => {
 
   it('capability fixture contains zero host-web modules', async () => {
     const { modules } = await getFixture('capability');
+    expect(sourceModules(modules).length).toBeGreaterThan(0);
     expect(hasHostWebModule(modules)).toBe(false);
   });
 
   it('cursor fixture excludes glyph rasterizer modules', async () => {
     const { modules } = await getFixture('cursor');
+    expect(sourceModules(modules).length).toBeGreaterThan(0);
     expect(hasHostWebModule(modules)).toBe(true);
     expect(hasGlyphModule(modules)).toBe(false);
   });
 
   it('glyph fixture excludes cursor modules', async () => {
     const { modules } = await getFixture('glyph');
+    expect(sourceModules(modules).length).toBeGreaterThan(0);
     expect(hasHostWebModule(modules)).toBe(true);
     expect(hasCursorModule(modules)).toBe(false);
   });
@@ -137,11 +140,18 @@ describe('evidence: tree-shaking isolation', () => {
     expect(outsideUnion).toEqual([]);
   });
 
-  it('reports control-normalized sizes', async () => {
+  it('reports control-normalized sizes with gating inequalities', async () => {
     const control = await getFixture('control');
-    const names: FixtureName[] = ['capability', 'cursor', 'glyph', 'both'];
-    for (const name of names) {
-      const fixture = await getFixture(name);
+    const cursor = await getFixture('cursor');
+    const glyph = await getFixture('glyph');
+    const both = await getFixture('both');
+
+    // Diagnostics
+    for (const [name, fixture] of [
+      ['cursor', cursor],
+      ['glyph', glyph],
+      ['both', both],
+    ] as const) {
       const rawDelta = fixture.rawBytes - control.rawBytes;
       const gzipDelta = fixture.gzipBytes - control.gzipBytes;
       console.log(
@@ -150,5 +160,21 @@ describe('evidence: tree-shaking isolation', () => {
       );
     }
     console.log(`control: raw=${control.rawBytes}, gzip=${control.gzipBytes}`);
+
+    // A8: glyph rasterizer adds real code
+    expect(glyph.rawBytes).toBeGreaterThan(control.rawBytes);
+
+    // A8: both is strictly larger than either individual capability
+    expect(both.rawBytes).toBeGreaterThan(cursor.rawBytes);
+    expect(both.rawBytes).toBeGreaterThan(glyph.rawBytes);
+
+    // A8: cursor is at least as large as control
+    expect(cursor.rawBytes).toBeGreaterThanOrEqual(control.rawBytes);
+
+    // A8: normalized subadditivity — S(both) + S(control) <= S(cursor) + S(glyph) for raw and gzip.
+    // Control is an empty retained constant so it represents only entry-point overhead. Shared code
+    // between cursor and glyph deduplicates in both, making the left side smaller.
+    expect(both.rawBytes + control.rawBytes).toBeLessThanOrEqual(cursor.rawBytes + glyph.rawBytes);
+    expect(both.gzipBytes + control.gzipBytes).toBeLessThanOrEqual(cursor.gzipBytes + glyph.gzipBytes);
   });
 });

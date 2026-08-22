@@ -1,3 +1,3 @@
-import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas';
+const _retained = 0;
 
-(globalThis as Record<string, unknown>).__evidence = getGlyphRasterizerBackend();
+(globalThis as Record<string, unknown>).__evidence = _retained;

@@ -1,4 +1,4 @@
-import { installGlyphRasterizerHostBackend } from '@flighthq/glyphatlas/contract';
+import { installGlyphRasterizerHostBackend, observeGlyphRasterizerHostResult } from '@flighthq/glyphatlas/contract';
 import type {
   GlyphMetrics,
   GlyphRasterizedBitmap,
@@ -10,31 +10,38 @@ export function createWebGlyphRasterizerBackend(): GlyphRasterizerBackend {
   return {
     measureMetrics(options): GlyphMetrics | null {
       const context = _acquireGlyphRasterContext();
-      if (context === null) return null;
+      if (context === null) {
+        observeGlyphRasterizerHostResult('measureMetrics', false);
+        return null;
+      }
       _applyGlyphRasterFont(context, options);
       const metrics = context.measureText('Hg');
       const ascent = metrics.fontBoundingBoxAscent;
       const descent = metrics.fontBoundingBoxDescent;
-      if (!(ascent > 0) || !(descent >= 0)) return null;
+      if (!(ascent > 0) || !(descent >= 0)) {
+        observeGlyphRasterizerHostResult('measureMetrics', false);
+        return null;
+      }
+      observeGlyphRasterizerHostResult('measureMetrics', true);
       return { ascent, descent, lineGap: 0 };
     },
     rasterize(codepoint, options): GlyphRasterizedBitmap | null {
       const context = _acquireGlyphRasterContext();
-      if (context === null) return null;
+      if (context === null) {
+        observeGlyphRasterizerHostResult('rasterize', false);
+        return null;
+      }
+      // Observe on context acquisition, not on result: null is valid for zero-ink glyphs (space).
+      observeGlyphRasterizerHostResult('rasterize', true);
       return _rasterizeGlyphOnContext(context, codepoint, options);
     },
   };
 }
 
-// Probes the runtime environment for a 2D canvas context. The enabler calls this once at
-// enable time to decide viability — the backend itself re-acquires on every call, but the
-// viability signal is locked at enable time so explain reports a stable answer.
 export function enableHostWebGlyphRasterizer(): void {
   if (_enabled) return;
   _enabled = true;
-  const viable = _probeGlyphRasterizerViability();
-  const backend = viable ? createWebGlyphRasterizerBackend() : _unavailableBackend;
-  installGlyphRasterizerHostBackend(backend, viable);
+  installGlyphRasterizerHostBackend(createWebGlyphRasterizerBackend());
 }
 
 function _acquireGlyphRasterContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null {
@@ -60,22 +67,6 @@ function _applyGlyphRasterFont(
   const fontStyle = options.fontStyle ?? 'normal';
   const fontWeight = options.fontWeight ?? 'normal';
   context.font = `${fontStyle} ${fontWeight} ${options.fontSize}px ${options.fontFamily}`;
-}
-
-function _probeGlyphRasterizerViability(): boolean {
-  try {
-    if (typeof OffscreenCanvas !== 'undefined') {
-      const context = new OffscreenCanvas(1, 1).getContext('2d');
-      if (context !== null) return true;
-    }
-    if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
-      const context = document.createElement('canvas').getContext('2d');
-      if (context !== null) return true;
-    }
-  } catch {
-    return false;
-  }
-  return false;
 }
 
 function _rasterizeGlyphOnContext(
@@ -126,11 +117,3 @@ export function resetHostWebGlyphRasterizerForTest(): void {
 }
 
 let _enabled = false;
-
-// Installed when the environment lacks OffscreenCanvas/document/2D-context. A real object (not
-// null) so get returns it and explain reports layer:host + viability:runtime-api-unavailable.
-const _unavailableBackend: GlyphRasterizerBackend = {
-  rasterize(): null {
-    return null;
-  },
-};
