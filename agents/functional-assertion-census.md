@@ -7,8 +7,8 @@ instrument or case rule and are therefore unsupported and not comparable with th
 
 | verdict | scene sources |
 | --- | ---: |
-| able | 346 |
-| blind | 10 |
+| able | 349 |
+| blind | 7 |
 | gap | 0 |
 | exempt | 0 |
 | **total** | **356** |
@@ -123,9 +123,9 @@ rearrangement-invariant whole-analysis aggregates. `gap` means no throw threshol
 | `functional/scenes/effect-pixelate.canvas.ts` | able | L105: measureHighFrequency thresholds spatial neighbourhood order via deltas |
 | `functional/scenes/effect-pixelate.webgl.ts` | able | L107: measureHighFrequency thresholds spatial neighbourhood order via deltas |
 | `functional/scenes/effect-pixelate.webgpu.ts` | able | L110: measureHighFrequency thresholds spatial neighbourhood order via deltas |
-| `functional/scenes/effect-posterize.canvas.ts` | blind | L101: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-posterize.webgl.ts` | blind | L100: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
-| `functional/scenes/effect-posterize.webgpu.ts` | blind | L105: assertRender supplies only rearrangement-invariant counts, averages, histograms, or coverage |
+| `functional/scenes/effect-posterize.canvas.ts` | able | L114: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-posterize.webgl.ts` | able | L114: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
+| `functional/scenes/effect-posterize.webgpu.ts` | able | L119: getBitmapPixelRgb is checked by a throw threshold inside its sampling loop (cx, cy) |
 | `functional/scenes/effect-radial-blur.webgl.ts` | able | L136: countSteepSteps is thresholded across 2 distinct call-site regions (RADIAL_CENTER_Y - 0.06 \| RADIAL_CENTER_Y + 0.06 ; RADIAL_CENTER_Y + 0.06 \| RADIAL_CENTER_Y + 0.18) |
 | `functional/scenes/effect-radial-blur.webgpu.ts` | able | L137: countSteepSteps is thresholded across 2 distinct call-site regions (RADIAL_CENTER_Y - 0.06 \| RADIAL_CENTER_Y + 0.06 ; RADIAL_CENTER_Y + 0.06 \| RADIAL_CENTER_Y + 0.18) |
 | `functional/scenes/effect-scanlines.canvas.ts` | able | L106: measureVerticalHighFrequency thresholds spatial neighbourhood order via deltas |
