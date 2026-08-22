@@ -206,6 +206,20 @@ describe('edge-publish dispatch contract', () => {
     expect(receiver).toContain('secrets.NPM_TOKEN');
   });
 
+  it('the first-rollout bootstrap is written down where the operator will be', () => {
+    const receiver = readWorkflow('edge-publish');
+    // The promotion that carries this file to main cannot dispatch it — the workflow is not registered
+    // until it IS on main. That run goes red (the dispatch is fail-closed) and its edge publish does
+    // not happen. Both facts have to be stated, or the expected red gets dismissed as a rollout
+    // artifact and the skipped publish goes with it.
+    expect(receiver).toContain('FIRST ROLLOUT IS NOT SELF-STARTING');
+    expect(receiver).toContain('THE FIRST PROMOTION AFTER THIS LANDS PUBLISHES NOTHING TO `edge`');
+    // The manual step must be spelled out as a command, and the acceptance must be the dist-tag rather
+    // than a green run — every local gate proves wiring, never that a package was published.
+    expect(receiver).toContain('gh workflow run edge-publish.yml --ref main');
+    expect(receiver).toContain('npm dist-tag ls @flighthq/sdk');
+  });
+
   it('tests.yml no longer publishes the same channel from a push to main', () => {
     const tests = parseWorkflow('tests') as { jobs: { 'edge-publish': { if: string } } };
     const condition = tests.jobs['edge-publish'].if;
