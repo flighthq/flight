@@ -114,6 +114,7 @@
     { "path": "./packages/socket" },
     { "path": "./packages/physics2d" },
     { "path": "./packages/physics3d" },
+    { "path": "./packages/physics2d-abi" },
     { "path": "./packages/physics3d-abi" },
     { "path": "./packages/spatial" },
     { "path": "./packages/spring" },

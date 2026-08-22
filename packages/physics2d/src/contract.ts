@@ -19,5 +19,6 @@ export {
   warmStartPhysics2DContacts,
 } from './solver';
 export * from './step';
+export * from './stepValidation';
 export * from './world';
 export * from './worldQueries';
