@@ -230,6 +230,46 @@ describe('readPhysics2DAbiContacts', () => {
     expect([contacts.ids[0], contacts.ids[1]]).toEqual([1, 2]);
   });
 
+  it('publishes a prefix rather than a subsequence when the point capacity binds', () => {
+    // The distinction only shows when a NARROWER contact sits behind a wider one. A box on the floor
+    // gives a two-point manifold; a circle on the floor gives one. With room for a single point, a
+    // subsequence would skip the box and publish the circle -- `count` would claim a prefix while
+    // holding the second contact, so a caller that grew its buffer would get a different set rather
+    // than a superset.
+    const abi = createPhysics2DAbi();
+    const handle = createPhysics2DAbiWorld(abi);
+    const commands = createPhysics2DAbiCommandBuffer(8192);
+    const floor = createRigidBody2D('static', 0, -0.5);
+    floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -8, minY: -0.5, maxX: 8, maxY: 0 }, MATERIAL));
+    writePhysics2DAbiSetBodyCommand(commands, 1, floor);
+    writePhysics2DAbiSetColliderCommand(commands, 1, 1, floor.colliders[0]);
+    const crate = createRigidBody2D('dynamic', -2, 0.5);
+    crate.colliders.push(
+      createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, MATERIAL),
+    );
+    writePhysics2DAbiSetBodyCommand(commands, 2, crate);
+    writePhysics2DAbiSetColliderCommand(commands, 2, 2, crate.colliders[0]);
+    const ball = createRigidBody2D('dynamic', 2, 0.5);
+    ball.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, MATERIAL));
+    writePhysics2DAbiSetBodyCommand(commands, 3, ball);
+    writePhysics2DAbiSetColliderCommand(commands, 3, 3, ball.colliders[0]);
+    executePhysics2DAbiCommands(abi, handle, commands, createPhysics2DAbiExecutionResult());
+    for (let step = 0; step < 60; step += 1) stepPhysics2DAbiWorld(abi, handle, 1 / 60);
+
+    const full = createPhysics2DAbiContactBuffer(8, 16);
+    expect(readPhysics2DAbiContacts(abi, handle, 'All', full)).toBe(true);
+    expect(full.count).toBe(2);
+    // The scene only tests what it claims to if a narrower contact really does follow a wider one.
+    expect(full.pointCounts[0]).toBe(2);
+    expect(full.pointCounts[1]).toBe(1);
+
+    const tight = createPhysics2DAbiContactBuffer(8, 1);
+    expect(readPhysics2DAbiContacts(abi, handle, 'All', tight)).toBe(true);
+    expect(tight.count).toBe(0);
+    expect(tight.requiredCount).toBe(2);
+    expect(tight.requiredPointCount).toBe(3);
+  });
+
   it('separates the began selection from the standing set', () => {
     const { abi, handle } = settled();
     const all = createPhysics2DAbiContactBuffer(4, 8);
