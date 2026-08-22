@@ -99,8 +99,11 @@ describe('edge-publish dispatch contract', () => {
       concurrency: { group: string; 'cancel-in-progress': boolean };
     };
     expect(receiver.on.workflow_dispatch.inputs.sha.required).toBe(true);
-    // Candidate-keyed, so a retry of the same promotion serializes against itself instead of racing.
-    expect(receiver.concurrency.group).toContain('inputs.sha');
+    // ★ CHANNEL-GLOBAL. `edge` is one dist-tag; two concurrent publishes race on it and last-write-wins
+    // can leave the OLDER build on the tag. Keying on the candidate would permit exactly that, so the
+    // group must NOT vary with the input.
+    expect(receiver.concurrency.group).toBe('edge-publish-main');
+    expect(receiver.concurrency.group).not.toContain('inputs.sha');
     expect(receiver.concurrency['cancel-in-progress']).toBe(false);
   });
 
