@@ -46,6 +46,7 @@
     { "path": "./packages/host-capacitor" },
     { "path": "./packages/host-electron" },
     { "path": "./packages/host-tauri" },
+    { "path": "./packages/host-web" },
     { "path": "./packages/input" },
     { "path": "./packages/interaction" },
     { "path": "./packages/intl" },

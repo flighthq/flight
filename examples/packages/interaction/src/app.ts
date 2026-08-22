@@ -1,3 +1,4 @@
+import { createWebCursorBackend } from '@flighthq/host-web';
 import type { PointerEventData, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -19,7 +20,6 @@ import {
   connectInputToInteraction,
   connectInteractionSignal,
   createInteractionManager,
-  createWebCursorBackend,
   hitTestNode2DsShape,
   registerDefaultHitTests,
   registerShapeHitTest,

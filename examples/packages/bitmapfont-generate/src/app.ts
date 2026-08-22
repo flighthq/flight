@@ -1,3 +1,4 @@
+import { createWebGlyphRasterizerBackend } from '@flighthq/host-web';
 import type { BitmapText } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -13,7 +14,6 @@ import {
   createGlyphAtlas,
   createGlyphSourceFromGlyphAtlas,
   createStubGlyphRasterizerBackend,
-  createWebGlyphRasterizerBackend,
   getGlyphAtlasBitmap,
   setGlyphRasterizerBackend,
 } from '@flighthq/sdk/text';

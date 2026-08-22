@@ -1,4 +1,3 @@
-export * from './cursorBackend';
 export * from './displayHitTests';
 export * from './enableInteractionGuards';
 export * from './displayObjectOverlap';
