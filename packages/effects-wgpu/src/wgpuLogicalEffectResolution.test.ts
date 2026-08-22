@@ -1,21 +1,10 @@
 import type { WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-import type * as WgpuCrtEffectModule from './wgpuCrtEffect';
-import type * as WgpuDirectionalBlurEffectModule from './wgpuDirectionalBlurEffect';
-import type * as WgpuDisplacementEffectModule from './wgpuDisplacementEffect';
-import type * as WgpuDitherEffectModule from './wgpuDitherEffect';
-import type * as WgpuFxaaEffectModule from './wgpuFxaaEffect';
-import type * as WgpuGlitchEffectModule from './wgpuGlitchEffect';
-import type * as WgpuKuwaharaEffectModule from './wgpuKuwaharaEffect';
-import type * as WgpuMotionBlurEffectModule from './wgpuMotionBlurEffect';
-import type * as WgpuPixelateEffectModule from './wgpuPixelateEffect';
-import type * as WgpuSharpenEffectModule from './wgpuSharpenEffect';
-import type * as WgpuSmaaEffectModule from './wgpuSmaaEffect';
-import type * as WgpuSsaoEffectModule from './wgpuSsaoEffect';
-import type * as WgpuTiltShiftEffectModule from './wgpuTiltShiftEffect';
-
-const recorded = { uniforms: [] as number[][] };
-const passMock = () => {
+// This file is in REGISTRY_ISOLATED_TESTS because its two top-level mocks replace shared effect-pass
+// modules for every table row. The private registry makes the hoisted form file-scoped without rebuilding
+// the full effects graph through resetModules plus dynamic imports for each test.
+const recorded = vi.hoisted(() => ({ uniforms: [] as number[][] }));
+const passMock = vi.hoisted(() => {
   const recordUniforms = (setUniforms: (f32: Float32Array) => void): void => {
     const f32 = new Float32Array(8);
     setUniforms(f32);
@@ -44,70 +33,25 @@ const passMock = () => {
       ) => recordUniforms(setUniforms),
     ),
   };
-};
-const pipelineMock = { getWgpuEffectPipeline: vi.fn(() => ({})) };
+});
+const pipelineMock = vi.hoisted(() => ({ getWgpuEffectPipeline: vi.fn(() => ({})) }));
 
-let applyCrtEffectToWgpu: typeof WgpuCrtEffectModule.applyCrtEffectToWgpu;
-let applyDirectionalBlurEffectToWgpu: typeof WgpuDirectionalBlurEffectModule.applyDirectionalBlurEffectToWgpu;
-let applyDisplacementEffectToWgpu: typeof WgpuDisplacementEffectModule.applyDisplacementEffectToWgpu;
-let applyDitherEffectToWgpu: typeof WgpuDitherEffectModule.applyDitherEffectToWgpu;
-let applyFxaaEffectToWgpu: typeof WgpuFxaaEffectModule.applyFxaaEffectToWgpu;
-let applyGlitchEffectToWgpu: typeof WgpuGlitchEffectModule.applyGlitchEffectToWgpu;
-let applyKuwaharaEffectToWgpu: typeof WgpuKuwaharaEffectModule.applyKuwaharaEffectToWgpu;
-let applyMotionBlurEffectToWgpu: typeof WgpuMotionBlurEffectModule.applyMotionBlurEffectToWgpu;
-let applyPixelateEffectToWgpu: typeof WgpuPixelateEffectModule.applyPixelateEffectToWgpu;
-let applySharpenEffectToWgpu: typeof WgpuSharpenEffectModule.applySharpenEffectToWgpu;
-let applySmaaEffectToWgpu: typeof WgpuSmaaEffectModule.applySmaaEffectToWgpu;
-let applySsaoEffectToWgpu: typeof WgpuSsaoEffectModule.applySsaoEffectToWgpu;
-let applyTiltShiftEffectToWgpu: typeof WgpuTiltShiftEffectModule.applyTiltShiftEffectToWgpu;
+vi.mock('./wgpuEffectPass', () => passMock);
+vi.mock('./wgpuEffectProgramCache', () => pipelineMock);
 
-beforeAll(async () => {
-  vi.doMock('./wgpuEffectPass', passMock);
-  vi.doMock('./wgpuEffectProgramCache', () => pipelineMock);
-
-  const [
-    crt,
-    directionalBlur,
-    displacement,
-    dither,
-    fxaa,
-    glitch,
-    kuwahara,
-    motionBlur,
-    pixelate,
-    sharpen,
-    smaa,
-    ssao,
-    tiltShift,
-  ] = await Promise.all([
-    import('./wgpuCrtEffect'),
-    import('./wgpuDirectionalBlurEffect'),
-    import('./wgpuDisplacementEffect'),
-    import('./wgpuDitherEffect'),
-    import('./wgpuFxaaEffect'),
-    import('./wgpuGlitchEffect'),
-    import('./wgpuKuwaharaEffect'),
-    import('./wgpuMotionBlurEffect'),
-    import('./wgpuPixelateEffect'),
-    import('./wgpuSharpenEffect'),
-    import('./wgpuSmaaEffect'),
-    import('./wgpuSsaoEffect'),
-    import('./wgpuTiltShiftEffect'),
-  ]);
-  ({ applyCrtEffectToWgpu } = crt);
-  ({ applyDirectionalBlurEffectToWgpu } = directionalBlur);
-  ({ applyDisplacementEffectToWgpu } = displacement);
-  ({ applyDitherEffectToWgpu } = dither);
-  ({ applyFxaaEffectToWgpu } = fxaa);
-  ({ applyGlitchEffectToWgpu } = glitch);
-  ({ applyKuwaharaEffectToWgpu } = kuwahara);
-  ({ applyMotionBlurEffectToWgpu } = motionBlur);
-  ({ applyPixelateEffectToWgpu } = pixelate);
-  ({ applySharpenEffectToWgpu } = sharpen);
-  ({ applySmaaEffectToWgpu } = smaa);
-  ({ applySsaoEffectToWgpu } = ssao);
-  ({ applyTiltShiftEffectToWgpu } = tiltShift);
-}, 30_000);
+import { applyCrtEffectToWgpu } from './wgpuCrtEffect';
+import { applyDirectionalBlurEffectToWgpu } from './wgpuDirectionalBlurEffect';
+import { applyDisplacementEffectToWgpu } from './wgpuDisplacementEffect';
+import { applyDitherEffectToWgpu } from './wgpuDitherEffect';
+import { applyFxaaEffectToWgpu } from './wgpuFxaaEffect';
+import { applyGlitchEffectToWgpu } from './wgpuGlitchEffect';
+import { applyKuwaharaEffectToWgpu } from './wgpuKuwaharaEffect';
+import { applyMotionBlurEffectToWgpu } from './wgpuMotionBlurEffect';
+import { applyPixelateEffectToWgpu } from './wgpuPixelateEffect';
+import { applySharpenEffectToWgpu } from './wgpuSharpenEffect';
+import { applySmaaEffectToWgpu } from './wgpuSmaaEffect';
+import { applySsaoEffectToWgpu } from './wgpuSsaoEffect';
+import { applyTiltShiftEffectToWgpu } from './wgpuTiltShiftEffect';
 
 type ApplyEffect = (
   state: WgpuRenderState,
