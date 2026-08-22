@@ -130,7 +130,9 @@ export function setNetBackend(backend: NetBackend | null): void {
 
 Each of the 38 `createWeb*Backend` functions was audited in full. The 38 factories implement 328 methods on their returned backend objects: 180 genuine, 148 sentinel. Strict-majority threshold: sentinel > genuine → NONE (no enabler for broad interface). 12 NONE rows. 32 genuine minority methods preserved via narrower split (section 5).
 
-Every implementation inventory governed by this record must cite, in each row, the exact section that decides its disposition. A row is incomplete if it merely restates a rule or relies on a parcel, memory, or a preceding row. At minimum, each row cites the applicable classification, lifetime, absence, singleton/per-instance, and viability sections. Replication may begin only from a complete cited inventory; this makes a contradiction reviewable on the face of the artifact.
+Every implementation inventory governed by this record must be written from a working copy in which the deciding record commit is applied, not merely named. Before authoring, record `git merge-base --is-ancestor <record-commit> HEAD` as a passing precondition and read this file from that working copy.
+
+The inventory must use the record's exact current headings as its schema: `Mandatory 38-Row Classification`, `Capability classification: global-singleton vs per-instance`, `No False Host Implementations`, `Provider-transition lifetime rule`, `Async viability semantics`, and `Repository gates`. Under each heading, every method row cites the exact deciding subsection. A renamed, missing, or superseded heading makes the inventory structurally incomplete; prose restating a remembered rule or a pasted commit hash cannot substitute. Replication may begin only from a complete inventory assembled under this heading skeleton.
 
 ### Three outcomes
 
