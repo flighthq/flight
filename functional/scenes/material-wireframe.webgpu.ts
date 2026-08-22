@@ -18,6 +18,7 @@ import {
   createWireframeMaterial,
   endWgpuRenderEffectPipeline,
   getBitmapPixelLuminance,
+  getBitmapPixelRgb,
   normalizeVector3,
   prepareScene3DRender,
   registerWgpuWireframeMaterial,
@@ -131,11 +132,13 @@ const lights = createScene3DLights({
 
 render(scene, camera, lights);
 
-// Assertion: all 12 cube edges render as separate projected segments, but the cube is not a solid fill.
+// Assertion: all 12 cube edges render as separate projected segments, remain neutral white, and leave dark
+// interiors. MEASURED defeat: a red wire keeps all twelve midpoint luminances above the old threshold and
+// preserves its dark coverage, but the direct edge-0 color check fails as #ff0000 on this backend.
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const cx = Math.floor(bitmap.width / 2);
   const cy = Math.floor(bitmap.height / 2);
-  let edgeCount = 0;
+  let edgeIndex = 0;
   for (const varyingAxis of [0, 1, 2]) {
     for (const firstSign of [-1, 1]) {
       for (const secondSign of [-1, 1]) {
@@ -145,14 +148,25 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
         const distance = 2.5 - point[2];
         const expectedX = Math.round(cx + (480 * point[0]) / distance);
         const expectedY = Math.round(cy - (480 * point[1]) / distance);
-        if (hasBrightPixel(bitmap, expectedX, expectedY, 2)) edgeCount++;
+        const sample = findBrightestPixel(bitmap, expectedX, expectedY, 2);
+        if (sample.luminance <= 40) {
+          throw new Error(
+            `[material-wireframe] edge ${edgeIndex} has no bright pixel near its projected midpoint ` +
+              `(${expectedX}, ${expectedY})`,
+          );
+        }
+        const red = (sample.rgb >> 16) & 255;
+        const green = (sample.rgb >> 8) & 255;
+        const blue = sample.rgb & 255;
+        if (Math.min(red, green, blue) < 200 || Math.max(red, green, blue) - Math.min(red, green, blue) > 24) {
+          throw new Error(
+            `[material-wireframe] edge ${edgeIndex} near (${expectedX}, ${expectedY}) is ` +
+              `#${sample.rgb.toString(16).padStart(6, '0')} — expected a neutral white wire`,
+          );
+        }
+        edgeIndex++;
       }
     }
-  }
-  if (edgeCount !== 12) {
-    throw new Error(
-      `[material-wireframe] only ${edgeCount}/12 distinguishable cube edges reached their projected midpoints`,
-    );
   }
 
   let darkCount = 0;
@@ -168,13 +182,23 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
   }
 }
 
-function hasBrightPixel(bitmap: Readonly<Bitmap>, cx: number, cy: number, radius: number): boolean {
+function findBrightestPixel(
+  bitmap: Readonly<Bitmap>,
+  cx: number,
+  cy: number,
+  radius: number,
+): { readonly luminance: number; readonly rgb: number } {
+  let luminance = -1;
+  let rgb = 0;
   for (let y = cy - radius; y <= cy + radius; y++) {
     for (let x = cx - radius; x <= cx + radius; x++) {
-      if (getBitmapPixelLuminance(bitmap, x, y) > 40) return true;
+      const candidateLuminance = getBitmapPixelLuminance(bitmap, x, y);
+      if (candidateLuminance <= luminance) continue;
+      luminance = candidateLuminance;
+      rgb = getBitmapPixelRgb(bitmap, x, y);
     }
   }
-  return false;
+  return { luminance, rgb };
 }
 
 // Barrel so TypeScript resolves the `./render` import in app.ts; the functional harness routes it to the
