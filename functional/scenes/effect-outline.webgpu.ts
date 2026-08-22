@@ -100,12 +100,55 @@ render(root);
 // fingerprint cannot see it: its committed grid scores 4.64 against a uniform frame of its own
 // background, under the gate's threshold of 5.
 export function assertRender(frame: Readonly<Bitmap>): void {
+  assertOutlineLocations(frame);
+
   const ink = measureOutlineInk(frame);
   if (ink < 0.01) {
     throw new Error(
       `[effect-outline] pure-black ink covers ${(ink * 100).toFixed(3)}% of the frame (expected >= 1%) — the ` +
         `shapes carry no outline`,
     );
+  }
+}
+
+const EXPECTED_FILL_RGB = [0xff5c7c, 0x5cff9c, 0x5c9cff, 0xffd25c, 0xd25cff, 0x5cf0ff] as const;
+const MIN_LOCAL_OUTLINE_INK = 400;
+
+// Global ink can be rearranged without changing its count. Bind both each fill and a dense patch of the
+// black outline to all eighteen intended centers; the 81x71 windows stay disjoint in this grid. Measured
+// local ink is 608..902 on Gl and 608..840 on Wgpu, leaving the threshold well below either backend.
+// MEASURED defeat: swapping the first two fills preserved global ink but failed both backends at shape 0.
+function assertOutlineLocations(frame: Readonly<Bitmap>): void {
+  for (let i = 0; i < 18; i++) {
+    const centerX = Math.round(frame.width * (0.12 + 0.18 * (i % 5)));
+    const centerY = Math.round(frame.height * (0.18 + 0.2 * Math.floor(i / 5)));
+    const actualFill = getBitmapPixelRgb(frame, centerX, centerY);
+    const expectedFill = EXPECTED_FILL_RGB[i % EXPECTED_FILL_RGB.length]!;
+    const fillDelta = Math.max(
+      Math.abs(((actualFill >> 16) & 255) - ((expectedFill >> 16) & 255)),
+      Math.abs(((actualFill >> 8) & 255) - ((expectedFill >> 8) & 255)),
+      Math.abs((actualFill & 255) - (expectedFill & 255)),
+    );
+    if (fillDelta > 4) {
+      throw new Error(
+        `[effect-outline] shape ${i} center at (${centerX}, ${centerY}) is ` +
+          `#${actualFill.toString(16).padStart(6, '0')} (expected #${expectedFill.toString(16).padStart(6, '0')})`,
+      );
+    }
+
+    let localInk = 0;
+    for (let y = centerY - 35; y <= centerY + 35; y++) {
+      for (let x = centerX - 40; x <= centerX + 40; x++) {
+        const rgb = getBitmapPixelRgb(frame, x, y);
+        if (((rgb >> 16) & 255) < 8 && ((rgb >> 8) & 255) < 8 && (rgb & 255) < 8) localInk++;
+      }
+    }
+    if (localInk < MIN_LOCAL_OUTLINE_INK) {
+      throw new Error(
+        `[effect-outline] shape ${i} has ${localInk} local black pixels (expected at least ` +
+          `${MIN_LOCAL_OUTLINE_INK}) — its outline moved or disappeared`,
+      );
+    }
   }
 }
 
