@@ -62,9 +62,17 @@ long-horizon stress scenes, and enforced performance/allocation budgets ship.
 - **Native ownership no longer changes the standard API.** `physics3d-abi` now owns the persistent handle,
   packed command/readback, synchronous hook, and query boundary as a public executable TypeScript contract.
   A future native target conforms there while a standard object-world shadow remains a separate promise.
+- **Active ragdoll is a proposed integration, not a missing core solver feature.** The passive joint
+  foundation ships, but skeleton/body binding, multi-axis pose drive, animation/physics mode transitions,
+  recovery, and solved-pose synchronization do not. The current lean is a separate tree-shakable
+  `@flighthq/ragdoll3d` package over `physics3d` + `skeleton3d`; a reusable target-orientation motor, if the
+  controller proves it needs one, remains a `physics3d` primitive. The contract and package name are not
+  yet blessed, so implementation is deliberately deferred.
 
 ## Log
 
+- **2026-08-21** — Recorded active ragdoll as a proposed separate integration package rather than adding
+  skeleton/scene orchestration to the headless solver.
 - **2026-08-21** — Native API shape resolved into `@flighthq/physics3d-abi`; the standard object-world API
   remains independent and adds no bundle edge for ordinary TypeScript consumers.
 - **2026-08-21** — TypeScript AAA gates completed: accelerated static mesh/heightfield terrain, enforced

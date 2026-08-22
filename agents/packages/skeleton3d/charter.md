@@ -3,7 +3,7 @@ package: '@flighthq/skeleton3d'
 role: package
 crate: flighthq-skeleton3d
 draft: false
-lastDirection: 2026-07-17
+lastDirection: 2026-08-21
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -104,6 +104,11 @@ All decisions from the original `skeleton` charter apply. See `agents/packages/s
 - **Double-skin guard** — a caller-facing guard for "GPU backend + `updateMeshSkin` called" (skinned twice).
 - **wgpu GPU skinning deferred** to a host-GPU session — `maxBindGroups` forces the bone palette into a
   2nd vertex-visible binding in group 1 + a skinned pipeline/layout variant; gl-side seams already feed it.
+- **Active ragdoll stays outside this package.** The proposed controller is tracked in the
+  [`physics3d` charter](../physics3d/charter.md#open-directions): `skeleton3d` supplies the rig and pose
+  boundary, while a tentative tree-shakable `@flighthq/ragdoll3d` integration package owns body binding,
+  animation/physics transitions, recovery, and solved-pose synchronization. The package name and contract
+  remain open; do not grow `skeleton3d` into a modeful animation/physics controller.
 
 **Phase 4 — separate track (morph targets / blend shapes; IK), not committed here:**
 

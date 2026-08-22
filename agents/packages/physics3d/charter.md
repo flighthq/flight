@@ -68,5 +68,20 @@ This is the 3D half of physics. 2D rigid-body dynamics is `@flighthq/physics2d`.
 
 ## Open directions
 
-None. Native implementation and its differential/performance qualification remain deliberately downstream
-of the now-established TypeScript ABI contract.
+1. **Active-ragdoll controller and package home.** Flight has the passive rigid-body and joint foundation,
+   but not the higher-level controller that binds a `Skeleton3D` rig to bodies/colliders/joint frames,
+   drives those bodies toward an animation pose, hands momentum across animated/active/passive transitions,
+   and writes the solved pose back to the skeleton. This is not a small addition to the headless solver:
+   cone-twist and generic 6-DOF constraints currently have limits but no multi-axis target-orientation
+   motor, and the rig descriptor, update order, blend/recovery semantics, self-collision policy, ownership,
+   and qualification scenes all need an explicit contract before implementation.
+
+   The current lean is a separate, tree-shakable **`@flighthq/ragdoll3d` integration package** depending on
+   `physics3d` and `skeleton3d`, with adapters/callbacks instead of a hard `scene3d` dependency where
+   possible. Do not put skeleton/scene orchestration in `physics3d`, and do not turn `skeleton3d` into a
+   modeful physics controller. If the design exposes a generally useful target-orientation or multi-axis
+   pose motor, that low-level primitive belongs in `physics3d`; humanoid, horse, and other rig binding
+   remains in the integration package. The package name and contract are proposed, not yet blessed.
+
+Native implementation and its differential/performance qualification remain deliberately downstream of
+the now-established TypeScript ABI contract.
