@@ -1,17 +1,37 @@
-import type { GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type { GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { createGlyphAtlas, deriveGlyphMetricsFromFontSize } from './glyphAtlas';
+import { getGlyphAtlasEntry } from './glyphAtlasEntry';
+import { getGlyphAtlasMetrics } from './glyphAtlasMetrics';
 import {
   createStubGlyphRasterizerBackend,
   explainGlyphRasterizerBackend,
   getGlyphRasterizerBackend,
   installGlyphRasterizerHostBackend,
+  observeGlyphRasterizerHostResult,
   resetGlyphRasterizerBackendForTest,
   setGlyphRasterizerBackend,
 } from './glyphRasterizerBackend';
 
 function fakeBackend(tag?: string): GlyphRasterizerBackend & { _tag: string } {
   return { _tag: tag ?? 'fake', rasterize: () => null };
+}
+
+function taggedBackend(advance: number): GlyphRasterizerBackend {
+  return {
+    rasterize(_codepoint, options): GlyphRasterizedBitmap {
+      const size = Math.max(1, Math.round(options.fontSize));
+      return {
+        advance,
+        bearingX: 0,
+        bearingY: size,
+        height: size,
+        pixels: new Uint8ClampedArray(size * size * 4),
+        width: size,
+      };
+    },
+  };
 }
 
 describe('createStubGlyphRasterizerBackend', () => {
@@ -50,48 +70,89 @@ describe('createStubGlyphRasterizerBackend', () => {
 describe('explainGlyphRasterizerBackend', () => {
   afterEach(resetGlyphRasterizerBackendForTest);
 
-  it('reports host-not-enabled when nothing is installed', () => {
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host-not-enabled', viability: 'available' });
+  it('reports host-not-enabled/unobserved when nothing is installed', () => {
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host-not-enabled',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 
-  it('reports custom when a custom backend is installed', () => {
+  it('reports custom/unobserved when a custom backend is installed', () => {
     setGlyphRasterizerBackend(fakeBackend());
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'custom', viability: 'available' });
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'custom',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 
-  it('reports host/available when the host backend is installed with viable=true', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('host'), true);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host', viability: 'available' });
+  it('reports host/unobserved when the host is installed but never exercised', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 
-  it('reports host/runtime-api-unavailable when installed with viable=false', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('unavailable'), false);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host', viability: 'runtime-api-unavailable' });
+  it('reports host/available after a successful rasterize observation', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('rasterize', true);
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: 'rasterize',
+      viability: 'available',
+    });
+  });
+
+  it('reports host/runtime-api-unavailable after a failed rasterize observation', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('rasterize', false);
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: 'rasterize',
+      viability: 'runtime-api-unavailable',
+    });
   });
 
   it('reports custom even when host is also installed', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('host'), true);
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
     setGlyphRasterizerBackend(fakeBackend('custom'));
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'custom', viability: 'available' });
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'custom',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 
-  it('reports custom even when host is installed with runtime-api-unavailable', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('unavailable'), false);
-    setGlyphRasterizerBackend(fakeBackend('custom'));
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'custom', viability: 'available' });
+  it('reports conflict:true when a distinct second host is installed', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('first'));
+    installGlyphRasterizerHostBackend(fakeBackend('second'));
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: true,
+      layer: 'host',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 
-  it('reports provider-conflict when a distinct second host is installed', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('first'), true);
-    installGlyphRasterizerHostBackend(fakeBackend('second'), true);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host', viability: 'provider-conflict' });
-  });
-
-  it('custom still wins over a conflicted host', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('first'), true);
-    installGlyphRasterizerHostBackend(fakeBackend('second'), true);
+  it('custom reports conflict:true from the host layer underneath', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('first'));
+    installGlyphRasterizerHostBackend(fakeBackend('second'));
     setGlyphRasterizerBackend(fakeBackend('custom'));
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'custom', viability: 'available' });
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: true,
+      layer: 'custom',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 });
 
@@ -111,20 +172,14 @@ describe('getGlyphRasterizerBackend', () => {
 
   it('returns the host backend when installed and no custom', () => {
     const host = fakeBackend('host');
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     expect(getGlyphRasterizerBackend()).toBe(host);
-  });
-
-  it('returns the unavailable host backend (not sentinel) when viable=false', () => {
-    const unavailable = fakeBackend('unavailable');
-    installGlyphRasterizerHostBackend(unavailable, false);
-    expect(getGlyphRasterizerBackend()).toBe(unavailable);
   });
 
   it('prefers custom over host', () => {
     const custom = fakeBackend('custom');
     const host = fakeBackend('host');
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(custom);
     expect(getGlyphRasterizerBackend()).toBe(custom);
   });
@@ -135,39 +190,143 @@ describe('installGlyphRasterizerHostBackend', () => {
 
   it('installs a host backend that get returns', () => {
     const host = fakeBackend('host');
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     expect(getGlyphRasterizerBackend()).toBe(host);
   });
 
   it('is idempotent — calling twice with the same backend preserves identity', () => {
     const host = fakeBackend('host');
-    installGlyphRasterizerHostBackend(host, true);
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
+    installGlyphRasterizerHostBackend(host);
     expect(getGlyphRasterizerBackend()).toBe(host);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host', viability: 'available' });
+    expect(explainGlyphRasterizerBackend().conflict).toBe(false);
   });
 
   it('does not last-write-win — a distinct second host preserves the original', () => {
     const first = fakeBackend('first');
     const second = fakeBackend('second');
-    installGlyphRasterizerHostBackend(first, true);
-    installGlyphRasterizerHostBackend(second, true);
+    installGlyphRasterizerHostBackend(first);
+    installGlyphRasterizerHostBackend(second);
     expect(getGlyphRasterizerBackend()).toBe(first);
   });
 
   it('flags conflict when a distinct second host is installed', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('first'), true);
-    installGlyphRasterizerHostBackend(fakeBackend('second'), true);
-    expect(explainGlyphRasterizerBackend().viability).toBe('provider-conflict');
+    installGlyphRasterizerHostBackend(fakeBackend('first'));
+    installGlyphRasterizerHostBackend(fakeBackend('second'));
+    expect(explainGlyphRasterizerBackend().conflict).toBe(true);
   });
 
   it('clearing custom reveals the original host even after a conflict', () => {
     const first = fakeBackend('first');
-    installGlyphRasterizerHostBackend(first, true);
-    installGlyphRasterizerHostBackend(fakeBackend('second'), true);
+    installGlyphRasterizerHostBackend(first);
+    installGlyphRasterizerHostBackend(fakeBackend('second'));
     setGlyphRasterizerBackend(fakeBackend('custom'));
     setGlyphRasterizerBackend(null);
     expect(getGlyphRasterizerBackend()).toBe(first);
+  });
+});
+
+describe('observeGlyphRasterizerHostResult', () => {
+  afterEach(resetGlyphRasterizerBackendForTest);
+
+  it('transitions host from unobserved to available on successful rasterize', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    expect(explainGlyphRasterizerBackend().viability).toBe('unobserved');
+    observeGlyphRasterizerHostResult('rasterize', true);
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: 'rasterize',
+      viability: 'available',
+    });
+  });
+
+  it('transitions host from unobserved to runtime-api-unavailable on failed rasterize', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('rasterize', false);
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: 'rasterize',
+      viability: 'runtime-api-unavailable',
+    });
+  });
+
+  it('records measureMetrics observation', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('measureMetrics', true);
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: 'measureMetrics',
+      viability: 'available',
+    });
+  });
+
+  it('later call replaces prior — loss: available to runtime-api-unavailable', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('rasterize', true);
+    expect(explainGlyphRasterizerBackend().viability).toBe('available');
+    observeGlyphRasterizerHostResult('rasterize', false);
+    expect(explainGlyphRasterizerBackend().viability).toBe('runtime-api-unavailable');
+  });
+
+  it('later call replaces prior — recovery: runtime-api-unavailable to available', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('rasterize', false);
+    expect(explainGlyphRasterizerBackend().viability).toBe('runtime-api-unavailable');
+    observeGlyphRasterizerHostResult('rasterize', true);
+    expect(explainGlyphRasterizerBackend().viability).toBe('available');
+  });
+
+  it('observation persists under custom mask — visible after custom removal', () => {
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('rasterize', true);
+    setGlyphRasterizerBackend(fakeBackend('custom'));
+    expect(explainGlyphRasterizerBackend().layer).toBe('custom');
+    setGlyphRasterizerBackend(null);
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: 'rasterize',
+      viability: 'available',
+    });
+  });
+});
+
+describe('per-call GlyphAtlas precedence', () => {
+  afterEach(resetGlyphRasterizerBackendForTest);
+
+  it('walks sentinel → host → custom → per-call override with distinguishable output', () => {
+    const hostBackend = taggedBackend(100);
+    const customBackend = taggedBackend(200);
+    const perCallBackend = taggedBackend(300);
+    const atlasOpts = { fontFamily: 'x', fontSize: 16, height: 256, width: 256 };
+
+    // Step 1: sentinel — rasterize returns null, entry is null
+    const atlas1 = createGlyphAtlas(atlasOpts);
+    expect(getGlyphAtlasEntry(atlas1, 65)).toBeNull();
+
+    // Step 2: install host (advance=100)
+    installGlyphRasterizerHostBackend(hostBackend);
+    const atlas2 = createGlyphAtlas(atlasOpts);
+    expect(getGlyphAtlasEntry(atlas2, 65)?.advance).toBe(100);
+
+    // Step 3: set custom (advance=200, custom > host)
+    setGlyphRasterizerBackend(customBackend);
+    const atlas3 = createGlyphAtlas(atlasOpts);
+    expect(getGlyphAtlasEntry(atlas3, 65)?.advance).toBe(200);
+
+    // Step 4: per-call override (advance=300, per-call > custom > host)
+    const atlas4 = createGlyphAtlas({ ...atlasOpts, rasterizerBackend: perCallBackend });
+    expect(getGlyphAtlasEntry(atlas4, 65)?.advance).toBe(300);
+
+    // Step 5: clear custom — per-call atlas still bound to its backend
+    setGlyphRasterizerBackend(null);
+    expect(getGlyphAtlasEntry(atlas4, 66)?.advance).toBe(300);
+    // New atlas without override falls to host
+    const atlas5 = createGlyphAtlas(atlasOpts);
+    expect(getGlyphAtlasEntry(atlas5, 65)?.advance).toBe(100);
   });
 });
 
@@ -178,7 +337,7 @@ describe('provider call-order independence', () => {
     const custom = fakeBackend('custom');
     const host = fakeBackend('host');
     setGlyphRasterizerBackend(custom);
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     expect(getGlyphRasterizerBackend()).toBe(custom);
     expect(explainGlyphRasterizerBackend().layer).toBe('custom');
   });
@@ -186,7 +345,7 @@ describe('provider call-order independence', () => {
   it('host-before-custom resolves to custom', () => {
     const custom = fakeBackend('custom');
     const host = fakeBackend('host');
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(custom);
     expect(getGlyphRasterizerBackend()).toBe(custom);
     expect(explainGlyphRasterizerBackend().layer).toBe('custom');
@@ -197,12 +356,12 @@ describe('provider call-order independence', () => {
     const host = fakeBackend('host');
 
     setGlyphRasterizerBackend(custom);
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(null);
     expect(getGlyphRasterizerBackend()).toBe(host);
 
     resetGlyphRasterizerBackendForTest();
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(custom);
     setGlyphRasterizerBackend(null);
     expect(getGlyphRasterizerBackend()).toBe(host);
@@ -214,7 +373,7 @@ describe('provider conflict and identity', () => {
 
   it('custom masks host — host is preserved and revealed on custom removal', () => {
     const host = fakeBackend('host');
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(fakeBackend('custom'));
     expect(getGlyphRasterizerBackend()).not.toBe(host);
 
@@ -224,7 +383,7 @@ describe('provider conflict and identity', () => {
 
   it('replacing custom preserves host', () => {
     const host = fakeBackend('host');
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(fakeBackend('a'));
     setGlyphRasterizerBackend(fakeBackend('b'));
     setGlyphRasterizerBackend(null);
@@ -237,54 +396,50 @@ describe('provider conflict and identity', () => {
     expect(a).toBe(b);
   });
 
-  it('the sentinel does not have measureMetrics', () => {
+  it('the sentinel does not have measureMetrics — property is absent, not undefined', () => {
     const sentinel = getGlyphRasterizerBackend();
-    expect(sentinel.measureMetrics).toBeUndefined();
+    expect('measureMetrics' in sentinel).toBe(false);
   });
 });
 
 describe('resetGlyphRasterizerBackendForTest', () => {
-  it('clears custom, host, viable, and conflict back to initial state', () => {
+  it('clears custom, host, and observation back to initial state', () => {
     setGlyphRasterizerBackend(fakeBackend('custom'));
-    installGlyphRasterizerHostBackend(fakeBackend('host'), true);
+    installGlyphRasterizerHostBackend(fakeBackend('host'));
+    observeGlyphRasterizerHostResult('rasterize', true);
     resetGlyphRasterizerBackendForTest();
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host-not-enabled', viability: 'available' });
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host-not-enabled',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 
   it('clears the conflict flag', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('a'), true);
-    installGlyphRasterizerHostBackend(fakeBackend('b'), true);
-    expect(explainGlyphRasterizerBackend().viability).toBe('provider-conflict');
+    installGlyphRasterizerHostBackend(fakeBackend('a'));
+    installGlyphRasterizerHostBackend(fakeBackend('b'));
+    expect(explainGlyphRasterizerBackend().conflict).toBe(true);
     resetGlyphRasterizerBackendForTest();
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host-not-enabled', viability: 'available' });
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host-not-enabled',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 });
 
-describe('runtime-API-unavailable scenario', () => {
+describe('sentinel consumer fallback via GlyphAtlas', () => {
   afterEach(resetGlyphRasterizerBackendForTest);
 
-  it('host installed with viable=false reports runtime-api-unavailable and returns the backend', () => {
-    const unavailable = fakeBackend('unavailable');
-    installGlyphRasterizerHostBackend(unavailable, false);
-    expect(getGlyphRasterizerBackend()).toBe(unavailable);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host', viability: 'runtime-api-unavailable' });
-  });
-
-  it('custom still overrides even when host API is unavailable', () => {
-    installGlyphRasterizerHostBackend(fakeBackend('unavailable'), false);
-    const custom = fakeBackend('custom');
-    setGlyphRasterizerBackend(custom);
-    expect(getGlyphRasterizerBackend()).toBe(custom);
-    expect(explainGlyphRasterizerBackend().layer).toBe('custom');
-  });
-
-  it('removing custom with unavailable host reveals that host backend', () => {
-    const unavailable = fakeBackend('unavailable');
-    installGlyphRasterizerHostBackend(unavailable, false);
-    setGlyphRasterizerBackend(fakeBackend('custom'));
-    setGlyphRasterizerBackend(null);
-    expect(getGlyphRasterizerBackend()).toBe(unavailable);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host', viability: 'runtime-api-unavailable' });
+  it('GlyphAtlas metrics fall back to deriveGlyphMetricsFromFontSize when sentinel lacks measureMetrics', () => {
+    const atlas = createGlyphAtlas({ fontFamily: 'x', fontSize: 16, height: 64, width: 64 });
+    const metrics = getGlyphAtlasMetrics(atlas);
+    const expected = deriveGlyphMetricsFromFontSize(16);
+    expect(metrics.ascent).toBe(expected.ascent);
+    expect(metrics.descent).toBe(expected.descent);
+    expect(metrics.lineGap).toBe(expected.lineGap);
   });
 });
 
@@ -300,19 +455,24 @@ describe('setGlyphRasterizerBackend', () => {
   it('reveals the host layer when cleared with null', () => {
     const host = fakeBackend('host');
     const custom = fakeBackend('custom');
-    installGlyphRasterizerHostBackend(host, true);
+    installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(custom);
     expect(getGlyphRasterizerBackend()).toBe(custom);
 
     setGlyphRasterizerBackend(null);
     expect(getGlyphRasterizerBackend()).toBe(host);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host', viability: 'available' });
+    expect(explainGlyphRasterizerBackend().layer).toBe('host');
   });
 
   it('falls to sentinel when cleared with null and no host', () => {
     const custom = fakeBackend('custom');
     setGlyphRasterizerBackend(custom);
     setGlyphRasterizerBackend(null);
-    expect(explainGlyphRasterizerBackend()).toEqual({ layer: 'host-not-enabled', viability: 'available' });
+    expect(explainGlyphRasterizerBackend()).toEqual({
+      conflict: false,
+      layer: 'host-not-enabled',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 });

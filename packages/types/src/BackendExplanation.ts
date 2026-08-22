@@ -1,4 +1,6 @@
 export interface BackendExplanation {
+  readonly conflict: boolean;
   readonly layer: 'custom' | 'host' | 'host-not-enabled' | 'no-host-implementation';
-  readonly viability: 'available' | 'provider-conflict' | 'runtime-api-unavailable';
+  readonly operation: 'measureMetrics' | 'rasterize' | null;
+  readonly viability: 'available' | 'runtime-api-unavailable' | 'unobserved';
 }
