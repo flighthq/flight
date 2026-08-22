@@ -77,7 +77,8 @@ export interface Physics3DAbiContactBuffer {
 
 // Contact hooks receive one contact at a time in step order. They may change only the Enabled flag,
 // friction, and restitution. The same buffer is reused for every invocation, so retaining a view past
-// the callback is invalid. Four point slots are sufficient for every built-in Physics3D manifold.
+// the callback is invalid. `Physics3DAbiMaxContactPoints` point slots are sufficient for every built-in
+// Physics3D manifold.
 export type Physics3DAbiContactHook = (contact: Physics3DAbiContactBuffer) => void;
 
 export interface Physics3DAbiContactHooks {

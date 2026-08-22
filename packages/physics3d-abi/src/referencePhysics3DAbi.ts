@@ -99,6 +99,7 @@ import {
   Physics3DAbiJointFlag,
   Physics3DAbiJointKind,
   Physics3DAbiJointValueStride,
+  Physics3DAbiMaxContactPoints,
   Physics3DAbiQueryValueStride,
   Physics3DAbiSetColliderPayloadOffset,
   Physics3DAbiShapeHeaderByteLength,
@@ -1011,8 +1012,8 @@ function canStep(world: Readonly<Physics3DWorld>, dt: number): boolean {
 function hasHookCapacity(buffer: Readonly<Physics3DAbiContactBuffer>): boolean {
   return (
     getContactCapacity(buffer) >= 1 &&
-    buffer.pointFeatureIds.length >= 4 &&
-    buffer.pointValues.length >= 4 * Physics3DAbiContactPointValueStride
+    buffer.pointFeatureIds.length >= Physics3DAbiMaxContactPoints &&
+    buffer.pointValues.length >= Physics3DAbiMaxContactPoints * Physics3DAbiContactPointValueStride
   );
 }
 

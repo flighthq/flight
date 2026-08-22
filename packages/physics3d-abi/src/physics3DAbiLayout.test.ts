@@ -1,8 +1,10 @@
+import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {
   Physics3DAbiBodyValue,
   Physics3DAbiBodyValueStride,
+  Physics3DAbiCommandByteLength,
   Physics3DAbiCommandHeaderByteLength,
   Physics3DAbiCommandKind,
   Physics3DAbiCommandMagic,
@@ -16,8 +18,11 @@ import {
   Physics3DAbiJointKind,
   Physics3DAbiJointValue,
   Physics3DAbiJointValueStride,
+  Physics3DAbiMaxContactPoints,
   Physics3DAbiQueryValue,
   Physics3DAbiQueryValueStride,
+  Physics3DAbiSetColliderPayloadOffset,
+  Physics3DAbiShapeHeaderByteLength,
   Physics3DAbiShapeKind,
   Physics3DAbiVersion,
 } from './physics3DAbiLayout';
@@ -60,5 +65,14 @@ describe('Physics3D ABI wire layout', () => {
     expect(Math.max(...Object.values(Physics3DAbiContactPointValue)) + 1).toBe(Physics3DAbiContactPointValueStride);
     expect(Math.max(...Object.values(Physics3DAbiJointValue)) + 1).toBe(Physics3DAbiJointValueStride);
     expect(Math.max(...Object.values(Physics3DAbiQueryValue)) + 1).toBe(Physics3DAbiQueryValueStride);
+  });
+
+  it('ties variable collider framing and hook capacity to their structural bounds', () => {
+    expect(Physics3DAbiCommandByteLength.SetColliderMinimum).toBe(
+      Physics3DAbiCommandRecordHeaderByteLength +
+        Physics3DAbiSetColliderPayloadOffset.Shape +
+        Physics3DAbiShapeHeaderByteLength,
+    );
+    expect(Physics3DAbiMaxContactPoints).toBe(MAX_COLLISION_CONTACT_POINTS_3D);
   });
 });

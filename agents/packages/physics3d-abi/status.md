@@ -16,6 +16,8 @@ native differential/performance qualification remain deliberately downstream and
 
 ## Log
 
+- **2026-08-21** — Structural collider minimum, collision-bound hook capacity, and bit-exact contact-rich
+  differential qualification locked by regression tests.
 - **2026-08-21** — Persistent lifecycle, packed commands/readback, all built-in shapes and joints, queries,
   synchronous hooks, reentrancy guards, shared-memory views, and standard-solver parity completed with 70
   focused tests.

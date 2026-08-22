@@ -65,6 +65,7 @@ import {
   Physics3DAbiBodyValueStride,
   Physics3DAbiCapability,
   Physics3DAbiCommandHeaderByteLength,
+  Physics3DAbiMaxContactPoints,
   Physics3DAbiVersion,
 } from './physics3DAbiLayout';
 import { queryPhysics3DAbiPoint } from './physics3DAbiQuery';
@@ -193,6 +194,20 @@ describe('executePhysics3DAbiCommands', () => {
 
     expect(executePhysics3DAbiCommands(abi, world, commands, result)).toBe(false);
     expect(result.status).toBe('InvalidCommand');
+  });
+
+  it('classifies a structurally minimal degenerate collider as a rejected mutation', () => {
+    const abi = createPhysics3DAbi();
+    const world = createPhysics3DAbiWorld(abi);
+    const commands = createPhysics3DAbiCommandBuffer();
+    expect(writePhysics3DAbiSetBodyCommand(commands, 1, createRigidBody3D('static'))).toBe(true);
+    expect(
+      writePhysics3DAbiSetColliderCommand(commands, 1, 1, createPhysics3DCollider({ kind: 'convex', points: [] })),
+    ).toBe(true);
+    const result = createPhysics3DAbiExecutionResult();
+
+    expect(executePhysics3DAbiCommands(abi, world, commands, result)).toBe(false);
+    expect(result).toMatchObject({ status: 'RejectedMutation', commandIndex: 1 });
   });
 
   it('applies configuration, force, impulse, torque, and wake commands to persistent state', () => {
@@ -375,7 +390,7 @@ describe('readPhysics3DAbiJoints', () => {
 });
 
 describe('stepPhysics3DAbiWorld', () => {
-  it('matches the standard Physics3D solver over a persistent multi-step world', () => {
+  it('matches standard free-flight integration exactly over a persistent multi-step world', () => {
     const abi = createPhysics3DAbi();
     const abiWorld = createPhysics3DAbiWorld(abi);
     const source = createRigidBody3D();
@@ -403,14 +418,81 @@ describe('stepPhysics3DAbiWorld', () => {
 
     const out = createPhysics3DAbiBodyBuffer(1);
     readPhysics3DAbiBodies(abi, abiWorld, null, out);
-    expect(out.values[Physics3DAbiBodyValue.X]).toBeCloseTo(directBody.x, 12);
-    expect(out.values[Physics3DAbiBodyValue.Y]).toBeCloseTo(directBody.y, 12);
-    expect(out.values[Physics3DAbiBodyValue.VelocityY]).toBeCloseTo(directBody.velocityY, 12);
+    expect(out.values[Physics3DAbiBodyValue.X]).toBe(directBody.x);
+    expect(out.values[Physics3DAbiBodyValue.Y]).toBe(directBody.y);
+    expect(out.values[Physics3DAbiBodyValue.VelocityY]).toBe(directBody.velocityY);
+  });
+
+  it('matches the standard contact solver exactly over a frictional settling stack', () => {
+    const abi = createPhysics3DAbi();
+    const abiWorld = createPhysics3DAbiWorld(abi);
+    const directWorld = createPhysics3DWorld();
+    const material = { density: 1, friction: 0.4, restitution: 0.2 };
+    const shapes: CollisionColliderShape3D[] = [
+      { kind: 'aabb', minX: -6, minY: -0.5, minZ: -6, maxX: 6, maxY: 0.5, maxZ: 6 },
+      unitAabb(),
+      unitAabb(),
+      unitAabb(),
+    ];
+    const poses: [RigidBody3D['type'], number, number, number][] = [
+      ['static', 0, -0.5, 0],
+      ['dynamic', 0, 0.5, 0],
+      ['dynamic', 0.2, 1.6, 0.1],
+      ['dynamic', -0.1, 2.7, 0],
+    ];
+    const bodies = poses.map(([type, x, y, z], index) => {
+      const body = createRigidBody3D(type);
+      body.x = x;
+      body.y = y;
+      body.z = z;
+      body.velocityX = type === 'dynamic' ? 0.3 : 0;
+      addPhysics3DBody(directWorld, body);
+      addPhysics3DCollider(directWorld, body, createPhysics3DCollider(shapes[index], material));
+      return body;
+    });
+    const commands = createPhysics3DAbiCommandBuffer(16384);
+    for (let i = 0; i < bodies.length; i += 1) {
+      expect(writePhysics3DAbiSetBodyCommand(commands, i + 1, bodies[i])).toBe(true);
+      expect(writePhysics3DAbiSetColliderCommand(commands, i + 1, i + 1, bodies[i].colliders[0])).toBe(true);
+    }
+    executeOrThrow(abi, abiWorld, commands);
+
+    for (let i = 0; i < 180; i += 1) {
+      stepPhysics3D(directWorld, 1 / 60);
+      expect(stepPhysics3DAbiWorld(abi, abiWorld, 1 / 60)).toBe('Complete');
+    }
+
+    const out = createPhysics3DAbiBodyBuffer(bodies.length);
+    expect(readPhysics3DAbiBodies(abi, abiWorld, null, out)).toBe(true);
+    expect(out.count).toBe(bodies.length);
+    for (let i = 0; i < bodies.length; i += 1) {
+      const at = i * Physics3DAbiBodyValueStride;
+      const body = bodies[i];
+      expect(out.values[at + Physics3DAbiBodyValue.X]).toBe(body.x);
+      expect(out.values[at + Physics3DAbiBodyValue.Y]).toBe(body.y);
+      expect(out.values[at + Physics3DAbiBodyValue.Z]).toBe(body.z);
+      expect(out.values[at + Physics3DAbiBodyValue.OrientationX]).toBe(body.orientationX);
+      expect(out.values[at + Physics3DAbiBodyValue.OrientationY]).toBe(body.orientationY);
+      expect(out.values[at + Physics3DAbiBodyValue.OrientationZ]).toBe(body.orientationZ);
+      expect(out.values[at + Physics3DAbiBodyValue.OrientationW]).toBe(body.orientationW);
+      expect(out.values[at + Physics3DAbiBodyValue.VelocityX]).toBe(body.velocityX);
+      expect(out.values[at + Physics3DAbiBodyValue.VelocityY]).toBe(body.velocityY);
+      expect(out.values[at + Physics3DAbiBodyValue.VelocityZ]).toBe(body.velocityZ);
+      expect(out.values[at + Physics3DAbiBodyValue.AngularVelocityX]).toBe(body.angularVelocityX);
+      expect(out.values[at + Physics3DAbiBodyValue.AngularVelocityY]).toBe(body.angularVelocityY);
+      expect(out.values[at + Physics3DAbiBodyValue.AngularVelocityZ]).toBe(body.angularVelocityZ);
+    }
+    expect(bodies[3].y).toBeLessThan(2.7);
+    expect(directWorld.contacts.length).toBeGreaterThan(0);
+    const contacts = createPhysics3DAbiContactBuffer(8, 8 * Physics3DAbiMaxContactPoints);
+    expect(readPhysics3DAbiContacts(abi, abiWorld, 'All', contacts)).toBe(true);
+    expect(contacts.count).toBe(directWorld.contacts.length);
+    expect(Math.max(...contacts.pointCounts.slice(0, contacts.count))).toBe(Physics3DAbiMaxContactPoints);
   });
 
   it('adapts synchronous contact hooks without exposing the owned world', () => {
     const { abi, world } = createContactWorld();
-    const buffer = createPhysics3DAbiContactBuffer(1, 4);
+    const buffer = createPhysics3DAbiContactBuffer(1, Physics3DAbiMaxContactPoints);
     const reentrantResult = createPhysics3DAbiExecutionResult();
     let preSolveCount = 0;
     let postSolveCount = 0;
@@ -457,7 +539,7 @@ describe('stepPhysics3DAbiWorld', () => {
     expect(stepPhysics3DAbiWorld(abi, world, 0)).toBe('Declined');
     expect(
       stepPhysics3DAbiWorld(abi, world, 1 / 60, {
-        buffer: createPhysics3DAbiContactBuffer(0, 0),
+        buffer: createPhysics3DAbiContactBuffer(1, Physics3DAbiMaxContactPoints - 1),
         preSolve(): void {},
         postSolve: null,
       }),
