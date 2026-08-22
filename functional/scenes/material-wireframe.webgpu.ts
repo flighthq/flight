@@ -155,13 +155,14 @@ export function assertRender(bitmap: Readonly<Bitmap>): void {
               `(${expectedX}, ${expectedY})`,
           );
         }
-        const red = (sample.rgb >> 16) & 255;
-        const green = (sample.rgb >> 8) & 255;
-        const blue = sample.rgb & 255;
+        const sampleRgb = getBitmapPixelRgb(bitmap, sample.x, sample.y);
+        const red = (sampleRgb >> 16) & 255;
+        const green = (sampleRgb >> 8) & 255;
+        const blue = sampleRgb & 255;
         if (Math.min(red, green, blue) < 200 || Math.max(red, green, blue) - Math.min(red, green, blue) > 24) {
           throw new Error(
             `[material-wireframe] edge ${edgeIndex} near (${expectedX}, ${expectedY}) is ` +
-              `#${sample.rgb.toString(16).padStart(6, '0')} — expected a neutral white wire`,
+              `#${sampleRgb.toString(16).padStart(6, '0')} — expected a neutral white wire`,
           );
         }
         edgeIndex++;
@@ -187,18 +188,20 @@ function findBrightestPixel(
   cx: number,
   cy: number,
   radius: number,
-): { readonly luminance: number; readonly rgb: number } {
+): { readonly luminance: number; readonly x: number; readonly y: number } {
   let luminance = -1;
-  let rgb = 0;
+  let brightestX = cx;
+  let brightestY = cy;
   for (let y = cy - radius; y <= cy + radius; y++) {
     for (let x = cx - radius; x <= cx + radius; x++) {
       const candidateLuminance = getBitmapPixelLuminance(bitmap, x, y);
       if (candidateLuminance <= luminance) continue;
       luminance = candidateLuminance;
-      rgb = getBitmapPixelRgb(bitmap, x, y);
+      brightestX = x;
+      brightestY = y;
     }
   }
-  return { luminance, rgb };
+  return { luminance, x: brightestX, y: brightestY };
 }
 
 // Barrel so TypeScript resolves the `./render` import in app.ts; the functional harness routes it to the
