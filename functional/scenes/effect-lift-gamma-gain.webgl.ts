@@ -97,12 +97,19 @@ for (let i = 0; i < colors.length; i++) {
 
 render(root);
 
-// The grade's whole job is to move the frame's color balance, so the frame's mean channels are the direct
-// evidence. The cool gain pulls blue DOWN off its ungraded ceiling: measured with the grade applied vs the
-// same scene with the pipeline bypassed, mean blue is 160.0 vs 255.0 while red barely moves (124.5 vs
-// 133.4). The band below sits between those two arms. The fingerprint cannot arbitrate this: its committed
-// grid scores 4.60 against a uniform frame of its own background, under the gate's threshold of 5.
+// The grade's whole job is to move the frame's color balance. The cool gain pulls blue DOWN off its
+// ungraded ceiling: measured with the grade applied vs the same scene with the pipeline bypassed, mean blue
+// is 160.0 vs 255.0 while red barely moves (124.5 vs 133.4). The band below sits between those two arms.
+//
+// A mean alone is permutation-blind, so each flat cell also carries its measured graded RGB at its own
+// location. Both GPU backends produce the six values below exactly; a four-level channel tolerance leaves
+// headroom for raster conversion while remaining below the nearest two cells' ten-level separation. The
+// fingerprint cannot arbitrate this: its committed grid scores 4.60 against a uniform frame of its own
+// background, under the gate's threshold of 5. MEASURED defeat: swapping the first two source cells left
+// the old mean unchanged but failed here at cell 0 (#858471 vs #707b6d) on both GPU backends.
 export function assertRender(frame: Readonly<Bitmap>): void {
+  assertCellColors(frame);
+
   const meanBlue = measureMeanBlue(frame);
   if (meanBlue > 200) {
     throw new Error(
@@ -115,6 +122,32 @@ export function assertRender(frame: Readonly<Bitmap>): void {
       `[effect-lift-gamma-gain] mean blue is ${meanBlue.toFixed(1)} (expected >= 120) — the cool gain crushed ` +
         `the channel rather than grading it`,
     );
+  }
+}
+
+const EXPECTED_CELL_RGB = [0x707b6d, 0x858471, 0x857fa0, 0x70856d, 0x707b91, 0x858595] as const;
+const MAX_CELL_CHANNEL_DELTA = 4;
+
+function assertCellColors(frame: Readonly<Bitmap>): void {
+  for (let i = 0; i < EXPECTED_CELL_RGB.length; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = Math.floor(((col + 0.5) * frame.width) / cols);
+    const y = Math.floor(((row + 0.5) * frame.height) / rows);
+    const actual = getBitmapPixelRgb(frame, x, y);
+    const expected = EXPECTED_CELL_RGB[i];
+    const delta = Math.max(
+      Math.abs(((actual >> 16) & 255) - ((expected >> 16) & 255)),
+      Math.abs(((actual >> 8) & 255) - ((expected >> 8) & 255)),
+      Math.abs((actual & 255) - (expected & 255)),
+    );
+    if (delta > MAX_CELL_CHANNEL_DELTA) {
+      throw new Error(
+        `[effect-lift-gamma-gain] cell ${i} at (${x}, ${y}) is #${actual.toString(16).padStart(6, '0')} ` +
+          `(expected #${expected.toString(16).padStart(6, '0')} within ${MAX_CELL_CHANNEL_DELTA} per channel) — ` +
+          `the graded colors moved to the wrong cells or the grade changed`,
+      );
+    }
   }
 }
 
