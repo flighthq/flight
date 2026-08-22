@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { resolve } from 'path';
 import type { OutputChunk, RollupOutput } from 'rollup';
 import { build } from 'vite';
@@ -7,9 +7,16 @@ import { gzipSync } from 'zlib';
 
 const ROOT = resolve(__dirname, '../../..');
 const EVIDENCE_DIR = resolve(__dirname, '../evidence');
-const FIXTURES = ['control', 'capability', 'cursor', 'glyph', 'both'] as const;
 
-type FixtureName = (typeof FIXTURES)[number];
+interface CapabilityEntry {
+  readonly fixture: string;
+  readonly modulePattern: string;
+}
+
+const CAPABILITIES: readonly CapabilityEntry[] = [
+  { fixture: 'cursor', modulePattern: 'webCursor' },
+  { fixture: 'glyph', modulePattern: 'webGlyphRasterizer' },
+];
 
 interface FixtureResult {
   modules: string[];
@@ -21,7 +28,7 @@ interface FixtureResult {
 function resolveWorkspaceAliases(): Record<string, string> {
   const packagesDir = resolve(ROOT, 'packages');
   const alias: Record<string, string> = {};
-  const entries = require('fs').readdirSync(packagesDir, { withFileTypes: true });
+  const entries = readdirSync(packagesDir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const pkgJsonPath = resolve(packagesDir, entry.name, 'package.json');
@@ -34,7 +41,7 @@ function resolveWorkspaceAliases(): Record<string, string> {
   return alias;
 }
 
-async function buildFixture(name: FixtureName): Promise<FixtureResult> {
+async function buildFixture(name: string): Promise<FixtureResult> {
   const entry = resolve(EVIDENCE_DIR, `${name}.ts`);
   const alias = resolveWorkspaceAliases();
 
@@ -76,26 +83,22 @@ async function buildFixture(name: FixtureName): Promise<FixtureResult> {
   };
 }
 
-function sourceModules(modules: string[]): string[] {
+function sourceModules(modules: readonly string[]): string[] {
   return modules.filter((m) => !m.includes('/evidence/'));
 }
 
-function hasHostWebModule(modules: string[]): boolean {
+function hasHostWebModule(modules: readonly string[]): boolean {
   return sourceModules(modules).some((m) => m.includes('packages/host-web/'));
 }
 
-function hasGlyphModule(modules: string[]): boolean {
-  return sourceModules(modules).some((m) => m.includes('webGlyphRasterizer'));
-}
-
-function hasCursorModule(modules: string[]): boolean {
-  return sourceModules(modules).some((m) => m.includes('webCursor'));
+function hasCapabilityModule(modules: readonly string[], pattern: string): boolean {
+  return sourceModules(modules).some((m) => m.includes(pattern));
 }
 
 describe('evidence: tree-shaking isolation', () => {
-  const results = new Map<FixtureName, FixtureResult>();
+  const results = new Map<string, FixtureResult>();
 
-  async function getFixture(name: FixtureName): Promise<FixtureResult> {
+  async function getFixture(name: string): Promise<FixtureResult> {
     let result = results.get(name);
     if (result === undefined) {
       result = await buildFixture(name);
@@ -115,43 +118,33 @@ describe('evidence: tree-shaking isolation', () => {
     expect(hasHostWebModule(modules)).toBe(false);
   });
 
-  it('cursor fixture excludes glyph rasterizer modules', async () => {
-    const { modules } = await getFixture('cursor');
-    expect(sourceModules(modules).length).toBeGreaterThan(0);
-    expect(hasHostWebModule(modules)).toBe(true);
-    expect(hasGlyphModule(modules)).toBe(false);
-  });
+  for (const cap of CAPABILITIES) {
+    for (const other of CAPABILITIES) {
+      if (other === cap) continue;
+      it(`${cap.fixture} fixture excludes ${other.fixture} modules`, async () => {
+        const { modules } = await getFixture(cap.fixture);
+        expect(sourceModules(modules).length).toBeGreaterThan(0);
+        expect(hasHostWebModule(modules)).toBe(true);
+        expect(hasCapabilityModule(modules, other.modulePattern)).toBe(false);
+      });
+    }
+  }
 
-  it('glyph fixture excludes cursor modules', async () => {
-    const { modules } = await getFixture('glyph');
-    expect(sourceModules(modules).length).toBeGreaterThan(0);
-    expect(hasHostWebModule(modules)).toBe(true);
-    expect(hasCursorModule(modules)).toBe(false);
-  });
-
-  it('both module set is within the union of cursor and glyph', async () => {
-    const [cursorResult, glyphResult, bothResult] = await Promise.all([
-      getFixture('cursor'),
-      getFixture('glyph'),
-      getFixture('both'),
-    ]);
-    const union = new Set([...sourceModules(cursorResult.modules), ...sourceModules(glyphResult.modules)]);
-    const outsideUnion = sourceModules(bothResult.modules).filter((m) => !union.has(m));
+  it('combined module set is within the union of individual capabilities', async () => {
+    const individualResults = await Promise.all(CAPABILITIES.map((cap) => getFixture(cap.fixture)));
+    const combinedResult = await getFixture('combined');
+    const union = new Set(individualResults.flatMap((r) => sourceModules(r.modules)));
+    const outsideUnion = sourceModules(combinedResult.modules).filter((m) => !union.has(m));
     expect(outsideUnion).toEqual([]);
   });
 
-  it('reports control-normalized sizes with gating inequalities', async () => {
+  it('normalized subadditivity: S(combined) + (N-1)*S(control) <= sum(S(individual))', async () => {
     const control = await getFixture('control');
-    const cursor = await getFixture('cursor');
-    const glyph = await getFixture('glyph');
-    const both = await getFixture('both');
+    const combined = await getFixture('combined');
+    const individualResults = await Promise.all(CAPABILITIES.map((cap) => getFixture(cap.fixture)));
+    const n = CAPABILITIES.length;
 
-    // Diagnostics
-    for (const [name, fixture] of [
-      ['cursor', cursor],
-      ['glyph', glyph],
-      ['both', both],
-    ] as const) {
+    for (const [name, fixture] of CAPABILITIES.map((cap, i) => [cap.fixture, individualResults[i]] as const)) {
       const rawDelta = fixture.rawBytes - control.rawBytes;
       const gzipDelta = fixture.gzipBytes - control.gzipBytes;
       console.log(
@@ -159,22 +152,20 @@ describe('evidence: tree-shaking isolation', () => {
           `gzip=${fixture.gzipBytes} (${gzipDelta >= 0 ? '+' : ''}${gzipDelta})`,
       );
     }
+    console.log(`combined: raw=${combined.rawBytes}, gzip=${combined.gzipBytes}`);
     console.log(`control: raw=${control.rawBytes}, gzip=${control.gzipBytes}`);
 
-    // A8: glyph rasterizer adds real code
-    expect(glyph.rawBytes).toBeGreaterThan(control.rawBytes);
+    const sumRaw = individualResults.reduce((s, r) => s + r.rawBytes, 0);
+    const sumGzip = individualResults.reduce((s, r) => s + r.gzipBytes, 0);
 
-    // A8: both is strictly larger than either individual capability
-    expect(both.rawBytes).toBeGreaterThan(cursor.rawBytes);
-    expect(both.rawBytes).toBeGreaterThan(glyph.rawBytes);
+    for (const cap of CAPABILITIES) {
+      const individual = individualResults[CAPABILITIES.indexOf(cap)];
+      expect(individual.rawBytes).toBeGreaterThan(control.rawBytes);
+    }
 
-    // A8: cursor is at least as large as control
-    expect(cursor.rawBytes).toBeGreaterThanOrEqual(control.rawBytes);
+    expect(combined.rawBytes).toBeGreaterThan(Math.max(...individualResults.map((r) => r.rawBytes)));
 
-    // A8: normalized subadditivity — S(both) + S(control) <= S(cursor) + S(glyph) for raw and gzip.
-    // Control is an empty retained constant so it represents only entry-point overhead. Shared code
-    // between cursor and glyph deduplicates in both, making the left side smaller.
-    expect(both.rawBytes + control.rawBytes).toBeLessThanOrEqual(cursor.rawBytes + glyph.rawBytes);
-    expect(both.gzipBytes + control.gzipBytes).toBeLessThanOrEqual(cursor.gzipBytes + glyph.gzipBytes);
+    expect(combined.rawBytes + (n - 1) * control.rawBytes).toBeLessThanOrEqual(sumRaw);
+    expect(combined.gzipBytes + (n - 1) * control.gzipBytes).toBeLessThanOrEqual(sumGzip);
   });
 });
