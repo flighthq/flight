@@ -128,17 +128,21 @@ describe('edge-publish dispatch contract', () => {
     expect(receiver).toContain('scripts/edge-version.ts main');
   });
 
-  it('the receiver is idempotent for a repeated candidate', () => {
+  it('the publisher always runs — no outer skip may gate the whole graph', () => {
+    const source = readWorkflow('edge-publish');
     const receiver = parseWorkflow('edge-publish') as {
-      jobs: { publish: { steps: { name?: string; id?: string; if?: string }[] } };
+      jobs: { publish: { steps: { name?: string; if?: string }[] } };
     };
     const steps = receiver.jobs.publish.steps;
-    expect(stepNamed(steps, 'Skip if this candidate is already on the registry')).toBeDefined();
-    // The version is a pure function of the commit, so a second dispatch computes the same version;
-    // the publish must be skipped rather than fail on a registry conflict.
+    // ★ publish-packages.ts is idempotent PER PACKAGE and completes a partial set on re-run. An outer
+    // guard keyed on one package (`npm view @flighthq/sdk@…`) would report "already published" for a
+    // graph that is half published, and make that state permanent. So neither the stamp nor the publish
+    // may carry a skip condition, and no single-package existence probe may appear at all.
     for (const fragment of ['Stamp the graph', 'Publish snapshot to npm']) {
-      expect(String(stepNamed(steps, fragment).if)).toContain("steps.published.outputs.skip == 'false'");
+      expect(stepNamed(steps, fragment).if).toBeUndefined();
     }
+    expect(source).not.toContain('npm view');
+    expect(source).not.toMatch(/outputs\.skip/);
   });
 
   it('no credential beyond the default token is introduced', () => {
