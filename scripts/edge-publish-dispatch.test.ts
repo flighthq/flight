@@ -47,6 +47,17 @@ describe('edge-publish dispatch contract', () => {
     expect(String(dispatch.if)).toContain("steps.push.outputs.advanced == 'true'");
   });
 
+  it('promote holds actions: write, without which the dispatch is a 403', () => {
+    const promote = parseWorkflow('promote') as {
+      jobs: { promote: { permissions: Record<string, string> } };
+    };
+    // `gh workflow run` is a write on the actions scope. With `actions: read` the promotion still goes
+    // green and the dispatch is refused — the exact silent absence this change removes, reintroduced
+    // by a plausible least-privilege trim.
+    expect(promote.jobs.promote.permissions.actions).toBe('write');
+    expect(promote.jobs.promote.permissions.contents).toBe('write');
+  });
+
   it('the dispatch fails the promote job rather than passing silently', () => {
     const dispatch = stepNamed(promoteSteps(), 'Dispatch the edge publish');
     const run = String(dispatch.run);

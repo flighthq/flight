@@ -48,7 +48,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # push refs/heads/main
-      actions: read # read tests.yml run conclusions
+      # ★ `write`, NOT `read` — `read` cannot dispatch. Reading tests.yml conclusions needs only
+      # `actions: read`, but `gh workflow run` is a WRITE on the actions scope and 403s without this.
+      # The failure mode is the one this whole change exists to remove: the promotion would go green,
+      # the dispatch would be refused, and edge would silently not publish. A structural test pins it
+      # (scripts/edge-publish-dispatch.test.ts) because a permission block is easy to trim later by
+      # someone applying least-privilege from the step names alone.
+      actions: write # read tests.yml conclusions AND dispatch edge-publish.yml
 
     steps:
       # fetch-depth: 0 fetches all branches, so both origin/main and origin/develop are present
