@@ -1234,6 +1234,10 @@
       "registrar": "registerSkeleton2DFormat"
     },
     {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineSkeletonBinaryParser"
+    },
+    {
       "packageName": "spritesheet-formats",
       "registrar": "registerSpritesheetFormat"
     },

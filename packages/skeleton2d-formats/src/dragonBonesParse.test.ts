@@ -118,14 +118,14 @@ describe('parseDragonBonesSkeleton', () => {
   });
 
   it('maps the newer rotate/skew transform form identically to skX/skY', () => {
-    const doc = { armature: [{ bone: [{ name: 'b', transform: { rotate: 30, skew: 15 } }] }] };
+    const doc = { version: '5.5', armature: [{ bone: [{ name: 'b', transform: { rotate: 30, skew: 15 } }] }] };
     const bone = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0];
     expect(bone.rotation).toBe(30);
     expect(bone.shearY).toBe(15);
   });
 
   it('applies DragonBones defaults for an omitted transform', () => {
-    const doc = { armature: [{ bone: [{ name: 'b' }] }] };
+    const doc = { version: '5.5', armature: [{ bone: [{ name: 'b' }] }] };
     const bone = parseDragonBonesSkeleton(JSON.stringify(doc))!.skeleton.bones[0];
     expect(bone).toMatchObject({
       x: 0,
@@ -143,6 +143,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('maps the DragonBones inheritance booleans onto TransformMode2D', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [
@@ -168,7 +169,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('expresses an inherit combo the old five-value enum could not, with no Skip crumb', () => {
     // "strip rotation, keep scale AND reflection" had no TransformMode2D preset; the factored boolean model
     // holds it directly. It maps cleanly and emits no diagnostic.
-    const doc = { armature: [{ bone: [{ name: 'b', inheritRotation: false }] }] };
+    const doc = { version: '5.5', armature: [{ bone: [{ name: 'b', inheritRotation: false }] }] };
     const crumbs: ImportDiagnostic[] = collectImportDiagnostics((sink) =>
       parseDragonBonesSkeleton(JSON.stringify(doc), sink),
     );
@@ -183,6 +184,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('parses slots with resolved bone index, image display, and ColorTransform tint', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }, { name: 'armBone', parent: 'root' }],
@@ -209,6 +211,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('parses an unweighted mesh display into a MeshAttachment2D (positions direct, skin null)', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -247,6 +250,7 @@ describe('parseDragonBonesSkeleton', () => {
   // topo-sort reorders (output [root=0, child=1]); the weights reference bones by armature FILE-ORDER index.
   function weightedMeshDoc(mesh: Record<string, unknown>): string {
     return JSON.stringify({
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'child', parent: 'root' }, { name: 'root' }],
@@ -347,6 +351,7 @@ describe('parseDragonBonesSkeleton', () => {
     // Two surviving bones share the name "dup". Resolving the weights remap by name alone would send both
     // influences to the last "dup" (output 1); the positional remap keeps raw 0 → output 0, raw 1 → output 1.
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'dup' }, { name: 'dup' }],
@@ -407,6 +412,7 @@ describe('parseDragonBonesSkeleton', () => {
     // A boundingBox display at index 0 must NOT drop, or the image at index 1 would shift to 0 and
     // displayIndex 1 would then address the wrong display (read-integrity axis 12 on the display array).
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -440,6 +446,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('Skip-crumbs additional armatures and IK constraints, but now PARSES alternate skins', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -471,6 +478,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('parses every armature skin into the wardrobe, keyed by display name', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -504,6 +512,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('wears an alternate DragonBones skin over the setup pose', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -523,6 +532,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('animates a slot display swap as a STEP channel indexing the slot display list', () => {
     const doc = {
       frameRate: 10,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -561,6 +571,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('animates a slot colour, normalizing the 0-100 percent channels rather than bytes', () => {
     const doc = {
       frameRate: 10,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -594,6 +605,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('accepts the older display/color frame spellings', () => {
     const doc = {
       frameRate: 10,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -616,6 +628,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('Skip-crumbs a slot timeline naming a slot the armature does not have', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -632,6 +645,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('Skip-crumbs a 5.6 BLEND TREE animation instead of emitting a silently empty clip', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root' }],
@@ -661,6 +675,7 @@ describe('parseDragonBonesSkeleton', () => {
     // curve maps straight onto easeCubicBezier with no rebasing.
     const doc = {
       frameRate: 10,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -691,6 +706,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('no longer Skip-crumbs a curve, but still crumbs a QUADRATIC tweenEasing', () => {
     const curved = {
       frameRate: 10,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -710,6 +726,7 @@ describe('parseDragonBonesSkeleton', () => {
     // The quadratic variants have no corpus coverage, so they stay reported rather than guessed.
     const quad = {
       frameRate: 10,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -730,6 +747,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('leaves an uncurved DragonBones timeline with no segment easings', () => {
     const doc = {
       frameRate: 10,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -742,7 +760,7 @@ describe('parseDragonBonesSkeleton', () => {
   });
 
   it('emits a bone with an unresolved parent as a root and Skip-crumbs it', () => {
-    const doc = { armature: [{ bone: [{ name: 'orphan', parent: 'ghost' }] }] };
+    const doc = { version: '5.5', armature: [{ bone: [{ name: 'orphan', parent: 'ghost' }] }] };
     const kinds = collectImportDiagnostics((sink) => parseDragonBonesSkeleton(JSON.stringify(doc), sink)).map(
       (c) => c.kind,
     );
@@ -759,6 +777,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('builds a named clip of RELATIVE deltas on a frameRate-converted time axis', () => {
     const doc = {
       frameRate: 20,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'root', transform: { x: 5, skX: 10, skY: 10, scX: 2 } }],
@@ -811,6 +830,7 @@ describe('parseDragonBonesSkeleton', () => {
     // is DragonBones' 1-frame default, and a negative one is clamped so the axis stays ascending.
     const doc = {
       frameRate: 24,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -841,17 +861,20 @@ describe('parseDragonBonesSkeleton', () => {
   it('takes the armature frame rate over the document, and 24fps when neither is usable', () => {
     const withArmatureRate = {
       frameRate: 20,
+      version: '5.5',
       armature: [{ frameRate: 10, bone: [{ name: 'b' }], animation: [{ bone: [translateTo('b', 12)] }] }],
     };
     expect(firstKeyEndTime(withArmatureRate)).toBeCloseTo(12 / 10, 5);
     const withDocumentRate = {
       frameRate: 20,
+      version: '5.5',
       armature: [{ bone: [{ name: 'b' }], animation: [{ bone: [translateTo('b', 12)] }] }],
     };
     expect(firstKeyEndTime(withDocumentRate)).toBeCloseTo(12 / 20, 5);
     // A zero rate would divide every time to Infinity, so it falls back rather than poisoning the axis.
     const withZeroRate = {
       frameRate: 0,
+      version: '5.5',
       armature: [{ bone: [{ name: 'b' }], animation: [{ bone: [translateTo('b', 12)] }] }],
     };
     expect(firstKeyEndTime(withZeroRate)).toBeCloseTo(12 / 24, 5);
@@ -989,6 +1012,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('applies the scale-frame identity default of 1 to an omitted component', () => {
     const doc = {
       frameRate: 24,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b', transform: { scX: 2, scY: 3 } }],
@@ -1006,6 +1030,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('takes the clip duration from the declared frame count, which can outlast the last keyframe', () => {
     const doc = {
       frameRate: 20,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -1019,6 +1044,7 @@ describe('parseDragonBonesSkeleton', () => {
   it('holds a malformed keyframe in place so the later keyframes keep their times', () => {
     const doc = {
       frameRate: 20,
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -1041,6 +1067,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('drops a timeline naming an absent bone and Recover-crumbs it once', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -1061,6 +1088,7 @@ describe('parseDragonBonesSkeleton', () => {
 
   it('Skip-crumbs the unmodeled animation timelines and non-linear frame easing', () => {
     const doc = {
+      version: '5.5',
       armature: [
         {
           bone: [{ name: 'b' }],
@@ -1102,7 +1130,7 @@ describe('parseDragonBonesSkeleton', () => {
     expect(parseDragonBonesSkeleton('{ not json')).toBeNull();
     expect(parseDragonBonesSkeleton('42')).toBeNull();
     expect(parseDragonBonesSkeleton(JSON.stringify({ bones: [] }))).toBeNull(); // a Spine-shaped doc
-    expect(parseDragonBonesSkeleton(JSON.stringify({ armature: [] }))).toBeNull(); // empty armature list
+    expect(parseDragonBonesSkeleton(JSON.stringify({ version: '5.5', armature: [] }))).toBeNull(); // empty armature list
   });
 });
 
@@ -1153,6 +1181,7 @@ function firstKeyEndTime(doc: unknown): number {
 function rotateDoc(frames: readonly Record<string, unknown>[]): Record<string, unknown> {
   return {
     frameRate: 20,
+    version: '5.5',
     armature: [{ bone: [{ name: 'b' }], animation: [{ name: 'a', bone: [{ name: 'b', rotateFrame: frames }] }] }],
   };
 }
@@ -1168,3 +1197,67 @@ function translateTo(boneName: string, duration: number): Record<string, unknown
     ],
   };
 }
+
+describe('parseDragonBonesSkeleton version gate', () => {
+  const armature = [{ bone: [{ name: 'root' }] }];
+
+  it('accepts the evidenced 5.5 layout', () => {
+    const sink: ImportDiagnostic[] = [];
+    expect(parseDragonBonesSkeleton(JSON.stringify({ armature, version: '5.5' }), sink)).not.toBeNull();
+    expect(sink.map((c) => c.kind)).not.toContain('dragonbones.version-unsupported');
+  });
+
+  it('★ prefers compatibleVersion over version, so a 5.6 export declaring 5.5-compatible is accepted', () => {
+    // This is the whole reason the fallback is ordered. compatibleVersion means "the minimum version that
+    // can read this file", so a newer exporter that changed nothing structural says 5.5 — and reading
+    // `version` first would refuse it over a difference the file explicitly says does not matter. One
+    // corpus fixture is exactly this shape.
+    const doc = JSON.stringify({ armature, compatibleVersion: '5.5', version: '5.6' });
+    expect(parseDragonBonesSkeleton(doc)).not.toBeNull();
+  });
+
+  it('falls back to version when compatibleVersion is absent, as the two pre-field fixtures need', () => {
+    expect(parseDragonBonesSkeleton(JSON.stringify({ armature, version: '5.5' }))).not.toBeNull();
+  });
+
+  it('refuses an unsupported version DISTINCTLY, carrying the value', () => {
+    const sink: ImportDiagnostic[] = [];
+    expect(parseDragonBonesSkeleton(JSON.stringify({ armature, version: '4.5' }), sink)).toBeNull();
+    expect(sink[0]).toMatchObject({ kind: 'dragonbones.version-unsupported' });
+    expect(sink[0].detail).toMatchObject({ version: '4.5' });
+  });
+
+  it('refuses a compatibleVersion that is unsupported even when version would have passed', () => {
+    // compatibleVersion wins in BOTH directions — it is the field that describes readability, so a file
+    // declaring an incompatible minimum is refused however friendly its `version` looks.
+    const sink: ImportDiagnostic[] = [];
+    expect(
+      parseDragonBonesSkeleton(JSON.stringify({ armature, compatibleVersion: '4.0', version: '5.5' }), sink),
+    ).toBeNull();
+    expect(sink[0].detail).toMatchObject({ version: '4.0' });
+  });
+
+  it('★ refuses a MISSING version distinctly from an unsupported one', () => {
+    // Two different claims: "we know what this is and cannot read it" versus "this file never said". A
+    // missing field is not evidence of compatibility, and collapsing the two would lose the difference a
+    // conformance scorer categorizes on.
+    const sink: ImportDiagnostic[] = [];
+    expect(parseDragonBonesSkeleton(JSON.stringify({ armature }), sink)).toBeNull();
+    expect(sink[0]).toMatchObject({ kind: 'dragonbones.version-missing' });
+    expect(sink.map((c) => c.kind)).not.toContain('dragonbones.version-unsupported');
+  });
+
+  it('treats a non-string version field as missing rather than coercing it', () => {
+    const sink: ImportDiagnostic[] = [];
+    expect(parseDragonBonesSkeleton(JSON.stringify({ armature, version: 5.5 }), sink)).toBeNull();
+    expect(sink[0]).toMatchObject({ kind: 'dragonbones.version-missing' });
+  });
+
+  it('refuses before parsing, so an unsupported file yields no partial import', () => {
+    // The gate exists to stop a wrong layout producing plausible garbage; running it after the parse would
+    // defeat the point.
+    const sink: ImportDiagnostic[] = [];
+    expect(parseDragonBonesSkeleton(JSON.stringify({ armature, version: '9.9' }), sink)).toBeNull();
+    expect(sink).toHaveLength(1);
+  });
+});

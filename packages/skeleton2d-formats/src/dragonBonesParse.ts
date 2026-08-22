@@ -65,6 +65,7 @@ export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagn
   if (doc === null || typeof doc !== 'object') return null;
   const armatures = (doc as Record<string, unknown>).armature;
   if (!Array.isArray(armatures) || armatures.length === 0) return null; // not a DragonBones document
+  if (!checkDragonBonesVersion(doc as Record<string, unknown>, diagnostics)) return null;
   if (armatures.length > 1) {
     reportImportDiagnostic(
       diagnostics,
@@ -1105,3 +1106,54 @@ const EMPTY_DRAGONBONES_FRAME: Readonly<Record<string, unknown>> = {};
 // this without wrapping the count (and breaking `influences.length === 4 × Σ influenceCounts`). No real rig
 // approaches it; the cap only guards adversarial input.
 const MAX_INFLUENCES_PER_VERTEX = 0xffff;
+
+// ★ THE COMPATIBILITY GATE — Pattern A of the version-keyed import model
+// (agents/version-keyed-import-model.md). DragonBones is a single JSON encoding whose structure is stable
+// within a major version and which carries an explicit compatibility field, so it needs a gate here rather
+// than Spine binary's probe + registry: there is one wire layout to describe, and the file says whether it
+// is that one.
+//
+// `compatibleVersion` means "the minimum format version that can read this file", so a 5.6 export that
+// introduced nothing a 5.5 reader would choke on declares `compatibleVersion: "5.5"` — which is why the
+// fallback order is compatibleVersion FIRST and `version` only when it is absent. Reading `version` first
+// would refuse that file over a difference it explicitly says does not matter.
+//
+// The accepted set is exactly `"5.5"` because that is the only layout the corpus evidences: all 46 fixtures
+// resolve to it through this fallback (45 report version 5.5; the one reporting 5.6 declares
+// compatibleVersion 5.5). Widening it to a prefix would repeat the Spine `startsWith('4.')` defect, where
+// 23 real exports were admitted into a reader built for a different layout and produced a valid-looking
+// import containing nothing.
+//
+// ★ MISSING IS REFUSED, NOT ASSUMED COMPATIBLE. Two of the 46 fixtures carry no `compatibleVersion` — they
+// predate the field — but they do carry `version: "5.5"`, so the fallback still resolves them. A file with
+// NEITHER field is refused: "predates the version fields" and "is a layout we can read" are different
+// claims, and absence is evidence of neither.
+function checkDragonBonesVersion(doc: Readonly<Record<string, unknown>>, diagnostics?: ImportDiagnostic[]): boolean {
+  const compatible = typeof doc.compatibleVersion === 'string' ? doc.compatibleVersion : null;
+  const declared = typeof doc.version === 'string' ? doc.version : null;
+  const resolved = compatible ?? declared;
+  if (resolved === null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'dragonbones.version-missing',
+      'parseDragonBonesSkeleton',
+      {},
+    );
+    return false;
+  }
+  if (resolved !== DRAGONBONES_COMPATIBLE_VERSION) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'dragonbones.version-unsupported',
+      'parseDragonBonesSkeleton',
+      { version: resolved },
+    );
+    return false;
+  }
+  return true;
+}
+
+// The single compatible layout this parser describes. An exact string, never a prefix — see the gate above.
+const DRAGONBONES_COMPATIBLE_VERSION = '5.5';
