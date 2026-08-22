@@ -65,20 +65,49 @@ beforeAll(async () => {
   vi.doMock('./wgpuEffectPass', passMock);
   vi.doMock('./wgpuEffectProgramCache', () => pipelineMock);
 
-  ({ applyCrtEffectToWgpu } = await import('./wgpuCrtEffect'));
-  ({ applyDirectionalBlurEffectToWgpu } = await import('./wgpuDirectionalBlurEffect'));
-  ({ applyDisplacementEffectToWgpu } = await import('./wgpuDisplacementEffect'));
-  ({ applyDitherEffectToWgpu } = await import('./wgpuDitherEffect'));
-  ({ applyFxaaEffectToWgpu } = await import('./wgpuFxaaEffect'));
-  ({ applyGlitchEffectToWgpu } = await import('./wgpuGlitchEffect'));
-  ({ applyKuwaharaEffectToWgpu } = await import('./wgpuKuwaharaEffect'));
-  ({ applyMotionBlurEffectToWgpu } = await import('./wgpuMotionBlurEffect'));
-  ({ applyPixelateEffectToWgpu } = await import('./wgpuPixelateEffect'));
-  ({ applySharpenEffectToWgpu } = await import('./wgpuSharpenEffect'));
-  ({ applySmaaEffectToWgpu } = await import('./wgpuSmaaEffect'));
-  ({ applySsaoEffectToWgpu } = await import('./wgpuSsaoEffect'));
-  ({ applyTiltShiftEffectToWgpu } = await import('./wgpuTiltShiftEffect'));
-});
+  const [
+    crt,
+    directionalBlur,
+    displacement,
+    dither,
+    fxaa,
+    glitch,
+    kuwahara,
+    motionBlur,
+    pixelate,
+    sharpen,
+    smaa,
+    ssao,
+    tiltShift,
+  ] = await Promise.all([
+    import('./wgpuCrtEffect'),
+    import('./wgpuDirectionalBlurEffect'),
+    import('./wgpuDisplacementEffect'),
+    import('./wgpuDitherEffect'),
+    import('./wgpuFxaaEffect'),
+    import('./wgpuGlitchEffect'),
+    import('./wgpuKuwaharaEffect'),
+    import('./wgpuMotionBlurEffect'),
+    import('./wgpuPixelateEffect'),
+    import('./wgpuSharpenEffect'),
+    import('./wgpuSmaaEffect'),
+    import('./wgpuSsaoEffect'),
+    import('./wgpuTiltShiftEffect'),
+  ]);
+  ({ applyCrtEffectToWgpu } = crt);
+  ({ applyDirectionalBlurEffectToWgpu } = directionalBlur);
+  ({ applyDisplacementEffectToWgpu } = displacement);
+  ({ applyDitherEffectToWgpu } = dither);
+  ({ applyFxaaEffectToWgpu } = fxaa);
+  ({ applyGlitchEffectToWgpu } = glitch);
+  ({ applyKuwaharaEffectToWgpu } = kuwahara);
+  ({ applyMotionBlurEffectToWgpu } = motionBlur);
+  ({ applyPixelateEffectToWgpu } = pixelate);
+  ({ applySharpenEffectToWgpu } = sharpen);
+  ({ applySmaaEffectToWgpu } = smaa);
+  ({ applySsaoEffectToWgpu } = ssao);
+  ({ applyTiltShiftEffectToWgpu } = tiltShift);
+}, 30_000);
 
 type ApplyEffect = (
   state: WgpuRenderState,
