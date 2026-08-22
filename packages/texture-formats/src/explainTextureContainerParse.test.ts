@@ -23,7 +23,7 @@ describe('explainTextureContainerParse', () => {
       reason: 'format-unsupported',
     });
 
-    const basis = new Uint8Array(67);
+    const basis = new Uint8Array(69);
     basis.set([0x73, 0x42]);
     expect(explainTextureContainerParse(basis)).toEqual({
       container: 'basis',

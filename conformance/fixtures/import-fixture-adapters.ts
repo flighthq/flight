@@ -35,7 +35,7 @@ import {
 } from '@flighthq/scene3d-formats';
 import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
 import { createScene2DImportFromSwf } from '@flighthq/swf';
-import { parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
+import { explainTextureContainerParse, parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
 import type {
   GltfDocument,
   GltfExtensionHandler,
@@ -189,7 +189,14 @@ async function runAwd2(input: Readonly<ConformanceFixtureInput>): Promise<Confor
 }
 
 async function runBasis(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
-  return { diagnostics: [], imported: parseBasis(new Uint8Array(await readFile(input.absolutePath))) !== null };
+  const bytes = new Uint8Array(await readFile(input.absolutePath));
+  const imported = parseBasis(bytes) !== null;
+  if (imported) return { diagnostics: [], imported: true };
+
+  const explanation = explainTextureContainerParse(bytes);
+  return explanation?.reason === 'format-unsupported'
+    ? { diagnostics: [], imported: false, notRunReason: 'basis-format-unsupported' }
+    : { diagnostics: [], imported: false };
 }
 
 async function runDds(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
