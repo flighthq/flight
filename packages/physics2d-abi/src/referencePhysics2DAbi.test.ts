@@ -143,6 +143,45 @@ describe('createReferencePhysics2DAbi', () => {
     expect(joints.ids[0]).toBe(1);
     expect(joints.flags[0] & Physics2DAbiJointFlag.Broken).toBe(Physics2DAbiJointFlag.Broken);
     expect(Math.hypot(joints.values[0], joints.values[1])).toBeGreaterThan(0);
+
+    expect(abi.readJoints(handle, joints)).toBe(true);
+    expect(joints.count).toBe(0);
+    expect(joints.requiredCount).toBe(0);
+  });
+
+  it('retires an unread broken event when its id is reused by a live joint', () => {
+    const anchor = createRigidBody2D('static', 0, 0);
+    const hanging = createRigidBody2D('dynamic', 0, -1);
+    hanging.colliders.push(createPhysics2DCollider(box(0.5, 0.5), MATERIAL));
+
+    const abi = createPhysics2DAbi();
+    const handle = abi.createWorld();
+    const setup = createPhysics2DAbiCommandBuffer(4096);
+    publish(setup, [anchor, hanging]);
+    expect(
+      writePhysics2DAbiSetJointCommand(
+        setup,
+        1,
+        1,
+        2,
+        createPhysics2DRevoluteJoint({ bodyA: 0, bodyB: 1, breakForce: 0.001 }),
+      ),
+    ).toBe(true);
+    expect(abi.execute(handle, setup, createPhysics2DAbiExecutionResult())).toBe(true);
+    expect(stepPhysics2DAbiWorld(abi, handle, 1 / 60)).toBe('Complete');
+
+    const replacement = createPhysics2DAbiCommandBuffer(512);
+    expect(
+      writePhysics2DAbiSetJointCommand(replacement, 1, 1, 2, createPhysics2DRevoluteJoint({ bodyA: 0, bodyB: 1 })),
+    ).toBe(true);
+    expect(abi.execute(handle, replacement, createPhysics2DAbiExecutionResult())).toBe(true);
+
+    const joints = createPhysics2DAbiJointBuffer(4);
+    expect(abi.readJoints(handle, joints)).toBe(true);
+    expect(joints.count).toBe(1);
+    expect(joints.requiredCount).toBe(1);
+    expect(joints.ids[0]).toBe(1);
+    expect(joints.flags[0] & Physics2DAbiJointFlag.Broken).toBe(0);
   });
 
   it('keeps a joint reported and unbroken while it holds', () => {

@@ -167,7 +167,7 @@ export function createReferencePhysics2DAbi(): Physics2DAbi {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       queryPhysics2DPoint(state.world, x, y, state.query, filter ?? undefined);
-      writeQueryHits(state, state.query.hits, out);
+      writeQueryHits(state, state.query, out);
       return true;
     },
     queryRay(handle, originX, originY, directionX, directionY, maxFraction, closest, filter, out): boolean {
@@ -182,7 +182,7 @@ export function createReferencePhysics2DAbi(): Physics2DAbi {
       const state = worlds.get(handle);
       if (state === undefined || state.stepping) return false;
       queryPhysics2DRegion(state.world, region, state.query, filter ?? undefined);
-      writeQueryHits(state, state.query.hits, out);
+      writeQueryHits(state, state.query, out);
       return true;
     },
     queryShapeCast(handle, shape, dx, dy, maxFraction, filter, out): boolean {
@@ -446,7 +446,7 @@ function executeSetBody(
   }
   const type = decodeBodyType(flags & Physics2DAbiBodyFlag.TypeMask);
   const values = readFloat64Values(command, 8, state.bodyValues);
-  if (type === null || !areFinite(values)) return 'RejectedMutation';
+  if (type === null || !isBodyValueBlockValid(values)) return 'RejectedMutation';
 
   const existing = state.bodyById.get(command.objectId);
   const body = existing ?? createRigidBody2D(type, values[0], values[1], values[2]);
@@ -531,13 +531,18 @@ function executeSetCollider(
 
   const sensorFlag = command.view.getUint32(command.payload, true);
   if (sensorFlag > 1) return 'InvalidCommand';
+  const shapeKind = command.view.getUint32(command.payload + Physics2DAbiSetColliderPayloadOffset.Shape, true);
+  if (shapeKind < Physics2DAbiShapeKind.Circle || shapeKind > Physics2DAbiShapeKind.Point) {
+    return 'UnsupportedShape';
+  }
   const shape = readShape(command, command.payload + Physics2DAbiSetColliderPayloadOffset.Shape);
-  if (shape === null) return 'UnsupportedShape';
+  if (shape === null) return 'InvalidCommand';
+  if (!isShapeStateValid(shape)) return 'RejectedMutation';
 
   const density = command.view.getFloat64(command.payload + 16, true);
   const friction = command.view.getFloat64(command.payload + 24, true);
   const restitution = command.view.getFloat64(command.payload + 32, true);
-  if (!Number.isFinite(density) || !Number.isFinite(friction) || !Number.isFinite(restitution)) {
+  if (![density, friction, restitution].every((value) => Number.isFinite(value) && value >= 0)) {
     return 'RejectedMutation';
   }
 
@@ -595,6 +600,8 @@ function executeSetJoint(
   const kind = command.view.getUint32(command.payload + Physics2DAbiSetJointPayloadOffset.Kind, true);
   const bodyAId = command.view.getUint32(command.payload + Physics2DAbiSetJointPayloadOffset.BodyA, true);
   const bodyBId = command.view.getUint32(command.payload + Physics2DAbiSetJointPayloadOffset.BodyB, true);
+  if (kind < Physics2DAbiJointKind.Distance || kind > Physics2DAbiJointKind.Gear) return 'UnsupportedJoint';
+  if (!isObjectId(bodyAId) || !isObjectId(bodyBId)) return 'InvalidCommand';
   const flags = command.view.getUint32(command.payload + Physics2DAbiSetJointPayloadOffset.Flags, true);
   if ((flags & getJointFlagMask(kind)) !== flags) return 'InvalidCommand';
 
@@ -604,11 +611,7 @@ function executeSetJoint(
 
   const common = readFloat64Values(command, Physics2DAbiSetJointPayloadOffset.CommonValues, state.jointCommonValues);
   const values = readFloat64Values(command, Physics2DAbiSetJointPayloadOffset.KindValues, state.jointKindValues);
-  // Break thresholds are the one place a joint may hold a non-finite number, and `Infinity` is the
-  // default meaning unbreakable — so they are checked by name rather than swept up with the rest.
-  if (!areFinite(values) || !areFinite(common.slice(0, 4)) || Number.isNaN(common[4]) || Number.isNaN(common[5])) {
-    return 'RejectedMutation';
-  }
+  if (!isJointValueBlockValid(common, values)) return 'RejectedMutation';
 
   const joint = createJoint(kind, bodyA.index, bodyB.index, flags, common, values);
   if (joint === null) return 'UnsupportedJoint';
@@ -623,6 +626,7 @@ function executeSetJoint(
   state.jointById.set(command.objectId, joint);
   state.idByJoint.set(joint, command.objectId);
   insertSorted(state.jointIds, command.objectId);
+  state.brokenJoints = state.brokenJoints.filter((broken) => broken.id !== command.objectId);
   return 'Complete';
 }
 
@@ -849,7 +853,7 @@ function readShape(command: Readonly<CommandRecord>, byteOffset: number): Collis
   // silently accepting a record whose tail it never read.
   if (integerCount !== 0 || version !== 0) return null;
   const scalarsAt = byteOffset + Physics2DAbiShapeHeaderByteLength;
-  if (scalarsAt + scalarCount * 8 > command.start + command.byteLength) return null;
+  if (scalarsAt + scalarCount * 8 !== command.start + command.byteLength) return null;
 
   const scalars: number[] = [];
   for (let i = 0; i < scalarCount; i += 1) scalars.push(command.view.getFloat64(scalarsAt + i * 8, true));
@@ -1019,9 +1023,13 @@ function readContacts(
   let written = 0;
   let pointsWritten = 0;
   let requiredPoints = 0;
+  let prefixFits = true;
   for (const contact of source) {
     requiredPoints += contact.pointCount;
-    if (written >= capacity || pointsWritten + contact.pointCount > pointCapacity) continue;
+    if (!prefixFits || written >= capacity || pointsWritten + contact.pointCount > pointCapacity) {
+      prefixFits = false;
+      continue;
+    }
     writeContact(state, contact, out, written, pointsWritten);
     pointsWritten += contact.pointCount;
     written += 1;
@@ -1066,6 +1074,7 @@ function readJoints(state: ReferencePhysics2DAbiWorld, out: Physics2DAbiJointBuf
   }
   out.requiredCount = written;
   out.count = Math.min(written, capacity);
+  state.brokenJoints = [];
 }
 
 function writeBody(id: number, body: Readonly<RigidBody2D>, out: Physics2DAbiBodyBuffer, at: number): void {
@@ -1164,29 +1173,29 @@ function getContactCapacity(out: Readonly<Physics2DAbiContactBuffer>): number {
 
 function writeQueryHits(
   state: ReferencePhysics2DAbiWorld,
-  hits: readonly Readonly<Physics2DQueryHit>[],
+  source: ReturnType<typeof createPhysics2DQueryResult>,
   out: Physics2DAbiQueryBuffer,
 ): void {
   const capacity = getQueryCapacity(out);
-  const written = Math.min(hits.length, capacity);
+  const written = Math.min(source.hitCount, capacity);
   for (let i = 0; i < written; i += 1) {
-    writeQueryIdentity(state, hits[i], out, i);
+    writeQueryIdentity(state, source.hits[i], out, i);
     clearQueryValues(out, i);
   }
   out.count = written;
-  out.requiredCount = hits.length;
+  out.requiredCount = source.hitCount;
 }
 
 function writeRayHits(state: ReferencePhysics2DAbiWorld, out: Physics2DAbiQueryBuffer): void {
   const hits = state.ray.hits;
   const capacity = getQueryCapacity(out);
-  const written = Math.min(hits.length, capacity);
+  const written = Math.min(state.ray.hitCount, capacity);
   for (let i = 0; i < written; i += 1) {
     writeQueryIdentity(state, hits[i], out, i);
     writeQueryValues(out, i, hits[i].fraction, hits[i].x, hits[i].y, hits[i].normalX, hits[i].normalY);
   }
   out.count = written;
-  out.requiredCount = hits.length;
+  out.requiredCount = state.ray.hitCount;
 }
 
 function writeShapeCastHit(state: ReferencePhysics2DAbiWorld, out: Physics2DAbiQueryBuffer): void {
@@ -1306,6 +1315,30 @@ function encodeBodyFlags(body: Readonly<RigidBody2D>): number {
 function areFinite(values: Readonly<number[]>): boolean {
   for (const value of values) if (!Number.isFinite(value)) return false;
   return true;
+}
+
+function isBodyValueBlockValid(values: Readonly<number[]>): boolean {
+  return areFinite(values) && values[13] >= 0 && values[14] >= 0 && values[16] >= 0;
+}
+
+// Match the Physics2D step validator rather than the manifold validator: point and segment colliders
+// are legal authored state even though they deliberately have no contact-manifold path.
+function isShapeStateValid(shape: Readonly<CollisionBuiltInShape2D>): boolean {
+  if (shape.kind === 'circle') return shape.radius > 0;
+  if (shape.kind === 'aabb') return shape.maxX > shape.minX && shape.maxY > shape.minY;
+  if (shape.kind === 'obb') return shape.halfW > 0 && shape.halfH > 0;
+  if (shape.kind === 'capsule') return shape.radius > 0;
+  if (shape.kind === 'polygon') return shape.points.length >= 6 && (shape.points.length & 1) === 0;
+  return true;
+}
+
+function isJointValueBlockValid(common: Readonly<number[]>, values: Readonly<number[]>): boolean {
+  if (!areFinite(values) || !areFinite(common.slice(0, 4))) return false;
+  return isBreakThresholdValid(common[4]) && isBreakThresholdValid(common[5]);
+}
+
+function isBreakThresholdValid(value: number): boolean {
+  return !Number.isNaN(value) && value >= 0;
 }
 
 function isObjectId(value: number): boolean {
