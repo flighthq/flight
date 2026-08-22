@@ -18,7 +18,7 @@ function varint(value: number): number[] {
 }
 
 function spineString(value: string): number[] {
-  const bytes = [...Buffer.from(value, 'utf8')];
+  const bytes = Array.from(value, (character) => character.charCodeAt(0));
   return [...varint(bytes.length + 1), ...bytes];
 }
 

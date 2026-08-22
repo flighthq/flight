@@ -26,7 +26,7 @@ function varint(value: number): number[] {
 
 // Spine writes a string as varint(byteCount + 1) then the bytes; 0 means null.
 function spineString(value: string): number[] {
-  const bytes = [...Buffer.from(value, 'utf8')];
+  const bytes = Array.from(value, (character) => character.charCodeAt(0));
   return [...varint(bytes.length + 1), ...bytes];
 }
 
