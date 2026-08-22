@@ -7,3 +7,9 @@ export {
 } from './contract';
 export { parseSpineSkeleton } from './contract';
 export { parseSpineSkeletonBinary } from './contract';
+export { explainSpineBinaryVersionFailure, getSpineBinaryVersion } from './contract';
+export {
+  parseSpineSkeletonBinaryVersioned,
+  registerSpineSkeletonBinaryParser,
+  toSpineBinaryLayoutKey,
+} from './contract';

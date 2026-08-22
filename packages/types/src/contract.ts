@@ -877,5 +877,6 @@ export * from './Skeleton2DGuards';
 export * from './Skeleton2DSlotAnimationTarget';
 export * from './SvgDocumentImport';
 export * from './Skeleton2DImport';
+export * from './SpineBinaryVersion';
 export * from './Scene2DDocument';
 export * from './Scene2DResources';
