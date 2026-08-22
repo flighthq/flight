@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered at
@@ -21,13 +22,14 @@ export function applyTiltShiftEffectToWgpu(
   const center = effect.center ?? 0.5;
   const width = effect.width ?? 0.3;
   const blur = effect.blur ?? 4;
+  const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'lens.tiltShift', TILT_SHIFT_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = center;
     f32[1] = width;
     f32[2] = blur;
-    f32[4] = source.width;
-    f32[5] = source.height;
+    f32[4] = resolution.width;
+    f32[5] = resolution.height;
   });
 }
 

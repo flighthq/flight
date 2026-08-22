@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
@@ -21,13 +22,14 @@ export function applyDirectionalBlurEffectToWgpu(
   const angle = ((effect.angle ?? 0) * Math.PI) / 180;
   const length = effect.length ?? 8;
   const samples = effect.samples ?? 16;
+  const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'motion.directionalBlur', DIRECTIONAL_BLUR_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = angle;
     f32[1] = length;
     f32[2] = samples;
-    f32[4] = source.width;
-    f32[5] = source.height;
+    f32[4] = resolution.width;
+    f32[5] = resolution.height;
   });
 }
 

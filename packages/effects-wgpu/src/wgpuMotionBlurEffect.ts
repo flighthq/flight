@@ -7,6 +7,7 @@ import type {
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF), the Wgpu
@@ -27,6 +28,7 @@ export function applyMotionBlurEffectToWgpu(
 ): void {
   const intensity = effect.intensity ?? 1;
   const samples = effect.samples ?? 16;
+  const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getMotionBlurPipeline(state);
   if (velocityTexture === null) {
     // Sentinel path: no velocity buffer — bind source as both inputs so the dual-source layout is
@@ -40,8 +42,8 @@ export function applyMotionBlurEffectToWgpu(
       (f32) => {
         f32[0] = intensity;
         f32[1] = samples;
-        f32[2] = source.width;
-        f32[3] = source.height;
+        f32[2] = resolution.width;
+        f32[3] = resolution.height;
         f32[4] = 0;
       },
     );
@@ -59,8 +61,8 @@ export function applyMotionBlurEffectToWgpu(
     (f32) => {
       f32[0] = intensity;
       f32[1] = samples;
-      f32[2] = source.width;
-      f32[3] = source.height;
+      f32[2] = resolution.width;
+      f32[3] = resolution.height;
       f32[4] = 1;
     },
   );
