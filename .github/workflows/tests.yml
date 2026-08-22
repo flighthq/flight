@@ -481,10 +481,19 @@ jobs:
     # health/hygiene legs (`size`, the flaky `render-test` matrix, `harness-build`, `quality`), which
     # still run in parallel as signals but never block an edge build. It never runs on pull_request (no
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
-    # dist-tag (main -> edge, develop -> next), so `latest` is untouched. See agents/packaging.md.
+    # dist-tag, so `latest` is untouched. See agents/packaging.md.
+    #
+    # ★ DEVELOP ONLY — THE `main` ARM MOVED TO edge-publish.yml AND IS NOT DEAD CODE HERE, IT IS A
+    # DUPLICATE. `main` advances only through promote.yml, which pushes with the default GITHUB_TOKEN,
+    # and GitHub raises no workflow-triggering event for that token. So this job could never fire on
+    # `main` in normal operation — the `edge` tag silently stopped advancing, which is the defect
+    # edge-publish.yml now fixes by explicit dispatch. Keeping `refs/heads/main` here would leave a
+    # second publisher for the same channel, reachable only by a hand-push to a branch documented as
+    # never hand-pushed, racing the dispatched run on a different concurrency key for the same version.
+    # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
     name: Publish · ${{ github.ref_name }} snapshot
     needs: [build, test-fast]
-    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

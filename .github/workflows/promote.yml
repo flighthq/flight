@@ -132,6 +132,97 @@ jobs:
       # workflow verified as green — a develop push mid-run cannot leak in. The push is
       # fast-forward-only by construction; if main moved under us it is rejected rather than
       # overwritten.
+      #
+      # `advanced` distinguishes a push that MOVED main from one that changed nothing, because the edge
+      # dispatch below must fire only on a real promotion. A no-op push is a success at the git level
+      # and would otherwise dispatch a publish for a commit already published.
       - name: Fast-forward main to the tested commit
+        id: push
         if: ${{ steps.candidate.outputs.sha != '' }}
-        run: git push origin ${{ steps.candidate.outputs.sha }}:refs/heads/main
+        env:
+          CANDIDATE: ${{ steps.candidate.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          before=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$before" = "$CANDIDATE" ]; then
+            echo "main is already at ${CANDIDATE}; nothing pushed."
+            echo "advanced=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git push origin "${CANDIDATE}:refs/heads/main"
+
+          # Re-read the remote rather than inferring success from the exit code: the dispatch below is
+          # a claim that main NOW points at this commit, and that is worth establishing rather than
+          # assuming.
+          after=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$after" != "$CANDIDATE" ]; then
+            echo "::error::pushed ${CANDIDATE} but origin/main is at ${after}; not dispatching an edge publish for a commit main does not point at."
+            exit 1
+          fi
+          echo "main advanced ${before} -> ${CANDIDATE}."
+          echo "advanced=true" >> "$GITHUB_OUTPUT"
+
+      # ★ THE PUSH ABOVE STARTS NO WORKFLOW RUN, SO EDGE MUST BE ASKED FOR EXPLICITLY.
+      # GitHub does not raise workflow-triggering events for actions taken with the default
+      # GITHUB_TOKEN — the recursion guard — so `tests.yml` never fires on main after a promotion and
+      # its `edge-publish` job never runs there. Before this step the `edge` dist-tag simply stopped
+      # advancing, with no failed run to notice: an absence, not an error.
+      #
+      # `workflow_dispatch` is the fix because it is one of the two events the guard explicitly exempts
+      # (with `repository_dispatch`), so the default token can raise it. `workflow_run` cannot help —
+      # it chains off a run, and the missing run is the whole problem — and a PAT or App would trade a
+      # long-lived secret for a capability the platform already grants here.
+      #
+      # ★ A FAILED DISPATCH FAILS THIS JOB. `gh workflow run` is checked under `set -e`, so a dispatch
+      # that does not land turns the promotion red. That is the point: the defect being fixed is a
+      # silent absence, and a remedy that could itself go silently absent would reproduce it.
+      - name: Dispatch the edge publish for the promoted commit
+        if: ${{ steps.candidate.outputs.sha != '' && steps.push.outputs.advanced == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE: ${{ steps.candidate.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          gh workflow run edge-publish.yml \
+            --ref main \
+            --field "sha=${CANDIDATE}" \
+            --field "promote_run_id=${GITHUB_RUN_ID}"
+          echo "Dispatched edge-publish.yml for ${CANDIDATE}."
+
+      # Correlation, best-effort by design. The dispatch API returns no run id, so the only way back to
+      # the run is to look for it. edge-publish.yml puts the candidate in its `run-name`, which makes it
+      # findable here. A run that has not appeared yet is NOT a failure — the dispatch already succeeded
+      # above, and this step only makes the link clickable from the promotion.
+      - name: Link the dispatched edge-publish run
+        if: ${{ steps.candidate.outputs.sha != '' && steps.push.outputs.advanced == 'true' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE: ${{ steps.candidate.outputs.sha }}
+        run: |
+          set -uo pipefail
+
+          url=''
+          for _ in 1 2 3 4 5 6; do
+            url=$(gh run list --workflow=edge-publish.yml --event=workflow_dispatch --limit 20 \
+              --json url,title \
+              --jq "[.[] | select(.title | contains(\"${CANDIDATE}\"))] | .[0].url // empty" || true)
+            [ -n "$url" ] && break
+            sleep 5
+          done
+
+          {
+            echo "### Promotion"
+            echo ""
+            echo "| field | value |"
+            echo "| --- | --- |"
+            echo "| promoted | \`${CANDIDATE}\` |"
+            if [ -n "$url" ]; then
+              echo "| edge publish | ${url} |"
+            else
+              echo "| edge publish | dispatched; run not visible yet |"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
