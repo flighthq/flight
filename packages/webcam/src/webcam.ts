@@ -18,28 +18,31 @@ export function createWebWebcamBackend(): WebcamBackend {
           input.type = 'file';
           input.accept = 'image/*';
           if (options.source === 'camera') input.capture = 'environment';
+          const settle = (value: WebcamPhoto | null): void => {
+            input.onchange = null;
+            input.oncancel = null;
+            observeWebcamHostResult('capture', value !== null);
+            resolve(value);
+          };
           input.onchange = () => {
             const file = input.files?.[0] ?? null;
             if (file === null) {
-              resolve(null);
+              settle(null);
               return;
             }
             const reader = new FileReader();
             reader.onload = () => {
-              observeWebcamHostResult('capture', true);
-              resolve({
+              settle({
                 dataUrl: typeof reader.result === 'string' ? reader.result : '',
                 width: 0,
                 height: 0,
                 format: file.type,
               });
             };
-            reader.onerror = () => {
-              observeWebcamHostResult('capture', false);
-              resolve(null);
-            };
+            reader.onerror = () => settle(null);
             reader.readAsDataURL(file);
           };
+          input.oncancel = () => settle(null);
           input.click();
         } catch {
           observeWebcamHostResult('capture', false);
@@ -59,27 +62,30 @@ export function createWebWebcamBackend(): WebcamBackend {
           input.type = 'file';
           input.accept = 'video/*';
           if (options.source === 'camera') input.capture = 'environment';
+          const settle = (value: WebcamVideo | null): void => {
+            input.onchange = null;
+            input.oncancel = null;
+            observeWebcamHostResult('captureVideo', value !== null);
+            resolve(value);
+          };
           input.onchange = () => {
             const file = input.files?.[0] ?? null;
             if (file === null) {
-              resolve(null);
+              settle(null);
               return;
             }
             const reader = new FileReader();
             reader.onload = () => {
-              observeWebcamHostResult('captureVideo', true);
-              resolve({
+              settle({
                 dataUrl: typeof reader.result === 'string' ? reader.result : '',
                 duration: 0,
                 format: file.type,
               });
             };
-            reader.onerror = () => {
-              observeWebcamHostResult('captureVideo', false);
-              resolve(null);
-            };
+            reader.onerror = () => settle(null);
             reader.readAsDataURL(file);
           };
+          input.oncancel = () => settle(null);
           input.click();
         } catch {
           observeWebcamHostResult('captureVideo', false);
