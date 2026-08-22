@@ -11,9 +11,18 @@ npm run conformance:fixtures
 
 ## Multi-pack recovery acceptance
 
-The shared-tree manifest-path fix is covered by unit and conformance tests, but its real-corpus result remains unverified because the fixture cache was unavailable when the fix landed. The measured defect hid 1,994 paths; the count guard then rejected both whole trees, excluding all 3,062 files (10.2% of the corpus). The exclusion was 55% larger than the underlying defect because the safety check compounded a partial loss into a total one and reported it as verification failure rather than data loss.
+Acceptance is closed against fixture release `0.1.1`. Repository-managed fetches followed by real-corpus conformance runs measured equal enumerated and stamped path counts in every selected tree, so the shared-tree manifest-path fix excludes zero files:
 
-Acceptance completed on 2026-08-21 against fixture release 0.1.1. `npm run fixtures -- --all` verified 39 packs across 35 trees, and `npm run conformance:fixtures` enumerated 29,884 fixture files. Every tree's enumerated count matched its stamped manifest count, leaving zero excluded or mismatched files. The previous 26,822-file denominator therefore rose by exactly 3,062, verifying the recovery. The 30,074-file acquisition plan also includes 190 pack files that are not conformance fixture inputs; that distinction accounts for the plan/report totals without exclusion.
+| Variant      | Tree           | Enumerated paths | Stamped paths | Excluded paths |
+| ------------ | -------------- | ---------------: | ------------: | -------------: |
+| `full`       | `cocos2dx`     |            1,629 |         1,629 |              0 |
+| `demo`       | `gltf-khronos` |            1,110 |         1,110 |              0 |
+| `full`       | `gltf-khronos` |            1,243 |         1,243 |              0 |
+| `permissive` | `gltf-khronos` |            1,041 |         1,041 |              0 |
+
+The historical 3,062 count and the current 3,394 count describe different populations at the same fixture release; no pack pin changed. The historical count added the stamped membership of the two `full` trees. The `cocos2dx` tree's `bitmapfont-fixtures` (252), `cocos2dx-textures` (987), `particle-fixtures` (279), and `spritesheet-fixtures` (301) memberships sum to 1,819, while its deduplicated path union is 1,629 because 190 paths occur in more than one pack stamp. The `gltf-khronos` tree's `gltf-khronos-fixtures` (476) and `gltf-khronos-textures` (767) memberships sum to the same 1,243 paths as its union. Thus 3,062 is the additive pack-membership total (1,819 + 1,243), while the comparable deduplicated two-tree corpus is 2,872 paths (1,629 + 1,243), all stamped and none excluded.
+
+The 3,394 count instead adds the three separate `gltf-khronos` variant trees (1,110 + 1,243 + 1,041). It is a cross-variant total, not a replacement for the historical two-tree measurement. The earlier defect hid 1,994 manifest paths and caused the guard to reject both affected trees; the measurements above provide the durable zero-exclusion acceptance evidence.
 
 The generated, gitignored report leads with three questions:
 
