@@ -70,7 +70,7 @@ For the 3 ambient-language facilities, the lazy-install is the default (layer 3 
 
 **Order-independent:** `enableHostWeb*` installs only if no host backend is present. A native host that calls `registerElectronBackends()` first is not clobbered.
 
-**`set*Backend(null)` semantics:** Clears the custom slot. For host-web capabilities, the sentinel serves. For ambient-language capabilities, the inline implementation re-creates on next `get*Backend()` call (current lazy-install behavior preserved).
+**`set*Backend(null)` semantics:** Clears only the custom slot. For host-web capabilities, an installed host is revealed; the sentinel serves only when neither custom nor host exists. For ambient-language capabilities, the inline implementation re-creates on next `get*Backend()` call (current lazy-install behavior preserved).
 
 ---
 
@@ -81,8 +81,8 @@ For host-web capabilities (22 global singletons), the slot model:
 ```typescript
 let _custom: ClipboardBackend | null = null;
 let _host: ClipboardBackend | null = null;
-let _hostViable = false;
 let _hostConflict = false;
+let _hostObservation: HostObservation | null = null;
 
 export function getClipboardBackend(): ClipboardBackend {
   return _custom ?? _host ?? _sentinel;
@@ -92,19 +92,18 @@ export function setClipboardBackend(backend: ClipboardBackend | null): void {
   _custom = backend;
 }
 
-export function installClipboardHostBackend(backend: ClipboardBackend, viable: boolean): void {
+export function installClipboardHostBackend(backend: ClipboardBackend): void {
   if (_host !== null) {
     if (_host !== backend) _hostConflict = true;
     return;
   }
   _host = backend;
-  _hostViable = viable;
 }
 ```
 
 **First host wins.** `installClipboardHostBackend` never overwrites a previously installed host — same reference is idempotent (no-op), distinct reference sets the conflict flag and preserves the original. `set*Backend(null)` reveals the host layer beneath custom. The host slot is separate from the custom slot.
 
-**Runtime viability probed at enable time.** The enabler probes for the runtime API (e.g. OffscreenCanvas, canvas 2D context) and passes `viable: true/false`. When viable is false, a real backend object is installed (not null) that returns null for all operations — `get` returns it, `explain` reports `{ layer: 'host', viability: 'runtime-api-unavailable' }`. This is distinct from `installHost(null)`, which was a prior design that conflated "API absent" with "no host".
+**Runtime viability is observed, never predicted.** Enablers install a real backend and make no availability claim. Before a real operation, `explain*` reports `unobserved`. Each host operation records whether the runtime API was actually reachable; the last real call replaces the prior observation, so loss and recovery are both visible. A legitimate negative result (permission denied, user cancellation, missing file, zero-ink glyph) is not an unavailable API. Only failure to reach or acquire the required runtime surface records `runtime-api-unavailable`; other failures remain ordinary operation results or defects.
 
 For ambient-language capabilities (3 of them), the existing pattern is structurally unchanged:
 
@@ -130,6 +129,8 @@ export function setNetBackend(backend: NetBackend | null): void {
 ### Method
 
 Each of the 38 `createWeb*Backend` functions was audited in full. The 38 factories implement 328 methods on their returned backend objects: 180 genuine, 148 sentinel. Strict-majority threshold: sentinel > genuine → NONE (no enabler for broad interface). 12 NONE rows. 32 genuine minority methods preserved via narrower split (section 5).
+
+Every implementation inventory governed by this record must cite, in each row, the exact section that decides its disposition. A row is incomplete if it merely restates a rule or relies on a parcel, memory, or a preceding row. At minimum, each row cites the applicable classification, lifetime, absence, singleton/per-instance, and viability sections. Replication may begin only from a complete cited inventory; this makes a contradiction reviewable on the face of the artifact.
 
 ### Three outcomes
 
@@ -300,22 +301,11 @@ Ten ownership/granularity questions from section 5, all settled.
 
 A host must not implement no-op methods merely to satisfy a full backend interface. Advertising a capability that does nothing is a lie.
 
+Absence is a declaration, not an inert implementation. An unsupported optional method is omitted. When a capability can represent no provider directly (as application/loop can), it uses `null` rather than a sentinel object whose required methods do nothing. When a required sentinel object is unavoidable, its return values must be the capability's documented absence values; it must not grow optional members or methods that claim unsupported power. Moving a no-op to `backend.method?.()` does not cure it.
+
 ### Sentinel ownership
 
-The sentinel backend belongs to the **capability package**, not to any host:
-
-```typescript
-const _sentinel: TrayBackend = {
-  create: () => -1,
-  destroy: () => {},
-};
-
-let _backend: TrayBackend | null = null;
-
-export function getTrayBackend(): TrayBackend {
-  return _backend ?? _sentinel;
-}
-```
+When a legacy required interface makes a sentinel unavoidable, that sentinel belongs to the **capability package**, not to any host. Its methods may return only documented absence values. A host must not copy the sentinel, add optional unsupported members, or present an inert implementation as host power.
 
 ### Capability classification: global-singleton vs per-instance
 
@@ -374,9 +364,7 @@ let _enabled = false;
 export function enableHostWebClipboard(): void {
   if (_enabled) return;
   _enabled = true;
-  const viable = _probeClipboardViability();
-  const backend = viable ? createWebClipboardBackend() : _unavailableBackend;
-  installClipboardHostBackend(backend, viable);
+  installClipboardHostBackend(createWebClipboardBackend());
 }
 ```
 
@@ -398,7 +386,16 @@ Seven of the 38 factories allocate closure state — mutable variables captured 
 | protocol | `_registeredSchemes` | string array |
 | updater | `_config`, `_channel` | config object (UpdaterConfig: 3 booleans), string |
 
-Closure state spans primitives, Maps, Sets, arrays, config objects, and retained DOM/object references. All are passive allocation — no listener registration, no timer, no I/O at construction. Listeners attach only when a consumer calls `subscribe*` methods, each returning an unsubscribe function. Teardown is consumer-owned, not enabler-owned. No deferred `dispose*Backend` needed for the enabler layer.
+Closure state spans primitives, Maps, Sets, arrays, config objects, and retained DOM/object references. All are passive allocation — no listener registration, no timer, no I/O at construction. Construction being passive does not settle transition ownership: MediaSession handlers and Accessibility DOM remain externally live after their provider is shadowed, so the outgoing layer must dispose its own externally observable state.
+
+### Provider-transition lifetime rule
+
+The deciding line is lifetime, not who happens to own an object:
+
+- **Unbounded relationships rebind.** Subscriptions and watches last until explicitly cancelled. On provider swap, detach from the old provider first, then attach the same caller handler to the new provider. This applies to clipboard, sensors, screen, lifecycle, connectivity, keyboard, and geolocation watches. The registry must remove entries on unsubscribe and be empty after the last unsubscribe; the old provider must not emit after the move.
+- **Bounded pending operations finish where they started.** A picker, share request, file read, or similar one-shot operation cannot coherently transfer mid-flight. It may complete on the originating provider, but must settle and release its resources. This is a bounded exception to shadow-inertness, not permission for an old provider to remain live indefinitely.
+
+The required transition test is observable: subscribe, swap, emit from the new provider and observe the original handler; then emit from the old provider and observe nothing. Attach-new-before-detach-old is forbidden because it creates a double-delivery window.
 
 ---
 
@@ -408,12 +405,14 @@ Closure state spans primitives, Maps, Sets, arrays, config objects, and retained
 
 ```typescript
 export interface BackendExplanation {
+  readonly conflict: boolean;
   readonly layer: 'custom' | 'host' | 'host-not-enabled' | 'no-host-implementation';
-  readonly viability: 'available' | 'provider-conflict' | 'runtime-api-unavailable';
+  readonly operation: string | null;
+  readonly viability: 'unobserved' | 'available' | 'runtime-api-unavailable';
 }
 ```
 
-Two orthogonal families: **layer** identifies which provider slot is active; **viability** reports whether that provider can serve. The type is shared across all capabilities in `@flighthq/types`.
+The fields answer separate questions. **Layer** says what is installed or selected. **Viability** says what the last real host operation observed about runtime API reachability. **Conflict** records a rejected second host without replacing the first. **Operation** names the real operation that produced the observation, or is `null` while unobserved. The type is shared across all capabilities in `@flighthq/types`.
 
 ### Layer semantics
 
@@ -424,21 +423,27 @@ Two orthogonal families: **layer** identifies which provider slot is active; **v
 
 ### Viability semantics
 
-- **`available`** — the active provider can serve requests.
-- **`runtime-api-unavailable`** — the enabler probed the environment and the required runtime API is absent (e.g. no OffscreenCanvas / no canvas 2D context). A real backend object is installed (not null), but it returns null for all operations. Distinct from `host-not-enabled`: the app called the enabler, but the platform cannot deliver.
-- **`provider-conflict`** — two distinct host backends attempted to install for the same capability. The first host is preserved; the second was silently rejected. Custom still wins; clearing custom reveals the original host.
+- **`unobserved`** — no real host operation has established runtime reachability. This is the initial value after installation and for the two no-active-host layers.
+- **`available`** — the last real operation reached or acquired the required runtime API. It does not promise that the requested outcome succeeded.
+- **`runtime-api-unavailable`** — the last real operation could not reach or acquire the required runtime API. A later operation may replace this observation with `available` after recovery.
+
+Provider conflict is not viability. Two distinct host backends attempting to install sets `conflict: true`, preserves the first host, and leaves the last operation observation unchanged. Custom still wins; clearing custom reveals the original host.
+
+### Async viability semantics
+
+Promise settlement is not a viability predicate. An absent API or failure to acquire its required runtime surface records `runtime-api-unavailable`. User cancellation, permission denial, a missing file, an unsupported requested datum, or another legitimate negative result proves that the capability surface was reached and records `available`; the operation returns or throws its ordinary result. A genuine implementation error is a defect, not a capability statement, and must not be relabelled as runtime unavailability. In particular, a blanket `try/await => available; catch => unavailable` implementation is forbidden.
 
 ### Five reachable states
 
-| # | Observed state | explain* report |
-|---|---------------|-----------------|
-| 1 | `set*Backend()` active | `{ layer: 'custom', viability: 'available' }` |
-| 2 | `enableHostWeb*()` active, runtime API present | `{ layer: 'host', viability: 'available' }` |
-| 3 | `enableHostWeb*()` active, runtime API absent | `{ layer: 'host', viability: 'runtime-api-unavailable' }` |
-| 4 | Nothing installed, host-web has enabler | `{ layer: 'host-not-enabled', viability: 'available' }` |
-| 5 | Nothing installed, NONE row | `{ layer: 'no-host-implementation', viability: 'available' }` |
+| # | Installed/selected state | Runtime observation | explain* core report |
+|---|--------------------------|---------------------|----------------------|
+| 1 | Custom active | Not a host reachability claim | `{ layer: 'custom', viability: 'unobserved' }` |
+| 2 | Host active | No real operation yet | `{ layer: 'host', viability: 'unobserved' }` |
+| 3 | Host active | Last operation reached the API | `{ layer: 'host', viability: 'available' }` |
+| 4 | Host active | Last operation could not reach/acquire the API | `{ layer: 'host', viability: 'runtime-api-unavailable' }` |
+| 5 | No active host | Enabler exists or no host implementation exists | `{ layer: 'host-not-enabled' | 'no-host-implementation', viability: 'unobserved' }` |
 
-A sixth state (`{ layer: 'host', viability: 'provider-conflict' }`) is reachable when two distinct host backends install for the same capability.
+Every report additionally carries `operation` and `conflict`. `operation` is `null` in states 1, 2, and 5 and names the observing call in states 3 and 4. `conflict` is an independent boolean on every state; it never changes `layer`, `operation`, or `viability`.
 
 For ambient-language capabilities (net, socket, textsegment), no explain*Backend is needed — the inline implementation always serves unless overridden by `set*Backend`.
 
@@ -604,7 +609,7 @@ AGENTS.md host-* family adds host-web (future host-node). Both outside SDK barre
 
 6. **Handle 7 strict-majority rows** — factories removed. Narrow-split disposition per section 6 questions.
 
-7. **Add enableHostWeb()** + 23 per-capability enablers.
+7. **Add enableHostWeb()** + 22 per-capability enablers and the per-instance Cursor factory.
 
 8. **Update SDK barrel**.
 
@@ -662,4 +667,4 @@ Two prerequisite commits are now on base, completing the documentation reconcili
 
 ### Design chosen
 
-Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine implementations: 22 global-singleton enablers + 1 per-instance factory (Cursor). Cursor excluded from `enableHostWeb()` umbrella (umbrella membership = 22). 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions settled in section 6). Precedence: custom > host > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent (second call allocates nothing, preserves provider identity). Distinct second host does not last-write-win — original preserved, explain reports provider-conflict. explain* returns orthogonal `{ layer, viability }` from shared `BackendExplanation` type. Runtime viability probed at enable time. Bundle acceptance fixtures required.
+Phase 3 creates `host-web` only. `host-node` is the sole host reserved for construction in this monorepo (charter-only until first genuine backend); `host-lime` is downstream (`flight-hx`), chartered here for naming authority. 23 genuine implementations: 22 global-singleton enablers + 1 per-instance factory (Cursor). Cursor excluded from `enableHostWeb()` umbrella (umbrella membership = 22). 3 ambient-language facilities stay inline, structurally unchanged. 12 NONE rows: 5 all-sentinel (factory deleted), 7 split-never-delete (32 genuine methods, 10 ownership questions settled in section 6). Precedence: custom > host > sentinel. `set*Backend(null)` reveals host layer beneath custom. Enablers truly idempotent (second call allocates nothing, preserves provider identity). Distinct second host does not last-write-win: the original is preserved and `conflict` reports the rejected install independently. explain* separates installed layer, last observed runtime reachability, observing operation, and conflict. Viability is observed by real operations, never probed at enable time and never inferred from operation success. Unbounded relationships rebind across provider transitions; bounded pending operations complete where they started. Bundle acceptance fixtures required.
