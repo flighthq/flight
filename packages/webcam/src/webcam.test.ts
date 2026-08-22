@@ -34,6 +34,29 @@ function fakeBackend(): WebcamBackend & { lastOptions: WebcamCaptureOptions | nu
 afterEach(() => setWebcamBackend(null));
 
 describe('createWebWebcamBackend', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  for (const method of ['capture', 'captureVideo'] as const) {
+    it(`${method} settles with null and detaches handlers when the picker is dismissed`, async () => {
+      const created: HTMLInputElement[] = [];
+      const createElement = document.createElement.bind(document);
+      vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+        const element = createElement(tag);
+        if (tag === 'input') created.push(element as HTMLInputElement);
+        return element;
+      }) as typeof document.createElement);
+
+      const pending = createWebWebcamBackend()[method]({ source: 'photos' });
+      created[0].dispatchEvent(new Event('cancel'));
+
+      await expect(
+        Promise.race([pending, new Promise<'pending'>((resolve) => setTimeout(() => resolve('pending'), 200))]),
+      ).resolves.toBeNull();
+      expect(created[0].onchange).toBeNull();
+      expect(created[0].oncancel).toBeNull();
+    });
+  }
+
   it('returns a backend whose capture yields a Promise without throwing synchronously', () => {
     const backend = createWebWebcamBackend();
     expect(backend.capture({}) instanceof Promise).toBe(true);
