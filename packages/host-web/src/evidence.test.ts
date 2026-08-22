@@ -16,6 +16,7 @@ interface CapabilityEntry {
 const CAPABILITIES: readonly CapabilityEntry[] = [
   { fixture: 'cursor', modulePattern: 'webCursor' },
   { fixture: 'glyph', modulePattern: 'webGlyphRasterizer' },
+  { fixture: 'loop', modulePattern: 'webLoop' },
 ];
 
 interface FixtureResult {
