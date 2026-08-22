@@ -60,6 +60,17 @@ describe('queryPhysics2DAbiPoint', () => {
     expect(out.count).toBe(0);
     expect(out.requiredCount).toBe(0);
   });
+
+  it('does not republish a previous hit when a reused query result misses', () => {
+    const { abi, handle } = world();
+    const out = createPhysics2DAbiQueryBuffer(4);
+    expect(queryPhysics2DAbiPoint(abi, handle, 0, 0, out)).toBe(true);
+    expect(out.count).toBe(1);
+
+    expect(queryPhysics2DAbiPoint(abi, handle, 5, 5, out)).toBe(true);
+    expect(out.count).toBe(0);
+    expect(out.requiredCount).toBe(0);
+  });
 });
 
 describe('queryPhysics2DAbiRay', () => {
@@ -85,6 +96,18 @@ describe('queryPhysics2DAbiRayClosest', () => {
     expect(out.count).toBe(1);
     expect(out.bodyIds[0]).toBe(1);
     expect(out.values[Physics2DAbiQueryValue.X]).toBeCloseTo(-0.5, 9);
+  });
+
+  it('publishes only the current closest hit after an all-hits query reused the scratch rows', () => {
+    const { abi, handle } = world();
+    const out = createPhysics2DAbiQueryBuffer(8);
+    expect(queryPhysics2DAbiRay(abi, handle, -5, 0, 1, 0, out, 100)).toBe(true);
+    expect(out.count).toBe(2);
+
+    expect(queryPhysics2DAbiRayClosest(abi, handle, -5, 0, 1, 0, out, 100)).toBe(true);
+    expect(out.count).toBe(1);
+    expect(out.requiredCount).toBe(1);
+    expect(out.bodyIds[0]).toBe(1);
   });
 });
 

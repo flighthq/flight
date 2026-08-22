@@ -90,8 +90,9 @@ export interface Physics2DAbiContactHooks {
 
 export type Physics2DAbiStepStatus = 'BusyWorld' | 'Complete' | 'Declined' | 'InsufficientHookBuffer' | 'StaleWorld';
 
-// Joint ids and their latest reaction. `flags` carries the Broken bit. A kind that cannot report a
-// reaction writes zeroes, exactly as `writePhysics2DJointReaction` reports false in the standard API.
+// Joint ids and their latest reaction. `flags` carries the Broken bit. Broken rows are one-read events;
+// reading this buffer consumes them. A kind that cannot report a reaction writes zeroes, exactly as
+// `writePhysics2DJointReaction` reports false in the standard API.
 export interface Physics2DAbiJointBuffer {
   readonly ids: Uint32Array<ArrayBufferLike>;
   readonly flags: Uint32Array<ArrayBufferLike>;

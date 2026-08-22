@@ -143,7 +143,10 @@ by Physics2D and recorded in `world.jointEvents.broke`. It has no `broken` field
 readback therefore appends, after the live joints, every joint that broke during the most recent step —
 carrying the `Broken` flag and the load that broke it — and retires its id. That list is the only
 channel by which a caller holding an id learns its joint no longer exists, and it survives exactly one
-readback. A `SetJoint` record with the `Broken` bit set is `InvalidCommand`.
+readback. Reading joints consumes the list even when the supplied capacity fits only a prefix; the
+required count tells the caller that it undersized the read. Reusing a retired id with `SetJoint`
+discards an unread event for that id before publishing the new live joint, so a readback can never carry
+two rows with the same identity. A `SetJoint` record with the `Broken` bit set is `InvalidCommand`.
 
 `step` returns `Declined` when the same validation predicates that guard `stepPhysics2D` fail,
 `InsufficientHookBuffer` before stepping when a live hook lacks one contact/two point slots, and
