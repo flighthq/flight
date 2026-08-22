@@ -141,46 +141,51 @@ jobs:
         id: edge
         run: npx tsx scripts/edge-version.ts main >> "$GITHUB_OUTPUT"
 
-      # ★ IDEMPOTENCY. The version is a pure function of the commit (count + short sha), so a second
-      # dispatch of the same candidate computes the same version. Publishing it again would fail with a
-      # registry conflict — a red run for work that is already correctly done. Check first and exit as a
-      # clean no-op, so a retried or duplicated dispatch is harmless rather than noisy.
-      - name: Skip if this candidate is already on the registry
-        id: published
-        run: |
-          set -euo pipefail
-          version='${{ steps.edge.outputs.version }}'
-          if npm view "@flighthq/sdk@${version}" version >/dev/null 2>&1; then
-            echo "@flighthq/sdk@${version} is already published; nothing to do."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
+      # ★ IDEMPOTENCY IS THE PUBLISHER'S, PER PACKAGE — DO NOT REINTRODUCE AN OUTER SKIP.
+      # `scripts/publish-packages.ts` already skips any package whose version is on the registry, so a
+      # re-run after a partial failure completes the set across the ~141-package graph. That per-package
+      # recovery is the whole point, and an outer guard destroys it: an earlier attempt that published
+      # @flighthq/sdk and then died leaves the graph incomplete, while a check on `@flighthq/sdk@version`
+      # reports "already published" and skips forever. The half-published state would then be permanent,
+      # and the guard would be the reason.
+      #
+      # So the publisher always runs, on every dispatch, and decides package by package. A duplicated
+      # dispatch is a fast no-op because every package is already present, not because we guessed from
+      # one of them.
       - name: Stamp the graph to the snapshot version
-        if: ${{ steps.published.outputs.skip == 'false' }}
-        run: npm run version:packages ${{ steps.edge.outputs.version }}
-      - name: Publish snapshot to npm
-        if: ${{ steps.published.outputs.skip == 'false' }}
-        run: npm run release -- --no-build --tag ${{ steps.edge.outputs.tag }}
         env:
+          EDGE_VERSION: ${{ steps.edge.outputs.version }}
+        run: npm run version:packages "${EDGE_VERSION}"
+      - name: Publish snapshot to npm
+        env:
+          EDGE_TAG: ${{ steps.edge.outputs.tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
+        run: npm run release -- --no-build --tag "${EDGE_TAG}"
 
       # Correlation in the direction that is fully supported: this run names the promote run that asked
       # for it, in `run-name` above and in the summary here. The reverse link is best-effort on the
       # promote side, because the dispatch API returns no run id.
+      # ★ EVERY INTERPOLATED VALUE ARRIVES THROUGH `env`, INCLUDING IN THE MARKDOWN.
+      # `${{ inputs.sha }}` written straight into a `run:` block is substituted before bash ever sees
+      # the script, so a crafted input becomes shell source — and a Markdown table is still a shell
+      # heredoc, not a safe context. Going through `env` puts the value in the process environment where
+      # bash treats it as data, and every reference is quoted so word-splitting cannot reassemble it.
       - name: Record what was published
         if: ${{ always() }}
+        env:
+          CANDIDATE: ${{ inputs.sha }}
+          EDGE_VERSION: ${{ steps.edge.outputs.version }}
+          EDGE_TAG: ${{ steps.edge.outputs.tag }}
+          PROMOTE_RUN_ID: ${{ inputs.promote_run_id }}
         run: |
           {
             echo "### Edge publish"
             echo ""
             echo "| field | value |"
             echo "| --- | --- |"
-            echo "| candidate | \`${{ inputs.sha }}\` |"
-            echo "| version | \`${{ steps.edge.outputs.version }}\` |"
-            echo "| dist-tag | \`${{ steps.edge.outputs.tag }}\` |"
-            echo "| already published | \`${{ steps.published.outputs.skip }}\` |"
-            echo "| dispatched by | promote run \`${{ inputs.promote_run_id }}\` |"
+            echo "| candidate | \`${CANDIDATE}\` |"
+            echo "| version | \`${EDGE_VERSION}\` |"
+            echo "| dist-tag | \`${EDGE_TAG}\` |"
+            echo "| dispatched by | promote run \`${PROMOTE_RUN_ID}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
