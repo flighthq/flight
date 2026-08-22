@@ -26,6 +26,7 @@ const NO_CRATE = new Set([
   'filters-canvas',
   'filters-css',
   'host-electron',
+  'host-web',
   'textshaper-canvas',
 ]);
 
