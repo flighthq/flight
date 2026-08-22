@@ -2,6 +2,7 @@ import type { DitherEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderT
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
@@ -13,12 +14,13 @@ export function applyDitherEffectToWgpu(
   effect: Readonly<DitherEffect>,
 ): void {
   const levels = effect.levels ?? 4;
+  const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'stylization.dither', DITHER_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = Math.max(2, levels);
     // u_resolution (vec2f) aligns to slot [2].
-    f32[2] = source.width;
-    f32[3] = source.height;
+    f32[2] = resolution.width;
+    f32[3] = resolution.height;
   });
 }
 

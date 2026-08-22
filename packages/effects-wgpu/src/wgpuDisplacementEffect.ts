@@ -7,6 +7,7 @@ import type {
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Displacement / heat-haze: warp the sample uv by an animated sine field for a refractive wobble.
@@ -19,14 +20,15 @@ export function applyDisplacementEffectToWgpu(
   const intensity = effect.intensity ?? 8;
   const frequency = effect.frequency ?? 12;
   const seed = effect.seed ?? 0;
+  const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'lens.displacement', DISPLACEMENT_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
     f32[1] = frequency;
     f32[2] = seed;
     // u_resolution (vec2f) aligns to slot [4].
-    f32[4] = source.width;
-    f32[5] = source.height;
+    f32[4] = resolution.width;
+    f32[5] = resolution.height;
   });
 }
 

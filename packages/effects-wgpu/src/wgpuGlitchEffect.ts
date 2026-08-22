@@ -2,6 +2,7 @@ import type { GlitchEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderT
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh tear),
@@ -16,6 +17,7 @@ export function applyGlitchEffectToWgpu(
   const blockSize = effect.blockSize ?? 24;
   const colorShift = effect.colorShift ?? 8;
   const seed = effect.seed ?? 0;
+  const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'stylization.glitch', GLITCH_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = intensity;
@@ -23,8 +25,8 @@ export function applyGlitchEffectToWgpu(
     f32[2] = colorShift;
     f32[3] = seed;
     // u_resolution (vec2f) aligns to slot [4].
-    f32[4] = source.width;
-    f32[5] = source.height;
+    f32[4] = resolution.width;
+    f32[5] = resolution.height;
   });
 }
 

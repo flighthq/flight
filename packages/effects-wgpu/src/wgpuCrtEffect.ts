@@ -2,6 +2,7 @@ import type { CrtEffect, WgpuRenderEffectRunner, WgpuRenderState, WgpuRenderTarg
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
@@ -16,14 +17,15 @@ export function applyCrtEffectToWgpu(
   const scanlineIntensity = effect.scanlineIntensity ?? 0.3;
   const vignette = effect.vignette ?? 0.3;
   const aberration = effect.aberration ?? 0.005;
+  const resolution = getWgpuEffectLogicalResolution(state, source);
   const pipeline = getWgpuEffectPipeline(state, 'stylization.crt', CRT_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuRenderTarget, dest as WgpuRenderTarget, pipeline, (f32) => {
     f32[0] = curvature;
     f32[1] = scanlineIntensity;
     f32[2] = vignette;
     f32[3] = aberration;
-    f32[4] = source.width;
-    f32[5] = source.height;
+    f32[4] = resolution.width;
+    f32[5] = resolution.height;
   });
 }
 
