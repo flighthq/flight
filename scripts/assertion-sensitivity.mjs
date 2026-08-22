@@ -24,7 +24,7 @@ const OUTPUT_PATH = 'agents/functional-assertion-census.md';
 const PIXEL_READER = /^getBitmapPixel(?:Channel|Luminance|Rgb)?$/;
 const SPATIAL_PARAMETER = /^(?:from|to|x\d*|y\d*|left|right|top|bottom|start|end|region|band)/i;
 const SPATIAL_BOUNDS =
-  /\b(?:findColorBounds|assertSquareBounds|minX|maxX|minY|maxY|leftmost|rightmost|topmost|bottommost|widestRow|firstLit|lastLit|brightest[XY]|centroid[XY]|topMean[XY]|bottomMean[XY]|transitionWidth)\b/;
+  /\b(?:findColorBounds|assertSquareBounds|minX|maxX|minY|maxY|leftmost|rightmost|topmost|bottommost|widestRow|firstLit|lastLit|brightest[XY]|centroid[XY]|topMean[XY]|bottomMean[XY]|transitionWidth|radialMidDim|tangentialMidDim)\b/;
 const SPATIAL_NEIGHBOUR =
   /\b(?:adjacent|delta|deltas|gradient|highFrequency|neighbou?r|previous|steepSteps?|transitions?)\b/i;
 
@@ -39,6 +39,8 @@ export const ASSERTION_SENSITIVITY_CONTROLS = {
   'functional/scenes/effect-radial-blur.webgl.ts': 'able',
   'functional/scenes/material-wireframe.webgl.ts': 'able',
   'functional/scenes/material-wireframe.webgpu.ts': 'able',
+  'functional/scenes/particle-motion-blur.webgl.ts': 'able',
+  'functional/scenes/particle-motion-blur.webgpu.ts': 'able',
   'functional/scenes/shape-stroke.ts': 'able',
   'functional/scenes/text-native.dom.ts': 'blind',
 };
