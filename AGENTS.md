@@ -218,7 +218,7 @@ Resources: `image`, `image-codec`, `font`, `video`, `audio`, `binpack`, `texture
 
 Animation and simulation: `spritesheet`, `spritesheet-formats`, `particles` (headless sim) with `particleemitter` (display node) and `particles-formats`, `timeline` with `movieclip`, `tween`, `motionpath`, `clock`, `easing`, `spring`, plus `skeleton2d` + `skeleton2d-formats` (2D bone rigs, alongside the 3D `skeleton3d`).
 
-Game: `collision` (2D/3D narrow phase + contact manifolds), `physics2d` / `physics3d` (rigid-body dynamics), `physics3d-abi` (persistent handle/buffer execution contract), `spatial` (2D/3D broadphase indices), `flow` (mode/screen state stack), `statechart` (concurrent data-only guarded state graphs), `snapshot` (frozen recoverable state).
+Game: `collision` (2D/3D narrow phase + contact manifolds), `physics2d` / `physics3d` (rigid-body dynamics), `physics2d-abi` / `physics3d-abi` (persistent handle/buffer execution contracts), `spatial` (2D/3D broadphase indices), `flow` (mode/screen state stack), `statechart` (concurrent data-only guarded state graphs), `snapshot` (frozen recoverable state).
 
 Input and text: `input`, `textinput`, `textlayout`, `textshaper` with `textshaper-canvas`, `textsegment`, `textbidi` (bidi itemization), `text-markup` (markup → rich text), `glyphatlas` (dynamic) and `bitmapfont` + `bitmapfont-formats` (static) behind the shared `GlyphSource` seam, `bitmaptext`.
 
