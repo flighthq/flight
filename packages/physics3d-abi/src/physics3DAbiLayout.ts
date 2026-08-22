@@ -74,6 +74,10 @@ export const Physics3DAbiContactPointValueStride = 10;
 export const Physics3DAbiJointValueStride = 6;
 export const Physics3DAbiQueryValueStride = 7;
 
+// A 3D face-face manifold can carry four points. Keep this ABI-owned constant explicit rather than
+// hiding the bound in hook code, so a collision-manifold expansion forces a reviewed contract update.
+export const Physics3DAbiMaxContactPoints = 4;
+
 export const Physics3DAbiBodyValue = {
   X: 0,
   Y: 1,
@@ -164,7 +168,7 @@ export const Physics3DAbiCommandByteLength = {
   SetSolverConfig: 96,
   SetBody: 288,
   DestroyBody: 16,
-  SetColliderMinimum: 80,
+  SetColliderMinimum: 72,
   DestroyCollider: 16,
   SetJoint: 272,
   DestroyJoint: 16,

@@ -98,11 +98,13 @@ standard Physics3D order.
 Body, contact identity/value, contact-point, joint-reaction, and query rows are indexed by the exported
 `Physics3DAbi*Value` constants. A query geometric row is fraction, point XYZ, normal XYZ; point and region
 queries zero that row. A contact identity row is body A/B and collider A/B. A contact hook receives one
-reused contact row plus up to four point rows. Only the enabled flag, friction, and restitution are read
-back from the callback; invalid values throw through the standard hook transaction and are rolled back.
+reused contact row plus up to `Physics3DAbiMaxContactPoints` point rows (currently four, matching
+`MAX_COLLISION_CONTACT_POINTS_3D`). Only the enabled flag, friction, and restitution are read back from
+the callback; invalid values throw through the standard hook transaction and are rolled back.
 
 `step` returns `Declined` when the same validation predicates that guard `stepPhysics3D` fail,
-`InsufficientHookBuffer` before stepping when a live hook lacks one contact/four point slots, and
+`InsufficientHookBuffer` before stepping when a live hook lacks one contact row or
+`Physics3DAbiMaxContactPoints` point rows, and
 `StaleWorld` after destruction. Hooks remain synchronous because they participate inside the solver.
 The same world is non-reentrant while a hook runs: command execution and nested stepping report
 `BusyWorld`, while destruction, readback, and queries return false. Other worlds owned by the ABI remain
