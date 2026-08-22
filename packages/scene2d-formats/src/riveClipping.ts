@@ -92,23 +92,47 @@ function createRiveClipPath(
 /**
  * Each component's transform measured from the artboard root. The root itself is the identity here
  * on purpose: it is an ancestor of every component, so whatever it carries cancels between any two
- * of them.
+ * of them. Component order is not hierarchy order — a child may precede its parent in the stream —
+ * so each parent chain is resolved before its world matrices are composed.
  */
 function createRiveRelativeTransforms(artboard: Readonly<RiveArtboardGraph>): Matrix[] {
-  const transforms: Matrix[] = [createMatrix()];
+  if (artboard.objects.length === 0) return [];
+  const transforms = new Array<Matrix>(artboard.objects.length);
+  const states = new Uint8Array(artboard.objects.length);
+  const pending: number[] = [];
+  transforms[0] = createMatrix();
+  states[0] = RIVE_TRANSFORM_RESOLVED;
   for (let index = 1; index < artboard.objects.length; index++) {
-    const object = artboard.objects[index];
-    const parent = artboard.parentIndices[index];
-    const inherited = parent >= 0 ? transforms[parent] : transforms[0];
-    if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NODE_TYPE_KEY)) {
-      // A non-node component holds no transform, so it passes its parent's through unchanged.
-      transforms.push(inherited);
-      continue;
+    let current = index;
+    while (states[current] !== RIVE_TRANSFORM_RESOLVED) {
+      if (states[current] === RIVE_TRANSFORM_RESOLVING) {
+        throw new Error(`Rive component parent cycle at index ${current}.`);
+      }
+      states[current] = RIVE_TRANSFORM_RESOLVING;
+      pending.push(current);
+      const parent = artboard.parentIndices[current];
+      if (parent === RIVE_NO_PARENT) break;
+      if (!Number.isInteger(parent) || parent < 0 || parent >= artboard.objects.length) {
+        throw new Error(`Rive component ${current} has unresolved parent ${parent}.`);
+      }
+      current = parent;
     }
-    const local = createRiveLocalMatrix(object);
-    const world = createMatrix();
-    multiplyMatrix(world, inherited, local);
-    transforms.push(world);
+    while (pending.length > 0) {
+      current = pending.pop()!;
+      const object = artboard.objects[current];
+      const parent = artboard.parentIndices[current];
+      const inherited = parent >= 0 ? transforms[parent] : transforms[0];
+      if (!isRiveCoreTypeDerivedFrom(object.typeKey, RIVE_NODE_TYPE_KEY)) {
+        // A non-node component holds no transform, so it passes its parent's through unchanged.
+        transforms[current] = inherited;
+      } else {
+        const local = createRiveLocalMatrix(object);
+        const world = createMatrix();
+        multiplyMatrix(world, inherited, local);
+        transforms[current] = world;
+      }
+      states[current] = RIVE_TRANSFORM_RESOLVED;
+    }
   }
   return transforms;
 }
@@ -151,3 +175,6 @@ const RIVE_SCALE_Y = 17;
 const RIVE_CLIP_SOURCE_ID = 92;
 const RIVE_CLIP_FILL_RULE = 93;
 const RIVE_CLIP_IS_VISIBLE = 94;
+const RIVE_NO_PARENT = -1;
+const RIVE_TRANSFORM_RESOLVING = 1;
+const RIVE_TRANSFORM_RESOLVED = 2;
