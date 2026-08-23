@@ -301,11 +301,15 @@ Ten ownership/granularity questions from section 5, all settled.
 
 ### Principle (user ruling)
 
-A host must not implement no-op methods merely to satisfy a full backend interface. Advertising a capability that does nothing is a lie.
+A host must not add inert or degraded methods merely to satisfy a full backend interface. Advertising an outcome the host cannot deliver is a lie.
 
 Absence is a declaration, not an inert implementation. An unsupported optional method is omitted. When a capability can represent no provider directly (as application/loop can), it uses `null` rather than a sentinel object whose required methods do nothing. When a required sentinel object is unavoidable, its return values must be the capability's documented absence values; it must not grow optional members or methods that claim unsupported power. Moving a no-op to `backend.method?.()` does not cure it.
 
+The deciding test is honest member semantics, not a mechanical genuine/sentinel census label and not optionality alone: a member must not claim an outcome it does not deliver. Haptics `prepare` remains present because doing nothing is a truthful fulfillment when the platform has nothing to preallocate. Haptics `vibrateWaveform` is omitted because degrading to plain vibration discards amplitudes and repeat while claiming the requested waveform outcome. The census summarizes prior judgments; it does not decide the next member by analogy.
+
 Filesystem applies this rule through an honest split. `FileSystemHostBackend` contains only the 21 genuine host methods; host-web never implements the seven symlink, permission, watch, and well-known-path absence members merely to satisfy the 28-member capability shape. The filesystem capability owns the full public surface and composes the narrow host provider with its seven documented absence results. Per-operation `explain*` identifies those operations as having no host implementation. A host author implementing `FileSystemHostBackend` therefore implements only power the host actually provides.
+
+The same narrow honest-provider composition applies to clipboard (18 genuine / 5 absence), notification (14 / 4), and sensors (17 / 4). Their capability packages own the full public surfaces and documented absence results; host-web supplies only members whose outcomes the web platform can deliver. Haptics is the semantic exception above: keep honest `prepare`, omit dishonest `vibrateWaveform`, regardless of their census labels.
 
 ### Sentinel ownership
 
@@ -396,13 +400,13 @@ Closure state spans primitives, Maps, Sets, arrays, config objects, and retained
 
 The deciding line is lifetime, not who happens to own an object:
 
-- **Unbounded relationships rebind.** Subscriptions and watches last until explicitly cancelled. On provider swap, detach from the old provider first, then attach the same caller handler to the new provider. This applies to clipboard, sensors, screen, lifecycle, connectivity, keyboard, and geolocation watches. The registry must remove entries on unsubscribe and be empty after the last unsubscribe; the old provider must not emit after the move.
+- **Unbounded relationships rebind.** Scope is structural: any unbounded subscription or watch returning an unsubscribe thunk rebinds, including notification, storage, filesystem watch, clipboard, sensors, screen, lifecycle, connectivity, keyboard, and geolocation. This list is illustrative, not exhaustive. On provider swap, detach from the old provider first, then attach the same caller handler to the new provider. The registry must remove entries on unsubscribe and be empty after the last unsubscribe; the old provider must not emit after the move.
 - **Bounded pending operations finish where they started.** A picker, share request, file read, or similar one-shot operation cannot coherently transfer mid-flight. It may complete on the originating provider, but must settle and release its resources. This is a bounded exception to shadow-inertness, not permission for an old provider to remain live indefinitely.
 - **Caller-held provider resources survive where transfer is impossible.** Shadow-inertness may be excepted when the caller knowingly holds and controls the surviving resource. Filesystem watches are ordinary unbounded relationships and rebind when a provider supports them. A stream-acquisition promise is bounded and completes on its originating provider; once resolved, the provider-specific stream remains open there until its caller closes or aborts it. It must not be transferred or force-closed on a provider swap, because doing so can destroy caller data. This differs from an unowned Accessibility DOM tree, which remains externally observable without a caller-held handle and must be disposed when shadowed.
 
-The required transition test is observable: subscribe, swap, emit from the new provider and observe the original handler; then emit from the old provider and observe nothing. Attach-new-before-detach-old is forbidden because it creates a double-delivery window.
+The required transition test is observable: subscribe, swap, emit from the new provider and observe the original handler; then emit from the old provider and observe nothing. The old provider's listener count must return to zero after the swap. Attach-new-before-detach-old is forbidden because it creates a double-delivery window.
 
-Accepted caller-held exceptions must also be observable. `explain*` reports the number of retained caller-held resources that remain on previous providers; filesystem increments the count for resolved streams and decrements it when they close or abort. A nonzero count is deliberate retained ownership, not invisible residue.
+Accepted caller-held exceptions must also be observable. `explain*` reports the number of retained caller-held resources that remain on previous providers; filesystem increments the count for resolved streams and decrements it when they close or abort. Correctly rebound listener registries never contribute to this count: their old-provider listener count must be zero. A nonzero retained-resource count therefore means deliberate caller-held ownership, not invisible residue.
 
 ---
 
