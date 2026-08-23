@@ -13,10 +13,19 @@ import { ClipboardFormatBookmark, ClipboardFormatHtml, ClipboardFormatRtf } from
 // Pair with detachClipboardWatch / disposeClipboardWatch.
 export function attachClipboardWatch(watch: ClipboardWatch): void {
   detachClipboardWatch(watch);
-  const unsubscribe = getClipboardBackend().subscribeClipboardChange(() => {
+  const listener = () => {
     emitSignal(watch.onChange);
-  });
-  _watchSubscriptions.set(watch, unsubscribe);
+  };
+  let unsubscribe = getClipboardBackend().subscribeClipboardChange(listener);
+  const entry: ClipboardWatchSubscription = {
+    listener,
+    detach: () => unsubscribe(),
+    rebind: (backend) => {
+      unsubscribe();
+      unsubscribe = backend.subscribeClipboardChange(listener);
+    },
+  };
+  _watchSubscriptions.set(watch, entry);
 }
 
 // Clears the system clipboard. Returns false when the host denies access. Sentinel, not throw.
@@ -220,7 +229,7 @@ export function createWebClipboardBackend(): ClipboardBackend {
 export function detachClipboardWatch(watch: ClipboardWatch): void {
   const unsubscribe = _watchSubscriptions.get(watch);
   if (unsubscribe !== undefined) {
-    unsubscribe();
+    unsubscribe.detach();
     _watchSubscriptions.delete(watch);
   }
 }
@@ -296,7 +305,9 @@ export function installClipboardHostBackend(backend: ClipboardBackend): void {
     if (_host !== backend) _hostConflict = true;
     return;
   }
+  const previous = getClipboardBackend();
   _host = backend;
+  rebindClipboardWatches(previous, getClipboardBackend());
 }
 
 export function observeClipboardHostResult(operation: string, succeeded: boolean): void {
@@ -347,15 +358,19 @@ export function readClipboardText(): Promise<string> {
 }
 
 export function resetClipboardBackendForTest(): void {
+  const previous = getClipboardBackend();
   _custom = null;
   _host = null;
   _hostConflict = false;
   _hostObservation = null;
+  rebindClipboardWatches(previous, getClipboardBackend());
 }
 
 // Installs a custom clipboard backend; pass null to clear the custom override.
 export function setClipboardBackend(backend: ClipboardBackend | null): void {
+  const previous = getClipboardBackend();
   _custom = backend;
+  rebindClipboardWatches(previous, getClipboardBackend());
 }
 
 // Writes multiple formats atomically so a paste target picks its best representation.
@@ -469,11 +484,24 @@ const _sentinel: ClipboardBackend = {
     return false;
   },
 };
-const _watchSubscriptions = new WeakMap<ClipboardWatch, () => void>();
 let _custom: ClipboardBackend | null = null;
 let _host: ClipboardBackend | null = null;
 let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+// This is intentionally an enumerable Map rather than a WeakMap: active watches must rebind
+// across provider swaps. Callers must explicitly detach/dispose watches to release registry roots.
+type ClipboardWatchSubscription = {
+  listener: () => void;
+  detach: () => void;
+  rebind: (backend: ClipboardBackend) => void;
+};
+const _watchSubscriptions = new Map<ClipboardWatch, ClipboardWatchSubscription>();
+
+function rebindClipboardWatches(previous: ClipboardBackend, next: ClipboardBackend): void {
+  if (previous === next) return;
+  for (const subscription of _watchSubscriptions.values()) subscription.rebind(next);
+}
 
 // Converts a format/data pair into a Blob. Image data URLs are fetched into their decoded bytes;
 // every other flavor wraps the string payload directly under its MIME type.

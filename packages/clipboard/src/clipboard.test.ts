@@ -188,6 +188,39 @@ function fakeBackend(): ClipboardBackend & {
 afterEach(() => setClipboardBackend(null));
 
 describe('attachClipboardWatch', () => {
+  it('rebinds the original watch across distinct provider swaps', () => {
+    const oldBackend = fakeBackend() as ClipboardBackend & { _listeners?: Array<() => void> };
+    const newBackend = fakeBackend() as ClipboardBackend & { _listeners?: Array<() => void> };
+    setClipboardBackend(oldBackend);
+    const watch = createClipboardWatch();
+    let calls = 0;
+    watch.onChange.emit = () => {
+      calls += 1;
+    };
+    attachClipboardWatch(watch);
+    const fire = (backend: typeof oldBackend) => backend._listeners?.slice().forEach((listener) => listener());
+    expect(oldBackend._listeners).toHaveLength(1);
+    setClipboardBackend(newBackend);
+    expect(oldBackend._listeners).toHaveLength(0);
+    expect(newBackend._listeners).toHaveLength(1);
+    fire(newBackend);
+    fire(oldBackend);
+    expect(calls).toBe(1);
+    setClipboardBackend(newBackend);
+    fire(newBackend);
+    expect(calls).toBe(2);
+    setClipboardBackend(null);
+    expect(newBackend._listeners).toHaveLength(0);
+    setClipboardBackend(oldBackend);
+    expect(oldBackend._listeners).toHaveLength(1);
+    fire(oldBackend);
+    expect(calls).toBe(3);
+    detachClipboardWatch(watch);
+    expect(oldBackend._listeners).toHaveLength(0);
+    fire(oldBackend);
+    expect(calls).toBe(3);
+  });
+
   it('emits onChange when the backend notifies', () => {
     const backend = fakeBackend();
     setClipboardBackend(backend);
