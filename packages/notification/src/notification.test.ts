@@ -573,6 +573,51 @@ describe('isNotificationSupported', () => {
   });
 });
 
+describe('notification listener provider swaps', () => {
+  it.each([
+    [
+      'action',
+      (b: ReturnType<typeof fakeBackend>) => b.fireAction('id', 'action'),
+      (fn: () => void) => onNotificationAction(() => fn()),
+    ],
+    [
+      'click',
+      (b: ReturnType<typeof fakeBackend>) => b.fireClick('id'),
+      (fn: () => void) => onNotificationClick(() => fn()),
+    ],
+    [
+      'dismiss',
+      (b: ReturnType<typeof fakeBackend>) => b.fireDismiss('id'),
+      (fn: () => void) => onNotificationDismiss(() => fn()),
+    ],
+    [
+      'reply',
+      (b: ReturnType<typeof fakeBackend>) => b.fireReply('id', 'action', 'text'),
+      (fn: () => void) => onNotificationReply(() => fn()),
+    ],
+    [
+      'show',
+      (b: ReturnType<typeof fakeBackend>) => b.fireShow('id'),
+      (fn: () => void) => onNotificationShow(() => fn()),
+    ],
+  ])('%s subscriptions detach old and rebind to new', (_name, fire, subscribe) => {
+    const oldBackend = fakeBackend();
+    const newBackend = fakeBackend();
+    setNotificationBackend(oldBackend);
+    let calls = 0;
+    const unsubscribe = subscribe(() => {
+      calls += 1;
+    });
+    setNotificationBackend(newBackend);
+    fire(newBackend);
+    fire(oldBackend);
+    expect(calls).toBe(1);
+    unsubscribe();
+    fire(newBackend);
+    expect(calls).toBe(1);
+  });
+});
+
 describe('notifyServiceWorkerBackendAction', () => {
   function fakeSwRegistration() {
     return {
