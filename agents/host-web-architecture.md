@@ -406,6 +406,15 @@ The deciding line is lifetime, not who happens to own an object:
 
 The required transition test is observable: subscribe, swap, emit from the new provider and observe the original handler; then emit from the old provider and observe nothing. The old provider's listener count must return to zero after the swap. Attach-new-before-detach-old is forbidden because it creates a double-delivery window.
 
+Every rebind test must use provider-distinct backends with independently observable listener registries and emitters. Two web backend instances that share `window` are effectively A/A, not A/B: their common event source can mask a stranded subscription and make a broken transition appear to pass. Existing and new transition tests, including notification tests, are invalid as rebind proof if provider identity cannot be distinguished.
+
+Measured provider-distinct evidence currently separates four cases:
+
+- **Storage passes:** after A→B, B delivers, A does not, and A has zero listeners. Its capability-owned signal already detaches old before attaching new; no repair is required.
+- **Clipboard fails both halves:** B does not deliver, A still does, and A retains one listener. The capability-owned registry is a non-enumerable `WeakMap`, so the setter cannot migrate live watches. Repair requires an enumerable registry. This deliberately trades WeakMap's automatic leak resistance for rebindability, so entries must be removed explicitly on unsubscribe and tests must prove the registry empties. A source comment must preserve this rationale.
+- **Notification fails both halves:** five factory-owned listener Sets strand handlers on the old provider. It requires a capability-owned rebind registry before host-web extraction.
+- **Filesystem watch is unexercised on web:** the web method is a sentinel that never emits. The rule is normative, but its first real proof belongs to a supporting native host and must not be counted as web-verified.
+
 Accepted caller-held exceptions must also be observable. `explain*` reports the number of retained caller-held resources that remain on previous providers; filesystem increments the count for resolved streams and decrements it when they close or abort. Correctly rebound listener registries never contribute to this count: their old-provider listener count must be zero. A nonzero retained-resource count therefore means deliberate caller-held ownership, not invisible residue.
 
 ---
