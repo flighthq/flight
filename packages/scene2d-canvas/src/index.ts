@@ -41,6 +41,8 @@ export {
   destroyCanvasRenderState,
   enableCanvasBlendMode,
   enableCanvasClip,
+  explainCanvasScene2DCoverage,
+  hasCanvasScene2DCoverage,
   enableCanvasRenderCache,
   enableCanvasTextInput,
   enableCanvasTextureResolverGuards,
