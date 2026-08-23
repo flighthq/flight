@@ -305,6 +305,8 @@ A host must not implement no-op methods merely to satisfy a full backend interfa
 
 Absence is a declaration, not an inert implementation. An unsupported optional method is omitted. When a capability can represent no provider directly (as application/loop can), it uses `null` rather than a sentinel object whose required methods do nothing. When a required sentinel object is unavoidable, its return values must be the capability's documented absence values; it must not grow optional members or methods that claim unsupported power. Moving a no-op to `backend.method?.()` does not cure it.
 
+Filesystem applies this rule through an honest split. `FileSystemHostBackend` contains only the 21 genuine host methods; host-web never implements the seven symlink, permission, watch, and well-known-path absence members merely to satisfy the 28-member capability shape. The filesystem capability owns the full public surface and composes the narrow host provider with its seven documented absence results. Per-operation `explain*` identifies those operations as having no host implementation. A host author implementing `FileSystemHostBackend` therefore implements only power the host actually provides.
+
 ### Sentinel ownership
 
 When a legacy required interface makes a sentinel unavoidable, that sentinel belongs to the **capability package**, not to any host. Its methods may return only documented absence values. A host must not copy the sentinel, add optional unsupported members, or present an inert implementation as host power.
@@ -396,8 +398,11 @@ The deciding line is lifetime, not who happens to own an object:
 
 - **Unbounded relationships rebind.** Subscriptions and watches last until explicitly cancelled. On provider swap, detach from the old provider first, then attach the same caller handler to the new provider. This applies to clipboard, sensors, screen, lifecycle, connectivity, keyboard, and geolocation watches. The registry must remove entries on unsubscribe and be empty after the last unsubscribe; the old provider must not emit after the move.
 - **Bounded pending operations finish where they started.** A picker, share request, file read, or similar one-shot operation cannot coherently transfer mid-flight. It may complete on the originating provider, but must settle and release its resources. This is a bounded exception to shadow-inertness, not permission for an old provider to remain live indefinitely.
+- **Caller-held provider resources survive where transfer is impossible.** Shadow-inertness may be excepted when the caller knowingly holds and controls the surviving resource. Filesystem watches are ordinary unbounded relationships and rebind when a provider supports them. A stream-acquisition promise is bounded and completes on its originating provider; once resolved, the provider-specific stream remains open there until its caller closes or aborts it. It must not be transferred or force-closed on a provider swap, because doing so can destroy caller data. This differs from an unowned Accessibility DOM tree, which remains externally observable without a caller-held handle and must be disposed when shadowed.
 
 The required transition test is observable: subscribe, swap, emit from the new provider and observe the original handler; then emit from the old provider and observe nothing. Attach-new-before-detach-old is forbidden because it creates a double-delivery window.
+
+Accepted caller-held exceptions must also be observable. `explain*` reports the number of retained caller-held resources that remain on previous providers; filesystem increments the count for resolved streams and decrements it when they close or abort. A nonzero count is deliberate retained ownership, not invisible residue.
 
 ---
 
@@ -410,11 +415,12 @@ export interface BackendExplanation {
   readonly conflict: boolean;
   readonly layer: 'custom' | 'host' | 'host-not-enabled' | 'no-host-implementation';
   readonly operation: string | null;
+  readonly retainedPreviousProviderResources: number;
   readonly viability: 'unobserved' | 'available' | 'runtime-api-unavailable';
 }
 ```
 
-The fields answer separate questions. **Layer** says what is installed or selected. **Viability** says what the last real host operation observed about runtime API reachability. **Conflict** records a rejected second host without replacing the first. **Operation** names the real operation that produced the observation, or is `null` while unobserved. The type is shared across all capabilities in `@flighthq/types`.
+The fields answer separate questions. **Layer** says what is installed or selected. **Viability** says what the last real host operation observed about runtime API reachability. **Conflict** records a rejected second host without replacing the first. **Operation** names the real operation that produced the observation, or is `null` while unobserved. **Retained previous-provider resources** counts accepted caller-held resources still keeping a shadowed provider live; it is zero when none remain. The type is shared across all capabilities in `@flighthq/types`.
 
 ### Layer semantics
 
@@ -445,7 +451,7 @@ Promise settlement is not a viability predicate. An absent API or failure to acq
 | 4 | Host active | Last operation could not reach/acquire the API | `{ layer: 'host', viability: 'runtime-api-unavailable' }` |
 | 5 | No active host | Enabler exists or no host implementation exists | `{ layer: 'host-not-enabled' | 'no-host-implementation', viability: 'unobserved' }` |
 
-Every report additionally carries `operation` and `conflict`. `operation` is `null` in states 1, 2, and 5 and names the observing call in states 3 and 4. `conflict` is an independent boolean on every state; it never changes `layer`, `operation`, or `viability`.
+Every report additionally carries `operation`, `conflict`, and `retainedPreviousProviderResources`. `operation` is `null` in states 1, 2, and 5 and names the observing call in states 3 and 4. `conflict` is an independent boolean on every state; it never changes `layer`, `operation`, or `viability`. `retainedPreviousProviderResources` is likewise independent: normally zero, and nonzero only for accepted caller-held resources such as filesystem streams that remain open on an originating provider after a swap.
 
 For ambient-language capabilities (net, socket, textsegment), no explain*Backend is needed — the inline implementation always serves unless overridden by `set*Backend`.
 
