@@ -595,7 +595,9 @@ export function installNotificationHostBackend(backend: NotificationBackend): vo
     if (_host !== backend) _hostConflict = true;
     return;
   }
+  const previous = getNotificationBackend();
   _host = backend;
+  rebindNotificationSubscriptions(previous, getNotificationBackend());
 }
 
 // True when the host can show notifications. Cheap; reads the active backend.
@@ -639,32 +641,32 @@ export function observeNotificationHostResult(operation: string, succeeded: bool
 // Returns an unsubscribe function. On the basic web backend this never fires; a native host or the
 // service-worker web backend is required for action delivery.
 export function onNotificationAction(listener: (id: string, actionId: string) => void): () => void {
-  return getNotificationBackend().subscribeAction(listener);
+  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeAction(handler));
 }
 
 // Subscribes to notification body clicks, delivering the notification id.
 // Returns an unsubscribe function. On the basic web backend clicks are delivered per-instance via
 // the onclick event (wired by createWebNotificationBackend); a native host delivers a global feed.
 export function onNotificationClick(listener: (id: string) => void): () => void {
-  return getNotificationBackend().subscribeClick(listener);
+  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeClick(handler));
 }
 
 // Subscribes to notification dismiss/close events, delivering the notification id.
 // Returns an unsubscribe function.
 export function onNotificationDismiss(listener: (id: string) => void): () => void {
-  return getNotificationBackend().subscribeDismiss(listener);
+  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeDismiss(handler));
 }
 
 // Subscribes to inline-reply text actions, delivering the notification id, action id, and reply text.
 // Returns an unsubscribe function. Requires native host or service-worker backend; never fires on
 // the basic web backend.
 export function onNotificationReply(listener: (id: string, actionId: string, text: string) => void): () => void {
-  return getNotificationBackend().subscribeReply(listener);
+  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeReply(handler));
 }
 
 // Subscribes to notification show events, delivering the notification id. Returns an unsubscribe function.
 export function onNotificationShow(listener: (id: string) => void): () => void {
-  return getNotificationBackend().subscribeShow(listener);
+  return registerNotificationSubscription(listener, (backend, handler) => backend.subscribeShow(handler));
 }
 
 // Requests notification permission. Returns the tri-state result: 'granted', 'denied', or 'default'
@@ -675,10 +677,12 @@ export function requestNotificationPermission(): Promise<NotificationPermission>
 }
 
 export function resetNotificationBackendForTest(): void {
+  const previous = getNotificationBackend();
   _custom = null;
   _host = null;
   _hostConflict = false;
   _hostObservation = null;
+  rebindNotificationSubscriptions(previous, getNotificationBackend());
 }
 
 // Schedules a local notification for delivery at the time specified in the schedule. Returns the
@@ -693,7 +697,9 @@ export function scheduleNotification(
 }
 
 export function setNotificationBackend(backend: NotificationBackend | null): void {
+  const previous = getNotificationBackend();
   _custom = backend;
+  rebindNotificationSubscriptions(previous, getNotificationBackend());
 }
 
 // Shows a notification. Returns the notification id (echoes request.id when provided, else a
@@ -782,3 +788,36 @@ const _sentinel: NotificationBackend = {
     return false;
   },
 };
+
+type NotificationSubscription = {
+  unsubscribe: () => void;
+  rebind: (backend: NotificationBackend) => void;
+};
+
+// Module-level notification listeners are unbounded relationships: they survive provider swaps.
+// The registry owns only these public subscriptions; backend-internal resources remain backend-owned.
+const _notificationSubscriptions = new Set<NotificationSubscription>();
+
+function registerNotificationSubscription<TArgs extends unknown[]>(
+  listener: (...args: TArgs) => void,
+  subscribe: (backend: NotificationBackend, listener: (...args: TArgs) => void) => () => void,
+): () => void {
+  let activeUnsubscribe = subscribe(getNotificationBackend(), listener);
+  const entry: NotificationSubscription = {
+    rebind(backend) {
+      activeUnsubscribe();
+      activeUnsubscribe = subscribe(backend, listener);
+    },
+    unsubscribe() {
+      if (!_notificationSubscriptions.delete(entry)) return;
+      activeUnsubscribe();
+    },
+  };
+  _notificationSubscriptions.add(entry);
+  return entry.unsubscribe;
+}
+
+function rebindNotificationSubscriptions(previous: NotificationBackend, next: NotificationBackend): void {
+  if (previous === next) return;
+  for (const subscription of _notificationSubscriptions) subscription.rebind(next);
+}
