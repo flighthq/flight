@@ -1,3 +1,4 @@
+import { enableHostWebLoop } from '@flighthq/host-web';
 import type { KeyboardEventData, RichText, TextInputState } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -295,6 +296,7 @@ function updateHud(): void {
 focusField(normalField);
 
 // Render loop.
+enableHostWebLoop();
 const app = createApplication();
 connectSignal(app.onRender, () => {
   updateHud();
