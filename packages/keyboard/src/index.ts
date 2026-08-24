@@ -1,4 +1,5 @@
 export {
+  explainSoftKeyboardBackend,
   attachSoftKeyboard,
   createSoftKeyboard,
   createSoftKeyboardTransition,

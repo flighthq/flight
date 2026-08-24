@@ -1,4 +1,5 @@
 import type {
+  BackendExplanation,
   MediaSessionAction,
   MediaSessionActionDetails,
   MediaSessionBackend,
@@ -7,17 +8,14 @@ import type {
   MediaSessionPositionState,
 } from '@flighthq/types/contract';
 
-// Clears the handler for a transport action; the OS drops the corresponding button.
 export function clearMediaSessionActionHandler(action: MediaSessionAction): void {
   getMediaSessionBackend().setActionHandler(action, null);
 }
 
-// Clears the now-playing card from the OS media UI.
 export function clearMediaSessionMetadata(): void {
   getMediaSessionBackend().setMetadata(null);
 }
 
-// Clears the scrubber position/duration the OS shows.
 export function clearMediaSessionPositionState(): void {
   getMediaSessionBackend().setPositionState(null);
 }
@@ -27,6 +25,16 @@ export function clearMediaSessionPositionState(): void {
 // browsers, non-secure contexts — rather than throwing.
 export function createWebMediaSessionBackend(): MediaSessionBackend {
   return {
+    setActionHandler(action, handler) {
+      const session = getWebMediaSession();
+      if (session === null) return;
+      try {
+        // Some browsers throw for an action they do not support; treat that as a no-op.
+        session.setActionHandler(action, handler ? (details) => handler(details as MediaSessionActionDetails) : null);
+      } catch {
+        // Unsupported action — leave it unregistered.
+      }
+    },
     setMetadata(metadata) {
       const session = getWebMediaSession();
       if (session === null) return;
@@ -53,27 +61,50 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       // A null position clears the OS scrubber; the web API spells "clear" as an omitted argument.
       session.setPositionState(state ?? undefined);
     },
-    setActionHandler(action, handler) {
-      const session = getWebMediaSession();
-      if (session === null) return;
-      try {
-        // Some browsers throw for an action they do not support; treat that as a no-op.
-        session.setActionHandler(action, handler ? (details) => handler(details as MediaSessionActionDetails) : null);
-      } catch {
-        // Unsupported action — leave it unregistered.
-      }
-    },
   };
 }
 
-// The active media-session backend, or a lazily-created web default. There is always a backend.
-export function getMediaSessionBackend(): MediaSessionBackend {
-  if (_backend === null) _backend = createWebMediaSessionBackend();
-  return _backend;
+export function explainMediaSessionBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// Registers a handler the OS invokes when the user presses the corresponding transport button
-// (play/pause/next/seek/…). Pass null via clearMediaSessionActionHandler to remove it.
+export function getMediaSessionBackend(): MediaSessionBackend {
+  return _custom ?? _host ?? _sentinel;
+}
+
+export function installMediaSessionHostBackend(backend: MediaSessionBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeMediaSessionHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
+export function resetMediaSessionBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 export function setMediaSessionActionHandler(
   action: MediaSessionAction,
   handler: (details: Readonly<MediaSessionActionDetails>) => void,
@@ -81,27 +112,33 @@ export function setMediaSessionActionHandler(
   getMediaSessionBackend().setActionHandler(action, handler);
 }
 
-// Installs a native host media-session backend; pass null to fall back to the web default.
 export function setMediaSessionBackend(backend: MediaSessionBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
-// Publishes the now-playing card (title/artist/album/artwork) to the OS media UI.
 export function setMediaSessionMetadata(metadata: Readonly<MediaSessionMetadata>): void {
   getMediaSessionBackend().setMetadata(metadata);
 }
 
-// Reports whether media is playing/paused/absent so the OS shows the right play/pause affordance.
 export function setMediaSessionPlaybackState(state: MediaSessionPlaybackState): void {
   getMediaSessionBackend().setPlaybackState(state);
 }
 
-// Publishes the scrubber position/duration/playbackRate so the OS can render an accurate seek bar.
 export function setMediaSessionPositionState(state: Readonly<MediaSessionPositionState>): void {
   getMediaSessionBackend().setPositionState(state);
 }
 
-let _backend: MediaSessionBackend | null = null;
+const _sentinel: MediaSessionBackend = {
+  setActionHandler(_action, _handler) {},
+  setMetadata(_metadata) {},
+  setPlaybackState(_state) {},
+  setPositionState(_state) {},
+};
+
+let _custom: MediaSessionBackend | null = null;
+let _host: MediaSessionBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 
 function getWebMediaSession(): MediaSession | null {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return null;

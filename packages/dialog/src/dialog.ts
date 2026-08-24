@@ -1,4 +1,5 @@
 import type {
+  BackendExplanation,
   DialogBackend,
   FileDialogHandle,
   FileDialogStartIn,
@@ -59,10 +60,23 @@ export function createWebDialogBackend(): DialogBackend {
   };
 }
 
-// The active dialog backend, or a lazily-created web default. There is always a backend.
+export function explainDialogBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 export function getDialogBackend(): DialogBackend {
-  if (_backend === null) _backend = createWebDialogBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Retrieves the underlying web FileSystemDirectoryHandle stashed for a dialog directory handle, if any.
@@ -79,9 +93,30 @@ export function getWebFileSystemHandle(handle: Readonly<FileDialogHandle>): File
   return _fileSystemHandleRegistry.get(handle as FileDialogHandle) ?? null;
 }
 
-// Installs a native host dialog backend; pass null to fall back to the web default.
+export function installDialogHostBackend(backend: DialogBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeDialogHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
+export function resetDialogBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 export function setDialogBackend(backend: DialogBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Shows a yes/no confirmation. Returns false on cancel or when the host lacks the surface.
@@ -141,7 +176,60 @@ export function showWarningDialog(options: Readonly<MessageDialogOptions>): Prom
   return getDialogBackend().message({ ...options, kind: 'warning' });
 }
 
-let _backend: DialogBackend | null = null;
+let _custom: DialogBackend | null = null;
+let _host: DialogBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+const _sentinel: DialogBackend = {
+  async confirm() {
+    return false;
+  },
+  async message(options) {
+    return { buttonIndex: 0, cancelled: false, checkboxChecked: options.checkboxChecked ?? false };
+  },
+  async openDirectory() {
+    return [];
+  },
+  async openFile() {
+    return [];
+  },
+  async prompt() {
+    return null;
+  },
+  async saveFile() {
+    return null;
+  },
+};
+
+// Registry mapping FileDialogHandle → live web FileSystemDirectoryHandle, enabling @flighthq/filesystem
+// to enumerate and read directories without dialog owning the I/O. Populated by showDirectoryPicker path.
+// Keys are plain FileDialogHandle objects (reference equality); values are the native handles.
+const _fileSystemDirectoryHandleRegistry = new WeakMap<FileDialogHandle, FileSystemDirectoryHandle>();
+
+// Registry mapping FileDialogHandle → live web FileSystemFileHandle, enabling @flighthq/filesystem
+// to read from or write to a picked file without dialog owning the I/O. Dialog holds this registry
+// because it is the only party that creates and observes the FileSystemFileHandle lifecycle.
+// Keys are plain FileDialogHandle objects (reference equality); values are the native handles.
+const _fileSystemHandleRegistry = new WeakMap<FileDialogHandle, FileSystemFileHandle>();
+
+// Minimal type stubs for the File System Access API, which is not in all lib.dom.d.ts versions.
+interface FileSystemFileHandle {
+  readonly kind: 'file';
+  readonly name: string;
+  getFile(): Promise<File>;
+  createWritable(): Promise<FileSystemWritableFileStream>;
+}
+
+interface FileSystemWritableFileStream {
+  write(data: BufferSource | Blob | string): Promise<void>;
+  close(): Promise<void>;
+}
+
+interface FileSystemDirectoryHandle {
+  readonly kind: 'directory';
+  readonly name: string;
+}
 
 // Builds a FileDialogFilter accept list for the File System Access API's 'types' option.
 function buildFileSystemAccessTypes(
@@ -380,35 +468,6 @@ async function saveWebFile(options: Readonly<SaveFileDialogOptions>): Promise<Fi
   } catch {
     return null;
   }
-}
-
-// Registry mapping FileDialogHandle → live web FileSystemDirectoryHandle, enabling @flighthq/filesystem
-// to enumerate and read directories without dialog owning the I/O. Populated by showDirectoryPicker path.
-// Keys are plain FileDialogHandle objects (reference equality); values are the native handles.
-const _fileSystemDirectoryHandleRegistry = new WeakMap<FileDialogHandle, FileSystemDirectoryHandle>();
-
-// Registry mapping FileDialogHandle → live web FileSystemFileHandle, enabling @flighthq/filesystem
-// to read from or write to a picked file without dialog owning the I/O. Dialog holds this registry
-// because it is the only party that creates and observes the FileSystemFileHandle lifecycle.
-// Keys are plain FileDialogHandle objects (reference equality); values are the native handles.
-const _fileSystemHandleRegistry = new WeakMap<FileDialogHandle, FileSystemFileHandle>();
-
-// Minimal type stubs for the File System Access API, which is not in all lib.dom.d.ts versions.
-interface FileSystemFileHandle {
-  readonly kind: 'file';
-  readonly name: string;
-  getFile(): Promise<File>;
-  createWritable(): Promise<FileSystemWritableFileStream>;
-}
-
-interface FileSystemWritableFileStream {
-  write(data: BufferSource | Blob | string): Promise<void>;
-  close(): Promise<void>;
-}
-
-interface FileSystemDirectoryHandle {
-  readonly kind: 'directory';
-  readonly name: string;
 }
 
 interface FileSystemAccessOpenPickerOptions {

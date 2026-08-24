@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   AppLaunchKind,
   AppLifecycle,
@@ -180,6 +181,21 @@ export function disposeAppLifecycle(app: AppLifecycle): void {
   _savedState.delete(app);
 }
 
+export function explainLifecycleBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // Returns the kind of launch — 'cold' (fresh process) or 'warm' (resumed from background). The web
 // backend approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
 // others → 'cold'). Returns 'warm' as a safe fallback when the backend does not implement
@@ -194,10 +210,16 @@ export function getAppLifecycleState(): AppLifecycleState {
   return getLifecycleBackend().getState();
 }
 
-// The active lifecycle backend, or a lazily-created web default. There is always a backend.
 export function getLifecycleBackend(): LifecycleBackend {
-  if (_backend === null) _backend = createWebLifecycleBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
+}
+
+export function installLifecycleHostBackend(backend: LifecycleBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // Returns true when the application is in the 'active' state (visible and focused).
@@ -216,6 +238,13 @@ export function isAppInactive(): boolean {
   return getLifecycleBackend().getState() === 'inactive';
 }
 
+export function observeLifecycleHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 // Emits app.onBackButton and returns whether the back action may proceed. Returns false when a
 // listener vetoed by calling cancelSignal(app.onBackButton), meaning the listener handled
 // navigation itself. Returns true when no listener consumed the event and the host should perform
@@ -226,11 +255,34 @@ export function requestAppBack(app: AppLifecycle): boolean {
   return app.onBackButton.data?.cancelled !== true;
 }
 
-// Installs a native host lifecycle backend; pass null to fall back to the web default.
-export function setLifecycleBackend(backend: LifecycleBackend | null): void {
-  _backend = backend;
+export function resetLifecycleBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
 }
 
-let _backend: LifecycleBackend | null = null;
+export function setLifecycleBackend(backend: LifecycleBackend | null): void {
+  _custom = backend;
+}
+
 const _savedState = new WeakMap<AppLifecycle, Record<string, unknown>>();
+const _sentinel: LifecycleBackend = {
+  getState(): AppLifecycleState {
+    return 'active';
+  },
+  getLaunchKind(): AppLaunchKind {
+    return 'cold';
+  },
+  subscribe(): () => void {
+    return () => {};
+  },
+  subscribeMemoryWarning(): () => void {
+    return () => {};
+  },
+};
 const _subscriptions = new WeakMap<AppLifecycle, () => void>();
+let _custom: LifecycleBackend | null = null;
+let _host: LifecycleBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;

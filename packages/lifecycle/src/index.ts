@@ -1,4 +1,5 @@
 export {
+  explainLifecycleBackend,
   attachAppLifecycle,
   createAppLifecycle,
   detachAppLifecycle,

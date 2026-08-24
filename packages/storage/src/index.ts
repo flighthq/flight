@@ -1,4 +1,5 @@
 export {
+  explainStorageBackend,
   clearStorage,
   clearStorageNamespace,
   createStorageNamespace,

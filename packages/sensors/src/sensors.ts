@@ -1,5 +1,6 @@
 import { DEG_TO_RAD, RAD_TO_DEG } from '@flighthq/math/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   AmbientLightReading,
   MotionReading,
@@ -576,10 +577,24 @@ export function disposeSensors(sensors: Sensors): void {
   detachSensors(sensors);
 }
 
-// The active sensors backend, or a lazily-created web default. There is always a backend.
+export function explainSensorsBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active sensors backend. Precedence: custom > host > sentinel.
 export function getSensorsBackend(): SensorsBackend {
-  if (_backend === null) _backend = createWebSensorsBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Queries the current permission state for the given sensor without triggering a permission prompt.
@@ -635,9 +650,24 @@ export function hasProximitySensor(): boolean {
   return getSensorsBackend().isProximitySupported();
 }
 
+export function installSensorsHostBackend(backend: SensorsBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 // True if any motion sensors (accelerometer or gyroscope) are available on this device.
 export function isSensorsSupported(): boolean {
   return getSensorsBackend().isMotionSupported();
+}
+
+export function observeSensorsHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Requests sensor permission where the host gates it (iOS); resolves true when granted or ungated.
@@ -645,12 +675,23 @@ export function requestSensorsPermission(): Promise<boolean> {
   return getSensorsBackend().requestPermission();
 }
 
-// Installs a native host sensors backend; pass null to fall back to the web default.
-export function setSensorsBackend(backend: SensorsBackend | null): void {
-  _backend = backend;
+export function resetSensorsBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
 }
 
-let _backend: SensorsBackend | null = null;
+// Installs a custom sensors backend; pass null to clear.
+export function setSensorsBackend(backend: SensorsBackend | null): void {
+  _custom = backend;
+}
+
+let _custom: SensorsBackend | null = null;
+let _host: SensorsBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+const _subscriptions = new WeakMap<Sensors, () => void>();
 const _absoluteOrientation: OrientationReading = createOrientationReading();
 const _ambientLight: AmbientLightReading = createAmbientLightReading();
 const _gravity: MotionReading = createMotionReading();
@@ -660,7 +701,74 @@ const _motionAcceleration: MotionReading = createMotionReading();
 const _motionRotationRate: RotationRateReading = createRotationRateReading();
 const _orientation: OrientationReading = createOrientationReading();
 const _quaternionReading: QuaternionReading = createQuaternionReading();
-const _subscriptions = new WeakMap<Sensors, () => void>();
+
+const _noopUnsubscribe = () => {};
+
+const _sentinel: SensorsBackend = {
+  getPermissionState(): Promise<SensorsPermissionState> {
+    return Promise.resolve('unsupported');
+  },
+  isAmbientLightSupported(): boolean {
+    return false;
+  },
+  isBarometerSupported(): boolean {
+    return false;
+  },
+  isGravitySupported(): boolean {
+    return false;
+  },
+  isGyroscopeSupported(): boolean {
+    return false;
+  },
+  isLinearAccelerationSupported(): boolean {
+    return false;
+  },
+  isMagnetometerSupported(): boolean {
+    return false;
+  },
+  isMotionSupported(): boolean {
+    return false;
+  },
+  isOrientationSupported(): boolean {
+    return false;
+  },
+  isProximitySupported(): boolean {
+    return false;
+  },
+  requestPermission(): Promise<boolean> {
+    return Promise.resolve(false);
+  },
+  subscribeAbsoluteOrientation(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeAmbientLight(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeBarometer(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeGravity(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeLinearAcceleration(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeMagnetometer(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeMotion(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeOrientation(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeProximity(): () => void {
+    return _noopUnsubscribe;
+  },
+  subscribeQuaternion(): () => void {
+    return _noopUnsubscribe;
+  },
+};
 
 interface WebMotionVector {
   x?: number | null;

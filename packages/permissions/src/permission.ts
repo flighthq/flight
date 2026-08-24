@@ -1,4 +1,5 @@
 import type {
+  BackendExplanation,
   PermissionBackend,
   PermissionName,
   PermissionRequestFallbackGuard,
@@ -22,6 +23,21 @@ export function createWebPermissionBackend(): PermissionBackend {
   };
 }
 
+export function explainPermissionBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // Reports WHY a state read came out the way it did, for the caller who got 'prompt' and cannot act on it.
 // That one value means three different things — undecided, unqueryable name, or no Permissions API at all —
 // and they have opposite remedies. Runs the same read as getPermissionState and reports which branch the
@@ -32,7 +48,7 @@ export function createWebPermissionBackend(): PermissionBackend {
 // 'unqueryable' from 'unsupported', because only it knows whether navigator.permissions exists.
 export async function explainPermissionState(name: PermissionName): Promise<PermissionStateExplanation> {
   const backend = getPermissionBackend();
-  if (backend !== _webBackend) {
+  if (_custom !== null) {
     const state = await backend.getState(name);
     return { name, source: state === 'prompt' ? 'undecided' : 'decided', state };
   }
@@ -49,13 +65,8 @@ export async function explainPermissionState(name: PermissionName): Promise<Perm
   }
 }
 
-// The active permission backend, lazily defaulting to the web backend. There is always a backend.
 export function getPermissionBackend(): PermissionBackend {
-  if (_backend === null) {
-    _backend = createWebPermissionBackend();
-    _webBackend = _backend;
-  }
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Resolves the current state of a named permission without prompting. Returns 'granted', 'denied',
@@ -72,6 +83,21 @@ export function getPermissionStates(names: readonly PermissionName[]): Promise<P
   return Promise.all(names.map((name) => getPermissionState(name)));
 }
 
+export function installPermissionHostBackend(backend: PermissionBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observePermissionHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 // Requests a named permission, triggering the OS prompt where the platform supports it. Resolves to
 // the resulting state; a name with no request path falls back to a plain state query, and a missing
 // API resolves to a sentinel rather than throwing.
@@ -79,9 +105,15 @@ export function requestPermission(name: PermissionName): Promise<PermissionState
   return getPermissionBackend().request(name);
 }
 
-// Installs a native host permission backend; pass null to fall back to a fresh lazy web default.
+export function resetPermissionBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 export function setPermissionBackend(backend: PermissionBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Diagnostics seam for the silent degradation in requestPermission: a name with no concrete request path
@@ -90,12 +122,6 @@ export function setPermissionBackend(backend: PermissionBackend | null): void {
 export function setPermissionRequestFallbackGuard(guard: PermissionRequestFallbackGuard | null): void {
   _requestFallbackGuard = guard;
 }
-
-let _backend: PermissionBackend | null = null;
-let _requestFallbackGuard: PermissionRequestFallbackGuard | null = null;
-// Identity of the lazily-created default, so explainPermissionState can tell whether the active backend is
-// the web one whose branches it knows how to describe.
-let _webBackend: PermissionBackend | null = null;
 
 // The per-name fallback state when the Permissions API is absent or the name is unqueryable.
 // notifications is still readable synchronously via Notification.permission ('default' → 'prompt');
@@ -107,6 +133,38 @@ function readWebFallbackPermissionState(name: PermissionName): PermissionState {
   }
   return 'prompt';
 }
+
+function getWebNotification(): typeof Notification | null {
+  return typeof Notification !== 'undefined' ? Notification : null;
+}
+
+function getWebNotificationPermission(): NotificationPermission | null {
+  const notification = getWebNotification();
+  if (notification === null) return null;
+  return notification.permission ?? null;
+}
+
+function getWebPermissions(): Permissions | null {
+  if (typeof navigator === 'undefined') return null;
+  const permissions = navigator.permissions ?? null;
+  if (permissions === null || typeof permissions.query !== 'function') return null;
+  return permissions;
+}
+
+let _custom: PermissionBackend | null = null;
+let _host: PermissionBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+let _requestFallbackGuard: PermissionRequestFallbackGuard | null = null;
+
+const _sentinel: PermissionBackend = {
+  getState() {
+    return Promise.resolve('prompt' as PermissionState);
+  },
+  request() {
+    return Promise.resolve('prompt' as PermissionState);
+  },
+};
 
 async function readWebPermissionState(name: PermissionName): Promise<PermissionState> {
   const permissions = getWebPermissions();
@@ -154,17 +212,6 @@ async function requestWebMediaPermission(kind: 'audio' | 'video'): Promise<Permi
   }
 }
 
-async function requestWebNotificationPermission(): Promise<PermissionState> {
-  const notification = getWebNotification();
-  if (notification === null || typeof notification.requestPermission !== 'function') return 'prompt';
-  try {
-    const result = await notification.requestPermission();
-    return result === 'default' ? 'prompt' : (result as PermissionState);
-  } catch {
-    return 'prompt';
-  }
-}
-
 // Observes a MIDI access grant purely for the prompt; the access object is discarded, mirroring the
 // discarded geolocation position. sysex is not requested — that is a strictly larger prompt than the
 // 'midi' permission this name denotes.
@@ -178,6 +225,25 @@ async function requestWebMidiPermission(): Promise<PermissionState> {
   } catch {
     return 'denied';
   }
+}
+
+async function requestWebNotificationPermission(): Promise<PermissionState> {
+  const notification = getWebNotification();
+  if (notification === null || typeof notification.requestPermission !== 'function') return 'prompt';
+  try {
+    const result = await notification.requestPermission();
+    return result === 'default' ? 'prompt' : (result as PermissionState);
+  } catch {
+    return 'prompt';
+  }
+}
+
+async function requestWebPermission(name: PermissionName): Promise<PermissionState> {
+  const router = _permissionRequestRouters[name];
+  if (router !== undefined) return await router();
+  const state = await readWebPermissionState(name);
+  _requestFallbackGuard?.(name, state);
+  return state;
 }
 
 async function requestWebPersistentStoragePermission(): Promise<PermissionState> {
@@ -207,14 +273,6 @@ async function requestWebScreenWakeLockPermission(): Promise<PermissionState> {
   }
 }
 
-async function requestWebPermission(name: PermissionName): Promise<PermissionState> {
-  const router = _permissionRequestRouters[name];
-  if (router !== undefined) return await router();
-  const state = await readWebPermissionState(name);
-  _requestFallbackGuard?.(name, state);
-  return state;
-}
-
 // Stops every track of a granted media stream, releasing the device. Guards a missing getTracks so a
 // stubbed or partial stream never throws.
 function stopMediaStreamTracks(stream: Readonly<MediaStream>): void {
@@ -232,23 +290,6 @@ function getWebGeolocation(): Geolocation | null {
 function getWebMediaDevices(): MediaDevices | null {
   if (typeof navigator === 'undefined') return null;
   return navigator.mediaDevices ?? null;
-}
-
-function getWebNotification(): typeof Notification | null {
-  return typeof Notification !== 'undefined' ? Notification : null;
-}
-
-function getWebNotificationPermission(): NotificationPermission | null {
-  const notification = getWebNotification();
-  if (notification === null) return null;
-  return notification.permission ?? null;
-}
-
-function getWebPermissions(): Permissions | null {
-  if (typeof navigator === 'undefined') return null;
-  const permissions = navigator.permissions ?? null;
-  if (permissions === null || typeof permissions.query !== 'function') return null;
-  return permissions;
 }
 
 function getWebStorageManager(): StorageManager | null {

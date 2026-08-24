@@ -1,4 +1,5 @@
 export {
+  explainScreenBackend,
   attachScreenSignals,
   createScreenMode,
   detachScreenSignals,

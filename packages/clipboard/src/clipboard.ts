@@ -1,5 +1,11 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { ClipboardBackend, ClipboardBookmark, ClipboardWatch, ClipboardWriteItem } from '@flighthq/types/contract';
+import type {
+  BackendExplanation,
+  ClipboardBackend,
+  ClipboardBookmark,
+  ClipboardWatch,
+  ClipboardWriteItem,
+} from '@flighthq/types/contract';
 import { ClipboardFormatBookmark, ClipboardFormatHtml, ClipboardFormatRtf } from '@flighthq/types/contract';
 
 // Attaches `watch` to the active backend's change subscription. Emits watch.onChange on each
@@ -225,10 +231,24 @@ export function disposeClipboardWatch(watch: ClipboardWatch): void {
   detachClipboardWatch(watch);
 }
 
-// The active clipboard backend, or a lazily-created web default. There is always a backend.
+export function explainClipboardBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active clipboard backend. Precedence: custom > host > sentinel.
 export function getClipboardBackend(): ClipboardBackend {
-  if (_backend === null) _backend = createWebClipboardBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns a monotonically increasing count from the active backend, or -1 if unsupported.
@@ -271,6 +291,21 @@ export function hasClipboardText(): Promise<boolean> {
   return getClipboardBackend().hasText();
 }
 
+export function installClipboardHostBackend(backend: ClipboardBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeClipboardHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 // Reads multiple formats in one round-trip; missing formats are omitted from the result.
 export function readClipboard(formats: readonly string[]): Promise<Readonly<Record<string, string>>> {
   return getClipboardBackend().readItems(formats);
@@ -311,9 +346,16 @@ export function readClipboardText(): Promise<string> {
   return getClipboardBackend().readText();
 }
 
-// Installs a native host clipboard backend; pass null to fall back to the web default.
+export function resetClipboardBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+// Installs a custom clipboard backend; pass null to clear the custom override.
 export function setClipboardBackend(backend: ClipboardBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Writes multiple formats atomically so a paste target picks its best representation.
@@ -356,8 +398,82 @@ export function writeClipboardText(text: string): Promise<boolean> {
   return getClipboardBackend().writeText(text);
 }
 
-let _backend: ClipboardBackend | null = null;
+const _sentinel: ClipboardBackend = {
+  async clear() {
+    return false;
+  },
+  getChangeCount() {
+    return -1;
+  },
+  async getFormats() {
+    return [];
+  },
+  async hasFormat() {
+    return false;
+  },
+  async hasImage() {
+    return false;
+  },
+  async hasText() {
+    return false;
+  },
+  async readBookmark() {
+    return null;
+  },
+  async readFiles() {
+    return [];
+  },
+  async readFormat() {
+    return '';
+  },
+  async readHtml() {
+    return '';
+  },
+  async readImage() {
+    return '';
+  },
+  async readItems() {
+    return {};
+  },
+  async readRTF() {
+    return '';
+  },
+  async readText() {
+    return '';
+  },
+  subscribeClipboardChange() {
+    return () => {};
+  },
+  async writeBookmark() {
+    return false;
+  },
+  async writeFiles() {
+    return false;
+  },
+  async writeFormat() {
+    return false;
+  },
+  async writeHtml() {
+    return false;
+  },
+  async writeImage() {
+    return false;
+  },
+  async writeItems() {
+    return false;
+  },
+  async writeRTF() {
+    return false;
+  },
+  async writeText() {
+    return false;
+  },
+};
 const _watchSubscriptions = new WeakMap<ClipboardWatch, () => void>();
+let _custom: ClipboardBackend | null = null;
+let _host: ClipboardBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 
 // Converts a format/data pair into a Blob. Image data URLs are fetched into their decoded bytes;
 // every other flavor wraps the string payload directly under its MIME type.

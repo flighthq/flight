@@ -1,3 +1,4 @@
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type { WebcamBackend, WebcamCaptureOptions, WebcamPhoto, WebcamVideo } from '@flighthq/types/contract';
 
 // Builds the default web backend over a transient <input type="file">. capture resolves to null when
@@ -8,6 +9,7 @@ export function createWebWebcamBackend(): WebcamBackend {
     capture(options) {
       return new Promise((resolve) => {
         if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+          observeWebcamHostResult('capture', false);
           resolve(null);
           return;
         }
@@ -24,6 +26,7 @@ export function createWebWebcamBackend(): WebcamBackend {
             }
             const reader = new FileReader();
             reader.onload = () => {
+              observeWebcamHostResult('capture', true);
               resolve({
                 dataUrl: typeof reader.result === 'string' ? reader.result : '',
                 width: 0,
@@ -31,11 +34,15 @@ export function createWebWebcamBackend(): WebcamBackend {
                 format: file.type,
               });
             };
-            reader.onerror = () => resolve(null);
+            reader.onerror = () => {
+              observeWebcamHostResult('capture', false);
+              resolve(null);
+            };
             reader.readAsDataURL(file);
           };
           input.click();
         } catch {
+          observeWebcamHostResult('capture', false);
           resolve(null);
         }
       });
@@ -43,6 +50,7 @@ export function createWebWebcamBackend(): WebcamBackend {
     captureVideo(options) {
       return new Promise((resolve) => {
         if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+          observeWebcamHostResult('captureVideo', false);
           resolve(null);
           return;
         }
@@ -59,42 +67,81 @@ export function createWebWebcamBackend(): WebcamBackend {
             }
             const reader = new FileReader();
             reader.onload = () => {
+              observeWebcamHostResult('captureVideo', true);
               resolve({
                 dataUrl: typeof reader.result === 'string' ? reader.result : '',
-                // The web file input cannot decode the clip; native hosts report a real duration.
                 duration: 0,
                 format: file.type,
               });
             };
-            reader.onerror = () => resolve(null);
+            reader.onerror = () => {
+              observeWebcamHostResult('captureVideo', false);
+              resolve(null);
+            };
             reader.readAsDataURL(file);
           };
           input.click();
         } catch {
+          observeWebcamHostResult('captureVideo', false);
           resolve(null);
         }
       });
     },
     async requestPermission() {
-      // The Permissions API only reports state; it does not prompt. A native host performs a real
-      // permission request. Returns false when the API is absent (jsdom, older browsers) or denied.
-      if (typeof navigator === 'undefined') return false;
+      if (typeof navigator === 'undefined') {
+        observeWebcamHostResult('requestPermission', false);
+        return false;
+      }
       try {
         const permissions = navigator.permissions;
-        if (permissions === undefined || typeof permissions.query !== 'function') return false;
+        if (permissions === undefined || typeof permissions.query !== 'function') {
+          observeWebcamHostResult('requestPermission', false);
+          return false;
+        }
         const status = await permissions.query({ name: 'camera' as PermissionName });
-        return status.state === 'granted';
+        const granted = status.state === 'granted';
+        observeWebcamHostResult('requestPermission', granted);
+        return granted;
       } catch {
+        observeWebcamHostResult('requestPermission', false);
         return false;
       }
     },
   };
 }
 
-// The active camera backend, or a lazily-created web default. There is always a backend.
+export function explainWebcamBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 export function getWebcamBackend(): WebcamBackend {
-  if (_backend === null) _backend = createWebWebcamBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
+}
+
+export function installWebcamHostBackend(backend: WebcamBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeWebcamHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Records a video from the device camera. Resolves null when cancelled, denied, or unavailable.
@@ -107,14 +154,20 @@ export function requestWebcamPermission(): Promise<boolean> {
   return getWebcamBackend().requestPermission();
 }
 
+export function resetWebcamBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Picks an existing image from the photo library. Resolves null when cancelled or unavailable.
 export function selectWebcamImage(options?: Readonly<WebcamCaptureOptions>): Promise<WebcamPhoto | null> {
   return getWebcamBackend().capture({ ...options, source: 'photos' });
 }
 
-// Installs a native host camera backend; pass null to fall back to the web default.
 export function setWebcamBackend(backend: WebcamBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Captures a photo from the device camera. Resolves null when cancelled, denied, or unavailable.
@@ -122,4 +175,19 @@ export function takeWebcamPhoto(options?: Readonly<WebcamCaptureOptions>): Promi
   return getWebcamBackend().capture({ ...options, source: 'camera' });
 }
 
-let _backend: WebcamBackend | null = null;
+let _custom: WebcamBackend | null = null;
+let _host: WebcamBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+const _sentinel: WebcamBackend = {
+  async capture() {
+    return null;
+  },
+  async captureVideo() {
+    return null;
+  },
+  async requestPermission() {
+    return false;
+  },
+};

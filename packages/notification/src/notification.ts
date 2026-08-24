@@ -1,4 +1,5 @@
 import type {
+  BackendExplanation,
   NotificationBackend,
   NotificationCapabilities,
   NotificationChannel,
@@ -534,6 +535,21 @@ export function deleteNotificationChannel(id: string): void {
   backend.deleteNotificationChannel?.(id);
 }
 
+export function explainNotificationBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // Returns all currently-displayed notifications. Returns an empty array on backends that do not
 // support active-notification introspection.
 export function getActiveNotifications(): Promise<ReadonlyArray<Readonly<NotificationRequest>>> {
@@ -546,10 +562,8 @@ export function getLaunchNotification(): Promise<Readonly<NotificationRequest> |
   return getNotificationBackend().getLaunchNotification();
 }
 
-// The active notification backend, or a lazily-created web default. There is always a backend.
 export function getNotificationBackend(): NotificationBackend {
-  if (_backend === null) _backend = createWebNotificationBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns a plain-data record of what the active backend supports.
@@ -574,6 +588,14 @@ export function getNotificationPermission(): NotificationPermission {
 // Returns all locally-scheduled (not yet delivered) notifications.
 export function getPendingNotifications(): Promise<ReadonlyArray<Readonly<ScheduledNotification>>> {
   return getNotificationBackend().getPendingNotifications();
+}
+
+export function installNotificationHostBackend(backend: NotificationBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // True when the host can show notifications. Cheap; reads the active backend.
@@ -604,6 +626,13 @@ export function notifyServiceWorkerBackendAction(
   } else if (b._dispatchClick !== undefined) {
     b._dispatchClick(message.notificationId);
   }
+}
+
+export function observeNotificationHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Subscribes to notification action-button activations, delivering the notification id and action id.
@@ -645,7 +674,12 @@ export function requestNotificationPermission(): Promise<NotificationPermission>
   return getNotificationBackend().requestPermission();
 }
 
-// Channel management — no-ops on web (no channel model); load-bearing on Android-class native hosts.
+export function resetNotificationBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
 
 // Schedules a local notification for delivery at the time specified in the schedule. Returns the
 // notification id (echoes request.id when provided, else a generated id). Returns '' when
@@ -658,9 +692,8 @@ export function scheduleNotification(
   return getNotificationBackend().scheduleNotification(request, schedule);
 }
 
-// Installs a native host notification backend; pass null to fall back to the web default.
 export function setNotificationBackend(backend: NotificationBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Shows a notification. Returns the notification id (echoes request.id when provided, else a
@@ -694,4 +727,58 @@ function _repeatMs(repeat: NonNullable<NotificationSchedule['repeat']>): number 
   }
 }
 
-let _backend: NotificationBackend | null = null;
+const _noop = (): (() => void) => () => {};
+
+let _custom: NotificationBackend | null = null;
+let _host: NotificationBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+const _sentinel: NotificationBackend = {
+  cancelScheduledNotification() {},
+  closeAllNotifications() {},
+  closeNotification() {},
+  getCapabilities(): NotificationCapabilities {
+    return {
+      actions: false,
+      channels: false,
+      coldStart: false,
+      image: false,
+      listActive: false,
+      scheduling: false,
+      textReply: false,
+    };
+  },
+  async getActiveNotifications() {
+    return [];
+  },
+  async getLaunchNotification() {
+    return null;
+  },
+  async getPendingNotifications() {
+    return [];
+  },
+  getPermission(): NotificationPermission {
+    return 'denied';
+  },
+  isSupported() {
+    return false;
+  },
+  async notify() {
+    return '';
+  },
+  async requestPermission(): Promise<NotificationPermission> {
+    return 'denied';
+  },
+  async scheduleNotification() {
+    return '';
+  },
+  subscribeAction: _noop,
+  subscribeClick: _noop,
+  subscribeDismiss: _noop,
+  subscribeReply: _noop,
+  subscribeShow: _noop,
+  async updateNotification() {
+    return false;
+  },
+};

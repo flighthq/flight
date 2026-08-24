@@ -1,4 +1,5 @@
 export {
+  explainClipboardBackend,
   attachClipboardWatch,
   clearClipboard,
   createClipboardWatch,

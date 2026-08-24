@@ -38,9 +38,29 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/accessibility": "*",
     "@flighthq/application": "*",
+    "@flighthq/clipboard": "*",
+    "@flighthq/connectivity": "*",
+    "@flighthq/device": "*",
+    "@flighthq/dialog": "*",
+    "@flighthq/filesystem": "*",
+    "@flighthq/geolocation": "*",
     "@flighthq/glyphatlas": "*",
-    "@flighthq/types": "*"
+    "@flighthq/haptics": "*",
+    "@flighthq/image": "*",
+    "@flighthq/keyboard": "*",
+    "@flighthq/lifecycle": "*",
+    "@flighthq/mediasession": "*",
+    "@flighthq/notification": "*",
+    "@flighthq/permissions": "*",
+    "@flighthq/platform": "*",
+    "@flighthq/screen": "*",
+    "@flighthq/sensors": "*",
+    "@flighthq/share": "*",
+    "@flighthq/storage": "*",
+    "@flighthq/types": "*",
+    "@flighthq/webcam": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

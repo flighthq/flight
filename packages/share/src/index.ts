@@ -1,4 +1,5 @@
 export {
+  explainShareBackend,
   attachShareSignals,
   canShareContent,
   detachShareSignals,

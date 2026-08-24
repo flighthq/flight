@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   ShareBackend,
   ShareContent,
@@ -8,31 +9,14 @@ import type {
   ShareSignals,
 } from '@flighthq/types/contract';
 
-// Attaches `signals` to receive share result events emitted by shareContentWithResult calls.
-// Idempotent by construction — the attached groups are a set, so attaching twice delivers once.
-// Pair with detachShareSignals / disposeShareSignals.
-//
-// Note: shareContent (the boolean convenience wrapper) does NOT emit signals — only
-// shareContentWithResult emits onShareResult. If you need signals on every share, use
-// shareContentWithResult directly.
 export function attachShareSignals(signals: ShareSignals): void {
   _attachedSignals.add(signals);
 }
 
-// True when the active backend can share the given content. Returns false when sharing is
-// unavailable or the content is not shareable by this platform (e.g. a MIME type not accepted by
-// the share sheet). Distinct from isShareAvailable: that probe asks whether sharing is possible at
-// all; this asks whether this specific content is shareable.
 export function canShareContent(content: Readonly<ShareContent>): boolean {
   return getShareBackend().canShare(content);
 }
 
-// Builds the default web backend over navigator.share / navigator.canShare.
-// share and shareWithResult resolve to false/dismissed=true when the Web Share API is absent (jsdom,
-// unsupported browsers) or the user cancels. canShare returns false when the API is absent or the
-// platform cannot share the given content. isAvailable returns true when navigator.share exists.
-// Files are converted from ShareFile (data URL) to DOM File at the boundary; conversion errors
-// fall back to false.
 export function createWebShareBackend(): ShareBackend {
   return {
     isAvailable() {
@@ -71,7 +55,6 @@ export function createWebShareBackend(): ShareBackend {
         await navigator.share(data);
         return { completed: true, activityType: null, dismissed: false };
       } catch (err) {
-        // AbortError means the user explicitly cancelled; other errors are failures.
         const dismissed = err instanceof Error && err.name === 'AbortError';
         return { completed: false, activityType: null, dismissed };
       }
@@ -79,35 +62,39 @@ export function createWebShareBackend(): ShareBackend {
   };
 }
 
-// Stops delivery to `signals` and forgets its subscription. Safe to call when not attached.
 export function detachShareSignals(signals: ShareSignals): void {
   _attachedSignals.delete(signals);
 }
 
-// Releases `signals` for garbage collection by detaching its subscription. The signals remain plain
-// GC-managed memory afterward.
 export function disposeShareSignals(signals: ShareSignals): void {
   detachShareSignals(signals);
 }
 
-// Enables a signals group for share result events. Signals stay inert until attachShareSignals is
-// called. This is the opt-in; the cost is assumed when attached.
 export function enableShareSignals(): ShareSignals {
   return {
     onShareResult: createSignal(),
   };
 }
 
-// The active share backend, or a lazily-created web default. There is always a backend.
-export function getShareBackend(): ShareBackend {
-  if (_backend === null) _backend = createWebShareBackend();
-  return _backend;
+export function explainShareBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// True when content has at least one populated field (title, text, url, or a non-empty files array).
-// The Web Share API requires at least one field to be present; calling shareContent with an empty
-// payload will throw on some engines, which shareContent swallows to false. Use this to detect
-// an obviously-empty payload before calling shareContent.
+export function getShareBackend(): ShareBackend {
+  return _custom ?? _host ?? _sentinel;
+}
+
 export function hasShareContentFields(content: Readonly<ShareContent>): boolean {
   if (content.title !== undefined && content.title !== '') return true;
   if (content.text !== undefined && content.text !== '') return true;
@@ -116,32 +103,41 @@ export function hasShareContentFields(content: Readonly<ShareContent>): boolean 
   return false;
 }
 
-// True when the active backend's platform supports sharing at all (capability-level probe,
-// independent of any content). Distinct from canShareContent: this asks "can this platform share?"
-// while canShareContent asks "is this specific content shareable?".
+export function installShareHostBackend(backend: ShareBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 export function isShareAvailable(): boolean {
   return getShareBackend().isAvailable();
 }
 
-// Installs a native host share backend; pass null to fall back to the web default.
-export function setShareBackend(backend: ShareBackend | null): void {
-  _backend = backend;
+export function observeShareHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
-// Opens the native share sheet with the given content. Resolves true on success, false when the host
-// denies, the user cancels, or sharing is unavailable. An empty content payload (no title/text/url/
-// files) is caught by hasShareContentFields and returns false immediately rather than forwarding to the
-// backend (which may throw). Pass options to control presentation on native hosts (parentWindow,
-// sourceRect on iPad).
+export function resetShareBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+export function setShareBackend(backend: ShareBackend | null): void {
+  _custom = backend;
+}
+
 export function shareContent(content: Readonly<ShareContent>, options?: Readonly<ShareOptions>): Promise<boolean> {
   if (!hasShareContentFields(content)) return Promise.resolve(false);
   return getShareBackend().share(content, options);
 }
 
-// Opens the native share sheet and returns a full ShareResult describing completion, cancellation,
-// and which activity/app was chosen. Emits onShareResult on all attached ShareSignals groups.
-// An empty content payload returns { completed: false, activityType: null, dismissed: false }
-// immediately. Pass options to control presentation on native hosts.
 export async function shareContentWithResult(
   content: Readonly<ShareContent>,
   options?: Readonly<ShareOptions>,
@@ -156,31 +152,40 @@ export async function shareContentWithResult(
   return result;
 }
 
-// Opens the share sheet with a file payload. A convenience wrapper over shareContent, completing the
-// trio with shareText / shareUrl — files are the third thing the Web Share Level 2 payload carries,
-// and leaving it out meant the one payload kind that needs a descriptor was also the one with no
-// shorthand. An empty array resolves false, like any other empty payload.
 export function shareFiles(files: readonly ShareFile[], options?: Readonly<ShareOptions>): Promise<boolean> {
   return shareContent({ files }, options);
 }
 
-// Opens the share sheet with a plain text payload. A convenience wrapper over shareContent.
 export function shareText(text: string, options?: Readonly<ShareOptions>): Promise<boolean> {
   return shareContent({ text }, options);
 }
 
-// Opens the share sheet with a URL payload. A convenience wrapper over shareContent.
 export function shareUrl(url: string, options?: Readonly<ShareOptions>): Promise<boolean> {
   return shareContent({ url }, options);
 }
 
-let _backend: ShareBackend | null = null;
-// The signals groups attached via attachShareSignals. A set, not a map to a dummy value: membership
-// is the whole state, and expressing it as a set is what makes attach idempotent without a guard.
+let _custom: ShareBackend | null = null;
+let _host: ShareBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+const _sentinel: ShareBackend = {
+  canShare(): boolean {
+    return false;
+  },
+  isAvailable(): boolean {
+    return false;
+  },
+  async share(): Promise<boolean> {
+    return false;
+  },
+  async shareWithResult(): Promise<ShareResult> {
+    return { completed: false, activityType: null, dismissed: false };
+  },
+};
+
 const _attachedSignals = new Set<ShareSignals>();
 
-// Converts a ShareContent (with portable ShareFile descriptors) to the navigator.share data shape,
-// converting ShareFile data URLs to DOM File objects at the web boundary.
 function shareContentToNavigatorData(content: Readonly<ShareContent>): ShareData {
   const data: ShareData = {};
   if (content.title !== undefined) data.title = content.title;
@@ -192,14 +197,7 @@ function shareContentToNavigatorData(content: Readonly<ShareContent>): ShareData
   return data;
 }
 
-// Converts a portable ShareFile descriptor to a DOM File for navigator.share / navigator.canShare.
-// Throws on a data URL with no comma, which the backend's try/catch turns into the ordinary false
-// sentinel. That is deliberate: the previous code let a missing comma through as index -1, which
-// makes `substring(0, -1)` empty and `substring(0)` the whole string, so a malformed descriptor
-// produced a plausible-looking File containing the URL text instead of failing. A share that
-// silently sends the wrong bytes is worse than one that reports it could not share.
 function shareFileToDomFile(file: Readonly<ShareFile>): File {
-  // Parse the data URL: 'data:<mimeType>;base64,<data>' or 'data:<mimeType>,<data>'
   const comma = file.dataUrl.indexOf(',');
   if (comma === -1) throw new Error('share: dataUrl is not a data URL (no comma)');
   const header = file.dataUrl.substring(0, comma);

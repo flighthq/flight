@@ -1,4 +1,5 @@
 export {
+  explainNotificationBackend,
   cancelScheduledNotification,
   closeAllNotifications,
   closeNotification,

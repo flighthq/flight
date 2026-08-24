@@ -4,6 +4,7 @@ import type {
   AccessibilityNode,
   AccessibilityState,
 } from '@flighthq/types/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 
 // Speaks a transient message through the platform's live region. `liveness` picks urgency: 'polite'
 // waits for current speech, 'assertive' interrupts. Defaults to 'polite'. No-op when no backend can
@@ -90,11 +91,39 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
   };
 }
 
-// The active accessibility backend, lazily defaulting to the web ARIA overlay. There is always a
-// backend.
+export function explainAccessibilityBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active accessibility backend. Precedence: custom > host > sentinel.
 export function getAccessibilityBackend(): AccessibilityBackend {
-  if (_backend === null) _backend = createWebAccessibilityBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
+}
+
+export function installAccessibilityHostBackend(backend: AccessibilityBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeAccessibilityHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Removes a node and its entire descendant subtree from the mirrored tree.
@@ -102,9 +131,16 @@ export function removeAccessibilityNode(id: string): void {
   getAccessibilityBackend().removeNode(id);
 }
 
-// Installs a native host accessibility backend; pass null to fall back to a fresh lazy web default.
+export function resetAccessibilityBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+// Installs a custom accessibility backend; pass null to revert to precedence fallback.
 export function setAccessibilityBackend(backend: AccessibilityBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Moves platform focus to the published node. Returns false when the node is missing or the platform
@@ -119,7 +155,20 @@ export function setAccessibilityNode(node: Readonly<AccessibilityNode>): void {
   getAccessibilityBackend().setNode(node);
 }
 
-let _backend: AccessibilityBackend | null = null;
+let _custom: AccessibilityBackend | null = null;
+let _host: AccessibilityBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+const _sentinel: AccessibilityBackend = {
+  setNode() {},
+  removeNode() {},
+  clear() {},
+  setFocus() {
+    return false;
+  },
+  announce() {},
+};
 
 const _TEXT_NODE = 3;
 

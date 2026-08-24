@@ -1,4 +1,5 @@
 export {
+  explainPlatformBackend,
   comparePlatformVersions,
   getPlatformEngine,
   getPlatformInfo,

@@ -1,3 +1,4 @@
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   HapticImpactStyle,
   HapticNotificationType,
@@ -5,7 +6,6 @@ import type {
   HapticsCapabilities,
 } from '@flighthq/types/contract';
 
-// Cancels any in-progress device vibration. Returns false when haptics are unavailable.
 export function cancelDeviceVibration(): boolean {
   return getHapticsBackend().cancel();
 }
@@ -16,7 +16,7 @@ export function cancelDeviceVibration(): boolean {
 export function createWebHapticsBackend(): HapticsBackend {
   return {
     cancel(): boolean {
-      return webVibrate(0);
+      return _webVibrate(0, 'cancel');
     },
     capabilities(out: HapticsCapabilities): HapticsCapabilities {
       const supported = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
@@ -30,100 +30,112 @@ export function createWebHapticsBackend(): HapticsBackend {
     impact(style: HapticImpactStyle, intensity?: number): boolean {
       const base = style === 'heavy' || style === 'rigid' ? 30 : style === 'medium' ? 20 : style === 'soft' ? 25 : 10;
       const ms = intensity !== undefined ? Math.round(base * Math.max(0, Math.min(1, intensity))) : base;
-      return webVibrate(ms);
+      return _webVibrate(ms, 'impact');
     },
     isSupported(): boolean {
       return typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
     },
     notification(type: HapticNotificationType): boolean {
       const pattern = type === 'error' ? [20, 60, 20] : type === 'warning' ? [20, 60, 20, 60] : [15, 50, 15];
-      return webVibrate(pattern);
+      return _webVibrate(pattern, 'notification');
     },
-    prepare(): void {
-      // No-op on web; native backends may pre-allocate feedback generators to reduce latency.
-    },
+    prepare(): void {},
     selection(): boolean {
-      return webVibrate(5);
+      return _webVibrate(5, 'selection');
     },
     vibrate(durationMs: number): boolean {
-      return webVibrate(durationMs);
+      return _webVibrate(durationMs, 'vibrate');
     },
     vibratePattern(pattern: Readonly<number[]>): boolean {
       if (pattern.length === 0) return false;
-      return webVibrate(pattern as number[]);
+      return _webVibrate(pattern as number[], 'vibratePattern');
     },
     vibrateWaveform(timings: Readonly<number[]>, _amplitudes: Readonly<number[]>, repeat?: number): boolean {
-      // Web backend ignores amplitudes; falls back to vibratePattern. repeat is unsupported on web.
       if (timings.length === 0) return false;
       void repeat;
-      return webVibrate(timings as number[]);
+      return _webVibrate(timings as number[], 'vibrateWaveform');
     },
   };
 }
 
-// The active haptics backend, or a lazily-created web default. There is always a backend.
-export function getHapticsBackend(): HapticsBackend {
-  if (_backend === null) _backend = createWebHapticsBackend();
-  return _backend;
+export function explainHapticsBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// Fills out with the capabilities of the active HapticsBackend. Returns the same out object.
+export function getHapticsBackend(): HapticsBackend {
+  return _custom ?? _host ?? _sentinel;
+}
+
 export function getHapticsCapabilities(out: HapticsCapabilities): HapticsCapabilities {
   return getHapticsBackend().capabilities(out);
 }
 
-// Returns true if the active backend reports that haptics are available on the current device.
+export function installHapticsHostBackend(backend: HapticsBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 export function isHapticsSupported(): boolean {
   return getHapticsBackend().isSupported();
 }
 
-// Warm-up hint to reduce first-trigger latency (mirrors UIFeedbackGenerator.prepare). No-op on
-// backends that do not support pre-allocation. Always safe to call.
+export function observeHapticsHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 export function prepareHaptics(): void {
   getHapticsBackend().prepare?.();
 }
 
-// Installs a native host haptics backend; pass null to fall back to the web default.
-export function setHapticsBackend(backend: HapticsBackend | null): void {
-  _backend = backend;
+export function resetHapticsBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
 }
 
-// Triggers a physical impact at the given style, with optional continuous intensity (0..1).
-// Intensity defaults to 1 when omitted. Returns false when haptics are unavailable.
+export function setHapticsBackend(backend: HapticsBackend | null): void {
+  _custom = backend;
+}
+
 export function triggerHapticImpact(style: HapticImpactStyle, intensity?: number): boolean {
-  // Resolve the documented default here so every backend receives a concrete intensity; a native
-  // backend must not have to reinterpret `undefined` as full strength on its own.
   return getHapticsBackend().impact(style, intensity ?? 1);
 }
 
-// Triggers a semantic notification cue ('success' | 'warning' | 'error').
-// Returns false when haptics are unavailable.
 export function triggerHapticNotification(type: HapticNotificationType): boolean {
   return getHapticsBackend().notification(type);
 }
 
-// Triggers a light selection tick. Returns false when haptics are unavailable.
 export function triggerHapticSelection(): boolean {
   return getHapticsBackend().selection();
 }
 
-// Vibrates the device for the given duration in milliseconds. Returns false when unavailable or denied.
 export function vibrateDevice(durationMs: number): boolean {
   return getHapticsBackend().vibrate(durationMs);
 }
 
-// Vibrates the device using a pattern array [onMs, offMs, onMs, ...] matching the Web Vibration API.
-// Returns false on empty pattern or when haptics are unavailable.
 export function vibrateDevicePattern(pattern: Readonly<number[]>): boolean {
   if (pattern.length === 0) return false;
   return getHapticsBackend().vibratePattern(pattern);
 }
 
-// Vibrates using an amplitude-aware waveform (maps to Android VibrationEffect.createWaveform).
-// timings and amplitudes must have equal length; amplitudes are 0..255 (per Android convention).
-// repeat is the index into timings at which to loop, or -1 (default) for no repeat.
-// Backends that lack native waveform support fall back to vibratePattern(timings).
-// Returns false on empty timings or when haptics are unavailable.
 export function vibrateDeviceWaveform(
   timings: Readonly<number[]>,
   amplitudes: Readonly<number[]>,
@@ -137,15 +149,55 @@ export function vibrateDeviceWaveform(
   return backend.vibratePattern(timings);
 }
 
-let _backend: HapticsBackend | null = null;
+let _custom: HapticsBackend | null = null;
+let _host: HapticsBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 
-function webVibrate(pattern: number | readonly number[]): boolean {
+const _sentinel: HapticsBackend = {
+  cancel(): boolean {
+    return false;
+  },
+  capabilities(out: HapticsCapabilities): HapticsCapabilities {
+    out.amplitudeControl = false;
+    out.customEvents = false;
+    out.intensity = false;
+    out.patterns = false;
+    out.supported = false;
+    return out;
+  },
+  impact(): boolean {
+    return false;
+  },
+  isSupported(): boolean {
+    return false;
+  },
+  notification(): boolean {
+    return false;
+  },
+  prepare(): void {},
+  selection(): boolean {
+    return false;
+  },
+  vibrate(): boolean {
+    return false;
+  },
+  vibratePattern(): boolean {
+    return false;
+  },
+};
+
+function _webVibrate(pattern: number | readonly number[], operation: string): boolean {
   if (typeof navigator === 'undefined' || !('vibrate' in navigator) || typeof navigator.vibrate !== 'function') {
+    observeHapticsHostResult(operation, false);
     return false;
   }
   try {
-    return navigator.vibrate(pattern as number | number[]);
+    const result = navigator.vibrate(pattern as number | number[]);
+    observeHapticsHostResult(operation, result);
+    return result;
   } catch {
+    observeHapticsHostResult(operation, false);
     return false;
   }
 }
