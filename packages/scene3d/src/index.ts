@@ -5,6 +5,7 @@ export {
   applyAnimationClipToScene3D,
   buildScene3DFrustum,
   cloneMesh,
+  cloneNode3DSubtree,
   createBillboard,
   createMesh,
   createNode3D,
