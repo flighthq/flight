@@ -15,6 +15,7 @@ export * from './jointCollisionSuppression';
 export * from './jointFactories';
 export * from './jointRegistry';
 export * from './joints';
+export * from './nodeSync';
 export * from './massProperties';
 export * from './material';
 export * from './registerBuiltInPhysics3DJointSolvers';

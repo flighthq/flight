@@ -15,5 +15,4 @@ export {
   setHtmlViewSize,
   setNode2DClip,
   setScene2DSize,
-  updateNode2DFromPhysics2DBody,
 } from './contract';

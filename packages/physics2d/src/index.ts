@@ -50,6 +50,7 @@ export {
 } from './jointRegistry';
 export { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties';
 export { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
+export { syncPhysics2DBodyToNode2D } from './nodeSync';
 export { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers';
 export {
   applyPhysics2DImpulse,

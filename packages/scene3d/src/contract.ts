@@ -2,7 +2,6 @@ export * from './billboard';
 export * from './billboardCamera';
 export * from './cloneNode3DSubtree';
 export * from './enableScene3DGuards';
-export * from './updateNode3DFromPhysics3DBody';
 export * from './mesh';
 export * from './prepareScene3DMorph';
 export * from './scene';
