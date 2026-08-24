@@ -1,3 +1,4 @@
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   ShellBackend,
   ShellOpenExternalOptions,
@@ -6,59 +7,32 @@ import type {
   ShellShortcutWriteOperation,
 } from '@flighthq/types/contract';
 
-// Builds the default web backend. Only openExternal is achievable on the web (window.open); revealing
-// items, opening arbitrary local paths, trashing, shortcut links, and batch operations require a native
-// host, so they return false / null / error-string sentinels here.
-export function createWebShellBackend(): ShellBackend {
-  return {
-    beep() {
-      // No portable web equivalent of a system beep; no-op until a native host provides one.
-    },
-    async moveItemsToTrash() {
-      // The web cannot move local paths to the OS trash; native-host only.
-      return [];
-    },
-    async moveToTrash() {
-      // The web cannot move a local path to the OS trash; native-host only.
-      return false;
-    },
-    async openExternal(url) {
-      // window.open returns a Window handle on success, or null when blocked (popup blocker, no window).
-      // The activate option (macOS foreground raise) has no web equivalent and is silently ignored.
-      if (typeof window === 'undefined' || typeof window.open !== 'function') return false;
-      try {
-        return window.open(url, '_blank', 'noopener') !== null;
-      } catch {
-        return false;
-      }
-    },
-    async openPath() {
-      // The web sandbox cannot open arbitrary local paths; only a native host can.
-      return false;
-    },
-    async openPathResult() {
-      // The web cannot open arbitrary local paths; native-host only.
-      return 'unavailable on web';
-    },
-    async readShortcutLink() {
-      // Windows .lnk shortcut links are not accessible on the web.
-      return null;
-    },
-    async showItemInFolder() {
-      // The web has no OS file manager to reveal an item in; native-host only.
-      return false;
-    },
-    async writeShortcutLink() {
-      // Windows .lnk shortcut links cannot be written on the web.
-      return false;
-    },
-  };
+export function explainShellBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// The active shell backend, or a lazily-created web default. There is always a backend.
+// The active shell backend. Precedence: custom > host > sentinel.
 export function getShellBackend(): ShellBackend {
-  if (_backend === null) _backend = createWebShellBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
+}
+
+export function installShellHostBackend(backend: ShellBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // True when url is allowed by the active URL-scheme allowlist. When no allowlist is set, all URLs
@@ -82,6 +56,13 @@ export function moveItemsToTrash(paths: readonly string[]): Promise<readonly boo
 // Moves a local path to the OS trash. Returns false on the web; native-host capability.
 export function moveItemToTrash(path: string): Promise<boolean> {
   return getShellBackend().moveToTrash(path);
+}
+
+export function observeShellHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Opens a URL in the user's default browser / external handler. Returns false when blocked, popup-
@@ -113,9 +94,16 @@ export function readShellShortcutLink(shortcutPath: string): Promise<ShellShortc
   return getShellBackend().readShortcutLink(shortcutPath);
 }
 
-// Installs a native host shell backend; pass null to fall back to the web default.
+export function resetShellBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+// Installs a custom shell backend; pass null to clear the custom override.
 export function setShellBackend(backend: ShellBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Sets the URL-scheme allowlist consulted by openShellExternalUrl. Pass null to allow all schemes
@@ -148,5 +136,35 @@ export function writeShellShortcutLink(
   return getShellBackend().writeShortcutLink(shortcutPath, link, operation);
 }
 
-let _backend: ShellBackend | null = null;
+const _sentinel: ShellBackend = {
+  beep() {},
+  async moveItemsToTrash() {
+    return [];
+  },
+  async moveToTrash() {
+    return false;
+  },
+  async openExternal() {
+    return false;
+  },
+  async openPath() {
+    return false;
+  },
+  async openPathResult() {
+    return 'unavailable on web';
+  },
+  async readShortcutLink() {
+    return null;
+  },
+  async showItemInFolder() {
+    return false;
+  },
+  async writeShortcutLink() {
+    return false;
+  },
+};
+let _custom: ShellBackend | null = null;
+let _host: ShellBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 let _urlSchemeAllowlist: readonly string[] | null = null;
