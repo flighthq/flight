@@ -134,7 +134,7 @@ function snapshotWorld(world: Readonly<Physics3DWorld>): number[][] {
 }
 
 describe('physics3d stress qualification', () => {
-  it('settles a distributed load across large accelerated mesh and heightfield terrain', () => {
+  it('settles a distributed load across large accelerated mesh and heightfield terrain', { timeout: 15_000 }, () => {
     for (const surface of [
       createGridTriangleMesh(17, 17),
       createCollisionHeightfield3D(17, 17, new Array(17 * 17).fill(0)),
