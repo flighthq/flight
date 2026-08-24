@@ -35,4 +35,5 @@ export {
   prepareScene3DMorph,
   setNode3DAlpha,
   setNode3DLookAt,
+  syncPhysics3DBodyToNode3D,
 } from './contract';
