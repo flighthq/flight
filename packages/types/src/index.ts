@@ -103,6 +103,7 @@ export * from './OrthographicProjectionOptions';
 export * from './PerspectiveProjectionOptions';
 export * from './Camera2D';
 export * from './CameraMotionBlurEffect';
+export * from './CameraShake';
 export * from './CanvasMaterialRenderer';
 export * from './CanvasMaterialState';
 export * from './CanvasRenderEffectPipeline';
