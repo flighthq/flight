@@ -1,10 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/flighthq/flight-reference-images/main/schemas/reference-image-lock.schema.json",
-  "manifestSha256": "621d63318e32a5f7781d1cbb6b4e564bbac1a5982d3e6e39793179d365d9d4b0",
-  "oracleCommit": "e9d92e69d52374b79db29616a8ed7593a5590bec",
+  "manifestSha256": "157c88611c6a093b1d47ad31a18b47e339a9696806d07ab6b50a8d99708185be",
+  "oracleCommit": "9676d9366059c70251f72274eb838c5db739dbb7",
   "packs": {
     "functional-images": {
-      "file": "functional-images-oracle-batch-bd5b91e8a807.tgz",
+      "file": "functional-images-oracle-batch-124534d42016.tgz",
       "images": {
         "functional/bitmap-color-transform/canvas": {
           "pixelSha256": "ce02534c3dc19aded24b2ee53f572356d5b4f08d7757f5bcda40df4ee3d99470"
@@ -327,6 +327,12 @@
         "functional/effect-ssao/webgpu": {
           "pixelSha256": "09ceccff6e94a82b4fc5667fb0d045429e94fad20485b2c5cea73dc22bea7dc2"
         },
+        "functional/effect-tilt-shift/webgl": {
+          "pixelSha256": "1f6f8ac048b4f302d2a4578a8bd6d48bca0a723a3cf1fdc38f48daaee91a3b25"
+        },
+        "functional/effect-tilt-shift/webgpu": {
+          "pixelSha256": "3be70aaf82438cd7a1a326b46300bf73f57ee311699c2763e28affa17a474eeb"
+        },
         "functional/effect-tone-map/webgl": {
           "pixelSha256": "ca18addac2b69132ae8f261bf47846b868980fe443e1bc246d35e8ec766f8632"
         },
@@ -349,10 +355,10 @@
           "pixelSha256": "f95f7ab28b189795ddb2d374c7e97ab32967bc1ec9a5645dadc0f04be538aa1a"
         }
       },
-      "sha256": "0f9a3f761ca106d670afb3194e49cb5e15a55f9c911f865a33b70f94dc275e44"
+      "sha256": "d08e0f47768c9299775b07d9b33e342ea2850942b357adabad8b0d68122ae053"
     },
     "functional-other": {
-      "file": "functional-other-oracle-batch-bd5b91e8a807.tgz",
+      "file": "functional-other-oracle-batch-124534d42016.tgz",
       "images": {
         "functional/application-render-view/webgl": {
           "pixelSha256": "62dca127338278b1715a31999513f874ad6a984cf196a63875c84aab0f50729f"
@@ -802,7 +808,7 @@
       "sha256": "1aeeaf4cc7b9ca75cd0b952001664b2ff82825ba6c7177253acc7661b112fd3b"
     },
     "functional-scene3d": {
-      "file": "functional-scene3d-oracle-batch-bd5b91e8a807.tgz",
+      "file": "functional-scene3d-oracle-batch-124534d42016.tgz",
       "images": {
         "functional/material-alpha-map-pbr/webgl": {
           "pixelSha256": "95aec27eb262c9905785bf45e84858bec7287bbfb4ea8bcdb1c9b42207406d55"
@@ -906,11 +912,17 @@
         "functional/material-video-map/webgpu": {
           "pixelSha256": "e7cfa9ba397bcedfd5bcb265e6f9cea6932302c77a032558ce0ac162a18e96a8"
         },
+        "functional/material-wireframe/webgl": {
+          "pixelSha256": "487157adcaf6ea2e771b0008d8c6a8935517371fa03539ee960dd45925aaa67c"
+        },
+        "functional/material-wireframe/webgpu": {
+          "pixelSha256": "487157adcaf6ea2e771b0008d8c6a8935517371fa03539ee960dd45925aaa67c"
+        },
         "functional/mesh-cone/webgl": {
-          "pixelSha256": "7d1d1dfb7cedf31431adcc5dfd3e965fcfe3a03bfb54516cba18ec81859dea7e"
+          "pixelSha256": "b77db0a0a07c3d96a17aea3089fc37f290cb0cfc83cfeb78f8b429bd03bb966f"
         },
         "functional/mesh-cone/webgpu": {
-          "pixelSha256": "7d1d1dfb7cedf31431adcc5dfd3e965fcfe3a03bfb54516cba18ec81859dea7e"
+          "pixelSha256": "b77db0a0a07c3d96a17aea3089fc37f290cb0cfc83cfeb78f8b429bd03bb966f"
         },
         "functional/mesh-cylinder/webgl": {
           "pixelSha256": "f15525882ffeec85d4f369b997081b109314ea85e425328bea5d32e069efff2a"
@@ -1009,10 +1021,10 @@
           "pixelSha256": "4f66be413b59f80ea860c484bc9df85eded3a652d0f8598ce64d19b5dda641a1"
         }
       },
-      "sha256": "a1102fda8b963c60e1ac6bec89f2d79283abea5d007c04a0a09078ec294cf875"
+      "sha256": "43d61acfdb32cad8247c49932ff73c48db8ad6a4fbc85f49b54985c082f17eb4"
     },
     "functional-shapes": {
-      "file": "functional-shapes-oracle-batch-bd5b91e8a807.tgz",
+      "file": "functional-shapes-oracle-batch-124534d42016.tgz",
       "images": {
         "functional/shape-curves/canvas": {
           "pixelSha256": "9536e3beafb320ea4847c6f1609327e6167c5cfd327b87f3d2c40a1437ed2d05"
@@ -1120,7 +1132,7 @@
       "sha256": "209872a5f82e96eee3d3548e976883eafca1c01131aa88051bf6248e75f78842"
     },
     "functional-text": {
-      "file": "functional-text-oracle-batch-bd5b91e8a807.tgz",
+      "file": "functional-text-oracle-batch-124534d42016.tgz",
       "images": {
         "functional/text-align-center/canvas": {
           "pixelSha256": "ef4b778e3b82715e09a4e30643694601d757b0a8de5f6e0242088cb436124127"
@@ -1258,7 +1270,7 @@
       "sha256": "9b55b01955bb9a3c55b7d9290250cb184c19e86629c879c9924ffed840832fb6"
     }
   },
-  "releaseTag": "oracle-batch-bd5b91e8a807",
+  "releaseTag": "oracle-batch-124534d42016",
   "repository": "flighthq/flight-reference-images",
   "schemaVersion": 2
 }
