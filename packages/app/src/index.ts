@@ -9,6 +9,7 @@ export {
   createAppLoginItem,
   detachApp,
   disposeApp,
+  explainAppBackend,
   focusApp,
   getAppCommandLine,
   getAppCommandLineSwitch,

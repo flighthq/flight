@@ -16,7 +16,6 @@ import {
   closeWindow,
   computeWindowDeviceTransform,
   createApplicationWindow,
-  createWebWindowBackend,
   detachWindowClose,
   detachWindowDropFile,
   detachWindowFocus,
@@ -30,20 +29,24 @@ import {
   disposeApplicationWindow,
   exitApplicationFullscreen,
   exitApplicationPointerLock,
+  explainWindowBackend,
   flashWindowFrame,
   focusWindow,
   getWindowBackend,
   getWindowBounds,
   getWindowDisplay,
   hideWindow,
+  installWindowHostBackend,
   lockApplicationPointer,
   maximizeWindow,
   minimizeWindow,
+  observeWindowHostResult,
   openWindow,
   prepareElementForInput,
   requestApplicationFullscreen,
   requestWindowAttention,
   requestWindowClose,
+  resetWindowBackendForTest,
   restoreWindow,
   setWindowAlwaysOnTop,
   setWindowBackend,
@@ -165,7 +168,7 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
   };
 }
 
-afterEach(() => setWindowBackend(null));
+afterEach(() => resetWindowBackendForTest());
 
 describe('attachWindowClose', () => {
   it('emits onClose on pagehide', () => {
@@ -550,17 +553,6 @@ describe('createApplicationWindow', () => {
   });
 });
 
-describe('createWebWindowBackend', () => {
-  it('sets document.title and reports bounds without throwing', () => {
-    const backend = createWebWindowBackend();
-    const win = createApplicationWindow();
-    backend.setTitle(win, 'Hello');
-    expect(document.title).toBe('Hello');
-    const bounds = backend.getBounds(win, { x: 0, y: 0, width: 0, height: 0 });
-    expect(typeof bounds.width).toBe('number');
-  });
-});
-
 describe('detachWindowClose', () => {
   it('stops emitting onClose after detach', () => {
     const win = createApplicationWindow();
@@ -776,6 +768,20 @@ describe('exitApplicationPointerLock', () => {
   });
 });
 
+describe('explainWindowBackend', () => {
+  it('reports host-not-enabled when no backend is installed', () => {
+    const explanation = explainWindowBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setWindowBackend(recordingWindowBackend());
+    const explanation = explainWindowBackend();
+    expect(explanation.layer).toBe('custom');
+  });
+});
+
 describe('flashWindowFrame', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
@@ -798,11 +804,11 @@ describe('focusWindow', () => {
 });
 
 describe('getWindowBackend', () => {
-  it('falls back to a web backend', () => {
+  it('falls back to a sentinel backend', () => {
     expect(getWindowBackend()).not.toBeNull();
   });
 
-  it('returns the registered backend', () => {
+  it('returns the custom backend when set', () => {
     const backend = recordingWindowBackend();
     setWindowBackend(backend);
     expect(getWindowBackend()).toBe(backend);
@@ -833,6 +839,23 @@ describe('hideWindow', () => {
     hideWindow(win);
     expect(win.visible).toBe(false);
     expect(backend.calls).toContain('hide');
+  });
+});
+
+describe('installWindowHostBackend', () => {
+  it('installs the host backend on first call', () => {
+    const backend = recordingWindowBackend();
+    installWindowHostBackend(backend);
+    expect(getWindowBackend()).toBe(backend);
+  });
+
+  it('ignores a second different backend and sets conflict', () => {
+    const first = recordingWindowBackend();
+    const second = recordingWindowBackend();
+    installWindowHostBackend(first);
+    installWindowHostBackend(second);
+    expect(getWindowBackend()).toBe(first);
+    expect(explainWindowBackend().conflict).toBe(true);
   });
 });
 
@@ -880,6 +903,22 @@ describe('minimizeWindow', () => {
     minimizeWindow(win);
     expect(win.minimized).toBe(true);
     expect(called).toBe(true);
+  });
+});
+
+describe('observeWindowHostResult', () => {
+  it('records the operation and viability', () => {
+    installWindowHostBackend(recordingWindowBackend());
+    observeWindowHostResult('setTitle', true);
+    const explanation = explainWindowBackend();
+    expect(explanation.operation).toBe('setTitle');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records runtime-api-unavailable on failure', () => {
+    installWindowHostBackend(recordingWindowBackend());
+    observeWindowHostResult('setPosition', false);
+    expect(explainWindowBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -965,6 +1004,15 @@ describe('requestWindowClose', () => {
   });
 });
 
+describe('resetWindowBackendForTest', () => {
+  it('clears all backend slots', () => {
+    installWindowHostBackend(recordingWindowBackend());
+    setWindowBackend(recordingWindowBackend());
+    resetWindowBackendForTest();
+    expect(explainWindowBackend().layer).toBe('host-not-enabled');
+  });
+});
+
 describe('restoreWindow', () => {
   it('clears minimized/maximized and emits onRestore', () => {
     const backend = recordingWindowBackend();
@@ -994,7 +1042,7 @@ describe('setWindowAlwaysOnTop', () => {
 });
 
 describe('setWindowBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
+  it('clears back to the sentinel when passed null', () => {
     setWindowBackend(recordingWindowBackend());
     setWindowBackend(null);
     expect(getWindowBackend()).not.toBeNull();

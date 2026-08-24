@@ -1,5 +1,6 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  BackendExplanation,
   StatusBar,
   StatusBarAnimation,
   StatusBarBackend,
@@ -57,50 +58,6 @@ export function createStatusBarInfo(): StatusBarInfo {
   };
 }
 
-// Builds the default web backend. Web pages have no true status bar, so only setBackgroundColor does
-// anything observable: it upserts a <meta name="theme-color"> hint (alpha dropped). The rest no-op
-// until a native host registers a backend. getInfo reads from the current theme-color meta where
-// present and returns safe defaults for fields the web cannot know (height = -1, visible = true).
-export function createWebStatusBarBackend(): StatusBarBackend {
-  return {
-    getInfo(out: StatusBarInfo): StatusBarInfo {
-      // Read back the theme-color meta if present; otherwise 0 (no hint set).
-      out.color = _webReadThemeColor();
-      out.height = -1;
-      out.overlaysContent = false;
-      out.style = 'default';
-      out.visible = true;
-      return out;
-    },
-    setBackgroundColor(color: number, _animated?: boolean): void {
-      // Derive #rrggbb from the top 24 bits of the packed RGBA integer; alpha is dropped.
-      if (typeof document === 'undefined') return;
-      const head = document.head;
-      if (head === null || head === undefined) return;
-      let meta = head.querySelector('meta[name="theme-color"]');
-      if (meta === null) {
-        meta = document.createElement('meta');
-        meta.setAttribute('name', 'theme-color');
-        head.appendChild(meta);
-      }
-      meta.setAttribute('content', packedRgbaToHexColor(color));
-    },
-    setOverlaysContent(_overlay: boolean): void {
-      // No web status bar; a native host is required to control content overlay.
-    },
-    setStyle(_style: StatusBarStyle): void {
-      // No web status bar; a native host (Capacitor/native shell) is required to honor style.
-    },
-    setVisible(_visible: boolean, _animation?: StatusBarAnimation): void {
-      // No web status bar; a native host is required to show/hide it.
-    },
-    subscribe(_listener: () => void): () => void {
-      // No OS-driven status bar events on web; return a no-op unsubscribe.
-      return () => {};
-    },
-  };
-}
-
 // Stops delivery to `bar` and forgets its subscription. Safe to call when not attached.
 export function detachStatusBar(bar: StatusBar): void {
   const unsubscribe = _subscriptions.get(bar);
@@ -116,10 +73,24 @@ export function disposeStatusBar(bar: StatusBar): void {
   detachStatusBar(bar);
 }
 
-// The active status bar backend, or a lazily-created web default. There is always a backend.
+export function explainStatusBarBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active status bar backend. Precedence: custom > host > sentinel.
 export function getStatusBarBackend(): StatusBarBackend {
-  if (_backend === null) _backend = createWebStatusBarBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the status bar height in CSS pixels, or -1 when the host does not report it (web,
@@ -143,6 +114,27 @@ export function getStatusBarInfo(out: StatusBarInfo): StatusBarInfo {
 export function hasStatusBarStyleEntry(handle: StatusBarStyleEntryHandle): boolean {
   if (handle === INVALID_HANDLE) return false;
   return _styleStack.some((e) => e.handle === handle);
+}
+
+export function installStatusBarHostBackend(backend: StatusBarBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeStatusBarHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
+// Converts a packed RGBA integer (0xRRGGBBAA) to a #rrggbb hex string, dropping alpha.
+export function packedRgbaToHexColor(color: number): string {
+  const rgb = (color >>> 8) & 0xffffff;
+  return '#' + rgb.toString(16).padStart(6, '0');
 }
 
 // Removes the style stack entry identified by `handle`. If the handle is unknown or invalid,
@@ -178,9 +170,16 @@ export function pushStatusBarStyleEntry(entry: Readonly<StatusBarStyleEntry>): S
   return handle;
 }
 
-// Installs a native host status bar backend; pass null to fall back to the web default.
+export function resetStatusBarBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+// Installs a custom status bar backend; pass null to clear the custom override.
 export function setStatusBarBackend(backend: StatusBarBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Sets the status bar background color from a packed RGBA integer (0xRRGGBBAA). On web this
@@ -205,7 +204,27 @@ export function setStatusBarVisible(visible: boolean, animation?: StatusBarAnima
   getStatusBarBackend().setVisible(visible, animation);
 }
 
-let _backend: StatusBarBackend | null = null;
+const _sentinel: StatusBarBackend = {
+  getInfo(out: StatusBarInfo): StatusBarInfo {
+    out.color = 0;
+    out.height = -1;
+    out.overlaysContent = false;
+    out.style = 'default';
+    out.visible = true;
+    return out;
+  },
+  setBackgroundColor(): void {},
+  setOverlaysContent(): void {},
+  setStyle(): void {},
+  setVisible(): void {},
+  subscribe(): () => void {
+    return () => {};
+  },
+};
+let _custom: StatusBarBackend | null = null;
+let _host: StatusBarBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 let _nextHandle: StatusBarStyleEntryHandle = 1;
 const _scratchInfo: StatusBarInfo = createStatusBarInfo();
 const _styleStack: { handle: StatusBarStyleEntryHandle; entry: Readonly<StatusBarStyleEntry> }[] = [];
@@ -274,25 +293,4 @@ function _applyTopStyleEntry(): void {
   if (color !== undefined) next.color = color;
   if (overlaysContent !== undefined) next.overlaysContent = overlaysContent;
   _applied = next;
-}
-
-function packedRgbaToHexColor(color: number): string {
-  const rgb = (color >>> 8) & 0xffffff;
-  return '#' + rgb.toString(16).padStart(6, '0');
-}
-
-// Reads the current theme-color meta content and parses it back to a packed RGBA integer.
-// Returns 0 if no meta is present or the value cannot be parsed.
-function _webReadThemeColor(): number {
-  if (typeof document === 'undefined') return 0;
-  const meta = document.head?.querySelector('meta[name="theme-color"]');
-  if (meta === null || meta === undefined) return 0;
-  const content = meta.getAttribute('content');
-  if (content === null || !content.startsWith('#')) return 0;
-  const hex = content.slice(1);
-  if (!/^(?:[\da-f]{3}|[\da-f]{6})$/i.test(hex)) return 0;
-  const expandedHex = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex;
-  const rgb = parseInt(expandedHex, 16);
-  // Reconstruct as 0xRRGGBBFF (alpha fully opaque since web drops alpha).
-  return ((rgb << 8) | 0xff) >>> 0;
 }

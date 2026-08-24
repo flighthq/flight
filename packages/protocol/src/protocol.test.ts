@@ -5,19 +5,22 @@ import {
   attachProtocolHandler,
   createProtocolHandler,
   createProtocolUrl,
-  createWebProtocolBackend,
   detachProtocolHandler,
   disposeProtocolHandler,
+  explainProtocolBackend,
   getProtocolBackend,
   getProtocolLaunchUrl,
   getRegisteredProtocolSchemes,
+  installProtocolHostBackend,
   isProtocolSchemeDefault,
   isProtocolSchemeRegistered,
   isValidProtocolScheme,
+  observeProtocolHostResult,
   parseProtocolUrl,
   registerProtocolScheme,
   registerProtocolSchemes,
   removeProtocolSchemeAsDefault,
+  resetProtocolBackendForTest,
   setProtocolBackend,
   setProtocolSchemeAsDefault,
   unregisterProtocolScheme,
@@ -86,7 +89,7 @@ function fakeBackend(): ProtocolBackend & {
   };
 }
 
-afterEach(() => setProtocolBackend(null));
+afterEach(() => resetProtocolBackendForTest());
 
 describe('attachProtocolHandler', () => {
   it('drains pre-attach pending URLs before subscribing', () => {
@@ -166,19 +169,6 @@ describe('createProtocolUrl', () => {
   });
 });
 
-describe('createWebProtocolBackend', () => {
-  it('reports a subscribe function and non-throwing queries', () => {
-    const backend = createWebProtocolBackend();
-    expect(backend.subscribe(() => {})).toBeInstanceOf(Function);
-    expect(typeof backend.isRegistered('myapp')).toBe('boolean');
-    expect(backend.setAsDefault('myapp')).toBe(false);
-    expect(backend.isDefault('myapp')).toBe(false);
-    expect(backend.removeAsDefault('myapp')).toBe(false);
-    expect(backend.getLaunchUrl()).toBeNull();
-    expect(backend.getRegisteredSchemes()).toBeInstanceOf(Array);
-  });
-});
-
 describe('detachProtocolHandler', () => {
   it('stops further delivery', () => {
     const backend = fakeBackend();
@@ -220,12 +210,51 @@ describe('disposeProtocolHandler', () => {
   });
 });
 
-describe('getProtocolBackend', () => {
-  it('falls back to a web backend', () => {
-    expect(getProtocolBackend()).not.toBeNull();
+describe('explainProtocolBackend', () => {
+  it('reports host-not-enabled when no backend is installed', () => {
+    const explanation = explainProtocolBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
   });
 
-  it('returns the installed backend', () => {
+  it('reports custom layer when a custom backend is set', () => {
+    setProtocolBackend(fakeBackend());
+    const explanation = explainProtocolBackend();
+    expect(explanation.layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installProtocolHostBackend(fakeBackend());
+    const explanation = explainProtocolBackend();
+    expect(explanation.layer).toBe('host');
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports observation viability after observeProtocolHostResult', () => {
+    installProtocolHostBackend(fakeBackend());
+    observeProtocolHostResult('register', true);
+    const explanation = explainProtocolBackend();
+    expect(explanation.operation).toBe('register');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installProtocolHostBackend(fakeBackend());
+    installProtocolHostBackend(fakeBackend());
+    const explanation = explainProtocolBackend();
+    expect(explanation.conflict).toBe(true);
+  });
+});
+
+describe('getProtocolBackend', () => {
+  it('returns the sentinel when no backend is installed', () => {
+    const backend = getProtocolBackend();
+    expect(backend).not.toBeNull();
+    expect(backend.isRegistered('myapp')).toBe(false);
+    expect(backend.drainPendingUrls()).toEqual([]);
+  });
+
+  it('returns the installed custom backend', () => {
     const backend = fakeBackend();
     setProtocolBackend(backend);
     expect(getProtocolBackend()).toBe(backend);
@@ -268,6 +297,22 @@ describe('getRegisteredProtocolSchemes', () => {
     setProtocolBackend(backend);
     registerProtocolScheme('myapp');
     expect(getRegisteredProtocolSchemes()).toContain('myapp');
+  });
+});
+
+describe('installProtocolHostBackend', () => {
+  it('installs the host backend', () => {
+    const backend = fakeBackend();
+    installProtocolHostBackend(backend);
+    expect(getProtocolBackend()).toBe(backend);
+  });
+
+  it('first-host-wins — ignores a second different backend', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installProtocolHostBackend(first);
+    installProtocolHostBackend(second);
+    expect(getProtocolBackend()).toBe(first);
   });
 });
 
@@ -333,6 +378,16 @@ describe('isValidProtocolScheme', () => {
   it('is case-insensitive — lowercases before validation', () => {
     expect(isValidProtocolScheme('MyApp')).toBe(true);
     expect(isValidProtocolScheme('HTTP')).toBe(false);
+  });
+});
+
+describe('observeProtocolHostResult', () => {
+  it('records observation in the explanation', () => {
+    installProtocolHostBackend(fakeBackend());
+    observeProtocolHostResult('register', false);
+    const explanation = explainProtocolBackend();
+    expect(explanation.operation).toBe('register');
+    expect(explanation.viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -443,11 +498,24 @@ describe('removeProtocolSchemeAsDefault', () => {
   });
 });
 
+describe('resetProtocolBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setProtocolBackend(fakeBackend());
+    installProtocolHostBackend(fakeBackend());
+    resetProtocolBackendForTest();
+    const explanation = explainProtocolBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+  });
+});
+
 describe('setProtocolBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
+  it('clears back to the sentinel when passed null', () => {
     setProtocolBackend(fakeBackend());
     setProtocolBackend(null);
-    expect(getProtocolBackend()).not.toBeNull();
+    const backend = getProtocolBackend();
+    expect(backend).not.toBeNull();
+    expect(backend.isRegistered('myapp')).toBe(false);
   });
 });
 

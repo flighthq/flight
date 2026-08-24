@@ -4,6 +4,7 @@ export {
   createProtocolUrl,
   detachProtocolHandler,
   disposeProtocolHandler,
+  explainProtocolBackend,
   getProtocolLaunchUrl,
   getRegisteredProtocolSchemes,
   isProtocolSchemeDefault,
