@@ -217,11 +217,13 @@ describe('setAccessibilityBackend', () => {
     expect(mock.calls.setNode.length).toBe(1);
   });
 
-  it('restores a fresh, distinct web default when passed null', () => {
-    const original = getAccessibilityBackend();
+  it('reverts to the sentinel when passed null', () => {
+    const sentinel = getAccessibilityBackend();
+    const mock = createMockAccessibilityBackend();
+    setAccessibilityBackend(mock.backend);
+    expect(getAccessibilityBackend()).toBe(mock.backend);
     setAccessibilityBackend(null);
-    const restored = getAccessibilityBackend();
-    expect(restored).not.toBe(original);
+    expect(getAccessibilityBackend()).toBe(sentinel);
   });
 });
 

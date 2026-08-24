@@ -3,7 +3,13 @@ import type { LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { arePermissionGuardsEnabled, disablePermissionGuards, enablePermissionGuards } from './enablePermissionGuards';
-import { requestPermission, setPermissionBackend } from './permission';
+import {
+  createWebPermissionBackend,
+  installPermissionHostBackend,
+  requestPermission,
+  resetPermissionBackendForTest,
+  setPermissionBackend,
+} from './permission';
 
 function captureLog(run: () => Promise<void>): Promise<readonly LogEntry[]> {
   const sink = createMemoryLogSink(8);
@@ -20,7 +26,7 @@ function messageOf(entry: Readonly<LogEntry>): string {
 
 afterEach(() => {
   disablePermissionGuards();
-  setPermissionBackend(null);
+  resetPermissionBackendForTest();
   vi.unstubAllGlobals();
 });
 
@@ -37,6 +43,7 @@ describe('arePermissionGuardsEnabled', () => {
 describe('disablePermissionGuards', () => {
   it('returns the silent degradation to silence', async () => {
     vi.stubGlobal('navigator', { permissions: { query: async () => ({ state: 'prompt' }) } });
+    installPermissionHostBackend(createWebPermissionBackend());
     enablePermissionGuards();
     disablePermissionGuards();
 
@@ -53,6 +60,7 @@ describe('enablePermissionGuards', () => {
   // ONE test in order, and every test in this file uses a distinct permission name.
   it('WARNS that a request showed no prompt, then suppresses the repeat', async () => {
     vi.stubGlobal('navigator', { permissions: { query: async () => ({ state: 'prompt' }) } });
+    installPermissionHostBackend(createWebPermissionBackend());
     enablePermissionGuards();
 
     const entries = await captureLog(async () => {
@@ -72,6 +80,7 @@ describe('enablePermissionGuards', () => {
   it('stays SILENT for a name that has a real request path', async () => {
     vi.stubGlobal('navigator', { permissions: { query: async () => ({ state: 'prompt' }) } });
     vi.stubGlobal('Notification', { permission: 'default', requestPermission: async () => 'granted' });
+    installPermissionHostBackend(createWebPermissionBackend());
     enablePermissionGuards();
 
     const entries = await captureLog(async () => {

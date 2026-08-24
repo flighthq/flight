@@ -10,7 +10,9 @@ import {
   enableShareSignals,
   getShareBackend,
   hasShareContentFields,
+  installShareHostBackend,
   isShareAvailable,
+  resetShareBackendForTest,
   setShareBackend,
   shareContent,
   shareContentWithResult,
@@ -57,7 +59,7 @@ function restoreNavigator(): void {
 }
 
 afterEach(() => {
-  setShareBackend(null);
+  resetShareBackendForTest();
   restoreNavigator();
 });
 
@@ -104,7 +106,7 @@ describe('canShareContent', () => {
     expect(canShareContent({ text: 'x' })).toBe(true);
   });
 
-  it('returns false from the web backend in jsdom without throwing', () => {
+  it('returns false from the sentinel when no backend is installed', () => {
     expect(canShareContent({ text: 'x' })).toBe(false);
   });
 
@@ -218,7 +220,7 @@ describe('enableShareSignals', () => {
 });
 
 describe('getShareBackend', () => {
-  it('falls back to a web backend', () => {
+  it('falls back to the sentinel when no backend is installed', () => {
     expect(getShareBackend()).not.toBeNull();
   });
 
@@ -261,7 +263,7 @@ describe('hasShareContentFields', () => {
 });
 
 describe('isShareAvailable', () => {
-  it('returns false from the web backend in jsdom', () => {
+  it('returns false from the sentinel when no backend is installed', () => {
     expect(isShareAvailable()).toBe(false);
   });
 
@@ -270,14 +272,15 @@ describe('isShareAvailable', () => {
     expect(isShareAvailable()).toBe(true);
   });
 
-  it('returns true when navigator.share exists', () => {
+  it('returns true when the web backend is installed and navigator.share exists', () => {
     mockNavigator({ share: async () => {} });
+    installShareHostBackend(createWebShareBackend());
     expect(isShareAvailable()).toBe(true);
   });
 });
 
 describe('setShareBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
+  it('clears back to the sentinel when passed null', () => {
     setShareBackend(fakeBackend());
     setShareBackend(null);
     expect(getShareBackend()).not.toBeNull();
@@ -292,7 +295,7 @@ describe('shareContent', () => {
     expect(backend.shared).toEqual({ title: 't', url: 'u' });
   });
 
-  it('returns false from the web backend in jsdom without throwing', async () => {
+  it('returns false from the sentinel when no backend is installed', async () => {
     expect(await shareContent({ text: 'x' })).toBe(false);
   });
 
@@ -401,7 +404,7 @@ describe('shareContentWithResult', () => {
     expect(result.activityType).toBe('com.example.App');
   });
 
-  it('returns false from web backend in jsdom without throwing', async () => {
+  it('returns false from the sentinel when no backend is installed', async () => {
     const result = await shareContentWithResult({ text: 'x' });
     expect(result.completed).toBe(false);
   });

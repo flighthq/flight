@@ -7,7 +7,9 @@ import {
   getPermissionBackend,
   getPermissionState,
   getPermissionStates,
+  installPermissionHostBackend,
   requestPermission,
+  resetPermissionBackendForTest,
   setPermissionBackend,
   setPermissionRequestFallbackGuard,
 } from './permission';
@@ -311,7 +313,7 @@ describe('setPermissionBackend', () => {
 describe('setPermissionRequestFallbackGuard', () => {
   afterEach(() => {
     setPermissionRequestFallbackGuard(null);
-    setPermissionBackend(null);
+    resetPermissionBackendForTest();
     vi.unstubAllGlobals();
   });
 
@@ -323,6 +325,7 @@ describe('setPermissionRequestFallbackGuard', () => {
       permission: 'default',
       requestPermission: () => Promise.resolve('granted'),
     });
+    installPermissionHostBackend(createWebPermissionBackend());
     setPermissionRequestFallbackGuard((name) => seen.push(name));
 
     expect(await requestPermission('push')).toBe('prompt');

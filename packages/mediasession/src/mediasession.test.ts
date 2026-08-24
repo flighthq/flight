@@ -109,6 +109,7 @@ describe('clearMediaSessionActionHandler', () => {
 
   it('unregisters the web handler for the action', () => {
     const session = installFakeMediaSession();
+    setMediaSessionBackend(createWebMediaSessionBackend());
     setMediaSessionActionHandler('pause', () => {});
     clearMediaSessionActionHandler('pause');
     expect(session.handlers.get('pause')).toBeNull();
@@ -126,6 +127,7 @@ describe('clearMediaSessionMetadata', () => {
 
   it('assigns null to the web session metadata', () => {
     const session = installFakeMediaSession();
+    setMediaSessionBackend(createWebMediaSessionBackend());
     setMediaSessionMetadata({ title: 'A', artist: 'B', album: 'C', artwork: [] });
     clearMediaSessionMetadata();
     expect(session.metadata).toBeNull();
@@ -143,6 +145,7 @@ describe('clearMediaSessionPositionState', () => {
 
   it('clears the web position by passing undefined', () => {
     const session = installFakeMediaSession();
+    setMediaSessionBackend(createWebMediaSessionBackend());
     clearMediaSessionPositionState();
     expect(session.positionCalls).toEqual([undefined]);
   });
