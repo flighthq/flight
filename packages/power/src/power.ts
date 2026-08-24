@@ -1,4 +1,5 @@
 import { createSignal, emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   Power,
   PowerBackend,
@@ -117,164 +118,6 @@ export function createPowerStatus(): PowerStatus {
   };
 }
 
-// Builds the default web backend over the Battery Status API and the Screen Wake Lock API. Degrades
-// to batteryLevel=-1 / not charging and a no-op subscription where the APIs are absent.
-export function createWebPowerBackend(): PowerBackend {
-  let cachedLevel = -1;
-  let cachedCharging = false;
-  let cachedChargingTime = -1;
-  let cachedDischargingTime = -1;
-  return {
-    getBatteryHealth(_out) {
-      // Browser Battery Status API does not expose health information.
-      return null;
-    },
-    isKeepAwakeActive() {
-      return _wakeLockSentinel !== null;
-    },
-    getStatus(out) {
-      // Read all input values first (alias-safe: out may be the same object as an input).
-      const level = cachedLevel;
-      const charging = cachedCharging;
-      const chargingTime = cachedChargingTime;
-      const dischargingTime = cachedDischargingTime;
-      out.batteryLevel = level;
-      out.chargingTime = chargingTime;
-      out.dischargingTime = dischargingTime;
-      out.isBatteryLow = level >= 0 && level <= 0.2 && !charging;
-      out.isCharging = charging;
-      // Web Battery Status API: isOnBattery = device has a battery and is not charging/AC.
-      // If level is -1 (API absent), we cannot determine the power source; use false as sentinel.
-      out.isOnBattery = level >= 0 && !charging;
-      // No real OS low-power-mode read available on web; use false as sentinel.
-      out.isLowPower = false;
-      out.thermalState = 'Unknown';
-      return out;
-    },
-    getSystemIdleState(_thresholdSeconds) {
-      // The Idle Detection API is permission-gated and not widely available; return sentinel.
-      return 'Unknown';
-    },
-    getSystemIdleTime() {
-      // No idle-time API available on web; return sentinel.
-      return -1;
-    },
-    setKeepAwake(enabled, mode) {
-      const resolvedMode = mode ?? 'PreventDisplaySleep';
-      // Web only supports display-sleep prevention via the Screen Wake Lock API.
-      if (resolvedMode === 'PreventAppSuspension') return false;
-      if (typeof navigator === 'undefined') return false;
-      const wakeLock = (navigator as Navigator & { wakeLock?: WebWakeLock }).wakeLock;
-      if (wakeLock === undefined) return false;
-      try {
-        if (!enabled) {
-          _wakeLockSentinel?.release?.().catch(() => {});
-          _wakeLockSentinel = null;
-          return true;
-        }
-        wakeLock
-          .request('screen')
-          .then((sentinel) => {
-            _wakeLockSentinel = sentinel;
-            // Re-acquire the lock after visibility is restored; browsers auto-release it when the
-            // tab goes hidden.
-            sentinel.addEventListener?.('release', () => {
-              if (_wakeLockSentinel === sentinel && !document.hidden) {
-                wakeLock
-                  .request('screen')
-                  .then((newSentinel) => {
-                    if (_wakeLockSentinel === sentinel) _wakeLockSentinel = newSentinel;
-                  })
-                  .catch(() => {});
-              }
-            });
-          })
-          .catch(() => {});
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    subscribe(listener) {
-      const battery = getWebBatteryManagerPromise();
-      if (battery === null) return () => {};
-      let manager: WebBatteryManager | null = null;
-      const onLevelChange = () => {
-        if (manager !== null) cachedLevel = manager.level;
-        listener();
-      };
-      const onChargingChange = () => {
-        if (manager !== null) cachedCharging = manager.charging;
-        listener();
-      };
-      const onChargingTimeChange = () => {
-        if (manager !== null) {
-          const t = manager.chargingTime;
-          cachedChargingTime = t === Infinity ? -1 : t;
-        }
-        listener();
-      };
-      const onDischargingTimeChange = () => {
-        if (manager !== null) {
-          const t = manager.dischargingTime;
-          cachedDischargingTime = t === Infinity ? -1 : t;
-        }
-        listener();
-      };
-      let cancelled = false;
-      battery
-        .then((m) => {
-          if (cancelled) return;
-          manager = m;
-          cachedLevel = m.level;
-          cachedCharging = m.charging;
-          cachedChargingTime = m.chargingTime === Infinity ? -1 : m.chargingTime;
-          cachedDischargingTime = m.dischargingTime === Infinity ? -1 : m.dischargingTime;
-          m.addEventListener?.('levelchange', onLevelChange);
-          m.addEventListener?.('chargingchange', onChargingChange);
-          m.addEventListener?.('chargingtimechange', onChargingTimeChange);
-          m.addEventListener?.('dischargingtimechange', onDischargingTimeChange);
-          listener();
-        })
-        .catch(() => {});
-      return () => {
-        cancelled = true;
-        manager?.removeEventListener?.('levelchange', onLevelChange);
-        manager?.removeEventListener?.('chargingchange', onChargingChange);
-        manager?.removeEventListener?.('chargingtimechange', onChargingTimeChange);
-        manager?.removeEventListener?.('dischargingtimechange', onDischargingTimeChange);
-        manager = null;
-      };
-    },
-    subscribeLockScreen() {
-      // The Web Platform has no lock-screen API; only native hosts can detect screen lock.
-      return () => {};
-    },
-    subscribeLowPowerModeChange() {
-      // No OS low-power-mode API available on web; return a no-op unsubscriber.
-      return () => {};
-    },
-    subscribeResume(listener) {
-      if (typeof document === 'undefined') return () => {};
-      document.addEventListener('resume', listener);
-      return () => document.removeEventListener('resume', listener);
-    },
-    subscribeSuspend(listener) {
-      if (typeof document === 'undefined') return () => {};
-      document.addEventListener('freeze', listener);
-      return () => document.removeEventListener('freeze', listener);
-    },
-    subscribeThermalStateChange() {
-      // No thermal state API available on web; return a no-op unsubscriber.
-      return () => {};
-    },
-    subscribeUnlockScreen() {
-      // The Web Platform has no unlock-screen API; only native hosts can detect screen unlock.
-      return () => {};
-    },
-  };
-}
-
 // Stops delivery to `power` and forgets its subscription. Safe to call when not attached.
 export function detachPower(power: Power): void {
   const unsubscribe = _subscriptions.get(power);
@@ -305,9 +148,23 @@ export function enablePowerSignals(power: Power): void {
   if (power.onUnlockScreen === null) power.onUnlockScreen = createSignal();
 }
 
+export function explainPowerBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 export function getPowerBackend(): PowerBackend {
-  if (_backend === null) _backend = createWebPowerBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the battery health detail from the active backend, writing into `out` and returning it,
@@ -346,9 +203,30 @@ export function hasPowerKeepAwake(): boolean {
   return getPowerBackend().isKeepAwakeActive();
 }
 
-// Installs a native host power backend; pass null to fall back to the web default.
+export function installPowerHostBackend(backend: PowerBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observePowerHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
+export function resetPowerBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 export function setPowerBackend(backend: PowerBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Sets the interval at which attachPower polls the backend for idle state changes. The default is
@@ -364,43 +242,59 @@ export function setPowerKeepAwake(enabled: boolean, mode?: PowerKeepAwakeMode): 
   return getPowerBackend().setKeepAwake(enabled, mode);
 }
 
-let _backend: PowerBackend | null = null;
+let _custom: PowerBackend | null = null;
+let _host: PowerBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 let _idlePollingIntervalMs = 5000;
-let _wakeLockSentinel: WebWakeLockSentinel | null = null;
 const _scratch: PowerStatus = createPowerStatus();
-const _subscriptions = new WeakMap<Power, () => void>();
-
-interface WebBatteryManager {
-  chargingTime: number;
-  dischargingTime: number;
-  level: number;
-  charging: boolean;
-  addEventListener?: (
-    type: 'chargingtimechange' | 'chargingchange' | 'dischargingtimechange' | 'levelchange',
-    listener: () => void,
-  ) => void;
-  removeEventListener?: (
-    type: 'chargingtimechange' | 'chargingchange' | 'dischargingtimechange' | 'levelchange',
-    listener: () => void,
-  ) => void;
-}
-
-interface WebWakeLockSentinel {
-  addEventListener?: (type: 'release', listener: () => void) => void;
-  release?: () => Promise<void>;
-}
-
-interface WebWakeLock {
-  request: (type: 'screen') => Promise<WebWakeLockSentinel>;
-}
-
-function getWebBatteryManagerPromise(): Promise<WebBatteryManager> | null {
-  if (typeof navigator === 'undefined') return null;
-  const nav = navigator as Navigator & { getBattery?: () => Promise<WebBatteryManager> };
-  if (typeof nav.getBattery !== 'function') return null;
-  try {
-    return nav.getBattery();
-  } catch {
+const _sentinel: PowerBackend = {
+  getBatteryHealth() {
     return null;
-  }
-}
+  },
+  getStatus(out) {
+    out.batteryLevel = -1;
+    out.chargingTime = -1;
+    out.dischargingTime = -1;
+    out.isBatteryLow = false;
+    out.isCharging = false;
+    out.isLowPower = false;
+    out.isOnBattery = false;
+    out.thermalState = 'Unknown';
+    return out;
+  },
+  getSystemIdleState() {
+    return 'Unknown';
+  },
+  getSystemIdleTime() {
+    return -1;
+  },
+  isKeepAwakeActive() {
+    return false;
+  },
+  setKeepAwake() {
+    return false;
+  },
+  subscribe() {
+    return () => {};
+  },
+  subscribeLockScreen() {
+    return () => {};
+  },
+  subscribeLowPowerModeChange() {
+    return () => {};
+  },
+  subscribeResume() {
+    return () => {};
+  },
+  subscribeSuspend() {
+    return () => {};
+  },
+  subscribeThermalStateChange() {
+    return () => {};
+  },
+  subscribeUnlockScreen() {
+    return () => {};
+  },
+};
+const _subscriptions = new WeakMap<Power, () => void>();

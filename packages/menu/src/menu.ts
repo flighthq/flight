@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type { MenuBackend, MenuItemTemplate, MenuSignals } from '@flighthq/types/contract';
 
 // Deep-clones a MenuItemTemplate tree. The returned tree has the same shape and values. Safe to call
@@ -26,25 +27,6 @@ export function createMenuItemTemplate(template?: Readonly<Partial<MenuItemTempl
   return item;
 }
 
-// Builds the default web backend. The app-menu bar returns false (native host required for a true menu
-// bar). popupContextMenu delegates to the DOM-rendered context-menu popup. subscribeSelect never fires
-// on web (no native app menu).
-export function createWebMenuBackend(): MenuBackend {
-  return {
-    setApplicationMenu() {
-      // Web has no native menu bar; return false (not an error — caller should handle gracefully).
-      return false;
-    },
-    popupContextMenu(items, x, y) {
-      return showWebContextMenu(items, x, y);
-    },
-    subscribeSelect() {
-      // Web app-menu has no select source — native host required.
-      return () => {};
-    },
-  };
-}
-
 // Activates the optional MenuSignals group and returns it. Calling this is when the cost is assumed.
 // The returned object is shared for the lifetime of the package; calling enableMenuSignals multiple
 // times returns the same instance. Connect slots via connectSignal from @flighthq/signals.
@@ -60,15 +42,44 @@ export function enableMenuSignals(): MenuSignals {
   return _menuSignals;
 }
 
-// Returns the active backend; lazily creates a web default on first call.
+export function explainMenuBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// Returns the active backend following the precedence chain: custom > host > sentinel.
 export function getMenuBackend(): MenuBackend {
-  if (_backend === null) _backend = createWebMenuBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the active MenuSignals group, or null if enableMenuSignals has not been called.
 export function getMenuSignals(): Readonly<MenuSignals> | null {
   return _menuSignals;
+}
+
+export function installMenuHostBackend(backend: MenuBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeMenuHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Subscribes to application menu item selections by item id. Returns an unsubscribe function. On web
@@ -81,15 +92,22 @@ export function onMenuSelect(listener: (id: string) => void): () => void {
   });
 }
 
+export function resetMenuBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Installs the application menu bar. Returns true on success, or false when the host lacks a native
 // menu bar (e.g. web).
 export function setApplicationMenu(items: readonly MenuItemTemplate[]): boolean {
   return getMenuBackend().setApplicationMenu(items);
 }
 
-// Sets the active menu backend; pass null to fall back to the web default.
+// Sets a custom menu backend; pass null to clear and fall back to the host or sentinel.
 export function setMenuBackend(backend: MenuBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Pops up a context menu at (x, y) and resolves the clicked item id, or null when dismissed. On web,
@@ -105,83 +123,14 @@ export function showContextMenu(items: readonly MenuItemTemplate[], x: number, y
   return promise;
 }
 
-// Validates a MenuItemTemplate tree for consistency. Returns null on success, or a string describing
-// the first violation found. Does not throw — returns a sentinel for expected failures. Throws only
-// for cyclic submenu references (programmer error).
-export function validateMenuItemTemplate(template: Readonly<MenuItemTemplate>): string | null {
-  return _validateItem(template, new Set());
-}
-
-let _backend: MenuBackend | null = null;
-let _menuSignals: MenuSignals | null = null;
-
-function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<MenuItemTemplate>>): string | null {
-  if (seen.has(item)) {
-    throw new Error('validateMenuItemTemplate: cyclic submenu reference detected');
-  }
-  if (item.type === 'separator') {
-    if (item.label !== undefined && item.label !== '') {
-      return `separator item has a label: "${item.label}" (separators should not have labels)`;
-    }
-    if (item.accelerator !== undefined) {
-      return `separator item has an accelerator: "${item.accelerator}"`;
-    }
-    if (item.submenu !== undefined) {
-      return 'separator item has a submenu';
-    }
-    return null;
-  }
-  if (item.type !== 'submenu' && item.submenu !== undefined && item.submenu.length > 0) {
-    return `item type "${item.type ?? 'normal'}" has a submenu (only type "submenu" should carry children)`;
-  }
-  // `checked` only means something on the two toggle types. Setting it elsewhere is the mistake that
-  // renders silently: the web backend draws the checkmark from `checked` alone, so a normal item with
-  // checked: true grows a tick it can never clear, and native backends typically drop it instead —
-  // same descriptor, two different wrong results, which is exactly what validation is for.
-  if (item.checked !== undefined && item.type !== 'checkbox' && item.type !== 'radio') {
-    return `item type "${item.type ?? 'normal'}" has "checked" (only "checkbox" and "radio" items are checkable)`;
-  }
-  if (item.submenu !== undefined) {
-    const groupError = _validateRadioGroups(item.submenu);
-    if (groupError !== null) return groupError;
-    seen.add(item);
-    for (const child of item.submenu) {
-      const err = _validateItem(child, seen);
-      if (err !== null) return err;
-    }
-    seen.delete(item);
-  }
-  return null;
-}
-
-// A radio group is a run of adjacent radio items — any other item type, including a separator, starts
-// a new one. Exactly one member of a run may be checked; two checked members describe a state the
-// widget cannot represent, and each backend picks a different winner. Checked on a non-radio item is
-// caught per-item above; this is the rule that only exists across siblings, which is why it runs where
-// the child list is known rather than inside the per-item walk.
-function _validateRadioGroups(items: readonly Readonly<MenuItemTemplate>[]): string | null {
-  let checkedInRun = 0;
-  for (const item of items) {
-    if (item.type !== 'radio') {
-      checkedInRun = 0;
-      continue;
-    }
-    if (item.checked === true) checkedInRun++;
-    if (checkedInRun > 1) {
-      return `radio group has ${checkedInRun} checked items (a radio group may have at most one)`;
-    }
-  }
-  return null;
-}
-
-// --- Web context-menu renderer ---
 // Renders a minimal DOM popup for showContextMenu in a browser environment. Returns the clicked item
 // id or null when the menu is dismissed without a selection. Keyboard support is ArrowUp/ArrowDown
 // within one menu level, plus Enter/Space to select and Escape to dismiss. Submenus open on hover
 // only: there is no ArrowRight/ArrowLeft traversal, so a submenu's rows are unreachable by keyboard,
 // and Enter on a submenu parent currently resolves the popup with that parent's id rather than
 // opening it. Both are recorded as open work in the package assessment rather than fixed here.
-function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
+// Exported so the host-web enabler can delegate to this DOM rendering implementation.
+export function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null> {
   return new Promise((resolve) => {
     if (typeof document === 'undefined') {
       resolve(null);
@@ -262,6 +211,90 @@ function showWebContextMenu(items: readonly MenuItemTemplate[], x: number, y: nu
     document.body.appendChild(menu);
     clampMenu(menu, x, y);
   });
+}
+
+let _custom: MenuBackend | null = null;
+let _host: MenuBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+let _menuSignals: MenuSignals | null = null;
+
+const _sentinel: MenuBackend = {
+  async popupContextMenu() {
+    return null;
+  },
+  setApplicationMenu() {
+    return false;
+  },
+  subscribeSelect() {
+    return () => {};
+  },
+};
+
+function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<MenuItemTemplate>>): string | null {
+  if (seen.has(item)) {
+    throw new Error('validateMenuItemTemplate: cyclic submenu reference detected');
+  }
+  if (item.type === 'separator') {
+    if (item.label !== undefined && item.label !== '') {
+      return `separator item has a label: "${item.label}" (separators should not have labels)`;
+    }
+    if (item.accelerator !== undefined) {
+      return `separator item has an accelerator: "${item.accelerator}"`;
+    }
+    if (item.submenu !== undefined) {
+      return 'separator item has a submenu';
+    }
+    return null;
+  }
+  if (item.type !== 'submenu' && item.submenu !== undefined && item.submenu.length > 0) {
+    return `item type "${item.type ?? 'normal'}" has a submenu (only type "submenu" should carry children)`;
+  }
+  // `checked` only means something on the two toggle types. Setting it elsewhere is the mistake that
+  // renders silently: the web backend draws the checkmark from `checked` alone, so a normal item with
+  // checked: true grows a tick it can never clear, and native backends typically drop it instead —
+  // same descriptor, two different wrong results, which is exactly what validation is for.
+  if (item.checked !== undefined && item.type !== 'checkbox' && item.type !== 'radio') {
+    return `item type "${item.type ?? 'normal'}" has "checked" (only "checkbox" and "radio" items are checkable)`;
+  }
+  if (item.submenu !== undefined) {
+    const groupError = _validateRadioGroups(item.submenu);
+    if (groupError !== null) return groupError;
+    seen.add(item);
+    for (const child of item.submenu) {
+      const err = _validateItem(child, seen);
+      if (err !== null) return err;
+    }
+    seen.delete(item);
+  }
+  return null;
+}
+
+// A radio group is a run of adjacent radio items — any other item type, including a separator, starts
+// a new one. Exactly one member of a run may be checked; two checked members describe a state the
+// widget cannot represent, and each backend picks a different winner. Checked on a non-radio item is
+// caught per-item above; this is the rule that only exists across siblings, which is why it runs where
+// the child list is known rather than inside the per-item walk.
+function _validateRadioGroups(items: readonly Readonly<MenuItemTemplate>[]): string | null {
+  let checkedInRun = 0;
+  for (const item of items) {
+    if (item.type !== 'radio') {
+      checkedInRun = 0;
+      continue;
+    }
+    if (item.checked === true) checkedInRun++;
+    if (checkedInRun > 1) {
+      return `radio group has ${checkedInRun} checked items (a radio group may have at most one)`;
+    }
+  }
+  return null;
+}
+
+// Validates a MenuItemTemplate tree for consistency. Returns null on success, or a string describing
+// the first violation found. Does not throw — returns a sentinel for expected failures. Throws only
+// for cyclic submenu references (programmer error).
+export function validateMenuItemTemplate(template: Readonly<MenuItemTemplate>): string | null {
+  return _validateItem(template, new Set());
 }
 
 function buildWebMenuElement(items: readonly MenuItemTemplate[], onSelect: (id: string) => void): HTMLUListElement {

@@ -1,5 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { ParsedProtocolUrl, ProtocolBackend, ProtocolHandler } from '@flighthq/types/contract';
+import type { BackendExplanation, ParsedProtocolUrl, ProtocolBackend, ProtocolHandler } from '@flighthq/types/contract';
 
 // Begins delivering deep-link opens to `handler`'s signal by subscribing to the active backend. Wires
 // subscribe→onOpenUrl. Idempotent: a prior subscription is torn down first. Drains any URLs that
@@ -45,75 +45,6 @@ export function createProtocolUrl(parts: Readonly<Partial<ParsedProtocolUrl>>): 
   return url;
 }
 
-// Builds the default web backend over navigator.registerProtocolHandler. Registration degrades to
-// false where the API is absent. Deep-link delivery needs a native host, so subscribe is inert.
-export function createWebProtocolBackend(): ProtocolBackend {
-  const _registeredSchemes: string[] = [];
-  return {
-    register(scheme) {
-      if (typeof navigator === 'undefined' || typeof location === 'undefined') return false;
-      const nav = navigator as Navigator & {
-        registerProtocolHandler?: (scheme: string, url: string) => void;
-      };
-      if (typeof nav.registerProtocolHandler !== 'function') return false;
-      try {
-        nav.registerProtocolHandler(scheme, location.origin + '/?url=%s');
-        if (!_registeredSchemes.includes(scheme)) _registeredSchemes.push(scheme);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    unregister(scheme) {
-      // The web platform offers no programmatic unregister; report failure rather than throw.
-      const idx = _registeredSchemes.indexOf(scheme);
-      if (idx >= 0) _registeredSchemes.splice(idx, 1);
-      return false;
-    },
-    isRegistered() {
-      // The web platform offers no registration query; report not-registered.
-      return false;
-    },
-    getRegisteredSchemes() {
-      // Web cannot enumerate registered schemes reliably; return what we tracked locally.
-      return _registeredSchemes.slice();
-    },
-    setAsDefault() {
-      // The web platform cannot claim a scheme as the OS default; report failure.
-      return false;
-    },
-    isDefault() {
-      // The web platform cannot query OS default handler; report false.
-      return false;
-    },
-    removeAsDefault() {
-      // The web platform cannot remove an OS default handler; report failure.
-      return false;
-    },
-    getLaunchUrl() {
-      // On the web the registered handler redirects to /?url=<encoded-url>. Read that query param as
-      // the cold-start launch URL when present.
-      if (typeof location === 'undefined') return null;
-      try {
-        const params = new URLSearchParams(location.search);
-        const url = params.get('url');
-        return url && url.length > 0 ? url : null;
-      } catch {
-        return null;
-      }
-    },
-    drainPendingUrls() {
-      // The web backend has no pre-attach buffering; the cold-start URL is handled by getLaunchUrl.
-      return [] as readonly string[];
-    },
-    subscribe() {
-      // Web deep-link delivery requires a native host to route incoming URLs into the page; the web
-      // backend cannot observe protocol opens on its own, so this subscription is inert.
-      return () => {};
-    },
-  };
-}
-
 // Stops delivery to `handler` and forgets its subscription. Safe to call when not attached.
 export function detachProtocolHandler(handler: ProtocolHandler): void {
   const unsubscribe = _subscriptions.get(handler);
@@ -129,10 +60,24 @@ export function disposeProtocolHandler(handler: ProtocolHandler): void {
   detachProtocolHandler(handler);
 }
 
-// The active protocol backend, or a lazily-created web default. There is always a backend.
+export function explainProtocolBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active protocol backend. Precedence: custom > host > sentinel.
 export function getProtocolBackend(): ProtocolBackend {
-  if (_backend === null) _backend = createWebProtocolBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the URL the app was launched with via a deep link (cold start), or null when the app was
@@ -146,6 +91,14 @@ export function getProtocolLaunchUrl(): string | null {
 // enumerate registered schemes.
 export function getRegisteredProtocolSchemes(): readonly string[] {
   return getProtocolBackend().getRegisteredSchemes();
+}
+
+export function installProtocolHostBackend(backend: ProtocolBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // True when `scheme` is the OS default handler for deep links. Returns false where the host cannot
@@ -168,6 +121,13 @@ export function isValidProtocolScheme(scheme: string): boolean {
   const lower = scheme.toLowerCase();
   if (_reservedSchemes.has(lower)) return false;
   return _schemePattern.test(lower);
+}
+
+export function observeProtocolHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Parses a deep-link URL into its components. Returns null for malformed or non-custom-scheme URLs.
@@ -256,9 +216,16 @@ export function removeProtocolSchemeAsDefault(scheme: string): boolean {
   return getProtocolBackend().removeAsDefault(scheme);
 }
 
-// Installs a native host protocol backend; pass null to fall back to the web default.
+export function resetProtocolBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+// Installs a custom protocol backend; pass null to clear the custom override.
 export function setProtocolBackend(backend: ProtocolBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Makes this app the default handler for `scheme`. Returns false when the host denies or does not
@@ -283,13 +250,49 @@ export function unregisterProtocolSchemes(schemes: readonly string[]): boolean {
   return allOk;
 }
 
+const _sentinel: ProtocolBackend = {
+  drainPendingUrls() {
+    return [];
+  },
+  getLaunchUrl() {
+    return null;
+  },
+  getRegisteredSchemes() {
+    return [];
+  },
+  isDefault() {
+    return false;
+  },
+  isRegistered() {
+    return false;
+  },
+  register() {
+    return false;
+  },
+  removeAsDefault() {
+    return false;
+  },
+  setAsDefault() {
+    return false;
+  },
+  subscribe() {
+    return () => {};
+  },
+  unregister() {
+    return false;
+  },
+};
+
 // RFC 3986 scheme grammar: letter followed by zero or more letter/digit/+/-/. (lowercased).
 const _schemePattern = /^[a-z][a-z0-9+\-.]*$/;
 
 // Schemes that should never be claimed as custom URI handlers to avoid OS conflicts.
 const _reservedSchemes = new Set(['file', 'ftp', 'ftps', 'http', 'https', 'mailto']);
 
-let _backend: ProtocolBackend | null = null;
+let _custom: ProtocolBackend | null = null;
+let _host: ProtocolBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _subscriptions = new WeakMap<ProtocolHandler, () => void>();
 
 function _safeDecode(s: string): string {

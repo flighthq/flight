@@ -10,9 +10,9 @@ import {
   clearAppRecentDocuments,
   createApp,
   createAppLoginItem,
-  createWebAppBackend,
   detachApp,
   disposeApp,
+  explainAppBackend,
   focusApp,
   getAppBackend,
   getAppCommandLine,
@@ -29,12 +29,15 @@ import {
   hasAppCommandLineSwitch,
   hasAppSingleInstanceLock,
   hideApp,
+  installAppHostBackend,
   isAppHidden,
   quitApp,
   relaunchApp,
   releaseAppSingleInstanceLock,
   requestAppAttention,
   requestAppSingleInstanceLock,
+  observeAppHostResult,
+  resetAppBackendForTest,
   setAppActivationPolicy,
   setAppBackend,
   setAppBadgeCount,
@@ -254,7 +257,7 @@ function fakeBackend(): AppBackend & {
   };
 }
 
-afterEach(() => setAppBackend(null));
+afterEach(() => resetAppBackendForTest());
 
 describe('addAppRecentDocument', () => {
   it('forwards the path to the backend', () => {
@@ -402,40 +405,6 @@ describe('createAppLoginItem', () => {
   });
 });
 
-describe('createWebAppBackend', () => {
-  it('reads identity values without throwing', () => {
-    const backend = createWebAppBackend();
-    expect(typeof backend.getName()).toBe('string');
-    expect(typeof backend.getVersion()).toBe('string');
-    expect(typeof backend.getLocale()).toBe('string');
-    expect(backend.requestSingleInstanceLock()).toBe(true);
-    expect(backend.hasSingleInstanceLock()).toBe(true);
-    expect(backend.bounceDock()).toBe(-1);
-    expect(backend.subscribeActivate(() => {})).toBeInstanceOf(Function);
-  });
-
-  it('returns sentinel values for unavailable APIs', () => {
-    const backend = createWebAppBackend();
-    expect(backend.getAppPath()).toBe('');
-    expect(backend.getExecutablePath()).toBe('');
-    expect(backend.getCommandLine()).toEqual([]);
-    expect(backend.getLoginItem().openAtLogin).toBe(false);
-    expect(backend.hideApp()).toBe(false);
-    expect(backend.isAppHidden()).toBe(false);
-    expect(backend.requestAttention(false)).toBe(-1);
-    expect(backend.setLoginItem({})).toBe(false);
-    expect(backend.setName('X')).toBe(false);
-    expect(backend.setUserModelId('X')).toBe(false);
-    expect(backend.showApp()).toBe(false);
-  });
-
-  it('returns preferred system languages and system locale', () => {
-    const backend = createWebAppBackend();
-    expect(Array.isArray(backend.getPreferredSystemLanguages())).toBe(true);
-    expect(typeof backend.getSystemLocale()).toBe('string');
-  });
-});
-
 describe('detachApp', () => {
   it('stops further delivery', () => {
     const backend = fakeBackend();
@@ -464,6 +433,34 @@ describe('disposeApp', () => {
   });
 });
 
+describe('explainAppBackend', () => {
+  afterEach(() => resetAppBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetAppBackendForTest();
+    const explanation = explainAppBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setAppBackend(fakeBackend());
+    expect(explainAppBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installAppHostBackend(fakeBackend());
+    expect(explainAppBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installAppHostBackend(fakeBackend());
+    installAppHostBackend(fakeBackend());
+    expect(explainAppBackend().conflict).toBe(true);
+  });
+});
+
 describe('focusApp', () => {
   it('focuses through the backend', () => {
     const backend = fakeBackend();
@@ -476,6 +473,40 @@ describe('focusApp', () => {
 describe('getAppBackend', () => {
   it('falls back to a web backend', () => {
     expect(getAppBackend()).not.toBeNull();
+  });
+});
+
+describe('getAppBackend (sentinel)', () => {
+  it('reads identity values without throwing', () => {
+    const backend = getAppBackend();
+    expect(typeof backend.getName()).toBe('string');
+    expect(typeof backend.getVersion()).toBe('string');
+    expect(typeof backend.getLocale()).toBe('string');
+    expect(backend.requestSingleInstanceLock()).toBe(false);
+    expect(backend.hasSingleInstanceLock()).toBe(false);
+    expect(backend.bounceDock()).toBe(-1);
+    expect(backend.subscribeActivate(() => {})).toBeInstanceOf(Function);
+  });
+
+  it('returns sentinel values for unavailable APIs', () => {
+    const backend = getAppBackend();
+    expect(backend.getAppPath()).toBe('');
+    expect(backend.getExecutablePath()).toBe('');
+    expect(backend.getCommandLine()).toEqual([]);
+    expect(backend.getLoginItem().openAtLogin).toBe(false);
+    expect(backend.hideApp()).toBe(false);
+    expect(backend.isAppHidden()).toBe(false);
+    expect(backend.requestAttention(false)).toBe(-1);
+    expect(backend.setLoginItem({})).toBe(false);
+    expect(backend.setName('X')).toBe(false);
+    expect(backend.setUserModelId('X')).toBe(false);
+    expect(backend.showApp()).toBe(false);
+  });
+
+  it('returns preferred system languages and system locale', () => {
+    const backend = getAppBackend();
+    expect(Array.isArray(backend.getPreferredSystemLanguages())).toBe(true);
+    expect(typeof backend.getSystemLocale()).toBe('string');
   });
 });
 
@@ -609,6 +640,25 @@ describe('hideApp', () => {
   });
 });
 
+describe('installAppHostBackend', () => {
+  afterEach(() => resetAppBackendForTest());
+
+  it('installs a host backend that getAppBackend returns', () => {
+    const backend = fakeBackend();
+    installAppHostBackend(backend);
+    expect(getAppBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installAppHostBackend(first);
+    installAppHostBackend(second);
+    expect(getAppBackend()).toBe(first);
+    expect(explainAppBackend().conflict).toBe(true);
+  });
+});
+
 describe('isAppHidden', () => {
   it('reflects the backend hidden state', () => {
     const backend = fakeBackend();
@@ -616,6 +666,24 @@ describe('isAppHidden', () => {
     expect(isAppHidden()).toBe(false);
     hideApp();
     expect(isAppHidden()).toBe(true);
+  });
+});
+
+describe('observeAppHostResult', () => {
+  afterEach(() => resetAppBackendForTest());
+
+  it('records a successful observation', () => {
+    installAppHostBackend(fakeBackend());
+    observeAppHostResult('focus', true);
+    const explanation = explainAppBackend();
+    expect(explanation.operation).toBe('focus');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installAppHostBackend(fakeBackend());
+    observeAppHostResult('focus', false);
+    expect(explainAppBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -654,6 +722,20 @@ describe('requestAppSingleInstanceLock', () => {
   it('acquires the lock', () => {
     setAppBackend(fakeBackend());
     expect(requestAppSingleInstanceLock()).toBe(true);
+  });
+});
+
+describe('resetAppBackendForTest', () => {
+  it('clears all backend slots', () => {
+    const backend = fakeBackend();
+    setAppBackend(backend);
+    installAppHostBackend(fakeBackend());
+    observeAppHostResult('focus', true);
+    resetAppBackendForTest();
+    expect(getAppBackend()).not.toBe(backend);
+    expect(explainAppBackend().layer).toBe('host-not-enabled');
+    expect(explainAppBackend().conflict).toBe(false);
+    expect(explainAppBackend().viability).toBe('unobserved');
   });
 });
 

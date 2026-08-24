@@ -35,6 +35,7 @@ export {
   enableApplicationLifecycleSignals,
   exitApplicationFullscreen,
   exitApplicationPointerLock,
+  explainWindowBackend,
   flashWindowFrame,
   focusWindow,
   forEachApplicationWindow,

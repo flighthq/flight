@@ -4,6 +4,7 @@ export {
   detachPower,
   disposePower,
   enablePowerSignals,
+  explainPowerBackend,
   getPowerBatteryHealth,
   getPowerIdlePollingIntervalMs,
   getPowerStatus,

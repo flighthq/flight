@@ -1,4 +1,5 @@
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   ApplicationWindow,
   Matrix,
@@ -249,114 +250,6 @@ export function createApplicationWindow(): ApplicationWindow {
   };
 }
 
-// Builds the default web window backend over the browser page-window. Covers what a browser can do
-// (title via document.title, fullscreen, focus, popup move/resize/close); minimize/maximize/restore,
-// always-on-top, and size constraints have no browser equivalent and are no-ops — the window command
-// functions still update the entity state and emit signals, and native hosts implement the rest.
-export function createWebWindowBackend(): WindowBackend {
-  return {
-    open() {
-      return typeof window !== 'undefined';
-    },
-    close() {
-      if (typeof window !== 'undefined' && typeof window.close === 'function') {
-        try {
-          window.close();
-        } catch {
-          /* a non-script-opened window cannot be closed by script */
-        }
-      }
-    },
-    setTitle(_win, title) {
-      if (typeof document !== 'undefined') document.title = title;
-    },
-    setPosition(_win, x, y) {
-      if (typeof window !== 'undefined' && typeof window.moveTo === 'function') {
-        try {
-          window.moveTo(x, y);
-        } catch {
-          /* blocked outside a script-opened window */
-        }
-      }
-    },
-    setSize(_win, width, height) {
-      if (typeof window !== 'undefined' && typeof window.resizeTo === 'function') {
-        try {
-          window.resizeTo(width, height);
-        } catch {
-          /* blocked outside a script-opened window */
-        }
-      }
-    },
-    getBounds(win, out) {
-      if (typeof window === 'undefined') {
-        out.x = win.x;
-        out.y = win.y;
-        out.width = win.width;
-        out.height = win.height;
-        return out;
-      }
-      out.x = window.screenX ?? win.x;
-      out.y = window.screenY ?? win.y;
-      out.width = window.innerWidth ?? win.width;
-      out.height = window.innerHeight ?? win.height;
-      return out;
-    },
-    minimize() {},
-    maximize() {},
-    restore() {},
-    focus() {
-      if (typeof window !== 'undefined' && typeof window.focus === 'function') window.focus();
-    },
-    show() {},
-    hide() {},
-    center(win) {
-      if (typeof window === 'undefined' || typeof window.moveTo !== 'function' || typeof screen === 'undefined') return;
-      try {
-        window.moveTo(
-          Math.round((screen.availWidth - win.width) / 2),
-          Math.round((screen.availHeight - win.height) / 2),
-        );
-      } catch {
-        /* blocked outside a script-opened window */
-      }
-    },
-    setResizable() {},
-    setAlwaysOnTop() {},
-    setMinimumSize() {},
-    setMaximumSize() {},
-    setFullscreen(_win, fullscreen) {
-      if (typeof document === 'undefined') return;
-      try {
-        if (fullscreen) void document.documentElement.requestFullscreen?.();
-        else void document.exitFullscreen?.();
-      } catch {
-        /* fullscreen requires a user gesture; ignore rejection */
-      }
-    },
-    setIcon(_win, icon) {
-      // The browser equivalent of a window icon is the page favicon; native hosts set the real icon.
-      if (typeof document === 'undefined') return;
-      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-      if (link === null) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
-      link.href = icon;
-    },
-    setOpacity() {},
-    setSkipTaskbar() {},
-    setMenuBarVisible() {},
-    setParent() {},
-    setProgress() {},
-    requestAttention() {},
-    setContentProtection() {},
-    flashWindowFrame() {},
-    setHasShadow() {},
-  };
-}
-
 export function detachWindowClose(win: ApplicationWindow): void {
   const observers = getApplicationWindowObservers(win);
   observers.get(kClose)?.();
@@ -436,6 +329,21 @@ export function exitApplicationPointerLock(): Promise<void> {
   return Promise.resolve();
 }
 
+export function explainWindowBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // Briefly flashes the window frame to attract attention. No-op on web; native hosts implement via
 // the WindowBackend (e.g. Electron window.flashFrame(true)).
 export function flashWindowFrame(win: ApplicationWindow): void {
@@ -448,10 +356,9 @@ export function focusWindow(win: ApplicationWindow): void {
   getWindowBackend().focus(win);
 }
 
-// The active window backend, or a lazily-created web default. There is always a backend.
+// The active window backend: custom > host > sentinel. There is always a backend.
 export function getWindowBackend(): WindowBackend {
-  if (_windowBackend === null) _windowBackend = createWebWindowBackend();
-  return _windowBackend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Fills `out` with the window's current screen bounds and returns it.
@@ -472,6 +379,14 @@ export function hideWindow(win: ApplicationWindow): void {
   if (!win.visible) return;
   win.visible = false;
   getWindowBackend().hide(win);
+}
+
+export function installWindowHostBackend(backend: WindowBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // Requests Pointer Lock on an element, hiding and confining the cursor so raw mouse deltas are
@@ -498,6 +413,13 @@ export function minimizeWindow(win: ApplicationWindow): void {
   win.minimized = true;
   getWindowBackend().minimize(win);
   emitSignal(win.onMinimize);
+}
+
+export function observeWindowHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Opens (or configures) the window from options, applying each provided field to the entity and
@@ -555,6 +477,13 @@ export function requestWindowClose(win: ApplicationWindow): boolean {
   return win.onCloseRequest.data?.cancelled !== true;
 }
 
+export function resetWindowBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Restores the window from a minimized/maximized state. Emits onRestore when state changed.
 export function restoreWindow(win: ApplicationWindow): void {
   if (!win.minimized && !win.maximized) return;
@@ -570,9 +499,9 @@ export function setWindowAlwaysOnTop(win: ApplicationWindow, alwaysOnTop: boolea
   getWindowBackend().setAlwaysOnTop(win, alwaysOnTop);
 }
 
-// Installs a native host window backend; pass null to fall back to the web default.
+// Installs a custom window backend; pass null to fall back to host or sentinel.
 export function setWindowBackend(backend: WindowBackend | null): void {
-  _windowBackend = backend;
+  _custom = backend;
 }
 
 // Prevents (or allows) the window contents from being captured in screenshots or screen sharing.
@@ -676,12 +605,54 @@ export function showWindow(win: ApplicationWindow): void {
   getWindowBackend().show(win);
 }
 
+const _sentinel: WindowBackend = {
+  center() {},
+  close() {},
+  flashWindowFrame() {},
+  focus() {},
+  getBounds(win, out) {
+    out.x = win.x;
+    out.y = win.y;
+    out.width = win.width;
+    out.height = win.height;
+    return out;
+  },
+  hide() {},
+  maximize() {},
+  minimize() {},
+  open() {
+    return false;
+  },
+  requestAttention() {},
+  restore() {},
+  setAlwaysOnTop() {},
+  setContentProtection() {},
+  setFullscreen() {},
+  setHasShadow() {},
+  setIcon() {},
+  setMaximumSize() {},
+  setMenuBarVisible() {},
+  setMinimumSize() {},
+  setOpacity() {},
+  setParent() {},
+  setPosition() {},
+  setProgress() {},
+  setResizable() {},
+  setSize() {},
+  setSkipTaskbar() {},
+  setTitle() {},
+  show() {},
+};
+
 // Internal teardown registry, kept off the public ApplicationWindow entity (a side table like
 // input's binding map). attach/detach/dispose track cleanup closures internally so callers hold
 // nothing.
 const _applicationWindowObservers = new WeakMap<ApplicationWindow, Map<symbol, () => void>>();
 
-let _windowBackend: WindowBackend | null = null;
+let _custom: WindowBackend | null = null;
+let _host: WindowBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 
 function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
   let observers = _applicationWindowObservers.get(win);

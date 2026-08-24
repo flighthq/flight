@@ -8,6 +8,7 @@ export {
   createDefaultWindowMenuTemplate,
   createMenuItemTemplate,
   enableMenuSignals,
+  explainMenuBackend,
   getMenuSignals,
   onMenuSelect,
   setApplicationMenu,

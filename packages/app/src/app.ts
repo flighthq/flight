@@ -8,6 +8,7 @@ import type {
   AppPathKind,
   MenuItemTemplate,
 } from '@flighthq/types/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 
 // Adds a path to the system's recent-documents list (Jump List on Windows; macOS recents). No-op on
 // web and platforms without a recents list.
@@ -85,182 +86,6 @@ export function createAppLoginItem(): AppLoginItem {
   return { args: [], openAsHidden: false, openAtLogin: false, path: '' };
 }
 
-// Builds the default web backend over document/window/navigator. Degrades to empty strings and no-ops
-// where the APIs are absent. A web tab is inherently single-instance, so the lock is always held.
-export function createWebAppBackend(): AppBackend {
-  return {
-    addRecentDocument() {
-      // No web recent-documents list; no-op.
-    },
-    bounceDock() {
-      return -1;
-    },
-    cancelAttention() {
-      // No web attention API; no-op.
-    },
-    cancelDockBounce() {
-      // No web dock; no-op.
-    },
-    clearRecentDocuments() {
-      // No web recent-documents list; no-op.
-    },
-    focus() {
-      if (typeof window !== 'undefined') {
-        try {
-          window.focus();
-        } catch {
-          // Focus may be blocked by the host; ignore.
-        }
-      }
-    },
-    getAppDirectoryPath() {
-      // Web sentinel '': a web tab has no app-identity-relative directory. Native: userData/logs/
-      // crashDumps under the per-app data root.
-      return '';
-    },
-    getAppPath() {
-      // Web sentinel '': no bundle/exe directory in a tab. Native: the application directory.
-      return '';
-    },
-    getCommandLine() {
-      // Web sentinel []: a tab has no process argv. Native: this process's command-line arguments.
-      return [];
-    },
-    getExecutablePath() {
-      // Web sentinel '': no executable in a tab. Native: the running executable's path.
-      return '';
-    },
-    getLocale() {
-      return typeof navigator !== 'undefined' ? (navigator.language ?? '') : '';
-    },
-    getPreferredSystemLanguages() {
-      if (typeof navigator !== 'undefined' && Array.isArray(navigator.languages)) {
-        return navigator.languages as readonly string[];
-      }
-      return [];
-    },
-    getSystemLocale() {
-      try {
-        return typeof Intl !== 'undefined' ? new Intl.DateTimeFormat().resolvedOptions().locale : '';
-      } catch {
-        return '';
-      }
-    },
-    getLoginItem() {
-      // Web sentinel: a default with openAtLogin false — a tab has no launch-at-login concept.
-      // Native: the OS launch-at-login registration for this app.
-      return { args: [], openAsHidden: false, openAtLogin: false, path: '' };
-    },
-    getName() {
-      // Web: document.title stands in for the app name ('' when no document). Native: the app's
-      // display name.
-      return typeof document !== 'undefined' ? document.title : '';
-    },
-    getVersion() {
-      // Web sentinel '': a tab carries no app version. Native: the packaged app version string.
-      return '';
-    },
-    hasSingleInstanceLock() {
-      return true;
-    },
-    hideApp() {
-      // No web application-hide; no-op.
-      return false;
-    },
-    isAppHidden() {
-      return false;
-    },
-    quit() {
-      if (typeof window !== 'undefined') {
-        try {
-          window.close();
-        } catch {
-          // window.close() is restricted for non-script-opened tabs; ignore.
-        }
-      }
-    },
-    relaunch() {
-      if (typeof location !== 'undefined') {
-        try {
-          location.reload();
-        } catch {
-          // Reload may be blocked in some embedding contexts; ignore.
-        }
-      }
-    },
-    releaseSingleInstanceLock() {
-      // A web tab cannot relinquish a process-level lock; no-op.
-    },
-    requestAttention() {
-      return -1;
-    },
-    requestSingleInstanceLock() {
-      return true;
-    },
-    setActivationPolicy() {
-      // No macOS activation policy on web; no-op.
-    },
-    setBadgeCount(count) {
-      if (typeof navigator === 'undefined' || !('setAppBadge' in navigator)) return false;
-      try {
-        (navigator as Navigator & { setAppBadge(count?: number): Promise<void> }).setAppBadge(count);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    setDockBadge() {
-      // No web dock; no-op.
-    },
-    setDockMenu() {
-      // No web dock menu; a native host (Electron app.dock) is required.
-    },
-    setLoginItem() {
-      // Web tabs have no login-item concept; no-op.
-      return false;
-    },
-    setName() {
-      // Cannot rename the application from web context; no-op.
-      return false;
-    },
-    setUserModelId() {
-      // AppUserModelID is Windows-only; no-op on web.
-      return false;
-    },
-    showApp() {
-      // No web application-show; no-op.
-      return false;
-    },
-    subscribeActivate() {
-      // No web app-activate event; the listener is never called. Native: dock/taskbar re-activation.
-      return () => {};
-    },
-    subscribeAllWindowsClosed() {
-      // No web all-windows-closed event; the listener is never called. Native: last window closed.
-      return () => {};
-    },
-    subscribeOpenFile() {
-      // No web open-file event; the listener is never called. Native: OS file-open / "Open With".
-      return () => {};
-    },
-    subscribeQuitRequest(_listener) {
-      // A web tab cannot intercept the browser's quit path; the listener is never called.
-      return () => {};
-    },
-    subscribeReady(listener) {
-      // On the web the DOM is already ready by the time script runs; fire on the next microtask.
-      const id = Promise.resolve().then(() => listener());
-      void id;
-      return () => {};
-    },
-    subscribeSecondInstance() {
-      // No web second-instance event; the listener is never called. Native: another launch hands its
-      // argv to the lock holder.
-      return () => {};
-    },
-  };
-}
-
 // Stops delivery to `app` and forgets its subscription. Safe to call when not attached.
 export function detachApp(app: App): void {
   const unsubscribe = _subscriptions.get(app);
@@ -276,15 +101,28 @@ export function disposeApp(app: App): void {
   detachApp(app);
 }
 
+export function explainAppBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // Brings the application to the foreground.
 export function focusApp(): void {
   getAppBackend().focus();
 }
 
-// The active app backend, or a lazily-created web default. There is always a backend.
 export function getAppBackend(): AppBackend {
-  if (_backend === null) _backend = createWebAppBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // The command-line arguments for this process, or [] on web.
@@ -366,9 +204,24 @@ export function hideApp(): boolean {
   return getAppBackend().hideApp();
 }
 
+export function installAppHostBackend(backend: AppBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 // True when the application is hidden (macOS only). Always false on web.
 export function isAppHidden(): boolean {
   return getAppBackend().isAppHidden();
+}
+
+export function observeAppHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Quits the application.
@@ -398,15 +251,21 @@ export function requestAppSingleInstanceLock(): boolean {
   return getAppBackend().requestSingleInstanceLock();
 }
 
+export function resetAppBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Sets the macOS activation policy, controlling dock presence and Command-Tab visibility. No-op on
 // non-macOS and web.
 export function setAppActivationPolicy(policy: AppActivationPolicy): void {
   getAppBackend().setActivationPolicy(policy);
 }
 
-// Installs a native host app backend; pass null to fall back to the web default.
 export function setAppBackend(backend: AppBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Sets the numeric application badge (taskbar overlay / dock / PWA badge). Returns false when
@@ -448,5 +307,97 @@ export function showApp(): boolean {
   return getAppBackend().showApp();
 }
 
-let _backend: AppBackend | null = null;
+const _noop = (): (() => void) => () => {};
+
+const _sentinel: AppBackend = {
+  addRecentDocument() {},
+  bounceDock() {
+    return -1;
+  },
+  cancelAttention() {},
+  cancelDockBounce() {},
+  clearRecentDocuments() {},
+  focus() {},
+  getAppDirectoryPath() {
+    return '';
+  },
+  getAppPath() {
+    return '';
+  },
+  getCommandLine() {
+    return [];
+  },
+  getExecutablePath() {
+    return '';
+  },
+  getLocale() {
+    return '';
+  },
+  getLoginItem(): AppLoginItem {
+    return { args: [], openAsHidden: false, openAtLogin: false, path: '' };
+  },
+  getName() {
+    return '';
+  },
+  getPreferredSystemLanguages() {
+    return [];
+  },
+  getSystemLocale() {
+    try {
+      return typeof Intl !== 'undefined' ? new Intl.DateTimeFormat().resolvedOptions().locale : '';
+    } catch {
+      return '';
+    }
+  },
+  getVersion() {
+    return '';
+  },
+  hasSingleInstanceLock() {
+    return false;
+  },
+  hideApp() {
+    return false;
+  },
+  isAppHidden() {
+    return false;
+  },
+  quit() {},
+  relaunch() {},
+  releaseSingleInstanceLock() {},
+  requestAttention() {
+    return -1;
+  },
+  requestSingleInstanceLock() {
+    return false;
+  },
+  setActivationPolicy() {},
+  setBadgeCount() {
+    return false;
+  },
+  setDockBadge() {},
+  setDockMenu() {},
+  setLoginItem() {
+    return false;
+  },
+  setName() {
+    return false;
+  },
+  setUserModelId() {
+    return false;
+  },
+  showApp() {
+    return false;
+  },
+  subscribeActivate: _noop,
+  subscribeAllWindowsClosed: _noop,
+  subscribeOpenFile: _noop,
+  subscribeQuitRequest: _noop,
+  subscribeReady: _noop,
+  subscribeSecondInstance: _noop,
+};
+
+let _custom: AppBackend | null = null;
+let _host: AppBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _subscriptions = new WeakMap<App, () => void>();

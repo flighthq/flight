@@ -6,10 +6,10 @@ import {
   createPower,
   createPowerBatteryHealth,
   createPowerStatus,
-  createWebPowerBackend,
   detachPower,
   disposePower,
   enablePowerSignals,
+  explainPowerBackend,
   getPowerBackend,
   getPowerBatteryHealth,
   getPowerIdlePollingIntervalMs,
@@ -18,6 +18,9 @@ import {
   getPowerSystemIdleTime,
   getPowerThermalState,
   hasPowerKeepAwake,
+  installPowerHostBackend,
+  observePowerHostResult,
+  resetPowerBackendForTest,
   setPowerBackend,
   setPowerIdlePollingIntervalMs,
   setPowerKeepAwake,
@@ -137,7 +140,7 @@ function fakeBackend(): PowerBackend & {
   };
 }
 
-afterEach(() => setPowerBackend(null));
+afterEach(() => resetPowerBackendForTest());
 
 describe('attachPower', () => {
   it('emits onChange and the charging transition signals', () => {
@@ -335,72 +338,6 @@ describe('createPowerStatus', () => {
   });
 });
 
-describe('createWebPowerBackend', () => {
-  it('isKeepAwakeActive returns false when no lock is held', () => {
-    expect(createWebPowerBackend().isKeepAwakeActive()).toBe(false);
-  });
-
-  it('reads a status without throwing', () => {
-    const out = createPowerStatus();
-    expect(typeof createWebPowerBackend().getStatus(out).isCharging).toBe('boolean');
-  });
-
-  it('getStatus is alias-safe when out is the scratch object', () => {
-    const backend = createWebPowerBackend();
-    const out = createPowerStatus();
-    const result = backend.getStatus(out);
-    expect(result).toBe(out);
-  });
-
-  it('getBatteryHealth returns null on web', () => {
-    const backend = createWebPowerBackend();
-    const out = createPowerBatteryHealth();
-    expect(backend.getBatteryHealth(out)).toBeNull();
-  });
-
-  it('getSystemIdleTime returns -1 on web', () => {
-    expect(createWebPowerBackend().getSystemIdleTime()).toBe(-1);
-  });
-
-  it('getSystemIdleState returns Unknown on web', () => {
-    expect(createWebPowerBackend().getSystemIdleState(5)).toBe('Unknown');
-  });
-
-  it('subscribeLockScreen and subscribeUnlockScreen return inert no-ops on the web', () => {
-    const backend = createWebPowerBackend();
-    expect(() => backend.subscribeLockScreen(() => {})()).not.toThrow();
-    expect(() => backend.subscribeUnlockScreen(() => {})()).not.toThrow();
-  });
-
-  it('subscribeLowPowerModeChange returns an inert no-op on the web', () => {
-    const backend = createWebPowerBackend();
-    expect(() => backend.subscribeLowPowerModeChange(() => {})()).not.toThrow();
-  });
-
-  it('subscribeThermalStateChange returns an inert no-op on the web', () => {
-    const backend = createWebPowerBackend();
-    expect(() => backend.subscribeThermalStateChange(() => {})()).not.toThrow();
-  });
-
-  it('subscribes without throwing when battery API is absent', () => {
-    const unsubscribe = createWebPowerBackend().subscribe(() => {});
-    expect(() => unsubscribe()).not.toThrow();
-  });
-
-  it('toggles keep-awake without throwing', () => {
-    expect(typeof createWebPowerBackend().setKeepAwake(true)).toBe('boolean');
-  });
-
-  it('setKeepAwake returns false for PreventAppSuspension mode (web unsupported)', () => {
-    expect(createWebPowerBackend().setKeepAwake(true, 'PreventAppSuspension')).toBe(false);
-  });
-
-  it('setKeepAwake honors PreventDisplaySleep mode (web default path)', () => {
-    // Web may not have wakeLock, but should not throw.
-    expect(() => createWebPowerBackend().setKeepAwake(true, 'PreventDisplaySleep')).not.toThrow();
-  });
-});
-
 describe('detachPower', () => {
   it('stops further delivery', () => {
     const backend = fakeBackend();
@@ -472,9 +409,102 @@ describe('enablePowerSignals', () => {
   });
 });
 
+describe('explainPowerBackend', () => {
+  afterEach(() => resetPowerBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetPowerBackendForTest();
+    const explanation = explainPowerBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setPowerBackend(fakeBackend());
+    expect(explainPowerBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installPowerHostBackend(fakeBackend());
+    expect(explainPowerBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installPowerHostBackend(fakeBackend());
+    installPowerHostBackend(fakeBackend());
+    expect(explainPowerBackend().conflict).toBe(true);
+  });
+});
+
 describe('getPowerBackend', () => {
   it('falls back to a web backend', () => {
     expect(getPowerBackend()).not.toBeNull();
+  });
+});
+
+describe('getPowerBackend (sentinel)', () => {
+  it('isKeepAwakeActive returns false when no lock is held', () => {
+    expect(getPowerBackend().isKeepAwakeActive()).toBe(false);
+  });
+
+  it('reads a status without throwing', () => {
+    const out = createPowerStatus();
+    expect(typeof getPowerBackend().getStatus(out).isCharging).toBe('boolean');
+  });
+
+  it('getStatus is alias-safe when out is the scratch object', () => {
+    const backend = getPowerBackend();
+    const out = createPowerStatus();
+    const result = backend.getStatus(out);
+    expect(result).toBe(out);
+  });
+
+  it('getBatteryHealth returns null', () => {
+    const backend = getPowerBackend();
+    const out = createPowerBatteryHealth();
+    expect(backend.getBatteryHealth(out)).toBeNull();
+  });
+
+  it('getSystemIdleTime returns -1', () => {
+    expect(getPowerBackend().getSystemIdleTime()).toBe(-1);
+  });
+
+  it('getSystemIdleState returns Unknown', () => {
+    expect(getPowerBackend().getSystemIdleState(5)).toBe('Unknown');
+  });
+
+  it('subscribeLockScreen and subscribeUnlockScreen return inert no-ops', () => {
+    const backend = getPowerBackend();
+    expect(() => backend.subscribeLockScreen(() => {})()).not.toThrow();
+    expect(() => backend.subscribeUnlockScreen(() => {})()).not.toThrow();
+  });
+
+  it('subscribeLowPowerModeChange returns an inert no-op', () => {
+    const backend = getPowerBackend();
+    expect(() => backend.subscribeLowPowerModeChange(() => {})()).not.toThrow();
+  });
+
+  it('subscribeThermalStateChange returns an inert no-op', () => {
+    const backend = getPowerBackend();
+    expect(() => backend.subscribeThermalStateChange(() => {})()).not.toThrow();
+  });
+
+  it('subscribes without throwing', () => {
+    const unsubscribe = getPowerBackend().subscribe(() => {});
+    expect(() => unsubscribe()).not.toThrow();
+  });
+
+  it('setKeepAwake returns false', () => {
+    expect(getPowerBackend().setKeepAwake(true)).toBe(false);
+  });
+
+  it('setKeepAwake returns false for PreventAppSuspension mode', () => {
+    expect(getPowerBackend().setKeepAwake(true, 'PreventAppSuspension')).toBe(false);
+  });
+
+  it('setKeepAwake returns false for PreventDisplaySleep mode', () => {
+    expect(getPowerBackend().setKeepAwake(true, 'PreventDisplaySleep')).toBe(false);
   });
 });
 
@@ -567,6 +597,57 @@ describe('hasPowerKeepAwake', () => {
     expect(hasPowerKeepAwake()).toBe(false);
     backend.keepAwake = true;
     expect(hasPowerKeepAwake()).toBe(true);
+  });
+});
+
+describe('installPowerHostBackend', () => {
+  afterEach(() => resetPowerBackendForTest());
+
+  it('installs a host backend that getPowerBackend returns', () => {
+    const backend = fakeBackend();
+    installPowerHostBackend(backend);
+    expect(getPowerBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installPowerHostBackend(first);
+    installPowerHostBackend(second);
+    expect(getPowerBackend()).toBe(first);
+    expect(explainPowerBackend().conflict).toBe(true);
+  });
+});
+
+describe('observePowerHostResult', () => {
+  afterEach(() => resetPowerBackendForTest());
+
+  it('records a successful observation', () => {
+    installPowerHostBackend(fakeBackend());
+    observePowerHostResult('setKeepAwake', true);
+    const explanation = explainPowerBackend();
+    expect(explanation.operation).toBe('setKeepAwake');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installPowerHostBackend(fakeBackend());
+    observePowerHostResult('setKeepAwake', false);
+    expect(explainPowerBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetPowerBackendForTest', () => {
+  it('clears all backend slots', () => {
+    const backend = fakeBackend();
+    setPowerBackend(backend);
+    installPowerHostBackend(fakeBackend());
+    observePowerHostResult('setKeepAwake', true);
+    resetPowerBackendForTest();
+    expect(getPowerBackend()).not.toBe(backend);
+    expect(explainPowerBackend().layer).toBe('host-not-enabled');
+    expect(explainPowerBackend().conflict).toBe(false);
+    expect(explainPowerBackend().viability).toBe('unobserved');
   });
 });
 

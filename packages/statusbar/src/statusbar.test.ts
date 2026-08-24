@@ -6,15 +6,19 @@ import {
   clearStatusBarStyleStack,
   createStatusBar,
   createStatusBarInfo,
-  createWebStatusBarBackend,
   detachStatusBar,
   disposeStatusBar,
+  explainStatusBarBackend,
   getStatusBarBackend,
   getStatusBarHeight,
   getStatusBarInfo,
   hasStatusBarStyleEntry,
+  installStatusBarHostBackend,
+  observeStatusBarHostResult,
+  packedRgbaToHexColor,
   popStatusBarStyleEntry,
   pushStatusBarStyleEntry,
+  resetStatusBarBackendForTest,
   setStatusBarBackend,
   setStatusBarColor,
   setStatusBarOverlaysContent,
@@ -80,10 +84,8 @@ function fakeBackend(): StatusBarBackend & {
 }
 
 afterEach(() => {
-  // Empty the stack before dropping the backend, so the restore lands on the fake rather than on the
-  // web default that setStatusBarBackend(null) falls back to.
   clearStatusBarStyleStack();
-  setStatusBarBackend(null);
+  resetStatusBarBackendForTest();
 });
 
 describe('attachStatusBar', () => {
@@ -208,72 +210,6 @@ describe('createStatusBarInfo', () => {
   });
 });
 
-describe('createWebStatusBarBackend', () => {
-  it('upserts a single theme-color meta with #rrggbb from the top 24 bits', () => {
-    document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
-    const backend = createWebStatusBarBackend();
-    backend.setBackgroundColor(0x11223344);
-    backend.setBackgroundColor(0xaabbccff);
-    const metas = document.head.querySelectorAll('meta[name="theme-color"]');
-    expect(metas.length).toBe(1);
-    expect(metas[0].getAttribute('content')).toBe('#aabbcc');
-  });
-
-  it('no-ops style/visible/overlay/subscribe without throwing', () => {
-    const backend = createWebStatusBarBackend();
-    expect(() => {
-      backend.setStyle('light');
-      backend.setVisible(false, 'slide');
-      backend.setOverlaysContent(true);
-      const unsub = backend.subscribe(() => {});
-      unsub();
-    }).not.toThrow();
-  });
-
-  it('getInfo returns -1 height and defaults when no theme-color meta', () => {
-    document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
-    const backend = createWebStatusBarBackend();
-    const info = createStatusBarInfo();
-    backend.getInfo(info);
-    expect(info.height).toBe(-1);
-    expect(info.visible).toBe(true);
-    expect(info.color).toBe(0);
-  });
-
-  it('getInfo reads back a previously set theme-color meta', () => {
-    document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
-    const backend = createWebStatusBarBackend();
-    backend.setBackgroundColor(0xff000000); // red, no alpha
-    const info = createStatusBarInfo();
-    backend.getInfo(info);
-    // Color should be reconstructed as 0xff0000ff (alpha forced to 0xff on web read-back)
-    expect(info.color).toBe(0xff0000ff);
-  });
-
-  it('getInfo expands a short #rgb theme-color and rejects malformed hex', () => {
-    document.head.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.remove());
-    const meta = document.createElement('meta');
-    meta.setAttribute('name', 'theme-color');
-    document.head.appendChild(meta);
-    const backend = createWebStatusBarBackend();
-    const info = createStatusBarInfo();
-
-    meta.setAttribute('content', '#aBc');
-    backend.getInfo(info);
-    expect(info.color).toBe(0xaabbccff);
-
-    meta.setAttribute('content', '#12xz56');
-    backend.getInfo(info);
-    expect(info.color).toBe(0);
-  });
-
-  it('subscribe returns a no-op unsubscribe function', () => {
-    const backend = createWebStatusBarBackend();
-    const unsub = backend.subscribe(() => {});
-    expect(() => unsub()).not.toThrow();
-  });
-});
-
 describe('detachStatusBar', () => {
   it('stops subscription and is safe to call when not attached', () => {
     const backend = fakeBackend();
@@ -307,6 +243,34 @@ describe('disposeStatusBar', () => {
   });
 });
 
+describe('explainStatusBarBackend', () => {
+  afterEach(() => resetStatusBarBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetStatusBarBackendForTest();
+    const explanation = explainStatusBarBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setStatusBarBackend(fakeBackend());
+    expect(explainStatusBarBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installStatusBarHostBackend(fakeBackend());
+    expect(explainStatusBarBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installStatusBarHostBackend(fakeBackend());
+    installStatusBarHostBackend(fakeBackend());
+    expect(explainStatusBarBackend().conflict).toBe(true);
+  });
+});
+
 describe('getStatusBarBackend', () => {
   it('falls back to a web backend', () => {
     expect(getStatusBarBackend()).not.toBeNull();
@@ -316,6 +280,39 @@ describe('getStatusBarBackend', () => {
     const backend = fakeBackend();
     setStatusBarBackend(backend);
     expect(getStatusBarBackend()).toBe(backend);
+  });
+});
+
+describe('getStatusBarBackend (sentinel)', () => {
+  it('no-ops style/visible/overlay/subscribe without throwing', () => {
+    const backend = getStatusBarBackend();
+    expect(() => {
+      backend.setStyle('light');
+      backend.setVisible(false, 'slide');
+      backend.setOverlaysContent(true);
+      const unsub = backend.subscribe(() => {});
+      unsub();
+    }).not.toThrow();
+  });
+
+  it('getInfo returns -1 height and defaults', () => {
+    const backend = getStatusBarBackend();
+    const info = createStatusBarInfo();
+    backend.getInfo(info);
+    expect(info.height).toBe(-1);
+    expect(info.visible).toBe(true);
+    expect(info.color).toBe(0);
+  });
+
+  it('setBackgroundColor is a no-op', () => {
+    const backend = getStatusBarBackend();
+    expect(() => backend.setBackgroundColor(0xff0000ff)).not.toThrow();
+  });
+
+  it('subscribe returns a no-op unsubscribe function', () => {
+    const backend = getStatusBarBackend();
+    const unsub = backend.subscribe(() => {});
+    expect(() => unsub()).not.toThrow();
   });
 });
 
@@ -384,6 +381,57 @@ describe('hasStatusBarStyleEntry', () => {
     const top = pushStatusBarStyleEntry({ style: 'light' });
     popStatusBarStyleEntry(top);
     expect(hasStatusBarStyleEntry(bottom)).toBe(true);
+  });
+});
+
+describe('installStatusBarHostBackend', () => {
+  afterEach(() => resetStatusBarBackendForTest());
+
+  it('installs a host backend that getStatusBarBackend returns', () => {
+    const backend = fakeBackend();
+    installStatusBarHostBackend(backend);
+    expect(getStatusBarBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installStatusBarHostBackend(first);
+    installStatusBarHostBackend(second);
+    expect(getStatusBarBackend()).toBe(first);
+    expect(explainStatusBarBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeStatusBarHostResult', () => {
+  afterEach(() => resetStatusBarBackendForTest());
+
+  it('records a successful observation', () => {
+    installStatusBarHostBackend(fakeBackend());
+    observeStatusBarHostResult('setBackgroundColor', true);
+    const explanation = explainStatusBarBackend();
+    expect(explanation.operation).toBe('setBackgroundColor');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installStatusBarHostBackend(fakeBackend());
+    observeStatusBarHostResult('setBackgroundColor', false);
+    expect(explainStatusBarBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('packedRgbaToHexColor', () => {
+  it('converts a packed RGBA to a hex color string', () => {
+    expect(packedRgbaToHexColor(0xff0000ff)).toBe('#ff0000');
+  });
+
+  it('converts black', () => {
+    expect(packedRgbaToHexColor(0x000000ff)).toBe('#000000');
+  });
+
+  it('converts white', () => {
+    expect(packedRgbaToHexColor(0xffffffff)).toBe('#ffffff');
   });
 });
 
@@ -497,6 +545,20 @@ describe('pushStatusBarStyleEntry', () => {
     pushStatusBarStyleEntry({ visible: false }); // no style set → falls through
     expect(backend.style).toBe('dark');
     expect(backend.visible).toBe(false);
+  });
+});
+
+describe('resetStatusBarBackendForTest', () => {
+  it('clears all backend slots', () => {
+    const backend = fakeBackend();
+    setStatusBarBackend(backend);
+    installStatusBarHostBackend(fakeBackend());
+    observeStatusBarHostResult('setBackgroundColor', true);
+    resetStatusBarBackendForTest();
+    expect(getStatusBarBackend()).not.toBe(backend);
+    expect(explainStatusBarBackend().layer).toBe('host-not-enabled');
+    expect(explainStatusBarBackend().conflict).toBe(false);
+    expect(explainStatusBarBackend().viability).toBe('unobserved');
   });
 });
 

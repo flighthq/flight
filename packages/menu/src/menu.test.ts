@@ -3,14 +3,18 @@ import type { MenuBackend, MenuItemTemplate } from '@flighthq/types/contract';
 import {
   cloneMenuTemplate,
   createMenuItemTemplate,
-  createWebMenuBackend,
   enableMenuSignals,
+  explainMenuBackend,
   getMenuBackend,
   getMenuSignals,
+  installMenuHostBackend,
+  observeMenuHostResult,
   onMenuSelect,
+  resetMenuBackendForTest,
   setApplicationMenu,
   setMenuBackend,
   showContextMenu,
+  showWebContextMenu,
   validateMenuItemTemplate,
 } from './menu';
 
@@ -52,148 +56,76 @@ describe('createMenuItemTemplate', () => {
   });
 });
 
-describe('createWebMenuBackend', () => {
-  it('reports no native application menu', () => {
-    const backend = createWebMenuBackend();
-    expect(backend.setApplicationMenu([])).toBe(false);
-  });
-
-  it('returns an unsubscribe function from subscribeSelect', () => {
-    const backend = createWebMenuBackend();
-    expect(typeof backend.subscribeSelect(() => {})).toBe('function');
-  });
-});
-
-describe('createWebMenuBackend context-menu renderer', () => {
-  afterEach(() => {
-    document.body.replaceChildren();
-    vi.restoreAllMocks();
-  });
-
-  function getRootMenu(): HTMLUListElement {
-    const menu = document.body.querySelector('ul');
-    expect(menu).not.toBeNull();
-    return menu as HTMLUListElement;
-  }
-
-  function getOverlay(): HTMLDivElement {
-    const overlay = document.body.querySelector('div');
-    expect(overlay).not.toBeNull();
-    return overlay as HTMLDivElement;
-  }
-
-  function press(key: string): void {
-    document.dispatchEvent(new KeyboardEvent('keydown', { key }));
-  }
-
-  it('renders separators, checked kinds, accelerators, and disabled items', async () => {
-    const promise = createWebMenuBackend().popupContextMenu(
-      [
-        { id: 'checked', label: 'Checked', type: 'checkbox', checked: true },
-        { id: 'chosen', label: 'Chosen', type: 'radio', checked: true },
-        { type: 'separator' },
-        { id: 'save', label: 'Save', accelerator: 'Ctrl+S' },
-        { id: 'disabled', label: 'Disabled', enabled: false },
-      ],
-      10,
-      20,
-    );
-    const items = getRootMenu().querySelectorAll(':scope > li');
-    expect(items).toHaveLength(5);
-    expect(items[0].textContent).toBe('✓Checked');
-    expect(items[1].textContent).toBe('●Chosen');
-    expect(items[2].getAttribute('data-enabled')).toBeNull();
-    expect(items[3].textContent).toBe('SaveCtrl+S');
-    expect(items[4].getAttribute('data-enabled')).toBe('false');
-
-    let settled = false;
-    void promise.then(() => {
-      settled = true;
-    });
-    items[4].dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await Promise.resolve();
-    expect(settled).toBe(false);
-    getOverlay().click();
-    await expect(promise).resolves.toBeNull();
-  });
-
-  it('selects enabled items by click and dismisses on outside click', async () => {
-    const backend = createWebMenuBackend();
-    const selected = backend.popupContextMenu([{ id: 'copy', label: 'Copy' }], 0, 0);
-    getRootMenu().querySelector<HTMLElement>('li')!.click();
-    await expect(selected).resolves.toBe('copy');
-    expect(document.body.querySelector('ul')).toBeNull();
-
-    const dismissed = backend.popupContextMenu([{ id: 'paste', label: 'Paste' }], 0, 0);
-    getOverlay().click();
-    await expect(dismissed).resolves.toBeNull();
-  });
-
-  it('wraps keyboard focus and selects with Enter or Space', async () => {
-    const items = [
-      { id: 'first', label: 'First' },
-      { id: 'disabled', label: 'Disabled', enabled: false },
-      { id: 'last', label: 'Last' },
-    ];
-
-    const enterSelection = createWebMenuBackend().popupContextMenu(items, 0, 0);
-    press('ArrowUp');
-    expect(getRootMenu().querySelector('[data-focused="true"]')?.getAttribute('data-item-id')).toBe('last');
-    press('Enter');
-    await expect(enterSelection).resolves.toBe('last');
-
-    const spaceSelection = createWebMenuBackend().popupContextMenu(items, 0, 0);
-    press('ArrowDown');
-    press('ArrowDown');
-    press('ArrowDown');
-    expect(getRootMenu().querySelector('[data-focused="true"]')?.getAttribute('data-item-id')).toBe('first');
-    press(' ');
-    await expect(spaceSelection).resolves.toBe('first');
-  });
-
-  it('dismisses on Escape', async () => {
-    const promise = createWebMenuBackend().popupContextMenu([{ id: 'copy', label: 'Copy' }], 0, 0);
-    press('Escape');
-    await expect(promise).resolves.toBeNull();
-  });
-
-  it('opens a submenu on hover and resolves a child selection', async () => {
-    const promise = createWebMenuBackend().popupContextMenu(
-      [{ id: 'file', label: 'File', type: 'submenu', submenu: [{ id: 'open', label: 'Open' }] }],
-      0,
-      0,
-    );
-    const parent = getRootMenu().querySelector<HTMLElement>(':scope > li')!;
-    const submenu = parent.querySelector<HTMLElement>('ul')!;
-    expect(submenu.style.display).toBe('none');
-    parent.dispatchEvent(new MouseEvent('mouseenter'));
-    expect(submenu.style.display).toBe('block');
-    submenu.querySelector<HTMLElement>('li')!.click();
-    await expect(promise).resolves.toBe('open');
-  });
-
-  it('clamps a menu that overflows the viewport', async () => {
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(1900, 1900, 100, 100));
-    const promise = createWebMenuBackend().popupContextMenu([{ id: 'copy', label: 'Copy' }], 40, 30);
-    expect(getRootMenu().style.left).toBe('0px');
-    expect(getRootMenu().style.top).toBe('0px');
-    getOverlay().click();
-    await promise;
-  });
-});
-
 describe('enableMenuSignals', () => {
   it('returns a stable instance across calls', () => {
     expect(enableMenuSignals()).toBe(enableMenuSignals());
   });
 });
 
-describe('getMenuBackend', () => {
-  afterEach(() => setMenuBackend(null));
+describe('explainMenuBackend', () => {
+  afterEach(() => resetMenuBackendForTest());
 
-  it('lazily returns a web default backend', () => {
-    setMenuBackend(null);
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetMenuBackendForTest();
+    const explanation = explainMenuBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setMenuBackend(fakeBackend());
+    expect(explainMenuBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installMenuHostBackend(fakeBackend());
+    expect(explainMenuBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installMenuHostBackend(fakeBackend());
+    installMenuHostBackend(fakeBackend());
+    expect(explainMenuBackend().conflict).toBe(true);
+  });
+
+  it('reports observed viability after observeMenuHostResult', () => {
+    installMenuHostBackend(fakeBackend());
+    observeMenuHostResult('popupContextMenu', true);
+    const explanation = explainMenuBackend();
+    expect(explanation.operation).toBe('popupContextMenu');
+    expect(explanation.viability).toBe('available');
+  });
+});
+
+describe('getMenuBackend', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('returns the sentinel when no backend is installed', () => {
+    resetMenuBackendForTest();
     expect(getMenuBackend()).not.toBeNull();
+  });
+});
+
+describe('getMenuBackend sentinel', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('reports no native application menu', () => {
+    resetMenuBackendForTest();
+    const backend = getMenuBackend();
+    expect(backend.setApplicationMenu([])).toBe(false);
+  });
+
+  it('returns an unsubscribe function from subscribeSelect', () => {
+    resetMenuBackendForTest();
+    const backend = getMenuBackend();
+    expect(typeof backend.subscribeSelect(() => {})).toBe('function');
+  });
+
+  it('returns null from popupContextMenu', async () => {
+    resetMenuBackendForTest();
+    const backend = getMenuBackend();
+    await expect(backend.popupContextMenu([], 0, 0)).resolves.toBeNull();
   });
 });
 
@@ -204,8 +136,52 @@ describe('getMenuSignals', () => {
   });
 });
 
+describe('installMenuHostBackend', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('installs a host backend that getMenuBackend returns', () => {
+    const backend = fakeBackend();
+    installMenuHostBackend(backend);
+    expect(getMenuBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installMenuHostBackend(first);
+    installMenuHostBackend(second);
+    expect(getMenuBackend()).toBe(first);
+    expect(explainMenuBackend().conflict).toBe(true);
+  });
+
+  it('does not set conflict when the same backend is installed twice', () => {
+    const backend = fakeBackend();
+    installMenuHostBackend(backend);
+    installMenuHostBackend(backend);
+    expect(explainMenuBackend().conflict).toBe(false);
+  });
+});
+
+describe('observeMenuHostResult', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('records a successful observation', () => {
+    installMenuHostBackend(fakeBackend());
+    observeMenuHostResult('popupContextMenu', true);
+    const explanation = explainMenuBackend();
+    expect(explanation.operation).toBe('popupContextMenu');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installMenuHostBackend(fakeBackend());
+    observeMenuHostResult('popupContextMenu', false);
+    expect(explainMenuBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('onMenuSelect', () => {
-  afterEach(() => setMenuBackend(null));
+  afterEach(() => resetMenuBackendForTest());
 
   it('delivers the selected id from the backend', () => {
     let captured: ((id: string) => void) | null = null;
@@ -224,8 +200,22 @@ describe('onMenuSelect', () => {
   });
 });
 
+describe('resetMenuBackendForTest', () => {
+  it('clears all backend slots', () => {
+    const backend = fakeBackend();
+    setMenuBackend(backend);
+    installMenuHostBackend(fakeBackend());
+    observeMenuHostResult('popupContextMenu', true);
+    resetMenuBackendForTest();
+    expect(getMenuBackend()).not.toBe(backend);
+    expect(explainMenuBackend().layer).toBe('host-not-enabled');
+    expect(explainMenuBackend().conflict).toBe(false);
+    expect(explainMenuBackend().viability).toBe('unobserved');
+  });
+});
+
 describe('setApplicationMenu', () => {
-  afterEach(() => setMenuBackend(null));
+  afterEach(() => resetMenuBackendForTest());
 
   it('delegates to the active backend', () => {
     let installed = 0;
@@ -243,9 +233,9 @@ describe('setApplicationMenu', () => {
 });
 
 describe('setMenuBackend', () => {
-  afterEach(() => setMenuBackend(null));
+  afterEach(() => resetMenuBackendForTest());
 
-  it('installs an explicit backend and reverts to the web default on null', () => {
+  it('installs a custom backend and reverts to the sentinel on null', () => {
     const backend = fakeBackend();
     setMenuBackend(backend);
     expect(getMenuBackend()).toBe(backend);
@@ -255,7 +245,7 @@ describe('setMenuBackend', () => {
 });
 
 describe('showContextMenu', () => {
-  afterEach(() => setMenuBackend(null));
+  afterEach(() => resetMenuBackendForTest());
 
   it('resolves the id returned by the backend popup', async () => {
     setMenuBackend(fakeBackend({ popupContextMenu: () => Promise.resolve('copy') }));
@@ -273,7 +263,8 @@ describe('showContextMenu', () => {
     ];
 
     beforeEach(() => {
-      setMenuBackend(null);
+      resetMenuBackendForTest();
+      setMenuBackend(fakeBackend({ popupContextMenu: showWebContextMenu }));
       document.body.innerHTML = '';
     });
 
@@ -411,6 +402,123 @@ describe('showContextMenu', () => {
       overlay.click();
       await expect(promise).resolves.toBeNull();
     });
+  });
+});
+
+describe('showWebContextMenu', () => {
+  afterEach(() => {
+    document.body.replaceChildren();
+    vi.restoreAllMocks();
+  });
+
+  function getRootMenu(): HTMLUListElement {
+    const menu = document.body.querySelector('ul');
+    expect(menu).not.toBeNull();
+    return menu as HTMLUListElement;
+  }
+
+  function getOverlay(): HTMLDivElement {
+    const overlay = document.body.querySelector('div');
+    expect(overlay).not.toBeNull();
+    return overlay as HTMLDivElement;
+  }
+
+  function press(key: string): void {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key }));
+  }
+
+  it('renders separators, checked kinds, accelerators, and disabled items', async () => {
+    const promise = showWebContextMenu(
+      [
+        { id: 'checked', label: 'Checked', type: 'checkbox', checked: true },
+        { id: 'chosen', label: 'Chosen', type: 'radio', checked: true },
+        { type: 'separator' },
+        { id: 'save', label: 'Save', accelerator: 'Ctrl+S' },
+        { id: 'disabled', label: 'Disabled', enabled: false },
+      ],
+      10,
+      20,
+    );
+    const items = getRootMenu().querySelectorAll(':scope > li');
+    expect(items).toHaveLength(5);
+    expect(items[0].textContent).toBe('✓Checked');
+    expect(items[1].textContent).toBe('●Chosen');
+    expect(items[2].getAttribute('data-enabled')).toBeNull();
+    expect(items[3].textContent).toBe('SaveCtrl+S');
+    expect(items[4].getAttribute('data-enabled')).toBe('false');
+
+    let settled = false;
+    void promise.then(() => {
+      settled = true;
+    });
+    items[4].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    getOverlay().click();
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it('selects enabled items by click and dismisses on outside click', async () => {
+    const selected = showWebContextMenu([{ id: 'copy', label: 'Copy' }], 0, 0);
+    getRootMenu().querySelector<HTMLElement>('li')!.click();
+    await expect(selected).resolves.toBe('copy');
+    expect(document.body.querySelector('ul')).toBeNull();
+
+    const dismissed = showWebContextMenu([{ id: 'paste', label: 'Paste' }], 0, 0);
+    getOverlay().click();
+    await expect(dismissed).resolves.toBeNull();
+  });
+
+  it('wraps keyboard focus and selects with Enter or Space', async () => {
+    const items = [
+      { id: 'first', label: 'First' },
+      { id: 'disabled', label: 'Disabled', enabled: false },
+      { id: 'last', label: 'Last' },
+    ];
+
+    const enterSelection = showWebContextMenu(items, 0, 0);
+    press('ArrowUp');
+    expect(getRootMenu().querySelector('[data-focused="true"]')?.getAttribute('data-item-id')).toBe('last');
+    press('Enter');
+    await expect(enterSelection).resolves.toBe('last');
+
+    const spaceSelection = showWebContextMenu(items, 0, 0);
+    press('ArrowDown');
+    press('ArrowDown');
+    press('ArrowDown');
+    expect(getRootMenu().querySelector('[data-focused="true"]')?.getAttribute('data-item-id')).toBe('first');
+    press(' ');
+    await expect(spaceSelection).resolves.toBe('first');
+  });
+
+  it('dismisses on Escape', async () => {
+    const promise = showWebContextMenu([{ id: 'copy', label: 'Copy' }], 0, 0);
+    press('Escape');
+    await expect(promise).resolves.toBeNull();
+  });
+
+  it('opens a submenu on hover and resolves a child selection', async () => {
+    const promise = showWebContextMenu(
+      [{ id: 'file', label: 'File', type: 'submenu', submenu: [{ id: 'open', label: 'Open' }] }],
+      0,
+      0,
+    );
+    const parent = getRootMenu().querySelector<HTMLElement>(':scope > li')!;
+    const submenu = parent.querySelector<HTMLElement>('ul')!;
+    expect(submenu.style.display).toBe('none');
+    parent.dispatchEvent(new MouseEvent('mouseenter'));
+    expect(submenu.style.display).toBe('block');
+    submenu.querySelector<HTMLElement>('li')!.click();
+    await expect(promise).resolves.toBe('open');
+  });
+
+  it('clamps a menu that overflows the viewport', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(1900, 1900, 100, 100));
+    const promise = showWebContextMenu([{ id: 'copy', label: 'Copy' }], 40, 30);
+    expect(getRootMenu().style.left).toBe('0px');
+    expect(getRootMenu().style.top).toBe('0px');
+    getOverlay().click();
+    await promise;
   });
 });
 
