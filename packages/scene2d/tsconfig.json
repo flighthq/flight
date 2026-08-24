@@ -13,6 +13,7 @@
     { "path": "../animation" },
     { "path": "../entity" },
     { "path": "../geometry" },
+    { "path": "../math" },
     { "path": "../materials" },
     { "path": "../node" },
     { "path": "../signals" },
