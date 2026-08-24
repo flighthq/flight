@@ -1,3 +1,4 @@
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   GeolocationBackend,
   GeolocationErrorReason,
@@ -7,12 +8,10 @@ import type {
   GeoPositionResult,
 } from '@flighthq/types/contract';
 
-// Cancels an active position watch. No-op when the id is unknown or the backend lacks watching.
 export function clearGeolocationWatch(id: number): void {
   getGeolocationBackend().clearWatch(id);
 }
 
-// Allocates a zeroed GeoPosition; use as a scratch value or when building a backend.
 export function createGeoPosition(): GeoPosition {
   return {
     accuracy: 0,
@@ -140,58 +139,77 @@ export function createWebGeolocationBackend(): GeolocationBackend {
   };
 }
 
-// Resolves the device's current position, or null when access is denied or unavailable.
+export function explainGeolocationBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 export function getCurrentGeoPosition(options?: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null> {
   return getGeolocationBackend().getCurrentPosition(options ?? _emptyOptions);
 }
 
-// Resolves a GeoPositionResult carrying both the position and the error reason on failure.
-// Use when the caller needs to distinguish denied / unavailable / timeout rather than just null.
 export function getCurrentGeoPositionResult(options?: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult> {
   return getGeolocationBackend().getCurrentPositionResult(options ?? _emptyOptions);
 }
 
-// The active geolocation backend, or a lazily-created web default. There is always a backend.
 export function getGeolocationBackend(): GeolocationBackend {
-  if (_backend === null) _backend = createWebGeolocationBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
-// Resolves the current permission state without triggering a user prompt.
-// Returns 'granted', 'denied', or 'prompt' (the user has not yet been asked).
-// Falls back to 'prompt' when the Permissions API is absent.
 export function getGeolocationPermission(): Promise<GeolocationPermissionState> {
   return getGeolocationBackend().getPermission();
 }
 
-// Returns true when the geolocation capability is available in the current context. Synchronous;
-// does not trigger a permission prompt. False on insecure context, jsdom, or missing navigator.
+export function installGeolocationHostBackend(backend: GeolocationBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 export function isGeolocationAvailable(): boolean {
   if (typeof navigator === 'undefined') return false;
   if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
   return typeof navigator.geolocation !== 'undefined' && navigator.geolocation !== null;
 }
 
-// Subscribes to geolocation permission state changes. Invokes listener whenever the OS changes the
-// permission (e.g., the user revokes access in Settings mid-session). Returns an unsubscribe
-// function. No-op subscription when the Permissions API is absent.
+export function observeGeolocationHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 export function onGeolocationPermissionChange(listener: (state: GeolocationPermissionState) => void): () => void {
   return getGeolocationBackend().subscribePermission(listener);
 }
 
-// Requests location permission. Resolves true when granted, false when denied or unavailable.
 export function requestGeolocationPermission(): Promise<boolean> {
   return getGeolocationBackend().requestPermission();
 }
 
-// Installs a native host geolocation backend; pass null to fall back to the web default.
-export function setGeolocationBackend(backend: GeolocationBackend | null): void {
-  _backend = backend;
+export function resetGeolocationBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
 }
 
-// Starts a position watch, invoking handler on each update. Returns the watch id, or -1 when
-// watching is unavailable. Pair with clearGeolocationWatch.
-// Pass onError to receive ongoing failure reasons (e.g., permission revoked mid-watch).
+export function setGeolocationBackend(backend: GeolocationBackend | null): void {
+  _custom = backend;
+}
+
 export function watchGeolocationPosition(
   handler: (position: Readonly<GeoPosition>) => void,
   options?: Readonly<GeolocationRequestOptions>,
@@ -200,9 +218,34 @@ export function watchGeolocationPosition(
   return getGeolocationBackend().watchPosition(handler, options ?? _emptyOptions, onError);
 }
 
-let _backend: GeolocationBackend | null = null;
+let _custom: GeolocationBackend | null = null;
+let _host: GeolocationBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _emptyOptions: GeolocationRequestOptions = {};
 const _noopUnsubscribe = () => {};
+
+const _sentinel: GeolocationBackend = {
+  clearWatch() {},
+  getCurrentPosition() {
+    return Promise.resolve(null);
+  },
+  getCurrentPositionResult() {
+    return Promise.resolve({ position: null, reason: 'unavailable' as const });
+  },
+  getPermission() {
+    return Promise.resolve('prompt' as GeolocationPermissionState);
+  },
+  requestPermission() {
+    return Promise.resolve(false);
+  },
+  subscribePermission() {
+    return _noopUnsubscribe;
+  },
+  watchPosition() {
+    return -1;
+  },
+};
 
 function getWebGeolocation(): Geolocation | null {
   if (typeof navigator === 'undefined') return null;

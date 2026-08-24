@@ -1,5 +1,6 @@
 import { getWebFileSystemHandle } from '@flighthq/dialog/contract';
 import type {
+  BackendExplanation,
   FileDialogHandle,
   FileEntry,
   FilePermissions,
@@ -307,6 +308,21 @@ export function directoryExists(path: string): Promise<boolean> {
   return getFileSystemBackend().directoryExists(path);
 }
 
+export function explainFileSystemBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // True when a file exists at `path`. Returns false when the host lacks access.
 export function fileExists(path: string): Promise<boolean> {
   return getFileSystemBackend().fileExists(path);
@@ -354,10 +370,8 @@ export function getFileRealPath(path: string): Promise<string | null> {
   return getFileSystemBackend().getFileRealPath(path);
 }
 
-// The active file system backend, or a lazily-created web (OPFS) default. There is always a backend.
 export function getFileSystemBackend(): FileSystemBackend {
-  if (_backend === null) _backend = createWebFileSystemBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Resolves a well-known host directory to an absolute path, or '' on web / when unavailable.
@@ -369,6 +383,14 @@ export function getFileSystemPath(kind: FileSystemPathKind): string {
 // navigator.storage.estimate(); native over statvfs. Returns null when unavailable.
 export function getFileSystemUsage(): Promise<FileSystemUsage | null> {
   return getFileSystemBackend().getFileSystemUsage();
+}
+
+export function installFileSystemHostBackend(backend: FileSystemBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // True when `path` is an absolute path (starts with '/' or a drive letter on Windows e.g. 'C:').
@@ -405,6 +427,13 @@ export function normalizeFilePath(path: string): string {
   const parts = splitWebPath(path);
   const prefix = path.startsWith('/') ? '/' : '';
   return prefix + parts.join('/');
+}
+
+export function observeFileSystemHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Opens a ReadableStream over the file at `path`. Returns null when the file is missing, access is
@@ -515,15 +544,21 @@ export function renameFile(from: string, to: string): Promise<boolean> {
   return getFileSystemBackend().rename(from, to);
 }
 
+export function resetFileSystemBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Sets file permissions for `path`. Returns false when unsupported (web/OPFS always returns false;
 // native POSIX backends use chmod). A no-op on platforms without a permissions model.
 export function setFilePermissions(path: string, permissions: Readonly<FilePermissions>): Promise<boolean> {
   return getFileSystemBackend().setFilePermissions(path, permissions);
 }
 
-// Installs a native host file system backend; pass null to fall back to the web (OPFS) default.
 export function setFileSystemBackend(backend: FileSystemBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Reads metadata for `path`, or null when missing or access is denied.
@@ -619,18 +654,104 @@ export function writeTextFile(path: string, data: string): Promise<boolean> {
   return getFileSystemBackend().writeTextFile(path, data);
 }
 
-let _backend: FileSystemBackend | null = null;
+let _custom: FileSystemBackend | null = null;
+let _host: FileSystemBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 
-// The OPFS root, or null when the API is absent (non-secure context, jsdom). Never throws.
-async function getWebRoot(): Promise<FileSystemDirectoryHandle | null> {
-  if (typeof navigator === 'undefined') return null;
-  const storage = navigator.storage;
-  if (storage === undefined || typeof storage.getDirectory !== 'function') return null;
-  try {
-    return await storage.getDirectory();
-  } catch {
+const _sentinel: FileSystemBackend = {
+  async readTextFile() {
     return null;
-  }
+  },
+  async writeTextFile() {
+    return false;
+  },
+  async readBinaryFile() {
+    return null;
+  },
+  async readBinaryFileRange() {
+    return null;
+  },
+  async writeBinaryFile() {
+    return false;
+  },
+  async fileExists() {
+    return false;
+  },
+  async directoryExists() {
+    return false;
+  },
+  async removeFile() {
+    return false;
+  },
+  async removeDirectory() {
+    return false;
+  },
+  async makeDirectory() {
+    return false;
+  },
+  async readDirectory() {
+    return [];
+  },
+  async readDirectoryRecursive() {
+    return [];
+  },
+  async statFile() {
+    return null;
+  },
+  async rename() {
+    return false;
+  },
+  async copy() {
+    return false;
+  },
+  async appendTextFile() {
+    return false;
+  },
+  async openFileReadStream() {
+    return null;
+  },
+  async openFileWriteStream() {
+    return null;
+  },
+  async writeFileAtomic() {
+    return false;
+  },
+  async createFileSymlink() {
+    return false;
+  },
+  async readFileSymlink() {
+    return null;
+  },
+  async getFileRealPath() {
+    return null;
+  },
+  async getFilePermissions() {
+    return null;
+  },
+  async setFilePermissions() {
+    return false;
+  },
+  async canAccessFile() {
+    return false;
+  },
+  async getFileSystemUsage() {
+    return null;
+  },
+  watch() {
+    return () => {};
+  },
+  getPath() {
+    return '';
+  },
+};
+
+function asAsyncEntries(
+  dir: FileSystemDirectoryHandle,
+): AsyncIterable<[string, FileSystemFileHandle | FileSystemDirectoryHandle]> {
+  return (
+    dir as unknown as { entries(): AsyncIterable<[string, FileSystemFileHandle | FileSystemDirectoryHandle]> }
+  ).entries();
 }
 
 async function getWebDirectoryHandle(
@@ -663,68 +784,16 @@ async function getWebFileHandle(path: string, create: boolean): Promise<FileSyst
   }
 }
 
-// Recursively walks a directory handle, appending FileEntry results into `out`.
-// `depth` is the current depth (0 = entries inside the root of the walk); `maxDepth` limits descent.
-async function walkWebDirectory(
-  dir: FileSystemDirectoryHandle,
-  basePath: string,
-  out: FileEntry[],
-  depth: number,
-  maxDepth: number,
-): Promise<void> {
-  for await (const [name, handle] of asAsyncEntries(dir)) {
-    const entryPath = basePath === '' ? name : `${basePath}/${name}`;
-    const isDirectory = handle.kind === 'directory';
-    out.push({ name, path: entryPath, isDirectory });
-    if (isDirectory && depth < maxDepth) {
-      await walkWebDirectory(handle as FileSystemDirectoryHandle, entryPath, out, depth + 1, maxDepth);
-    }
-  }
-}
-
-// Removes a path from the OPFS tree. When `isDirectory` is true, only attempts removal via directory
-// handle to enforce the file/directory verb split. When false, removes any entry type (files only).
-async function writeWebRemove(path: string, isDirectory: boolean): Promise<boolean> {
-  const root = await getWebRoot();
-  if (root === null) return false;
-  const segments = splitWebPath(path);
-  if (segments.length === 0) return false;
+// The OPFS root, or null when the API is absent (non-secure context, jsdom). Never throws.
+async function getWebRoot(): Promise<FileSystemDirectoryHandle | null> {
+  if (typeof navigator === 'undefined') return null;
+  const storage = navigator.storage;
+  if (storage === undefined || typeof storage.getDirectory !== 'function') return null;
   try {
-    const parent = await getWebDirectoryHandle(root, segments.slice(0, -1), false);
-    if (parent === null) return false;
-    // For removeFile, verify target is not a directory before removing.
-    if (!isDirectory) {
-      const fileHandle = await getWebFileHandle(path, false);
-      if (fileHandle === null) return false;
-    }
-    await parent.removeEntry(segments[segments.length - 1], { recursive: false });
-    return true;
+    return await storage.getDirectory();
   } catch {
-    return false;
+    return null;
   }
-}
-
-async function writeWebFile(path: string, data: string | Uint8Array): Promise<boolean> {
-  const handle = await getWebFileHandle(path, true);
-  if (handle === null || typeof handle.createWritable !== 'function') return false;
-  try {
-    const writable = await handle.createWritable();
-    // Uint8Array<ArrayBufferLike> and string are both valid chunk inputs, but the union widens past
-    // FileSystemWriteChunkType's overloads; cast to the lib.dom chunk type at the write boundary.
-    await writable.write(data as FileSystemWriteChunkType);
-    await writable.close();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function asAsyncEntries(
-  dir: FileSystemDirectoryHandle,
-): AsyncIterable<[string, FileSystemFileHandle | FileSystemDirectoryHandle]> {
-  return (
-    dir as unknown as { entries(): AsyncIterable<[string, FileSystemFileHandle | FileSystemDirectoryHandle]> }
-  ).entries();
 }
 
 // Converts a glob pattern (supporting *, **, and ?) to a RegExp. Each segment is matched case-sensitively.
@@ -762,4 +831,60 @@ function normalizeWebPath(path: string): string {
 
 function splitWebPath(path: string): string[] {
   return path.split('/').filter((segment) => segment !== '' && segment !== '.');
+}
+
+// Recursively walks a directory handle, appending FileEntry results into `out`.
+// `depth` is the current depth (0 = entries inside the root of the walk); `maxDepth` limits descent.
+async function walkWebDirectory(
+  dir: FileSystemDirectoryHandle,
+  basePath: string,
+  out: FileEntry[],
+  depth: number,
+  maxDepth: number,
+): Promise<void> {
+  for await (const [name, handle] of asAsyncEntries(dir)) {
+    const entryPath = basePath === '' ? name : `${basePath}/${name}`;
+    const isDirectory = handle.kind === 'directory';
+    out.push({ name, path: entryPath, isDirectory });
+    if (isDirectory && depth < maxDepth) {
+      await walkWebDirectory(handle as FileSystemDirectoryHandle, entryPath, out, depth + 1, maxDepth);
+    }
+  }
+}
+
+async function writeWebFile(path: string, data: string | Uint8Array): Promise<boolean> {
+  const handle = await getWebFileHandle(path, true);
+  if (handle === null || typeof handle.createWritable !== 'function') return false;
+  try {
+    const writable = await handle.createWritable();
+    // Uint8Array<ArrayBufferLike> and string are both valid chunk inputs, but the union widens past
+    // FileSystemWriteChunkType's overloads; cast to the lib.dom chunk type at the write boundary.
+    await writable.write(data as FileSystemWriteChunkType);
+    await writable.close();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Removes a path from the OPFS tree. When `isDirectory` is true, only attempts removal via directory
+// handle to enforce the file/directory verb split. When false, removes any entry type (files only).
+async function writeWebRemove(path: string, isDirectory: boolean): Promise<boolean> {
+  const root = await getWebRoot();
+  if (root === null) return false;
+  const segments = splitWebPath(path);
+  if (segments.length === 0) return false;
+  try {
+    const parent = await getWebDirectoryHandle(root, segments.slice(0, -1), false);
+    if (parent === null) return false;
+    // For removeFile, verify target is not a directory before removing.
+    if (!isDirectory) {
+      const fileHandle = await getWebFileHandle(path, false);
+      if (fileHandle === null) return false;
+    }
+    await parent.removeEntry(segments[segments.length - 1], { recursive: false });
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -1,4 +1,5 @@
 export {
+  explainMediaSessionBackend,
   clearMediaSessionActionHandler,
   clearMediaSessionMetadata,
   clearMediaSessionPositionState,

@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   RectangleLike,
   ScreenBackend,
@@ -12,9 +13,6 @@ import type {
   Vector2Like,
 } from '@flighthq/types/contract';
 
-// Attaches the active backend's change subscription to `signals`, fanning out events to the
-// appropriate signal for each ScreenChangeKind. Idempotent: a prior subscription is torn down first.
-// Pair with detachScreenSignals / disposeScreenSignals.
 export function attachScreenSignals(signals: ScreenSignals): void {
   detachScreenSignals(signals);
   const unsubscribe = getScreenBackend().subscribe((event) => {
@@ -29,8 +27,6 @@ export function attachScreenSignals(signals: ScreenSignals): void {
   _signalSubscriptions.set(signals, unsubscribe);
 }
 
-// Allocates a zeroed ScreenInfo; use as the `out` for getPrimaryScreen or as an array slot for
-// getScreens. scaleFactor defaults to 1 (no scaling) and isPrimary to false.
 export function createScreenInfo(): ScreenInfo {
   return {
     id: 0,
@@ -61,7 +57,6 @@ export function createScreenInfo(): ScreenInfo {
   };
 }
 
-// Allocates a zeroed ScreenMode; use as an array slot for getScreenModes / getScreenCurrentMode.
 export function createScreenMode(): ScreenMode {
   return {
     width: 0,
@@ -72,7 +67,6 @@ export function createScreenMode(): ScreenMode {
   };
 }
 
-// Allocates a ScreenSignals group with inert signals; call attachScreenSignals to start delivery.
 export function createScreenSignals(): ScreenSignals {
   return {
     onScreenAdded: createSignal(),
@@ -361,7 +355,6 @@ export function createWebScreenBackend(): ScreenBackend {
   return backend;
 }
 
-// Stops delivery to `signals` and forgets its subscription. Safe to call when not attached.
 export function detachScreenSignals(signals: ScreenSignals): void {
   const unsubscribe = _signalSubscriptions.get(signals);
   if (unsubscribe !== undefined) {
@@ -370,9 +363,6 @@ export function detachScreenSignals(signals: ScreenSignals): void {
   }
 }
 
-// Converts a point from DIP (logical) coordinates to physical screen pixel coordinates relative to
-// `screen`'s origin. Alias-safe: `out` may be the same object as `point`.
-// physicalX = (point.x - screen.x) * screen.scaleFactor
 export function dipToScreenPoint(
   screen: Readonly<ScreenInfo>,
   point: Readonly<Vector2Like>,
@@ -385,8 +375,6 @@ export function dipToScreenPoint(
   return out;
 }
 
-// Converts a rectangle from DIP (logical) coordinates to physical screen pixel coordinates relative
-// to `screen`'s origin. Alias-safe: `out` may be the same object as `rect`.
 export function dipToScreenRect(
   screen: Readonly<ScreenInfo>,
   rect: Readonly<RectangleLike>,
@@ -404,31 +392,37 @@ export function dipToScreenRect(
   return out;
 }
 
-// Releases `signals` for garbage collection by detaching its backend subscription. The signals
-// remain plain GC-managed memory afterward.
 export function disposeScreenSignals(signals: ScreenSignals): void {
   detachScreenSignals(signals);
 }
 
-// Enables a signals group for screen change events. Signals stay inert until attachScreenSignals is
-// called. This is the opt-in; the cost is paid when attached.
 export function enableScreenSignals(): ScreenSignals {
   return createScreenSignals();
 }
 
-// Fills `out` with the primary display and returns it. The web reports one screen; a native host its
-// OS-designated primary monitor.
+export function explainScreenBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 export function getPrimaryScreen(out: ScreenInfo): ScreenInfo {
   return getScreenBackend().getPrimaryScreen(out);
 }
 
-// The active screen backend, or a lazily-created web default. There is always a backend.
 export function getScreenBackend(): ScreenBackend {
-  if (_backend === null) _backend = createWebScreenBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
-// Fills `out` with the bounds rectangle of the given screen. Convenience accessor over the flat fields.
 export function getScreenBounds(
   screen: Readonly<ScreenInfo>,
   out: { x: number; y: number; width: number; height: number },
@@ -440,7 +434,6 @@ export function getScreenBounds(
   return out;
 }
 
-// Returns the screen with the given id, or null when no screen matches. Sentinel null means not found.
 export function getScreenById(id: number, out: ScreenInfo): ScreenInfo | null {
   const screens: ScreenInfo[] = [];
   getScreens(screens);
@@ -453,8 +446,6 @@ export function getScreenById(id: number, out: ScreenInfo): ScreenInfo | null {
   return null;
 }
 
-// Returns the screen whose bounds contain the given rectangle (largest-overlap strategy). Falls back
-// to the screen nearest to the rectangle's center when no screen contains it.
 export function getScreenContainingRect(rect: Readonly<RectangleLike>, out: ScreenInfo): ScreenInfo {
   const screens: ScreenInfo[] = [];
   getScreens(screens);
@@ -476,7 +467,6 @@ export function getScreenContainingRect(rect: Readonly<RectangleLike>, out: Scre
     }
   }
 
-  // No overlap — fall back to nearest by center distance.
   if (bestOverlap <= 0) {
     const cx = rect.x + rect.width / 2;
     const cy = rect.y + rect.height / 2;
@@ -498,8 +488,6 @@ export function getScreenContainingRect(rect: Readonly<RectangleLike>, out: Scre
   return out;
 }
 
-// Fills `out` with the current-mode for the given screen (the active resolution/refresh pair).
-// Web returns a synthetic single-entry mode derived from ScreenInfo fields.
 export function getScreenCurrentMode(screen: Readonly<ScreenInfo>, out: ScreenMode): ScreenMode {
   out.width = screen.width;
   out.height = screen.height;
@@ -509,24 +497,16 @@ export function getScreenCurrentMode(screen: Readonly<ScreenInfo>, out: ScreenMo
   return out;
 }
 
-// Fills `out` with the current cursor position in virtual-desktop coordinates and returns it.
-// Uses the active backend's getCursorPosition. Returns (0, 0) before the first pointermove (web)
-// or when unavailable.
 export function getScreenCursorPosition(out: { x: number; y: number }): { x: number; y: number } {
   return getScreenBackend().getCursorPosition(out);
 }
 
-// Returns the screen currently containing the cursor. Composites getScreenCursorPosition with
-// getScreenNearestPoint.
 export function getScreenCursorScreen(out: ScreenInfo): ScreenInfo {
   const pos = _scratchPoint;
   getScreenCursorPosition(pos);
   return getScreenNearestPoint(pos, out);
 }
 
-// Returns the permission state for the Window Management API (multi-monitor on web).
-// 'granted' | 'denied' | 'prompt' mirrors the PermissionState vocabulary.
-// Returns 'prompt' when the Permissions API is unavailable.
 export async function getScreenDetailPermission(): Promise<'denied' | 'granted' | 'prompt'> {
   if (typeof navigator === 'undefined' || !('permissions' in navigator)) return 'prompt';
   try {
@@ -539,22 +519,17 @@ export async function getScreenDetailPermission(): Promise<'denied' | 'granted' 
   }
 }
 
-// Fills `out` with all available display modes for the given screen. Web returns a single synthetic
-// entry derived from the screen's current fields.
 export function getScreenModes(screen: Readonly<ScreenInfo>, out: ScreenMode[]): ScreenMode[] {
   const backend = getScreenBackend();
   if (backend.getModes !== undefined) {
     return backend.getModes(screen, out);
   }
-  // Fallback: a single synthetic mode from the screen's current fields.
   out.length = 1;
   if (out[0] === undefined) out[0] = createScreenMode();
   getScreenCurrentMode(screen, out[0]);
   return out;
 }
 
-// Returns the screen whose bounds contain `point` (virtual-desktop coordinates). Falls back to the
-// closest screen by Euclidean distance when the point lies outside all screens.
 export function getScreenNearestPoint(point: Readonly<Vector2Like>, out: ScreenInfo): ScreenInfo {
   const screens: ScreenInfo[] = [];
   getScreens(screens);
@@ -563,7 +538,6 @@ export function getScreenNearestPoint(point: Readonly<Vector2Like>, out: ScreenI
     return out;
   }
 
-  // Prefer the screen that contains the point.
   for (const screen of screens) {
     if (
       point.x >= screen.x &&
@@ -576,7 +550,6 @@ export function getScreenNearestPoint(point: Readonly<Vector2Like>, out: ScreenI
     }
   }
 
-  // Fall back to the nearest screen by distance from point to screen center.
   let bestScreen = screens[0];
   let bestDist = Infinity;
   for (const screen of screens) {
@@ -595,12 +568,6 @@ export function getScreenNearestPoint(point: Readonly<Vector2Like>, out: ScreenI
   return out;
 }
 
-// Returns the screen this rectangle is nearest to. A screen that fully contains the rectangle wins;
-// otherwise the screen whose center is closest to the rectangle's center (squared Euclidean distance,
-// used only for ordering). This lifts getScreenNearestPoint's contains-else-nearest rule from a point
-// to a rectangle, and complements getScreenContainingRect, which instead selects by largest overlap
-// area. The two diverge only when a rectangle straddles screens without being contained by any: this
-// picks by center proximity, getScreenContainingRect by overlap area.
 export function getScreenNearestRect(rect: Readonly<RectangleLike>, out: ScreenInfo): ScreenInfo {
   const screens: ScreenInfo[] = [];
   getScreens(screens);
@@ -609,9 +576,6 @@ export function getScreenNearestRect(rect: Readonly<RectangleLike>, out: ScreenI
     return out;
   }
 
-  // Prefer a screen that fully contains the rectangle, mirroring getScreenNearestPoint's containment
-  // preference. This beats center proximity: a rectangle wholly on one screen belongs to that screen
-  // even when a differently-sized neighbor's center happens to sit closer.
   for (const screen of screens) {
     if (
       rect.x >= screen.x &&
@@ -624,7 +588,6 @@ export function getScreenNearestRect(rect: Readonly<RectangleLike>, out: ScreenI
     }
   }
 
-  // Fall back to the screen whose center is closest to the rectangle's center.
   const cx = rect.x + rect.width / 2;
   const cy = rect.y + rect.height / 2;
   let bestScreen = screens[0];
@@ -646,13 +609,10 @@ export function getScreenNearestRect(rect: Readonly<RectangleLike>, out: ScreenI
   return out;
 }
 
-// Fills `out` with every attached display and returns it. out.length is set to the screen count;
-// missing slots are allocated. On the web this is a single screen; an empty array when no window.
 export function getScreens(out: ScreenInfo[]): ScreenInfo[] {
   return getScreenBackend().getScreens(out);
 }
 
-// Fills `out` with the work-area rectangle of the given screen (excluding OS chrome).
 export function getScreenWorkArea(
   screen: Readonly<ScreenInfo>,
   out: { x: number; y: number; width: number; height: number },
@@ -664,18 +624,25 @@ export function getScreenWorkArea(
   return out;
 }
 
-// Subscribes to display change events via the active backend; returns an unsubscribe.
-// Each event carries the affected ScreenInfo and the ScreenChangeKind, plus changedMetrics for
-// ScreenMetricsChanged events.
+export function installScreenHostBackend(backend: ScreenBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeScreenHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 export function onScreenChange(listener: (event: Readonly<ScreenChangeEvent>) => void): () => void {
   return getScreenBackend().subscribe(listener);
 }
 
-// Watches the Window Management permission for later grant/revoke and invokes `listener` with the
-// new state on each change. Backed by the Permissions API PermissionStatus change event, so it
-// reflects a grant/revoke made outside this call (browser UI, another tab) without polling.
-// Returns a no-op unsubscribe when the Permissions API is unavailable (SSR, jsdom, non-Chromium)
-// or the query rejects — matching getScreenDetailPermission's sentinel discipline.
 export function onScreenDetailPermissionChange(listener: (state: 'denied' | 'granted' | 'prompt') => void): () => void {
   if (typeof navigator === 'undefined' || !('permissions' in navigator)) return () => {};
   let status: PermissionStatus | null = null;
@@ -697,42 +664,19 @@ export function onScreenDetailPermissionChange(listener: (state: 'denied' | 'gra
   };
 }
 
-// Invalidates the backend's cached enumeration so the next getScreens / getPrimaryScreen call reads
-// fresh data. Call after a known reconfiguration (e.g. when the backend fires a change event but
-// the application needs to force-refresh before the next natural poll).
-export function refreshScreens(): void {
-  // The web backend re-reads window.screen on every call; no explicit invalidation needed.
-  // Native backends should override this via the backend seam if they cache internally.
-  // This function is a hook: calling it is always safe.
+export function refreshScreens(): void {}
+
+export function requestScreenDetails(): Promise<boolean> {
+  return _requestScreenDetails();
 }
 
-// Requests the Window Management permission and, if granted, upgrades the active web backend to
-// expose all attached screens via the Screen Details API. Returns true when permission is granted
-// and the multi-monitor view is active. Returns false in environments where the API is unavailable
-// (SSR, jsdom, non-Chromium browsers) or when the user denies the request.
-//
-// After this returns true, getScreens() enumerates from ScreenDetails.screens and refreshRate is
-// populated from ScreenDetailed.refreshRate. The active backend must be the web backend (created by
-// createWebScreenBackend); calling this when a native host backend is installed is a no-op (native
-// backends provide multi-monitor natively without a permission grant).
-export async function requestScreenDetails(): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
-  const win = window as Window & { getScreenDetails?: () => Promise<unknown> };
-  if (typeof win.getScreenDetails !== 'function') return false;
-  try {
-    const details = await win.getScreenDetails();
-    // Upgrade the active backend if it is a web backend (has the internal _upgrade hook).
-    const b = getScreenBackend() as ScreenBackend & { _upgrade?: (d: unknown) => void };
-    b._upgrade?.(details);
-    return true;
-  } catch {
-    return false;
-  }
+export function resetScreenBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
 }
 
-// Converts a point from physical screen pixel coordinates (relative to `screen`'s origin) to DIP
-// (logical) coordinates. Alias-safe: `out` may be the same object as `point`.
-// dipX = point.x / screen.scaleFactor + screen.x
 export function screenToDipPoint(
   screen: Readonly<ScreenInfo>,
   point: Readonly<Vector2Like>,
@@ -745,8 +689,6 @@ export function screenToDipPoint(
   return out;
 }
 
-// Converts a rectangle from physical screen pixel coordinates to DIP (logical) coordinates.
-// Alias-safe: `out` may be the same object as `rect`.
 export function screenToDipRect(
   screen: Readonly<ScreenInfo>,
   rect: Readonly<RectangleLike>,
@@ -764,16 +706,18 @@ export function screenToDipRect(
   return out;
 }
 
-// Installs a native host screen backend; pass null to fall back to the web default.
 export function setScreenBackend(backend: ScreenBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
-let _backend: ScreenBackend | null = null;
+let _custom: ScreenBackend | null = null;
+let _host: ScreenBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
 const _signalSubscriptions = new WeakMap<ScreenSignals, () => void>();
 const _scratchPoint = { x: 0, y: 0 };
 
-// Copies all fields from src to dst.
 function copyScreenInfo(src: Readonly<ScreenInfo>, dst: ScreenInfo): void {
   dst.id = src.id;
   dst.x = src.x;
@@ -802,23 +746,6 @@ function copyScreenInfo(src: Readonly<ScreenInfo>, dst: ScreenInfo): void {
   dst.monochrome = src.monochrome;
 }
 
-// Returns a ScreenChangedMetrics diff between two ScreenInfo snapshots, or null when nothing changed.
-function diffScreenInfo(prev: Readonly<ScreenInfo>, curr: Readonly<ScreenInfo>): ScreenChangedMetrics | null {
-  const boundsChanged =
-    prev.x !== curr.x || prev.y !== curr.y || prev.width !== curr.width || prev.height !== curr.height;
-  const workAreaChanged = prev.workWidth !== curr.workWidth || prev.workHeight !== curr.workHeight;
-  const scaleChanged = prev.scaleFactor !== curr.scaleFactor;
-  const orientationChanged = prev.rotation !== curr.rotation || prev.orientation !== curr.orientation;
-
-  if (!boundsChanged && !workAreaChanged && !scaleChanged && !orientationChanged) return null;
-  return {
-    bounds: boundsChanged,
-    workArea: workAreaChanged,
-    scaleFactor: scaleChanged,
-    orientation: orientationChanged,
-  };
-}
-
 function fillDefaultScreenInfo(out: ScreenInfo): void {
   out.id = 0;
   out.x = 0;
@@ -845,6 +772,23 @@ function fillDefaultScreenInfo(out: ScreenInfo): void {
   out.internal = false;
   out.touchSupport = 'unknown';
   out.monochrome = false;
+}
+
+// Returns a ScreenChangedMetrics diff between two ScreenInfo snapshots, or null when nothing changed.
+function diffScreenInfo(prev: Readonly<ScreenInfo>, curr: Readonly<ScreenInfo>): ScreenChangedMetrics | null {
+  const boundsChanged =
+    prev.x !== curr.x || prev.y !== curr.y || prev.width !== curr.width || prev.height !== curr.height;
+  const workAreaChanged = prev.workWidth !== curr.workWidth || prev.workHeight !== curr.workHeight;
+  const scaleChanged = prev.scaleFactor !== curr.scaleFactor;
+  const orientationChanged = prev.rotation !== curr.rotation || prev.orientation !== curr.orientation;
+
+  if (!boundsChanged && !workAreaChanged && !scaleChanged && !orientationChanged) return null;
+  return {
+    bounds: boundsChanged,
+    workArea: workAreaChanged,
+    scaleFactor: scaleChanged,
+    orientation: orientationChanged,
+  };
 }
 
 interface WebScreenOrientationObject {
@@ -887,3 +831,40 @@ function getWebScreenOrientationObject(): WebScreenOrientationObject | null {
   const s = window.screen as Screen & { orientation?: WebScreenOrientationObject };
   return s.orientation ?? null;
 }
+
+async function _requestScreenDetails(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  const win = window as Window & { getScreenDetails?: () => Promise<unknown> };
+  if (typeof win.getScreenDetails !== 'function') return false;
+  try {
+    const details = await win.getScreenDetails();
+    const b = getScreenBackend() as ScreenBackend & { _upgrade?: (d: unknown) => void };
+    b._upgrade?.(details);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const _sentinel: ScreenBackend = {
+  getScreens(out) {
+    out.length = 0;
+    return out;
+  },
+  getPrimaryScreen(out) {
+    fillDefaultScreenInfo(out);
+    return out;
+  },
+  subscribe() {
+    return () => {};
+  },
+  getCursorPosition(out) {
+    out.x = 0;
+    out.y = 0;
+    return out;
+  },
+  getModes(_screen, out) {
+    out.length = 0;
+    return out;
+  },
+};

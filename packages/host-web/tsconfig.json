@@ -10,15 +10,29 @@
     "types": ["node", "@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
-    {
-      "path": "../application"
-    },
-    {
-      "path": "../glyphatlas"
-    },
-    {
-      "path": "../types"
-    }
+    { "path": "../accessibility" },
+    { "path": "../application" },
+    { "path": "../clipboard" },
+    { "path": "../connectivity" },
+    { "path": "../device" },
+    { "path": "../dialog" },
+    { "path": "../filesystem" },
+    { "path": "../geolocation" },
+    { "path": "../glyphatlas" },
+    { "path": "../haptics" },
+    { "path": "../image" },
+    { "path": "../keyboard" },
+    { "path": "../lifecycle" },
+    { "path": "../mediasession" },
+    { "path": "../notification" },
+    { "path": "../permissions" },
+    { "path": "../platform" },
+    { "path": "../screen" },
+    { "path": "../sensors" },
+    { "path": "../share" },
+    { "path": "../storage" },
+    { "path": "../types" },
+    { "path": "../webcam" }
   ],
   "include": ["src"]
 }

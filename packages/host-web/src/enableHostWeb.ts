@@ -1,0 +1,47 @@
+import { enableHostWebAccessibility } from './webAccessibility';
+import { enableHostWebClipboard } from './webClipboard';
+import { enableHostWebConnectivity } from './webConnectivity';
+import { enableHostWebDevice } from './webDevice';
+import { enableHostWebDialog } from './webDialog';
+import { enableHostWebFileSystem } from './webFilesystem';
+import { enableHostWebGeolocation } from './webGeolocation';
+import { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
+import { enableHostWebHaptics } from './webHaptics';
+import { enableHostWebImage } from './webImage';
+import { enableHostWebSoftKeyboard } from './webKeyboard';
+import { enableHostWebLifecycle } from './webLifecycle';
+import { enableHostWebLoop } from './webLoop';
+import { enableHostWebMediaSession } from './webMediasession';
+import { enableHostWebNotification } from './webNotification';
+import { enableHostWebPermission } from './webPermissions';
+import { enableHostWebPlatform } from './webPlatform';
+import { enableHostWebScreen } from './webScreen';
+import { enableHostWebSensors } from './webSensors';
+import { enableHostWebShare } from './webShare';
+import { enableHostWebStorage } from './webStorage';
+import { enableHostWebWebcam } from './webWebcam';
+
+export function enableHostWeb(): void {
+  enableHostWebAccessibility();
+  enableHostWebClipboard();
+  enableHostWebConnectivity();
+  enableHostWebDevice();
+  enableHostWebDialog();
+  enableHostWebFileSystem();
+  enableHostWebGeolocation();
+  enableHostWebGlyphRasterizer();
+  enableHostWebHaptics();
+  enableHostWebImage();
+  enableHostWebSoftKeyboard();
+  enableHostWebLifecycle();
+  enableHostWebLoop();
+  enableHostWebMediaSession();
+  enableHostWebNotification();
+  enableHostWebPermission();
+  enableHostWebPlatform();
+  enableHostWebScreen();
+  enableHostWebSensors();
+  enableHostWebShare();
+  enableHostWebStorage();
+  enableHostWebWebcam();
+}

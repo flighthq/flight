@@ -1,3 +1,4 @@
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   PlatformBackend,
   PlatformEngine,
@@ -63,11 +64,25 @@ export function createWebPlatformBackend(): PlatformBackend {
   return { getInfo: getWebPlatformInfo };
 }
 
-// The active platform backend, or the web default when no native host has registered one. Capability
-// packages call their own get*Backend; this is the root one for environment identification.
+export function explainPlatformBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active platform backend. Capability packages call their own get*Backend; this is the root
+// one for environment identification.
 export function getPlatformBackend(): PlatformBackend {
-  if (_backend === null) _backend = createWebPlatformBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // The browser rendering engine — 'blink' | 'gecko' | 'webkit' | 'unknown'. Convenience over
@@ -95,6 +110,14 @@ export function getPlatformName(): PlatformName {
 // 'unknown'. Convenience over getPlatformInfo. Distinguishes plain web from a host shell.
 export function getPlatformRuntime(): PlatformRuntime {
   return getPlatformInfo(_scratch).runtime;
+}
+
+export function installPlatformHostBackend(backend: PlatformBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // True on a desktop host (Electron/Tauri/native window shell). False on mobile and plain web.
@@ -133,16 +156,53 @@ export function isPlatformWeb(): boolean {
   return getPlatformKind() === 'web';
 }
 
-// Installs a native host backend (Electron/Tauri/Capacitor/native). Pass null to fall back to web.
-// Opt-in and side-effect-free at import: nothing registers until a host calls this.
-export function setPlatformBackend(backend: PlatformBackend | null): void {
-  _backend = backend;
+export function observePlatformHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
-let _backend: PlatformBackend | null = null;
+export function resetPlatformBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+// Installs a native host backend (Electron/Tauri/Capacitor/native). Pass null to fall back to
+// the host or sentinel layer.
+export function setPlatformBackend(backend: PlatformBackend | null): void {
+  _custom = backend;
+}
+
+let _custom: PlatformBackend | null = null;
+let _host: PlatformBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 // Single-threaded JS no-alloc scratch for scalar convenience reads (getPlatformKind, etc.).
 // Rust/native mirror uses a per-call local or thread-local instead.
 const _scratch: PlatformInfo = createPlatformInfo();
+
+const _sentinel: PlatformBackend = {
+  getInfo(out: PlatformInfo): PlatformInfo {
+    out.arch = '';
+    out.distro = '';
+    out.distroVersion = '';
+    out.endianness = 'unknown';
+    out.engine = 'unknown';
+    out.engineVersion = '';
+    out.isTouch = false;
+    out.kind = 'unknown';
+    out.locale = '';
+    out.name = 'unknown';
+    out.osBuild = '';
+    out.pointerWidth = -1;
+    out.runtime = 'unknown';
+    out.version = '';
+    return out;
+  },
+};
 
 function getWebPlatformInfo(out: PlatformInfo): PlatformInfo {
   const nav = typeof navigator !== 'undefined' ? navigator : null;

@@ -1,4 +1,5 @@
 import type {
+  BackendExplanation,
   DeviceBackend,
   DeviceCapabilities,
   DeviceDisplayMetrics,
@@ -13,8 +14,6 @@ import {
   parseUserAgentOsVersion,
 } from '@flighthq/useragent/contract';
 
-// Allocates a zeroed DeviceCapabilities; use as the `out` for getDeviceCapabilities.
-// All boolean fields default to false (unknown).
 export function createDeviceCapabilities(): DeviceCapabilities {
   return {
     hasKeyboard: false,
@@ -23,8 +22,6 @@ export function createDeviceCapabilities(): DeviceCapabilities {
   };
 }
 
-// Allocates a zeroed DeviceDisplayMetrics; use as the `out` for getDeviceDisplayMetrics.
-// All numeric fields default to -1 when unknown.
 export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
   return {
     colorDepth: -1,
@@ -37,8 +34,6 @@ export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
   };
 }
 
-// Allocates a zeroed DeviceInfo; use as the `out` for getDeviceInfo or when building a backend.
-// Strings default to '', booleans to false, arrays to [], and unknown-numeric fields to -1.
 export function createDeviceInfo(): DeviceInfo {
   return {
     arch: '',
@@ -69,7 +64,6 @@ export function createDeviceInfo(): DeviceInfo {
   };
 }
 
-// Allocates a zeroed SafeAreaInsets (all edges 0); use as the `out` for getSafeAreaInsets.
 export function createSafeAreaInsets(): SafeAreaInsets {
   return { bottom: 0, left: 0, right: 0, top: 0 };
 }
@@ -186,11 +180,6 @@ export function createWebDeviceBackend(): DeviceBackend {
   };
 }
 
-// Mounts a CSS env(safe-area-inset-*) probe element in the DOM and keeps the active web backend's
-// safe-area values live. Call once after the page is ready; unmount by calling the returned dispose
-// function. Has no effect when called outside of a browser context (SSR, workers). The probe is
-// cheap: one hidden element, no polling — a ResizeObserver detects viewport changes.
-// Returns a dispose function that removes the probe element and stops the observer.
 export function enableWebSafeAreaInsets(): () => void {
   if (typeof document === 'undefined') return () => {};
 
@@ -213,7 +202,6 @@ export function enableWebSafeAreaInsets(): () => void {
 
   readInsets();
 
-  // ResizeObserver may be absent in older browsers or test environments; fall back to a no-op.
   const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(readInsets) : null;
   if (observer !== null) observer.observe(document.documentElement);
 
@@ -224,48 +212,60 @@ export function enableWebSafeAreaInsets(): () => void {
   };
 }
 
-// Returns the active device backend, or a lazily-created web default. There is always a backend.
-export function getDeviceBackend(): DeviceBackend {
-  if (_backend === null) _backend = createWebDeviceBackend();
-  return _backend;
+export function explainDeviceBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// Fills `out` with the device's input/hardware capability flags and returns it.
-// Only surfaces capabilities with no dedicated package owner; see DeviceCapabilities for cross-refs.
+export function getDeviceBackend(): DeviceBackend {
+  return _custom ?? _host ?? _sentinel;
+}
+
 export function getDeviceCapabilities(out: DeviceCapabilities): DeviceCapabilities {
   return getDeviceBackend().getCapabilities(out);
 }
 
-// Fills `out` with the device's built-in display metrics and returns it. Reads the active backend.
-// For live multi-display enumeration and work-area geometry, use @flighthq/screen.
 export function getDeviceDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics {
   return getDeviceBackend().getDisplayMetrics(out);
 }
 
-// Returns a stable install identifier for this device/app install. Backed by DeviceBackend.getId().
-// Web default: crypto.randomUUID() persisted to localStorage. Returns '' when no stable id can be
-// formed (SSR, blocked storage, privacy mode). This is an _install_ id — resettable by clearing
-// storage — not a hardware serial.
 export function getDeviceId(): string {
   return getDeviceBackend().getId();
 }
 
-// Fills `out` with the running device's identity and returns it. Reads the active backend.
 export function getDeviceInfo(out: DeviceInfo): DeviceInfo {
   return getDeviceBackend().getInfo(out);
 }
 
-// Fills `out` with the device's safe-area insets, in CSS pixels, and returns it.
-// Web: returns zeros by default; call enableWebSafeAreaInsets() for real CSS env() values.
 export function getSafeAreaInsets(out: SafeAreaInsets): SafeAreaInsets {
   return getDeviceBackend().getSafeAreaInsets(out);
 }
 
-// Invalidates any snapshot cached in the active backend and triggers a fresh read on the next call
-// to getDeviceInfo / getSafeAreaInsets / getDeviceDisplayMetrics. Useful for orientation-affected
-// safe-area insets and available-memory reads that may change at runtime.
-// The web default backend is stateless (no cache), so this is a no-op there; native backends that
-// cache a snapshot must listen for this signal and invalidate their cache.
+export function installDeviceHostBackend(backend: DeviceBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeDeviceHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 export function refreshDeviceInfo(): void {
   const backend = getDeviceBackend();
   const maybeRefreshable = backend as unknown as { refresh?: () => void };
@@ -274,17 +274,79 @@ export function refreshDeviceInfo(): void {
   }
 }
 
-// Installs a native host device backend; pass null to fall back to the web default.
-export function setDeviceBackend(backend: DeviceBackend | null): void {
-  _backend = backend;
+export function resetDeviceBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
 }
 
-let _backend: DeviceBackend | null = null;
-let _safeAreaInsets: SafeAreaInsets | null = null;
+export function setDeviceBackend(backend: DeviceBackend | null): void {
+  _custom = backend;
+}
 
-// ---------------------------------------------------------------------------
-// Web-backend detection helpers (private)
-// ---------------------------------------------------------------------------
+const _sentinel: DeviceBackend = {
+  getCapabilities(out: DeviceCapabilities): DeviceCapabilities {
+    out.hasKeyboard = false;
+    out.hasMouse = false;
+    out.hasStylus = false;
+    return out;
+  },
+  getDisplayMetrics(out: DeviceDisplayMetrics): DeviceDisplayMetrics {
+    out.colorDepth = -1;
+    out.densityDpi = -1;
+    out.logicalHeight = -1;
+    out.logicalWidth = -1;
+    out.physicalHeight = -1;
+    out.physicalWidth = -1;
+    out.pixelRatio = -1;
+    return out;
+  },
+  getId(): string {
+    return '';
+  },
+  getInfo(out: DeviceInfo): DeviceInfo {
+    out.arch = '';
+    out.availableMemory = -1;
+    out.boardName = '';
+    out.colorGamut = '';
+    out.cpuCores = -1;
+    out.fontScale = -1;
+    out.formFactor = DeviceFormFactorUnknown;
+    out.gpuRenderer = '';
+    out.gpuVendor = '';
+    out.isHdr = false;
+    out.isJailbroken = false;
+    out.isLowEndDevice = false;
+    out.isRooted = false;
+    out.isVirtual = false;
+    out.manufacturer = '';
+    out.marketingName = '';
+    out.model = '';
+    out.osBuild = '';
+    out.osName = '';
+    out.osVersion = '';
+    out.platformString = '';
+    out.productName = '';
+    out.supportedAbis = [];
+    out.totalMemory = -1;
+    out.webViewVersion = '';
+    return out;
+  },
+  getSafeAreaInsets(out: SafeAreaInsets): SafeAreaInsets {
+    out.bottom = 0;
+    out.left = 0;
+    out.right = 0;
+    out.top = 0;
+    return out;
+  },
+};
+
+let _custom: DeviceBackend | null = null;
+let _host: DeviceBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+let _safeAreaInsets: SafeAreaInsets | null = null;
 
 function detectDesktopUa(ua: string): boolean {
   return /win(?:dows)?nt|macintosh|mac os x|linux(?!.*android)|cros|x11/i.test(ua);

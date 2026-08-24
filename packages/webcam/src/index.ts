@@ -1,4 +1,5 @@
 export {
+  explainWebcamBackend,
   createWebcamStreamEntity,
   recordWebcamVideo,
   requestWebcamPermission,

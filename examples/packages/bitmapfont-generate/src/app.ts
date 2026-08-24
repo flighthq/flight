@@ -1,4 +1,4 @@
-import { createWebGlyphRasterizerBackend } from '@flighthq/host-web';
+import { createWebGlyphRasterizerBackend } from '@flighthq/host-web/contract';
 import type { BitmapText } from '@flighthq/sdk';
 import {
   addNodeChild,

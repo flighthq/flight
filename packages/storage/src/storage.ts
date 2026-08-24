@@ -1,5 +1,6 @@
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  BackendExplanation,
   StorageBackend,
   StorageChange,
   StorageMigration,
@@ -41,46 +42,55 @@ export function createStorageNamespace(prefix: string): StorageNamespace {
 export function createWebStorageBackend(): StorageBackend {
   return {
     getItem(key) {
-      const ls = getWebStorage();
+      const ls = _getWebStorage();
       if (ls === null) return null;
       try {
-        return ls.getItem(key);
+        const result = ls.getItem(key);
+        observeStorageHostResult('getItem', true);
+        return result;
       } catch {
+        observeStorageHostResult('getItem', false);
         return null;
       }
     },
     setItem(key, value) {
-      const ls = getWebStorage();
+      const ls = _getWebStorage();
       if (ls === null) return false;
       try {
         ls.setItem(key, value);
+        observeStorageHostResult('setItem', true);
         return true;
       } catch {
+        observeStorageHostResult('setItem', false);
         return false;
       }
     },
     removeItem(key) {
-      const ls = getWebStorage();
+      const ls = _getWebStorage();
       if (ls === null) return false;
       try {
         ls.removeItem(key);
+        observeStorageHostResult('removeItem', true);
         return true;
       } catch {
+        observeStorageHostResult('removeItem', false);
         return false;
       }
     },
     clear() {
-      const ls = getWebStorage();
+      const ls = _getWebStorage();
       if (ls === null) return false;
       try {
         ls.clear();
+        observeStorageHostResult('clear', true);
         return true;
       } catch {
+        observeStorageHostResult('clear', false);
         return false;
       }
     },
     keys() {
-      const ls = getWebStorage();
+      const ls = _getWebStorage();
       if (ls === null) return [];
       try {
         const out: string[] = [];
@@ -135,6 +145,21 @@ export function enableStorageSignals(): StorageSignals {
   return _signals;
 }
 
+export function explainStorageBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // Returns the estimated UTF-16 byte cost of all keys under the namespace. Returns -1 on denial.
 export function getNamespacedStorageByteSize(namespace: Readonly<StorageNamespace>): number {
   const prefix = namespace.prefix + '.';
@@ -184,10 +209,9 @@ export function getNamespacedStorageKeys(namespace: Readonly<StorageNamespace>):
   return out;
 }
 
-// The active storage backend, or a lazily-created web default. There is always a backend.
+// The active storage backend. Precedence: custom > host > sentinel.
 export function getStorageBackend(): StorageBackend {
-  if (_backend === null) _backend = createWebStorageBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Reads the stored value as a stored boolean ('true'/'false'). Returns null on absent key,
@@ -338,6 +362,14 @@ export function hasStorageItem(key: string): boolean {
   return getStorageBackend().getItem(key) !== null;
 }
 
+export function installStorageHostBackend(backend: StorageBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 // Applies a sequence of versioned migrations to the given namespace (or global keyspace when null).
 // Migrations are run in ascending version order, starting from the stored version + 1. Stores the
 // resulting version under the reserved key `__flight_storage_version` (namespaced or global).
@@ -370,6 +402,13 @@ export function migrateStorage(
   return newVersion;
 }
 
+export function observeStorageHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
 // Removes a key from the namespace. Returns false on denial.
 export function removeNamespacedStorageItem(namespace: Readonly<StorageNamespace>, key: string): boolean {
   return getStorageBackend().removeItem(_namespacedKey(namespace, key));
@@ -395,18 +434,25 @@ export function removeStorageItems(keys: readonly string[]): boolean {
   return success;
 }
 
+export function resetStorageBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Writes a namespaced value. Returns false on denial/quota.
 export function setNamespacedStorageItem(namespace: Readonly<StorageNamespace>, key: string, value: string): boolean {
   return getStorageBackend().setItem(_namespacedKey(namespace, key), value);
 }
 
-// Installs a native host storage backend; pass null to fall back to the web default.
+// Installs a custom storage backend; pass null to clear the custom override.
 export function setStorageBackend(backend: StorageBackend | null): void {
   if (_signalsActive && _crossTabUnsubscribe !== null) {
     _crossTabUnsubscribe();
     _crossTabUnsubscribe = null;
   }
-  _backend = backend;
+  _custom = backend;
   if (_signalsActive) {
     const b = getStorageBackend();
     if (b.subscribeChanges !== undefined) {
@@ -459,7 +505,27 @@ export function setStorageNumber(key: string, value: number): boolean {
   return setStorageItem(key, String(value));
 }
 
-let _backend: StorageBackend | null = null;
+const _sentinel: StorageBackend = {
+  getItem() {
+    return null;
+  },
+  setItem() {
+    return false;
+  },
+  removeItem() {
+    return false;
+  },
+  clear() {
+    return false;
+  },
+  keys() {
+    return [];
+  },
+};
+let _custom: StorageBackend | null = null;
+let _host: StorageBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 let _signals: StorageSignals | null = null;
 let _signalsActive = false;
 let _crossTabUnsubscribe: (() => void) | null = null;
@@ -472,7 +538,7 @@ function _namespacedKey(namespace: Readonly<StorageNamespace>, key: string): str
   return namespace.prefix + '.' + key;
 }
 
-function getWebStorage(): Storage | null {
+function _getWebStorage(): Storage | null {
   if (typeof window === 'undefined') return null;
   try {
     return window.localStorage ?? null;

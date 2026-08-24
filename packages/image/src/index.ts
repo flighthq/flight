@@ -1,4 +1,5 @@
 export {
+  explainImageBackend,
   cloneImageResource,
   createCompressedImage,
   createEmbeddedImageResourceReference,

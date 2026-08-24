@@ -1,5 +1,6 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  BackendExplanation,
   Connectivity,
   ConnectivityBackend,
   ConnectivityConnectionType,
@@ -8,9 +9,6 @@ import type {
   ConnectivityStatus,
 } from '@flighthq/types/contract';
 
-// Begins delivering connectivity changes to `net`'s signals by subscribing to the active backend. On
-// each change it reads a fresh status and emits onChange plus edge-triggered signals. Idempotent: a
-// prior subscription is torn down first. Pair with detachConnectivity/disposeConnectivity.
 export function attachConnectivity(net: Connectivity): void {
   detachConnectivity(net);
   const backend = getConnectivityBackend();
@@ -37,7 +35,6 @@ export function attachConnectivity(net: Connectivity): void {
   _subscriptions.set(net, unsubscribe);
 }
 
-// Allocates a Connectivity event entity with inert signals; call attachConnectivity to start delivery.
 export function createConnectivity(): Connectivity {
   return {
     onChange: createSignal(),
@@ -48,7 +45,6 @@ export function createConnectivity(): Connectivity {
   };
 }
 
-// Allocates a zeroed ConnectivityStatus, suitable as the `out` for getConnectivityStatus.
 export function createConnectivityStatus(): ConnectivityStatus {
   return {
     downlink: -1,
@@ -121,7 +117,6 @@ export function createWebConnectivityBackend(): ConnectivityBackend {
   };
 }
 
-// Stops delivery to `net` and forgets its subscription. Safe to call when not attached.
 export function detachConnectivity(net: Connectivity): void {
   const unsubscribe = _subscriptions.get(net);
   if (unsubscribe !== undefined) {
@@ -130,11 +125,6 @@ export function detachConnectivity(net: Connectivity): void {
   }
 }
 
-// Performs a one-shot reachability probe against the given URL using the active backend's
-// detectReachability, falling back to a fetch-based implementation when the backend does not provide
-// one. Writes the result into `out` and returns it. Returns a sentinel on failure rather than throwing.
-// NOTE: navigator.onLine reports an interface, not internet reachability. Use this function when you
-// need to distinguish "a network interface is up" from "the internet is actually reachable."
 export async function detectConnectivityReachability(
   options: Readonly<ConnectivityReachabilityOptions>,
   out: ConnectivityReachability,
@@ -154,24 +144,33 @@ export async function detectConnectivityReachability(
   return out;
 }
 
-// Releases `net` for garbage collection by detaching its backend subscription. The signals remain
-// plain GC-managed memory afterward.
 export function disposeConnectivity(net: Connectivity): void {
   detachConnectivity(net);
 }
 
-// The active network backend, or a lazily-created web default. There is always a backend.
-export function getConnectivityBackend(): ConnectivityBackend {
-  if (_backend === null) _backend = createWebConnectivityBackend();
-  return _backend;
+export function explainConnectivityBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// Fills `out` with the current connectivity snapshot and returns it.
+export function getConnectivityBackend(): ConnectivityBackend {
+  return _custom ?? _host ?? _sentinel;
+}
+
 export function getConnectivityStatus(out: ConnectivityStatus): ConnectivityStatus {
   return getConnectivityBackend().getStatus(out);
 }
 
-// Returns a diff of two status snapshots. Returns true if any field differs.
 export function hasConnectivityStatusChanged(
   a: Readonly<ConnectivityStatus>,
   b: Readonly<ConnectivityStatus>,
@@ -188,28 +187,70 @@ export function hasConnectivityStatusChanged(
   );
 }
 
-// True when the connection is metered (cellular or save-data is set). Convenience over getConnectivityStatus.
+export function installConnectivityHostBackend(backend: ConnectivityBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 export function isConnectivityMetered(): boolean {
   return getConnectivityBackend().getStatus(_scratch).metered;
 }
 
-// True when the host currently reports connectivity. Convenience over getConnectivityStatus.
 export function isConnectivityOnline(): boolean {
   return getConnectivityBackend().getStatus(_scratch).online;
 }
 
-// True when the user or OS has requested reduced data usage. Convenience over getConnectivityStatus.
 export function isConnectivitySaveDataEnabled(): boolean {
   return getConnectivityBackend().getStatus(_scratch).saveData;
 }
 
-// Installs a native host network backend; pass null to fall back to the web default.
-export function setConnectivityBackend(backend: ConnectivityBackend | null): void {
-  _backend = backend;
+export function observeConnectivityHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
-let _backend: ConnectivityBackend | null = null;
+export function resetConnectivityBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+export function setConnectivityBackend(backend: ConnectivityBackend | null): void {
+  _custom = backend;
+}
+
+let _custom: ConnectivityBackend | null = null;
+let _host: ConnectivityBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 const _scratch: ConnectivityStatus = createConnectivityStatus();
+const _sentinel: ConnectivityBackend = {
+  getStatus(out) {
+    out.online = false;
+    out.type = 'unknown';
+    out.downlink = -1;
+    out.downlinkMax = -1;
+    out.effectiveType = '';
+    out.rtt = -1;
+    out.saveData = false;
+    out.metered = false;
+    return out;
+  },
+  async detectReachability(_options, out) {
+    out.reachable = false;
+    out.latency = -1;
+    return out;
+  },
+  subscribe() {
+    return () => {};
+  },
+};
 const _subscriptions = new WeakMap<Connectivity, () => void>();
 
 interface WebConnectivityConnection {

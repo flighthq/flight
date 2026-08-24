@@ -1,15 +1,7 @@
-import type { Image, ImageBackend } from '@flighthq/types/contract';
+import type { BackendExplanation, Image, ImageBackend } from '@flighthq/types/contract';
 
 import { createImageResourceFromImageElement } from './imageResourceFrom';
 
-// Builds the default web backend over `Image` + `decode()`. Created lazily by `getImageBackend` — no
-// DOM is touched at import time, so importing the package has no side effect.
-//
-// ★ THIS BODY IS THE PREVIOUS `loadImageResourceFromUrl` MOVED VERBATIM, INCLUDING ITS KNOWN ABORT
-// RACE: aborting rejects the caller and clears `src`, but the underlying load may already be in
-// flight and is not guaranteed to stop. That defect is preserved deliberately rather than repaired
-// here — this change is the seam, and fixing behaviour while relocating it would make the seam
-// unreviewable against the approval that authorised it.
 export function createWebImageBackend(): ImageBackend {
   return {
     async loadImageFromUrl(url, crossOrigin, signal): Promise<Image> {
@@ -17,8 +9,6 @@ export function createWebImageBackend(): ImageBackend {
       const img = new Image();
       if (crossOrigin !== undefined) img.crossOrigin = crossOrigin;
       img.src = url;
-      // Wire abort to cancel the pending decode and reject with the signal's reason. Always remove the
-      // listener when the race settles so a long-lived signal does not retain the image and closure.
       if (signal !== undefined) {
         let rejectAbort: (reason?: unknown) => void = () => {};
         const abortPromise = new Promise<never>((_, reject) => {
@@ -42,17 +32,64 @@ export function createWebImageBackend(): ImageBackend {
   };
 }
 
-// The active image backend, lazily defaulting to the web one. There is always a backend.
+export function explainImageBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 export function getImageBackend(): ImageBackend {
-  if (_backend === null) _backend = createWebImageBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
-// Installs a native host image backend; pass null to fall back to the lazy web default. Resettable on
-// purpose: a seam a caller cannot restore is a one-way door, and a test that swapped the backend could
-// not put it back.
+export function installImageHostBackend(backend: ImageBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeImageHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
+export function resetImageBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 export function setImageBackend(backend: ImageBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
-let _backend: ImageBackend | null = null;
+const _sentinel: ImageBackend = {
+  loadImageFromUrl(
+    _url: string,
+    _crossOrigin?: 'anonymous' | 'use-credentials',
+    _signal?: AbortSignal,
+  ): Promise<Image> {
+    return Promise.reject(
+      new Error('No image backend installed. Call enableHostWebImage() or setImageBackend() first.'),
+    );
+  },
+};
+
+let _custom: ImageBackend | null = null;
+let _host: ImageBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;

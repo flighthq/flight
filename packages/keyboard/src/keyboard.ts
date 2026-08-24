@@ -1,5 +1,6 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  BackendExplanation,
   SoftKeyboard,
   SoftKeyboardBackend,
   SoftKeyboardInfo,
@@ -149,10 +150,24 @@ export function disposeSoftKeyboard(keyboard: SoftKeyboard): void {
   detachSoftKeyboard(keyboard);
 }
 
-// The active soft keyboard backend, or a lazily-created web default. There is always a backend.
+export function explainSoftKeyboardBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active soft keyboard backend. Precedence: custom > host > sentinel.
 export function getSoftKeyboardBackend(): SoftKeyboardBackend {
-  if (_backend === null) _backend = createWebSoftKeyboardBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the current on-screen keyboard height in CSS pixels without allocating. 0 when hidden.
@@ -178,6 +193,14 @@ export function hideSoftKeyboard(): void {
   getSoftKeyboardBackend().hide();
 }
 
+export function installSoftKeyboardHostBackend(backend: SoftKeyboardBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 // Returns whether the input accessory bar (iOS toolbar above the keyboard) is visible.
 // Returns false when the backend does not support this query.
 export function isSoftKeyboardAccessoryBarVisible(): boolean {
@@ -189,15 +212,29 @@ export function isSoftKeyboardScrollAssistEnabled(): boolean {
   return getSoftKeyboardBackend().getScrollAssistEnabled?.() ?? false;
 }
 
+export function observeSoftKeyboardHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
+export function resetSoftKeyboardBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Controls whether the iOS input accessory bar (the toolbar above the keyboard) is visible.
 // No-op when the backend does not support this.
 export function setSoftKeyboardAccessoryBarVisible(visible: boolean): void {
   getSoftKeyboardBackend().setAccessoryBarVisible?.(visible);
 }
 
-// Installs a native host soft keyboard backend; pass null to fall back to the web default.
+// Installs a custom soft keyboard backend; takes precedence over the host backend.
 export function setSoftKeyboardBackend(backend: SoftKeyboardBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Controls keyboard resize behavior — how the app viewport reacts when the keyboard appears.
@@ -224,7 +261,25 @@ export function showSoftKeyboard(): void {
   getSoftKeyboardBackend().show();
 }
 
-let _backend: SoftKeyboardBackend | null = null;
+let _custom: SoftKeyboardBackend | null = null;
+let _host: SoftKeyboardBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+const _sentinel: SoftKeyboardBackend = {
+  getInfo(out) {
+    out.visible = false;
+    out.height = 0;
+    out.x = 0;
+    out.y = 0;
+    out.width = 0;
+    return out;
+  },
+  subscribe() {
+    return () => {};
+  },
+  show() {},
+  hide() {},
+};
 const _scratch: SoftKeyboardInfo = createSoftKeyboardInfo();
 const _subscriptions = new WeakMap<SoftKeyboard, () => void>();
 

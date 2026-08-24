@@ -1,4 +1,5 @@
 export {
+  explainConnectivityBackend,
   attachConnectivity,
   createConnectivity,
   detachConnectivity,
