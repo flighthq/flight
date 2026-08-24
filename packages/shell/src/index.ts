@@ -1,4 +1,5 @@
 export {
+  explainShellBackend,
   isShellUrlAllowed,
   moveItemToTrash,
   moveItemsToTrash,

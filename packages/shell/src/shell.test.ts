@@ -1,15 +1,18 @@
 import type { ShellBackend, ShellOpenExternalOptions, ShellOpenPathOptions } from '@flighthq/types/contract';
 
 import {
-  createWebShellBackend,
+  explainShellBackend,
   getShellBackend,
+  installShellHostBackend,
   isShellUrlAllowed,
   moveItemsToTrash,
   moveItemToTrash,
+  observeShellHostResult,
   openShellExternalUrl,
   openShellPath,
   openShellPathResult,
   readShellShortcutLink,
+  resetShellBackendForTest,
   setShellBackend,
   setShellUrlSchemeAllowlist,
   shellBeep,
@@ -72,40 +75,33 @@ function fakeBackend(): ShellBackend & {
 }
 
 afterEach(() => {
-  setShellBackend(null);
+  resetShellBackendForTest();
   setShellUrlSchemeAllowlist(null);
 });
 
-describe('createWebShellBackend', () => {
-  it('returns a backend whose native-only operations resolve to sentinels without throwing', async () => {
-    const backend = createWebShellBackend();
-    expect(await backend.openPath('/tmp/x')).toBe(false);
-    expect(await backend.showItemInFolder('/tmp/x')).toBe(false);
-    expect(await backend.moveToTrash('/tmp/x')).toBe(false);
-    expect(await backend.writeShortcutLink('/tmp/x.lnk', { target: '/tmp/x' })).toBe(false);
-    expect(await backend.readShortcutLink('/tmp/x.lnk')).toBeNull();
-    expect(() => backend.beep()).not.toThrow();
+describe('explainShellBackend', () => {
+  it('returns host-not-enabled when no backend is installed', () => {
+    expect(explainShellBackend()).toEqual({
+      conflict: false,
+      layer: 'host-not-enabled',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 
-  it('batch trash resolves to an empty array on the web', async () => {
-    const backend = createWebShellBackend();
-    expect(await backend.moveItemsToTrash(['/tmp/a', '/tmp/b'])).toEqual([]);
+  it('returns custom layer when a custom backend is set', () => {
+    setShellBackend(fakeBackend());
+    expect(explainShellBackend().layer).toBe('custom');
   });
 
-  it('openPathResult returns the unavailable-on-web sentinel string', async () => {
-    const backend = createWebShellBackend();
-    expect(await backend.openPathResult('/tmp/x')).toBe('unavailable on web');
-  });
-
-  it('openExternal type-checks to boolean regardless of options', async () => {
-    const backend = createWebShellBackend();
-    expect(typeof (await backend.openExternal('https://example.com'))).toBe('boolean');
-    expect(typeof (await backend.openExternal('https://example.com', { activate: true }))).toBe('boolean');
+  it('returns host layer when a host backend is installed', () => {
+    installShellHostBackend(fakeBackend());
+    expect(explainShellBackend().layer).toBe('host');
   });
 });
 
 describe('getShellBackend', () => {
-  it('falls back to a web backend', () => {
+  it('falls back to sentinel', () => {
     expect(getShellBackend()).not.toBeNull();
   });
 
@@ -113,6 +109,23 @@ describe('getShellBackend', () => {
     const backend = fakeBackend();
     setShellBackend(backend);
     expect(getShellBackend()).toBe(backend);
+  });
+});
+
+describe('installShellHostBackend', () => {
+  it('first-host-wins and sets conflict on second different backend', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installShellHostBackend(first);
+    installShellHostBackend(second);
+    expect(explainShellBackend().conflict).toBe(true);
+  });
+
+  it('does not set conflict when the same backend is installed twice', () => {
+    const backend = fakeBackend();
+    installShellHostBackend(backend);
+    installShellHostBackend(backend);
+    expect(explainShellBackend().conflict).toBe(false);
   });
 });
 
@@ -156,6 +169,24 @@ describe('moveItemToTrash', () => {
     setShellBackend(backend);
     expect(await moveItemToTrash('/tmp/x')).toBe(true);
     expect(backend.trashed).toBe('/tmp/x');
+  });
+});
+
+describe('observeShellHostResult', () => {
+  it('records a successful observation into the explanation', () => {
+    installShellHostBackend(fakeBackend());
+    observeShellHostResult('openExternal', true);
+    const explanation = explainShellBackend();
+    expect(explanation.operation).toBe('openExternal');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation into the explanation', () => {
+    installShellHostBackend(fakeBackend());
+    observeShellHostResult('openExternal', false);
+    const explanation = explainShellBackend();
+    expect(explanation.operation).toBe('openExternal');
+    expect(explanation.viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -246,7 +277,7 @@ describe('openShellPathResult', () => {
 });
 
 describe('readShellShortcutLink', () => {
-  it('returns null on the web (no backend set)', async () => {
+  it('returns null with sentinel (no backend set)', async () => {
     const result = await readShellShortcutLink('/tmp/x.lnk');
     expect(result).toBeNull();
   });
@@ -259,8 +290,17 @@ describe('readShellShortcutLink', () => {
   });
 });
 
+describe('resetShellBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setShellBackend(fakeBackend());
+    installShellHostBackend(fakeBackend());
+    resetShellBackendForTest();
+    expect(explainShellBackend().layer).toBe('host-not-enabled');
+  });
+});
+
 describe('setShellBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
+  it('clears back to sentinel when passed null', () => {
     setShellBackend(fakeBackend());
     setShellBackend(null);
     expect(getShellBackend()).not.toBeNull();
@@ -299,7 +339,7 @@ describe('showItemInFolder', () => {
 });
 
 describe('writeShellShortcutLink', () => {
-  it('returns false on the web (no backend set)', async () => {
+  it('returns false with sentinel (no backend set)', async () => {
     const result = await writeShellShortcutLink('/tmp/x.lnk', { target: '/tmp/target' });
     expect(result).toBe(false);
   });
