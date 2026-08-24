@@ -69,6 +69,12 @@
     },
     {
       "packageName": "effects-canvas",
+      "symbol": "defaultCanvasLensDistortionEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
       "symbol": "defaultCanvasOuterGlowEffectRunner",
       "dot": true,
       "contract": true
@@ -88,6 +94,12 @@
     {
       "packageName": "effects-canvas",
       "symbol": "defaultCanvasScanlinesEffectRunner",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "defaultCanvasTiltShiftEffectRunner",
       "dot": true,
       "contract": true
     },
@@ -165,6 +177,12 @@
     },
     {
       "packageName": "effects-canvas",
+      "symbol": "registerCanvasLensDistortionEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
       "symbol": "registerCanvasOuterGlowEffect",
       "dot": true,
       "contract": true
@@ -190,6 +208,12 @@
     {
       "packageName": "effects-canvas",
       "symbol": "registerCanvasScanlinesEffect",
+      "dot": true,
+      "contract": true
+    },
+    {
+      "packageName": "effects-canvas",
+      "symbol": "registerCanvasTiltShiftEffect",
       "dot": true,
       "contract": true
     },
