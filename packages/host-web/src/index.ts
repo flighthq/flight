@@ -4,7 +4,7 @@ export { enableHostWebApp } from './webApp';
 export { enableHostWebClipboard } from './webClipboard';
 export { enableHostWebConnectivity } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';
-export { enableHostWebDevice, enableWebSafeAreaInsets } from './webDevice';
+export { enableHostWebDevice } from './webDevice';
 export { enableHostWebDialog } from './webDialog';
 export { enableHostWebFileSystem } from './webFilesystem';
 export { enableHostWebGeolocation } from './webGeolocation';

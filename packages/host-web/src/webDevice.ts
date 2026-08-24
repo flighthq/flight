@@ -1,6 +1,4 @@
-import { createWebDeviceBackend, enableWebSafeAreaInsets, installDeviceHostBackend } from '@flighthq/device/contract';
-
-export { enableWebSafeAreaInsets };
+import { createWebDeviceBackend, installDeviceHostBackend } from '@flighthq/device/contract';
 
 export function enableHostWebDevice(): void {
   if (_enabled) return;
