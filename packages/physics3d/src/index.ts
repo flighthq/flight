@@ -56,6 +56,7 @@ export {
   updateRigidBody3DMassData,
 } from './massProperties';
 export { mixPhysics3DFriction, mixPhysics3DRestitution } from './material';
+export { syncPhysics3DBodyToNode3D } from './nodeSync';
 export { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
 export { stepPhysics3D, stepPhysics3DInterval } from './step';
 export {

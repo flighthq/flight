@@ -22,6 +22,12 @@
       "path": "../math"
     },
     {
+      "path": "../node"
+    },
+    {
+      "path": "../scene3d"
+    },
+    {
       "path": "../spatial"
     },
     {

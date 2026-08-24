@@ -1,18 +1,18 @@
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createDisplayObject } from './displayContainer';
-import { updateNode2DFromPhysics2DBody } from './updateNode2DFromPhysics2DBody';
+import { syncPhysics2DBodyToNode2D } from './nodeSync';
 
 function stubBody(x: number, y: number, angle: number): RigidBody2D {
   return { x, y, angle } as RigidBody2D;
 }
 
-describe('updateNode2DFromPhysics2DBody', () => {
+describe('syncPhysics2DBodyToNode2D', () => {
   it('copies position from body to node', () => {
     const body = stubBody(5, -3, 0);
     const node = createDisplayObject();
-    updateNode2DFromPhysics2DBody(body, node);
+    syncPhysics2DBodyToNode2D(body, node);
     expect(node.x).toBe(5);
     expect(node.y).toBe(-3);
   });
@@ -20,14 +20,14 @@ describe('updateNode2DFromPhysics2DBody', () => {
   it('converts angle from radians to degrees', () => {
     const body = stubBody(0, 0, Math.PI);
     const node = createDisplayObject();
-    updateNode2DFromPhysics2DBody(body, node);
+    syncPhysics2DBodyToNode2D(body, node);
     expect(node.rotation).toBeCloseTo(180, 10);
   });
 
   it('converts a quarter turn', () => {
     const body = stubBody(0, 0, Math.PI / 2);
     const node = createDisplayObject();
-    updateNode2DFromPhysics2DBody(body, node);
+    syncPhysics2DBodyToNode2D(body, node);
     expect(node.rotation).toBeCloseTo(90, 10);
   });
 
@@ -35,7 +35,7 @@ describe('updateNode2DFromPhysics2DBody', () => {
     const body = stubBody(1, 2, 0);
     const node = createDisplayObject();
     node.rotation = 45;
-    updateNode2DFromPhysics2DBody(body, node);
+    syncPhysics2DBodyToNode2D(body, node);
     expect(node.rotation).toBe(0);
   });
 });

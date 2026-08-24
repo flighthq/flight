@@ -20,5 +20,6 @@ export {
 } from './solver';
 export * from './step';
 export * from './stepValidation';
+export * from './nodeSync';
 export * from './world';
 export * from './worldQueries';
