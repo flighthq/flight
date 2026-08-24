@@ -1,4 +1,5 @@
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   Accelerator,
   AcceleratorParseError,
@@ -15,35 +16,6 @@ import type {
 // Allocates a zeroed ParsedAccelerator for use as an `out` argument to parseAccelerator.
 export function createParsedAccelerator(): ParsedAccelerator {
   return { key: '', modifiers: [] };
-}
-
-// Builds the default web backend. Web pages cannot register OS-level global hotkeys; every
-// operation returns a sentinel — register / unregister / isRegistered / setEnabled are false,
-// getRegistered returns [], and unregisterAll / setAllEnabled are no-ops.
-export function createWebShortcutBackend(): ShortcutBackend {
-  return {
-    getRegistered() {
-      return _emptyList;
-    },
-    isRegistered() {
-      return false;
-    },
-    register() {
-      return false;
-    },
-    setAllEnabled() {
-      // No-op: web has no global-hotkey registry.
-    },
-    setEnabled() {
-      return false;
-    },
-    unregister() {
-      return false;
-    },
-    unregisterAll() {
-      // No-op: web has no global-hotkey registry to clear.
-    },
-  };
 }
 
 // Disables a registered global shortcut without unregistering it; the handler is preserved and
@@ -88,6 +60,21 @@ export function equalsAccelerator(a: string, b: string): boolean {
   const nb = normalizeAccelerator(b);
   if (na === null || nb === null) return false;
   return na === nb;
+}
+
+export function explainShortcutBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
 // Returns the first accelerator in `candidates` that names the same chord as `accelerator`, or null
@@ -171,14 +158,9 @@ export function getRegisteredGlobalShortcuts(): readonly Accelerator[] {
   return result;
 }
 
-// The active shortcut backend, or a lazily-created web default. There is always a backend.
-// The default is cached in its own slot rather than assigned into the installed-backend slot, so
-// "a host installed a backend" stays distinguishable from "we fell back" for the whole process —
-// folding the two together would make hasNativeShortcutBackend read true after the first command.
+// The active shortcut backend: custom > host > sentinel. There is always a backend.
 export function getShortcutBackend(): ShortcutBackend {
-  if (_backend !== null) return _backend;
-  if (_webBackend === null) _webBackend = createWebShortcutBackend();
-  return _webBackend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // True when the (normalized) chord is already registered. A conflict probe over isGlobalShortcutRegistered.
@@ -189,11 +171,18 @@ export function hasGlobalShortcutConflict(accelerator: string): boolean {
   return isGlobalShortcutRegistered(normalized);
 }
 
-// True when a native host backend is installed. False means the default web backend is active, whose
-// registry is a sentinel — no chord can register, and every command is a no-op. The capability probe
-// an application uses to decide whether to offer a global-hotkey settings screen at all.
+// True when a native host backend is installed (custom or host layer). False means only the
+// sentinel is active — no chord can register, and every command is a no-op.
 export function hasNativeShortcutBackend(): boolean {
-  return _backend !== null;
+  return _custom !== null || _host !== null;
+}
+
+export function installShortcutHostBackend(backend: ShortcutBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // True when `input` is a parseable accelerator (valid modifiers + recognized key).
@@ -218,6 +207,13 @@ export function normalizeAccelerator(input: string): Accelerator | null {
   const result = _parse(input);
   if (result === null) return null;
   return _formatNormalized(result);
+}
+
+export function observeShortcutHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Parses `input` into modifiers + key and writes into `out`. Returns `out` on success, null on
@@ -257,6 +253,13 @@ export function registerGlobalShortcut(
   return getShortcutBackend().register(normalized, wrappedHandler);
 }
 
+export function resetShortcutBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Resolves 'CommandOrControl' to 'Meta' on macOS and 'Control' on Windows/Linux.
 // Reads the platform directly via navigator.platform to avoid depending on @flighthq/platform.
 // Pass `platform` to override OS detection (e.g. 'macos', 'windows', 'linux') for testability.
@@ -270,9 +273,9 @@ export function resumeAllGlobalShortcuts(): void {
   getShortcutBackend().setAllEnabled(true);
 }
 
-// Installs a native host shortcut backend; pass null to fall back to the web default.
+// Installs a custom shortcut backend; pass null to fall back to host or sentinel.
 export function setShortcutBackend(backend: ShortcutBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Installs the drop guard consulted whenever a global-shortcut command returns its sentinel for a
@@ -303,10 +306,10 @@ export function unregisterGlobalShortcut(accelerator: string): boolean {
   return getShortcutBackend().unregister(normalized);
 }
 
-// The backend a native host installed, and separately the web default getShortcutBackend falls back
-// to. Keeping them apart is what lets hasNativeShortcutBackend answer honestly.
-let _backend: ShortcutBackend | null = null;
-let _webBackend: ShortcutBackend | null = null;
+let _custom: ShortcutBackend | null = null;
+let _host: ShortcutBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 let _signals: ShortcutSignals | null = null;
 
 // Diagnostics seam: enableShortcutGuards (separately imported, so its message text and its
@@ -315,6 +318,27 @@ let _signals: ShortcutSignals | null = null;
 let _dropGuard: ShortcutDropGuard | null = null;
 
 const _emptyList: readonly string[] = [];
+
+// Web pages cannot register OS-level global hotkeys; every operation returns a sentinel.
+const _sentinel: ShortcutBackend = {
+  getRegistered() {
+    return _emptyList;
+  },
+  isRegistered() {
+    return false;
+  },
+  register() {
+    return false;
+  },
+  setAllEnabled() {},
+  setEnabled() {
+    return false;
+  },
+  unregister() {
+    return false;
+  },
+  unregisterAll() {},
+};
 
 // Canonical modifier order used in normalized form: Control < Alt < Shift < Meta < Super < CommandOrControl.
 // CommandOrControl carries its own ordinal (last) so any chord — including one mixing Control and
@@ -659,11 +683,11 @@ function _parseDetailed(input: string): _Parsed | AcceleratorParseError {
   return { key: canonicalKey, modifiers };
 }
 
-// Reports to the drop guard that a command reached the default web backend, whose registry is a
-// sentinel, so the command could not have taken effect on any input. Silent once a native backend is
-// installed: a native backend answering false is a real answer, not a drop.
+// Reports to the drop guard that a command reached the sentinel, so the command could not have
+// taken effect on any input. Silent once a native backend is installed (custom or host layer):
+// a native backend answering false is a real answer, not a drop.
 function _reportNoNativeBackend(operation: ShortcutOperation, accelerator: string): void {
-  if (_dropGuard === null || _backend !== null) return;
+  if (_dropGuard === null || _custom !== null || _host !== null) return;
   _dropGuard({ accelerator, operation, parseError: null, reason: 'no-native-backend' });
 }
 

@@ -1,3 +1,4 @@
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   MenuItemTemplate,
   RectangleLike,
@@ -29,78 +30,6 @@ export function createTrayIcon(options?: Readonly<TrayIconOptions>): TrayIcon | 
   return id < 0 ? null : { id };
 }
 
-// Builds the default web backend. Web has no system tray, so create returns -1 and the tray mutators
-// are no-ops — a native host (Electron's Tray, Tauri) is required for the tray icon itself. (The
-// application/dock badge lives in @flighthq/app's setAppBadgeCount, not here.)
-export function createWebTrayBackend(): TrayBackend {
-  return {
-    create() {
-      // No tray on web. -1 signals "unsupported"; createTrayIcon maps it to null.
-      return -1;
-    },
-    destroy() {
-      // No-op: web has no tray icon to destroy.
-    },
-    displayBalloon() {
-      // No-op: balloon notifications require a native host (Windows only).
-    },
-    getBounds() {
-      // No tray on web; null signals unavailable.
-      return null;
-    },
-    getCapabilities() {
-      return WEB_CAPABILITIES;
-    },
-    getTitle() {
-      // No tray on web.
-      return '';
-    },
-    getTooltip() {
-      // No tray on web.
-      return '';
-    },
-    isDestroyed() {
-      // No tray icons exist on web; treat every id as destroyed.
-      return true;
-    },
-    listIds() {
-      // No tray icons exist on web.
-      return [];
-    },
-    popUpContextMenu() {
-      // No-op: web has no context menu to pop up.
-    },
-    removeBalloon() {
-      // No-op: balloon notifications require a native host (Windows only).
-    },
-    setContextMenu() {
-      // No-op: web has no tray icon — a native host (Electron/Tauri) is required.
-    },
-    setIcon() {
-      // No-op: web has no tray icon to update.
-    },
-    setIgnoreDoubleClickEvents() {
-      // No-op: web has no tray icon double-click behavior to configure.
-    },
-    setPressedIcon() {
-      // No-op: web has no tray icon; pressed icon is macOS-specific.
-    },
-    setTemplate() {
-      // No-op: template images are a macOS menu-bar concept; irrelevant on web.
-    },
-    setTitle() {
-      // No-op: web has no tray icon to update.
-    },
-    setTooltip() {
-      // No-op: web has no tray icon to update.
-    },
-    subscribe() {
-      // No tray on web — a native host (Electron/Tauri) is required to emit tray events.
-      return () => {};
-    },
-  };
-}
-
 // Destroys a tray icon and frees its host resource. No-op when the host has no tray.
 // Any icon animation running on this tray is stopped first: the interval writes through setTrayIcon,
 // and left running it would keep calling into a resource the host has freed — forever, since the
@@ -117,10 +46,24 @@ export function displayTrayBalloon(tray: TrayIcon, options: Readonly<TrayBalloon
   getTrayBackend().displayBalloon(tray.id, options);
 }
 
-// The active tray backend, or a lazily-created web default. There is always a backend.
+export function explainTrayBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// The active tray backend. Precedence: custom > host > sentinel.
 export function getTrayBackend(): TrayBackend {
-  if (_backend === null) _backend = createWebTrayBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the capability flags for the active tray backend. Use before calling APIs that may
@@ -153,6 +96,14 @@ export function getTrayIconTooltip(tray: TrayIcon): string {
   return getTrayBackend().getTooltip(tray.id);
 }
 
+export function installTrayHostBackend(backend: TrayBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 // Returns whether a tray icon has been destroyed. Returns true on web (no trays exist).
 // Use this to guard calls after destroyTrayIcon when the tray lifecycle is unclear.
 export function isTrayDestroyed(tray: TrayIcon): boolean {
@@ -163,6 +114,13 @@ export function isTrayDestroyed(tray: TrayIcon): boolean {
 // it is stopped, replaced by a later start, or the tray is destroyed.
 export function isTrayIconAnimating(tray: TrayIcon): boolean {
   return _animations.has(tray.id);
+}
+
+export function observeTrayHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Subscribes to tray icon events, delivering a rich TrayEventData payload (id, type, bounds,
@@ -184,6 +142,13 @@ export function removeTrayBalloon(tray: TrayIcon): void {
   getTrayBackend().removeBalloon(tray.id);
 }
 
+export function resetTrayBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 /** Installs the tray guard, or clears it with `null`. The seam exists so the messages and the
  *  `@flighthq/log` dependency live in the separately-importable guard module rather than here; not
  *  importing that module costs production nothing. Called by `enableTrayGuards`, not directly. */
@@ -193,9 +158,9 @@ export function setTrayAnimationGuard(
   _animationGuard = guard;
 }
 
-// Installs a native host tray backend; pass null to fall back to the web default.
+// Installs a custom tray backend; pass null to clear the custom override.
 export function setTrayBackend(backend: TrayBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Sets the image for the tray icon. Accepts the same icon path/data-URI accepted by createTrayIcon.
@@ -270,8 +235,6 @@ export function startTrayIconAnimation(tray: TrayIcon, frames: readonly string[]
   };
 }
 
-let _backend: TrayBackend | null = null;
-
 // The interval per animating tray id. Module-scoped like the backend, and correct at that scope: an
 // id is the host's, so one id is one icon is one animation.
 const _animations = new Map<number, ReturnType<typeof setInterval>>();
@@ -290,3 +253,74 @@ export function stopTrayIconAnimation(tray: TrayIcon): void {
 }
 
 let _animationGuard: ((tray: TrayIcon, frameCount: number, intervalMs: number) => void) | null = null;
+let _custom: TrayBackend | null = null;
+let _host: TrayBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+const _sentinel: TrayBackend = {
+  create() {
+    // No tray on web. -1 signals "unsupported"; createTrayIcon maps it to null.
+    return -1;
+  },
+  destroy() {
+    // No-op: web has no tray icon to destroy.
+  },
+  displayBalloon() {
+    // No-op: balloon notifications require a native host (Windows only).
+  },
+  getBounds() {
+    // No tray on web; null signals unavailable.
+    return null;
+  },
+  getCapabilities() {
+    return WEB_CAPABILITIES;
+  },
+  getTitle() {
+    // No tray on web.
+    return '';
+  },
+  getTooltip() {
+    // No tray on web.
+    return '';
+  },
+  isDestroyed() {
+    // No tray icons exist on web; treat every id as destroyed.
+    return true;
+  },
+  listIds() {
+    // No tray icons exist on web.
+    return [];
+  },
+  popUpContextMenu() {
+    // No-op: web has no context menu to pop up.
+  },
+  removeBalloon() {
+    // No-op: balloon notifications require a native host (Windows only).
+  },
+  setContextMenu() {
+    // No-op: web has no tray icon — a native host (Electron/Tauri) is required.
+  },
+  setIcon() {
+    // No-op: web has no tray icon to update.
+  },
+  setIgnoreDoubleClickEvents() {
+    // No-op: web has no tray icon double-click behavior to configure.
+  },
+  setPressedIcon() {
+    // No-op: web has no tray icon; pressed icon is macOS-specific.
+  },
+  setTemplate() {
+    // No-op: template images are a macOS menu-bar concept; irrelevant on web.
+  },
+  setTitle() {
+    // No-op: web has no tray icon to update.
+  },
+  setTooltip() {
+    // No-op: web has no tray icon to update.
+  },
+  subscribe() {
+    // No tray on web — a native host (Electron/Tauri) is required to emit tray events.
+    return () => {};
+  },
+};

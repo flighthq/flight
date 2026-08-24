@@ -4,6 +4,7 @@ export {
   createTrayIcon,
   destroyTrayIcon,
   displayTrayBalloon,
+  explainTrayBackend,
   getTrayCapabilities,
   getTrayIconBounds,
   getTrayIconTitle,

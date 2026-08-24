@@ -8,6 +8,7 @@ export {
   enableShortcutGuards,
   equalsAccelerator,
   explainGlobalShortcutRegistration,
+  explainShortcutBackend,
   findAcceleratorConflict,
   formatAcceleratorForDisplay,
   getAcceleratorKey,

@@ -9,7 +9,6 @@ import {
   createAppUpdater,
   createUpdaterConfig,
   createUpdaterState,
-  createWebUpdaterBackend,
   detachAppUpdater,
   disposeAppUpdater,
   downloadAppUpdate,
@@ -19,6 +18,7 @@ import {
   getUpdaterConfig,
   isAppUpdateEligible,
   quitAndInstallUpdate,
+  resetUpdaterBackendForTest,
   rollbackAppUpdate,
   setUpdaterBackend,
   setUpdaterChannel,
@@ -202,7 +202,7 @@ function fakeBackend(): FakeUpdaterBackend {
   };
 }
 
-afterEach(() => setUpdaterBackend(null));
+afterEach(() => resetUpdaterBackendForTest());
 
 describe('attachAppUpdater', () => {
   it('is idempotent — re-attach tears down the prior subscription first', () => {
@@ -437,52 +437,6 @@ describe('createUpdaterState', () => {
   });
 });
 
-describe('createWebUpdaterBackend', () => {
-  it('no-ops commands and returns inert unsubscribes without throwing', () => {
-    const backend = createWebUpdaterBackend();
-    expect(() => {
-      backend.setFeedUrl('https://example.com/feed');
-      backend.checkForUpdates();
-      backend.downloadUpdate();
-      backend.cancelDownload();
-      backend.quitAndInstall();
-      backend.rollback();
-      backend.setSignatureConfig(null);
-      backend.setSignatureConfig({ algorithm: 'ed25519', publicKey: 'abc' });
-    }).not.toThrow();
-    expect(typeof backend.subscribeChecking(() => {})).toBe('function');
-    expect(typeof backend.subscribeError(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateCancelled(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateStaging(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateVerified(() => {})).toBe('function');
-    expect(typeof backend.subscribeUpdateRolledBack(() => {})).toBe('function');
-  });
-
-  it('stores and returns channel', () => {
-    const backend = createWebUpdaterBackend();
-    expect(backend.getChannel()).toBe('stable');
-    backend.setChannel('beta');
-    expect(backend.getChannel()).toBe('beta');
-  });
-
-  it('stores and returns config', () => {
-    const backend = createWebUpdaterBackend();
-    const config = createUpdaterConfig();
-    expect(backend.getConfig()).toEqual(config);
-    backend.setConfig({ ...config, autoDownload: true });
-    expect(backend.getConfig().autoDownload).toBe(true);
-  });
-
-  it('returns idle state for every query', () => {
-    const backend = createWebUpdaterBackend();
-    expect(backend.getChannel()).toBe('stable');
-    const config = backend.getConfig();
-    expect(config.autoDownload).toBe(false);
-    expect(config.autoInstallOnAppQuit).toBe(false);
-    expect(config.allowPrerelease).toBe(false);
-  });
-});
-
 describe('detachAppUpdater', () => {
   it('stops further delivery', () => {
     const backend = fakeBackend();
@@ -543,6 +497,52 @@ describe('getAppUpdaterState', () => {
 describe('getUpdaterBackend', () => {
   it('falls back to a web backend', () => {
     expect(getUpdaterBackend()).not.toBeNull();
+  });
+});
+
+describe('getUpdaterBackend (sentinel)', () => {
+  it('no-ops commands and returns inert unsubscribes without throwing', () => {
+    const backend = getUpdaterBackend();
+    expect(() => {
+      backend.setFeedUrl('https://example.com/feed');
+      backend.checkForUpdates();
+      backend.downloadUpdate();
+      backend.cancelDownload();
+      backend.quitAndInstall();
+      backend.rollback();
+      backend.setSignatureConfig(null);
+      backend.setSignatureConfig({ algorithm: 'ed25519', publicKey: 'abc' });
+    }).not.toThrow();
+    expect(typeof backend.subscribeChecking(() => {})).toBe('function');
+    expect(typeof backend.subscribeError(() => {})).toBe('function');
+    expect(typeof backend.subscribeUpdateCancelled(() => {})).toBe('function');
+    expect(typeof backend.subscribeUpdateStaging(() => {})).toBe('function');
+    expect(typeof backend.subscribeUpdateVerified(() => {})).toBe('function');
+    expect(typeof backend.subscribeUpdateRolledBack(() => {})).toBe('function');
+  });
+
+  it('stores and returns channel', () => {
+    const backend = getUpdaterBackend();
+    expect(backend.getChannel()).toBe('stable');
+    backend.setChannel('beta');
+    expect(backend.getChannel()).toBe('beta');
+  });
+
+  it('stores and returns config', () => {
+    const backend = getUpdaterBackend();
+    const config = createUpdaterConfig();
+    expect(backend.getConfig()).toEqual(config);
+    backend.setConfig({ ...config, autoDownload: true });
+    expect(backend.getConfig().autoDownload).toBe(true);
+  });
+
+  it('returns idle state for every query', () => {
+    const backend = getUpdaterBackend();
+    expect(backend.getChannel()).toBe('stable');
+    const config = backend.getConfig();
+    expect(config.autoDownload).toBe(false);
+    expect(config.autoInstallOnAppQuit).toBe(false);
+    expect(config.allowPrerelease).toBe(false);
   });
 });
 
