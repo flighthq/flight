@@ -2,6 +2,7 @@ import { createEntity } from '@flighthq/entity/contract';
 import type { Bitmap } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
+import { createWebImageBackend, resetImageBackendForTest, setImageBackend } from './imageBackend';
 import { createImageResource } from './imageResource';
 import {
   createImageResourceFromBitmap,
@@ -17,11 +18,13 @@ import {
 
 // Stub img.decode() so async load functions resolve immediately in jsdom.
 beforeEach(() => {
+  setImageBackend(createWebImageBackend());
   HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  resetImageBackendForTest();
   delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
 });
 

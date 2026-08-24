@@ -1,4 +1,9 @@
-import { createImageResourceFromImageElement } from '@flighthq/image/contract';
+import {
+  createImageResourceFromImageElement,
+  createWebImageBackend,
+  resetImageBackendForTest,
+  setImageBackend,
+} from '@flighthq/image/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Image } from '@flighthq/types/contract';
 
@@ -15,11 +20,13 @@ import {
 
 // Stub img.decode() so async load functions resolve immediately in jsdom.
 beforeEach(() => {
+  setImageBackend(createWebImageBackend());
   HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  resetImageBackendForTest();
   delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
 });
 
