@@ -18,6 +18,10 @@ import {
   requestGeolocationPermission,
   setGeolocationBackend,
   watchGeolocationPosition,
+  explainGeolocationBackend,
+  installGeolocationHostBackend,
+  observeGeolocationHostResult,
+  resetGeolocationBackendForTest,
 } from './geolocation';
 
 function fakeBackend(): GeolocationBackend & { cleared: number[]; lastWatch: number } {
@@ -157,6 +161,34 @@ describe('createWebGeolocationBackend', () => {
   });
 });
 
+describe('explainGeolocationBackend', () => {
+  afterEach(() => resetGeolocationBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetGeolocationBackendForTest();
+    const explanation = explainGeolocationBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setGeolocationBackend(fakeBackend());
+    expect(explainGeolocationBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installGeolocationHostBackend(fakeBackend());
+    expect(explainGeolocationBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installGeolocationHostBackend(fakeBackend());
+    installGeolocationHostBackend(fakeBackend());
+    expect(explainGeolocationBackend().conflict).toBe(true);
+  });
+});
+
 describe('getCurrentGeoPosition', () => {
   it('returns the backend position', async () => {
     setGeolocationBackend(fakeBackend());
@@ -206,6 +238,25 @@ describe('getGeolocationPermission', () => {
   });
 });
 
+describe('installGeolocationHostBackend', () => {
+  afterEach(() => resetGeolocationBackendForTest());
+
+  it('installs a host backend that getGeolocationBackend returns', () => {
+    const backend = fakeBackend();
+    installGeolocationHostBackend(backend);
+    expect(getGeolocationBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installGeolocationHostBackend(first);
+    installGeolocationHostBackend(second);
+    expect(getGeolocationBackend()).toBe(first);
+    expect(explainGeolocationBackend().conflict).toBe(true);
+  });
+});
+
 describe('isGeolocationAvailable', () => {
   it('returns a boolean', () => {
     expect(typeof isGeolocationAvailable()).toBe('boolean');
@@ -214,6 +265,24 @@ describe('isGeolocationAvailable', () => {
   it('returns false in jsdom (no secure context / no navigator.geolocation)', () => {
     // jsdom does not provide navigator.geolocation, so this is expected to be false.
     expect(isGeolocationAvailable()).toBe(false);
+  });
+});
+
+describe('observeGeolocationHostResult', () => {
+  afterEach(() => resetGeolocationBackendForTest());
+
+  it('records a successful observation', () => {
+    installGeolocationHostBackend(fakeBackend());
+    observeGeolocationHostResult('clearWatch', true);
+    const explanation = explainGeolocationBackend();
+    expect(explanation.operation).toBe('clearWatch');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installGeolocationHostBackend(fakeBackend());
+    observeGeolocationHostResult('clearWatch', false);
+    expect(explainGeolocationBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -250,6 +319,18 @@ describe('requestGeolocationPermission', () => {
 
   it('returns a boolean from the web backend without throwing', async () => {
     expect(typeof (await requestGeolocationPermission())).toBe('boolean');
+  });
+});
+
+describe('resetGeolocationBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setGeolocationBackend(fakeBackend());
+    installGeolocationHostBackend(fakeBackend());
+    observeGeolocationHostResult('clearWatch', true);
+    resetGeolocationBackendForTest();
+    expect(explainGeolocationBackend().layer).toBe('host-not-enabled');
+    expect(explainGeolocationBackend().conflict).toBe(false);
+    expect(explainGeolocationBackend().viability).toBe('unobserved');
   });
 });
 

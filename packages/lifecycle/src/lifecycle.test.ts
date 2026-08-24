@@ -15,6 +15,10 @@ import {
   isAppInactive,
   requestAppBack,
   setLifecycleBackend,
+  explainLifecycleBackend,
+  installLifecycleHostBackend,
+  observeLifecycleHostResult,
+  resetLifecycleBackendForTest,
 } from './lifecycle';
 
 type FakeBackend = LifecycleBackend & {
@@ -432,6 +436,34 @@ describe('disposeAppLifecycle', () => {
   });
 });
 
+describe('explainLifecycleBackend', () => {
+  afterEach(() => resetLifecycleBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetLifecycleBackendForTest();
+    const explanation = explainLifecycleBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setLifecycleBackend(fakeBackend());
+    expect(explainLifecycleBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installLifecycleHostBackend(fakeBackend());
+    expect(explainLifecycleBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installLifecycleHostBackend(fakeBackend());
+    installLifecycleHostBackend(fakeBackend());
+    expect(explainLifecycleBackend().conflict).toBe(true);
+  });
+});
+
 describe('getAppLaunchKind', () => {
   it("returns 'warm' when backend does not implement getLaunchKind", () => {
     const backend = fakeBackend();
@@ -462,6 +494,25 @@ describe('getAppLifecycleState', () => {
 describe('getLifecycleBackend', () => {
   it('falls back to a web backend', () => {
     expect(getLifecycleBackend()).not.toBeNull();
+  });
+});
+
+describe('installLifecycleHostBackend', () => {
+  afterEach(() => resetLifecycleBackendForTest());
+
+  it('installs a host backend that getLifecycleBackend returns', () => {
+    const backend = fakeBackend();
+    installLifecycleHostBackend(backend);
+    expect(getLifecycleBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installLifecycleHostBackend(first);
+    installLifecycleHostBackend(second);
+    expect(getLifecycleBackend()).toBe(first);
+    expect(explainLifecycleBackend().conflict).toBe(true);
   });
 });
 
@@ -520,6 +571,24 @@ describe('isAppInactive', () => {
   });
 });
 
+describe('observeLifecycleHostResult', () => {
+  afterEach(() => resetLifecycleBackendForTest());
+
+  it('records a successful observation', () => {
+    installLifecycleHostBackend(fakeBackend());
+    observeLifecycleHostResult('getState', true);
+    const explanation = explainLifecycleBackend();
+    expect(explanation.operation).toBe('getState');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installLifecycleHostBackend(fakeBackend());
+    observeLifecycleHostResult('getState', false);
+    expect(explainLifecycleBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('requestAppBack', () => {
   it('returns true when no listener vetoes', () => {
     const app = createAppLifecycle();
@@ -538,6 +607,18 @@ describe('requestAppBack', () => {
     connectSignal(app.onBackButton, () => fired++);
     requestAppBack(app);
     expect(fired).toBe(1);
+  });
+});
+
+describe('resetLifecycleBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setLifecycleBackend(fakeBackend());
+    installLifecycleHostBackend(fakeBackend());
+    observeLifecycleHostResult('getState', true);
+    resetLifecycleBackendForTest();
+    expect(explainLifecycleBackend().layer).toBe('host-not-enabled');
+    expect(explainLifecycleBackend().conflict).toBe(false);
+    expect(explainLifecycleBackend().viability).toBe('unobserved');
   });
 });
 

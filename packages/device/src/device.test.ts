@@ -22,6 +22,10 @@ import {
   getSafeAreaInsets,
   refreshDeviceInfo,
   setDeviceBackend,
+  explainDeviceBackend,
+  installDeviceHostBackend,
+  observeDeviceHostResult,
+  resetDeviceBackendForTest,
 } from './device';
 
 function fakeBackend(): DeviceBackend {
@@ -241,6 +245,34 @@ describe('enableWebSafeAreaInsets', () => {
   });
 });
 
+describe('explainDeviceBackend', () => {
+  afterEach(() => resetDeviceBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetDeviceBackendForTest();
+    const explanation = explainDeviceBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setDeviceBackend(fakeBackend());
+    expect(explainDeviceBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installDeviceHostBackend(fakeBackend());
+    expect(explainDeviceBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installDeviceHostBackend(fakeBackend());
+    installDeviceHostBackend(fakeBackend());
+    expect(explainDeviceBackend().conflict).toBe(true);
+  });
+});
+
 describe('getDeviceBackend', () => {
   it('falls back to a web backend when none is set', () => {
     expect(getDeviceBackend()).not.toBeNull();
@@ -352,6 +384,43 @@ describe('getSafeAreaInsets', () => {
   });
 });
 
+describe('installDeviceHostBackend', () => {
+  afterEach(() => resetDeviceBackendForTest());
+
+  it('installs a host backend that getDeviceBackend returns', () => {
+    const backend = fakeBackend();
+    installDeviceHostBackend(backend);
+    expect(getDeviceBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installDeviceHostBackend(first);
+    installDeviceHostBackend(second);
+    expect(getDeviceBackend()).toBe(first);
+    expect(explainDeviceBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeDeviceHostResult', () => {
+  afterEach(() => resetDeviceBackendForTest());
+
+  it('records a successful observation', () => {
+    installDeviceHostBackend(fakeBackend());
+    observeDeviceHostResult('getCapabilities', true);
+    const explanation = explainDeviceBackend();
+    expect(explanation.operation).toBe('getCapabilities');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installDeviceHostBackend(fakeBackend());
+    observeDeviceHostResult('getCapabilities', false);
+    expect(explainDeviceBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('refreshDeviceInfo', () => {
   it('does not throw on the default web backend', () => {
     expect(() => refreshDeviceInfo()).not.toThrow();
@@ -368,6 +437,18 @@ describe('refreshDeviceInfo', () => {
     setDeviceBackend(backend);
     refreshDeviceInfo();
     expect(refreshed).toBe(true);
+  });
+});
+
+describe('resetDeviceBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setDeviceBackend(fakeBackend());
+    installDeviceHostBackend(fakeBackend());
+    observeDeviceHostResult('getCapabilities', true);
+    resetDeviceBackendForTest();
+    expect(explainDeviceBackend().layer).toBe('host-not-enabled');
+    expect(explainDeviceBackend().conflict).toBe(false);
+    expect(explainDeviceBackend().viability).toBe('unobserved');
   });
 });
 

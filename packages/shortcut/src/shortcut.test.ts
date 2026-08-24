@@ -38,6 +38,10 @@ import {
   suspendAllGlobalShortcuts,
   unregisterAllGlobalShortcuts,
   unregisterGlobalShortcut,
+  explainShortcutBackend,
+  installShortcutHostBackend,
+  observeShortcutHostResult,
+  resetShortcutBackendForTest,
 } from './shortcut';
 
 // A full-featured fake backend for testing.
@@ -267,6 +271,34 @@ describe('equalsAccelerator', () => {
   it('is order-insensitive for modifiers', () => {
     expect(equalsAccelerator('Shift+Ctrl+K', 'Control+Shift+K')).toBe(true);
     expect(equalsAccelerator('Alt+Shift+Control+K', 'Ctrl+Shift+Alt+K')).toBe(true);
+  });
+});
+
+describe('explainShortcutBackend', () => {
+  afterEach(() => resetShortcutBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetShortcutBackendForTest();
+    const explanation = explainShortcutBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setShortcutBackend(fakeBackend());
+    expect(explainShortcutBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installShortcutHostBackend(fakeBackend());
+    expect(explainShortcutBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installShortcutHostBackend(fakeBackend());
+    installShortcutHostBackend(fakeBackend());
+    expect(explainShortcutBackend().conflict).toBe(true);
   });
 });
 
@@ -548,6 +580,25 @@ describe('hasNativeShortcutBackend', () => {
   });
 });
 
+describe('installShortcutHostBackend', () => {
+  afterEach(() => resetShortcutBackendForTest());
+
+  it('installs a host backend that getShortcutBackend returns', () => {
+    const backend = fakeBackend();
+    installShortcutHostBackend(backend);
+    expect(getShortcutBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installShortcutHostBackend(first);
+    installShortcutHostBackend(second);
+    expect(getShortcutBackend()).toBe(first);
+    expect(explainShortcutBackend().conflict).toBe(true);
+  });
+});
+
 describe('isAcceleratorValid', () => {
   it('returns true for well-formed accelerators', () => {
     expect(isAcceleratorValid('Control+K')).toBe(true);
@@ -731,6 +782,24 @@ describe('normalizeAccelerator', () => {
   });
 });
 
+describe('observeShortcutHostResult', () => {
+  afterEach(() => resetShortcutBackendForTest());
+
+  it('records a successful observation', () => {
+    installShortcutHostBackend(fakeBackend());
+    observeShortcutHostResult('getRegistered', true);
+    const explanation = explainShortcutBackend();
+    expect(explanation.operation).toBe('getRegistered');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installShortcutHostBackend(fakeBackend());
+    observeShortcutHostResult('getRegistered', false);
+    expect(explainShortcutBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('parseAccelerator', () => {
   it('parses a simple accelerator into modifiers and key', () => {
     const out = createParsedAccelerator();
@@ -877,6 +946,18 @@ describe('registerGlobalShortcut', () => {
     setShortcutBackend(backend);
     expect(registerGlobalShortcut('', () => {})).toBe(false);
     expect(registerGlobalShortcut('Bad###Key', () => {})).toBe(false);
+  });
+});
+
+describe('resetShortcutBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setShortcutBackend(fakeBackend());
+    installShortcutHostBackend(fakeBackend());
+    observeShortcutHostResult('getRegistered', true);
+    resetShortcutBackendForTest();
+    expect(explainShortcutBackend().layer).toBe('host-not-enabled');
+    expect(explainShortcutBackend().conflict).toBe(false);
+    expect(explainShortcutBackend().viability).toBe('unobserved');
   });
 });
 

@@ -16,6 +16,10 @@ import {
   showPromptDialog,
   showSaveFileDialog,
   showWarningDialog,
+  explainDialogBackend,
+  installDialogHostBackend,
+  observeDialogHostResult,
+  resetDialogBackendForTest,
 } from './dialog';
 
 function fakeHandle(name: string): FileDialogHandle {
@@ -105,6 +109,34 @@ describe('createWebDialogBackend', () => {
   });
 });
 
+describe('explainDialogBackend', () => {
+  afterEach(() => resetDialogBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetDialogBackendForTest();
+    const explanation = explainDialogBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setDialogBackend(fakeBackend());
+    expect(explainDialogBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installDialogHostBackend(fakeBackend());
+    expect(explainDialogBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installDialogHostBackend(fakeBackend());
+    installDialogHostBackend(fakeBackend());
+    expect(explainDialogBackend().conflict).toBe(true);
+  });
+});
+
 describe('getDialogBackend', () => {
   it('falls back to a web backend when none is set', () => {
     expect(getDialogBackend()).not.toBeNull();
@@ -128,6 +160,55 @@ describe('getWebFileSystemHandle', () => {
   it('returns null for a handle not produced by the File System Access API', () => {
     const handle: FileDialogHandle = { kind: 'File', name: 'test.txt', path: null };
     expect(getWebFileSystemHandle(handle)).toBeNull();
+  });
+});
+
+describe('installDialogHostBackend', () => {
+  afterEach(() => resetDialogBackendForTest());
+
+  it('installs a host backend that getDialogBackend returns', () => {
+    const backend = fakeBackend();
+    installDialogHostBackend(backend);
+    expect(getDialogBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installDialogHostBackend(first);
+    installDialogHostBackend(second);
+    expect(getDialogBackend()).toBe(first);
+    expect(explainDialogBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeDialogHostResult', () => {
+  afterEach(() => resetDialogBackendForTest());
+
+  it('records a successful observation', () => {
+    installDialogHostBackend(fakeBackend());
+    observeDialogHostResult('confirm', true);
+    const explanation = explainDialogBackend();
+    expect(explanation.operation).toBe('confirm');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installDialogHostBackend(fakeBackend());
+    observeDialogHostResult('confirm', false);
+    expect(explainDialogBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetDialogBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setDialogBackend(fakeBackend());
+    installDialogHostBackend(fakeBackend());
+    observeDialogHostResult('confirm', true);
+    resetDialogBackendForTest();
+    expect(explainDialogBackend().layer).toBe('host-not-enabled');
+    expect(explainDialogBackend().conflict).toBe(false);
+    expect(explainDialogBackend().viability).toBe('unobserved');
   });
 });
 

@@ -10,6 +10,10 @@ import {
   setAccessibilityBackend,
   setAccessibilityFocus,
   setAccessibilityNode,
+  explainAccessibilityBackend,
+  installAccessibilityHostBackend,
+  observeAccessibilityHostResult,
+  resetAccessibilityBackendForTest,
 } from './accessibility';
 
 afterEach(() => {
@@ -187,6 +191,34 @@ describe('createWebAccessibilityBackend', () => {
   });
 });
 
+describe('explainAccessibilityBackend', () => {
+  afterEach(() => resetAccessibilityBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetAccessibilityBackendForTest();
+    const explanation = explainAccessibilityBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setAccessibilityBackend(getAccessibilityBackend());
+    expect(explainAccessibilityBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installAccessibilityHostBackend(getAccessibilityBackend());
+    expect(explainAccessibilityBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installAccessibilityHostBackend(getAccessibilityBackend());
+    installAccessibilityHostBackend(getAccessibilityBackend());
+    expect(explainAccessibilityBackend().conflict).toBe(true);
+  });
+});
+
 describe('getAccessibilityBackend', () => {
   it('lazily returns a stable web default', () => {
     const first = getAccessibilityBackend();
@@ -200,50 +232,49 @@ describe('getAccessibilityBackend', () => {
   });
 });
 
+describe('installAccessibilityHostBackend', () => {
+  afterEach(() => resetAccessibilityBackendForTest());
+
+  it('installs a host backend that getAccessibilityBackend returns', () => {
+    const backend = getAccessibilityBackend();
+    installAccessibilityHostBackend(backend);
+    expect(getAccessibilityBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = getAccessibilityBackend();
+    const second = getAccessibilityBackend();
+    installAccessibilityHostBackend(first);
+    installAccessibilityHostBackend(second);
+    expect(getAccessibilityBackend()).toBe(first);
+    expect(explainAccessibilityBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeAccessibilityHostResult', () => {
+  afterEach(() => resetAccessibilityBackendForTest());
+
+  it('records a successful observation', () => {
+    installAccessibilityHostBackend(getAccessibilityBackend());
+    observeAccessibilityHostResult('setNode', true);
+    const explanation = explainAccessibilityBackend();
+    expect(explanation.operation).toBe('setNode');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installAccessibilityHostBackend(getAccessibilityBackend());
+    observeAccessibilityHostResult('setNode', false);
+    expect(explainAccessibilityBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('removeAccessibilityNode', () => {
   it('dispatches the id to the backend', () => {
     const mock = createMockAccessibilityBackend();
     setAccessibilityBackend(mock.backend);
     removeAccessibilityNode('gone');
     expect(mock.calls.removeNode).toEqual(['gone']);
-  });
-});
-
-describe('setAccessibilityBackend', () => {
-  it('installs a backend that later commands dispatch through', () => {
-    const mock = createMockAccessibilityBackend();
-    setAccessibilityBackend(mock.backend);
-    setAccessibilityNode(node('a', 'button', {}));
-    expect(mock.calls.setNode.length).toBe(1);
-  });
-
-  it('reverts to the sentinel when passed null', () => {
-    const sentinel = getAccessibilityBackend();
-    const mock = createMockAccessibilityBackend();
-    setAccessibilityBackend(mock.backend);
-    expect(getAccessibilityBackend()).toBe(mock.backend);
-    setAccessibilityBackend(null);
-    expect(getAccessibilityBackend()).toBe(sentinel);
-  });
-});
-
-describe('setAccessibilityFocus', () => {
-  it('dispatches the id and returns the backend result', () => {
-    const mock = createMockAccessibilityBackend();
-    setAccessibilityBackend(mock.backend);
-    expect(setAccessibilityFocus('ok')).toBe(true);
-    expect(setAccessibilityFocus('nope')).toBe(false);
-    expect(mock.calls.setFocus).toEqual(['ok', 'nope']);
-  });
-});
-
-describe('setAccessibilityNode', () => {
-  it('dispatches the node to the backend', () => {
-    const mock = createMockAccessibilityBackend();
-    setAccessibilityBackend(mock.backend);
-    const target = node('a', 'button', { label: 'Go' });
-    setAccessibilityNode(target);
-    expect(mock.calls.setNode).toEqual([target]);
   });
 });
 
@@ -285,3 +316,53 @@ function createMockAccessibilityBackend(): { backend: AccessibilityBackend; call
   };
   return { backend, calls };
 }
+
+describe('resetAccessibilityBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setAccessibilityBackend(getAccessibilityBackend());
+    installAccessibilityHostBackend(getAccessibilityBackend());
+    observeAccessibilityHostResult('setNode', true);
+    resetAccessibilityBackendForTest();
+    expect(explainAccessibilityBackend().layer).toBe('host-not-enabled');
+    expect(explainAccessibilityBackend().conflict).toBe(false);
+    expect(explainAccessibilityBackend().viability).toBe('unobserved');
+  });
+});
+
+describe('setAccessibilityBackend', () => {
+  it('installs a backend that later commands dispatch through', () => {
+    const mock = createMockAccessibilityBackend();
+    setAccessibilityBackend(mock.backend);
+    setAccessibilityNode(node('a', 'button', {}));
+    expect(mock.calls.setNode.length).toBe(1);
+  });
+
+  it('reverts to the sentinel when passed null', () => {
+    const sentinel = getAccessibilityBackend();
+    const mock = createMockAccessibilityBackend();
+    setAccessibilityBackend(mock.backend);
+    expect(getAccessibilityBackend()).toBe(mock.backend);
+    setAccessibilityBackend(null);
+    expect(getAccessibilityBackend()).toBe(sentinel);
+  });
+});
+
+describe('setAccessibilityFocus', () => {
+  it('dispatches the id and returns the backend result', () => {
+    const mock = createMockAccessibilityBackend();
+    setAccessibilityBackend(mock.backend);
+    expect(setAccessibilityFocus('ok')).toBe(true);
+    expect(setAccessibilityFocus('nope')).toBe(false);
+    expect(mock.calls.setFocus).toEqual(['ok', 'nope']);
+  });
+});
+
+describe('setAccessibilityNode', () => {
+  it('dispatches the node to the backend', () => {
+    const mock = createMockAccessibilityBackend();
+    setAccessibilityBackend(mock.backend);
+    const target = node('a', 'button', { label: 'Go' });
+    setAccessibilityNode(target);
+    expect(mock.calls.setNode).toEqual([target]);
+  });
+});

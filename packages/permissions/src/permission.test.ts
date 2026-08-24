@@ -12,6 +12,8 @@ import {
   resetPermissionBackendForTest,
   setPermissionBackend,
   setPermissionRequestFallbackGuard,
+  explainPermissionBackend,
+  observePermissionHostResult,
 } from './permission';
 
 // A recording mock backend: relays a fixed state and captures the last name each method saw.
@@ -202,6 +204,34 @@ describe('createWebPermissionBackend', () => {
   });
 });
 
+describe('explainPermissionBackend', () => {
+  afterEach(() => resetPermissionBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetPermissionBackendForTest();
+    const explanation = explainPermissionBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setPermissionBackend(fakeBackend('granted'));
+    expect(explainPermissionBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installPermissionHostBackend(fakeBackend('granted'));
+    expect(explainPermissionBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installPermissionHostBackend(fakeBackend('granted'));
+    installPermissionHostBackend(fakeBackend('granted'));
+    expect(explainPermissionBackend().conflict).toBe(true);
+  });
+});
+
 describe('explainPermissionState', () => {
   afterEach(() => {
     setPermissionBackend(null);
@@ -289,12 +319,61 @@ describe('getPermissionStates', () => {
   });
 });
 
+describe('installPermissionHostBackend', () => {
+  afterEach(() => resetPermissionBackendForTest());
+
+  it('installs a host backend that getPermissionBackend returns', () => {
+    const backend = fakeBackend('granted');
+    installPermissionHostBackend(backend);
+    expect(getPermissionBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend('granted');
+    const second = fakeBackend('granted');
+    installPermissionHostBackend(first);
+    installPermissionHostBackend(second);
+    expect(getPermissionBackend()).toBe(first);
+    expect(explainPermissionBackend().conflict).toBe(true);
+  });
+});
+
+describe('observePermissionHostResult', () => {
+  afterEach(() => resetPermissionBackendForTest());
+
+  it('records a successful observation', () => {
+    installPermissionHostBackend(fakeBackend('granted'));
+    observePermissionHostResult('getState', true);
+    const explanation = explainPermissionBackend();
+    expect(explanation.operation).toBe('getState');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installPermissionHostBackend(fakeBackend('granted'));
+    observePermissionHostResult('getState', false);
+    expect(explainPermissionBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('requestPermission', () => {
   it('dispatches to the active backend and relays the resolved state', async () => {
     const backend = fakeBackend('granted');
     setPermissionBackend(backend);
     expect(await requestPermission('microphone')).toBe('granted');
     expect(backend.lastRequest).toBe('microphone');
+  });
+});
+
+describe('resetPermissionBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setPermissionBackend(fakeBackend('granted'));
+    installPermissionHostBackend(fakeBackend('granted'));
+    observePermissionHostResult('getState', true);
+    resetPermissionBackendForTest();
+    expect(explainPermissionBackend().layer).toBe('host-not-enabled');
+    expect(explainPermissionBackend().conflict).toBe(false);
+    expect(explainPermissionBackend().viability).toBe('unobserved');
   });
 });
 

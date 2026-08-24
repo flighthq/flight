@@ -40,6 +40,10 @@ import {
   writeClipboardImage,
   writeClipboardRTF,
   writeClipboardText,
+  explainClipboardBackend,
+  installClipboardHostBackend,
+  observeClipboardHostResult,
+  resetClipboardBackendForTest,
 } from './clipboard';
 
 function fakeBackend(): ClipboardBackend & {
@@ -307,6 +311,34 @@ describe('disposeClipboardWatch', () => {
   });
 });
 
+describe('explainClipboardBackend', () => {
+  afterEach(() => resetClipboardBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetClipboardBackendForTest();
+    const explanation = explainClipboardBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setClipboardBackend(fakeBackend());
+    expect(explainClipboardBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installClipboardHostBackend(fakeBackend());
+    expect(explainClipboardBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installClipboardHostBackend(fakeBackend());
+    installClipboardHostBackend(fakeBackend());
+    expect(explainClipboardBackend().conflict).toBe(true);
+  });
+});
+
 describe('getClipboardBackend', () => {
   it('falls back to a web backend', () => {
     expect(getClipboardBackend()).not.toBeNull();
@@ -419,6 +451,43 @@ describe('hasClipboardText', () => {
   });
 });
 
+describe('installClipboardHostBackend', () => {
+  afterEach(() => resetClipboardBackendForTest());
+
+  it('installs a host backend that getClipboardBackend returns', () => {
+    const backend = fakeBackend();
+    installClipboardHostBackend(backend);
+    expect(getClipboardBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installClipboardHostBackend(first);
+    installClipboardHostBackend(second);
+    expect(getClipboardBackend()).toBe(first);
+    expect(explainClipboardBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeClipboardHostResult', () => {
+  afterEach(() => resetClipboardBackendForTest());
+
+  it('records a successful observation', () => {
+    installClipboardHostBackend(fakeBackend());
+    observeClipboardHostResult('clear', true);
+    const explanation = explainClipboardBackend();
+    expect(explanation.operation).toBe('clear');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installClipboardHostBackend(fakeBackend());
+    observeClipboardHostResult('clear', false);
+    expect(explainClipboardBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('readClipboard', () => {
   it('reads multiple formats in one call', async () => {
     const backend = fakeBackend();
@@ -522,6 +591,18 @@ describe('readClipboardText', () => {
     setClipboardBackend(fakeBackend());
     await writeClipboardText('hello');
     expect(await readClipboardText()).toBe('hello');
+  });
+});
+
+describe('resetClipboardBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setClipboardBackend(fakeBackend());
+    installClipboardHostBackend(fakeBackend());
+    observeClipboardHostResult('clear', true);
+    resetClipboardBackendForTest();
+    expect(explainClipboardBackend().layer).toBe('host-not-enabled');
+    expect(explainClipboardBackend().conflict).toBe(false);
+    expect(explainClipboardBackend().viability).toBe('unobserved');
   });
 });
 

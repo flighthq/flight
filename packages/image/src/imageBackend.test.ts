@@ -1,7 +1,15 @@
 import type { Image, ImageBackend } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createWebImageBackend, getImageBackend, setImageBackend } from './imageBackend';
+import {
+  createWebImageBackend,
+  getImageBackend,
+  setImageBackend,
+  explainImageBackend,
+  installImageHostBackend,
+  observeImageHostResult,
+  resetImageBackendForTest,
+} from './imageBackend';
 import { loadImageResourceFromUrl } from './imageResourceFrom';
 
 // Every test that installs a backend must put it back, or a later test sees a stale one.
@@ -32,6 +40,34 @@ describe('createWebImageBackend', () => {
   });
 });
 
+describe('explainImageBackend', () => {
+  afterEach(() => resetImageBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetImageBackendForTest();
+    const explanation = explainImageBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setImageBackend(getImageBackend());
+    expect(explainImageBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installImageHostBackend(getImageBackend());
+    expect(explainImageBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installImageHostBackend(getImageBackend());
+    installImageHostBackend(getImageBackend());
+    expect(explainImageBackend().conflict).toBe(true);
+  });
+});
+
 describe('getImageBackend', () => {
   it('defaults lazily to a web backend rather than being registered at import', () => {
     expect(typeof getImageBackend().loadImageFromUrl).toBe('function');
@@ -45,6 +81,55 @@ describe('getImageBackend', () => {
     const { backend } = recordingBackend();
     setImageBackend(backend);
     expect(getImageBackend()).toBe(backend);
+  });
+});
+
+describe('installImageHostBackend', () => {
+  afterEach(() => resetImageBackendForTest());
+
+  it('installs a host backend that getImageBackend returns', () => {
+    const backend = getImageBackend();
+    installImageHostBackend(backend);
+    expect(getImageBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = getImageBackend();
+    const second = getImageBackend();
+    installImageHostBackend(first);
+    installImageHostBackend(second);
+    expect(getImageBackend()).toBe(first);
+    expect(explainImageBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeImageHostResult', () => {
+  afterEach(() => resetImageBackendForTest());
+
+  it('records a successful observation', () => {
+    installImageHostBackend(getImageBackend());
+    observeImageHostResult('loadImageFromUrl', true);
+    const explanation = explainImageBackend();
+    expect(explanation.operation).toBe('loadImageFromUrl');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installImageHostBackend(getImageBackend());
+    observeImageHostResult('loadImageFromUrl', false);
+    expect(explainImageBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetImageBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setImageBackend(getImageBackend());
+    installImageHostBackend(getImageBackend());
+    observeImageHostResult('loadImageFromUrl', true);
+    resetImageBackendForTest();
+    expect(explainImageBackend().layer).toBe('host-not-enabled');
+    expect(explainImageBackend().conflict).toBe(false);
+    expect(explainImageBackend().viability).toBe('unobserved');
   });
 });
 
