@@ -213,8 +213,8 @@ describe('explainAccessibilityBackend', () => {
   });
 
   it('reports conflict when two different host backends are installed', () => {
-    installAccessibilityHostBackend(getAccessibilityBackend());
-    installAccessibilityHostBackend(getAccessibilityBackend());
+    installAccessibilityHostBackend({ ...getAccessibilityBackend() });
+    installAccessibilityHostBackend({ ...getAccessibilityBackend() });
     expect(explainAccessibilityBackend().conflict).toBe(true);
   });
 });
@@ -242,8 +242,8 @@ describe('installAccessibilityHostBackend', () => {
   });
 
   it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = getAccessibilityBackend();
-    const second = getAccessibilityBackend();
+    const first = { ...getAccessibilityBackend() };
+    const second = { ...getAccessibilityBackend() };
     installAccessibilityHostBackend(first);
     installAccessibilityHostBackend(second);
     expect(getAccessibilityBackend()).toBe(first);

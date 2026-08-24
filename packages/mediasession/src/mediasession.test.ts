@@ -250,8 +250,8 @@ describe('explainMediaSessionBackend', () => {
   });
 
   it('reports conflict when two different host backends are installed', () => {
-    installMediaSessionHostBackend(getMediaSessionBackend());
-    installMediaSessionHostBackend(getMediaSessionBackend());
+    installMediaSessionHostBackend({ ...getMediaSessionBackend() });
+    installMediaSessionHostBackend({ ...getMediaSessionBackend() });
     expect(explainMediaSessionBackend().conflict).toBe(true);
   });
 });
@@ -284,8 +284,8 @@ describe('installMediaSessionHostBackend', () => {
   });
 
   it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = getMediaSessionBackend();
-    const second = getMediaSessionBackend();
+    const first = { ...getMediaSessionBackend() };
+    const second = { ...getMediaSessionBackend() };
     installMediaSessionHostBackend(first);
     installMediaSessionHostBackend(second);
     expect(getMediaSessionBackend()).toBe(first);

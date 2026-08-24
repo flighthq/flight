@@ -62,8 +62,8 @@ describe('explainImageBackend', () => {
   });
 
   it('reports conflict when two different host backends are installed', () => {
-    installImageHostBackend(getImageBackend());
-    installImageHostBackend(getImageBackend());
+    installImageHostBackend({ ...getImageBackend() });
+    installImageHostBackend({ ...getImageBackend() });
     expect(explainImageBackend().conflict).toBe(true);
   });
 });
@@ -94,8 +94,8 @@ describe('installImageHostBackend', () => {
   });
 
   it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = getImageBackend();
-    const second = getImageBackend();
+    const first = { ...getImageBackend() };
+    const second = { ...getImageBackend() };
     installImageHostBackend(first);
     installImageHostBackend(second);
     expect(getImageBackend()).toBe(first);
