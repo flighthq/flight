@@ -27,7 +27,6 @@ import {
   createRateLimitedLogSink,
   createSampledLogSink,
   createTextLogFormatter,
-  createWebLogTransportBackend,
   disposeFileLogSink,
   disposeLogSink,
   enableLogSignals,
@@ -687,14 +686,6 @@ describe('createTextLogFormatter', () => {
   });
 });
 
-describe('createWebLogTransportBackend', () => {
-  it('returns a no-op backend with a write function', () => {
-    const backend = createWebLogTransportBackend();
-    expect(typeof backend.write).toBe('function');
-    expect(() => backend.write('test line')).not.toThrow();
-  });
-});
-
 describe('disposeFileLogSink', () => {
   it('calls flush and dispose on the installed transport backend', () => {
     const flushed: boolean[] = [];
@@ -951,7 +942,7 @@ describe('getLogTransportBackend', () => {
   });
 
   it('returns the installed backend', () => {
-    const backend = createWebLogTransportBackend();
+    const backend = { write() {} };
     setLogTransportBackend(backend);
     expect(getLogTransportBackend()).toBe(backend);
   });
@@ -1374,13 +1365,13 @@ describe('setLogSink', () => {
 
 describe('setLogTransportBackend', () => {
   it('sets and retrieves the backend', () => {
-    const backend = createWebLogTransportBackend();
+    const backend = { write() {} };
     setLogTransportBackend(backend);
     expect(getLogTransportBackend()).toBe(backend);
   });
 
   it('clears the backend when null is passed', () => {
-    setLogTransportBackend(createWebLogTransportBackend());
+    setLogTransportBackend({ write() {} });
     setLogTransportBackend(null);
     expect(getLogTransportBackend()).toBeNull();
   });

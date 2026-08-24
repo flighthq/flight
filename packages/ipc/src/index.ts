@@ -1,6 +1,7 @@
 export {
   createIpcChannel,
   enableIpcSignals,
+  explainIpcBackend,
   getIpcListenerCount,
   getIpcSignals,
   invokeIpc,

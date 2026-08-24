@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   IpcBackend,
   IpcBackendCapabilities,
@@ -13,8 +14,6 @@ import { IpcTimeoutError } from '@flighthq/types/contract';
 function resolveChannel(channel: string | Readonly<IpcChannel>): string {
   return typeof channel === 'string' ? channel : channel.name;
 }
-
-// ---- Bronze: listener registry for once/removeAll/count ----
 
 // Package-local listener tracking, keyed by channel name. Used by onceIpcMessage,
 // removeAllIpcListeners, and getIpcListenerCount. Each entry is the unsubscribe thunk
@@ -38,33 +37,12 @@ function _untrackListener(channel: string, unsubscribe: () => void): void {
   }
 }
 
-// ---- IpcSignals (Silver opt-in) ----
-
 let _ipcSignals: IpcSignals | null = null;
-
-// ---- Core backend ----
 
 // Creates a typed channel descriptor. Functions that accept a channel string also accept an
 // IpcChannel, so a feature can publish its channel constants once and get a single grep target.
 export function createIpcChannel(name: string): IpcChannel {
   return { name };
-}
-
-// Builds the default web backend. There is no main process on web, so send no-ops, invoke resolves
-// to undefined, and subscribe returns an inert unsubscribe — a native host is required for real IPC.
-export function createWebIpcBackend(): IpcBackend {
-  return {
-    send() {},
-    invoke() {
-      return Promise.resolve(undefined);
-    },
-    subscribe() {
-      return () => {};
-    },
-    getCapabilities(): Readonly<IpcBackendCapabilities> {
-      return { canHandle: false, canInvoke: false, canSend: false, canTarget: false };
-    },
-  };
 }
 
 // Activates the optional IpcSignals group and returns it. Calling this is when the cost is assumed.
@@ -80,10 +58,25 @@ export function enableIpcSignals(): IpcSignals {
   return _ipcSignals;
 }
 
-// Returns the active IpcBackend, or a lazily-created web default. There is always a backend.
+// Returns a BackendExplanation describing the active backend layer, conflict state, and viability.
+export function explainIpcBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+// Returns the active IpcBackend. Precedence: custom > host > sentinel.
 export function getIpcBackend(): IpcBackend {
-  if (_backend === null) _backend = createWebIpcBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the count of active in-package listeners on a channel. Returns 0 for an unknown channel.
@@ -97,10 +90,19 @@ export function getIpcSignals(): Readonly<IpcSignals> | null {
   return _ipcSignals;
 }
 
-// Returns true when a real native backend is installed, false when the lazy web default is active.
-// Use this to distinguish "no main process" (web) from a connected host without performing an invoke.
+// Returns true when a custom or host backend is installed, false when only the sentinel is active.
 export function hasIpcBackend(): boolean {
-  return _backend !== null;
+  return _custom !== null || _host !== null;
+}
+
+// Installs the host-layer IPC backend. Idempotent: a second call with the same backend is a no-op;
+// a second call with a different backend sets the conflict flag and keeps the first.
+export function installIpcHostBackend(backend: IpcBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
 }
 
 // Sends a request on `channel` and resolves with the host's response, or undefined on web.
@@ -127,6 +129,14 @@ export function invokeIpcWithTimeout(
     );
   });
   return Promise.race([invoke, timeout]);
+}
+
+// Records the result of a host-layer IPC operation for diagnostic reporting via explainIpcBackend.
+export function observeIpcHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
 }
 
 // Subscribes `listener` to a single message on `channel`, then auto-unsubscribes.
@@ -225,7 +235,15 @@ export function removeAllIpcListeners(channel?: string | Readonly<IpcChannel>): 
   }
 }
 
-// Sends a fire-and-forget message on `channel`. No-ops on web (no main process).
+// Resets all backend state to initial values. Test-only — not part of the public API.
+export function resetIpcBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
+// Sends a fire-and-forget message on `channel`. No-ops when only the sentinel is active.
 export function sendIpcMessage(channel: string | Readonly<IpcChannel>, ...args: readonly unknown[]): void {
   getIpcBackend().send(resolveChannel(channel), args);
 }
@@ -240,10 +258,25 @@ export function sendIpcMessageTo(
   getIpcBackend().sendTo?.(target, resolveChannel(channel), args);
 }
 
-// Installs a native host IPC backend; pass null to fall back to the web default.
+// Installs a custom IPC backend; pass null to clear and fall back to host or sentinel.
 export function setIpcBackend(backend: IpcBackend | null): void {
-  _backend = backend;
+  _custom = backend;
   if (_ipcSignals !== null) emitSignal(_ipcSignals.onBackendChanged);
 }
 
-let _backend: IpcBackend | null = null;
+const _sentinel: IpcBackend = {
+  send() {},
+  invoke() {
+    return Promise.resolve(undefined);
+  },
+  subscribe() {
+    return () => {};
+  },
+  getCapabilities(): Readonly<IpcBackendCapabilities> {
+    return { canHandle: false, canInvoke: false, canSend: false, canTarget: false };
+  },
+};
+let _custom: IpcBackend | null = null;
+let _host: IpcBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;

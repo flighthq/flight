@@ -9,6 +9,7 @@ export {
   detachAppUpdater,
   disposeAppUpdater,
   downloadAppUpdate,
+  explainUpdaterBackend,
   getAppUpdaterState,
   getUpdaterChannel,
   getUpdaterConfig,

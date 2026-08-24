@@ -288,21 +288,6 @@ export function createTextLogFormatter(
   };
 }
 
-// Creates the web default LogTransportBackend — a no-op transport whose write/flush/dispose do
-// nothing. The web has no destination a sink can write a formatted line to (no filesystem, and
-// network requests from within a sink are outside the SDK's concern), so createFileLogSink entries
-// silently drop until a host registers a real backend via setLogTransportBackend. Native/Node hosts
-// register a backend that writes the lines to a file or stream; for remote shipping, compose
-// createBufferedLogSink over such a backend rather than baking batching into the transport.
-export function createWebLogTransportBackend(): LogTransportBackend {
-  // Web default: no-op transport (the SDK does not own network requests from sinks).
-  return {
-    write(_line: string): void {
-      // no-op on web — caller must register a real backend via setLogTransportBackend
-    },
-  };
-}
-
 // Flushes a file-log sink's transport backend immediately, then disposes it. After this call
 // createFileLogSink entries will silently no-op until setLogTransportBackend is called again.
 // (`dispose*` — releases the backend resource; no GPU/native handle.)
@@ -613,8 +598,8 @@ export function setLogSink(sink: LogSink | null): void {
 }
 
 // Sets the LogTransportBackend used by createFileLogSink. Set to null to detach the backend.
-// Call createWebLogTransportBackend for a no-op web default; native/Node hosts register a real
-// fs-backed implementation. The backend is process-global (one transport per process).
+// Native/Node hosts register a real fs-backed implementation. The backend is process-global
+// (one transport per process).
 export function setLogTransportBackend(backend: LogTransportBackend | null): void {
   _transportBackend = backend;
 }

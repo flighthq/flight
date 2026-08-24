@@ -10,7 +10,6 @@ import type {
 
 import {
   createTrayIcon,
-  createWebTrayBackend,
   destroyTrayIcon,
   displayTrayBalloon,
   getTrayBackend,
@@ -213,41 +212,6 @@ describe('createTrayIcon', () => {
   });
 });
 
-describe('createWebTrayBackend', () => {
-  it('returns sentinels without throwing (web has no tray)', () => {
-    const backend = createWebTrayBackend();
-    expect(backend.create({})).toBe(-1);
-    expect(() => backend.destroy(0)).not.toThrow();
-    expect(() => backend.setTooltip(0, 'x')).not.toThrow();
-    expect(() => backend.setTitle(0, 'x')).not.toThrow();
-    expect(() => backend.setContextMenu(0, [])).not.toThrow();
-    expect(() => backend.setIcon(0, 'icon.png')).not.toThrow();
-    expect(() => backend.setTemplate(0, true)).not.toThrow();
-    expect(() => backend.setPressedIcon(0, 'pressed.png')).not.toThrow();
-    expect(() => backend.setIgnoreDoubleClickEvents(0, true)).not.toThrow();
-    expect(() => backend.popUpContextMenu(0)).not.toThrow();
-    expect(() => backend.displayBalloon(0, { title: 'T', text: 'B' })).not.toThrow();
-    expect(() => backend.removeBalloon(0)).not.toThrow();
-    expect(backend.getBounds(0)).toBeNull();
-    expect(backend.getTitle(0)).toBe('');
-    expect(backend.getTooltip(0)).toBe('');
-    expect(backend.isDestroyed(0)).toBe(true);
-    expect(backend.listIds()).toEqual([]);
-    expect(typeof backend.subscribe(() => {})).toBe('function');
-  });
-
-  it('web capabilities are all false', () => {
-    const backend = createWebTrayBackend();
-    const caps = backend.getCapabilities();
-    expect(caps.balloon).toBe(false);
-    expect(caps.bounds).toBe(false);
-    expect(caps.clickEvents).toBe(false);
-    expect(caps.dropFiles).toBe(false);
-    expect(caps.pressedIcon).toBe(false);
-    expect(caps.title).toBe(false);
-  });
-});
-
 describe('destroyTrayIcon', () => {
   it('destroys the tray via the active backend', () => {
     const backend = fakeBackend();
@@ -298,6 +262,41 @@ describe('getTrayBackend', () => {
     const backend = fakeBackend();
     setTrayBackend(backend);
     expect(getTrayBackend()).toBe(backend);
+  });
+});
+
+describe('getTrayBackend (sentinel)', () => {
+  it('returns sentinels without throwing (web has no tray)', () => {
+    const backend = getTrayBackend();
+    expect(backend.create({})).toBe(-1);
+    expect(() => backend.destroy(0)).not.toThrow();
+    expect(() => backend.setTooltip(0, 'x')).not.toThrow();
+    expect(() => backend.setTitle(0, 'x')).not.toThrow();
+    expect(() => backend.setContextMenu(0, [])).not.toThrow();
+    expect(() => backend.setIcon(0, 'icon.png')).not.toThrow();
+    expect(() => backend.setTemplate(0, true)).not.toThrow();
+    expect(() => backend.setPressedIcon(0, 'pressed.png')).not.toThrow();
+    expect(() => backend.setIgnoreDoubleClickEvents(0, true)).not.toThrow();
+    expect(() => backend.popUpContextMenu(0)).not.toThrow();
+    expect(() => backend.displayBalloon(0, { title: 'T', text: 'B' })).not.toThrow();
+    expect(() => backend.removeBalloon(0)).not.toThrow();
+    expect(backend.getBounds(0)).toBeNull();
+    expect(backend.getTitle(0)).toBe('');
+    expect(backend.getTooltip(0)).toBe('');
+    expect(backend.isDestroyed(0)).toBe(true);
+    expect(backend.listIds()).toEqual([]);
+    expect(typeof backend.subscribe(() => {})).toBe('function');
+  });
+
+  it('sentinel capabilities are all false', () => {
+    const backend = getTrayBackend();
+    const caps = backend.getCapabilities();
+    expect(caps.balloon).toBe(false);
+    expect(caps.bounds).toBe(false);
+    expect(caps.clickEvents).toBe(false);
+    expect(caps.dropFiles).toBe(false);
+    expect(caps.pressedIcon).toBe(false);
+    expect(caps.title).toBe(false);
   });
 });
 

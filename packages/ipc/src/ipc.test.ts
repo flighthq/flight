@@ -3,7 +3,6 @@ import { IpcTimeoutError } from '@flighthq/types/contract';
 
 import {
   createIpcChannel,
-  createWebIpcBackend,
   enableIpcSignals,
   getIpcBackend,
   getIpcListenerCount,
@@ -101,24 +100,6 @@ describe('createIpcChannel', () => {
   });
 });
 
-describe('createWebIpcBackend', () => {
-  it('no-ops send, resolves invoke to undefined, returns an inert unsubscribe', async () => {
-    const backend = createWebIpcBackend();
-    expect(() => backend.send('channel', [1])).not.toThrow();
-    expect(await backend.invoke('channel', [])).toBeUndefined();
-    expect(typeof backend.subscribe('channel', () => {})).toBe('function');
-  });
-
-  it('reports canSend/canInvoke/canHandle/canTarget as false', () => {
-    const backend = createWebIpcBackend();
-    const caps = backend.getCapabilities!();
-    expect(caps.canSend).toBe(false);
-    expect(caps.canInvoke).toBe(false);
-    expect(caps.canHandle).toBe(false);
-    expect(caps.canTarget).toBe(false);
-  });
-});
-
 describe('enableIpcSignals', () => {
   it('returns an IpcSignals group', () => {
     const signals: IpcSignals = enableIpcSignals();
@@ -184,6 +165,24 @@ describe('getIpcBackend', () => {
     const backend = fakeBackend();
     setIpcBackend(backend);
     expect(getIpcBackend()).toBe(backend);
+  });
+});
+
+describe('getIpcBackend (sentinel)', () => {
+  it('no-ops send, resolves invoke to undefined, returns an inert unsubscribe', async () => {
+    const backend = getIpcBackend();
+    expect(() => backend.send('channel', [1])).not.toThrow();
+    expect(await backend.invoke('channel', [])).toBeUndefined();
+    expect(typeof backend.subscribe('channel', () => {})).toBe('function');
+  });
+
+  it('reports canSend/canInvoke/canHandle/canTarget as false', () => {
+    const backend = getIpcBackend();
+    const caps = backend.getCapabilities!();
+    expect(caps.canSend).toBe(false);
+    expect(caps.canInvoke).toBe(false);
+    expect(caps.canHandle).toBe(false);
+    expect(caps.canTarget).toBe(false);
   });
 });
 

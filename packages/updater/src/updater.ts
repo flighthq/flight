@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   AppUpdater,
   UpdateInfo,
@@ -122,64 +123,6 @@ export function createUpdaterState(): UpdaterState {
   };
 }
 
-// Builds the default web backend. Auto-update needs a native host, so every command no-ops and every
-// subscribe* returns an inert unsubscribe — the browser has no application updater to drive.
-export function createWebUpdaterBackend(): UpdaterBackend {
-  let _config: UpdaterConfig = createUpdaterConfig();
-  let _channel = 'stable';
-  return {
-    cancelDownload() {},
-    checkForUpdates() {},
-    downloadUpdate() {},
-    getChannel() {
-      return _channel;
-    },
-    getConfig() {
-      return _config;
-    },
-    quitAndInstall() {},
-    rollback() {},
-    setChannel(channel) {
-      _channel = channel;
-    },
-    setConfig(config) {
-      _config = { ...config };
-    },
-    setFeedUrl() {},
-    setSignatureConfig() {},
-    subscribeChecking() {
-      return () => {};
-    },
-    subscribeDownloadProgress() {
-      return () => {};
-    },
-    subscribeError() {
-      return () => {};
-    },
-    subscribeUpdateAvailable() {
-      return () => {};
-    },
-    subscribeUpdateCancelled() {
-      return () => {};
-    },
-    subscribeUpdateDownloaded() {
-      return () => {};
-    },
-    subscribeUpdateNotAvailable() {
-      return () => {};
-    },
-    subscribeUpdateRolledBack() {
-      return () => {};
-    },
-    subscribeUpdateStaging() {
-      return () => {};
-    },
-    subscribeUpdateVerified() {
-      return () => {};
-    },
-  };
-}
-
 // Stops delivery to `updater` and forgets its subscription. Safe to call when not attached.
 export function detachAppUpdater(updater: AppUpdater): void {
   const unsubscribe = _subscriptions.get(updater);
@@ -201,6 +144,21 @@ export function downloadAppUpdate(): void {
   getUpdaterBackend().downloadUpdate();
 }
 
+export function explainUpdaterBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
 // Returns the current queryable lifecycle state for `updater`. This lets a late subscriber or UI
 // read whether a check is pending, what update is available, or the last error, without having
 // listened since the beginning.
@@ -208,10 +166,8 @@ export function getAppUpdaterState(updater: AppUpdater): Readonly<UpdaterState> 
   return _states.get(updater) ?? createUpdaterState();
 }
 
-// The active updater backend, or a lazily-created web default. There is always a backend.
 export function getUpdaterBackend(): UpdaterBackend {
-  if (_backend === null) _backend = createWebUpdaterBackend();
-  return _backend;
+  return _custom ?? _host ?? _sentinel;
 }
 
 // Returns the active update channel string. Conventional values are 'stable', 'beta', 'alpha'.
@@ -224,6 +180,14 @@ export function getUpdaterConfig(): Readonly<UpdaterConfig> {
   return getUpdaterBackend().getConfig();
 }
 
+export function installUpdaterHostBackend(backend: UpdaterBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
 // Deterministic check for staged-rollout eligibility. Returns true when the given `rolloutSeed`
 // (a number in [0, 1)) falls within the update's staged rollout percentage. A seed derived from a
 // stable device/user identifier ensures consistent results across sessions for the same device.
@@ -232,9 +196,22 @@ export function isAppUpdateEligible(info: Readonly<UpdateInfo>, rolloutSeed: num
   return rolloutSeed * 100 < info.stagedRolloutPercent;
 }
 
+export function observeUpdaterHostResult(operation: string, succeeded: boolean): void {
+  _hostObservation = { operation, viability: succeeded ? 'available' : 'runtime-api-unavailable' };
+}
+
 // Quits the application and installs a downloaded update via the active backend.
 export function quitAndInstallUpdate(): void {
   getUpdaterBackend().quitAndInstall();
+}
+
+export function resetUpdaterBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+  _sentinelChannel = 'stable';
+  _sentinelConfig = createUpdaterConfig();
 }
 
 // Requests the active backend to roll back the last installed update. The backend must support
@@ -243,9 +220,8 @@ export function rollbackAppUpdate(): void {
   getUpdaterBackend().rollback();
 }
 
-// Installs a native host updater backend; pass null to fall back to the web default.
 export function setUpdaterBackend(backend: UpdaterBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Sets the active update channel. Conventional values: 'stable', 'beta', 'alpha'. Free string so
@@ -272,7 +248,66 @@ export function setUpdaterSignatureConfig(config: Readonly<UpdaterSignatureConfi
   getUpdaterBackend().setSignatureConfig(config);
 }
 
-let _backend: UpdaterBackend | null = null;
+let _custom: UpdaterBackend | null = null;
+let _host: UpdaterBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+
+let _sentinelChannel = 'stable';
+let _sentinelConfig: UpdaterConfig = createUpdaterConfig();
+
+const _sentinel: UpdaterBackend = {
+  cancelDownload() {},
+  checkForUpdates() {},
+  downloadUpdate() {},
+  getChannel() {
+    return _sentinelChannel;
+  },
+  getConfig() {
+    return _sentinelConfig;
+  },
+  quitAndInstall() {},
+  rollback() {},
+  setChannel(channel) {
+    _sentinelChannel = channel;
+  },
+  setConfig(config) {
+    _sentinelConfig = { ...config };
+  },
+  setFeedUrl() {},
+  setSignatureConfig() {},
+  subscribeChecking() {
+    return () => {};
+  },
+  subscribeDownloadProgress() {
+    return () => {};
+  },
+  subscribeError() {
+    return () => {};
+  },
+  subscribeUpdateAvailable() {
+    return () => {};
+  },
+  subscribeUpdateCancelled() {
+    return () => {};
+  },
+  subscribeUpdateDownloaded() {
+    return () => {};
+  },
+  subscribeUpdateNotAvailable() {
+    return () => {};
+  },
+  subscribeUpdateRolledBack() {
+    return () => {};
+  },
+  subscribeUpdateStaging() {
+    return () => {};
+  },
+  subscribeUpdateVerified() {
+    return () => {};
+  },
+};
+
 const _states = new WeakMap<AppUpdater, UpdaterState>();
 const _subscriptions = new WeakMap<AppUpdater, () => void>();
 

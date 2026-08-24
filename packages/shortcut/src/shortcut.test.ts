@@ -9,13 +9,12 @@ import type {
 } from '@flighthq/types/contract';
 
 import {
-  equalsAccelerator,
   createParsedAccelerator,
-  createWebShortcutBackend,
   disableGlobalShortcut,
   disposeGlobalShortcutSignals,
   enableGlobalShortcut,
   enableGlobalShortcutSignals,
+  equalsAccelerator,
   findAcceleratorConflict,
   formatAcceleratorForDisplay,
   getAcceleratorKey,
@@ -94,19 +93,6 @@ describe('createParsedAccelerator', () => {
     const out = createParsedAccelerator();
     expect(out.key).toBe('');
     expect(out.modifiers).toEqual([]);
-  });
-});
-
-describe('createWebShortcutBackend', () => {
-  it('returns sentinels without throwing (web has no global hotkeys)', () => {
-    const backend = createWebShortcutBackend();
-    expect(backend.register('Control+K', () => {})).toBe(false);
-    expect(backend.unregister('Control+K')).toBe(false);
-    expect(backend.isRegistered('Control+K')).toBe(false);
-    expect(backend.setEnabled('Control+K', false)).toBe(false);
-    expect(backend.getRegistered()).toEqual([]);
-    expect(() => backend.unregisterAll()).not.toThrow();
-    expect(() => backend.setAllEnabled(false)).not.toThrow();
   });
 });
 
@@ -510,6 +496,19 @@ describe('getShortcutBackend', () => {
     const backend = fakeBackend();
     setShortcutBackend(backend);
     expect(getShortcutBackend()).toBe(backend);
+  });
+});
+
+describe('getShortcutBackend (sentinel)', () => {
+  it('returns sentinels without throwing (web has no global hotkeys)', () => {
+    const backend = getShortcutBackend();
+    expect(backend.register('Control+K', () => {})).toBe(false);
+    expect(backend.unregister('Control+K')).toBe(false);
+    expect(backend.isRegistered('Control+K')).toBe(false);
+    expect(backend.setEnabled('Control+K', false)).toBe(false);
+    expect(backend.getRegistered()).toEqual([]);
+    expect(() => backend.unregisterAll()).not.toThrow();
+    expect(() => backend.setAllEnabled(false)).not.toThrow();
   });
 });
 
