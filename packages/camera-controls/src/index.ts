@@ -1,8 +1,11 @@
 export {
+  addCameraShakeTrauma,
   cloneFlyCameraController,
   cloneOrbitCameraController,
   copyFlyCameraController,
   copyOrbitCameraController,
+  createCameraShake,
+  createCameraShakeOffset,
   createFlyCameraController,
   createOrbitCameraController,
   dollyOrbitCameraController,
@@ -12,6 +15,7 @@ export {
   moveFlyCameraController,
   panOrbitCameraController,
   panOrbitCameraControllerInViewPlane,
+  resetCameraShake,
   resetFlyCameraController,
   resetOrbitCameraController,
   rotateOrbitCameraController,
@@ -19,6 +23,7 @@ export {
   snapFlyCameraController,
   snapOrbitCameraController,
   updateCamera2DFollow,
+  updateCameraShake,
   updateFlyCameraController,
   updateOrbitCameraController,
 } from './contract';
