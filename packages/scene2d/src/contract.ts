@@ -5,3 +5,4 @@ export * from './displayObjectAnimation';
 export * from './htmlView';
 export * from './scene2d';
 export * from './sceneKindUsage';
+export * from './syncPhysics2DBodyToNode2D';
