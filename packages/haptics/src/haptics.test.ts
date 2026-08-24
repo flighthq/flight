@@ -19,6 +19,10 @@ import {
   vibrateDevice,
   vibrateDevicePattern,
   vibrateDeviceWaveform,
+  explainHapticsBackend,
+  installHapticsHostBackend,
+  observeHapticsHostResult,
+  resetHapticsBackendForTest,
 } from './haptics';
 
 function makeCapabilities(overrides: Partial<HapticsCapabilities> = {}): HapticsCapabilities {
@@ -155,6 +159,34 @@ describe('createWebHapticsBackend', () => {
   });
 });
 
+describe('explainHapticsBackend', () => {
+  afterEach(() => resetHapticsBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetHapticsBackendForTest();
+    const explanation = explainHapticsBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setHapticsBackend(fakeBackend());
+    expect(explainHapticsBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installHapticsHostBackend(fakeBackend());
+    expect(explainHapticsBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installHapticsHostBackend(fakeBackend());
+    installHapticsHostBackend(fakeBackend());
+    expect(explainHapticsBackend().conflict).toBe(true);
+  });
+});
+
 describe('getHapticsBackend', () => {
   it('falls back to a web backend', () => {
     expect(getHapticsBackend()).not.toBeNull();
@@ -188,6 +220,25 @@ describe('getHapticsCapabilities', () => {
   });
 });
 
+describe('installHapticsHostBackend', () => {
+  afterEach(() => resetHapticsBackendForTest());
+
+  it('installs a host backend that getHapticsBackend returns', () => {
+    const backend = fakeBackend();
+    installHapticsHostBackend(backend);
+    expect(getHapticsBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installHapticsHostBackend(first);
+    installHapticsHostBackend(second);
+    expect(getHapticsBackend()).toBe(first);
+    expect(explainHapticsBackend().conflict).toBe(true);
+  });
+});
+
 describe('isHapticsSupported', () => {
   it('returns true from fake backend', () => {
     setHapticsBackend(fakeBackend());
@@ -196,6 +247,24 @@ describe('isHapticsSupported', () => {
 
   it('returns false when vibrate is unavailable (jsdom)', () => {
     expect(isHapticsSupported()).toBe(false);
+  });
+});
+
+describe('observeHapticsHostResult', () => {
+  afterEach(() => resetHapticsBackendForTest());
+
+  it('records a successful observation', () => {
+    installHapticsHostBackend(fakeBackend());
+    observeHapticsHostResult('cancel', true);
+    const explanation = explainHapticsBackend();
+    expect(explanation.operation).toBe('cancel');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installHapticsHostBackend(fakeBackend());
+    observeHapticsHostResult('cancel', false);
+    expect(explainHapticsBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -213,6 +282,18 @@ describe('prepareHaptics', () => {
     (backend as HapticsBackend & { prepare?: () => void }).prepare = undefined;
     setHapticsBackend(backend);
     expect(() => prepareHaptics()).not.toThrow();
+  });
+});
+
+describe('resetHapticsBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setHapticsBackend(fakeBackend());
+    installHapticsHostBackend(fakeBackend());
+    observeHapticsHostResult('cancel', true);
+    resetHapticsBackendForTest();
+    expect(explainHapticsBackend().layer).toBe('host-not-enabled');
+    expect(explainHapticsBackend().conflict).toBe(false);
+    expect(explainHapticsBackend().viability).toBe('unobserved');
   });
 });
 

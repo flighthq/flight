@@ -52,6 +52,10 @@ import {
   writeDialogHandleTextFile,
   writeFileAtomic,
   writeTextFile,
+  explainFileSystemBackend,
+  installFileSystemHostBackend,
+  observeFileSystemHostResult,
+  resetFileSystemBackendForTest,
 } from './filesystem';
 
 function fakeBackend(): FileSystemBackend {
@@ -360,6 +364,34 @@ describe('directoryExists', () => {
   });
 });
 
+describe('explainFileSystemBackend', () => {
+  afterEach(() => resetFileSystemBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetFileSystemBackendForTest();
+    const explanation = explainFileSystemBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setFileSystemBackend(fakeBackend());
+    expect(explainFileSystemBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installFileSystemHostBackend(fakeBackend());
+    expect(explainFileSystemBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installFileSystemHostBackend(fakeBackend());
+    installFileSystemHostBackend(fakeBackend());
+    expect(explainFileSystemBackend().conflict).toBe(true);
+  });
+});
+
 describe('fileExists', () => {
   it('reflects backend state', async () => {
     setFileSystemBackend(fakeBackend());
@@ -495,6 +527,25 @@ describe('getFileSystemUsage', () => {
   });
 });
 
+describe('installFileSystemHostBackend', () => {
+  afterEach(() => resetFileSystemBackendForTest());
+
+  it('installs a host backend that getFileSystemBackend returns', () => {
+    const backend = fakeBackend();
+    installFileSystemHostBackend(backend);
+    expect(getFileSystemBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installFileSystemHostBackend(first);
+    installFileSystemHostBackend(second);
+    expect(getFileSystemBackend()).toBe(first);
+    expect(explainFileSystemBackend().conflict).toBe(true);
+  });
+});
+
 describe('isAbsoluteFilePath', () => {
   it('returns true for Unix absolute paths', () => {
     expect(isAbsoluteFilePath('/foo/bar')).toBe(true);
@@ -551,6 +602,24 @@ describe('normalizeFilePath', () => {
 
   it('returns empty string for empty input', () => {
     expect(normalizeFilePath('')).toBe('');
+  });
+});
+
+describe('observeFileSystemHostResult', () => {
+  afterEach(() => resetFileSystemBackendForTest());
+
+  it('records a successful observation', () => {
+    installFileSystemHostBackend(fakeBackend());
+    observeFileSystemHostResult('readTextFile', true);
+    const explanation = explainFileSystemBackend();
+    expect(explanation.operation).toBe('readTextFile');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installFileSystemHostBackend(fakeBackend());
+    observeFileSystemHostResult('readTextFile', false);
+    expect(explainFileSystemBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -778,6 +847,18 @@ describe('renameFile', () => {
 
   it('returns false from the web backend without throwing in jsdom', async () => {
     expect(await renameFile('a.txt', 'b.txt')).toBe(false);
+  });
+});
+
+describe('resetFileSystemBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setFileSystemBackend(fakeBackend());
+    installFileSystemHostBackend(fakeBackend());
+    observeFileSystemHostResult('readTextFile', true);
+    resetFileSystemBackendForTest();
+    expect(explainFileSystemBackend().layer).toBe('host-not-enabled');
+    expect(explainFileSystemBackend().conflict).toBe(false);
+    expect(explainFileSystemBackend().viability).toBe('unobserved');
   });
 });
 

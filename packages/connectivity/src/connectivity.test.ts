@@ -16,6 +16,10 @@ import {
   isConnectivityOnline,
   isConnectivitySaveDataEnabled,
   setConnectivityBackend,
+  explainConnectivityBackend,
+  installConnectivityHostBackend,
+  observeConnectivityHostResult,
+  resetConnectivityBackendForTest,
 } from './connectivity';
 
 function fakeBackend(
@@ -266,6 +270,34 @@ describe('disposeConnectivity', () => {
   });
 });
 
+describe('explainConnectivityBackend', () => {
+  afterEach(() => resetConnectivityBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetConnectivityBackendForTest();
+    const explanation = explainConnectivityBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setConnectivityBackend(fakeBackend());
+    expect(explainConnectivityBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installConnectivityHostBackend(fakeBackend());
+    expect(explainConnectivityBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installConnectivityHostBackend(fakeBackend());
+    installConnectivityHostBackend(fakeBackend());
+    expect(explainConnectivityBackend().conflict).toBe(true);
+  });
+});
+
 describe('getConnectivityBackend', () => {
   it('falls back to a web backend', () => {
     expect(getConnectivityBackend()).not.toBeNull();
@@ -326,6 +358,25 @@ describe('hasConnectivityStatusChanged', () => {
   });
 });
 
+describe('installConnectivityHostBackend', () => {
+  afterEach(() => resetConnectivityBackendForTest());
+
+  it('installs a host backend that getConnectivityBackend returns', () => {
+    const backend = fakeBackend();
+    installConnectivityHostBackend(backend);
+    expect(getConnectivityBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installConnectivityHostBackend(first);
+    installConnectivityHostBackend(second);
+    expect(getConnectivityBackend()).toBe(first);
+    expect(explainConnectivityBackend().conflict).toBe(true);
+  });
+});
+
 describe('isConnectivityMetered', () => {
   it('returns false for a non-metered connection', () => {
     setConnectivityBackend(fakeBackend({ metered: false }));
@@ -360,6 +411,36 @@ describe('isConnectivitySaveDataEnabled', () => {
   it('returns true when saveData is on', () => {
     setConnectivityBackend(fakeBackend({ saveData: true }));
     expect(isConnectivitySaveDataEnabled()).toBe(true);
+  });
+});
+
+describe('observeConnectivityHostResult', () => {
+  afterEach(() => resetConnectivityBackendForTest());
+
+  it('records a successful observation', () => {
+    installConnectivityHostBackend(fakeBackend());
+    observeConnectivityHostResult('getStatus', true);
+    const explanation = explainConnectivityBackend();
+    expect(explanation.operation).toBe('getStatus');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installConnectivityHostBackend(fakeBackend());
+    observeConnectivityHostResult('getStatus', false);
+    expect(explainConnectivityBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetConnectivityBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setConnectivityBackend(fakeBackend());
+    installConnectivityHostBackend(fakeBackend());
+    observeConnectivityHostResult('getStatus', true);
+    resetConnectivityBackendForTest();
+    expect(explainConnectivityBackend().layer).toBe('host-not-enabled');
+    expect(explainConnectivityBackend().conflict).toBe(false);
+    expect(explainConnectivityBackend().viability).toBe('unobserved');
   });
 });
 

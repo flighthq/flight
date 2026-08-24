@@ -17,6 +17,10 @@ import {
   isPlatformVersionAtLeast,
   isPlatformWeb,
   setPlatformBackend,
+  explainPlatformBackend,
+  installPlatformHostBackend,
+  observePlatformHostResult,
+  resetPlatformBackendForTest,
 } from './platform';
 
 function fakeBackend(info: Partial<PlatformInfo>): PlatformBackend {
@@ -141,6 +145,34 @@ describe('createWebPlatformBackend', () => {
   });
 });
 
+describe('explainPlatformBackend', () => {
+  afterEach(() => resetPlatformBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetPlatformBackendForTest();
+    const explanation = explainPlatformBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setPlatformBackend(fakeBackend({}));
+    expect(explainPlatformBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installPlatformHostBackend(fakeBackend({}));
+    expect(explainPlatformBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installPlatformHostBackend(fakeBackend({}));
+    installPlatformHostBackend(fakeBackend({}));
+    expect(explainPlatformBackend().conflict).toBe(true);
+  });
+});
+
 describe('getPlatformBackend', () => {
   it('falls back to a web backend when none is registered', () => {
     expect(getPlatformBackend()).not.toBeNull();
@@ -223,6 +255,25 @@ describe('getPlatformRuntime', () => {
   it('returns native when set by a native backend', () => {
     setPlatformBackend(fakeBackend({ runtime: 'native' }));
     expect(getPlatformRuntime()).toBe('native');
+  });
+});
+
+describe('installPlatformHostBackend', () => {
+  afterEach(() => resetPlatformBackendForTest());
+
+  it('installs a host backend that getPlatformBackend returns', () => {
+    const backend = fakeBackend({});
+    installPlatformHostBackend(backend);
+    expect(getPlatformBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend({});
+    const second = fakeBackend({});
+    installPlatformHostBackend(first);
+    installPlatformHostBackend(second);
+    expect(getPlatformBackend()).toBe(first);
+    expect(explainPlatformBackend().conflict).toBe(true);
   });
 });
 
@@ -314,6 +365,36 @@ describe('isPlatformWeb', () => {
   it('is true only for web kind', () => {
     setPlatformBackend(fakeBackend({ kind: 'web' }));
     expect(isPlatformWeb()).toBe(true);
+  });
+});
+
+describe('observePlatformHostResult', () => {
+  afterEach(() => resetPlatformBackendForTest());
+
+  it('records a successful observation', () => {
+    installPlatformHostBackend(fakeBackend({}));
+    observePlatformHostResult('getInfo', true);
+    const explanation = explainPlatformBackend();
+    expect(explanation.operation).toBe('getInfo');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installPlatformHostBackend(fakeBackend({}));
+    observePlatformHostResult('getInfo', false);
+    expect(explainPlatformBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetPlatformBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setPlatformBackend(fakeBackend({}));
+    installPlatformHostBackend(fakeBackend({}));
+    observePlatformHostResult('getInfo', true);
+    resetPlatformBackendForTest();
+    expect(explainPlatformBackend().layer).toBe('host-not-enabled');
+    expect(explainPlatformBackend().conflict).toBe(false);
+    expect(explainPlatformBackend().viability).toBe('unobserved');
   });
 });
 

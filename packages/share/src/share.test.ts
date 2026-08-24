@@ -19,6 +19,8 @@ import {
   shareFiles,
   shareText,
   shareUrl,
+  explainShareBackend,
+  observeShareHostResult,
 } from './share';
 
 function fakeBackend(
@@ -219,6 +221,34 @@ describe('enableShareSignals', () => {
   });
 });
 
+describe('explainShareBackend', () => {
+  afterEach(() => resetShareBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetShareBackendForTest();
+    const explanation = explainShareBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setShareBackend(fakeBackend());
+    expect(explainShareBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installShareHostBackend(fakeBackend());
+    expect(explainShareBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installShareHostBackend(fakeBackend());
+    installShareHostBackend(fakeBackend());
+    expect(explainShareBackend().conflict).toBe(true);
+  });
+});
+
 describe('getShareBackend', () => {
   it('falls back to the sentinel when no backend is installed', () => {
     expect(getShareBackend()).not.toBeNull();
@@ -262,6 +292,25 @@ describe('hasShareContentFields', () => {
   });
 });
 
+describe('installShareHostBackend', () => {
+  afterEach(() => resetShareBackendForTest());
+
+  it('installs a host backend that getShareBackend returns', () => {
+    const backend = fakeBackend();
+    installShareHostBackend(backend);
+    expect(getShareBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installShareHostBackend(first);
+    installShareHostBackend(second);
+    expect(getShareBackend()).toBe(first);
+    expect(explainShareBackend().conflict).toBe(true);
+  });
+});
+
 describe('isShareAvailable', () => {
   it('returns false from the sentinel when no backend is installed', () => {
     expect(isShareAvailable()).toBe(false);
@@ -276,6 +325,36 @@ describe('isShareAvailable', () => {
     mockNavigator({ share: async () => {} });
     installShareHostBackend(createWebShareBackend());
     expect(isShareAvailable()).toBe(true);
+  });
+});
+
+describe('observeShareHostResult', () => {
+  afterEach(() => resetShareBackendForTest());
+
+  it('records a successful observation', () => {
+    installShareHostBackend(fakeBackend());
+    observeShareHostResult('canShare', true);
+    const explanation = explainShareBackend();
+    expect(explanation.operation).toBe('canShare');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installShareHostBackend(fakeBackend());
+    observeShareHostResult('canShare', false);
+    expect(explainShareBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetShareBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setShareBackend(fakeBackend());
+    installShareHostBackend(fakeBackend());
+    observeShareHostResult('canShare', true);
+    resetShareBackendForTest();
+    expect(explainShareBackend().layer).toBe('host-not-enabled');
+    expect(explainShareBackend().conflict).toBe(false);
+    expect(explainShareBackend().viability).toBe('unobserved');
   });
 });
 

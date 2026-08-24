@@ -35,6 +35,10 @@ import {
   setNotificationBackend,
   showNotification,
   updateNotification,
+  explainNotificationBackend,
+  installNotificationHostBackend,
+  observeNotificationHostResult,
+  resetNotificationBackendForTest,
 } from './notification';
 
 const WEB_CAPABILITIES: NotificationCapabilities = {
@@ -426,6 +430,34 @@ describe('deleteNotificationChannel', () => {
   });
 });
 
+describe('explainNotificationBackend', () => {
+  afterEach(() => resetNotificationBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetNotificationBackendForTest();
+    const explanation = explainNotificationBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setNotificationBackend(fakeBackend());
+    expect(explainNotificationBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installNotificationHostBackend(fakeBackend());
+    expect(explainNotificationBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installNotificationHostBackend(fakeBackend());
+    installNotificationHostBackend(fakeBackend());
+    expect(explainNotificationBackend().conflict).toBe(true);
+  });
+});
+
 describe('getActiveNotifications', () => {
   it('delegates to the active backend', async () => {
     const backend = fakeBackend();
@@ -508,6 +540,25 @@ describe('getPendingNotifications', () => {
     const list = await getPendingNotifications();
     expect(list.length).toBe(1);
     expect(list[0]!.id).toBe('sn-1');
+  });
+});
+
+describe('installNotificationHostBackend', () => {
+  afterEach(() => resetNotificationBackendForTest());
+
+  it('installs a host backend that getNotificationBackend returns', () => {
+    const backend = fakeBackend();
+    installNotificationHostBackend(backend);
+    expect(getNotificationBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installNotificationHostBackend(first);
+    installNotificationHostBackend(second);
+    expect(getNotificationBackend()).toBe(first);
+    expect(explainNotificationBackend().conflict).toBe(true);
   });
 });
 
@@ -609,6 +660,24 @@ describe('notifyServiceWorkerBackendAction', () => {
       notifyServiceWorkerBackendAction(backend, { type: 'notificationclick', notificationId: 'x' }),
     ).not.toThrow();
     setNotificationBackend(null);
+  });
+});
+
+describe('observeNotificationHostResult', () => {
+  afterEach(() => resetNotificationBackendForTest());
+
+  it('records a successful observation', () => {
+    installNotificationHostBackend(fakeBackend());
+    observeNotificationHostResult('cancelScheduledNotification', true);
+    const explanation = explainNotificationBackend();
+    expect(explanation.operation).toBe('cancelScheduledNotification');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installNotificationHostBackend(fakeBackend());
+    observeNotificationHostResult('cancelScheduledNotification', false);
+    expect(explainNotificationBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -756,6 +825,18 @@ describe('requestNotificationPermission', () => {
   it('returns a valid tri-state from the web backend in jsdom', async () => {
     const result = await requestNotificationPermission();
     expect(['default', 'granted', 'denied']).toContain(result);
+  });
+});
+
+describe('resetNotificationBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setNotificationBackend(fakeBackend());
+    installNotificationHostBackend(fakeBackend());
+    observeNotificationHostResult('cancelScheduledNotification', true);
+    resetNotificationBackendForTest();
+    expect(explainNotificationBackend().layer).toBe('host-not-enabled');
+    expect(explainNotificationBackend().conflict).toBe(false);
+    expect(explainNotificationBackend().viability).toBe('unobserved');
   });
 });
 

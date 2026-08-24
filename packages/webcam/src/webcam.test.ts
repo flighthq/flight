@@ -8,6 +8,10 @@ import {
   selectWebcamImage,
   setWebcamBackend,
   takeWebcamPhoto,
+  explainWebcamBackend,
+  installWebcamHostBackend,
+  observeWebcamHostResult,
+  resetWebcamBackendForTest,
 } from './webcam';
 
 function fakeBackend(): WebcamBackend & { lastOptions: WebcamCaptureOptions | null } {
@@ -36,6 +40,34 @@ describe('createWebWebcamBackend', () => {
   });
 });
 
+describe('explainWebcamBackend', () => {
+  afterEach(() => resetWebcamBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetWebcamBackendForTest();
+    const explanation = explainWebcamBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setWebcamBackend(fakeBackend());
+    expect(explainWebcamBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installWebcamHostBackend(fakeBackend());
+    expect(explainWebcamBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installWebcamHostBackend(fakeBackend());
+    installWebcamHostBackend(fakeBackend());
+    expect(explainWebcamBackend().conflict).toBe(true);
+  });
+});
+
 describe('getWebcamBackend', () => {
   it('falls back to a web backend', () => {
     expect(getWebcamBackend()).not.toBeNull();
@@ -45,6 +77,43 @@ describe('getWebcamBackend', () => {
     const backend = fakeBackend();
     setWebcamBackend(backend);
     expect(getWebcamBackend()).toBe(backend);
+  });
+});
+
+describe('installWebcamHostBackend', () => {
+  afterEach(() => resetWebcamBackendForTest());
+
+  it('installs a host backend that getWebcamBackend returns', () => {
+    const backend = fakeBackend();
+    installWebcamHostBackend(backend);
+    expect(getWebcamBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installWebcamHostBackend(first);
+    installWebcamHostBackend(second);
+    expect(getWebcamBackend()).toBe(first);
+    expect(explainWebcamBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeWebcamHostResult', () => {
+  afterEach(() => resetWebcamBackendForTest());
+
+  it('records a successful observation', () => {
+    installWebcamHostBackend(fakeBackend());
+    observeWebcamHostResult('capture', true);
+    const explanation = explainWebcamBackend();
+    expect(explanation.operation).toBe('capture');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installWebcamHostBackend(fakeBackend());
+    observeWebcamHostResult('capture', false);
+    expect(explainWebcamBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -71,6 +140,18 @@ describe('requestWebcamPermission', () => {
 
   it('returns a boolean from the web backend without throwing', async () => {
     expect(typeof (await requestWebcamPermission())).toBe('boolean');
+  });
+});
+
+describe('resetWebcamBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setWebcamBackend(fakeBackend());
+    installWebcamHostBackend(fakeBackend());
+    observeWebcamHostResult('capture', true);
+    resetWebcamBackendForTest();
+    expect(explainWebcamBackend().layer).toBe('host-not-enabled');
+    expect(explainWebcamBackend().conflict).toBe(false);
+    expect(explainWebcamBackend().viability).toBe('unobserved');
   });
 });
 

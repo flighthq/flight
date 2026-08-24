@@ -40,6 +40,10 @@ import {
   setStorageItems,
   setStorageJSON,
   setStorageNumber,
+  explainStorageBackend,
+  installStorageHostBackend,
+  observeStorageHostResult,
+  resetStorageBackendForTest,
 } from './storage';
 
 function fakeBackend(): StorageBackend {
@@ -204,6 +208,34 @@ describe('enableStorageSignals', () => {
     expect(changes).toHaveLength(1);
     expect(changes[0].key).toBe('a');
     expect(changes[0].newValue).toBeNull();
+  });
+});
+
+describe('explainStorageBackend', () => {
+  afterEach(() => resetStorageBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetStorageBackendForTest();
+    const explanation = explainStorageBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setStorageBackend(fakeBackend());
+    expect(explainStorageBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installStorageHostBackend(fakeBackend());
+    expect(explainStorageBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installStorageHostBackend(fakeBackend());
+    installStorageHostBackend(fakeBackend());
+    expect(explainStorageBackend().conflict).toBe(true);
   });
 });
 
@@ -565,6 +597,25 @@ describe('hasStorageItem', () => {
   });
 });
 
+describe('installStorageHostBackend', () => {
+  afterEach(() => resetStorageBackendForTest());
+
+  it('installs a host backend that getStorageBackend returns', () => {
+    const backend = fakeBackend();
+    installStorageHostBackend(backend);
+    expect(getStorageBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installStorageHostBackend(first);
+    installStorageHostBackend(second);
+    expect(getStorageBackend()).toBe(first);
+    expect(explainStorageBackend().conflict).toBe(true);
+  });
+});
+
 describe('migrateStorage', () => {
   it('runs migrations in version order', () => {
     setStorageBackend(fakeBackend());
@@ -649,6 +700,24 @@ describe('migrateStorage', () => {
   });
 });
 
+describe('observeStorageHostResult', () => {
+  afterEach(() => resetStorageBackendForTest());
+
+  it('records a successful observation', () => {
+    installStorageHostBackend(fakeBackend());
+    observeStorageHostResult('getItem', true);
+    const explanation = explainStorageBackend();
+    expect(explanation.operation).toBe('getItem');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installStorageHostBackend(fakeBackend());
+    observeStorageHostResult('getItem', false);
+    expect(explainStorageBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('removeNamespacedStorageItem', () => {
   it('removes a namespaced key', () => {
     setStorageBackend(fakeBackend());
@@ -681,6 +750,18 @@ describe('removeStorageItems', () => {
   it('returns false when any removal fails', () => {
     setStorageBackend(deniedBackend());
     expect(removeStorageItems(['x'])).toBe(false);
+  });
+});
+
+describe('resetStorageBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setStorageBackend(fakeBackend());
+    installStorageHostBackend(fakeBackend());
+    observeStorageHostResult('getItem', true);
+    resetStorageBackendForTest();
+    expect(explainStorageBackend().layer).toBe('host-not-enabled');
+    expect(explainStorageBackend().conflict).toBe(false);
+    expect(explainStorageBackend().viability).toBe('unobserved');
   });
 });
 

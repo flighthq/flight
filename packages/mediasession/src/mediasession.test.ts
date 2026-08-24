@@ -12,6 +12,10 @@ import {
   setMediaSessionMetadata,
   setMediaSessionPlaybackState,
   setMediaSessionPositionState,
+  explainMediaSessionBackend,
+  installMediaSessionHostBackend,
+  observeMediaSessionHostResult,
+  resetMediaSessionBackendForTest,
 } from './mediasession';
 
 interface FakeMediaSession {
@@ -224,6 +228,34 @@ describe('createWebMediaSessionBackend', () => {
   });
 });
 
+describe('explainMediaSessionBackend', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetMediaSessionBackendForTest();
+    const explanation = explainMediaSessionBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setMediaSessionBackend(getMediaSessionBackend());
+    expect(explainMediaSessionBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installMediaSessionHostBackend(getMediaSessionBackend());
+    expect(explainMediaSessionBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installMediaSessionHostBackend(getMediaSessionBackend());
+    installMediaSessionHostBackend(getMediaSessionBackend());
+    expect(explainMediaSessionBackend().conflict).toBe(true);
+  });
+});
+
 describe('getMediaSessionBackend', () => {
   it('lazily creates a web default backend when none is set', () => {
     const backend = getMediaSessionBackend();
@@ -239,6 +271,55 @@ describe('getMediaSessionBackend', () => {
     const fake = createFakeBackend();
     setMediaSessionBackend(fake);
     expect(getMediaSessionBackend()).toBe(fake);
+  });
+});
+
+describe('installMediaSessionHostBackend', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  it('installs a host backend that getMediaSessionBackend returns', () => {
+    const backend = getMediaSessionBackend();
+    installMediaSessionHostBackend(backend);
+    expect(getMediaSessionBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = getMediaSessionBackend();
+    const second = getMediaSessionBackend();
+    installMediaSessionHostBackend(first);
+    installMediaSessionHostBackend(second);
+    expect(getMediaSessionBackend()).toBe(first);
+    expect(explainMediaSessionBackend().conflict).toBe(true);
+  });
+});
+
+describe('observeMediaSessionHostResult', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  it('records a successful observation', () => {
+    installMediaSessionHostBackend(getMediaSessionBackend());
+    observeMediaSessionHostResult('setActionHandler', true);
+    const explanation = explainMediaSessionBackend();
+    expect(explanation.operation).toBe('setActionHandler');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installMediaSessionHostBackend(getMediaSessionBackend());
+    observeMediaSessionHostResult('setActionHandler', false);
+    expect(explainMediaSessionBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetMediaSessionBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setMediaSessionBackend(getMediaSessionBackend());
+    installMediaSessionHostBackend(getMediaSessionBackend());
+    observeMediaSessionHostResult('setActionHandler', true);
+    resetMediaSessionBackendForTest();
+    expect(explainMediaSessionBackend().layer).toBe('host-not-enabled');
+    expect(explainMediaSessionBackend().conflict).toBe(false);
+    expect(explainMediaSessionBackend().viability).toBe('unobserved');
   });
 });
 

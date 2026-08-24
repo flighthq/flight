@@ -34,6 +34,10 @@ import {
   setSoftKeyboardScrollAssistEnabled,
   setSoftKeyboardStyle,
   showSoftKeyboard,
+  explainSoftKeyboardBackend,
+  installSoftKeyboardHostBackend,
+  observeSoftKeyboardHostResult,
+  resetSoftKeyboardBackendForTest,
 } from './keyboard';
 
 type BackendListener = (phase: SoftKeyboardPhase, transition: Readonly<SoftKeyboardTransition>) => void;
@@ -670,6 +674,34 @@ describe('disposeSoftKeyboard', () => {
   });
 });
 
+describe('explainSoftKeyboardBackend', () => {
+  afterEach(() => resetSoftKeyboardBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetSoftKeyboardBackendForTest();
+    const explanation = explainSoftKeyboardBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setSoftKeyboardBackend(fakeBackend());
+    expect(explainSoftKeyboardBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installSoftKeyboardHostBackend(fakeBackend());
+    expect(explainSoftKeyboardBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installSoftKeyboardHostBackend(fakeBackend());
+    installSoftKeyboardHostBackend(fakeBackend());
+    expect(explainSoftKeyboardBackend().conflict).toBe(true);
+  });
+});
+
 describe('getSoftKeyboardBackend', () => {
   it('falls back to a web backend', () => {
     expect(getSoftKeyboardBackend()).not.toBeNull();
@@ -752,6 +784,25 @@ describe('hideSoftKeyboard', () => {
   });
 });
 
+describe('installSoftKeyboardHostBackend', () => {
+  afterEach(() => resetSoftKeyboardBackendForTest());
+
+  it('installs a host backend that getSoftKeyboardBackend returns', () => {
+    const backend = fakeBackend();
+    installSoftKeyboardHostBackend(backend);
+    expect(getSoftKeyboardBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installSoftKeyboardHostBackend(first);
+    installSoftKeyboardHostBackend(second);
+    expect(getSoftKeyboardBackend()).toBe(first);
+    expect(explainSoftKeyboardBackend().conflict).toBe(true);
+  });
+});
+
 describe('isSoftKeyboardAccessoryBarVisible', () => {
   it('delegates to backend getAccessoryBarVisible', () => {
     const backend = fakeBackend();
@@ -797,6 +848,36 @@ describe('isSoftKeyboardScrollAssistEnabled', () => {
     };
     setSoftKeyboardBackend(backend);
     expect(isSoftKeyboardScrollAssistEnabled()).toBe(false);
+  });
+});
+
+describe('observeSoftKeyboardHostResult', () => {
+  afterEach(() => resetSoftKeyboardBackendForTest());
+
+  it('records a successful observation', () => {
+    installSoftKeyboardHostBackend(fakeBackend());
+    observeSoftKeyboardHostResult('getInfo', true);
+    const explanation = explainSoftKeyboardBackend();
+    expect(explanation.operation).toBe('getInfo');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installSoftKeyboardHostBackend(fakeBackend());
+    observeSoftKeyboardHostResult('getInfo', false);
+    expect(explainSoftKeyboardBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
+describe('resetSoftKeyboardBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setSoftKeyboardBackend(fakeBackend());
+    installSoftKeyboardHostBackend(fakeBackend());
+    observeSoftKeyboardHostResult('getInfo', true);
+    resetSoftKeyboardBackendForTest();
+    expect(explainSoftKeyboardBackend().layer).toBe('host-not-enabled');
+    expect(explainSoftKeyboardBackend().conflict).toBe(false);
+    expect(explainSoftKeyboardBackend().viability).toBe('unobserved');
   });
 });
 

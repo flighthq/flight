@@ -25,6 +25,9 @@ import {
   setUpdaterConfig,
   setUpdaterFeedUrl,
   setUpdaterSignatureConfig,
+  explainUpdaterBackend,
+  installUpdaterHostBackend,
+  observeUpdaterHostResult,
 } from './updater';
 
 const FULL_UPDATE_INFO: UpdateInfo = {
@@ -475,6 +478,34 @@ describe('downloadAppUpdate', () => {
   });
 });
 
+describe('explainUpdaterBackend', () => {
+  afterEach(() => resetUpdaterBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetUpdaterBackendForTest();
+    const explanation = explainUpdaterBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setUpdaterBackend(fakeBackend());
+    expect(explainUpdaterBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installUpdaterHostBackend(fakeBackend());
+    expect(explainUpdaterBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installUpdaterHostBackend(fakeBackend());
+    installUpdaterHostBackend(fakeBackend());
+    expect(explainUpdaterBackend().conflict).toBe(true);
+  });
+});
+
 describe('getAppUpdaterState', () => {
   it('returns Idle state for an updater that has never been attached', () => {
     const updater = createAppUpdater();
@@ -563,6 +594,25 @@ describe('getUpdaterConfig', () => {
   });
 });
 
+describe('installUpdaterHostBackend', () => {
+  afterEach(() => resetUpdaterBackendForTest());
+
+  it('installs a host backend that getUpdaterBackend returns', () => {
+    const backend = fakeBackend();
+    installUpdaterHostBackend(backend);
+    expect(getUpdaterBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installUpdaterHostBackend(first);
+    installUpdaterHostBackend(second);
+    expect(getUpdaterBackend()).toBe(first);
+    expect(explainUpdaterBackend().conflict).toBe(true);
+  });
+});
+
 describe('isAppUpdateEligible', () => {
   it('returns true when seed falls within stagedRolloutPercent', () => {
     const info: Readonly<UpdateInfo> = { ...FULL_UPDATE_INFO, stagedRolloutPercent: 50 };
@@ -586,12 +636,42 @@ describe('isAppUpdateEligible', () => {
   });
 });
 
+describe('observeUpdaterHostResult', () => {
+  afterEach(() => resetUpdaterBackendForTest());
+
+  it('records a successful observation', () => {
+    installUpdaterHostBackend(fakeBackend());
+    observeUpdaterHostResult('cancelDownload', true);
+    const explanation = explainUpdaterBackend();
+    expect(explanation.operation).toBe('cancelDownload');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installUpdaterHostBackend(fakeBackend());
+    observeUpdaterHostResult('cancelDownload', false);
+    expect(explainUpdaterBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('quitAndInstallUpdate', () => {
   it('delegates to the active backend', () => {
     const backend = fakeBackend();
     setUpdaterBackend(backend);
     quitAndInstallUpdate();
     expect(backend.quit).toBe(1);
+  });
+});
+
+describe('resetUpdaterBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setUpdaterBackend(fakeBackend());
+    installUpdaterHostBackend(fakeBackend());
+    observeUpdaterHostResult('cancelDownload', true);
+    resetUpdaterBackendForTest();
+    expect(explainUpdaterBackend().layer).toBe('host-not-enabled');
+    expect(explainUpdaterBackend().conflict).toBe(false);
+    expect(explainUpdaterBackend().viability).toBe('unobserved');
   });
 });
 

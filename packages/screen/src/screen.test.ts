@@ -32,6 +32,10 @@ import {
   screenToDipPoint,
   screenToDipRect,
   setScreenBackend,
+  explainScreenBackend,
+  installScreenHostBackend,
+  observeScreenHostResult,
+  resetScreenBackendForTest,
 } from './screen';
 function makeScreenInfo(overrides: Partial<ScreenInfo> = {}): ScreenInfo {
   return { ...createScreenInfo(), ...overrides };
@@ -447,6 +451,33 @@ describe('enableScreenSignals', () => {
     expect(signals.onScreenRemoved).toBeDefined();
   });
 });
+describe('explainScreenBackend', () => {
+  afterEach(() => resetScreenBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetScreenBackendForTest();
+    const explanation = explainScreenBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setScreenBackend(fakeBackend([]));
+    expect(explainScreenBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installScreenHostBackend(fakeBackend([]));
+    expect(explainScreenBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installScreenHostBackend(fakeBackend([]));
+    installScreenHostBackend(fakeBackend([]));
+    expect(explainScreenBackend().conflict).toBe(true);
+  });
+});
 describe('getPrimaryScreen', () => {
   it('fills and returns the passed out object', () => {
     setScreenBackend(fakeBackend([{ width: 1920, isPrimary: true }]));
@@ -729,6 +760,41 @@ describe('getScreenWorkArea', () => {
     expect(out.height).toBe(1040);
   });
 });
+describe('installScreenHostBackend', () => {
+  afterEach(() => resetScreenBackendForTest());
+
+  it('installs a host backend that getScreenBackend returns', () => {
+    const backend = fakeBackend([]);
+    installScreenHostBackend(backend);
+    expect(getScreenBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend([]);
+    const second = fakeBackend([]);
+    installScreenHostBackend(first);
+    installScreenHostBackend(second);
+    expect(getScreenBackend()).toBe(first);
+    expect(explainScreenBackend().conflict).toBe(true);
+  });
+});
+describe('observeScreenHostResult', () => {
+  afterEach(() => resetScreenBackendForTest());
+
+  it('records a successful observation', () => {
+    installScreenHostBackend(fakeBackend([]));
+    observeScreenHostResult('getScreens', true);
+    const explanation = explainScreenBackend();
+    expect(explanation.operation).toBe('getScreens');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installScreenHostBackend(fakeBackend([]));
+    observeScreenHostResult('getScreens', false);
+    expect(explainScreenBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
 describe('onScreenChange', () => {
   it('delivers change events to the listener and unsubscribes', () => {
     const backend = fakeBackend([{}]);
@@ -891,6 +957,19 @@ describe('requestScreenDetails', () => {
     }
   });
 });
+
+describe('resetScreenBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setScreenBackend(fakeBackend([]));
+    installScreenHostBackend(fakeBackend([]));
+    observeScreenHostResult('getScreens', true);
+    resetScreenBackendForTest();
+    expect(explainScreenBackend().layer).toBe('host-not-enabled');
+    expect(explainScreenBackend().conflict).toBe(false);
+    expect(explainScreenBackend().viability).toBe('unobserved');
+  });
+});
+
 describe('screenToDipPoint', () => {
   it('converts physical pixels to DIP', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
@@ -927,6 +1006,7 @@ describe('screenToDipPoint', () => {
     expect(recovered.y).toBeCloseTo(original.y);
   });
 });
+
 describe('screenToDipRect', () => {
   it('scales the rect back to DIP', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
@@ -961,6 +1041,7 @@ describe('screenToDipRect', () => {
     expect(recovered.height).toBeCloseTo(original.height);
   });
 });
+
 describe('setScreenBackend', () => {
   it('clears back to the web fallback when passed null', () => {
     setScreenBackend(fakeBackend([{}]));

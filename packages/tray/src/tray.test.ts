@@ -34,6 +34,10 @@ import {
   setTrayPressedIcon,
   startTrayIconAnimation,
   stopTrayIconAnimation,
+  explainTrayBackend,
+  installTrayHostBackend,
+  observeTrayHostResult,
+  resetTrayBackendForTest,
 } from './tray';
 
 // Fake backend state per icon.
@@ -253,6 +257,34 @@ describe('displayTrayBalloon', () => {
   });
 });
 
+describe('explainTrayBackend', () => {
+  afterEach(() => resetTrayBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetTrayBackendForTest();
+    const explanation = explainTrayBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setTrayBackend(fakeBackend());
+    expect(explainTrayBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installTrayHostBackend(fakeBackend());
+    expect(explainTrayBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installTrayHostBackend(fakeBackend());
+    installTrayHostBackend(fakeBackend());
+    expect(explainTrayBackend().conflict).toBe(true);
+  });
+});
+
 describe('getTrayBackend', () => {
   it('falls back to a web backend', () => {
     expect(getTrayBackend()).not.toBeNull();
@@ -384,6 +416,25 @@ describe('getTrayIconTooltip', () => {
   });
 });
 
+describe('installTrayHostBackend', () => {
+  afterEach(() => resetTrayBackendForTest());
+
+  it('installs a host backend that getTrayBackend returns', () => {
+    const backend = fakeBackend();
+    installTrayHostBackend(backend);
+    expect(getTrayBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installTrayHostBackend(first);
+    installTrayHostBackend(second);
+    expect(getTrayBackend()).toBe(first);
+    expect(explainTrayBackend().conflict).toBe(true);
+  });
+});
+
 describe('isTrayDestroyed', () => {
   it('returns false for a live tray', () => {
     const backend = fakeBackend();
@@ -439,6 +490,24 @@ describe('isTrayIconAnimating', () => {
     expect(isTrayIconAnimating(first)).toBe(true);
     expect(isTrayIconAnimating(second)).toBe(false);
     stopTrayIconAnimation(first);
+  });
+});
+
+describe('observeTrayHostResult', () => {
+  afterEach(() => resetTrayBackendForTest());
+
+  it('records a successful observation', () => {
+    installTrayHostBackend(fakeBackend());
+    observeTrayHostResult('create', true);
+    const explanation = explainTrayBackend();
+    expect(explanation.operation).toBe('create');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installTrayHostBackend(fakeBackend());
+    observeTrayHostResult('create', false);
+    expect(explainTrayBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -537,6 +606,18 @@ describe('removeTrayBalloon', () => {
 
   it('is a no-op on web', () => {
     expect(() => removeTrayBalloon({ id: 0 })).not.toThrow();
+  });
+});
+
+describe('resetTrayBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setTrayBackend(fakeBackend());
+    installTrayHostBackend(fakeBackend());
+    observeTrayHostResult('create', true);
+    resetTrayBackendForTest();
+    expect(explainTrayBackend().layer).toBe('host-not-enabled');
+    expect(explainTrayBackend().conflict).toBe(false);
+    expect(explainTrayBackend().viability).toBe('unobserved');
   });
 });
 

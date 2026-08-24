@@ -18,6 +18,10 @@ import {
   sendIpcMessage,
   sendIpcMessageTo,
   setIpcBackend,
+  explainIpcBackend,
+  installIpcHostBackend,
+  observeIpcHostResult,
+  resetIpcBackendForTest,
 } from './ipc';
 
 interface FakeIpcBackend extends IpcBackend {
@@ -156,6 +160,34 @@ describe('enableIpcSignals', () => {
   });
 });
 
+describe('explainIpcBackend', () => {
+  afterEach(() => resetIpcBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetIpcBackendForTest();
+    const explanation = explainIpcBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setIpcBackend(fakeBackend());
+    expect(explainIpcBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installIpcHostBackend(fakeBackend());
+    expect(explainIpcBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installIpcHostBackend(fakeBackend());
+    installIpcHostBackend(fakeBackend());
+    expect(explainIpcBackend().conflict).toBe(true);
+  });
+});
+
 describe('getIpcBackend', () => {
   it('falls back to a web backend', () => {
     expect(getIpcBackend()).not.toBeNull();
@@ -259,6 +291,25 @@ describe('hasIpcBackend', () => {
   });
 });
 
+describe('installIpcHostBackend', () => {
+  afterEach(() => resetIpcBackendForTest());
+
+  it('installs a host backend that getIpcBackend returns', () => {
+    const backend = fakeBackend();
+    installIpcHostBackend(backend);
+    expect(getIpcBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installIpcHostBackend(first);
+    installIpcHostBackend(second);
+    expect(getIpcBackend()).toBe(first);
+    expect(explainIpcBackend().conflict).toBe(true);
+  });
+});
+
 describe('invokeIpc', () => {
   it('passes variadic args as an array and resolves the backend result', async () => {
     const backend = fakeBackend();
@@ -303,6 +354,24 @@ describe('invokeIpcWithTimeout', () => {
     }
     expect(err?.channel).toBe('slow-channel');
     expect(err?.timeoutMs).toBe(5);
+  });
+});
+
+describe('observeIpcHostResult', () => {
+  afterEach(() => resetIpcBackendForTest());
+
+  it('records a successful observation', () => {
+    installIpcHostBackend(fakeBackend());
+    observeIpcHostResult('send', true);
+    const explanation = explainIpcBackend();
+    expect(explanation.operation).toBe('send');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installIpcHostBackend(fakeBackend());
+    observeIpcHostResult('send', false);
+    expect(explainIpcBackend().viability).toBe('runtime-api-unavailable');
   });
 });
 
@@ -457,6 +526,18 @@ describe('removeAllIpcListeners', () => {
     removeAllIpcListeners(ch);
     backend.fire('typed', []);
     expect(received).toHaveLength(0);
+  });
+});
+
+describe('resetIpcBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setIpcBackend(fakeBackend());
+    installIpcHostBackend(fakeBackend());
+    observeIpcHostResult('send', true);
+    resetIpcBackendForTest();
+    expect(explainIpcBackend().layer).toBe('host-not-enabled');
+    expect(explainIpcBackend().conflict).toBe(false);
+    expect(explainIpcBackend().viability).toBe('unobserved');
   });
 });
 

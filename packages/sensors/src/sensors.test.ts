@@ -44,6 +44,10 @@ import {
   isSensorsSupported,
   requestSensorsPermission,
   setSensorsBackend,
+  explainSensorsBackend,
+  installSensorsHostBackend,
+  observeSensorsHostResult,
+  resetSensorsBackendForTest,
 } from './sensors';
 
 function fakeBackend(): SensorsBackend & {
@@ -643,6 +647,34 @@ describe('disposeSensors', () => {
   });
 });
 
+describe('explainSensorsBackend', () => {
+  afterEach(() => resetSensorsBackendForTest());
+
+  it('reports host-not-enabled when no backend is installed', () => {
+    resetSensorsBackendForTest();
+    const explanation = explainSensorsBackend();
+    expect(explanation.layer).toBe('host-not-enabled');
+    expect(explanation.conflict).toBe(false);
+    expect(explanation.viability).toBe('unobserved');
+  });
+
+  it('reports custom layer when a custom backend is set', () => {
+    setSensorsBackend(fakeBackend());
+    expect(explainSensorsBackend().layer).toBe('custom');
+  });
+
+  it('reports host layer when a host backend is installed', () => {
+    installSensorsHostBackend(fakeBackend());
+    expect(explainSensorsBackend().layer).toBe('host');
+  });
+
+  it('reports conflict when two different host backends are installed', () => {
+    installSensorsHostBackend(fakeBackend());
+    installSensorsHostBackend(fakeBackend());
+    expect(explainSensorsBackend().conflict).toBe(true);
+  });
+});
+
 describe('getSensorsBackend', () => {
   it('falls back to a web backend when none is installed', () => {
     expect(getSensorsBackend()).not.toBeNull();
@@ -735,6 +767,25 @@ describe('hasProximitySensor', () => {
   });
 });
 
+describe('installSensorsHostBackend', () => {
+  afterEach(() => resetSensorsBackendForTest());
+
+  it('installs a host backend that getSensorsBackend returns', () => {
+    const backend = fakeBackend();
+    installSensorsHostBackend(backend);
+    expect(getSensorsBackend()).toBe(backend);
+  });
+
+  it('is first-host-wins: a second different backend sets conflict', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installSensorsHostBackend(first);
+    installSensorsHostBackend(second);
+    expect(getSensorsBackend()).toBe(first);
+    expect(explainSensorsBackend().conflict).toBe(true);
+  });
+});
+
 describe('isSensorsSupported', () => {
   it('returns true when the fake backend reports motion support', () => {
     setSensorsBackend(fakeBackend());
@@ -749,10 +800,40 @@ describe('isSensorsSupported', () => {
   });
 });
 
+describe('observeSensorsHostResult', () => {
+  afterEach(() => resetSensorsBackendForTest());
+
+  it('records a successful observation', () => {
+    installSensorsHostBackend(fakeBackend());
+    observeSensorsHostResult('getPermissionState', true);
+    const explanation = explainSensorsBackend();
+    expect(explanation.operation).toBe('getPermissionState');
+    expect(explanation.viability).toBe('available');
+  });
+
+  it('records a failed observation', () => {
+    installSensorsHostBackend(fakeBackend());
+    observeSensorsHostResult('getPermissionState', false);
+    expect(explainSensorsBackend().viability).toBe('runtime-api-unavailable');
+  });
+});
+
 describe('requestSensorsPermission', () => {
   it('delegates to the backend', async () => {
     setSensorsBackend(fakeBackend());
     expect(await requestSensorsPermission()).toBe(true);
+  });
+});
+
+describe('resetSensorsBackendForTest', () => {
+  it('clears all backend slots', () => {
+    setSensorsBackend(fakeBackend());
+    installSensorsHostBackend(fakeBackend());
+    observeSensorsHostResult('getPermissionState', true);
+    resetSensorsBackendForTest();
+    expect(explainSensorsBackend().layer).toBe('host-not-enabled');
+    expect(explainSensorsBackend().conflict).toBe(false);
+    expect(explainSensorsBackend().viability).toBe('unobserved');
   });
 });
 
