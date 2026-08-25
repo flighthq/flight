@@ -8,6 +8,7 @@ export {
   createVelocityField,
   dampVelocity,
   ensureVelocitySample,
+  explainVelocity,
   getVelocity,
   hasVelocity,
   isVelocityZero,

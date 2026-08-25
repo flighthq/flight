@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
-import { createVelocityField, ensureVelocitySample } from './velocityField';
+import { contributeVelocity, createVelocityField, ensureVelocitySample, suppressVelocity } from './velocityField';
 import { getVelocitySampleAt } from './velocitySample';
 
 describe('getVelocitySampleAt', () => {
@@ -48,7 +48,7 @@ describe('getVelocitySampleAt', () => {
     expect(out.y).toBeCloseTo(1);
   });
 
-  it('is alias-safe when out references a different object (basic alias check)', () => {
+  it('computes the translation delta for a pair of translated transforms', () => {
     const field = createVelocityField();
     const source = {};
     const sample = ensureVelocitySample(field, source);
@@ -57,5 +57,20 @@ describe('getVelocitySampleAt', () => {
     const out = { x: 0, y: 0 };
     getVelocitySampleAt(sample, current, 0, 0, out);
     expect(out).toEqual({ x: 3, y: 4 });
+  });
+
+  it('reprojects transforms independently of contributeVelocity / suppressVelocity', () => {
+    const field = createVelocityField();
+    const source = {};
+    const sample = ensureVelocitySample(field, source);
+    sample.previousWorldTransform = createMatrix(1, 0, 0, 1, 0, 0);
+    const current = createMatrix(1, 0, 0, 1, 7, 3);
+
+    contributeVelocity(field, source, 0, 0);
+    suppressVelocity(field, source);
+
+    const out = { x: 0, y: 0 };
+    getVelocitySampleAt(sample, current, 0, 0, out);
+    expect(out).toEqual({ x: 7, y: 3 });
   });
 });

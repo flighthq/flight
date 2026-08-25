@@ -1,4 +1,4 @@
-import type { Velocity2D, VelocityField, VelocitySample } from '@flighthq/types/contract';
+import type { Velocity2D, VelocityExplanation, VelocityField, VelocitySample } from '@flighthq/types/contract';
 
 // The VelocityField is the generic seam: any system (physics, tween, camera, manual edit) contributes a
 // source object's screen-space velocity for the current frame, and any consumer reads it. The accessors
@@ -84,6 +84,25 @@ export function ensureVelocitySample(field: VelocityField, source: object): Velo
     field.samples.set(source, sample);
   }
   return sample;
+}
+
+export function explainVelocity(field: VelocityField, source: object): VelocityExplanation {
+  const sample = field.samples.get(source);
+  const currentFrameId = field.frameId;
+  if (sample === undefined) {
+    return { currentFrameId, explicit: false, lastFrameId: -1, reason: 'no-sample', x: 0, y: 0 };
+  }
+  if (sample.lastFrameId !== currentFrameId) {
+    return { currentFrameId, explicit: false, lastFrameId: sample.lastFrameId, reason: 'stale', x: 0, y: 0 };
+  }
+  const explicit = sample.explicitFrameId === currentFrameId;
+  const x = sample.velocity.x;
+  const y = sample.velocity.y;
+  if (x === 0 && y === 0) {
+    const reason = explicit ? 'explicit-zero' : 'derived-zero';
+    return { currentFrameId, explicit, lastFrameId: sample.lastFrameId, reason, x: 0, y: 0 };
+  }
+  return { currentFrameId, explicit, lastFrameId: sample.lastFrameId, reason: 'ok', x, y };
 }
 
 // Writes the source's current-frame velocity into `out`. Returns zero velocity for sources with no
