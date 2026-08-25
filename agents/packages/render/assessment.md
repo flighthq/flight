@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/render'
-updated: 2026-07-21
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -33,8 +33,8 @@ Strictly sweep-safe: within `@flighthq/render`, no unresolved design decision.
 - **Replace the `'pivotX' in source` duck-type sniff in `isSpatial2DNode` (`renderViewport.ts`).** The one residual of the approved world-bounds fix: the bounds computation, render-transform handling, inclusive-edge comment, and `createRectangle()` scratch all landed, but trait detection still keys off a single field name. Use proper `Spatial2DNode` narrowing (or the node package's trait predicate if one exists at review time).
 - **Complete the chartered guard/explain set (Approved 2026-07-03, still pending).** `enableRenderGuards(state)` with the three warn-once checks (unregistered kind at the `rendererMap` lookup; draw-before-prepare via `currentFrameId`; clip data present while `displayObjectClipHooks` is null), `areRenderGuardsEnabled(state)`, `explainRenderState(state, root)` returning plain data, and `formatRenderStateExplanation`. Also add the `format*` companion `explainDisplayObjectRender`'s own doc comment promises. Emission via `@flighthq/log` `logOnce`, channel `'render'`; only sibling modules import log; fire/silent test pair per guard. The shipped `enableColorAdjustmentGuards` + `explainDisplayObjectRender` are the pattern to follow, not a substitute.
 - **Honor `sceneGraphSyncPolicy` in `prepareScene3DRender` — the 3D dirty short-circuit (Approved 2026-07-09, still pending).** Under `requiresInvalidation`, skip the walk/cull/rebuild and return the cached `SceneRenderList` when nothing changed. Dirty inputs: descendant world-transform/structure (needs the scene-root aggregate revision in `@flighthq/node` — the cross-package prerequisite in Backlog, which lands first), visible-mesh `geometry.version`, camera view+projection, and the light-block `version` (already honest since 2026-07-09). Keep `refreshDerivedState` always-refresh so default behavior is unchanged.
-- **Delete the dead `RenderTargetSizeOptions` export (`renderTarget.ts`).** Exported type referenced by nothing in the tree — not even `computeRenderTargetSize` in the same file, which takes positional `minWidth`/`minHeight`. Pure surface debt.
-- **Fix the stale `drawDriver` comment (`renderQueue.ts:114`).** It cites "the drawDriver's `_drawStack`", a module that does not exist in this tree. Reword to name only the scratch that exists (the per-state `tempStack`).
+- ~~**Delete the dead `RenderTargetSizeOptions` export.**~~ Landed 2026-08-25.
+- ~~**Fix the stale `drawDriver` comment.**~~ Landed 2026-08-25.
 - **Convert `collectVisibleMeshes` (`sceneRender.ts`) to the package's explicit-stack walk pattern.** Every other traversal here (`walkNode`, `walkRenderSubtree`, `buildRenderQueue`) is iterative; the 3D collect is the lone call-stack recursion — align it for consistency and deep-scene safety.
 - **Give `computeRenderTargetSize` an `out`-parameter form (or document the allocation).** It allocates a `{width, height}` object per call in cache-refresh paths; the package's own constraint is explicit allocation with `out`-params for compute functions. Greenfield: reshape the signature rather than adding a second name.
 

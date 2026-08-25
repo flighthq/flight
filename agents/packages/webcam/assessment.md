@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/webcam'
-updated: 2026-07-07
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Fix `null as any` cast** — `WebcamStreamRuntime.mediaStream` typed non-nullable but initialized as `null as any`. Use proper nullable typing (`MediaStream | null`).
+None — all prior items verified landed 2026-08-25.
 
 ## Approved
 

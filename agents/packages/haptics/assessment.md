@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/haptics'
-updated: 2026-07-07
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Fix `triggerHapticImpact` default intensity** — documentation says "defaults to 1" but the implementation passes `undefined` to the backend. Pass `1` explicitly.
+None — all prior items verified landed 2026-08-25.
 
 ## Approved
 
