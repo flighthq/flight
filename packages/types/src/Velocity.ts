@@ -33,7 +33,6 @@ export interface VelocityField {
 }
 
 // A source of per-node velocity for a frame — physics, tween, camera, or the transform-delta baseline.
-// Implementations write into the field (via contributeNodeVelocity / suppressNodeVelocity) for `root`'s
-// subtree. Kept as a plain function so any system can be one without depending on the velocity package's
-// internals.
+// Implementations write into the field (via contributeVelocity / suppressVelocity) for `root`'s subtree.
+// Kept as a plain function so any system can be one without depending on the velocity package's internals.
 export type VelocityContributor = (field: VelocityField, root: object) => void;

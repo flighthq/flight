@@ -188,44 +188,43 @@ export function prepareScene3DRender(
 }
 
 function collectVisibleMeshes(
-  node: Readonly<NodeAny>,
+  root: Readonly<NodeAny>,
   frustum: Readonly<Frustum>,
   worldBounds: Aabb,
   out: Mesh[],
   refreshTransforms: boolean,
 ): void {
-  // `enabled` gates graph participation; `visible` gates rendering. A hidden subtree is skipped whole,
-  // so `visible` propagates (a hidden group hides its descendants) without a resolved-visibility cache.
-  if (!node.enabled || !(node as unknown as HasAppearance).visible) {
-    return;
-  }
+  const stack = _collectStack;
+  stack[0] = root;
+  let stackLength = 1;
 
-  // Under 'refreshDerivedState', bump the local-transform revision of every visited node before its
-  // world matrix is read below. Pre-order walk order means an ancestor is invalidated before any
-  // descendant resolves the parent chain, so the whole visible subtree recomposes from live transform
-  // fields this frame. See prepareScene3DRender for the policy rationale.
-  // A directly-authored local matrix is already the node's authoritative transform. The refresh
-  // policy exists to observe bare TRS-field mutations; invalidating a detached matrix here would
-  // recompose it from the dormant TRS fields and silently erase setNodeLocalMatrix4().
-  if (refreshTransforms && !isNodeLocalMatrix4Detached(node as Transform3DNode)) {
-    invalidateNodeLocalTransform(node as NodeAny);
-  }
+  while (stackLength > 0) {
+    const node = stack[--stackLength] as NodeAny;
 
-  // worldAlpha is not folded in this walk: it is lazily ensured on access (getNode3DWorldAlpha), the
-  // appearance analog of the ensure-on-access world matrix the renderer resolves at draw time. This walk
-  // is culling + mesh collection only.
+    if (!node.enabled || !(node as unknown as HasAppearance).visible) {
+      continue;
+    }
 
-  // A node is a drawable Mesh (not a transform-only group) when it carries geometry. Structural,
-  // so it holds for Meshes created with a custom kind, not just MeshKind.
-  const mesh = node as unknown as Mesh;
-  if (mesh.geometry != null && isMeshVisible(mesh, frustum, worldBounds)) {
-    out.push(mesh);
-  }
+    // Under 'refreshDerivedState', bump the local-transform revision of every visited node before its
+    // world matrix is read below. Pre-order walk order means an ancestor is invalidated before any
+    // descendant resolves the parent chain, so the whole visible subtree recomposes from live transform
+    // fields this frame. A directly-authored local matrix is already the node's authoritative transform;
+    // invalidating a detached matrix here would recompose from dormant TRS fields and erase
+    // setNodeLocalMatrix4().
+    if (refreshTransforms && !isNodeLocalMatrix4Detached(node as Transform3DNode)) {
+      invalidateNodeLocalTransform(node);
+    }
 
-  const children = getNodeRuntime(node).children;
-  if (children !== null) {
-    for (let i = 0; i < children.length; i++) {
-      collectVisibleMeshes(children[i], frustum, worldBounds, out, refreshTransforms);
+    const mesh = node as unknown as Mesh;
+    if (mesh.geometry != null && isMeshVisible(mesh, frustum, worldBounds)) {
+      out.push(mesh);
+    }
+
+    const children = getNodeRuntime(node).children;
+    if (children !== null) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        stack[stackLength++] = children[i];
+      }
     }
   }
 }
@@ -371,7 +370,6 @@ function packSpotLight(data: Float32Array, offset: number, spot: Readonly<SpotLi
 function setScene3DViewProjectionMatrix4(out: Matrix4, camera: Readonly<Camera3D>, aspect: number): void {
   const projection = camera.projection;
   if (projection.kind === 'perspective') {
-    // Geometry's setPerspectiveMatrix4 takes the tangent of the half-FOV, not the full angle.
     setPerspectiveMatrix4(scratchProjection, Math.tan(projection.fovY * 0.5), aspect, camera.near, camera.far);
   } else {
     setOrthographicMatrix4(
@@ -443,4 +441,5 @@ export function setSkinnedMeshBoundsGuard(guard: ((mesh: Readonly<Mesh>) => void
   _skinnedBoundsGuard = guard;
 }
 
+const _collectStack: Readonly<NodeAny>[] = [];
 let _skinnedBoundsGuard: ((mesh: Readonly<Mesh>) => void) | null = null;

@@ -40,7 +40,6 @@
   "dependencies": {
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
-    "@flighthq/scene2d": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
     "@flighthq/render": "*",
@@ -54,6 +53,7 @@
     "@webgpu/types": "^0.1.70"
   },
   "devDependencies": {
+    "@flighthq/scene2d": "*",
     "@webgpu/types": "*",
     "typescript": "^5.3.0"
   },
