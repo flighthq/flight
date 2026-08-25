@@ -127,8 +127,7 @@ export function createWebDeviceBackend(): DeviceBackend {
       out.availableMemory = -1;
       // boardName, marketingName, productName, supportedAbis — not exposed by browsers.
       out.boardName = '';
-      // colorGamut, fontScale, isHdr — not exposed by browsers.
-      out.colorGamut = '';
+      out.colorGamut = detectColorGamut();
       const cores = nav !== null && 'hardwareConcurrency' in nav ? (nav.hardwareConcurrency ?? -1) : -1;
       out.cpuCores = cores;
       out.fontScale = -1;
@@ -136,7 +135,7 @@ export function createWebDeviceBackend(): DeviceBackend {
       const gpuInfo = readWebGpuInfo();
       out.gpuRenderer = gpuInfo.renderer;
       out.gpuVendor = gpuInfo.vendor;
-      out.isHdr = false;
+      out.isHdr = detectHdr();
       // isJailbroken and isRooted are always false on web — no detection available.
       out.isJailbroken = false;
       const devMem =
@@ -348,8 +347,21 @@ let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 let _safeAreaInsets: SafeAreaInsets | null = null;
 
+function detectColorGamut(): string {
+  if (typeof matchMedia === 'undefined') return '';
+  if (matchMedia('(color-gamut: rec2020)').matches) return 'rec2020';
+  if (matchMedia('(color-gamut: p3)').matches) return 'p3';
+  if (matchMedia('(color-gamut: srgb)').matches) return 'srgb';
+  return '';
+}
+
 function detectDesktopUa(ua: string): boolean {
   return /win(?:dows)?nt|macintosh|mac os x|linux(?!.*android)|cros|x11/i.test(ua);
+}
+
+function detectHdr(): boolean {
+  if (typeof matchMedia === 'undefined') return false;
+  return matchMedia('(dynamic-range: high)').matches;
 }
 
 function detectLowEndDevice(deviceMemoryGib: number, cores: number): boolean {
