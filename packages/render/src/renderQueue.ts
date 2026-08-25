@@ -110,6 +110,6 @@ function compareRenderQueueEntriesByKey(a: RenderQueueEntry, b: RenderQueueEntry
   return a.sortKey - b.sortKey;
 }
 
-// Module-level scratch stack used by buildRenderQueue. Not shared with the per-state tempStack or
-// the drawDriver's _drawStack, so prepare, draw, and queue-build can be interleaved safely.
+// Module-level scratch stack used by buildRenderQueue. Not shared with the per-state tempStack,
+// so prepare, draw, and queue-build can be interleaved safely.
 const _buildStack: Renderable[] = [];
