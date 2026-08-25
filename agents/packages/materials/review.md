@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/materials'
 status: solid
-score: 87
-updated: 2026-07-13
+score: 89
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -14,6 +14,9 @@ ingested:
 Evidence: live worktree `packages/materials/src/` (11 source files + 11 colocated tests, 194 `it(` cases, ~85 exports). Prior review (2026-06-24, solid/86) was over the `builder-67dc46d64` bundle; this one re-grounds in the live tree, which has since absorbed the fork-H filters dissolution and the 2026-07-03 direction session.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 solid — **87/100**. A coherent three-slice descriptor library — ColorTransform algebra, a broad color-utility tier around the single sRGB↔linear seam, and the complete 20-material 3D catalog — with clean hygiene and strong tests. Since the prior review: fork H landed cleanly (the `ColorTransformMaterial`/`UniformColorTransformMaterial` kinds are gone from the whole tree; the algebra stays here per the 2026-07-03 Decision, realized as `ColorTransformAdjustment` in `@flighthq/adjustments`), `LinearColor` moved to `@flighthq/types`, `createColorTransform` now takes `opts?: Readonly<Partial<…>>`, and the `KHR_texture_transform` + per-texture `colorSpace` gap closed on `Texture` in types. Held below 90: two blessed Decisions are only partially executed (Hsl/Hsv types not moved; OKLab/OKLCH in scope but unbuilt), a known stale doc comment survived two passes, the manifest description is stale, and the conversion matrix is still one-directional.
 

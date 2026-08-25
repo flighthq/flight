@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene3d-gl'
 status: solid
-score: 75
-updated: 2026-07-21
+score: 87
+updated: 2026-08-25
 ingested:
   - charter.md
   - source
@@ -13,6 +13,9 @@ ingested:
 # scene-gl — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **Solid — 75/100.** Scene-gl is now a substantial forward renderer: explicit material registration,
 standard/classic/debug/shaded families, multi-light packing, two-pass transparency, shadows, environment

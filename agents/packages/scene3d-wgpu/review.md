@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene3d-wgpu'
 status: solid
-score: 78
-updated: 2026-07-31
+score: 86
+updated: 2026-08-25
 ingested:
   - status.md
   - reviews/depth/scene-wgpu.md
@@ -19,6 +19,9 @@ ingested:
 > documentation defects, not current or retired API.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **solid — 78/100.** The WebGPU/WGSL backend for the 3D scene/mesh subject family. As a _material shading library_ it remains genuinely deep and close to authoritative (a full glTF-tier PBR uber-shader with KHR extension lobes, plus classic/NPR/debug families). The builder pass advanced the _renderer envelope_ the prior depth review flagged as thin: a transparent pipeline variant with back-to-front sorting now exists and works end-to-end, and a complete multi-light forward infrastructure (WGSL helpers, GPU buffer, bind layout, per-frame upload) was built and tested. The honest ceiling: that multi-light infrastructure is **not yet reachable** — every renderer hardcodes the live light counts to zero, so no point/spot/hemisphere light renders today despite the WGSL being present and the buffer being uploaded. The status doc's 88/100 self-estimate over-credits the lighting work; the wiring is built but the feature it enables is dark. 78 reflects real, tested progress on transparency plus dormant-but-correct lighting infrastructure.
 

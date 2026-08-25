@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/spatial'
 status: solid
-score: 66
-updated: 2026-07-13
+score: 78
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -11,6 +11,9 @@ ingested:
 # spatial — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 solid — 66/100. The seam and the P1 uniform grid are built to the charter's decisions and the tricky parts (canonical-cell pair dedup, DDA ray walk with real-bounds confirmation) are implemented thoughtfully. It sits at the low end of solid because the backend family is still one-of-three, the pair query is not as allocation-frugal as the North star asks, `updateSpatialObject` always does a full remove+reinsert, and the test suite (15 tests) is thin for internals this easy to get subtly wrong.
 

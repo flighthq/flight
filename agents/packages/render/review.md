@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/render'
 status: solid
-score: 76
-updated: 2026-07-13
+score: 86
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -16,6 +16,9 @@ ingested:
 > Full survey of the live package (16 source files + 16 test files, ~186 tests, `packages/render/src/`). Replaces the 2026-06-25 merge-gate review, which judged only an integration bundle's viewport-file delta (then a broken stub) — that delta has since been fixed and landed; this review judges the package as it stands.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **solid — 76/100.** The core the package actually owns — renderer registry, dirty-tracked 2D prepare pipeline, render-cache seam, 3D scene-prepare with frustum cull and a full punctual light block, viewport culling with real world bounds, a retained sortable queue — is well built, well commented, and genuinely tested. What keeps it out of solid-high is that a visible slice of its chartered surface is header or charter only: the shared draw driver (Decision #1, the keystone), the stats snapshot the charter's "What it is" claims in the present tense, and the blend stack all have types in `@flighthq/types` but no implementation, and the queue/viewport primitives have zero consumers anywhere in the tree.
 

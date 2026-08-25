@@ -1,12 +1,15 @@
 ---
 package: '@flighthq/animation'
 status: solid
-score: 62
-updated: 2026-07-09
+score: 78
+updated: 2026-08-25
 ingested:
   - source
   - tests
 ---
+
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
 
 # animation — Review
 

@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene2d'
 status: solid
-score: 80
-updated: 2026-07-13
+score: 85
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -13,6 +13,9 @@ ingested:
 # scene2d — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **solid — 80/100.** The pruned core the 2026-06-25 Decisions blessed, now landed and clean: seven kinds (`DisplayObject`, `DisplayObject`, `Bitmap`, `Stage`, `Video`, `HtmlView`, `RenderView`), each an entity/runtime quartet with a `compute*LocalBoundsRectangle` wired through `defaultMethods`, plus the new **color-adjustments runtime-slot API** — the generic replacement for the removed color-transform trait. The prior review (82, 2026-06-24) described a builder bundle (`Loader`, the seven-field `Stage`, `cacheAsBitmap`/`scrollRect`/`opaqueBackground`, lifecycle signals) that the charter has since ruled **dropped**; none of it is in this tree, correctly. The score reflects a smaller but charter-aligned surface: what remains is a Stage that has not yet re-grown the fields the Decision said it *keeps*, a few setter asymmetries, and dead debt (`internal.ts`, an unused `@flighthq/geometry` dependency).
 

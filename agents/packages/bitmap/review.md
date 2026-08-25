@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/bitmap'
 status: solid
-score: 72
-updated: 2026-06-25
+score: 82
+updated: 2026-08-25
 ingested:
   - base=origin/main(eb73c3d74)
   - evidence=integration-b2824e3d8 delta
@@ -26,6 +26,9 @@ Four files, two source units:
 - **`bitmapWarp.ts`** (new): `warpBitmap` (3×3 projective/homography, inverse-mapped, nearest/bilinear/bicubic sampling, edge modes) and `warpBitmapQuad` (4-corner DLT homography → invert → delegate), plus `bitmapWarp.test.ts` (10 `it`s).
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `REVISE — 72/100, NOT mergeable as-is.` The noise half of the delta is clean, well-tested, and a genuine perlin-noise improvement that I would merge on its own. The warp half is **not fit to merge**: it imports a type that does not exist on this base (a hard `tsc -b` failure for the whole package) and is not wired into the barrel (dead public API even if it compiled). One of those two is independently blocking; together they mean the candidate, as delivered, does not build and ships no reachable warp API. Fix both (or split warp out of this merge) and the delta is mergeable.
 

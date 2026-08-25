@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene2d-wgpu'
 status: solid
-score: 90
-updated: 2026-06-24
+score: 94
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -12,6 +12,9 @@ ingested:
 # scene2d-wgpu — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `solid — 90/100`. A broad, well-shaped WebGPU per-subject leaf-renderer set covering every 2D display-object kind (bitmap, shape, scale9, sprite/quad-batch, tilemap, particles, text label, rich text, video, render-cache, clip, color-transform materials, velocity writers). This pass (builder-67dc46d64) is a maturity/hygiene increment — register-all convenience, a per-frame stats API, typed renderer-data helpers, and closing four exports:check gaps — not new rendering capability. Every status claim verifies against the diff. The remaining ceiling is real-feature gaps (advanced blend, GPU stroke/gradient fills, glyph-atlas text, MSAA), all of which the status correctly attributes to cross-package blockers.
 

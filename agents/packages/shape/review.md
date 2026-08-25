@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/shape'
 status: solid
-score: 82
-updated: 2026-07-13
+score: 87
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -18,6 +18,9 @@ ingested:
 Rereview against the live worktree at HEAD (`23fcf86c`). Supersedes the 2026-06-24 review, which surveyed the `builder-67dc46d64` bundle; the live tree has since absorbed that work (commit `06a0c480` "recover lost source"), gained the approved correctness sweep (`2e37591e` — cubic extrema, per-span stroke, triangles, path winding), a typed buffer (`6cc3b346` — `ShapeCommandToken` replaces `unknown[]`), and repointed invalidation to `@flighthq/node`'s `invalidateContent` (`23fcf86c`).
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `solid — 82/100`. A broad, well-shaped retained `Graphics`-style command recorder with exact analytic bounds, a winding-honoring solid-fill resolver consumed by the gl/wgpu shape renderers, an opt-in hit-test registry, and a typed command buffer. Most of the 2026-07-02 Approved sweep has landed and is verified in source — but two approved items (typed round-trip, path dependency) have not, the landed bounds fixes shipped without behavioral tests, and `drawTriangles` is emitted by the vocabulary while absent from the `ShapeCommandRegistry` header. The code is good; the gap to authoritative is unfinished approved work plus test debt.
 

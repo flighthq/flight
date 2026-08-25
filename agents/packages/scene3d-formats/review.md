@@ -1,12 +1,15 @@
 ---
 package: '@flighthq/scene3d-formats'
-status: partial
-score: 46
-updated: 2026-07-09
+status: solid
+score: 75
+updated: 2026-08-25
 ingested:
   - source
   - tests
 ---
+
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
 
 > **Score bumped 2026-07-03 stub/18 → partial/46 (2026-07-09, `771bf232`) — a delta bump, not a full re-review.** The deepening pass landed GLB container parsing, `byteStride`/`normalized` accessor correctness, multi-primitive meshes, TANGENT, validation/diagnostics, and the barrel narrowing (assessment Recommended 1–4, 7, 9), moving it from "parses a trivial glTF slice" to a real importer (18 tests). The gap to solid is now cross-package: materials/textures and animation import (no rendered output yet). A full re-review should refine this number; the body below predates the pass.
 

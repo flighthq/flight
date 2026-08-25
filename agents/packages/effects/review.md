@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/effects'
 status: solid
-score: 90
-updated: 2026-06-24
+score: 92
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -15,6 +15,9 @@ ingested:
 Evidence: incoming bundle `builder-67dc46d64` (`head/packages/effects/`, `changes.patch`). Prior `reviews/depth/effects.md` does not exist in this tree (mid-migration), so this survey is grounded directly in source and the as-claimed `status.md`. All status claims below were verified against the diff and source unless noted.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **solid — 90/100.** A broad, well-built catalog of substrate-agnostic effect _intents_ plus a deep bench of canonical, deterministic recipe math. The descriptor layer is mature and contract-clean; the math layer is the standout — Oklab (Ottosson), ACES/Hable/AgX/Reinhard tone maps, separable Gaussian, Sobel, thin-lens CoC, Halton SSAO kernel — all named to their references, alias-safe, zero-alloc. What holds it short of _authoritative_ is not breadth but a few correctness and structural sharp edges (a color-aware-lerp bug, three parallel hand-maintained kind tables, an entirely TODO charter) and the fact that no backend consumes the new base-contract fields yet, so `enabled`/`intensity` are inert.
 

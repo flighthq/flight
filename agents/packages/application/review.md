@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/application'
 status: solid
-score: 88
-updated: 2026-07-13
+score: 90
+updated: 2026-08-25
 ingested:
   - status.md
   - source (packages/application/src)
@@ -24,6 +24,9 @@ Survey of the live tree (2026-07-13). This **supersedes** the 2026-06-25 merge-g
 The non-blocking cleanup also landed: the dead `LoopState.accumulated` field is gone (only `fixedAccumulator` remains), and the Package Map line in `agents/index.md` now describes the full loop + windowing surface. The package compiles and its 139 tests (61 loop + 78 window) are colocated and passing per status.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `solid — 88/100`. A deliberate, charter-aligned AAA build-out of the two chartered subjects. The **loop** (22 exports): start/stop/pause/resume plus deterministic headless `stepApplicationLoop`, fixed-timestep accumulator with `interpolationAlpha` and a `maxUpdatesPerFrame` spiral-of-death guard, `targetFrameRate` + `backgroundFrameRate` throttling keyed off document visibility, `maxDeltaTime` clamping, rolling-average FPS (`getApplicationFrameRate`, 60-frame window), opt-in lifecycle signals (`enableApplicationLifecycleSignals`), an `onError` sink that isolates listener failures, a multi-window registry with main-window selection, and a three-method `LoopBackend` seam (`requestFrame`/`cancelFrame`/`now`) with a lazy web rAF default. The **windowing** surface (61 exports): full state/control (open/close/center/focus/hide/show/maximize/minimize/restore, bounds, min/max size, position, title, icon, opacity, progress, always-on-top, skip-taskbar, menu-bar, parent, resizable, content protection, shadow, frame flash, attention, display lookup), ten attach/detach event pairs, fullscreen + a correctly-split pointer-lock (`lockApplicationPointer` requests Pointer Lock; `prepareElementForInput` does the CSS prep), and a `WindowBackend` seam whose web default fills every method. Held below 90 by the loop-metrics gap, the `stepApplicationLoop`/fixed-mode asymmetry, and the undecided decomposition forks the charter itself flags.
 

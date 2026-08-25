@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/render-wgpu'
 status: solid
-score: 78
-updated: 2026-07-13
+score: 88
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -16,6 +16,9 @@ ingested:
 > Full re-survey of the **live tree** (`packages/render-wgpu/src/`, 14 source + 14 test files, 96 tests). The prior review (2026-06-24) surveyed the `builder-67dc46d64` **bundle**, which did not land wholesale: the live package is a different, in places leaner and in places richer, shape. Landed from the bundle: scissor, fullscreen pass, adapter capabilities, shader registry (reshaped), the `WgpuAdapterCapabilities`/`WgpuFullscreenPipeline` types. **Not in the live tree:** timestamp queries (`wgpuTimestampQuery.ts`), the device-lost/resize signal group (`wgpuRenderStateSignals.ts`), MSAA (no `sampleCount` option, pipeline key, or msaa texture), the depth-write pipeline variant, `requiresWgpuBlendReadback`, and the 18-pipeline warm set (now 2). New since: `wgpuMaterialRegistry.ts`, `wgpuShaderBinding.ts`, `wgpuElement.ts`, HDR format-keyed pipelines, a hardened capture path, sprite-batch/clip-contour/shape-mesh runtime plumbing, and 5-bind-group negotiation for the forward-lit 3D path.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **solid — 78/100.** A genuine, subject-agnostic WebGPU backend core with excellent opt-in discipline and a first-class, environment-hardened capture path — but the charter's own identity paragraph and one blessed Decision describe capabilities (MSAA, timestamp profiling, a device-lost signal group) that do not exist in the live tree, teardown leaks the frame-capture GPU resources, `@flighthq/scene2d` is still a mis-declared runtime dependency, and the destination-read blend modes now fall back to Normal *silently* — the honest predicate the bundle had was not carried over.
 

@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/render-gl'
 status: solid
-score: 74
-updated: 2026-07-21
+score: 87
+updated: 2026-08-25
 ingested:
   - charter.md
   - source
@@ -12,6 +12,9 @@ ingested:
 # render-gl — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **Solid — 74/100.** Render-gl has recognizable bedrock: RenderState/context ownership, explicit target
 creation/resize/destroy, clear-preserve render-pass brackets, MSAA resolve, MRT/depth attachments,
