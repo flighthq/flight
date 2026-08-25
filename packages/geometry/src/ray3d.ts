@@ -1,5 +1,13 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { AabbLike, BoundingSphereLike, PlaneLike, Ray3D, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
+import type {
+  AabbLike,
+  BoundingSphereLike,
+  Matrix4Like,
+  PlaneLike,
+  Ray3D,
+  Ray3DLike,
+  Vector3Like,
+} from '@flighthq/types/contract';
 
 import { createVector3 } from './vector3';
 
@@ -348,4 +356,37 @@ export function setRay3D(out: Ray3DLike, origin: Readonly<Vector3Like>, directio
   out.direction.x = dx;
   out.direction.y = dy;
   out.direction.z = dz;
+}
+
+/**
+ * Transforms a ray by a 4×4 matrix. The origin is transformed as a point (w = 1) and the
+ * direction as a vector (w = 0), then re-normalized. Safe when `out` aliases `ray`.
+ */
+export function transformRay3DByMatrix4(out: Ray3DLike, ray: Readonly<Ray3DLike>, m: Readonly<Matrix4Like>): void {
+  const mm = m.m;
+  const ox = ray.origin.x,
+    oy = ray.origin.y,
+    oz = ray.origin.z;
+  const dx = ray.direction.x,
+    dy = ray.direction.y,
+    dz = ray.direction.z;
+
+  out.origin.x = mm[0] * ox + mm[4] * oy + mm[8] * oz + mm[12];
+  out.origin.y = mm[1] * ox + mm[5] * oy + mm[9] * oz + mm[13];
+  out.origin.z = mm[2] * ox + mm[6] * oy + mm[10] * oz + mm[14];
+
+  const ndx = mm[0] * dx + mm[4] * dy + mm[8] * dz;
+  const ndy = mm[1] * dx + mm[5] * dy + mm[9] * dz;
+  const ndz = mm[2] * dx + mm[6] * dy + mm[10] * dz;
+  const len = Math.sqrt(ndx * ndx + ndy * ndy + ndz * ndz);
+  if (len > 0) {
+    const inv = 1 / len;
+    out.direction.x = ndx * inv;
+    out.direction.y = ndy * inv;
+    out.direction.z = ndz * inv;
+  } else {
+    out.direction.x = 0;
+    out.direction.y = 0;
+    out.direction.z = 0;
+  }
 }

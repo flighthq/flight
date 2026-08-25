@@ -66,6 +66,14 @@ export function createVector2FromPolar(length: number, angle: number): Vector2 {
 }
 
 /**
+ * Returns the 2D cross product (wedge product): the z-component of the 3D cross product if both
+ * vectors were extended to z = 0. Positive when `b` is counter-clockwise from `a`.
+ */
+export function crossVector2(a: Readonly<Vector2Like>, b: Readonly<Vector2Like>): number {
+  return a.x * b.y - a.y * b.x;
+}
+
+/**
  * Component-wise division of two vectors (Hadamard division). Each component of
  * `source` is divided by the corresponding component of `divisor`. Components with a
  * zero divisor produce `0` in the output.
@@ -87,6 +95,15 @@ export function equalsVector2(
 ): boolean {
   if (!a || !b) return false;
   return a === b || (a.x === b.x && a.y === b.y);
+}
+
+/**
+ * Returns the signed angle in radians from the positive x-axis to the vector, in the range
+ * (−π, π]. Returns 0 for the zero vector.
+ */
+export function getVector2Angle(source: Readonly<Vector2Like>): number {
+  if (source.x === 0 && source.y === 0) return 0;
+  return Math.atan2(source.y, source.x);
 }
 
 /**
@@ -272,6 +289,18 @@ export function reflectVector2(out: Vector2Like, incident: Readonly<Vector2Like>
   const twoDot = 2 * (ix * nx + iy * ny);
   out.x = ix - twoDot * nx;
   out.y = iy - twoDot * ny;
+}
+
+/**
+ * Rotates a 2D vector by `angle` radians (counter-clockwise). Safe when `out` aliases `source`.
+ */
+export function rotateVector2(out: Vector2Like, source: Readonly<Vector2Like>, angle: number): void {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const x = source.x,
+    y = source.y;
+  out.x = x * c - y * s;
+  out.y = x * s + y * c;
 }
 
 /**

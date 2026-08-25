@@ -7,6 +7,7 @@ import {
   createVector3,
   equalsQuaternion,
   getQuaternionAngleBetween,
+  getQuaternionAxisAngle,
   getQuaternionDot,
   getQuaternionEuler,
   inverseQuaternion,
@@ -118,6 +119,43 @@ describe('getQuaternionAngleBetween', () => {
     setQuaternionFromAxisAngle(a, createVector3(0, 1, 0), 0);
     setQuaternionFromAxisAngle(b, createVector3(0, 1, 0), Math.PI / 2);
     expect(getQuaternionAngleBetween(a, b)).toBeCloseTo(Math.PI / 2, 5);
+  });
+});
+
+describe('getQuaternionAxisAngle', () => {
+  it('returns angle 0 and axis (1,0,0) for the identity quaternion', () => {
+    const axis = createVector3();
+    const angle = getQuaternionAxisAngle(axis, createQuaternion());
+    expect(angle).toBe(0);
+    expect(axis.x).toBe(1);
+    expect(axis.y).toBe(0);
+    expect(axis.z).toBe(0);
+  });
+
+  it('round-trips with setQuaternionFromAxisAngle', () => {
+    const q = createQuaternion();
+    const inAxis = createVector3(0, 1, 0);
+    const inAngle = Math.PI / 3;
+    setQuaternionFromAxisAngle(q, inAxis, inAngle);
+    const outAxis = createVector3();
+    const outAngle = getQuaternionAxisAngle(outAxis, q);
+    expect(outAngle).toBeCloseTo(inAngle);
+    expect(outAxis.x).toBeCloseTo(0);
+    expect(outAxis.y).toBeCloseTo(1);
+    expect(outAxis.z).toBeCloseTo(0);
+  });
+
+  it('extracts a diagonal axis correctly', () => {
+    const q = createQuaternion();
+    const inAxis = createVector3(1, 1, 1);
+    normalizeVector3(inAxis, inAxis);
+    setQuaternionFromAxisAngle(q, inAxis, 1.5);
+    const outAxis = createVector3();
+    const outAngle = getQuaternionAxisAngle(outAxis, q);
+    expect(outAngle).toBeCloseTo(1.5);
+    expect(outAxis.x).toBeCloseTo(inAxis.x);
+    expect(outAxis.y).toBeCloseTo(inAxis.y);
+    expect(outAxis.z).toBeCloseTo(inAxis.z);
   });
 });
 

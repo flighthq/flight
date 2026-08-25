@@ -14,6 +14,7 @@ import {
   getClosestPointOnAabb,
   intersectAabb,
   isAabbIntersectingAabb,
+  isAabbIntersectingSphere,
   setAabb,
   setAabbFromPoints,
   setMatrix4Position,
@@ -262,6 +263,38 @@ describe('isAabbIntersectingAabb', () => {
     const full = createAabb(-10, -10, -10, 10, 10, 10);
     expect(isAabbIntersectingAabb(empty, full)).toBe(false);
     expect(isAabbIntersectingAabb(full, empty)).toBe(false);
+  });
+});
+
+describe('isAabbIntersectingSphere', () => {
+  it('returns true when sphere center is inside the box', () => {
+    const aabb = createAabb(-1, -1, -1, 1, 1, 1);
+    const sphere = createBoundingSphere(0, 0, 0, 0.5);
+    expect(isAabbIntersectingSphere(aabb, sphere)).toBe(true);
+  });
+
+  it('returns true when sphere overlaps a face', () => {
+    const aabb = createAabb(0, 0, 0, 2, 2, 2);
+    const sphere = createBoundingSphere(3, 1, 1, 1.5);
+    expect(isAabbIntersectingSphere(aabb, sphere)).toBe(true);
+  });
+
+  it('returns false when sphere is fully outside', () => {
+    const aabb = createAabb(0, 0, 0, 1, 1, 1);
+    const sphere = createBoundingSphere(5, 5, 5, 1);
+    expect(isAabbIntersectingSphere(aabb, sphere)).toBe(false);
+  });
+
+  it('returns false for an empty aabb', () => {
+    const aabb = createAabb(1, 0, 0, 0, 1, 1);
+    const sphere = createBoundingSphere(0.5, 0.5, 0.5, 10);
+    expect(isAabbIntersectingSphere(aabb, sphere)).toBe(false);
+  });
+
+  it('returns false for a negative-radius sphere', () => {
+    const aabb = createAabb(-10, -10, -10, 10, 10, 10);
+    const sphere = createBoundingSphere(0, 0, 0, -1);
+    expect(isAabbIntersectingSphere(aabb, sphere)).toBe(false);
   });
 });
 

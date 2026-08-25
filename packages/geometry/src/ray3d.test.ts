@@ -1,6 +1,7 @@
 import { createAabb } from './aabb';
 import { createBoundingSphere } from './boundingSphere';
 import { createCapsule, intersectRay3DCapsule } from './capsule';
+import { createMatrix4, translateMatrix4 } from './matrix4';
 import { createObb, intersectRay3DObb } from './obb';
 import { createPlane } from './plane';
 import {
@@ -13,6 +14,7 @@ import {
   intersectRay3DSphere,
   intersectRay3DTriangle,
   setRay3D,
+  transformRay3DByMatrix4,
 } from './ray3d';
 import { createVector3 } from './vector3';
 
@@ -484,6 +486,48 @@ describe('setRay3D', () => {
     expect(ray.direction.x).toBe(0);
     expect(ray.direction.y).toBe(1);
     expect(ray.direction.z).toBe(0);
+  });
+});
+
+describe('transformRay3DByMatrix4', () => {
+  it('leaves the ray unchanged under the identity matrix', () => {
+    const ray = createRay3D(1, 2, 3, 0, 0, 1);
+    const m = createMatrix4();
+    const out = createRay3D();
+    transformRay3DByMatrix4(out, ray, m);
+    expect(out.origin.x).toBeCloseTo(1);
+    expect(out.origin.y).toBeCloseTo(2);
+    expect(out.origin.z).toBeCloseTo(3);
+    expect(out.direction.x).toBeCloseTo(0);
+    expect(out.direction.y).toBeCloseTo(0);
+    expect(out.direction.z).toBeCloseTo(1);
+  });
+
+  it('translates the origin but not the direction', () => {
+    const ray = createRay3D(0, 0, 0, 0, 1, 0);
+    const m = createMatrix4();
+    translateMatrix4(m, m, 5, 6, 7);
+    const out = createRay3D();
+    transformRay3DByMatrix4(out, ray, m);
+    expect(out.origin.x).toBeCloseTo(5);
+    expect(out.origin.y).toBeCloseTo(6);
+    expect(out.origin.z).toBeCloseTo(7);
+    expect(out.direction.x).toBeCloseTo(0);
+    expect(out.direction.y).toBeCloseTo(1);
+    expect(out.direction.z).toBeCloseTo(0);
+  });
+
+  it('is alias-safe when out is the same ray', () => {
+    const ray = createRay3D(1, 0, 0, 0, 0, 1);
+    const m = createMatrix4();
+    translateMatrix4(m, m, 10, 0, 0);
+    transformRay3DByMatrix4(ray, ray, m);
+    expect(ray.origin.x).toBeCloseTo(11);
+    expect(ray.origin.y).toBeCloseTo(0);
+    expect(ray.origin.z).toBeCloseTo(0);
+    expect(ray.direction.x).toBeCloseTo(0);
+    expect(ray.direction.y).toBeCloseTo(0);
+    expect(ray.direction.z).toBeCloseTo(1);
   });
 });
 

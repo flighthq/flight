@@ -8,7 +8,9 @@ import {
   getFrustumCorners,
   inverseMatrix4,
   isFrustumContainingPoint,
+  createObb,
   isFrustumIntersectingAabb,
+  isFrustumIntersectingObb,
   isFrustumIntersectingSphere,
   multiplyMatrix4,
   setFrustumFromMatrix4,
@@ -141,6 +143,29 @@ describe('isFrustumIntersectingAabb', () => {
     const f = createFrustum();
     setFrustumFromMatrix4(f, createMatrix4());
     expect(isFrustumIntersectingAabb(f, empty)).toBe(false);
+  });
+});
+
+describe('isFrustumIntersectingObb', () => {
+  it('accepts an axis-aligned OBB inside the frustum', () => {
+    const f = createFrustum();
+    setFrustumFromMatrix4(f, createTestViewProjection());
+    const obb = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    expect(isFrustumIntersectingObb(f, obb)).toBe(true);
+  });
+
+  it('rejects an OBB behind the camera', () => {
+    const f = createFrustum();
+    setFrustumFromMatrix4(f, createTestViewProjection());
+    const obb = createObb(0, 0, 20, 1, 1, 1, 0, 0, 0, 1);
+    expect(isFrustumIntersectingObb(f, obb)).toBe(false);
+  });
+
+  it('rejects an OBB to the far right', () => {
+    const f = createFrustum();
+    setFrustumFromMatrix4(f, createTestViewProjection());
+    const obb = createObb(100, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    expect(isFrustumIntersectingObb(f, obb)).toBe(false);
   });
 });
 

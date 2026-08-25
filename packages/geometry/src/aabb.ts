@@ -242,6 +242,23 @@ export function isAabbIntersectingAabb(a: Readonly<AabbLike>, b: Readonly<AabbLi
 }
 
 /**
+ * Returns whether an axis-aligned bounding box overlaps a bounding sphere (Arvo's method:
+ * clamp the sphere center to the box, then test distance² ≤ radius²). An empty box (min > max
+ * on any axis) or empty sphere (negative radius) does not intersect anything.
+ */
+export function isAabbIntersectingSphere(aabb: Readonly<AabbLike>, sphere: Readonly<BoundingSphereLike>): boolean {
+  if (aabb.min.x > aabb.max.x || aabb.min.y > aabb.max.y || aabb.min.z > aabb.max.z) return false;
+  if (sphere.radius < 0) return false;
+  const cx = sphere.center.x,
+    cy = sphere.center.y,
+    cz = sphere.center.z;
+  const dx = Math.max(aabb.min.x - cx, 0, cx - aabb.max.x);
+  const dy = Math.max(aabb.min.y - cy, 0, cy - aabb.max.y);
+  const dz = Math.max(aabb.min.z - cz, 0, cz - aabb.max.z);
+  return dx * dx + dy * dy + dz * dz <= sphere.radius * sphere.radius;
+}
+
+/**
  * Sets the min and max corners of an axis-aligned bounding box from explicit components.
  */
 export function setAabb(

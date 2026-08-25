@@ -7,8 +7,10 @@ import {
   crossVector3,
   getClosestPointOnObb,
   intersectRay3DObb,
+  createBoundingSphere,
   isObbIntersectingAabb,
   isObbIntersectingObb,
+  isObbIntersectingSphere,
   matrix4TransformPoint,
   normalizeVector3,
   rotateMatrix4,
@@ -247,6 +249,32 @@ describe('isObbIntersectingObb', () => {
         expect(isObbIntersectingObb(first, concentric)).toBe(true);
       }
     }
+  });
+});
+
+describe('isObbIntersectingSphere', () => {
+  it('returns true when sphere is at the OBB center', () => {
+    const obb = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const sphere = createBoundingSphere(0, 0, 0, 0.5);
+    expect(isObbIntersectingSphere(obb, sphere)).toBe(true);
+  });
+
+  it('returns true when sphere touches an OBB face', () => {
+    const obb = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const sphere = createBoundingSphere(1.5, 0, 0, 1);
+    expect(isObbIntersectingSphere(obb, sphere)).toBe(true);
+  });
+
+  it('returns false when sphere is outside the OBB', () => {
+    const obb = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+    const sphere = createBoundingSphere(5, 5, 5, 1);
+    expect(isObbIntersectingSphere(obb, sphere)).toBe(false);
+  });
+
+  it('returns false for a negative-radius sphere', () => {
+    const obb = createObb(0, 0, 0, 10, 10, 10, 0, 0, 0, 1);
+    const sphere = createBoundingSphere(0, 0, 0, -1);
+    expect(isObbIntersectingSphere(obb, sphere)).toBe(false);
   });
 });
 

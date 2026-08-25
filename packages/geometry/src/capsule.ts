@@ -1,5 +1,12 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { BoundingSphereLike, Capsule, CapsuleLike, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
+import type {
+  AabbLike,
+  BoundingSphereLike,
+  Capsule,
+  CapsuleLike,
+  Ray3DLike,
+  Vector3Like,
+} from '@flighthq/types/contract';
 
 /**
  * Creates a capsule from a start point, end point, and radius. A negative radius conventionally
@@ -174,6 +181,31 @@ export function intersectRay3DCapsule(ray: Readonly<Ray3DLike>, capsule: Readonl
   if (tB >= 0 && (tBest < 0 || tB < tBest)) tBest = tB;
 
   return tBest;
+}
+
+/**
+ * Returns whether a capsule overlaps an axis-aligned bounding box. Computes the minimum squared
+ * distance from the capsule axis-segment to the AABB and tests against radius². An empty
+ * capsule (negative radius) or empty AABB (min > max on any axis) does not intersect.
+ */
+export function isCapsuleIntersectingAabb(capsule: Readonly<CapsuleLike>, aabb: Readonly<AabbLike>): boolean {
+  if (capsule.radius < 0) return false;
+  if (aabb.min.x > aabb.max.x || aabb.min.y > aabb.max.y || aabb.min.z > aabb.max.z) return false;
+  const dist2 = segmentToAabbDistanceSq(
+    capsule.startX,
+    capsule.startY,
+    capsule.startZ,
+    capsule.endX,
+    capsule.endY,
+    capsule.endZ,
+    aabb.min.x,
+    aabb.min.y,
+    aabb.min.z,
+    aabb.max.x,
+    aabb.max.y,
+    aabb.max.z,
+  );
+  return dist2 <= capsule.radius * capsule.radius;
 }
 
 /**
@@ -359,3 +391,86 @@ function segmentToSegmentDistanceSq(
   const qz = az + s * d1z - (cz + t * d2z);
   return qx * qx + qy * qy + qz * qz;
 }
+
+// Squared distance from a line segment AB to an axis-aligned bounding box. The segment is
+// parameterized as P(t) = A + t*(B−A), t ∈ [0,1]. The per-axis squared distance to the box is
+// piecewise-quadratic in t; we evaluate at the unclamped minimum and at all breakpoints where
+// the axis function changes form, then return the smallest.
+function segmentToAabbDistanceSq(
+  ax: number,
+  ay: number,
+  az: number,
+  bx: number,
+  by: number,
+  bz: number,
+  minX: number,
+  minY: number,
+  minZ: number,
+  maxX: number,
+  maxY: number,
+  maxZ: number,
+): number {
+  const dx = bx - ax,
+    dy = by - ay,
+    dz = bz - az;
+  const len2 = dx * dx + dy * dy + dz * dz;
+  if (len2 < 1e-20) {
+    // Degenerate segment — treat as a point.
+    const ex = Math.max(minX - ax, 0, ax - maxX);
+    const ey = Math.max(minY - ay, 0, ay - maxY);
+    const ez = Math.max(minZ - az, 0, az - maxZ);
+    return ex * ex + ey * ey + ez * ez;
+  }
+
+  // Collect candidate t values where the piecewise function may change form.
+  let bestDist2 = Infinity;
+  const candidates: number[] = _segCandidates;
+  let count = 2;
+  candidates[0] = 0;
+  candidates[1] = 1;
+  if (Math.abs(dx) > 1e-20) {
+    candidates[count++] = Math.min(Math.max((minX - ax) / dx, 0), 1);
+    candidates[count++] = Math.min(Math.max((maxX - ax) / dx, 0), 1);
+  }
+  if (Math.abs(dy) > 1e-20) {
+    candidates[count++] = Math.min(Math.max((minY - ay) / dy, 0), 1);
+    candidates[count++] = Math.min(Math.max((maxY - ay) / dy, 0), 1);
+  }
+  if (Math.abs(dz) > 1e-20) {
+    candidates[count++] = Math.min(Math.max((minZ - az) / dz, 0), 1);
+    candidates[count++] = Math.min(Math.max((maxZ - az) / dz, 0), 1);
+  }
+
+  for (let i = 0; i < count; i++) {
+    const t = candidates[i];
+    const px = ax + t * dx,
+      py = ay + t * dy,
+      pz = az + t * dz;
+    const ex = Math.max(minX - px, 0, px - maxX);
+    const ey = Math.max(minY - py, 0, py - maxY);
+    const ez = Math.max(minZ - pz, 0, pz - maxZ);
+    const d2 = ex * ex + ey * ey + ez * ez;
+    if (d2 < bestDist2) bestDist2 = d2;
+  }
+
+  // Also try the unconstrained minimum of the quadratic (closest point on the infinite line to the
+  // AABB center, clamped to [0,1]). This catches the midpoint minimum that breakpoints may miss.
+  const cx = (minX + maxX) * 0.5,
+    cy = (minY + maxY) * 0.5,
+    cz = (minZ + maxZ) * 0.5;
+  const tCenter = Math.min(Math.max(((cx - ax) * dx + (cy - ay) * dy + (cz - az) * dz) / len2, 0), 1);
+  {
+    const px = ax + tCenter * dx,
+      py = ay + tCenter * dy,
+      pz = az + tCenter * dz;
+    const ex = Math.max(minX - px, 0, px - maxX);
+    const ey = Math.max(minY - py, 0, py - maxY);
+    const ez = Math.max(minZ - pz, 0, pz - maxZ);
+    const d2 = ex * ex + ey * ey + ez * ez;
+    if (d2 < bestDist2) bestDist2 = d2;
+  }
+
+  return bestDist2;
+}
+
+const _segCandidates: number[] = [0, 0, 0, 0, 0, 0, 0, 0];
