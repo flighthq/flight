@@ -80,6 +80,7 @@ registerWgpuBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
 const effects: ReadonlyArray<Readonly<RenderEffect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
 const padding = computeRenderEffectPadding(offscreenState, effects);
+const _targetSize = { width: 0, height: 0 };
 
 // The selected subtree is a detached root of the offscreen pipeline. Its dramatic root transform is
 // cancelled by root-local capture while the changed descendant scale remains visible in pass two.
@@ -221,5 +222,3 @@ function hex(rgb: number): string {
 function isCyan(rgb: number, minimum: number): boolean {
   return channel(rgb, 16) < 100 && channel(rgb, 8) > minimum && channel(rgb, 0) > minimum;
 }
-
-const _targetSize = { width: 0, height: 0 };
