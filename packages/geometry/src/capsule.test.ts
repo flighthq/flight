@@ -1,10 +1,12 @@
 import {
+  createAabb,
   createBoundingSphere,
   createCapsule,
   createRay3D,
   createVector3,
   getClosestPointOnCapsule,
   intersectRay3DCapsule,
+  isCapsuleIntersectingAabb,
   isCapsuleIntersectingCapsule,
   isCapsuleIntersectingSphere,
   setCapsule,
@@ -189,6 +191,38 @@ describe('intersectRay3DCapsule', () => {
     // cylinder means nothing: from a point outside the capsule heading away, there is no hit.
     const c = createCapsule(0, -1, 0, 0, 1, 0, 1);
     expect(intersectRay3DCapsule(createRay3D(0, 3, 0, 1, 1, 0), c)).toBe(-1);
+  });
+});
+
+describe('isCapsuleIntersectingAabb', () => {
+  it('returns true when the capsule segment passes through the AABB', () => {
+    const capsule = createCapsule(-5, 0, 0, 5, 0, 0, 0.5);
+    const aabb = createAabb(-1, -1, -1, 1, 1, 1);
+    expect(isCapsuleIntersectingAabb(capsule, aabb)).toBe(true);
+  });
+
+  it('returns true when the capsule radius reaches the AABB', () => {
+    const capsule = createCapsule(0, 2, 0, 0, 2, 0, 1.5);
+    const aabb = createAabb(-1, -1, -1, 1, 1, 1);
+    expect(isCapsuleIntersectingAabb(capsule, aabb)).toBe(true);
+  });
+
+  it('returns false when the capsule is far from the AABB', () => {
+    const capsule = createCapsule(10, 10, 10, 10, 12, 10, 0.5);
+    const aabb = createAabb(-1, -1, -1, 1, 1, 1);
+    expect(isCapsuleIntersectingAabb(capsule, aabb)).toBe(false);
+  });
+
+  it('returns false for a negative-radius capsule', () => {
+    const capsule = createCapsule(0, 0, 0, 0, 0, 0, -1);
+    const aabb = createAabb(-10, -10, -10, 10, 10, 10);
+    expect(isCapsuleIntersectingAabb(capsule, aabb)).toBe(false);
+  });
+
+  it('returns false for an empty AABB', () => {
+    const capsule = createCapsule(0, 0, 0, 1, 0, 0, 5);
+    const aabb = createAabb(1, 0, 0, 0, 1, 1);
+    expect(isCapsuleIntersectingAabb(capsule, aabb)).toBe(false);
   });
 });
 

@@ -5,6 +5,7 @@ import type {
   Frustum,
   FrustumLike,
   Matrix4Like,
+  ObbLike,
   PlaneLike,
   Vector3Like,
 } from '@flighthq/types/contract';
@@ -103,6 +104,47 @@ export function isFrustumIntersectingAabb(frustum: Readonly<FrustumLike>, aabb: 
 }
 
 /**
+ * Returns whether an oriented bounding box intersects (or is contained by) the frustum.
+ * Uses the conservative effective-radius test: for each plane, the OBB's projection onto the
+ * plane normal gives an effective radius; the OBB is rejected only when its center lies farther
+ * than this radius on the outside of any single plane. May report false positives near frustum
+ * corners but never false negatives.
+ */
+export function isFrustumIntersectingObb(frustum: Readonly<FrustumLike>, obb: Readonly<ObbLike>): boolean {
+  const qx = obb.orientationX,
+    qy = obb.orientationY,
+    qz = obb.orientationZ,
+    qw = obb.orientationW;
+  const xx = qx * qx,
+    yy = qy * qy,
+    zz = qz * qz,
+    xy = qx * qy,
+    xz = qx * qz,
+    yz = qy * qz,
+    wx = qw * qx,
+    wy = qw * qy,
+    wz = qw * qz;
+  const ax0 = 1 - 2 * (yy + zz),
+    ay0 = 2 * (xy + wz),
+    az0 = 2 * (xz - wy);
+  const ax1 = 2 * (xy - wz),
+    ay1 = 1 - 2 * (xx + zz),
+    az1 = 2 * (yz + wx);
+  const ax2 = 2 * (xz + wy),
+    ay2 = 2 * (yz - wx),
+    az2 = 1 - 2 * (xx + yy);
+
+  return (
+    __planeIntersectsObb(frustum.left, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2) &&
+    __planeIntersectsObb(frustum.right, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2) &&
+    __planeIntersectsObb(frustum.bottom, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2) &&
+    __planeIntersectsObb(frustum.top, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2) &&
+    __planeIntersectsObb(frustum.near, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2) &&
+    __planeIntersectsObb(frustum.far, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2)
+  );
+}
+
+/**
  * Returns whether a bounding sphere intersects (or is contained by) the frustum. A sphere is
  * rejected only when its signed distance to some plane is less than -radius (entirely on the
  * outside of that plane). An empty sphere (negative radius) always returns false.
@@ -167,6 +209,27 @@ function __planeIntersectsAabb(plane: Readonly<PlaneLike>, aabb: Readonly<AabbLi
   const py = plane.b >= 0 ? aabb.max.y : aabb.min.y;
   const pz = plane.c >= 0 ? aabb.max.z : aabb.min.z;
   return plane.a * px + plane.b * py + plane.c * pz + plane.d >= 0;
+}
+
+function __planeIntersectsObb(
+  plane: Readonly<PlaneLike>,
+  obb: Readonly<ObbLike>,
+  ax0: number,
+  ay0: number,
+  az0: number,
+  ax1: number,
+  ay1: number,
+  az1: number,
+  ax2: number,
+  ay2: number,
+  az2: number,
+): boolean {
+  const dist = plane.a * obb.centerX + plane.b * obb.centerY + plane.c * obb.centerZ + plane.d;
+  const r =
+    obb.halfExtentX * Math.abs(plane.a * ax0 + plane.b * ay0 + plane.c * az0) +
+    obb.halfExtentY * Math.abs(plane.a * ax1 + plane.b * ay1 + plane.c * az1) +
+    obb.halfExtentZ * Math.abs(plane.a * ax2 + plane.b * ay2 + plane.c * az2);
+  return dist >= -r;
 }
 
 function __planeSignedDistance(plane: Readonly<PlaneLike>, point: Readonly<Vector3Like>): number {

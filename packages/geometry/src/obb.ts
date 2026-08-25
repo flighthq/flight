@@ -1,5 +1,13 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { AabbLike, Matrix4Like, Obb, ObbLike, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
+import type {
+  AabbLike,
+  BoundingSphereLike,
+  Matrix4Like,
+  Obb,
+  ObbLike,
+  Ray3DLike,
+  Vector3Like,
+} from '@flighthq/types/contract';
 
 /**
  * Creates an oriented bounding box from a center, half-extents, and an orientation quaternion
@@ -347,6 +355,54 @@ export function isObbIntersectingObb(a: Readonly<ObbLike>, b: Readonly<ObbLike>)
     b.halfExtentY,
     b.halfExtentZ,
   );
+}
+
+/**
+ * Returns whether an oriented bounding box overlaps a bounding sphere. The sphere center is
+ * projected into the OBB's local frame and clamped to its half-extents; the test is then a
+ * simple distance² ≤ radius² check. An empty sphere (negative radius) does not intersect.
+ */
+export function isObbIntersectingSphere(obb: Readonly<ObbLike>, sphere: Readonly<BoundingSphereLike>): boolean {
+  if (sphere.radius < 0) return false;
+  const qx = obb.orientationX,
+    qy = obb.orientationY,
+    qz = obb.orientationZ,
+    qw = obb.orientationW;
+  const xx = qx * qx,
+    yy = qy * qy,
+    zz = qz * qz,
+    xy = qx * qy,
+    xz = qx * qz,
+    yz = qy * qz,
+    wx = qw * qx,
+    wy = qw * qy,
+    wz = qw * qz;
+  // OBB local axes (columns of the rotation matrix).
+  const ax0 = 1 - 2 * (yy + zz),
+    ay0 = 2 * (xy + wz),
+    az0 = 2 * (xz - wy);
+  const ax1 = 2 * (xy - wz),
+    ay1 = 1 - 2 * (xx + zz),
+    az1 = 2 * (yz + wx);
+  const ax2 = 2 * (xz + wy),
+    ay2 = 2 * (yz - wx),
+    az2 = 1 - 2 * (xx + yy);
+  // Vector from OBB center to sphere center.
+  const dx = sphere.center.x - obb.centerX,
+    dy = sphere.center.y - obb.centerY,
+    dz = sphere.center.z - obb.centerZ;
+  // Project into OBB local frame and clamp to half-extents.
+  const lx = Math.max(-obb.halfExtentX, Math.min(obb.halfExtentX, ax0 * dx + ay0 * dy + az0 * dz));
+  const ly = Math.max(-obb.halfExtentY, Math.min(obb.halfExtentY, ax1 * dx + ay1 * dy + az1 * dz));
+  const lz = Math.max(-obb.halfExtentZ, Math.min(obb.halfExtentZ, ax2 * dx + ay2 * dy + az2 * dz));
+  // Transform clamped point back to world and compute distance².
+  const cx = ax0 * lx + ax1 * ly + ax2 * lz;
+  const cy = ay0 * lx + ay1 * ly + ay2 * lz;
+  const cz = az0 * lx + az1 * ly + az2 * lz;
+  const ex = dx - cx,
+    ey = dy - cy,
+    ez = dz - cz;
+  return ex * ex + ey * ey + ez * ez <= sphere.radius * sphere.radius;
 }
 
 /**

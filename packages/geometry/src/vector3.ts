@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Vector2Like, Vector3, Vector3Like, Vector4Like } from '@flighthq/types/contract';
+import type { Matrix3Like, Vector2Like, Vector3, Vector3Like, Vector4Like } from '@flighthq/types/contract';
 
 /**
  * Adds the x, y and z components of two vector objects
@@ -492,7 +492,7 @@ export function subtractVector3(out: Vector3Like, source: Readonly<Vector3Like>,
 export function transformVector3ByMatrix3(
   out: Vector3Like,
   source: Readonly<Vector3Like>,
-  matrix: Readonly<{ m: Readonly<Float32Array> }>,
+  matrix: Readonly<Matrix3Like>,
 ): void {
   const m = matrix.m;
   const x = source.x,

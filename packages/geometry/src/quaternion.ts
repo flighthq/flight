@@ -60,6 +60,27 @@ export function getQuaternionAngleBetween(a: Readonly<QuaternionLike>, b: Readon
 }
 
 /**
+ * Extracts the rotation axis and angle (radians) from a unit quaternion. Writes the unit axis
+ * into `outAxis` and returns the angle in [0, 2π). For the identity quaternion (no rotation),
+ * the axis is set to (1, 0, 0) and the angle is 0. Inverse of `setQuaternionFromAxisAngle`.
+ */
+export function getQuaternionAxisAngle(outAxis: Vector3Like, source: Readonly<QuaternionLike>): number {
+  const w = source.w;
+  const sinHalfSq = 1 - w * w;
+  if (sinHalfSq <= 0) {
+    outAxis.x = 1;
+    outAxis.y = 0;
+    outAxis.z = 0;
+    return 0;
+  }
+  const invSinHalf = 1 / Math.sqrt(sinHalfSq);
+  outAxis.x = source.x * invSinHalf;
+  outAxis.y = source.y * invSinHalf;
+  outAxis.z = source.z * invSinHalf;
+  return 2 * Math.acos(Math.min(1, Math.max(-1, w)));
+}
+
+/**
  * Returns the dot product of two quaternions: sum of component-wise products.
  * Useful for measuring the similarity of two orientations; `|dot| === 1` means identical.
  */

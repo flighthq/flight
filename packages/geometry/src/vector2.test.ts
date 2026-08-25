@@ -5,8 +5,10 @@ import {
   copyVector2,
   createVector2,
   createVector2FromPolar,
+  crossVector2,
   divideVector2,
   equalsVector2,
+  getVector2Angle,
   getVector2AngleBetween,
   getVector2Distance,
   getVector2DistanceSquared,
@@ -22,6 +24,7 @@ import {
   normalizeVector2,
   offsetVector2,
   reflectVector2,
+  rotateVector2,
   scaleVector2,
   scaleVector2ToLength,
   setVector2,
@@ -231,6 +234,24 @@ describe('createVector2FromPolar', () => {
   });
 });
 
+describe('crossVector2', () => {
+  it('returns positive when b is counter-clockwise from a', () => {
+    expect(crossVector2({ x: 1, y: 0 }, { x: 0, y: 1 })).toBe(1);
+  });
+
+  it('returns negative when b is clockwise from a', () => {
+    expect(crossVector2({ x: 0, y: 1 }, { x: 1, y: 0 })).toBe(-1);
+  });
+
+  it('returns zero for parallel vectors', () => {
+    expect(crossVector2({ x: 3, y: 0 }, { x: 7, y: 0 })).toBe(0);
+  });
+
+  it('computes the general case', () => {
+    expect(crossVector2({ x: 2, y: 3 }, { x: 5, y: 7 })).toBe(2 * 7 - 3 * 5);
+  });
+});
+
 describe('divideVector2', () => {
   it('gives 0 for a zero divisor on each component in turn', () => {
     // A zero divisor is answered per component, not for the whole vector, so each component is
@@ -330,6 +351,28 @@ describe('equalsVector2', () => {
     const notANumber = createVector2(NaN, 2);
     expect(equalsVector2(notANumber, notANumber)).toBe(true);
     expect(equalsVector2(notANumber, createVector2(NaN, 2))).toBe(false);
+  });
+});
+
+describe('getVector2Angle', () => {
+  it('returns 0 for a vector along +x', () => {
+    expect(getVector2Angle({ x: 5, y: 0 })).toBe(0);
+  });
+
+  it('returns PI/2 for a vector along +y', () => {
+    expect(getVector2Angle({ x: 0, y: 3 })).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('returns -PI/2 for a vector along -y', () => {
+    expect(getVector2Angle({ x: 0, y: -1 })).toBeCloseTo(-Math.PI / 2);
+  });
+
+  it('returns PI for a vector along -x', () => {
+    expect(getVector2Angle({ x: -2, y: 0 })).toBeCloseTo(Math.PI);
+  });
+
+  it('returns 0 for the zero vector', () => {
+    expect(getVector2Angle({ x: 0, y: 0 })).toBe(0);
   });
 });
 
@@ -815,6 +858,29 @@ describe('reflectVector2', () => {
     reflectVector2(normal, createVector2(1, -1), normal);
     expect(normal.x).toBeCloseTo(-1, 6);
     expect(normal.y).toBeCloseTo(-1, 6);
+  });
+});
+
+describe('rotateVector2', () => {
+  it('rotates +x by PI/2 to +y', () => {
+    const out = createVector2();
+    rotateVector2(out, { x: 1, y: 0 }, Math.PI / 2);
+    expect(out.x).toBeCloseTo(0);
+    expect(out.y).toBeCloseTo(1);
+  });
+
+  it('rotates by a full turn and returns to the original', () => {
+    const out = createVector2();
+    rotateVector2(out, { x: 3, y: 4 }, Math.PI * 2);
+    expect(out.x).toBeCloseTo(3);
+    expect(out.y).toBeCloseTo(4);
+  });
+
+  it('is alias-safe when out equals source', () => {
+    const v = createVector2(1, 0);
+    rotateVector2(v, v, Math.PI / 2);
+    expect(v.x).toBeCloseTo(0);
+    expect(v.y).toBeCloseTo(1);
   });
 });
 
