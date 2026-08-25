@@ -176,7 +176,7 @@ function captureSubtree(): {
 } {
   const bounds = createRectangle();
   computeNodeRootLocalBoundsRectangle(bounds, source);
-  const size = computeRenderTargetSize(bounds, padding);
+  const size = computeRenderTargetSize(_targetSize, bounds, padding);
   const descriptor = {
     clearColors: [0x00000000],
     depth: 'none' as const,
@@ -227,3 +227,5 @@ function hex(rgb: number): string {
 function isCyan(rgb: number, minimum: number): boolean {
   return channel(rgb, 16) < 100 && channel(rgb, 8) > minimum && channel(rgb, 0) > minimum;
 }
+
+const _targetSize = { width: 0, height: 0 };
