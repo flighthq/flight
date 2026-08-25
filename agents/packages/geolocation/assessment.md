@@ -14,8 +14,10 @@ See [charter](./charter.md) for blessed direction.
 
 ## Approved
 
-1. ~~**Fix `floorLevel` bug**~~ [2026-07-02 · landed]
-2. **Rename `Geo*` → `Geolocation*` prefix** [2026-07-02 · blanket "platform integration suite sweep"] — partially landed (`clearGeolocationWatch`); three functions remain
+1. **Fix `floorLevel` bug** [2026-07-02 · blanket "platform integration suite sweep"]
+2. **Rename `Geo*` → `Geolocation*` prefix** [2026-07-02 · blanket "platform integration suite sweep"]
+3. **Fix `floorLevel` bug — landed** [2026-08-25 · verified landed]
+4. **Rename `Geo*` → `Geolocation*` prefix — partially landed** [2026-08-25 · `clearGeolocationWatch` renamed; three functions remain]
 
 ## Backlog
 
