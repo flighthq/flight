@@ -7,6 +7,7 @@ import {
   createVelocityField,
   dampVelocity,
   ensureVelocitySample,
+  explainVelocity,
   getVelocity,
   hasVelocity,
   isVelocityZero,
@@ -145,6 +146,46 @@ describe('ensureVelocitySample', () => {
     const field = createVelocityField();
     const source = {};
     expect(ensureVelocitySample(field, source)).toBe(ensureVelocitySample(field, source));
+  });
+});
+
+describe('explainVelocity', () => {
+  it('reports no-sample for an unknown source', () => {
+    const field = createVelocityField();
+    expect(explainVelocity(field, {})).toMatchObject({ reason: 'no-sample' });
+  });
+
+  it('reports stale when the sample was not touched this frame', () => {
+    const field = createVelocityField();
+    const source = {};
+    contributeVelocity(field, source, 5, 5);
+    beginVelocityFrame(field);
+    expect(explainVelocity(field, source)).toMatchObject({ reason: 'stale' });
+  });
+
+  it('reports explicit-zero for a suppressed velocity', () => {
+    const field = createVelocityField();
+    const source = {};
+    suppressVelocity(field, source);
+    expect(explainVelocity(field, source)).toMatchObject({ reason: 'explicit-zero', explicit: true });
+  });
+
+  it('reports derived-zero when the transform baseline produces zero', () => {
+    const field = createVelocityField();
+    const source = {};
+    const sample = ensureVelocitySample(field, source);
+    sample.velocity.x = 0;
+    sample.velocity.y = 0;
+    sample.lastFrameId = field.frameId;
+    expect(explainVelocity(field, source)).toMatchObject({ reason: 'derived-zero', explicit: false });
+  });
+
+  it('reports ok with velocity values for a contributing source', () => {
+    const field = createVelocityField();
+    const source = {};
+    contributeVelocity(field, source, 3, -4);
+    const result = explainVelocity(field, source);
+    expect(result).toMatchObject({ reason: 'ok', x: 3, y: -4, explicit: true });
   });
 });
 

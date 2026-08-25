@@ -36,3 +36,12 @@ export interface VelocityField {
 // Implementations write into the field (via contributeVelocity / suppressVelocity) for `root`'s subtree.
 // Kept as a plain function so any system can be one without depending on the velocity package's internals.
 export type VelocityContributor = (field: VelocityField, root: object) => void;
+
+export interface VelocityExplanation {
+  reason: 'ok' | 'no-sample' | 'stale' | 'explicit-zero' | 'derived-zero';
+  x: number;
+  y: number;
+  lastFrameId: number;
+  currentFrameId: number;
+  explicit: boolean;
+}

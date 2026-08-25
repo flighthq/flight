@@ -7,6 +7,7 @@ export {
   copyVelocity,
   createVelocityField,
   dampVelocity,
+  explainVelocity,
   getVelocity,
   getVelocitySampleAt,
   hasVelocity,
