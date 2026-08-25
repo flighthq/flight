@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/device'
-updated: 2026-07-13
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -13,7 +13,6 @@ See [charter](./charter.md) for blessed direction.
 Sweep-safe changes. Builder-ready.
 
 1. **Evaluate `detectDesktopUa` refactor to use `@flighthq/useragent`** — still open (verified 2026-07-13): the private helper (`device.ts:289-291`) duplicates the desktop branch of `parseUserAgentFormFactor`, and the copies have diverged — device's regex includes `cros`, useragent's does not. Not forced DRY (the Rust port may distinguish the APIs); the builder should evaluate, reconcile the `cros` divergence either way, and report.
-2. **Remove the `// ---- ... ----` structural divider comment** at `device.ts:285-287` — banned by the source-style rules; the private-helpers position after module state already carries the meaning.
 3. **`matchMedia`-backed web fills for `colorGamut` / `isHdr`** — the web backend hardcodes sentinels for fields the platform can actually answer via `matchMedia('(color-gamut: p3)')` / `('(dynamic-range: high)')` (guarded, sentinel when `matchMedia` is absent). Within-package, no design fork — it deepens web-backend fidelity for existing fields.
 
 ## Approved

@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/geometry'
-updated: 2026-07-13
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -12,7 +12,7 @@ Sorts the gaps from `review.md` (authoritative, 92/100, 2026-07-13). The prior a
 
 Strictly sweep-safe: within `packages/geometry/`, existing `@flighthq/types` entries only, no breaking change, no open design decision. Each follows the file-per-type, free-function, out-param, alias-safe style; additions are barrel re-exports via the existing `export *`.
 
-- **Fix the `translateMatrix` / `translateMatrixByVectorXY` out-param defect.** They write only `tx`/`ty`, leaving `out`'s linear part stale when `out !== source` — a violation of the out-param contract every sibling honors (`translateMatrix4` copies first). Copy the full matrix, add the distinct-`out` and aliased test cases, and add the missing `: void` annotations on `translateMatrixByVector`/`XY`. (review.md#gaps; charter North-star contradiction.)
+- ~~**Fix the `translateMatrix` / `translateMatrixByVectorXY` out-param defect.**~~ Verified landed 2026-08-25 — both functions destructure all fields from source and write the full matrix via `setMatrix`; alias-safe. `: void` annotations present.
 - **Document `setPerspectiveMatrix4`'s parameter as tan(fovY/2) and rename the param.** `top = fov * zNear` means `fov` is the half-FOV tangent, not an angle; the compensating comment currently lives in the consumer (`camera/src/projection.ts`), the exact caller-side-warning smell the diagnostics rule bans. Renaming a parameter and writing the JSDoc is non-breaking; _changing_ the semantics to radians is the routed Open direction. (review.md#gaps.)
 - **Add the missing pair predicates on existing types:** `isAabbIntersectingSphere` (Arvo), `isObbIntersectingSphere`, `isCapsuleIntersectingAabb`, `isFrustumIntersectingObb` — all spelled per the blessed 2026-07-01 `is*Intersecting*` Decision, all over already-homed types. (review.md#gaps.)
 - **Add the missing conventional singles:** `transformRay3DByMatrix4` (transform origin as point, direction as vector — the picking-into-local-space primitive), `getQuaternionAxisAngle` (inverse of the existing `setQuaternionFromAxisAngle`), and the 2D vector kit — scalar `crossVector2`, `rotateVector2`, `getVector2Angle`. Additive, textbook semantics, no new types. (review.md#gaps.)

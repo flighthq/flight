@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/ipc'
-updated: 2026-07-07
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Fix test fixture method mismatches** — test fixtures reference methods that don't match the current `IpcBackend` interface.
+None — all prior items verified landed 2026-08-25.
 
 ## Approved
 

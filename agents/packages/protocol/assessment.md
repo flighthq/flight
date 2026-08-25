@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/protocol'
-updated: 2026-07-07
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Fix type error** — `unknown` not assignable to `string | number | boolean` in protocol parameter handling.
+None — all prior items verified landed 2026-08-25.
 
 ## Approved
 

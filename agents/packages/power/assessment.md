@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/power'
-updated: 2026-07-13
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -10,10 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-Sweep-safe changes. Builder-ready.
-
-1. **Move `_wakeLockSentinel` into the web backend closure** — the wake-lock sentinel is module-level state shared by every `createWebPowerBackend()` instance (`power.ts:369`), so two backend instances alias one lock slot and `isKeepAwakeActive()` reports across instances. Hoist it into the `createWebPowerBackend` closure alongside the battery caches; behavior under the singleton `getPowerBackend` path is unchanged.
-2. **Trim the vacuous alias-safety comment in `getStatus`** — `power.ts:136` claims "out may be the same object as an input" but `getStatus(out)` reads only closure primitives; no object input exists to alias. Reduce the comment to match reality (carried from the 2026-06-25 review, still present).
+None — all prior items verified landed 2026-08-25.
 
 ## Approved
 

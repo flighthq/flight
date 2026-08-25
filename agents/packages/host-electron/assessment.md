@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/host-electron'
-updated: 2026-07-07
+updated: 2026-08-25
 basedOn: ./review.md
 ---
 
@@ -10,7 +10,7 @@ See [charter](./charter.md) for blessed direction.
 
 ## Recommended
 
-1. **Add missing `@flighthq/storage` dependency** — `@flighthq/storage` is imported but not listed in `package.json` dependencies.
+None — all prior items verified landed 2026-08-25.
 
 ## Approved
 
