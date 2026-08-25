@@ -30,6 +30,7 @@ export function computeRenderCacheTransform(
 }
 
 export function computeRenderTargetSize(
+  out: { width: number; height: number },
   bounds: Readonly<RectangleLike>,
   padding: number | Readonly<RenderEffectPadding> = 0,
   minWidth: number = 1,
@@ -37,10 +38,9 @@ export function computeRenderTargetSize(
 ): { width: number; height: number } {
   const horizontal = typeof padding === 'number' ? padding * 2 : padding.left + padding.right;
   const vertical = typeof padding === 'number' ? padding * 2 : padding.top + padding.bottom;
-  return {
-    width: Math.max(minWidth, Math.ceil(bounds.width) + horizontal),
-    height: Math.max(minHeight, Math.ceil(bounds.height) + vertical),
-  };
+  out.width = Math.max(minWidth, Math.ceil(bounds.width) + horizontal);
+  out.height = Math.max(minHeight, Math.ceil(bounds.height) + vertical);
+  return out;
 }
 
 /**

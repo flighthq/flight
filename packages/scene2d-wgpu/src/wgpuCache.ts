@@ -237,7 +237,7 @@ export function refreshWgpuRenderCache(
   const minHeight = options?.minHeight ?? 1;
 
   computeNodeBoundsRectangle(_bounds, source, source);
-  const { width, height } = computeRenderTargetSize(_bounds, padding, minWidth, minHeight);
+  const { width, height } = computeRenderTargetSize(_targetSize, _bounds, padding, minWidth, minHeight);
 
   const existing = getWgpuRenderCacheTarget(screenState, cache);
   const resized = existing === null || existing.width !== width || existing.height !== height;
@@ -326,5 +326,6 @@ const _cacheStateScreen = new WeakMap<WgpuRenderState, WgpuRenderState>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
 const _bakeTransform = createMatrix() as Matrix;
+const _targetSize = { width: 0, height: 0 };
 const _yInvert = createMatrix() as Matrix;
 const _identity = createMatrix() as Matrix;

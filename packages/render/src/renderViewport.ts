@@ -68,7 +68,7 @@ export function isRenderProxyInViewport(
 // Nodes that pass through createRenderProxy2D carry both HasTransform2D and HasBoundsRectangle,
 // making them Spatial2DNode — the bounds runtime is guaranteed present.
 function isSpatial2DNode(source: unknown): source is Spatial2DNode {
-  return source !== null && typeof source === 'object' && 'pivotX' in (source as object);
+  return source !== null && typeof source === 'object' && 'pivotX' in source && 'skewX' in source;
 }
 
 // Module-level scratch rectangles used by isRenderableInViewport to avoid allocation on every call.

@@ -66,9 +66,7 @@ export function setProjectionMatrix4(
   far: number,
 ): void {
   if (projection.kind === 'perspective') {
-    // Geometry's setPerspectiveMatrix4 takes the tangent of the half-FOV, not the full angle.
-    const tanHalfFovY = Math.tan(projection.fovY * 0.5);
-    setPerspectiveMatrix4(out, tanHalfFovY, aspect, near, far);
+    setPerspectiveMatrix4(out, Math.tan(projection.fovY * 0.5), aspect, near, far);
     return;
   }
 

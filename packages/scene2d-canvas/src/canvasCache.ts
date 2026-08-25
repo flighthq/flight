@@ -149,7 +149,7 @@ export function refreshCanvasRenderCache(
   const minHeight = options?.minHeight ?? 1;
 
   computeNodeBoundsRectangle(_bounds, source, source);
-  const { width, height } = computeRenderTargetSize(_bounds, padding, minWidth, minHeight);
+  const { width, height } = computeRenderTargetSize(_targetSize, _bounds, padding, minWidth, minHeight);
 
   const existing = getCanvasRenderCacheTarget(screenState, cache);
   // A canvas resize clears its pixels, so a resized target must be redrawn even if the
@@ -214,3 +214,4 @@ const _renderCacheTargets = new WeakMap<CanvasRenderState, WeakMap<RenderCache, 
 const _cacheStateScreen = new WeakMap<CanvasRenderState, CanvasRenderState>();
 const _bounds = createRectangle();
 const _renderTransform = createMatrix() as Matrix;
+const _targetSize = { width: 0, height: 0 };

@@ -403,11 +403,11 @@ export function createOrthographicMatrix4(
 }
 
 /**
- * Initializes this matrix with values for a perspective projection
- **/
-export function createPerspectiveMatrix4(fov: number, aspect: number, zNear: number, zFar: number): Matrix4 {
+ * Creates a perspective projection matrix. `tanHalfFovY` is tan(fovY / 2), not the angle itself.
+ */
+export function createPerspectiveMatrix4(tanHalfFovY: number, aspect: number, zNear: number, zFar: number): Matrix4 {
   const out = createMatrix4();
-  setPerspectiveMatrix4(out, fov, aspect, zNear, zFar);
+  setPerspectiveMatrix4(out, tanHalfFovY, aspect, zNear, zFar);
   return out;
 }
 
@@ -1187,11 +1187,11 @@ export function setOrthographicMatrix4(
 }
 
 /**
- * Initializes a matrix with values for a perspective projection
- **/
+ * Writes a perspective projection into `out`. `tanHalfFovY` is tan(fovY / 2), not the angle itself.
+ */
 export function setPerspectiveMatrix4(
   out: Matrix4Like,
-  fov: number,
+  tanHalfFovY: number,
   aspect: number,
   zNear: number,
   zFar: number,
@@ -1201,7 +1201,7 @@ export function setPerspectiveMatrix4(
   }
 
   const _out = out.m;
-  const top = fov * zNear;
+  const top = tanHalfFovY * zNear;
   const bottom = -top;
   const right = top * aspect;
   const left = -right;

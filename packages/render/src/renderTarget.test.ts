@@ -31,36 +31,39 @@ describe('computeRenderCacheTransform', () => {
 });
 
 describe('computeRenderTargetSize', () => {
-  it('returns width and height from bounds', () => {
-    const result = computeRenderTargetSize({ x: 0, y: 0, width: 100.4, height: 80.6 });
-    expect(result.width).toBe(101);
-    expect(result.height).toBe(81);
+  it('writes width and height from bounds into out', () => {
+    const out = { width: 0, height: 0 };
+    const result = computeRenderTargetSize(out, { x: 0, y: 0, width: 100.4, height: 80.6 });
+    expect(result).toBe(out);
+    expect(out.width).toBe(101);
+    expect(out.height).toBe(81);
   });
 
   it('adds padding on both sides', () => {
-    const result = computeRenderTargetSize({ x: 0, y: 0, width: 100, height: 80 }, 4);
-    expect(result.width).toBe(108);
-    expect(result.height).toBe(88);
+    const out = { width: 0, height: 0 };
+    computeRenderTargetSize(out, { x: 0, y: 0, width: 100, height: 80 }, 4);
+    expect(out.width).toBe(108);
+    expect(out.height).toBe(88);
   });
 
   it('adds directional padding on its corresponding sides', () => {
-    const result = computeRenderTargetSize(
-      { x: -3, y: 4, width: 100, height: 80 },
-      { bottom: 7, left: 2, right: 5, top: 3 },
-    );
-    expect(result).toEqual({ width: 107, height: 90 });
+    const out = { width: 0, height: 0 };
+    computeRenderTargetSize(out, { x: -3, y: 4, width: 100, height: 80 }, { bottom: 7, left: 2, right: 5, top: 3 });
+    expect(out).toEqual({ width: 107, height: 90 });
   });
 
   it('respects minWidth and minHeight', () => {
-    const result = computeRenderTargetSize({ x: 0, y: 0, width: 0, height: 0 }, 0, 32, 16);
-    expect(result.width).toBe(32);
-    expect(result.height).toBe(16);
+    const out = { width: 0, height: 0 };
+    computeRenderTargetSize(out, { x: 0, y: 0, width: 0, height: 0 }, 0, 32, 16);
+    expect(out.width).toBe(32);
+    expect(out.height).toBe(16);
   });
 
   it('uses defaults of minWidth=1 minHeight=1', () => {
-    const result = computeRenderTargetSize({ x: 0, y: 0, width: 0, height: 0 });
-    expect(result.width).toBe(1);
-    expect(result.height).toBe(1);
+    const out = { width: 0, height: 0 };
+    computeRenderTargetSize(out, { x: 0, y: 0, width: 0, height: 0 });
+    expect(out.width).toBe(1);
+    expect(out.height).toBe(1);
   });
 });
 
