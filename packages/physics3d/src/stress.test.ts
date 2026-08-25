@@ -195,8 +195,11 @@ describe('physics3d stress qualification', () => {
     // platform-dependent convergence rates (~0.47 locally, ~0.43 on CI) while still catching the stale-
     // depth position correction bug that measured 0.23 of sink (pile[0].y ≈ 0.27).
     expect(pile[0].y).toBeGreaterThan(0.4);
-    // And the pile has not collapsed: twelve unit boxes stand about twelve units tall.
-    expect(pile[pile.length - 1].y).toBeGreaterThan(11);
+    // And the pile has not collapsed: twelve unit boxes stand about twelve units tall. The per-contact
+    // compression from the bottom-box bound (~0.07 on CI) compounds across all twelve contacts, so the
+    // top box can settle as low as ~10.6 on CI while measuring ~11.1 locally. The bound still catches the
+    // stale-depth bug, which compressed the pile to ~8.7.
+    expect(pile[pile.length - 1].y).toBeGreaterThan(10.2);
     expect(pile.every((body) => body.sleeping)).toBe(true);
   });
 
