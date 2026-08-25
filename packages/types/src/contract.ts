@@ -502,7 +502,6 @@ export * from './RenderProxyResolver';
 export * from './RenderQueue';
 export * from './RenderState';
 export * from './RenderProxyVisitor';
-export * from './RenderTargetSizeOptions';
 export * from './RenderStateStats';
 export * from './RenderTarget';
 export * from './RenderViewport2D';
