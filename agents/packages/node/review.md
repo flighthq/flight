@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/node'
 status: solid
-score: 89
-updated: 2026-07-13
+score: 91
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -17,6 +17,9 @@ ingested:
 > Rereview against the live worktree. Supersedes the 2026-06-24 bundle review; the 2026-07-01 direction session and the commits through `23fcf86c` (2026-07-12) are now in evidence.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **solid — 89/100.** The 2D scene-graph tier is effectively finished against its charter: every 2026-07-01 Decision has landed in source — `skewX`/`skewY` on `HasTransform2D` (Decision #5, `c5262d4c`), the world-transform-preserving `reparentNode` with inline decomposition (Decision #7, `e86c2d01`), and the three DisplayObject traits (`hasCacheAsBitmap`/`hasOpaqueBackground`/`hasScrollRect`) removed per the trait-boundary ruling (Decision #1). New since the prior review: a **content revision channel** (`localContentId` + `invalidateNodeLocalContent`/`getNodeLocalContentRevision`) and the cross-package `invalidateContent` consolidation that collapsed per-package `invalidate<Subject>` functions into one node-tier call (`23fcf86c`). It stops short of authoritative because the charter-blessed 3D bounds tier (Decision #3) is still unbuilt, the 3D path lacks a cached world-inverse, and a handful of naming/consistency nits remain — including one new export that breaks the package's own naming rule.
 

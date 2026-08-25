@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene2d-canvas'
 status: solid
-score: 88
-updated: 2026-06-24
+score: 92
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -12,6 +12,9 @@ ingested:
 # scene2d-canvas — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `solid — 88/100`. The Canvas 2D leaf renderer for the display-object subject family: a complete, well-factored set of per-kind draw functions over a shared draw-state spine, with explicit registration, an open material/shape-command registry pair, deterministic teardown, and a tidy blend-mode/scale-mode fidelity story. The incoming pass closed the last small contract gaps (naming, destroy verbs, an umbrella registration, a missing test block) and added a real `LineScaleMode 'none'` implementation. The remaining distance to authoritative is feature breadth (dashed strokes, per-axis scale modes, bitmap-fill repeat, render-target readback) plus the absence of cross-backend functional conformance scenes — all of it either cross-package or visual-session work, not within-file debt.
 

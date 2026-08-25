@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/collision'
 status: solid
-score: 70
-updated: 2026-07-13
+score: 85
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -11,6 +11,9 @@ ingested:
 # collision — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 solid — 70/100. Phase 1 of the charter's phased AAA build (discrete overlap + manifolds over the six-shape set) is complete, correct in its documented conventions, and allocation-free in the hot path; 68 tests back it. The score reflects that the domain deliberately extends two more chartered phases (swept/TOI, contact points) plus the hardening items the build session itself logged in status.md — none of which are started.
 

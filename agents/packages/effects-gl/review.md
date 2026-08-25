@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/effects-gl'
 status: solid
-score: 84
-updated: 2026-07-31
+score: 89
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -22,6 +22,9 @@ ingested:
 > - `changes.patch`), referenced as `67dc46d64:<path>`. No prior `reviews/depth/effects-gl.md` existed to supersede; the charter is a stub (only "What it is" seeded). Where the charter is silent, judged against the codebase-map AAA standard and the SDK-wide structural forks.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `solid` — 84/100. A broad, well-shaped WebGL-2 post-process backend: 44 effect runners across a clean six-band taxonomy, a proper registry (not a switch), an MSAA-aware ping-pong pipeline, a program cache, and now a per-program uniform-location cache and a production-grade mip-pyramid bloom. The package is structurally exemplary and conforms to the contract. It falls short of `authoritative` on two axes: a handful of screen-space effects (SSR, TAA, SSAO, partial SMAA) are honest stand-ins pending a G-buffer/history-target seam, and — newly introduced in this bundle — the bloom recipe **reimplements** mip-count and soft-knee math inline that `@flighthq/effects` now ships as shared helpers, so GL and the other backends will not derive identical bloom parameters.
 

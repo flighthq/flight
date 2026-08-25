@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene3d-resources'
 status: solid
-score: 76
-updated: 2026-07-22
+score: 84
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -13,6 +13,9 @@ ingested:
 # scene-resources — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **Solid — 76/100.** The package has clear CPU-document, instantiated-graph, decoded-resource, and
 renderer/GPU boundaries. It provides format-neutral URL document acquisition, a caller-composable

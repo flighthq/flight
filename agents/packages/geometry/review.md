@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/geometry'
 status: authoritative
-score: 92
-updated: 2026-07-13
+score: 94
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -18,6 +18,9 @@ ingested:
 Evidence source: live worktree (`packages/geometry/src/`). Rereview superseding the 2026-06-24 bundle review (solid, 90); 9 commits have landed since, including the OBB/Capsule build-out, the predicate renames, the look-rotation/Euler fixes, the Matrix4 radians flip, and the `setPerspectiveMatrix4` m[15] fix.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **authoritative — 92/100.** Every blocker the prior review docked points for is fixed, and the canonical roster is now genuinely complete: `getQuaternionEuler` is the true inverse of `setQuaternionFromEuler` for all six orders (per-order deterministic + seeded-fuzz + gimbal round-trip tests), `setQuaternionLookRotation` uses the standard +Z-forward/+Y-up = identity convention, the intersection predicates are unified on `is*Intersecting*` per the 2026-07-01 Decision, the closest-point suite exists, and OBB + Capsule landed with types homed in `@flighthq/types` (SAT 15-axis tests, ray intersection, closest-point, Matrix4 transform). What separates it from easing's 96 is a short tail of real defects: a `translateMatrix` out-param contract bug, a mislabeled `setPerspectiveMatrix4` parameter that forces a caller-side warning comment in `camera`, per-call allocations in the OBB hot paths, residual one-concept-two-spellings naming, and the Approved-but-unbuilt pool guards.
 

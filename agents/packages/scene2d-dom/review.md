@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene2d-dom'
 status: solid
-score: 89
-updated: 2026-06-24
+score: 92
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -12,6 +12,9 @@ ingested:
 # scene2d-dom — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `solid — 89/100`. A mature, well-factored DOM renderer that covers the full 2D display-object set (shape, bitmap, scale9, rich/label/native text, video, html-view, render cache, clip) plus the one capability that is DOM's alone — accessibility — and now exact-fidelity color-matrix filtering via injected SVG `<feColorMatrix>`. The opt-in `enable*` seam pattern is applied consistently and the package tree-shakes cleanly. The remaining distance to "authoritative" is a small set of named, mostly-deferred gaps (sprite-graph decision, raster-filter wiring, a HiDPI follow-up) plus two minor naming/convention drifts — none structural.
 

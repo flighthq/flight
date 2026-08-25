@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/texture'
 status: solid
-score: 58
-updated: 2026-06-25
+score: 80
+updated: 2026-08-25
 ingested:
   - status.md
   - reviews/depth/texture.md
@@ -18,6 +18,9 @@ ingested:
 > Harsh merge-gate survey. Judges **only the delta** — `incoming/integration-b2824e3d8/head/packages/texture/` vs the approved `origin/main` base `eb73c3d74` (`.../base/packages/texture/`), plus the `packages/texture/` hunks of `incoming/integration-b2824e3d8/changes.patch` (the texture diff lands in `committed.patch`). The base is the blessed floor and is **not** under review. Findings cite `b2824e3d8:<path>` with a quoted snippet. This survey supersedes the prior depth review (`reviews/depth/texture.md`, 62/100) as the new baseline.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **REVISE — blocked. 58/100.** The delta is a large, well-shaped symmetry build (base: 9 exports across three files → head: 27 exports) with clean naming, tree-shaking, `out`-param alias-safety, and colocated tests. But it ships **broken as integrated**: the cube-texture surface consumes `CubeFace*` constants from `@flighthq/types` that the head bundle **never defines**, so `tsc -b` (which typechecks `src/*.test.ts`) fails to compile and `setCubeTextureFace`'s own doc-comment points users at non-existent symbols. This is a single, mechanical, cross-package blocker — not a design flaw — but it gates the merge.
 

@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene2d-gl'
 status: solid
-score: 84
-updated: 2026-06-25
+score: 91
+updated: 2026-08-25
 ingested:
   - status.md
   - reviews/depth/scene2d-gl.md
@@ -15,6 +15,9 @@ ingested:
 # Review: @flighthq/scene2d-gl
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 solid — **84/100**, and this is a **clean merge**. The integration delta is small, test-only, and surgically correct: it severs the cross-package test-helper coupling that the prior review (2026-06-24) named as its single highest-value finding. The package's production surface — every 2D leaf renderer, the GPU clipping/masking/material/cache/velocity subsystems — is **byte-identical** to the approved base; not one non-test `gl*.ts` file changed. The score nudges up two points from 80 precisely because the prior blocker (the unresolvable `makeGlState` import) is now fixed, and fixed the way the charter recommended.
 

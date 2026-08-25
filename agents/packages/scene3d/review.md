@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/scene3d'
 status: solid
-score: 68
-updated: 2026-07-21
+score: 82
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -13,6 +13,9 @@ ingested:
 # scene — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **Solid — 68/100.** The prior review materially under-described the live tree. Scene now realizes the
 basic node/mesh graph, clone and lifecycle operations, world transforms and bounds, culling, animation

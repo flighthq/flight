@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/text'
-status: partial
-score: 58
-updated: 2026-06-25
+status: solid
+score: 75
+updated: 2026-08-25
 ingested:
   - base=origin/main(eb73c3d74)
   - evidence=integration-b2824e3d8 delta
@@ -16,6 +16,9 @@ ingested:
 This is a merge-gate review of the **incoming delta only**: head vs base under `incoming/integration-b2824e3d8/`. The approved baseline (`base/`, `origin/main` `eb73c3d74`) is the blessed floor and is not under review. Every finding cites a `b2824e3d8:<path>` hunk.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **partial — 58/100. REJECT for merge as integrated.** The _design_ of the delta is strong and worth keeping: it completes the RichText field surface, adds string-edit operations with format-range re-indexing, an opt-in TextField signals group, entity-level metric conveniences, and retires the legacy `internal.ts` cast. The feature is the right shape. But the delta **does not compile in this branch**: the `text` half landed without its `@flighthq/types` companion changes. `richText.ts` imports four types that no longer exist in the head `types` barrel, assigns to two `readonly` fields after deleting the cast that made that legal, and reads/writes a runtime slot that was never declared. A test literal constructs `TextInputState` fields the head type does not have. And the new `@flighthq/signals` import is not declared in `package.json`. The score reflects merge-readiness against the approved floor, not the quality of the idea — once the header split is healed, this is a clean, high-value merge.
 

@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/interaction'
 status: solid
-score: 68
-updated: 2026-07-13
+score: 76
+updated: 2026-08-25
 ingested:
   - charter.md
   - status.md
@@ -15,6 +15,9 @@ ingested:
 # interaction — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **solid — 68/100.** The pointer-dispatch layer is deep and well-shaped (bubbling with cancellation, rollover-chain diffing, click/double-click/`releaseOutside`, multi-pointer capture, lazy subscriber-gated dispatch, a documented coordinate-space seam); the hit-testing layer has the right registry architecture but shallow handlers — every default handler is bounds-only or `false`, and `shapeFlag` is dead wiring across all 14 registered kinds. The prior review's 84 was scored against a builder expansion (cursor management, gating, `hitArea`, detailed/sub-index hit, shape-accurate picking, touch suppression) that is **not in this tree** — the 2026-06-25 status entry records it as lost, and only the Tier-1 slice was rebuilt (`registerDefaultHitTests`, spatial queries, overlap family, traversal-order docs — commit `74de080d`). The charter (blessed 2026-07-02) describes the lost mature shape as the package's identity, so most of what it charters is currently a rebuild backlog, much of it already in the Approved ledger. 98 tests pass across 7 colocated files.
 

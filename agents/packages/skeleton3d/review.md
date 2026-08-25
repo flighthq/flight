@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/skeleton3d'
 status: solid
-score: 75
-updated: 2026-07-21
+score: 81
+updated: 2026-08-25
 ingested:
   - charter.md
   - source
@@ -13,6 +13,9 @@ ingested:
 # skeleton3d — Review
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 **Solid — 75/100.** Skeleton3D owns an Entity, joint hierarchy and palette computation, CPU vertex
 skinning, bind-pose capture, mesh update and skinned bounds. GL consumes an explicit palette, and MD5,

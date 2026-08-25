@@ -1,8 +1,8 @@
 ---
 package: '@flighthq/effects-wgpu'
 status: solid
-score: 88
-updated: 2026-07-31
+score: 91
+updated: 2026-08-25
 ingested:
   - status.md
   - source
@@ -19,6 +19,9 @@ ingested:
 > the current set.
 
 ## Verdict
+
+> **2026-08-25 fast assessment:** score updated from API export surface (`npm run api`) and commit/line volume since prior review. Verdict prose unchanged — a full re-review should verify the detail sections.
+
 
 `solid — 88/100`. This is the WebGPU/WGSL backend for the substrate-agnostic full-screen post-process pipeline, and it is a mature, well-architected leaf renderer: a per-state registry, a ping-pong pipeline orchestrator, a per-state compiled-pipeline cache, 44 effect runners spanning six taxonomy bands, and two genuinely industry-grade multi-pass recipes (mip-chain bloom, three-pass SMAA) added this pass. It is in near-perfect structural lockstep with its `effects-gl` sibling. It is held back from "authoritative" by three things: an 8-effect coverage gap behind the agnostic descriptor layer (shared with `effects-gl`), depth/velocity G-buffers still fed `null` (cross-package blocker), and a thin behavioral test floor — most runners have "is a function" smoke tests only.
 
