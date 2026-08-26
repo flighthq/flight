@@ -7,7 +7,8 @@ import type { ConventionalCommit } from './conventional-commits.js';
 import { parseConventionalCommit } from './conventional-commits.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const STABLE_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const RELEASE_VERSION_PATTERN = /^(\d+\.\d+\.\d+)(?:-(?:next|edge)\.\d+\.([0-9a-f]{7,40}))?$/;
 
 export interface ReleaseNoteInput {
   version: string;
@@ -82,8 +83,17 @@ function escapeMarkdown(value: string): string {
 }
 
 export function resolveReleaseInput(version: string, through = 'HEAD', description = ''): ReleaseNoteInput {
+  const versionMatch = RELEASE_VERSION_PATTERN.exec(version);
+  const stableTargetVersion = versionMatch?.[1];
+  if (stableTargetVersion === undefined) {
+    fail(`version must be numeric stable or a next/edge snapshot, got ${version}`);
+  }
   const changesThrough = git('rev-parse', `${through}^{commit}`);
-  const previousVersion = previousVersionTag(version, changesThrough);
+  const snapshotSha = versionMatch?.[2];
+  if (snapshotSha !== undefined && !changesThrough.startsWith(snapshotSha)) {
+    fail(`snapshot suffix ${snapshotSha} does not identify changes-through commit ${changesThrough}`);
+  }
+  const previousVersion = previousVersionTag(stableTargetVersion, changesThrough);
   if (previousVersion === null) fail(`no earlier numeric version tag is reachable from ${changesThrough}`);
   return {
     version,
@@ -92,6 +102,10 @@ export function resolveReleaseInput(version: string, through = 'HEAD', descripti
     description,
     commits: readCommits(`${previousVersion}..${changesThrough}`),
   };
+}
+
+export function getStableTargetVersion(version: string): string | null {
+  return RELEASE_VERSION_PATTERN.exec(version)?.[1] ?? null;
 }
 
 function readCommits(range: string): ConventionalCommit[] {
@@ -108,7 +122,7 @@ function readCommits(range: string): ConventionalCommit[] {
 function previousVersionTag(version: string, through: string): string | null {
   const candidates = git('tag', '--merged', through, '--list')
     .split('\n')
-    .filter((tag) => VERSION_PATTERN.test(tag) && compareVersions(tag, version) < 0)
+    .filter((tag) => STABLE_VERSION_PATTERN.test(tag) && compareVersions(tag, version) < 0)
     .sort(compareVersions);
   return candidates.at(-1) ?? null;
 }
@@ -148,8 +162,10 @@ function fail(message: string): never {
 
 function main(): void {
   const [version, ...args] = process.argv.slice(2);
-  if (version === undefined || !VERSION_PATTERN.test(version)) {
-    fail('Usage: release-notes.ts <version> [--description <markdown>] [--through <git-ref>] [--output <path>]');
+  if (version === undefined || getStableTargetVersion(version) === null) {
+    fail(
+      'Usage: release-notes.ts <stable-or-snapshot-version> [--description <markdown>] [--through <git-ref>] [--output <path>]',
+    );
   }
 
   const options = parseOptions(args);

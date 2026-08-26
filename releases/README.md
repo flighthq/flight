@@ -18,6 +18,12 @@ npm run release:notes -- 0.4.0 --through HEAD --description 'A focused release f
 
 Use `--output <path>` to write the note instead of printing it to standard output.
 
+## Snapshot notes
+
+Every `next` and `edge` npm publish generates a cumulative note from the last stable numeric tag through the snapshot commit before it publishes any package. The note is appended to the GitHub Actions job summary, where the generated stable-release content can be inspected throughout development without creating a GitHub Release for every snapshot.
+
+Snapshot notes are not incremental from the preceding snapshot: each describes everything a consumer of the last stable release would gain by installing that particular build. A generation failure blocks the snapshot publish, exercising the same generator and commit-range assumptions used by the eventual stable release.
+
 ## Publish
 
 1. Exercise the intended `@next` package version in clean consumer applications.
