@@ -72,7 +72,8 @@ jobs:
             os: ubuntu-latest
             command: npm run test:host-probe:capacitor:android
           - host: capacitor-ios
-            os: macos-14
+            # Capacitor 8's SwiftPM binaries require the Swift toolchain shipped with Xcode 26.
+            os: macos-26
             command: npm run test:host-probe:capacitor:ios
 
     steps:
