@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/flighthq/flight/actions/workflows/tests.yml/badge.svg?branch=develop)](https://github.com/flighthq/flight/actions/workflows/tests.yml?query=branch%3Adevelop) [![npm](https://img.shields.io/npm/v/@flighthq/sdk?logo=npm)](https://www.npmjs.com/package/@flighthq/sdk)
 
-Flight is a modular TypeScript SDK for building interactive applications — designed to be read and written by AI coding agents as well as people. Its 149 tree-shakable packages span 2D and 3D graphics, physics, animation, media, input, asset formats, application lifecycle, and desktop/mobile platform APIs.
+Flight is a modular TypeScript SDK for building interactive applications — designed to be read and written by AI coding agents as well as people. Its more than 150 tree-shakable packages span 2D and 3D graphics, physics, animation, media, input, asset formats, application lifecycle, and desktop/mobile platform APIs.
 
 The API is cellular: explicit passes over plain data, self-identifying names, clear ownership, and no work at import time. A function can be understood in isolation; an application can import one capability without inheriting an engine. Those same properties keep the codebase grepable for agents, portable to compiled targets, and small in production builds.
 
@@ -81,9 +81,14 @@ The same scene renders through DOM, WebGL2, or WebGPU by creating the matching r
 
 ### Animation
 
-The application package provides a request-animation-frame loop with typed update and render signals:
+The application package provides a request-animation-frame loop with typed update and render signals. Host implementations are explicit; in a browser, install `@flighthq/host-web` and enable its loop backend before starting the application:
+
+```sh
+npm install @flighthq/host-web
+```
 
 ```ts
+import { enableHostWebLoop } from '@flighthq/host-web';
 import {
   connectSignal,
   createApplication,
@@ -109,6 +114,7 @@ connectSignal(app.onRender, () => {
   }
 });
 
+enableHostWebLoop();
 startApplicationLoop(app);
 ```
 
@@ -175,7 +181,7 @@ Canvas and DOM are lightweight host-web paths. WebGL2 and WebGPU add GPU render 
 
 ## Platform Scope
 
-Flight currently spans 149 independently importable, publishable packages. The public API can be inspected with:
+Flight currently spans more than 150 independently importable, publishable packages. The public API can be inspected with:
 
 ```sh
 npm run api
@@ -212,7 +218,7 @@ Library code should prefer the smallest package root that provides the needed AP
 import { createTween, updateTweens } from '@flighthq/tween';
 ```
 
-Web implementations are available by default for the platform layer. Native hosts replace them through explicit backends, keeping application code stable across browser, desktop, and mobile targets.
+Platform implementations are registered explicitly. Browser applications opt into the narrow `enableHostWeb*` functions they use (or the combined `enableHostWeb()` setup); Electron, Tauri, and Capacitor hosts register their matching adapters. The application-facing API remains stable across those hosts.
 
 ## Engineering Confidence
 

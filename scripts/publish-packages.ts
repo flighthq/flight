@@ -18,15 +18,15 @@
 // whereas this one always lets the first build to reach the registry win. See
 // snapshot-version-order.ts.
 //
-// The graph is ~141 packages and every publish is network-bound, so both registry phases run
+// The graph is more than 150 packages and every publish is network-bound, so both registry phases run
 // CONCURRENTLY rather than one package at a time:
 //
 //   Existence check. Previously one `npm view` per package, serially. That cost ~0.69s each — but a
 //                    registry round trip is only ~0.13s, so ~80% of it was npm CLI cold start paid
-//                    141 times (~98s total). It is now one batched pass of plain registry GETs
+//                    for every package. It is now one batched pass of plain registry GETs
 //                    against the configured registry: ~3s for the same answer.
 //   Publish.         A bounded worker pool instead of a serial loop. Output is captured per package
-//                    and printed on completion — interleaving 141 live `npm publish` streams would
+//                    and printed on completion — interleaving every live `npm publish` stream would
 //                    be unreadable — so a failure still shows that package's full stderr.
 //
 // Concurrency is deliberately bounded (not unbounded Promise.all): the registry rate-limits publishes,
@@ -53,6 +53,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { withTemporaryPublishArtifacts } from './package-publish-artifacts.js';
 import { classifyPublishError } from './publish-error-kind.js';
 import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
 
@@ -102,6 +103,9 @@ const DEP_FIELDS = ['dependencies', 'peerDependencies', 'optionalDependencies'] 
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const packagesDir = join(root, 'packages');
+const rootReadme = readFileSync(join(root, 'README.md'), 'utf8');
+const license = readFileSync(join(root, 'LICENSE.md'), 'utf8');
+const sourceRef = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
@@ -272,9 +276,12 @@ async function publishOne({ dir, path, pkg }: PackageEntry): Promise<void> {
   try {
     for (let attempt = 1; ; attempt++) {
       try {
-        // Output is captured rather than inherited: 141 concurrent npm streams would interleave into
+        // Output is captured rather than inherited: more than 150 concurrent npm streams would interleave into
         // noise. Success prints one line; a failure prints that package's full stderr below.
-        await execFileAsync('npm', publishArgs, { cwd: dir, env: PUBLISH_ENV });
+        await withTemporaryPublishArtifacts(
+          { packageDir: dir, manifest: pkg, rootReadme, license, sourceRef },
+          async () => execFileAsync('npm', publishArgs, { cwd: dir, env: PUBLISH_ENV }),
+        );
         published.push(id);
         console.log(`[publish] ok ${id}`);
         return;
