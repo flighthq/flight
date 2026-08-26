@@ -102,6 +102,8 @@ jobs:
           }
           NODE
       - run: npm ci
+      - name: Verify curated release notes and tested candidate
+        run: npm run release:notes:check -- "${GITHUB_REF_NAME}"
       - run: npm run build
       - name: Publish packages to npm
         run: npm run release -- --no-build
@@ -136,5 +138,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" \
-            --title "${GITHUB_REF_NAME}" --generate-notes \
+            --title "${GITHUB_REF_NAME}" --notes-file "releases/${GITHUB_REF_NAME}.md" \
           || gh release upload "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" --clobber

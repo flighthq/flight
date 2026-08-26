@@ -40,6 +40,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { isBreakingCommitMessage, isFeatureCommitMessage } from './conventional-commits.js';
+
 type BumpLevel = 'breaking' | 'feature' | 'fix';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -81,22 +83,10 @@ function detectBumpLevel(range: string): BumpLevel {
     .filter(Boolean);
   let level: BumpLevel = 'fix';
   for (const message of messages) {
-    if (isBreakingCommit(message)) return 'breaking';
-    if (isFeatureCommit(message)) level = 'feature';
+    if (isBreakingCommitMessage(message)) return 'breaking';
+    if (isFeatureCommitMessage(message)) level = 'feature';
   }
   return level;
-}
-
-// A `!` before the colon in the subject (`type!:` / `type(scope)!:`) marks a breaking change, as does a
-// `BREAKING CHANGE:` / `BREAKING-CHANGE:` footer line anywhere in the body.
-function isBreakingCommit(message: string): boolean {
-  const subject = message.split('\n', 1)[0];
-  return /^[a-z]+(\([^)]*\))?!:/.test(subject) || /^BREAKING[ -]CHANGE:/m.test(message);
-}
-
-// A `feat:` / `feat(scope):` subject. A breaking `feat!:` is caught earlier by isBreakingCommit.
-function isFeatureCommit(message: string): boolean {
-  return /^feat(\([^)]*\))?:/.test(message.split('\n', 1)[0]);
 }
 
 // main -> the "edge" channel, develop -> the "next" channel; any other branch is not a publish target.

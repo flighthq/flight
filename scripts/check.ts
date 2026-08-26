@@ -73,6 +73,7 @@ add('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);
 
 if (!scoped) {
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
+  add('api:create-entity:check', 'tsx', ['scripts/create-entity.ts', '--check']);
   add('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
   add('append-only-ledgers:check', 'tsx', ['scripts/check-append-only-ledgers.ts']);
   add('facets:check', 'tsx', ['scripts/requirement-facets.ts', '--check']);

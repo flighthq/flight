@@ -11,14 +11,15 @@ Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). 
 ## Directed
 
 1. **Enforce the repository-wide `create*` Entity invariant.** Every Flight `create*` that constructs an SDK object returns an `Entity` through the entity constructor path, including value-looking objects such as `Viewport`; this preserves internal shape enforcement and the still-load-bearing OOP binding layer. Structural literals remain reserved for explicit `*Like` inputs. Add a mechanical/API test capable of catching new constructor drift.
-2. **Make the migration semantic rather than a cast exercise.** The generated API currently exposes
-   `create*` for structural products (`Scene3DDocument`, Standard PBR property blocks, projection
+2. **Make the migration semantic rather than a cast or verb-table exercise.** The generated API currently
+   exposes `create*` for structural products (`Scene3DDocument`, Standard PBR property blocks, projection
    descriptors), collections (`createScenesFrom*`), runtime records, backend descriptors, DOM elements,
-   and native GL handles. Entity-valued SDK objects keep `create*` and adopt `createEntity`; structural
-   assembly/calculation uses `build*`, native GPU allocation/compilation uses `allocate*`/`compile*`, and
-   collection-producing import operations use `parse*`/`build*`. Do not fake the invariant by casting a
-   browser-native `WebGLProgram` or an array to Entity. Audit against the generated root API, not an
-   import-grep, so re-exported constructor drift is finite and CI-enforceable.
+   and native GL handles. Review each public function in its package context: some products should become
+   Entities, while others need a more truthful operation name. `build*`, `compute*`, `parse*`, `allocate*`,
+   and `compile*` are **not** approved blanket mappings from return shape to verb. Do not fake the invariant
+   by casting a browser-native `WebGLProgram` or an array to Entity. `npm run api:create-entity` audits the
+   generated public barrels; its checked baseline prevents new drift while the existing entries receive
+   those semantic decisions.
 
 ## Recommended
 
