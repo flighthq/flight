@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseConventionalCommit } from './conventional-commits';
-import { renderGeneratedChanges, renderReleaseNote, validateReleaseNote } from './release-notes';
+import { renderGeneratedChanges, renderReleaseNote } from './release-notes';
 
 const commits = [
   parseConventionalCommit('1111111111111111111111111111111111111111', 'feat(scene3d): add fog'),
@@ -12,8 +12,8 @@ const commits = [
 const input = {
   version: '0.4.0',
   previousVersion: '0.3.0',
-  testedCandidate: '0.4.0-next.42.abcdef0',
   changesThrough: 'abcdef0123456789abcdef0123456789abcdef01',
+  description: '',
   commits,
 };
 
@@ -31,34 +31,22 @@ describe('release notes', () => {
     expect(generated).not.toContain('explain it');
   });
 
-  it('requires human curation before a draft can pass', () => {
-    expect(validateReleaseNote(renderReleaseNote(input), input, [])).toEqual([
-      'Highlights still contains its draft placeholder',
-      'Migration still contains its draft placeholder',
-    ]);
-  });
+  it('places an optional Markdown description above the generated changes', () => {
+    const note = renderReleaseNote({
+      ...input,
+      description: 'A focused release for **3D applications**.\n\nUpgrade normally.',
+    });
 
-  it('accepts a curated note followed only by a release metadata commit', () => {
-    const curated = renderReleaseNote(input)
-      .replace('- Replace this line with the release highlights.', '- Adds scene fog and API cleanup.')
-      .replace(
-        '- Replace this line with migration guidance, or state that no migration is required.',
-        '- Replace the legacy API path before upgrading.',
-      );
-
-    expect(validateReleaseNote(curated, input, ['chore(release): 0.4.0'])).toEqual([]);
-  });
-
-  it('rejects an untested functional change after the recorded candidate', () => {
-    const curated = renderReleaseNote(input)
-      .replace('- Replace this line with the release highlights.', '- Adds scene fog.')
-      .replace(
-        '- Replace this line with migration guidance, or state that no migration is required.',
-        '- No migration is required.',
-      );
-
-    expect(validateReleaseNote(curated, input, ['fix(scene3d): late fix'])).toContain(
-      'untested post-candidate commit is not release metadata: fix(scene3d): late fix',
+    expect(note).toMatch(
+      /^# Flight 0\.4\.0\n\nA focused release for \*\*3D applications\*\*\.\n\nUpgrade normally\.\n\n## Changes/,
     );
+  });
+
+  it('does not emit candidate or source metadata when no description is supplied', () => {
+    const note = renderReleaseNote(input);
+
+    expect(note).toMatch(/^# Flight 0\.4\.0\n\n## Changes/);
+    expect(note).not.toContain('Tested candidate');
+    expect(note).not.toContain('Changes through:');
   });
 });

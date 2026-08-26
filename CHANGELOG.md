@@ -1,5 +1,5 @@
 # Changelog
 
-Flight uses one release note for its locked-version package graph. Curated notes for new stable releases live in [`releases/`](releases/README.md); historical tags and their generated notes remain available on [GitHub Releases](https://github.com/flighthq/flight/releases).
+Flight uses one release note for its locked-version package graph. Stable release notes are generated from conventional commits by the publish workflow rather than committed to this repository; published notes remain available on [GitHub Releases](https://github.com/flighthq/flight/releases).
 
-Release notes call out migration requirements and record the exact `@flighthq/sdk@next` candidate that was exercised before the stable tag was cut.
+The generator accepts an optional Markdown description for context that does not fit naturally in commit subjects. See the [release-note procedure](releases/README.md).
