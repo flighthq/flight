@@ -1,0 +1,118 @@
+name: Conformance
+
+# Corpus outcomes are measurements, not verdicts: the conformance CLIs already return success after
+# recording rejected, unsupported, degraded, or failed fixture outcomes. Acquisition integrity, corpus
+# completeness, harness validity, and the unit contracts remain hard failures. A seeded ratchet becomes
+# a hard failure automatically when its baseline is committed.
+on:
+  schedule:
+    # Run after both the 04:00 UTC quality nightly and the 05:17 UTC host matrix.
+    - cron: '43 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conformance-${{ github.event_name == 'schedule' && 'develop' || github.ref }}
+  cancel-in-progress: false
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+jobs:
+  corpus:
+    name: Fixture corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Scheduled workflows otherwise test the default branch. Nightly quality in this repository
+          # measures develop; manual dispatch preserves the branch selected by its caller.
+          ref: ${{ github.event_name == 'schedule' && 'develop' || github.ref }}
+
+      - id: source
+        name: Resolve source revision
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - run: npm ci
+
+      # These tests verify the score, acquisition, classifier, and ratchet machinery itself. Unlike
+      # corpus outcomes, a failure here is a code defect and therefore fails the workflow.
+      - name: Run conformance contracts
+        run: npm run test conformance
+
+      - id: fixture-cache
+        name: Restore verified fixture cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/fixtures
+          key: conformance-fixtures-${{ runner.os }}-${{ hashFiles('scripts/fixtures.ts', 'scripts/fixtures-core.ts') }}
+          restore-keys: |
+            conformance-fixtures-${{ runner.os }}-
+
+      # The fetcher always rechecks the pinned release manifest, both published checksum copies, every
+      # archive hash, and every extracted manifest path. A restored cache saves bytes without weakening
+      # acquisition verification.
+      - name: Acquire and verify the complete fixture release
+        run: npm run fixtures -- --all
+
+      # Save immediately after verified acquisition so a later harness error does not force the next
+      # nightly run to download the complete corpus again.
+      - name: Save verified fixture cache
+        if: steps.fixture-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/fixtures
+          key: ${{ steps.fixture-cache.outputs.cache-primary-key }}
+
+      # SWF import results are content-addressed by fixture case and importer source. Restore the most
+      # recent cache, then save a revision-specific successor after this run.
+      - name: Restore import result cache
+        uses: actions/cache@v4
+        with:
+          path: .artifacts/import-conformance/cache
+          key: conformance-results-${{ runner.os }}-${{ steps.source.outputs.sha }}
+          restore-keys: |
+            conformance-results-${{ runner.os }}-
+
+      # Per-fixture and per-feature failures are advisory score data by design. The command exits
+      # nonzero only for acquisition/configuration/population failures that invalidate the measurement.
+      - name: Measure fixture import coverage
+        run: npm run conformance:fixtures -- --output .artifacts/conformance/fixture-imports.json
+
+      # This specialized SWF score has the same boundary: observed capability and oracle outcomes are
+      # recorded, while a missing pack, incomplete shard, or invalid instrumentation is a hard failure.
+      - name: Measure SWF import conformance
+        run: |
+          npm run conformance -- \
+            --pack swf-ruffle-fixtures \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+      # No baseline is committed today. Once one is deliberately seeded, this step appears and enforces
+      # actual score/oracle regressions without changing the workflow.
+      - name: Enforce the seeded SWF conformance ratchet
+        if: hashFiles('conformance/core/import-conformance-baseline.json') != ''
+        run: npm run check:import-conformance
+
+      - name: Report advisory ratchet state
+        if: hashFiles('conformance/core/import-conformance-baseline.json') == ''
+        run: echo 'No SWF conformance baseline is committed; scores are advisory.'
+
+      - name: Upload conformance reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-${{ steps.source.outputs.sha }}
+          path: |
+            .artifacts/conformance/fixture-imports.json
+            .artifacts/import-conformance/score.json
+          if-no-files-found: warn
+          retention-days: 14

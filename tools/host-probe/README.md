@@ -58,6 +58,17 @@ npm exec --workspace=@flighthq/tool-host-probe -- appium driver install xcuitest
 
 Android also needs an SDK and a running emulator (or connected device). iOS needs macOS, Xcode, and a booted simulator. Override Appium selection with `HOST_PROBE_CAPACITOR_DEVICE` and `HOST_PROBE_CAPACITOR_PLATFORM_VERSION`; use `HOST_PROBE_CAPACITOR_APP` to test a prebuilt app.
 
+## Automated host matrix
+
+`.github/workflows/host-matrix.yml` is dedicated exclusively to this tool. A fast report-contract job gates five independently reported runtime jobs: web, Electron, Tauri, Capacitor Android, and Capacitor iOS. The matrix runs:
+
+- on pull requests that change the probe, a host adapter, host-facing types, dependency manifests, or the workflow itself;
+- on equivalent pushes to `main` or `develop`;
+- every day at 05:17 UTC, after the repository's general nightly workflow; and
+- on manual dispatch.
+
+Web, Electron, Tauri, and Android use Linux runners; iOS uses a macOS runner. The workflow installs Rust and Linux WebKit for Tauri, provisions the Appium drivers, boots an Android emulator through the emulator action, and selects and boots an available iPhone simulator. It intentionally stays separate from the general CI and nightly workflows so a host failure is a distinct check rather than an incidental failure inside a broad test job.
+
 ## Applying the pattern to a project
 
 A host runner owns the native shell, installs the corresponding `@flighthq/host-*` backend before app startup, and then loads the project's normal web entry. The renderer stays the project; native wiring does not belong in each example or scene.

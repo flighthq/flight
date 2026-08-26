@@ -1,0 +1,172 @@
+name: Host Matrix
+
+# This workflow owns executable host integration and nothing else. Unit, build, and rendering coverage
+# remain in CI; keeping the native matrix separate makes its platform cost and failures visible without
+# hiding them inside the general-purpose test jobs.
+on:
+  pull_request:
+    paths:
+      - '.github/actions/setup-playwright/**'
+      - '.github/workflows/host-matrix.yml'
+      - 'package-lock.json'
+      - 'package.json'
+      - 'packages/host-*/**'
+      - 'packages/types/**'
+      - 'tools/host-probe/**'
+  push:
+    branches: [main, develop]
+    paths:
+      - '.github/actions/setup-playwright/**'
+      - '.github/workflows/host-matrix.yml'
+      - 'package-lock.json'
+      - 'package.json'
+      - 'packages/host-*/**'
+      - 'packages/types/**'
+      - 'tools/host-probe/**'
+  schedule:
+    # Off the top of the hour, and after the repository's 04:00 UTC nightly quality workflow.
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: host-matrix-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  contract:
+    name: Host contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - run: npm run test:host-probe
+
+  runtime:
+    name: Host · ${{ matrix.host }}
+    needs: contract
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host: web
+            os: ubuntu-latest
+            command: npm run test:host-probe:web
+          - host: electron
+            os: ubuntu-latest
+            command: npm run test:host-probe:electron
+          - host: tauri
+            os: ubuntu-latest
+            command: xvfb-run -a npm run test:host-probe:tauri
+          - host: capacitor-android
+            os: ubuntu-latest
+            command: npm run test:host-probe:capacitor:android
+          - host: capacitor-ios
+            os: macos-14
+            command: npm run test:host-probe:capacitor:ios
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Java for Android
+        if: matrix.host == 'capacitor-android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Rust for Tauri
+        if: matrix.host == 'tauri'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Tauri system dependencies
+        if: matrix.host == 'tauri'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential \
+            file \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libwebkit2gtk-4.1-dev \
+            libxdo-dev \
+            patchelf \
+            xvfb
+
+      - name: Install Electron display dependency
+        if: matrix.host == 'electron'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y xvfb
+
+      # Only one matrix cell launches Electron. Avoid downloading its platform binary into the other
+      # four fresh runners, while still installing the package and its declarations everywhere.
+      - name: Install dependencies
+        if: matrix.host != 'electron'
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Install dependencies with Electron
+        if: matrix.host == 'electron'
+        run: npm ci
+
+      - name: Install Chromium for the web probe
+        if: matrix.host == 'web'
+        uses: ./.github/actions/setup-playwright
+
+      - name: Install the Android Appium driver
+        if: matrix.host == 'capacitor-android'
+        run: npm exec --workspace=@flighthq/tool-host-probe -- appium driver install uiautomator2
+
+      - name: Install the iOS Appium driver
+        if: matrix.host == 'capacitor-ios'
+        run: npm exec --workspace=@flighthq/tool-host-probe -- appium driver install xcuitest
+
+      - name: Select and boot an iOS simulator
+        if: matrix.host == 'capacitor-ios'
+        shell: bash
+        run: |
+          selection=$(xcrun simctl list devices available -j | node -e "
+            const fs = require('node:fs');
+            const devices = Object.values(JSON.parse(fs.readFileSync(0, 'utf8')).devices).flat();
+            const device = devices.find(({ isAvailable, name }) => isAvailable && name.startsWith('iPhone'));
+            if (device === undefined) throw new Error('No available iPhone simulator');
+            process.stdout.write(device.udid + '\\t' + device.name);
+          ")
+          simulator_udid="${selection%%$'\t'*}"
+          simulator_name="${selection#*$'\t'}"
+          xcrun simctl boot "$simulator_udid" || true
+          xcrun simctl bootstatus "$simulator_udid" -b
+          echo "HOST_PROBE_CAPACITOR_DEVICE=$simulator_name" >> "$GITHUB_ENV"
+
+      - name: Run the host probe
+        if: matrix.host != 'capacitor-android'
+        run: ${{ matrix.command }}
+
+      # The emulator action owns acceleration, startup, and teardown; the command itself builds the APK
+      # and starts Appium before entering the generated Capacitor WebView.
+      - name: Run the Android host probe
+        if: matrix.host == 'capacitor-android'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_7
+          script: ${{ matrix.command }}
