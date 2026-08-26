@@ -38,7 +38,7 @@ function fakeTauri(): TauriApi {
       sendNotification: () => {},
     },
     opener: {},
-    os: { arch: () => 'x86_64', locale: () => 'en-US', platform: () => 'linux', version: () => '' },
+    os: { arch: () => 'x86_64', locale: async () => 'en-US', platform: () => 'linux', version: () => '' },
     process: {},
     tray: {},
     window: { getCurrentWindow: () => ({}), LogicalPosition: class {}, LogicalSize: class {} },

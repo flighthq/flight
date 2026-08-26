@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import { join } from 'node:path';
 
 import type { ElectronApi } from '@flighthq/host-electron';
@@ -109,7 +110,13 @@ function runOsIntegrationDemo(): void {
 void app.whenReady().then(() => {
   // Swap the web defaults for Electron implementations across every seam. Pass the real electron
   // module; it satisfies ElectronApi structurally.
-  registerElectronBackends(electron as unknown as ElectronApi);
+  const electronApi: ElectronApi = {
+    ...electron,
+    fs,
+    // Electron's NativeImage parameter is nominally richer than Flight's dependency-free handle.
+    Tray: electron.Tray as ElectronApi['Tray'],
+  };
+  registerElectronBackends(electronApi);
   installIpcBridge();
 
   mainWindow = createApplicationWindow();

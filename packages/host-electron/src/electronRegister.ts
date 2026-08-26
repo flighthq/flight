@@ -39,7 +39,8 @@ import { createElectronWindowBackend } from './electronWindow';
 //
 //   import * as electron from 'electron';
 //   import * as fs from 'node:fs';
-//   registerElectronBackends({ ...electron, fs });
+//   const electronApi: ElectronApi = { ...electron, fs, Tray: electron.Tray as ElectronApi['Tray'] };
+//   registerElectronBackends(electronApi);
 //
 // After this, the platform/app/window seams resolve to their Electron implementations instead of the
 // web defaults. Each set*Backend(null) (per package) reverts to the web default; there is no bulk

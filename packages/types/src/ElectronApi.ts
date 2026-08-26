@@ -1,13 +1,21 @@
-// The precise slice of Electron's main-process API that Flight's host backends use. The real
-// `electron` module satisfies this structurally, so a consumer passes it directly:
+// The precise slice of Electron's main-process API that Flight's host backends use. A consumer passes
+// the real `electron` module plus the `node:fs` slice used by storage:
 //
 //   import * as electron from 'electron';
-//   registerElectronBackends(electron);
+//   import * as fs from 'node:fs';
+//   const electronApi: ElectronApi = {
+//     ...electron,
+//     fs,
+//     Tray: electron.Tray as ElectronApi['Tray'],
+//   };
+//   registerElectronBackends(electronApi);
 //
 // Typing it here (rather than importing 'electron') keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Electron surface the seams require, which is the
-// real coupling between Flight and a host. Members are intentionally minimal; widen only when a
-// backend needs more.
+// real coupling between Flight and a host. Electron's Tray constructor accepts its full NativeImage
+// class, while this facade exposes only the handle members Flight uses, so that one nominal boundary
+// needs the narrow assertion shown above. Members are intentionally minimal; widen only when a backend
+// needs more.
 
 export interface ElectronApi {
   app: ElectronApp;
@@ -95,8 +103,8 @@ export interface ElectronDock {
 export interface ElectronClipboard {
   readText(): string;
   writeText(text: string): void;
-  readHtml(): string;
-  writeHtml(markup: string): void;
+  readHTML(): string;
+  writeHTML(markup: string): void;
   readRTF(): string;
   writeRTF(text: string): void;
   readBookmark(): { title: string; url: string };
@@ -219,12 +227,12 @@ export interface ElectronPowerSaveBlocker {
 }
 
 export interface ElectronNativeImageModule {
-  createFromDataUrl(dataUrl: string): ElectronNativeImage;
+  createFromDataURL(dataUrl: string): ElectronNativeImage;
   createFromPath(path: string): ElectronNativeImage;
 }
 
 export interface ElectronNativeImage {
-  toDataUrl(): string;
+  toDataURL(): string;
   isEmpty(): boolean;
 }
 
@@ -236,7 +244,7 @@ export interface ElectronIpcMain {
 }
 
 export interface ElectronAutoUpdater {
-  setFeedUrl(options: { url: string }): void;
+  setFeedURL(options: { url: string }): void;
   checkForUpdates(): void;
   quitAndInstall(): void;
   on(event: string, listener: (...args: unknown[]) => void): void;
@@ -331,14 +339,60 @@ export interface ElectronMenu {
 export interface ElectronMenuItemOptions {
   id?: string;
   label?: string;
-  type?: string;
-  role?: string;
+  type?: 'checkbox' | 'normal' | 'radio' | 'separator' | 'submenu';
+  role?: ElectronMenuItemRole;
   accelerator?: string;
   enabled?: boolean;
   checked?: boolean;
   click?: () => void;
   submenu?: ElectronMenuItemOptions[];
 }
+
+export type ElectronMenuItemRole =
+  | 'about'
+  | 'appMenu'
+  | 'clearRecentDocuments'
+  | 'close'
+  | 'copy'
+  | 'cut'
+  | 'delete'
+  | 'editMenu'
+  | 'fileMenu'
+  | 'forceReload'
+  | 'front'
+  | 'help'
+  | 'hide'
+  | 'hideOthers'
+  | 'mergeAllWindows'
+  | 'minimize'
+  | 'moveTabToNewWindow'
+  | 'paste'
+  | 'pasteAndMatchStyle'
+  | 'quit'
+  | 'recentDocuments'
+  | 'redo'
+  | 'reload'
+  | 'resetZoom'
+  | 'selectAll'
+  | 'selectNextTab'
+  | 'selectPreviousTab'
+  | 'services'
+  | 'shareMenu'
+  | 'showAllTabs'
+  | 'startSpeaking'
+  | 'stopSpeaking'
+  | 'toggleDevTools'
+  | 'toggleSpellChecker'
+  | 'toggleTabBar'
+  | 'togglefullscreen'
+  | 'undo'
+  | 'unhide'
+  | 'viewMenu'
+  | 'window'
+  | 'windowMenu'
+  | 'zoom'
+  | 'zoomIn'
+  | 'zoomOut';
 
 export interface ElectronTrayConstructor {
   new (image: string | ElectronNativeImage): ElectronTray;
@@ -380,7 +434,7 @@ export interface ElectronNotificationOptions {
   body?: string;
   icon?: string;
   silent?: boolean;
-  actions?: { type: string; text: string }[];
+  actions?: { text: string; type: 'button' }[];
 }
 
 export interface ElectronNotification {

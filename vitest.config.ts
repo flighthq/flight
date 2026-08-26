@@ -94,7 +94,7 @@ export default mergeConfig(
           test: {
             name: 'shared',
             isolate: false,
-            include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts'],
+            include: ['packages/**/src/**/*.test.ts', 'scripts/**/*.test.ts', 'tools/host-probe/src/**/*.test.ts'],
             exclude: [
               ...COMMON_EXCLUDE,
               ...TOOL_CAPTURE_TEST_FILES,

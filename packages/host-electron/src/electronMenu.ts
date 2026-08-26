@@ -1,4 +1,6 @@
-import type { MenuBackend, MenuItemTemplate, ElectronApi, ElectronMenuItemOptions } from '@flighthq/types/contract';
+import type { ElectronApi, MenuBackend } from '@flighthq/types/contract';
+
+import { toElectronTemplate } from './electronMenuTemplate';
 
 // Maps Flight's MenuBackend onto Electron's Menu module. Flight menu items are plain templates with a
 // stable `id`; Electron delivers selection through per-item `click` callbacks, so the seam funnels
@@ -35,29 +37,4 @@ export function createElectronMenuBackend(electron: ElectronApi): MenuBackend {
       };
     },
   };
-}
-
-// Recursively maps Flight menu templates to Electron menu options. A selectable leaf with an id gets a
-// `click` that reports its id through onSelect; submenus recurse with the same onSelect.
-function toElectronTemplate(
-  items: readonly MenuItemTemplate[],
-  onSelect?: (id: string) => void,
-): ElectronMenuItemOptions[] {
-  return items.map((item) => {
-    const options: ElectronMenuItemOptions = {
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      role: item.role,
-      accelerator: item.accelerator,
-      enabled: item.enabled,
-      checked: item.checked,
-    };
-    if (item.submenu) {
-      options.submenu = toElectronTemplate(item.submenu, onSelect);
-    } else if (onSelect && item.id !== undefined) {
-      options.click = () => onSelect(item.id!);
-    }
-    return options;
-  });
 }

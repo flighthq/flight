@@ -1,11 +1,6 @@
-import type {
-  AppBackend,
-  AppLoginItem,
-  AppPathKind,
-  MenuItemTemplate,
-  ElectronApi,
-  ElectronMenuItemOptions,
-} from '@flighthq/types/contract';
+import type { AppBackend, AppLoginItem, AppPathKind, ElectronApi } from '@flighthq/types/contract';
+
+import { toElectronTemplate } from './electronMenuTemplate';
 
 // Maps Flight's AppBackend onto Electron's `app` module (plus `app.dock` on macOs). Dock-only
 // operations no-op or return -1 where there is no dock. Subscribe methods wire an electron event
@@ -109,7 +104,7 @@ export function createElectronAppBackend(electron: ElectronApi): AppBackend {
     },
     setDockMenu(items) {
       if (!app.dock) return;
-      app.dock.setMenu(electron.Menu.buildFromTemplate(items.map(toMenuItemOptions)));
+      app.dock.setMenu(electron.Menu.buildFromTemplate(toElectronTemplate(items)));
     },
     setLoginItem(settings) {
       app.setLoginItemSettings({
@@ -173,18 +168,4 @@ function toElectronPathName(kind: AppPathKind): string {
   if (kind === 'logs') return 'logs';
   if (kind === 'crashDumps') return 'crashDumps';
   return 'userData';
-}
-
-function toMenuItemOptions(item: Readonly<MenuItemTemplate>): ElectronMenuItemOptions {
-  const out: ElectronMenuItemOptions = {
-    id: item.id,
-    label: item.label,
-    type: item.type,
-    role: item.role,
-    accelerator: item.accelerator,
-    enabled: item.enabled,
-    checked: item.checked,
-  };
-  if (item.submenu) out.submenu = item.submenu.map(toMenuItemOptions);
-  return out;
 }

@@ -11,7 +11,7 @@ export function createElectronUpdaterBackend(electron: ElectronApi): UpdaterBack
   let config: UpdaterConfig = { allowPrerelease: false, autoDownload: true, autoInstallOnAppQuit: true };
   return {
     setFeedUrl(url) {
-      autoUpdater.setFeedUrl({ url });
+      autoUpdater.setFeedURL({ url });
     },
     checkForUpdates() {
       autoUpdater.checkForUpdates();

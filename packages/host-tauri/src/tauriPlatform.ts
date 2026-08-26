@@ -1,18 +1,25 @@
 import type { PlatformBackend, PlatformName, TauriApi } from '@flighthq/types/contract';
 
-// Maps Flight's PlatformBackend onto Tauri's `@tauri-apps/plugin-os`. In Tauri v2 the os plugin's
-// accessors are synchronous (resolved from values injected at startup), so the sync getInfo maps
-// cleanly. Writes into caller-owned `out` so callers control allocation; unset fields keep the
-// pre-populated web defaults the platform package supplies.
+// Maps Flight's PlatformBackend onto Tauri's `@tauri-apps/plugin-os`. Locale is the plugin's one async
+// identity accessor, so it is prefetched once and cached for the synchronous getInfo seam. Writes into
+// caller-owned `out` so callers control allocation.
 export function createTauriPlatformBackend(tauri: TauriApi): PlatformBackend {
   const os = tauri.os;
+  let cachedLocale = '';
+  os.locale()
+    .then((locale) => {
+      cachedLocale = locale ?? '';
+    })
+    .catch(() => {
+      /* leave '' */
+    });
   return {
     getInfo(out) {
       out.name = toPlatformName(os.platform());
       out.kind = 'desktop';
       out.version = os.version();
       out.arch = os.arch();
-      out.locale = os.locale() ?? '';
+      out.locale = cachedLocale;
       out.isTouch = false;
       out.runtime = 'tauri';
       return out;

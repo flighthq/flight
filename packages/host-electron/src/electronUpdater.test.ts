@@ -11,7 +11,7 @@ function fakeElectron(): {
   const calls = { feedUrl: undefined as string | undefined, checks: 0, quit: 0 };
   const electron = {
     autoUpdater: {
-      setFeedUrl: (options: { url: string }) => {
+      setFeedURL: (options: { url: string }) => {
         calls.feedUrl = options.url;
       },
       checkForUpdates: () => {

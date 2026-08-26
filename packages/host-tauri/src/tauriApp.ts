@@ -17,10 +17,18 @@ export function createTauriAppBackend(tauri: TauriApi): AppBackend {
   // Sync getters over async Tauri: prefetch once, serve the cached value.
   let cachedName = '';
   let cachedVersion = '';
+  let cachedLocale = '';
   app
     .getName()
     .then((name) => {
       cachedName = name;
+    })
+    .catch(() => {
+      /* leave '' */
+    });
+  os.locale()
+    .then((locale) => {
+      cachedLocale = locale ?? '';
     })
     .catch(() => {
       /* leave '' */
@@ -66,7 +74,7 @@ export function createTauriAppBackend(tauri: TauriApi): AppBackend {
       return '';
     },
     getLocale() {
-      return os.locale() ?? '';
+      return cachedLocale;
     },
     getLoginItem() {
       const out: AppLoginItem = { openAtLogin: false, openAsHidden: false, path: '', args: [] };
@@ -76,11 +84,10 @@ export function createTauriAppBackend(tauri: TauriApi): AppBackend {
       return cachedName;
     },
     getPreferredSystemLanguages() {
-      const locale = os.locale();
-      return locale ? [locale] : [];
+      return cachedLocale ? [cachedLocale] : [];
     },
     getSystemLocale() {
-      return os.locale() ?? '';
+      return cachedLocale;
     },
     getVersion() {
       return cachedVersion;

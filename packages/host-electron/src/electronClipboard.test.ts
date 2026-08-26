@@ -5,7 +5,7 @@ import { createElectronClipboardBackend } from './electronClipboard';
 function fakeElectron(): ElectronApi {
   const store = { text: '', html: '', rtf: '', imageDataUrl: '', bookmarkTitle: '', bookmarkUrl: '' };
   const image = (dataUrl: string): ElectronNativeImage => ({
-    toDataUrl: () => dataUrl,
+    toDataURL: () => dataUrl,
     isEmpty: () => dataUrl === '',
   });
   return {
@@ -14,8 +14,8 @@ function fakeElectron(): ElectronApi {
       writeText: (t: string) => {
         store.text = t;
       },
-      readHtml: () => store.html,
-      writeHtml: (h: string) => {
+      readHTML: () => store.html,
+      writeHTML: (h: string) => {
         store.html = h;
       },
       readRTF: () => store.rtf,
@@ -29,7 +29,7 @@ function fakeElectron(): ElectronApi {
       },
       readImage: () => image(store.imageDataUrl),
       writeImage: (img: ElectronNativeImage) => {
-        store.imageDataUrl = img.toDataUrl();
+        store.imageDataUrl = img.toDataURL();
       },
       clear: () => {
         store.text = '';
@@ -41,7 +41,7 @@ function fakeElectron(): ElectronApi {
       },
     },
     nativeImage: {
-      createFromDataUrl: (dataUrl: string) => image(dataUrl),
+      createFromDataURL: (dataUrl: string) => image(dataUrl),
       createFromPath: () => image(''),
     },
   } as unknown as ElectronApi;

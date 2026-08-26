@@ -153,9 +153,15 @@ tools/site/
 # tests/<subject>/baselines/<name>.json — small tracked JSON keyed by column id, not PNGs.
 .artifacts/
 
-# Generic build-output dir guard (not Rust-specific — the repo is TS-only). Kept so a stray `target/`
-# from any tool never gets tracked or swept into a working-tree sync. Do not remove as "dead Rust".
+# Generic build-output dir guard. Kept so a stray `target/` from any tool never gets tracked or
+# swept into a working-tree sync.
 /target/
+
+# Native projects generated on demand by the private host-probe tool. Capacitor regenerates these
+# from capacitor.config.ts so platform templates and build output never become repository source.
+/tools/host-probe/android/
+/tools/host-probe/ios/
+/tools/host-probe/src-tauri/target/
 
 # Guard against rogue compilation files
 *.map

@@ -15,7 +15,7 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
   return {
     async readTextFile(path) {
       try {
-        return (await filesystem.readFile({ path, encoding: 'utf8' })).data;
+        return readResultAsText((await filesystem.readFile({ path, encoding: 'utf8' })).data);
       } catch {
         return null;
       }
@@ -30,7 +30,7 @@ export function createCapacitorFileSystemBackend(capacitor: CapacitorApi): FileS
     },
     async readBinaryFile(path) {
       try {
-        return base64ToBytes((await filesystem.readFile({ path })).data);
+        return readResultAsBytes((await filesystem.readFile({ path })).data);
       } catch {
         return null;
       }
@@ -192,6 +192,14 @@ function base64ToBytes(base64: string): Uint8Array {
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
+}
+
+async function readResultAsText(data: Blob | string): Promise<string> {
+  return typeof data === 'string' ? data : data.text();
+}
+
+async function readResultAsBytes(data: Blob | string): Promise<Uint8Array> {
+  return typeof data === 'string' ? base64ToBytes(data) : new Uint8Array(await data.arrayBuffer());
 }
 
 function bytesToBase64(bytes: Readonly<Uint8Array>): string {
