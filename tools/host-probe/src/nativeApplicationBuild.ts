@@ -7,7 +7,8 @@ export function createCapacitorNativeBuildInvocation(
 ) {
   if (target === 'android') {
     return {
-      arguments: ['assembleDebug'],
+      // The CI emulator starts after this build. Do not leave a 1.5 GiB Gradle daemon competing with it.
+      arguments: ['assembleDebug', '--no-daemon'],
       cwd: resolve(toolRoot, 'android'),
       executable: operatingSystem === 'win32' ? 'gradlew.bat' : './gradlew',
     };

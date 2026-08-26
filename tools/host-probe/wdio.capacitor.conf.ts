@@ -11,6 +11,7 @@ const application =
     ? resolve(import.meta.dirname, 'android/app/build/outputs/apk/debug/app-debug.apk')
     : resolve(import.meta.dirname, 'ios/build/Build/Products/Debug-iphonesimulator/App.app'));
 const platformVersion = process.env.HOST_PROBE_CAPACITOR_PLATFORM_VERSION;
+const deviceUdid = process.env.HOST_PROBE_CAPACITOR_DEVICE_UDID;
 
 const capability =
   platform === 'android'
@@ -20,21 +21,28 @@ const capability =
         // defaults to install the UiAutomator2 server or complete package-manager commands.
         'appium:adbExecTimeout': 120_000,
         'appium:app': application,
-        'appium:autoWebview': true,
         'appium:automationName': 'UiAutomator2',
         'appium:chromedriverAutodownload': true,
         'appium:deviceName': process.env.HOST_PROBE_CAPACITOR_DEVICE ?? 'Android Emulator',
         'appium:ensureWebviewsHavePages': true,
+        'appium:skipDeviceInitialization': true,
+        'appium:skipUnlock': true,
         'appium:uiautomator2ServerInstallTimeout': 120_000,
+        'appium:uiautomator2ServerLaunchTimeout': 120_000,
         ...(platformVersion === undefined ? {} : { 'appium:platformVersion': platformVersion }),
       }
     : {
         platformName: 'iOS',
+        'appium:additionalWebviewBundleIds': ['*'],
         'appium:app': application,
-        'appium:autoWebview': true,
         'appium:automationName': 'XCUITest',
         'appium:deviceName': process.env.HOST_PROBE_CAPACITOR_DEVICE ?? 'iPhone 16',
+        'appium:simulatorStartupTimeout': 300_000,
+        'appium:wdaLaunchTimeout': 300_000,
+        'appium:webviewConnectRetries': 120,
+        'appium:webviewConnectTimeout': 30_000,
         ...(platformVersion === undefined ? {} : { 'appium:platformVersion': platformVersion }),
+        ...(deviceUdid === undefined ? {} : { 'appium:udid': deviceUdid }),
       };
 
 export const config: WebdriverIO.Config = {
@@ -42,10 +50,10 @@ export const config: WebdriverIO.Config = {
   framework: 'mocha',
   logLevel: 'warn',
   maxInstances: 1,
-  mochaOpts: { timeout: 120_000 },
+  mochaOpts: { timeout: 300_000 },
   reporters: ['spec'],
   runner: 'local',
-  connectionRetryTimeout: 300_000,
+  connectionRetryTimeout: 600_000,
   services: [['appium', { args: { relaxedSecurity: true } }]],
   specs: [resolve(import.meta.dirname, 'test/report.e2e.ts')],
 };

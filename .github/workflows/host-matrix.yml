@@ -70,11 +70,11 @@ jobs:
             command: xvfb-run -a npm run test:host-probe:tauri
           - host: capacitor-android
             os: ubuntu-latest
-            command: npm run test:host-probe:capacitor:android
+            command: HOST_PROBE_CAPACITOR_PLATFORM=android npm exec --workspace=@flighthq/tool-host-probe -- wdio run wdio.capacitor.conf.ts
           - host: capacitor-ios
             # Capacitor 8's SwiftPM binaries require the Swift toolchain shipped with Xcode 26.
             os: macos-26
-            command: npm run test:host-probe:capacitor:ios
+            command: HOST_PROBE_CAPACITOR_PLATFORM=ios npm exec --workspace=@flighthq/tool-host-probe -- wdio run wdio.capacitor.conf.ts
 
     steps:
       - uses: actions/checkout@v4
@@ -140,6 +140,16 @@ jobs:
         if: matrix.host == 'capacitor-ios'
         run: npm exec --workspace=@flighthq/tool-host-probe -- appium driver install xcuitest
 
+      # Build before starting either simulator so native compilation does not contend with the device
+      # and Appium for the runner's CPU and memory.
+      - name: Build the Android host probe application
+        if: matrix.host == 'capacitor-android'
+        run: npm exec --workspace=@flighthq/tool-host-probe -- tsx scripts/buildCapacitorApp.ts android
+
+      - name: Build the iOS host probe application
+        if: matrix.host == 'capacitor-ios'
+        run: npm exec --workspace=@flighthq/tool-host-probe -- tsx scripts/buildCapacitorApp.ts ios
+
       - name: Select and boot an iOS simulator
         if: matrix.host == 'capacitor-ios'
         shell: bash
@@ -156,13 +166,14 @@ jobs:
           xcrun simctl boot "$simulator_udid" || true
           xcrun simctl bootstatus "$simulator_udid" -b
           echo "HOST_PROBE_CAPACITOR_DEVICE=$simulator_name" >> "$GITHUB_ENV"
+          echo "HOST_PROBE_CAPACITOR_DEVICE_UDID=$simulator_udid" >> "$GITHUB_ENV"
 
       - name: Run the host probe
         if: matrix.host != 'capacitor-android'
         run: ${{ matrix.command }}
 
-      # The emulator action owns acceleration, startup, and teardown; the command itself builds the APK
-      # and starts Appium before entering the generated Capacitor WebView.
+      # The emulator action owns acceleration, startup, and teardown. The APK is already built, so this
+      # step only starts Appium and enters the generated Capacitor WebView.
       - name: Run the Android host probe
         if: matrix.host == 'capacitor-android'
         uses: reactivecircus/android-emulator-runner@v2
