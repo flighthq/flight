@@ -1,25 +1,34 @@
 # Release notes
 
-The `@flighthq/*` packages use locked versioning, so the repository keeps one note per stable version rather than a changelog in every package.
+The `@flighthq/*` packages use locked versioning, so the publish workflow generates one GitHub release note for the complete package graph. Per-version notes are ephemeral publish artifacts and are not committed to this directory.
 
-## Prepare a release
+## Preview locally
 
-1. Exercise the exact `@next` package version in clean consumer applications. Keep the full version string; the commit suffix is part of the evidence.
-2. From that candidate's source commit, draft the note:
+Generate a note from the previous numeric release through a chosen commit:
 
-   ```sh
-   npm run release:notes -- 0.4.0 --candidate 0.4.0-next.1921.abcdef0
-   ```
+```sh
+npm run release:notes -- 0.4.0 --through HEAD
+```
 
-3. Replace the generated placeholders in `releases/0.4.0.md`. Curate `Highlights` for application developers and make `Migration` explicit, including an affirmative “No migration is required” when appropriate. Do not edit the generated Changes appendix.
-4. Check the note, then bump the locked graph:
+An optional Markdown description is placed directly below the release title and above the generated changes:
 
-   ```sh
-   npm run release:notes:check -- 0.4.0
-   npm run version:packages 0.4.0
-   ```
+```sh
+npm run release:notes -- 0.4.0 --through HEAD --description 'A focused release for 3D applications.'
+```
 
-5. Commit the note, manifests, and lockfile together with a subject of the form `chore(release): 0.4.0`. Any functional commit after the recorded candidate makes the note check fail: publish and exercise a new `@next` candidate instead of declaring untested code stable.
-6. Push the release commit to `develop`, wait for its exact CI run to pass, create the bare numeric tag on that commit, and push the tag. The release workflow checks the note again and uses it as the GitHub release body.
+Use `--output <path>` to write the note instead of printing it to standard output.
 
-The check is intentionally local and deterministic. It validates candidate/source correspondence, the reachable previous tag, the generated conventional-commit appendix, human curation, and the absence of untested post-candidate changes. It does not contact npm or infer whether a team actually performed consumer testing; recording the exact candidate makes that human release decision auditable.
+## Publish
+
+1. Exercise the intended `@next` package version in clean consumer applications.
+2. Run `npm run version:packages <version>`, commit the locked manifests and lockfile, push to `develop`, and wait for that exact commit's CI run to pass.
+3. Push a bare numeric tag such as `0.4.0`. The release workflow generates its note in the runner's temporary directory from the previous numeric tag through the tagged commit, publishes the packages, and passes the temporary note directly to GitHub Releases.
+
+By default, a lightweight tag produces a fully generated note with no introduction. For a short human introduction without committing a release-note file, use an annotated tag; its subject and body become the description:
+
+```sh
+git tag -a 0.4.0 -m 'A focused release for 3D applications.'
+git push origin 0.4.0
+```
+
+A manual `workflow_dispatch` on a numeric tag can instead supply its optional `description` input. That input takes precedence over an annotated tag message. On a retry, the workflow updates the existing GitHub release body with the freshly generated note before replacing its examples asset.

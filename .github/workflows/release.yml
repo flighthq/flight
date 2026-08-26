@@ -10,6 +10,11 @@ on:
     # Bare numeric version tags (no "v" prefix), e.g. 0.1.0. The release asset is named after the tag.
     tags: ['[0-9]*.[0-9]*.[0-9]*']
   workflow_dispatch:
+    inputs:
+      description:
+        description: Optional Markdown shown above the generated changes
+        required: false
+        type: string
 
 # Electron's postinstall downloads a ~100MB prebuilt binary from GitHub releases on the critical path of
 # every `npm ci`. NOTHING IN CI LAUNCHES ELECTRON: the only scripts that do are electron:review*,
@@ -41,6 +46,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Release notes compare against earlier numeric tags and may read an annotated tag message.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -102,8 +110,27 @@ jobs:
           }
           NODE
       - run: npm ci
-      - name: Verify curated release notes and tested candidate
-        run: npm run release:notes:check -- "${GITHUB_REF_NAME}"
+      - name: Generate release notes
+        env:
+          RELEASE_DESCRIPTION: ${{ inputs.description }}
+        run: |
+          set -euo pipefail
+
+          description="${RELEASE_DESCRIPTION:-}"
+          tag_ref="refs/tags/${GITHUB_REF_NAME}"
+          if [[ -z "${description}" ]] && [[ "$(git cat-file -t "${tag_ref}")" == "tag" ]]; then
+            description=$(git for-each-ref --format='%(contents:subject)%0a%0a%(contents:body)' "${tag_ref}")
+          fi
+          # A conventional annotation that merely repeats the version is not a useful introduction.
+          if [[ "${description}" == "${GITHUB_REF_NAME}" ]]; then
+            description=""
+          fi
+
+          args=("${GITHUB_REF_NAME}" --through "${GITHUB_SHA}" --output "${RUNNER_TEMP}/release-notes.md")
+          if [[ -n "${description}" ]]; then
+            args+=(--description "${description}")
+          fi
+          npm run release:notes -- "${args[@]}"
       - run: npm run build
       - name: Publish packages to npm
         run: npm run release -- --no-build
@@ -137,6 +164,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" \
-            --title "${GITHUB_REF_NAME}" --notes-file "releases/${GITHUB_REF_NAME}.md" \
-          || gh release upload "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" --clobber
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release edit "${GITHUB_REF_NAME}" \
+              --title "${GITHUB_REF_NAME}" --notes-file "${RUNNER_TEMP}/release-notes.md"
+            gh release upload "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" \
+              --title "${GITHUB_REF_NAME}" --notes-file "${RUNNER_TEMP}/release-notes.md"
+          fi

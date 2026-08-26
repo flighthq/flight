@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,43 +7,28 @@ import type { ConventionalCommit } from './conventional-commits.js';
 import { parseConventionalCommit } from './conventional-commits.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const releasesDir = join(root, 'releases');
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
-const GENERATED_START = '<!-- generated changes: do not edit -->';
-const GENERATED_END = '<!-- end generated changes -->';
-const HIGHLIGHTS_PLACEHOLDER = '- Replace this line with the release highlights.';
-const MIGRATION_PLACEHOLDER = '- Replace this line with migration guidance, or state that no migration is required.';
 
 export interface ReleaseNoteInput {
   version: string;
   previousVersion: string;
-  testedCandidate: string;
   changesThrough: string;
+  description: string;
   commits: readonly ConventionalCommit[];
 }
 
-interface ReleaseMetadata {
-  previousVersion: string;
-  testedCandidate: string;
-  changesThrough: string;
+interface CliOptions {
+  description: string;
+  through: string;
+  output: string | null;
 }
 
 export function renderReleaseNote(input: Readonly<ReleaseNoteInput>): string {
+  const description = input.description.trim();
+  const introduction = description === '' ? '' : `${description}\n\n`;
   return `# Flight ${input.version}
 
-- Previous release: \`${input.previousVersion}\`
-- Tested candidate: \`@flighthq/sdk@${input.testedCandidate}\`
-- Changes through: \`${input.changesThrough}\`
-
-## Highlights
-
-${HIGHLIGHTS_PLACEHOLDER}
-
-## Migration
-
-${MIGRATION_PLACEHOLDER}
-
-## Changes
+${introduction}## Changes
 
 ${renderGeneratedChanges(input.commits, input)}`;
 }
@@ -65,50 +50,7 @@ export function renderGeneratedChanges(
   const comparison =
     `[Full comparison](https://github.com/flighthq/flight/compare/${context.previousVersion}...${context.changesThrough}) ` +
     'includes individual fixes, documentation, tests, refactors, and maintenance commits.';
-  return `${GENERATED_START}\n${sections.join('\n\n')}\n\n${comparison}\n${GENERATED_END}\n`;
-}
-
-export function validateReleaseNote(
-  contents: string,
-  expected: Readonly<ReleaseNoteInput>,
-  postCandidateSubjects: readonly string[],
-): string[] {
-  const issues: string[] = [];
-  if (!contents.startsWith(`# Flight ${expected.version}\n`)) issues.push(`title is not Flight ${expected.version}`);
-  if (contents.includes(HIGHLIGHTS_PLACEHOLDER)) issues.push('Highlights still contains its draft placeholder');
-  if (contents.includes(MIGRATION_PLACEHOLDER)) issues.push('Migration still contains its draft placeholder');
-
-  const metadata = parseReleaseMetadata(contents);
-  if (metadata === null) {
-    issues.push('release metadata is missing or malformed');
-  } else {
-    if (metadata.previousVersion !== expected.previousVersion) {
-      issues.push(`previous release is ${metadata.previousVersion}, expected ${expected.previousVersion}`);
-    }
-    if (metadata.testedCandidate !== expected.testedCandidate) {
-      issues.push(`tested candidate is ${metadata.testedCandidate}, expected ${expected.testedCandidate}`);
-    }
-    if (metadata.changesThrough !== expected.changesThrough) {
-      issues.push(`changes-through commit is ${metadata.changesThrough}, expected ${expected.changesThrough}`);
-    }
-  }
-
-  const actualGenerated = betweenMarkers(contents, GENERATED_START, GENERATED_END);
-  const expectedGenerated = betweenMarkers(
-    renderGeneratedChanges(expected.commits, expected),
-    GENERATED_START,
-    GENERATED_END,
-  );
-  if (actualGenerated === null || actualGenerated !== expectedGenerated) {
-    issues.push('generated Changes appendix does not match the conventional commits in the recorded range');
-  }
-
-  for (const subject of postCandidateSubjects) {
-    if (!subject.startsWith('chore(release): ')) {
-      issues.push(`untested post-candidate commit is not release metadata: ${subject}`);
-    }
-  }
-  return issues;
+  return `${sections.join('\n\n')}\n\n${comparison}\n`;
 }
 
 function formatCommit(commit: Readonly<ConventionalCommit>): string {
@@ -139,86 +81,15 @@ function escapeMarkdown(value: string): string {
   return value.replaceAll('\\', '\\\\').replaceAll('[', '\\[').replaceAll(']', '\\]');
 }
 
-function parseReleaseMetadata(contents: string): ReleaseMetadata | null {
-  const previousVersion = /^- Previous release: `([^`]+)`$/m.exec(contents)?.[1];
-  const testedCandidate = /^- Tested candidate: `@flighthq\/sdk@([^`]+)`$/m.exec(contents)?.[1];
-  const changesThrough = /^- Changes through: `([0-9a-f]{40})`$/m.exec(contents)?.[1];
-  if (previousVersion === undefined || testedCandidate === undefined || changesThrough === undefined) return null;
-  return { previousVersion, testedCandidate, changesThrough };
-}
-
-function betweenMarkers(contents: string, startMarker: string, endMarker: string): string | null {
-  const start = contents.indexOf(startMarker);
-  const end = contents.indexOf(endMarker);
-  if (start === -1 || end === -1 || end < start) return null;
-  return contents.slice(start + startMarker.length, end).trim();
-}
-
-function main(): void {
-  const [mode, version, ...args] = process.argv.slice(2);
-  if ((mode !== 'draft' && mode !== 'check') || version === undefined || !VERSION_PATTERN.test(version)) {
-    fail('Usage: release-notes.ts <draft|check> <version> [--candidate <exact-next-version>]');
-  }
-
-  const notePath = join(releasesDir, `${version}.md`);
-  if (mode === 'draft') {
-    const testedCandidate = readOption(args, '--candidate');
-    if (testedCandidate === null) fail('draft requires --candidate <exact-next-version>');
-    const input = resolveReleaseInput(version, testedCandidate);
-    mkdirSync(releasesDir, { recursive: true });
-    if (existsSync(notePath)) fail(`${notePath} already exists; refusing to overwrite human release notes`);
-    writeFileSync(notePath, renderReleaseNote(input));
-    console.log(
-      `[release:notes] drafted ${relativePath(notePath)} from ${input.previousVersion} through ${input.changesThrough}`,
-    );
-    console.log('[release:notes] curate Highlights and Migration, then run the check command.');
-    return;
-  }
-
-  if (!existsSync(notePath)) fail(`missing ${relativePath(notePath)}; run the draft command first`);
-  const contents = readFileSync(notePath, 'utf8');
-  const metadata = parseReleaseMetadata(contents);
-  if (metadata === null) fail(`${relativePath(notePath)} has missing or malformed release metadata`);
-  const input = resolveReleaseInput(version, metadata.testedCandidate, metadata.changesThrough);
-  const subjects = git('log', '--format=%s', `${input.changesThrough}..HEAD`)
-    .split('\n')
-    .map((subject) => subject.trim())
-    .filter(Boolean);
-  const issues = validateReleaseNote(contents, input, subjects);
-  if (issues.length > 0) {
-    console.error(`[release:notes] ${relativePath(notePath)} has ${issues.length} issue(s):`);
-    for (const issue of issues) console.error(`  - ${issue}`);
-    process.exit(1);
-  }
-  console.log(
-    `[release:notes] ${relativePath(notePath)} matches ${input.commits.length} release commits; tested candidate ${input.testedCandidate}`,
-  );
-}
-
-export function resolveReleaseInput(
-  version: string,
-  testedCandidate: string,
-  explicitThrough?: string,
-): ReleaseNoteInput {
-  const candidatePattern = new RegExp(`^${escapeRegExp(version)}-next\\.\\d+\\.([0-9a-f]{7,40})$`);
-  const candidateMatch = candidatePattern.exec(testedCandidate);
-  if (candidateMatch === null) {
-    fail(`tested candidate must be an exact ${version}-next.<count>.<sha> version, got ${testedCandidate}`);
-  }
-  const candidateSha = candidateMatch[1];
-  const changesThrough = git('rev-parse', `${explicitThrough ?? candidateSha}^{commit}`);
-  if (!changesThrough.startsWith(candidateSha)) {
-    fail(`tested candidate suffix ${candidateSha} does not identify changes-through commit ${changesThrough}`);
-  }
-  if (!isAncestor(changesThrough, 'HEAD')) fail(`${changesThrough} is not an ancestor of HEAD`);
-
+export function resolveReleaseInput(version: string, through = 'HEAD', description = ''): ReleaseNoteInput {
+  const changesThrough = git('rev-parse', `${through}^{commit}`);
   const previousVersion = previousVersionTag(version, changesThrough);
   if (previousVersion === null) fail(`no earlier numeric version tag is reachable from ${changesThrough}`);
   return {
     version,
     previousVersion,
-    testedCandidate,
     changesThrough,
+    description,
     commits: readCommits(`${previousVersion}..${changesThrough}`),
   };
 }
@@ -252,36 +123,47 @@ function compareVersions(a: string, b: string): number {
   return 0;
 }
 
-function readOption(args: readonly string[], flag: string): string | null {
-  const index = args.indexOf(flag);
-  if (index === -1 || args[index + 1] === undefined) return null;
-  return args[index + 1];
-}
-
-function isAncestor(ancestor: string, descendant: string): boolean {
-  try {
-    execFileSync('git', ['merge-base', '--is-ancestor', ancestor, descendant], { cwd: root, stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
+function parseOptions(args: readonly string[]): CliOptions {
+  const options: CliOptions = { description: '', through: 'HEAD', output: null };
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index];
+    const value = args[index + 1];
+    if (value === undefined) fail(`${flag ?? 'option'} requires a value`);
+    if (flag === '--description') options.description = value;
+    else if (flag === '--through') options.through = value;
+    else if (flag === '--output') options.output = value;
+    else fail(`unknown option ${flag}`);
   }
+  return options;
 }
 
 function git(...args: readonly string[]): string {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 }
 
-function relativePath(path: string): string {
-  return path.slice(root.length + 1).replaceAll('\\', '/');
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 function fail(message: string): never {
   console.error(`[release:notes] ${message}`);
   process.exit(1);
+}
+
+function main(): void {
+  const [version, ...args] = process.argv.slice(2);
+  if (version === undefined || !VERSION_PATTERN.test(version)) {
+    fail('Usage: release-notes.ts <version> [--description <markdown>] [--through <git-ref>] [--output <path>]');
+  }
+
+  const options = parseOptions(args);
+  const input = resolveReleaseInput(version, options.through, options.description);
+  const contents = renderReleaseNote(input);
+  if (options.output === null) {
+    process.stdout.write(contents);
+    return;
+  }
+
+  const outputPath = resolve(root, options.output);
+  mkdirSync(dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, contents);
+  console.log(`[release:notes] generated ${outputPath} from ${input.previousVersion} through ${input.changesThrough}`);
 }
 
 if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) main();
