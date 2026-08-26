@@ -172,6 +172,16 @@ jobs:
         id: edge
         run: npx tsx scripts/edge-version.ts main >> "$GITHUB_OUTPUT"
 
+      # Exercise the same cumulative generator stable publication uses. npm has no release-notes
+      # field, so the rendered note lives in the run summary rather than inside one package tarball.
+      - name: Generate cumulative snapshot release notes
+        env:
+          SNAPSHOT_VERSION: ${{ steps.edge.outputs.version }}
+        run: |
+          set -euo pipefail
+          npm run release:notes -- "${SNAPSHOT_VERSION}" --through HEAD --output "${RUNNER_TEMP}/release-notes.md"
+          cat "${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_STEP_SUMMARY}"
+
       # ★ IDEMPOTENCY IS THE PUBLISHER'S, PER PACKAGE — DO NOT REINTRODUCE AN OUTER SKIP.
       # `scripts/publish-packages.ts` already skips any package whose version is on the registry, so a
       # re-run after a partial failure completes the set across the ~141-package graph. That per-package

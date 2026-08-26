@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseConventionalCommit } from './conventional-commits';
-import { renderGeneratedChanges, renderReleaseNote } from './release-notes';
+import { getStableTargetVersion, renderGeneratedChanges, renderReleaseNote } from './release-notes';
 
 const commits = [
   parseConventionalCommit('1111111111111111111111111111111111111111', 'feat(scene3d): add fog'),
@@ -18,6 +18,13 @@ const input = {
 };
 
 describe('release notes', () => {
+  it('uses the stable target embedded in next and edge snapshot versions', () => {
+    expect(getStableTargetVersion('0.4.0')).toBe('0.4.0');
+    expect(getStableTargetVersion('0.4.0-next.42.abcdef0')).toBe('0.4.0');
+    expect(getStableTargetVersion('0.4.0-edge.43.1234567')).toBe('0.4.0');
+    expect(getStableTargetVersion('0.4.0-beta.1')).toBeNull();
+  });
+
   it('groups user-facing conventional commits and omits routine documentation', () => {
     const generated = renderGeneratedChanges(commits, input);
 

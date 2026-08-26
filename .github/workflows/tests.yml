@@ -525,6 +525,15 @@ jobs:
       - name: Compute snapshot version and dist-tag
         id: edge
         run: npx tsx scripts/edge-version.ts >> "$GITHUB_OUTPUT"
+      # Exercise the same cumulative generator stable publication uses. npm has no release-notes
+      # field, so the rendered note lives in the run summary rather than inside one package tarball.
+      - name: Generate cumulative snapshot release notes
+        env:
+          SNAPSHOT_VERSION: ${{ steps.edge.outputs.version }}
+        run: |
+          set -euo pipefail
+          npm run release:notes -- "${SNAPSHOT_VERSION}" --through HEAD --output "${RUNNER_TEMP}/release-notes.md"
+          cat "${RUNNER_TEMP}/release-notes.md" >> "${GITHUB_STEP_SUMMARY}"
       - name: Stamp the graph to the snapshot version
         run: npm run version:packages ${{ steps.edge.outputs.version }}
       - name: Publish snapshot to npm
