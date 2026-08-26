@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { createCapacitorNativeBuildInvocation } from '../src/nativeApplicationBuild';
+
 const platform = process.argv[2];
 if (platform !== 'android' && platform !== 'ios') {
   throw new Error('Usage: tsx scripts/buildCapacitorApp.ts <android|ios>');
@@ -16,29 +18,8 @@ if (!existsSync(application)) throw new Error(`Capacitor ${platform} application
 process.stdout.write(`Capacitor ${platform} application ready: ${application}\n`);
 
 function buildNativeApplication(target: 'android' | 'ios'): void {
-  if (target === 'android') {
-    const executable = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
-    execFileSync(executable, ['assembleDebug'], { cwd: resolve(toolRoot, 'android'), stdio: 'inherit' });
-    return;
-  }
-  if (process.platform !== 'darwin') throw new Error('The Capacitor iOS lane requires macOS and Xcode');
-  execFileSync(
-    'xcodebuild',
-    [
-      '-workspace',
-      'App/App.xcworkspace',
-      '-scheme',
-      'App',
-      '-configuration',
-      'Debug',
-      '-sdk',
-      'iphonesimulator',
-      '-derivedDataPath',
-      'build',
-      'CODE_SIGNING_ALLOWED=NO',
-    ],
-    { cwd: resolve(toolRoot, 'ios'), stdio: 'inherit' },
-  );
+  const invocation = createCapacitorNativeBuildInvocation(toolRoot, target);
+  execFileSync(invocation.executable, invocation.arguments, { cwd: invocation.cwd, stdio: 'inherit' });
 }
 
 function defaultApplicationPath(target: 'android' | 'ios'): string {
