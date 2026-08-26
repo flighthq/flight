@@ -66,5 +66,6 @@ describe('native host CI configuration', () => {
     expect(endToEndTest).toContain("capacitorPlatform === 'android' || capacitorPlatform === 'ios'");
     expect(endToEndTest).toContain('browser.switchAppiumContext(webview)');
     expect(endToEndTest).toContain("title.includes('Flight Host Probe')");
+    expect(endToEndTest).toContain("status === 'pass' || status === 'fail'");
   });
 });

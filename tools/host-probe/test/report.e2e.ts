@@ -38,7 +38,10 @@ describe('host adapter', () => {
 
   it('publishes a passing structured report', async () => {
     await browser.waitUntil(
-      async () => (await browser.execute(() => window.__flightHostProbeReport?.status)) !== undefined,
+      async () => {
+        const status = await browser.execute(() => window.__flightHostProbeReport?.status);
+        return status === 'pass' || status === 'fail';
+      },
       { interval: 100, timeout: 30_000, timeoutMsg: 'host probe did not publish a report' },
     );
     const report = await browser.execute(() => window.__flightHostProbeReport);
