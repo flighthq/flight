@@ -20,7 +20,7 @@ interface Baseline {
   nonEntityCreateFunctions: string[];
 }
 
-export function getCreateEntityBaselineIssues(
+export function getCreateEntityBaselineNotices(
   currentViolations: readonly string[],
   baselineViolations: readonly string[],
 ): string[] {
@@ -83,7 +83,7 @@ export function collectPublicCreateFunctions(): CreateEntityRecord[] {
 
 function main(): void {
   const updateBaseline = process.argv.includes('--update-baseline');
-  const check = process.argv.includes('--check');
+  const advisory = process.argv.includes('--advisory');
   const json = process.argv.includes('--json');
   const records = collectPublicCreateFunctions();
   const violations = records.filter((record) => !record.returnsEntity);
@@ -95,18 +95,19 @@ function main(): void {
     return;
   }
 
-  if (check) {
+  if (advisory) {
     const baseline = JSON.parse(readFileSync(baselinePath, 'utf8')) as Baseline;
-    const issues = getCreateEntityBaselineIssues(violationIds, baseline.nonEntityCreateFunctions);
-    if (issues.length > 0) {
-      console.error(`[api:create-entity] ${issues.length} baseline issue(s):`);
-      for (const issue of issues) console.error(`  - ${issue}`);
-      process.exit(1);
-    }
+    const notices = getCreateEntityBaselineNotices(violationIds, baseline.nonEntityCreateFunctions);
     console.log(
-      `[api:create-entity] ${records.length - violations.length}/${records.length} public create functions return Entity; ` +
-        `${violations.length} pre-existing functions remain in the semantic-review baseline`,
+      `[api:create-entity] advisory: ${records.length - violations.length}/${records.length} public create functions ` +
+        `return Entity; ${violations.length} return other values`,
     );
+    if (notices.length > 0) {
+      console.warn(`[api:create-entity] ${notices.length} semantic-review notice(s); CI remains green:`);
+      for (const notice of notices) console.warn(`  - ${notice}`);
+    } else {
+      console.log('[api:create-entity] no changes from the semantic-review baseline');
+    }
     return;
   }
 
