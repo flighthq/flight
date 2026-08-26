@@ -44,6 +44,7 @@ describe('native host CI configuration', () => {
     const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows/host-matrix.yml'), 'utf8');
     const webdriver = readFileSync(resolve(toolRoot, 'wdio.capacitor.conf.ts'), 'utf8');
     const endToEndTest = readFileSync(resolve(toolRoot, 'test/report.e2e.ts'), 'utf8');
+    const main = readFileSync(resolve(toolRoot, 'src/main.ts'), 'utf8');
 
     expect(workflow).toMatch(/host: capacitor-ios\s+# Capacitor 8[^\n]+\n\s+os: macos-26/);
     expect(workflow).toContain('HOST_PROBE_CAPACITOR_DEVICE_UDID=emulator-5554');
@@ -67,5 +68,8 @@ describe('native host CI configuration', () => {
     expect(endToEndTest).toContain('browser.switchAppiumContext(webview)');
     expect(endToEndTest).toContain("title.includes('Flight Host Probe')");
     expect(endToEndTest).toContain("status === 'pass' || status === 'fail'");
+    expect(endToEndTest).toContain('document.documentElement.dataset.hostProbeReport');
+    expect(endToEndTest).not.toContain('window.__flightHostProbeReport?.status');
+    expect(main).toContain('document.documentElement.dataset.hostProbeReport = JSON.stringify(report)');
   });
 });

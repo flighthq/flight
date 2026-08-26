@@ -37,14 +37,28 @@ describe('host adapter', () => {
   }
 
   it('publishes a passing structured report', async () => {
-    await browser.waitUntil(
-      async () => {
-        const status = await browser.execute(() => window.__flightHostProbeReport?.status);
-        return status === 'pass' || status === 'fail';
-      },
-      { interval: 100, timeout: 30_000, timeoutMsg: 'host probe did not publish a report' },
-    );
-    const report = await browser.execute(() => window.__flightHostProbeReport);
+    try {
+      await browser.waitUntil(
+        async () => {
+          const status = await browser.execute(() => document.documentElement.dataset.hostProbeStatus);
+          return status === 'pass' || status === 'fail';
+        },
+        { interval: 100, timeout: 30_000, timeoutMsg: 'host probe did not publish a report' },
+      );
+    } catch {
+      const diagnostics = await browser.execute(() => ({
+        bodyText: document.body?.innerText.slice(0, 4_000) ?? '',
+        href: location.href,
+        readyState: document.readyState,
+        stage: document.documentElement.dataset.hostProbeStage ?? null,
+        status: document.documentElement.dataset.hostProbeStatus ?? null,
+        title: document.title,
+      }));
+      throw new Error(`host probe did not publish a report:\n${JSON.stringify(diagnostics, null, 2)}`);
+    }
+    const serializedReport = await browser.execute(() => document.documentElement.dataset.hostProbeReport ?? null);
+    if (serializedReport === null) throw new Error('host probe status was published without its structured report');
+    const report = JSON.parse(serializedReport) as NonNullable<Window['__flightHostProbeReport']>;
     if (report?.status !== 'pass') throw new Error(`Host probe failed:\n${JSON.stringify(report, null, 2)}`);
     process.stdout.write(`${report.host} host probe passed (${report.results.length} results)\n`);
   });

@@ -12,6 +12,7 @@ app.innerHTML =
 
 const host = resolveHostProbeHost();
 document.title = `Flight Host Probe · ${host}`;
+document.documentElement.dataset.hostProbeStage = 'installing-host';
 const startedAt = new Date();
 const before = captureHostProbeBackends();
 
@@ -38,7 +39,11 @@ try {
 
 function publish(report: NonNullable<Window['__flightHostProbeReport']>): void {
   window.__flightHostProbeReport = report;
+  // ChromeDriver may execute test scripts in an isolated JavaScript world. DOM attributes cross that
+  // boundary even when page-defined window properties do not, so keep a serialized report there too.
+  document.documentElement.dataset.hostProbeReport = JSON.stringify(report);
   document.documentElement.dataset.hostProbeStatus = report.status;
+  document.documentElement.dataset.hostProbeStage = 'complete';
   const summary = document.getElementById('summary');
   if (summary !== null)
     summary.textContent = `${report.host}: ${report.status.toUpperCase()} · ${report.durationMilliseconds}ms`;
