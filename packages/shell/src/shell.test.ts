@@ -74,10 +74,16 @@ function fakeBackend(): ShellBackend & {
   };
 }
 
-afterEach(() => {
+function resetShellTestState(): void {
   resetShellBackendForTest();
   setShellUrlSchemeAllowlist(null);
-});
+}
+
+// The root fast suite deliberately shares modules between files. A host-adapter test can therefore
+// be the state immediately before this file; reset on entry as well as exit so the first assertion has
+// the same isolation as every later one.
+beforeEach(resetShellTestState);
+afterEach(resetShellTestState);
 
 describe('explainShellBackend', () => {
   it('returns host-not-enabled when no backend is installed', () => {
