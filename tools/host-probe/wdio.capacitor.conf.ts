@@ -16,12 +16,16 @@ const capability =
   platform === 'android'
     ? {
         platformName: 'Android',
+        // GitHub's nested-virtualization runners can take substantially longer than Appium's 20-second
+        // defaults to install the UiAutomator2 server or complete package-manager commands.
+        'appium:adbExecTimeout': 120_000,
         'appium:app': application,
         'appium:autoWebview': true,
         'appium:automationName': 'UiAutomator2',
         'appium:chromedriverAutodownload': true,
         'appium:deviceName': process.env.HOST_PROBE_CAPACITOR_DEVICE ?? 'Android Emulator',
         'appium:ensureWebviewsHavePages': true,
+        'appium:uiautomator2ServerInstallTimeout': 120_000,
         ...(platformVersion === undefined ? {} : { 'appium:platformVersion': platformVersion }),
       }
     : {
@@ -41,6 +45,7 @@ export const config: WebdriverIO.Config = {
   mochaOpts: { timeout: 120_000 },
   reporters: ['spec'],
   runner: 'local',
+  connectionRetryTimeout: 300_000,
   services: [['appium', { args: { relaxedSecurity: true } }]],
   specs: [resolve(import.meta.dirname, 'test/report.e2e.ts')],
 };

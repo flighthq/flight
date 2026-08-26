@@ -35,3 +35,16 @@ describe('Tauri packaging inputs', () => {
     }
   });
 });
+
+describe('native host CI configuration', () => {
+  it('uses the Capacitor 8 iOS toolchain and allows slow Android emulator setup', () => {
+    const repositoryRoot = resolve(toolRoot, '../..');
+    const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows/host-matrix.yml'), 'utf8');
+    const webdriver = readFileSync(resolve(toolRoot, 'wdio.capacitor.conf.ts'), 'utf8');
+
+    expect(workflow).toMatch(/host: capacitor-ios\s+# Capacitor 8[^\n]+\n\s+os: macos-26/);
+    expect(webdriver).toContain("'appium:adbExecTimeout': 120_000");
+    expect(webdriver).toContain("'appium:uiautomator2ServerInstallTimeout': 120_000");
+    expect(webdriver).toContain('connectionRetryTimeout: 300_000');
+  });
+});
