@@ -9,6 +9,18 @@ npm run fixtures -- --all
 npm run conformance:fixtures
 ```
 
+## Automated nightly run
+
+`.github/workflows/conformance.yml` acquires the complete pinned fixture release and runs the conformance corpus every day at 06:43 UTC against `develop`; it can also be dispatched manually against a selected branch. GitHub Actions caches the verified archive/extraction pool and the content-addressed SWF import results. The acquisition command still checks the release manifest, both checksum publications, archive hashes, and extracted paths on every run, including cache hits.
+
+The workflow preserves the command-line contracts rather than applying a blanket `continue-on-error`:
+
+- conformance unit tests, acquisition integrity, corpus completeness, and harness/configuration errors fail the job;
+- per-file import outcomes and per-feature failures remain advisory score data, so `conformance:fixtures` and the exhaustive SWF measurement succeed after recording them; and
+- `check:import-conformance` becomes a hard regression gate automatically if `conformance/core/import-conformance-baseline.json` is deliberately committed. Until then the generated scores are advisory.
+
+The fixture-import and SWF score JSON files are retained as workflow artifacts for 14 days. Fixture bytes remain only in the GitHub Actions cache and are never uploaded as report artifacts or committed to the repository.
+
 ## Multi-pack recovery acceptance
 
 Acceptance is closed against fixture release `0.1.1`. Repository-managed fetches followed by real-corpus conformance runs measured equal enumerated and stamped path counts in every selected tree, so the shared-tree manifest-path fix excludes zero files:
