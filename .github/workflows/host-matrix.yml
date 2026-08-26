@@ -70,7 +70,7 @@ jobs:
             command: xvfb-run -a npm run test:host-probe:tauri
           - host: capacitor-android
             os: ubuntu-latest
-            command: HOST_PROBE_CAPACITOR_PLATFORM=android npm exec --workspace=@flighthq/tool-host-probe -- wdio run wdio.capacitor.conf.ts
+            command: HOST_PROBE_CAPACITOR_DEVICE_UDID=emulator-5554 HOST_PROBE_CAPACITOR_PLATFORM=android npm exec --workspace=@flighthq/tool-host-probe -- wdio run wdio.capacitor.conf.ts
           - host: capacitor-ios
             # Capacitor 8's SwiftPM binaries require the Swift toolchain shipped with Xcode 26.
             os: macos-26
@@ -150,6 +150,17 @@ jobs:
         if: matrix.host == 'capacitor-ios'
         run: npm exec --workspace=@flighthq/tool-host-probe -- tsx scripts/buildCapacitorApp.ts ios
 
+      # Ubuntu hosted runners expose /dev/kvm but do not grant the runner account access by default.
+      # Without this rule the emulator falls back to software virtualization and Appium's on-device
+      # instrumentation repeatedly dies during startup.
+      - name: Enable KVM for the Android emulator
+        if: matrix.host == 'capacitor-android'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Select and boot an iOS simulator
         if: matrix.host == 'capacitor-ios'
         shell: bash
@@ -171,14 +182,50 @@ jobs:
       - name: Run the host probe
         if: matrix.host != 'capacitor-android'
         run: ${{ matrix.command }}
+        env:
+          HOST_PROBE_ARTIFACT_DIR: ${{ runner.temp }}/host-probe-artifacts
 
       # The emulator action owns acceleration, startup, and teardown. The APK is already built, so this
       # step only starts Appium and enters the generated Capacitor WebView.
       - name: Run the Android host probe
         if: matrix.host == 'capacitor-android'
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          HOST_PROBE_ARTIFACT_DIR: ${{ runner.temp }}/host-probe-artifacts
         with:
-          api-level: 35
+          api-level: 34
           arch: x86_64
           profile: pixel_7
           script: ${{ matrix.command }}
+
+      - name: Capture Android emulator diagnostics
+        if: failure() && matrix.host == 'capacitor-android'
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/host-probe-artifacts"
+          timeout 30s adb devices -l > "$RUNNER_TEMP/host-probe-artifacts/adb-devices.txt" 2>&1 || true
+          timeout 30s adb shell getprop \
+            > "$RUNNER_TEMP/host-probe-artifacts/android-properties.txt" 2>&1 || true
+          timeout 30s adb shell pm list instrumentation \
+            > "$RUNNER_TEMP/host-probe-artifacts/android-instrumentation.txt" 2>&1 || true
+          timeout 30s adb logcat -d -v threadtime \
+            > "$RUNNER_TEMP/host-probe-artifacts/android-logcat.txt" 2>&1 || true
+
+      - name: Print Appium diagnostic tail
+        if: failure() && startsWith(matrix.host, 'capacitor-')
+        run: |
+          log="$RUNNER_TEMP/host-probe-artifacts/wdio-appium.log"
+          if [ -f "$log" ]; then
+            echo '::group::Appium diagnostic tail'
+            tail -n 300 "$log"
+            echo '::endgroup::'
+          fi
+
+      - name: Upload Capacitor diagnostics
+        if: failure() && startsWith(matrix.host, 'capacitor-')
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-matrix-${{ matrix.host }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/host-probe-artifacts
+          if-no-files-found: warn
+          retention-days: 7
