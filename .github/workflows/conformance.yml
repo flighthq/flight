@@ -106,6 +106,15 @@ jobs:
         if: hashFiles('conformance/core/import-conformance-baseline.json') == ''
         run: echo 'No SWF conformance baseline is committed; scores are advisory.'
 
+      # Always leave the measurements (or a clear note that a report was unavailable) on the run page.
+      # This presentation step does not alter the exit status of the gating commands above.
+      - name: Publish conformance job summary
+        if: always()
+        continue-on-error: true
+        run: npm exec tsx -- scripts/conformance-action-summary.ts
+        env:
+          CONFORMANCE_ARTIFACT_NAME: conformance-${{ steps.source.outputs.sha }}
+
       - name: Upload conformance reports
         if: always()
         uses: actions/upload-artifact@v4
