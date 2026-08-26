@@ -46,7 +46,10 @@ describe('native host CI configuration', () => {
     const endToEndTest = readFileSync(resolve(toolRoot, 'test/report.e2e.ts'), 'utf8');
 
     expect(workflow).toMatch(/host: capacitor-ios\s+# Capacitor 8[^\n]+\n\s+os: macos-26/);
+    expect(workflow).toContain('HOST_PROBE_CAPACITOR_DEVICE_UDID=emulator-5554');
     expect(workflow).toContain('HOST_PROBE_CAPACITOR_DEVICE_UDID=$simulator_udid');
+    expect(workflow).toContain('name: Enable KVM for the Android emulator');
+    expect(workflow).toContain('api-level: 34');
     expect(workflow.indexOf('name: Build the Android host probe application')).toBeLessThan(
       workflow.indexOf('name: Run the Android host probe'),
     );
@@ -58,8 +61,10 @@ describe('native host CI configuration', () => {
     expect(webdriver).toContain("'appium:uiautomator2ServerLaunchTimeout': 120_000");
     expect(webdriver).toContain("'appium:wdaLaunchTimeout': 300_000");
     expect(webdriver).not.toContain("'appium:autoWebview'");
+    expect(webdriver).not.toContain("'appium:skipDeviceInitialization'");
     expect(webdriver).toContain('connectionRetryTimeout: 600_000');
-    expect(endToEndTest).toContain("appIdentifier: 'dev.flighthq.hostprobe'");
-    expect(endToEndTest).toContain("title: 'Flight Host Probe'");
+    expect(endToEndTest).toContain("capacitorPlatform === 'android' || capacitorPlatform === 'ios'");
+    expect(endToEndTest).toContain('browser.switchAppiumContext(webview)');
+    expect(endToEndTest).toContain("title.includes('Flight Host Probe')");
   });
 });
