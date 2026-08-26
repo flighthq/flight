@@ -1,6 +1,5 @@
 // The precise slice of the Tauri (v2) JavaScript API — `@tauri-apps/api` plus its official plugins —
-// that Flight's host backends call. The real Tauri modules satisfy this structurally, so a consumer
-// aggregates them and passes the object directly:
+// that Flight's host backends call. A consumer aggregates the real Tauri modules and passes the object:
 //
 //   import * as app from '@tauri-apps/api/app';
 //   import * as window from '@tauri-apps/api/window';
@@ -13,12 +12,18 @@
 //   import * as os from '@tauri-apps/plugin-os';
 //   import * as globalShortcut from '@tauri-apps/plugin-global-shortcut';
 //   import * as process from '@tauri-apps/plugin-process';
-//   registerTauriBackends({ app, window, menu, tray, clipboard, dialog, notification, opener, os, globalShortcut, process });
+//   const tauriApi: TauriApi = {
+//     app, clipboard, dialog, notification, opener, os, globalShortcut, process,
+//     menu: menu as TauriApi['menu'], tray: tray as TauriApi['tray'], window: window as TauriApi['window'],
+//   };
+//   registerTauriBackends(tauriApi);
 //
 // Typing it here (rather than importing `@tauri-apps/*`) keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Tauri surface the seams require, which is the real
-// coupling between Flight and a Tauri host. Members are intentionally minimal; widen only when a backend
-// needs more. Note the wide async/sync gap: most Tauri calls are Promise-based, while several Flight
+// coupling between Flight and a Tauri host. Tauri's Resource/DPI classes contain nominal private/symbol
+// fields, so menu/tray/window need the narrow boundary assertions shown above even though the runtime
+// surface matches. Members are intentionally minimal; widen only when a backend needs more. Note the
+// wide async/sync gap: most Tauri calls are Promise-based, while several Flight
 // seams (window/shortcut/app getters/menu install/tray create) are synchronous. Those adapters call the
 // async Tauri method fire-and-forget and mirror state locally — see each adapter for the exact contract.
 
@@ -91,7 +96,7 @@ export interface TauriDialogMessageOptions {
 export interface TauriDialogPlugin {
   ask(message: string, options?: Readonly<TauriDialogMessageOptions>): Promise<boolean>;
   confirm(message: string, options?: Readonly<TauriDialogMessageOptions>): Promise<boolean>;
-  message(message: string, options?: Readonly<TauriDialogMessageOptions>): Promise<void>;
+  message(message: string, options?: Readonly<TauriDialogMessageOptions>): Promise<unknown>;
   open(options?: Readonly<TauriDialogOpenOptions>): Promise<string | string[] | null>;
   save(options?: Readonly<TauriDialogSaveOptions>): Promise<string | null>;
 }
@@ -121,11 +126,11 @@ export interface TauriOpenerPlugin {
   revealItemInDir(path: string): Promise<void>;
 }
 
-// `@tauri-apps/plugin-os` — OS identity. In Tauri v2 these are synchronous (resolved from values
-// injected at startup), which is why the sync PlatformBackend maps onto them cleanly.
+// `@tauri-apps/plugin-os` — OS identity. Most values are synchronous because Tauri injects them at
+// startup. Locale is async, so the app/platform adapters prefetch and cache it for their sync getters.
 export interface TauriOsModule {
   arch(): string;
-  locale(): string | null;
+  locale(): Promise<string | null>;
   platform(): string;
   version(): string;
 }

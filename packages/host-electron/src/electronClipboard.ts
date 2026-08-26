@@ -23,14 +23,14 @@ export function createElectronClipboardBackend(electron: ElectronApi): Clipboard
     },
     async readHtml() {
       try {
-        return cb.readHtml();
+        return cb.readHTML();
       } catch {
         return '';
       }
     },
     async writeHtml(html) {
       try {
-        cb.writeHtml(html);
+        cb.writeHTML(html);
         return true;
       } catch {
         return false;
@@ -46,14 +46,14 @@ export function createElectronClipboardBackend(electron: ElectronApi): Clipboard
     async readImage() {
       try {
         const image = cb.readImage();
-        return image.isEmpty() ? '' : image.toDataUrl();
+        return image.isEmpty() ? '' : image.toDataURL();
       } catch {
         return '';
       }
     },
     async writeImage(dataUrl) {
       try {
-        cb.writeImage(electron.nativeImage.createFromDataUrl(dataUrl));
+        cb.writeImage(electron.nativeImage.createFromDataURL(dataUrl));
         return true;
       } catch {
         return false;

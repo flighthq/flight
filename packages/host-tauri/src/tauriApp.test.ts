@@ -21,7 +21,7 @@ function fakeTauri() {
     },
     os: {
       arch: () => 'x86_64',
-      locale: () => 'fr-FR',
+      locale: async () => 'fr-FR',
       platform: () => 'linux',
       version: () => '',
     },
@@ -48,8 +48,9 @@ describe('createTauriAppBackend', () => {
     expect(backend.getVersion()).toBe('2.3.4');
   });
 
-  it('sources locale from the os plugin', () => {
+  it('sources locale from the os plugin', async () => {
     const backend = createTauriAppBackend(fakeTauri().tauri);
+    await Promise.resolve();
     expect(backend.getLocale()).toBe('fr-FR');
     expect(backend.getSystemLocale()).toBe('fr-FR');
     expect(backend.getPreferredSystemLanguages()).toEqual(['fr-FR']);

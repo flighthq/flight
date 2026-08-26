@@ -1,0 +1,54 @@
+:root {
+  color: #eaf2f8;
+  background: #0b1724;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+h1 {
+  margin: 0 0 8px;
+}
+
+#render-proof {
+  display: block;
+  margin: 20px 0;
+  width: 192px;
+  height: 128px;
+  border: 1px solid #48647d;
+  image-rendering: pixelated;
+}
+
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+li {
+  margin: 6px 0;
+  padding: 8px 10px;
+  border-left: 4px solid #607d94;
+  background: #102235;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+}
+
+li[data-status='pass'] {
+  border-color: #39d98a;
+}
+
+li[data-status='fail'] {
+  border-color: #ff5c77;
+}
+
+li[data-status='manual'] {
+  border-color: #ffc857;
+}

@@ -1,13 +1,13 @@
 import type {
-  MenuItemTemplate,
   TrayBackend,
   TrayEventData,
   TrayEventType,
   ElectronApi,
   ElectronMenu,
-  ElectronMenuItemOptions,
   ElectronTray,
 } from '@flighthq/types/contract';
+
+import { toElectronTemplate } from './electronMenuTemplate';
 
 // Maps Flight's TrayBackend onto Electron's Tray module. Flight identifies trays by an opaque numeric
 // id; the seam keeps an id→record map (the ElectronTray plus the title/tooltip/menu it cannot read
@@ -147,24 +147,6 @@ function toBounds(tray: Readonly<ElectronTray>): { x: number; y: number; width: 
   } catch {
     return null;
   }
-}
-
-// Recursively maps Flight menu templates to Electron menu options for a tray context menu. Tray menus
-// carry no select callback in this seam — selection is reported through the menu backend's listener.
-function toElectronTemplate(items: readonly MenuItemTemplate[]): ElectronMenuItemOptions[] {
-  return items.map((item) => {
-    const options: ElectronMenuItemOptions = {
-      id: item.id,
-      label: item.label,
-      type: item.type,
-      role: item.role,
-      accelerator: item.accelerator,
-      enabled: item.enabled,
-      checked: item.checked,
-    };
-    if (item.submenu) options.submenu = toElectronTemplate(item.submenu);
-    return options;
-  });
 }
 
 // Per-tray bookkeeping: the Electron tray plus the title/tooltip/menu Electron does not expose for read-back.

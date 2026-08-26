@@ -65,6 +65,20 @@ describe('createCapacitorFileSystemBackend', () => {
     expect([...read!]).toEqual([0, 1, 2, 254, 255]);
   });
 
+  it('reads Blob results returned by the web implementation', async () => {
+    const { capacitor } = fakeCapacitor();
+    const bytes = new Uint8Array([70, 108, 105, 103, 104, 116]);
+    const blob = new Blob([]);
+    Object.defineProperties(blob, {
+      arrayBuffer: { value: async () => bytes.buffer },
+      text: { value: async () => 'Flight' },
+    });
+    capacitor.filesystem.readFile = async () => ({ data: blob });
+    const backend = createCapacitorFileSystemBackend(capacitor);
+    expect(await backend.readTextFile('/blob.txt')).toBe('Flight');
+    expect([...(await backend.readBinaryFile('/blob.bin'))!]).toEqual([70, 108, 105, 103, 104, 116]);
+  });
+
   it('maps exists/stat/remove and reports null for a missing file', async () => {
     const backend = createCapacitorFileSystemBackend(fakeCapacitor().capacitor);
     await backend.writeTextFile('/c.txt', 'x');

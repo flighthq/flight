@@ -1,6 +1,5 @@
 // The precise slice of the Capacitor JavaScript plugin API — `@capacitor/core` plus the official
-// plugins — that Flight's host backends call. The real Capacitor plugin objects satisfy this
-// structurally, so a consumer aggregates them and passes the object directly:
+// plugins — that Flight's host backends call. A consumer aggregates the real Capacitor plugin objects:
 //
 //   import { App } from '@capacitor/app';
 //   import { Clipboard } from '@capacitor/clipboard';
@@ -14,14 +13,19 @@
 //   import { Network } from '@capacitor/network';
 //   import { Share } from '@capacitor/share';
 //   import { StatusBar } from '@capacitor/status-bar';
-//   registerCapacitorBackends({ app: App, clipboard: Clipboard, device: Device, dialog: Dialog,
-//     filesystem: Filesystem, geolocation: Geolocation, haptics: Haptics, keyboard: Keyboard,
-//     localNotifications: LocalNotifications, network: Network, share: Share, statusBar: StatusBar });
+//   const capacitorApi: CapacitorApi = {
+//     app: App, clipboard: Clipboard, device: Device, dialog: Dialog,
+//     filesystem: Filesystem as CapacitorApi['filesystem'], geolocation: Geolocation,
+//     haptics: Haptics as CapacitorApi['haptics'], keyboard: Keyboard,
+//     localNotifications: LocalNotifications, network: Network, share: Share, statusBar: StatusBar,
+//   };
+//   registerCapacitorBackends(capacitorApi);
 //
 // Typing it here (rather than importing `@capacitor/*`) keeps this package dependency-free and unit
 // testable with a fake — and documents exactly which Capacitor surface the seams require, which is the
-// real coupling between Flight and a Capacitor host. Members are intentionally minimal; widen only when
-// a backend needs more. Note the wide async/sync gap: every Capacitor plugin call is Promise-based,
+// real coupling between Flight and a Capacitor host. Capacitor's string-valued TypeScript enums are
+// nominal, so Filesystem and Haptics need the narrow boundary assertions shown above. Members are
+// intentionally minimal; widen only when a backend needs more. Note the wide async/sync gap: every Capacitor plugin call is Promise-based,
 // while several Flight seams (device/statusbar/connectivity snapshot getters, keyboard info) are
 // synchronous. Those adapters prefetch-and-cache (and, where the value is live, subscribe to keep the
 // cache fresh) — see each adapter for the exact contract. `@capacitor/preferences` is deliberately
@@ -160,7 +164,7 @@ export interface CapacitorDialogPromptResult {
 // Capacitor-resolvable path (a `file://` URI or a path under a configured Directory).
 export interface CapacitorFilesystemPlugin {
   appendFile(options: Readonly<CapacitorFilesystemWriteOptions>): Promise<void>;
-  copy(options: Readonly<CapacitorFilesystemCopyOptions>): Promise<void>;
+  copy(options: Readonly<CapacitorFilesystemCopyOptions>): Promise<unknown>;
   deleteFile(options: Readonly<CapacitorFilesystemPathOptions>): Promise<void>;
   mkdir(options: Readonly<CapacitorFilesystemMkdirOptions>): Promise<void>;
   readFile(options: Readonly<CapacitorFilesystemReadOptions>): Promise<CapacitorFilesystemReadResult>;
@@ -181,7 +185,7 @@ export interface CapacitorFilesystemReadOptions {
 }
 
 export interface CapacitorFilesystemReadResult {
-  data: string;
+  data: Blob | string;
 }
 
 export interface CapacitorFilesystemWriteOptions {
@@ -274,7 +278,7 @@ export interface CapacitorPosition {
 export interface CapacitorPositionCoords {
   accuracy: number;
   altitude: number | null;
-  altitudeAccuracy: number | null;
+  altitudeAccuracy: number | null | undefined;
   heading: number | null;
   latitude: number;
   longitude: number;

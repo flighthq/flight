@@ -6,7 +6,7 @@ function fakeTauri(platform: string): TauriApi {
   return {
     os: {
       arch: () => 'aarch64',
-      locale: () => 'en-US',
+      locale: async () => 'en-US',
       platform: () => platform,
       version: () => '14.2.1',
     },
@@ -14,8 +14,9 @@ function fakeTauri(platform: string): TauriApi {
 }
 
 describe('createTauriPlatformBackend', () => {
-  it('fills platform info from the os plugin', () => {
+  it('fills platform info from the os plugin', async () => {
     const backend = createTauriPlatformBackend(fakeTauri('macos'));
+    await Promise.resolve();
     const out = {} as PlatformInfo;
     const result = backend.getInfo(out);
     expect(result).toBe(out);
@@ -46,7 +47,7 @@ describe('createTauriPlatformBackend', () => {
 
   it('falls back to empty locale when the os plugin reports null', () => {
     const tauri = {
-      os: { arch: () => '', locale: () => null, platform: () => 'linux', version: () => '' },
+      os: { arch: () => '', locale: async () => null, platform: () => 'linux', version: () => '' },
     } as unknown as TauriApi;
     const out = {} as PlatformInfo;
     createTauriPlatformBackend(tauri).getInfo(out);
