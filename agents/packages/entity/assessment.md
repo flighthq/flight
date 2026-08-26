@@ -10,16 +10,16 @@ Sorted from `review.md` (solid, 92/100) and the direction session (2026-07-02). 
 
 ## Directed
 
-1. **Enforce the repository-wide `create*` Entity invariant.** Every Flight `create*` that constructs an SDK object returns an `Entity` through the entity constructor path, including value-looking objects such as `Viewport`; this preserves internal shape enforcement and the still-load-bearing OOP binding layer. Structural literals remain reserved for explicit `*Like` inputs. Add a mechanical/API test capable of catching new constructor drift.
+1. **Track the proposed `create*` Entity convention as an advisory.** An Entity-valued `create*` can make the runtime and binding contract predictable, including for value-looking objects such as `Viewport`, while structural literals remain appropriate for explicit `*Like` inputs. This is design evidence rather than a repository invariant: a new public `create*` that returns another value must remain legal and must not block CI.
 2. **Make the migration semantic rather than a cast or verb-table exercise.** The generated API currently
    exposes `create*` for structural products (`Scene3DDocument`, Standard PBR property blocks, projection
    descriptors), collections (`createScenesFrom*`), runtime records, backend descriptors, DOM elements,
    and native GL handles. Review each public function in its package context: some products should become
    Entities, while others need a more truthful operation name. `build*`, `compute*`, `parse*`, `allocate*`,
-   and `compile*` are **not** approved blanket mappings from return shape to verb. Do not fake the invariant
+   and `compile*` are **not** approved blanket mappings from return shape to verb. Do not fake the convention
    by casting a browser-native `WebGLProgram` or an array to Entity. `npm run api:create-entity` audits the
-   generated public barrels; its checked baseline prevents new drift while the existing entries receive
-   those semantic decisions.
+   generated public barrels; `npm run api:create-entity:advisory` compares that inventory with the review
+   baseline and reports changes without failing the command or blocking CI.
 
 ## Recommended
 
