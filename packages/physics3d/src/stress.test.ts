@@ -200,7 +200,22 @@ describe('physics3d stress qualification', () => {
     // top box can settle as low as ~10.6 on CI while measuring ~11.1 locally. The bound still catches the
     // stale-depth bug, which compressed the pile to ~8.7.
     expect(pile[pile.length - 1].y).toBeGreaterThan(10.2);
-    expect(pile.every((body) => body.sleeping)).toBe(true);
+    expect(
+      pile.every((body) => body.sleeping),
+      JSON.stringify(
+        pile.map((body) => [
+          body.y,
+          body.sleeping,
+          body.sleepTimer,
+          body.velocityX,
+          body.velocityY,
+          body.velocityZ,
+          body.angularVelocityX,
+          body.angularVelocityY,
+          body.angularVelocityZ,
+        ]),
+      ),
+    ).toBe(true);
   });
 
   it('keeps a driven ball-and-socket chain bounded over thousands of constraint solves', () => {
