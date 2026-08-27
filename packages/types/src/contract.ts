@@ -145,6 +145,7 @@ export * from './ClipboardFormat';
 export * from './ClipboardWatch';
 export * from './ClipRegion';
 export * from './Clock';
+export * from './Command';
 export * from './ClockOptions';
 export * from './CocosPlistSchema';
 export * from './Collision';

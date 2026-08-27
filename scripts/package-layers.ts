@@ -38,6 +38,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/camera',
     '@flighthq/camera-controls',
     '@flighthq/capture',
+    '@flighthq/command',
     '@flighthq/clip',
     '@flighthq/clipboard',
     '@flighthq/clock',

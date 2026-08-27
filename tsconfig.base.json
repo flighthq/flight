@@ -120,6 +120,8 @@
       "@flighthq/compression/*": ["./packages/compression/src/*"],
       "@flighthq/color": ["./packages/color/src/index.ts"],
       "@flighthq/color/*": ["./packages/color/src/*"],
+      "@flighthq/command": ["./packages/command/src/index.ts"],
+      "@flighthq/command/*": ["./packages/command/src/*"],
       "@flighthq/textureatlas-formats": ["./packages/textureatlas-formats/src/index.ts"],
       "@flighthq/textureatlas-formats/*": ["./packages/textureatlas-formats/src/*"],
       "@flighthq/assets": ["./packages/assets/src/index.ts"],

@@ -73,6 +73,9 @@
       "path": "../color"
     },
     {
+      "path": "../command"
+    },
+    {
       "path": "../compression"
     },
     {
