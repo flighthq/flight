@@ -62,6 +62,14 @@
       "registrar": "registerCollisionSupport3D"
     },
     {
+      "packageName": "command",
+      "registrar": "registerCommandBinding"
+    },
+    {
+      "packageName": "command",
+      "registrar": "registerDefaultCommandBindings"
+    },
+    {
       "packageName": "compression",
       "registrar": "registerDecompressor"
     },
