@@ -57,9 +57,11 @@ roles:
   integration:
     escalatesTo: [manager]
     instructions: |
-      Land builder work and keep the tree green. On failure, escalate to manager with what
-      broke - never re-task a builder directly. You are in a sandbox and can install
-      dependencies.
+      Merge builder work. DO NOT BECOME A BOTTLENECK. Manage merge conflicts and run checks.
+      If a merge causes your tree to go red and is not quickly resolved, do a handoff back to
+      manager to notify them briefly that the integration tree is red. Don't block merging.
+      Continue to integrate all the work which is given to you. Never re-task a builder directly.
+      You are in a sandbox and can install dependencies.
   auditor:
     nudge: directed
     instructions: |
