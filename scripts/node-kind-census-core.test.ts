@@ -36,20 +36,9 @@ describe('collectNodeConstructorCandidates', () => {
 
 describe('collectNodeKindChokepointSites', () => {
   it('resolves a literal kind constant passed straight to a chokepoint', () => {
-    const sites = collectNodeKindChokepointSites(
-      new Map([
-        [
-          'scene2d',
-          [
-            fixture(
-              'literal.ts',
-              `export function createThing() { return createNode2D(ThingKind, obj, data, runtime); }`,
-            ),
-          ],
-        ],
-      ]),
-      new Map([['ThingKind', 'Thing']]),
-    );
+    const sites = sitesFor(`export function createThing() { return createNode2D(ThingKind, obj, data, runtime); }`, [
+      'createThing',
+    ]);
     expect(sites).toHaveLength(1);
     expect(sites[0]).toMatchObject({ chokepoint: 'createNode2D', kind: 'Thing', packageName: 'scene2d' });
   });
@@ -59,21 +48,11 @@ describe('collectNodeKindChokepointSites', () => {
   // and reports a population two kinds short with no diagnostic — which is exactly what the first draft of
   // this instrument did to Mesh and Billboard.
   it('resolves a kind forwarded through a parameter default', () => {
-    const sites = collectNodeKindChokepointSites(
-      new Map([
-        [
-          'scene3d',
-          [
-            fixture(
-              'defaulted.ts',
-              `export function createThing(geometry, materials, kind: Kind = ThingKind, obj) {
-                 return createNode3D(kind, obj);
-               }`,
-            ),
-          ],
-        ],
-      ]),
-      new Map([['ThingKind', 'Thing']]),
+    const sites = sitesFor(
+      `export function createThing(geometry, materials, kind: Kind = ThingKind, obj) {
+         return createNode3D(kind, obj);
+       }`,
+      ['createThing'],
     );
     expect(sites.map((site) => site.kind)).toEqual(['Thing']);
   });
@@ -81,34 +60,41 @@ describe('collectNodeKindChokepointSites', () => {
   // The same site with the default removed must NOT quietly drop out of the census. It resolves to null,
   // which the report turns into an unresolved entry, so the instrument fails instead of shrinking.
   it('yields an unresolvable kind rather than dropping the site when the default is gone', () => {
-    const sites = collectNodeKindChokepointSites(
-      new Map([
-        ['scene3d', [fixture('undefaulted.ts', `export function createThing(kind) { return createNode3D(kind); }`)]],
-      ]),
-      new Map([['ThingKind', 'Thing']]),
-    );
+    const sites = sitesFor(`export function createThing(kind) { return createNode3D(kind); }`, ['createThing']);
     expect(sites).toHaveLength(1);
     expect(sites[0].kind).toBeNull();
   });
 
-  it('skips a chokepoint forwarding to another chokepoint, which mints no kind of its own', () => {
-    const sites = collectNodeKindChokepointSites(
-      new Map([
-        ['scene2d', [fixture('plumbing.ts', `export function createNode2D(kind) { return createNode(kind); }`)]],
-      ]),
-      new Map(),
+  // THE PRIVATE-HELPER DEFEATING ARM, stated generically: it is the ABSENCE of a public export that keeps a
+  // function out, not anything about its name or what it mints. Four private helpers here — resolvable,
+  // dynamic, differently named — and none may reach a population. The dynamic one is the case that bit:
+  // it failed the whole census on a function no consumer can call.
+  it('admits no private helper to any population, whatever it is named or mints', () => {
+    const sites = sitesFor(
+      `function buildResolvable() { return createNode3D(ThingKind); }
+       function buildDynamic(node) { return createNode3D(node.kind); }
+       function makeAnother() { return createNode2D(ThingKind); }
+       const arrowHelper = (node) => createNode3D(node.kind);
+       export function createPublic() { return createNode3D(ThingKind); }`,
+      ['createPublic'],
     );
-    expect(sites).toEqual([]);
+    expect(sites.map((site) => site.enclosingFunction)).toEqual(['createPublic']);
+  });
+
+  // Exported from its own file is NOT enough: the gate is the package's public lane. A contract-only export
+  // is not a public constructor under the ruled predicate.
+  it('excludes a function exported from its file but absent from the public lane', () => {
+    expect(sitesFor(`export function createContractOnly() { return createNode2D(ThingKind); }`, [])).toEqual([]);
+  });
+
+  it('skips a chokepoint forwarding to another chokepoint, which mints no kind of its own', () => {
+    expect(sitesFor(`export function createNode2D(kind) { return createNode(kind); }`, ['createNode2D'])).toEqual([]);
   });
 
   it('skips a kind-preserving clone, whose kind is its source node and not a new one', () => {
-    const sites = collectNodeKindChokepointSites(
-      new Map([
-        ['scene3d', [fixture('clone.ts', `export function cloneThing(source) { return createNode3D(source.kind); }`)]],
-      ]),
-      new Map(),
-    );
-    expect(sites).toEqual([]);
+    expect(
+      sitesFor(`export function cloneThing(source) { return createNode3D(source.kind); }`, ['cloneThing']),
+    ).toEqual([]);
   });
 });
 
@@ -287,6 +273,19 @@ function fixture(name: string, source: string): string {
   const file = join(mkdtempSync(join(tmpdir(), 'node-kind-census-')), name);
   writeFileSync(file, source, 'utf-8');
   return file;
+}
+
+// Builds sites for one synthetic package, with `publicExports` naming what its public lane exports — the
+// gate every constructor must pass before it can enter any population.
+function sitesFor(source: string, publicExports: readonly string[]): ReturnType<typeof collectNodeKindChokepointSites> {
+  return collectNodeKindChokepointSites(
+    new Map([['scene2d', [fixture('sites.ts', source)]]]),
+    new Map([
+      ['ThingKind', 'Thing'],
+      ['PublicKind', 'Public'],
+    ]),
+    new Map([['scene2d', new Set(publicExports)]]),
+  );
 }
 
 function outcome(overrides: Readonly<Partial<NodeKindProbeOutcome>> = {}): NodeKindProbeOutcome {
