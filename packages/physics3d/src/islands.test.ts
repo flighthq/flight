@@ -182,6 +182,26 @@ describe('updatePhysics3DSleep', () => {
     expect(body.sleeping).toBe(true);
   });
 
+  it('includes floating-point accumulation at the configured sleep deadline', () => {
+    const world = createPhysics3DWorld();
+    const body = createBox(world);
+    const frameDuration = 1 / 60;
+    const framesToSleep = world.config.timeToSleep / frameDuration;
+    expect(Number.isInteger(framesToSleep)).toBe(true);
+
+    let accumulated = 0;
+    for (let frame = 1; frame < framesToSleep; frame += 1) {
+      accumulated += frameDuration;
+      updatePhysics3DSleep(world, frameDuration);
+    }
+    expect(body.sleeping).toBe(false);
+
+    accumulated += frameDuration;
+    updatePhysics3DSleep(world, frameDuration);
+    expect(accumulated).toBeLessThan(world.config.timeToSleep);
+    expect(body.sleeping).toBe(true);
+  });
+
   it('zeroes velocity on sleeping so a woken body does not resume stale motion', () => {
     const world = createPhysics3DWorld();
     const body = createBox(world);

@@ -214,7 +214,11 @@ export function updatePhysics3DSleep(world: Physics3DWorld, dt: number): void {
     const body = bodies[bodyIndex];
     if (body.type === 'static') continue;
     const islandTimer = islandTimers.get(islandRootOf(parents, body.index)) ?? body.sleepTimer;
-    const shouldSleep = body.sleepEnabled && islandTimer >= config.timeToSleep;
+    // Repeated frame durations need not sum to their authored deadline exactly: thirty 1/60-second
+    // intervals produce 0.49999999999999994 rather than 0.5. Treat only that representation-scale
+    // shortfall as reaching the deadline, without admitting a meaningfully early sleep.
+    const deadlineTolerance = Number.EPSILON * Math.max(1, islandTimer, config.timeToSleep);
+    const shouldSleep = body.sleepEnabled && islandTimer + deadlineTolerance >= config.timeToSleep;
     if (!shouldSleep && body.sleeping) {
       // Waking clears the timer so a woken island must earn its rest again from zero rather than
       // falling straight back asleep on the next step.
