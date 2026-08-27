@@ -74,6 +74,32 @@ export function explainFlightDocumentRefusal(
   return null;
 }
 
+export function explainFlightDocumentRefusalFromText(
+  text: string,
+  dimension: 'Scene2D' | 'Scene3D',
+): FlightDocumentRefusalExplanation | null {
+  const result = parseSceneDocumentYamlSubset(text);
+  if (!result.ok) {
+    return {
+      actual: result.actual,
+      column: result.column,
+      kind: null,
+      limit: result.limit,
+      line: result.line,
+      offset: result.offset,
+      path: '',
+      reason: result.kind as FlightDocumentRefusalReasonType,
+      resourceKey: null,
+      version: null,
+    };
+  }
+  const document = parseFlightDocumentFromText(text);
+  if (document === null) {
+    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, '');
+  }
+  return explainFlightDocumentRefusal(document, dimension);
+}
+
 export function serializeFlightDocument(document: Readonly<FlightDocument>): string {
   const lines: string[] = [];
   lines.push('flight: ' + String(document.version));
