@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/geometry": "*",
+    "@flighthq/registry": "*",
     "@flighthq/shape": "*",
     "@flighthq/types": "*"
   },
