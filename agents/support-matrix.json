@@ -4872,6 +4872,31 @@
           }
         },
         {
+          "scene": "swf-color-transform",
+          "backends": {
+            "canvas": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "dom": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgl": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            },
+            "webgpu": {
+              "status": "realized",
+              "fingerprint": true,
+              "realization": true
+            }
+          }
+        },
+        {
           "scene": "swf-import",
           "backends": {
             "canvas": {

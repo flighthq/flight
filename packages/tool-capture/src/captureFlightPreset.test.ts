@@ -38,7 +38,11 @@ describe('getFlightCaptureValidationPreset', () => {
       'effect-msaa': ['webgpu'],
       'effect-msaa-bloom': ['webgpu'],
       'render-target-node-2d': ['canvas'],
-      'swf-alpha-transform': ['webgl', 'webgpu'],
+      'swf-color-transform': ['webgl', 'webgpu'],
     });
+  });
+
+  it('compares every swf-alpha-transform backend after the RGB fold moves to its own held scene', () => {
+    expect(getFlightCaptureValidationPreset('functional').paritySkip).not.toHaveProperty('swf-alpha-transform');
   });
 });

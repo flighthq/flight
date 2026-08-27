@@ -128,7 +128,7 @@ does not depend on a commit hash, which a rebase rewrites.
 The bounded-candidate audit found none. Every row resolves to a unique backend-specific backing file,
 so the shared-file/per-backend constraint documented in
 [bounded expected-image descriptions](functional-bounded-descriptions.md) does not apply. No source in
-this population records a genuinely undecided correct picture like `swf-alpha-transform`. `none`
+this population records a genuinely undecided correct picture like `swf-color-transform`. `none`
 means no candidate was found in this audit; a CC-2 writer must still stop and report newly discovered
 evidence of an undecided design rather than weaken a precise description.
 

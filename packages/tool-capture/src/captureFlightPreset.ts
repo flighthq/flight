@@ -52,7 +52,7 @@ const FLIGHT_PARITY_SKIP: Readonly<Record<string, 'all' | Readonly<string[]>>> =
   // deliberately different producers are not visual references for one another; retain only GL↔WGPU.
   'render-target-node-2d': ['canvas'],
   // SWF RGB CXFORM realization is still an undecided design: GL and WGPU fold it into tessellated solid
-  // shapes, while Canvas and DOM leave it unapplied. Exclude the GPU cells until that representation is
-  // ruled instead of letting parity bless either side; Canvas↔DOM still compares the shared behavior.
-  'swf-alpha-transform': ['webgl', 'webgpu'],
+  // shapes, while Canvas and DOM leave it unapplied. The isolated scene keeps that question visible without
+  // suppressing parity on the three cross-backend-equal alpha cases; Canvas↔DOM still compares here.
+  'swf-color-transform': ['webgl', 'webgpu'],
 };

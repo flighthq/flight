@@ -20,7 +20,7 @@ per-backend comparisons) on 2026-08-08. A file:line here is a claim about this t
   (`:74-81`), so a color-matrix-adjusted solid draws its **source** colour. WebGL folds both cases at
   the same seam (`packages/scene2d-gl/src/glShapeMesh.ts:74`, matrix uniforms at
   `glColorAdjustmentMaterialFeature.ts:863-886`), so this is a live per-backend gap, not a shared one.
-  A resolved `ColorScaleBias` does fold here. `functional/scenes/swf-alpha-transform.ts` is the
+  A resolved `ColorScaleBias` does fold here. `functional/scenes/swf-color-transform.ts` is the
   four-backend reproducer.
 - **The render-stats surface has zero callers.** `recordWgpuBatchFlush` and
   `recordWgpuTextureUpload` (`wgpuRenderStats.ts:16`, `:28`) are exported and invoked from nowhere in
@@ -59,8 +59,8 @@ per-backend comparisons) on 2026-08-08. A file:line here is a claim about this t
 - **2026-08-04** — Tessellated solid fills fold a resolved `ColorScaleBias` through the opt-in
   color-adjustment feature; the untinted path keeps its 64-byte uniform and carries no adjustment
   shader code.
-- **2026-08-04** — Recorded the mesh-path colour-adjustment gap against
-  `functional/scenes/swf-alpha-transform.ts` as the permanent four-backend reproducer.
+- **2026-08-04** — Recorded the mesh-path colour-adjustment gap against the four-backend reproducer now
+  isolated in `functional/scenes/swf-color-transform.ts`.
 - **2026-06-25** — Audited every draw path for degenerate input; all already no-op, no edit warranted.
   Per-kind velocity-writer aliases rejected as byte-identical copies of the display-object writer.
 - **2026-06-24** — Typed renderer-data helpers (`createWgpuRendererData` / `getWgpuRendererData`)

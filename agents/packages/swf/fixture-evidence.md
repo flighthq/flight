@@ -25,7 +25,7 @@ reproducibility.
 | Nested cross-check | new here, and falsified before being believed |
 | Mutation sweep | ran clean on its **property**; its "still imported" figure was **not reproducible as written** and is now stated as a range with the reason |
 | [Incidental SHA-token inventory](sha-pin-incidental-audit.md) | ran clean — 207 occurrences across 43 files reproduce exactly, and 207 of its 208 cited line references are still exact; the single exception is the repair that document itself records |
-| Functional scenes `swf-import` / `swf-alpha-transform` | ran clean — the functional smoke gate captured both on DOM, Canvas, WebGL, and WebGPU with each hash equal to its baseline |
+| Functional scenes `swf-import` / `swf-alpha-transform` / `swf-color-transform` | ran clean — `swf-import` is unchanged; the two split transform scenes each passed exact four-backend smoke and regression capture, with alpha parity comparing all three Canvas-reference pairs and color parity retaining only the unresolved same-arm Canvas↔DOM pair |
 | `npm run check swf` / `npm run test swf` | ran clean; re-run for the current gate and test counts |
 | Stated *reasons*, not just commands | one was false — the mutation sweep's "seeded generator so any failure is reproducible", which recorded no seed. The load-bearing justifications in [`status.md`](status.md) hold: `setMovieClipSource` does end in `gotoAndStopTimeline`, `updateMovieClip` does advance only the timeline it is handed, and `playMode` does default to `loop` |
 
