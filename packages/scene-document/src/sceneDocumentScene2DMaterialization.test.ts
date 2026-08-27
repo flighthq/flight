@@ -276,11 +276,13 @@ describe('explainFlightDocumentRefusalFromText', () => {
     expect(explanation).toBeNull();
   });
 
-  it('explains a version mismatch in valid YAML', () => {
+  it('explains an unsupported version in valid YAML', () => {
     const yaml = 'flight: 99\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
     const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
     expect(explanation).not.toBeNull();
-    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
+    expect(explanation!.path).toBe('version');
+    expect(explanation!.version).toBe(99);
   });
 
   it('explains a dimension mismatch in valid YAML', () => {
@@ -288,6 +290,7 @@ describe('explainFlightDocumentRefusalFromText', () => {
     const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
+    expect(explanation!.path).toBe('kind');
   });
 });
 

@@ -93,11 +93,26 @@ export function explainFlightDocumentRefusalFromText(
       version: null,
     };
   }
-  const document = parseFlightDocumentFromText(text);
-  if (document === null) {
+  const value = result.value;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     return createRefusal(FlightDocumentRefusalReason.StructureInvalid, '');
   }
-  return explainFlightDocumentRefusal(document, dimension);
+  const mapping = value as Record<string, unknown>;
+  const version = mapping['flight'];
+  if (typeof version !== 'number') {
+    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'flight');
+  }
+  if (version !== 1) {
+    return {
+      ...createRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
+      version,
+    };
+  }
+  const kind = mapping['kind'];
+  if (kind !== dimension) {
+    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
+  }
+  return null;
 }
 
 export function serializeFlightDocument(document: Readonly<FlightDocument>): string {
