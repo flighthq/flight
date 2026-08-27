@@ -191,7 +191,7 @@ describe('causal limitation prose', () => {
       'pinned official WebGL capture',
       'pinned official WebGPU capture',
       'scan horizontally through x=300 at y=150',
-      'after an architecture ruling chooses parity',
+      'temporary WHITE-versus-GREEN bound',
       'minimal functional A/B whose',
     ]) {
       expect(audit).toContain(releaseMarker);

@@ -112,10 +112,10 @@ so they are bounded rather than asserted as gaps:
    quadrant-centre colours in the same frame are the positive control; those scans settle a backend-specific
    seam profile without promoting one backend's result into a shared contract.
 4. `swf-color-transform.ts` — the backend RGB-fold difference is an undecided design. **Release observation:**
-   after an architecture ruling chooses one representation for every backend, capture all four backends and
-   observe the ruled square colour on each. The separate `swf-alpha-transform` scene is the positive control
-   for cross-backend SWF alpha parity. The ruling plus that four-backend result releases the temporary
-   WHITE-versus-GREEN bound into the selected permanent contract.
+   after an architecture ruling chooses parity or explicitly preserves backend divergence, capture all four
+   backends and observe the ruled square colour on each. The separate `swf-alpha-transform` scene is the
+   positive control for cross-backend SWF alpha parity. The ruling plus that four-backend result releases the
+   temporary WHITE-versus-GREEN bound into the selected permanent contract.
 5. `maturity-gaps.md` group/container blend — the record says unverified/likely absent; source inspection does
    not establish a supported semantic contract. **Release observation:** add a minimal functional A/B whose
    overlapping-child result differs between whole-subtree blend, per-child blend, and Normal, alongside a known
