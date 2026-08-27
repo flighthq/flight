@@ -2,15 +2,15 @@
 //
 //   node agents/packages/scaffold.mjs
 //
-// For every packages/<name>, ensures agents/packages/<name>/ exists and writes a
-// charter.md + status.md stub if absent. Never overwrites an existing file (existing status
-// docs and any authored charter are safe). "What it is" in the charter is seeded from the prior
-// depth review's Domain line — words already vetted as accurate — and marked as needing your voice.
+// For every packages/<name> carrying a package.json, ensures agents/packages/<name>/ exists and writes
+// a charter.md + status.md stub if absent. Never overwrites an existing file (existing status docs and
+// any authored charter are safe). "What it is" in the charter is seeded from the prior depth review's
+// Domain line — words already vetted as accurate — and marked as needing your voice.
 //
 // review.md / assessment.md are stage OUTPUTS and are intentionally not stubbed here.
 
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -30,8 +30,8 @@ const NO_CRATE = new Set([
   'textshaper-canvas',
 ]);
 
-function domainSeed(name) {
-  const path = join(depthDir, `${name}.md`);
+function domainSeed(name, depthDirectory) {
+  const path = join(depthDirectory, `${name}.md`);
   if (!existsSync(path)) return null;
   const line = readFileSync(path, 'utf8')
     .split('\n')
@@ -51,9 +51,9 @@ function charterRole(name) {
   return 'package';
 }
 
-function charterStub(name) {
+function charterStub(name, depthDirectory) {
   const crate = NO_CRATE.has(name) ? 'null' : `flighthq-${name}`;
-  const seed = domainSeed(name);
+  const seed = domainSeed(name, depthDirectory);
   const whatItIs = seed
     ? `${seed}\n\n_(Seeded from the prior depth review; replace with the intent in your own framing.)_`
     : `_TODO — capture what this package is for, in your framing._`;
@@ -121,28 +121,42 @@ appending to it: a closed thread is deleted, not struck._
 `;
 }
 
-const names = readdirSync(packagesDir, { withFileTypes: true })
-  .filter((d) => d.isDirectory())
-  .map((d) => d.name)
-  .sort();
-
-let created = 0;
-let skipped = 0;
-for (const name of names) {
-  const dir = join(here, name);
-  mkdirSync(dir, { recursive: true });
-  for (const [file, make] of [
-    ['charter.md', charterStub],
-    ['status.md', statusStub],
-  ]) {
-    const path = join(dir, file);
-    if (existsSync(path)) {
-      skipped += 1;
-      continue;
-    }
-    writeFileSync(path, make(name));
-    created += 1;
-  }
+export function findRealPackageNames(packagesDirectory) {
+  return readdirSync(packagesDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(packagesDirectory, entry.name, 'package.json')))
+    .map((entry) => entry.name)
+    .sort();
 }
 
-console.log(`packages: ${names.length}  files created: ${created}  skipped (existing): ${skipped}`);
+export function scaffoldPackageCells({
+  cellsDirectory = here,
+  depthDirectory = depthDir,
+  packagesDirectory = packagesDir,
+} = {}) {
+  const packageNames = findRealPackageNames(packagesDirectory);
+  let created = 0;
+  let skipped = 0;
+  for (const name of packageNames) {
+    const dir = join(cellsDirectory, name);
+    mkdirSync(dir, { recursive: true });
+    for (const [file, make] of [
+      ['charter.md', charterStub],
+      ['status.md', statusStub],
+    ]) {
+      const path = join(dir, file);
+      if (existsSync(path)) {
+        skipped += 1;
+        continue;
+      }
+      writeFileSync(path, make(name, depthDirectory));
+      created += 1;
+    }
+  }
+
+  return { created, packageNames, skipped };
+}
+
+if (resolve(process.argv[1] ?? '') === resolve(fileURLToPath(import.meta.url))) {
+  const { created, packageNames, skipped } = scaffoldPackageCells();
+  console.log(`packages: ${packageNames.length}  files created: ${created}  skipped (existing): ${skipped}`);
+}
