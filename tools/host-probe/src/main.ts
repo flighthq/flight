@@ -12,29 +12,36 @@ app.innerHTML =
 
 const host = resolveHostProbeHost();
 document.title = `Flight Host Probe · ${host}`;
-document.documentElement.dataset.hostProbeStage = 'installing-host';
-const startedAt = new Date();
-const before = captureHostProbeBackends();
+void runHostProbe();
 
-try {
-  const installation = await installHostProbe(host, before);
-  const results = [
-    ...createHostProbeProviderResults(host, new Set(installation.changedCapabilities)),
-    ...installation.results,
-    runHostProbeRender(),
-  ];
-  publish(createHostProbeReport(host, startedAt, new Date(), results));
-} catch (error) {
-  publish(
-    createHostProbeReport(host, startedAt, new Date(), [
-      {
-        detail: error instanceof Error ? error.message : String(error),
-        id: 'runtime.bootstrap',
-        kind: 'runtime',
-        status: 'fail',
-      },
-    ]),
-  );
+async function runHostProbe(): Promise<void> {
+  document.documentElement.dataset.hostProbeStage = 'installing-host';
+  const startedAt = new Date();
+  const before = captureHostProbeBackends();
+
+  try {
+    // Keep this await inside a detached async function. The lazy host chunks import shared bindings
+    // from this entry chunk, so top-level-awaiting one prevents older Android WebViews from completing
+    // the entry module and resolving that import cycle.
+    const installation = await installHostProbe(host, before);
+    const results = [
+      ...createHostProbeProviderResults(host, new Set(installation.changedCapabilities)),
+      ...installation.results,
+      runHostProbeRender(),
+    ];
+    publish(createHostProbeReport(host, startedAt, new Date(), results));
+  } catch (error) {
+    publish(
+      createHostProbeReport(host, startedAt, new Date(), [
+        {
+          detail: error instanceof Error ? error.message : String(error),
+          id: 'runtime.bootstrap',
+          kind: 'runtime',
+          status: 'fail',
+        },
+      ]),
+    );
+  }
 }
 
 function publish(report: NonNullable<Window['__flightHostProbeReport']>): void {
