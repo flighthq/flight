@@ -1,0 +1,51 @@
+{
+  "name": "@flighthq/command",
+  "version": "0.4.0",
+  "author": "Joshua Granick and other contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/command"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "default": "./dist/contract.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/**/*.test.ts",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts.map"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --watch --config vitest.config.ts",
+    "prepack": "npm run clean && npm run clean:dist && npm run build",
+    "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
+  },
+  "dependencies": {
+    "@flighthq/node": "*",
+    "@flighthq/registry": "*",
+    "@flighthq/signals": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "description": "Undo/redo command history — commands are plain kind-tagged data (property set, add/remove/reorder child, composite) whose execute/undo/merge are free functions registered per kind in a keyed table and resolved at dispatch, with a stack tracking applied/redoable entries, per-kind merge coalescing for drag sequences, nestable transaction brackets that fold many commands into one entry, an optional maxSize cap, and an opt-in onChange signal; no closures on the stack, so entries stay inspectable data",
+  "sideEffects": false
+}

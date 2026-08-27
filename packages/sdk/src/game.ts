@@ -1,5 +1,6 @@
 export * from '@flighthq/camera-controls';
 export * from '@flighthq/collision';
+export * from '@flighthq/command';
 export * from '@flighthq/flow';
 export * from '@flighthq/particleemitter';
 export * from '@flighthq/particles';

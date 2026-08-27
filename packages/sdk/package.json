@@ -112,6 +112,7 @@
     "@flighthq/clock": "*",
     "@flighthq/collision": "*",
     "@flighthq/color": "*",
+    "@flighthq/command": "*",
     "@flighthq/compression": "*",
     "@flighthq/connectivity": "*",
     "@flighthq/debug": "*",
