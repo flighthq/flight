@@ -232,6 +232,8 @@
       "@flighthq/render-wgpu/*": ["./packages/render-wgpu/src/*"],
       "@flighthq/requirements": ["./packages/requirements/src/index.ts"],
       "@flighthq/requirements/*": ["./packages/requirements/src/*"],
+      "@flighthq/scene-document": ["./packages/scene-document/src/index.ts"],
+      "@flighthq/scene-document/*": ["./packages/scene-document/src/*"],
       "@flighthq/registry-catalog": ["./packages/registry-catalog/src/index.ts"],
       "@flighthq/registry-catalog/*": ["./packages/registry-catalog/src/*"],
       "@flighthq/registry-codegen": ["./packages/registry-codegen/src/index.ts"],

@@ -109,6 +109,9 @@
       "path": "../scene2d-wgpu"
     },
     {
+      "path": "../scene-document"
+    },
+    {
       "path": "../easing"
     },
     {
