@@ -16,7 +16,9 @@ import type {
   FlightDocumentSchemaRegistry,
   FlightDocumentValue,
   NodeAny,
+  Projection,
   Scene2D,
+  Transform3DLike,
 } from '@flighthq/types/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
@@ -121,6 +123,30 @@ export function serializeFlightDocument(document: Readonly<FlightDocument>): str
   lines.push('kind: ' + document.kind);
   if (document.kind === 'Scene2D' && document.backgroundColor !== null) {
     lines.push('backgroundColor: ' + String(document.backgroundColor));
+  }
+  if (document.kind === 'Scene3D') {
+    if (document.cameras.length > 0) {
+      lines.push('cameras:');
+      for (const cam of document.cameras) {
+        lines.push('  - far: ' + String(cam.far));
+        lines.push('    near: ' + String(cam.near));
+        lines.push('    projection:');
+        serializeProjection(lines, cam.projection, 6);
+        lines.push('    transform:');
+        serializeTransform3D(lines, cam.transform, 6);
+        if (cam.name !== undefined) lines.push('    name: ' + serializeScalar(cam.name));
+      }
+    }
+    if (document.lights.length > 0) {
+      lines.push('lights:');
+      for (const light of document.lights) {
+        lines.push('  - descriptor:');
+        lines.push('      kind: ' + light.descriptor.kind);
+        lines.push('    transform:');
+        serializeTransform3D(lines, light.transform, 6);
+        if (light.name !== undefined) lines.push('    name: ' + serializeScalar(light.name));
+      }
+    }
   }
   if (document.resources.length > 0) {
     lines.push('resources:');
@@ -313,6 +339,39 @@ function writeNode(source: Readonly<NodeAny>, schemas: Readonly<FlightDocumentSc
     fields,
     kind: source.kind,
   };
+}
+
+function serializeProjection(lines: string[], projection: Readonly<Projection>, indent: number): void {
+  const prefix = ' '.repeat(indent);
+  lines.push(prefix + 'kind: ' + projection.kind);
+  if (projection.kind === 'perspective') {
+    lines.push(prefix + 'fovY: ' + String(projection.fovY));
+    lines.push(prefix + 'aspect: ' + String(projection.aspect));
+  } else {
+    lines.push(prefix + 'halfWidth: ' + String(projection.halfWidth));
+    lines.push(prefix + 'halfHeight: ' + String(projection.halfHeight));
+  }
+}
+
+function serializeTransform3D(lines: string[], transform: Readonly<Transform3DLike>, indent: number): void {
+  const prefix = ' '.repeat(indent);
+  const p = transform.position;
+  const r = transform.rotation;
+  const s = transform.scale;
+  lines.push(prefix + 'position: { x: ' + String(p.x) + ', y: ' + String(p.y) + ', z: ' + String(p.z) + ' }');
+  lines.push(
+    prefix +
+      'rotation: { x: ' +
+      String(r.x) +
+      ', y: ' +
+      String(r.y) +
+      ', z: ' +
+      String(r.z) +
+      ', w: ' +
+      String(r.w) +
+      ' }',
+  );
+  lines.push(prefix + 'scale: { x: ' + String(s.x) + ', y: ' + String(s.y) + ', z: ' + String(s.z) + ' }');
 }
 
 function writeFieldsWithDefaults(
