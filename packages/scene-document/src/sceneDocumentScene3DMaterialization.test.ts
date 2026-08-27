@@ -315,6 +315,42 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
     expect(explanation!.path).toBe('kind');
   });
 
+  it('explains a duplicate ambient light from text', () => {
+    const yaml = [
+      'flight: 1',
+      'kind: Scene3D',
+      'scene:',
+      '  kind: Node3D',
+      'lights:',
+      '  - descriptor:',
+      '      kind: AmbientLight',
+      '  - descriptor:',
+      '      kind: AmbientLight',
+    ].join('\n');
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateAmbientLight);
+    expect(explanation!.path).toBe('lights');
+  });
+
+  it('explains a duplicate directional light from text', () => {
+    const yaml = [
+      'flight: 1',
+      'kind: Scene3D',
+      'scene:',
+      '  kind: Node3D',
+      'lights:',
+      '  - descriptor:',
+      '      kind: DirectionalLight',
+      '  - descriptor:',
+      '      kind: DirectionalLight',
+    ].join('\n');
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateDirectionalLight);
+    expect(explanation!.path).toBe('lights');
+  });
+
   it('returns null for valid Scene3D text', () => {
     const yaml = 'flight: 1\nkind: Scene3D\nscene:\n  kind: Node3D\n';
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
