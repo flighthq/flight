@@ -84,6 +84,7 @@
     { "path": "./packages/render-gl" },
     { "path": "./packages/render-wgpu" },
     { "path": "./packages/requirements" },
+    { "path": "./packages/scene-document" },
     { "path": "./packages/registry-catalog" },
     { "path": "./packages/registry-codegen" },
     { "path": "./packages/tool-registry" },
