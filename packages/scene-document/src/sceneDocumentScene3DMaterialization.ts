@@ -1,7 +1,13 @@
+import { createCamera3D } from '@flighthq/camera/contract';
+import { createTransform3D } from '@flighthq/geometry/contract';
+import { createScene3DLights } from '@flighthq/lighting/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createScene2D } from '@flighthq/scene2d/contract';
+import { createScene3D } from '@flighthq/scene3d/contract';
 import type {
+  AmbientLight,
+  Camera3D,
+  DirectionalLight,
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentNode,
@@ -11,60 +17,68 @@ import type {
   FlightDocumentResourceDescriptor,
   FlightDocumentResourceLookup,
   FlightDocumentResourceResolverRegistry,
-  FlightDocumentScene2D,
-  FlightDocumentScene2DMaterialization,
+  FlightDocumentScene3D,
+  FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
   FlightDocumentValue,
   NodeAny,
-  Projection,
-  Scene2D,
-  Transform3DLike,
+  Scene3D,
+  Scene3DDocumentCamera,
+  Scene3DDocumentLight,
+  Scene3DLights,
+  Transform3D,
 } from '@flighthq/types/contract';
-import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+import { AmbientLightKind, DirectionalLightKind, FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
 
-export function createFlightDocumentFromScene2D(
-  source: Readonly<Scene2D>,
+export function createFlightDocumentFromScene3D(
+  source: Readonly<Scene3D>,
+  cameras: readonly Readonly<Scene3DDocumentCamera>[],
+  lights: readonly Readonly<Scene3DDocumentLight>[],
   schemas: Readonly<FlightDocumentSchemaRegistry>,
-): FlightDocumentScene2D {
+): FlightDocumentScene3D {
   return {
-    backgroundColor: source.color,
-    kind: 'Scene2D',
+    cameras: cameras.map((c) => ({ ...c })),
+    kind: 'Scene3D',
+    lights: lights.map((l) => ({ ...l })),
     resources: [],
     scene: writeNode(source.root, schemas),
     version: 1,
   };
 }
 
-export function createFlightDocumentScene2DMaterialization(
+export function createFlightDocumentScene3DMaterialization(
   document: Readonly<FlightDocument>,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
-): FlightDocumentScene2DMaterialization | null {
-  if (document.kind !== 'Scene2D') return null;
+): FlightDocumentScene3DMaterialization | null {
+  if (document.kind !== 'Scene3D') return null;
   if (document.version !== 1) return null;
-  const scene = createScene2D({ color: document.backgroundColor });
+  const duplicateRefusal = checkDuplicateLights(document.lights);
+  if (duplicateRefusal !== null) return null;
+  const scene = createScene3D();
   const resources = resolveResources(document.resources, resolvers);
   materializeChildren(scene.root, document.scene.children, schemas, resources);
-  return { scene };
+  const cameras = materializeCameras(document.cameras);
+  const lights = materializeLights(document.lights);
+  return { cameras, lights, scene };
 }
 
-export function createFlightDocumentScene2DMaterializationFromText(
+export function createFlightDocumentScene3DMaterializationFromText(
   text: string,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
-): FlightDocumentScene2DMaterialization | null {
+): FlightDocumentScene3DMaterialization | null {
   const document = parseFlightDocumentFromText(text);
   if (document === null) return null;
-  return createFlightDocumentScene2DMaterialization(document, schemas, resolvers);
+  return createFlightDocumentScene3DMaterialization(document, schemas, resolvers);
 }
 
-export function explainFlightDocumentRefusal(
+export function explainFlightDocumentScene3DRefusal(
   document: Readonly<FlightDocument>,
-  dimension: 'Scene2D' | 'Scene3D',
 ): FlightDocumentRefusalExplanation | null {
-  if (document.kind !== dimension) {
+  if (document.kind !== 'Scene3D') {
     return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
   }
   if (document.version !== 1) {
@@ -73,13 +87,10 @@ export function explainFlightDocumentRefusal(
       version: document.version,
     };
   }
-  return null;
+  return checkDuplicateLights(document.lights);
 }
 
-export function explainFlightDocumentRefusalFromText(
-  text: string,
-  dimension: 'Scene2D' | 'Scene3D',
-): FlightDocumentRefusalExplanation | null {
+export function explainFlightDocumentScene3DRefusalFromText(text: string): FlightDocumentRefusalExplanation | null {
   const result = parseSceneDocumentYamlSubset(text);
   if (!result.ok) {
     return {
@@ -111,54 +122,32 @@ export function explainFlightDocumentRefusalFromText(
     };
   }
   const kind = mapping['kind'];
-  if (kind !== dimension) {
+  if (kind !== 'Scene3D') {
     return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
   }
   return null;
 }
 
-export function serializeFlightDocument(document: Readonly<FlightDocument>): string {
-  const lines: string[] = [];
-  lines.push('flight: ' + String(document.version));
-  lines.push('kind: ' + document.kind);
-  if (document.kind === 'Scene2D' && document.backgroundColor !== null) {
-    lines.push('backgroundColor: ' + String(document.backgroundColor));
-  }
-  if (document.kind === 'Scene3D') {
-    if (document.cameras.length > 0) {
-      lines.push('cameras:');
-      for (const cam of document.cameras) {
-        lines.push('  - far: ' + String(cam.far));
-        lines.push('    near: ' + String(cam.near));
-        lines.push('    projection:');
-        serializeProjection(lines, cam.projection, 6);
-        lines.push('    transform:');
-        serializeTransform3D(lines, cam.transform, 6);
-        if (cam.name !== undefined) lines.push('    name: ' + serializeScalar(cam.name));
+function checkDuplicateLights(
+  lights: readonly Readonly<Scene3DDocumentLight>[],
+): FlightDocumentRefusalExplanation | null {
+  let ambientCount = 0;
+  let directionalCount = 0;
+  for (const light of lights) {
+    if (light.descriptor.kind === AmbientLightKind) {
+      ambientCount++;
+      if (ambientCount > 1) {
+        return createRefusal(FlightDocumentRefusalReason.DuplicateAmbientLight, 'lights');
       }
     }
-    if (document.lights.length > 0) {
-      lines.push('lights:');
-      for (const light of document.lights) {
-        lines.push('  - descriptor:');
-        lines.push('      kind: ' + light.descriptor.kind);
-        lines.push('    transform:');
-        serializeTransform3D(lines, light.transform, 6);
-        if (light.name !== undefined) lines.push('    name: ' + serializeScalar(light.name));
+    if (light.descriptor.kind === DirectionalLightKind) {
+      directionalCount++;
+      if (directionalCount > 1) {
+        return createRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, 'lights');
       }
     }
   }
-  if (document.resources.length > 0) {
-    lines.push('resources:');
-    for (const resource of document.resources) {
-      lines.push('  - kind: ' + resource.kind);
-      lines.push('    key: ' + resource.key);
-      serializeFields(lines, resource.fields, 4);
-    }
-  }
-  lines.push('scene:');
-  serializeNode(lines, document.scene, 2);
-  return lines.join('\n') + '\n';
+  return null;
 }
 
 function createRefusal(reason: FlightDocumentRefusalReasonType, path: string): FlightDocumentRefusalExplanation {
@@ -174,6 +163,16 @@ function createRefusal(reason: FlightDocumentRefusalReasonType, path: string): F
     resourceKey: null,
     version: null,
   };
+}
+
+function materializeCameras(cameras: readonly Readonly<Scene3DDocumentCamera>[]): Camera3D[] {
+  return cameras.map((cam) =>
+    createCamera3D({
+      far: cam.far,
+      near: cam.near,
+      projection: cam.projection,
+    }),
+  );
 }
 
 function materializeChildren(
@@ -192,6 +191,15 @@ function materializeChildren(
   }
 }
 
+function materializeLights(lights: readonly Readonly<Scene3DDocumentLight>[]): Scene3DLights {
+  const ambientEntry = lights.find((l) => l.descriptor.kind === AmbientLightKind);
+  const directionalEntry = lights.find((l) => l.descriptor.kind === DirectionalLightKind);
+  return createScene3DLights({
+    ambient: ambientEntry !== undefined ? (ambientEntry.descriptor as AmbientLight) : null,
+    directional: directionalEntry !== undefined ? (directionalEntry.descriptor as DirectionalLight) : null,
+  });
+}
+
 function parseFlightDocumentFromText(text: string): FlightDocument | null {
   const result = parseSceneDocumentYamlSubset(text);
   if (!result.ok) return null;
@@ -201,21 +209,64 @@ function parseFlightDocumentFromText(text: string): FlightDocument | null {
   const version = mapping['flight'];
   if (version !== 1) return null;
   const kind = mapping['kind'];
-  if (kind !== 'Scene2D' && kind !== 'Scene3D') return null;
+  if (kind !== 'Scene3D') return null;
   const sceneRaw = mapping['scene'];
-  const scene = parseDocumentNode(sceneRaw) ?? { children: [], fields: {}, kind: 'DisplayObject' };
+  const scene = parseDocumentNode(sceneRaw) ?? { children: [], fields: {}, kind: 'Node3D' };
   const resources = parseResources(mapping['resources']);
-  if (kind === 'Scene2D') {
-    const bg = mapping['backgroundColor'];
-    return {
-      backgroundColor: typeof bg === 'number' ? bg : null,
-      kind: 'Scene2D',
-      resources,
-      scene,
-      version: 1,
+  const cameras = parseCameras(mapping['cameras']);
+  const documentLights = parseLights(mapping['lights']);
+  return {
+    cameras,
+    kind: 'Scene3D',
+    lights: documentLights,
+    resources,
+    scene,
+    version: 1,
+  };
+}
+
+function parseCameras(value: unknown): Scene3DDocumentCamera[] {
+  if (!Array.isArray(value)) return [];
+  const out: Scene3DDocumentCamera[] = [];
+  for (const item of value) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
+    const mapping = item as Record<string, unknown>;
+    const far = mapping['far'];
+    const near = mapping['near'];
+    const projection = mapping['projection'];
+    if (typeof far !== 'number' || typeof near !== 'number') continue;
+    if (projection === null || projection === undefined || typeof projection !== 'object') continue;
+    const transform = parseTransform3D(mapping['transform']);
+    const cam: Scene3DDocumentCamera = {
+      far,
+      near,
+      projection: projection as Scene3DDocumentCamera['projection'],
+      transform,
     };
+    const name = mapping['name'];
+    if (typeof name === 'string') cam.name = name;
+    out.push(cam);
   }
-  return null;
+  return out;
+}
+
+function parseLights(value: unknown): Scene3DDocumentLight[] {
+  if (!Array.isArray(value)) return [];
+  const out: Scene3DDocumentLight[] = [];
+  for (const item of value) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
+    const mapping = item as Record<string, unknown>;
+    const descriptorRaw = mapping['descriptor'];
+    if (descriptorRaw === null || descriptorRaw === undefined || typeof descriptorRaw !== 'object') continue;
+    const descriptor = descriptorRaw as Scene3DDocumentLight['descriptor'];
+    if (typeof descriptor.kind !== 'string') continue;
+    const transform = parseTransform3D(mapping['transform']);
+    const light: Scene3DDocumentLight = { descriptor, transform };
+    const name = mapping['name'];
+    if (typeof name === 'string') light.name = name;
+    out.push(light);
+  }
+  return out;
 }
 
 function parseDocumentNode(value: unknown): FlightDocumentNode | null {
@@ -260,6 +311,47 @@ function parseResources(value: unknown): FlightDocumentResourceDescriptor[] {
   return out;
 }
 
+function parseTransform3D(value: unknown): Transform3D {
+  const identity = createTransform3D();
+  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) {
+    return identity;
+  }
+  const mapping = value as Record<string, unknown>;
+  const out = createTransform3D();
+  parseVector3Into(out.position, mapping['position']);
+  parseQuaternionInto(out.rotation, mapping['rotation']);
+  parseVector3Into(out.scale, mapping['scale'], identity.scale);
+  return out;
+}
+
+function parseVector3Into(
+  out: { x: number; y: number; z: number },
+  value: unknown,
+  fallback?: Readonly<{ x: number; y: number; z: number }>,
+): void {
+  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) {
+    if (fallback !== undefined) {
+      out.x = fallback.x;
+      out.y = fallback.y;
+      out.z = fallback.z;
+    }
+    return;
+  }
+  const mapping = value as Record<string, unknown>;
+  if (typeof mapping['x'] === 'number') out.x = mapping['x'];
+  if (typeof mapping['y'] === 'number') out.y = mapping['y'];
+  if (typeof mapping['z'] === 'number') out.z = mapping['z'];
+}
+
+function parseQuaternionInto(out: { w: number; x: number; y: number; z: number }, value: unknown): void {
+  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) return;
+  const mapping = value as Record<string, unknown>;
+  if (typeof mapping['w'] === 'number') out.w = mapping['w'];
+  if (typeof mapping['x'] === 'number') out.x = mapping['x'];
+  if (typeof mapping['y'] === 'number') out.y = mapping['y'];
+  if (typeof mapping['z'] === 'number') out.z = mapping['z'];
+}
+
 function resolveResources(
   descriptors: readonly Readonly<FlightDocumentResourceDescriptor>[],
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
@@ -275,58 +367,6 @@ function resolveResources(
   return out;
 }
 
-function serializeFields(lines: string[], fields: Readonly<FlightDocumentFields>, indent: number): void {
-  const prefix = ' '.repeat(indent);
-  for (const key of Object.keys(fields)) {
-    const value = fields[key];
-    lines.push(prefix + key + ': ' + serializeScalar(value));
-  }
-}
-
-function serializeNode(lines: string[], node: Readonly<FlightDocumentNode>, indent: number): void {
-  const prefix = ' '.repeat(indent);
-  lines.push(prefix + 'kind: ' + node.kind);
-  serializeFields(lines, node.fields, indent);
-  if (node.children.length > 0) {
-    lines.push(prefix + 'children:');
-    for (const child of node.children) {
-      lines.push(prefix + '  - kind: ' + child.kind);
-      serializeFields(lines, child.fields, indent + 4);
-      if (child.children.length > 0) {
-        lines.push(prefix + '    children:');
-        for (const grandchild of child.children) {
-          serializeNodeAsSequenceItem(lines, grandchild, indent + 6);
-        }
-      }
-    }
-  }
-}
-
-function serializeNodeAsSequenceItem(lines: string[], node: Readonly<FlightDocumentNode>, indent: number): void {
-  const prefix = ' '.repeat(indent);
-  lines.push(prefix + '- kind: ' + node.kind);
-  serializeFields(lines, node.fields, indent + 2);
-  if (node.children.length > 0) {
-    lines.push(prefix + '  children:');
-    for (const child of node.children) {
-      serializeNodeAsSequenceItem(lines, child, indent + 4);
-    }
-  }
-}
-
-function serializeScalar(value: FlightDocumentValue): string {
-  if (value === null) return 'null';
-  if (typeof value === 'boolean') return value ? 'true' : 'false';
-  if (typeof value === 'number') return String(value);
-  if (typeof value === 'string') {
-    if (/^[a-zA-Z_][\w.-]*$/.test(value) && value !== 'null' && value !== 'true' && value !== 'false') {
-      return value;
-    }
-    return '"' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-  }
-  return String(value);
-}
-
 function writeNode(source: Readonly<NodeAny>, schemas: Readonly<FlightDocumentSchemaRegistry>): FlightDocumentNode {
   const fields: FlightDocumentFields = {};
   const schema = getRegistryTableEntry(schemas.nodeSchemas, source.kind);
@@ -339,39 +379,6 @@ function writeNode(source: Readonly<NodeAny>, schemas: Readonly<FlightDocumentSc
     fields,
     kind: source.kind,
   };
-}
-
-function serializeProjection(lines: string[], projection: Readonly<Projection>, indent: number): void {
-  const prefix = ' '.repeat(indent);
-  lines.push(prefix + 'kind: ' + projection.kind);
-  if (projection.kind === 'perspective') {
-    lines.push(prefix + 'fovY: ' + String(projection.fovY));
-    lines.push(prefix + 'aspect: ' + String(projection.aspect));
-  } else {
-    lines.push(prefix + 'halfWidth: ' + String(projection.halfWidth));
-    lines.push(prefix + 'halfHeight: ' + String(projection.halfHeight));
-  }
-}
-
-function serializeTransform3D(lines: string[], transform: Readonly<Transform3DLike>, indent: number): void {
-  const prefix = ' '.repeat(indent);
-  const p = transform.position;
-  const r = transform.rotation;
-  const s = transform.scale;
-  lines.push(prefix + 'position: { x: ' + String(p.x) + ', y: ' + String(p.y) + ', z: ' + String(p.z) + ' }');
-  lines.push(
-    prefix +
-      'rotation: { x: ' +
-      String(r.x) +
-      ', y: ' +
-      String(r.y) +
-      ', z: ' +
-      String(r.z) +
-      ', w: ' +
-      String(r.w) +
-      ' }',
-  );
-  lines.push(prefix + 'scale: { x: ' + String(s.x) + ', y: ' + String(s.y) + ', z: ' + String(s.z) + ' }');
 }
 
 function writeFieldsWithDefaults(

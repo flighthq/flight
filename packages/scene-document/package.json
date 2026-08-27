@@ -38,14 +38,22 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
+    "@flighthq/camera": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/lighting": "*",
     "@flighthq/node": "*",
     "@flighthq/registry": "*",
     "@flighthq/scene2d": "*",
+    "@flighthq/scene3d": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
+    "@flighthq/camera": "*",
+    "@flighthq/geometry": "*",
+    "@flighthq/lighting": "*",
     "@flighthq/node": "*",
     "@flighthq/scene2d": "*",
+    "@flighthq/scene3d": "*",
     "@flighthq/types": "*",
     "typescript": "^5.3.0"
   },
