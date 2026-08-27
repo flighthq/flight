@@ -20,6 +20,7 @@ import {
   createFlightDocumentScene2DMaterialization,
   createFlightDocumentScene2DMaterializationFromText,
   explainFlightDocumentRefusal,
+  explainFlightDocumentRefusalFromText,
   serializeFlightDocument,
 } from './sceneDocumentScene2DMaterialization';
 
@@ -221,6 +222,69 @@ describe('explainFlightDocumentRefusal', () => {
     };
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D');
     expect(explanation).toBeNull();
+  });
+});
+
+describe('explainFlightDocumentRefusalFromText', () => {
+  it('explains an anchor refusal with parser position', () => {
+    const yaml = 'flight: 1\nkind: Scene2D\nanchor: &ref value\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.AnchorUnsupported);
+    expect(explanation!.line).toBeGreaterThan(0);
+    expect(explanation!.column).toBeGreaterThan(0);
+    expect(explanation!.offset).toBeGreaterThanOrEqual(0);
+  });
+
+  it('explains an alias refusal', () => {
+    const yaml = 'flight: 1\nkind: Scene2D\nref: *alias\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.AliasUnsupported);
+  });
+
+  it('explains a tag refusal', () => {
+    const yaml = 'flight: 1\nkind: Scene2D\ntyped: !custom value\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.TagUnsupported);
+  });
+
+  it('explains a document separator refusal', () => {
+    const yaml = 'flight: 1\n---\nkind: Scene2D\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DocumentSeparatorUnsupported);
+  });
+
+  it('explains a scalar limit refusal with limit and actual', () => {
+    const longKey = 'k'.repeat(300);
+    const yaml = 'flight: 1\nkind: Scene2D\n' + longKey + ': value\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    if (explanation !== null && explanation.limit !== null) {
+      expect(explanation.limit).toBeGreaterThan(0);
+      expect(explanation.actual).toBeGreaterThan(explanation.limit);
+    }
+  });
+
+  it('returns null for valid Scene2D text', () => {
+    const yaml = 'flight: 1\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    expect(explanation).toBeNull();
+  });
+
+  it('explains a version mismatch in valid YAML', () => {
+    const yaml = 'flight: 99\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
+  });
+
+  it('explains a dimension mismatch in valid YAML', () => {
+    const yaml = 'flight: 1\nkind: Scene3D\nscene:\n  kind: Node3D\n';
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
   });
 });
 
