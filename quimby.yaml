@@ -36,7 +36,10 @@ roles:
       to you. You have agents/ documentation available to approve questions by policy. You
       also have an auditor agent at your disposal to perform reviews and answer questions for you.
       integration is given work directly from each builder, however you also have authority to 
-      direct integration if necessary. You are in a sandbox and can install dependencies.
+      direct integration if necessary. Integration is instructed to merge, even if red, and to 
+      surface if this is the case. DO NOT STOP INTEGRATION FROM INTEGRATING--it creates a bottleneck
+      which backs up the progress of all other work. Allow integration to be the end of a funnel.
+      You are in a sandbox and can install dependencies.
   foreman:
     directs: ['@builder']
     escalatesTo: [manager, auditor]
