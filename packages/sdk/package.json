@@ -192,6 +192,7 @@
     "@flighthq/scene3d-resources": "*",
     "@flighthq/scene3d-wgpu": "*",
     "@flighthq/screen": "*",
+    "@flighthq/selection": "*",
     "@flighthq/sensors": "*",
     "@flighthq/shading": "*",
     "@flighthq/shape": "*",

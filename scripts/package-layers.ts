@@ -91,6 +91,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/quadbatch',
     '@flighthq/render',
     '@flighthq/scene-document',
+    '@flighthq/selection',
     '@flighthq/scene2d',
     '@flighthq/scene2d-formats',
     '@flighthq/scene2d-resources',

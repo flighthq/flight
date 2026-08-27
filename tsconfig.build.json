@@ -101,6 +101,7 @@
     { "path": "./packages/loader" },
     { "path": "./packages/screen" },
     { "path": "./packages/sdk" },
+    { "path": "./packages/selection" },
     { "path": "./packages/sensors" },
     { "path": "./packages/shading" },
     { "path": "./packages/shape" },
