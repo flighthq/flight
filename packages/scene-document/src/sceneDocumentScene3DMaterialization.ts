@@ -125,7 +125,7 @@ export function explainFlightDocumentScene3DRefusalFromText(text: string): Fligh
   if (kind !== 'Scene3D') {
     return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
   }
-  return null;
+  return checkDuplicateLightsFromRaw(mapping['lights']);
 }
 
 function checkDuplicateLights(
@@ -141,6 +141,32 @@ function checkDuplicateLights(
       }
     }
     if (light.descriptor.kind === DirectionalLightKind) {
+      directionalCount++;
+      if (directionalCount > 1) {
+        return createRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, 'lights');
+      }
+    }
+  }
+  return null;
+}
+
+function checkDuplicateLightsFromRaw(value: unknown): FlightDocumentRefusalExplanation | null {
+  if (!Array.isArray(value)) return null;
+  let ambientCount = 0;
+  let directionalCount = 0;
+  for (const item of value) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
+    const mapping = item as Record<string, unknown>;
+    const descriptor = mapping['descriptor'];
+    if (descriptor === null || descriptor === undefined || typeof descriptor !== 'object') continue;
+    const kind = (descriptor as Record<string, unknown>)['kind'];
+    if (kind === AmbientLightKind) {
+      ambientCount++;
+      if (ambientCount > 1) {
+        return createRefusal(FlightDocumentRefusalReason.DuplicateAmbientLight, 'lights');
+      }
+    }
+    if (kind === DirectionalLightKind) {
       directionalCount++;
       if (directionalCount > 1) {
         return createRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, 'lights');
