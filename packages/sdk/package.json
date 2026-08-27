@@ -131,6 +131,7 @@
     "@flighthq/geolocation": "*",
     "@flighthq/geometry": "*",
     "@flighthq/glyphatlas": "*",
+    "@flighthq/gui": "*",
     "@flighthq/haptics": "*",
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",

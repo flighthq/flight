@@ -45,6 +45,7 @@ export * from '@flighthq/font-formats';
 export * from '@flighthq/geolocation';
 export * from '@flighthq/geometry';
 export * from '@flighthq/glyphatlas';
+export * from '@flighthq/gui';
 export * from '@flighthq/haptics';
 export * from '@flighthq/image';
 export * from '@flighthq/image-codec';

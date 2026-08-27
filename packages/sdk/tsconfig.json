@@ -151,6 +151,9 @@
       "path": "../geometry"
     },
     {
+      "path": "../gui"
+    },
+    {
       "path": "../glyphatlas"
     },
     {
