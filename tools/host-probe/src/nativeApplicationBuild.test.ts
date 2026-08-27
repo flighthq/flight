@@ -71,5 +71,7 @@ describe('native host CI configuration', () => {
     expect(endToEndTest).toContain('document.documentElement.dataset.hostProbeReport');
     expect(endToEndTest).not.toContain('window.__flightHostProbeReport?.status');
     expect(main).toContain('document.documentElement.dataset.hostProbeReport = JSON.stringify(report)');
+    expect(main).toContain('void runHostProbe();');
+    expect(main).toMatch(/async function runHostProbe\(\): Promise<void> \{[\s\S]+await installHostProbe/);
   });
 });
