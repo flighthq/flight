@@ -252,12 +252,12 @@ describe('parseShapeJson argument validation', () => {
   });
 
   it('rejects an out-of-range literal that parses as Infinity', () => {
-    expect(parseShapeJson('{"shapeFormat":2,"commands":[{"key":"moveTo","args":[1e999,2]}]}')).toBeNull();
+    expect(parseShapeJson('{"shapeFormat":3,"commands":[{"key":"moveTo","args":[1e999,2]}]}')).toBeNull();
   });
 
   it('rejects a non-finite entry inside a numeric array', () => {
     expect(
-      parseShapeJson('{"shapeFormat":2,"commands":[{"key":"drawPath","args":[[1],[1e999,0],"evenOdd"]}]}'),
+      parseShapeJson('{"shapeFormat":3,"commands":[{"key":"drawPath","args":[[1],[1e999,0],"evenOdd"]}]}'),
     ).toBeNull();
   });
 
@@ -294,7 +294,7 @@ describe('parseShapeJson argument validation', () => {
       .map(([key, value]) => `"${key}":${value}`)
       .join(',')}}`;
     const text =
-      `{"shapeFormat":2,"commands":[{"key":"beginGradientFill","args":` +
+      `{"shapeFormat":3,"commands":[{"key":"beginGradientFill","args":` +
       `["linear",[1],[1],[0],${matrix},"pad","rgb",0]}]}`;
 
     expect(parseShapeJson(text)).toBeNull();
@@ -322,11 +322,9 @@ describe('parseShapeJson argument validation', () => {
     expect(getShapeCommandCount(restored!)).toBe(1);
   });
 
-  // The two tables are indexed by the same key set and are read together on every command, so a key
-  // in the appender table with no arg spec would make its command unparseable — isValidShapeCommandArgs
-  // treats a missing spec as invalid. Round-tripping a shape that exercises the whole non-texture
-  // vocabulary therefore *is* the consistency check: a forgotten spec turns this null.
-  it('parses every command the serializer can emit, proving each has an argument spec', () => {
+  // Runtime validation reads the shared schema on every command, so a key in the appender table with
+  // no schema becomes unparseable. Exercising the whole non-texture vocabulary catches that drift.
+  it('parses every command the serializer can emit, proving each has a runtime schema', () => {
     const shape = createEveryNonBitmapCommandShape();
     const expected = getShapeCommandCount(shape);
     const restored = parseShapeJson(formatShapeJson(shape));

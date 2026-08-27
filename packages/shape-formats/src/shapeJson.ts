@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
@@ -19,7 +20,14 @@ import {
   appendShapeRoundRectangle,
   createShape,
 } from '@flighthq/shape/contract';
-import type { Shape, ShapeJsonFormatOptions, ShapeJsonParseOptions } from '@flighthq/types/contract';
+import type {
+  Shape,
+  ShapeCommandSchemaArgumentType,
+  ShapeJsonFormatOptions,
+  ShapeJsonParseOptions,
+} from '@flighthq/types/contract';
+
+import { defaultShapeCommandSchemas } from './shapeCommandSchemas';
 
 // Serializes a shape's full drawing-command stream to a native JSON string that `parseShapeJson`
 // restores. Every stored command is checked against the same positional and finiteness predicates the
@@ -136,19 +144,18 @@ function reconstructShapeCommandArg(value: unknown, resolveTexture: ShapeJsonPar
 // Runs after reconstruction, so matrices are already Matrix values and textures already resolved, and
 // after the drop check, so an unresolved texture is still a dropped command rather than a parse failure.
 function isValidShapeCommandArgs(key: string, args: readonly unknown[]): boolean {
-  const spec = SHAPE_COMMAND_ARG_SPECS[key];
-  // Treating a missing spec as invalid is what makes the two tables self-checking: a key that gained
-  // an appender without a spec would make its own command unparseable, so the full-vocabulary
-  // round-trip test fails the moment they drift apart.
-  if (spec === undefined) return false;
-  if (args.length < spec.required || args.length > spec.types.length) return false;
+  const schema = getRegistryTableEntry(defaultShapeCommandSchemas, key);
+  // A missing runtime schema invalidates the command. The full-vocabulary round-trip test therefore
+  // fails if the appender table and the shared schema table ever drift apart.
+  if (schema === null) return false;
+  if (args.length < schema.requiredArgumentCount || args.length > schema.arguments.length) return false;
   for (let i = 0; i < args.length; i++) {
-    if (!isValidShapeCommandArg(args[i], spec.types[i]!)) return false;
+    if (!isValidShapeCommandArg(args[i], schema.arguments[i]!.type)) return false;
   }
   return true;
 }
 
-function isValidShapeCommandArg(value: unknown, type: ShapeCommandArgType): boolean {
+function isValidShapeCommandArg(value: unknown, type: ShapeCommandSchemaArgumentType): boolean {
   switch (type) {
     // Non-finite values are rejected here rather than passed through: JSON has no NaN or Infinity
     // literal, so a NaN in a shape serializes as `null` and an out-of-range literal like 1e999 parses
@@ -232,50 +239,6 @@ const MALFORMED_ARG = Symbol('shapeFormats.malformedArg');
 const DROP_COMMAND = Symbol('shapeFormats.dropCommand');
 
 const SHAPE_JSON_FORMAT = 3;
-
-type ShapeCommandArgType = 'boolean' | 'matrixOrNull' | 'number' | 'numbers' | 'numbersOrNull' | 'string' | 'texture';
-
-// The positional shape of each command's arguments, mirroring the appendShape* signatures one-for-one.
-// `required` is the count of leading parameters with no default, so a hand-written document may omit
-// trailing optional args and let the appender's own defaults apply; `types` bounds the maximum. The
-// serializer always writes the full stored arity, so a round-tripped document uses the upper bound.
-interface ShapeCommandArgSpec {
-  required: number;
-  types: readonly ShapeCommandArgType[];
-}
-
-const GRADIENT_ARG_SPEC: ShapeCommandArgSpec = {
-  required: 4,
-  types: ['string', 'numbers', 'numbers', 'numbers', 'matrixOrNull', 'string', 'string', 'number'],
-};
-
-const TEXTURE_ARG_SPEC: ShapeCommandArgSpec = { required: 1, types: ['texture', 'matrixOrNull'] };
-
-const SHAPE_COMMAND_ARG_SPECS: Readonly<Record<string, ShapeCommandArgSpec>> = {
-  beginTextureFill: TEXTURE_ARG_SPEC,
-  beginFill: { required: 0, types: ['number', 'number'] },
-  beginGradientFill: GRADIENT_ARG_SPEC,
-  cubicCurveTo: { required: 6, types: ['number', 'number', 'number', 'number', 'number', 'number'] },
-  curveTo: { required: 4, types: ['number', 'number', 'number', 'number'] },
-  drawCircle: { required: 3, types: ['number', 'number', 'number'] },
-  drawEllipse: { required: 4, types: ['number', 'number', 'number', 'number'] },
-  drawPath: { required: 2, types: ['numbers', 'numbers', 'string'] },
-  drawRectangle: { required: 4, types: ['number', 'number', 'number', 'number'] },
-  drawRoundRectangle: {
-    required: 6,
-    types: ['number', 'number', 'number', 'number', 'number', 'number'],
-  },
-  drawTriangles: { required: 1, types: ['numbers', 'numbersOrNull', 'numbersOrNull', 'string'] },
-  endFill: { required: 0, types: [] },
-  lineTextureStyle: TEXTURE_ARG_SPEC,
-  lineGradientStyle: GRADIENT_ARG_SPEC,
-  lineStyle: {
-    required: 0,
-    types: ['number', 'number', 'number', 'boolean', 'string', 'string', 'string', 'number'],
-  },
-  lineTo: { required: 2, types: ['number', 'number'] },
-  moveTo: { required: 2, types: ['number', 'number'] },
-};
 
 const SHAPE_COMMAND_APPENDERS: Readonly<Record<string, ShapeCommandAppender>> = {
   beginTextureFill: appendShapeBeginTextureFill,

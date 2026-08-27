@@ -1,5 +1,6 @@
 import type { Matrix } from './Matrix';
 import type { Texture } from './Texture';
+import type { TriangleCulling } from './TriangleCulling';
 
 export type CapsStyle = 'none' | 'round' | 'square';
 
@@ -49,6 +50,12 @@ export interface ShapeCommandRegistry {
     height: number,
     ellipseWidth: number,
     ellipseHeight: number,
+  ];
+  drawTriangles: readonly [
+    vertices: number[],
+    indices: number[] | null,
+    uvtData: number[] | null,
+    culling: TriangleCulling,
   ];
   endFill: readonly [];
   lineTextureStyle: readonly [texture: Texture, matrix: Matrix | null];
