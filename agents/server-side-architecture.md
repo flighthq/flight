@@ -6,7 +6,9 @@ _2026-08-27. Proposal — the layered package plan that completes Flight's serve
 
 Flight's core is accidentally server-ready. Side-effect-free functions over plain data, no DOM coupling, swappable `*Backend` seams, deterministic simulation — `stepPhysics3D` does not know it is in a browser. The `host-*` pattern (`host-web`, `host-electron`, `host-tauri`, `host-capacitor`) already abstracts platform capabilities; a Node host is the same shape, not a new architecture.
 
-The packages that are already server-capable with no changes: `snapshot` (capture/restore/interpolate/equals — explicitly designed for netcode), `net` and `socket` (transport over swappable backends), `loader` and `assets` (resource management, transport-agnostic), `bitmap` (pixel manipulation on raw `Uint8ClampedArray`), `collision` / `physics2d` / `physics3d` / `spatial` (pure computation), all `*-formats` importers (parsing, no DOM), `binpack` (atlas packing). `tool-capture` and `tool-registry` are already outside the SDK barrel.
+The packages that are already server-capable with no changes: `snapshot` (capture/restore/interpolate/equals — explicitly designed for netcode), `net` and `socket` (transport over swappable backends), `loader` and `assets` (resource management, transport-agnostic), `bitmap` (pixel manipulation on raw `Uint8ClampedArray`), `collision` / `physics2d` / `physics3d` / `spatial` (pure computation), all `*-formats` importers (parsing, no DOM), `binpack` (atlas packing), `statechart` (game logic). `tool-capture` and `tool-registry` are already outside the SDK barrel.
+
+The same applies to planned game-algorithm cells: `pathfinding` (A*/JPS/flow fields), `steering` (Reynolds forces), `behaviortree` — all pure computation, C-portable, and among the clearest "same code, different machine" cases. Server-authoritative pathfinding and AI are canonical game-server workloads; these cells run identically on client and server with no adaptation.
 
 ## Layered package plan
 
