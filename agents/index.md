@@ -71,6 +71,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [render oracle repository](render-reference-image-repository.md) — **proposal.** blessed reference images for a full-resolution regression tier, and the measured reason they are not stored in git.
 - [render view model](render-view-model.md) — extracting a windowless `RenderView` from `ApplicationRenderView`.
 - [runtime package review](runtime-package-review.md) — why the runtime facade and substrate packages were considered and declined, and why ambient language facilities remain distinct from host code.
+- [server-side architecture](server-side-architecture.md) — **proposal.** the layered package plan that completes Flight's server story: `host-node` → `tool-pipeline` → `serialize` → `sync` + `authority` → `render-cpu`. Builds on [cloud & distributed breadth](breadth-cloud-distributed.md).
 - [registration lifecycle](registration-lifecycle.md) — **unratified.** how a file's contents become the exact `register*` calls that draw it: requirement sets, the source-derived catalog, and the generated registries module.
 - [registry table model](registry-table-model.md) — **unratified.** the storage under the registration doors: three table shapes, and which tier owns a registry.
 - [ribbon trails](ribbon-trail-proposal.md) — **proposal.** a trail recorder and a strip builder, and why the 3D draw needs nothing new.
