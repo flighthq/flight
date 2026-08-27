@@ -33,6 +33,7 @@ import type {
 // A kind constant with no public constructor is not in the population, however canonical its name looks.
 describe('node kind census', () => {
   let chokepointSites: readonly NodeKindChokepointSite[];
+  let publicExports: ReadonlyMap<string, ReadonlySet<string>>;
   let report: NodeKindCensusReport;
   let probedExports: readonly string[];
 
@@ -42,17 +43,28 @@ describe('node kind census', () => {
     const constants = collectNodeKindConstants(allSourceFiles);
     const candidates = new Set(collectNodeConstructorCandidates(allSourceFiles));
     const mintingPackages = collectNodeMintingPackages(sourceFilesByPackage);
-    const sites = collectNodeKindChokepointSites(
-      new Map(mintingPackages.map((name) => [name, sourceFilesByPackage.get(name) ?? []])),
-      constants,
-    );
 
-    const outcomes: NodeKindProbeOutcome[] = [];
-    const probed: string[] = [];
+    // The public lane is enumerated FIRST, because it is the gate for both halves of the census: only a
+    // name the package's `index.ts` exports may enter any population, whether by probe or by static site.
+    const publicExportsByPackage = new Map<string, ReadonlySet<string>>();
+    const modules = new Map<string, Record<string, unknown>>();
     for (const packageName of mintingPackages) {
       const publicLane = join(ROOT, 'packages', packageName, 'src', 'index.ts');
       if (!existsSync(publicLane)) continue;
       const module = (await import(/* @vite-ignore */ pathToFileURL(publicLane).href)) as Record<string, unknown>;
+      modules.set(packageName, module);
+      publicExportsByPackage.set(packageName, new Set(Object.keys(module)));
+    }
+
+    const sites = collectNodeKindChokepointSites(
+      new Map(mintingPackages.map((name) => [name, sourceFilesByPackage.get(name) ?? []])),
+      constants,
+      publicExportsByPackage,
+    );
+
+    const outcomes: NodeKindProbeOutcome[] = [];
+    const probed: string[] = [];
+    for (const [packageName, module] of modules) {
       for (const exportName of Object.keys(module).sort()) {
         if (!candidates.has(exportName)) continue;
         if (isKindPreservingConstructor(exportName)) continue;
@@ -63,6 +75,7 @@ describe('node kind census', () => {
       }
     }
     chokepointSites = sites;
+    publicExports = publicExportsByPackage;
     probedExports = probed;
     // `covered` stays empty until a scene-document registry exists to declare bindings. The diff is then
     // inert rather than absent — uncovered lists the whole population, which is the honest reading of
@@ -125,20 +138,46 @@ describe('node kind census', () => {
     }
   });
 
-  // The one site the instrument genuinely cannot bound: the scene3d document importer reads its node kind
-  // from parsed data, so what it mints is open by construction rather than enumerable. Pinned by REASON and
-  // by the function, not by a count, so a second unbounded site fails this instead of blending in.
-  it('reports the data-driven importer site as unresolved and nothing else', () => {
-    expect(report.unresolved.map((entry) => ({ exportName: entry.exportName, reason: entry.reason }))).toEqual([
-      { exportName: 'buildDocumentNode', reason: 'kind-not-statically-resolvable' },
-    ]);
+  // THE PRIVATE-HELPER ARM against the real repo, stated as a property over the WHOLE report rather than
+  // about any one function: every name in every population must be something its package's public lane
+  // actually exports. `buildDocumentNode` in scene3d/sceneDocument.ts is the case that exposed this — a
+  // module-private helper that calls a chokepoint with a kind read from parsed data, which used to fail the
+  // census on a function no consumer can call — but nothing here is written in terms of it.
+  it('admits nothing to any population that its package does not publicly export', () => {
+    const reported = [
+      ...report.population.map((entry) => ({ exportName: entry.exportName, packageName: entry.packageName })),
+      ...report.excluded.map((entry) => ({ exportName: entry.exportName, packageName: entry.packageName })),
+      ...report.unresolved.map((entry) => ({ exportName: entry.exportName, packageName: entry.packageName })),
+    ];
+    expect(reported.length).toBeGreaterThan(0);
+    for (const entry of reported) {
+      expect(publicExports.get(entry.packageName) ?? new Set()).toContain(entry.exportName);
+    }
   });
 
-  // The verdict property foreman asked for: an unresolved entry must make the run fail, never be reported
-  // alongside a pass. Checked on the live report, which currently carries one.
-  it('fails the verdict while anything is unresolved', () => {
-    expect(report.unresolved.length).toBeGreaterThan(0);
-    expect(hasNodeKindCensusFailure(report)).toBe(true);
+  // With internal helpers correctly out of scope, every remaining chokepoint mint resolves, so the live
+  // census is clean. Asserted as an empty set rather than a count so a new unbounded site fails here.
+  it('leaves nothing unresolved once discovery is limited to public constructors', () => {
+    expect(report.unresolved).toEqual([]);
+    expect(hasNodeKindCensusFailure({ ...report, uncovered: [], unresolved: [] })).toBe(false);
+  });
+
+  // The verdict property still has to hold, so it is checked on a report that DOES carry an unresolved
+  // entry. Proving it on live data is no longer possible now that the live data is clean, and a property
+  // nothing exercises is a property nothing protects.
+  it('fails the verdict whenever anything is unresolved', () => {
+    const withUnresolved = {
+      ...report,
+      unresolved: [
+        {
+          detail: 'synthetic',
+          exportName: 'createSomething',
+          packageName: 'scene2d',
+          reason: 'kind-not-statically-resolvable' as const,
+        },
+      ],
+    };
+    expect(hasNodeKindCensusFailure(withUnresolved)).toBe(true);
   });
 });
 

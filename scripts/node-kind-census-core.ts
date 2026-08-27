@@ -129,13 +129,21 @@ export function collectNodeKindConstants(sourceFiles: readonly string[]): Readon
 export function collectNodeKindChokepointSites(
   sourceFilesByPackage: ReadonlyMap<string, readonly string[]>,
   constants: ReadonlyMap<string, string>,
+  publicExportsByPackage: ReadonlyMap<string, ReadonlySet<string>>,
 ): NodeKindChokepointSite[] {
   const sites: NodeKindChokepointSite[] = [];
   for (const [packageName, sourceFiles] of sourceFilesByPackage) {
+    const publicExports = publicExportsByPackage.get(packageName) ?? new Set<string>();
     for (const sourceFile of sourceFiles) {
       for (const fn of functionsIn(getParsedOxcSource(sourceFile).program.body)) {
         if (NODE_KIND_CHOKEPOINTS.includes(fn.name)) continue;
         if (isKindPreservingConstructor(fn.name)) continue;
+        // THE PUBLIC-EXPORT GATE, applied generically rather than to any named helper. Nothing enters
+        // included, excluded or unresolved unless the package's public lane exports it, which is the same
+        // condition the probe side already enforces by enumerating `index.ts`. Whatever a private helper
+        // mints reaches a consumer only through the public function that calls it, and that function is
+        // what the probe measures. Without this gate the census failed on functions no consumer can call.
+        if (!publicExports.has(fn.name)) continue;
         const defaults = parameterDefaults(fn.node);
         for (const call of callsIn(fn.node)) {
           const callee = unwrapExpression(call.callee);
