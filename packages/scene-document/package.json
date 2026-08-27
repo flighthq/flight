@@ -37,6 +37,12 @@
     "prepack": "npm run clean && npm run clean:dist && npm run build",
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
+  "dependencies": {
+    "@flighthq/node": "*",
+    "@flighthq/registry": "*",
+    "@flighthq/scene2d": "*",
+    "@flighthq/types": "*"
+  },
   "devDependencies": {
     "@flighthq/node": "*",
     "@flighthq/scene2d": "*",
