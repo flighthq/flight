@@ -234,6 +234,8 @@
       "@flighthq/requirements/*": ["./packages/requirements/src/*"],
       "@flighthq/scene-document": ["./packages/scene-document/src/index.ts"],
       "@flighthq/scene-document/*": ["./packages/scene-document/src/*"],
+      "@flighthq/selection": ["./packages/selection/src/index.ts"],
+      "@flighthq/selection/*": ["./packages/selection/src/*"],
       "@flighthq/registry-catalog": ["./packages/registry-catalog/src/index.ts"],
       "@flighthq/registry-catalog/*": ["./packages/registry-catalog/src/*"],
       "@flighthq/registry-codegen": ["./packages/registry-codegen/src/index.ts"],

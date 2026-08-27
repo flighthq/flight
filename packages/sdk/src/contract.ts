@@ -92,6 +92,7 @@ export * from '@flighthq/scene3d-gl';
 export * from '@flighthq/scene3d-resources';
 export * from '@flighthq/scene3d-wgpu';
 export * from '@flighthq/screen';
+export * from '@flighthq/selection/contract';
 export * from '@flighthq/sensors';
 export * from '@flighthq/shading';
 export * from '@flighthq/shape';
