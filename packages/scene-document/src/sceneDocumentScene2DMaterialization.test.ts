@@ -257,14 +257,17 @@ describe('explainFlightDocumentRefusalFromText', () => {
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DocumentSeparatorUnsupported);
   });
 
-  it('explains a scalar limit refusal with limit and actual', () => {
+  it('explains a key limit refusal with limit and actual', () => {
     const longKey = 'k'.repeat(300);
     const yaml = 'flight: 1\nkind: Scene2D\n' + longKey + ': value\n';
     const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
-    if (explanation !== null && explanation.limit !== null) {
-      expect(explanation.limit).toBeGreaterThan(0);
-      expect(explanation.actual).toBeGreaterThan(explanation.limit);
-    }
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.KeyCodeUnitsLimitExceeded);
+    expect(explanation!.limit).toBe(256);
+    expect(explanation!.actual).toBe(300);
+    expect(explanation!.line).toBeGreaterThan(0);
+    expect(explanation!.column).toBeGreaterThan(0);
+    expect(explanation!.offset).toBeGreaterThanOrEqual(0);
   });
 
   it('returns null for valid Scene2D text', () => {
