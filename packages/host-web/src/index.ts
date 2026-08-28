@@ -2,6 +2,7 @@ export { enableHostWeb } from './enableHostWeb';
 export { enableHostWebAccessibility } from './webAccessibility';
 export { enableHostWebApp } from './webApp';
 export { enableHostWebAudio } from './webAudio';
+export { enableHostWebAudioDevice } from './webAudioDevice';
 export { enableHostWebClipboard } from './webClipboard';
 export { enableHostWebConnectivity } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';

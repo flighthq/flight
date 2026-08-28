@@ -1,48 +1,40 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { AudioChannel, AudioPlayOptions, AudioResource } from '@flighthq/types/contract';
+import type {
+  AudioBufferHandle,
+  AudioChannel,
+  AudioDeviceHandle,
+  AudioPlayOptions,
+  AudioResource,
+  AudioSourceHandle,
+} from '@flighthq/types/contract';
 
-export function connectAudioChannelToNode(channel: AudioChannel, destinationNode: AudioNode): void {
-  const runtime = channelRuntime.get(channel);
-  if (runtime === undefined) return;
-  if (runtime.gainNode !== null) {
-    runtime.gainNode.disconnect();
-    runtime.gainNode.connect(destinationNode);
-  }
-  runtime.destinationNode = destinationNode;
-}
+import { getAudioDeviceBackend } from './audioDeviceBackend';
 
-export function fadeAudioChannelGain(channel: AudioChannel, targetGain: number, durationMs: number): void {
-  const runtime = channelRuntime.get(channel);
-  if (runtime?.gainNode === null || runtime?.gainNode === undefined) {
-    channel.gain = targetGain;
-    return;
-  }
-  const ctx = runtime.context;
-  const now = ctx.currentTime;
-  runtime.gainNode.gain.cancelScheduledValues(now);
-  runtime.gainNode.gain.setValueAtTime(runtime.gainNode.gain.value, now);
-  runtime.gainNode.gain.linearRampToValueAtTime(targetGain, now + durationMs / 1000);
+export function connectAudioChannelToNode(_channel: AudioChannel, _destinationNode: AudioNode): void {}
+
+export function fadeAudioChannelGain(channel: AudioChannel, targetGain: number, _durationMs: number): void {
   channel.gain = targetGain;
+  const runtime = channelRuntime.get(channel);
+  if (runtime === undefined || runtime.sourceHandle === INVALID_SOURCE) return;
+  getAudioDeviceBackend().setSourceGain(runtime.sourceHandle, targetGain);
 }
 
 export function getAudioChannelCurrentTime(channel: AudioChannel): number {
   const runtime = channelRuntime.get(channel);
   if (runtime === undefined || channel.state !== 'playing') return channel.currentTime;
-  return Math.min((runtime.context.currentTime - runtime.startedAt) * 1000, channel.length);
+  return Math.min((getAudioDeviceBackend().getDeviceTime(runtime.device) - runtime.startedAt) * 1000, channel.length);
 }
 
 export function getAudioChannelDuration(channel: AudioChannel): number {
   return channel.length;
 }
 
-export function getAudioChannelInputNode(channel: AudioChannel): AudioNode | null {
-  const runtime = channelRuntime.get(channel);
-  return runtime?.sourceNode ?? null;
+export function getAudioChannelInputNode(_channel: AudioChannel): AudioNode | null {
+  return null;
 }
 
-export function getAudioChannelOutputNode(channel: AudioChannel): AudioNode | null {
-  const runtime = channelRuntime.get(channel);
-  return runtime?.gainNode ?? null;
+export function getAudioChannelOutputNode(_channel: AudioChannel): AudioNode | null {
+  return null;
 }
 
 export function isAudioChannelPlaying(channel: AudioChannel): boolean {
@@ -53,20 +45,29 @@ export function pauseAudioChannel(channel: AudioChannel): void {
   if (channel.state !== 'playing') return;
   channel.currentTime = getAudioChannelCurrentTime(channel);
   channel.state = 'paused';
-  stopActiveNode(channel, false);
+  destroyActiveSource(channel);
 }
 
 export function playAudioResource(
-  context: AudioContext,
+  device: AudioDeviceHandle,
   source: AudioResource,
   options?: Readonly<AudioPlayOptions>,
 ): AudioChannel | null {
   if (source.buffer === null) return null;
 
+  const backend = getAudioDeviceBackend();
+  const buf = source.buffer;
+  const numberOfChannels = buf.numberOfChannels;
+  const data: Float32Array[] = [];
+  for (let i = 0; i < numberOfChannels; i++) {
+    data.push(buf.getChannelData(i));
+  }
+  const bufferHandle = backend.createBuffer(device, numberOfChannels, buf.length, buf.sampleRate, data);
+
   const channel: AudioChannel = {
     currentTime: options?.currentTime ?? 0,
     gain: options?.gain ?? 1,
-    length: source.buffer.duration * 1000,
+    length: buf.duration * 1000,
     loops: options?.loops ?? 0,
     playbackRate: options?.playbackRate ?? 1,
     source,
@@ -75,11 +76,10 @@ export function playAudioResource(
   };
 
   channelRuntime.set(channel, {
-    context,
-    destinationNode: null,
-    gainNode: null,
+    bufferHandle,
+    device,
     loopsRemaining: channel.loops,
-    sourceNode: null,
+    sourceHandle: INVALID_SOURCE,
     startedAt: 0,
   });
 
@@ -95,7 +95,7 @@ export function resumeAudioChannel(channel: AudioChannel): void {
 export function setAudioChannelCurrentTime(channel: AudioChannel, value: number): number {
   channel.currentTime = clamp(value, 0, channel.length);
   if (channel.state === 'playing') {
-    stopActiveNode(channel, false);
+    destroyActiveSource(channel);
     startAudioChannel(channel);
   }
   return channel.currentTime;
@@ -104,33 +104,36 @@ export function setAudioChannelCurrentTime(channel: AudioChannel, value: number)
 export function setAudioChannelGain(channel: AudioChannel, value: number): number {
   channel.gain = value;
   const runtime = channelRuntime.get(channel);
-  if (runtime?.gainNode !== null && runtime?.gainNode !== undefined) runtime.gainNode.gain.value = value;
+  if (runtime !== undefined && runtime.sourceHandle !== INVALID_SOURCE) {
+    getAudioDeviceBackend().setSourceGain(runtime.sourceHandle, value);
+  }
   return channel.gain;
 }
 
 export function setAudioChannelPlaybackRate(channel: AudioChannel, value: number): number {
   channel.playbackRate = value;
   const runtime = channelRuntime.get(channel);
-  if (runtime?.sourceNode !== null && runtime?.sourceNode !== undefined) runtime.sourceNode.playbackRate.value = value;
+  if (runtime !== undefined && runtime.sourceHandle !== INVALID_SOURCE) {
+    getAudioDeviceBackend().setSourcePlaybackRate(runtime.sourceHandle, value);
+  }
   return channel.playbackRate;
 }
 
 export function stopAudioChannel(channel: AudioChannel): void {
-  stopActiveNode(channel, false);
+  destroyActiveSource(channel);
   channel.currentTime = 0;
   channel.state = 'stopped';
 }
 
 interface AudioChannelRuntime {
-  context: AudioContext;
-  // Output target the gain node feeds. Null means the context destination; a mixer bus
-  // sets this via connectAudioChannelToNode so routing survives a stop/restart.
-  destinationNode: AudioNode | null;
-  gainNode: GainNode | null;
+  bufferHandle: AudioBufferHandle;
+  device: AudioDeviceHandle;
   loopsRemaining: number;
-  sourceNode: AudioBufferSourceNode | null;
+  sourceHandle: AudioSourceHandle;
   startedAt: number;
 }
+
+const INVALID_SOURCE = 0 as AudioSourceHandle;
 
 const channelRuntime = new WeakMap<AudioChannel, AudioChannelRuntime>();
 
@@ -149,49 +152,38 @@ function completeAudioChannel(channel: AudioChannel): void {
     return;
   }
 
-  runtime.gainNode = null;
-  runtime.sourceNode = null;
+  runtime.sourceHandle = INVALID_SOURCE;
   channel.currentTime = channel.length;
   channel.state = 'complete';
   emitSignal(channel.onComplete);
 }
 
+function destroyActiveSource(channel: AudioChannel): void {
+  const runtime = channelRuntime.get(channel);
+  if (runtime === undefined || runtime.sourceHandle === INVALID_SOURCE) return;
+  const backend = getAudioDeviceBackend();
+  backend.onSourceEnded(runtime.sourceHandle, null);
+  backend.destroySource(runtime.sourceHandle);
+  runtime.sourceHandle = INVALID_SOURCE;
+}
+
 function startAudioChannel(channel: AudioChannel): void {
   const runtime = channelRuntime.get(channel);
-  const buffer = channel.source.buffer;
-  if (runtime === undefined || buffer === null) return;
+  if (runtime === undefined) return;
 
-  const sourceNode = runtime.context.createBufferSource();
-  const gainNode = runtime.context.createGain();
+  const backend = getAudioDeviceBackend();
   const currentTime = clamp(channel.currentTime, 0, channel.length);
+  const sourceHandle = backend.createSource(runtime.device, runtime.bufferHandle);
 
-  sourceNode.buffer = buffer;
-  sourceNode.playbackRate.value = channel.playbackRate;
-  gainNode.gain.value = channel.gain;
-  sourceNode.connect(gainNode);
-  gainNode.connect(runtime.destinationNode ?? runtime.context.destination);
-  sourceNode.onended = () => completeAudioChannel(channel);
+  backend.setSourceGain(sourceHandle, channel.gain);
+  backend.onSourceEnded(sourceHandle, () => completeAudioChannel(channel));
 
-  runtime.gainNode = gainNode;
-  runtime.sourceNode = sourceNode;
-  runtime.startedAt = runtime.context.currentTime - currentTime / 1000;
+  runtime.sourceHandle = sourceHandle;
+  runtime.startedAt = backend.getDeviceTime(runtime.device) - currentTime / 1000;
   channel.currentTime = currentTime;
   channel.state = 'playing';
 
-  sourceNode.start(0, currentTime / 1000);
-
-  if (runtime.context.state === 'suspended') {
-    runtime.context.resume().catch(() => {});
-  }
-}
-
-function stopActiveNode(channel: AudioChannel, complete: boolean): void {
-  const runtime = channelRuntime.get(channel);
-  const sourceNode = runtime?.sourceNode;
-  if (runtime === undefined || sourceNode === null || sourceNode === undefined) return;
-
-  runtime.sourceNode = null;
-  runtime.gainNode = null;
-  sourceNode.onended = complete ? () => completeAudioChannel(channel) : null;
-  sourceNode.stop();
+  backend.startSource(sourceHandle, currentTime / 1000);
+  backend.setSourcePlaybackRate(sourceHandle, channel.playbackRate);
+  backend.resumeDevice(runtime.device);
 }

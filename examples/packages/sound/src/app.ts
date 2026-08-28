@@ -1,5 +1,6 @@
+import { enableHostWebAudioDevice } from '@flighthq/host-web';
 import { createWebCursorBackend } from '@flighthq/host-web';
-import type { AudioChannel, AudioResource, Shape } from '@flighthq/sdk';
+import type { AudioChannel, AudioDeviceHandle, AudioResource, Shape } from '@flighthq/sdk';
 import {
   addAudioBusToMixer,
   addNodeChild,
@@ -18,6 +19,7 @@ import {
   createInteractionManager,
   createShape,
   createTextLabel,
+  getAudioDeviceBackend,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
   playAudioResource,
@@ -65,18 +67,15 @@ const clickSound = generateTone(440, 0.15, 20);
 const blipSound = generateTone(880, 0.08, 40);
 const sweepSound = generateSweep(200, 800, 0.3, 6);
 
-// Web Audio requires a user gesture to start. The AudioContext is created once and resumed on
-// the first pointer interaction.
-let audioContext: AudioContext | null = null;
+// Install the web audio device backend and lazily create a device on first interaction.
+enableHostWebAudioDevice();
+let audioDevice: AudioDeviceHandle | null = null;
 
-function getAudioContext(): AudioContext {
-  if (audioContext === null) {
-    audioContext = new AudioContext();
+function getAudioDevice(): AudioDeviceHandle {
+  if (audioDevice === null) {
+    audioDevice = getAudioDeviceBackend().createDevice(SAMPLE_RATE);
   }
-  if (audioContext.state === 'suspended') {
-    audioContext.resume().catch(() => {});
-  }
-  return audioContext;
+  return audioDevice;
 }
 
 // Scene3D graph root, scaled to device pixel ratio.
@@ -95,24 +94,24 @@ const inputManager = createInputManager();
 attachPointerInput(inputManager, canvasElement);
 connectInputToInteraction(inputManager, interactionManager, scale);
 
-// Audio mixer with two buses: sfx and music.
+// Audio mixer with two buses: sfx and music. The mixer stays web-only (AudioContext) for now;
+// bus routing is a no-op when channels are managed through AudioDeviceBackend (Option A).
 let mixer: ReturnType<typeof createAudioMixer> | null = null;
 const sfxBus = createAudioBus({ name: 'sfx', gain: 0.8 });
 const musicBus = createAudioBus({ name: 'music', gain: 0.6 });
 
 function ensureMixer(): ReturnType<typeof createAudioMixer> {
   if (mixer === null) {
-    mixer = createAudioMixer(getAudioContext());
+    mixer = createAudioMixer(new AudioContext({ sampleRate: SAMPLE_RATE }));
     addAudioBusToMixer(mixer, sfxBus);
     addAudioBusToMixer(mixer, musicBus);
   }
   return mixer;
 }
 
-// Play a sound through the sfx bus.
 function playSfx(resource: AudioResource, gain: number, pan: number): AudioChannel | null {
-  const ctx = getAudioContext();
-  const channel = playAudioResource(ctx, resource, { gain });
+  const dev = getAudioDevice();
+  const channel = playAudioResource(dev, resource, { gain });
   if (channel !== null) {
     routeAudioChannelToMixerBus(ensureMixer(), channel, sfxBus);
   }

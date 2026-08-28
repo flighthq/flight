@@ -1,6 +1,8 @@
 import { createAudioResource } from '@flighthq/audio/contract';
+import type { AudioDeviceBackend, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
 import { pauseAudioChannel, playAudioResource } from './audioChannel';
+import { resetAudioDeviceBackendForTest, setAudioDeviceBackend } from './audioDeviceBackend';
 import {
   addAudioBusToMixer,
   createAudioBus,
@@ -21,26 +23,14 @@ import {
   unrouteAudioChannelFromMixerBus,
 } from './audioMixer';
 
-const createdSourceNodes: MockAudioBufferSourceNode[] = [];
+let nextSourceHandle = 1;
+let mockBackend: AudioDeviceBackend;
+const device = 1 as unknown as AudioDeviceHandle;
 
 class MockStereoPannerNode {
   pan = { value: 0 };
   connect(): void {}
   disconnect(): void {}
-}
-
-class MockAudioBufferSourceNode {
-  buffer: AudioBuffer | null = null;
-  loopEnd = 0;
-  loopStart = 0;
-  onended: (() => void) | null = null;
-  playbackRate = { value: 1 };
-  stopCount = 0;
-  connect(): void {}
-  start(): void {}
-  stop(): void {
-    this.stopCount++;
-  }
 }
 
 class MockGainNode {
@@ -59,9 +49,7 @@ class MockAudioContext {
   destination = {};
   state = 'running';
   createBufferSource(): AudioBufferSourceNode {
-    const node = new MockAudioBufferSourceNode();
-    createdSourceNodes.push(node);
-    return node as unknown as AudioBufferSourceNode;
+    return {} as unknown as AudioBufferSourceNode;
   }
   createGain(): GainNode {
     return new MockGainNode() as unknown as GainNode;
@@ -77,8 +65,42 @@ class MockAudioContext {
 const ctx = new MockAudioContext() as unknown as AudioContext;
 
 function createMockAudioBuffer(): AudioBuffer {
-  return { duration: 1 } as AudioBuffer;
+  return {
+    duration: 1,
+    getChannelData: () => new Float32Array(44100),
+    length: 44100,
+    numberOfChannels: 1,
+    sampleRate: 44100,
+  } as unknown as AudioBuffer;
 }
+
+function createMockBackend(): AudioDeviceBackend {
+  return {
+    createBuffer: vi.fn().mockReturnValue(1),
+    createDevice: vi.fn().mockReturnValue(1),
+    createSource: vi.fn(() => nextSourceHandle++ as unknown as AudioSourceHandle),
+    destroyBuffer: vi.fn(),
+    destroyDevice: vi.fn(),
+    destroySource: vi.fn(),
+    getDeviceTime: vi.fn().mockReturnValue(0),
+    onSourceEnded: vi.fn(),
+    resumeDevice: vi.fn(),
+    setSourceGain: vi.fn(),
+    setSourcePlaybackRate: vi.fn(),
+    startSource: vi.fn(),
+    stopSource: vi.fn(),
+  };
+}
+
+beforeEach(() => {
+  nextSourceHandle = 1;
+  mockBackend = createMockBackend();
+  setAudioDeviceBackend(mockBackend);
+});
+
+afterEach(() => {
+  resetAudioDeviceBackendForTest();
+});
 
 describe('addAudioBusToMixer', () => {
   it('registers the bus in the Web Audio graph without error', () => {
@@ -131,7 +153,7 @@ describe('destroyAudioMixer', () => {
   it('stops routed channels, clears the active set, and is safe to call twice', () => {
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     destroyAudioMixer(mixer);
@@ -167,7 +189,7 @@ describe('getAudioMixerActiveChannels', () => {
   it('returns routed channels', () => {
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     expect(getAudioMixerActiveChannels(mixer)).toHaveLength(1);
@@ -175,38 +197,36 @@ describe('getAudioMixerActiveChannels', () => {
 });
 
 describe('pauseAllAudioMixerChannels', () => {
-  it('stops the source node and marks playing channels as paused', () => {
-    createdSourceNodes.length = 0;
+  it('destroys the active source and marks playing channels as paused', () => {
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     pauseAllAudioMixerChannels(mixer);
     expect(channel!.state).toBe('paused');
-    expect(createdSourceNodes[0]?.stopCount).toBeGreaterThan(0);
+    expect(mockBackend.destroySource).toHaveBeenCalled();
   });
 });
 
 describe('resumeAllAudioMixerChannels', () => {
-  it('restarts the source node and marks paused channels as playing', () => {
-    createdSourceNodes.length = 0;
+  it('creates a new source and marks paused channels as playing', () => {
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
+    const createCountBefore = (mockBackend.createSource as ReturnType<typeof vi.fn>).mock.calls.length;
     pauseAllAudioMixerChannels(mixer);
     resumeAllAudioMixerChannels(mixer);
     expect(channel!.state).toBe('playing');
-    // A fresh source node is created on resume (the paused one was stopped and discarded).
-    expect(createdSourceNodes.length).toBeGreaterThan(1);
+    expect((mockBackend.createSource as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(createCountBefore);
   });
 });
 
 describe('resumeAllAudioMixerChannels scope', () => {
   function playRouted(mixer: ReturnType<typeof createAudioMixer>, bus: ReturnType<typeof createAudioBus>) {
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()))!;
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()))!;
     routeAudioChannelToMixerBus(mixer, channel, bus);
     return channel;
   }
@@ -218,8 +238,6 @@ describe('resumeAllAudioMixerChannels scope', () => {
     return { bus, mixer };
   }
 
-  // A mixer-wide pause/resume around a menu must not resurrect a channel the caller had paused on its
-  // own. Resuming every paused channel — rather than the ones this mixer paused — silently did.
   it('leaves a channel the caller paused independently still paused', () => {
     const { bus, mixer } = mixerWithBus();
     const mixerPaused = playRouted(mixer, bus);
@@ -244,8 +262,6 @@ describe('resumeAllAudioMixerChannels scope', () => {
     expect(channel.state).toBe('playing');
   });
 
-  // Each transition that takes a channel away from the mixer must also drop it from the paused-by-mixer
-  // record, or a later resume restarts something the mixer no longer owns.
   it('does not resume a channel unrouted while the mixer was paused', () => {
     const { bus, mixer } = mixerWithBus();
     const channel = playRouted(mixer, bus);
@@ -268,7 +284,6 @@ describe('resumeAllAudioMixerChannels scope', () => {
     expect(channel.state).toBe('stopped');
   });
 
-  // The record is consumed by the resume, so a second resume has nothing of its own to restart.
   it('does not re-resume on a second call after the caller paused again', () => {
     const { bus, mixer } = mixerWithBus();
     const channel = playRouted(mixer, bus);
@@ -286,7 +301,7 @@ describe('routeAudioChannelToMixerBus', () => {
   it('adds the channel to the mixer active channels', () => {
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     expect(getAudioMixerActiveChannels(mixer)).toContain(channel!);
@@ -306,8 +321,6 @@ describe('setAudioBusMixerGuard', () => {
     const seen: string[] = [];
     setAudioBusMixerGuard((operation) => seen.push(operation));
     try {
-      // A bus that was never added to a mixer: every setter stores its value and returns it, but no
-      // audio node exists to receive it.
       const orphan = createAudioBus({ name: 'orphan' });
       expect(setAudioBusGain(orphan, 0.25)).toBe(0.25);
       setAudioBusMuted(orphan, true);
@@ -332,7 +345,6 @@ describe('setAudioBusMixerGuard', () => {
     } finally {
       setAudioBusMixerGuard(null);
     }
-    // Uninstalled: the orphan write is still a silent no-op, but nothing is reported.
     setAudioBusGain(createAudioBus({ name: 'orphan2' }), 0.75);
     expect(seen).toEqual([]);
   });
@@ -375,7 +387,7 @@ describe('stopAllAudioMixerChannels', () => {
   it('stops all routed channels and clears the active set', () => {
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     stopAllAudioMixerChannels(mixer);
@@ -388,7 +400,7 @@ describe('unrouteAudioChannelFromMixerBus', () => {
   it('removes the channel from the mixer active channels', () => {
     const mixer = createAudioMixer(ctx);
     const bus = createAudioBus();
-    const channel = playAudioResource(ctx, createAudioResource(createMockAudioBuffer()));
+    const channel = playAudioResource(device, createAudioResource(createMockAudioBuffer()));
     expect(channel).not.toBeNull();
     routeAudioChannelToMixerBus(mixer, channel!, bus);
     unrouteAudioChannelFromMixerBus(mixer, channel!);
