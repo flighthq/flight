@@ -50,6 +50,39 @@ This could be:
 
 The host-web extraction's strict-majority analysis (148 sentinel methods across 38 backends, 79.9% false concentration in 12 NONE rows) demonstrates the problem quantitatively. Those 148 sentinels are invisible lies.
 
+### Wrappers over partial backends must compose conditionally — ruled 2026-08-28
+
+A wrapper that delegates to another backend — a `host-*` layer over the web default, a decorator that adds
+observation or logging — **must carry an operation only when the backend it delegates to carries it.**
+
+```ts
+// WRONG — compiles, and re-presents an operation nothing can perform
+const backend: MediaSessionBackend = {
+  setMetadata(metadata) { inner.setMetadata?.(metadata); },
+};
+
+// RIGHT — the wrapper offers what the inner backend actually implements
+const backend: Mutable<MediaSessionBackend> = {};
+if (inner.setMetadata !== undefined) {
+  backend.setMetadata = (metadata) => inner.setMetadata!(metadata);
+}
+```
+
+★ **Optional-call guards alone are forbidden.** `inner.setMetadata?.(…)` type-checks and looks defensive,
+but it gives the wrapper a `setMetadata` that silently does nothing when the inner backend has none. The
+wrapper then reports as implementing an operation it cannot perform, so `has*Operation` / `explain*Operation`
+**lie through the host layer** — which is precisely the sentinel masquerade the absence-declared interface
+exists to remove, reintroduced one level up.
+
+The rule follows from the standing absence-of-an-export ruling: absence is the declaration, and a wrapper
+that manufactures presence out of absence has overridden a declaration it does not own.
+
+**How this was found.** Making the four `MediaSessionBackend` operations optional broke four call sites in
+`host-web/src/webMediasession.ts`, and the tempting repair was the optional-call guard. It compiles; it is
+wrong. `npm run check <package>` did not catch the break at all, because its typecheck gate is
+package-scoped and never compiles consumers — **an interface change requires a consumer typecheck**
+(`npx tsc --noEmit -p tsconfig.json`, or the consuming package's own project), never a package-scoped one.
+
 ### What this is NOT
 
 Legitimate host capability limitations are not defects. Lime cannot provide rich clipboard formats, POSIX file operations, or arbitrary haptic patterns — those are real platform limits. The requirement is that Flight can **represent these limits truthfully**, not that every host implements everything.
