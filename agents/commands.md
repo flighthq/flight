@@ -40,6 +40,20 @@ A **floor** (ratchet) advances as work lands: it names every value that must not
 
 These are distinct axes with distinct failure modes: rewriting a baseline is a history error (progression becomes invisible), while shrinking a floor is a regression error (landed work silently disappears). Require separate mutations for each, so that one kind of change cannot be confused with or hidden inside the other. A single constant serving both roles forces a choice — either it advances (erasing history) or it stays fixed (missing new ratchet entries) — and neither answer is correct because the question conflates two instruments.
 
+### Census changes are typed
+
+A gate number moves for exactly one of three reasons, and each must be recorded as a separate step with its own reason and delta:
+
+- **Relabel** — an existing item is reclassified (e.g. a backend moves from "owed" to "landed hook"). The population is unchanged; the partition shifts.
+- **Discovery** — a new item enters the population (a new interface is added). The denominator grows; the prior partition is unchanged.
+- **Repair** — a counted item is removed or merged (a duplicate is eliminated, an interface is deleted). The denominator shrinks.
+
+Never mix these in a single mutation. A commit that simultaneously discovers a new interface and relabels an existing one produces a delta that cannot be decomposed after the fact — was the count change from one event or two? Record each as its own step so the reason for every number change is traceable.
+
+### Hand-written detector rosters are floors, not ceilings
+
+A gate that enumerates conditions by name — a list of backends, a roster of known defects, a set of expected warnings — records a floor on what has been observed, not an exhaustive ceiling on what exists. When a consumer contradicts a closed gate (reports a condition the gate says is absent), the first question is whether the detector looks for the reported condition at all. A roster that does not contain a term cannot find it, and its silence is not evidence of absence — it is evidence of the roster's vocabulary. Expand the detector before trusting the gate's answer.
+
 ## Unowned working-tree content before rebase or handoff
 
 Never reflexively discard a dirty path you did not author. The same `git status` symptom can describe
