@@ -1,8 +1,12 @@
 # AudioDeviceBackend Design
 
-_2026-08-28. Read-only design proposal for the installable native audio-device seam that satisfies P2 of [upstream-host-requirements](upstream-host-requirements.md)._
+_2026-08-28. Design record for the installable native audio-device seam that satisfies P2 of [upstream-host-requirements](upstream-host-requirements.md)._
 
-**Status: proposal (read-only, no implementation until scope approved).**
+**Status: implemented (13 core operations). Bus/spatial/streaming operations deferred.**
+
+### Principle: abstraction adds host participation, never levels capable hosts down
+
+When a capability moves behind a backend seam, the web implementation must preserve every feature the web platform provides. Opaque handles replace web types in the portable API, but web-only features (gain automation, graph routing, native node access) remain available through web-specific backend extensions. A native backend declares those web-only capabilities absent through the explain/has machinery — it never pretends they exist by returning no-ops or null.
 
 ## Problem
 
@@ -46,20 +50,19 @@ export type AudioSourceHandle = number & { readonly __brand: 'AudioSourceHandle'
 export type AudioBusHandle = number & { readonly __brand: 'AudioBusHandle' };
 ```
 
-### AudioDeviceBackend interface (28 operations)
+### AudioDeviceBackend interface (13 operations — implemented)
 
 ```typescript
 // @flighthq/types
 
 interface AudioDeviceBackend {
-  // -- Device lifecycle (5) --
+  // -- Device lifecycle (4) --
   createDevice(sampleRate: number): AudioDeviceHandle;
   destroyDevice(device: AudioDeviceHandle): void;
   getDeviceTime(device: AudioDeviceHandle): number;
   resumeDevice(device: AudioDeviceHandle): void;
-  suspendDevice(device: AudioDeviceHandle): void;
 
-  // -- Buffer management (4) --
+  // -- Buffer management (2) --
   createBuffer(
     device: AudioDeviceHandle,
     channels: number,
@@ -68,39 +71,32 @@ interface AudioDeviceBackend {
     data: readonly Float32Array[],
   ): AudioBufferHandle;
   destroyBuffer(buffer: AudioBufferHandle): void;
-  getBufferDuration(buffer: AudioBufferHandle): number;
-  setBufferChannelData(buffer: AudioBufferHandle, channel: number, data: Float32Array): void;
 
-  // -- Source playback (9) --
+  // -- Source playback (7) --
   createSource(device: AudioDeviceHandle, buffer: AudioBufferHandle): AudioSourceHandle;
   destroySource(source: AudioSourceHandle): void;
-  getSourceState(source: AudioSourceHandle): 'playing' | 'stopped';
   onSourceEnded(source: AudioSourceHandle, callback: (() => void) | null): void;
   setSourceGain(source: AudioSourceHandle, gain: number): void;
-  setSourceLoop(source: AudioSourceHandle, loop: boolean): void;
   setSourcePlaybackRate(source: AudioSourceHandle, rate: number): void;
   startSource(source: AudioSourceHandle, offset: number): void;
   stopSource(source: AudioSourceHandle): void;
-
-  // -- Bus routing (7) --
-  connectBusToDevice(bus: AudioBusHandle, device: AudioDeviceHandle): void;
-  connectSourceToBus(source: AudioSourceHandle, bus: AudioBusHandle): void;
-  createBus(device: AudioDeviceHandle): AudioBusHandle;
-  destroyBus(device: AudioDeviceHandle, bus: AudioBusHandle): void;
-  fadeGain(bus: AudioBusHandle, targetGain: number, durationMs: number): void;
-  setBusGain(bus: AudioBusHandle, gain: number): void;
-  setBusPan(bus: AudioBusHandle, pan: number): void;
-
-  // -- Spatial positioning (3) --
-  setListenerOrientation(
-    device: AudioDeviceHandle,
-    forwardX: number, forwardY: number, forwardZ: number,
-    upX: number, upY: number, upZ: number,
-  ): void;
-  setListenerPosition(device: AudioDeviceHandle, x: number, y: number, z: number): void;
-  setSourcePosition(source: AudioSourceHandle, x: number, y: number, z: number): void;
 }
 ```
+
+### Web-specific extensions (not AudioDeviceBackend operations)
+
+The web backend returns an object that satisfies `AudioDeviceBackend` and additionally provides:
+
+- `getSourceGainNode(source): GainNode | null` — the GainNode for a source handle
+- `getSourceBufferSourceNode(source): AudioBufferSourceNode | null` — the active BufferSourceNode
+
+These are queried through `getAudioSourceGainNode` and `getAudioSourceBufferSourceNode` in `audioDeviceBackend.ts`, which check the active backend via type guard. `hasAudioDeviceWebNodeAccess()` reports whether the current backend exposes these methods.
+
+Channel-level web-only capabilities (`connectAudioChannelToNode`, `getAudioChannelInputNode`, `getAudioChannelOutputNode`, `fadeAudioChannelGain` with gain automation) work when the web backend is active and return sentinels otherwise. `hasAudioChannelNodeAccess()` and `hasAudioChannelFade()` report availability.
+
+### Deferred operations (not implemented)
+
+Bus routing (`createBus`, `destroyBus`, `connectSourceToBus`, `connectBusToDevice`, `fadeGain`, `setBusGain`, `setBusPan`), spatial positioning (`setListenerOrientation`, `setListenerPosition`, `setSourcePosition`), and additional buffer/source queries (`getBufferDuration`, `setBufferChannelData`, `getSourceState`, `setSourceLoop`, `suspendDevice`) remain in the original design proposal but are not implemented. The mixer continues to use `AudioContext` and Web Audio nodes directly.
 
 ### Sentinel and invalid-handle behavior
 
@@ -144,6 +140,17 @@ The sentinel backend and every operation on an invalid (destroyed or never-creat
 - The `onSourceEnded` callback does **not** fire (destroy is an explicit teardown, not a playback completion).
 - Any subsequent operation on the destroyed handle is a no-op per the invalid-handle table.
 - The handle value may be reused by a future `createSource` call.
+
+### Buffer handle ownership
+
+The acquirer releases: `playAudioResource` creates the buffer handle, and `destroyAudioChannel` frees it via `destroyBuffer`. Borrowed handles (passed to `createSource`) are never destroyed by the borrower — the source references the buffer but does not own it.
+
+- Stopping or pausing a channel does not free the buffer (the channel may resume).
+- Completing playback does not free the buffer (the channel may be replayed).
+- `destroyAudioChannel` stops the active source, then frees the buffer, then clears the runtime.
+- Double-destroy is safe (the runtime is cleared on first call; the second is a no-op).
+
+Tests cover: explicit teardown frees the buffer, stop/complete do not free, double-destroy is safe.
 
 ### Process-global plumbing
 
