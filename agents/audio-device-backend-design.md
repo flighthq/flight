@@ -2,7 +2,7 @@
 
 _2026-08-28. Design record for the installable native audio-device seam that satisfies P2 of [upstream-host-requirements](upstream-host-requirements.md)._
 
-**Status: implemented (13 core operations). Bus/spatial/streaming operations deferred.**
+**Status: P2 satisfied — native hosts have playback without mixing.** 13 core operations implemented (device lifecycle, buffer management, source playback). Bus routing, spatial positioning, and panning are user-decided deferrals to Option B, not open gaps: the mixer continues to operate directly on Web Audio nodes, and a native host that needs mixing would extend through a dedicated bus backend or Option B operations.
 
 ### Principle: abstraction adds host participation, never levels capable hosts down
 
