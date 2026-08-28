@@ -223,10 +223,38 @@ That makes Power the smallest possible first implementation: no new proofs to in
 existing ones to transcribe. If encoding them turns out to be more than a small slice, that is itself the
 signal that this instrument is not worth its weight yet.
 
-#### Design: a separate instrument for behavioral completeness — UNRATIFIED
+#### The four Power mutations, preserved verbatim so encoding is transcription
 
-Design only, pending a manager ruling. Nothing here is implemented, and it deliberately produces **no
-number that can be ratcheted**.
+These were run by hand against `webPower.ts` and `webPower.test.ts` and are recorded here because nothing
+re-runs them. They are the entire evidence behind `PowerBackend`'s `closed` row above. Written out in full
+— anchor, edit, and the exact test names that must fail — so that whoever encodes them later transcribes
+rather than rediscovers, and so that a reader can re-run them by hand today.
+
+Each anchor occurs exactly once in the file; that uniqueness is part of the evidence, because an anchor
+matching twice would splice a site nobody chose.
+
+| # | anchor in `packages/host-web/src/webPower.ts` | edit | tests that MUST fail, by exact name | what it proves |
+| --- | --- | --- | --- | --- |
+| A | `resetCachedBatteryReadings();` (in `destroy`) | delete | `does not serve battery readings captured by a destroyed backend` | the four cached readings are module-scoped, so without the reset a destroyed backend's last measurement is served by its successor as if fresh |
+| B | `detachWakeLockReleaseListeners();` (in `destroy`) | delete | `detaches the release listener from the exact sentinel it was added to` **and** `is idempotent: a second destroy detaches nothing more and does not throw` | teardown detaches at all. B kills **two** tests; a spec naming only one would pass while the other silently broke |
+| C | `_wakeLockReleaseListeners.clear();` (in `detachWakeLockReleaseListeners`) | delete | `is idempotent: a second destroy detaches nothing more and does not throw` | the registry is emptied, so a second teardown detaches nothing further |
+| D | `_wakeLockReleaseListeners.set(sentinel, onRelease);` | store `() => {}` instead of `onRelease` | `detaches the release listener from the exact sentinel it was added to` | **the identity claim itself.** A removal still happens and every count-based assertion still passes; only the `Object.is` check catches that the wrong reference was removed and the real listener leaked |
+
+D is the one that would be lost first if these were summarised. It is the difference between "a listener
+was removed" and "the listener that was added was removed", and only the second is the property
+`removeEventListener` actually requires.
+
+**A matching hazard to carry forward:** `webPower.test.ts` contains two tests whose names contain
+`is idempotent` — the unrelated `enableHostWebPower` one, and B/C's. Any future encoding must match test
+names by exact full string, never substring, or it will report a kill from a test that checked nothing
+relevant.
+
+#### Design: a separate instrument for behavioral completeness — DEFERRED, UNRATIFIED
+
+**Manager ruling: DEFERRED** until the lifecycle behavioral audit derives its claim population. No runner
+or spec machinery is to be built. The design below is kept unchanged and unratified so that it is ready
+when that population exists; nothing here is implemented, and it deliberately produces **no number that
+can be ratcheted**.
 
 **The problem.** The structural gate answers "is a teardown declared and named by its setter". Whether
 that teardown releases what the backend owns is a different question, and the section above currently
