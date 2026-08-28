@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/log": "*",
+    "@flighthq/platform": "*",
     "@flighthq/signals": "*",
     "@flighthq/types": "*"
   },

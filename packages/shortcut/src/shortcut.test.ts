@@ -1,3 +1,4 @@
+import { resetPlatformBackendForTest, setPlatformBackend } from '@flighthq/platform/contract';
 import { clearSignal, connectSignal } from '@flighthq/signals/contract';
 import type {
   AcceleratorParseError,
@@ -85,8 +86,10 @@ function fakeBackend(): FakeBackend {
 }
 
 afterEach(() => {
+  resetPlatformBackendForTest();
   setShortcutBackend(null);
   setShortcutDropGuard(null);
+  vi.unstubAllGlobals();
   // Disconnect any signal listeners registered in this test to avoid cross-test bleed.
   const signals = enableGlobalShortcutSignals();
   clearSignal(signals.onTrigger);
@@ -977,6 +980,53 @@ describe('resolveCommandOrControlModifier', () => {
     expect(resolveCommandOrControlModifier('windows')).toBe('Control');
     expect(resolveCommandOrControlModifier('linux')).toBe('Control');
     expect(resolveCommandOrControlModifier('Windows NT')).toBe('Control');
+  });
+
+  it('uses the selected macOS platform identity when DOM globals are absent', () => {
+    vi.stubGlobal('navigator', undefined);
+    setPlatformBackend({
+      getInfo(out) {
+        out.name = 'macos';
+        return out;
+      },
+    });
+
+    expect(resolveCommandOrControlModifier()).toBe('Meta');
+    expect(getAcceleratorModifierLabel('CommandOrControl')).toBe('⌘');
+    expect(formatAcceleratorForDisplay('CommandOrControl+K')).toBe('⌘K');
+  });
+
+  it('prefers a selected Windows identity over a conflicting DOM Mac identity', () => {
+    vi.stubGlobal('navigator', { platform: 'MacIntel' });
+    setPlatformBackend({
+      getInfo(out) {
+        out.name = 'windows';
+        return out;
+      },
+    });
+
+    expect(resolveCommandOrControlModifier()).toBe('Control');
+    expect(formatAcceleratorForDisplay('CommandOrControl+K')).toBe('Ctrl+K');
+  });
+
+  it('lets an explicit override win without querying the selected backend', () => {
+    const getInfo = vi.fn(() => {
+      throw new Error('selected backend must not be queried');
+    });
+    setPlatformBackend({ getInfo });
+
+    expect(resolveCommandOrControlModifier('windows')).toBe('Control');
+    expect(getAcceleratorModifierLabel('CommandOrControl', 'macos')).toBe('⌘');
+    expect(formatAcceleratorForDisplay('CommandOrControl+K', 'windows')).toBe('Ctrl+K');
+    expect(getInfo).not.toHaveBeenCalled();
+  });
+
+  it('treats the unselected sentinel identity as non-Mac without a DOM fallback', () => {
+    vi.stubGlobal('navigator', { platform: 'MacIntel' });
+    resetPlatformBackendForTest();
+
+    expect(resolveCommandOrControlModifier()).toBe('Control');
+    expect(getAcceleratorModifierLabel('CommandOrControl')).toBe('Ctrl');
   });
 });
 

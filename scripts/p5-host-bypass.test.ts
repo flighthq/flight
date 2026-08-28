@@ -25,10 +25,11 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=31 direct-dom=15 input-ingress=0 scratch-surface=16 webgpu-acquisition=0',
+      'P5 outstanding=30 direct-dom=14 input-ingress=0 scratch-surface=16 webgpu-acquisition=0',
     );
     expect(formatted).toContain('33 (-3 fixed)');
     expect(formatted).toContain('31 (-2 fixed)');
+    expect(formatted).toContain('30 (-1 fixed)');
   }, 30_000);
 
   it('preserves the append-only evidenced budget history and its category breakdowns', () => {
@@ -58,22 +59,46 @@ describe('P5 host-bypass derived gate', () => {
         reason: 'Bitmap materialization routed through the selected image backend',
         total: 31,
       },
+      {
+        budget: { 'direct-dom': 14, 'input-ingress': 0, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+        reason: 'Shortcut platform identity routed through the selected platform backend',
+        total: 30,
+      },
     ]);
     expect(p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY)).toEqual([]);
   });
 
-  it('mutation-proves that coherently raising the latest checkpoint cannot rewrite accepted history', () => {
+  it('mutation-proves that coherently raising the accepted Bitmap checkpoint cannot rewrite history', () => {
+    const checkpoint = P5_HOST_BYPASS_BUDGET_HISTORY[4];
+    const mutated = [
+      ...P5_HOST_BYPASS_BUDGET_HISTORY.slice(0, 4),
+      {
+        ...checkpoint,
+        budget: { ...checkpoint.budget, 'scratch-surface': checkpoint.budget['scratch-surface'] + 1 },
+        total: checkpoint.total + 1,
+      },
+      ...P5_HOST_BYPASS_BUDGET_HISTORY.slice(5),
+    ];
+    expect(p5HostBypassBudgetHistoryFailures(mutated)).toContain(
+      'P5 budget history[4] rewrites immutable accepted checkpoint total 31 (categories and reason are pinned)',
+    );
+  });
+
+  it('pins the appended Shortcut checkpoint categories even when its total stays coherent', () => {
     const latest = P5_HOST_BYPASS_BUDGET_HISTORY[P5_HOST_BYPASS_BUDGET_HISTORY.length - 1];
     const mutated = [
       ...P5_HOST_BYPASS_BUDGET_HISTORY.slice(0, -1),
       {
         ...latest,
-        budget: { ...latest.budget, 'scratch-surface': latest.budget['scratch-surface'] + 1 },
-        total: latest.total + 1,
+        budget: {
+          ...latest.budget,
+          'direct-dom': latest.budget['direct-dom'] + 1,
+          'scratch-surface': latest.budget['scratch-surface'] - 1,
+        },
       },
     ];
     expect(p5HostBypassBudgetHistoryFailures(mutated)).toContain(
-      'P5 budget history[4] rewrites immutable accepted checkpoint total 31 (categories and reason are pinned)',
+      'P5 budget history[5] rewrites immutable accepted checkpoint total 30 (categories and reason are pinned)',
     );
   });
 
@@ -88,7 +113,7 @@ describe('P5 host-bypass derived gate', () => {
       },
     ];
     expect(p5HostBypassBudgetHistoryFailures(mutated)).toContain(
-      'P5 budget history[5] total 32 is not below prior total 31',
+      'P5 budget history[6] total 31 is not below prior total 30',
     );
   });
 
@@ -180,8 +205,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(3);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(18);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 18, budget 15');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(17);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 17, budget 14');
   }, 30_000);
 
   it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
@@ -204,6 +229,24 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain(
       'scratch-surface: found 18, budget 16',
     );
+  }, 30_000);
+
+  it('mutation-proves that restoring Shortcut DOM platform detection exceeds the lowered direct-DOM ratchet', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    const restoredProbe = scanP5HostBypassSource(
+      'packages/shortcut/src/restoredPlatformProbe.ts',
+      `export function isMacOS() {
+         return typeof navigator !== 'undefined' && /mac/i.test(navigator.platform ?? '');
+       }`,
+    );
+    const mutated = createP5HostBypassReport(clean.scannedFiles + 1, [
+      ...clean.p5,
+      ...clean.excluded,
+      ...restoredProbe,
+    ]);
+    expect(restoredProbe).toHaveLength(1);
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(15);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 15, budget 14');
   }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {

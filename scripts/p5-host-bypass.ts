@@ -77,6 +77,11 @@ const P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX = [
     reason: 'Bitmap materialization routed through the selected image backend',
     total: 31,
   },
+  {
+    budget: { 'direct-dom': 14, 'input-ingress': 0, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+    reason: 'Shortcut platform identity routed through the selected platform backend',
+    total: 30,
+  },
 ] as const satisfies readonly P5HostBypassBudgetEvidence[];
 
 // APPEND ONLY. Each entry is an evidenced repair state, not a current number to edit in place. Future
