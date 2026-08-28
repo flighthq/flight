@@ -1,3 +1,5 @@
+import { setNetBackend } from '@flighthq/net/contract';
+
 import {
   createAudioResourceFromSamples,
   loadAudioResourceFromBase64,
@@ -55,6 +57,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setNetBackend(null);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   (mockContext.decodeAudioData as ReturnType<typeof vi.fn>).mockClear();
@@ -174,6 +177,26 @@ describe('loadAudioResourceFromBytes', () => {
 });
 
 describe('loadAudioResourceFromUrl', () => {
+  it('routes URL loading through the installed NetBackend', async () => {
+    const sendNetRequest = vi.fn().mockResolvedValue({
+      body: new ArrayBuffer(8),
+      headers: { 'content-type': 'audio/mpeg' },
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      url: 'sound.mp3',
+    });
+    setNetBackend({ sendNetRequest });
+
+    const resource = await loadAudioResourceFromUrl(mockContext, 'sound.mp3');
+
+    expect(resource.buffer).toBe(decodedBuffer);
+    expect(sendNetRequest).toHaveBeenCalledWith(
+      { method: 'GET', responseType: 'arraybuffer', url: 'sound.mp3' },
+      undefined,
+    );
+  });
+
   it('fetches, decodes, and returns a resource', async () => {
     vi.stubGlobal(
       'fetch',

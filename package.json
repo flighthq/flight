@@ -80,6 +80,7 @@
     "check:import-conformance": "tsx ./conformance/core/check-import-conformance-ratchet.ts",
     "check:license-provenance": "tsx ./scripts/check-license-provenance.ts",
     "check:package-dist-orphans": "tsx ./scripts/check-package-dist-orphans.ts",
+    "check:transport-bypasses": "tsx ./scripts/check-transport-bypasses.ts",
     "clean": "npm run clean:build",
     "clean:artifacts:functional": "tsx ./scripts/clean-functional-artifacts.ts",
     "clean:build": "tsx ./scripts/clean-package-dist.ts && tsc -b tsconfig.build.json --clean",
