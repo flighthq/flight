@@ -24,10 +24,10 @@ describe('backend replacement lifetime census', () => {
   let teardowns: ReadonlyMap<string, string>;
   let formattedOutput: string;
 
-  // ★ THE FLOOR, named rather than counted. A number-only floor lets a deletion go unnoticed as long as
-  // an addition lands in the same slice. A named set makes every disappearance individually visible.
-  // Raise this set by adding the name whenever a slice lands a teardown hook. Update total when new
-  // backend interfaces are added to @flighthq/types.
+  // ★ THE FLOOR is a HISTORICAL BASELINE, not a mirror of the current population. A baseline that moves
+  // with the thing it measures measures nothing. The total stays at 43 (the population when the enforced
+  // set was established) so that growth is visible: baseline 43 / current 46 → "+3 new seams". Raise
+  // enforcedNames when a slice lands a teardown hook; do NOT update total to match the current count.
   const ENFORCED_FLOOR: BackendLifecycleFloor = {
     enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'],
     total: 43,
@@ -101,12 +101,10 @@ describe('backend replacement lifetime census', () => {
     expect(formattedOutput).toContain(`(${deltaText})`);
   });
 
-  // ★ The floor total is a HISTORICAL BASELINE (the total when the enforced set was established), not the
-  // current total. Bumping it to match the current total absorbs growth into the baseline and silences the
-  // "+N new seams" signal. This test fails if someone does that: it asserts that when the live population
-  // exceeds the floor, the output visibly reports the growth. An explicit rebaseline is a deliberate act
-  // that adds a comment and updates both the total and this test together.
-  it('reports denominator growth when the population exceeds the historical baseline', () => {
+  // ★ A baseline that moves with the thing it measures measures nothing. This test fails if someone bumps
+  // ENFORCED_FLOOR.total to absorb denominator growth: the "+N new seams" text disappears from the output
+  // and the assertion breaks. New seam additions must remain visible history, not normalized away.
+  it('fails if denominator growth is absorbed by advancing the floor total to match current', () => {
     const growth = report.total - ENFORCED_FLOOR.total;
     expect(growth).toBeGreaterThan(0);
     expect(formattedOutput).toContain(`+${growth} new seam`);
