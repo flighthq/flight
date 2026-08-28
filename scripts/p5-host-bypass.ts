@@ -152,7 +152,7 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
     `SCANNED ${report.scannedFiles} packages/*/src/**/*.ts files (runtime directory walk; no file roster)`,
     'DETECTS direct document/window/navigator access, DOM input listener attachment, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
     'EXCLUDES tests/helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom/*-canvas technology adapters, application P4 window attachment, and P3 fetch/socket/EventSource/WebSocket/XHR/Request/Image transport syntax',
-    `P5 ${Object.entries(counts)
+    `P5 outstanding=${report.p5.length} ${Object.entries(counts)
       .map(([kind, count]) => `${kind}=${count}`)
       .join(' ')}`,
   ];
