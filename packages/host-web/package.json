@@ -53,6 +53,7 @@
     "@flighthq/image": "*",
     "@flighthq/keyboard": "*",
     "@flighthq/lifecycle": "*",
+    "@flighthq/media": "*",
     "@flighthq/mediasession": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",
