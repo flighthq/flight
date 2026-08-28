@@ -58,9 +58,27 @@ Legitimate host capability limitations are not defects. Lime cannot provide rich
 
 ## P2 — AudioBackend
 
-No `AudioBackend` interface exists in Flight. Audio playback is currently web-only (`<audio>` element, Web Audio API). A native host that provides its own audio device (Lime's OpenAL backend, a Node.js audio library, a mobile platform's audio API) has no seam to install.
+### Audit findings (2026-08-27)
 
-`audio` needs the same `get*Backend` / `set*Backend` / `enableHostWeb*` treatment as every other capability. The backend interface should cover: source creation, playback control (play/pause/stop/seek), volume, spatial/3D positioning, and stream management.
+The `@flighthq/audio` package was audited for Application coupling, global state, and direct web API usage:
+
+- **Zero Application coupling.** No import of `@flighthq/application` or `Application` anywhere in `audio/src/`. The package is fully standalone.
+- **Caller-owned AudioContext.** Every decode/load function accepts an `AudioContext` parameter; the package never creates or stores one. The native host retains full control of audio device lifecycle.
+- **Direct web leak: `new Audio().canPlayType()`** in `audioFormat.ts`. This was the only hard web dependency — a capability probe that native hosts cannot satisfy without a DOM `HTMLAudioElement`.
+
+### Slice implemented: `canPlayType` seam
+
+The `new Audio()` leak has been moved behind a process-global `AudioBackend` seam:
+
+- `AudioBackend` interface in `@flighthq/types` — single operation: `canPlayType(mimeType: string): boolean`.
+- Process-global plumbing in `@flighthq/audio/contract`: `getAudioBackend`, `setAudioBackend`, `installAudioHostBackend`, `explainAudioBackend`, `observeAudioHostResult`, `resetAudioBackendForTest`, `createWebAudioBackend`.
+- Three-tier precedence: custom > host > sentinel (sentinel returns `false`).
+- `enableHostWebAudio()` in `@flighthq/host-web` creates the web backend (`new Audio().canPlayType()`), wraps with observation, installs into the host slot. Called by the umbrella `enableHostWeb()`.
+- `canPlayAudioType()` in `@flighthq/audio` now routes through the backend instead of constructing `new Audio()` directly.
+
+### P2 remains open
+
+The `canPlayType` slice addresses only the direct web leak. The broader audio-device seam — source creation, playback control (play/pause/stop/seek), volume, spatial/3D positioning, and stream management — requires a separate `AudioDeviceBackend` design (see below, or a future `@flighthq/media` backend). P2 is not satisfied until a native host can install its own audio playback device.
 
 ---
 
