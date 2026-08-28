@@ -728,3 +728,72 @@ model, where the sentinel tier serves when nothing is installed and never throws
 defect already ruled on for `createImageResourceFromBitmap`. Its sentinel twin,
 `createGlRenderSurface`, returns `| null` from the same file. Fix the throwing wrapper to return a
 sentinel with an `explain*` query; do not fold this into the H7 slice.
+
+---
+
+# H8 — the scratch-surface foundation (unblocks the four GL/WGPU scratch shapes) — 2026-08-28
+
+Foreman reports four remaining shapes — shape raster, rich-text cache, text-label cache, scale9 —
+blocked on one shared ruling: the scratch-surface contract. This is that ruling. It is **not** the
+same problem as [H7](#h7), and conflating them would produce the wrong seam.
+
+## Two different surfaces, two different answers
+
+- **The GL screen context (H7).** The canvas was never load-bearing — every read was a width/height
+  fallback. So the primitive is `GlContext` and no surface appears in the signature at all.
+- **A 2D scratch raster target (here).** The canvas *is* load-bearing: these paths set `width`/
+  `height`, call `getContext('2d')`, `clearRect`, rasterize, and upload the result as a texture. A
+  canvas-shaped 2D drawing target is genuinely what the work needs — and it is natively
+  implementable, which is why the provider shape is right here and was wrong for the GL context.
+
+## The line is already drawn correctly one level up
+
+`ShapeRasterizer` is `(context: CanvasRenderingContext2D, commands, state) => void`, and its own
+comment states the split: *the backend owns the canvas, the upload, and the caching; a rasterizer
+owns only the replay.* So the thing to abstract is exactly what the backend owns — the surface.
+
+## Ruling A — the provider returns a Flight-owned `Raster2DSurface`, not `HTMLCanvasElement`
+
+`GlRenderSurfaceProvider.createRenderSurface` currently returns `HTMLCanvasElement | null`. A native
+host implementing it must therefore return a canvas-shaped shim so we can call `getContext` on it —
+the same dishonesty H7 removes from the GL path. Retype it.
+
+`Raster2DSurface` (in `@flighthq/types`) is: mutable `width`/`height`, yields a 2D drawing context,
+and is usable as a texture upload source. Derive the member set from what these four paths actually
+call — do not transcribe the HTML canvas IDL.
+
+**The P5 gate cannot see this distinction, and that is the trap.** It counts `document` access.
+Routing these four shapes through the existing `HTMLCanvasElement`-returning provider would drop the
+site count and satisfy the gate while leaving a native host no honest implementation. Do not let a
+green gate stand in for a correct seam.
+
+## Explicitly NOT in this slice
+
+Replacing `CanvasRenderingContext2D` inside `ShapeRasterizer`. That touches the whole Canvas backend
+and the shape system, and it has not been sized. Items 5–8 land with `Raster2DSurface` yielding a
+`CanvasRenderingContext2D`: the **surface** becomes Flight-owned, the **context** stays web-typed,
+and that residue is named here rather than hidden. File it; do not bundle it.
+
+Also derive, rather than assume: whether one shared 2D scratch provider serves both backends, or
+`GlRenderSurfaceProvider` and `WgpuRenderSurfaceProvider` both remain. Under H7 the GL *screen*
+surface disappears, so the surviving use may be scratch only — in which case two per-backend
+providers for one backend-independent job is the wrong count.
+
+## Ruling B — yes, the caches need explicit teardown, and the verb is `destroy*`
+
+Decided by doctrine plus one fact. On the web a raster surface is GC-eligible, so teardown looks
+optional. **Natively it is not** — a Cairo surface is a resource that must be freed. The web's GC
+behaviour is not the contract; the seam's contract is what every backend must honour.
+
+A cache owning a raster surface (and any GPU texture it uploads to) owns a non-GC resource. Per
+AGENTS.md that is `destroy*`, not `dispose*`: it frees a resource now and leaves the entity invalid.
+Give the rich-text and text-label caches an explicit `destroy*` and hold the ownership contract in
+[backend lifecycle ownership](backend-lifecycle-ownership.md).
+
+## Ruling C — deferred pending evidence, and this is not a stall
+
+Video resource ownership/lifecycle (item 9) I will not rule blind. It is last in foreman's order
+anyway, so nothing waits on it. To close it I need, derived: who currently owns the element or
+handle each `videoResourceFrom` path produces, what frees it today, and whether any consumer holds a
+reference past the resource's own lifetime. With those three facts the `dispose*`/`destroy*` choice
+falls out the same way Ruling B did.
