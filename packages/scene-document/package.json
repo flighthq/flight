@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/camera": "*",
+    "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/lighting": "*",
     "@flighthq/node": "*",
