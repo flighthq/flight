@@ -78,7 +78,7 @@ The `new Audio()` leak has been moved behind a process-global `AudioBackend` sea
 
 ### P2 remains open
 
-The `canPlayType` slice addresses only the direct web leak. The broader audio-device seam — source creation, playback control (play/pause/stop/seek), volume, spatial/3D positioning, and stream management — requires a separate `AudioDeviceBackend` design (see below, or a future `@flighthq/media` backend). P2 is not satisfied until a native host can install its own audio playback device.
+The `canPlayType` slice addresses only the direct web leak. The broader audio-device seam — source creation, playback control (play/pause/stop/seek), volume, spatial/3D positioning, and stream management — is specified in the [AudioDeviceBackend design proposal](audio-device-backend-design.md). P2 is not satisfied until a native host can install its own audio playback device.
 
 ---
 
@@ -343,4 +343,3 @@ existing window is a backend operation, never an application-scoped one.
 and removal must be explicit and must not leak the GPU textures, audio contexts, native handles and open
 sockets the outgoing backend held. Per H4 that teardown verb is **`destroy*`, not `dispose*`**. Window
 ownership is still decided at attachment time.
-
