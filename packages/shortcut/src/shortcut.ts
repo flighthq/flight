@@ -1,3 +1,4 @@
+import { getPlatformName } from '@flighthq/platform/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
@@ -585,12 +586,11 @@ function _getModifierLabel(resolved: Exclude<ShortcutModifier, 'CommandOrControl
 
 // Returns true when running on macOS.
 // Accepts an optional `platform` override (e.g. 'macos', 'windows', 'linux') for testability.
-// Falls back to navigator.platform heuristic. Lightweight — avoids importing @flighthq/platform.
+// Without an override, reads the selected process-wide PlatformBackend identity. The required
+// sentinel identity is `unknown`, which deliberately resolves as non-Mac without a DOM fallback.
 function _isMacOS(platform?: string): boolean {
   if (platform !== undefined) return /^mac/i.test(platform);
-  if (typeof navigator === 'undefined') return false;
-  const p = navigator.platform ?? '';
-  return /mac/i.test(p);
+  return getPlatformName() === 'macos';
 }
 
 interface _Parsed {
