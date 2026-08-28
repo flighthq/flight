@@ -183,28 +183,48 @@ export function formatBackendLifecycleReport(
       {
         command: 'npx vitest run scripts/backend-lifecycle.test.ts (scripts/backend-lifecycle-core.ts)',
         counting:
-          'one unit = one interface; owning = declares a ZERO-PARAMETER destroy/dispose in method or property syntax, so a per-object teardown taking an id is excluded; enforced + noTeardownHook is asserted equal to total',
+          'one unit = one interface; counted = DECLARES a ZERO-PARAMETER destroy/dispose in method or property syntax (a per-object teardown taking an id is excluded) AND its set*Backend body names that member; this is declaration and wiring only, never evidence that destroy releases what the backend owns; enforced + noTeardownHook is asserted equal to total',
         scope:
           'every exported *Backend interface in packages/types/src/*.ts, plus every exported set*Backend body and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
       },
       readGateTreeState(process.cwd()),
     ),
   );
-  const summary = `${report.enforced} of ${report.total} backends own a freeable resource, ${report.noTeardownHook} declare no whole-backend teardown`;
+  // ★ "declare a whole-backend teardown hook", NOT "own a freeable resource". The gate reads
+  // DECLARATIONS: an interface member and a `set*Backend` body that names it. It cannot see whether
+  // `destroy()` releases what the backend actually holds, and the audit in
+  // `agents/backend-lifecycle-ownership.md` found live rows where it does not — a counted backend whose
+  // host-installed instance has no reachable teardown at all, and counted rows that release state they
+  // never acquired. Wording that says "own a freeable resource" invites the reading that the numerator
+  // is a completeness measure, and that reading is what this line must not support.
+  const summary = `${report.enforced} of ${report.total} backends declare a whole-backend teardown hook, ${report.noTeardownHook} declare none`;
   if (floor !== undefined) {
     const delta = compareFloorToReport(floor, report);
     lines.push(`${summary} (${formatBackendLifecycleDelta(delta)})`);
   } else {
     lines.push(summary);
   }
+  lines.push(BACKEND_LIFECYCLE_SCOPE_CAVEAT);
   for (const entry of report.entries.filter((candidate) => candidate.teardown !== null)) {
     lines.push(
-      `  ${entry.tearsDown ? 'frees  ' : 'LEAKS  '} ${entry.interfaceName.padEnd(24)} ${entry.setter ?? '(no setter)'} → ${entry.teardown}()`,
+      `  ${entry.tearsDown ? 'wired   ' : 'UNWIRED '} ${entry.interfaceName.padEnd(24)} ${entry.setter ?? '(no setter)'} → ${entry.teardown}()`,
     );
   }
   for (const violation of report.violations) lines.push(`  VIOLATION ${violation.rule}: ${violation.detail}`);
   return lines.join('\n');
 }
+
+// ★ THE SCOPE CAVEAT, printed on every run and asserted by the tests so it cannot be quietly dropped.
+//
+// This gate answers one question — is a whole-backend teardown DECLARED and NAMED by its setter — and
+// the number it prints is routinely read as "N backends clean up correctly", which it has never meant.
+// The audit in `agents/backend-lifecycle-ownership.md` measured the gap on the live tree: rows this gate
+// counts include one whose host-installed instance has no reachable teardown at all, and ones whose
+// destroy releases host state they never acquired. Both are invisible here, by construction.
+//
+// It rides in the output rather than in a doc because the output is what gets pasted into reports.
+export const BACKEND_LIFECYCLE_SCOPE_CAVEAT =
+  'STRUCTURAL: hook presence and setter wiring only; this gate does NOT verify that destroy releases what a backend owns — behavior unverified, see agents/backend-lifecycle-ownership.md';
 
 export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.noTeardownHook !== report.total;
