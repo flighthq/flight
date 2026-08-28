@@ -322,9 +322,23 @@ const P5_HOST_BYPASS_S09_V4_PROGRESS = {
   total: 25,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
+const P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 9,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 13,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Input pointer-lock exit and state queries routed through the selected input ingress backend',
+  total: 22,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
 export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   P5_HOST_BYPASS_S09_V4_PROGRESS,
+  P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
@@ -877,6 +891,15 @@ export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBy
       failures.push(`P5 taxonomy v4 progress history[${index}] rewrites immutable accepted checkpoint`);
     }
   }
+  const pointerLockEntry = history[4];
+  if (
+    pointerLockEntry === undefined ||
+    !p5HostBypassV4BudgetEvidenceMatches(pointerLockEntry, P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS)
+  ) {
+    failures.push(
+      'Input pointer-lock taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason',
+    );
+  }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
     const categoryTotal = totalP5HostBypassBudget(entry.budget);
@@ -891,9 +914,11 @@ export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBy
         `P5 taxonomy v4 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
       );
     }
-    if (prior !== undefined && entry.total !== prior.total - 1) {
+    const repairedSites = index === 4 ? 3 : 1;
+    if (prior !== undefined && entry.total !== prior.total - repairedSites) {
+      const repairedSitesLabel = repairedSites === 1 ? 'one site' : `${repairedSites} sites`;
       failures.push(
-        `P5 taxonomy v4 progress history[${index}] must repair exactly one site; found ${prior.total} -> ${entry.total}`,
+        `P5 taxonomy v4 progress history[${index}] must repair exactly ${repairedSitesLabel}; found ${prior.total} -> ${entry.total}`,
       );
     }
   }
