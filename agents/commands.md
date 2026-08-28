@@ -122,6 +122,10 @@ When `npm run fix` or lint-staged runs on a tree whose base is behind the integr
 
 When a measured count exceeds a prediction, first check whether requirements or work were added between the prediction and the measurement. A prediction made under scope S is falsified only by a measurement under scope S; work that arrived after the prediction was issued expands the scope and explains the surplus without falsifying the original estimate. When the surplus is explained by new work, insert a newly earned step rather than relabeling a later increment — but only after deriving the step by names or content, not by assuming the explanation.
 
+### Format-patch attachment for a narrow change on a stale base
+
+When a narrow change must ship before the cumulative base can advance, a verified single-commit `git format-patch` attachment makes summary and effect match structurally: integration applies only the attachment (`git am`) and ignores the parcel's cumulative diff. Include the patch's SHA-256 hash and diffstat in the note so the recipient can verify before applying. This is an exceptional workaround for base-advance lag, not normal practice — advancing the base and rebasing is the real fix, and a rebased parcel needs no attachment.
+
 ## Parcel acceptance
 
 Compare the parcel summary's stated intent against the actual diff effect before accepting. Inspect every deleted line and file, and every path not named by the summary. A parcel doing more than it says — or less — is rejected for a clean rebased replacement rather than partially accepted. Deleted tests can make suites greener and evade typecheck; deleted comments can remove caveats that constrain a measurement's interpretation. The summary is a claim about the diff, not a substitute for reading it.
