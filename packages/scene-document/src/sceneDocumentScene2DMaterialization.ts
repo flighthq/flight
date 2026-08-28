@@ -1,6 +1,9 @@
+import { getEntityRuntime } from '@flighthq/entity/contract';
+import { getNodeRuntime } from '@flighthq/node/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { createScene2D } from '@flighthq/scene2d/contract';
+import { FlightDocumentRefusalReason, Node2DTraitsKey, Node3DTraitsKey } from '@flighthq/types/contract';
 import type {
   FlightDocument,
   FlightDocumentFields,
@@ -13,13 +16,15 @@ import type {
   FlightDocumentScene2D,
   FlightDocumentScene2DMaterialization,
   FlightDocumentSchemaRegistry,
+  Node2D,
+  Node2DRuntime,
   NodeAny,
   Scene2D,
 } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
 import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
-import { checkUnregisteredNodeKinds } from './sceneDocumentRefusal';
+import { checkUnregisteredNodeKinds, createSceneRefusal } from './sceneDocumentRefusal';
 
 export function createFlightDocumentFromScene2D(
   source: Readonly<Scene2D>,
@@ -45,6 +50,10 @@ export function createFlightDocumentScene2DMaterialization(
   if (unregisteredRefusal !== null) return null;
   const scene = createScene2D({ color: documentScene.backgroundColor });
   const resources = resolveResources(document.resources, resolvers);
+  // The authored root carries a kind and fields like any other node; materializing only its children
+  // discarded both, so a document whose root was a Sprite at (100, 200) came back a bare DisplayObject at
+  // the origin. The writer always captured them, which made the round trip lossy in one direction only.
+  if (!adoptDocumentRoot2D(scene, documentScene.scene, schemas, resources)) return null;
   materializeChildren(scene.root, documentScene.scene.children, schemas, resources);
   return { scene };
 }
@@ -68,7 +77,9 @@ export function explainFlightDocumentRefusal(
 ): FlightDocumentRefusalExplanation | null {
   const selection = selectFlightDocumentScene(document, dimension, sceneIndex);
   if (selection.refusal !== null) return selection.refusal;
-  return checkUnregisteredNodeKinds(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
+  const unregistered = checkUnregisteredNodeKinds(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
+  if (unregistered !== null) return unregistered;
+  return checkRootKindDimension(selection.scene.scene, dimension, schemas, selection.sceneIndex);
 }
 
 export function explainFlightDocumentRefusalFromText(
@@ -138,4 +149,55 @@ function writeFieldsWithDefaults(
       delete out[field.name];
     }
   }
+}
+
+// Replaces the scene's default container root with the authored one, carrying its kind and fields.
+// Returns false when the root cannot serve as a 2D root, which the caller reports as a refusal.
+//
+// ★ The dimension check is STRUCTURAL, not a roster: the node is built and its runtime traits key is read.
+// A registered kind of the wrong dimension passes the unregistered-kind check — it IS registered — and
+// would otherwise be installed as a 2D scene root while actually being a Node3D.
+function adoptDocumentRoot2D(
+  scene: Scene2D,
+  documentRoot: Readonly<FlightDocumentNode>,
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
+  resources: FlightDocumentResourceLookup,
+): boolean {
+  const schema = getRegistryTableEntry(schemas.nodeSchemas, documentRoot.kind);
+  if (schema === null) return true;
+  const root = schema.createNode(documentRoot.fields, resources);
+  if (root === null) return false;
+  const runtime = getEntityRuntime(root) as Readonly<{ traits?: unknown }> | undefined;
+  if (runtime?.traits !== Node2DTraitsKey) return false;
+  const previous = scene.root;
+  scene.root = root as Node2D;
+  (getNodeRuntime(root) as Node2DRuntime).scene2d = scene;
+  (getNodeRuntime(previous) as Node2DRuntime).scene2d = null;
+  return true;
+}
+
+// A registered root kind belonging to the other dimension. Distinct from an unregistered kind — the kind
+// IS registered, so that check passes it through — and detected structurally by building the node and
+// reading its runtime traits key rather than consulting any per-dimension roster.
+function checkRootKindDimension(
+  documentRoot: Readonly<FlightDocumentNode>,
+  dimension: 'Scene2D' | 'Scene3D',
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
+  sceneIndex: number,
+): FlightDocumentRefusalExplanation | null {
+  const schema = getRegistryTableEntry(schemas.nodeSchemas, documentRoot.kind);
+  if (schema === null) return null;
+  const probe = schema.createNode(documentRoot.fields, createEmptyResourceLookup());
+  if (probe === null) return null;
+  const runtime = getEntityRuntime(probe) as Readonly<{ traits?: unknown }> | undefined;
+  const expected = dimension === 'Scene2D' ? Node2DTraitsKey : Node3DTraitsKey;
+  if (runtime?.traits === expected) return null;
+  return {
+    ...createSceneRefusal(FlightDocumentRefusalReason.RootKindMismatch, sceneIndex, 'scene'),
+    kind: documentRoot.kind,
+  };
+}
+
+function createEmptyResourceLookup(): FlightDocumentResourceLookup {
+  return { resolve: () => null } as unknown as FlightDocumentResourceLookup;
 }

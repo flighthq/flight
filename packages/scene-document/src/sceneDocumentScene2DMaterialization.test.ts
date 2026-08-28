@@ -1,7 +1,8 @@
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { createDisplayObject, createScene2D, createSprite } from '@flighthq/scene2d/contract';
-import { DisplayObjectKind, FlightDocumentRefusalReason, SpriteKind } from '@flighthq/types/contract';
+import { createNode3D } from '@flighthq/scene3d/contract';
+import { DisplayObjectKind, FlightDocumentRefusalReason, Node3DKind, SpriteKind } from '@flighthq/types/contract';
 import type {
   FlightDocument,
   FlightDocumentFields,
@@ -446,3 +447,75 @@ const TRANSFORM_FIELD_SCHEMAS = [
   { defaultValue: 0, name: 'rotation', required: false, validate: (v: unknown) => typeof v === 'number' },
   { defaultValue: 1, name: 'alpha', required: false, validate: (v: unknown) => typeof v === 'number' },
 ] as const;
+
+// ★ ROOT-NODE FIDELITY. The writer captures the root's kind and fields (`writeNode(source.root, …)`), but
+// the reader built a fresh container with `createScene2D()` and materialized only `scene.children` — so
+// everything authored ON the root was silently dropped. Write preserved what read discarded, which makes
+// the round trip lossy in a way no per-child test could see.
+describe('Scene2D root fidelity', () => {
+  it('preserves the authored root kind', () => {
+    const document = rootDocument2D(SpriteKind, {});
+    const materialization = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
+    expect(materialization).not.toBeNull();
+    expect(materialization!.scene.root.kind).toBe(SpriteKind);
+  });
+
+  it('preserves fields authored on the root', () => {
+    const document = rootDocument2D(DisplayObjectKind, { x: 100, y: 200 });
+    const materialization = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
+    expect(materialization).not.toBeNull();
+    const root = materialization!.scene.root as unknown as { x: number; y: number };
+    expect(root.x).toBe(100);
+    expect(root.y).toBe(200);
+  });
+
+  it('round-trips a root with authored fields without losing them', () => {
+    const schemas = createTestSchemas();
+    const scene = createScene2D();
+    (scene.root as unknown as { x: number; y: number }).x = 7;
+    (scene.root as unknown as { x: number; y: number }).y = 9;
+
+    const document = createFlightDocumentFromScene2D(scene, schemas);
+    const wrapped = { defaultScene: 0, resources: [], scenes: [document], version: 1 } as unknown as FlightDocument;
+    const back = createFlightDocumentScene2DMaterialization(wrapped, schemas);
+
+    expect(back).not.toBeNull();
+    const root = back!.scene.root as unknown as { x: number; y: number };
+    expect(root.x).toBe(7);
+    expect(root.y).toBe(9);
+  });
+
+  // ★ A REGISTERED kind of the WRONG DIMENSION is the interesting refusal: it is not an unregistered kind,
+  // so the unregistered-kind check passes it through, and it then builds a Node3D as a 2D scene root.
+  it('refuses a registered root whose kind belongs to the other dimension', () => {
+    // The kind must be REGISTERED for this to be the case under test — an unregistered kind is caught one
+    // check earlier, and that is a different refusal with a different remedy.
+    const schemas = createTestSchemas();
+    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, Node3DKind, {
+      createNode: () => createNode3D() as unknown as NodeAny,
+      fields: [],
+      kind: Node3DKind,
+      writeNodeFields: () => true,
+    });
+    const document = rootDocument2D(Node3DKind, {});
+    expect(createFlightDocumentScene2DMaterialization(document, schemas)).toBeNull();
+    expect(explainFlightDocumentRefusal(document, 'Scene2D', schemas)).toMatchObject({
+      reason: FlightDocumentRefusalReason.RootKindMismatch,
+    });
+  });
+});
+
+function rootDocument2D(kind: string, fields: Record<string, unknown>): FlightDocument {
+  return {
+    defaultScene: 0,
+    resources: [],
+    scenes: [
+      {
+        backgroundColor: null,
+        kind: 'Scene2D',
+        scene: { children: [], fields, kind },
+      },
+    ],
+    version: 1,
+  } as unknown as FlightDocument;
+}
