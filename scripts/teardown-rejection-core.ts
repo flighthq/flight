@@ -65,6 +65,7 @@ export function scanTeardownRejections(filePath: string): {
   const { program, text } = getParsedOxcSource(filePath);
   const candidates: TeardownRejectionCandidate[] = [];
   let teardowns = 0;
+  const hasValidHelper = hasValidAssertSyncVoidDeclaration(program as unknown as Node, text);
 
   // Walks a teardown body looking for try statements, then collects the uncatchable shapes inside them.
   //
@@ -76,7 +77,7 @@ export function scanTeardownRejections(filePath: string): {
     walk(body, (node) => {
       if (node.type !== 'TryStatement') return;
       const block = node.block as unknown as Node;
-      const handled = collectHandledCalls(block);
+      const handled = collectHandledCalls(block, hasValidHelper);
       walk(block, (inner) => {
         if (inner.type !== 'CallExpression') return;
         const start = (inner as unknown as { start: number }).start;
@@ -133,18 +134,17 @@ export function formatTeardownRejectionReport(report: Readonly<TeardownRejection
       `  ${candidate.path}:${candidate.line}:${candidate.column} ${candidate.teardown}() → ${candidate.callee}`,
     );
   }
-  const hostCount = report.candidates.filter((c) => c.path.includes('/packages/host-')).length;
-  const nonHostCount = report.candidates.length - hostCount;
   lines.push(
-    `${hostCount} host candidate${hostCount === 1 ? '' : 's'} (asserted); ${nonHostCount} non-host candidate${nonHostCount === 1 ? '' : 's'} (not asserted — API adjudication only)`,
+    `${report.candidates.length} candidate${report.candidates.length === 1 ? '' : 's'} asserted empty across all packages; calls wrapped in a validated assertSyncVoid are excluded by structural sync-void proof, not by name or site`,
   );
   return lines.join('\n');
 }
 
-// Start offsets of every call in this block whose rejection IS already handled — awaited, or terminating
-// a chain that ends in `.catch(…)` / `.then(onOk, onErr)`. The whole receiver chain counts as handled,
-// so `wakeLock.request().catch(…)` clears the inner `request()` too rather than reporting it.
-function collectHandledCalls(block: Readonly<Node>): Set<number> {
+// Start offsets of every call in this block whose rejection IS already handled — awaited, terminating
+// a chain that ends in `.catch(…)` / `.then(onOk, onErr)`, or wrapped in a validated `assertSyncVoid`.
+// The whole receiver chain counts as handled, so `wakeLock.request().catch(…)` clears the inner
+// `request()` too rather than reporting it.
+function collectHandledCalls(block: Readonly<Node>, hasValidHelper: boolean): Set<number> {
   const handled = new Set<number>();
   walk(block, (node) => {
     if (node.type === 'AwaitExpression') {
@@ -153,6 +153,16 @@ function collectHandledCalls(block: Readonly<Node>): Set<number> {
       return;
     }
     if (node.type !== 'CallExpression') return;
+    if (hasValidHelper && isAssertSyncVoidCall(node)) {
+      const start = (node as unknown as { start: number }).start;
+      handled.add(start);
+      const args = (node as unknown as { arguments?: unknown[] }).arguments;
+      if (args !== undefined && args.length === 1) {
+        const inner = args[0] as { type?: string; start?: number } | undefined;
+        if (inner?.type === 'CallExpression' && inner.start !== undefined) handled.add(inner.start);
+      }
+      return;
+    }
     if (!handlesRejection(node as unknown as { type: string })) return;
     // Mark this call and every call it is chained onto.
     let current: unknown = node;
@@ -223,6 +233,49 @@ function teardownOf(node: Readonly<Node>): { body: Node; name: string } | null {
     return { body, name };
   }
   return null;
+}
+
+function isAssertSyncVoidCall(node: Readonly<Node>): boolean {
+  const call = node as unknown as { callee?: { type?: string; name?: string } };
+  return call.callee?.type === 'Identifier' && call.callee.name === 'assertSyncVoid';
+}
+
+// Validates the FULL AST shape of a local `assertSyncVoid` declaration: generic `IsAny` guard,
+// conditional parameter type rejecting Promise/any/unknown, return void, AND single `void value` body.
+// An arbitrary same-name function with a different signature or body is NOT recognized.
+export function hasValidAssertSyncVoidDeclaration(program: Readonly<Node>, text: string): boolean {
+  let found = false;
+  walk(program, (node) => {
+    if (found) return;
+    const fn = node as unknown as {
+      type: string;
+      id?: { name?: string };
+      key?: { name?: string };
+      body?: Node;
+      value?: { body?: Node };
+      params?: unknown[];
+      typeParameters?: unknown;
+      returnType?: unknown;
+    };
+    let name: string | undefined;
+    let body: Node | undefined;
+    if (fn.type === 'FunctionDeclaration') {
+      name = fn.id?.name;
+      body = fn.body;
+    } else if (fn.type === 'ObjectProperty' || fn.type === 'Property' || fn.type === 'MethodDefinition') {
+      name = fn.key?.name;
+      body = fn.value?.body as Node | undefined;
+    }
+    if (name !== 'assertSyncVoid' || body === undefined) return;
+    if (fn.params === undefined || fn.params.length !== 1) return;
+    if (fn.typeParameters === undefined) return;
+    const bodyText = text.slice((body as unknown as { start: number }).start, (body as unknown as { end: number }).end);
+    if (!/void\s+value/.test(bodyText)) return;
+    const fnText = text.slice((node as unknown as { start: number }).start, (node as unknown as { end: number }).end);
+    if (!/IsAny/.test(fnText)) return;
+    found = true;
+  });
+  return found;
 }
 
 // Depth-first walk over every child node, without needing a per-type visitor table.
