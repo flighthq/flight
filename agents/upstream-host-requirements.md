@@ -797,3 +797,72 @@ anyway, so nothing waits on it. To close it I need, derived: who currently owns 
 handle each `videoResourceFrom` path produces, what frees it today, and whether any consumer holds a
 reference past the resource's own lifetime. With those three facts the `dispose*`/`destroy*` choice
 falls out the same way Ruling B did.
+
+---
+
+# H8-C — video resource ownership: the verb is `destroy*`, and `dispose*` currently fails its own contract — 2026-08-28
+
+Derived by auditor from a ts-morph checker pass at `8e568d541`, read-only. Producers were selected
+by **return type**, not by name, which found **five** paths where I had assumed two — my partial
+list would have been the wrong roster.
+
+## What is actually owned
+
+An `HTMLVideoElement`, and optionally an object URL. **No `MediaSource`, no explicit decoder
+handle**; a `MediaStream` is reachable only through `element.srcObject`. Ownership of the URL is
+already modelled correctly: `objectUrl === null` means caller-managed and Flight never revokes it.
+
+## Finding 1 — `dispose*` promises something it cannot deliver
+
+`dispose*` means *release what keeps the entity reachable, so it becomes GC-eligible*.
+`disposeVideoResource` nulls the resource's own fields, but two independent strong references
+survive that it never knew about:
+
+- `VideoChannel.source` retains the wrapper. `stopVideoChannel` removes the ended listener, pauses,
+  and resets state — but **never clears `source`**, and there is no channel destroy API. After
+  disposal the channel observes a wrapper with `element`/`objectUrl` nulled.
+- `Texture → Image.source = resource.element` retains **the exact element**, proven by identity in
+  `videoTexture.test.ts`. Cloned and copied textures share it, so there may be several retainers.
+
+So the entity is not GC-eligible after `dispose*`, and renaming alone would not fix it.
+
+## Finding 2 — an object URL is a non-GC resource, so the act is `destroy*`
+
+Revoking an object URL frees a registry entry that GC will never reclaim. That is the `destroy*`
+side of the AGENTS.md split, and natively it is worse: the element's equivalent is a decoder handle
+that must be freed explicitly. Same reasoning as Ruling B — the web's GC behaviour is not the
+contract.
+
+**Ruling: `destroyVideoResource`.** It frees what the resource owns and leaves the entity invalid.
+
+## Finding 3 — each retainer releases its own reference; do not build a fan-out registry
+
+The resource must not learn about channels and textures. Per the runtime-slot rule, subsystems
+attach to the entity, not the reverse. So `stopVideoChannel` clears `channel.source`, and the
+texture path gets an explicit source detach. A dispose-time observer registry for this would invert
+the dependency and is not authorised.
+
+## Finding 4 — element ownership is unmodelled, and the file already has the pattern
+
+`createVideoResource(element)` accepts a caller element, explicitly permits a second carrier over
+the same element, **and still mutates it on teardown** — so tearing down carrier A corrupts carrier
+B. The fix is the convention this file already uses for URLs: track whether the element is
+Flight-created (owned, teardown detaches) or caller-supplied (borrowed, teardown must not touch it).
+
+## Finding 5 — `srcObject` is never cleared
+
+Nothing sets `element.srcObject = null`. Teardown must clear it, so the element stops retaining the
+stream. **Do not stop the stream's tracks** — the caller created it, and by the same
+owned-vs-borrowed convention it is not Flight's to stop.
+
+## Why this shipped: the test gap
+
+There is **no test combining teardown with `MediaStream`, `VideoChannel`, or `VideoTexture`**. Each
+is tested alone. Any slice acting on this must add the combination tests first — they are what would
+have caught every finding above.
+
+## Scope note
+
+This is now larger than one P5 site pair and is no longer just "item 9". Treat it as its own slice,
+sequenced after the shapes already queued, and let the two `videoResourceFrom` bypass sites ride
+with it rather than being repaired separately.
