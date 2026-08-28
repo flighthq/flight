@@ -195,7 +195,7 @@ describe('explainFlightDocumentRefusal', () => {
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D');
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
-    expect(explanation!.path).toBe('kind');
+    expect(explanation!.path).toBe('scenes[0].kind');
   });
 
   it('explains an unsupported version', () => {
@@ -290,7 +290,7 @@ describe('explainFlightDocumentRefusalFromText', () => {
     const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
-    expect(explanation!.path).toBe('kind');
+    expect(explanation!.path).toBe('scenes[0].kind');
   });
 });
 
