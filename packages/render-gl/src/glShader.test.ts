@@ -271,7 +271,14 @@ describe('setGlMatrixFromTransform', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 200;
     canvas.height = 100;
-    setGlMatrixFromTransform(gl, makeShaderLoc(), m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, canvas);
+    setGlMatrixFromTransform(
+      gl,
+      makeShaderLoc(),
+      m,
+      { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
+      canvas.width,
+      canvas.height,
+    );
 
     const project = (x: number, y: number): [number, number] => [
       m[0] * x + m[3] * y + m[6],
@@ -295,7 +302,7 @@ describe('setGlMatrixFromTransform', () => {
     canvas.width = 200;
     canvas.height = 100;
 
-    setGlMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, canvas);
+    setGlMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, canvas.width, canvas.height);
 
     expect(m[0]).toBeCloseTo(0.01); // a * 2/width
     expect(m[1]).toBeCloseTo(0); // -b * 2/height
@@ -316,7 +323,7 @@ describe('setGlMatrixFromTransform', () => {
     canvas.width = 200;
     canvas.height = 100;
 
-    setGlMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 }, canvas);
+    setGlMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 10, ty: 20 }, canvas.width, canvas.height);
 
     expect(m[6]).toBeCloseTo(-0.9); // 10 * 2/200 - 1
     expect(m[7]).toBeCloseTo(0.6); // -20 * 2/100 + 1
@@ -330,7 +337,7 @@ describe('setGlMatrixFromTransform', () => {
     canvas.width = 100;
     canvas.height = 100;
 
-    setGlMatrixFromTransform(gl, loc, m, { a: 0, b: 2, c: 3, d: 0, tx: 0, ty: 0 }, canvas);
+    setGlMatrixFromTransform(gl, loc, m, { a: 0, b: 2, c: 3, d: 0, tx: 0, ty: 0 }, canvas.width, canvas.height);
 
     expect(m[1]).toBeCloseTo(-0.04); // -b * 2/100
     expect(m[3]).toBeCloseTo(0.06); // c * 2/100
@@ -345,7 +352,7 @@ describe('setGlMatrixFromTransform', () => {
     canvas.width = 100;
     canvas.height = 100;
 
-    setGlMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, canvas);
+    setGlMatrixFromTransform(gl, loc, m, { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 }, canvas.width, canvas.height);
 
     expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(loc.locMatrix, false, m);
   });
@@ -362,8 +369,8 @@ describe('setGlMatrixFromValues', () => {
     canvas.height = 100;
     const t = { a: 2, b: 0.5, c: -0.5, d: 3, tx: 10, ty: 20 };
 
-    setGlMatrixFromTransform(gl, loc, m1, t, canvas);
-    setGlMatrixFromValues(gl, loc, m2, t.a, t.b, t.c, t.d, t.tx, t.ty, canvas);
+    setGlMatrixFromTransform(gl, loc, m1, t, canvas.width, canvas.height);
+    setGlMatrixFromValues(gl, loc, m2, t.a, t.b, t.c, t.d, t.tx, t.ty, canvas.width, canvas.height);
 
     for (let i = 0; i < 9; i++) {
       expect(m2[i]).toBeCloseTo(m1[i]);
@@ -378,7 +385,7 @@ describe('setGlMatrixFromValues', () => {
     canvas.width = 100;
     canvas.height = 100;
 
-    setGlMatrixFromValues(gl, loc, m, 1, 0, 0, 1, 0, 0, canvas);
+    setGlMatrixFromValues(gl, loc, m, 1, 0, 0, 1, 0, 0, canvas.width, canvas.height);
 
     expect(gl.uniformMatrix3fv).toHaveBeenCalledWith(loc.locMatrix, false, m);
   });

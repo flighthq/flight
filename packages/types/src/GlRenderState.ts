@@ -4,6 +4,7 @@ import type { Kind } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
 import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
+import type { GlContext } from './GlContext';
 import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
 import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
@@ -29,8 +30,7 @@ import type { TintMaterialData } from './TintMaterialData';
 
 export interface GlRenderState extends RenderState {
   applyBlendMode: ((state: GlRenderState, blendMode: BlendMode | null) => void) | null;
-  readonly canvas: HTMLCanvasElement;
-  readonly gl: WebGL2RenderingContext;
+  readonly gl: GlContext;
 }
 
 // Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived

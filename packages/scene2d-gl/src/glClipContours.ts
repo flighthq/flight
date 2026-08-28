@@ -1,6 +1,6 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState, Matrix, PathWinding } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, Matrix, PathWinding } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
@@ -138,7 +138,7 @@ function ensureClipProgram(state: GlRenderState): void {
   });
 }
 
-function compileProgram(gl: WebGL2RenderingContext, vertex: string, fragment: string): WebGLProgram {
+function compileProgram(gl: GlContext, vertex: string, fragment: string): WebGLProgram {
   return createGlProgram(gl, vertex, fragment, 'Clip-contours');
 }
 
@@ -169,8 +169,8 @@ function drawClipContours(state: GlRenderState, program: ClipProgram, contours: 
 // content it clips land in identical clip space (the clip stays pixel-exact under the node transform).
 function getProjectionMat3(state: GlRenderState): Float32Array {
   const runtime = getGlRenderStateRuntime(state);
-  const w = (runtime.renderTargetViewport ?? state.canvas).width || 1;
-  const h = (runtime.renderTargetViewport ?? state.canvas).height || 1;
+  const w = (runtime.renderTargetViewport?.width ?? state.gl.drawingBufferWidth) || 1;
+  const h = (runtime.renderTargetViewport?.height ?? state.gl.drawingBufferHeight) || 1;
   // pixels (origin top-left, y down) -> clip space (-1..1, y up)
   // prettier-ignore
   return new Float32Array([2 / w, 0, 0, 0, -2 / h, 0, -1, 1, 1]);

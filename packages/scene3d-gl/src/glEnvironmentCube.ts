@@ -1,5 +1,13 @@
 import { uploadGlTextureData, uploadGlTextureImageResource } from '@flighthq/render-gl/contract';
-import type { Bitmap, Environment, GlRenderState, TextureSource, Image, Texture } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  Bitmap,
+  Environment,
+  GlRenderState,
+  TextureSource,
+  Image,
+  Texture,
+} from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -45,7 +53,7 @@ export function ensureGlEnvironmentSourceCube(
 
 // The cubemap face target in Texture.sources order (+X, -X, +Y, -Y, +Z, -Z), which is exactly
 // gl.TEXTURE_CUBE_MAP_POSITIVE_X + face. Face loops call this rather than hardcoding the GL enum math.
-export function getGlCubeFaceTarget(gl: WebGL2RenderingContext, face: number): number {
+export function getGlCubeFaceTarget(gl: GlContext, face: number): number {
   return gl.TEXTURE_CUBE_MAP_POSITIVE_X + face;
 }
 
@@ -89,7 +97,7 @@ function hasGlCubeFacePixels(cube: Readonly<Texture>): boolean {
 }
 
 function uploadGlEnvironmentImage(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   target: number,
   image: Readonly<TextureSource>,
   internalFormat: number = gl.RGBA,

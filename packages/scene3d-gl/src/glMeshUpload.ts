@@ -1,5 +1,6 @@
 import { getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from '@flighthq/mesh/contract';
 import type {
+  GlContext,
   GlRenderState,
   MeshGeometry,
   MeshSkinBindPose,
@@ -10,11 +11,7 @@ import type {
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
-export function bindGlVertexAttribute(
-  gl: WebGL2RenderingContext,
-  attribute: Readonly<VertexAttribute>,
-  stride: number,
-): void {
+export function bindGlVertexAttribute(gl: GlContext, attribute: Readonly<VertexAttribute>, stride: number): void {
   const location = ATTRIBUTE_LOCATION[attribute.semantic];
   if (location === undefined) return;
   const [size, type, normalized] = resolveGlVertexFormat(gl, attribute.format);
@@ -37,7 +34,7 @@ export function destroyGlMeshUpload(state: GlRenderState, upload: Readonly<GlMes
   if (upload.indexBuffer !== null) gl.deleteBuffer(upload.indexBuffer);
 }
 
-function getGlPrimitiveMode(gl: WebGL2RenderingContext, topology: PrimitiveTopology): number {
+function getGlPrimitiveMode(gl: GlContext, topology: PrimitiveTopology): number {
   switch (topology) {
     case 'line-list':
       return gl.LINES;
@@ -202,7 +199,7 @@ export function ensureGlMeshUpload(
 
 // Maps a VertexFormat to its [componentCount, glType, normalized] tuple. The canonical PBR record
 // is all float32, but the data path may carry packed integer/unorm attributes for later passes.
-function resolveGlVertexFormat(gl: WebGL2RenderingContext, format: string): [number, number, boolean] {
+function resolveGlVertexFormat(gl: GlContext, format: string): [number, number, boolean] {
   switch (format) {
     case 'float32x2':
       return [2, gl.FLOAT, false];

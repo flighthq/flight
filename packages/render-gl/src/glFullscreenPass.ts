@@ -1,4 +1,4 @@
-import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { createGlProgram } from './glProgram';
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -34,7 +34,7 @@ export function clearGlRenderTarget(state: GlRenderState, target: GlRenderTarget
   runtime.currentBlendMode = null;
 }
 
-export function compileGlFullscreenProgram(gl: WebGL2RenderingContext, fragmentSource: string): GlFullscreenProgram {
+export function compileGlFullscreenProgram(gl: GlContext, fragmentSource: string): GlFullscreenProgram {
   const program = createGlProgram(gl, FULLSCREEN_VERTEX_SRC, fragmentSource, 'Fullscreen pass');
 
   const textures: WebGLUniformLocation[] = [];
@@ -64,7 +64,7 @@ export function drawGlFullscreenPass(
   program: Readonly<GlFullscreenProgram>,
   inputs: ReadonlyArray<WebGLTexture>,
   dest: Readonly<GlRenderTarget> | null,
-  setUniforms: (gl: WebGL2RenderingContext, program: Readonly<GlFullscreenProgram>) => void,
+  setUniforms: (gl: GlContext, program: Readonly<GlFullscreenProgram>) => void,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
@@ -79,8 +79,8 @@ export function drawGlFullscreenPass(
     gl.bindFramebuffer(gl.FRAMEBUFFER, destFramebuffer);
     runtime.currentFramebuffer = destFramebuffer;
   }
-  const destWidth = dest?.width ?? state.canvas.width;
-  const destHeight = dest?.height ?? state.canvas.height;
+  const destWidth = dest?.width ?? gl.drawingBufferWidth;
+  const destHeight = dest?.height ?? gl.drawingBufferHeight;
   gl.viewport(0, 0, destWidth, destHeight);
   runtime.renderTargetViewport = dest ? { height: destHeight, width: destWidth, x: 0, y: 0 } : null;
 
@@ -168,4 +168,4 @@ function drawGlFullscreenQuad(state: GlRenderState, program: Readonly<GlFullscre
 
 // Per-context dedicated VAO for the fullscreen quad. Isolates the quad's buffer/attribute bindings so a fullscreen pass never mutates a
 // caller's (e.g. a mesh's) currently-bound VAO. See drawGlFullscreenQuad.
-const _quadVaos = new WeakMap<WebGL2RenderingContext, WebGLVertexArrayObject>();
+const _quadVaos = new WeakMap<GlContext, WebGLVertexArrayObject>();

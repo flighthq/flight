@@ -4,6 +4,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
+  GlContext,
   GlRenderState,
   MatrixLike,
   RenderProxy2D,
@@ -136,7 +137,8 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
     t,
     source.scaleX,
     source.scaleY,
-    runtime.renderTargetViewport ?? state.canvas,
+    runtime.renderTargetViewport?.width ?? gl.drawingBufferWidth,
+    runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight,
   );
 
   drawGlQuad(state, 0, 0, w, h, 0, 0, 1, 1);
@@ -153,17 +155,18 @@ export const defaultGlScale9ShapeRenderer: Scene2DRenderer = {
 };
 
 function setStrippedGlMatrixFromValues(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   loc: Parameters<typeof setGlMatrixFromValues>[1],
   m: Float32Array,
   t: Readonly<MatrixLike>,
   scaleX: number,
   scaleY: number,
-  viewport: Readonly<{ width: number; height: number }>,
+  viewportWidth: number,
+  viewportHeight: number,
 ): void {
   const a = scaleX !== 0 ? t.a / scaleX : t.a;
   const b = scaleX !== 0 ? t.b / scaleX : t.b;
   const c = scaleY !== 0 ? t.c / scaleY : t.c;
   const d = scaleY !== 0 ? t.d / scaleY : t.d;
-  setGlMatrixFromValues(gl, loc, m, a, b, c, d, t.tx, t.ty, viewport);
+  setGlMatrixFromValues(gl, loc, m, a, b, c, d, t.tx, t.ty, viewportWidth, viewportHeight);
 }

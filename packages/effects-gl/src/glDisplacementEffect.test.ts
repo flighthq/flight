@@ -1,4 +1,4 @@
-import { createGlRenderState } from '@flighthq/render-gl/contract';
+import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
 import type { DisplacementEffect, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 const programMock = vi.hoisted(() => ({
@@ -120,7 +120,7 @@ describe('defaultGlDisplacementEffectRunner', () => {
 
 describe('registerGlDisplacementEffect', () => {
   it('makes the runner resolvable for the DisplacementEffect kind', () => {
-    const state = createGlRenderState(document.createElement('canvas'));
+    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
 
     expect(getGlRenderEffectRunner(state, 'DisplacementEffect')).toBeNull();
     registerGlDisplacementEffect(state);

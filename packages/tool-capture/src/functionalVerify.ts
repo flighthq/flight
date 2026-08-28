@@ -272,9 +272,9 @@ export async function snapshotFunctionalRender(): Promise<Bitmap | null> {
   if (target?.kind === 'webgpu') {
     return createBitmapFromWgpuRenderState(target.state, getCaptureWaitBudgetMs(READBACK_BUDGET_SHARE));
   }
+  if (target?.kind === 'webgl') return createBitmapFromGlRenderState(target.state);
   const canvas = target ? target.state.canvas : findRenderCanvas();
   if (canvas === null || canvas.width === 0 || canvas.height === 0) return null;
-  if (target?.kind === 'webgl') target.state.gl.finish();
   return createBitmapFromImageSource(canvas, canvas.width, canvas.height);
 }
 
@@ -314,12 +314,11 @@ function getFunctionalRenderImageBitmap(): Bitmap | null {
 }
 
 function createBitmapFromGlRenderState(state: GlRenderState): Bitmap | null {
-  const canvas = state.canvas;
-  const width = canvas.width;
-  const height = canvas.height;
+  const gl = state.gl;
+  const width = gl.drawingBufferWidth;
+  const height = gl.drawingBufferHeight;
   if (width === 0 || height === 0) return null;
 
-  const gl = state.gl;
   gl.finish();
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 

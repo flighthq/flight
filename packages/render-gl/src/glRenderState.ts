@@ -11,6 +11,7 @@ import {
 import type {
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
+  GlContext,
   GlRenderOptions,
   GlRenderState,
   GlRenderStateRuntime,
@@ -75,8 +76,7 @@ export function createGlOffscreenRenderState(screenState: GlRenderState): GlRend
     sceneGraphSyncPolicy: screenState.sceneGraphSyncPolicy,
   }) as GlRenderState;
   state.applyBlendMode = screenState.applyBlendMode;
-  (state as { canvas: HTMLCanvasElement }).canvas = screenState.canvas;
-  (state as { gl: WebGL2RenderingContext }).gl = screenState.gl;
+  (state as { gl: GlContext }).gl = screenState.gl;
 
   const screenRuntime = getGlRenderStateRuntime(screenState);
   const runtime = createGlRenderStateRuntime(screenRuntime);
@@ -87,18 +87,7 @@ export function createGlOffscreenRenderState(screenState: GlRenderState): GlRend
   return state;
 }
 
-export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRenderOptions = {}): GlRenderState {
-  const contextAttribs: WebGLContextAttributes = {
-    alpha: true,
-    antialias: options.antialias ?? true,
-    powerPreference: options.powerPreference ?? 'default',
-    stencil: true,
-    ...options.contextAttributes,
-  };
-
-  const gl = canvas.getContext('webgl2', contextAttribs) as WebGL2RenderingContext | null;
-  if (!gl) throw new Error('Failed to get WebGL2 context.');
-
+export function createGlRenderState(gl: GlContext, options: GlRenderOptions = {}): GlRenderState {
   const matrixArray = new Float32Array(9);
 
   // Static index buffer [0, 1, 2, 0, 2, 3]
@@ -112,7 +101,7 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   gl.bufferData(gl.ARRAY_BUFFER, 64, gl.DYNAMIC_DRAW);
 
   const state = _createRenderState({
-    allowSmoothing: options.imageSmoothingEnabled ?? true,
+    allowSmoothing: options.imageSmoothingEnabled ?? options.allowSmoothing ?? true,
     pixelRatio: options.pixelRatio ?? 1,
     renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
@@ -120,8 +109,7 @@ export function createGlRenderState(canvas: HTMLCanvasElement, options: GlRender
   }) as GlRenderState;
 
   state.applyBlendMode = null;
-  (state as { canvas: HTMLCanvasElement }).canvas = canvas;
-  (state as { gl: WebGL2RenderingContext }).gl = gl;
+  (state as { gl: GlContext }).gl = gl;
 
   if (options.backgroundColor != null) setRenderStateBackgroundColor(state, options.backgroundColor);
 

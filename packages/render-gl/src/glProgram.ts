@@ -1,3 +1,4 @@
+import type { GlContext } from '@flighthq/types/contract';
 // Shared GL shader-compile/link primitives. Every GL program in the SDK is built through these so the
 // COMPILE_STATUS / LINK_STATUS checks are applied uniformly. Those queries are not only error handling:
 // they force a driver that defers compilation/linking (KHR_parallel_shader_compile) to finish before the
@@ -5,7 +6,7 @@
 // renders nothing. They also turn a silent shader failure into a thrown error carrying the driver's info
 // log; `label` prefixes that message so the failing program is identifiable.
 
-export function compileGlShader(gl: WebGL2RenderingContext, type: number, source: string, label = 'GL'): WebGLShader {
+export function compileGlShader(gl: GlContext, type: number, source: string, label = 'GL'): WebGLShader {
   const shader = gl.createShader(type)!;
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
@@ -18,7 +19,7 @@ export function compileGlShader(gl: WebGL2RenderingContext, type: number, source
 // Compiles a vertex+fragment source pair into a linked, ready-to-use program. The shaders are deleted
 // once linked — the program retains them — so the caller owns only the returned program.
 export function createGlProgram(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   vertexSource: string,
   fragmentSource: string,
   label = 'GL',
@@ -36,7 +37,7 @@ export function createGlProgram(
 
 // Links an already-assembled program (shaders attached, any pre-link configuration such as
 // transform-feedback varyings done) and throws if linking failed.
-export function linkGlProgram(gl: WebGL2RenderingContext, program: WebGLProgram, label = 'GL'): void {
+export function linkGlProgram(gl: GlContext, program: WebGLProgram, label = 'GL'): void {
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     throw new Error(`${label} program link error: ${gl.getProgramInfoLog(program)}`);

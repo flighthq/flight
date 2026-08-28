@@ -10,8 +10,8 @@ export function renderGlBackground(state: GlRenderState): void {
   gl.viewport(
     viewport?.x ?? 0,
     viewport?.y ?? 0,
-    viewport?.width ?? state.canvas.width,
-    viewport?.height ?? state.canvas.height,
+    viewport?.width ?? gl.drawingBufferWidth,
+    viewport?.height ?? gl.drawingBufferHeight,
   );
   const rgba = state.backgroundColorRgba;
   if (rgba.length >= 4 && rgba[3] > 0) {

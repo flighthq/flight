@@ -1,4 +1,10 @@
-import type { GlLitProgram, GlRenderState, Scene3DLightBlock, GlMeshProgram } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlLitProgram,
+  GlRenderState,
+  Scene3DLightBlock,
+  GlMeshProgram,
+} from '@flighthq/types/contract';
 import {
   MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
   MAX_FORWARD_LIGHTS,
@@ -173,10 +179,7 @@ function ensureGlIblPlaceholders(state: GlRenderState): GlIblPlaceholders {
 // Resolves the standard lit uniform locations from a linked program, so each lit family's compile
 // spreads these in rather than repeating the getUniformLocation calls. The names match
 // GL_MESH_LIGHT_BLOCK_GLSL — change them together.
-export function resolveGlLitLocations(
-  gl: WebGL2RenderingContext,
-  program: WebGLProgram,
-): Omit<GlLitProgram, keyof GlMeshProgram> {
+export function resolveGlLitLocations(gl: GlContext, program: WebGLProgram): Omit<GlLitProgram, keyof GlMeshProgram> {
   return {
     locAmbientCount: gl.getUniformLocation(program, 'u_ambientCount'),
     locAmbientRadiance: gl.getUniformLocation(program, 'u_ambientRadiance'),

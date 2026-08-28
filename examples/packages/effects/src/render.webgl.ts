@@ -1,5 +1,6 @@
 import type { Node2D, RenderEffect } from '@flighthq/sdk';
 import {
+  createGlContextFromCanvasElement,
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   beginGlRenderEffectPipeline,
@@ -33,11 +34,13 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
-  pixelRatio,
-  backgroundColor: 0x0a0c14ff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  {
+    pixelRatio,
+    backgroundColor: 0x0a0c14ff,
+  },
+);
 enableFlightDiagnostics(state);
 
 registerStandardGlTextureResolvers(state);

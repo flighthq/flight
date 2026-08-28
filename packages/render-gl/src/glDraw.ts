@@ -1,6 +1,7 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
+  GlContext,
   Bitmap,
   CompressedImage,
   GlBitmapShader,
@@ -393,7 +394,8 @@ export function setGlQuadMatrixFromOffset(
     d,
     tx + a * dx + c * dy,
     ty + b * dx + d * dy,
-    runtime.renderTargetViewport ?? state.canvas,
+    runtime.renderTargetViewport?.width ?? state.gl.drawingBufferWidth,
+    runtime.renderTargetViewport?.height ?? state.gl.drawingBufferHeight,
   );
 }
 
@@ -545,14 +547,14 @@ function ensureGlAnisotropyExt(
 
 // Maps a magnification TextureFilter to its WebGL2 constant. Magnification never samples mips, so the
 // mip-variant names collapse to their base LINEAR/NEAREST.
-function glMagFilterValue(gl: WebGL2RenderingContext, filter: TextureFilter): number {
+function glMagFilterValue(gl: GlContext, filter: TextureFilter): number {
   return filter.startsWith('nearest') ? gl.NEAREST : gl.LINEAR;
 }
 
 // Maps a minification TextureFilter to its WebGL2 constant. When useMips is false (mipmaps disabled or
 // a non-mip filter) the mip-variant names collapse to their base LINEAR/NEAREST, so a filter that
 // names a mip level never selects an absent chain (which would render the texture black).
-function glMinFilterValue(gl: WebGL2RenderingContext, filter: TextureFilter, useMips: boolean): number {
+function glMinFilterValue(gl: GlContext, filter: TextureFilter, useMips: boolean): number {
   if (!useMips) return filter.startsWith('nearest') ? gl.NEAREST : gl.LINEAR;
   switch (filter) {
     case 'linear-mipmap-linear':
@@ -578,7 +580,7 @@ function isGlMipmapFilter(filter: TextureFilter): boolean {
 
 // Maps a sampler wrap mode to its WebGL2 texture-wrap constant; clamp-to-edge is the fallback. REPEAT
 // tiles the sampled uv, which is what makes setTextureUvScale / a repeat sampler actually tile.
-function glTextureWrapValue(gl: WebGL2RenderingContext, wrap: TextureWrap): number {
+function glTextureWrapValue(gl: GlContext, wrap: TextureWrap): number {
   if (wrap === 'repeat') return gl.REPEAT;
   if (wrap === 'mirror-repeat') return gl.MIRRORED_REPEAT;
   return gl.CLAMP_TO_EDGE;

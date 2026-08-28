@@ -1,6 +1,7 @@
 import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getModifierDefineKey, orderModifierStack, resolveModifier } from '@flighthq/shading/contract';
 import type {
+  GlContext,
   GlColorAdjustmentMaterialFeature,
   GlModifierSnippet,
   GlRenderState,
@@ -44,7 +45,7 @@ export function buildGlShadedCacheKey(key: Readonly<GlShadedDefineKey>, modifier
 // locations. Pure GL work — no caching — used by ensureGlShadedProgram. Throws on a compile/link
 // failure (a programmer error: a malformed base or modifier snippet), not an expected runtime case.
 export function compileGlShadedProgram(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   key: Readonly<GlShadedDefineKey>,
   orderedModifiers: readonly Modifier[],
   registry: GlModifierSnippetSource,

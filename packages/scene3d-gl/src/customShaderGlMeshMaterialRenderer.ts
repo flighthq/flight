@@ -1,6 +1,7 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   GlCustomMaterialShaderSource,
   Camera3D,
   CustomShaderMaterial,
@@ -131,7 +132,7 @@ function ensureGlCustomShaderProgram(
 }
 
 function compileGlCustomShaderProgram(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   source: Readonly<GlCustomMaterialShaderSource>,
 ): GlCustomShaderProgram {
   const linked = compileGlProgram(gl, source.vertex, source.fragment);
@@ -145,7 +146,7 @@ function compileGlCustomShaderProgram(
 }
 
 function uploadCustomShaderMaterialUniforms(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   program: WebGLProgram,
   material: Readonly<CustomShaderMaterial>,
 ): void {

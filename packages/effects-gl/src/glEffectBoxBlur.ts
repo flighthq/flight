@@ -1,6 +1,6 @@
 import { computeBoxBlurPassRadius } from '@flighthq/effects/contract';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlRenderTarget } from '@flighthq/types/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 const BOX_BLUR_FRAGMENT_SRC = `#version 300 es
@@ -43,7 +43,7 @@ type BoxBlurShaderLocations = GlFullscreenProgram & {
   locUseEdgeColor: WebGLUniformLocation;
 };
 
-const boxBlurShaders = new WeakMap<WebGL2RenderingContext, BoxBlurShaderLocations>();
+const boxBlurShaders = new WeakMap<GlContext, BoxBlurShaderLocations>();
 
 /**
  * Applies a separable box blur to `source`, writing to `dest`. `blurX`/`blurY` are the target

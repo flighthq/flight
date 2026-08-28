@@ -335,17 +335,15 @@ function makeViewport(x: number, y: number, width: number, height: number): View
 
 describe('offscreen 2D projection basis', () => {
   // Pins the property a downstream report claimed was broken: that an offscreen state's 2D pass projects
-  // into the BOUND TARGET's dimensions rather than the shared canvas's. An offscreen state aliases the
-  // screen canvas deliberately (one context, one canvas element), so the canvas is the wrong basis and
-  // reading it would shrink content by canvasW/texW and canvasH/texH — non-uniformly, and looking like a
-  // plausible small image rather than an error. The projection helpers read
-  // `renderTargetViewport ?? state.canvas`, so this asserts the pass actually populates that viewport.
-  it('derives the viewport from the target, not from the shared canvas', () => {
+  // into the BOUND TARGET's dimensions rather than the shared context's drawing buffer. Reading the
+  // drawing-buffer fallback during an offscreen pass would shrink content non-uniformly while still
+  // looking plausible, so this asserts the pass actually populates its explicit viewport.
+  it('derives the viewport from the target, not from the shared drawing buffer', () => {
     const { state } = createGlState();
     const offscreen = createGlOffscreenRenderState(state);
     const runtime = getGlRenderStateRuntime(offscreen);
-    expect(offscreen.canvas).toBe(state.canvas);
-    expect([state.canvas.width, state.canvas.height]).toEqual([200, 100]);
+    expect(offscreen.gl).toBe(state.gl);
+    expect([state.gl.drawingBufferWidth, state.gl.drawingBufferHeight]).toEqual([200, 100]);
 
     beginGlRenderPass(offscreen, makeTarget({ width: 64, height: 32 }));
 

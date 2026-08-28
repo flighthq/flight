@@ -9,6 +9,7 @@ import type { GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 import { createGlApplicationRenderView, destroyGlApplicationRenderView } from './glApplicationRenderView';
 
 const mocks = vi.hoisted(() => ({
+  createGlContextFromCanvasElement: vi.fn(),
   createGlRenderState: vi.fn(),
   createGlRenderTarget: vi.fn(),
   createViewport: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('@flighthq/node/contract', () => ({
 }));
 
 vi.mock('@flighthq/render-gl/contract', () => ({
+  createGlContextFromCanvasElement: mocks.createGlContextFromCanvasElement,
   createGlRenderState: mocks.createGlRenderState,
   createGlRenderTarget: mocks.createGlRenderTarget,
   destroyGlRenderState: mocks.destroyGlRenderState,
@@ -32,8 +34,9 @@ vi.mock('@flighthq/render-gl/contract', () => ({
 }));
 
 beforeEach(() => {
-  mocks.createGlRenderState.mockImplementation((canvas: HTMLCanvasElement, options: { pixelRatio: number }) => ({
-    canvas,
+  mocks.createGlContextFromCanvasElement.mockImplementation(() => ({ drawingBufferHeight: 0, drawingBufferWidth: 0 }));
+  mocks.createGlRenderState.mockImplementation((gl, options: { pixelRatio: number }) => ({
+    gl,
     pixelRatio: options.pixelRatio,
     renderTransform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   }));
@@ -61,13 +64,21 @@ describe('createGlApplicationRenderView', () => {
     const canvas = document.createElement('canvas');
 
     const view = createGlApplicationRenderView(window, canvas, {
-      render: { antialias: false },
+      context: { antialias: false },
+      render: { roundPixels: true },
       target: { colorSpace: 'linear', depth: 'depth-stencil' },
     });
 
     expect(canvas.width).toBe(640);
     expect(canvas.height).toBe(360);
-    expect(mocks.createGlRenderState).toHaveBeenCalledWith(canvas, { antialias: false, pixelRatio: 2 });
+    expect(mocks.createGlContextFromCanvasElement).toHaveBeenCalledWith(canvas, { antialias: false });
+    expect(mocks.createGlRenderState).toHaveBeenCalledWith(
+      mocks.createGlContextFromCanvasElement.mock.results[0].value,
+      {
+        pixelRatio: 2,
+        roundPixels: true,
+      },
+    );
     expect(mocks.createGlRenderTarget).toHaveBeenCalledWith(view.renderState, {
       colorSpace: 'linear',
       depth: 'depth-stencil',

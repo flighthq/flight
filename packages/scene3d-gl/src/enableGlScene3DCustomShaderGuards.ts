@@ -1,5 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -23,7 +23,7 @@ export function enableGlScene3DCustomShaderGuards(state: GlRenderState): void {
 // Maps a GL uniform-type enum to its GLSL type keyword, so a warning names the type a shader must declare
 // rather than a raw enum. Only the types the built-in uniforms use (and their nearest neighbors) are named;
 // anything else falls back to the raw enum so the message is still actionable.
-function glUniformTypeName(gl: Readonly<WebGL2RenderingContext>, type: number): string {
+function glUniformTypeName(gl: Readonly<GlContext>, type: number): string {
   switch (type) {
     case gl.FLOAT_MAT4:
       return 'mat4';

@@ -7,6 +7,7 @@ import {
   releaseGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   BevelEffect,
   GlFullscreenProgram,
   GlRenderEffectRunner,
@@ -153,7 +154,7 @@ type BevelCompositeLocations = GlFullscreenProgram & {
   locClipMode: WebGLUniformLocation;
 };
 
-const bevelCompositeShaders = new WeakMap<WebGL2RenderingContext, BevelCompositeLocations>();
+const bevelCompositeShaders = new WeakMap<GlContext, BevelCompositeLocations>();
 
 type BevelCompositeParams = Readonly<{
   offsetX: number;

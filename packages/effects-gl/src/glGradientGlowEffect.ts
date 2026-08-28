@@ -6,6 +6,7 @@ import {
   releaseGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   GradientGlowEffect,
   GlFullscreenProgram,
   GlRenderEffectRunner,
@@ -37,7 +38,7 @@ type GradientLookupLocations = GlFullscreenProgram & {
   locRamp: WebGLUniformLocation;
 };
 
-const lookupShaders = new WeakMap<WebGL2RenderingContext, GradientLookupLocations>();
+const lookupShaders = new WeakMap<GlContext, GradientLookupLocations>();
 
 // Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

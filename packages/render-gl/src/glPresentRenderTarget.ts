@@ -1,4 +1,4 @@
-import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass';
@@ -33,7 +33,7 @@ function getGlCopyProgram(state: GlRenderState): GlFullscreenProgram {
 const NOOP = (): void => {};
 
 // Per-context passthrough program for the 'srgb' present branch.
-const _programs = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
+const _programs = new WeakMap<GlContext, GlFullscreenProgram>();
 
 const COPY_FRAGMENT_SRC = `#version 300 es
 precision highp float;

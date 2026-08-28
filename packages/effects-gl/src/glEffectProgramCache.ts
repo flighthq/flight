@@ -1,5 +1,5 @@
 import { compileGlFullscreenProgram } from '@flighthq/render-gl/contract';
-import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 // Per-context cache of compiled effect fragment programs, keyed by a stable string. Effect recipes call
 // getGlEffectProgram with their own key + fragment source so each program compiles once per context
@@ -41,7 +41,7 @@ export function getGlEffectUniformLocation(
   return loc;
 }
 
-const _programs = new WeakMap<WebGL2RenderingContext, Map<string, GlFullscreenProgram>>();
+const _programs = new WeakMap<GlContext, Map<string, GlFullscreenProgram>>();
 
 // Keyed by program object (not state) so the cache survives state-key rotation and is naturally
 // freed when the program itself is garbage-collected (all GlFullscreenPrograms are stored in

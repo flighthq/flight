@@ -6,6 +6,7 @@ import {
   releaseGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   GradientBevelEffect,
   GlFullscreenProgram,
   GlRenderEffectRunner,
@@ -61,8 +62,8 @@ type BevelApplyLocations = GlFullscreenProgram & {
   locSource: WebGLUniformLocation;
 };
 
-const encodeShaders = new WeakMap<WebGL2RenderingContext, BevelEncodeLocations>();
-const applyShaders = new WeakMap<WebGL2RenderingContext, BevelApplyLocations>();
+const encodeShaders = new WeakMap<GlContext, BevelEncodeLocations>();
+const applyShaders = new WeakMap<GlContext, BevelApplyLocations>();
 
 // Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

@@ -1,5 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { GlRenderState, GlRenderTextureExplanation, RenderTexture } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, GlRenderTextureExplanation, RenderTexture } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setGlRenderTextureGuard } from './glRenderTexture';
@@ -45,4 +45,4 @@ function warnGlRenderTextureUnavailable(
   );
 }
 
-const _guardedContexts = new WeakSet<WebGL2RenderingContext>();
+const _guardedContexts = new WeakSet<GlContext>();

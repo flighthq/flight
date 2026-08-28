@@ -10,6 +10,7 @@ import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createGlRenderTarget } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   GlRenderState,
   GlRenderTarget,
   GlVelocityContext,
@@ -384,4 +385,4 @@ const _scratchVelocity: Velocity2D = { x: 0, y: 0 };
 
 // Lazily compiled velocity program per context. Per-kind writer policy lives in the render state's
 // persistent registry aggregate, so derived pipelines retain a creation-time snapshot.
-const _velocityPrograms = new WeakMap<WebGL2RenderingContext, GlVelocityProgram>();
+const _velocityPrograms = new WeakMap<GlContext, GlVelocityProgram>();

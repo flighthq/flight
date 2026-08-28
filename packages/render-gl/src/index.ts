@@ -10,6 +10,7 @@ export {
   createGlRenderSurface,
   createExternalGlTexture,
   createGlOffscreenRenderState,
+  createGlContextFromCanvasElement,
   createGlRenderState,
   createGlRenderTexturePool,
   createGlRenderTarget,

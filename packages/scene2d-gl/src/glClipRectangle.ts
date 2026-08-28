@@ -51,8 +51,8 @@ function computeScissorRect(
   const y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
   const viewport = getGlRenderStateRuntime(state).renderTargetViewport;
-  const viewportWidth = viewport?.width ?? state.canvas.width;
-  const viewportHeight = viewport?.height ?? state.canvas.height;
+  const viewportWidth = viewport?.width ?? state.gl.drawingBufferWidth;
+  const viewportHeight = viewport?.height ?? state.gl.drawingBufferHeight;
   const minX = Math.max(0, Math.floor(Math.min(x0, x1, x2, x3)));
   const maxX = Math.min(viewportWidth, Math.ceil(Math.max(x0, x1, x2, x3)));
   const minY = Math.max(0, Math.floor(Math.min(y0, y1, y2, y3)));

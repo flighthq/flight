@@ -1,4 +1,4 @@
-import type { GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlFullscreenProgram, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
 
@@ -33,7 +33,7 @@ function getGlLinearToSrgbProgram(state: GlRenderState): GlFullscreenProgram {
 const NOOP = (): void => {};
 
 // Per-context compiled OETF program, shared by derived pipelines over the same GL context.
-const _programs = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
+const _programs = new WeakMap<GlContext, GlFullscreenProgram>();
 
 export const LINEAR_TO_SRGB_FRAGMENT_SRC = `#version 300 es
 precision highp float;

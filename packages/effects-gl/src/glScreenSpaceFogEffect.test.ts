@@ -1,4 +1,4 @@
-import { createGlRenderState } from '@flighthq/render-gl/contract';
+import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
 const programMock = vi.hoisted(() => ({
@@ -163,7 +163,7 @@ describe('defaultGlScreenSpaceFogEffectRunner', () => {
 
 describe('registerGlScreenSpaceFogEffect', () => {
   it('makes the runner resolvable for the ScreenSpaceFogEffect kind', () => {
-    const state = createGlRenderState(document.createElement('canvas'));
+    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
 
     expect(getGlRenderEffectRunner(state, 'ScreenSpaceFogEffect')).toBeNull();
     registerGlScreenSpaceFogEffect(state);

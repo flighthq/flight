@@ -1,4 +1,4 @@
-﻿import type { GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
+﻿import type { GlContext, GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
 import type { GlBitmapShader, GlShaderLocations } from '@flighthq/types/contract';
 
 import { createGlProgram } from './glProgram';
@@ -27,7 +27,7 @@ void main() {
   fragColor = color;
 }`;
 
-export function compileDefaultGlProgram(gl: WebGL2RenderingContext): GlShaderLocations {
+export function compileDefaultGlProgram(gl: GlContext): GlShaderLocations {
   return compileGlBitmapProgram(gl);
 }
 
@@ -38,10 +38,7 @@ export function compileDefaultGlProgram(gl: WebGL2RenderingContext): GlShaderLoc
  * `uniform float u_alpha` — and may add its own uniforms, resolved against the
  * returned `program`.
  */
-export function compileGlBitmapProgram(
-  gl: WebGL2RenderingContext,
-  fragmentSrc: string = FRAGMENT_SRC,
-): GlShaderLocations {
+export function compileGlBitmapProgram(gl: GlContext, fragmentSrc: string = FRAGMENT_SRC): GlShaderLocations {
   const program = createGlProgram(gl, VERTEX_SRC, fragmentSrc, 'Bitmap');
   return {
     program,
@@ -57,7 +54,7 @@ export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrix
   return {
     locations: shaderLoc,
     program: shaderLoc.program,
-    bind(gl: WebGL2RenderingContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
+    bind(gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
       const runtime = getGlRenderStateRuntime(state);
       setGlAttributes(gl, shaderLoc);
       setGlMatrixFromTransform(
@@ -65,7 +62,8 @@ export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrix
         shaderLoc,
         matrixArray,
         renderProxy.transform2D,
-        runtime.renderTargetViewport ?? state.canvas,
+        runtime.renderTargetViewport?.width ?? gl.drawingBufferWidth,
+        runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight,
       );
       setGlBaseUniforms(gl, shaderLoc, renderProxy);
     },
@@ -80,15 +78,15 @@ export function createDefaultGlBitmapShader(shaderLoc: GlShaderLocations, matrix
  * `locations.program`).
  */
 export function createGlBitmapShader(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   fragmentSrc: string,
-  onBind?: (gl: WebGL2RenderingContext, locations: GlShaderLocations, renderProxy: RenderProxy2D) => void,
+  onBind?: (gl: GlContext, locations: GlShaderLocations, renderProxy: RenderProxy2D) => void,
 ): GlBitmapShader {
   const locations = compileGlBitmapProgram(gl, fragmentSrc);
   return {
     locations,
     program: locations.program,
-    bind(gl: WebGL2RenderingContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
+    bind(gl: GlContext, state: GlRenderState, renderProxy: RenderProxy2D): void {
       const runtime = getGlRenderStateRuntime(state);
       setGlAttributes(gl, locations);
       setGlMatrixFromTransform(
@@ -96,7 +94,8 @@ export function createGlBitmapShader(
         locations,
         runtime.matrixArray,
         renderProxy.transform2D,
-        runtime.renderTargetViewport ?? state.canvas,
+        runtime.renderTargetViewport?.width ?? gl.drawingBufferWidth,
+        runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight,
       );
       setGlBaseUniforms(gl, locations, renderProxy);
       onBind?.(gl, locations, renderProxy);
@@ -114,27 +113,28 @@ export function ensureDefaultGlBitmapShader(state: GlRenderState): GlBitmapShade
   return shader;
 }
 
-export function setGlAttributes(gl: WebGL2RenderingContext, loc: GlShaderLocations): void {
+export function setGlAttributes(gl: GlContext, loc: GlShaderLocations): void {
   gl.enableVertexAttribArray(loc.locPosition);
   gl.enableVertexAttribArray(loc.locTexCoord);
   gl.vertexAttribPointer(loc.locPosition, 2, gl.FLOAT, false, 16, 0);
   gl.vertexAttribPointer(loc.locTexCoord, 2, gl.FLOAT, false, 16, 8);
 }
 
-export function setGlBaseUniforms(gl: WebGL2RenderingContext, loc: GlShaderLocations, renderProxy: RenderProxy): void {
+export function setGlBaseUniforms(gl: GlContext, loc: GlShaderLocations, renderProxy: RenderProxy): void {
   gl.uniform1f(loc.locAlpha, renderProxy.alpha);
   gl.uniform1i(loc.locTexture, 0);
 }
 
 export function setGlMatrixFromTransform(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   loc: GlShaderLocations,
   m: Float32Array,
   t: { a: number; b: number; c: number; d: number; tx: number; ty: number },
-  viewport: { width: number; height: number },
+  viewportWidth: number,
+  viewportHeight: number,
 ): void {
-  const iw = 2 / viewport.width;
-  const ih = 2 / viewport.height;
+  const iw = 2 / viewportWidth;
+  const ih = 2 / viewportHeight;
   m[0] = t.a * iw;
   m[1] = -t.b * ih;
   m[2] = 0;
@@ -148,7 +148,7 @@ export function setGlMatrixFromTransform(
 }
 
 export function setGlMatrixFromValues(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   loc: GlShaderLocations,
   m: Float32Array,
   a: number,
@@ -157,10 +157,11 @@ export function setGlMatrixFromValues(
   d: number,
   tx: number,
   ty: number,
-  viewport: { width: number; height: number },
+  viewportWidth: number,
+  viewportHeight: number,
 ): void {
-  const iw = 2 / viewport.width;
-  const ih = 2 / viewport.height;
+  const iw = 2 / viewportWidth;
+  const ih = 2 / viewportHeight;
   m[0] = a * iw;
   m[1] = -b * ih;
   m[2] = 0;

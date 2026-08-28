@@ -1,5 +1,6 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
+  createGlContextFromCanvasElement,
   SpriteKind,
   TilemapKind,
   createGlCanvasElement,
@@ -19,12 +20,14 @@ const pixelRatio = window.devicePixelRatio || 1;
 export const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const state = createGlRenderState(canvas, {
-  pixelRatio,
-  backgroundColor: 0x1a1a2eff,
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  sceneGraphSyncPolicy: 'requiresInvalidation',
-});
+export const state = createGlRenderState(
+  createGlContextFromCanvasElement(canvas, { contextAttributes: { alpha: false, preserveDrawingBuffer: true } }),
+  {
+    pixelRatio,
+    backgroundColor: 0x1a1a2eff,
+    sceneGraphSyncPolicy: 'requiresInvalidation',
+  },
+);
 enableFlightDiagnostics(state);
 
 registerStandardGlTextureResolvers(state);
