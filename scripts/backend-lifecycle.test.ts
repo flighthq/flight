@@ -29,7 +29,7 @@ describe('backend replacement lifetime census', () => {
   // set was established) so that growth is visible: baseline 43 / current 46 → "+3 new seams". Raise
   // enforcedNames when a slice lands a teardown hook; do NOT update total to match the current count.
   const ENFORCED_FLOOR: BackendLifecycleFloor = {
-    enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'],
+    enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend', 'MenuBackend'],
     total: 43,
   };
 

@@ -40,6 +40,7 @@ export interface MenuItemTemplate {
 // returns a boolean (false when the host has no native menu bar, e.g. web); context-menu popups
 // resolve to the selected item id, or null when dismissed; selections are delivered by id.
 export interface MenuBackend {
+  destroy?(): void;
   setApplicationMenu(items: readonly MenuItemTemplate[]): boolean;
   popupContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null>;
   subscribeSelect(listener: (id: string) => void): () => void;

@@ -5,6 +5,7 @@ export function enableHostWebMenu(): void {
   if (_enabled) return;
   _enabled = true;
   const backend: MenuBackend = {
+    destroy() {},
     popupContextMenu(items, x, y) {
       try {
         const result = showWebContextMenu(items, x, y);
