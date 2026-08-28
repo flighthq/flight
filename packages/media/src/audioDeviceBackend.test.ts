@@ -119,11 +119,12 @@ describe('getAudioSourceBufferSourceNode', () => {
 
   it('delegates to the web extension when present', () => {
     const mockNode = {} as AudioBufferSourceNode;
-    setAudioDeviceBackend({
+    const backend = {
       ...stubBackend(),
       getSourceBufferSourceNode: () => mockNode,
       getSourceGainNode: () => null,
-    });
+    };
+    setAudioDeviceBackend(backend);
     expect(getAudioSourceBufferSourceNode(1 as unknown as AudioSourceHandle)).toBe(mockNode);
   });
 });
@@ -140,11 +141,12 @@ describe('getAudioSourceGainNode', () => {
 
   it('delegates to the web extension when present', () => {
     const mockNode = {} as GainNode;
-    setAudioDeviceBackend({
+    const backend = {
       ...stubBackend(),
       getSourceBufferSourceNode: () => null,
       getSourceGainNode: () => mockNode,
-    });
+    };
+    setAudioDeviceBackend(backend);
     expect(getAudioSourceGainNode(1 as unknown as AudioSourceHandle)).toBe(mockNode);
   });
 });
@@ -171,11 +173,12 @@ describe('hasAudioDeviceWebNodeAccess', () => {
   });
 
   it('returns true when the backend has web extension methods', () => {
-    setAudioDeviceBackend({
+    const backend = {
       ...stubBackend(),
       getSourceBufferSourceNode: () => null,
       getSourceGainNode: () => null,
-    });
+    };
+    setAudioDeviceBackend(backend);
     expect(hasAudioDeviceWebNodeAccess()).toBe(true);
   });
 });
