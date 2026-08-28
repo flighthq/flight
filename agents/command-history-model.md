@@ -193,3 +193,66 @@ Does not depend on: `selection`, `gizmo`, `gui`, `interaction`, `render`, `scene
 **In scope**: command interface, history stack with undo/redo, command factories for property/child/reorder operations, command merging, composite commands, transaction brackets, signals.
 
 **Out of scope**: clipboard (copy/paste are commands that the caller composes using `clipboard` + `scene-document`), file save (saving is not undoable), selection state changes (selecting a node is not an undoable operation in most editors — the selection model is separate), view changes (pan/zoom are not undoable).
+
+---
+
+# Manager rulings — PRESERVED VERBATIM after a records collision, 2026-08-28
+
+★ **Why this section exists.** A records rewrite built from a base that predated these rulings landed and
+dropped every ruling section below. The code still implements them and tests pin several, but the
+*reasoning* was lost while the conclusions survived — and the reasoning is the part that stops a future
+agent re-deriving a decision that was already withdrawn.
+
+Reproduced **verbatim** rather than re-summarised, because summarising a ruling is exactly how this was
+lost the first time. Where a ruling is already pinned by a test, the test is the enforcement and this is
+the explanation. Where anything here conflicts with the sections above, the *conclusions* above are
+current wherever the user has since ruled; this is what those conclusions were built on.
+
+## Manager rulings — 2026-08-27
+
+**Deliverable ruled by the user: THE PACKAGES ONLY.** `gui`, `selection`, `gizmo` and `command` are built
+as SDK cells to AAA completeness, each usable standalone by anyone building an editor or tool. **No
+editor application ships from this work.** The "editor data flow" in the handoff is motivation, not a
+deliverable — do not let an app shell, panel layout, project model, or file management appear in any of
+these packages. An editor is a possible follow-on the user will scope separately.
+
+**Sequencing ruled by the user: PARALLEL with `scene-document`.** `selection` and `command` depend only
+on `node`, `signals`, `geometry` and `types` and touch nothing `scene-document` touches, so they start
+immediately. `gui` needs `interaction`, which exists. Only `gizmo` has real coupling, through the
+overlay scene.
+
+**C1. The package, and `snapshot` versus `command` — APPROVED.** The four reasons given (granularity,
+memory, merge, description) are correct and the complementary relationship is stated well.
+
+**C2. ★ COMMANDS ARE PLAIN KIND-TAGGED DATA, NOT CLOSURE-CARRYING OBJECTS. This is a redesign of the
+central interface in this record, and it is not optional.**
+
+The record defines `Command` as an object carrying `execute()`, `undo()`, and `merge()` — methods over
+captured state. That loses on four counts:
+
+1. **It is the default unit this SDK rejects.** Functions, not methods; free functions over classes;
+   explicit ownership over GC-reliant patterns; portable to C/C++ idioms. A stack of closures is none
+   of those.
+2. **Flight has already made this exact call once.** The timeline cue model rules that authored cues
+   are plain kind-dispatched data and that importers emit **zero closures**. An undo history is the
+   same problem — recorded intent replayed later — and must not get the opposite answer.
+3. **It contradicts the ruling already made next door.** `scene-document` Q3 commissions open,
+   kind-keyed registries with caller-owned pre-registration. Two adjacent new packages should not
+   disagree about how behavior is bound to a kind.
+4. **Closures are unserializable, and that forecloses the feature that matters most.** Data commands
+   can be persisted, inspected in a history panel, diffed, logged with a bug report, or replayed.
+   A closure can do none of it, and the loss is silent — nobody discovers it until someone asks for
+   "save my undo history" and finds it was designed out in the first commit.
+
+Ruling: a command is `{ kind, …fields }` — for example
+`{ kind: 'setNodeProperty', target, property, before, after }`. `execute`, `undo` and `merge` are
+**functions registered per kind** in a keyed table, resolved at dispatch, so unused command kinds
+tree-shake out and callers register their own. Composite and batch commands are data too
+(`{ kind: 'composite', children: [...] }`). Merging becomes a registered per-kind merge function rather
+than a method the top-of-stack object happens to carry.
+
+**The one real cost, stated honestly:** `target` is a live node reference, so a command is only fully
+serializable once nodes have stable identity. `scene-document` supplies exactly that, by key and path.
+Until it lands, commands are data with one non-serializable field — still strictly better than
+closures, and the seam is in the right place for the rest to follow.
+
