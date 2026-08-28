@@ -82,6 +82,10 @@ Compare the parcel summary's stated intent against the actual diff effect before
 
 Paused work — a decision deferred, a half-finished refactor, uncommitted exploratory edits — must be preserved in an explicitly named, date-stamped recoverable stash or isolated state before switching to unrelated work. It must not remain in the working tree. A cumulative parcel carries everything since `quimby/seed`, so paused content sitting in the tree rides with the next handoff as though it were part of the delivered work. If the pause was a deliberate hold (e.g., awaiting a design ruling), the parcel silently reverses the hold by shipping the held content alongside unrelated changes — and the summary, written for the new work, will not mention it. Verify a clean tree before starting unrelated work so that the parcel's cumulative state matches the summary's stated intent. See also [Unowned working-tree content](#unowned-working-tree-content-before-rebase-or-handoff) for the matching guard on content you did not author.
 
+### Restoring parked work
+
+Parked stash or tag content predates every base change that landed while it was parked. A blind `git stash pop` applies the stash as-is, and any file the stash touches that a peer also changed gets the stash's older version restored on top of the landed one — silently undoing landed work with no conflict marker when the stash's diff does not overlap textually. Restore only after rebasing the current base, then audit direction per touched file and hunk: an addition the stash introduces is new work to keep; a hunk that reverts a line the landed base added is a stale reversion to discard. Where stash content and base content overlap on the same lines, preserve the overlap by verifying each hunk against the current base version rather than accepting either side wholesale. Retain the recovery stash or tag as evidence until the restored work itself lands in a commit — do not drop the stash at pop time, so that a bad restore is recoverable.
+
 ## Unowned working-tree content before rebase or handoff
 
 Never reflexively discard a dirty path you did not author. The same `git status` symptom can describe
