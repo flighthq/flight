@@ -52,7 +52,12 @@ export interface LogTimer {
 export interface LogTransportBackend {
   write(line: string): void;
   flush?(): void;
-  dispose?(): void;
+  // ★ `destroy`, not `dispose`. A transport owns a NON-GC RESOURCE — a file handle, a socket, a native
+  // writer — and teardown frees it immediately, leaving the transport invalid. `dispose*` is the other
+  // verb: detach listeners and clear registries so an entity becomes GC-eligible, with nothing to free.
+  // A teardown verb that ships with the wrong meaning is corrected in every consumer afterwards, and
+  // both verbs already have settled meanings in this SDK.
+  destroy?(): void;
 }
 
 // One emitted log entry. `channel` is a free categorization tag (for example 'batch', 'shader',
