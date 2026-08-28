@@ -220,7 +220,7 @@ Animation and simulation: `spritesheet`, `spritesheet-formats`, `particles` (hea
 
 Game: `collision` (2D/3D narrow phase + contact manifolds), `physics2d` / `physics3d` (rigid-body dynamics), `physics2d-abi` / `physics3d-abi` (persistent handle/buffer execution contracts), `spatial` (2D/3D broadphase indices), `flow` (mode/screen state stack), `statechart` (concurrent data-only guarded state graphs), `snapshot` (frozen recoverable state).
 
-Input, authoring, and text: `input`, `selection` (generic graph identity and selection queries), `gui` (caller-visual controllers), `gizmo` (generic selection transforms over fixed 2D overlay handles), `textinput`, `textlayout`, `textshaper` with `textshaper-canvas`, `textsegment`, `textbidi` (bidi itemization), `text-markup` (markup → rich text), `glyphatlas` (dynamic) and `bitmapfont` + `bitmapfont-formats` (static) behind the shared `GlyphSource` seam, `bitmaptext`.
+Input and text: `input`, `textinput`, `textlayout`, `textshaper` with `textshaper-canvas`, `textsegment`, `textbidi` (bidi itemization), `text-markup` (markup → rich text), `glyphatlas` (dynamic) and `bitmapfont` + `bitmapfont-formats` (static) behind the shared `GlyphSource` seam, `bitmaptext`.
 
 Application: `application` (main loop and windowing) with `application-gl` (the WebGL `ApplicationRenderView` assembly), `intl`, `log`, `debug`, `useragent`, `xml`, `media`, `mediasession` (OS now-playing/transport), `sdk` (convenience barrel).
 
