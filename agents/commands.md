@@ -30,6 +30,34 @@ Three measurements that make the size of the effect concrete, all on one reposit
 The same discipline applies to a derived gate's own summary line: state the population it swept and the
 exclusions it applied, so a smaller number reads as a narrower sweep rather than as progress.
 
+## Unowned working-tree content before rebase or handoff
+
+Never reflexively discard a dirty path you did not author. The same `git status` symptom can describe
+opposite states: the worktree may contain newer work that is absent from the delivered base, or it may
+contain a stale pre-sync copy that removes or rewinds work already present in the base. The first must
+not be lost; the second must not be restored over the base. A filename and a modified marker cannot tell
+those cases apart.
+
+Before cleaning the tree, inspect the direction of every unowned change against the delivered base with
+`git diff -- <path>` and `git diff quimby/base -- <path>` (and read the base version when the direction is
+still unclear). Then preserve the exact unowned content in a stash whose name says both what it is and
+when it was captured, for example:
+
+```sh
+git stash push --include-untracked -m "unowned 2026-08-28 before rebase: <context>" -- <path>...
+```
+
+Use an explicit date and context; an anonymous `WIP` stash is not a durable ownership record. Confirm
+that the named stash exists and that those paths are no longer dirty before rebasing or preparing a
+handoff. Never commit unowned content, and never leave it in the working tree where a parcel can carry it
+as though it were yours.
+
+After the base move, keep the two outcomes distinct. If the stash is newer work, leave it isolated and
+surface it to its owner rather than popping it into your task. If it is a stale reversion, do not restore
+it over the landed version; retain the named stash as recovery evidence until the responsible owner says
+it can be removed. Identical dirty-tree symptoms therefore require opposite follow-up even though both
+start with the same protective stash.
+
 ### `npm run check:transport-bypasses`
 
 Prevents production SDK code from calling browser transport primitives outside the web backend that
