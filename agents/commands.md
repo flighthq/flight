@@ -193,6 +193,18 @@ contention moves by a factor of three. Count what has to execute.
 3. Conversely, a **kill** proves a test noticed, not that the test is good. A snapshot asserting the whole
    output kills nearly everything while explaining nothing.
 
+**A mutation proves only the axis it perturbs.** Replacing a category tests category discrimination,
+not the total; changing a total tests that count, not ordering; swapping entries tests ordering, not
+arity; adding or dropping an entry tests arity, not identity; substituting an equal-shaped object tests
+identity, not any of those other moves. A kill on one axis is no evidence about its neighbors merely
+because they affect the same output.
+
+Every mutation report therefore names both the exact axis it moved and the surviving moves it did not
+exercise — for example, “the total mutation was killed; category substitution, reordering, duplicate or
+drop, and identity replacement remain untested.” A survivor stays a finding with its address and scope.
+Never average it away or round the series into a pass: four kills plus one survivor means one unresolved
+finding, not an 80% pass.
+
 **When it refuses.** A red suite fails on every mutant too, which reads as a perfect kill rate — so an
 unmutated control run must pass before anything is measured. Every mutant run must also print a marker
 proving the edit was actually applied; without it a passing suite tested unmutated source, which by exit
