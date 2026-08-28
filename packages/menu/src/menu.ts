@@ -1,6 +1,12 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { BackendExplanation } from '@flighthq/types/contract';
-import type { MenuBackend, MenuItemTemplate, MenuSignals } from '@flighthq/types/contract';
+import type {
+  MenuBackend,
+  MenuItemTemplate,
+  MenuReplacementGuarantee,
+  MenuReplacementGuaranteeExplanation,
+  MenuSignals,
+} from '@flighthq/types/contract';
 
 // Deep-clones a MenuItemTemplate tree. The returned tree has the same shape and values. Safe to call
 // with a template carrying a submenu — children are cloned recursively.
@@ -57,6 +63,30 @@ export function explainMenuBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// Explains a relational replacement guarantee independently of whether the selected real backend has a
+// destroy operation. Guarantee metadata is read from the same object that owns the selected slot, so a
+// replacement cannot inherit a stale limitation from the backend it displaced.
+export function explainMenuReplacementGuarantee(
+  guarantee: MenuReplacementGuarantee,
+): MenuReplacementGuaranteeExplanation {
+  const backend = _custom ?? _host;
+  const implemented = backend !== null && typeof backend.destroy === 'function';
+  const layer = implemented ? (_custom !== null ? 'custom' : 'host') : 'sentinel';
+  const declaration = backend?.replacementGuarantees?.find((candidate) => candidate.guarantee === guarantee);
+  if (declaration !== undefined) {
+    return { ...declaration, implemented, layer, operation: 'destroy' };
+  }
+  return {
+    guarantee,
+    implemented,
+    layer,
+    liftableBy: [],
+    operation: 'destroy',
+    reason: null,
+    support: 'unobserved',
+  };
+}
+
 // Returns the active backend following the precedence chain: custom > host > sentinel.
 export function getMenuBackend(): MenuBackend {
   return _custom ?? _host ?? _sentinel;
@@ -65,6 +95,10 @@ export function getMenuBackend(): MenuBackend {
 // Returns the active MenuSignals group, or null if enableMenuSignals has not been called.
 export function getMenuSignals(): Readonly<MenuSignals> | null {
   return _menuSignals;
+}
+
+export function hasMenuReplacementGuarantee(guarantee: MenuReplacementGuarantee): boolean {
+  return explainMenuReplacementGuarantee(guarantee).support === 'supported';
 }
 
 export function installMenuHostBackend(backend: MenuBackend): void {

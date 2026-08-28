@@ -13,6 +13,20 @@ export function createTauriMenuBackend(tauri: TauriApi): MenuBackend {
   let selectListener: ((id: string) => void) | null = null;
   let destroyed = false;
   return {
+    replacementGuarantees: [
+      {
+        guarantee: 'native-destroy-before-install',
+        liftableBy: TAURI_MENU_REPLACEMENT_LIFT_PREMISES,
+        reason: 'no-atomic-replace-rollback-or-current-menu',
+        support: 'unsupported',
+      },
+      {
+        guarantee: 'native-clear-to-sentinel',
+        liftableBy: TAURI_MENU_REPLACEMENT_LIFT_PREMISES,
+        reason: 'no-atomic-replace-rollback-or-current-menu',
+        support: 'unsupported',
+      },
+    ],
     // Tauri's menu API is entirely async — there is no synchronous path to clear the native app menu.
     // A fire-and-forget async clear races with the replacement backend's setApplicationMenu, so destroy
     // releases JS-owned state only and preserves last-known-good (the native menu stays until replaced).
@@ -85,3 +99,9 @@ async function buildItem(
     action: id !== undefined ? () => onSelect(id) : undefined,
   });
 }
+
+const TAURI_MENU_REPLACEMENT_LIFT_PREMISES = [
+  'atomic-replace-retains-old-on-rejection',
+  'rollback-or-undo',
+  'current-app-menu-getter',
+] as const;

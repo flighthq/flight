@@ -62,6 +62,24 @@ const template: MenuItemTemplate[] = [
 ];
 
 describe('createTauriMenuBackend', () => {
+  it('declares both unsupported native replacement guarantees and every lift premise', () => {
+    const { tauri } = fakeTauri();
+    expect(createTauriMenuBackend(tauri).replacementGuarantees).toEqual([
+      {
+        guarantee: 'native-destroy-before-install',
+        liftableBy: ['atomic-replace-retains-old-on-rejection', 'rollback-or-undo', 'current-app-menu-getter'],
+        reason: 'no-atomic-replace-rollback-or-current-menu',
+        support: 'unsupported',
+      },
+      {
+        guarantee: 'native-clear-to-sentinel',
+        liftableBy: ['atomic-replace-retains-old-on-rejection', 'rollback-or-undo', 'current-app-menu-getter'],
+        reason: 'no-atomic-replace-rollback-or-current-menu',
+        support: 'unsupported',
+      },
+    ]);
+  });
+
   it('installs an application menu and routes item clicks to the select listener', async () => {
     const { tauri, state } = fakeTauri();
     const backend = createTauriMenuBackend(tauri);
