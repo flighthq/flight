@@ -283,7 +283,7 @@ describe('createTauriWindowBackend close when the platform close rejects', () =>
       // `.catch` deleted — which is exactly what it did before this line was corrected.
       expect(backend.attach?.(win, window as never, 'flight')).toBe(true);
 
-      expect(() => backend.close(win)).not.toThrow();
+      expect(() => backend.close!(win)).not.toThrow();
       // Detached synchronously, so a rejected close cannot strand the window as still attached.
       expect(backend.attach?.(win, window as never, 'flight')).toBe(true);
 
