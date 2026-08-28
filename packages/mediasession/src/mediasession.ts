@@ -43,7 +43,7 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
             continue;
           }
           try {
-            session.setActionHandler(action, null);
+            assertSyncVoid(session.setActionHandler(action, null));
             if (ownership.actions.get(action) === owner) ownership.actions.delete(action);
             publication.actions.delete(action);
           } catch {
@@ -406,6 +406,11 @@ function releaseMediaSessionBackends(previous: readonly (Readonly<MediaSessionBa
     released.add(backend);
     backend.destroy?.();
   }
+}
+
+type IsAny<T> = 0 extends 1 & T ? true : false;
+function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {
+  void value;
 }
 
 interface WebMediaSessionOwnedValue<Value> {
