@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
 // committed contrast is 0.57-0.62. `assertRender` checks both the aggregate smear population and the radial
@@ -58,6 +59,7 @@ declareExpectedImageDescription(
 // Wgpu parity column for per-particle motion blur: the particle velocity writer rasterizes each
 // particle's own velocity into the G-buffer, which the motion-blur runner smears along — a radial star.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

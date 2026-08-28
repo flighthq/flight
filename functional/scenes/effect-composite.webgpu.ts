@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Node2D, Bitmap, WgpuRenderTarget } from '@flighthq/sdk';
 import {
   CompositeOperator,
@@ -44,6 +45,7 @@ declareExpectedImageDescription(
     'with no gradient or grey fringe.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

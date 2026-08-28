@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -45,6 +46,7 @@ declareExpectedImageDescription(
 // The contour clip's stencil pipeline runs inside the rgba16float scene target, so its color-target format
 // must match — this exercises the per-format clip-contour pipeline keying on Wgpu.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

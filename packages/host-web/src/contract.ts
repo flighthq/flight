@@ -32,3 +32,4 @@ export * from './webStatusbar';
 export * from './webStorage';
 export * from './webWebcam';
 export * from './webWindow';
+export * from './webWgpuRenderSurface';

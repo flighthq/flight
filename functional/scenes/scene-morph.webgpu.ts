@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import { drawWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import type { Camera3D, MeshMorph, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
@@ -44,6 +45,7 @@ declareExpectedImageDescription(
 // WebGPU mirror of scene-morph.webgl: the outer probe is reachable only when the CPU morph blend
 // increments geometry.version and the WebGPU upload refreshes the deformed vertex buffer.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

@@ -803,6 +803,7 @@ export * from './WgpuModifierSnippet';
 export * from './WgpuPbrPipeline';
 export * from './WgpuRenderEffectPipeline';
 export * from './WgpuRenderOptions';
+export * from './WgpuRenderSurfaceProvider';
 export * from './WgpuDualSourceEffectPipeline';
 export * from './WgpuEffectBlendMode';
 export * from './WgpuEffectPipeline';

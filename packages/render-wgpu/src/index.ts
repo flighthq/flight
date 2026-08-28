@@ -7,6 +7,7 @@ export {
   createBitmapFromWgpuRenderState,
   createExternalWgpuTexture,
   createWgpuCanvasElement,
+  createWgpuRenderSurface,
   createWgpuOffscreenRenderState,
   createWgpuRenderState,
   createWgpuRenderTexturePool,
