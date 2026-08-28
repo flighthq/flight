@@ -193,6 +193,31 @@ describe('hasValidAssertSyncVoidDeclaration', () => {
     expect(hasValidAssertSyncVoidDeclaration(parseFixture(WEAKENED_FIXTURE), WEAKENED_FIXTURE)).toBe(false);
   });
 
+  it('rejects an arbitrary same-name function without throwing', () => {
+    const weakened = 'function assertSyncVoid(value) {}';
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
+  });
+
+  it('rejects a helper whose IsAny alias is weakened', () => {
+    const weakened = FIXTURE.replace('0 extends 1 & T', '0 extends T');
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
+  });
+
+  it('rejects a helper whose conditional parameter proof is weakened', () => {
+    const weakened = FIXTURE.replace('value: T & (', 'value: T | (');
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
+  });
+
+  it('rejects a helper whose declared return is not void', () => {
+    const weakened = FIXTURE.replace(')): void {', ')): unknown {');
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
+  });
+
+  it('rejects a helper whose body does more than discard the value', () => {
+    const weakened = FIXTURE.replace('  void value;\n}', '  void value;\n  sideEffect();\n}');
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
+  });
+
   it('rejects code with no assertSyncVoid at all', () => {
     const bare = 'export function destroy() { try { foo(); } catch {} }';
     expect(hasValidAssertSyncVoidDeclaration(parseFixture(bare), bare)).toBe(false);

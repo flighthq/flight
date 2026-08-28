@@ -243,39 +243,134 @@ function isAssertSyncVoidCall(node: Readonly<Node>): boolean {
 // Validates the FULL AST shape of a local `assertSyncVoid` declaration: generic `IsAny` guard,
 // conditional parameter type rejecting Promise/any/unknown, return void, AND single `void value` body.
 // An arbitrary same-name function with a different signature or body is NOT recognized.
-export function hasValidAssertSyncVoidDeclaration(program: Readonly<Node>, text: string): boolean {
-  let found = false;
+export function hasValidAssertSyncVoidDeclaration(program: Readonly<Node>, _text: string): boolean {
+  let hasCanonicalIsAny = false;
+  let hasCanonicalHelper = false;
   walk(program, (node) => {
-    if (found) return;
-    const fn = node as unknown as {
-      type: string;
-      id?: { name?: string };
-      key?: { name?: string };
-      body?: Node;
-      value?: { body?: Node };
-      params?: unknown[];
-      typeParameters?: unknown;
-      returnType?: unknown;
-    };
-    let name: string | undefined;
-    let body: Node | undefined;
-    if (fn.type === 'FunctionDeclaration') {
-      name = fn.id?.name;
-      body = fn.body;
-    } else if (fn.type === 'ObjectProperty' || fn.type === 'Property' || fn.type === 'MethodDefinition') {
-      name = fn.key?.name;
-      body = fn.value?.body as Node | undefined;
-    }
-    if (name !== 'assertSyncVoid' || body === undefined) return;
-    if (fn.params === undefined || fn.params.length !== 1) return;
-    if (fn.typeParameters === undefined) return;
-    const bodyText = text.slice((body as unknown as { start: number }).start, (body as unknown as { end: number }).end);
-    if (!/void\s+value/.test(bodyText)) return;
-    const fnText = text.slice((node as unknown as { start: number }).start, (node as unknown as { end: number }).end);
-    if (!/IsAny/.test(fnText)) return;
-    found = true;
+    if (isCanonicalIsAnyDeclaration(node)) hasCanonicalIsAny = true;
+    if (isCanonicalAssertSyncVoidDeclaration(node)) hasCanonicalHelper = true;
   });
-  return found;
+  return hasCanonicalIsAny && hasCanonicalHelper;
+}
+
+function isCanonicalAssertSyncVoidDeclaration(node: Readonly<Node>): boolean {
+  const fn = asAstNode(node);
+  if (fn.type !== 'FunctionDeclaration' || identifierName(fn.id) !== 'assertSyncVoid') return false;
+  if (fn.async === true || fn.generator === true) return false;
+  if (!hasSingleTypeParameter(fn.typeParameters, 'T')) return false;
+
+  const params = fn.params as unknown[] | undefined;
+  if (params?.length !== 1) return false;
+  const param = asAstNode(params[0]);
+  if (param.type !== 'Identifier' || param.name !== 'value') return false;
+  const parameterType = unwrapTypeAnnotation(param.typeAnnotation);
+  if (parameterType.type !== 'TSIntersectionType') return false;
+  const intersections = parameterType.types as unknown[] | undefined;
+  if (intersections?.length !== 2 || !isTypeReference(intersections[0], 'T')) return false;
+  const guard = unwrapParenthesizedType(intersections[1]);
+  if (guard.type !== 'TSConditionalType') return false;
+  if (!isTypeReference(guard.checkType, 'IsAny', 'T')) return false;
+  if (!isBooleanLiteralType(guard.extendsType, true) || nodeType(guard.trueType) !== 'TSNeverKeyword') return false;
+  const voidGuard = asAstNode(guard.falseType);
+  if (voidGuard.type !== 'TSConditionalType' || !isTypeReference(voidGuard.checkType, 'T')) return false;
+  if (nodeType(voidGuard.extendsType) !== 'TSVoidKeyword') return false;
+  if (nodeType(voidGuard.trueType) !== 'TSUnknownKeyword' || nodeType(voidGuard.falseType) !== 'TSNeverKeyword') {
+    return false;
+  }
+
+  if (unwrapTypeAnnotation(fn.returnType).type !== 'TSVoidKeyword') return false;
+  const body = asAstNode(fn.body);
+  const statements = body.body as unknown[] | undefined;
+  if (body.type !== 'BlockStatement' || statements?.length !== 1) return false;
+  const statement = asAstNode(statements[0]);
+  const expression = asAstNode(statement.expression);
+  return (
+    statement.type === 'ExpressionStatement' &&
+    expression.type === 'UnaryExpression' &&
+    expression.operator === 'void' &&
+    identifierName(expression.argument) === 'value'
+  );
+}
+
+function isCanonicalIsAnyDeclaration(node: Readonly<Node>): boolean {
+  const alias = asAstNode(node);
+  if (alias.type !== 'TSTypeAliasDeclaration' || identifierName(alias.id) !== 'IsAny') return false;
+  if (!hasSingleTypeParameter(alias.typeParameters, 'T')) return false;
+  const conditional = asAstNode(alias.typeAnnotation);
+  if (conditional.type !== 'TSConditionalType' || !isNumberLiteralType(conditional.checkType, 0)) return false;
+  const intersection = asAstNode(conditional.extendsType);
+  const types = intersection.types as unknown[] | undefined;
+  return (
+    intersection.type === 'TSIntersectionType' &&
+    types?.length === 2 &&
+    isNumberLiteralType(types[0], 1) &&
+    isTypeReference(types[1], 'T') &&
+    isBooleanLiteralType(conditional.trueType, true) &&
+    isBooleanLiteralType(conditional.falseType, false)
+  );
+}
+
+interface AstNode {
+  [key: string]: unknown;
+  type?: string;
+}
+
+function asAstNode(value: unknown): AstNode {
+  return value !== null && typeof value === 'object' ? (value as AstNode) : {};
+}
+
+function hasSingleTypeParameter(value: unknown, name: string): boolean {
+  const declaration = asAstNode(value);
+  const params = declaration?.params as unknown[] | undefined;
+  return (
+    declaration?.type === 'TSTypeParameterDeclaration' &&
+    params?.length === 1 &&
+    identifierName(asAstNode(params[0]).name) === name
+  );
+}
+
+function identifierName(value: unknown): string | undefined {
+  const identifier = asAstNode(value);
+  return identifier?.type === 'Identifier' ? (identifier.name as string | undefined) : undefined;
+}
+
+function isBooleanLiteralType(value: unknown, expected: boolean): boolean {
+  const literalType = asAstNode(value);
+  const literal = asAstNode(literalType.literal);
+  return literalType?.type === 'TSLiteralType' && literal?.type === 'Literal' && literal.value === expected;
+}
+
+function isNumberLiteralType(value: unknown, expected: number): boolean {
+  const literalType = asAstNode(value);
+  const literal = asAstNode(literalType.literal);
+  return literalType?.type === 'TSLiteralType' && literal?.type === 'Literal' && literal.value === expected;
+}
+
+function isTypeReference(value: unknown, name: string, typeArgument?: string): boolean {
+  const reference = asAstNode(value);
+  if (reference?.type !== 'TSTypeReference' || identifierName(reference.typeName) !== name) return false;
+  const rawArguments = reference.typeArguments;
+  const argumentsNode = asAstNode(rawArguments);
+  const params = argumentsNode?.params as unknown[] | undefined;
+  return typeArgument === undefined
+    ? rawArguments === null || rawArguments === undefined
+    : argumentsNode?.type === 'TSTypeParameterInstantiation' &&
+        params?.length === 1 &&
+        isTypeReference(params[0], typeArgument);
+}
+
+function nodeType(value: unknown): string | undefined {
+  return asAstNode(value).type;
+}
+
+function unwrapParenthesizedType(value: unknown): AstNode {
+  const type = asAstNode(value);
+  return type.type === 'TSParenthesizedType' ? asAstNode(type.typeAnnotation) : type;
+}
+
+function unwrapTypeAnnotation(value: unknown): AstNode {
+  const type = asAstNode(value);
+  return type.type === 'TSTypeAnnotation' ? asAstNode(type.typeAnnotation) : type;
 }
 
 // Depth-first walk over every child node, without needing a per-type visitor table.
