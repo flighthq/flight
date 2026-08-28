@@ -420,6 +420,39 @@ backend installed via `setNetBackend` cannot be overridden by a caller's custom 
 **Fix:** add `installNetHostBackend` and `installSocketHostBackend` in each package, matching the
 pattern every other capability uses. Small, mechanical, no design decision needed.
 
+#### Downstream `enableHostLime` integration
+
+`host-lime` remains downstream in the external `flight-hx` checkout. Do not create a
+`packages/host-lime` package in this monorepo. After regenerating the bindings against a Flight
+revision that exports these contract functions, the downstream registration door must use the host
+installers, never the caller-owned `set*Backend` functions:
+
+```typescript
+import { installNetHostBackend } from '@flighthq/net/contract';
+import { installSocketHostBackend } from '@flighthq/socket/contract';
+
+export function enableHostLime(): void {
+  installNetHostBackend(createLimeNetBackend());
+  installSocketHostBackend(createLimeSocketBackend());
+}
+```
+
+The concrete factories and language syntax belong to `flight-hx`; the required call graph does not:
+`enableHostLime` installs both transports into Flight's process-global host slots. Consumer tests in
+that checkout must prove this sequence independently for Net and Socket:
+
+1. Enable Lime and observe the Lime backend through the capability operation.
+2. Install a provider-distinct custom backend with `set*Backend` and observe the custom backend.
+3. Clear the custom slot with `set*Backend(null)` and observe the original Lime backend again.
+4. Run the consumer's test-only disable/teardown, including release of Lime-owned transport
+   resources, then verify a fresh enable cycle. Flight's `resetNetBackendForTest` and
+   `resetSocketBackendForTest` are contract-lane test helpers for clearing process-global slot state;
+   they are not production uninstall APIs.
+
+The Lime binding generation, `enableHostLime` implementation, mutation tests, and consumer builds all
+run in the external `flight-hx` checkout. Flight's repository gates can prove only that the two
+installers are exported and that their custom-over-host precedence is correct.
+
 ### F2. Native gamepad ingress is incomplete
 
 The ingress sink has no axis/button callbacks. Flight still polls through
