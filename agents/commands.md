@@ -80,6 +80,14 @@ When a census is versioned — because the taxonomy it classifies under has chan
 
 History is immutable: once a count is reported under a version, the record stands as-is. Corrections are new entries, not edits to the old one. Per-slice attribution — naming the specific item that moved and the reason — is required wherever movement is reported, so that the aggregate delta decomposes into individually verifiable steps. "−2 sites" without naming which two and why is an unattributable sum that cannot be audited after the fact.
 
+### Caller and fanout claims must name their evidence method
+
+A claim that a function has N callers, or that a change fans out to M call sites, is only as strong as the method that produced it. Every such claim crossing an agent boundary must name whether it was established by AST CallExpression / call-graph analysis or by text search (grep, ripgrep, IDE find-references backed by text matching).
+
+AST-based analysis walks the parse tree and identifies direct call expressions — `foo(...)` nodes whose callee resolves to the target symbol. It certifies direct callers. Text search (`grep -rn 'foo'`) finds every mention of the string: comments, imports, type annotations, string literals, variable names that happen to contain the substring, and documentation — in addition to actual calls. A text-search hit count is a mention count, not a caller count, and the two diverge as soon as the name appears in any non-call context.
+
+Text search is a valid discovery instrument — it surfaces candidates that AST analysis can then confirm or reject. But a count reported as "N callers" must have been confirmed structurally, not merely discovered textually. When text search is the evidence method, report the count as "N mentions (text search)" and state that structural confirmation has not been performed. When AST analysis is the evidence method, report it as "N direct callers (AST CallExpression)." The evidence method is part of the unit/scope/method tuple required for any count crossing an agent boundary.
+
 ### A synchronous try/catch cannot catch a Promise rejection
 
 A `try/catch` around an un-awaited call that returns a Promise handles only synchronous throws — if the call itself succeeds but the returned Promise rejects, the rejection escapes the catch block entirely. When calling a Promise-returning function from a synchronous context (like `destroy`), either `await` the result (if the caller can be async) or attach an explicit `.catch(() => {})` on the returned Promise chain. Every such site requires a rejection-axis test: a fake that makes the call reject, verifying no unhandled rejection leaks. The test is the proof the handler exists; without it, a future edit can remove the `.catch()` silently.
