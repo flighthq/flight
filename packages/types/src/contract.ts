@@ -228,6 +228,7 @@ export * from './FocusEventData';
 export * from './FocusManager';
 export * from './OrbitCameraController';
 export * from './Font';
+export * from './FontLoadingBackend';
 export * from './FontMetrics';
 export * from './FontResource';
 export * from './FontVariation';

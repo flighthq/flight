@@ -1,27 +1,29 @@
+import type { FontLoadingBackend } from '@flighthq/types/contract';
+
+import { resetFontLoadingBackendForTest, setFontLoadingBackend } from './fontLoading';
 import { isFontLoaded, whenFontsReady } from './fontStatus';
 
-let originalFonts: PropertyDescriptor | undefined;
 let checkMock: ReturnType<typeof vi.fn>;
+let whenReadyMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   checkMock = vi.fn().mockReturnValue(true);
-  originalFonts = Object.getOwnPropertyDescriptor(document, 'fonts');
-  Object.defineProperty(document, 'fonts', {
-    value: { check: checkMock, ready: Promise.resolve() },
-    configurable: true,
-  });
+  whenReadyMock = vi.fn().mockResolvedValue(undefined);
+  const backend: FontLoadingBackend = {
+    addFontFace: vi.fn(),
+    checkFontFace: checkMock,
+    loadFontFaces: vi.fn().mockResolvedValue([]),
+    whenReady: whenReadyMock,
+  };
+  setFontLoadingBackend(backend);
 });
 
 afterEach(() => {
-  if (originalFonts) {
-    Object.defineProperty(document, 'fonts', originalFonts);
-  } else {
-    delete (document as unknown as { fonts?: unknown }).fonts;
-  }
+  resetFontLoadingBackendForTest();
 });
 
 describe('isFontLoaded', () => {
-  it('queries document.fonts.check with the family shorthand', () => {
+  it('queries the backend with the family shorthand', () => {
     expect(isFontLoaded('MyFont')).toBe(true);
     expect(checkMock).toHaveBeenCalledWith("1em 'MyFont'");
   });
@@ -43,7 +45,8 @@ describe('isFontLoaded', () => {
 });
 
 describe('whenFontsReady', () => {
-  it('resolves once document.fonts.ready resolves', async () => {
+  it('resolves once the backend reports ready', async () => {
     await expect(whenFontsReady()).resolves.toBeUndefined();
+    expect(whenReadyMock).toHaveBeenCalledOnce();
   });
 });

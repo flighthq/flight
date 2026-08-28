@@ -348,11 +348,67 @@ const P5_HOST_BYPASS_S10_V4_PROGRESS = {
   total: 21,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
+const P5_HOST_BYPASS_S10_FONT_LOAD_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 7,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 13,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Font face loading routed through the selected font-loading backend',
+  total: 20,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
+const P5_HOST_BYPASS_S10_FONT_ADD_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 6,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 13,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Font face registration routed through the selected font-loading backend',
+  total: 19,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
+const P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 5,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 13,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Font availability check routed through the selected font-loading backend',
+  total: 18,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
+const P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 4,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 13,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Font readiness query routed through the selected font-loading backend',
+  total: 17,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
 export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   P5_HOST_BYPASS_S09_V4_PROGRESS,
   P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS,
   P5_HOST_BYPASS_S10_V4_PROGRESS,
+  P5_HOST_BYPASS_S10_FONT_LOAD_V4_PROGRESS,
+  P5_HOST_BYPASS_S10_FONT_ADD_V4_PROGRESS,
+  P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS,
+  P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [

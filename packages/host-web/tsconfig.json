@@ -19,6 +19,7 @@
     { "path": "../device" },
     { "path": "../dialog" },
     { "path": "../filesystem" },
+    { "path": "../font" },
     { "path": "../geolocation" },
     { "path": "../glyphatlas" },
     { "path": "../haptics" },

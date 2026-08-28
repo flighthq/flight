@@ -47,6 +47,7 @@
     "@flighthq/device": "*",
     "@flighthq/dialog": "*",
     "@flighthq/filesystem": "*",
+    "@flighthq/font": "*",
     "@flighthq/geolocation": "*",
     "@flighthq/glyphatlas": "*",
     "@flighthq/haptics": "*",

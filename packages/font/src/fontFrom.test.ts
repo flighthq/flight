@@ -1,4 +1,7 @@
+import type { FontLoadingBackend } from '@flighthq/types/contract';
+
 import { loadFontFromBytes, loadFontFromName, loadFontFromUrl, loadFontFromUrls } from './fontFrom';
+import { resetFontLoadingBackendForTest, setFontLoadingBackend } from './fontLoading';
 
 interface FontFaceConstruction {
   family: string;
@@ -13,32 +16,28 @@ let loadMock: ReturnType<typeof vi.fn>;
 class MockFontFace {
   load = vi.fn().mockResolvedValue(undefined);
   constructor(family: string, source: string | ArrayBuffer) {
-    const construction = { family, source, instance: this };
-    constructions.push(construction);
+    constructions.push({ family, source, instance: this });
   }
 }
 
-// Re-applied per test (not once) and torn down, so under a shared (isolate:false) worker with
-// unstubGlobals the FontFace stub survives every test and the document.fonts patch never leaks out.
-let originalFonts: PropertyDescriptor | undefined;
 beforeEach(() => {
   constructions = [];
   addMock = vi.fn();
   loadMock = vi.fn().mockResolvedValue([]);
   vi.stubGlobal('FontFace', MockFontFace);
-  originalFonts = Object.getOwnPropertyDescriptor(document, 'fonts');
-  Object.defineProperty(document, 'fonts', {
-    value: { add: addMock, load: loadMock },
-    configurable: true,
-  });
+  const backend: FontLoadingBackend = {
+    addFontFace: addMock,
+    checkFontFace: vi.fn().mockReturnValue(false),
+    loadFontFaces: loadMock,
+    whenReady: vi.fn().mockResolvedValue(undefined),
+  };
+  setFontLoadingBackend(backend);
 });
 
 afterEach(() => {
-  if (originalFonts) {
-    Object.defineProperty(document, 'fonts', originalFonts);
-  } else {
-    delete (document as unknown as { fonts?: unknown }).fonts;
-  }
+  resetFontLoadingBackendForTest();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('loadFontFromBytes', () => {
@@ -47,7 +46,7 @@ describe('loadFontFromBytes', () => {
     expect(font.name).toBe('TestFont');
   });
 
-  it('loads the face and registers it with document.fonts', async () => {
+  it('loads the face and registers it via the backend', async () => {
     await loadFontFromBytes(new Uint8Array(8), 'TestFont');
     expect(constructions).toHaveLength(1);
     expect(constructions[0].family).toBe('TestFont');

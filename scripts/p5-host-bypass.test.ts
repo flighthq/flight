@@ -62,7 +62,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=21 direct-dom=8 input-ingress=0 frame-scheduling=0 scratch-surface=13 render-surface=0 webgpu-acquisition=0',
+      'P5 outstanding=17 direct-dom=4 input-ingress=0 frame-scheduling=0 scratch-surface=13 render-surface=0 webgpu-acquisition=0',
     );
     expect(p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
@@ -248,7 +248,7 @@ describe('P5 host-bypass derived gate', () => {
     );
   }, 30_000);
 
-  it('mutation-proves an extra removal fails the exact live-current assertion at total 20', () => {
+  it('mutation-proves an extra removal fails the exact live-current assertion at total 16', () => {
     const clean = scanP5HostBypasses(ROOT);
     const otherScratch = clean.p5.find((site) => site.kind === 'scratch-surface')!;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
@@ -259,7 +259,7 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(p5HostBypassCurrentBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([
       'P5 current scratch-surface: found 12, expected 13',
-      'P5 current outstanding: found 20, expected 21',
+      'P5 current outstanding: found 16, expected 17',
     ]);
   }, 30_000);
 
@@ -538,6 +538,54 @@ describe('P5 host-bypass derived gate', () => {
         },
         reason: 'Video MIME capability probing routed through the selected video capability backend',
         total: 21,
+      },
+      {
+        budget: {
+          'direct-dom': 7,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 13,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Font face loading routed through the selected font-loading backend',
+        total: 20,
+      },
+      {
+        budget: {
+          'direct-dom': 6,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 13,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Font face registration routed through the selected font-loading backend',
+        total: 19,
+      },
+      {
+        budget: {
+          'direct-dom': 5,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 13,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Font availability check routed through the selected font-loading backend',
+        total: 18,
+      },
+      {
+        budget: {
+          'direct-dom': 4,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 13,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Font readiness query routed through the selected font-loading backend',
+        total: 17,
       },
     ]);
     expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
@@ -889,8 +937,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(3);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(11);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 11, budget 8');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(7);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 7, budget 4');
   }, 30_000);
 
   it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
@@ -929,8 +977,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(1);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(9);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 9, budget 8');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(5);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 5, budget 4');
   }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {

@@ -1,3 +1,6 @@
+import type { FontLoadingBackend } from '@flighthq/types/contract';
+
+import { resetFontLoadingBackendForTest, setFontLoadingBackend } from './fontLoading';
 import { createFontResource } from './fontResource';
 import {
   loadFontResourceFromBytes,
@@ -23,28 +26,22 @@ class MockFontFace {
   }
 }
 
-// Mirrors the harness in fontFrom.test.ts, including its restore discipline: the document.fonts
-// descriptor is saved and put back per test rather than left overwritten, so under a shared
-// (isolate:false) worker the patch cannot leak into a sibling file.
-let originalFonts: PropertyDescriptor | undefined;
 beforeEach(() => {
   constructions = [];
   addMock = vi.fn();
   loadMock = vi.fn().mockResolvedValue([]);
   vi.stubGlobal('FontFace', MockFontFace);
-  originalFonts = Object.getOwnPropertyDescriptor(document, 'fonts');
-  Object.defineProperty(document, 'fonts', {
-    value: { add: addMock, load: loadMock },
-    configurable: true,
-  });
+  const backend: FontLoadingBackend = {
+    addFontFace: addMock,
+    checkFontFace: vi.fn().mockReturnValue(false),
+    loadFontFaces: loadMock,
+    whenReady: vi.fn().mockResolvedValue(undefined),
+  };
+  setFontLoadingBackend(backend);
 });
 
 afterEach(() => {
-  if (originalFonts) {
-    Object.defineProperty(document, 'fonts', originalFonts);
-  } else {
-    delete (document as unknown as { fonts?: unknown }).fonts;
-  }
+  resetFontLoadingBackendForTest();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -62,8 +59,6 @@ describe('loadFontResourceFromBytes', () => {
   });
 
   it('slices only the view bytes out of a larger backing buffer', async () => {
-    // This integration assertion pins that the resource wrapper forwards its view to the canonical
-    // byte loader rather than widening it back to the whole buffer.
     const backing = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
     await loadFontResourceFromBytes(createFontResource('TestFont'), backing.subarray(2, 6));
     expect(new Uint8Array(constructions[0].source as ArrayBuffer)).toEqual(new Uint8Array([3, 4, 5, 6]));
@@ -85,9 +80,6 @@ describe('loadFontResourceFromBytes', () => {
   });
 
   it('leaves a previously loaded face attached when a reload fails', async () => {
-    // The contract this pins: `face` is assigned only after the load resolves, so a failed reload
-    // rejects and leaves the resource on the font it already had rather than blanking it. A caller
-    // that ignores the rejection keeps rendering with a working font instead of losing one.
     const resource = createFontResource('TestFont');
     await loadFontResourceFromBytes(resource, new Uint8Array(4));
     const loaded = resource.face;
@@ -118,7 +110,7 @@ describe('loadFontResourceFromName', () => {
     expect(loadMock).toHaveBeenCalledWith("1em 'Josh\\'s Font'");
   });
 
-  it('attaches the first face when the document returns several', async () => {
+  it('attaches the first face when the backend returns several', async () => {
     const first = { family: 'first' } as unknown as FontFace;
     const second = { family: 'second' } as unknown as FontFace;
     loadMock.mockResolvedValue([first, second]);
@@ -181,9 +173,6 @@ describe('loadFontResourceFromUrl', () => {
 
 describe('loadFontResourceFromUrls', () => {
   it('composes a comma-joined src with explicit and inferred format() hints', async () => {
-    // The block this replaces was titled "builds a multi-source src string" and asserted nothing
-    // about the string — only that a face was attached. The composed src is the whole point of this
-    // function, and it was the one thing not checked.
     const resource = createFontResource('MyFont');
     const result = await loadFontResourceFromUrls(resource, [
       { url: 'font.woff2', format: 'woff2' },
