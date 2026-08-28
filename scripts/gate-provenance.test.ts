@@ -60,14 +60,10 @@ describe('every derived gate prints its provenance', () => {
       name: 'backend-operation-seam',
       render: () =>
         formatBackendOperationSeamReport({
-          covered: [],
           entries: [],
           enforced: 0,
-          extraneous: [],
           notMigrated: 0,
-          population: [],
           total: 0,
-          uncovered: [],
           violations: [],
         }),
     },
