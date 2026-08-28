@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -50,6 +51,7 @@ declareExpectedImageDescription(
 // vignette. The pipeline ping-pongs between offscreen targets so each scene2d reads the previous
 // scene2d's output, proving multi-scene2d ordering. HDR (rgba16f) keeps the bright pass for bloom.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

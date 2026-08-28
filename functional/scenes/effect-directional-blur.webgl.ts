@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -39,6 +40,7 @@ declareExpectedImageDescription(
     'their positions and their colours; only their edges are drawn out.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

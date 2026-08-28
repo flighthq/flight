@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -40,6 +41,7 @@ declareExpectedImageDescription(
 // Lens flare [HDR]: bright shapes above the threshold seed ghosts and a halo mirrored through the
 // frame center, run through an HDR (rgba16f) pipeline so bright spots carry the flare.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

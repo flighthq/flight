@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -38,6 +39,7 @@ declareExpectedImageDescription(
 // screenSpaceFog is depth-driven [DEPTH]. These tests carry no sampleable depth buffer, so the Gl
 // recipe falls back to a color-only flat fog tint over the frame rather than depth-graded fog.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

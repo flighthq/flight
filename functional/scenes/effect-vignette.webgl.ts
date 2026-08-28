@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -37,6 +38,7 @@ declareExpectedImageDescription(
 // Vignette: a full-bleed bright fill darkened toward the corners. The center stays bright while the
 // edges fall off, so the radial darkening is obvious against the flat fill.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

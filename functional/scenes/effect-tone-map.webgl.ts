@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -38,6 +39,7 @@ declareExpectedImageDescription(
 // Tone map: bright HDR content (rendered into an rgba16f target) is compressed back to displayable
 // range by the ACES operator with raised exposure. Highlights roll off instead of clipping to flat white.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

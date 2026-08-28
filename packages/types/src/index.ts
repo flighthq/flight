@@ -298,6 +298,7 @@ export * from './GradientGlowEffect';
 export * from './GradientSpread';
 export * from './GridSliceOptions';
 export * from './Group';
+export * from './GlRenderSurfaceProvider';
 export * from './HalftoneEffect';
 export * from './Haptics';
 export * from './HasAppearance';

@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -34,6 +35,7 @@ declareExpectedImageDescription(
 // also runs a bloom scene2d. This proves the MSAA-resolve and the effect-compose paths cooperate — the
 // rotated shapes' edges resolve smooth while their bright interiors still bloom a soft halo.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

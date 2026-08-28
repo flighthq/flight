@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Node2D, GlRenderEffectPipeline, GlRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
   AdvancedBlendMode,
@@ -55,6 +56,7 @@ declareExpectedImageDescription(
 //   - backdrop-only region → passes through as the layer is transparent there, reading ~backdrop colour.
 // A passthrough (blend not applied) would leave the white foreground white in the overlap — the failing case.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

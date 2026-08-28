@@ -1,4 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
   beginGlRenderPass,
   createGlCanvasElement,
@@ -28,6 +29,7 @@ export const scale = window.devicePixelRatio || 1;
 // produced a usable target rather than a blank/incomplete framebuffer.
 export const minCoverage = 0;
 
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(canvas, {

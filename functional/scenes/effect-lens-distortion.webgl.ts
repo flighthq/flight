@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   getBitmapPixelRgb,
@@ -33,6 +34,7 @@ declareExpectedImageDescription(
 // Lens distortion: a positive amount bows the frame outward (barrel). Off-center shapes near the
 // edges curve away from straight lines, most visible at the corners.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

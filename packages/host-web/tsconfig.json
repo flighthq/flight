@@ -33,6 +33,7 @@
     { "path": "../platform" },
     { "path": "../power" },
     { "path": "../protocol" },
+    { "path": "../render-gl" },
     { "path": "../screen" },
     { "path": "../sensors" },
     { "path": "../share" },

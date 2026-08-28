@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -8,6 +9,11 @@ import {
   createP5HostBypassReport,
   deriveP5InputIngressListenerOperations,
   formatP5HostBypassReport,
+  p5GlExampleRunnerOwnershipFailures,
+  p5GlRenderSurfaceConsumerFailures,
+  p5GlRenderSurfaceConsumerSourceFailures,
+  p5GlRenderSurfaceProviderBoundaryFailures,
+  p5GlRenderSurfaceRepairFailures,
   P5_HOST_BYPASS_BUDGET,
   P5_HOST_BYPASS_BUDGET_HISTORY,
   P5_HOST_BYPASS_CLASSIFICATION_HISTORY,
@@ -38,7 +44,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=28 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=2 webgpu-acquisition=0',
+      'P5 outstanding=27 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=1 webgpu-acquisition=0',
     );
     expect(formatted).toContain(
       'v1 -> v2 total 30 -> 30 (0 census delta) recategorised=2 from-to=direct-dom->input-ingress=2 new=0 detected=none',
@@ -53,7 +59,6 @@ describe('P5 host-bypass derived gate', () => {
     expect(formatted).toContain(
       '28 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=2 webgpu-acquisition=0 — P5 taxonomy v4 classification baseline',
     );
-    expect(formatted).toContain('render-surface packages/render-gl/src/glElement.ts:2:18');
     expect(formatted).toContain('render-surface packages/render-wgpu/src/wgpuElement.ts:2:18');
     expect(formatted).toContain('28 (-5 fixed)');
     expect(formatted).toContain('DETECTS hand-written floor (not an exhaustive ceiling):');
@@ -72,6 +77,70 @@ describe('P5 host-bypass derived gate', () => {
       'P5 seam-slice guidance no longer requires same-slice production consumer migration',
     );
   });
+
+  it('derives GL surface ownership for every direct functional consumer and both shared owners', () => {
+    expect(p5GlRenderSurfaceConsumerFailures(ROOT)).toEqual([]);
+  });
+
+  it('mutation-proves a direct functional GL consumer cannot omit its Web enabler', () => {
+    const file = 'functional/scenes/camera-orthographic.webgl.ts';
+    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebGlRenderSurface();', '');
+    expect(p5GlRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
+      expect.stringContaining('GL surface creation is not immediately preceded by enableHostWebGlRenderSurface()'),
+    ]);
+  });
+
+  it('mutation-proves the shared functional harness cannot omit its Web enabler', () => {
+    const file = 'tools/harness/webgl.ts';
+    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebGlRenderSurface();', '');
+    expect(p5GlRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
+      expect.stringContaining('GL surface creation is not immediately preceded by enableHostWebGlRenderSurface()'),
+    ]);
+  });
+
+  it('mutation-proves the generated example WebGL owner cannot omit its Web enabler', () => {
+    const source = readFileSync(join(ROOT, 'examples/runners/web/vite.config.ts'), 'utf8').replace(
+      '`enableHostWebGlRenderSurface();`',
+      '`mutation removed WebGL surface enabler`',
+    );
+    expect(p5GlExampleRunnerOwnershipFailures(source)).toContain(
+      'examples WebGL entry does not call enableHostWebGlRenderSurface()',
+    );
+  });
+
+  it('pins the portable GL provider against DOM restoration and WGPU cross-fallback', () => {
+    const source = readFileSync(join(ROOT, 'packages/render-gl/src/glElement.ts'), 'utf8');
+    expect(p5GlRenderSurfaceProviderBoundaryFailures(source)).toEqual([]);
+    expect(p5GlRenderSurfaceProviderBoundaryFailures(`${source}\ncreateWgpuCanvasElement(1, 1);`)).toContain(
+      'portable GL surface provider crosses into the WGPU surface boundary',
+    );
+    expect(p5GlRenderSurfaceProviderBoundaryFailures(`${source}\ndocument.createElement('canvas');`)).toContain(
+      'portable GL surface provider reads document instead of returning null',
+    );
+  });
+
+  it('pins the exact remaining S08 WGPU render-surface site', () => {
+    const report = scanP5HostBypasses(ROOT);
+    expect(p5GlRenderSurfaceRepairFailures(report)).toEqual([]);
+    const withoutWgpu = createP5HostBypassReport(
+      report.scannedFiles,
+      [...report.p5, ...report.excluded].filter((site) => site.kind !== 'render-surface'),
+    );
+    expect(p5GlRenderSurfaceRepairFailures(withoutWgpu)).toContain(
+      'S07 must leave exactly the WGPU render surface; found []',
+    );
+  }, 30_000);
+
+  it('mutation-proves restoring the portable GL DOM factory exceeds the v4 render ratchet', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    const restored = scanP5HostBypassSource(
+      'packages/render-gl/src/glElement.ts',
+      `export function createGlCanvasElement() { return document.createElement('canvas'); }`,
+    );
+    const mutated = createP5HostBypassReport(clean.scannedFiles, [...clean.p5, ...clean.excluded, ...restored]);
+    expect(countP5HostBypasses(mutated)['render-surface']).toBe(2);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('render-surface: found 2, budget 1');
+  }, 30_000);
 
   it('pins detector provenance against removal and false exhaustive wording', () => {
     expect(P5_HOST_BYPASS_DETECTOR_PROVENANCE).toEqual({
@@ -251,6 +320,18 @@ describe('P5 host-bypass derived gate', () => {
         },
         reason: 'P5 taxonomy v4 classification baseline',
         total: 28,
+      },
+      {
+        budget: {
+          'direct-dom': 12,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 14,
+          'render-surface': 1,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'GL root-surface creation routed through the selected GL render-surface provider',
+        total: 27,
       },
     ]);
     expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);

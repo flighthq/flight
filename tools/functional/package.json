@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@flighthq/host-web": "*"
+  },
   "scripts": {
     "predev": "tsx ../../scripts/download-cached.ts",
     "dev": "vite --config vite.config.ts",

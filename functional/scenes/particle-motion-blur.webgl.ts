@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a dim smear on a near-black field: the whole frame spans 16,16,20 to about 25,30,37, so
 // committed contrast is 0.57-0.62. `assertRender` checks both the aggregate smear population and the radial
@@ -56,6 +57,7 @@ declareExpectedImageDescription(
 // The particle emitter writes per-particle velocity into the G-buffer (registerGlVelocityWriter with
 // the particle writer); the motion-blur effect then smears each particle along its own ring-radial vector.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

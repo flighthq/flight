@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 // mesh-tangent-mirror-handedness — gates the tangent-handedness half of the mirrored-model fix: that a
 // model transform with a negative determinant reaches tangent.w, so the bitangent (rebuilt in the shader
 // as w * cross(N, T)) is reconstructed with the correct hand on a mirrored instance.
@@ -74,6 +75,7 @@ declareExpectedImageDescription(
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

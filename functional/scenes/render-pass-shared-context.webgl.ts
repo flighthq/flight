@@ -1,4 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createRenderCache } from '@flighthq/render';
 import {
   beginGlRenderPass,
@@ -29,6 +30,7 @@ export const scale = window.devicePixelRatio || 1;
 // so it always reads 0. assertRender below is the real check.
 export const minCoverage = 0;
 
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(canvas, {

@@ -10,6 +10,7 @@ export { enableHostWebDevice } from './webDevice';
 export { enableHostWebDialog } from './webDialog';
 export { enableHostWebFileSystem } from './webFilesystem';
 export { enableHostWebGeolocation } from './webGeolocation';
+export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 export { enableHostWebHaptics } from './webHaptics';
 export { enableHostWebImage } from './webImage';

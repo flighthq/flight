@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -38,6 +39,7 @@ declareExpectedImageDescription(
 // SMAA antialiases the whole frame. This is a single-pass approximation of SMAA (not the full
 // edge/blend-weight/neighborhood three-pass), smoothing the jagged diagonal edges.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
