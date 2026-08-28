@@ -122,3 +122,41 @@ describe('createTauriTrayBackend', () => {
     expect(backend.isDestroyed(id)).toBe(true);
   });
 });
+
+// ★ THE REJECTION AXIS. `destroy(id)` closes the tray through `icon.close()`, which returns a promise
+// that teardown cannot await. The `.catch` at the call site is the only thing preventing a rejected
+// close from escaping as an unhandled rejection, and nothing exercised it — the host suites contained
+// no rejecting-promise fixture at all, on any host. This drives the failing half of that branch.
+describe('createTauriTrayBackend teardown when the platform close rejects', () => {
+  it('still forgets the tray and raises no unhandled rejection', async () => {
+    const { tauri } = fakeTauri();
+    const rejecting = tauri as unknown as {
+      tray: { TrayIcon: { new: (options?: TauriTrayIconOptions) => Promise<unknown> } };
+    };
+    rejecting.tray.TrayIcon.new = async () => ({
+      close: () => Promise.reject(new Error('close refused by the platform')),
+      setIcon: async () => {},
+      setMenu: async () => {},
+      setTitle: async () => {},
+      setTooltip: async () => {},
+    });
+
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown): void => void unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const backend = createTauriTrayBackend(tauri);
+      const id = backend.create({ title: 'Flight' });
+      await flush();
+
+      backend.destroy(id);
+      // The record is dropped synchronously, so a rejected close cannot strand a tray in the registry.
+      expect(backend.listIds()).not.toContain(id);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+  });
+});
