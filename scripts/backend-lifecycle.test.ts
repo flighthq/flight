@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  collectMethodSyntaxTeardowns,
   collectWholeBackendTeardowns,
   createBackendLifecycleReport,
   formatBackendLifecycleReport,
@@ -46,6 +47,24 @@ describe('backend replacement lifetime census', () => {
   it('includes the whole-backend teardowns that exist', () => {
     expect(teardowns.get('LogTransportBackend')).toBe('destroy');
     expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
+  });
+
+  // ★ WHY WIDENING THE PARSER LEFT THE LIVE COUNT WHERE IT WAS — stated executably, because a number
+  // explained only in prose drifts from the code that produced it.
+  //
+  // The gate accepts a zero-arity teardown in either declaration syntax. Comparing that against the old
+  // method-only reader answers, from the live tree, whether accepting property form changed WHICH backends
+  // are counted. It does not: no interface currently declares a callable property named `destroy` or
+  // `dispose` — the six property-form members that exist are all `TextShaperBackend` operations
+  // (`shapeRun?` and five siblings). So the population is unchanged for that reason, not by luck.
+  //
+  // The next property-form teardown someone writes IS caught — the specimen below proves that — and on
+  // that day these two readers disagree and this test fails, which is exactly when the recorded count
+  // should be updated rather than quietly discovered to be stale.
+  it('is unchanged by accepting property syntax, because no callable property is named destroy or dispose', () => {
+    const methodOnly = collectMethodSyntaxTeardowns(packageSourceFiles('types'));
+    expect([...teardowns.keys()].sort()).toEqual([...methodOnly.keys()].sort());
+    expect(report.enforced).toBe(methodOnly.size);
   });
 
   // ★ THE FLOOR, and it must be raised by every slice that adds a teardown hook. Without it this gate has
