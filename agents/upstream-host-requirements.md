@@ -83,6 +83,27 @@ wrong. `npm run check <package>` did not catch the break at all, because its typ
 package-scoped and never compiles consumers — **an interface change requires a consumer typecheck**
 (`npx tsc --noEmit -p tsconfig.json`, or the consuming package's own project), never a package-scoped one.
 
+### WindowBackend P1 population and host rosters — ruled 2026-08-28
+
+HostLime is the motivating downstream consumer: it currently has to publish stubs for all 28 P1 window
+operations even when the host cannot perform them. `attach` is not in this population; it is the separately
+ruled P4 existing-window operation. The 28 split into 25 safe absent commands, one capability-owned output
+fallback (`getBounds`), and the manual `open` / `close` lifecycle pair.
+
+The existing host adapters establish the exact structural target:
+
+| Host | Implemented P1 operations | Absent P1 operations | Justification |
+| --- | --- | --- | --- |
+| Web | **10:** `open`, `close`, `focus`, `setTitle`, `setIcon`, `getBounds`, `setPosition`, `setSize`, `center`, `setFullscreen` | **18:** `flashWindowFrame`, `hide`, `maximize`, `minimize`, `requestAttention`, `restore`, `setAlwaysOnTop`, `setContentProtection`, `setHasShadow`, `setMaximumSize`, `setMenuBarVisible`, `setMinimumSize`, `setOpacity`, `setParent`, `setProgress`, `setResizable`, `setSkipTaskbar`, `show` | The implemented set maps to page-window, document, geometry and fullscreen APIs. Desktop window chrome, taskbar and native ownership commands have no web implementation and must be absent. |
+| Tauri | **24:** every P1 operation except the four named absent | **4:** `setOpacity`, `setMenuBarVisible`, `setParent`, `setProgress` | The current adapter has no modeled Tauri operation for these four; every other member calls the Tauri window API or honestly returns the mirrored entity bounds. |
+| Electron | **28:** every P1 operation | **0** | Every member maps to `BrowserWindow`; returning early for an absent or destroyed per-window record is target state, not missing platform capability. |
+
+These rosters are migration evidence, not a parallel production capability table. Runtime support is still
+derived only from method presence, and exact adapter tests make a restored false member or accidental omission
+fail. The interface-wide public `hasWindowOperation` / `explainWindowOperation` seam remains withheld until the
+25 commands, `getBounds`, and `open` / `close` have all migrated, so the derived seam gate cannot overclaim a
+partially completed interface.
+
 ### What this is NOT
 
 Legitimate host capability limitations are not defects. Lime cannot provide rich clipboard formats, POSIX file operations, or arbitrary haptic patterns — those are real platform limits. The requirement is that Flight can **represent these limits truthfully**, not that every host implements everything.

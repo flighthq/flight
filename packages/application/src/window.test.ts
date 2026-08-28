@@ -70,6 +70,78 @@ import {
   showWindow,
 } from './window';
 
+type WindowOperation = Exclude<keyof WindowBackend, 'attach'>;
+type WindowOperationClass = 'B' | 'C' | 'manual';
+
+const WINDOW_OPERATION_CLASSES = {
+  center: 'B',
+  close: 'manual',
+  flashWindowFrame: 'B',
+  focus: 'B',
+  getBounds: 'C',
+  hide: 'B',
+  maximize: 'B',
+  minimize: 'B',
+  open: 'manual',
+  requestAttention: 'B',
+  restore: 'B',
+  setAlwaysOnTop: 'B',
+  setContentProtection: 'B',
+  setFullscreen: 'B',
+  setHasShadow: 'B',
+  setIcon: 'B',
+  setMaximumSize: 'B',
+  setMenuBarVisible: 'B',
+  setMinimumSize: 'B',
+  setOpacity: 'B',
+  setParent: 'B',
+  setPosition: 'B',
+  setProgress: 'B',
+  setResizable: 'B',
+  setSize: 'B',
+  setSkipTaskbar: 'B',
+  setTitle: 'B',
+  show: 'B',
+} as const satisfies Record<WindowOperation, WindowOperationClass>;
+
+type WindowBOperation = {
+  [Operation in WindowOperation]: (typeof WINDOW_OPERATION_CLASSES)[Operation] extends 'B' ? Operation : never;
+}[WindowOperation];
+
+const WINDOW_B_OPERATION_CALLS = {
+  center: (win) => centerWindow(win),
+  flashWindowFrame: (win) => flashWindowFrame(win),
+  focus: (win) => focusWindow(win),
+  hide: (win) => hideWindow(win),
+  maximize: (win) => maximizeWindow(win),
+  minimize: (win) => minimizeWindow(win),
+  requestAttention: (win) => requestWindowAttention(win, true),
+  restore: (win) => {
+    win.minimized = true;
+    restoreWindow(win);
+  },
+  setAlwaysOnTop: (win) => setWindowAlwaysOnTop(win, true),
+  setContentProtection: (win) => setWindowContentProtection(win, true),
+  setFullscreen: (win) => setWindowFullscreen(win, true),
+  setHasShadow: (win) => setWindowHasShadow(win, true),
+  setIcon: (win) => setWindowIcon(win, 'icon.png'),
+  setMaximumSize: (win) => setWindowMaximumSize(win, 1920, 1080),
+  setMenuBarVisible: (win) => setWindowMenuBarVisible(win, false),
+  setMinimumSize: (win) => setWindowMinimumSize(win, 320, 240),
+  setOpacity: (win) => setWindowOpacity(win, 0.5),
+  setParent: (win) => setWindowParent(win, null),
+  setPosition: (win) => setWindowPosition(win, 10, 20),
+  setProgress: (win) => setWindowProgress(win, 0.5),
+  setResizable: (win) => setWindowResizable(win, false),
+  setSize: (win) => setWindowSize(win, 640, 480),
+  setSkipTaskbar: (win) => setWindowSkipTaskbar(win, true),
+  setTitle: (win) => setWindowTitle(win, 'Flight'),
+  show: (win) => {
+    win.visible = false;
+    showWindow(win);
+  },
+} satisfies Record<WindowBOperation, (win: ReturnType<typeof createApplicationWindow>) => void>;
+
 function makeRenderState(): RenderState {
   return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
 }
@@ -171,6 +243,23 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
     setHasShadow(_win, hasShadow) {
       calls.push(`setHasShadow:${hasShadow}`);
     },
+  };
+}
+
+function partialWindowBackend(operations: Partial<WindowBackend> = {}): WindowBackend {
+  return {
+    close() {},
+    getBounds(win, out) {
+      out.x = win.x;
+      out.y = win.y;
+      out.width = win.width;
+      out.height = win.height;
+      return out;
+    },
+    open() {
+      return false;
+    },
+    ...operations,
   };
 }
 
@@ -1393,5 +1482,122 @@ describe('showWindow', () => {
     showWindow(win);
     expect(win.visible).toBe(true);
     expect(backend.calls).toContain('show');
+  });
+});
+
+describe('WindowBackend B-class migration axes', () => {
+  it('classification-population axis: derives the exact 28-operation 25/1/2 partition without attach', () => {
+    const counts: Record<WindowOperationClass, number> = { B: 0, C: 0, manual: 0 };
+    for (const classification of Object.values(WINDOW_OPERATION_CLASSES)) counts[classification]++;
+
+    expect(Object.keys(WINDOW_OPERATION_CLASSES)).toHaveLength(28);
+    expect(WINDOW_OPERATION_CLASSES).not.toHaveProperty('attach');
+    expect(counts).toEqual({ B: 25, C: 1, manual: 2 });
+  });
+
+  it('sentinel-exclusion axis: publishes no B member and every absent B command remains safe', () => {
+    expect(Object.keys(getWindowBackend()).sort()).toEqual(['close', 'getBounds', 'open']);
+
+    for (const invoke of Object.values(WINDOW_B_OPERATION_CALLS)) {
+      expect(() => invoke(createApplicationWindow())).not.toThrow();
+    }
+  });
+
+  it('precedence axis: a custom B member wins over the same host member', () => {
+    const calls: string[] = [];
+    installWindowHostBackend(
+      partialWindowBackend({
+        setTitle() {
+          calls.push('host');
+        },
+      }),
+    );
+    setWindowBackend(
+      partialWindowBackend({
+        setTitle() {
+          calls.push('custom');
+        },
+      }),
+    );
+
+    setWindowTitle(createApplicationWindow(), 'Flight');
+
+    expect(calls).toEqual(['custom']);
+  });
+
+  it('dispatch-alignment axis: an uncovered custom B member falls through to the host member', () => {
+    const calls: string[] = [];
+    installWindowHostBackend(
+      partialWindowBackend({
+        setProgress() {
+          calls.push('host:setProgress');
+        },
+      }),
+    );
+    setWindowBackend(
+      partialWindowBackend({
+        setTitle() {
+          calls.push('custom:setTitle');
+        },
+      }),
+    );
+    const win = createApplicationWindow();
+
+    setWindowTitle(win, 'Flight');
+    setWindowProgress(win, 0.5);
+
+    expect(calls).toEqual(['custom:setTitle', 'host:setProgress']);
+  });
+
+  it('core-state axis: absent B providers preserve capability-owned state and signal changes', () => {
+    const win = createApplicationWindow();
+    const signals = { fullscreen: 0, maximize: 0, minimize: 0, move: 0, resize: 0, restore: 0 };
+    connectSignal(win.onFullscreenChanged, () => signals.fullscreen++);
+    connectSignal(win.onMaximize, () => signals.maximize++);
+    connectSignal(win.onMinimize, () => signals.minimize++);
+    connectSignal(win.onMove, () => signals.move++);
+    connectSignal(win.onResize, () => signals.resize++);
+    connectSignal(win.onRestore, () => signals.restore++);
+
+    focusWindow(win);
+    hideWindow(win);
+    maximizeWindow(win);
+    minimizeWindow(win);
+    restoreWindow(win);
+    setWindowAlwaysOnTop(win, true);
+    setWindowFullscreen(win, true);
+    setWindowIcon(win, 'icon.png');
+    setWindowMaximumSize(win, 1920, 1080);
+    setWindowMinimumSize(win, 320, 240);
+    setWindowOpacity(win, 0.5);
+    setWindowPosition(win, 10, 20);
+    setWindowResizable(win, false);
+    setWindowSize(win, 640, 480);
+    setWindowSkipTaskbar(win, true);
+    setWindowTitle(win, 'Flight');
+    showWindow(win);
+
+    expect(win).toMatchObject({
+      alwaysOnTop: true,
+      focused: true,
+      fullscreen: true,
+      height: 480,
+      icon: 'icon.png',
+      maxHeight: 1080,
+      maximized: false,
+      maxWidth: 1920,
+      minHeight: 240,
+      minimized: false,
+      minWidth: 320,
+      opacity: 0.5,
+      resizable: false,
+      skipTaskbar: true,
+      title: 'Flight',
+      visible: true,
+      width: 640,
+      x: 10,
+      y: 20,
+    });
+    expect(signals).toEqual({ fullscreen: 1, maximize: 1, minimize: 1, move: 1, resize: 1, restore: 1 });
   });
 });

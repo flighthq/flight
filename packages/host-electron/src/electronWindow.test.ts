@@ -144,6 +144,46 @@ function fakeElectron(): { electron: ElectronApi; created: FakeBrowserWindow[] }
 beforeEach(() => resetElectronWindowBackendForTest());
 
 describe('createElectronWindowBackend', () => {
+  it('adapter-roster axis: publishes all 28 P1 operations without false omissions', () => {
+    const { electron } = fakeElectron();
+    const backend = createElectronWindowBackend(electron);
+
+    expect(
+      Object.keys(backend)
+        .filter((operation) => operation !== 'attach')
+        .sort(),
+    ).toEqual([
+      'center',
+      'close',
+      'flashWindowFrame',
+      'focus',
+      'getBounds',
+      'hide',
+      'maximize',
+      'minimize',
+      'open',
+      'requestAttention',
+      'restore',
+      'setAlwaysOnTop',
+      'setContentProtection',
+      'setFullscreen',
+      'setHasShadow',
+      'setIcon',
+      'setMaximumSize',
+      'setMenuBarVisible',
+      'setMinimumSize',
+      'setOpacity',
+      'setParent',
+      'setPosition',
+      'setProgress',
+      'setResizable',
+      'setSize',
+      'setSkipTaskbar',
+      'setTitle',
+      'show',
+    ]);
+  });
+
   it('open creates a BrowserWindow and forwards commands to it', () => {
     const { electron, created } = fakeElectron();
     const backend = createElectronWindowBackend(electron);
@@ -151,7 +191,7 @@ describe('createElectronWindowBackend', () => {
     expect(backend.open(win, { title: 'Flight', width: 640, height: 480 })).toBe(true);
     expect(created).toHaveLength(1);
     expect(created[0].options.title).toBe('Flight');
-    backend.setTitle(win, 'Renamed');
+    backend.setTitle!(win, 'Renamed');
     expect(created[0].calls).toContainEqual({ method: 'setTitle', args: ['Renamed'] });
   });
 

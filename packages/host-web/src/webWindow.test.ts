@@ -2,6 +2,7 @@ import {
   attachWindow,
   closeWindow,
   createApplicationWindow,
+  getWindowBackend,
   resetWindowBackendForTest,
 } from '@flighthq/application/contract';
 import { connectSignal } from '@flighthq/signals/contract';
@@ -17,6 +18,27 @@ describe('enableHostWebWindow', () => {
 
   it('does not throw on first call', () => {
     expect(() => enableHostWebWindow()).not.toThrow();
+  });
+
+  it('adapter-roster axis: publishes exactly the 10 genuine P1 operations and omits all 18 false ones', () => {
+    enableHostWebWindow();
+
+    expect(
+      Object.keys(getWindowBackend())
+        .filter((operation) => operation !== 'attach')
+        .sort(),
+    ).toEqual([
+      'center',
+      'close',
+      'focus',
+      'getBounds',
+      'open',
+      'setFullscreen',
+      'setIcon',
+      'setPosition',
+      'setSize',
+      'setTitle',
+    ]);
   });
 
   it('is idempotent', () => {

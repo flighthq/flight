@@ -66,7 +66,6 @@ export function enableHostWebWindow(): void {
       detach(win, true);
       observeWindowHostResult('close', true);
     },
-    flashWindowFrame() {},
     focus(win) {
       const handle = getHandle(win);
       if (handle !== null && typeof handle.focus === 'function') {
@@ -91,18 +90,11 @@ export function enableHostWebWindow(): void {
       observeWindowHostResult('getBounds', true);
       return out;
     },
-    hide() {},
-    maximize() {},
-    minimize() {},
     open(win) {
       const result = typeof window !== 'undefined' && attach(win, window, 'host');
       observeWindowHostResult('open', result);
       return result;
     },
-    requestAttention() {},
-    restore() {},
-    setAlwaysOnTop() {},
-    setContentProtection() {},
     setFullscreen(win, fullscreen) {
       const document = getHandle(win)?.document;
       if (document === undefined) return;
@@ -114,7 +106,6 @@ export function enableHostWebWindow(): void {
         observeWindowHostResult('setFullscreen', false);
       }
     },
-    setHasShadow() {},
     setIcon(win, icon) {
       const document = getHandle(win)?.document;
       if (document === undefined) return;
@@ -127,11 +118,6 @@ export function enableHostWebWindow(): void {
       link.href = icon;
       observeWindowHostResult('setIcon', true);
     },
-    setMaximumSize() {},
-    setMenuBarVisible() {},
-    setMinimumSize() {},
-    setOpacity() {},
-    setParent() {},
     setPosition(win, x, y) {
       const handle = getHandle(win);
       if (handle !== null && typeof handle.moveTo === 'function') {
@@ -143,8 +129,6 @@ export function enableHostWebWindow(): void {
         }
       }
     },
-    setProgress() {},
-    setResizable() {},
     setSize(win, width, height) {
       const handle = getHandle(win);
       if (handle !== null && typeof handle.resizeTo === 'function') {
@@ -156,7 +140,6 @@ export function enableHostWebWindow(): void {
         }
       }
     },
-    setSkipTaskbar() {},
     setTitle(win, title) {
       const document = getHandle(win)?.document;
       if (document !== undefined) {
@@ -164,7 +147,6 @@ export function enableHostWebWindow(): void {
         observeWindowHostResult('setTitle', true);
       }
     },
-    show() {},
   };
   installWindowHostBackend(backend);
 }
