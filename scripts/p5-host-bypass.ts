@@ -73,6 +73,11 @@ export interface P5HostBypassV3BudgetEvidence {
 export interface P5HostBypassV4BudgetEvidence {
   readonly budget: P5HostBypassBudget;
   readonly reason: string;
+  // Sites this checkpoint repaired, DECLARED by the entry rather than inferred from its position. The
+  // delta alone cannot tell "repaired three sites" from "repaired one and mis-stated the total", and the
+  // index-keyed table this replaces encoded that fact in a place no entry could keep true: inserting a
+  // checkpoint ahead of pointer-lock would have silently reassigned its exception to a different repair.
+  readonly repairedSites: number;
   readonly total: number;
 }
 
@@ -281,6 +286,7 @@ const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
       'webgpu-acquisition': 0,
     },
     reason: 'P5 taxonomy v4 classification baseline',
+    repairedSites: 0,
     total: 28,
   },
   {
@@ -293,6 +299,7 @@ const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
       'webgpu-acquisition': 0,
     },
     reason: 'GL root-surface creation routed through the selected GL render-surface provider',
+    repairedSites: 1,
     total: 27,
   },
   {
@@ -305,6 +312,7 @@ const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
       'webgpu-acquisition': 0,
     },
     reason: 'WGPU root-surface creation routed through the selected WGPU render-surface provider',
+    repairedSites: 1,
     total: 26,
   },
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
@@ -319,6 +327,7 @@ const P5_HOST_BYPASS_S09_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Bitmap drawing allocates its pixel-transfer buffer through the caller-owned 2D context',
+  repairedSites: 1,
   total: 25,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -332,6 +341,7 @@ const P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Input pointer-lock exit and state queries routed through the selected input ingress backend',
+  repairedSites: 3,
   total: 22,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -345,6 +355,7 @@ const P5_HOST_BYPASS_S10_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Video MIME capability probing routed through the selected video capability backend',
+  repairedSites: 1,
   total: 21,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -358,6 +369,7 @@ const P5_HOST_BYPASS_S10_FONT_LOAD_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Font face loading routed through the selected font-loading backend',
+  repairedSites: 1,
   total: 20,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -371,6 +383,7 @@ const P5_HOST_BYPASS_S10_FONT_ADD_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Font face registration routed through the selected font-loading backend',
+  repairedSites: 1,
   total: 19,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -384,6 +397,7 @@ const P5_HOST_BYPASS_S10_FONT_CHECK_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Font availability check routed through the selected font-loading backend',
+  repairedSites: 1,
   total: 18,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -397,6 +411,7 @@ const P5_HOST_BYPASS_S10_FONT_READY_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Font readiness query routed through the selected font-loading backend',
+  repairedSites: 1,
   total: 17,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -410,6 +425,7 @@ const P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Image-resource capture composed through the existing image-source readback primitive',
+  repairedSites: 1,
   total: 16,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -423,6 +439,7 @@ const P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Bitmap encoding scratch canvas creation routed through the selected bitmap encode backend',
+  repairedSites: 1,
   total: 15,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
@@ -436,7 +453,25 @@ const P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS = {
     'webgpu-acquisition': 0,
   },
   reason: 'Bitmap encoding ImageData construction routed through the selected bitmap encode backend',
+  repairedSites: 1,
   total: 14,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
+// One checkpoint for one slice. Both window-management sites were routed together, so the honest evidence
+// is a single entry declaring what it repaired rather than two synthetic one-site steps.
+const P5_HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 2,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 10,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason:
+    'window-management permission query and change subscription routed through two optional ScreenBackend operations',
+  repairedSites: 2,
+  total: 12,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
 export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
@@ -451,6 +486,7 @@ export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   P5_HOST_BYPASS_H12_CAPTURE_V4_PROGRESS,
   P5_HOST_BYPASS_BITMAP_ENCODE_CANVAS_V4_PROGRESS,
   P5_HOST_BYPASS_BITMAP_ENCODE_IMAGE_DATA_V4_PROGRESS,
+  P5_HOST_BYPASS_SCREEN_PERMISSION_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
@@ -1091,7 +1127,7 @@ export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBy
         `P5 taxonomy v4 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
       );
     }
-    const repairedSites = index === 4 ? 3 : 1;
+    const repairedSites = entry.repairedSites;
     if (prior !== undefined && entry.total !== prior.total - repairedSites) {
       const repairedSitesLabel = repairedSites === 1 ? 'one site' : `${repairedSites} sites`;
       failures.push(

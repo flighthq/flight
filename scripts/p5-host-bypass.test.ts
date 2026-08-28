@@ -75,7 +75,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=14 direct-dom=4 input-ingress=0 frame-scheduling=0 scratch-surface=10 render-surface=0 webgpu-acquisition=0',
+      'P5 outstanding=12 direct-dom=2 input-ingress=0 frame-scheduling=0 scratch-surface=10 render-surface=0 webgpu-acquisition=0',
     );
     expect(p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
@@ -272,7 +272,7 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(p5HostBypassCurrentBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([
       'P5 current scratch-surface: found 9, expected 10',
-      'P5 current outstanding: found 13, expected 14',
+      'P5 current outstanding: found 11, expected 12',
     ]);
   }, 30_000);
 
@@ -525,6 +525,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'P5 taxonomy v4 classification baseline',
+        repairedSites: 0,
         total: 28,
       },
       {
@@ -537,6 +538,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'GL root-surface creation routed through the selected GL render-surface provider',
+        repairedSites: 1,
         total: 27,
       },
       {
@@ -549,6 +551,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'WGPU root-surface creation routed through the selected WGPU render-surface provider',
+        repairedSites: 1,
         total: 26,
       },
       {
@@ -561,6 +564,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Bitmap drawing allocates its pixel-transfer buffer through the caller-owned 2D context',
+        repairedSites: 1,
         total: 25,
       },
       {
@@ -573,6 +577,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Input pointer-lock exit and state queries routed through the selected input ingress backend',
+        repairedSites: 3,
         total: 22,
       },
       {
@@ -585,6 +590,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Video MIME capability probing routed through the selected video capability backend',
+        repairedSites: 1,
         total: 21,
       },
       {
@@ -597,6 +603,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Font face loading routed through the selected font-loading backend',
+        repairedSites: 1,
         total: 20,
       },
       {
@@ -609,6 +616,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Font face registration routed through the selected font-loading backend',
+        repairedSites: 1,
         total: 19,
       },
       {
@@ -621,6 +629,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Font availability check routed through the selected font-loading backend',
+        repairedSites: 1,
         total: 18,
       },
       {
@@ -633,6 +642,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Font readiness query routed through the selected font-loading backend',
+        repairedSites: 1,
         total: 17,
       },
       {
@@ -645,6 +655,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Image-resource capture composed through the existing image-source readback primitive',
+        repairedSites: 1,
         total: 16,
       },
       {
@@ -657,6 +668,7 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Bitmap encoding scratch canvas creation routed through the selected bitmap encode backend',
+        repairedSites: 1,
         total: 15,
       },
       {
@@ -669,7 +681,22 @@ describe('P5 host-bypass derived gate', () => {
           'webgpu-acquisition': 0,
         },
         reason: 'Bitmap encoding ImageData construction routed through the selected bitmap encode backend',
+        repairedSites: 1,
         total: 14,
+      },
+      {
+        budget: {
+          'direct-dom': 2,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 10,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason:
+          'window-management permission query and change subscription routed through two optional ScreenBackend operations',
+        repairedSites: 2,
+        total: 12,
       },
     ]);
     expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
@@ -706,12 +733,50 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5BitmapDrawTransferProgressFailures(omitted)).toContain(
       'S09 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason',
     );
+    // With S09 dropped, pointer-lock slides into index 3 and its OWN declaration drives the message —
+    // three sites, not the "one" the old index-keyed table would have assigned to whatever sat here.
+    // That the message follows the entry rather than the position is the invariant repair working.
     expect(p5HostBypassV4ProgressHistoryFailures(omitted)).toContain(
-      'P5 taxonomy v4 progress history[3] must repair exactly one site; found 26 -> 22',
+      'P5 taxonomy v4 progress history[3] must repair exactly 3 sites; found 26 -> 22',
     );
     const report = scanP5HostBypasses(ROOT);
     expect(p5HostBypassCurrentBudgetFailures(report, omitted.at(-1)!.budget)).toEqual([]);
   }, 30_000);
+
+  // ★ THE DECLARATION AND THE DELTA MUST AGREE, IN BOTH DIRECTIONS. `repairedSites` lets a multi-site
+  // repair be one honest checkpoint instead of several synthetic one-site steps — but an unchecked count
+  // would just be a second source of truth about the same fact. Cross-checking it against the total delta
+  // is what keeps it evidence.
+  //
+  // ★ LOCATED BY REASON, NEVER BY INDEX. The whole point of this repair is that a checkpoint's declared
+  // count travels with the entry rather than its position; a test that hard-coded `[10]` would rebuild the
+  // coupling the validator just shed, and would silently retarget the next time a slice lands ahead of it.
+  it('mutation-proves a declared repairedSites that disagrees with the total delta is red both ways', () => {
+    const screenReason =
+      'window-management permission query and change subscription routed through two optional ScreenBackend operations';
+    const at = P5_HOST_BYPASS_V4_PROGRESS_HISTORY.findIndex((entry) => entry.reason === screenReason);
+    // Loud, not silent: a drifted reason must fail here rather than yield -1 and slice into nonsense.
+    expect(at).toBeGreaterThanOrEqual(0);
+    const screen = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[at]!;
+    const prior = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[at - 1]!;
+    const rebuild = (repairedSites: number) => [
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, at),
+      { ...screen, repairedSites },
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(at + 1),
+    ];
+
+    // Understated, and overstated. Totals interpolated so the message cannot rot when the chain grows.
+    expect(p5HostBypassV4ProgressHistoryFailures(rebuild(1))).toContain(
+      `P5 taxonomy v4 progress history[${at}] must repair exactly one site; found ${prior.total} -> ${screen.total}`,
+    );
+    expect(p5HostBypassV4ProgressHistoryFailures(rebuild(3))).toContain(
+      `P5 taxonomy v4 progress history[${at}] must repair exactly 3 sites; found ${prior.total} -> ${screen.total}`,
+    );
+
+    // And the honest declaration stays green, so this cannot pass by rejecting everything.
+    expect(screen.repairedSites).toBe(prior.total - screen.total);
+    expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
+  });
 
   it('mutation-proves S09 cannot rewrite the accepted S08 checkpoint', () => {
     const s08 = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[2];
@@ -1033,8 +1098,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(3);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(7);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 7, budget 4');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(5);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 5, budget 2');
   }, 30_000);
 
   it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
@@ -1073,8 +1138,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(1);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(5);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 5, budget 4');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(3);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 3, budget 2');
   }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {
