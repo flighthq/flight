@@ -22,12 +22,11 @@ eight: already-implemented `LogTransportBackend` plus the seven named below. Sin
 state is therefore three declared and exercised hooks (`AccessibilityBackend`, `LogTransportBackend`,
 and `MediaSessionBackend`) with five still owed.
 
-The live tree has since added two interfaces. `AudioBackend` is a pure `canPlayType` query and
-joins the GC/bounded bucket. `WgpuHostBackend` owns no process-wide resource: each acquisition
-carries its own release bracket and explicit `caller | flight` ownership, so it joins the
-entity/keyed/caller-owned bucket. Therefore the live total is 44 and the live partition is
-`1 + 7 + 20 + 16 = 44`. Neither post-audit row changes the whole-owner population or its live
-implementation state of three declared hooks with five still owed.
+The live tree has since added three interfaces. `AudioBackend` is a pure `canPlayType` query and
+joins the GC/bounded bucket. `WgpuHostBackend` and `InputIngressBackend` own acquisition- or
+registration-scoped brackets, so they join the entity/keyed/caller-owned bucket. Therefore the live
+total is 45 and the live partition is `1 + 7 + 21 + 16 = 45`. None of the post-audit rows changes the
+whole-owner population or its live implementation state of three declared hooks with five still owed.
 
 ## Derivation rules
 
@@ -52,6 +51,12 @@ Provider replacement follows three invariants:
 2. Installing the identical backend again does not destroy it.
 3. If the same object occupies more than one precedence slot, losing one slot does not destroy the
    object while another slot still owns it.
+
+**Shared origin-pinned lifecycle doctrine (normative):** cleanup releases only the resources or
+registrations acquired by the originating backend for that exact acquisition/source. Later backend
+selection cannot reroute that cleanup, and a caller-supplied source or handle is borrowed and never
+destroyed. WebGPU host acquisition and input ingress attachment are concrete instances of this same
+rule.
 
 The structural ratchet in `scripts/backend-lifecycle-core.ts` derives exported backend names, finds
 zero-argument `destroy`/`dispose` members in both method and callable-property syntax, excludes
@@ -100,8 +105,8 @@ The result column uses **owned** only when the current path reaches the originat
 names the exact provenance or cleanup work still required; it does not promote the backend to a
 whole-owner.
 
-Rows 1–19 reproduce the frozen audit population. Row 20 is the post-audit
-`WgpuHostBackend` addition.
+Rows 1–19 reproduce the frozen audit population. Rows 20–21 are the post-audit
+`WgpuHostBackend` and `InputIngressBackend` additions.
 
 | # | Backend | Exact resource bracket and provenance | Result |
 | ---: | --- | --- | --- |
@@ -125,6 +130,7 @@ Rows 1–19 reproduce the frozen audit population. Row 20 is the post-audit
 | 18 | `TrayBackend` | `destroyTrayIcon` first calls `stopTrayIconAnimation`, then sends provider-local `tray.id` to the current backend. `_animations` is keyed only by that id. `onTrayEvent` does return an origin-capturing unsubscribe. | **Owed:** make a tray handle retain provider provenance (or keep an id-to-provider registry), key animations by that ownership identity, and route every query/mutation plus `destroy` to the creator. Then stop the local timer and call that creator's `destroy(id)` exactly once. |
 | 19 | `UpdaterBackend` | `AppUpdater` subscriptions retain a combined origin-capturing unsubscribe and `disposeAppUpdater` invokes it. An in-flight download, however, is global backend work while `cancelAppUpdateDownload` routes to the backend active at cancellation time. | **Owed:** retain the backend that started a download (or prohibit replacement while one is active) and send cancellation to it before releasing that command lifetime. Entity subscriptions are already safe; feed/config values are durable policy to reapply, not resources to free. |
 | 20 | `WgpuHostBackend` | `acquire` returns a `WgpuHostAcquisition` carrying the presentation context, device, format, and explicit `caller \| flight` ownership. `flight` is valid only for handles the backend created for Flight; `caller` borrows the exact supplied device, context, and native-surface identities. `createWgpuRenderState` retains the acquisition and selected backend in the reference-counted shared device runtime; initialization failure calls the captured backend's `release` immediately, while the last `destroyWgpuRenderState` sharing it calls `release` exactly once. Release unconfigures the context and destroys the device only for Flight-owned handles. For caller-owned handles it may detach Flight bookkeeping but must not destroy the device or destroy/unconfigure the presentation context or native surface, which may remain in use outside Flight. | **Owned.** Cleanup is per acquisition and provider-pinned, including failure and final-reference paths. Replacing the process-global backend cannot reroute an existing acquisition's release; derived-state teardown preserves borrowed caller handles, and no zero-argument whole-backend teardown is appropriate. |
+| 21 | `InputIngressBackend` | One process-global backend receives many exact `InputIngressSource` identities. Each of the six attachment families returns an opaque release retained by `_inputBindings` under `(InputManager, source, family)`; the Web adapter's releases remove the exact listener records they installed. The backend selection is independent of `Application` and is not stored per source. | **Owned under the shared doctrine above.** Same-key replacement and detach consume the stored release exactly once, backend replacement cannot redirect it, distinct source/window records remain independent, and no zero-argument whole-backend teardown is appropriate. |
 
 This table deliberately does not collapse “has a cleanup-named API” into “done.” Geolocation,
 notification, protocol, status-bar, and tray cleanup all exist by name yet lack enough provider
@@ -158,10 +164,10 @@ row 16. It has no audio device, decoded buffer, source, stream, or playback owne
 `AudioDeviceBackend` is a different, not-yet-landed contract and must be classified from its actual
 lifetime shape if approved.
 
-Post-audit `WgpuHostBackend` joins the entity/keyed bucket as row 20. It moves the live
-denominator from 43 to 44 and that bucket from 19 to 20 without changing the whole-owner
-population. The structural lifecycle census should therefore report three whole-backend hooks
-among 44 interfaces after the source lands.
+Post-audit `WgpuHostBackend` and `InputIngressBackend` join the entity/keyed bucket as rows 20–21.
+They move the live denominator from 43 to 45 and that bucket from 19 to 21 without changing the
+whole-owner population. The structural lifecycle census should therefore report three whole-backend
+hooks among 45 interfaces.
 
 ## Review checklist for the remaining slices
 

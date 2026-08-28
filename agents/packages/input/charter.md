@@ -3,7 +3,7 @@ package: '@flighthq/input'
 role: package
 crate: flighthq-input
 draft: false
-lastDirection: 2026-07-02
+lastDirection: 2026-08-27
 review: ./review.md
 assessment: ./assessment.md
 status: ./status.md
@@ -22,7 +22,7 @@ The package is a full input library, to be refactored down into more packages as
 1. **Full input library, not thin seam.** Normalize, snapshot, edge-track, and semantic-name all host input. Refactor into focused neighbor packages as areas grow.
 2. **Zero per-event allocation.** Scratch singletons, `out`-param dead-zone math, reused payloads. Load-bearing property, not optimization.
 3. **Opt-in, side-effect-free wiring.** No listeners/timers/globals at import. `attach*`/`detach*` pairs, `create*`/`connect*`.
-4. **Portable by construction.** An `InputBackend` seam must exist so native hosts (Rust, Electron) feed normalized events without DOM. Web is one backend, not the only one.
+4. **Portable by construction.** `InputIngressBackend` lets native hosts feed normalized events without DOM. Web is one explicit adapter, not the only source.
 5. **Sentinels over throws.** Missing capabilities return `null`/`false`/`-1`/`UNKNOWN`. Throws for API misuse only.
 
 ## Boundaries
@@ -33,7 +33,7 @@ The package is a full input library, to be refactored down into more packages as
 - Held-state snapshots and per-frame edge tracking.
 - Gamepad semantics: dead zones, W3C button/axis naming, key-repeat synthesis.
 - Pointer lock/capture helpers, coalesced pointer iteration.
-- `InputBackend` abstraction for multi-host portability.
+- `InputIngressBackend` abstraction for multi-host listener ingress.
 
 **Non-goals:**
 
@@ -52,6 +52,18 @@ The package is a full input library, to be refactored down into more packages as
 
   **Why:** Every other platform-integration package has a `*Backend` seam. Input is the missing one. Portability is a first-class constraint, not aspirational.
 
+- **[2026-08-27] One process-global `InputIngressBackend`, with exact source identities.** Backend
+  selection is independent of `Application` and serves many simultaneous source/window identities.
+  The existing six `attach*Input`/`detach*Input` pairs accept the host-neutral
+  `InputIngressSource`; the explicit Web adapter interprets DOM identities internally. There is no
+  backend-per-source selection and no parallel DOM entry point. See the approved
+  [ingress record](../../input-ingress-seam-plan.md).
+
+  **Why:** All legacy DOM callers must migrate through one surface. Retaining a direct DOM path would
+  require a permanent P5 allowlist and make the zero input-ingress budget rot. The shared lifecycle
+  contract is canonical in the [backend lifecycle ledger](../../backend-lifecycle-ownership.md), not
+  duplicated here.
+
 - **[2026-07-02] Three neighbor packages blessed.** `@flighthq/input-bindings` (action maps, rebinding, chord/combo), `@flighthq/gestures` (tap/swipe/pinch/rotate recognizers), `@flighthq/gamepad-mappings` (SDL GameControllerDB-style registry). All three are wanted.
 
   **Why:** Each is a distinct concern that doesn't belong in the core input library but naturally extends it.
@@ -64,10 +76,8 @@ The package is a full input library, to be refactored down into more packages as
 
 ## Open directions
 
-1. **`InputBackend` shape.** What does the backend interface look like? Does it wrap `attach*`/`detach*` pairs, or does it push events directly? How does it relate to the `WindowBackend` in application?
+1. **`enableInputSignals` opt-in.** `createInputManager` eagerly folds all 15 signals. Signals are this package's sole delivery mechanism, so a manager without them is inert — but the pattern differs from `enableNode2DSignals`. Bless the eager fold or add an opt-in.
 
-2. **`enableInputSignals` opt-in.** `createInputManager` eagerly folds all 15 signals. Signals are this package's sole delivery mechanism, so a manager without them is inert — but the pattern differs from `enableNode2DSignals`. Bless the eager fold or add an opt-in.
+2. **Neighbor package shapes.** `input-bindings`, `gestures`, `gamepad-mappings` are blessed but undesigned. Each needs its own direction session when built.
 
-3. **Neighbor package shapes.** `input-bindings`, `gestures`, `gamepad-mappings` are blessed but undesigned. Each needs its own direction session when built.
-
-4. **Multi-device identity.** No `InputDeviceId` or generalized connect/disconnect for keyboard/mouse. Relevant for native hosts with multiple input devices.
+3. **Multi-device identity.** No `InputDeviceId` or generalized connect/disconnect for keyboard/mouse. Relevant for native hosts with multiple input devices.
