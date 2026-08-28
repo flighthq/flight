@@ -131,6 +131,16 @@ export function getMediaSessionBackend(): MediaSessionBackend {
 
 // Whether a real backend implements `operation`. Every OS transport control is optional, so a caller that
 // shows a scrubber or a next-track button should ask before offering it.
+// True when a host backend occupies the host slot. See `hasPowerHostBackend` for why a host package
+// asks instead of remembering: a host-local `_enabled` boolean is a second copy of a fact this package
+// owns, and it goes stale the moment the slot is cleared.
+//
+// Reports the SLOT, not the effective backend: a custom backend takes precedence for callers but does
+// not occupy this slot, so it must not suppress host installation.
+export function hasMediaSessionHostBackend(): boolean {
+  return _host !== null;
+}
+
 export function hasMediaSessionOperation(operation: MediaSessionOperation): boolean {
   return explainMediaSessionOperation(operation).implemented;
 }

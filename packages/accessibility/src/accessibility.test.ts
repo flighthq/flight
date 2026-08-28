@@ -9,6 +9,7 @@ import {
   explainAccessibilityBackend,
   explainAccessibilityOperation,
   getAccessibilityBackend,
+  hasAccessibilityHostBackend,
   hasAccessibilityOperation,
   installAccessibilityHostBackend,
   observeAccessibilityHostResult,
@@ -383,6 +384,27 @@ describe('getAccessibilityBackend', () => {
     const mock = createMockAccessibilityBackend();
     setAccessibilityBackend(mock.backend);
     expect(getAccessibilityBackend()).toBe(mock.backend);
+  });
+});
+
+describe('hasAccessibilityHostBackend', () => {
+  // Reports the SLOT rather than the effective backend. A host package uses this instead of caching
+  // "did I install", so that clearing the slot is immediately visible to it.
+  it('is false before a host backend is installed and true after', () => {
+    resetAccessibilityBackendForTest();
+    expect(hasAccessibilityHostBackend()).toBe(false);
+    installAccessibilityHostBackend(inertBackend());
+    expect(hasAccessibilityHostBackend()).toBe(true);
+  });
+
+  // ★ A CUSTOM BACKEND MUST NOT SUPPRESS HOST INSTALLATION. Custom outranks host for callers, but it
+  // occupies a different slot; reporting it here would make a host package skip installing and leave
+  // the host slot permanently empty once the custom one is cleared.
+  it('stays false when only a custom backend is set', () => {
+    resetAccessibilityBackendForTest();
+    setAccessibilityBackend(inertBackend());
+    expect(hasAccessibilityHostBackend()).toBe(false);
+    resetAccessibilityBackendForTest();
   });
 });
 

@@ -198,6 +198,19 @@ export function getPowerThermalState(): PowerThermalState {
   return getPowerBackend().getStatus(_scratch).thermalState;
 }
 
+// True when a host backend occupies the host slot.
+//
+// ★ THIS EXISTS SO A HOST PACKAGE NEED NOT REMEMBER WHETHER IT INSTALLED. `enableHostWeb*` guarded
+// itself with a module-local `_enabled` boolean, which is a second copy of a fact this package owns —
+// and the two desynchronise the moment the slot is cleared, leaving the capability pinned to the
+// sentinel with the host convinced it is still installed. Asking is always current; remembering is not.
+//
+// It reports the SLOT, not the effective backend: a custom backend set through `setPowerBackend` takes
+// precedence for callers but does not occupy this slot, so it must not suppress host installation.
+export function hasPowerHostBackend(): boolean {
+  return _host !== null;
+}
+
 // Returns true when a keep-awake lock is currently held by the active backend.
 export function hasPowerKeepAwake(): boolean {
   return getPowerBackend().isKeepAwakeActive();

@@ -10,6 +10,7 @@ import {
   explainMediaSessionBackend,
   explainMediaSessionOperation,
   getMediaSessionBackend,
+  hasMediaSessionHostBackend,
   hasMediaSessionOperation,
   installMediaSessionHostBackend,
   observeMediaSessionHostResult,
@@ -389,6 +390,27 @@ describe('getMediaSessionBackend', () => {
     const fake = createFakeBackend();
     setMediaSessionBackend(fake);
     expect(getMediaSessionBackend()).toBe(fake);
+  });
+});
+
+describe('hasMediaSessionHostBackend', () => {
+  // Reports the SLOT rather than the effective backend. A host package uses this instead of caching
+  // "did I install", so that clearing the slot is immediately visible to it.
+  it('is false before a host backend is installed and true after', () => {
+    resetMediaSessionBackendForTest();
+    expect(hasMediaSessionHostBackend()).toBe(false);
+    installMediaSessionHostBackend(createFakeBackend());
+    expect(hasMediaSessionHostBackend()).toBe(true);
+  });
+
+  // ★ A CUSTOM BACKEND MUST NOT SUPPRESS HOST INSTALLATION. Custom outranks host for callers, but it
+  // occupies a different slot; reporting it here would make a host package skip installing and leave
+  // the host slot permanently empty once the custom one is cleared.
+  it('stays false when only a custom backend is set', () => {
+    resetMediaSessionBackendForTest();
+    setMediaSessionBackend(createFakeBackend());
+    expect(hasMediaSessionHostBackend()).toBe(false);
+    resetMediaSessionBackendForTest();
   });
 });
 

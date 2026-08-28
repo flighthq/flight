@@ -1,9 +1,17 @@
-import { installPowerHostBackend, observePowerHostResult } from '@flighthq/power/contract';
+import {
+  hasPowerHostBackend,
+  installPowerHostBackend,
+  observePowerHostResult,
+  resetPowerBackendForTest,
+} from '@flighthq/power/contract';
 import type { PowerBackend } from '@flighthq/types/contract';
 
+// ★ THE GUARD ASKS RATHER THAN REMEMBERS. This was `if (_enabled) return; _enabled = true;` — a host-local
+// copy of a fact `@flighthq/power` owns. Nothing reset it, so once the capability cleared its host slot
+// the two disagreed permanently: the slot was empty, this function believed it had already installed, and
+// the capability stayed on its sentinel for the life of the process with no error anywhere.
 export function enableHostWebPower(): void {
-  if (_enabled) return;
-  _enabled = true;
+  if (hasPowerHostBackend()) return;
   const backend: PowerBackend = {
     destroy() {
       _wakeLockSentinel?.release?.().catch(() => {});
@@ -184,15 +192,17 @@ export function enableHostWebPower(): void {
   installPowerHostBackend(backend);
 }
 
+// The host holds no enable state of its own any more, so "un-enable" means clearing the capability slot
+// this installed into. Delegates rather than reaching past the owner: the slot belongs to
+// `@flighthq/power`, and this is its own published test seam.
 export function resetHostWebPowerForTest(): void {
-  _enabled = false;
+  resetPowerBackendForTest();
 }
 
 let _cachedCharging = false;
 let _cachedChargingTime = -1;
 let _cachedDischargingTime = -1;
 let _cachedLevel = -1;
-let _enabled = false;
 let _wakeLockSentinel: WebWakeLockSentinel | null = null;
 
 interface WebBatteryManager {

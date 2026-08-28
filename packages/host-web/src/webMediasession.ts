@@ -1,16 +1,21 @@
 import {
   createWebMediaSessionBackend,
+  hasMediaSessionHostBackend,
   installMediaSessionHostBackend,
   observeMediaSessionHostResult,
+  resetMediaSessionBackendForTest,
 } from '@flighthq/mediasession/contract';
 import type { MediaSessionBackend } from '@flighthq/types/contract';
 
 // Local mutable view for conditional composition; the installed value is the readonly interface.
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
+// ★ THE GUARD ASKS RATHER THAN REMEMBERS. See `enableHostWebPower`: a host-local `_enabled` boolean is a
+// second copy of a fact `@flighthq/mediasession` owns, nothing reset it, and once the capability cleared
+// its host slot the two disagreed permanently — slot empty, this function certain it had installed, and
+// the capability pinned to its sentinel for the life of the process.
 export function enableHostWebMediaSession(): void {
-  if (_enabled) return;
-  _enabled = true;
+  if (hasMediaSessionHostBackend()) return;
   const inner = createWebMediaSessionBackend();
   // ★ COMPOSED CONDITIONALLY, not with optional calls. Every MediaSession operation is optional, so
   // wrapping `inner.setMetadata?.(…)` would give this backend a setMetadata that silently does nothing
@@ -67,8 +72,9 @@ export function enableHostWebMediaSession(): void {
   installMediaSessionHostBackend(backend);
 }
 
+// The host holds no enable state of its own any more, so "un-enable" means clearing the capability slot
+// this installed into. Delegates rather than reaching past the owner: the slot belongs to
+// `@flighthq/mediasession`, and this is its own published test seam.
 export function resetHostWebMediasessionForTest(): void {
-  _enabled = false;
+  resetMediaSessionBackendForTest();
 }
-
-let _enabled = false;

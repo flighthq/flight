@@ -17,6 +17,7 @@ import {
   getPowerSystemIdleState,
   getPowerSystemIdleTime,
   getPowerThermalState,
+  hasPowerHostBackend,
   hasPowerKeepAwake,
   installPowerHostBackend,
   observePowerHostResult,
@@ -583,6 +584,27 @@ describe('getPowerThermalState', () => {
   it('returns the thermal state from the backend', () => {
     setPowerBackend(fakeBackend());
     expect(getPowerThermalState()).toBe('Nominal');
+  });
+});
+
+describe('hasPowerHostBackend', () => {
+  // Reports the SLOT rather than the effective backend. A host package uses this instead of caching
+  // "did I install", so that clearing the slot is immediately visible to it.
+  it('is false before a host backend is installed and true after', () => {
+    resetPowerBackendForTest();
+    expect(hasPowerHostBackend()).toBe(false);
+    installPowerHostBackend(fakeBackend());
+    expect(hasPowerHostBackend()).toBe(true);
+  });
+
+  // ★ A CUSTOM BACKEND MUST NOT SUPPRESS HOST INSTALLATION. Custom outranks host for callers, but it
+  // occupies a different slot; reporting it here would make a host package skip installing and leave
+  // the host slot permanently empty once the custom one is cleared.
+  it('stays false when only a custom backend is set', () => {
+    resetPowerBackendForTest();
+    setPowerBackend(fakeBackend());
+    expect(hasPowerHostBackend()).toBe(false);
+    resetPowerBackendForTest();
   });
 });
 
