@@ -98,6 +98,10 @@ export interface WindowBackend {
   // backend cannot adopt host-created windows; attachWindow resolves custom → host by that presence.
   attach?(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
   open(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
+  // Releases one entity-keyed window attachment. Implementations must be idempotent: delete their native
+  // identity record and remove the exact listeners installed for that record before requesting native
+  // destruction. A host-owned record is detached only; a Flight-owned record also closes/destroys its
+  // native handle, at most once.
   close(win: ApplicationWindow): void;
   setTitle(win: ApplicationWindow, title: string): void;
   setPosition(win: ApplicationWindow, x: number, y: number): void;

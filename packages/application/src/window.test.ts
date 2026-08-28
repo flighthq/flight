@@ -219,12 +219,17 @@ describe('attachWindow', () => {
     setWindowBackend(backend);
     const win = createApplicationWindow();
     let closed = 0;
+    let forwarded = 0;
     connectSignal(win.onClose, () => closed++);
+    connectSignal(win.onFullscreenChanged, () => forwarded++);
     expect(attachWindow(win, { id: 1 }, 'flight')).toBe(true);
+    attachWindowFullscreen(win);
 
     expect(closeWindow(win)).toBe(true);
     notifyWindowClosed(win);
+    document.dispatchEvent(new Event('fullscreenchange'));
     expect(closed).toBe(1);
+    expect(forwarded).toBe(0);
   });
 
   it('clears terminal state after the same window successfully reattaches', () => {
@@ -1002,15 +1007,40 @@ describe('minimizeWindow', () => {
 });
 
 describe('notifyWindowClosed', () => {
-  it('emits at most one terminal close for a window', () => {
+  it('emits once before draining application observers, then remains idempotent', () => {
     const win = createApplicationWindow();
-    let closed = 0;
-    connectSignal(win.onClose, () => closed++);
+    const order: string[] = [];
+    let forwarded = 0;
+    connectSignal(win.onFullscreenChanged, () => forwarded++);
+    attachWindowFullscreen(win);
+    connectSignal(win.onClose, () => {
+      order.push('close');
+      document.dispatchEvent(new Event('fullscreenchange'));
+      order.push(`observer:${forwarded}`);
+    });
 
     notifyWindowClosed(win);
+    document.dispatchEvent(new Event('fullscreenchange'));
     notifyWindowClosed(win);
 
-    expect(closed).toBe(1);
+    expect(order).toEqual(['close', 'observer:1']);
+    expect(forwarded).toBe(1);
+  });
+
+  it('still drains application observers when a terminal listener throws', () => {
+    const win = createApplicationWindow();
+    let forwarded = 0;
+    connectSignal(win.onFullscreenChanged, () => forwarded++);
+    attachWindowFullscreen(win);
+    connectSignal(win.onClose, () => {
+      throw new Error('close listener failed');
+    });
+
+    expect(() => notifyWindowClosed(win)).toThrow('close listener failed');
+    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(() => notifyWindowClosed(win)).not.toThrow();
+
+    expect(forwarded).toBe(0);
   });
 });
 
@@ -1056,6 +1086,32 @@ describe('openWindow', () => {
     const win = createApplicationWindow();
     openWindow(win, { title: 'Normal' });
     expect(backend.calls).not.toContain('center');
+  });
+
+  it('re-arms terminal close and observer disposal after a successful reopen', () => {
+    const backend = recordingWindowBackend();
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    let closed = 0;
+    let forwarded = 0;
+    connectSignal(win.onClose, () => closed++);
+    connectSignal(win.onFullscreenChanged, () => forwarded++);
+
+    expect(openWindow(win)).toBe(true);
+    attachWindowFullscreen(win);
+    expect(closeWindow(win)).toBe(true);
+    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(forwarded).toBe(0);
+
+    expect(openWindow(win)).toBe(true);
+    attachWindowFullscreen(win);
+    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(forwarded).toBe(1);
+    expect(closeWindow(win)).toBe(true);
+    document.dispatchEvent(new Event('fullscreenchange'));
+
+    expect(closed).toBe(2);
+    expect(forwarded).toBe(1);
   });
 });
 
