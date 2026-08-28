@@ -97,6 +97,12 @@ export function getMenuSignals(): Readonly<MenuSignals> | null {
   return _menuSignals;
 }
 
+// Whether a host backend currently occupies the host slot. This intentionally does not inspect the
+// effective backend: a custom backend has higher dispatch precedence but must not suppress host setup.
+export function hasMenuHostBackend(): boolean {
+  return _host !== null;
+}
+
 export function hasMenuReplacementGuarantee(guarantee: MenuReplacementGuarantee): boolean {
   return explainMenuReplacementGuarantee(guarantee).support === 'supported';
 }

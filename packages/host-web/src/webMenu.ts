@@ -1,9 +1,14 @@
-import { installMenuHostBackend, observeMenuHostResult, showWebContextMenu } from '@flighthq/menu/contract';
+import {
+  hasMenuHostBackend,
+  installMenuHostBackend,
+  observeMenuHostResult,
+  resetMenuBackendForTest,
+  showWebContextMenu,
+} from '@flighthq/menu/contract';
 import type { MenuBackend } from '@flighthq/types/contract';
 
 export function enableHostWebMenu(): void {
-  if (_enabled) return;
-  _enabled = true;
+  if (hasMenuHostBackend()) return;
   const backend: MenuBackend = {
     destroy() {},
     popupContextMenu(items, x, y) {
@@ -27,7 +32,5 @@ export function enableHostWebMenu(): void {
 }
 
 export function resetHostWebMenuForTest(): void {
-  _enabled = false;
+  resetMenuBackendForTest();
 }
-
-let _enabled = false;

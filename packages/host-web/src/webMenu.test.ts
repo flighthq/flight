@@ -1,3 +1,5 @@
+import { getMenuBackend, resetMenuBackendForTest } from '@flighthq/menu/contract';
+
 import { enableHostWebMenu, resetHostWebMenuForTest } from './webMenu';
 
 describe('enableHostWebMenu', () => {
@@ -9,14 +11,38 @@ describe('enableHostWebMenu', () => {
 
   it('is idempotent', () => {
     enableHostWebMenu();
-    expect(() => enableHostWebMenu()).not.toThrow();
+    const first = getMenuBackend();
+    enableHostWebMenu();
+    expect(getMenuBackend()).toBe(first);
+  });
+
+  it('reinstalls a fresh host backend after the capability slot is reset', () => {
+    const sentinel = getMenuBackend();
+    enableHostWebMenu();
+    const first = getMenuBackend();
+
+    resetMenuBackendForTest();
+    expect(getMenuBackend()).toBe(sentinel);
+
+    enableHostWebMenu();
+    const second = getMenuBackend();
+    expect(second).not.toBe(sentinel);
+    expect(second).not.toBe(first);
   });
 });
 
 describe('resetHostWebMenuForTest', () => {
-  it('allows re-enabling after reset', () => {
+  it('clears the capability slot and allows a fresh backend to be enabled', () => {
+    const sentinel = getMenuBackend();
     enableHostWebMenu();
+    const first = getMenuBackend();
+
     resetHostWebMenuForTest();
-    expect(() => enableHostWebMenu()).not.toThrow();
+    expect(getMenuBackend()).toBe(sentinel);
+
+    enableHostWebMenu();
+    const second = getMenuBackend();
+    expect(second).not.toBe(sentinel);
+    expect(second).not.toBe(first);
   });
 });
