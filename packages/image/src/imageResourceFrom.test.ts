@@ -45,14 +45,13 @@ describe('createImageResourceFromBitmap', () => {
     expect(createImageFromBitmap).toHaveBeenCalledWith(bitmap);
   });
 
-  it('reports selected-backend absence without falling back to DOM', () => {
+  it('returns null for selected-backend absence without throwing or falling back to DOM', () => {
     const createElement = vi.spyOn(document, 'createElement');
     const backend: ImageBackend = { loadImageFromUrl: vi.fn() };
     setImageBackend(backend);
 
-    expect(() => createImageResourceFromBitmap(createTestBitmap(1, 1))).toThrow(
-      'Active image backend does not support Bitmap materialization.',
-    );
+    expect(() => createImageResourceFromBitmap(createTestBitmap(1, 1))).not.toThrow();
+    expect(createImageResourceFromBitmap(createTestBitmap(1, 1))).toBeNull();
     expect(createElement).not.toHaveBeenCalled();
   });
 
@@ -70,6 +69,8 @@ describe('createImageResourceFromBitmap', () => {
       width: 4,
     });
     const resource = createImageResourceFromBitmap(bitmap);
+    expect(resource).not.toBeNull();
+    if (resource === null) return;
     expect(resource.width).toBe(4);
     expect(resource.height).toBe(4);
     expect(resource.source).not.toBeNull();
@@ -88,7 +89,7 @@ describe('createImageResourceFromBitmap', () => {
     });
     const putImageData = vi.spyOn(CanvasRenderingContext2D.prototype, 'putImageData');
 
-    createImageResourceFromBitmap(bitmap);
+    expect(createImageResourceFromBitmap(bitmap)).not.toBeNull();
 
     const imageData = putImageData.mock.calls[0][0];
     expect([...imageData.data]).toEqual([0x80, 0x40, 0x20, 0x80]);

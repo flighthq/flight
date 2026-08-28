@@ -1,5 +1,10 @@
 import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  createWebImageBackend,
+  resetImageBackendForTest,
+  setImageBackend,
+} from '@flighthq/image/contract';
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 
@@ -19,6 +24,9 @@ function makeState() {
   canvas.height = 200;
   return createCanvasRenderState(canvas);
 }
+
+beforeEach(() => setImageBackend(createWebImageBackend()));
+afterEach(() => resetImageBackendForTest());
 
 describe('explainCanvasImageSource', () => {
   it('reports element for a host-element-backed resource', () => {

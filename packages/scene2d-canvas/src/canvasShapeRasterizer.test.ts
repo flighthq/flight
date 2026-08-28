@@ -1,5 +1,11 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import { createImageResourceFromCanvas } from '@flighthq/image/contract';
+import {
+  createImageResourceFromCanvas,
+  createWebImageBackend,
+  explainImageOperation,
+  resetImageBackendForTest,
+  setImageBackend,
+} from '@flighthq/image/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '@flighthq/shape/contract';
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
@@ -21,6 +27,9 @@ function makeRasterizerState(): RenderState {
   registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
   return state;
 }
+
+beforeEach(() => setImageBackend(createWebImageBackend()));
+afterEach(() => resetImageBackendForTest());
 
 describe('createCanvasShapeRasterizer', () => {
   it('paints a Bitmap-sourced texture fill, which is what a null render state could never do', () => {
@@ -57,6 +66,25 @@ describe('createCanvasShapeRasterizer', () => {
     createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, makeRasterizerState());
 
     expect(fills).toEqual([]);
+  });
+
+  it('paints nothing when the registered Bitmap resolver cannot materialize on this host', () => {
+    const { context, fills } = createRecordingContext();
+    const resolvers = createCanvasTextureResolvers();
+    registerCanvasBitmapTextureResolver(resolvers);
+    resetImageBackendForTest();
+
+    const texture = createTexture();
+    setTextureSource(texture, createBitmap(2, 2));
+    const shape = createShape();
+    appendShapeBeginTextureFill(shape, texture);
+    appendShapeRectangle(shape, 0, 0, 10, 10);
+
+    expect(() =>
+      createCanvasShapeRasterizer(resolvers)(context, shape.data.commands, makeRasterizerState()),
+    ).not.toThrow();
+    expect(fills).toEqual([]);
+    expect(explainImageOperation('createImageFromBitmap').implemented).toBe(false);
   });
 
   it('resolves an Image-sourced texture through the same state', () => {

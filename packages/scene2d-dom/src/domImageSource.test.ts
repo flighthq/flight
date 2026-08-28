@@ -1,5 +1,10 @@
 import { createBitmap, invalidateBitmap } from '@flighthq/bitmap/contract';
-import { createImageResource } from '@flighthq/image/contract';
+import {
+  createImageResource,
+  createWebImageBackend,
+  resetImageBackendForTest,
+  setImageBackend,
+} from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 
 import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
@@ -11,6 +16,9 @@ import { resolveDomTexture } from './domTextureResolver';
 function makeState() {
   return createDomRenderState(document.createElement('div'));
 }
+
+beforeEach(() => setImageBackend(createWebImageBackend()));
+afterEach(() => resetImageBackendForTest());
 
 describe('explainDomImageSource', () => {
   it('reports element and data for the two drawable representations', () => {

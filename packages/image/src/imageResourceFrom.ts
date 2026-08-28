@@ -8,11 +8,9 @@ import { getImageBackend } from './imageBackend';
 // Transcodes a Bitmap's raw pixels into the selected host's drawable Image representation. The
 // inverse of captureBitmapFromImageResource. Lives here rather than in @flighthq/bitmap because a
 // conversion belongs with the type it PRODUCES: you look for it under what you want to end up with.
-export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): Image {
+export function createImageResourceFromBitmap(bitmap: Readonly<Bitmap>): Image | null {
   const backend = getImageBackend();
-  if (backend.createImageFromBitmap === undefined) {
-    throw new Error('Active image backend does not support Bitmap materialization.');
-  }
+  if (backend.createImageFromBitmap === undefined) return null;
   return backend.createImageFromBitmap(bitmap);
 }
 

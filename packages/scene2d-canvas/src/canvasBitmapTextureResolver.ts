@@ -20,6 +20,7 @@ function resolveCanvasBitmapTexture(
   let entry = cache.get(bitmap);
   if (entry === undefined || entry.version !== bitmap.version) {
     const image = createImageResourceFromBitmap(bitmap);
+    if (image === null) return null;
     entry = { element: image.source as HTMLCanvasElement, version: bitmap.version };
     cache.set(bitmap, entry);
   }

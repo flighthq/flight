@@ -30,3 +30,5 @@ export interface ImageBackend {
   createImageFromBitmap?(bitmap: Readonly<Bitmap>): Image;
   loadImageFromUrl(url: string, crossOrigin?: 'anonymous' | 'use-credentials', signal?: AbortSignal): Promise<Image>;
 }
+
+export type ImageBackendOperation = keyof ImageBackend;
