@@ -582,3 +582,71 @@ flight-hx will proceed:
 5. **F6** — reconcile interface denominator (42 vs 46, re-derive)
 6. **F4** — AudioDevice atomicity: decide and document (recommendation: keep 13 required)
 7. **GL host seam** — add `GlHostBackend` for caller-owned GL context (cleanup, not blocking)
+
+---
+
+# Manager ruling H6 — the GL host seam is an ACQUISITION, not a surface provider — 2026-08-28
+
+Derived by auditor from this checkout and verified independently at `WgpuHost.ts:1-24`,
+`glRenderState.ts:90-100`, and `GlRenderSurfaceProvider.ts:1`. This ruling does not depend on any
+flight-hx source, which is not present here.
+
+## The asymmetry, which is already shipped
+
+WGPU accepts caller-owned handles. GL does not.
+
+`createWgpuRenderState` takes `options.acquisition`, a `WgpuHostAcquisition` carrying `context`,
+`device`, `format`, and an explicit `ownership: 'caller' | 'flight'`. A native host hands over
+handles it already owns, and the ownership field says who frees them.
+
+`createGlRenderState(canvas: HTMLCanvasElement, options)` has no equivalent. It calls
+`canvas.getContext('webgl2', contextAttribs)` itself. There is no other production path: the
+offscreen and cache constructors derive from an existing state, `createGlApplicationRenderView`
+wraps the same signature, and `createGlRenderStateRuntime` is a package-private allocator that
+neither returns a `GlRenderState` nor initializes GPU resources.
+
+So the two sibling backends disagree about whether a caller may bring its own context. That is a
+design defect in the pair, independent of any consumer.
+
+## Ruling
+
+Give GL an acquisition mirroring the WGPU one — `GlHostAcquisition { context, ownership }` reachable
+through `GlRenderOptions.acquisition`, with the canvas-derived context as the web path. This is not
+an invention: it is the shape our own WebGPU backend already ships, and symmetry between sibling
+backends is the cheaper thing to defend.
+
+The reusable native-facing surface, derived from what construction actually touches, is small.
+Before the context exists, `createGlRenderState` reads exactly one member of its first argument:
+`getContext('webgl2', attributes)`. Afterwards it stores the object and later paths read only
+`width` and `height`; `application-gl` also writes them on resize. Nothing reads `style`, DOM
+ancestry, events, client dimensions, `getBoundingClientRect`, `toBlob`, or `toDataURL`. So once the
+context is an explicit argument, the residual surface contract is only mutable `{ width, height }`.
+
+## `GlRenderSurfaceProvider` is complementary, and stays
+
+The landed provider abstracts surface **creation** and returns `HTMLCanvasElement | null`. It does
+useful work — it removes direct `document` access from the renderer, which is what the P5 site count
+measures. It does not solve context adoption: a native host implementing it must still return a
+canvas-shaped object so that `createGlRenderState` can call `getContext` on it and receive a context
+that host already had.
+
+Creation and adoption are different problems. Keep the provider for creation; add acquisition for
+adoption. Neither substitutes for the other, and removing the provider is not part of this ruling.
+
+## Correction to the prioritized list above
+
+Item 7 reads "GL host seam — add `GlHostBackend` for caller-owned GL context (cleanup, not
+blocking)." The direction is right. The **rating** rests on the consumer assertion that HostLime
+already passes its context to `createGlRenderState`, which is not literally true of Flight's API and
+is not supported by any path, call site, test, or diff in the commit that recorded it.
+
+Re-rate item 7 as **unestablished**, not "not blocking". It must not be promoted to blocking either
+— that would be the same error inverted, asserting a consumer difficulty we have equally little
+evidence for. Unestablished is the honest state, and it is resolved by one fact: what flight-hx
+actually passes.
+
+## Recorded so it is not re-derived
+
+A consumer claim entered this document as a fact and was used to rate work. State consumer claims
+with their evidence — call site, test, or attached diff — or mark them as reported-but-unverified.
+An unverified claim that sets a priority is more expensive than one that sets nothing.
