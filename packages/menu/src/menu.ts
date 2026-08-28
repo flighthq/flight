@@ -107,20 +107,16 @@ export function setApplicationMenu(items: readonly MenuItemTemplate[]): boolean 
 
 // Sets a custom menu backend; pass null to clear and fall back to the host or sentinel.
 // Destroys the outgoing backend before installing the replacement, so getMenuBackend still returns
-// the outgoing backend during its destroy call. Skips destroy when the outgoing backend is retained
-// in the host slot (shared identity).
+// the outgoing backend during its destroy call. If destroy throws, the replacement is not installed
+// and the outgoing backend remains selected/owned for retry. Skips destroy when the outgoing backend
+// is retained in the host slot (shared identity).
 export function setMenuBackend(backend: MenuBackend | null): void {
   if (_custom === backend) return;
   const previous = _custom;
   if (previous !== null && previous !== _host) {
-    try {
-      previous.destroy?.();
-    } finally {
-      _custom = backend;
-    }
-  } else {
-    _custom = backend;
+    previous.destroy?.();
   }
+  _custom = backend;
 }
 
 // Pops up a context menu at (x, y) and resolves the clicked item id, or null when dismissed. On web,
