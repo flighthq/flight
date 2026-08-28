@@ -244,22 +244,31 @@ describe('setMenuBackend', () => {
     expect(getMenuBackend()).not.toBe(backend);
   });
 
-  it('destroys the outgoing backend before the new one is active', () => {
+  it('destroys the outgoing backend while it is still the active backend', () => {
     const order: string[] = [];
     const first = fakeBackend({
       destroy() {
-        order.push('destroy-first');
-        order.push(`active-is-first:${getMenuBackend() !== first}`);
+        order.push('destroy');
+        order.push(`sees-self:${getMenuBackend() === first}`);
       },
     });
-    const second = fakeBackend({
-      destroy() {
-        order.push('destroy-second');
-      },
-    });
+    const second = fakeBackend();
     setMenuBackend(first);
     setMenuBackend(second);
-    expect(order).toEqual(['destroy-first', 'active-is-first:true']);
+    expect(order).toEqual(['destroy', 'sees-self:true']);
+    expect(getMenuBackend()).toBe(second);
+  });
+
+  it('installs the replacement even when outgoing destroy throws', () => {
+    const first = fakeBackend({
+      destroy() {
+        throw new Error('teardown failed');
+      },
+    });
+    const second = fakeBackend();
+    setMenuBackend(first);
+    expect(() => setMenuBackend(second)).toThrow('teardown failed');
+    expect(getMenuBackend()).toBe(second);
   });
 
   it('does not destroy a backend that is being re-assigned to the same slot', () => {
