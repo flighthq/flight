@@ -67,3 +67,8 @@ export interface Connectivity {
   onOnline: Signal<() => void>;
   onOffline: Signal<() => void>;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type ConnectivityOperation = keyof ConnectivityBackend;

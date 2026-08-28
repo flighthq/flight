@@ -15,8 +15,15 @@
 export interface BackendOperationExplanation {
   // True iff a custom or host backend provides the operation. False whenever only the sentinel serves it.
   readonly implemented: boolean;
-  // Which layer provides it. `'sentinel'` is the honest answer for an unimplemented operation and is why
-  // this vocabulary is not `BackendExplanation`'s: that one never had to name the fall-through.
-  readonly layer: 'custom' | 'host' | 'sentinel';
+  // Which layer provides it, and why this vocabulary is not `BackendExplanation`'s: that one never had to
+  // name what serves an unimplemented operation.
+  //
+  // `'sentinel'` and `'none'` are BOTH "nothing real implements this", and they are kept apart because
+  // they are different facts about the package. `'sentinel'` means a fall-through object answers the call
+  // so it cannot throw. `'none'` means there is no fall-through at all — the nullable single-slot
+  // capabilities (`textshaper`, `log`) return `null` from their getter and callers handle the absence
+  // directly. Reporting `'sentinel'` for those would name an object that does not exist, which is the
+  // same class of lie this type exists to remove.
+  readonly layer: 'custom' | 'host' | 'none' | 'sentinel';
   readonly operation: string;
 }

@@ -48,3 +48,8 @@ export interface StorageQuota {
 export interface StorageSignals {
   onChange: Signal<(change: Readonly<StorageChange>) => void>;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type StorageOperation = keyof StorageBackend;

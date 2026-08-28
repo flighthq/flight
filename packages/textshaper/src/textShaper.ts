@@ -1,4 +1,9 @@
-import type { TextFormat, TextShaperBackend } from '@flighthq/types/contract';
+import type {
+  BackendOperationExplanation,
+  TextFormat,
+  TextShaperBackend,
+  TextShaperOperation,
+} from '@flighthq/types/contract';
 
 import { _textShaperBackendHook } from './_textShaperHooks';
 
@@ -9,8 +14,25 @@ import { _textShaperBackendHook } from './_textShaperHooks';
 // historical measure-provider, which was null until a renderer registered one — callers fall back to
 // leaving text unmeasured until a backend exists. A future @flighthq/textshaper-harfbuzz registers
 // the same way.
+// Which layer implements `operation`. This capability is a SINGLE NULLABLE SLOT — there is no host layer
+// and no sentinel — so the two honest answers are `'custom'` (a backend is installed and provides it) and
+// `'none'` (no backend is installed at all). Reporting `'sentinel'` here would name a fall-through object
+// that does not exist, and inventing a host layer would describe a precedence this package does not have.
+export function explainTextShaperOperation(operation: TextShaperOperation): BackendOperationExplanation {
+  if (_backend !== null && typeof _backend[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  return { implemented: false, layer: 'none', operation };
+}
+
 export function getTextShaperBackend(): TextShaperBackend | null {
   return _backend;
+}
+
+// Whether an installed backend implements `operation`. False when nothing is installed, which for this
+// capability is also what the getter reports by returning null.
+export function hasTextShaperOperation(operation: TextShaperOperation): boolean {
+  return explainTextShaperOperation(operation).implemented;
 }
 
 // Measures `text` in `format` to its horizontal advance, in pixels, via the active backend. Returns

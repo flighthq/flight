@@ -1,5 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendExplanation } from '@flighthq/types/contract';
+import type { BackendExplanation, BackendOperationExplanation, LifecycleOperation } from '@flighthq/types/contract';
 import type {
   AppLaunchKind,
   AppLifecycle,
@@ -196,6 +196,22 @@ export function explainLifecycleBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// Which layer implements `operation`, and whether anything real does — the per-operation answer
+// `explainLifecycleBackend` cannot give: that one reports a backend is installed, this one reports whether
+// THIS operation on it is a genuine implementation or the sentinel standing in.
+//
+// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
+// this report `true` for everything and say nothing at all.
+export function explainLifecycleOperation(operation: LifecycleOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 // Returns the kind of launch — 'cold' (fresh process) or 'warm' (resumed from background). The web
 // backend approximates this via PerformanceNavigationTiming.type ('back_forward' → 'warm', all
 // others → 'cold'). Returns 'warm' as a safe fallback when the backend does not implement
@@ -212,6 +228,11 @@ export function getAppLifecycleState(): AppLifecycleState {
 
 export function getLifecycleBackend(): LifecycleBackend {
   return _custom ?? _host ?? _sentinel;
+}
+
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+export function hasLifecycleOperation(operation: LifecycleOperation): boolean {
+  return explainLifecycleOperation(operation).implemented;
 }
 
 export function installLifecycleHostBackend(backend: LifecycleBackend): void {

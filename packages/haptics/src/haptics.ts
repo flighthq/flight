@@ -1,4 +1,4 @@
-import type { BackendExplanation } from '@flighthq/types/contract';
+import type { BackendExplanation, BackendOperationExplanation, HapticsOperation } from '@flighthq/types/contract';
 import type {
   HapticImpactStyle,
   HapticNotificationType,
@@ -73,12 +73,33 @@ export function explainHapticsBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// Which layer implements `operation`, and whether anything real does — the per-operation answer
+// `explainHapticsBackend` cannot give: that one reports a backend is installed, this one reports whether
+// THIS operation on it is a genuine implementation or the sentinel standing in.
+//
+// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
+// this report `true` for everything and say nothing at all.
+export function explainHapticsOperation(operation: HapticsOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 export function getHapticsBackend(): HapticsBackend {
   return _custom ?? _host ?? _sentinel;
 }
 
 export function getHapticsCapabilities(out: HapticsCapabilities): HapticsCapabilities {
   return getHapticsBackend().capabilities(out);
+}
+
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+export function hasHapticsOperation(operation: HapticsOperation): boolean {
+  return explainHapticsOperation(operation).implemented;
 }
 
 export function installHapticsHostBackend(backend: HapticsBackend): void {
