@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -224,6 +225,34 @@ describe('hasValidAssertSyncVoidDeclaration', () => {
   });
 });
 
+// ★ COMPILE FIXTURE. The type guard is the assertion surface — this test proves it rejects
+// Promise/any/unknown/number at compile time and accepts void (including lib.dom void calls).
+// Every @ts-expect-error line MUST hit a real error; an unused one produces TS2578 and fails
+// the compile, so weakening assertSyncVoid to accept Promise would break this test.
+describe('assertSyncVoid compile fixture', () => {
+  it('accepts void and rejects Promise, any, unknown, and number via tsc', { timeout: 30_000 }, () => {
+    const dir = mkdtempSync(join(tmpdir(), 'assertSyncVoid-compile-'));
+    writeFileSync(join(dir, 'fixture.ts'), COMPILE_FIXTURE, 'utf-8');
+    writeFileSync(
+      join(dir, 'tsconfig.json'),
+      JSON.stringify({
+        compilerOptions: {
+          lib: ['ES2022', 'DOM'],
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+          noEmit: true,
+          strict: true,
+          target: 'ES2022',
+        },
+        include: ['fixture.ts'],
+      }),
+      'utf-8',
+    );
+    const result = runTsc(dir);
+    expect(result.exitCode).toBe(0);
+  });
+});
+
 // The live population. This is a census rather than a ratchet: it reports, and the judgement of whether
 // a candidate's callee actually returns a promise is made by reading the API and recorded in
 // `agents/backend-lifecycle-ownership.md`, because that is not syntactically decidable.
@@ -255,6 +284,57 @@ describe('teardown rejection census of the live tree', () => {
   });
 });
 
+// Compile fixture proving the assertSyncVoid type guard accepts void and rejects
+// Promise/any/unknown/number. Every @ts-expect-error is a mutation guard: if someone weakens
+// the helper to accept the annotated type, the directive becomes unused (TS2578) and tsc fails.
+const COMPILE_FIXTURE = [
+  'type IsAny<T> = 0 extends 1 & T ? true : false;',
+  'function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {',
+  '  void value;',
+  '}',
+  '',
+  '// Positive: plain void',
+  'function syncVoid(): void {}',
+  'assertSyncVoid(syncVoid());',
+  '',
+  '// Positive: lib.dom void — AudioBufferSourceNode.stop',
+  'declare const sourceNode: AudioBufferSourceNode;',
+  'assertSyncVoid(sourceNode.stop());',
+  '',
+  '// Positive: lib.dom void — MediaSession.setActionHandler',
+  'declare const session: MediaSession;',
+  "assertSyncVoid(session.setActionHandler('play', null));",
+  '',
+  '// Positive: third sync-void with no registry edit',
+  'declare const map: Map<string, string>;',
+  'assertSyncVoid(map.clear());',
+  '',
+  '// Negative: Promise<void>',
+  'declare function asyncFn(): Promise<void>;',
+  '// @ts-expect-error TS2345: Promise<void> must be rejected',
+  'assertSyncVoid(asyncFn());',
+  '',
+  '// Negative: lib.dom Promise<void> — AudioContext.close',
+  'declare const ctx: AudioContext;',
+  '// @ts-expect-error TS2345: AudioContext.close returns Promise<void>',
+  'assertSyncVoid(ctx.close());',
+  '',
+  '// Negative: any',
+  'declare function returnsAny(): any;',
+  '// @ts-expect-error TS2345: any must be rejected by IsAny guard',
+  'assertSyncVoid(returnsAny());',
+  '',
+  '// Negative: unknown',
+  'declare function returnsUnknown(): unknown;',
+  '// @ts-expect-error TS2345: unknown must be rejected',
+  'assertSyncVoid(returnsUnknown());',
+  '',
+  '// Negative: number',
+  'declare function returnsNumber(): number;',
+  '// @ts-expect-error TS2345: number must be rejected',
+  'assertSyncVoid(returnsNumber());',
+].join('\n');
+
 const ROOT = resolve(__dirname, '..');
 const fixturePath = writeFixture(FIXTURE, 'TeardownFixture.ts');
 const weakenedFixturePath = writeFixture(WEAKENED_FIXTURE, 'WeakenedFixture.ts');
@@ -275,6 +355,20 @@ function livePackageSources(): string[] {
 function parseFixture(source: string): Node {
   const path = writeFixture(source, 'ParseFixture.ts');
   return getParsedOxcSource(path).program as unknown as Node;
+}
+
+function runTsc(dir: string): { exitCode: number; output: string } {
+  try {
+    const output = execSync(`npx tsc --project ${dir}/tsconfig.json`, {
+      cwd: ROOT,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return { exitCode: 0, output };
+  } catch (error: unknown) {
+    const e = error as { status?: number; stdout?: string; stderr?: string };
+    return { exitCode: e.status ?? 1, output: `${e.stdout ?? ''}${e.stderr ?? ''}` };
+  }
 }
 
 function writeFixture(source: string, name: string): string {
