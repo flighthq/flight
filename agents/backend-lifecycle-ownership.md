@@ -61,7 +61,7 @@ an oracle.
 | --- | --- | --- | --- |
 | `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse and destroy behavior are assertion-backed |
 | `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
-| `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on the `navigator.mediaSession` singleton | clears exactly the actions in `registered`; sets `metadata = null`, `playbackState = 'none'`, `setPositionState(undefined)` | **over-release:** actions are origin-pinned via `registered`, but metadata/playbackState/position are reset unconditionally — including when this backend never set them, discarding another party's state |
+| `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on each exact `navigator.mediaSession` identity it published to | releases only lanes still carrying that backend's provenance token; metadata and playback state additionally require the exact published value; explicit clears relinquish ownership; failed releases remain retryable | **closed.** A superseding backend or external publisher remains intact, shared-session lanes are released independently, and a session-identity change cannot redirect cleanup |
 | `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | Electron clears the listener and calls `Menu.setApplicationMenu(null)`; Tauri clears the listener only; web is a no-op | **under-release:** Tauri native-menu cleanup remains owed pending an observable async teardown contract, and the host-installed backend has no reachable teardown — there is no `destroyMenuBackend`, and `setMenuBackend` destroys only the custom slot |
 | `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel; detaches each retained `(sentinel, handler)` pair by identity; resets the four cached readings | **closed.** All three findings were remediated in order — teardown made reachable (`destroyPowerBackend`), then the release completed. This row is behaviorally assertion-backed; see *Behavioral completeness* below |
 
@@ -90,8 +90,9 @@ counted removals would pass against an implementation that removes the wrong han
 one. Counting is not identity.
 
 `Accessibility` cleanup is likewise assertion-backed by its borrowed-container identity tests. The
-remaining rows are unchanged: `Menu` and `MediaSession` still carry the mismatches named above, while
-`LogTransport` has no implementation to audit.
+remaining rows are unchanged: `Menu` still carries the mismatch named above, while `LogTransport` has
+no implementation to audit. `MediaSession` is now assertion-backed by per-backend, per-session,
+per-lane ownership tests, including B-supersedes-A and failed-release retry cases.
 
 #### A systemic defect the row-by-row reading did not surface — FIXED
 
