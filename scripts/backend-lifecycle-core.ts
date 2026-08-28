@@ -60,8 +60,13 @@ export interface BackendLifecycleReport {
 // `BackendLifecycleReport` is supplied in this one place instead of at every construction site.
 //
 // This exists because the opposite happened: `enforcedNames` was added to the interface and had to be
-// hand-applied to six literals. Five were found and the sixth — a provenance fixture that never reads
+// hand-applied to TEN fixture sites. Nine were found; the tenth — a provenance fixture that never reads
 // the report's contents at all — was missed, and broke the root typecheck.
+//
+// Ten is measured, not recalled: adding one required field to the interface and counting the compiler's
+// complaints gives 11 sites before the factory (10 fixtures + the real producer) and 2 after (this
+// factory + the real producer). The producer must genuinely compute a new field, so it SHOULD appear;
+// the fixtures should not, and now do not.
 export function createEmptyBackendLifecycleReport(): BackendLifecycleReport {
   return { enforced: 0, enforcedNames: [], entries: [], noTeardownHook: 0, total: 0, violations: [] };
 }
