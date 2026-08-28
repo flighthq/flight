@@ -91,7 +91,7 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceB
         s.sourceNode.onended = null;
         if (s.state === 'playing') {
           try {
-            s.sourceNode.stop();
+            assertSyncVoid(s.sourceNode.stop());
           } catch {
             // already stopped
           }
@@ -293,3 +293,8 @@ const _sentinel: AudioDeviceBackend = {
   startSource(): void {},
   stopSource(): void {},
 };
+
+type IsAny<T> = 0 extends 1 & T ? true : false;
+function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): void {
+  void value;
+}
