@@ -12,6 +12,8 @@ import type {
   TextureWrap,
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
+  WgpuHostAcquisition,
+  WgpuHostBackend,
   WgpuRenderOptions,
   WgpuRenderState,
   WgpuRenderStateRuntime,
@@ -19,6 +21,7 @@ import type {
 import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import { warmWgpuPipelines } from './wgpuDraw';
+import { getWgpuHostBackend } from './wgpuHost';
 import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
 
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
@@ -99,35 +102,28 @@ export async function createWgpuRenderState(
   canvas: HTMLCanvasElement,
   options: WgpuRenderOptions = {},
 ): Promise<WgpuRenderState> {
-  if (!navigator.gpu) throw new Error('WebGPU is not supported in this browser.');
+  const hostBackend = getWgpuHostBackend();
+  const acquisition =
+    options.acquisition ??
+    (await hostBackend.acquire(canvas, {
+      format: options.format,
+      powerPreference: options.powerPreference,
+    }));
+  try {
+    return initializeWgpuRenderState(canvas, options, acquisition, hostBackend);
+  } catch (error) {
+    hostBackend.release(acquisition);
+    throw error;
+  }
+}
 
-  const adapter = await navigator.gpu.requestAdapter(
-    options.powerPreference != null ? { powerPreference: options.powerPreference } : undefined,
-  );
-  if (!adapter) throw new Error('Failed to get WebGPU adapter.');
-
-  // The forward-lit 3D pipeline binds 5 groups (Frame, Draw, Material, Shadow, Ibl); WebGPU's
-  // guaranteed baseline maxBindGroups is only 4, so request 5 when the adapter allows it. Guarded by
-  // the adapter limit: requiredLimits above the adapter's support makes requestDevice reject, and a
-  // baseline-4 adapter simply keeps 4 (the 5-group lit pipeline is unavailable there until shadow+IBL
-  // are folded into one group — a portability follow-up). 2D and unlit paths use ≤4 groups regardless.
-  const requiredLimits: Record<string, number> = {};
-  if (adapter.limits.maxBindGroups >= 5) requiredLimits.maxBindGroups = 5;
-  // Compression features must be enabled at device creation; there is no later extension activation
-  // like WebGL. Enable every family the adapter exposes so the opt-in compressed uploader can use the
-  // native path when it is registered, while unsupported families retain their CPU decode fallback.
-  const requiredFeatures = (
-    ['texture-compression-bc', 'texture-compression-etc2', 'texture-compression-astc'] as GPUFeatureName[]
-  ).filter((feature) => adapter.features.has(feature));
-  const deviceDescriptor: GPUDeviceDescriptor = {};
-  if (Object.keys(requiredLimits).length > 0) deviceDescriptor.requiredLimits = requiredLimits;
-  if (requiredFeatures.length > 0) deviceDescriptor.requiredFeatures = requiredFeatures;
-  const device = await adapter.requestDevice(deviceDescriptor);
-
-  const format = options.format ?? navigator.gpu.getPreferredCanvasFormat();
-
-  const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
-  if (!context) throw new Error('Failed to get WebGPU canvas context.');
+function initializeWgpuRenderState(
+  canvas: HTMLCanvasElement,
+  options: Readonly<WgpuRenderOptions>,
+  acquisition: Readonly<WgpuHostAcquisition>,
+  hostBackend: WgpuHostBackend,
+): WgpuRenderState {
+  const { context, device, format } = acquisition;
 
   // COPY_SRC lets the canvas texture be read back via copyTextureToBuffer (createBitmapFromWgpuRenderState).
   // It is the only reliable way to read a Wgpu frame in headless/software contexts, where canvas
@@ -188,7 +184,7 @@ export async function createWgpuRenderState(
   (state as { device: GPUDevice }).device = device;
   (state as { format: GPUTextureFormat }).format = format;
 
-  const runtime = createWgpuRenderStateRuntime();
+  const runtime = createWgpuRenderStateRuntimeWithHost(acquisition, hostBackend);
   state[EntityRuntimeKey] = runtime;
   runtime.surfaceAntialiasEnabled = options.antialias ?? false;
   runtime.currentBlendMode = null;
@@ -269,6 +265,21 @@ export async function createWgpuRenderState(
 // it back. The render path writes the returned object every frame, so the return is intentionally
 // mutable (not Readonly).
 export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRuntime): WgpuRenderStateRuntime {
+  return createWgpuRenderStateRuntimeInternal(sharedRuntime, null, null);
+}
+
+function createWgpuRenderStateRuntimeWithHost(
+  acquisition: Readonly<WgpuHostAcquisition>,
+  hostBackend: WgpuHostBackend,
+): WgpuRenderStateRuntime {
+  return createWgpuRenderStateRuntimeInternal(undefined, acquisition, hostBackend);
+}
+
+function createWgpuRenderStateRuntimeInternal(
+  sharedRuntime: WgpuRenderStateRuntime | undefined,
+  acquisition: Readonly<WgpuHostAcquisition> | null = null,
+  hostBackend: WgpuHostBackend | null = null,
+): WgpuRenderStateRuntime {
   const runtime = createRenderStateRuntime() as WgpuRenderStateRuntime;
   runtime.applyBlendModeParent = null;
   runtime.surfaceAntialiasEnabled = false;
@@ -296,7 +307,9 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
     velocityWriters: createKeyedTable('WgpuVelocityWriter', 'Unregistered'),
   };
   const deviceRuntime =
-    sharedRuntime === undefined ? { fields: {}, references: 0 } : getWgpuDeviceRuntime(sharedRuntime);
+    sharedRuntime === undefined
+      ? { acquisition, fields: {}, hostBackend, references: 0 }
+      : getWgpuDeviceRuntime(sharedRuntime);
   deviceRuntime.references++;
   _deviceRuntimeByStateRuntime.set(runtime, deviceRuntime);
   for (const key of WGPU_DEVICE_RUNTIME_KEYS) {
@@ -317,10 +330,10 @@ export function createWgpuRenderStateRuntime(sharedRuntime?: WgpuRenderStateRunt
 // and every quad-batch writer pool slot's instance/material buffers. Call when the render state is no
 // longer needed.
 //
-// Intentionally NOT touched: the GPUDevice (app-owned and shared — destroying it would tear down
-// every state on it), and GC-managed Wgpu objects with no destroy() (pipelines, bind groups,
-// layouts, samplers, shader modules, texture views). textureCache is a WeakMap and cannot be
-// enumerated; its entries' textures are freed per-node by the dispose* paths.
+// GC-managed Wgpu objects with no destroy() (pipelines, bind groups, layouts, samplers, shader
+// modules, texture views) are not touched. textureCache is a WeakMap and cannot be enumerated; its
+// entries' textures are freed per-node by the dispose* paths. The shared device tier routes its
+// acquisition through the originating host backend when its last state is destroyed.
 export function destroyWgpuRenderState(state: WgpuRenderState): void {
   if (_destroyedStates.has(state)) return;
   _destroyedStates.add(state);
@@ -334,7 +347,11 @@ export function destroyWgpuRenderState(state: WgpuRenderState): void {
     slot.instanceBuffer?.destroy();
     slot.materialBuffer?.destroy();
   }
-  getWgpuDeviceRuntime(runtime).references--;
+  const deviceRuntime = getWgpuDeviceRuntime(runtime);
+  deviceRuntime.references--;
+  if (deviceRuntime.references === 0 && deviceRuntime.acquisition !== null && deviceRuntime.hostBackend !== null) {
+    deviceRuntime.hostBackend.release(deviceRuntime.acquisition);
+  }
 }
 
 export function getWgpuColorAdjustmentMaterialFeature(
@@ -406,7 +423,7 @@ export function getWgpuSampler(
 }
 
 export function isWgpuSupported(): boolean {
-  return typeof navigator !== 'undefined' && 'gpu' in navigator && navigator.gpu !== null;
+  return getWgpuHostBackend().isSupported();
 }
 
 // Small-integer codes for the sampler-cache numeric key (see getWgpuSampler). Module-level so the key
@@ -484,7 +501,9 @@ function initializeOffscreenWgpuRuntime(
 
 type WgpuDeviceRuntimeKey = (typeof WGPU_DEVICE_RUNTIME_KEYS)[number];
 type WgpuDeviceRuntime = {
+  acquisition: Readonly<WgpuHostAcquisition> | null;
   fields: Partial<Pick<WgpuRenderStateRuntime, WgpuDeviceRuntimeKey>>;
+  hostBackend: WgpuHostBackend | null;
   references: number;
 };
 

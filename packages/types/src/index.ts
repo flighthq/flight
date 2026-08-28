@@ -791,6 +791,7 @@ export * from './WgpuCompressedTextureUploader';
 export * from './WgpuClassicPipeline';
 export * from './WgpuDebugPipeline';
 export * from './WgpuFullscreenPipeline';
+export * from './WgpuHost';
 export * from './WgpuMatcapPipeline';
 export * from './WgpuMaterialRenderer';
 export * from './WgpuMeshMaterialRenderer';

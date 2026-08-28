@@ -87,4 +87,45 @@ describe('P5 host-bypass derived gate', () => {
       'technology-specific-renderer',
     ]);
   });
+
+  it('drops the six WebGPU sites only when they move through an explicit web acquisition seam', () => {
+    const directSource = `
+      export async function acquire(canvas: HTMLCanvasElement) {
+        if (!navigator.gpu) throw new Error('unsupported');
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter!.requestDevice();
+        const format = navigator.gpu.getPreferredCanvasFormat();
+        const context = canvas.getContext('webgpu');
+        return { context, device, format };
+      }
+      export function supported() { return navigator.gpu !== null; }
+    `;
+    const direct = createP5HostBypassReport(
+      1,
+      scanP5HostBypassSource('packages/render-wgpu/src/wgpuHost.ts', directSource),
+    );
+    expect(countP5HostBypasses(direct)['webgpu-acquisition']).toBe(6);
+    expect(direct.excluded).toEqual([]);
+
+    const explicitWebSource = directSource
+      .replace('function acquire', 'function acquireWebWgpuHost')
+      .replace('function supported', 'function isWebWgpuSupported');
+    const explicitWeb = createP5HostBypassReport(
+      1,
+      scanP5HostBypassSource('packages/render-wgpu/src/wgpuHost.ts', explicitWebSource),
+    );
+    expect(explicitWeb.p5).toEqual([]);
+    expect(explicitWeb.excluded).toHaveLength(6);
+    expect(explicitWeb.excluded.every((site) => site.exclusion === 'explicit-web-adapter')).toBe(true);
+
+    const portableConsumer = createP5HostBypassReport(
+      1,
+      scanP5HostBypassSource(
+        'packages/render-wgpu/src/wgpuRenderState.ts',
+        `export function createWgpuRenderState(backend: WgpuHostBackend) { return backend.acquire(); }`,
+      ),
+    );
+    expect(portableConsumer.p5).toEqual([]);
+    expect(portableConsumer.excluded).toEqual([]);
+  });
 });

@@ -8,6 +8,7 @@ export * from './wgpuElement';
 export * from './enableWgpuTextureResolverGuards';
 export * from './explainWgpuTextureResolution';
 export * from './wgpuFullscreenPass';
+export * from './wgpuHost';
 export * from './wgpuMaterialRegistry';
 export * from './wgpuMipmap';
 export * from './wgpuRenderState';

@@ -40,7 +40,7 @@ export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget = {
   'direct-dom': 18,
   'input-ingress': 26,
   'scratch-surface': 18,
-  'webgpu-acquisition': 6,
+  'webgpu-acquisition': 0,
 };
 
 const P3_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
