@@ -89,7 +89,11 @@ Legitimate host capability limitations are not defects. Lime cannot provide rich
 
 ---
 
-## P2 — AudioBackend
+## P2 — Audio device seam
+
+The installable audio-device seam belongs in `@flighthq/media`, not `@flighthq/audio`. `media` owns channels, mixing, and playback; `audio` owns resources and decoding. The device backend that replaces `AudioContext`/`GainNode`/`AudioBufferSourceNode` is a `media` concern.
+
+`media` needs the same `get*Backend` / `set*Backend` / `enableHostWeb*` treatment as every other capability. The backend interface should cover: source creation, playback control (play/pause/stop/seek), volume, spatial/3D positioning, and stream management. See [AudioDeviceBackend design](audio-device-backend-design.md) for the concrete proposal.
 
 ### Audit findings (2026-08-27)
 
@@ -99,7 +103,7 @@ The `@flighthq/audio` package was audited for Application coupling, global state
 - **Caller-owned AudioContext.** Every decode/load function accepts an `AudioContext` parameter; the package never creates or stores one. The native host retains full control of audio device lifecycle.
 - **Direct web leak: `new Audio().canPlayType()`** in `audioFormat.ts`. This was the only hard web dependency — a capability probe that native hosts cannot satisfy without a DOM `HTMLAudioElement`.
 
-### Slice implemented: `canPlayType` seam
+### Slice implemented: `canPlayType` seam (in `@flighthq/audio`)
 
 The `new Audio()` leak has been moved behind a process-global `AudioBackend` seam:
 
@@ -109,7 +113,7 @@ The `new Audio()` leak has been moved behind a process-global `AudioBackend` sea
 - `enableHostWebAudio()` in `@flighthq/host-web` creates the web backend (`new Audio().canPlayType()`), wraps with observation, installs into the host slot. Called by the umbrella `enableHostWeb()`.
 - `canPlayAudioType()` in `@flighthq/audio` now routes through the backend instead of constructing `new Audio()` directly.
 
-### P2 remains open
+### P2 remains OPEN
 
 The `canPlayType` slice addresses only the direct web leak. The broader audio-device seam — source creation, playback control (play/pause/stop/seek), volume, spatial/3D positioning, and stream management — is specified in the [AudioDeviceBackend design proposal](audio-device-backend-design.md). P2 is not satisfied until a native host can install its own audio playback device.
 
