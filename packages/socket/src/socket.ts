@@ -124,15 +124,30 @@ export function enableSocketSignals(socket: Socket): SocketSignals {
   return runtime.signals;
 }
 
-// The active socket backend, or a lazily-created web default. There is always a backend.
+// The active socket backend. A caller-installed custom backend takes precedence over a host backend;
+// without either, the existing web WebSocket backend remains the lazy fallback.
 export function getSocketBackend(): SocketBackend {
-  if (_backend === null) _backend = createWebSocketBackend();
-  return _backend;
+  if (_custom !== null) return _custom;
+  if (_host !== null) return _host;
+  if (_webFallback === null) _webFallback = createWebSocketBackend();
+  return _webFallback;
 }
 
 // The socket's current connection phase, tracked on the runtime from backend events and closeSocket.
 export function getSocketReadyState(socket: Readonly<Socket>): SocketReadyState {
   return socket.runtime.readyState;
+}
+
+// Installs the process host's socket transport without occupying the caller-owned custom slot. First
+// host wins, matching the other process-global capability seams.
+export function installSocketHostBackend(backend: SocketBackend): void {
+  if (_host === null) _host = backend;
+}
+
+export function resetSocketBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _webFallback = null;
 }
 
 // Sends a text or binary frame over the live connection without mutating or copying either argument.
@@ -148,9 +163,10 @@ export function sendSocketMessage(socket: Readonly<Socket>, data: string | Array
   return runtime.connection.sendSocketFrame(data);
 }
 
-// Installs a native host socket backend (adding TCP/UDP); pass null to fall back to the web default.
+// Installs or clears a caller-owned custom transport. Clearing it reveals the process host backend,
+// or the lazy web fallback when no host is installed.
 export function setSocketBackend(backend: SocketBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
 // Installs the diagnostics hook used by the separately imported enableSocketGuards module. Null is
@@ -159,8 +175,10 @@ export function setSocketGuard(guard: SocketGuard | null): void {
   _guard = guard;
 }
 
-let _backend: SocketBackend | null = null;
+let _custom: SocketBackend | null = null;
 let _guard: SocketGuard | null = null;
+let _host: SocketBackend | null = null;
+let _webFallback: SocketBackend | null = null;
 
 // Builds the backend→entity sink bound to one socket's runtime: it updates readyState and emits the
 // opt-in signals. Every handler is a no-op once the runtime stops delivering (detach/dispose), so a
