@@ -206,6 +206,25 @@ Whether `dispose` is a method on the backend interface or a separate lifecycle f
 
 These are subsequent design items that block specific native host capabilities.
 
+### Acceptance ordering
+
+The sequential immutable taxonomy-v4 checkpoints deliberately serialize acceptance and integration.
+Each accepted migration appends one checkpoint derived from the immediately preceding accepted state,
+preserving its taxonomy version, category counts, total, direction, population, and slice attribution.
+That serialization is an auditability cost: it makes movements such as 28 -> 27 -> 26 meaningful and
+must not be weakened, batched, or optimized away for throughput.
+
+Each checkpoint requires a reason and deliberately carries no timestamp: the chain records why an
+accepted state changed, not when. That absence is intentional, not an instrumentation gap.
+
+Read-only discovery may proceed in parallel, and disjoint leaf implementation may proceed against a
+frozen accepted foundation. Acceptance does not parallelize: after each landing, later manifests and
+checkpoint edits must be rederived or revalidated against the new accepted tail.
+
+One shared scratch-surface provider foundation is the high-leverage prerequisite for four GL/WGPU pairs
+covering eight sites: rich text, scale9, lazy shape, and text label. Accept that foundation before treating
+those renderer leaves as parallel candidates; its shared provider and taxonomy surfaces remain serialized.
+
 ### Scratch surfaces and image decoding
 
 `bitmap` directly creates `<canvas>` elements for pixel manipulation:
