@@ -199,6 +199,28 @@ describe('hasValidAssertSyncVoidDeclaration', () => {
     expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
   });
 
+  it('rejects the Promise-returning imposter from independent review', () => {
+    const weakened =
+      'function assertSyncVoid<T>(value: Promise<void>): Promise<void> { const IsAny = 0; void value; return value; }';
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
+  });
+
+  it('rejects a canonical helper whose call binding can be shadowed', () => {
+    const shadowed = FIXTURE.replace(
+      'export function makeBackend() {',
+      'export function makeBackend(assertSyncVoid: (value: unknown) => unknown) {',
+    );
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(shadowed), shadowed)).toBe(false);
+  });
+
+  it('rejects a canonical helper whose binding is reassigned', () => {
+    const reassigned = FIXTURE.replace(
+      'export function makeBackend() {',
+      'assertSyncVoid = ((value: unknown) => value) as typeof assertSyncVoid;\nexport function makeBackend() {',
+    );
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(reassigned), reassigned)).toBe(false);
+  });
+
   it('rejects a helper whose IsAny alias is weakened', () => {
     const weakened = FIXTURE.replace('0 extends 1 & T', '0 extends T');
     expect(hasValidAssertSyncVoidDeclaration(parseFixture(weakened), weakened)).toBe(false);
