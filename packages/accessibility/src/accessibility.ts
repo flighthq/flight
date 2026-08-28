@@ -50,16 +50,24 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
     return root;
   }
 
+  // Removes only DOM identities this backend created. A caller-supplied root is borrowed and may contain
+  // unrelated children (including lookalikes carrying Flight data attributes), so root-wide replacement or
+  // selector-based cleanup would release state this backend does not own.
+  function removeOwnedAccessibilityDom(): void {
+    for (const element of elements.values()) element.remove();
+    for (const region of liveRegions.values()) region.remove();
+    elements.clear();
+    liveRegions.clear();
+  }
+
   return {
     // Frees everything this instance owns. Idempotent: the maps are emptied and the root reference
     // dropped, so a second destroy finds nothing to free.
     destroy() {
-      elements.clear();
-      liveRegions.clear();
-      // Remove the container when this backend created it; when it was handed one, empty the elements this
-      // backend put inside it but leave the container itself — the caller owns that and may reuse it.
+      removeOwnedAccessibilityDom();
+      // Remove the container only when this backend created it. A handed-in container and every untracked
+      // child remain in place because the caller owns them and may reuse them.
       if (ownsRoot) root?.remove();
-      else root?.replaceChildren();
       root = null;
       // Left resolved so a destroyed backend cannot lazily resurrect a fresh container on the next call.
       rootResolved = true;
@@ -87,10 +95,8 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
       if (element.parentNode !== null) element.parentNode.removeChild(element);
     },
     clear() {
-      const overlayRoot = getRoot();
-      elements.clear();
-      liveRegions.clear();
-      if (overlayRoot !== null) overlayRoot.replaceChildren();
+      getRoot();
+      removeOwnedAccessibilityDom();
     },
     setFocus(id) {
       const overlayRoot = getRoot();

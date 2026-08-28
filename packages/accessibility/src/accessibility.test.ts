@@ -166,14 +166,74 @@ describe('createWebAccessibilityBackend', () => {
     expect(assertive?.textContent).toBe('warning');
   });
 
-  it('empties the container on clear', () => {
+  it('borrowed-clear/reuse axis: removes owned DOM, preserves foreign identity and order, and re-arms', () => {
     const container = document.createElement('div');
+    const foreignBefore = document.createElement('span');
+    foreignBefore.textContent = 'before';
+    container.appendChild(foreignBefore);
     const backend = createWebAccessibilityBackend(container);
     backend.setNode(node('a', 'button', {}));
     backend.announce('hi', 'polite');
-    expect(container.childElementCount).toBeGreaterThan(0);
+    const firstNode = container.querySelector('[data-flight-accessibility-id="a"]');
+    const firstRegion = container.querySelector('[data-flight-accessibility-live="polite"]');
+    const foreignAfter = document.createElement('span');
+    foreignAfter.textContent = 'after';
+    container.appendChild(foreignAfter);
+
     backend.clear();
-    expect(container.childElementCount).toBe(0);
+
+    expect([...container.children]).toEqual([foreignBefore, foreignAfter]);
+    expect(foreignBefore.textContent).toBe('before');
+    expect(foreignAfter.textContent).toBe('after');
+    expect(firstNode?.parentNode).toBeNull();
+    expect(firstRegion?.parentNode).toBeNull();
+
+    backend.setNode(node('b', 'button', {}));
+    backend.announce('again', 'assertive');
+    const secondNode = container.querySelector('[data-flight-accessibility-id="b"]');
+    const secondRegion = container.querySelector('[data-flight-accessibility-live="assertive"]');
+    backend.clear();
+
+    expect([...container.children]).toEqual([foreignBefore, foreignAfter]);
+    expect(secondNode?.parentNode).toBeNull();
+    expect(secondRegion?.parentNode).toBeNull();
+  });
+
+  it('borrowed-lookalike axis: preserves untracked caller nodes carrying Flight data attributes', () => {
+    const container = document.createElement('div');
+    const foreignNode = document.createElement('span');
+    foreignNode.setAttribute('data-flight-accessibility-id', 'caller');
+    const foreignRegion = document.createElement('span');
+    foreignRegion.setAttribute('data-flight-accessibility-live', 'polite');
+    container.append(foreignNode, foreignRegion);
+    const backend = createWebAccessibilityBackend(container);
+
+    backend.setNode(node('flight', 'button', {}));
+    backend.announce('owned', 'assertive');
+    backend.clear();
+
+    expect([...container.children]).toEqual([foreignNode, foreignRegion]);
+
+    backend.setNode(node('flight-again', 'button', {}));
+    backend.announce('owned again', 'assertive');
+    backend.destroy!();
+
+    expect([...container.children]).toEqual([foreignNode, foreignRegion]);
+  });
+
+  it('owned-map axis: removes mirrored nodes and both live-region identities', () => {
+    const container = document.createElement('div');
+    const backend = createWebAccessibilityBackend(container);
+    backend.setNode(node('parent', 'group', {}));
+    backend.setNode(node('child', 'button', { parentId: 'parent' }));
+    backend.announce('polite', 'polite');
+    backend.announce('assertive', 'assertive');
+    const owned = [...container.querySelectorAll('[data-flight-accessibility-id], [data-flight-accessibility-live]')];
+
+    backend.clear();
+
+    expect(owned).toHaveLength(4);
+    for (const element of owned) expect(element.parentNode).toBeNull();
   });
 
   it('defaults its container into document.body', () => {
@@ -212,18 +272,41 @@ describe('destroyAccessibilityBackend', () => {
 
     backend.destroy!();
     expect(containers()).toBe(0);
+
+    backend.setNode({ id: 'later', role: 'button', label: 'Later', parentId: undefined });
+    backend.announce('later', 'polite');
+    expect(containers()).toBe(0);
   });
 
-  // ★ Ownership is decided at construction. A container handed in belongs to the caller and must survive.
-  it('leaves a caller-supplied container in place', () => {
+  // ★ Ownership is decided at construction. A container and unrelated children handed in by the caller
+  // must survive with their exact identities and order.
+  it('borrowed-destroy axis: preserves pre-existing and late caller children while removing owned DOM', () => {
     const supplied = document.createElement('div');
     document.body.appendChild(supplied);
+    const foreignBefore = document.createElement('span');
+    foreignBefore.textContent = 'before';
+    foreignBefore.setAttribute('data-owner', 'caller-before');
+    supplied.appendChild(foreignBefore);
     const backend = createWebAccessibilityBackend(supplied);
     backend.setNode({ id: 'a', role: 'button', label: 'A', parentId: undefined });
+    backend.announce('announcement', 'polite');
+    const ownedNode = supplied.querySelector('[data-flight-accessibility-id="a"]');
+    const ownedRegion = supplied.querySelector('[data-flight-accessibility-live="polite"]');
+    const foreignAfter = document.createElement('span');
+    foreignAfter.textContent = 'after';
+    foreignAfter.setAttribute('data-owner', 'caller-after');
+    supplied.appendChild(foreignAfter);
 
     backend.destroy!();
+
     expect(supplied.isConnected).toBe(true);
-    expect(supplied.children.length).toBe(0);
+    expect([...supplied.children]).toEqual([foreignBefore, foreignAfter]);
+    expect(foreignBefore.textContent).toBe('before');
+    expect(foreignBefore.getAttribute('data-owner')).toBe('caller-before');
+    expect(foreignAfter.textContent).toBe('after');
+    expect(foreignAfter.getAttribute('data-owner')).toBe('caller-after');
+    expect(ownedNode?.isConnected).toBe(false);
+    expect(ownedRegion?.isConnected).toBe(false);
     supplied.remove();
   });
 
