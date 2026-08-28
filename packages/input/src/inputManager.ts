@@ -7,6 +7,9 @@ import type {
   InputGamepadAxisData,
   InputGamepadButtonData,
   InputGamepadConnectData,
+  InputIngressBackend,
+  InputIngressSink,
+  InputIngressSource,
   InputKeyboardData,
   InputKeyRepeatOptions,
   InputKeyRepeatTimer,
@@ -74,35 +77,10 @@ export function applyGamepadStickDeadZone(out: { x: number; y: number }, x: numb
 
 export function attachGamepadInput(
   manager: InputManager,
-  target: Window,
+  source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const onGamepadConnected = (e: Event) => {
-    if (!manager.enabled) return;
-    const pad = (e as GamepadEvent).gamepad;
-    const prev = getOrCreateGamepadPollState(manager);
-    prev.axes.set(pad.index, Array.from(pad.axes));
-    prev.buttons.set(
-      pad.index,
-      Array.from(pad.buttons, (b) => b.pressed),
-    );
-    _connectData.gamepad = pad.index;
-    _connectData.id = pad.id;
-    _connectData.mapping = pad.mapping === 'standard' ? 'standard' : pad.mapping === '' ? '' : 'raw';
-    emitSignal(manager.onGamepadConnect, _connectData);
-  };
-
-  const onGamepadDisconnected = (e: Event) => {
-    if (!manager.enabled) return;
-    const pad = (e as GamepadEvent).gamepad;
-    const prev = getOrCreateGamepadPollState(manager);
-    prev.axes.delete(pad.index);
-    prev.buttons.delete(pad.index);
-    _connectData.gamepad = pad.index;
-    _connectData.id = pad.id;
-    _connectData.mapping = pad.mapping === 'standard' ? 'standard' : pad.mapping === '' ? '' : 'raw';
-    emitSignal(manager.onGamepadDisconnect, _connectData);
-  };
+  const releaseIngress = getInputIngressBackend().attachGamepad(source, getInputIngressSink(manager), options);
 
   let rafId = 0;
   const loop = () => {
@@ -110,167 +88,57 @@ export function attachGamepadInput(
     rafId = requestAnimationFrame(loop);
   };
 
-  target.addEventListener('gamepadconnected', onGamepadConnected);
-  target.addEventListener('gamepaddisconnected', onGamepadDisconnected);
   rafId = requestAnimationFrame(loop);
 
-  setInputBinding(manager, target, kGamepadInput, () => {
-    target.removeEventListener('gamepadconnected', onGamepadConnected);
-    target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
+  setInputBinding(manager, source, kGamepadInput, () => {
+    releaseIngress();
     cancelAnimationFrame(rafId);
   });
-
-  // Suppress unused-options warning; options accepted for API symmetry.
-  void options;
 }
 
 export function attachKeyboardInput(
   manager: InputManager,
-  target: EventTarget,
+  source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const preventDefault = options?.preventDefault ?? true;
-
-  const onKeyDown = (e: Event) => {
-    if (!manager.enabled) return;
-    const ke = e as KeyboardEvent;
-    if (preventDefault) ke.preventDefault();
-    setInputKeyboardData(_keyboardData, ke);
-    emitSignal(manager.onKeyDown, _keyboardData);
-  };
-  const onKeyUp = (e: Event) => {
-    if (!manager.enabled) return;
-    const ke = e as KeyboardEvent;
-    if (preventDefault) ke.preventDefault();
-    setInputKeyboardData(_keyboardData, ke);
-    emitSignal(manager.onKeyUp, _keyboardData);
-  };
-
-  target.addEventListener('keydown', onKeyDown);
-  target.addEventListener('keyup', onKeyUp);
-  setInputBinding(manager, target, kKeyboardInput, () => {
-    target.removeEventListener('keydown', onKeyDown);
-    target.removeEventListener('keyup', onKeyUp);
-  });
+  const release = getInputIngressBackend().attachKeyboard(source, getInputIngressSink(manager), options);
+  setInputBinding(manager, source, kKeyboardInput, release);
 }
 
 export function attachPointerInput(
   manager: InputManager,
-  element: HTMLElement,
+  source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const preventDefault = options?.preventDefault ?? true;
-
-  const onContextMenu = (e: Event) => {
-    if (preventDefault) e.preventDefault();
-  };
-  const onPointerCancel = (e: Event) => {
-    if (!manager.enabled) return;
-    if (preventDefault) e.preventDefault();
-    setInputPointerData(_pointerData, e as PointerEvent, 0, 0);
-    emitSignal(manager.onPointerCancel, _pointerData);
-  };
-  const onPointerDown = (e: Event) => {
-    if (!manager.enabled) return;
-    if (preventDefault) e.preventDefault();
-    setInputPointerData(_pointerData, e as PointerEvent, 0, 0);
-    emitSignal(manager.onPointerDown, _pointerData);
-  };
-  const onPointerMove = (e: Event) => {
-    if (!manager.enabled) return;
-    if (preventDefault) e.preventDefault();
-    setInputPointerData(_pointerData, e as PointerEvent, 0, 0);
-    emitSignal(manager.onPointerMove, _pointerData);
-  };
-  const onPointerUp = (e: Event) => {
-    if (!manager.enabled) return;
-    if (preventDefault) e.preventDefault();
-    setInputPointerData(_pointerData, e as PointerEvent, 0, 0);
-    emitSignal(manager.onPointerUp, _pointerData);
-  };
-
-  element.addEventListener('contextmenu', onContextMenu);
-  element.addEventListener('pointercancel', onPointerCancel);
-  element.addEventListener('pointerdown', onPointerDown);
-  element.addEventListener('pointermove', onPointerMove);
-  element.addEventListener('pointerup', onPointerUp);
-
-  setInputBinding(manager, element, kPointerInput, () => {
-    element.removeEventListener('contextmenu', onContextMenu);
-    element.removeEventListener('pointercancel', onPointerCancel);
-    element.removeEventListener('pointerdown', onPointerDown);
-    element.removeEventListener('pointermove', onPointerMove);
-    element.removeEventListener('pointerup', onPointerUp);
-  });
+  const release = getInputIngressBackend().attachPointer(source, getInputIngressSink(manager), options);
+  setInputBinding(manager, source, kPointerInput, release);
 }
 
 export function attachRelativePointerInput(
   manager: InputManager,
-  element: HTMLElement,
+  source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const preventDefault = options?.preventDefault ?? true;
-  const target = element.ownerDocument;
-  const handler = (e: Event) => {
-    if (!manager.enabled) return;
-    const me = e as MouseEvent;
-    if (preventDefault) me.preventDefault();
-    setInputPointerData(_pointerData, me, me.movementX, me.movementY);
-    emitSignal(manager.onPointerMoveRelative, _pointerData);
-  };
-  target.addEventListener('mousemove', handler);
-  setInputBinding(manager, element, kRelativePointerInput, () => target.removeEventListener('mousemove', handler));
+  const release = getInputIngressBackend().attachRelativePointer(source, getInputIngressSink(manager), options);
+  setInputBinding(manager, source, kRelativePointerInput, release);
 }
 
 export function attachTextInput(
   manager: InputManager,
-  element: HTMLElement,
+  source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const onBeforeInput = (e: Event) => {
-    if (!manager.enabled) return;
-    const ie = e as InputEvent;
-    const text = ie.data ?? '';
-    _textData.isComposing = ie.isComposing;
-    _textData.text = text;
-    emitSignal(manager.onTextInput, _textData);
-  };
-  const onCompositionUpdate = (e: Event) => {
-    if (!manager.enabled) return;
-    const ce = e as CompositionEvent;
-    const text = ce.data ?? '';
-    _textData.isComposing = true;
-    _textData.text = text;
-    emitSignal(manager.onTextEdit, _textData);
-  };
-
-  element.addEventListener('beforeinput', onBeforeInput);
-  element.addEventListener('compositionupdate', onCompositionUpdate);
-  setInputBinding(manager, element, kTextInput, () => {
-    element.removeEventListener('beforeinput', onBeforeInput);
-    element.removeEventListener('compositionupdate', onCompositionUpdate);
-  });
-
-  // Suppress unused-options warning; options accepted for API symmetry.
-  void options;
+  const release = getInputIngressBackend().attachText(source, getInputIngressSink(manager), options);
+  setInputBinding(manager, source, kTextInput, release);
 }
 
 export function attachWheelInput(
   manager: InputManager,
-  element: HTMLElement,
+  source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const preventDefault = options?.preventDefault ?? true;
-  const handler = (e: Event) => {
-    if (!manager.enabled) return;
-    const we = e as WheelEvent;
-    if (preventDefault) we.preventDefault();
-    setInputPointerData(_pointerData, we, we.deltaX, we.deltaY);
-    _pointerData.wheelMode = getMouseWheelModeFromDomWheelEvent(we);
-    emitSignal(manager.onWheel, _pointerData);
-  };
-  element.addEventListener('wheel', handler, { passive: !preventDefault });
-  setInputBinding(manager, element, kWheelInput, () => element.removeEventListener('wheel', handler));
+  const release = getInputIngressBackend().attachWheel(source, getInputIngressSink(manager), options);
+  setInputBinding(manager, source, kWheelInput, release);
 }
 
 /**
@@ -470,28 +338,192 @@ export function createInputState(): InputState {
   };
 }
 
-export function detachGamepadInput(manager: InputManager, target: Window): void {
-  clearInputBinding(manager, target, kGamepadInput);
+/** Explicit browser adapter for the process-wide input-ingress seam. */
+export function createWebInputIngressBackend(): InputIngressBackend {
+  return {
+    attachGamepad(source, sink): () => void {
+      const target = getWebInputEventTarget(source);
+      if (target === null) return noopInputIngressRelease;
+
+      const onGamepadConnected = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        const gamepad = (event as GamepadEvent).gamepad;
+        setInputGamepadConnectData(_connectData, gamepad);
+        sink.gamepadConnect(
+          _connectData,
+          gamepad.axes,
+          Array.from(gamepad.buttons, (button) => button.pressed),
+        );
+      };
+      const onGamepadDisconnected = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        setInputGamepadConnectData(_connectData, (event as GamepadEvent).gamepad);
+        sink.gamepadDisconnect(_connectData);
+      };
+
+      target.addEventListener('gamepadconnected', onGamepadConnected);
+      target.addEventListener('gamepaddisconnected', onGamepadDisconnected);
+      return () => {
+        target.removeEventListener('gamepadconnected', onGamepadConnected);
+        target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
+      };
+    },
+
+    attachKeyboard(source, sink, options): () => void {
+      const target = getWebInputEventTarget(source);
+      if (target === null) return noopInputIngressRelease;
+      const preventDefault = options?.preventDefault ?? true;
+      const onKeyDown = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        const keyboardEvent = event as KeyboardEvent;
+        if (preventDefault) keyboardEvent.preventDefault();
+        setInputKeyboardData(_keyboardData, keyboardEvent);
+        sink.keyDown(_keyboardData);
+      };
+      const onKeyUp = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        const keyboardEvent = event as KeyboardEvent;
+        if (preventDefault) keyboardEvent.preventDefault();
+        setInputKeyboardData(_keyboardData, keyboardEvent);
+        sink.keyUp(_keyboardData);
+      };
+
+      target.addEventListener('keydown', onKeyDown);
+      target.addEventListener('keyup', onKeyUp);
+      return () => {
+        target.removeEventListener('keydown', onKeyDown);
+        target.removeEventListener('keyup', onKeyUp);
+      };
+    },
+
+    attachPointer(source, sink, options): () => void {
+      const target = getWebInputEventTarget(source);
+      if (target === null) return noopInputIngressRelease;
+      const preventDefault = options?.preventDefault ?? true;
+      const onContextMenu = (event: Event) => {
+        if (preventDefault) event.preventDefault();
+      };
+      const onPointerCancel = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        if (preventDefault) event.preventDefault();
+        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+        sink.pointerCancel(_pointerData);
+      };
+      const onPointerDown = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        if (preventDefault) event.preventDefault();
+        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+        sink.pointerDown(_pointerData);
+      };
+      const onPointerMove = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        if (preventDefault) event.preventDefault();
+        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+        sink.pointerMove(_pointerData);
+      };
+      const onPointerUp = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        if (preventDefault) event.preventDefault();
+        setInputPointerData(_pointerData, event as PointerEvent, 0, 0);
+        sink.pointerUp(_pointerData);
+      };
+
+      target.addEventListener('contextmenu', onContextMenu);
+      target.addEventListener('pointercancel', onPointerCancel);
+      target.addEventListener('pointerdown', onPointerDown);
+      target.addEventListener('pointermove', onPointerMove);
+      target.addEventListener('pointerup', onPointerUp);
+      return () => {
+        target.removeEventListener('contextmenu', onContextMenu);
+        target.removeEventListener('pointercancel', onPointerCancel);
+        target.removeEventListener('pointerdown', onPointerDown);
+        target.removeEventListener('pointermove', onPointerMove);
+        target.removeEventListener('pointerup', onPointerUp);
+      };
+    },
+
+    attachRelativePointer(source, sink, options): () => void {
+      const target = getWebInputOwnerDocumentTarget(source);
+      if (target === null) return noopInputIngressRelease;
+      const preventDefault = options?.preventDefault ?? true;
+      const onMouseMove = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        const mouseEvent = event as MouseEvent;
+        if (preventDefault) mouseEvent.preventDefault();
+        setInputPointerData(_pointerData, mouseEvent, mouseEvent.movementX, mouseEvent.movementY);
+        sink.pointerMoveRelative(_pointerData);
+      };
+
+      target.addEventListener('mousemove', onMouseMove);
+      return () => target.removeEventListener('mousemove', onMouseMove);
+    },
+
+    attachText(source, sink): () => void {
+      const target = getWebInputEventTarget(source);
+      if (target === null) return noopInputIngressRelease;
+      const onBeforeInput = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        const inputEvent = event as InputEvent;
+        _textData.isComposing = inputEvent.isComposing;
+        _textData.text = inputEvent.data ?? '';
+        sink.textInput(_textData);
+      };
+      const onCompositionUpdate = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        _textData.isComposing = true;
+        _textData.text = (event as CompositionEvent).data ?? '';
+        sink.textEdit(_textData);
+      };
+
+      target.addEventListener('beforeinput', onBeforeInput);
+      target.addEventListener('compositionupdate', onCompositionUpdate);
+      return () => {
+        target.removeEventListener('beforeinput', onBeforeInput);
+        target.removeEventListener('compositionupdate', onCompositionUpdate);
+      };
+    },
+
+    attachWheel(source, sink, options): () => void {
+      const target = getWebInputEventTarget(source);
+      if (target === null) return noopInputIngressRelease;
+      const preventDefault = options?.preventDefault ?? true;
+      const onWheel = (event: Event) => {
+        if (!sink.isEnabled()) return;
+        const wheelEvent = event as WheelEvent;
+        if (preventDefault) wheelEvent.preventDefault();
+        setInputPointerData(_pointerData, wheelEvent, wheelEvent.deltaX, wheelEvent.deltaY);
+        _pointerData.wheelMode = getMouseWheelModeFromDomWheelEvent(wheelEvent);
+        sink.wheel(_pointerData);
+      };
+
+      target.addEventListener('wheel', onWheel, { passive: !preventDefault });
+      return () => target.removeEventListener('wheel', onWheel);
+    },
+  };
 }
 
-export function detachKeyboardInput(manager: InputManager, target: EventTarget): void {
-  clearInputBinding(manager, target, kKeyboardInput);
+export function detachGamepadInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kGamepadInput);
 }
 
-export function detachPointerInput(manager: InputManager, element: HTMLElement): void {
-  clearInputBinding(manager, element, kPointerInput);
+export function detachKeyboardInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kKeyboardInput);
 }
 
-export function detachRelativePointerInput(manager: InputManager, element: HTMLElement): void {
-  clearInputBinding(manager, element, kRelativePointerInput);
+export function detachPointerInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kPointerInput);
 }
 
-export function detachTextInput(manager: InputManager, element: HTMLElement): void {
-  clearInputBinding(manager, element, kTextInput);
+export function detachRelativePointerInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kRelativePointerInput);
 }
 
-export function detachWheelInput(manager: InputManager, element: HTMLElement): void {
-  clearInputBinding(manager, element, kWheelInput);
+export function detachTextInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kTextInput);
+}
+
+export function detachWheelInput(manager: InputManager, source: InputIngressSource): void {
+  clearInputBinding(manager, source, kWheelInput);
 }
 
 /**
@@ -570,6 +602,10 @@ export function getInputGamepadAxis(state: Readonly<InputState>, gamepad: number
   return state.axisValues.get(gamepad * MAX_GAMEPAD_AXES + axis) ?? 0;
 }
 
+export function getInputIngressBackend(): InputIngressBackend {
+  return _customInputIngressBackend ?? _hostInputIngressBackend ?? _webInputIngressBackend;
+}
+
 export function getKeyCodeFromDomKeyboardEvent(event: Readonly<KeyboardEvent>): number {
   const code = getKeyCodeFromDomKeyboardCode(event.code, event.location);
   if (code !== KeyCode.UNKNOWN) return code;
@@ -607,6 +643,11 @@ export function getMouseWheelModeFromDomWheelEvent(event: Readonly<WheelEvent>):
  */
 export function hasInputPointerLock(): boolean {
   return document.pointerLockElement !== null;
+}
+
+// First host wins; a custom backend installed through setInputIngressBackend always takes precedence.
+export function installInputIngressHostBackend(backend: InputIngressBackend): void {
+  if (_hostInputIngressBackend === null) _hostInputIngressBackend = backend;
 }
 
 /**
@@ -704,6 +745,15 @@ export function requestInputPointerLock(element: HTMLElement): Promise<boolean> 
   } catch {
     return Promise.resolve(false);
   }
+}
+
+export function resetInputIngressBackendForTest(): void {
+  _customInputIngressBackend = null;
+  _hostInputIngressBackend = null;
+}
+
+export function setInputIngressBackend(backend: InputIngressBackend | null): void {
+  _customInputIngressBackend = backend;
 }
 
 /**
@@ -1106,10 +1156,93 @@ const _axisData: InputGamepadAxisData = { axis: 0, gamepad: 0, timeStamp: 0, val
 const _buttonData: InputGamepadButtonData = { button: 0, gamepad: 0, timeStamp: 0, value: 0 };
 const _connectData: InputGamepadConnectData = { gamepad: 0, id: '', mapping: '' };
 
-// Internal teardown registry: maps a manager to its per-target, per-input-kind cleanup closures.
+const _inputIngressSinks = new WeakMap<InputManager, InputIngressSink>();
+
+function getInputIngressSink(manager: InputManager): InputIngressSink {
+  let sink = _inputIngressSinks.get(manager);
+  if (sink !== undefined) return sink;
+  sink = {
+    gamepadConnect(data, axes, buttons): void {
+      if (!manager.enabled) return;
+      const previous = getOrCreateGamepadPollState(manager);
+      previous.axes.set(data.gamepad, Array.from(axes));
+      previous.buttons.set(data.gamepad, Array.from(buttons));
+      emitSignal(manager.onGamepadConnect, data);
+    },
+    gamepadDisconnect(data): void {
+      if (!manager.enabled) return;
+      const previous = getOrCreateGamepadPollState(manager);
+      previous.axes.delete(data.gamepad);
+      previous.buttons.delete(data.gamepad);
+      emitSignal(manager.onGamepadDisconnect, data);
+    },
+    isEnabled(): boolean {
+      return manager.enabled;
+    },
+    keyDown(data): void {
+      if (manager.enabled) emitSignal(manager.onKeyDown, data);
+    },
+    keyUp(data): void {
+      if (manager.enabled) emitSignal(manager.onKeyUp, data);
+    },
+    pointerCancel(data): void {
+      if (manager.enabled) emitSignal(manager.onPointerCancel, data);
+    },
+    pointerDown(data): void {
+      if (manager.enabled) emitSignal(manager.onPointerDown, data);
+    },
+    pointerMove(data): void {
+      if (manager.enabled) emitSignal(manager.onPointerMove, data);
+    },
+    pointerMoveRelative(data): void {
+      if (manager.enabled) emitSignal(manager.onPointerMoveRelative, data);
+    },
+    pointerUp(data): void {
+      if (manager.enabled) emitSignal(manager.onPointerUp, data);
+    },
+    textEdit(data): void {
+      if (manager.enabled) emitSignal(manager.onTextEdit, data);
+    },
+    textInput(data): void {
+      if (manager.enabled) emitSignal(manager.onTextInput, data);
+    },
+    wheel(data): void {
+      if (manager.enabled) emitSignal(manager.onWheel, data);
+    },
+  };
+  _inputIngressSinks.set(manager, sink);
+  return sink;
+}
+
+function getWebInputEventTarget(source: InputIngressSource): EventTarget | null {
+  const candidate = source as Partial<EventTarget>;
+  return typeof candidate.addEventListener === 'function' && typeof candidate.removeEventListener === 'function'
+    ? (candidate as EventTarget)
+    : null;
+}
+
+function getWebInputOwnerDocumentTarget(source: InputIngressSource): EventTarget | null {
+  if (!('ownerDocument' in source)) return null;
+  const ownerDocument = (source as { readonly ownerDocument?: object | null }).ownerDocument;
+  return ownerDocument === undefined || ownerDocument === null ? null : getWebInputEventTarget(ownerDocument);
+}
+
+function noopInputIngressRelease(): void {}
+
+function setInputGamepadConnectData(out: InputGamepadConnectData, gamepad: Gamepad): void {
+  out.gamepad = gamepad.index;
+  out.id = gamepad.id;
+  out.mapping = gamepad.mapping === 'standard' ? 'standard' : gamepad.mapping === '' ? '' : 'raw';
+}
+
+const _webInputIngressBackend = createWebInputIngressBackend();
+let _customInputIngressBackend: InputIngressBackend | null = null;
+let _hostInputIngressBackend: InputIngressBackend | null = null;
+
+// Internal teardown registry: maps a manager to its per-source, per-input-kind origin release.
 // Kept off the public InputManager entity (a side table like `_gamepadPollStates`) so attach/detach
-// track bindings internally and callers hold nothing. The nested EventTarget key lets one manager
-// attach the same input kind to multiple elements and detach each precisely.
+// track bindings internally and callers hold nothing. The exact source identity lets one manager
+// attach the same input kind to multiple windows/sources and detach each precisely.
 const kGamepadInput = Symbol();
 const kKeyboardInput = Symbol();
 const kPointerInput = Symbol();
@@ -1117,27 +1250,33 @@ const kRelativePointerInput = Symbol();
 const kTextInput = Symbol();
 const kWheelInput = Symbol();
 
-const _inputBindings = new WeakMap<InputManager, Map<EventTarget, Map<symbol, () => void>>>();
+const _inputBindings = new WeakMap<InputManager, Map<InputIngressSource, Map<symbol, () => void>>>();
 
-function clearInputBinding(manager: InputManager, target: EventTarget, kind: symbol): void {
-  const byKind = _inputBindings.get(manager)?.get(target);
-  const cleanup = byKind?.get(kind);
-  if (cleanup === undefined) return;
-  cleanup();
+function clearInputBinding(manager: InputManager, source: InputIngressSource, kind: symbol): void {
+  const bySource = _inputBindings.get(manager);
+  const byKind = bySource?.get(source);
+  const release = byKind?.get(kind);
+  if (release === undefined) return;
   byKind!.delete(kind);
+  if (byKind!.size === 0) bySource!.delete(source);
+  release();
 }
 
-function setInputBinding(manager: InputManager, target: EventTarget, kind: symbol, cleanup: () => void): void {
-  let byTarget = _inputBindings.get(manager);
-  if (byTarget === undefined) {
-    byTarget = new Map();
-    _inputBindings.set(manager, byTarget);
+function setInputBinding(manager: InputManager, source: InputIngressSource, kind: symbol, release: () => void): void {
+  let bySource = _inputBindings.get(manager);
+  if (bySource === undefined) {
+    bySource = new Map();
+    _inputBindings.set(manager, bySource);
   }
-  let byKind = byTarget.get(target);
+  let byKind = bySource.get(source);
   if (byKind === undefined) {
     byKind = new Map();
-    byTarget.set(target, byKind);
+    bySource.set(source, byKind);
   }
-  byKind.get(kind)?.();
-  byKind.set(kind, cleanup);
+  const previous = byKind.get(kind);
+  if (previous !== undefined) {
+    byKind.delete(kind);
+    previous();
+  }
+  byKind.set(kind, release);
 }
