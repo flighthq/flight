@@ -259,7 +259,7 @@ describe('setMenuBackend', () => {
     expect(getMenuBackend()).toBe(second);
   });
 
-  it('installs the replacement even when outgoing destroy throws', () => {
+  it('does not install replacement when outgoing destroy throws', () => {
     const first = fakeBackend({
       destroy() {
         throw new Error('teardown failed');
@@ -268,7 +268,7 @@ describe('setMenuBackend', () => {
     const second = fakeBackend();
     setMenuBackend(first);
     expect(() => setMenuBackend(second)).toThrow('teardown failed');
-    expect(getMenuBackend()).toBe(second);
+    expect(getMenuBackend()).toBe(first);
   });
 
   it('does not destroy a backend that is being re-assigned to the same slot', () => {
