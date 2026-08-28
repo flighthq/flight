@@ -1,7 +1,14 @@
 import { createSignal } from '@flighthq/signals/contract';
 import type { NetBackend, NetProgress, NetRequest, NetResponse } from '@flighthq/types/contract';
 
-import { createWebNetBackend, getNetBackend, sendNetRequest, setNetBackend } from './net';
+import {
+  createWebNetBackend,
+  getNetBackend,
+  installNetHostBackend,
+  resetNetBackendForTest,
+  sendNetRequest,
+  setNetBackend,
+} from './net';
 
 interface FakeResponseInit {
   status?: number;
@@ -63,7 +70,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (originalFetch !== undefined) globalThis.fetch = originalFetch;
-  setNetBackend(null);
+  resetNetBackendForTest();
 });
 
 describe('createWebNetBackend', () => {
@@ -220,6 +227,41 @@ describe('getNetBackend', () => {
     const backend: NetBackend = { sendNetRequest: async () => stubResponse() };
     setNetBackend(backend);
     expect(getNetBackend()).toBe(backend);
+  });
+});
+
+describe('installNetHostBackend', () => {
+  it('keeps host and custom slots distinct so clearing custom reveals host', () => {
+    const host: NetBackend = { sendNetRequest: async () => stubResponse() };
+    const custom: NetBackend = { sendNetRequest: async () => stubResponse() };
+    installNetHostBackend(host);
+    expect(getNetBackend()).toBe(host);
+    setNetBackend(custom);
+    expect(getNetBackend()).toBe(custom);
+    setNetBackend(null);
+    expect(getNetBackend()).toBe(host);
+  });
+
+  it('preserves the first installed host backend', () => {
+    const first: NetBackend = { sendNetRequest: async () => stubResponse() };
+    const second: NetBackend = { sendNetRequest: async () => stubResponse() };
+    installNetHostBackend(first);
+    installNetHostBackend(second);
+    expect(getNetBackend()).toBe(first);
+  });
+});
+
+describe('resetNetBackendForTest', () => {
+  it('clears custom and host slots and restores the lazy web fallback', () => {
+    const host: NetBackend = { sendNetRequest: async () => stubResponse() };
+    const custom: NetBackend = { sendNetRequest: async () => stubResponse() };
+    installNetHostBackend(host);
+    setNetBackend(custom);
+    resetNetBackendForTest();
+    const web = getNetBackend();
+    expect(web).not.toBe(host);
+    expect(web).not.toBe(custom);
+    expect(typeof web.sendNetRequest).toBe('function');
   });
 });
 

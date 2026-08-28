@@ -17,6 +17,8 @@ import {
   enableSocketSignals,
   getSocketBackend,
   getSocketReadyState,
+  installSocketHostBackend,
+  resetSocketBackendForTest,
   sendSocketMessage,
   setSocketBackend,
   setSocketGuard,
@@ -65,7 +67,7 @@ function fakeBackend(): FakeSocket {
 }
 
 afterEach(() => {
-  setSocketBackend(null);
+  resetSocketBackendForTest();
   setSocketGuard(null);
 });
 
@@ -389,6 +391,41 @@ describe('getSocketReadyState', () => {
     expect(getSocketReadyState(socket)).toBe('closing');
     fake.sink.handleSocketClose({ code: 1000, reason: '', wasClean: true });
     expect(getSocketReadyState(socket)).toBe('closed');
+  });
+});
+
+describe('installSocketHostBackend', () => {
+  it('keeps host and custom slots distinct so clearing custom reveals host', () => {
+    const host = fakeBackend();
+    const custom = fakeBackend();
+    installSocketHostBackend(host.backend);
+    expect(getSocketBackend()).toBe(host.backend);
+    setSocketBackend(custom.backend);
+    expect(getSocketBackend()).toBe(custom.backend);
+    setSocketBackend(null);
+    expect(getSocketBackend()).toBe(host.backend);
+  });
+
+  it('preserves the first installed host backend', () => {
+    const first = fakeBackend();
+    const second = fakeBackend();
+    installSocketHostBackend(first.backend);
+    installSocketHostBackend(second.backend);
+    expect(getSocketBackend()).toBe(first.backend);
+  });
+});
+
+describe('resetSocketBackendForTest', () => {
+  it('clears custom and host slots and restores the lazy web fallback', () => {
+    const host = fakeBackend();
+    const custom = fakeBackend();
+    installSocketHostBackend(host.backend);
+    setSocketBackend(custom.backend);
+    resetSocketBackendForTest();
+    const web = getSocketBackend();
+    expect(web).not.toBe(host.backend);
+    expect(web).not.toBe(custom.backend);
+    expect(typeof web.openSocket).toBe('function');
   });
 });
 

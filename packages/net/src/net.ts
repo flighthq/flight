@@ -42,10 +42,25 @@ export function createWebNetBackend(): NetBackend {
   };
 }
 
-// The active net backend, lazily defaulting to the web fetch backend. There is always a backend.
+// The active net backend. A caller-installed custom backend takes precedence over a host backend;
+// without either, the existing web fetch backend remains the lazy fallback.
 export function getNetBackend(): NetBackend {
-  if (_backend === null) _backend = createWebNetBackend();
-  return _backend;
+  if (_custom !== null) return _custom;
+  if (_host !== null) return _host;
+  if (_webFallback === null) _webFallback = createWebNetBackend();
+  return _webFallback;
+}
+
+// Installs the process host's transport without occupying the caller-owned custom slot. First host
+// wins, matching the other process-global capability seams.
+export function installNetHostBackend(backend: NetBackend): void {
+  if (_host === null) _host = backend;
+}
+
+export function resetNetBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _webFallback = null;
 }
 
 // Issues one HTTP(S) request through the active backend and resolves to a plain-data NetResponse.
@@ -58,12 +73,15 @@ export function sendNetRequest(
   return getNetBackend().sendNetRequest(request, options);
 }
 
-// Installs a native host transport backend; pass null to fall back to the lazy web default.
+// Installs or clears a caller-owned custom transport. Clearing it reveals the process host backend,
+// or the lazy web fallback when no host is installed.
 export function setNetBackend(backend: NetBackend | null): void {
-  _backend = backend;
+  _custom = backend;
 }
 
-let _backend: NetBackend | null = null;
+let _custom: NetBackend | null = null;
+let _host: NetBackend | null = null;
+let _webFallback: NetBackend | null = null;
 
 // A sentinel abort reason so a timeout-triggered abort is distinguishable from a caller abort.
 const _netTimeoutReason = { flightNetTimeout: true } as const;
