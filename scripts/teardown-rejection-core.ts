@@ -133,6 +133,11 @@ export function formatTeardownRejectionReport(report: Readonly<TeardownRejection
       `  ${candidate.path}:${candidate.line}:${candidate.column} ${candidate.teardown}() → ${candidate.callee}`,
     );
   }
+  const hostCount = report.candidates.filter((c) => c.path.includes('/packages/host-')).length;
+  const nonHostCount = report.candidates.length - hostCount;
+  lines.push(
+    `${hostCount} host candidate${hostCount === 1 ? '' : 's'} (asserted); ${nonHostCount} non-host candidate${nonHostCount === 1 ? '' : 's'} (not asserted — API adjudication only)`,
+  );
   return lines.join('\n');
 }
 
