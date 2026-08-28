@@ -924,3 +924,52 @@ has been counted.
 
 This is why several shapes were marked "needs a ruling before it can start" rather than "small". The
 size of a slice and the settledness of its model are independent, and the gate can only see size.
+
+---
+
+# H11 — the GL surface pair is already correct; the 168-site migration is closed — 2026-08-28
+
+Builder4's binding-aware AST pass closed the delete branch: `createGlCanvasElement` has 168 calls
+across 166 files and **all survive H7** — 41 examples, 123 functional scenes, one harness, three
+tests, and **zero package calls**. H7 changes adjacent context composition; it does not remove
+surface acquisition.
+
+That evidence does not expand H7's consumer surface. It closes the question, because it exposes that
+`glElement.ts` already ships both halves of the pattern, three lines apart:
+
+- `createGlRenderSurface(width, height, pixelRatio): HTMLCanvasElement | null` — the **sentinel
+  primitive**. Returns `null` when no provider is installed. Never throws.
+- `createGlCanvasElement(width, height, pixelRatio): HTMLCanvasElement` — an **asserting convenience
+  over it**, for callers whose correct response to absence is to fail.
+
+A nullable primitive plus an asserting wrapper is a legitimate pairing, not a defect. Both are
+exported through `contract.ts` only, so this is the intra-SDK lane — not public app API.
+
+## Correction to my earlier ruling
+
+I called the throw a defect by analogy to `createImageResourceFromBitmap`. **That analogy fails.**
+`createImageResourceFromBitmap` throws *instead of* offering a sentinel — it has no nullable sibling,
+so a caller has no non-throwing way to ask. Here the sentinel exists, is exported, and sits directly
+below the wrapper. The throw is not the absence of a sentinel; it is a second, opinionated door
+beside one.
+
+I generalised from a shape ("a `throw` on a missing backend") without checking whether the thing that
+made it wrong ("and no sentinel is offered") was present. It was not.
+
+## Consequences
+
+- **No 168-site migration.** Closed. H7's consumer surface is unchanged, and builder3 does not
+  inherit this.
+- `0cd899017` stays retracted, which was right for the reason [H9](#h9) gives — the runtime half
+  would have shipped without its type. H9's rule stands untouched and still governs every other
+  expected-absence repair.
+- **What is genuinely owed** is small and is the diagnostics half, not a signature change: the
+  sentinel needs its shakeable `explain*`. Add `explainGlRenderSurfaceAbsence()` returning plain data
+  (`{ reason: 'provider-not-installed' }` or `null` when a provider is installed), matching
+  `explainImageEncodeFailure`. Queue it as a small item; it does not gate H7.
+
+## Worth fixing eventually, not now
+
+Neither name signals which door is which. `createGlRenderSurface` and `createGlCanvasElement` read as
+peers, so a caller cannot tell from the call which one asserts. Revisit when H7 touches this file
+anyway; do not spend a slice on it.
