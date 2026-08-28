@@ -7,8 +7,9 @@ import type {
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentNodeSchema,
+  FlightDocumentResourceDescriptor,
   FlightDocumentResourceLookup,
-  FlightDocumentScene3D,
+  FlightDocumentScene,
   FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
   NodeAny,
@@ -37,7 +38,6 @@ describe('createFlightDocumentFromScene3D', () => {
     const scene = createScene3D();
     const document = createFlightDocumentFromScene3D(scene, [], [], createTestSchemas());
     expect(document.kind).toBe('Scene3D');
-    expect(document.version).toBe(1);
     expect(document.scene.children).toHaveLength(0);
     expect(document.cameras).toHaveLength(0);
     expect(document.lights).toHaveLength(0);
@@ -71,14 +71,12 @@ describe('createFlightDocumentFromScene3D', () => {
 
 describe('createFlightDocumentScene3DMaterialization', () => {
   it('materializes an empty Scene3D from a minimal model', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
-      version: 1,
-    };
+    });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
     const materialization = result as FlightDocumentScene3DMaterialization;
@@ -88,7 +86,7 @@ describe('createFlightDocumentScene3DMaterialization', () => {
   });
 
   it('materializes cameras from document camera descriptors', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [
         {
           far: 500,
@@ -99,10 +97,8 @@ describe('createFlightDocumentScene3DMaterialization', () => {
       ],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
-      version: 1,
-    };
+    });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
     const materialization = result as FlightDocumentScene3DMaterialization;
@@ -113,18 +109,16 @@ describe('createFlightDocumentScene3DMaterialization', () => {
   });
 
   it('materializes a tree with children', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: {
         children: [{ children: [], fields: {}, kind: Node3DKind }],
         fields: {},
         kind: Node3DKind,
       },
-      version: 1,
-    };
+    });
     const schemas = createTestSchemas();
     const result = createFlightDocumentScene3DMaterialization(document, schemas);
     expect(result).not.toBeNull();
@@ -135,58 +129,53 @@ describe('createFlightDocumentScene3DMaterialization', () => {
   });
 
   it('returns null for a Scene2D document', () => {
-    const document = {
+    const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
-      resources: [],
       scene: { children: [], fields: {}, kind: 'DisplayObject' },
-      version: 1,
-    } as FlightDocument;
+    });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
   });
 
   it('returns null for an unsupported version', () => {
     const document = {
-      cameras: [],
-      kind: 'Scene3D',
-      lights: [],
-      resources: [],
-      scene: { children: [], fields: {}, kind: Node3DKind },
+      ...createTestDocument({
+        cameras: [],
+        kind: 'Scene3D',
+        lights: [],
+        scene: { children: [], fields: {}, kind: Node3DKind },
+      }),
       version: 99,
-    } as unknown as FlightDocumentScene3D;
+    } as unknown as FlightDocument;
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
   });
 
   it('returns null for duplicate ambient lights', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [
         { descriptor: createAmbientLight(), transform: createTransform3D() },
         { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
-      resources: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
-      version: 1,
-    };
+    });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
   });
 
   it('returns null for duplicate directional lights', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [
         { descriptor: createDirectionalLight(), transform: createTransform3D() },
         { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
-      resources: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
-      version: 1,
-    };
+    });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
   });
@@ -211,13 +200,11 @@ describe('createFlightDocumentScene3DMaterializationFromText', () => {
 
 describe('explainFlightDocumentScene3DRefusal', () => {
   it('explains a dimension mismatch', () => {
-    const document = {
+    const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
-      resources: [],
       scene: { children: [], fields: {}, kind: 'DisplayObject' },
-      version: 1,
-    } as FlightDocument;
+    });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
@@ -226,13 +213,14 @@ describe('explainFlightDocumentScene3DRefusal', () => {
 
   it('explains an unsupported version', () => {
     const document = {
-      cameras: [],
-      kind: 'Scene3D',
-      lights: [],
-      resources: [],
-      scene: { children: [], fields: {}, kind: Node3DKind },
+      ...createTestDocument({
+        cameras: [],
+        kind: 'Scene3D',
+        lights: [],
+        scene: { children: [], fields: {}, kind: Node3DKind },
+      }),
       version: 99,
-    } as unknown as FlightDocumentScene3D;
+    } as unknown as FlightDocument;
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
@@ -241,17 +229,15 @@ describe('explainFlightDocumentScene3DRefusal', () => {
   });
 
   it('explains a duplicate ambient light', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [
         { descriptor: createAmbientLight(), transform: createTransform3D() },
         { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
-      resources: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
-      version: 1,
-    };
+    });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateAmbientLight);
@@ -259,17 +245,15 @@ describe('explainFlightDocumentScene3DRefusal', () => {
   });
 
   it('explains a duplicate directional light', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [
         { descriptor: createDirectionalLight(), transform: createTransform3D() },
         { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
       ],
-      resources: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
-      version: 1,
-    };
+    });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateDirectionalLight);
@@ -277,14 +261,12 @@ describe('explainFlightDocumentScene3DRefusal', () => {
   });
 
   it('returns null when the document is valid', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: { children: [], fields: {}, kind: Node3DKind },
-      version: 1,
-    };
+    });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).toBeNull();
   });
@@ -360,11 +342,8 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
 });
 
 describe('model-to-text explain parity', () => {
-  // The table is annotated so each fixture is checked AGAINST THE SCHEMA rather than inferred from its own
-  // literal. Without this, `version: 1` widens to `number` and the row stops being a `FlightDocument` — and
-  // the two obvious local repairs both make the fixture worse: `1 as const` and a cast silence the widening
-  // while also silencing every other way a row could stop matching the document type, which is the only
-  // thing this parity test has to hold the fixtures to.
+  // Keep the table annotated so every fixture is checked against the container schema rather than inferred
+  // only from its own literal.
   it.each<{
     document: Readonly<FlightDocument>;
     expectedPath: string;
@@ -373,71 +352,64 @@ describe('model-to-text explain parity', () => {
   }>([
     {
       label: 'duplicate ambient (scene 0)',
-      document: {
+      document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
         lights: [
           { descriptor: createAmbientLight(), transform: createTransform3D() },
           { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
         ],
-        resources: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
-        version: 1,
-      },
+      }),
       expectedReason: FlightDocumentRefusalReason.DuplicateAmbientLight,
       expectedPath: 'scenes[0].lights',
     },
     {
       label: 'duplicate directional (scene 0)',
-      document: {
+      document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
         lights: [
           { descriptor: createDirectionalLight(), transform: createTransform3D() },
           { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
         ],
-        resources: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
-        version: 1,
-      },
+      }),
       expectedReason: FlightDocumentRefusalReason.DuplicateDirectionalLight,
       expectedPath: 'scenes[0].lights',
     },
     {
       label: 'wrong dimension (scene 0)',
-      document: {
+      document: createTestDocument({
         backgroundColor: null,
         kind: 'Scene2D',
-        resources: [],
         scene: { children: [], fields: {}, kind: 'DisplayObject' },
-        version: 1,
-      } as FlightDocument,
+      }),
       expectedReason: FlightDocumentRefusalReason.StructureInvalid,
       expectedPath: 'scenes[0].kind',
     },
     {
       label: 'unsupported version (document-level)',
       document: {
-        cameras: [],
-        kind: 'Scene3D',
-        lights: [],
-        resources: [],
-        scene: { children: [], fields: {}, kind: Node3DKind },
+        ...createTestDocument({
+          cameras: [],
+          kind: 'Scene3D',
+          lights: [],
+          scene: { children: [], fields: {}, kind: Node3DKind },
+        }),
         version: 99,
-      } as unknown as FlightDocumentScene3D,
+      } as unknown as FlightDocument,
       expectedReason: FlightDocumentRefusalReason.VersionUnsupported,
       expectedPath: 'version',
     },
     {
       label: 'unregistered node kind (scene 0)',
-      document: {
+      document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
         lights: [],
-        resources: [],
         scene: { children: [{ children: [], fields: {}, kind: 'acme.Unknown' }], fields: {}, kind: Node3DKind },
-        version: 1,
-      },
+      }),
       expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
       expectedPath: 'scenes[0].scene.children[0]',
     },
@@ -456,11 +428,10 @@ describe('model-to-text explain parity', () => {
 
 describe('NodeKindUnregistered', () => {
   it('materializer returns null for nested unregistered kind two levels deep', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: {
         children: [
           {
@@ -472,18 +443,16 @@ describe('NodeKindUnregistered', () => {
         fields: {},
         kind: Node3DKind,
       },
-      version: 1,
-    };
+    });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
   });
 
   it('explain names the unregistered kind with qualified scene path', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: {
         children: [
           {
@@ -495,8 +464,7 @@ describe('NodeKindUnregistered', () => {
         fields: {},
         kind: Node3DKind,
       },
-      version: 1,
-    };
+    });
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.NodeKindUnregistered);
@@ -505,11 +473,10 @@ describe('NodeKindUnregistered', () => {
   });
 
   it('registration mutation control: same tree passes when kind is registered', () => {
-    const document: FlightDocumentScene3D = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: {
         children: [
           {
@@ -521,8 +488,7 @@ describe('NodeKindUnregistered', () => {
         fields: {},
         kind: Node3DKind,
       },
-      version: 1,
-    };
+    });
     const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
     const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
@@ -559,6 +525,13 @@ describe('Scene3DDocumentLight', () => {
     expectTypeOf<keyof Scene3DDocumentLight>().toEqualTypeOf<'descriptor' | 'name' | 'node' | 'transform'>();
   });
 });
+
+function createTestDocument(
+  scene: FlightDocumentScene,
+  resources: FlightDocumentResourceDescriptor[] = [],
+): FlightDocument {
+  return { defaultScene: 0, resources, scenes: [scene], version: 1 };
+}
 
 function createTestSchemas(): FlightDocumentSchemaRegistry {
   const node3DSchema: FlightDocumentNodeSchema = {

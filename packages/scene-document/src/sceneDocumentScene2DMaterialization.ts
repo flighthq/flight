@@ -22,6 +22,7 @@ import type {
 } from '@flighthq/types/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
+import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
 import {
   checkUnregisteredNodeKinds,
   checkUnregisteredNodeKindsFromRaw,
@@ -37,9 +38,7 @@ export function createFlightDocumentFromScene2D(
   return {
     backgroundColor: source.color,
     kind: 'Scene2D',
-    resources: [],
     scene: writeNode(source.root, schemas),
-    version: 1,
   };
 }
 
@@ -47,14 +46,16 @@ export function createFlightDocumentScene2DMaterialization(
   document: Readonly<FlightDocument>,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
+  sceneIndex: number = document.defaultScene,
 ): FlightDocumentScene2DMaterialization | null {
-  if (document.kind !== 'Scene2D') return null;
-  if (document.version !== 1) return null;
-  const unregisteredRefusal = checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
+  const selection = selectFlightDocumentScene(document, 'Scene2D', sceneIndex);
+  if (selection.refusal !== null || selection.scene.kind !== 'Scene2D') return null;
+  const documentScene = selection.scene;
+  const unregisteredRefusal = checkUnregisteredNodeKinds(documentScene.scene, schemas, selection.sceneIndex, 'scene');
   if (unregisteredRefusal !== null) return null;
-  const scene = createScene2D({ color: document.backgroundColor });
+  const scene = createScene2D({ color: documentScene.backgroundColor });
   const resources = resolveResources(document.resources, resolvers);
-  materializeChildren(scene.root, document.scene.children, schemas, resources);
+  materializeChildren(scene.root, documentScene.scene.children, schemas, resources);
   return { scene };
 }
 
@@ -62,33 +63,29 @@ export function createFlightDocumentScene2DMaterializationFromText(
   text: string,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
+  sceneIndex?: number,
 ): FlightDocumentScene2DMaterialization | null {
   const document = parseFlightDocumentFromText(text);
   if (document === null) return null;
-  return createFlightDocumentScene2DMaterialization(document, schemas, resolvers);
+  return createFlightDocumentScene2DMaterialization(document, schemas, resolvers, sceneIndex);
 }
 
 export function explainFlightDocumentRefusal(
   document: Readonly<FlightDocument>,
   dimension: 'Scene2D' | 'Scene3D',
   schemas: Readonly<FlightDocumentSchemaRegistry>,
+  sceneIndex: number = document.defaultScene,
 ): FlightDocumentRefusalExplanation | null {
-  if (document.kind !== dimension) {
-    return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
-  }
-  if (document.version !== 1) {
-    return {
-      ...createDocumentRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
-      version: document.version,
-    };
-  }
-  return checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
+  const selection = selectFlightDocumentScene(document, dimension, sceneIndex);
+  if (selection.refusal !== null) return selection.refusal;
+  return checkUnregisteredNodeKinds(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
 }
 
 export function explainFlightDocumentRefusalFromText(
   text: string,
   dimension: 'Scene2D' | 'Scene3D',
   schemas: Readonly<FlightDocumentSchemaRegistry>,
+  _sceneIndex?: number,
 ): FlightDocumentRefusalExplanation | null {
   const result = parseSceneDocumentYamlSubset(text);
   if (!result.ok) {

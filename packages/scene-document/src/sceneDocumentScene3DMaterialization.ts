@@ -30,6 +30,7 @@ import type {
 } from '@flighthq/types/contract';
 import { AmbientLightKind, DirectionalLightKind, FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
+import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
 import {
   checkUnregisteredNodeKinds,
   checkUnregisteredNodeKindsFromRaw,
@@ -48,9 +49,7 @@ export function createFlightDocumentFromScene3D(
     cameras: cameras.map((c) => ({ ...c })),
     kind: 'Scene3D',
     lights: lights.map((l) => ({ ...l })),
-    resources: [],
     scene: writeNode(source.root, schemas),
-    version: 1,
   };
 }
 
@@ -58,18 +57,20 @@ export function createFlightDocumentScene3DMaterialization(
   document: Readonly<FlightDocument>,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
+  sceneIndex: number = document.defaultScene,
 ): FlightDocumentScene3DMaterialization | null {
-  if (document.kind !== 'Scene3D') return null;
-  if (document.version !== 1) return null;
-  const duplicateRefusal = checkDuplicateLights(document.lights, 0);
+  const selection = selectFlightDocumentScene(document, 'Scene3D', sceneIndex);
+  if (selection.refusal !== null || selection.scene.kind !== 'Scene3D') return null;
+  const documentScene = selection.scene;
+  const duplicateRefusal = checkDuplicateLights(documentScene.lights, selection.sceneIndex);
   if (duplicateRefusal !== null) return null;
-  const unregisteredRefusal = checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
+  const unregisteredRefusal = checkUnregisteredNodeKinds(documentScene.scene, schemas, selection.sceneIndex, 'scene');
   if (unregisteredRefusal !== null) return null;
   const scene = createScene3D();
   const resources = resolveResources(document.resources, resolvers);
-  materializeChildren(scene.root, document.scene.children, schemas, resources);
-  const cameras = materializeCameras(document.cameras);
-  const lights = materializeLights(document.lights);
+  materializeChildren(scene.root, documentScene.scene.children, schemas, resources);
+  const cameras = materializeCameras(documentScene.cameras);
+  const lights = materializeLights(documentScene.lights);
   return { cameras, lights, scene };
 }
 
@@ -77,33 +78,30 @@ export function createFlightDocumentScene3DMaterializationFromText(
   text: string,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
+  sceneIndex?: number,
 ): FlightDocumentScene3DMaterialization | null {
   const document = parseFlightDocumentFromText(text);
   if (document === null) return null;
-  return createFlightDocumentScene3DMaterialization(document, schemas, resolvers);
+  return createFlightDocumentScene3DMaterialization(document, schemas, resolvers, sceneIndex);
 }
 
 export function explainFlightDocumentScene3DRefusal(
   document: Readonly<FlightDocument>,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
+  sceneIndex: number = document.defaultScene,
 ): FlightDocumentRefusalExplanation | null {
-  if (document.kind !== 'Scene3D') {
-    return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
-  }
-  if (document.version !== 1) {
-    return {
-      ...createDocumentRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
-      version: document.version,
-    };
-  }
-  const lightRefusal = checkDuplicateLights(document.lights, 0);
+  const selection = selectFlightDocumentScene(document, 'Scene3D', sceneIndex);
+  if (selection.refusal !== null) return selection.refusal;
+  if (selection.scene.kind !== 'Scene3D') return null;
+  const lightRefusal = checkDuplicateLights(selection.scene.lights, selection.sceneIndex);
   if (lightRefusal !== null) return lightRefusal;
-  return checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
+  return checkUnregisteredNodeKinds(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
 }
 
 export function explainFlightDocumentScene3DRefusalFromText(
   text: string,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
+  _sceneIndex?: number,
 ): FlightDocumentRefusalExplanation | null {
   const result = parseSceneDocumentYamlSubset(text);
   if (!result.ok) {

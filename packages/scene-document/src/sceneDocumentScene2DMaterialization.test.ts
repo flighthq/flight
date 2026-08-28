@@ -6,8 +6,9 @@ import type {
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentNodeSchema,
+  FlightDocumentResourceDescriptor,
   FlightDocumentResourceLookup,
-  FlightDocumentScene2D,
+  FlightDocumentScene,
   FlightDocumentScene2DMaterialization,
   FlightDocumentSchemaRegistry,
   Node2D,
@@ -29,7 +30,6 @@ describe('createFlightDocumentFromScene2D', () => {
     const scene = createScene2D();
     const document = createFlightDocumentFromScene2D(scene, createTestSchemas());
     expect(document.kind).toBe('Scene2D');
-    expect(document.version).toBe(1);
     expect(document.scene.children).toHaveLength(0);
   });
 
@@ -81,13 +81,11 @@ describe('createFlightDocumentFromScene2D', () => {
 
 describe('createFlightDocumentScene2DMaterialization', () => {
   it('materializes an empty Scene2D from a minimal model', () => {
-    const document: FlightDocumentScene2D = {
+    const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
-      resources: [],
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
-      version: 1,
-    };
+    });
     const result = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
     expect(result).not.toBeNull();
     const materialization = result as FlightDocumentScene2DMaterialization;
@@ -96,10 +94,9 @@ describe('createFlightDocumentScene2DMaterialization', () => {
   });
 
   it('materializes a tree with nested children', () => {
-    const document: FlightDocumentScene2D = {
+    const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
-      resources: [],
       scene: {
         children: [
           {
@@ -111,8 +108,7 @@ describe('createFlightDocumentScene2DMaterialization', () => {
         fields: {},
         kind: DisplayObjectKind,
       },
-      version: 1,
-    };
+    });
     const schemas = createTestSchemas();
     const result = createFlightDocumentScene2DMaterialization(document, schemas);
     expect(result).not.toBeNull();
@@ -126,26 +122,25 @@ describe('createFlightDocumentScene2DMaterialization', () => {
   });
 
   it('returns null for a Scene3D document', () => {
-    const document = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: { children: [], fields: {}, kind: 'Node3D' },
-      version: 1,
-    } as FlightDocument;
+    });
     const result = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
   });
 
   it('returns null for an unsupported version', () => {
     const document = {
-      backgroundColor: null,
-      kind: 'Scene2D',
-      resources: [],
-      scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      ...createTestDocument({
+        backgroundColor: null,
+        kind: 'Scene2D',
+        scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      }),
       version: 99,
-    } as unknown as FlightDocumentScene2D;
+    } as unknown as FlightDocument;
     const result = createFlightDocumentScene2DMaterialization(document, createTestSchemas());
     expect(result).toBeNull();
   });
@@ -184,14 +179,12 @@ describe('createFlightDocumentScene2DMaterializationFromText', () => {
 
 describe('explainFlightDocumentRefusal', () => {
   it('explains a dimension mismatch', () => {
-    const document = {
+    const document = createTestDocument({
       cameras: [],
       kind: 'Scene3D',
       lights: [],
-      resources: [],
       scene: { children: [], fields: {}, kind: 'Node3D' },
-      version: 1,
-    } as FlightDocument;
+    });
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
@@ -200,12 +193,13 @@ describe('explainFlightDocumentRefusal', () => {
 
   it('explains an unsupported version', () => {
     const document = {
-      backgroundColor: null,
-      kind: 'Scene2D',
-      resources: [],
-      scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      ...createTestDocument({
+        backgroundColor: null,
+        kind: 'Scene2D',
+        scene: { children: [], fields: {}, kind: DisplayObjectKind },
+      }),
       version: 99,
-    } as unknown as FlightDocumentScene2D;
+    } as unknown as FlightDocument;
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
@@ -213,13 +207,11 @@ describe('explainFlightDocumentRefusal', () => {
   });
 
   it('returns null when the document is valid', () => {
-    const document: FlightDocumentScene2D = {
+    const document = createTestDocument({
       backgroundColor: null,
       kind: 'Scene2D',
-      resources: [],
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
-      version: 1,
-    };
+    });
     const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).toBeNull();
   });
@@ -303,42 +295,39 @@ describe('model-to-text explain parity', () => {
   }>([
     {
       label: 'wrong dimension (scene 0)',
-      document: {
+      document: createTestDocument({
         cameras: [],
         kind: 'Scene3D',
         lights: [],
-        resources: [],
         scene: { children: [], fields: {}, kind: 'Node3D' },
-        version: 1,
-      } as FlightDocument,
+      }),
       expectedReason: FlightDocumentRefusalReason.StructureInvalid,
       expectedPath: 'scenes[0].kind',
     },
     {
       label: 'unsupported version (document-level)',
       document: {
-        backgroundColor: null,
-        kind: 'Scene2D',
-        resources: [],
-        scene: { children: [], fields: {}, kind: DisplayObjectKind },
+        ...createTestDocument({
+          backgroundColor: null,
+          kind: 'Scene2D',
+          scene: { children: [], fields: {}, kind: DisplayObjectKind },
+        }),
         version: 99,
-      } as unknown as FlightDocumentScene2D,
+      } as unknown as FlightDocument,
       expectedReason: FlightDocumentRefusalReason.VersionUnsupported,
       expectedPath: 'version',
     },
     {
       label: 'unregistered node kind (scene 0)',
-      document: {
+      document: createTestDocument({
         backgroundColor: null,
         kind: 'Scene2D',
-        resources: [],
         scene: {
           children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
           fields: {},
           kind: DisplayObjectKind,
         },
-        version: 1,
-      },
+      }),
       expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
       expectedPath: 'scenes[0].scene.children[0]',
     },
@@ -359,7 +348,7 @@ describe('serializeFlightDocument', () => {
   it('round-trips a minimal Scene2D through model and text', () => {
     const scene = createScene2D();
     const schemas = createTestSchemas();
-    const document = createFlightDocumentFromScene2D(scene, schemas);
+    const document = createTestDocument(createFlightDocumentFromScene2D(scene, schemas));
     const text = serializeFlightDocument(document);
     expect(typeof text).toBe('string');
     expect(text).toContain('flight: 1');
@@ -373,12 +362,19 @@ describe('serializeFlightDocument', () => {
     sprite.y = 100;
     addNodeChild(scene.root, sprite);
     const schemas = createTestSchemas();
-    const document = createFlightDocumentFromScene2D(scene, schemas);
+    const document = createTestDocument(createFlightDocumentFromScene2D(scene, schemas));
     const text = serializeFlightDocument(document);
     const reparsed = createFlightDocumentScene2DMaterializationFromText(text, schemas);
     expect(reparsed).not.toBeNull();
   });
 });
+
+function createTestDocument(
+  scene: FlightDocumentScene,
+  resources: FlightDocumentResourceDescriptor[] = [],
+): FlightDocument {
+  return { defaultScene: 0, resources, scenes: [scene], version: 1 };
+}
 
 function createTestSchemas(): FlightDocumentSchemaRegistry {
   const displayObjectSchema: FlightDocumentNodeSchema = {
