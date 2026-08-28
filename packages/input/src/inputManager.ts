@@ -80,20 +80,8 @@ export function attachGamepadInput(
   source: InputIngressSource,
   options?: Readonly<AttachInputOptions>,
 ): void {
-  const releaseIngress = getInputIngressBackend().attachGamepad(source, getInputIngressSink(manager), options);
-
-  let rafId = 0;
-  const loop = () => {
-    pollGamepadInput(manager);
-    rafId = requestAnimationFrame(loop);
-  };
-
-  rafId = requestAnimationFrame(loop);
-
-  setInputBinding(manager, source, kGamepadInput, () => {
-    releaseIngress();
-    cancelAnimationFrame(rafId);
-  });
+  const release = getInputIngressBackend().attachGamepad(source, getInputIngressSink(manager), options);
+  setInputBinding(manager, source, kGamepadInput, release);
 }
 
 export function attachKeyboardInput(
@@ -183,10 +171,9 @@ export function connectInputStateToInputManager(state: InputState, manager: Inpu
   const onPointerCancel = (data: Readonly<InputPointerData>) => {
     state.pointerButtonsDown.delete(data.pointerId);
   };
-  // Same transition rules as the keyboard pair above. pollGamepadInput already edge-detects before it
-  // emits, so it cannot produce a repeat itself — but these signals are public and a native backend
-  // reporting held buttons each poll is a supported source, so the guard belongs on the state machine
-  // rather than in one producer.
+  // Same transition rules as the keyboard pair above. The Web adapter edge-detects before it emits,
+  // but these signals are public and a native backend reporting held buttons each poll is a supported
+  // source, so the guard belongs on the state machine rather than in one producer.
   const onGamepadButtonDown = (data: Readonly<InputGamepadButtonData>) => {
     const key = data.gamepad * MAX_GAMEPAD_BUTTONS + data.button;
     if (!state.gamepadButtonsDown.has(key)) state.justPressedGamepadButtons.add(key);
@@ -345,27 +332,82 @@ export function createWebInputIngressBackend(): InputIngressBackend {
       const target = getWebInputEventTarget(source);
       if (target === null) return noopInputIngressRelease;
 
+      const previousAxes = new Map<number, number[]>();
+      const previousButtons = new Map<number, boolean[]>();
+      let released = false;
+      let frameHandle = 0;
+
       const onGamepadConnected = (event: Event) => {
-        if (!sink.isEnabled()) return;
+        if (released || !sink.isEnabled()) return;
         const gamepad = (event as GamepadEvent).gamepad;
-        setInputGamepadConnectData(_connectData, gamepad);
-        sink.gamepadConnect(
-          _connectData,
-          gamepad.axes,
+        previousAxes.set(gamepad.index, Array.from(gamepad.axes));
+        previousButtons.set(
+          gamepad.index,
           Array.from(gamepad.buttons, (button) => button.pressed),
         );
+        setInputGamepadConnectData(_connectData, gamepad);
+        sink.gamepadConnect(_connectData);
       };
       const onGamepadDisconnected = (event: Event) => {
-        if (!sink.isEnabled()) return;
-        setInputGamepadConnectData(_connectData, (event as GamepadEvent).gamepad);
+        if (released || !sink.isEnabled()) return;
+        const gamepad = (event as GamepadEvent).gamepad;
+        previousAxes.delete(gamepad.index);
+        previousButtons.delete(gamepad.index);
+        setInputGamepadConnectData(_connectData, gamepad);
         sink.gamepadDisconnect(_connectData);
+      };
+
+      const poll = () => {
+        if (!sink.isEnabled() || typeof navigator.getGamepads !== 'function') return;
+        const now = performance.now();
+        for (const gamepad of navigator.getGamepads()) {
+          if (gamepad === null) continue;
+          const axes = previousAxes.get(gamepad.index) ?? [];
+          const buttons = previousButtons.get(gamepad.index) ?? [];
+          for (let index = 0; index < gamepad.axes.length; index++) {
+            const value = gamepad.axes[index]!;
+            if (value === axes[index]) continue;
+            axes[index] = value;
+            _axisData.axis = index;
+            _axisData.gamepad = gamepad.index;
+            _axisData.timeStamp = now;
+            _axisData.value = value;
+            sink.gamepadAxisMove(_axisData);
+            if (released) return;
+          }
+          for (let index = 0; index < gamepad.buttons.length; index++) {
+            const button = gamepad.buttons[index]!;
+            const wasPressed = buttons[index] ?? false;
+            if (button.pressed === wasPressed) continue;
+            buttons[index] = button.pressed;
+            _buttonData.button = index;
+            _buttonData.gamepad = gamepad.index;
+            _buttonData.timeStamp = now;
+            _buttonData.value = button.value;
+            if (button.pressed) sink.gamepadButtonDown(_buttonData);
+            else sink.gamepadButtonUp(_buttonData);
+            if (released) return;
+          }
+          previousAxes.set(gamepad.index, axes);
+          previousButtons.set(gamepad.index, buttons);
+        }
+      };
+      const loop = () => {
+        if (released) return;
+        // Schedule first so a signal handler that detaches reentrantly cancels the only future frame.
+        frameHandle = requestAnimationFrame(loop);
+        poll();
       };
 
       target.addEventListener('gamepadconnected', onGamepadConnected);
       target.addEventListener('gamepaddisconnected', onGamepadDisconnected);
+      frameHandle = requestAnimationFrame(loop);
       return () => {
+        if (released) return;
+        released = true;
         target.removeEventListener('gamepadconnected', onGamepadConnected);
         target.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
+        cancelAnimationFrame(frameHandle);
       };
     },
 
@@ -671,47 +713,6 @@ export function isInputKeyDown(state: Readonly<InputState>, keyCode: number): bo
  */
 export function isInputPointerButtonDown(state: Readonly<InputState>, pointerId: number, button: number): boolean {
   return ((state.pointerButtonsDown.get(pointerId) ?? 0) & (1 << button)) !== 0;
-}
-
-export function pollGamepadInput(manager: InputManager): void {
-  if (!manager.enabled || typeof navigator.getGamepads !== 'function') return;
-  const now = performance.now();
-  const prev = getOrCreateGamepadPollState(manager);
-  const gamepads = navigator.getGamepads();
-  for (const pad of gamepads) {
-    if (pad === null) continue;
-    const prevAxes = prev.axes.get(pad.index) ?? [];
-    const prevButtons = prev.buttons.get(pad.index) ?? [];
-    for (let i = 0; i < pad.axes.length; i++) {
-      const value = pad.axes[i]!;
-      if (value !== prevAxes[i]) {
-        prevAxes[i] = value;
-        _axisData.axis = i;
-        _axisData.gamepad = pad.index;
-        _axisData.timeStamp = now;
-        _axisData.value = value;
-        emitSignal(manager.onGamepadAxisMove, _axisData);
-      }
-    }
-    for (let i = 0; i < pad.buttons.length; i++) {
-      const btn = pad.buttons[i]!;
-      const wasPressed = prevButtons[i] ?? false;
-      if (btn.pressed !== wasPressed) {
-        prevButtons[i] = btn.pressed;
-        _buttonData.button = i;
-        _buttonData.gamepad = pad.index;
-        _buttonData.timeStamp = now;
-        _buttonData.value = btn.value;
-        if (btn.pressed) {
-          emitSignal(manager.onGamepadButtonDown, _buttonData);
-        } else {
-          emitSignal(manager.onGamepadButtonUp, _buttonData);
-        }
-      }
-    }
-    prev.axes.set(pad.index, prevAxes);
-    prev.buttons.set(pad.index, prevButtons);
-  }
 }
 
 /**
@@ -1136,22 +1137,6 @@ const _textData: InputTextData = {
   text: '',
 };
 
-interface GamepadPollState {
-  axes: Map<number, number[]>;
-  buttons: Map<number, boolean[]>;
-}
-
-const _gamepadPollStates = new WeakMap<InputManager, GamepadPollState>();
-
-function getOrCreateGamepadPollState(manager: InputManager): GamepadPollState {
-  let state = _gamepadPollStates.get(manager);
-  if (state === undefined) {
-    state = { axes: new Map(), buttons: new Map() };
-    _gamepadPollStates.set(manager, state);
-  }
-  return state;
-}
-
 const _axisData: InputGamepadAxisData = { axis: 0, gamepad: 0, timeStamp: 0, value: 0 };
 const _buttonData: InputGamepadButtonData = { button: 0, gamepad: 0, timeStamp: 0, value: 0 };
 const _connectData: InputGamepadConnectData = { gamepad: 0, id: '', mapping: '' };
@@ -1162,19 +1147,20 @@ function getInputIngressSink(manager: InputManager): InputIngressSink {
   let sink = _inputIngressSinks.get(manager);
   if (sink !== undefined) return sink;
   sink = {
-    gamepadConnect(data, axes, buttons): void {
-      if (!manager.enabled) return;
-      const previous = getOrCreateGamepadPollState(manager);
-      previous.axes.set(data.gamepad, Array.from(axes));
-      previous.buttons.set(data.gamepad, Array.from(buttons));
-      emitSignal(manager.onGamepadConnect, data);
+    gamepadAxisMove(data): void {
+      if (manager.enabled) emitSignal(manager.onGamepadAxisMove, data);
+    },
+    gamepadButtonDown(data): void {
+      if (manager.enabled) emitSignal(manager.onGamepadButtonDown, data);
+    },
+    gamepadButtonUp(data): void {
+      if (manager.enabled) emitSignal(manager.onGamepadButtonUp, data);
+    },
+    gamepadConnect(data): void {
+      if (manager.enabled) emitSignal(manager.onGamepadConnect, data);
     },
     gamepadDisconnect(data): void {
-      if (!manager.enabled) return;
-      const previous = getOrCreateGamepadPollState(manager);
-      previous.axes.delete(data.gamepad);
-      previous.buttons.delete(data.gamepad);
-      emitSignal(manager.onGamepadDisconnect, data);
+      if (manager.enabled) emitSignal(manager.onGamepadDisconnect, data);
     },
     isEnabled(): boolean {
       return manager.enabled;
@@ -1240,9 +1226,9 @@ let _customInputIngressBackend: InputIngressBackend | null = null;
 let _hostInputIngressBackend: InputIngressBackend | null = null;
 
 // Internal teardown registry: maps a manager to its per-source, per-input-kind origin release.
-// Kept off the public InputManager entity (a side table like `_gamepadPollStates`) so attach/detach
-// track bindings internally and callers hold nothing. The exact source identity lets one manager
-// attach the same input kind to multiple windows/sources and detach each precisely.
+// Kept off the public InputManager entity so attach/detach track bindings internally and callers hold
+// nothing. The exact source identity lets one manager attach the same input kind to multiple
+// windows/sources and detach each precisely.
 const kGamepadInput = Symbol();
 const kKeyboardInput = Symbol();
 const kPointerInput = Symbol();

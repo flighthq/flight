@@ -7,7 +7,9 @@ import ts from 'typescript';
 
 import { formatGateProvenance, readGateTreeState } from './gate-provenance';
 
-export type P5HostBypassKind = 'direct-dom' | 'input-ingress' | 'scratch-surface' | 'webgpu-acquisition';
+type P5HostBypassKindV1 = 'direct-dom' | 'input-ingress' | 'scratch-surface' | 'webgpu-acquisition';
+
+export type P5HostBypassKind = P5HostBypassKindV1 | 'frame-scheduling';
 
 export type P5HostBypassExclusion =
   | 'explicit-web-adapter'
@@ -50,7 +52,15 @@ export function createEmptyP5HostBypassReport(): P5HostBypassReport {
 
 export type P5HostBypassBudget = Readonly<Record<P5HostBypassKind, number>>;
 
+type P5HostBypassBudgetV1 = Readonly<Record<P5HostBypassKindV1, number>>;
+
 export interface P5HostBypassBudgetEvidence {
+  readonly budget: P5HostBypassBudgetV1;
+  readonly reason: string;
+  readonly total: number;
+}
+
+export interface P5HostBypassV3BudgetEvidence {
   readonly budget: P5HostBypassBudget;
   readonly reason: string;
   readonly total: number;
@@ -60,6 +70,38 @@ const P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE =
   'a P5 seam repair is complete only when every existing production consumer migrates in the same slice; a lowered census alone is incomplete';
 
 export const P5_HOST_BYPASS_SLICE_GUIDANCE = P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE;
+
+type P5HostBypassVersionedBudget = Readonly<Partial<Record<P5HostBypassKind, number>>>;
+
+export interface P5HostBypassRecategorisation {
+  readonly count: number;
+  readonly from: P5HostBypassKind;
+  readonly reason: string;
+  readonly to: P5HostBypassKind;
+}
+
+export interface P5HostBypassNewDetection {
+  readonly count: number;
+  readonly kind: P5HostBypassKind;
+  readonly reason: string;
+}
+
+export interface P5HostBypassClassificationEvidence {
+  readonly fromBudget: P5HostBypassVersionedBudget;
+  readonly fromTotal: number;
+  readonly fromVersion: number;
+  readonly newlyDetected: readonly P5HostBypassNewDetection[];
+  readonly reason: string;
+  readonly recategorised: readonly P5HostBypassRecategorisation[];
+  readonly toBudget: P5HostBypassVersionedBudget;
+  readonly toTotal: number;
+  readonly toVersion: number;
+}
+
+export interface P5HostBypassDetectorProvenance {
+  readonly detects: string;
+  readonly zeroMeaning: string;
+}
 
 // IMMUTABLE PREFIX. These accepted checkpoints pin every category, total and reason. History
 // validation compares against this full prefix, so even a coherent category-and-total rewrite fails.
@@ -103,10 +145,100 @@ export const P5_HOST_BYPASS_BUDGET_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX,
 ] as const satisfies readonly P5HostBypassBudgetEvidence[];
 
-// Category upper bounds, not source membership. The current budget is derived from the last evidenced
-// history entry so there is no second lone number an ordinary bypass addition can edit to become green.
+// Classification changes are append-only evidence, not repairs. A pure relabel preserves the census;
+// a discovery explicitly raises it. Keeping these events separate prevents a detector improvement from
+// being disguised as repair progress or used to rewrite the accepted v1 checkpoints above.
+const P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX = [
+  {
+    fromBudget: { 'direct-dom': 14, 'input-ingress': 0, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+    fromTotal: 30,
+    fromVersion: 1,
+    newlyDetected: [],
+    reason: 'navigator.getGamepads sampling recategorised as input ingress',
+    recategorised: [
+      {
+        count: 2,
+        from: 'direct-dom',
+        reason: 'navigator.getGamepads capability read and poll call',
+        to: 'input-ingress',
+      },
+    ],
+    toBudget: { 'direct-dom': 12, 'input-ingress': 2, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+    toTotal: 30,
+    toVersion: 2,
+  },
+  {
+    fromBudget: { 'direct-dom': 12, 'input-ingress': 2, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+    fromTotal: 30,
+    fromVersion: 2,
+    newlyDetected: [
+      {
+        count: 3,
+        kind: 'frame-scheduling',
+        reason: 'two requestAnimationFrame calls and one cancelAnimationFrame call',
+      },
+    ],
+    reason: 'gamepad frame scheduling added to P5 classification coverage',
+    recategorised: [],
+    toBudget: {
+      'direct-dom': 12,
+      'input-ingress': 2,
+      'frame-scheduling': 3,
+      'scratch-surface': 16,
+      'webgpu-acquisition': 0,
+    },
+    toTotal: 33,
+    toVersion: 3,
+  },
+] as const satisfies readonly P5HostBypassClassificationEvidence[];
+
+export const P5_HOST_BYPASS_CLASSIFICATION_HISTORY: readonly P5HostBypassClassificationEvidence[] = [
+  ...P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX,
+] as const satisfies readonly P5HostBypassClassificationEvidence[];
+
+const P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX = [
+  {
+    budget: {
+      'direct-dom': 12,
+      'input-ingress': 2,
+      'frame-scheduling': 3,
+      'scratch-surface': 16,
+      'webgpu-acquisition': 0,
+    },
+    reason: 'P5 taxonomy v3 classification baseline',
+    total: 33,
+  },
+  {
+    budget: {
+      'direct-dom': 12,
+      'input-ingress': 0,
+      'frame-scheduling': 0,
+      'scratch-surface': 16,
+      'webgpu-acquisition': 0,
+    },
+    reason: 'gamepad sampling and scheduling moved into the explicit Web ingress adapter',
+    total: 28,
+  },
+] as const satisfies readonly P5HostBypassV3BudgetEvidence[];
+
+export const P5_HOST_BYPASS_V3_PROGRESS_HISTORY = [
+  ...P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX,
+] as const satisfies readonly P5HostBypassV3BudgetEvidence[];
+
+const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE = {
+  detects:
+    'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+  zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
+} as const satisfies P5HostBypassDetectorProvenance;
+
+export const P5_HOST_BYPASS_DETECTOR_PROVENANCE: P5HostBypassDetectorProvenance = {
+  ...P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE,
+};
+
+// Category upper bounds, not source membership. The active budget is the latest evidenced repair in
+// the current taxonomy, so there is no second lone number an ordinary bypass addition can edit green.
 export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget =
-  P5_HOST_BYPASS_BUDGET_HISTORY[P5_HOST_BYPASS_BUDGET_HISTORY.length - 1].budget;
+  P5_HOST_BYPASS_V3_PROGRESS_HISTORY[P5_HOST_BYPASS_V3_PROGRESS_HISTORY.length - 1].budget;
 
 const P3_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
 const INPUT_EVENT_NAMES = new Set([
@@ -198,6 +330,7 @@ export function countP5HostBypasses(report: Readonly<P5HostBypassReport>): Recor
   const counts: Record<P5HostBypassKind, number> = {
     'direct-dom': 0,
     'input-ingress': 0,
+    'frame-scheduling': 0,
     'scratch-surface': 0,
     'webgpu-acquisition': 0,
   };
@@ -256,7 +389,7 @@ export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypass
   }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
-    const categoryTotal = totalP5HostBypassBudget(entry.budget);
+    const categoryTotal = totalP5HostBypassVersionedBudget(entry.budget);
     if (categoryTotal !== entry.total) {
       failures.push(
         `P5 budget history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
@@ -276,6 +409,108 @@ export function p5HostBypassSliceGuidanceFailures(guidance: string): string[] {
     : ['P5 seam-slice guidance no longer requires same-slice production consumer migration'];
 }
 
+export function p5HostBypassClassificationHistoryFailures(
+  history: readonly P5HostBypassClassificationEvidence[],
+): string[] {
+  if (history.length === 0) return ['P5 taxonomy history is empty'];
+  const failures: string[] = [];
+  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX.length; index++) {
+    const accepted = P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX[index];
+    const entry = history[index];
+    if (entry === undefined || !p5HostBypassClassificationEvidenceMatches(entry, accepted)) {
+      failures.push(`P5 taxonomy history[${index}] rewrites immutable accepted classification evidence`);
+    }
+  }
+  for (let index = 0; index < history.length; index++) {
+    const entry = history[index];
+    const fromCategoryTotal = totalP5HostBypassVersionedBudget(entry.fromBudget);
+    const toCategoryTotal = totalP5HostBypassVersionedBudget(entry.toBudget);
+    if (fromCategoryTotal !== entry.fromTotal) {
+      failures.push(
+        `P5 taxonomy history[${index}] before-category sum ${fromCategoryTotal} does not match evidenced total ${entry.fromTotal}`,
+      );
+    }
+    if (toCategoryTotal !== entry.toTotal) {
+      failures.push(
+        `P5 taxonomy history[${index}] after-category sum ${toCategoryTotal} does not match evidenced total ${entry.toTotal}`,
+      );
+    }
+
+    const newCount = entry.newlyDetected.reduce((sum, evidence) => sum + evidence.count, 0);
+    if (newCount === 0 && entry.fromTotal !== entry.toTotal) {
+      failures.push(`P5 taxonomy history[${index}] pure relabel changes total ${entry.fromTotal} -> ${entry.toTotal}`);
+    }
+    if (entry.toTotal - entry.fromTotal !== newCount) {
+      failures.push(
+        `P5 taxonomy history[${index}] census delta ${entry.toTotal - entry.fromTotal} does not match ${newCount} newly detected sites`,
+      );
+    }
+
+    const derived = completeP5HostBypassBudget(entry.fromBudget);
+    for (const recategorisation of entry.recategorised) {
+      derived[recategorisation.from] -= recategorisation.count;
+      derived[recategorisation.to] += recategorisation.count;
+    }
+    for (const detection of entry.newlyDetected) derived[detection.kind] += detection.count;
+    if (!p5HostBypassBudgetsMatch(derived, entry.toBudget)) {
+      failures.push(`P5 taxonomy history[${index}] derived categories do not match its evidenced after-budget`);
+    }
+
+    if (entry.toVersion !== entry.fromVersion + 1) {
+      failures.push(
+        `P5 taxonomy history[${index}] version ${entry.fromVersion} does not advance exactly once to ${entry.toVersion}`,
+      );
+    }
+    const prior = history[index - 1];
+    if (
+      prior !== undefined &&
+      (entry.fromVersion !== prior.toVersion || !p5HostBypassBudgetsMatch(entry.fromBudget, prior.toBudget))
+    ) {
+      failures.push(`P5 taxonomy history[${index}] does not continue the prior classification state`);
+    }
+  }
+  return failures;
+}
+
+export function p5HostBypassV3ProgressHistoryFailures(history: readonly P5HostBypassV3BudgetEvidence[]): string[] {
+  if (history.length === 0) return ['P5 taxonomy v3 progress history is empty'];
+  const failures: string[] = [];
+  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX.length; index++) {
+    const accepted = P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX[index];
+    const entry = history[index];
+    if (entry === undefined || !p5HostBypassV3BudgetEvidenceMatches(entry, accepted)) {
+      failures.push(`P5 taxonomy v3 progress history[${index}] rewrites immutable accepted checkpoint`);
+    }
+  }
+  for (let index = 0; index < history.length; index++) {
+    const entry = history[index];
+    const categoryTotal = totalP5HostBypassBudget(entry.budget);
+    if (categoryTotal !== entry.total) {
+      failures.push(
+        `P5 taxonomy v3 progress history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
+      );
+    }
+    const prior = history[index - 1];
+    if (prior !== undefined && entry.total >= prior.total) {
+      failures.push(
+        `P5 taxonomy v3 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
+      );
+    }
+  }
+  return failures;
+}
+
+export function p5HostBypassDetectorProvenanceFailures(provenance: Readonly<P5HostBypassDetectorProvenance>): string[] {
+  const failures: string[] = [];
+  if (provenance.detects !== P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE.detects) {
+    failures.push('P5 detector provenance rewrites the accepted hand-written detection floor');
+  }
+  if (provenance.zeroMeaning !== P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE.zeroMeaning) {
+    failures.push('P5 detector provenance rewrites the accepted non-exhaustive zero meaning');
+  }
+  return failures;
+}
+
 function p5HostBypassBudgetEvidenceMatches(
   entry: Readonly<P5HostBypassBudgetEvidence>,
   accepted: Readonly<P5HostBypassBudgetEvidence>,
@@ -288,6 +523,46 @@ function p5HostBypassBudgetEvidenceMatches(
     entry.budget['scratch-surface'] === accepted.budget['scratch-surface'] &&
     entry.budget['webgpu-acquisition'] === accepted.budget['webgpu-acquisition']
   );
+}
+
+function p5HostBypassClassificationEvidenceMatches(
+  entry: Readonly<P5HostBypassClassificationEvidence>,
+  accepted: Readonly<P5HostBypassClassificationEvidence>,
+): boolean {
+  return JSON.stringify(entry) === JSON.stringify(accepted);
+}
+
+function p5HostBypassV3BudgetEvidenceMatches(
+  entry: Readonly<P5HostBypassV3BudgetEvidence>,
+  accepted: Readonly<P5HostBypassV3BudgetEvidence>,
+): boolean {
+  return (
+    entry.total === accepted.total &&
+    entry.reason === accepted.reason &&
+    p5HostBypassBudgetsMatch(entry.budget, accepted.budget)
+  );
+}
+
+function completeP5HostBypassBudget(budget: P5HostBypassVersionedBudget): Record<P5HostBypassKind, number> {
+  return {
+    'direct-dom': budget['direct-dom'] ?? 0,
+    'input-ingress': budget['input-ingress'] ?? 0,
+    'frame-scheduling': budget['frame-scheduling'] ?? 0,
+    'scratch-surface': budget['scratch-surface'] ?? 0,
+    'webgpu-acquisition': budget['webgpu-acquisition'] ?? 0,
+  };
+}
+
+function p5HostBypassBudgetsMatch(left: P5HostBypassVersionedBudget, right: P5HostBypassVersionedBudget): boolean {
+  const completedLeft = completeP5HostBypassBudget(left);
+  const completedRight = completeP5HostBypassBudget(right);
+  return (Object.keys(completedLeft) as P5HostBypassKind[]).every(
+    (kind) => completedLeft[kind] === completedRight[kind],
+  );
+}
+
+function totalP5HostBypassVersionedBudget(budget: P5HostBypassVersionedBudget): number {
+  return Object.values(budget).reduce((sum, count) => sum + (count ?? 0), 0);
 }
 
 export function totalP5HostBypassBudget(budget: P5HostBypassBudget): number {
@@ -310,7 +585,8 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
     'P5 host-bypass census',
     `SCANNED ${report.scannedFiles} packages/*/src/**/*.ts files (runtime directory walk; no file roster)`,
     `SLICE ${P5_HOST_BYPASS_SLICE_GUIDANCE}`,
-    'DETECTS direct document/window/navigator access, DOM input listener attachment, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+    `DETECTS ${P5_HOST_BYPASS_DETECTOR_PROVENANCE.detects}`,
+    `ZERO ${P5_HOST_BYPASS_DETECTOR_PROVENANCE.zeroMeaning}`,
     'EXCLUDES tests/helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom/*-canvas technology adapters, application P4 window attachment, and P3 fetch/socket/EventSource/WebSocket/XHR/Request/Image transport syntax',
     `P5 outstanding=${report.p5.length} ${Object.entries(counts)
       .map(([kind, count]) => `${kind}=${count}`)
@@ -320,6 +596,35 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
   for (let index = 0; index < P5_HOST_BYPASS_BUDGET_HISTORY.length; index++) {
     const entry = P5_HOST_BYPASS_BUDGET_HISTORY[index];
     const prior = P5_HOST_BYPASS_BUDGET_HISTORY[index - 1];
+    const delta = prior === undefined ? '' : ` (-${prior.total - entry.total} fixed)`;
+    lines.push(
+      `  ${entry.total}${delta} ${Object.entries(entry.budget)
+        .map(([kind, count]) => `${kind}=${count}`)
+        .join(' ')} — ${entry.reason}`,
+    );
+  }
+  lines.push('P5 taxonomy history (append-only)');
+  for (const entry of P5_HOST_BYPASS_CLASSIFICATION_HISTORY) {
+    const recategorised = entry.recategorised.reduce((sum, evidence) => sum + evidence.count, 0);
+    const newlyDetected = entry.newlyDetected.reduce((sum, evidence) => sum + evidence.count, 0);
+    const recategorisationProvenance =
+      entry.recategorised.length === 0
+        ? 'none'
+        : entry.recategorised.map((evidence) => `${evidence.from}->${evidence.to}=${evidence.count}`).join(',');
+    const discoveryProvenance =
+      entry.newlyDetected.length === 0
+        ? 'none'
+        : entry.newlyDetected.map((evidence) => `${evidence.kind}=${evidence.count}`).join(',');
+    const censusDelta = entry.toTotal - entry.fromTotal;
+    const delta = censusDelta === 0 ? '0 census delta' : `${censusDelta > 0 ? '+' : ''}${censusDelta} classified`;
+    lines.push(
+      `  v${entry.fromVersion} -> v${entry.toVersion} total ${entry.fromTotal} -> ${entry.toTotal} (${delta}) recategorised=${recategorised} from-to=${recategorisationProvenance} new=${newlyDetected} detected=${discoveryProvenance} — ${entry.reason}`,
+    );
+  }
+  lines.push('P5 repair history (taxonomy v3)');
+  for (let index = 0; index < P5_HOST_BYPASS_V3_PROGRESS_HISTORY.length; index++) {
+    const entry = P5_HOST_BYPASS_V3_PROGRESS_HISTORY[index];
+    const prior = P5_HOST_BYPASS_V3_PROGRESS_HISTORY[index - 1];
     const delta = prior === undefined ? '' : ` (-${prior.total - entry.total} fixed)`;
     lines.push(
       `  ${entry.total}${delta} ${Object.entries(entry.budget)
@@ -356,6 +661,9 @@ if (isMainModule(import.meta.url, process.argv[1])) {
   const failures = [
     ...p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY),
     ...p5HostBypassSliceGuidanceFailures(P5_HOST_BYPASS_SLICE_GUIDANCE),
+    ...p5HostBypassClassificationHistoryFailures(P5_HOST_BYPASS_CLASSIFICATION_HISTORY),
+    ...p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY),
+    ...p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE),
     ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
   ];
   if (failures.length > 0) {
@@ -419,6 +727,10 @@ function classifyNode(
   if (ts.isCallExpression(node)) {
     const calledName = expressionName(node.expression);
     if (calledName === 'fetch') return { kind: 'p3-transport' };
+    if (calledName === 'getGamepads' && isRootedInBrowserGlobal(node.expression)) {
+      return { kind: 'input-ingress' };
+    }
+    if (isGlobalFrameSchedulingCall(node.expression)) return { kind: 'frame-scheduling' };
     if (calledName === 'createImageBitmap') return { kind: 'scratch-surface' };
     if (calledName === 'createElement' && firstStringArgument(node) === 'canvas') return { kind: 'scratch-surface' };
     if (calledName === 'createElement' || calledName === 'createTextNode') return { kind: 'direct-dom' };
@@ -445,6 +757,7 @@ function classifyNode(
     !isInsideRecognizedCallOrConstruction(node, source) &&
     isRootedInBrowserGlobal(node)
   ) {
+    if (node.name.text === 'getGamepads') return { kind: 'input-ingress' };
     return expressionContainsName(node, 'gpu') ? { kind: 'webgpu-acquisition' } : { kind: 'direct-dom' };
   }
   return null;
@@ -509,6 +822,21 @@ function isRootedInBrowserGlobal(expression: ts.Expression): boolean {
     return !isLocallyDeclared(current, current.text);
   }
   return current.text === 'globalThis' && expressionContainsName(expression, 'document', 'navigator', 'window');
+}
+
+function isGlobalFrameSchedulingCall(expression: ts.Expression): boolean {
+  const name = expressionName(expression);
+  if (name !== 'requestAnimationFrame' && name !== 'cancelAnimationFrame') return false;
+  if (ts.isIdentifier(expression)) return !isLocallyDeclared(expression, name);
+  if (!ts.isPropertyAccessExpression(expression)) return false;
+
+  let root: ts.Expression = expression;
+  while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root)) root = root.expression;
+  return (
+    ts.isIdentifier(root) &&
+    (root.text === 'window' || root.text === 'globalThis') &&
+    !isLocallyDeclared(root, root.text)
+  );
 }
 
 function isLocallyDeclared(identifier: ts.Identifier, name: string): boolean {
