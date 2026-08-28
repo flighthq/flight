@@ -30,6 +30,16 @@ Three measurements that make the size of the effect concrete, all on one reposit
 The same discipline applies to a derived gate's own summary line: state the population it swept and the
 exclusions it applied, so a smaller number reads as a narrower sweep rather than as progress.
 
+## Baseline and floor are separate instruments
+
+A gate that tracks both history and regression needs two constants, not one — and they must never share a variable.
+
+A **baseline** is immutable: it records the population and enforced set at the moment the gate was established. Its job is to make progression visible. Baseline 43 / current 46 → "+3 new seams"; baseline 3 enforced / current 5 → "+2 newly enforced". Updating a baseline to absorb subsequent work erases the progression it exists to show. A baseline that moves with the thing it measures measures nothing.
+
+A **floor** (ratchet) advances as work lands: it names every value that must not regress. When a slice adds a teardown hook, the floor grows to include it. Removing a name from the floor is a regression — the gate fails.
+
+These are distinct axes with distinct failure modes: rewriting a baseline is a history error (progression becomes invisible), while shrinking a floor is a regression error (landed work silently disappears). Require separate mutations for each, so that one kind of change cannot be confused with or hidden inside the other. A single constant serving both roles forces a choice — either it advances (erasing history) or it stays fixed (missing new ratchet entries) — and neither answer is correct because the question conflates two instruments.
+
 ## Unowned working-tree content before rebase or handoff
 
 Never reflexively discard a dirty path you did not author. The same `git status` symptom can describe
