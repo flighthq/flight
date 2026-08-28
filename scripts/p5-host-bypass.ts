@@ -49,10 +49,9 @@ export interface P5HostBypassBudgetEvidence {
   readonly total: number;
 }
 
-// APPEND ONLY. Each entry is an evidenced repair state, not a current number to edit in place. A new
-// repair appends a lower state with its category breakdown and reason; history validation checks both
-// the explicit total and strict descent, so raising one latest category cannot rebaseline a bypass.
-export const P5_HOST_BYPASS_BUDGET_HISTORY = [
+// IMMUTABLE PREFIX. These accepted checkpoints pin every category, total and reason. History
+// validation compares against this full prefix, so even a coherent category-and-total rewrite fails.
+const P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX = [
   {
     budget: { 'direct-dom': 18, 'input-ingress': 26, 'scratch-surface': 18, 'webgpu-acquisition': 6 },
     reason: 'initial runtime-derived P5 host-bypass census',
@@ -78,6 +77,13 @@ export const P5_HOST_BYPASS_BUDGET_HISTORY = [
     reason: 'Bitmap materialization routed through the selected image backend',
     total: 31,
   },
+] as const satisfies readonly P5HostBypassBudgetEvidence[];
+
+// APPEND ONLY. Each entry is an evidenced repair state, not a current number to edit in place. Future
+// repairs append a lower state with its category breakdown and reason without editing the accepted
+// prefix above.
+export const P5_HOST_BYPASS_BUDGET_HISTORY = [
+  ...P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX,
 ] as const satisfies readonly P5HostBypassBudgetEvidence[];
 
 // Category upper bounds, not source membership. The current budget is derived from the last evidenced
@@ -222,6 +228,15 @@ export function p5HostBypassBudgetFailures(report: Readonly<P5HostBypassReport>,
 export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypassBudgetEvidence[]): string[] {
   if (history.length === 0) return ['P5 budget history is empty'];
   const failures: string[] = [];
+  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX.length; index++) {
+    const accepted = P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX[index];
+    const entry = history[index];
+    if (entry === undefined || !p5HostBypassBudgetEvidenceMatches(entry, accepted)) {
+      failures.push(
+        `P5 budget history[${index}] rewrites immutable accepted checkpoint total ${accepted.total} (categories and reason are pinned)`,
+      );
+    }
+  }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
     const categoryTotal = totalP5HostBypassBudget(entry.budget);
@@ -236,6 +251,20 @@ export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypass
     }
   }
   return failures;
+}
+
+function p5HostBypassBudgetEvidenceMatches(
+  entry: Readonly<P5HostBypassBudgetEvidence>,
+  accepted: Readonly<P5HostBypassBudgetEvidence>,
+): boolean {
+  return (
+    entry.total === accepted.total &&
+    entry.reason === accepted.reason &&
+    entry.budget['direct-dom'] === accepted.budget['direct-dom'] &&
+    entry.budget['input-ingress'] === accepted.budget['input-ingress'] &&
+    entry.budget['scratch-surface'] === accepted.budget['scratch-surface'] &&
+    entry.budget['webgpu-acquisition'] === accepted.budget['webgpu-acquisition']
+  );
 }
 
 export function totalP5HostBypassBudget(budget: P5HostBypassBudget): number {

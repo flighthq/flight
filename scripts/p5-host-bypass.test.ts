@@ -62,14 +62,18 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY)).toEqual([]);
   });
 
-  it('mutation-proves that raising the latest category budget cannot rebaseline the gate', () => {
+  it('mutation-proves that coherently raising the latest checkpoint cannot rewrite accepted history', () => {
     const latest = P5_HOST_BYPASS_BUDGET_HISTORY[P5_HOST_BYPASS_BUDGET_HISTORY.length - 1];
     const mutated = [
       ...P5_HOST_BYPASS_BUDGET_HISTORY.slice(0, -1),
-      { ...latest, budget: { ...latest.budget, 'scratch-surface': latest.budget['scratch-surface'] + 1 } },
+      {
+        ...latest,
+        budget: { ...latest.budget, 'scratch-surface': latest.budget['scratch-surface'] + 1 },
+        total: latest.total + 1,
+      },
     ];
     expect(p5HostBypassBudgetHistoryFailures(mutated)).toContain(
-      'P5 budget history[4] category sum 32 does not match evidenced total 31',
+      'P5 budget history[4] rewrites immutable accepted checkpoint total 31 (categories and reason are pinned)',
     );
   });
 
