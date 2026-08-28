@@ -30,7 +30,7 @@ describe('backend replacement lifetime census', () => {
   // backend interfaces are added to @flighthq/types.
   const ENFORCED_FLOOR: BackendLifecycleFloor = {
     enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'],
-    total: 46,
+    total: 43,
   };
 
   beforeAll(() => {
@@ -99,6 +99,17 @@ describe('backend replacement lifetime census', () => {
     const delta = compareFloorToReport(ENFORCED_FLOOR, report);
     const deltaText = formatBackendLifecycleDelta(delta);
     expect(formattedOutput).toContain(`(${deltaText})`);
+  });
+
+  // ★ The floor total is a HISTORICAL BASELINE (the total when the enforced set was established), not the
+  // current total. Bumping it to match the current total absorbs growth into the baseline and silences the
+  // "+N new seams" signal. This test fails if someone does that: it asserts that when the live population
+  // exceeds the floor, the output visibly reports the growth. An explicit rebaseline is a deliberate act
+  // that adds a comment and updates both the total and this test together.
+  it('reports denominator growth when the population exceeds the historical baseline', () => {
+    const growth = report.total - ENFORCED_FLOOR.total;
+    expect(growth).toBeGreaterThan(0);
+    expect(formattedOutput).toContain(`+${growth} new seam`);
   });
 });
 
