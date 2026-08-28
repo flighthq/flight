@@ -21,8 +21,9 @@ import {
   FlightDocumentRefusalReason,
   Node3DKind,
 } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import { serializeFlightDocument } from './sceneDocumentScene2DMaterialization';
 import {
   createFlightDocumentFromScene3D,
   createFlightDocumentScene3DMaterialization,
@@ -208,6 +209,51 @@ describe('createFlightDocumentScene3DMaterializationFromText', () => {
   });
 });
 
+describe('duplicate-light explain parity', () => {
+  it.each([
+    {
+      label: 'duplicate ambient',
+      document: {
+        cameras: [],
+        kind: 'Scene3D' as const,
+        lights: [
+          { descriptor: createAmbientLight(), transform: createTransform3D() },
+          { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
+        ],
+        resources: [],
+        scene: { children: [], fields: {}, kind: Node3DKind },
+        version: 1,
+      },
+      expectedReason: FlightDocumentRefusalReason.DuplicateAmbientLight,
+    },
+    {
+      label: 'duplicate directional',
+      document: {
+        cameras: [],
+        kind: 'Scene3D' as const,
+        lights: [
+          { descriptor: createDirectionalLight(), transform: createTransform3D() },
+          { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
+        ],
+        resources: [],
+        scene: { children: [], fields: {}, kind: Node3DKind },
+        version: 1,
+      },
+      expectedReason: FlightDocumentRefusalReason.DuplicateDirectionalLight,
+    },
+  ])('model and text explain agree on $label', ({ document, expectedReason }) => {
+    const modelResult = explainFlightDocumentScene3DRefusal(document);
+    const text = serializeFlightDocument(document);
+    const textResult = explainFlightDocumentScene3DRefusalFromText(text);
+    expect(modelResult).not.toBeNull();
+    expect(textResult).not.toBeNull();
+    expect(textResult!.reason).toBe(modelResult!.reason);
+    expect(textResult!.path).toBe(modelResult!.path);
+    expect(modelResult!.reason).toBe(expectedReason);
+    expect(modelResult!.path).toBe('lights');
+  });
+});
+
 describe('explainFlightDocumentScene3DRefusal', () => {
   it('explains a dimension mismatch', () => {
     const document = {
@@ -355,6 +401,20 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
     const yaml = 'flight: 1\nkind: Scene3D\nscene:\n  kind: Node3D\n';
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
     expect(explanation).toBeNull();
+  });
+});
+
+describe('Scene3DDocumentCamera', () => {
+  it('has no direction field', () => {
+    expectTypeOf<keyof Scene3DDocumentCamera>().toEqualTypeOf<
+      'far' | 'name' | 'near' | 'node' | 'projection' | 'transform'
+    >();
+  });
+});
+
+describe('Scene3DDocumentLight', () => {
+  it('has no direction field', () => {
+    expectTypeOf<keyof Scene3DDocumentLight>().toEqualTypeOf<'descriptor' | 'name' | 'node' | 'transform'>();
   });
 });
 
