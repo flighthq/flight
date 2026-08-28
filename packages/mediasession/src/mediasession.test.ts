@@ -303,6 +303,42 @@ describe('createWebMediaSessionBackend destroy', () => {
     },
   );
 
+  it('keeps an action publication owned when the position lane is explicitly cleared', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    backend.setActionHandler!('play', () => undefined);
+    backend.setPositionState!({ duration: 100, playbackRate: 1, position: 10 });
+
+    backend.setPositionState!(null);
+    backend.destroy!();
+
+    expect(session.handlers.get('play')).toBeNull();
+  });
+
+  it('keeps a metadata publication owned when the action lane is explicitly cleared', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    backend.setMetadata!({ title: 'Owned', artist: 'Artist', album: 'Album', artwork: [] });
+    backend.setActionHandler!('play', () => undefined);
+
+    backend.setActionHandler!('play', null);
+    backend.destroy!();
+
+    expect(session.metadata).toBeNull();
+  });
+
+  it('keeps a playback publication owned when the action lane is explicitly cleared', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    backend.setPlaybackState!('playing');
+    backend.setActionHandler!('play', () => undefined);
+
+    backend.setActionHandler!('play', null);
+    backend.destroy!();
+
+    expect(session.playbackState).toBe('none');
+  });
+
   it('relinquishes every lane after an explicit clear', () => {
     const session = installFakeMediaSession();
     const backend = createWebMediaSessionBackend();
@@ -410,6 +446,134 @@ describe('createWebMediaSessionBackend destroy', () => {
     expect(session.playbackState).toBe('none');
     expect(session.positionState).toBeUndefined();
     expect(session.handlers.get('play')).toBeNull();
+  });
+
+  it('preserves an action synchronously republished while an older backend releases it', () => {
+    const session = installFakeMediaSession();
+    const first = createWebMediaSessionBackend();
+    const second = createWebMediaSessionBackend();
+    const setActionHandler = session.setActionHandler.bind(session);
+    const secondHandler = vi.fn();
+    let republish = true;
+    session.setActionHandler = (action, handler) => {
+      setActionHandler(action, handler);
+      if (action === 'play' && handler === null && republish) {
+        republish = false;
+        second.setActionHandler!(action, secondHandler);
+      }
+    };
+    first.setActionHandler!('play', () => undefined);
+
+    first.destroy!();
+
+    const installedSecondHandler = session.handlers.get('play');
+    expect(installedSecondHandler).not.toBeNull();
+    installedSecondHandler?.({ action: 'play' });
+    expect(secondHandler).toHaveBeenCalledOnce();
+
+    second.destroy!();
+    expect(session.handlers.get('play')).toBeNull();
+  });
+
+  it('preserves metadata synchronously republished while an older backend releases it', () => {
+    const session = installFakeMediaSession();
+    const first = createWebMediaSessionBackend();
+    const second = createWebMediaSessionBackend();
+    let currentMetadata: unknown;
+    let republish = true;
+    Object.defineProperty(session, 'metadata', {
+      configurable: true,
+      get: () => currentMetadata,
+      set(value: unknown) {
+        currentMetadata = value;
+        if (value === null && republish) {
+          republish = false;
+          second.setMetadata!({ title: 'Second', artist: 'Artist', album: 'Album', artwork: [] });
+        }
+      },
+    });
+    first.setMetadata!({ title: 'First', artist: 'Artist', album: 'Album', artwork: [] });
+
+    first.destroy!();
+
+    expect(currentMetadata).toMatchObject({ title: 'Second' });
+    second.destroy!();
+    expect(currentMetadata).toBeNull();
+  });
+
+  it('preserves playback synchronously republished while an older backend releases it', () => {
+    const session = installFakeMediaSession();
+    const first = createWebMediaSessionBackend();
+    const second = createWebMediaSessionBackend();
+    let currentPlaybackState = 'none';
+    let republish = true;
+    Object.defineProperty(session, 'playbackState', {
+      configurable: true,
+      get: () => currentPlaybackState,
+      set(value: string) {
+        currentPlaybackState = value;
+        if (value === 'none' && republish) {
+          republish = false;
+          second.setPlaybackState!('paused');
+        }
+      },
+    });
+    first.setPlaybackState!('playing');
+
+    first.destroy!();
+
+    expect(currentPlaybackState).toBe('paused');
+    second.destroy!();
+    expect(currentPlaybackState).toBe('none');
+  });
+
+  it('preserves position synchronously republished while an older backend releases it', () => {
+    const session = installFakeMediaSession();
+    const first = createWebMediaSessionBackend();
+    const second = createWebMediaSessionBackend();
+    const setPositionState = session.setPositionState!.bind(session);
+    const secondPosition = { duration: 200, playbackRate: 1, position: 20 };
+    let republish = true;
+    session.setPositionState = (state) => {
+      setPositionState(state);
+      if (state === undefined && republish) {
+        republish = false;
+        second.setPositionState!(secondPosition);
+      }
+    };
+    first.setPositionState!({ duration: 100, playbackRate: 1, position: 10 });
+
+    first.destroy!();
+
+    expect(session.positionState).toBe(secondPosition);
+    second.destroy!();
+    expect(session.positionState).toBeUndefined();
+  });
+
+  it('drains replacement ownership and publication records created synchronously during destroy', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    const clearer = createWebMediaSessionBackend();
+    let currentMetadata: unknown;
+    let republish = true;
+    Object.defineProperty(session, 'metadata', {
+      configurable: true,
+      get: () => currentMetadata,
+      set(value: unknown) {
+        currentMetadata = value;
+        if (value === null && republish) {
+          republish = false;
+          clearer.setMetadata!(null);
+          backend.destroy!();
+          backend.setMetadata!({ title: 'Reentrant', artist: 'Artist', album: 'Album', artwork: [] });
+        }
+      },
+    });
+    backend.setMetadata!({ title: 'First', artist: 'Artist', album: 'Album', artwork: [] });
+
+    backend.destroy!();
+
+    expect(currentMetadata).toBeNull();
   });
 
   it('releases the exact session identity it touched without clearing the current navigator session', () => {
@@ -582,6 +746,17 @@ describe('destroyMediaSessionBackend', () => {
 
 describe('explainMediaSessionBackend', () => {
   afterEach(() => resetMediaSessionBackendForTest());
+
+  it('starts a fresh module without a host conflict before any competing install', async () => {
+    vi.resetModules();
+    const freshMediaSession = await import('./mediasession');
+    try {
+      freshMediaSession.installMediaSessionHostBackend({});
+      expect(freshMediaSession.explainMediaSessionBackend()).toMatchObject({ conflict: false, layer: 'host' });
+    } finally {
+      freshMediaSession.resetMediaSessionBackendForTest();
+    }
+  });
 
   it('reports host-not-enabled when no backend is installed', () => {
     resetMediaSessionBackendForTest();
@@ -816,6 +991,21 @@ describe('resetMediaSessionBackendForTest', () => {
     expect(explainMediaSessionBackend().layer).toBe('host-not-enabled');
     expect(explainMediaSessionBackend().conflict).toBe(false);
     expect(explainMediaSessionBackend().viability).toBe('unobserved');
+  });
+
+  it('clears a prior conflict before a fresh host install', () => {
+    const first = {};
+    installMediaSessionHostBackend(first);
+    installMediaSessionHostBackend({});
+    expect(explainMediaSessionBackend().conflict).toBe(true);
+
+    resetMediaSessionBackendForTest();
+    installMediaSessionHostBackend(first);
+    try {
+      expect(explainMediaSessionBackend().conflict).toBe(false);
+    } finally {
+      resetMediaSessionBackendForTest();
+    }
   });
 });
 
