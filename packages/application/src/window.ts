@@ -202,7 +202,7 @@ export function attachWindowVisibility(win: ApplicationWindow): void {
 
 // Centers the window on its current display via the backend.
 export function centerWindow(win: ApplicationWindow): void {
-  getWindowBackend().center(win);
+  getWindowOperationBackend('center')?.center(win);
 }
 
 // Closes the window. First emits onCloseRequest; if a listener vetoes (cancelSignal), the close is
@@ -365,16 +365,16 @@ export function explainWindowBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
-// Briefly flashes the window frame to attract attention. No-op on web; native hosts implement via
-// the WindowBackend (e.g. Electron window.flashFrame(true)).
+// Briefly flashes the window frame to attract attention. Native hosts may implement it via the
+// WindowBackend (for example Electron window.flashFrame(true)).
 export function flashWindowFrame(win: ApplicationWindow): void {
-  getWindowBackend().flashWindowFrame(win);
+  getWindowOperationBackend('flashWindowFrame')?.flashWindowFrame(win);
 }
 
 // Brings the window to the foreground and marks it focused.
 export function focusWindow(win: ApplicationWindow): void {
   win.focused = true;
-  getWindowBackend().focus(win);
+  getWindowOperationBackend('focus')?.focus(win);
 }
 
 // The active window backend: custom > host > sentinel. There is always a backend.
@@ -399,7 +399,7 @@ export function getWindowDisplay(win: Readonly<ApplicationWindow>): number {
 export function hideWindow(win: ApplicationWindow): void {
   if (!win.visible) return;
   win.visible = false;
-  getWindowBackend().hide(win);
+  getWindowOperationBackend('hide')?.hide(win);
 }
 
 export function installWindowHostBackend(backend: WindowBackend): void {
@@ -424,7 +424,7 @@ export function lockApplicationPointer(element: HTMLElement): Promise<void> {
 export function maximizeWindow(win: ApplicationWindow): void {
   if (win.maximized) return;
   win.maximized = true;
-  getWindowBackend().maximize(win);
+  getWindowOperationBackend('maximize')?.maximize(win);
   emitSignal(win.onMaximize);
 }
 
@@ -432,7 +432,7 @@ export function maximizeWindow(win: ApplicationWindow): void {
 export function minimizeWindow(win: ApplicationWindow): void {
   if (win.minimized) return;
   win.minimized = true;
-  getWindowBackend().minimize(win);
+  getWindowOperationBackend('minimize')?.minimize(win);
   emitSignal(win.onMinimize);
 }
 
@@ -484,7 +484,7 @@ export function openWindow(win: ApplicationWindow, options: Readonly<WindowOptio
     _terminalWindows.delete(win);
   }
   // Apply center after open so the backend has registered the OS window before moving it.
-  if (result && options.center === true) backend.center(win);
+  if (result && options.center === true) backend.center?.(win);
   return result;
 }
 
@@ -508,7 +508,7 @@ export function requestApplicationFullscreen(element: HTMLElement): Promise<void
 
 // Requests user attention on the window (taskbar flash / dock bounce); pass false to stop.
 export function requestWindowAttention(win: ApplicationWindow, attention: boolean): void {
-  getWindowBackend().requestAttention(win, attention);
+  getWindowOperationBackend('requestAttention')?.requestAttention(win, attention);
 }
 
 // Emits onCloseRequest and returns whether the close may proceed (false when a listener vetoed by
@@ -532,14 +532,14 @@ export function restoreWindow(win: ApplicationWindow): void {
   if (!win.minimized && !win.maximized) return;
   win.minimized = false;
   win.maximized = false;
-  getWindowBackend().restore(win);
+  getWindowOperationBackend('restore')?.restore(win);
   emitSignal(win.onRestore);
 }
 
 // Sets whether the window floats above others.
 export function setWindowAlwaysOnTop(win: ApplicationWindow, alwaysOnTop: boolean): void {
   win.alwaysOnTop = alwaysOnTop;
-  getWindowBackend().setAlwaysOnTop(win, alwaysOnTop);
+  getWindowOperationBackend('setAlwaysOnTop')?.setAlwaysOnTop(win, alwaysOnTop);
 }
 
 // Installs a custom window backend; pass null to fall back to host or sentinel.
@@ -548,111 +548,108 @@ export function setWindowBackend(backend: WindowBackend | null): void {
 }
 
 // Prevents (or allows) the window contents from being captured in screenshots or screen sharing.
-// Web no-op; native hosts implement via the WindowBackend (e.g. Electron window.setContentProtection).
+// Native hosts may implement it via the WindowBackend (for example Electron setContentProtection).
 export function setWindowContentProtection(win: ApplicationWindow, enabled: boolean): void {
-  getWindowBackend().setContentProtection(win, enabled);
+  getWindowOperationBackend('setContentProtection')?.setContentProtection(win, enabled);
 }
 
 // Sets fullscreen state. Updates state and emits onFullscreenChanged when the state changes.
 export function setWindowFullscreen(win: ApplicationWindow, fullscreen: boolean): void {
   if (win.fullscreen === fullscreen) return;
   win.fullscreen = fullscreen;
-  getWindowBackend().setFullscreen(win, fullscreen);
+  getWindowOperationBackend('setFullscreen')?.setFullscreen(win, fullscreen);
   emitSignal(win.onFullscreenChanged);
 }
 
-// Shows or hides the native drop shadow around the window. macOS / native only; web no-op.
+// Shows or hides the native drop shadow around the window when the host supports it.
 export function setWindowHasShadow(win: ApplicationWindow, hasShadow: boolean): void {
-  getWindowBackend().setHasShadow(win, hasShadow);
+  getWindowOperationBackend('setHasShadow')?.setHasShadow(win, hasShadow);
 }
 
 // Sets the window icon (path/URL). On web this updates the page favicon.
 export function setWindowIcon(win: ApplicationWindow, icon: string): void {
   win.icon = icon;
-  getWindowBackend().setIcon(win, icon);
+  getWindowOperationBackend('setIcon')?.setIcon(win, icon);
 }
 
 // Sets the maximum window size in logical pixels (-1 for unbounded).
 export function setWindowMaximumSize(win: ApplicationWindow, width: number, height: number): void {
   win.maxWidth = width;
   win.maxHeight = height;
-  getWindowBackend().setMaximumSize(win, width, height);
+  getWindowOperationBackend('setMaximumSize')?.setMaximumSize(win, width, height);
 }
 
-// Shows or hides the window's menu bar (native hosts; no-op on web).
+// Shows or hides the window's menu bar when the host supports it.
 export function setWindowMenuBarVisible(win: ApplicationWindow, visible: boolean): void {
-  getWindowBackend().setMenuBarVisible(win, visible);
+  getWindowOperationBackend('setMenuBarVisible')?.setMenuBarVisible(win, visible);
 }
 
 // Sets the minimum window size in logical pixels.
 export function setWindowMinimumSize(win: ApplicationWindow, width: number, height: number): void {
   win.minWidth = width;
   win.minHeight = height;
-  getWindowBackend().setMinimumSize(win, width, height);
+  getWindowOperationBackend('setMinimumSize')?.setMinimumSize(win, width, height);
 }
 
 // Sets the window opacity in [0, 1].
 export function setWindowOpacity(win: ApplicationWindow, opacity: number): void {
   win.opacity = opacity;
-  getWindowBackend().setOpacity(win, opacity);
+  getWindowOperationBackend('setOpacity')?.setOpacity(win, opacity);
 }
 
 // Sets the window's parent (for modal/child relationships); pass null to detach. Native hosts only.
 export function setWindowParent(win: ApplicationWindow, parent: ApplicationWindow | null): void {
-  getWindowBackend().setParent(win, parent);
+  getWindowOperationBackend('setParent')?.setParent(win, parent);
 }
 
 // Moves the window's top-left to (x, y) in screen coordinates. Updates state and emits onMove.
 export function setWindowPosition(win: ApplicationWindow, x: number, y: number): void {
   win.x = x;
   win.y = y;
-  getWindowBackend().setPosition(win, x, y);
+  getWindowOperationBackend('setPosition')?.setPosition(win, x, y);
   emitSignal(win.onMove);
 }
 
 // Sets the taskbar/dock progress indicator in [0, 1]; a negative value clears it.
 export function setWindowProgress(win: ApplicationWindow, progress: number): void {
-  getWindowBackend().setProgress(win, progress);
+  getWindowOperationBackend('setProgress')?.setProgress(win, progress);
 }
 
 // Sets whether the user can resize the window.
 export function setWindowResizable(win: ApplicationWindow, resizable: boolean): void {
   win.resizable = resizable;
-  getWindowBackend().setResizable(win, resizable);
+  getWindowOperationBackend('setResizable')?.setResizable(win, resizable);
 }
 
 // Resizes the window to width x height (logical pixels). Updates state and emits onResize.
 export function setWindowSize(win: ApplicationWindow, width: number, height: number): void {
   win.width = width;
   win.height = height;
-  getWindowBackend().setSize(win, width, height);
+  getWindowOperationBackend('setSize')?.setSize(win, width, height);
   emitSignal(win.onResize);
 }
 
 // Sets whether the window is hidden from the taskbar/dock switcher.
 export function setWindowSkipTaskbar(win: ApplicationWindow, skip: boolean): void {
   win.skipTaskbar = skip;
-  getWindowBackend().setSkipTaskbar(win, skip);
+  getWindowOperationBackend('setSkipTaskbar')?.setSkipTaskbar(win, skip);
 }
 
 // Sets the window title text.
 export function setWindowTitle(win: ApplicationWindow, title: string): void {
   win.title = title;
-  getWindowBackend().setTitle(win, title);
+  getWindowOperationBackend('setTitle')?.setTitle(win, title);
 }
 
 // Shows a hidden window.
 export function showWindow(win: ApplicationWindow): void {
   if (win.visible) return;
   win.visible = true;
-  getWindowBackend().show(win);
+  getWindowOperationBackend('show')?.show(win);
 }
 
 const _sentinel: WindowBackend = {
-  center() {},
   close() {},
-  flashWindowFrame() {},
-  focus() {},
   getBounds(win, out) {
     out.x = win.x;
     out.y = win.y;
@@ -660,31 +657,9 @@ const _sentinel: WindowBackend = {
     out.height = win.height;
     return out;
   },
-  hide() {},
-  maximize() {},
-  minimize() {},
   open() {
     return false;
   },
-  requestAttention() {},
-  restore() {},
-  setAlwaysOnTop() {},
-  setContentProtection() {},
-  setFullscreen() {},
-  setHasShadow() {},
-  setIcon() {},
-  setMaximumSize() {},
-  setMenuBarVisible() {},
-  setMinimumSize() {},
-  setOpacity() {},
-  setParent() {},
-  setPosition() {},
-  setProgress() {},
-  setResizable() {},
-  setSize() {},
-  setSkipTaskbar() {},
-  setTitle() {},
-  show() {},
 };
 
 // Internal teardown registry, kept off the public ApplicationWindow entity (a side table like
@@ -705,6 +680,25 @@ function getWindowAttachmentBackend(): WindowBackend | null {
   return null;
 }
 
+// B-class commands compose per operation: a partial custom backend shadows only the members it
+// actually provides, then the host receives the first chance to serve every uncovered command.
+// The sentinel is deliberately absent from this resolver because publishing a no-op member would turn
+// structural absence back into false support.
+function getWindowOperationBackend<Operation extends WindowBOperation>(
+  operation: Operation,
+): WindowBackendWithOperation<Operation> | null {
+  if (hasWindowBackendOperation(_custom, operation)) return _custom;
+  if (hasWindowBackendOperation(_host, operation)) return _host;
+  return null;
+}
+
+function hasWindowBackendOperation<Operation extends WindowBOperation>(
+  backend: WindowBackend | null,
+  operation: Operation,
+): backend is WindowBackendWithOperation<Operation> {
+  return typeof backend?.[operation] === 'function';
+}
+
 function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
   let observers = _applicationWindowObservers.get(win);
   if (observers === undefined) {
@@ -713,3 +707,8 @@ function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () =
   }
   return observers;
 }
+
+type WindowBOperation = Exclude<keyof WindowBackend, 'attach' | 'close' | 'getBounds' | 'open'>;
+
+type WindowBackendWithOperation<Operation extends WindowBOperation> = WindowBackend &
+  Required<Pick<WindowBackend, Operation>>;

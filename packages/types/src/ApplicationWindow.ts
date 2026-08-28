@@ -91,8 +91,10 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 
 // Control seam for windowing: a host backend the window command functions delegate to. The web
 // backend covers what a browser page-window can do (title, fullscreen, focus, popup move/resize);
-// a native host (Electron/Tauri/C++) maps each ApplicationWindow to a real OS window. Every method
-// takes the target window so the seam supports multiple windows.
+// a native host (Electron/Tauri/C++) maps each ApplicationWindow to a real OS window. Operations whose
+// absence is a safe command no-op are optional, so a host declares support by providing the method rather
+// than by publishing a false implementation. Every method takes the target window so the seam supports
+// multiple windows.
 export interface WindowBackend {
   // Attaches an existing native window. Optional because absence is the structural declaration that a
   // backend cannot adopt host-created windows; attachWindow resolves custom → host by that presence.
@@ -103,36 +105,36 @@ export interface WindowBackend {
   // destruction. A host-owned record is detached only; a Flight-owned record also closes/destroys its
   // native handle, at most once.
   close(win: ApplicationWindow): void;
-  setTitle(win: ApplicationWindow, title: string): void;
-  setPosition(win: ApplicationWindow, x: number, y: number): void;
-  setSize(win: ApplicationWindow, width: number, height: number): void;
+  setTitle?(win: ApplicationWindow, title: string): void;
+  setPosition?(win: ApplicationWindow, x: number, y: number): void;
+  setSize?(win: ApplicationWindow, width: number, height: number): void;
   getBounds(win: ApplicationWindow, out: WindowBounds): WindowBounds;
-  minimize(win: ApplicationWindow): void;
-  maximize(win: ApplicationWindow): void;
-  restore(win: ApplicationWindow): void;
-  focus(win: ApplicationWindow): void;
-  show(win: ApplicationWindow): void;
-  hide(win: ApplicationWindow): void;
-  center(win: ApplicationWindow): void;
-  setResizable(win: ApplicationWindow, resizable: boolean): void;
-  setAlwaysOnTop(win: ApplicationWindow, alwaysOnTop: boolean): void;
-  setMinimumSize(win: ApplicationWindow, width: number, height: number): void;
-  setMaximumSize(win: ApplicationWindow, width: number, height: number): void;
-  setFullscreen(win: ApplicationWindow, fullscreen: boolean): void;
-  setIcon(win: ApplicationWindow, icon: string): void;
-  setOpacity(win: ApplicationWindow, opacity: number): void;
-  setSkipTaskbar(win: ApplicationWindow, skip: boolean): void;
-  setMenuBarVisible(win: ApplicationWindow, visible: boolean): void;
-  setParent(win: ApplicationWindow, parent: ApplicationWindow | null): void;
+  minimize?(win: ApplicationWindow): void;
+  maximize?(win: ApplicationWindow): void;
+  restore?(win: ApplicationWindow): void;
+  focus?(win: ApplicationWindow): void;
+  show?(win: ApplicationWindow): void;
+  hide?(win: ApplicationWindow): void;
+  center?(win: ApplicationWindow): void;
+  setResizable?(win: ApplicationWindow, resizable: boolean): void;
+  setAlwaysOnTop?(win: ApplicationWindow, alwaysOnTop: boolean): void;
+  setMinimumSize?(win: ApplicationWindow, width: number, height: number): void;
+  setMaximumSize?(win: ApplicationWindow, width: number, height: number): void;
+  setFullscreen?(win: ApplicationWindow, fullscreen: boolean): void;
+  setIcon?(win: ApplicationWindow, icon: string): void;
+  setOpacity?(win: ApplicationWindow, opacity: number): void;
+  setSkipTaskbar?(win: ApplicationWindow, skip: boolean): void;
+  setMenuBarVisible?(win: ApplicationWindow, visible: boolean): void;
+  setParent?(win: ApplicationWindow, parent: ApplicationWindow | null): void;
   // Taskbar/dock progress in [0, 1]; a negative value clears the indicator.
-  setProgress(win: ApplicationWindow, progress: number): void;
+  setProgress?(win: ApplicationWindow, progress: number): void;
   // Flashes the taskbar entry / bounces the dock to draw attention; false stops it.
-  requestAttention(win: ApplicationWindow, attention: boolean): void;
+  requestAttention?(win: ApplicationWindow, attention: boolean): void;
   // Prevents (true) or allows (false) the window contents from being captured in screenshots or
-  // screen sharing. Web no-op; native hosts implement it (e.g. Electron setContentProtection).
-  setContentProtection(win: ApplicationWindow, enabled: boolean): void;
-  // Briefly flashes the window frame to attract attention. Web no-op; native hosts implement it.
-  flashWindowFrame(win: ApplicationWindow): void;
-  // Shows or hides the native drop shadow around the window. macOS / native only; web no-op.
-  setHasShadow(win: ApplicationWindow, hasShadow: boolean): void;
+  // screen sharing. Web omits it; native hosts implement it (e.g. Electron setContentProtection).
+  setContentProtection?(win: ApplicationWindow, enabled: boolean): void;
+  // Briefly flashes the window frame to attract attention. Web omits it; native hosts implement it.
+  flashWindowFrame?(win: ApplicationWindow): void;
+  // Shows or hides the native drop shadow around the window. macOS / native only; web omits it.
+  setHasShadow?(win: ApplicationWindow, hasShadow: boolean): void;
 }

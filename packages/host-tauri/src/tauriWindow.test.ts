@@ -97,6 +97,42 @@ function methods(state: FakeWindowState): string[] {
 }
 
 describe('createTauriWindowBackend', () => {
+  it('adapter-roster axis: publishes exactly 24 P1 operations and omits the four false members', () => {
+    const { tauri } = fakeTauri();
+    const backend = createTauriWindowBackend(tauri);
+
+    expect(
+      Object.keys(backend)
+        .filter((operation) => operation !== 'attach')
+        .sort(),
+    ).toEqual([
+      'center',
+      'close',
+      'flashWindowFrame',
+      'focus',
+      'getBounds',
+      'hide',
+      'maximize',
+      'minimize',
+      'open',
+      'requestAttention',
+      'restore',
+      'setAlwaysOnTop',
+      'setContentProtection',
+      'setFullscreen',
+      'setHasShadow',
+      'setIcon',
+      'setMaximumSize',
+      'setMinimumSize',
+      'setPosition',
+      'setResizable',
+      'setSize',
+      'setSkipTaskbar',
+      'setTitle',
+      'show',
+    ]);
+  });
+
   it('opens the current window and applies options', () => {
     const { tauri, state } = fakeTauri();
     const backend = createTauriWindowBackend(tauri);
@@ -131,14 +167,14 @@ describe('createTauriWindowBackend', () => {
     const backend = createTauriWindowBackend(tauri);
     const win = createApplicationWindow();
     // Not opened yet: nothing routes through.
-    backend.setTitle(win, 'ignored');
+    backend.setTitle!(win, 'ignored');
     expect(state.calls).toHaveLength(0);
     backend.open(win, {});
     state.calls.length = 0;
-    backend.setTitle(win, 'New');
-    backend.minimize(win);
-    backend.setFullscreen(win, true);
-    backend.requestAttention(win, true);
+    backend.setTitle!(win, 'New');
+    backend.minimize!(win);
+    backend.setFullscreen!(win, true);
+    backend.requestAttention!(win, true);
     expect(methods(state)).toEqual(['setTitle', 'minimize', 'setFullscreen', 'requestUserAttention']);
   });
 

@@ -178,20 +178,8 @@ export function createTauriWindowBackend(tauri: TauriApi): WindowBackend {
     setIcon(win, icon) {
       run(win, (w) => w.setIcon(icon));
     },
-    setOpacity() {
-      // Tauri's window API exposes no opacity control; no-op.
-    },
     setSkipTaskbar(win, skip) {
       run(win, (w) => w.setSkipTaskbar(skip));
-    },
-    setMenuBarVisible() {
-      // Tauri menus are not a per-window menu bar toggled here; no-op.
-    },
-    setParent() {
-      // Parenting an already-created window is not modeled through the current-window seam; no-op.
-    },
-    setProgress() {
-      // Taskbar progress is available via Tauri's setProgressBar but not modeled here; no-op.
     },
     requestAttention(win, attention) {
       // Tauri's requestUserAttention takes a UserAttentionType (1 = Critical) or null to cancel.
