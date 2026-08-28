@@ -13,6 +13,7 @@
     { "path": "../accessibility" },
     { "path": "../app" },
     { "path": "../application" },
+    { "path": "../audio" },
     { "path": "../clipboard" },
     { "path": "../connectivity" },
     { "path": "../device" },

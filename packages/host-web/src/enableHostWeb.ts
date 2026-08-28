@@ -1,4 +1,5 @@
 import { enableHostWebAccessibility } from './webAccessibility';
+import { enableHostWebAudio } from './webAudio';
 import { enableHostWebClipboard } from './webClipboard';
 import { enableHostWebConnectivity } from './webConnectivity';
 import { enableHostWebDevice } from './webDevice';
@@ -23,6 +24,7 @@ import { enableHostWebWebcam } from './webWebcam';
 
 export function enableHostWeb(): void {
   enableHostWebAccessibility();
+  enableHostWebAudio();
   enableHostWebClipboard();
   enableHostWebConnectivity();
   enableHostWebDevice();

@@ -1,5 +1,6 @@
 import { setNetBackend } from '@flighthq/net/contract';
 
+import { resetAudioBackendForTest, setAudioBackend } from './audioBackend';
 import {
   createAudioResourceFromSamples,
   loadAudioResourceFromBase64,
@@ -58,6 +59,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setNetBackend(null);
+  resetAudioBackendForTest();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   (mockContext.decodeAudioData as ReturnType<typeof vi.fn>).mockClear();
@@ -256,9 +258,7 @@ describe('loadAudioResourceFromUrls', () => {
   });
 
   it('loads the first playable source', async () => {
-    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockImplementation((type: string) =>
-      type === 'audio/ogg' ? 'probably' : '',
-    );
+    setAudioBackend({ canPlayType: (type: string) => type === 'audio/ogg' });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
@@ -275,9 +275,7 @@ describe('loadAudioResourceFromUrls', () => {
 
 describe('selectAudioResourceUrl', () => {
   beforeEach(() => {
-    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockImplementation((type: string) =>
-      type === 'audio/ogg' ? 'maybe' : '',
-    );
+    setAudioBackend({ canPlayType: (type: string) => type === 'audio/ogg' });
   });
 
   it('returns the first source whose inferred type is playable', () => {
