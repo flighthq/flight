@@ -26,37 +26,112 @@ export function clearMediaSessionPositionState(): void {
 // (or a specific capability such as setPositionState / MediaMetadata) is absent — jsdom, older
 // browsers, non-secure contexts — rather than throwing.
 export function createWebMediaSessionBackend(): MediaSessionBackend {
-  // Which actions this instance registered, so destroy clears exactly those and not a handler some other
-  // code installed. Per-instance rather than module state: two backends must not clear each other's work.
-  const registered = new Set<MediaSessionAction>();
+  const owner = {};
+  const publications = new Map<MediaSession, WebMediaSessionPublication>();
   return {
-    // Clears everything this instance published to navigator.mediaSession. Idempotent — the action set is
-    // emptied as it is walked, so a second destroy finds nothing to clear.
     destroy() {
-      const session = getWebMediaSession();
-      if (session === null) return;
-      for (const action of registered) {
-        try {
-          session.setActionHandler(action, null);
-        } catch {
-          // Unsupported action — it was never registered, so there is nothing to clear.
+      for (const [session, publication] of publications) {
+        const ownership = _webMediaSessionOwnership.get(session);
+        if (ownership === undefined) {
+          publications.delete(session);
+          continue;
         }
+
+        for (const action of publication.actions) {
+          if (ownership.actions.get(action) !== owner) {
+            publication.actions.delete(action);
+            continue;
+          }
+          try {
+            session.setActionHandler(action, null);
+            if (ownership.actions.get(action) === owner) ownership.actions.delete(action);
+            publication.actions.delete(action);
+          } catch {
+            // Keep failed releases owned so a later destroy can retry them.
+          }
+        }
+
+        if (publication.metadata !== null) {
+          const ownedMetadata = ownership.metadata;
+          if (ownedMetadata?.owner !== owner) {
+            publication.metadata = null;
+          } else if (ownedMetadata.value !== publication.metadata || session.metadata !== ownedMetadata.value) {
+            ownership.metadata = null;
+            publication.metadata = null;
+          } else {
+            try {
+              session.metadata = null;
+              if (ownership.metadata?.owner === owner) ownership.metadata = null;
+              publication.metadata = null;
+            } catch {
+              // Keep failed releases owned so a later destroy can retry them.
+            }
+          }
+        }
+
+        if (publication.playbackState !== null) {
+          const ownedPlaybackState = ownership.playbackState;
+          if (ownedPlaybackState?.owner !== owner) {
+            publication.playbackState = null;
+          } else if (
+            ownedPlaybackState.value !== publication.playbackState ||
+            session.playbackState !== ownedPlaybackState.value
+          ) {
+            ownership.playbackState = null;
+            publication.playbackState = null;
+          } else {
+            try {
+              session.playbackState = 'none';
+              if (ownership.playbackState?.owner === owner) ownership.playbackState = null;
+              publication.playbackState = null;
+            } catch {
+              // Keep failed releases owned so a later destroy can retry them.
+            }
+          }
+        }
+
+        if (publication.positionState) {
+          if (ownership.positionState !== owner) {
+            publication.positionState = false;
+          } else if (typeof session.setPositionState === 'function') {
+            try {
+              // MediaSession exposes no readable position or action handler. Token ownership is the
+              // strongest boundary available for those two lanes; direct outside replacement is opaque.
+              session.setPositionState(undefined);
+              if (ownership.positionState === owner) ownership.positionState = null;
+              publication.positionState = false;
+            } catch {
+              // Keep failed releases owned so a later destroy can retry them.
+            }
+          }
+        }
+
+        pruneWebMediaSessionOwnership(session, ownership);
+        pruneWebMediaSessionPublication(publications, session, publication);
       }
-      registered.clear();
-      session.metadata = null;
-      session.playbackState = 'none';
-      if (typeof session.setPositionState === 'function') session.setPositionState(undefined);
     },
     setActionHandler(action, handler) {
       const session = getWebMediaSession();
       if (session === null) return;
       try {
         // Some browsers throw for an action they do not support; treat that as a no-op.
-        session.setActionHandler(action, handler ? (details) => handler(details as MediaSessionActionDetails) : null);
-        if (handler === null) registered.delete(action);
-        else registered.add(action);
+        session.setActionHandler(
+          action,
+          handler === null ? null : (details) => handler(details as MediaSessionActionDetails),
+        );
+        const ownership = _webMediaSessionOwnership.get(session);
+        const publication = publications.get(session);
+        if (handler === null) {
+          ownership?.actions.delete(action);
+          publication?.actions.delete(action);
+          if (ownership !== undefined) pruneWebMediaSessionOwnership(session, ownership);
+          if (publication !== undefined) pruneWebMediaSessionPublication(publications, session, publication);
+        } else {
+          getWebMediaSessionOwnership(session).actions.set(action, owner);
+          getWebMediaSessionPublication(publications, session).actions.add(action);
+        }
       } catch {
-        // Unsupported action — leave it unregistered.
+        // Unsupported action — leave any prior registration provenance unchanged.
       }
     },
     setMetadata(metadata) {
@@ -64,26 +139,69 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       if (session === null) return;
       if (metadata === null) {
         session.metadata = null;
+        const ownership = _webMediaSessionOwnership.get(session);
+        const publication = publications.get(session);
+        if (ownership !== undefined) {
+          ownership.metadata = null;
+          pruneWebMediaSessionOwnership(session, ownership);
+        }
+        if (publication !== undefined) {
+          publication.metadata = null;
+          pruneWebMediaSessionPublication(publications, session, publication);
+        }
         return;
       }
       if (typeof MediaMetadata === 'undefined') return;
-      session.metadata = new MediaMetadata({
+      const published = new MediaMetadata({
         title: metadata.title,
         artist: metadata.artist,
         album: metadata.album,
         artwork: [...metadata.artwork],
       });
+      session.metadata = published;
+      getWebMediaSessionOwnership(session).metadata = { owner, value: published };
+      getWebMediaSessionPublication(publications, session).metadata = published;
     },
     setPlaybackState(state) {
       const session = getWebMediaSession();
       if (session === null) return;
       session.playbackState = state;
+      const ownership = _webMediaSessionOwnership.get(session);
+      const publication = publications.get(session);
+      if (state === 'none') {
+        if (ownership !== undefined) {
+          ownership.playbackState = null;
+          pruneWebMediaSessionOwnership(session, ownership);
+        }
+        if (publication !== undefined) {
+          publication.playbackState = null;
+          pruneWebMediaSessionPublication(publications, session, publication);
+        }
+      } else {
+        getWebMediaSessionOwnership(session).playbackState = { owner, value: state };
+        getWebMediaSessionPublication(publications, session).playbackState = state;
+      }
     },
     setPositionState(state) {
       const session = getWebMediaSession();
       if (session === null || typeof session.setPositionState !== 'function') return;
       // A null position clears the OS scrubber; the web API spells "clear" as an omitted argument.
       session.setPositionState(state ?? undefined);
+      const ownership = _webMediaSessionOwnership.get(session);
+      const publication = publications.get(session);
+      if (state === null) {
+        if (ownership !== undefined) {
+          ownership.positionState = null;
+          pruneWebMediaSessionOwnership(session, ownership);
+        }
+        if (publication !== undefined) {
+          publication.positionState = false;
+          pruneWebMediaSessionPublication(publications, session, publication);
+        }
+      } else {
+        getWebMediaSessionOwnership(session).positionState = owner;
+        getWebMediaSessionPublication(publications, session).positionState = true;
+      }
     },
   };
 }
@@ -207,10 +325,68 @@ let _custom: MediaSessionBackend | null = null;
 let _host: MediaSessionBackend | null = null;
 let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+const _webMediaSessionOwnership = new WeakMap<MediaSession, WebMediaSessionOwnership>();
 
 function getWebMediaSession(): MediaSession | null {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return null;
   return navigator.mediaSession;
+}
+
+function getWebMediaSessionOwnership(session: MediaSession): WebMediaSessionOwnership {
+  const existing = _webMediaSessionOwnership.get(session);
+  if (existing !== undefined) return existing;
+  const created: WebMediaSessionOwnership = {
+    actions: new Map(),
+    metadata: null,
+    playbackState: null,
+    positionState: null,
+  };
+  _webMediaSessionOwnership.set(session, created);
+  return created;
+}
+
+function getWebMediaSessionPublication(
+  publications: Map<MediaSession, WebMediaSessionPublication>,
+  session: MediaSession,
+): WebMediaSessionPublication {
+  const existing = publications.get(session);
+  if (existing !== undefined) return existing;
+  const created: WebMediaSessionPublication = {
+    actions: new Set(),
+    metadata: null,
+    playbackState: null,
+    positionState: false,
+  };
+  publications.set(session, created);
+  return created;
+}
+
+function pruneWebMediaSessionOwnership(session: MediaSession, ownership: WebMediaSessionOwnership): void {
+  if (
+    _webMediaSessionOwnership.get(session) === ownership &&
+    ownership.actions.size === 0 &&
+    ownership.metadata === null &&
+    ownership.playbackState === null &&
+    ownership.positionState === null
+  ) {
+    _webMediaSessionOwnership.delete(session);
+  }
+}
+
+function pruneWebMediaSessionPublication(
+  publications: Map<MediaSession, WebMediaSessionPublication>,
+  session: MediaSession,
+  publication: WebMediaSessionPublication,
+): void {
+  if (
+    publications.get(session) === publication &&
+    publication.actions.size === 0 &&
+    publication.metadata === null &&
+    publication.playbackState === null &&
+    !publication.positionState
+  ) {
+    publications.delete(session);
+  }
 }
 
 // Destroys every backend that WAS referenced and is not referenced any more — exactly once each.
@@ -230,4 +406,23 @@ function releaseMediaSessionBackends(previous: readonly (Readonly<MediaSessionBa
     released.add(backend);
     backend.destroy?.();
   }
+}
+
+interface WebMediaSessionOwnedValue<Value> {
+  owner: object;
+  value: Value;
+}
+
+interface WebMediaSessionOwnership {
+  actions: Map<MediaSessionAction, object>;
+  metadata: WebMediaSessionOwnedValue<MediaMetadata> | null;
+  playbackState: WebMediaSessionOwnedValue<MediaSessionPlaybackState> | null;
+  positionState: object | null;
+}
+
+interface WebMediaSessionPublication {
+  actions: Set<MediaSessionAction>;
+  metadata: MediaMetadata | null;
+  playbackState: MediaSessionPlaybackState | null;
+  positionState: boolean;
 }
