@@ -9,16 +9,17 @@ recorded separately below._
 The 42-interface audit partitions exactly as:
 
 ```text
-1 existing whole-backend owner (LogTransport)
-+ 7 additional whole-backend owners
+1 already-implemented whole-backend owner (LogTransport)
++ 7 additional whole-backend owners still needing hooks at the audit freeze
 + 19 entity/keyed/caller-owned lifetimes
 + 15 GC-managed, pure, or bounded-call backends
 = 42 audited interfaces
 ```
 
-The seven additional whole-backend rows are not the total owner population. The total is eight:
-`LogTransportBackend` plus the seven named below. Two of the eight now declare and exercise a
-whole-backend hook (`LogTransportBackend` and `MediaSessionBackend`); six still owe one.
+The seven still-needing rows are not the total owner population. At the frozen audit, the total was
+eight: already-implemented `LogTransportBackend` plus the seven named below. Since that audit,
+`MediaSessionBackend` has landed its hook. The live implementation state is therefore two declared
+and exercised hooks (`LogTransportBackend` and `MediaSessionBackend`) with six still owed.
 
 The live tree has since added `AudioBackend`, a pure `canPlayType` query. Therefore the live total is
 43 and the live partition is `1 + 7 + 19 + 16 = 43`. The new row changes neither the whole-owner nor
@@ -70,6 +71,10 @@ no-op. `setLogTransportBackend` preserves identical-object assignment and destro
 removed outgoing transport. This is the complete single-slot reference implementation.
 
 ### Seven additional owners
+
+All seven rows needed a hook at the 42-interface audit freeze. `MediaSessionBackend` is retained in
+this seven-row population because implementation progress changes a row's state, not its ownership
+category; its subsequently landed hook is recorded in the row itself.
 
 | Backend | Evidence for whole ownership | Required or current teardown |
 | --- | --- | --- |
