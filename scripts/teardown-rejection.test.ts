@@ -82,6 +82,17 @@ describe('formatTeardownRejectionReport', () => {
     expect(text).toContain('destroy() → flagged1');
     expect(text).toContain('destroyThingBackend() → flagged4');
   });
+
+  it('labels the host/non-host split so the ungated scope is visible', () => {
+    const text = formatTeardownRejectionReport(createTeardownRejectionReport([fixturePath]));
+    expect(text).toContain('0 host candidates (asserted)');
+    expect(text).toContain('non-host candidates (not asserted');
+  });
+
+  it('would fail if the non-host caveat were removed or weakened', () => {
+    const text = formatTeardownRejectionReport(createTeardownRejectionReport([fixturePath]));
+    expect(text).toMatch(/not asserted/);
+  });
 });
 
 describe('isTeardownFunctionName', () => {
