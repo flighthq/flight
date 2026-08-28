@@ -1,5 +1,6 @@
 import {
   checkTransportBypasses,
+  createEmptyTransportBypassReport,
   formatTransportBypassReport,
   readPackageTransportSources,
 } from './check-transport-bypasses';
@@ -192,6 +193,23 @@ describe('readPackageTransportSources', () => {
     expect(report.allowed.length).toBeGreaterThan(4);
     expect(report.violations).toEqual([]);
   }, 60_000);
+});
+
+describe('createEmptyTransportBypassReport', () => {
+  // ★ Compared against the production path, never against a field list written here — a list would be a
+  // second copy of the shape, which is the defect the factory exists to remove.
+  it('supplies every field the real report producer does', () => {
+    const produced = checkTransportBypasses([]);
+    expect(Object.keys(createEmptyTransportBypassReport()).sort()).toEqual(Object.keys(produced).sort());
+  });
+
+  it('is empty rather than merely well-typed', () => {
+    const empty = createEmptyTransportBypassReport();
+    expect(empty.scannedFiles).toBe(0);
+    expect(empty.allowed).toEqual([]);
+    expect(empty.excluded).toEqual([]);
+    expect(empty.violations).toEqual([]);
+  });
 });
 
 function source(path: string, text: string): { path: string; text: string } {
