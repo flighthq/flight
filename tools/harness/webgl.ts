@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   createCanvasRenderState,
@@ -51,6 +52,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
+  enableHostWebGlRenderSurface();
   const canvas = createGlCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 

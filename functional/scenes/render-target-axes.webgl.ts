@@ -1,4 +1,5 @@
 import { getBitmapPixelRgb } from '@flighthq/bitmap';
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import {
   acquireGlRenderTarget,
   beginGlRenderPass,
@@ -29,6 +30,7 @@ export const scale = window.devicePixelRatio || 1;
 // heuristic has no split to measure, so assertRender below checks the actual attachment color.
 export const minCoverage = 0;
 
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(canvas, {

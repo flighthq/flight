@@ -10,6 +10,7 @@ export * from './webDevice';
 export * from './webDialog';
 export * from './webFilesystem';
 export * from './webGeolocation';
+export * from './webGlRenderSurface';
 export * from './webGlyphRasterizer';
 export * from './webHaptics';
 export * from './webImage';

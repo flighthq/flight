@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -41,6 +42,7 @@ declareExpectedImageDescription(
 // Chromatic aberration: the R/G/B channels are sampled with a growing radial offset toward the edges,
 // fringing high-contrast borders. Sharp edges away from center show the red/blue split clearly.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

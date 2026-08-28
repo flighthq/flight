@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, Camera3D, GlRenderEffectPipeline, Material, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
@@ -55,6 +56,7 @@ declareExpectedImageDescription(
 // different built-in material whose vertex path used to stay rigid: Depth, Normal, Matcap, and
 // Wireframe. Their upper arms must all reach a region left of the corresponding bind-pose column.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

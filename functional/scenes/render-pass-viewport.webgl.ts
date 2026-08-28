@@ -2,6 +2,7 @@ import { getBitmapPixelRgb } from '@flighthq/bitmap';
 import { createCamera3D, createPerspectiveProjection, setCamera3DViewMatrix4FromLookAt } from '@flighthq/camera';
 import { createClipRegionFromRectangle } from '@flighthq/clip';
 import { createVector3 } from '@flighthq/geometry';
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { createBoxMeshGeometry } from '@flighthq/mesh';
@@ -51,6 +52,7 @@ export const width = 800;
 export const height = 600;
 export const scale = window.devicePixelRatio || 1;
 
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(width, height, scale);
 document.body.appendChild(canvas);
 const state = createGlRenderState(canvas, {

@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -40,6 +41,7 @@ declareExpectedImageDescription(
 // Bokeh depth-of-field [DEPTH]: shapes near the focus distance stay sharp while out-of-focus
 // shapes spread into soft bokeh discs. Gl drives the circle-of-confusion from the depth target.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

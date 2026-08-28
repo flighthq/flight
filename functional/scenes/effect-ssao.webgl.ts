@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -38,6 +39,7 @@ declareExpectedImageDescription(
 // ssao is depth-driven [DEPTH]. With no sampleable depth buffer in this test, the Gl recipe is a
 // color-only fallback (no occlusion darkening), passing the lit scene through.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

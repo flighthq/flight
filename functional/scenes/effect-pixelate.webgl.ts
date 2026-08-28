@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D, GlRenderEffectPipeline } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -39,6 +40,7 @@ declareExpectedImageDescription(
 // Pixelate: the frame is quantized into uniform blocks. Detailed, rotated shapes turn into chunky
 // stair-stepped edges, making the block size obvious.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

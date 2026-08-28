@@ -61,6 +61,7 @@
     "@flighthq/platform": "*",
     "@flighthq/power": "*",
     "@flighthq/protocol": "*",
+    "@flighthq/render-gl": "*",
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
     "@flighthq/share": "*",

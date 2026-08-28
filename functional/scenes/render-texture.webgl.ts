@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
 import { drawGlScene3D } from '@flighthq/scene3d-gl';
 import type { GlRenderEffectPipeline, Bitmap } from '@flighthq/sdk';
@@ -43,6 +44,7 @@ declareExpectedImageDescription(
 const WIDTH = 800;
 const HEIGHT = 600;
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 export const state = createGlRenderState(canvas, {

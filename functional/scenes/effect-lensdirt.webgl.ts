@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, GlRenderEffectPipeline, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -33,6 +34,7 @@ declareExpectedImageDescription(
 // Lens dirt: procedural smudge blobs over bright regions, simulating grime on the lens. The dirt
 // threshold gates which areas glow; seed fixes the procedural pattern for deterministic capture.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

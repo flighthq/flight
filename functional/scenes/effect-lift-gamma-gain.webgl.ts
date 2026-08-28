@@ -1,3 +1,4 @@
+import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a GLOBAL TONAL SHIFT over a flat field. That is the one class `npm run contrast` states it
 // does not bound, and `npm run displacement` cannot see it either — moving a flat field changes nothing;
@@ -41,6 +42,7 @@ declareExpectedImageDescription(
 // Full-frame liftGammaGain color grade: applies a warm lift and cool gain for a cinematic split-tone. One config applied to the whole scene through an
 // rgba8 effect pipeline (the default format for color ops, so format is omitted).
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebGlRenderSurface();
 const canvas = createGlCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
