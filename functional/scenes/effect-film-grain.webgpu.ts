@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -45,6 +46,7 @@ declareExpectedImageDescription(
 // mid-gray fill, fixed seed for a deterministic capture. Wgpu render-state init is async; the effect
 // pipeline runs between renderWgpuBackground and submitWgpuRenderPass.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

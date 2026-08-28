@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -34,6 +35,7 @@ declareExpectedImageDescription(
 
 // Wgpu parity column for FXAA. The full frame is edge-detected and blended to soften jagged edges.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

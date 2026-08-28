@@ -13,7 +13,11 @@ import {
   p5GlRenderSurfaceConsumerFailures,
   p5GlRenderSurfaceConsumerSourceFailures,
   p5GlRenderSurfaceProviderBoundaryFailures,
-  p5GlRenderSurfaceRepairFailures,
+  p5WgpuExampleRunnerOwnershipFailures,
+  p5WgpuRenderSurfaceConsumerFailures,
+  p5WgpuRenderSurfaceConsumerSourceFailures,
+  p5WgpuRenderSurfaceProviderBoundaryFailures,
+  p5WgpuRenderSurfaceRepairFailures,
   P5_HOST_BYPASS_BUDGET,
   P5_HOST_BYPASS_BUDGET_HISTORY,
   P5_HOST_BYPASS_CLASSIFICATION_HISTORY,
@@ -44,7 +48,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=27 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=1 webgpu-acquisition=0',
+      'P5 outstanding=26 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=0 webgpu-acquisition=0',
     );
     expect(formatted).toContain(
       'v1 -> v2 total 30 -> 30 (0 census delta) recategorised=2 from-to=direct-dom->input-ingress=2 new=0 detected=none',
@@ -59,7 +63,7 @@ describe('P5 host-bypass derived gate', () => {
     expect(formatted).toContain(
       '28 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=2 webgpu-acquisition=0 — P5 taxonomy v4 classification baseline',
     );
-    expect(formatted).toContain('render-surface packages/render-wgpu/src/wgpuElement.ts:2:18');
+    expect(countP5HostBypasses(report)['render-surface']).toBe(0);
     expect(formatted).toContain('28 (-5 fixed)');
     expect(formatted).toContain('DETECTS hand-written floor (not an exhaustive ceiling):');
     expect(formatted).toContain('ZERO category zero means none found by current detectors, not that no bypasses exist');
@@ -119,15 +123,63 @@ describe('P5 host-bypass derived gate', () => {
     );
   });
 
-  it('pins the exact remaining S08 WGPU render-surface site', () => {
-    const report = scanP5HostBypasses(ROOT);
-    expect(p5GlRenderSurfaceRepairFailures(report)).toEqual([]);
-    const withoutWgpu = createP5HostBypassReport(
-      report.scannedFiles,
-      [...report.p5, ...report.excluded].filter((site) => site.kind !== 'render-surface'),
+  it('derives WGPU surface ownership for every direct functional consumer and both shared owners', () => {
+    expect(p5WgpuRenderSurfaceConsumerFailures(ROOT)).toEqual([]);
+  });
+
+  it('mutation-proves a direct functional WGPU consumer cannot omit its Web enabler', () => {
+    const file = 'functional/scenes/camera-orthographic.webgpu.ts';
+    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebWgpuRenderSurface();', '');
+    expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
+      expect.stringContaining('WGPU surface creation is not immediately preceded by enableHostWebWgpuRenderSurface()'),
+    ]);
+  });
+
+  it('mutation-proves the shared functional WebGPU harness cannot omit its Web enabler', () => {
+    const file = 'tools/harness/webgpu.ts';
+    const source = readFileSync(join(ROOT, file), 'utf8').replace('enableHostWebWgpuRenderSurface();', '');
+    expect(p5WgpuRenderSurfaceConsumerSourceFailures(file, source)).toEqual([
+      expect.stringContaining('WGPU surface creation is not immediately preceded by enableHostWebWgpuRenderSurface()'),
+    ]);
+  });
+
+  it('mutation-proves the generated example WebGPU owner cannot omit or delay its Web enabler', () => {
+    const source = readFileSync(join(ROOT, 'examples/runners/web/vite.config.ts'), 'utf8');
+    expect(
+      p5WgpuExampleRunnerOwnershipFailures(
+        source.replace('`enableHostWebWgpuRenderSurface();`', '`mutation removed WebGPU surface enabler`'),
+      ),
+    ).toContain('examples WebGPU entry does not call enableHostWebWgpuRenderSurface()');
+    const branch = source.match(/  if \(render === 'webgpu'\) \{[\s\S]*?\n  \}/)?.[0] ?? '';
+    expect(p5WgpuExampleRunnerOwnershipFailures(source.replace(branch, '').concat(`\n${branch}`))).toContain(
+      'examples WebGPU enabler does not run before the capture render dynamic import',
     );
-    expect(p5GlRenderSurfaceRepairFailures(withoutWgpu)).toContain(
-      'S07 must leave exactly the WGPU render surface; found []',
+  });
+
+  it('pins the portable WGPU provider against DOM, GL and acquisition fallback independently', () => {
+    const source = readFileSync(join(ROOT, 'packages/render-wgpu/src/wgpuElement.ts'), 'utf8');
+    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(source)).toEqual([]);
+    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(`${source}\ncreateGlCanvasElement(1, 1);`)).toContain(
+      'portable WGPU surface provider crosses into the GL surface boundary',
+    );
+    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(`${source}\ngetWgpuHostBackend();`)).toContain(
+      'portable WGPU surface provider crosses into the WGPU acquisition boundary',
+    );
+    expect(p5WgpuRenderSurfaceProviderBoundaryFailures(`${source}\ndocument.createElement('canvas');`)).toContain(
+      'portable WGPU surface provider reads document instead of returning null',
+    );
+  });
+
+  it('pins zero remaining render-surface sites after S08', () => {
+    const report = scanP5HostBypasses(ROOT);
+    expect(p5WgpuRenderSurfaceRepairFailures(report)).toEqual([]);
+    const restored = scanP5HostBypassSource(
+      'packages/render-wgpu/src/wgpuElement.ts',
+      `export function createWgpuCanvasElement() { return document.createElement('canvas'); }`,
+    );
+    const withWgpu = createP5HostBypassReport(report.scannedFiles, [...report.p5, ...report.excluded, ...restored]);
+    expect(p5WgpuRenderSurfaceRepairFailures(withWgpu)).toContain(
+      'S08 must leave no render surfaces; found [packages/render-wgpu/src/wgpuElement.ts:createWgpuCanvasElement]',
     );
   }, 30_000);
 
@@ -138,8 +190,19 @@ describe('P5 host-bypass derived gate', () => {
       `export function createGlCanvasElement() { return document.createElement('canvas'); }`,
     );
     const mutated = createP5HostBypassReport(clean.scannedFiles, [...clean.p5, ...clean.excluded, ...restored]);
-    expect(countP5HostBypasses(mutated)['render-surface']).toBe(2);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('render-surface: found 2, budget 1');
+    expect(countP5HostBypasses(mutated)['render-surface']).toBe(1);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('render-surface: found 1, budget 0');
+  }, 30_000);
+
+  it('mutation-proves restoring the portable WGPU DOM factory exceeds the v4 render ratchet', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    const restored = scanP5HostBypassSource(
+      'packages/render-wgpu/src/wgpuElement.ts',
+      `export function createWgpuCanvasElement() { return document.createElement('canvas'); }`,
+    );
+    const mutated = createP5HostBypassReport(clean.scannedFiles, [...clean.p5, ...clean.excluded, ...restored]);
+    expect(countP5HostBypasses(mutated)['render-surface']).toBe(1);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('render-surface: found 1, budget 0');
   }, 30_000);
 
   it('pins detector provenance against removal and false exhaustive wording', () => {
@@ -333,8 +396,31 @@ describe('P5 host-bypass derived gate', () => {
         reason: 'GL root-surface creation routed through the selected GL render-surface provider',
         total: 27,
       },
+      {
+        budget: {
+          'direct-dom': 12,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 14,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'WGPU root-surface creation routed through the selected WGPU render-surface provider',
+        total: 26,
+      },
     ]);
     expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
+  });
+
+  it('mutation-proves S08 cannot collapse the immutable 27 -> 26 repair into 27 -> 25', () => {
+    const latest = P5_HOST_BYPASS_V4_PROGRESS_HISTORY.at(-1)!;
+    const mutated = [
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, -1),
+      { ...latest, budget: { ...latest.budget, 'direct-dom': 11 }, total: 25 },
+    ];
+    expect(p5HostBypassV4ProgressHistoryFailures(mutated)).toContain(
+      'P5 taxonomy v4 progress history[2] must repair exactly one site; found 27 -> 25',
+    );
   });
 
   it('mutation-proves that the v4 pure relabel cannot change the total', () => {

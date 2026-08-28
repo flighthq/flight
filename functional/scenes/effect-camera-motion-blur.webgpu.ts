@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -47,6 +48,7 @@ declareExpectedImageDescription(
 // Wgpu parity column for the same single-pass radial/zoom smear as Gl. Per-object motion blur is the
 // separate MotionBlurEffect path and reads a velocity texture when the scene supplies one.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

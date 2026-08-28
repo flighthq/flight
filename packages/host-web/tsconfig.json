@@ -34,6 +34,7 @@
     { "path": "../power" },
     { "path": "../protocol" },
     { "path": "../render-gl" },
+    { "path": "../render-wgpu" },
     { "path": "../screen" },
     { "path": "../sensors" },
     { "path": "../share" },

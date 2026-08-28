@@ -32,3 +32,4 @@ export { enableHostWebStatusBar } from './webStatusbar';
 export { enableHostWebStorage } from './webStorage';
 export { enableHostWebWebcam } from './webWebcam';
 export { enableHostWebWindow } from './webWindow';
+export { createWebWgpuRenderSurfaceProvider, enableHostWebWgpuRenderSurface } from './webWgpuRenderSurface';

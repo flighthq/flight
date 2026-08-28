@@ -283,10 +283,6 @@ const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
     reason: 'P5 taxonomy v4 classification baseline',
     total: 28,
   },
-] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
-
-export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
-  ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   {
     budget: {
       'direct-dom': 12,
@@ -298,6 +294,22 @@ export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
     },
     reason: 'GL root-surface creation routed through the selected GL render-surface provider',
     total: 27,
+  },
+] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
+
+export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
+  ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
+  {
+    budget: {
+      'direct-dom': 12,
+      'input-ingress': 0,
+      'frame-scheduling': 0,
+      'scratch-surface': 14,
+      'render-surface': 0,
+      'webgpu-acquisition': 0,
+    },
+    reason: 'WGPU root-surface creation routed through the selected WGPU render-surface provider',
+    total: 26,
   },
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
@@ -504,14 +516,124 @@ export function p5GlRenderSurfaceConsumerFailures(root: string): string[] {
   return failures;
 }
 
-export function p5GlRenderSurfaceRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
+export function p5WgpuRenderSurfaceConsumerSourceFailures(file: string, source: string): string[] {
+  const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
+  const calls: ts.CallExpression[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && expressionName(node.expression) === 'createWgpuCanvasElement') calls.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(parsed);
+  if (calls.length === 0) return [];
+
+  const importsEnabler = parsed.statements.some(
+    (statement) =>
+      ts.isImportDeclaration(statement) &&
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.moduleSpecifier.text === '@flighthq/host-web' &&
+      statement.importClause?.namedBindings !== undefined &&
+      ts.isNamedImports(statement.importClause.namedBindings) &&
+      statement.importClause.namedBindings.elements.some(
+        (element) => element.propertyName === undefined && element.name.text === 'enableHostWebWgpuRenderSurface',
+      ),
+  );
+  const failures = importsEnabler ? [] : [`${file}: WGPU consumer does not import enableHostWebWgpuRenderSurface`];
+
+  for (const call of calls) {
+    const statement = statementInList(call);
+    const position = parsed.getLineAndCharacterOfPosition(call.getStart(parsed));
+    if (statement === null) {
+      failures.push(`${file}:${position.line + 1}: WGPU surface creation is not owned by a statement list`);
+      continue;
+    }
+    const statements = statementList(statement.parent);
+    const previous = statements[statements.indexOf(statement) - 1];
+    if (!isEnableHostWebWgpuRenderSurfaceStatement(previous)) {
+      failures.push(
+        `${file}:${position.line + 1}: WGPU surface creation is not immediately preceded by enableHostWebWgpuRenderSurface()`,
+      );
+    }
+  }
+  return failures;
+}
+
+export function p5WgpuExampleRunnerOwnershipFailures(source: string): string[] {
+  const failures: string[] = [];
+  const branchStart = source.indexOf("if (render === 'webgpu') {");
+  const nextRendererBranch = source.indexOf("if (!VERIFY_SKIP.has(name) && render === 'dom')", branchStart);
+  const captureBranch = source.indexOf("if (!VERIFY_SKIP.has(name) && render === 'webgpu')");
+  const exampleImport = source.indexOf("const __example = await import('___app___${name}:${render}')");
+  if (branchStart === -1) {
+    return ['examples Web runner does not own a WebGPU-only WGPU surface enabler branch'];
+  }
+  if (nextRendererBranch === -1) {
+    const misplaced = ['examples Web runner does not own a WebGPU-only WGPU surface enabler branch'];
+    if (captureBranch !== -1 && branchStart > captureBranch) {
+      misplaced.push('examples WebGPU enabler does not run before the capture render dynamic import');
+    }
+    if (exampleImport !== -1 && branchStart > exampleImport) {
+      misplaced.push('examples WebGPU enabler does not run before the app dynamic import');
+    }
+    return misplaced;
+  }
+  const branch = source.slice(branchStart, nextRendererBranch);
+  const importIndex = branch.indexOf("import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';");
+  const callIndex = branch.indexOf('enableHostWebWgpuRenderSurface();');
+  if (importIndex === -1) failures.push('examples WebGPU entry does not import enableHostWebWgpuRenderSurface');
+  if (callIndex === -1) failures.push('examples WebGPU entry does not call enableHostWebWgpuRenderSurface()');
+  if (importIndex !== -1 && callIndex !== -1 && importIndex > callIndex) {
+    failures.push('examples WebGPU entry calls enableHostWebWgpuRenderSurface() before importing it');
+  }
+  if (captureBranch === -1 || branchStart > captureBranch) {
+    failures.push('examples WebGPU enabler does not run before the capture render dynamic import');
+  }
+  if (exampleImport === -1 || branchStart > exampleImport) {
+    failures.push('examples WebGPU enabler does not run before the app dynamic import');
+  }
+  return failures;
+}
+
+export function p5WgpuRenderSurfaceProviderBoundaryFailures(source: string): string[] {
+  const failures: string[] = [];
+  if (/render-gl|createGlCanvasElement|GlRenderSurface/.test(source)) {
+    failures.push('portable WGPU surface provider crosses into the GL surface boundary');
+  }
+  if (/WgpuHostBackend|getWgpuHostBackend|setWgpuHostBackend|installWgpuHostBackend/.test(source)) {
+    failures.push('portable WGPU surface provider crosses into the WGPU acquisition boundary');
+  }
+  if (/\bdocument\s*(?:\.|\[)/.test(source)) {
+    failures.push('portable WGPU surface provider reads document instead of returning null');
+  }
+  return failures;
+}
+
+export function p5WgpuRenderSurfaceConsumerFailures(root: string): string[] {
+  const failures: string[] = [];
+  const functionalFiles: string[] = [];
+  collectTypeScriptFiles(join(root, 'functional'), functionalFiles);
+  for (const path of functionalFiles) {
+    const file = relative(root, path).split(sep).join('/');
+    failures.push(...p5WgpuRenderSurfaceConsumerSourceFailures(file, readFileSync(path, 'utf8')));
+  }
+
+  const harnessFile = 'tools/harness/webgpu.ts';
+  const harnessSource = readFileSync(join(root, harnessFile), 'utf8');
+  if (!harnessSource.includes('createWgpuCanvasElement(')) {
+    failures.push(`${harnessFile}: shared WebGPU harness no longer creates the WGPU surface`);
+  } else {
+    failures.push(...p5WgpuRenderSurfaceConsumerSourceFailures(harnessFile, harnessSource));
+  }
+
+  const runnerSource = readFileSync(join(root, 'examples/runners/web/vite.config.ts'), 'utf8');
+  failures.push(...p5WgpuExampleRunnerOwnershipFailures(runnerSource));
+  return failures;
+}
+
+export function p5WgpuRenderSurfaceRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
   const remaining = report.p5
     .filter((site) => site.kind === 'render-surface')
     .map((site) => `${site.file}:${site.functionName ?? '<module>'}`);
-  const expected = ['packages/render-wgpu/src/wgpuElement.ts:createWgpuCanvasElement'];
-  return remaining.length === expected.length && remaining.every((site, index) => site === expected[index])
-    ? []
-    : [`S07 must leave exactly the WGPU render surface; found [${remaining.join(', ')}]`];
+  return remaining.length === 0 ? [] : [`S08 must leave no render surfaces; found [${remaining.join(', ')}]`];
 }
 
 export function createP5HostBypassReport(scannedFiles: number, sites: readonly P5HostBypassSite[]): P5HostBypassReport {
@@ -724,6 +846,11 @@ export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBy
     if (prior !== undefined && entry.total >= prior.total) {
       failures.push(
         `P5 taxonomy v4 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
+      );
+    }
+    if (prior !== undefined && entry.total !== prior.total - 1) {
+      failures.push(
+        `P5 taxonomy v4 progress history[${index}] must repair exactly one site; found ${prior.total} -> ${entry.total}`,
       );
     }
   }
@@ -949,7 +1076,11 @@ if (isMainModule(import.meta.url, process.argv[1])) {
       readFileSync(join(process.cwd(), 'packages/render-gl/src/glElement.ts'), 'utf8'),
     ),
     ...p5GlRenderSurfaceConsumerFailures(process.cwd()),
-    ...p5GlRenderSurfaceRepairFailures(report),
+    ...p5WgpuRenderSurfaceProviderBoundaryFailures(
+      readFileSync(join(process.cwd(), 'packages/render-wgpu/src/wgpuElement.ts'), 'utf8'),
+    ),
+    ...p5WgpuRenderSurfaceConsumerFailures(process.cwd()),
+    ...p5WgpuRenderSurfaceRepairFailures(report),
     ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
   ];
   if (failures.length > 0) {
@@ -1016,6 +1147,17 @@ function isEnableHostWebGlRenderSurfaceStatement(statement: ts.Statement | undef
     ts.isCallExpression(statement.expression) &&
     ts.isIdentifier(statement.expression.expression) &&
     statement.expression.expression.text === 'enableHostWebGlRenderSurface' &&
+    statement.expression.arguments.length === 0
+  );
+}
+
+function isEnableHostWebWgpuRenderSurfaceStatement(statement: ts.Statement | undefined): boolean {
+  return (
+    statement !== undefined &&
+    ts.isExpressionStatement(statement) &&
+    ts.isCallExpression(statement.expression) &&
+    ts.isIdentifier(statement.expression.expression) &&
+    statement.expression.expression.text === 'enableHostWebWgpuRenderSurface' &&
     statement.expression.arguments.length === 0
   );
 }

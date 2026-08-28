@@ -1,4 +1,5 @@
 import { hasWgpuRenderEffectRunner } from '@flighthq/effects-wgpu/contract';
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -42,6 +43,7 @@ declareExpectedImageDescription(
 export const functionalBackendSupport = 'control' as const;
 
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

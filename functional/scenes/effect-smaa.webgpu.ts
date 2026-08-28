@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -39,6 +40,7 @@ declareExpectedImageDescription(
 
 // Wgpu SMAA: single-pass approximation antialiasing the full frame's jagged edges.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

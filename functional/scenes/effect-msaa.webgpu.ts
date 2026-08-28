@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -37,6 +38,7 @@ declareExpectedImageDescription(
 // Wgpu supersamples — and the point of the pair is that the PICTURE agrees, not the mechanism. Rendered
 // through the pipeline with an empty effect list so nothing but the resolve is under test.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

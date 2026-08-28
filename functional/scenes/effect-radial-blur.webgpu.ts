@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -47,6 +48,7 @@ const RADIAL_CENTER_Y = 0.4;
 // Wgpu parity column. The radial zoom smear is a color-only/uniform full-frame blur around the
 // configured center (no depth/velocity G-buffer is involved).
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

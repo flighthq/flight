@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 import { createCompressedImage } from '@flighthq/image';
 import type { Node2D, Bitmap, TextureContainer } from '@flighthq/sdk';
 import {
@@ -57,6 +58,7 @@ const BC3_HALF_RED_BLOCK = new Uint8Array([
 ]);
 
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(WIDTH, HEIGHT, pixelRatio);
 document.body.appendChild(canvas);
 export const state = await createWgpuRenderState(canvas, { pixelRatio, backgroundColor: 0x000000ff });

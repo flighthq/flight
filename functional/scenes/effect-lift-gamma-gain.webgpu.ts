@@ -1,3 +1,4 @@
+import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is a GLOBAL TONAL SHIFT over a flat field. That is the one class `npm run contrast` states it
 // does not bound, and `npm run displacement` cannot see it either — moving a flat field changes nothing;
@@ -45,6 +46,7 @@ declareExpectedImageDescription(
 // runs between renderWgpuBackground (opens the encoder + canvas pass) and submitWgpuRenderPass
 // (flushes it), grading the rgba8 scene target.
 const pixelRatio = window.devicePixelRatio || 1;
+enableHostWebWgpuRenderSurface();
 const canvas = createWgpuCanvasElement(800, 600, pixelRatio);
 document.body.appendChild(canvas);
 

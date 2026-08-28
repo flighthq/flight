@@ -62,6 +62,7 @@
     "@flighthq/power": "*",
     "@flighthq/protocol": "*",
     "@flighthq/render-gl": "*",
+    "@flighthq/render-wgpu": "*",
     "@flighthq/screen": "*",
     "@flighthq/sensors": "*",
     "@flighthq/share": "*",

@@ -50,6 +50,12 @@ function entryWithLogCapture(name: string, render: string): string {
   if (render === 'webgl') {
     lines.push(`import { enableHostWebGlRenderSurface } from '@flighthq/host-web';`, `enableHostWebGlRenderSurface();`);
   }
+  if (render === 'webgpu') {
+    lines.push(
+      `import { enableHostWebWgpuRenderSurface } from '@flighthq/host-web';`,
+      `enableHostWebWgpuRenderSurface();`,
+    );
+  }
   if (!VERIFY_SKIP.has(name) && render === 'dom') {
     // DOM render states do not have a GPU/canvas readback path that can self-register with the capture
     // verifier. Import the renderer before the app and expose its element-backed state explicitly, just
