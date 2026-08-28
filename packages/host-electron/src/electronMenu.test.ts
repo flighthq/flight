@@ -85,6 +85,17 @@ describe('createElectronMenuBackend', () => {
     expect(applied[1]).toBeNull();
   });
 
+  it('clears the native application menu exactly once on double destroy', () => {
+    const { electron, applied } = fakeElectron();
+    const backend = createElectronMenuBackend(electron);
+    backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
+    expect(applied.length).toBe(1);
+    backend.destroy?.();
+    backend.destroy?.();
+    expect(applied.length).toBe(2);
+    expect(applied[1]).toBeNull();
+  });
+
   it('clears the select listener on destroy', () => {
     const { electron, built } = fakeElectron();
     const backend = createElectronMenuBackend(electron);

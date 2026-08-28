@@ -10,8 +10,11 @@ export function createElectronMenuBackend(electron: ElectronApi): MenuBackend {
   // The single application-menu select listener, owned by this backend. setApplicationMenu wires it
   // as onSelect; subscribeSelect sets it and returns an unsubscribe that clears it.
   let selectListener: ((id: string) => void) | null = null;
+  let destroyed = false;
   return {
     destroy() {
+      if (destroyed) return;
+      destroyed = true;
       selectListener = null;
       electron.Menu.setApplicationMenu(null);
     },
