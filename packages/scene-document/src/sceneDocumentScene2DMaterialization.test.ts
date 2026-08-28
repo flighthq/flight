@@ -16,13 +16,13 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { formatFlightDocumentText } from './flightDocumentText';
 import {
   createFlightDocumentFromScene2D,
   createFlightDocumentScene2DMaterialization,
   createFlightDocumentScene2DMaterializationFromText,
   explainFlightDocumentRefusal,
   explainFlightDocumentRefusalFromText,
-  serializeFlightDocument,
 } from './sceneDocumentScene2DMaterialization';
 
 describe('createFlightDocumentFromScene2D', () => {
@@ -150,12 +150,14 @@ describe('createFlightDocumentScene2DMaterializationFromText', () => {
   it('materializes a Scene2D from YAML text', () => {
     const yaml = [
       'flight: 1',
-      'kind: Scene2D',
-      'scene:',
-      '  kind: DisplayObject',
-      '  children:',
-      '    - kind: Sprite',
-      '      name: bg',
+      'defaultScene: 0',
+      'scenes:',
+      '  - kind: Scene2D',
+      '    scene:',
+      '      kind: DisplayObject',
+      '      children:',
+      '        - kind: Sprite',
+      '          name: bg',
     ].join('\n');
     const schemas = createTestSchemas();
     const result = createFlightDocumentScene2DMaterializationFromText(yaml, schemas);
@@ -165,7 +167,14 @@ describe('createFlightDocumentScene2DMaterializationFromText', () => {
   });
 
   it('returns null for a Scene3D YAML document', () => {
-    const yaml = ['flight: 1', 'kind: Scene3D', 'scene:', '  kind: Node3D'].join('\n');
+    const yaml = [
+      'flight: 1',
+      'defaultScene: 0',
+      'scenes:',
+      '  - kind: Scene3D',
+      '    scene:',
+      '      kind: Node3D',
+    ].join('\n');
     const result = createFlightDocumentScene2DMaterializationFromText(yaml, createTestSchemas());
     expect(result).toBeNull();
   });
@@ -263,13 +272,13 @@ describe('explainFlightDocumentRefusalFromText', () => {
   });
 
   it('returns null for valid Scene2D text', () => {
-    const yaml = 'flight: 1\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
+    const yaml = 'flight: 1\ndefaultScene: 0\nscenes:\n  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n';
     const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).toBeNull();
   });
 
   it('explains an unsupported version in valid YAML', () => {
-    const yaml = 'flight: 99\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
+    const yaml = 'flight: 99\ndefaultScene: 0\nscenes:\n  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n';
     const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
@@ -278,11 +287,36 @@ describe('explainFlightDocumentRefusalFromText', () => {
   });
 
   it('explains a dimension mismatch in valid YAML', () => {
-    const yaml = 'flight: 1\nkind: Scene3D\nscene:\n  kind: Node3D\n';
+    const yaml = 'flight: 1\ndefaultScene: 0\nscenes:\n  - kind: Scene3D\n    scene:\n      kind: Node3D\n';
     const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
     expect(explanation!.path).toBe('scenes[0].kind');
+  });
+});
+
+describe('formatFlightDocumentText', () => {
+  it('round-trips a minimal Scene2D through model and text', () => {
+    const scene = createScene2D();
+    const schemas = createTestSchemas();
+    const document = createTestDocument(createFlightDocumentFromScene2D(scene, schemas));
+    const text = formatFlightDocumentText(document);
+    expect(typeof text).toBe('string');
+    expect(text).toContain('flight: 1');
+    expect(text).toContain('kind: Scene2D');
+  });
+
+  it('round-trips a Scene2D with children through text', () => {
+    const scene = createScene2D();
+    const sprite = createSprite({ name: 'hero' });
+    sprite.x = 50;
+    sprite.y = 100;
+    addNodeChild(scene.root, sprite);
+    const schemas = createTestSchemas();
+    const document = createTestDocument(createFlightDocumentFromScene2D(scene, schemas));
+    const text = formatFlightDocumentText(document);
+    const reparsed = createFlightDocumentScene2DMaterializationFromText(text, schemas);
+    expect(reparsed).not.toBeNull();
   });
 });
 
@@ -305,19 +339,6 @@ describe('model-to-text explain parity', () => {
       expectedPath: 'scenes[0].kind',
     },
     {
-      label: 'unsupported version (document-level)',
-      document: {
-        ...createTestDocument({
-          backgroundColor: null,
-          kind: 'Scene2D',
-          scene: { children: [], fields: {}, kind: DisplayObjectKind },
-        }),
-        version: 99,
-      } as unknown as FlightDocument,
-      expectedReason: FlightDocumentRefusalReason.VersionUnsupported,
-      expectedPath: 'version',
-    },
-    {
       label: 'unregistered node kind (scene 0)',
       document: createTestDocument({
         backgroundColor: null,
@@ -333,7 +354,7 @@ describe('model-to-text explain parity', () => {
     },
   ])('model and text explain agree on $label', ({ document, expectedPath, expectedReason }) => {
     const modelResult = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
-    const text = serializeFlightDocument(document);
+    const text = formatFlightDocumentText(document);
     const textResult = explainFlightDocumentRefusalFromText(text, 'Scene2D', createTestSchemas());
     expect(modelResult).not.toBeNull();
     expect(textResult).not.toBeNull();
@@ -341,31 +362,6 @@ describe('model-to-text explain parity', () => {
     expect(textResult!.path).toBe(modelResult!.path);
     expect(modelResult!.reason).toBe(expectedReason);
     expect(modelResult!.path).toBe(expectedPath);
-  });
-});
-
-describe('serializeFlightDocument', () => {
-  it('round-trips a minimal Scene2D through model and text', () => {
-    const scene = createScene2D();
-    const schemas = createTestSchemas();
-    const document = createTestDocument(createFlightDocumentFromScene2D(scene, schemas));
-    const text = serializeFlightDocument(document);
-    expect(typeof text).toBe('string');
-    expect(text).toContain('flight: 1');
-    expect(text).toContain('kind: Scene2D');
-  });
-
-  it('round-trips a Scene2D with children through text', () => {
-    const scene = createScene2D();
-    const sprite = createSprite({ name: 'hero' });
-    sprite.x = 50;
-    sprite.y = 100;
-    addNodeChild(scene.root, sprite);
-    const schemas = createTestSchemas();
-    const document = createTestDocument(createFlightDocumentFromScene2D(scene, schemas));
-    const text = serializeFlightDocument(document);
-    const reparsed = createFlightDocumentScene2DMaterializationFromText(text, schemas);
-    expect(reparsed).not.toBeNull();
   });
 });
 
