@@ -24,8 +24,15 @@ export interface P5HostBypassSite {
   readonly exclusion: P5HostBypassExclusion | null;
   readonly file: string;
   readonly functionName: string | null;
+  readonly inputEventName: string | null;
+  readonly inputListenerOperation: 'registration' | 'removal' | null;
   readonly kind: P5HostBypassKind | 'p3-transport';
   readonly line: number;
+}
+
+export interface P5InputIngressListenerOperations {
+  readonly registrationNames: readonly string[];
+  readonly removalNames: readonly string[];
 }
 
 export interface P5HostBypassReport {
@@ -40,7 +47,7 @@ export type P5HostBypassBudget = Readonly<Record<P5HostBypassKind, number>>;
 // a repaired site may lower a number without editing this file, while a new site makes the gate red.
 export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget = {
   'direct-dom': 18,
-  'input-ingress': 26,
+  'input-ingress': 0,
   'scratch-surface': 18,
   'webgpu-acquisition': 0,
 };
@@ -100,6 +107,8 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
         exclusion: finding.kind === 'p3-transport' ? 'p3-transport' : structuralExclusion,
         file,
         functionName,
+        inputEventName: finding.inputEventName ?? null,
+        inputListenerOperation: finding.inputListenerOperation ?? null,
         kind: finding.kind,
         line: position.line + 1,
       });
@@ -138,6 +147,36 @@ export function countP5HostBypasses(report: Readonly<P5HostBypassReport>): Recor
   };
   for (const site of report.p5) counts[site.kind as P5HostBypassKind]++;
   return counts;
+}
+
+export function deriveP5InputIngressListenerOperations(
+  report: Readonly<P5HostBypassReport>,
+): P5InputIngressListenerOperations {
+  const sites = [...report.p5, ...report.excluded].filter(
+    (site) => site.kind === 'input-ingress' && site.file.startsWith('packages/input/'),
+  );
+  return {
+    registrationNames: sites
+      .filter((site) => site.inputListenerOperation === 'registration')
+      .map((site) => site.inputEventName!)
+      .sort(),
+    removalNames: sites
+      .filter((site) => site.inputListenerOperation === 'removal')
+      .map((site) => site.inputEventName!)
+      .sort(),
+  };
+}
+
+export function p5InputIngressPairingFailures(operations: Readonly<P5InputIngressListenerOperations>): string[] {
+  if (
+    operations.registrationNames.length === operations.removalNames.length &&
+    operations.registrationNames.every((name, index) => name === operations.removalNames[index])
+  ) {
+    return [];
+  }
+  return [
+    `input-ingress listener names differ: registered [${operations.registrationNames.join(', ')}], removed [${operations.removalNames.join(', ')}]`,
+  ];
 }
 
 export function p5HostBypassBudgetFailures(report: Readonly<P5HostBypassReport>, budget: P5HostBypassBudget): string[] {
@@ -241,7 +280,11 @@ function collectTypeScriptFiles(directory: string, files: string[]): void {
 function classifyNode(
   node: ts.Node,
   source: ts.SourceFile,
-): { readonly kind: P5HostBypassKind | 'p3-transport' } | null {
+): {
+  readonly inputEventName?: string;
+  readonly inputListenerOperation?: 'registration' | 'removal';
+  readonly kind: P5HostBypassKind | 'p3-transport';
+} | null {
   if (ts.isNewExpression(node)) {
     const constructorName = expressionName(node.expression);
     if (constructorName === 'ImageData' || constructorName === 'OffscreenCanvas') return { kind: 'scratch-surface' };
@@ -261,7 +304,11 @@ function classifyNode(
       (calledName === 'addEventListener' || calledName === 'removeEventListener') &&
       INPUT_EVENT_NAMES.has(firstStringArgument(node) ?? '')
     ) {
-      return { kind: 'input-ingress' };
+      return {
+        inputEventName: firstStringArgument(node)!,
+        inputListenerOperation: calledName === 'addEventListener' ? 'registration' : 'removal',
+        kind: 'input-ingress',
+      };
     }
     if (isRootedInBrowserGlobal(node.expression)) {
       return expressionContainsName(node.expression, 'gpu') ? { kind: 'webgpu-acquisition' } : { kind: 'direct-dom' };
