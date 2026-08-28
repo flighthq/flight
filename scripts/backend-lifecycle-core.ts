@@ -147,3 +147,29 @@ function teardownMemberName(member: Node): string | null {
   if (annotation === undefined || annotation.type !== 'TSFunctionType') return null;
   return annotation.params.length > 0 ? null : member.key.name;
 }
+
+// The method-syntax-only reader this gate used to be, kept as a SECOND opinion rather than deleted.
+//
+// Its only purpose is to make the widening's effect on the live population checkable instead of asserted:
+// comparing it against `collectWholeBackendTeardowns` says, executably, whether accepting property-form
+// members changed which backends are counted. Today it changes nothing, and the test that compares them
+// records why. The day a property-form teardown is written, the two disagree and the comparison fails —
+// which is the correct moment for someone to update the recorded count rather than discover it later.
+export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[]): ReadonlyMap<string, string> {
+  const teardowns = new Map<string, string>();
+  for (const sourceFile of typeSourceFiles) {
+    for (const statement of getParsedOxcSource(sourceFile).program.body) {
+      if (statement.type !== 'ExportNamedDeclaration') continue;
+      const declaration = statement.declaration;
+      if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
+      if (!declaration.id.name.endsWith('Backend')) continue;
+      for (const member of declaration.body.body) {
+        if (member.type !== 'TSMethodSignature' || member.key.type !== 'Identifier') continue;
+        if (member.key.name !== 'destroy' && member.key.name !== 'dispose') continue;
+        if (member.params.length > 0) continue;
+        teardowns.set(declaration.id.name, member.key.name);
+      }
+    }
+  }
+  return teardowns;
+}
