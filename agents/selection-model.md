@@ -125,3 +125,44 @@ Does not depend on: `interaction`, `gui`, `render`, `scene2d`, `scene3d`, `tween
 **In scope**: selection state (ordered set + active node), pointer-to-selection policy, marquee selection, lasso selection, geometric candidate queries, signals.
 
 **Out of scope**: selection visuals (outlines, handles, marquee rectangle rendering), transform gizmos (see `gizmo`), drag-to-move (the caller implements move using the selected set + pointer delta), clipboard operations (copy/paste use `clipboard` + `scene-document`), scene tree selection synchronization (the tree view controller in `gui` listens to selection signals).
+
+---
+
+# Manager rulings — PRESERVED VERBATIM after a records collision, 2026-08-28
+
+★ **Why this section exists.** A records rewrite built from a base that predated these rulings landed and
+dropped every ruling section below. The code still implements them and tests pin several, but the
+*reasoning* was lost while the conclusions survived — and the reasoning is the part that stops a future
+agent re-deriving a decision that was already withdrawn.
+
+Reproduced **verbatim** rather than re-summarised, because summarising a ruling is exactly how this was
+lost the first time. Where a ruling is already pinned by a test, the test is the enforcement and this is
+the explanation. Where anything here conflicts with the sections above, the *conclusions* above are
+current wherever the user has since ruled; this is what those conclusions were built on.
+
+## Manager rulings — 2026-08-27
+
+**Deliverable ruled by the user: THE PACKAGES ONLY.** `gui`, `selection`, `gizmo` and `command` are built
+as SDK cells to AAA completeness, each usable standalone by anyone building an editor or tool. **No
+editor application ships from this work.** The "editor data flow" in the handoff is motivation, not a
+deliverable — do not let an app shell, panel layout, project model, or file management appear in any of
+these packages. An editor is a possible follow-on the user will scope separately.
+
+**Sequencing ruled by the user: PARALLEL with `scene-document`.** `selection` and `command` depend only
+on `node`, `signals`, `geometry` and `types` and touch nothing `scene-document` touches, so they start
+immediately. `gui` needs `interaction`, which exists. Only `gizmo` has real coupling, through the
+overlay scene.
+
+**S1. The package and its boundary — APPROVED.** Selection is not interaction and not a GUI
+controller; the record draws both lines correctly.
+
+**S2. TYPE IT ON GRAPH-FEATURE ALIASES, NOT `Node2D`.** Every signature in this record is written
+against `Node2D`. Standing rule: use the graph-feature aliases so an API depends on the feature it
+needs rather than on a concrete graph family. Selection needs node identity and hierarchy — it does not
+need 2D-ness, and `gizmo` already declares a 3D extension, so `Node2D` here means rewriting every
+signature later instead of never.
+
+Ruling: the selected set is over **`HierarchyNode`**. The marquee and lasso queries additionally need
+bounds, so they take **`BoundsNode`** — state it at that seam rather than widening the whole package to
+the union of everything any one function wants.
+

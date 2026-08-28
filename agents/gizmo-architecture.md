@@ -133,3 +133,42 @@ Does not depend on: `gui`, `command`, `render` (the caller renders the overlay s
 **In scope**: translate/rotate/scale gizmos, selection outlines, axis constraints, snapping, coordinate space (local/world), pivot modes, multi-selection bounds, transform delta signals, screen-space-constant handle sizing.
 
 **Out of scope**: applying transforms to nodes (the caller does this in the signal handler), undo/redo (the caller uses `command`), guide/ruler overlays (future extension or separate concern), vertex/path editing handles (a shape-editing gizmo is a future extension), 3D gizmos (future extension, same architecture).
+
+---
+
+# Manager rulings — PRESERVED VERBATIM after a records collision, 2026-08-28
+
+★ **Why this section exists.** A records rewrite built from a base that predated these rulings landed and
+dropped every ruling section below. The code still implements them and tests pin several, but the
+*reasoning* was lost while the conclusions survived — and the reasoning is the part that stops a future
+agent re-deriving a decision that was already withdrawn.
+
+Reproduced **verbatim** rather than re-summarised, because summarising a ruling is exactly how this was
+lost the first time. Where a ruling is already pinned by a test, the test is the enforcement and this is
+the explanation. Where anything here conflicts with the sections above, the *conclusions* above are
+current wherever the user has since ruled; this is what those conclusions were built on.
+
+## Manager rulings — 2026-08-27
+
+**Deliverable ruled by the user: THE PACKAGES ONLY.** `gui`, `selection`, `gizmo` and `command` are built
+as SDK cells to AAA completeness, each usable standalone by anyone building an editor or tool. **No
+editor application ships from this work.** The "editor data flow" in the handoff is motivation, not a
+deliverable — do not let an app shell, panel layout, project model, or file management appear in any of
+these packages. An editor is a possible follow-on the user will scope separately.
+
+**Sequencing ruled by the user: PARALLEL with `scene-document`.** `selection` and `command` depend only
+on `node`, `signals`, `geometry` and `types` and touch nothing `scene-document` touches, so they start
+immediately. `gui` needs `interaction`, which exists. Only `gizmo` has real coupling, through the
+overlay scene.
+
+**Z1. APPROVED, including the declared exception to the controller-only pattern.** `gizmo` creating its
+own handle nodes contradicts `gui`'s premise, and the record says so out loud and gives its reason
+(fixed semantics, fixed conventions). That is what a record is for. Approved as argued.
+
+★ **Record the consequence so it is not rediscovered later as a defect: gizmo handles are NOT
+skinnable.** An application that wants themed handles cannot get them through this API. That is an
+accepted cost today, not an oversight, and if it ever needs to change it is a new decision.
+
+**Z2. The angle convention is right** — `onRotate` emitting degrees matches the authoring layer. Keep
+radians out of every signal in this package.
+

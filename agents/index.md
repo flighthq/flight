@@ -75,6 +75,11 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 - [registration lifecycle](registration-lifecycle.md) — **unratified.** how a file's contents become the exact `register*` calls that draw it: requirement sets, the source-derived catalog, and the generated registries module.
 - [registry table model](registry-table-model.md) — **unratified.** the storage under the registration doors: three table shapes, and which tier owns a registry.
 - [ribbon trails](ribbon-trail-proposal.md) — **proposal.** a trail recorder and a strip builder, and why the 3D draw needs nothing new.
+- [command history model](command-history-model.md) — **unratified.** undo/redo for editors, and the ruling that commands are kind-tagged data rather than closure-carrying objects.
+- [gizmo architecture](gizmo-architecture.md) — **unratified.** transform handles in an overlay scene, and the declared exception to the controller-only pattern.
+- [gui controller architecture](gui-architecture.md) — **unratified.** the controller-only widget layer: the caller owns every visual, the library owns behavior.
+- [scene document model](scene-document-model.md) — **unratified.** Flight's native `.flight` scene description: the multi-scene container, three encodings over one document model, and the manager rulings preserved after a records collision.
+- [selection model](selection-model.md) — **unratified.** pure selection state over graph nodes, typed on graph-feature aliases rather than one graph family.
 - [scene2d format coverage](scene2d-format-coverage.md) — what the Lottie and SVG importers read and what they do not.
 - [scene3d format coverage](scene3d-format-coverage.md) — what each 3D importer reads and what it does not, per format.
 - [skeleton2d animation model](skeleton2d-animation-model.md) — non-bone timelines, target-kind dispatch, and where constraints live.

@@ -267,3 +267,60 @@ Does not depend on: `render`, `layout`, `application`, `scene2d`, `scene3d`, any
 2. **TreeView** — a hierarchical expandable list is essential for an editor's scene tree panel. Should it be a distinct controller or a mode of ListController?
 3. **ColorPicker** — editors need one. Is it a single controller or a composition of Slider + canvas + TextInput controllers?
 4. **PropertyGrid** — an editor's property inspector is a specialized list of label+editor pairs. Controller or composition?
+
+---
+
+# Manager rulings — PRESERVED VERBATIM after a records collision, 2026-08-28
+
+★ **Why this section exists.** A records rewrite built from a base that predated these rulings landed and
+dropped every ruling section below. The code still implements them and tests pin several, but the
+*reasoning* was lost while the conclusions survived — and the reasoning is the part that stops a future
+agent re-deriving a decision that was already withdrawn.
+
+Reproduced **verbatim** rather than re-summarised, because summarising a ruling is exactly how this was
+lost the first time. Where a ruling is already pinned by a test, the test is the enforcement and this is
+the explanation. Where anything here conflicts with the sections above, the *conclusions* above are
+current wherever the user has since ruled; this is what those conclusions were built on.
+
+## Manager rulings — 2026-08-27
+
+**Deliverable ruled by the user: THE PACKAGES ONLY.** `gui`, `selection`, `gizmo` and `command` are built
+as SDK cells to AAA completeness, each usable standalone by anyone building an editor or tool. **No
+editor application ships from this work.** The "editor data flow" in the handoff is motivation, not a
+deliverable — do not let an app shell, panel layout, project model, or file management appear in any of
+these packages. An editor is a possible follow-on the user will scope separately.
+
+**Sequencing ruled by the user: PARALLEL with `scene-document`.** `selection` and `command` depend only
+on `node`, `signals`, `geometry` and `types` and touch nothing `scene-document` touches, so they start
+immediately. `gui` needs `interaction`, which exists. Only `gizmo` has real coupling, through the
+overlay scene.
+
+**G1. The controller-only pattern — APPROVED.** It is the right call and the record argues it well:
+explicit data (the caller's visuals) plus explicit behavior (the controller), no hidden coupling,
+skinnable by construction, tree-shakable per controller.
+
+**G2. THE MANDATORY TWEEN IS REJECTED.** The record states a controller "never sets a visual property
+without going through a tween when the change is user-visible." That is exactly the implicit, stateful
+runtime behavior this SDK is designed against — the caller did not ask for an animation and cannot see
+where it came from. It also forces `tween` into the dependency graph of every controller, so
+`createButtonController` would drag a tween engine in behind it and the per-controller tree-shaking
+claimed two rules above would be false.
+
+Ruling: **transitions are opt-in data.** A controller accepts an optional transition descriptor; with
+none given it sets the property directly. `tween` becomes a dependency only of callers who ask for it.
+
+**G3. The four catalog questions — ruled by one test: does it introduce a behavior primitive that does
+not already exist?**
+- **SplitPane — YES, its own controller.** Divider-drag with min/max constraints on two regions is a
+  behavior nothing else provides.
+- **TreeView — YES, its own controller, NOT a mode of `ListController`.** Expand/collapse state and
+  hierarchical navigation are different state, not a flag on a flat list. A `mode` flag here is the
+  config-gated-branch smell: a primitive not yet extracted.
+- **ColorPicker — NO, a composition.** Sliders plus a text input plus a caller-drawn gradient. It adds
+  no behavior primitive, and shipping it as a controller would bake one visual convention into a
+  library whose whole premise is that visuals are the caller's.
+- **PropertyGrid — NO, a composition.** Label-and-editor pairs are `layout` plus existing controllers.
+
+Composition answers are not "not worth building" — they are worth an example, and an example is where
+they belong.
+
