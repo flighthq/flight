@@ -42,12 +42,16 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
             publication.actions.delete(action);
             continue;
           }
+          let released = false;
           try {
             assertSyncVoid(session.setActionHandler(action, null));
-            if (ownership.actions.get(action) === owner) ownership.actions.delete(action);
-            publication.actions.delete(action);
+            released = true;
           } catch {
             // Keep failed releases owned so a later destroy can retry them.
+          }
+          if (released) {
+            if (ownership.actions.get(action) === owner) ownership.actions.delete(action);
+            publication.actions.delete(action);
           }
         }
 
@@ -97,7 +101,7 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
             try {
               // MediaSession exposes no readable position or action handler. Token ownership is the
               // strongest boundary available for those two lanes; direct outside replacement is opaque.
-              session.setPositionState(undefined);
+              assertSyncVoid(session.setPositionState(undefined));
               if (ownership.positionState === owner) ownership.positionState = null;
               publication.positionState = false;
             } catch {
