@@ -25,6 +25,7 @@
     { "path": "../image" },
     { "path": "../keyboard" },
     { "path": "../lifecycle" },
+    { "path": "../media" },
     { "path": "../mediasession" },
     { "path": "../menu" },
     { "path": "../notification" },
