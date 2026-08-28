@@ -670,6 +670,7 @@ describe('getScreenDetailPermission', () => {
     expect(state).toBe('prompt');
   });
 });
+
 describe('getScreenModes', () => {
   it('calls getModes on the backend when available', () => {
     const modes: ScreenMode[] = [{ width: 1920, height: 1080, refreshRate: 60, colorDepth: 32, pixelFormat: '' }];
@@ -907,6 +908,11 @@ describe('onScreenDetailPermissionChange', () => {
       query: () => Promise.resolve(status),
     };
     try {
+      // ★ CONSTRUCTED AFTER THE STUB, deliberately. The web adapter declares these two operations by
+      // PRESENCE — it spreads them in only when `navigator.permissions` exists, which is the
+      // absence-of-an-export ruling applied to a capability the platform may not have. So the backend
+      // must be built once the stub is installed; building it first would correctly omit them.
+      setScreenBackend(createWebScreenBackend());
       const states: string[] = [];
       const unsubscribe = onScreenDetailPermissionChange((s) => states.push(s));
       // Let the query promise resolve so the change listener is registered.
@@ -923,7 +929,6 @@ describe('onScreenDetailPermissionChange', () => {
     }
   });
 });
-
 describe('refreshScreens', () => {
   it('is callable without throwing', () => {
     expect(() => refreshScreens()).not.toThrow();
@@ -1038,6 +1043,80 @@ describe('resetScreenBackendForTest', () => {
     expect(explainScreenBackend().layer).toBe('host-not-enabled');
     expect(explainScreenBackend().conflict).toBe(false);
     expect(explainScreenBackend().viability).toBe('unobserved');
+  });
+});
+
+// ★ THE SEAM COVERS BOTH CONSUMERS. Each operation is optional, so a host that cannot answer omits it
+// and the caller falls back to exactly what the old inline `typeof navigator === 'undefined'` guard
+// produced — `'prompt'` for the query, a no-op unsubscribe for the subscription. These pin that
+// equivalence, and that a backend which throws is normalised rather than propagated.
+describe('screen window-management permission seam', () => {
+  function backendWithout(): ScreenBackend {
+    return createWebScreenBackend();
+  }
+
+  it('falls back to prompt when the backend omits the query operation', async () => {
+    const backend = backendWithout();
+    delete (backend as { queryWindowManagementPermission?: unknown }).queryWindowManagementPermission;
+    setScreenBackend(backend);
+    expect(await getScreenDetailPermission()).toBe('prompt');
+  });
+
+  it('returns the state the backend reports', async () => {
+    setScreenBackend({
+      ...backendWithout(),
+      queryWindowManagementPermission: () => Promise.resolve('granted' as const),
+    });
+    expect(await getScreenDetailPermission()).toBe('granted');
+  });
+
+  // A rejected provider promise must read as "not yet asked", never as an escaping rejection.
+  it('normalises a rejecting query to prompt', async () => {
+    setScreenBackend({
+      ...backendWithout(),
+      queryWindowManagementPermission: () => Promise.reject(new Error('permission service unavailable')),
+    });
+    expect(await getScreenDetailPermission()).toBe('prompt');
+  });
+
+  it('returns a no-op unsubscribe when the backend omits the subscribe operation', () => {
+    const backend = backendWithout();
+    delete (backend as { subscribeWindowManagementPermission?: unknown }).subscribeWindowManagementPermission;
+    setScreenBackend(backend);
+    const unsubscribe = onScreenDetailPermissionChange(() => {});
+    expect(typeof unsubscribe).toBe('function');
+    expect(() => unsubscribe()).not.toThrow();
+  });
+
+  it('delegates the subscription to the backend and returns its unsubscribe', () => {
+    let received: string | null = null;
+    let unsubscribed = false;
+    setScreenBackend({
+      ...backendWithout(),
+      subscribeWindowManagementPermission: (listener) => {
+        listener('denied');
+        return () => {
+          unsubscribed = true;
+        };
+      },
+    });
+    const unsubscribe = onScreenDetailPermissionChange((state) => {
+      received = state;
+    });
+    expect(received).toBe('denied');
+    unsubscribe();
+    expect(unsubscribed).toBe(true);
+  });
+
+  // A throwing subscribe must not take the caller down; it degrades to the omitted-operation answer.
+  it('normalises a throwing subscribe to a no-op unsubscribe', () => {
+    setScreenBackend({
+      ...backendWithout(),
+      subscribeWindowManagementPermission: () => {
+        throw new Error('subscription refused');
+      },
+    });
+    expect(() => onScreenDetailPermissionChange(() => {})()).not.toThrow();
   });
 });
 

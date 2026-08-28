@@ -9,6 +9,7 @@ import type {
   ScreenInfo,
   ScreenMode,
   ScreenOrientation,
+  ScreenPermissionState,
   ScreenSignals,
   Vector2Like,
 } from '@flighthq/types/contract';
@@ -350,6 +351,40 @@ export function createWebScreenBackend(): ScreenBackend {
       out[0].pixelFormat = '';
       return out;
     },
+
+    // The Permissions API lives here rather than in the callers, so the capability functions hold no DOM.
+    // Both operations are omitted-when-unavailable rather than present-and-failing: a browser without
+    // `navigator.permissions` gets `undefined` for each, and the callers fall back to `'prompt'` and a
+    // no-op unsubscribe — byte-for-byte the behavior the previous inline guards produced.
+    ...(typeof navigator !== 'undefined' && 'permissions' in navigator
+      ? {
+          queryWindowManagementPermission(): Promise<ScreenPermissionState> {
+            return navigator.permissions
+              .query({ name: 'window-management' as PermissionName })
+              .then((status) => status.state as ScreenPermissionState);
+          },
+
+          subscribeWindowManagementPermission(listener: (state: ScreenPermissionState) => void): () => void {
+            let status: PermissionStatus | null = null;
+            let cancelled = false;
+            const handleChange = (): void => {
+              if (status !== null) listener(status.state as ScreenPermissionState);
+            };
+            navigator.permissions
+              .query({ name: 'window-management' as PermissionName })
+              .then((s) => {
+                if (cancelled) return;
+                status = s;
+                s.addEventListener('change', handleChange);
+              })
+              .catch(() => {});
+            return () => {
+              cancelled = true;
+              status?.removeEventListener('change', handleChange);
+            };
+          },
+        }
+      : {}),
   };
 
   return backend;
@@ -523,13 +558,11 @@ export function getScreenCursorScreen(out: ScreenInfo): ScreenInfo {
   return getScreenNearestPoint(pos, out);
 }
 
-export async function getScreenDetailPermission(): Promise<'denied' | 'granted' | 'prompt'> {
-  if (typeof navigator === 'undefined' || !('permissions' in navigator)) return 'prompt';
+export async function getScreenDetailPermission(): Promise<ScreenPermissionState> {
+  const query = getScreenBackend().queryWindowManagementPermission;
+  if (query === undefined) return 'prompt';
   try {
-    const status = await navigator.permissions.query({
-      name: 'window-management' as PermissionName,
-    });
-    return status.state as 'denied' | 'granted' | 'prompt';
+    return await query();
   } catch {
     return 'prompt';
   }
@@ -664,25 +697,14 @@ export function onScreenChange(listener: (event: Readonly<ScreenChangeEvent>) =>
   return getScreenBackend().subscribe(listener);
 }
 
-export function onScreenDetailPermissionChange(listener: (state: 'denied' | 'granted' | 'prompt') => void): () => void {
-  if (typeof navigator === 'undefined' || !('permissions' in navigator)) return () => {};
-  let status: PermissionStatus | null = null;
-  let cancelled = false;
-  const handleChange = () => {
-    if (status !== null) listener(status.state as 'denied' | 'granted' | 'prompt');
-  };
-  navigator.permissions
-    .query({ name: 'window-management' as PermissionName })
-    .then((s) => {
-      if (cancelled) return;
-      status = s;
-      s.addEventListener('change', handleChange);
-    })
-    .catch(() => {});
-  return () => {
-    cancelled = true;
-    status?.removeEventListener('change', handleChange);
-  };
+export function onScreenDetailPermissionChange(listener: (state: ScreenPermissionState) => void): () => void {
+  const subscribe = getScreenBackend().subscribeWindowManagementPermission;
+  if (subscribe === undefined) return () => {};
+  try {
+    return subscribe(listener);
+  } catch {
+    return () => {};
+  }
 }
 
 export function refreshScreens(): void {}
