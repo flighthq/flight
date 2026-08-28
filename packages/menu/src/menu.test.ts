@@ -1,12 +1,14 @@
-import type { MenuBackend, MenuItemTemplate } from '@flighthq/types/contract';
+import type { MenuBackend, MenuItemTemplate, MenuReplacementGuaranteeDeclaration } from '@flighthq/types/contract';
 
 import {
   cloneMenuTemplate,
   createMenuItemTemplate,
   enableMenuSignals,
   explainMenuBackend,
+  explainMenuReplacementGuarantee,
   getMenuBackend,
   getMenuSignals,
+  hasMenuReplacementGuarantee,
   installMenuHostBackend,
   observeMenuHostResult,
   onMenuSelect,
@@ -27,6 +29,20 @@ function fakeBackend(overrides?: Partial<MenuBackend>): MenuBackend {
     ...overrides,
   };
 }
+
+const unsupportedDestroyBeforeInstall: MenuReplacementGuaranteeDeclaration = {
+  guarantee: 'native-destroy-before-install',
+  liftableBy: ['atomic-replace-retains-old-on-rejection', 'rollback-or-undo', 'current-app-menu-getter'],
+  reason: 'no-atomic-replace-rollback-or-current-menu',
+  support: 'unsupported',
+};
+
+const supportedDestroyBeforeInstall: MenuReplacementGuaranteeDeclaration = {
+  guarantee: 'native-destroy-before-install',
+  liftableBy: [],
+  reason: null,
+  support: 'supported',
+};
 
 describe('cloneMenuTemplate', () => {
   it('produces an equal but distinct tree', () => {
@@ -99,6 +115,49 @@ describe('explainMenuBackend', () => {
   });
 });
 
+describe('explainMenuReplacementGuarantee', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('reports sentinel and unobserved when no real backend is selected', () => {
+    resetMenuBackendForTest();
+    expect(explainMenuReplacementGuarantee('native-destroy-before-install')).toEqual({
+      guarantee: 'native-destroy-before-install',
+      implemented: false,
+      layer: 'sentinel',
+      liftableBy: [],
+      operation: 'destroy',
+      reason: null,
+      support: 'unobserved',
+    });
+  });
+
+  it('reports a present destroy operation and its unsupported guarantee independently', () => {
+    setMenuBackend(fakeBackend({ replacementGuarantees: [unsupportedDestroyBeforeInstall] }));
+    expect(explainMenuReplacementGuarantee('native-destroy-before-install')).toEqual({
+      ...unsupportedDestroyBeforeInstall,
+      implemented: true,
+      layer: 'custom',
+      operation: 'destroy',
+    });
+  });
+
+  it('derives guarantee metadata from the selected backend identity without retaining stale metadata', () => {
+    const host = fakeBackend({ replacementGuarantees: [supportedDestroyBeforeInstall] });
+    const limitedCustom = fakeBackend({ replacementGuarantees: [unsupportedDestroyBeforeInstall] });
+    installMenuHostBackend(host);
+    setMenuBackend(limitedCustom);
+    expect(explainMenuReplacementGuarantee('native-destroy-before-install').support).toBe('unsupported');
+
+    setMenuBackend(null);
+    expect(explainMenuReplacementGuarantee('native-destroy-before-install').support).toBe('supported');
+    expect(explainMenuReplacementGuarantee('native-destroy-before-install').layer).toBe('host');
+
+    setMenuBackend(fakeBackend());
+    expect(explainMenuReplacementGuarantee('native-destroy-before-install').support).toBe('unobserved');
+    expect(explainMenuReplacementGuarantee('native-destroy-before-install').layer).toBe('custom');
+  });
+});
+
 describe('getMenuBackend', () => {
   afterEach(() => resetMenuBackendForTest());
 
@@ -134,6 +193,20 @@ describe('getMenuSignals', () => {
   it('returns the active signal group once enabled', () => {
     const signals = enableMenuSignals();
     expect(getMenuSignals()).toBe(signals);
+  });
+});
+
+describe('hasMenuReplacementGuarantee', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('agrees with explanation support rather than operation presence', () => {
+    const declarations = [supportedDestroyBeforeInstall, unsupportedDestroyBeforeInstall, undefined] as const;
+    for (const declaration of declarations) {
+      setMenuBackend(fakeBackend({ replacementGuarantees: declaration === undefined ? undefined : [declaration] }));
+      const explanation = explainMenuReplacementGuarantee('native-destroy-before-install');
+      expect(hasMenuReplacementGuarantee('native-destroy-before-install')).toBe(explanation.support === 'supported');
+      expect(explanation.implemented).toBe(true);
+    }
   });
 });
 

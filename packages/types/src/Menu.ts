@@ -1,3 +1,4 @@
+import type { BackendOperationExplanation } from './BackendOperationExplanation';
 import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole';
 
 // Application and context menu seam. Free functions in @flighthq/menu delegate to the active
@@ -35,11 +36,59 @@ export interface MenuItemTemplate {
   submenu?: MenuItemTemplate[];
 }
 
+// Native replacement guarantees are properties of the transition between two application menus, not
+// separate operations. A backend can therefore implement `destroy` while truthfully declaring that its
+// host API cannot provide one of these orderings.
+export type MenuReplacementGuarantee = 'native-clear-to-sentinel' | 'native-destroy-before-install';
+
+export type MenuReplacementGuaranteeReason = 'no-atomic-replace-rollback-or-current-menu';
+
+export type MenuReplacementLiftPremise =
+  | 'atomic-replace-retains-old-on-rejection'
+  | 'current-app-menu-getter'
+  | 'rollback-or-undo';
+
+export type MenuReplacementGuaranteeDeclaration =
+  | {
+      readonly guarantee: MenuReplacementGuarantee;
+      readonly liftableBy: readonly [];
+      readonly reason: null;
+      readonly support: 'supported';
+    }
+  | {
+      readonly guarantee: MenuReplacementGuarantee;
+      readonly liftableBy: readonly MenuReplacementLiftPremise[];
+      readonly reason: MenuReplacementGuaranteeReason;
+      readonly support: 'unsupported';
+    };
+
+export type MenuReplacementGuaranteeExplanation = BackendOperationExplanation &
+  (
+    | {
+        readonly guarantee: MenuReplacementGuarantee;
+        readonly liftableBy: readonly [];
+        readonly operation: 'destroy';
+        readonly reason: null;
+        readonly support: 'supported' | 'unobserved';
+      }
+    | {
+        readonly guarantee: MenuReplacementGuarantee;
+        readonly liftableBy: readonly MenuReplacementLiftPremise[];
+        readonly operation: 'destroy';
+        readonly reason: MenuReplacementGuaranteeReason;
+        readonly support: 'unsupported';
+      }
+  );
+
 // The backend seam realized by the web default and by native hosts (e.g. host-electron). This is the
 // honored shape — a method no real host implements would be a phantom. Application-menu installation
 // returns a boolean (false when the host has no native menu bar, e.g. web); context-menu popups
 // resolve to the selected item id, or null when dismissed; selections are delivered by id.
 export interface MenuBackend {
+  // Static facts about cross-menu replacement behavior. This is intentionally separate from operation
+  // presence: `has*Operation` remains structural, while these guarantees cannot be derived from a method's
+  // existence. Omission means unobserved, never implicitly supported.
+  readonly replacementGuarantees?: readonly MenuReplacementGuaranteeDeclaration[];
   destroy?(): void;
   setApplicationMenu(items: readonly MenuItemTemplate[]): boolean;
   popupContextMenu(items: readonly MenuItemTemplate[], x: number, y: number): Promise<string | null>;
