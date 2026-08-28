@@ -12,15 +12,19 @@ import {
   P5_HOST_BYPASS_BUDGET_HISTORY,
   P5_HOST_BYPASS_CLASSIFICATION_HISTORY,
   P5_HOST_BYPASS_DETECTOR_PROVENANCE,
+  P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY,
   P5_HOST_BYPASS_SLICE_GUIDANCE,
   P5_HOST_BYPASS_V3_PROGRESS_HISTORY,
+  P5_HOST_BYPASS_V4_PROGRESS_HISTORY,
   p5HostBypassBudgetFailures,
   p5HostBypassBudgetHistoryFailures,
   p5HostBypassClassificationHistoryFailures,
   p5HostBypassDetectorProvenanceFailures,
+  p5HostBypassDetectorProvenanceHistoryFailures,
   p5HostBypassSliceGuidanceFailures,
   p5InputIngressPairingFailures,
   p5HostBypassV3ProgressHistoryFailures,
+  p5HostBypassV4ProgressHistoryFailures,
   scanP5HostBypasses,
   scanP5HostBypassSource,
 } from './p5-host-bypass';
@@ -34,7 +38,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=28 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=16 webgpu-acquisition=0',
+      'P5 outstanding=28 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=2 webgpu-acquisition=0',
     );
     expect(formatted).toContain(
       'v1 -> v2 total 30 -> 30 (0 census delta) recategorised=2 from-to=direct-dom->input-ingress=2 new=0 detected=none',
@@ -42,6 +46,15 @@ describe('P5 host-bypass derived gate', () => {
     expect(formatted).toContain(
       'v2 -> v3 total 30 -> 33 (+3 classified) recategorised=0 from-to=none new=3 detected=frame-scheduling=3',
     );
+    expect(formatted).toContain(
+      'v3 -> v4 total 28 -> 28 (0 census delta) recategorised=2 from-to=scratch-surface->render-surface=2 new=0 detected=none',
+    );
+    expect(formatted).toContain('TAXONOMY v4');
+    expect(formatted).toContain(
+      '28 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=14 render-surface=2 webgpu-acquisition=0 — P5 taxonomy v4 classification baseline',
+    );
+    expect(formatted).toContain('render-surface packages/render-gl/src/glElement.ts:2:18');
+    expect(formatted).toContain('render-surface packages/render-wgpu/src/wgpuElement.ts:2:18');
     expect(formatted).toContain('28 (-5 fixed)');
     expect(formatted).toContain('DETECTS hand-written floor (not an exhaustive ceiling):');
     expect(formatted).toContain('ZERO category zero means none found by current detectors, not that no bypasses exist');
@@ -63,9 +76,20 @@ describe('P5 host-bypass derived gate', () => {
   it('pins detector provenance against removal and false exhaustive wording', () => {
     expect(P5_HOST_BYPASS_DETECTOR_PROVENANCE).toEqual({
       detects:
-        'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+        'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, caller-owned GL/WebGPU render-surface construction, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+      taxonomyVersion: 4,
       zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
     });
+    expect(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY).toEqual([
+      {
+        detects:
+          'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+        taxonomyVersion: 3,
+        zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
+      },
+      P5_HOST_BYPASS_DETECTOR_PROVENANCE,
+    ]);
+    expect(p5HostBypassDetectorProvenanceHistoryFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY)).toEqual([]);
     expect(p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE)).toEqual([]);
     expect(p5HostBypassDetectorProvenanceFailures({ ...P5_HOST_BYPASS_DETECTOR_PROVENANCE, detects: '' })).toContain(
       'P5 detector provenance rewrites the accepted hand-written detection floor',
@@ -157,6 +181,37 @@ describe('P5 host-bypass derived gate', () => {
         toTotal: 33,
         toVersion: 3,
       },
+      {
+        fromBudget: {
+          'direct-dom': 12,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 16,
+          'webgpu-acquisition': 0,
+        },
+        fromTotal: 28,
+        fromVersion: 3,
+        newlyDetected: [],
+        reason: 'GL and WebGPU root canvases recategorised as caller-owned render surfaces',
+        recategorised: [
+          {
+            count: 2,
+            from: 'scratch-surface',
+            reason: 'render-gl and render-wgpu root canvas factories',
+            to: 'render-surface',
+          },
+        ],
+        toBudget: {
+          'direct-dom': 12,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 14,
+          'render-surface': 2,
+          'webgpu-acquisition': 0,
+        },
+        toTotal: 28,
+        toVersion: 4,
+      },
     ]);
     expect(p5HostBypassClassificationHistoryFailures(P5_HOST_BYPASS_CLASSIFICATION_HISTORY)).toEqual([]);
     expect(P5_HOST_BYPASS_V3_PROGRESS_HISTORY).toEqual([
@@ -184,6 +239,80 @@ describe('P5 host-bypass derived gate', () => {
       },
     ]);
     expect(p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY)).toEqual([]);
+    expect(P5_HOST_BYPASS_V4_PROGRESS_HISTORY).toEqual([
+      {
+        budget: {
+          'direct-dom': 12,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 14,
+          'render-surface': 2,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'P5 taxonomy v4 classification baseline',
+        total: 28,
+      },
+    ]);
+    expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
+  });
+
+  it('mutation-proves that the v4 pure relabel cannot change the total', () => {
+    const relabelIndex = P5_HOST_BYPASS_CLASSIFICATION_HISTORY.length - 1;
+    const relabel = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[relabelIndex];
+    const mutated = [
+      ...P5_HOST_BYPASS_CLASSIFICATION_HISTORY.slice(0, relabelIndex),
+      { ...relabel, toTotal: relabel.toTotal + 1 },
+    ];
+    expect(p5HostBypassClassificationHistoryFailures(mutated)).toContain(
+      `P5 taxonomy history[${relabelIndex}] pure relabel changes total 28 -> 29`,
+    );
+  });
+
+  it('mutation-proves that the v4 relabel cannot claim new findings', () => {
+    const relabelIndex = P5_HOST_BYPASS_CLASSIFICATION_HISTORY.length - 1;
+    const relabel = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[relabelIndex];
+    const mutated = [
+      ...P5_HOST_BYPASS_CLASSIFICATION_HISTORY.slice(0, relabelIndex),
+      {
+        ...relabel,
+        newlyDetected: [
+          { count: 1, kind: 'render-surface' as const, reason: 'mutation: hides a new finding in the relabel' },
+        ],
+      },
+    ];
+    expect(p5HostBypassClassificationHistoryFailures(mutated)).toContain(
+      `P5 taxonomy history[${relabelIndex}] census delta 0 does not match 1 newly detected sites`,
+    );
+  });
+
+  it('mutation-proves that the v4 relabel cannot lose its scratch-surface provenance', () => {
+    const relabelIndex = P5_HOST_BYPASS_CLASSIFICATION_HISTORY.length - 1;
+    const relabel = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[relabelIndex];
+    const mutated = [
+      ...P5_HOST_BYPASS_CLASSIFICATION_HISTORY.slice(0, relabelIndex),
+      {
+        ...relabel,
+        recategorised: [{ ...relabel.recategorised[0], from: 'render-surface' as const }],
+      },
+    ];
+    const failures = p5HostBypassClassificationHistoryFailures(mutated);
+    expect(failures).toContain(
+      `P5 taxonomy history[${relabelIndex}] rewrites immutable accepted classification evidence`,
+    );
+    expect(failures).toContain(
+      `P5 taxonomy history[${relabelIndex}] derived categories do not match its evidenced after-budget`,
+    );
+  });
+
+  it('mutation-proves that the v4 append cannot rewrite an accepted classification prefix', () => {
+    const accepted = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[0];
+    const mutated = [
+      { ...accepted, reason: 'mutation: rewrite accepted v1 evidence' },
+      ...P5_HOST_BYPASS_CLASSIFICATION_HISTORY.slice(1),
+    ];
+    expect(p5HostBypassClassificationHistoryFailures(mutated)).toContain(
+      'P5 taxonomy history[0] rewrites immutable accepted classification evidence',
+    );
   });
 
   it('mutation-proves that a pure relabel cannot change the total', () => {
@@ -432,9 +561,9 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredBridge,
     ]);
     expect(restoredBridge).toHaveLength(2);
-    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(18);
+    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(16);
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain(
-      'scratch-surface: found 18, budget 16',
+      'scratch-surface: found 16, budget 14',
     );
   }, 30_000);
 

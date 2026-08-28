@@ -9,7 +9,9 @@ import { formatGateProvenance, readGateTreeState } from './gate-provenance';
 
 type P5HostBypassKindV1 = 'direct-dom' | 'input-ingress' | 'scratch-surface' | 'webgpu-acquisition';
 
-export type P5HostBypassKind = P5HostBypassKindV1 | 'frame-scheduling';
+type P5HostBypassKindV3 = P5HostBypassKindV1 | 'frame-scheduling';
+
+export type P5HostBypassKind = P5HostBypassKindV3 | 'render-surface';
 
 export type P5HostBypassExclusion =
   | 'explicit-web-adapter'
@@ -54,6 +56,8 @@ export type P5HostBypassBudget = Readonly<Record<P5HostBypassKind, number>>;
 
 type P5HostBypassBudgetV1 = Readonly<Record<P5HostBypassKindV1, number>>;
 
+type P5HostBypassBudgetV3 = Readonly<Record<P5HostBypassKindV3, number>>;
+
 export interface P5HostBypassBudgetEvidence {
   readonly budget: P5HostBypassBudgetV1;
   readonly reason: string;
@@ -61,6 +65,12 @@ export interface P5HostBypassBudgetEvidence {
 }
 
 export interface P5HostBypassV3BudgetEvidence {
+  readonly budget: P5HostBypassBudgetV3;
+  readonly reason: string;
+  readonly total: number;
+}
+
+export interface P5HostBypassV4BudgetEvidence {
   readonly budget: P5HostBypassBudget;
   readonly reason: string;
   readonly total: number;
@@ -101,6 +111,10 @@ export interface P5HostBypassClassificationEvidence {
 export interface P5HostBypassDetectorProvenance {
   readonly detects: string;
   readonly zeroMeaning: string;
+}
+
+export interface P5HostBypassVersionedDetectorProvenance extends P5HostBypassDetectorProvenance {
+  readonly taxonomyVersion: number;
 }
 
 // IMMUTABLE PREFIX. These accepted checkpoints pin every category, total and reason. History
@@ -190,6 +204,37 @@ const P5_HOST_BYPASS_ACCEPTED_CLASSIFICATION_HISTORY_PREFIX = [
     toTotal: 33,
     toVersion: 3,
   },
+  {
+    fromBudget: {
+      'direct-dom': 12,
+      'input-ingress': 0,
+      'frame-scheduling': 0,
+      'scratch-surface': 16,
+      'webgpu-acquisition': 0,
+    },
+    fromTotal: 28,
+    fromVersion: 3,
+    newlyDetected: [],
+    reason: 'GL and WebGPU root canvases recategorised as caller-owned render surfaces',
+    recategorised: [
+      {
+        count: 2,
+        from: 'scratch-surface',
+        reason: 'render-gl and render-wgpu root canvas factories',
+        to: 'render-surface',
+      },
+    ],
+    toBudget: {
+      'direct-dom': 12,
+      'input-ingress': 0,
+      'frame-scheduling': 0,
+      'scratch-surface': 14,
+      'render-surface': 2,
+      'webgpu-acquisition': 0,
+    },
+    toTotal: 28,
+    toVersion: 4,
+  },
 ] as const satisfies readonly P5HostBypassClassificationEvidence[];
 
 export const P5_HOST_BYPASS_CLASSIFICATION_HISTORY: readonly P5HostBypassClassificationEvidence[] = [
@@ -225,20 +270,52 @@ export const P5_HOST_BYPASS_V3_PROGRESS_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_V3_PROGRESS_HISTORY_PREFIX,
 ] as const satisfies readonly P5HostBypassV3BudgetEvidence[];
 
-const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE = {
-  detects:
-    'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
-  zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
-} as const satisfies P5HostBypassDetectorProvenance;
+const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
+  {
+    budget: {
+      'direct-dom': 12,
+      'input-ingress': 0,
+      'frame-scheduling': 0,
+      'scratch-surface': 14,
+      'render-surface': 2,
+      'webgpu-acquisition': 0,
+    },
+    reason: 'P5 taxonomy v4 classification baseline',
+    total: 28,
+  },
+] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
-export const P5_HOST_BYPASS_DETECTOR_PROVENANCE: P5HostBypassDetectorProvenance = {
-  ...P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE,
+export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
+  ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
+] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
+
+const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
+  {
+    detects:
+      'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+    taxonomyVersion: 3,
+    zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
+  },
+  {
+    detects:
+      'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, caller-owned GL/WebGPU render-surface construction, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+    taxonomyVersion: 4,
+    zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
+  },
+] as const satisfies readonly P5HostBypassVersionedDetectorProvenance[];
+
+export const P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY = [
+  ...P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX,
+] as const satisfies readonly P5HostBypassVersionedDetectorProvenance[];
+
+export const P5_HOST_BYPASS_DETECTOR_PROVENANCE: P5HostBypassVersionedDetectorProvenance = {
+  ...P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY[P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY.length - 1],
 };
 
 // Category upper bounds, not source membership. The active budget is the latest evidenced repair in
 // the current taxonomy, so there is no second lone number an ordinary bypass addition can edit green.
 export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget =
-  P5_HOST_BYPASS_V3_PROGRESS_HISTORY[P5_HOST_BYPASS_V3_PROGRESS_HISTORY.length - 1].budget;
+  P5_HOST_BYPASS_V4_PROGRESS_HISTORY[P5_HOST_BYPASS_V4_PROGRESS_HISTORY.length - 1].budget;
 
 const P3_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
 const INPUT_EVENT_NAMES = new Set([
@@ -282,13 +359,17 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
   const sites: P5HostBypassSite[] = [];
 
   const visit = (node: ts.Node): void => {
+    const functionNames = enclosingFunctionNames(node);
     const finding = classifyNode(node, parsed);
     if (finding !== null) {
       const start = node.getStart(parsed);
       const position = parsed.getLineAndCharacterOfPosition(start);
-      const functionNames = enclosingFunctionNames(node);
       const functionName = functionNames[0] ?? null;
       const structuralExclusion = classifyStructuralExclusion(file, functionNames, webAdapterFunctions);
+      const kind =
+        finding.kind === 'scratch-surface' && isRenderSurfaceFactory(file, functionNames)
+          ? 'render-surface'
+          : finding.kind;
       sites.push({
         column: position.character + 1,
         expression: node.getText(parsed),
@@ -297,7 +378,7 @@ export function scanP5HostBypassSource(file: string, source: string): P5HostBypa
         functionName,
         inputEventName: finding.inputEventName ?? null,
         inputListenerOperation: finding.inputListenerOperation ?? null,
-        kind: finding.kind,
+        kind,
         line: position.line + 1,
       });
 
@@ -332,6 +413,7 @@ export function countP5HostBypasses(report: Readonly<P5HostBypassReport>): Recor
     'input-ingress': 0,
     'frame-scheduling': 0,
     'scratch-surface': 0,
+    'render-surface': 0,
     'webgpu-acquisition': 0,
   };
   for (const site of report.p5) counts[site.kind as P5HostBypassKind]++;
@@ -464,7 +546,9 @@ export function p5HostBypassClassificationHistoryFailures(
     const prior = history[index - 1];
     if (
       prior !== undefined &&
-      (entry.fromVersion !== prior.toVersion || !p5HostBypassBudgetsMatch(entry.fromBudget, prior.toBudget))
+      (entry.fromVersion !== prior.toVersion ||
+        (!p5HostBypassBudgetsMatch(entry.fromBudget, prior.toBudget) &&
+          !p5HostBypassClassificationStartsFromAcceptedProgress(entry)))
     ) {
       failures.push(`P5 taxonomy history[${index}] does not continue the prior classification state`);
     }
@@ -484,7 +568,7 @@ export function p5HostBypassV3ProgressHistoryFailures(history: readonly P5HostBy
   }
   for (let index = 0; index < history.length; index++) {
     const entry = history[index];
-    const categoryTotal = totalP5HostBypassBudget(entry.budget);
+    const categoryTotal = totalP5HostBypassVersionedBudget(entry.budget);
     if (categoryTotal !== entry.total) {
       failures.push(
         `P5 taxonomy v3 progress history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
@@ -500,12 +584,57 @@ export function p5HostBypassV3ProgressHistoryFailures(history: readonly P5HostBy
   return failures;
 }
 
-export function p5HostBypassDetectorProvenanceFailures(provenance: Readonly<P5HostBypassDetectorProvenance>): string[] {
+export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
+  if (history.length === 0) return ['P5 taxonomy v4 progress history is empty'];
   const failures: string[] = [];
-  if (provenance.detects !== P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE.detects) {
+  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX.length; index++) {
+    const accepted = P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX[index];
+    const entry = history[index];
+    if (entry === undefined || !p5HostBypassV4BudgetEvidenceMatches(entry, accepted)) {
+      failures.push(`P5 taxonomy v4 progress history[${index}] rewrites immutable accepted checkpoint`);
+    }
+  }
+  for (let index = 0; index < history.length; index++) {
+    const entry = history[index];
+    const categoryTotal = totalP5HostBypassBudget(entry.budget);
+    if (categoryTotal !== entry.total) {
+      failures.push(
+        `P5 taxonomy v4 progress history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
+      );
+    }
+    const prior = history[index - 1];
+    if (prior !== undefined && entry.total >= prior.total) {
+      failures.push(
+        `P5 taxonomy v4 progress history[${index}] total ${entry.total} is not below prior total ${prior.total}`,
+      );
+    }
+  }
+  return failures;
+}
+
+export function p5HostBypassDetectorProvenanceHistoryFailures(
+  history: readonly P5HostBypassVersionedDetectorProvenance[],
+): string[] {
+  const failures: string[] = [];
+  for (let index = 0; index < P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX.length; index++) {
+    const accepted = P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX[index];
+    const entry = history[index];
+    if (entry === undefined || JSON.stringify(entry) !== JSON.stringify(accepted)) {
+      failures.push(
+        `P5 detector provenance history[${index}] rewrites immutable taxonomy v${accepted.taxonomyVersion}`,
+      );
+    }
+  }
+  return failures;
+}
+
+export function p5HostBypassDetectorProvenanceFailures(provenance: Readonly<P5HostBypassDetectorProvenance>): string[] {
+  const accepted = P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX.at(-1)!;
+  const failures: string[] = [];
+  if (provenance.detects !== accepted.detects) {
     failures.push('P5 detector provenance rewrites the accepted hand-written detection floor');
   }
-  if (provenance.zeroMeaning !== P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE.zeroMeaning) {
+  if (provenance.zeroMeaning !== accepted.zeroMeaning) {
     failures.push('P5 detector provenance rewrites the accepted non-exhaustive zero meaning');
   }
   return failures;
@@ -532,9 +661,28 @@ function p5HostBypassClassificationEvidenceMatches(
   return JSON.stringify(entry) === JSON.stringify(accepted);
 }
 
+function p5HostBypassClassificationStartsFromAcceptedProgress(
+  entry: Readonly<P5HostBypassClassificationEvidence>,
+): boolean {
+  if (entry.fromVersion !== 3) return false;
+  const latest = P5_HOST_BYPASS_V3_PROGRESS_HISTORY[P5_HOST_BYPASS_V3_PROGRESS_HISTORY.length - 1];
+  return entry.fromTotal === latest.total && p5HostBypassBudgetsMatch(entry.fromBudget, latest.budget);
+}
+
 function p5HostBypassV3BudgetEvidenceMatches(
   entry: Readonly<P5HostBypassV3BudgetEvidence>,
   accepted: Readonly<P5HostBypassV3BudgetEvidence>,
+): boolean {
+  return (
+    entry.total === accepted.total &&
+    entry.reason === accepted.reason &&
+    p5HostBypassBudgetsMatch(entry.budget, accepted.budget)
+  );
+}
+
+function p5HostBypassV4BudgetEvidenceMatches(
+  entry: Readonly<P5HostBypassV4BudgetEvidence>,
+  accepted: Readonly<P5HostBypassV4BudgetEvidence>,
 ): boolean {
   return (
     entry.total === accepted.total &&
@@ -549,6 +697,7 @@ function completeP5HostBypassBudget(budget: P5HostBypassVersionedBudget): Record
     'input-ingress': budget['input-ingress'] ?? 0,
     'frame-scheduling': budget['frame-scheduling'] ?? 0,
     'scratch-surface': budget['scratch-surface'] ?? 0,
+    'render-surface': budget['render-surface'] ?? 0,
     'webgpu-acquisition': budget['webgpu-acquisition'] ?? 0,
   };
 }
@@ -585,6 +734,7 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
     'P5 host-bypass census',
     `SCANNED ${report.scannedFiles} packages/*/src/**/*.ts files (runtime directory walk; no file roster)`,
     `SLICE ${P5_HOST_BYPASS_SLICE_GUIDANCE}`,
+    `TAXONOMY v${P5_HOST_BYPASS_DETECTOR_PROVENANCE.taxonomyVersion}`,
     `DETECTS ${P5_HOST_BYPASS_DETECTOR_PROVENANCE.detects}`,
     `ZERO ${P5_HOST_BYPASS_DETECTOR_PROVENANCE.zeroMeaning}`,
     'EXCLUDES tests/helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom/*-canvas technology adapters, application P4 window attachment, and P3 fetch/socket/EventSource/WebSocket/XHR/Request/Image transport syntax',
@@ -632,6 +782,17 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
         .join(' ')} — ${entry.reason}`,
     );
   }
+  lines.push('P5 repair history (taxonomy v4)');
+  for (let index = 0; index < P5_HOST_BYPASS_V4_PROGRESS_HISTORY.length; index++) {
+    const entry = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[index];
+    const prior = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[index - 1];
+    const delta = prior === undefined ? '' : ` (-${prior.total - entry.total} fixed)`;
+    lines.push(
+      `  ${entry.total}${delta} ${Object.entries(entry.budget)
+        .map(([kind, count]) => `${kind}=${count}`)
+        .join(' ')} — ${entry.reason}`,
+    );
+  }
   for (const site of report.p5)
     lines.push(`  ${site.kind} ${site.file}:${site.line}:${site.column} ${site.expression}`);
 
@@ -663,6 +824,8 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ...p5HostBypassSliceGuidanceFailures(P5_HOST_BYPASS_SLICE_GUIDANCE),
     ...p5HostBypassClassificationHistoryFailures(P5_HOST_BYPASS_CLASSIFICATION_HISTORY),
     ...p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY),
+    ...p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...p5HostBypassDetectorProvenanceHistoryFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY),
     ...p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE),
     ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
   ];
@@ -761,6 +924,13 @@ function classifyNode(
     return expressionContainsName(node, 'gpu') ? { kind: 'webgpu-acquisition' } : { kind: 'direct-dom' };
   }
   return null;
+}
+
+function isRenderSurfaceFactory(file: string, functionNames: readonly string[]): boolean {
+  return (
+    (file === 'packages/render-gl/src/glElement.ts' && functionNames.includes('createGlCanvasElement')) ||
+    (file === 'packages/render-wgpu/src/wgpuElement.ts' && functionNames.includes('createWgpuCanvasElement'))
+  );
 }
 
 function classifyStructuralExclusion(
