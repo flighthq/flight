@@ -1,6 +1,6 @@
 import type { Node } from 'oxc-parser';
 
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+import { formatGateProvenance, GATE_STRUCTURAL_LIMIT, readGateTreeState } from './gate-provenance';
 import { getParsedOxcSource } from './oxc-source';
 
 // The backend-replacement lifetime census.
@@ -223,8 +223,7 @@ export function formatBackendLifecycleReport(
 // destroy releases host state they never acquired. Both are invisible here, by construction.
 //
 // It rides in the output rather than in a doc because the output is what gets pasted into reports.
-export const BACKEND_LIFECYCLE_SCOPE_CAVEAT =
-  'STRUCTURAL: hook presence and setter wiring only; this gate does NOT verify that destroy releases what a backend owns — behavior unverified, see agents/backend-lifecycle-ownership.md';
+export const BACKEND_LIFECYCLE_SCOPE_CAVEAT = `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by its set*Backend; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether destroy releases what a backend owns. See agents/backend-lifecycle-ownership.md`;
 
 export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.noTeardownHook !== report.total;

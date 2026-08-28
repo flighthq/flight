@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  BACKEND_OPERATION_SEAM_SCOPE_CAVEAT,
   collectBackendInterfaceNames,
   createBackendOperationSeamReport,
   createEmptyBackendOperationSeamReport,
@@ -13,6 +14,7 @@ import {
   isAggregatorContractLane,
 } from './backend-operation-seam-core';
 import type { BackendOperationSeamReport } from './backend-operation-seam-core';
+import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
 
 // The ratchet. Membership in the enforced set is DERIVED — a package is migrated because it exports
 // `explain<Name>Operation`, never because it appears in a list here — so the gate tightens by itself as
@@ -72,6 +74,16 @@ describe('backend operation seam ratchet', () => {
   // 15 of 46 enforced / 31 not migrated after the Window and Image closures.
   it('never enforces fewer interfaces than the slices already landed', () => {
     expect(report.enforced).toBeGreaterThanOrEqual(15);
+  });
+
+  // ★ THE SCOPE CAVEAT MUST SURVIVE. The count is read as "N operations work"; it means an export exists.
+  // Deleting the caveat to tidy the output fails here.
+  it('prints the caveat that the count is migration and says what it cannot measure', () => {
+    const output = formatBackendOperationSeamReport(report);
+    expect(output).toContain(BACKEND_OPERATION_SEAM_SCOPE_CAVEAT);
+    expect(output).toContain('STRUCTURAL');
+    expect(output).toContain('counts migration');
+    expect(output).toContain(GATE_STRUCTURAL_LIMIT);
   });
 
   it('reports no violation among the migrated interfaces', () => {

@@ -28,6 +28,13 @@ export interface GateTreeState {
   readonly dirty: boolean;
 }
 
+// The limit every STRUCTURAL gate shares, owned here so the gates state it identically rather than
+// similarly. Both the operation seam and the lifecycle census read a declaration: one counts migration,
+// the other counts hook presence. Neither runs the code they describe, so neither can say whether the
+// tests around it are deep or whether the behavior was ever audited — and both numbers get read as if
+// they could. Stating the limit in the output is cheaper than correcting the reading afterwards.
+export const GATE_STRUCTURAL_LIMIT = 'measures neither test depth nor audited behavior';
+
 export const GATE_PROVENANCE_FIELDS: readonly string[] = ['gate', 'tree', 'scope', 'counting'];
 
 // Renders the four-field header. Pure: the tree state is passed in, so a test can fabricate clean and
