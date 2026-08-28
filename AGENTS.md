@@ -149,6 +149,7 @@ Decisions and procedures that are easy to violate and only matter inside one dom
 - [spatial dimension seams](agents/spatial-dimension-seams.md) — before adding a 3D broadphase backend or widening `SpatialAabb2D`. Two suffixed seams, one policy layer.
 - [texture color space](agents/texture-color-space-model.md) — **unratified.** Before touching `Texture.colorSpace`, the `resolveGl*/resolveWgpu*Texture` resolvers, or adding a color-space-aware op to the 2D path. Where Flight decodes and where it encodes.
 - [host-web architecture](agents/host-web-architecture.md) — before touching `enableHostWeb*`, `createWeb*Backend` factories, the capability/host boundary, or the precedence model. The 38-row census, extraction plan, and types spine.
+- [upstream host requirements](agents/upstream-host-requirements.md) — **unratified.** Before working on backend lifecycle, partial composition, operation availability, or any new host package (`host-node`, `host-lime`). Feedback from flight-hx identifying gaps in the host seam.
 
 The full `agents/` library — plans, reviews, breadth analyses, and every record not triggered by a rule above — is indexed in [`agents/index.md`](agents/index.md). Read it when you need a doc you could not reach from this map.
 
