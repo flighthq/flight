@@ -8,7 +8,9 @@ import {
   deriveP5InputIngressListenerOperations,
   formatP5HostBypassReport,
   P5_HOST_BYPASS_BUDGET,
+  P5_HOST_BYPASS_BUDGET_HISTORY,
   p5HostBypassBudgetFailures,
+  p5HostBypassBudgetHistoryFailures,
   p5InputIngressPairingFailures,
   scanP5HostBypasses,
   scanP5HostBypassSource,
@@ -23,9 +25,68 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=33 direct-dom=15 input-ingress=0 scratch-surface=18 webgpu-acquisition=0',
+      'P5 outstanding=31 direct-dom=15 input-ingress=0 scratch-surface=16 webgpu-acquisition=0',
     );
+    expect(formatted).toContain('33 (-3 fixed)');
+    expect(formatted).toContain('31 (-2 fixed)');
   }, 30_000);
+
+  it('preserves the append-only evidenced budget history and its category breakdowns', () => {
+    expect(P5_HOST_BYPASS_BUDGET_HISTORY).toEqual([
+      {
+        budget: { 'direct-dom': 18, 'input-ingress': 26, 'scratch-surface': 18, 'webgpu-acquisition': 6 },
+        reason: 'initial runtime-derived P5 host-bypass census',
+        total: 68,
+      },
+      {
+        budget: { 'direct-dom': 18, 'input-ingress': 26, 'scratch-surface': 18, 'webgpu-acquisition': 0 },
+        reason: 'WebGPU acquisition routed through the structural host backend',
+        total: 62,
+      },
+      {
+        budget: { 'direct-dom': 18, 'input-ingress': 0, 'scratch-surface': 18, 'webgpu-acquisition': 0 },
+        reason: 'input listeners routed through the process-wide ingress backend',
+        total: 36,
+      },
+      {
+        budget: { 'direct-dom': 15, 'input-ingress': 0, 'scratch-surface': 18, 'webgpu-acquisition': 0 },
+        reason: 'geolocation availability routed through the selected backend',
+        total: 33,
+      },
+      {
+        budget: { 'direct-dom': 15, 'input-ingress': 0, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+        reason: 'Bitmap materialization routed through the selected image backend',
+        total: 31,
+      },
+    ]);
+    expect(p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY)).toEqual([]);
+  });
+
+  it('mutation-proves that raising the latest category budget cannot rebaseline the gate', () => {
+    const latest = P5_HOST_BYPASS_BUDGET_HISTORY[P5_HOST_BYPASS_BUDGET_HISTORY.length - 1];
+    const mutated = [
+      ...P5_HOST_BYPASS_BUDGET_HISTORY.slice(0, -1),
+      { ...latest, budget: { ...latest.budget, 'scratch-surface': latest.budget['scratch-surface'] + 1 } },
+    ];
+    expect(p5HostBypassBudgetHistoryFailures(mutated)).toContain(
+      'P5 budget history[4] category sum 32 does not match evidenced total 31',
+    );
+  });
+
+  it('rejects an appended budget increase instead of accepting it as new history', () => {
+    const latest = P5_HOST_BYPASS_BUDGET_HISTORY[P5_HOST_BYPASS_BUDGET_HISTORY.length - 1];
+    const mutated = [
+      ...P5_HOST_BYPASS_BUDGET_HISTORY,
+      {
+        budget: { ...latest.budget, 'direct-dom': latest.budget['direct-dom'] + 1 },
+        reason: 'mutation: ordinary bypass addition',
+        total: latest.total + 1,
+      },
+    ];
+    expect(p5HostBypassBudgetHistoryFailures(mutated)).toContain(
+      'P5 budget history[5] total 32 is not below prior total 31',
+    );
+  });
 
   it('derives an exact one-to-one input listener registration/removal name pairing', () => {
     const operations = deriveP5InputIngressListenerOperations(scanP5HostBypasses(ROOT));
@@ -117,6 +178,28 @@ describe('P5 host-bypass derived gate', () => {
     expect(restoredProbe).toHaveLength(3);
     expect(countP5HostBypasses(mutated)['direct-dom']).toBe(18);
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 18, budget 15');
+  }, 30_000);
+
+  it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    const restoredBridge = scanP5HostBypassSource(
+      'packages/image/src/restoredBitmapMaterialization.ts',
+      `export function createImageResourceFromBitmap(bitmap: { width: number; height: number }) {
+         const canvas = document.createElement('canvas');
+         const imageData = new globalThis.ImageData(bitmap.width, bitmap.height);
+         return { canvas, imageData };
+       }`,
+    );
+    const mutated = createP5HostBypassReport(clean.scannedFiles + 1, [
+      ...clean.p5,
+      ...clean.excluded,
+      ...restoredBridge,
+    ]);
+    expect(restoredBridge).toHaveLength(2);
+    expect(countP5HostBypasses(mutated)['scratch-surface']).toBe(18);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain(
+      'scratch-surface: found 18, budget 16',
+    );
   }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {

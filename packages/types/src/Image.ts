@@ -1,3 +1,4 @@
+import type { Bitmap } from './Bitmap';
 import type { HostImageSource } from './HostImageSource';
 import type { TextureSource } from './TextureSource';
 import type { ImageTextureSourceKind } from './TextureSourceKind';
@@ -23,5 +24,9 @@ export interface Image extends TextureSource {
 // not because the backend must be a DOM one: a native host reads it as the credential mode to use.
 // `signal` cancels the load; an aborted load rejects with the signal's reason rather than resolving.
 export interface ImageBackend {
+  // Materializes raw Bitmap pixels into this host's drawable Image representation. Optional because
+  // native providers may decode URLs without owning a synchronous raw-pixel bridge; absence is the
+  // capability signal and callers must not silently fall back to browser globals.
+  createImageFromBitmap?(bitmap: Readonly<Bitmap>): Image;
   loadImageFromUrl(url: string, crossOrigin?: 'anonymous' | 'use-credentials', signal?: AbortSignal): Promise<Image>;
 }
