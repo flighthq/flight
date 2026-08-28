@@ -17,6 +17,20 @@ export function enableHostWebImage(): void {
       }
     },
   };
+  // Optional operations are composed structurally: an observing wrapper must not advertise a method
+  // the inner provider does not implement, because method presence is the capability signal.
+  if (inner.createImageFromBitmap !== undefined) {
+    backend.createImageFromBitmap = (bitmap) => {
+      try {
+        const result = inner.createImageFromBitmap!(bitmap);
+        observeImageHostResult('createImageFromBitmap', true);
+        return result;
+      } catch (error) {
+        observeImageHostResult('createImageFromBitmap', false);
+        throw error;
+      }
+    };
+  }
   installImageHostBackend(backend);
 }
 

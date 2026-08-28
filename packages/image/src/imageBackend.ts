@@ -1,9 +1,18 @@
 import type { BackendExplanation, Image, ImageBackend } from '@flighthq/types/contract';
 
-import { createImageResourceFromImageElement } from './imageResourceFrom';
+import { createImageResourceFromCanvas, createImageResourceFromImageElement } from './imageResourceFrom';
 
 export function createWebImageBackend(): ImageBackend {
   return {
+    createImageFromBitmap(bitmap): Image {
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
+      domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
+      canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
+      return createImageResourceFromCanvas(canvas);
+    },
     async loadImageFromUrl(url, crossOrigin, signal): Promise<Image> {
       signal?.throwIfAborted();
       const img = new Image();
@@ -30,6 +39,26 @@ export function createWebImageBackend(): ImageBackend {
       return createImageResourceFromImageElement(img);
     },
   };
+}
+
+// ImageData is straight-alpha by contract. Preserve a Bitmap's declared representation at its own
+// seam, then normalize only the scratch browser copy used to materialize a CanvasImageSource.
+function unpremultiplyRgba8(source: Readonly<Uint8ClampedArray>): Uint8ClampedArray<ArrayBuffer> {
+  const data = new Uint8ClampedArray(source);
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    if (alpha === 0) {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+      continue;
+    }
+    const scale = 255 / alpha;
+    data[i] = Math.min(255, Math.round(data[i] * scale));
+    data[i + 1] = Math.min(255, Math.round(data[i + 1] * scale));
+    data[i + 2] = Math.min(255, Math.round(data[i + 2] * scale));
+  }
+  return data;
 }
 
 export function explainImageBackend(): BackendExplanation {

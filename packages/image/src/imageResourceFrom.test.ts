@@ -1,5 +1,5 @@
 import { createEntity } from '@flighthq/entity/contract';
-import type { Bitmap } from '@flighthq/types/contract';
+import type { Bitmap, Image, ImageBackend } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
 import { createWebImageBackend, resetImageBackendForTest, setImageBackend } from './imageBackend';
@@ -24,11 +24,38 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   resetImageBackendForTest();
   delete (HTMLImageElement.prototype as Partial<HTMLImageElement>).decode;
 });
 
 describe('createImageResourceFromBitmap', () => {
+  it('routes the selected custom backend when DOM globals are absent', () => {
+    const bitmap = createTestBitmap(3, 2);
+    const expected = {} as Image;
+    const createImageFromBitmap = vi.fn((_bitmap: Readonly<Bitmap>) => expected);
+    const backend: ImageBackend = {
+      createImageFromBitmap,
+      loadImageFromUrl: vi.fn(),
+    };
+    setImageBackend(backend);
+    vi.stubGlobal('document', undefined);
+
+    expect(createImageResourceFromBitmap(bitmap)).toBe(expected);
+    expect(createImageFromBitmap).toHaveBeenCalledWith(bitmap);
+  });
+
+  it('reports selected-backend absence without falling back to DOM', () => {
+    const createElement = vi.spyOn(document, 'createElement');
+    const backend: ImageBackend = { loadImageFromUrl: vi.fn() };
+    setImageBackend(backend);
+
+    expect(() => createImageResourceFromBitmap(createTestBitmap(1, 1))).toThrow(
+      'Active image backend does not support Bitmap materialization.',
+    );
+    expect(createElement).not.toHaveBeenCalled();
+  });
+
   it('returns an Image with matching dimensions', () => {
     // Built with createEntity rather than @flighthq/bitmap's createBitmap: bitmap depends on image,
     // so importing it here would force a circular tsconfig project reference.
@@ -68,6 +95,19 @@ describe('createImageResourceFromBitmap', () => {
     expect([...bitmap.data]).toEqual([0x40, 0x20, 0x10, 0x80]);
   });
 });
+
+function createTestBitmap(width: number, height: number): Bitmap {
+  return createEntity({
+    alphaType: 'straight',
+    gamut: 'srgb',
+    data: new Uint8ClampedArray(width * height * 4),
+    format: 'rgba8unorm',
+    height,
+    kind: BitmapTextureSourceKind,
+    version: 0,
+    width,
+  });
+}
 
 describe('createImageResourceFromCanvas', () => {
   it('wraps a canvas with correct dimensions', () => {

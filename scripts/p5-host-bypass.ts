@@ -43,14 +43,47 @@ export interface P5HostBypassReport {
 
 export type P5HostBypassBudget = Readonly<Record<P5HostBypassKind, number>>;
 
-// Category upper bounds, not source membership. The runtime scan below prints the derived population;
-// a repaired site may lower a number without editing this file, while a new site makes the gate red.
-export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget = {
-  'direct-dom': 15,
-  'input-ingress': 0,
-  'scratch-surface': 18,
-  'webgpu-acquisition': 0,
-};
+export interface P5HostBypassBudgetEvidence {
+  readonly budget: P5HostBypassBudget;
+  readonly reason: string;
+  readonly total: number;
+}
+
+// APPEND ONLY. Each entry is an evidenced repair state, not a current number to edit in place. A new
+// repair appends a lower state with its category breakdown and reason; history validation checks both
+// the explicit total and strict descent, so raising one latest category cannot rebaseline a bypass.
+export const P5_HOST_BYPASS_BUDGET_HISTORY = [
+  {
+    budget: { 'direct-dom': 18, 'input-ingress': 26, 'scratch-surface': 18, 'webgpu-acquisition': 6 },
+    reason: 'initial runtime-derived P5 host-bypass census',
+    total: 68,
+  },
+  {
+    budget: { 'direct-dom': 18, 'input-ingress': 26, 'scratch-surface': 18, 'webgpu-acquisition': 0 },
+    reason: 'WebGPU acquisition routed through the structural host backend',
+    total: 62,
+  },
+  {
+    budget: { 'direct-dom': 18, 'input-ingress': 0, 'scratch-surface': 18, 'webgpu-acquisition': 0 },
+    reason: 'input listeners routed through the process-wide ingress backend',
+    total: 36,
+  },
+  {
+    budget: { 'direct-dom': 15, 'input-ingress': 0, 'scratch-surface': 18, 'webgpu-acquisition': 0 },
+    reason: 'geolocation availability routed through the selected backend',
+    total: 33,
+  },
+  {
+    budget: { 'direct-dom': 15, 'input-ingress': 0, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+    reason: 'Bitmap materialization routed through the selected image backend',
+    total: 31,
+  },
+] as const satisfies readonly P5HostBypassBudgetEvidence[];
+
+// Category upper bounds, not source membership. The current budget is derived from the last evidenced
+// history entry so there is no second lone number an ordinary bypass addition can edit to become green.
+export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget =
+  P5_HOST_BYPASS_BUDGET_HISTORY[P5_HOST_BYPASS_BUDGET_HISTORY.length - 1].budget;
 
 const P3_CONSTRUCTORS = new Set(['EventSource', 'Image', 'Request', 'WebSocket', 'XMLHttpRequest']);
 const INPUT_EVENT_NAMES = new Set([
@@ -186,6 +219,29 @@ export function p5HostBypassBudgetFailures(report: Readonly<P5HostBypassReport>,
     .map((kind) => `${kind}: found ${counts[kind]}, budget ${budget[kind]}`);
 }
 
+export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypassBudgetEvidence[]): string[] {
+  if (history.length === 0) return ['P5 budget history is empty'];
+  const failures: string[] = [];
+  for (let index = 0; index < history.length; index++) {
+    const entry = history[index];
+    const categoryTotal = totalP5HostBypassBudget(entry.budget);
+    if (categoryTotal !== entry.total) {
+      failures.push(
+        `P5 budget history[${index}] category sum ${categoryTotal} does not match evidenced total ${entry.total}`,
+      );
+    }
+    const prior = history[index - 1];
+    if (prior !== undefined && entry.total >= prior.total) {
+      failures.push(`P5 budget history[${index}] total ${entry.total} is not below prior total ${prior.total}`);
+    }
+  }
+  return failures;
+}
+
+export function totalP5HostBypassBudget(budget: P5HostBypassBudget): number {
+  return Object.values(budget).reduce((sum, count) => sum + count, 0);
+}
+
 export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): string {
   const counts = countP5HostBypasses(report);
   const lines = [
@@ -206,7 +262,18 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
     `P5 outstanding=${report.p5.length} ${Object.entries(counts)
       .map(([kind, count]) => `${kind}=${count}`)
       .join(' ')}`,
+    'P5 budget history (append-only)',
   ];
+  for (let index = 0; index < P5_HOST_BYPASS_BUDGET_HISTORY.length; index++) {
+    const entry = P5_HOST_BYPASS_BUDGET_HISTORY[index];
+    const prior = P5_HOST_BYPASS_BUDGET_HISTORY[index - 1];
+    const delta = prior === undefined ? '' : ` (-${prior.total - entry.total} fixed)`;
+    lines.push(
+      `  ${entry.total}${delta} ${Object.entries(entry.budget)
+        .map(([kind, count]) => `${kind}=${count}`)
+        .join(' ')} — ${entry.reason}`,
+    );
+  }
   for (const site of report.p5)
     lines.push(`  ${site.kind} ${site.file}:${site.line}:${site.column} ${site.expression}`);
 
@@ -233,7 +300,10 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
 if (isMainModule(import.meta.url, process.argv[1])) {
   const report = scanP5HostBypasses(process.cwd());
   process.stdout.write(`${formatP5HostBypassReport(report)}\n`);
-  const failures = p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET);
+  const failures = [
+    ...p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY),
+    ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
+  ];
   if (failures.length > 0) {
     process.stderr.write(`P5 host-bypass ratchet exceeded:\n${failures.map((failure) => `- ${failure}`).join('\n')}\n`);
     process.exitCode = 1;

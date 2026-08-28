@@ -32,6 +32,7 @@ describe('createWebImageBackend', () => {
   it('builds a backend without touching the DOM until it is called', () => {
     // Constructing must not decode anything; the DOM work belongs inside `loadImageFromUrl`.
     const backend = createWebImageBackend();
+    expect(typeof backend.createImageFromBitmap).toBe('function');
     expect(typeof backend.loadImageFromUrl).toBe('function');
   });
 
