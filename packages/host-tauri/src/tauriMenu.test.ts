@@ -86,6 +86,32 @@ describe('createTauriMenuBackend', () => {
     expect(await pending).toBe('cut');
   });
 
+  it('does not touch native menu on destroy (async API cannot clear synchronously)', async () => {
+    const { tauri, state } = fakeTauri();
+    const backend = createTauriMenuBackend(tauri);
+    backend.setApplicationMenu(template);
+    await flush();
+    expect(state.appMenuSet).toBe(1);
+    backend.destroy?.();
+    await flush();
+    expect(state.appMenuSet).toBe(1);
+  });
+
+  it('is idempotent on double destroy', async () => {
+    const { tauri, state } = fakeTauri();
+    const backend = createTauriMenuBackend(tauri);
+    const selected: string[] = [];
+    backend.subscribeSelect((id) => selected.push(id));
+    backend.setApplicationMenu(template);
+    await flush();
+    backend.destroy?.();
+    backend.destroy?.();
+    await flush();
+    expect(state.appMenuSet).toBe(1);
+    state.actions.get('open')!('open');
+    expect(selected).toEqual([]);
+  });
+
   it('clears the select listener on destroy', async () => {
     const { tauri, state } = fakeTauri();
     const backend = createTauriMenuBackend(tauri);
