@@ -1,23 +1,25 @@
 import type {
   BackendExplanation,
+  BackendOperationExplanation,
   MediaSessionAction,
   MediaSessionActionDetails,
   MediaSessionBackend,
   MediaSessionMetadata,
+  MediaSessionOperation,
   MediaSessionPlaybackState,
   MediaSessionPositionState,
 } from '@flighthq/types/contract';
 
 export function clearMediaSessionActionHandler(action: MediaSessionAction): void {
-  getMediaSessionBackend().setActionHandler(action, null);
+  getMediaSessionBackend().setActionHandler?.(action, null);
 }
 
 export function clearMediaSessionMetadata(): void {
-  getMediaSessionBackend().setMetadata(null);
+  getMediaSessionBackend().setMetadata?.(null);
 }
 
 export function clearMediaSessionPositionState(): void {
-  getMediaSessionBackend().setPositionState(null);
+  getMediaSessionBackend().setPositionState?.(null);
 }
 
 // Builds the default web backend over navigator.mediaSession. Every method is a no-op when the API
@@ -79,8 +81,26 @@ export function explainMediaSessionBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// Which layer implements `operation`, and whether anything real does. The sentinel is not consulted and
+// implements nothing, so an unimplemented operation reports honestly rather than as a silent no-op.
+export function explainMediaSessionOperation(operation: MediaSessionOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 export function getMediaSessionBackend(): MediaSessionBackend {
   return _custom ?? _host ?? _sentinel;
+}
+
+// Whether a real backend implements `operation`. Every OS transport control is optional, so a caller that
+// shows a scrubber or a next-track button should ask before offering it.
+export function hasMediaSessionOperation(operation: MediaSessionOperation): boolean {
+  return explainMediaSessionOperation(operation).implemented;
 }
 
 export function installMediaSessionHostBackend(backend: MediaSessionBackend): void {
@@ -109,7 +129,7 @@ export function setMediaSessionActionHandler(
   action: MediaSessionAction,
   handler: (details: Readonly<MediaSessionActionDetails>) => void,
 ): void {
-  getMediaSessionBackend().setActionHandler(action, handler);
+  getMediaSessionBackend().setActionHandler?.(action, handler);
 }
 
 export function setMediaSessionBackend(backend: MediaSessionBackend | null): void {
@@ -117,23 +137,22 @@ export function setMediaSessionBackend(backend: MediaSessionBackend | null): voi
 }
 
 export function setMediaSessionMetadata(metadata: Readonly<MediaSessionMetadata>): void {
-  getMediaSessionBackend().setMetadata(metadata);
+  getMediaSessionBackend().setMetadata?.(metadata);
 }
 
 export function setMediaSessionPlaybackState(state: MediaSessionPlaybackState): void {
-  getMediaSessionBackend().setPlaybackState(state);
+  getMediaSessionBackend().setPlaybackState?.(state);
 }
 
 export function setMediaSessionPositionState(state: Readonly<MediaSessionPositionState>): void {
-  getMediaSessionBackend().setPositionState(state);
+  getMediaSessionBackend().setPositionState?.(state);
 }
 
-const _sentinel: MediaSessionBackend = {
-  setActionHandler(_action, _handler) {},
-  setMetadata(_metadata) {},
-  setPlaybackState(_state) {},
-  setPositionState(_state) {},
-};
+// ★ EMPTY ON PURPOSE. A sentinel that implemented these four would answer every call with a no-op that a
+// caller cannot tell from a real one — the invisible lie this work exists to remove. With the operations
+// declared optional, the empty object is the honest fall-through: calls no-op via `?.` and
+// `hasMediaSessionOperation` reports false, so the absence is observable rather than disguised.
+const _sentinel: MediaSessionBackend = {};
 
 let _custom: MediaSessionBackend | null = null;
 let _host: MediaSessionBackend | null = null;

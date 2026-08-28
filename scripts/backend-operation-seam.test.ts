@@ -40,10 +40,15 @@ describe('backend operation seam ratchet', () => {
     );
   });
 
-  // The ratchet direction: this slice migrated ten interfaces, so the enforced count may grow but must
-  // never shrink. A regression that removes a seam fails here rather than quietly lowering the number.
-  it('enforces at least the ten interfaces migrated so far', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(10);
+  // ★ THE RATCHET FLOOR, and it must be raised by every slice that migrates an interface. This is the
+  // one committed number in the gate, and it is what makes the ratchet a ratchet: membership is derived,
+  // but "never fewer than we already had" cannot be derived from the same source without being circular.
+  //
+  // Found by mutation rather than by review: renaming `explainMediaSessionOperation` correctly dropped the
+  // printed count from 11 to 10, and NOTHING FAILED, because the floor still read 10 from the previous
+  // slice. A ratchet whose floor lags is a ratchet that lets one regression through per slice.
+  it('never enforces fewer interfaces than the slices already landed', () => {
+    expect(report.enforced).toBeGreaterThanOrEqual(11);
   });
 
   it('reports no violation among the migrated interfaces', () => {
