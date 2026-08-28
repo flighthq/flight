@@ -54,9 +54,25 @@ Never mix these in a single mutation. A commit that simultaneously discovers a n
 
 A floor grows by one named entry per earned reason: "MenuBackend landed its teardown hook" is one increment. Never collapse multiple completed items into a single multi-step floor jump — a commit that adds three names at once produces an unattributable sum. Each name carries its own justification (the slice that earned it), and that justification is lost when names arrive in a batch whose commit message can only say "added several." One name, one reason, one commit to the floor.
 
+### Caveats are assertions
+
+Any scope or uncertainty caveat printed with a measurement is part of the assertion and must have a removal or weakening mutation that turns the gate red. A caveat that can be deleted without breaking anything is decoration, not a guard. Examples: "structural behavior unverified" warns that the gate checked presence but not correctness; "recategorised, 0 new" distinguishes a reclassification from a discovery; "consumer unverified" marks a claim no external consumer has confirmed; "known untested axes" names what the gate structurally cannot see; "detector floor" reminds that the roster is a lower bound. Each of these constrains how the number should be read — removing one widens the claim the number makes, and that widening must fail a test.
+
+### Clearing an override must reveal the retained provider by identity
+
+When a setter clears a custom override to fall back to a retained host or sentinel, assert the exact instance identity of the revealed provider — not merely that an equivalent provider is active. Reconstruction (creating a new provider on fallback) orphans any resources or subscriptions origin-pinned to the original. `expect(getBackend()).toBe(originalHost)` catches reconstruction; `expect(getBackend()).not.toBeNull()` does not.
+
+### Mutation reports separate introduced from pre-existing survivors
+
+A mutation report must distinguish survivors introduced or reachable by the work under test from pre-existing unrelated survivors. "No survivors" when some are pre-existing is a false claim; "some survivors" without separation hides whether any are new. List each survivor with its origin (introduced by this work, or pre-existing) and name known untested axes — dimensions the mutation suite structurally cannot probe. Never summarize either axis as a generic aggregate.
+
 ### Hand-written detector rosters are floors, not ceilings
 
 A gate that enumerates conditions by name — a list of backends, a roster of known defects, a set of expected warnings — records a floor on what has been observed, not an exhaustive ceiling on what exists. When a consumer contradicts a closed gate (reports a condition the gate says is absent), the first question is whether the detector looks for the reported condition at all. A roster that does not contain a term cannot find it, and its silence is not evidence of absence — it is evidence of the roster's vocabulary. Expand the detector before trusting the gate's answer.
+
+## Parcel acceptance
+
+Compare the parcel summary's stated intent against the actual diff effect before accepting. Inspect every deleted line and file, and every path not named by the summary. A parcel doing more than it says — or less — is rejected for a clean rebased replacement rather than partially accepted. Deleted tests can make suites greener and evade typecheck; deleted comments can remove caveats that constrain a measurement's interpretation. The summary is a claim about the diff, not a substitute for reading it.
 
 ## Unowned working-tree content before rebase or handoff
 
