@@ -98,13 +98,16 @@ export type WindowAttachmentOwnership = 'host' | 'flight';
 export interface WindowBackend {
   // Attaches an existing native window. Optional because absence is the structural declaration that a
   // backend cannot adopt host-created windows; attachWindow resolves custom → host by that presence.
+  // A provider is eligible only when it also provides close, which owns the resulting release obligation.
   attach?(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
-  open(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
+  // A provider is eligible to open only when it also provides close. Successful opens follow the canonical
+  // origin-pinned doctrine in agents/backend-lifecycle-ownership.md; absence returns false from openWindow.
+  open?(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
   // Releases one entity-keyed window attachment. Implementations must be idempotent: delete their native
   // identity record and remove the exact listeners installed for that record before requesting native
   // destruction. A host-owned record is detached only; a Flight-owned record also closes/destroys its
   // native handle, at most once.
-  close(win: ApplicationWindow): void;
+  close?(win: ApplicationWindow): void;
   setTitle?(win: ApplicationWindow, title: string): void;
   setPosition?(win: ApplicationWindow, x: number, y: number): void;
   setSize?(win: ApplicationWindow, width: number, height: number): void;

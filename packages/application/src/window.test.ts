@@ -247,13 +247,7 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
 }
 
 function partialWindowBackend(operations: Partial<WindowBackend> = {}): WindowBackend {
-  return {
-    close() {},
-    open() {
-      return false;
-    },
-    ...operations,
-  };
+  return { ...operations };
 }
 
 afterEach(() => resetWindowBackendForTest());
@@ -341,6 +335,33 @@ describe('attachWindow', () => {
     expect(closeWindow(win)).toBe(true);
     expect(host.calls).toContain('close');
     expect(custom.calls).not.toContain('close');
+  });
+
+  it('lifecycle-pair axis: skips an orphan custom attach and pins the complete host pair', () => {
+    const calls: string[] = [];
+    const custom: WindowBackend = {
+      attach() {
+        calls.push('custom:attach');
+        return true;
+      },
+    };
+    const host: WindowBackend = {
+      attach() {
+        calls.push('host:attach');
+        return true;
+      },
+      close() {
+        calls.push('host:close');
+      },
+    };
+    installWindowHostBackend(host);
+    setWindowBackend(custom);
+    const win = createApplicationWindow();
+
+    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(win)).toBe(true);
+
+    expect(calls).toEqual(['host:attach', 'host:close']);
   });
 
   it('returns false when neither custom nor host structurally provides attach', () => {
@@ -665,6 +686,17 @@ describe('closeWindow', () => {
     connectSignal(win.onCloseRequest, () => cancelSignal(win.onCloseRequest));
     expect(closeWindow(win)).toBe(false);
     expect(backend.calls).not.toContain('close');
+  });
+
+  it('manual-absence axis: closes terminal state safely when no provider exists', () => {
+    const win = createApplicationWindow();
+    let closed = 0;
+    connectSignal(win.onClose, () => closed++);
+
+    expect(closeWindow(win)).toBe(true);
+    expect(closeWindow(win)).toBe(true);
+
+    expect(closed).toBe(1);
   });
 });
 
@@ -1193,7 +1225,7 @@ describe('openWindow', () => {
     setWindowBackend(backend);
     const win = createApplicationWindow();
     openWindow(win, { title: 'Centered', center: true });
-    expect(backend.calls).toContain('center');
+    expect(backend.calls.filter((call) => call === 'center')).toHaveLength(1);
   });
 
   it('does not center when center option is not set', () => {
@@ -1228,6 +1260,80 @@ describe('openWindow', () => {
 
     expect(closed).toBe(2);
     expect(forwarded).toBe(1);
+  });
+
+  it('lifecycle-pair axis: skips an orphan custom opener and pins the complete host pair', () => {
+    const calls: string[] = [];
+    const custom: WindowBackend = {
+      open() {
+        calls.push('custom:open');
+        return true;
+      },
+    };
+    const host: WindowBackend = {
+      close() {
+        calls.push('host:close');
+      },
+      open() {
+        calls.push('host:open');
+        return true;
+      },
+    };
+    installWindowHostBackend(host);
+    setWindowBackend(custom);
+    const win = createApplicationWindow();
+
+    expect(openWindow(win)).toBe(true);
+    expect(closeWindow(win)).toBe(true);
+
+    expect(calls).toEqual(['host:open', 'host:close']);
+  });
+
+  it('manual-absence axis: returns false without calling an orphan opener', () => {
+    const calls: string[] = [];
+    setWindowBackend({
+      open() {
+        calls.push('open');
+        return true;
+      },
+    });
+
+    expect(openWindow(createApplicationWindow())).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  it('lifecycle-ledger mutation axis: A-open/B-active releases through A, never current B', () => {
+    const calls: string[] = [];
+    const providerA: WindowBackend = {
+      close() {
+        calls.push('A:close');
+      },
+      open() {
+        calls.push('A:open');
+        return true;
+      },
+    };
+    const providerB: WindowBackend = {
+      close() {
+        calls.push('B:close');
+      },
+      open() {
+        calls.push('B:open');
+        return true;
+      },
+    };
+    setWindowBackend(providerA);
+    const win = createApplicationWindow();
+    let closed = 0;
+    connectSignal(win.onClose, () => closed++);
+
+    expect(openWindow(win)).toBe(true);
+    setWindowBackend(providerB);
+    expect(closeWindow(win)).toBe(true);
+
+    // Mutation proof for the canonical doctrine in agents/backend-lifecycle-ownership.md.
+    expect(calls).toEqual(['A:open', 'A:close']);
+    expect(closed).toBe(1);
   });
 });
 
@@ -1523,7 +1629,7 @@ describe('WindowBackend B-class migration axes', () => {
   });
 
   it('sentinel-exclusion axis: publishes no B member and every absent B command remains safe', () => {
-    expect(Object.keys(getWindowBackend()).sort()).toEqual(['close', 'open']);
+    expect(Object.keys(getWindowBackend()).sort()).toEqual([]);
 
     for (const invoke of Object.values(WINDOW_B_OPERATION_CALLS)) {
       expect(() => invoke(createApplicationWindow())).not.toThrow();

@@ -188,7 +188,7 @@ describe('createElectronWindowBackend', () => {
     const { electron, created } = fakeElectron();
     const backend = createElectronWindowBackend(electron);
     const win = createApplicationWindow();
-    expect(backend.open(win, { title: 'Flight', width: 640, height: 480 })).toBe(true);
+    expect(backend.open!(win, { title: 'Flight', width: 640, height: 480 })).toBe(true);
     expect(created).toHaveLength(1);
     expect(created[0].options.title).toBe('Flight');
     backend.setTitle!(win, 'Renamed');
@@ -199,7 +199,7 @@ describe('createElectronWindowBackend', () => {
     const { electron, created } = fakeElectron();
     const backend = createElectronWindowBackend(electron);
     const win = createApplicationWindow();
-    backend.open(win, {});
+    backend.open!(win, {});
     created[0].bounds = { x: 10, y: 20, width: 300, height: 400 };
     const out = { x: 0, y: 0, width: 0, height: 0 };
     const result = backend.getBounds!(win, out);
@@ -224,7 +224,7 @@ describe('createElectronWindowBackend', () => {
     const { electron, created } = fakeElectron();
     const backend = createElectronWindowBackend(electron);
     const win = createApplicationWindow();
-    backend.open(win, {});
+    backend.open!(win, {});
     let emitted = false;
     connectSignal(win.onMinimize, () => {
       emitted = true;
@@ -255,8 +255,8 @@ describe('createElectronWindowBackend', () => {
     const win = createApplicationWindow();
     expect(backend.attach?.(win, native, 'host')).toBe(true);
 
-    backend.close(win);
-    backend.close(win);
+    backend.close!(win);
+    backend.close!(win);
 
     expect(native.calls.filter((call) => call.method === 'close')).toHaveLength(0);
     expect(native.listenerCount('move')).toBe(0);
@@ -270,8 +270,8 @@ describe('createElectronWindowBackend', () => {
     const win = createApplicationWindow();
     expect(backend.attach?.(win, native, 'flight')).toBe(true);
 
-    backend.close(win);
-    backend.close(win);
+    backend.close!(win);
+    backend.close!(win);
 
     expect(native.calls.filter((call) => call.method === 'close')).toHaveLength(1);
   });
@@ -299,7 +299,7 @@ describe('getApplicationWindowForElectronId', () => {
     const { electron, created } = fakeElectron();
     const backend = createElectronWindowBackend(electron);
     const win = createApplicationWindow();
-    backend.open(win, {});
+    backend.open!(win, {});
     const id = created[0].id;
     expect(getApplicationWindowForElectronId(id)).toBe(win);
     expect(getApplicationWindowForElectronId(9999)).toBeNull();
@@ -312,7 +312,7 @@ describe('getElectronBrowserWindow', () => {
     const backend = createElectronWindowBackend(electron);
     const win = createApplicationWindow();
     expect(getElectronBrowserWindow(win)).toBeNull();
-    backend.open(win, {});
+    backend.open!(win, {});
     expect(getElectronBrowserWindow(win)).toBe(created[0]);
   });
 });
@@ -323,7 +323,7 @@ describe('getElectronWindowId', () => {
     const backend = createElectronWindowBackend(electron);
     const win = createApplicationWindow();
     expect(getElectronWindowId(win)).toBe(-1);
-    backend.open(win, {});
+    backend.open!(win, {});
     const expectedId = created[0].id;
     expect(getElectronWindowId(win)).toBe(expectedId);
   });
@@ -334,7 +334,7 @@ describe('resetElectronWindowBackendForTest', () => {
     const { electron, created } = fakeElectron();
     const backend = createElectronWindowBackend(electron);
     const win = createApplicationWindow();
-    expect(backend.open(win, {})).toBe(true);
+    expect(backend.open!(win, {})).toBe(true);
     expect(getElectronBrowserWindow(win)).toBe(created[0]);
 
     resetElectronWindowBackendForTest();

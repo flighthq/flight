@@ -1,4 +1,9 @@
-import { createApplicationWindow } from '@flighthq/application/contract';
+import {
+  createApplicationWindow,
+  openWindow,
+  resetWindowBackendForTest,
+  setWindowBackend,
+} from '@flighthq/application/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { TauriApi, TauriLogicalSizeLike, TauriPhysicalPositionLike } from '@flighthq/types/contract';
 
@@ -96,6 +101,8 @@ function methods(state: FakeWindowState): string[] {
   return state.calls.map((c) => c.method);
 }
 
+afterEach(() => resetWindowBackendForTest());
+
 describe('createTauriWindowBackend', () => {
   it('adapter-roster axis: publishes exactly 24 P1 operations and omits the four false members', () => {
     const { tauri } = fakeTauri();
@@ -137,7 +144,7 @@ describe('createTauriWindowBackend', () => {
     const { tauri, state } = fakeTauri();
     const backend = createTauriWindowBackend(tauri);
     const win = createApplicationWindow();
-    expect(backend.open(win, { title: 'Hi', width: 640, height: 480, resizable: false, visible: true })).toBe(true);
+    expect(backend.open!(win, { title: 'Hi', width: 640, height: 480, resizable: false, visible: true })).toBe(true);
     expect(methods(state)).toContain('setTitle');
     expect(methods(state)).toContain('setSize');
     expect(methods(state)).toContain('setResizable');
@@ -150,7 +157,7 @@ describe('createTauriWindowBackend', () => {
     const win = createApplicationWindow();
     let moves = 0;
     connectSignal(win.onMove, () => moves++);
-    backend.open(win, {});
+    backend.open!(win, {});
     state.moved!({ payload: { x: 12, y: 34 } });
     expect(win.x).toBe(12);
     expect(win.y).toBe(34);
@@ -169,7 +176,7 @@ describe('createTauriWindowBackend', () => {
     // Not opened yet: nothing routes through.
     backend.setTitle!(win, 'ignored');
     expect(state.calls).toHaveLength(0);
-    backend.open(win, {});
+    backend.open!(win, {});
     state.calls.length = 0;
     backend.setTitle!(win, 'New');
     backend.minimize!(win);
@@ -186,7 +193,7 @@ describe('createTauriWindowBackend', () => {
     win.y = 6;
     win.width = 100;
     win.height = 200;
-    backend.open(win, {});
+    backend.open!(win, {});
     const out = { x: 0, y: 0, width: 0, height: 0 };
     expect(backend.getBounds!(win, out)).toBe(out);
     expect(out).toEqual({ x: 5, y: 6, width: 100, height: 200 });
@@ -209,8 +216,8 @@ describe('createTauriWindowBackend', () => {
     const win = createApplicationWindow();
     expect(backend.attach?.(win, window, 'host')).toBe(true);
 
-    backend.close(win);
-    backend.close(win);
+    backend.close!(win);
+    backend.close!(win);
     await Promise.resolve();
 
     expect(methods(state)).not.toContain('close');
@@ -223,8 +230,8 @@ describe('createTauriWindowBackend', () => {
     const win = createApplicationWindow();
     expect(backend.attach?.(win, window, 'flight')).toBe(true);
 
-    backend.close(win);
-    backend.close(win);
+    backend.close!(win);
+    backend.close!(win);
 
     expect(methods(state).filter((method) => method === 'close')).toHaveLength(1);
   });
@@ -243,5 +250,15 @@ describe('createTauriWindowBackend', () => {
 
     expect(closes).toBe(1);
     expect(state.unlistened).toHaveLength(4);
+  });
+
+  it('center-owner axis: lets application perform exactly one post-open center command', () => {
+    const { tauri, state } = fakeTauri();
+    const backend = createTauriWindowBackend(tauri);
+    setWindowBackend(backend);
+
+    expect(openWindow(createApplicationWindow(), { center: true })).toBe(true);
+
+    expect(methods(state).filter((method) => method === 'center')).toHaveLength(1);
   });
 });

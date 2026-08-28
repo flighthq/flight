@@ -111,7 +111,6 @@ export function createTauriWindowBackend(tauri: TauriApi): WindowBackend {
       if (options.maxWidth !== undefined && options.maxWidth >= 0 && options.maxHeight !== undefined) {
         w.setMaxSize(new windowModule.LogicalSize(options.maxWidth, options.maxHeight)).catch(() => {});
       }
-      if (options.center) w.center().catch(() => {});
       if (options.maximized) w.maximize().catch(() => {});
       if (options.minimized) w.minimize().catch(() => {});
       if (options.visible === false) w.hide().catch(() => {});
