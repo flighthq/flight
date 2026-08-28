@@ -384,7 +384,17 @@ export function getWindowBackend(): WindowBackend {
 
 // Fills `out` with the window's current screen bounds and returns it.
 export function getWindowBounds(win: Readonly<ApplicationWindow>, out: WindowBounds): WindowBounds {
-  return getWindowBackend().getBounds(win as ApplicationWindow, out);
+  const backend = getWindowOperationBackend('getBounds');
+  if (backend !== null) return backend.getBounds(win as ApplicationWindow, out);
+  const x = win.x;
+  const y = win.y;
+  const width = win.width;
+  const height = win.height;
+  out.x = x;
+  out.y = y;
+  out.width = width;
+  out.height = height;
+  return out;
 }
 
 // Returns the index of the display (screen) the window is currently on, or -1 if unknown.
@@ -650,13 +660,6 @@ export function showWindow(win: ApplicationWindow): void {
 
 const _sentinel: WindowBackend = {
   close() {},
-  getBounds(win, out) {
-    out.x = win.x;
-    out.y = win.y;
-    out.width = win.width;
-    out.height = win.height;
-    return out;
-  },
   open() {
     return false;
   },
@@ -680,11 +683,11 @@ function getWindowAttachmentBackend(): WindowBackend | null {
   return null;
 }
 
-// B-class commands compose per operation: a partial custom backend shadows only the members it
-// actually provides, then the host receives the first chance to serve every uncovered command.
+// Migrated operations compose per operation: a partial custom backend shadows only the members it
+// actually provides, then the host receives the first chance to serve every uncovered operation.
 // The sentinel is deliberately absent from this resolver because publishing a no-op member would turn
 // structural absence back into false support.
-function getWindowOperationBackend<Operation extends WindowBOperation>(
+function getWindowOperationBackend<Operation extends WindowComposedOperation>(
   operation: Operation,
 ): WindowBackendWithOperation<Operation> | null {
   if (hasWindowBackendOperation(_custom, operation)) return _custom;
@@ -692,7 +695,7 @@ function getWindowOperationBackend<Operation extends WindowBOperation>(
   return null;
 }
 
-function hasWindowBackendOperation<Operation extends WindowBOperation>(
+function hasWindowBackendOperation<Operation extends WindowComposedOperation>(
   backend: WindowBackend | null,
   operation: Operation,
 ): backend is WindowBackendWithOperation<Operation> {
@@ -708,7 +711,7 @@ function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () =
   return observers;
 }
 
-type WindowBOperation = Exclude<keyof WindowBackend, 'attach' | 'close' | 'getBounds' | 'open'>;
+type WindowComposedOperation = Exclude<keyof WindowBackend, 'attach' | 'close' | 'open'>;
 
-type WindowBackendWithOperation<Operation extends WindowBOperation> = WindowBackend &
+type WindowBackendWithOperation<Operation extends WindowComposedOperation> = WindowBackend &
   Required<Pick<WindowBackend, Operation>>;

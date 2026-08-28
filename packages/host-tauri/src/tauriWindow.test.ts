@@ -188,7 +188,7 @@ describe('createTauriWindowBackend', () => {
     win.height = 200;
     backend.open(win, {});
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    expect(backend.getBounds(win, out)).toBe(out);
+    expect(backend.getBounds!(win, out)).toBe(out);
     expect(out).toEqual({ x: 5, y: 6, width: 100, height: 200 });
   });
 
