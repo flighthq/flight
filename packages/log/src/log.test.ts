@@ -34,7 +34,8 @@ import {
   createRateLimitedLogSink,
   createSampledLogSink,
   createTextLogFormatter,
-  disposeFileLogSink,
+  destroyFileLogSink,
+  destroyLogTransportBackend,
   disposeLogSink,
   enableLogSignals,
   endLogGroup,
@@ -695,30 +696,67 @@ describe('createTextLogFormatter', () => {
   });
 });
 
-describe('disposeFileLogSink', () => {
-  it('calls flush and dispose on the installed transport backend', () => {
+describe('destroyFileLogSink', () => {
+  it('calls flush and destroy on the installed transport backend', () => {
     const flushed: boolean[] = [];
-    const disposed: boolean[] = [];
+    const destroyed: boolean[] = [];
     setLogTransportBackend({
       write: () => {},
       flush: () => flushed.push(true),
-      dispose: () => disposed.push(true),
+      destroy: () => destroyed.push(true),
     });
-    const handle = createFileLogSink();
-    disposeFileLogSink(handle);
+    destroyFileLogSink(createFileLogSink());
     expect(flushed).toHaveLength(1);
-    expect(disposed).toHaveLength(1);
+    expect(destroyed).toHaveLength(1);
+  });
+
+  // ★ The correction. Teardown used to leave the destroyed backend installed, so the file sink kept
+  // calling write on a freed handle. Writing to a freed resource is worse than losing the line.
+  it('stops the file sink writing to the transport once it is destroyed', () => {
+    const written: string[] = [];
+    setLogTransportBackend({ write: (line) => written.push(line), destroy: () => {} });
+    const handle = createFileLogSink();
+
+    handle.sink({ level: LogLevel.Info, channel: null, data: 'before' });
+    expect(written).toHaveLength(1);
+
+    destroyFileLogSink(handle);
+    handle.sink({ level: LogLevel.Info, channel: null, data: 'after' });
+    expect(written).toHaveLength(1);
+  });
+
+  // Exactly-once, and it falls out of clearing the slot rather than a flag that could drift from it.
+  it('destroys the backend exactly once across repeated teardown', () => {
+    const destroyed: boolean[] = [];
+    setLogTransportBackend({ write: () => {}, destroy: () => destroyed.push(true) });
+    const handle = createFileLogSink();
+
+    destroyFileLogSink(handle);
+    destroyFileLogSink(handle);
+    destroyLogTransportBackend();
+    expect(destroyed).toHaveLength(1);
   });
 
   it('is a no-op when no backend is installed', () => {
-    const handle = createFileLogSink();
-    expect(() => disposeFileLogSink(handle)).not.toThrow();
+    expect(() => destroyFileLogSink(createFileLogSink())).not.toThrow();
   });
 
-  it('accepts a backend without optional flush and dispose hooks', () => {
+  it('accepts a backend without optional flush and destroy hooks', () => {
     setLogTransportBackend({ write: () => {} });
+    expect(() => destroyFileLogSink(createFileLogSink())).not.toThrow();
+  });
+});
 
-    expect(() => disposeFileLogSink(createFileLogSink())).not.toThrow();
+describe('destroyLogTransportBackend', () => {
+  it('clears the slot so getLogTransportBackend reports nothing installed', () => {
+    setLogTransportBackend({ write: () => {}, destroy: () => {} });
+    destroyLogTransportBackend();
+    expect(getLogTransportBackend()).toBeNull();
+  });
+
+  it('is safe with nothing installed', () => {
+    setLogTransportBackend(null);
+    expect(() => destroyLogTransportBackend()).not.toThrow();
   });
 });
 
@@ -1431,7 +1469,40 @@ describe('setLogTransportBackend', () => {
 // Per-operation availability for LogTransportBackend. The operations below are the ones the interface declares
 // OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
 // ruling, and this is the query that makes it observable.
-const OPTIONAL_OPERATIONS: readonly LogTransportOperation[] = ['flush', 'dispose'];
+const OPTIONAL_OPERATIONS: readonly LogTransportOperation[] = ['flush', 'destroy'];
+
+describe('setLogTransportBackend replacement lifetime', () => {
+  // Replacement used to leak: the outgoing transport kept its file handle and nothing ever freed it.
+  it('destroys the outgoing transport when a new one replaces it', () => {
+    const destroyed: string[] = [];
+    const first = { write: () => {}, destroy: () => destroyed.push('first') };
+    const second = { write: () => {}, destroy: () => destroyed.push('second') };
+
+    setLogTransportBackend(first);
+    setLogTransportBackend(second);
+    expect(destroyed).toEqual(['first']);
+    expect(getLogTransportBackend()).toBe(second);
+  });
+
+  it('destroys the outgoing transport when removed with null', () => {
+    const destroyed: string[] = [];
+    setLogTransportBackend({ write: () => {}, destroy: () => destroyed.push('only') });
+    setLogTransportBackend(null);
+    expect(destroyed).toEqual(['only']);
+    expect(getLogTransportBackend()).toBeNull();
+  });
+
+  // Re-installing the SAME object is not a replacement, so it must not free a transport that is still
+  // in use — the caller would be left writing to a destroyed handle it never removed.
+  it('does not destroy when the same backend is installed again', () => {
+    const destroyed: string[] = [];
+    const only = { write: () => {}, destroy: () => destroyed.push('only') };
+    setLogTransportBackend(only);
+    setLogTransportBackend(only);
+    expect(destroyed).toEqual([]);
+    expect(getLogTransportBackend()).toBe(only);
+  });
+});
 
 describe('severity wrapper providers and gates', () => {
   it('does not evaluate any provider when its level is suppressed', () => {
@@ -1480,6 +1551,13 @@ describe('severity wrapper providers and gates', () => {
   });
 });
 
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): LogTransportBackend {
+  return {
+    write: (() => undefined) as never,
+  } as LogTransportBackend;
+}
+
 describe('startLogTimer', () => {
   it('returns a LogTimer with the given label and channel', () => {
     const timer = startLogTimer('render', 'perf');
@@ -1506,10 +1584,3 @@ describe('startLogTimer', () => {
     expect(startedAt!).toBe(1234);
   });
 });
-
-// A host implementing only the REQUIRED members — partial support declared by absence.
-function partialBackend(): LogTransportBackend {
-  return {
-    write: (() => undefined) as never,
-  } as LogTransportBackend;
-}

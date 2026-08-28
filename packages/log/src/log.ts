@@ -290,14 +290,30 @@ export function createTextLogFormatter(
   };
 }
 
-// Flushes a file-log sink's transport backend immediately, then disposes it. After this call
-// createFileLogSink entries will silently no-op until setLogTransportBackend is called again.
-// (`dispose*` — releases the backend resource; no GPU/native handle.)
-export function disposeFileLogSink(_handle: FileLogSink): void {
+export function destroyFileLogSink(_handle: FileLogSink): void {
+  destroyLogTransportBackend();
+}
+
+// Flushes the transport backend and frees its resource, then CLEARS the slot so nothing writes to it
+// again. `destroy*` rather than `dispose*` because a transport owns a file handle or socket that is
+// freed here, not merely a reference that becomes collectable.
+//
+// ★ Clearing the slot is the correction, not a side effect. This function's contract has always been
+// that entries afterwards no-op until a new backend is set — but it used to leave the destroyed backend
+// installed, so `createFileLogSink`'s sink kept calling `write` on it. A freed handle written to is
+// worse than a lost line.
+//
+// Exactly-once follows from the clear rather than from a flag: a second call finds `null` and returns,
+// so the backend's own `destroy` can never run twice.
+// Frees the installed transport's resource and clears the slot. Safe to call with nothing installed and
+// safe to call twice — the second call sees an empty slot, which is what makes teardown exactly-once
+// without a separate destroyed flag to keep in sync.
+export function destroyLogTransportBackend(): void {
   const backend = _transportBackend;
   if (backend === null) return;
+  _transportBackend = null;
   if (backend.flush) backend.flush();
-  if (backend.dispose) backend.dispose();
+  if (backend.destroy) backend.destroy();
 }
 
 // Disposes a buffered sink: cancels its interval timer and flushes remaining entries. The sink
@@ -619,7 +635,12 @@ export function setLogSink(sink: LogSink | null): void {
 // Sets the LogTransportBackend used by createFileLogSink. Set to null to detach the backend.
 // Native/Node hosts register a real fs-backed implementation. The backend is process-global
 // (one transport per process).
+// Installs the transport, DESTROYING the outgoing one first so replacement and removal cannot leak the
+// file handle or socket it held. Passing `null` removes and destroys; passing the backend already
+// installed is a no-op rather than a destroy-then-reinstall of the same object.
 export function setLogTransportBackend(backend: LogTransportBackend | null): void {
+  if (_transportBackend === backend) return;
+  destroyLogTransportBackend();
   _transportBackend = backend;
 }
 
