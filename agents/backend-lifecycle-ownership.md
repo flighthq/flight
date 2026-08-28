@@ -18,15 +18,16 @@ The 42-interface audit partitions exactly as:
 
 The seven still-needing rows are not the total owner population. At the frozen audit, the total was
 eight: already-implemented `LogTransportBackend` plus the seven named below. Since that audit,
-`MediaSessionBackend` has landed its hook. The live implementation state is therefore two declared
-and exercised hooks (`LogTransportBackend` and `MediaSessionBackend`) with six still owed.
+`AccessibilityBackend` and `MediaSessionBackend` have landed their hooks. The live implementation
+state is therefore three declared and exercised hooks (`AccessibilityBackend`, `LogTransportBackend`,
+and `MediaSessionBackend`) with five still owed.
 
 The live tree has since added two interfaces. `AudioBackend` is a pure `canPlayType` query and
 joins the GC/bounded bucket. `WgpuHostBackend` owns no process-wide resource: each acquisition
 carries its own release bracket and explicit `caller | flight` ownership, so it joins the
 entity/keyed/caller-owned bucket. Therefore the live total is 44 and the live partition is
 `1 + 7 + 20 + 16 = 44`. Neither post-audit row changes the whole-owner population or its live
-implementation state of two declared hooks with six still owed.
+implementation state of three declared hooks with five still owed.
 
 ## Derivation rules
 
@@ -81,7 +82,7 @@ category; its subsequently landed hook is recorded in the row itself.
 
 | Backend | Evidence for whole ownership | Required or current teardown |
 | --- | --- | --- |
-| `AccessibilityBackend` | `createWebAccessibilityBackend` retains mirrored DOM nodes, live regions, and sometimes an owned root appended to `document.body`. | **Owed:** `destroy?()` removes backend-created nodes/live regions and an owned default root without removing a caller-supplied container or unrelated children. Destruction must not lazily create the root. |
+| `AccessibilityBackend` | `createWebAccessibilityBackend` retains mirrored DOM nodes, live regions, and sometimes an owned root appended to `document.body`. | **Landed hook:** web `destroy()` clears mirrored nodes and live regions, removes only a backend-created root, empties but preserves a caller-supplied container, and cannot lazily recreate a root afterward. Custom/host slots release only objects no longer referenced by either slot and deduplicate aliased final removal. |
 | `AppBackend` | A backend can hold the process single-instance lock and start dock/attention requests; its event thunks alone do not release those host resources. | **Owed:** each implementation tracks locks and request ids it acquired; `destroy?()` releases its lock, cancels outstanding attention/bounce ids, and detaches any instance-owned host state. Durable user configuration such as login-at-startup is not rolled back merely because an adapter is replaced. |
 | `MediaSessionBackend` | Metadata, playback state, scrubber state, and action handlers remain installed on the OS `mediaSession` singleton after the adapter reference is dropped. | **Landed hook:** web `destroy()` clears its registered action set, metadata, playback state, and position state. `setMediaSessionBackend` covers custom-slot replacement/removal. The two-slot final-loss/alias cases remain evidence still to add: `destroyMediaSessionBackend` currently clears both slots after invoking only the active object, and a host object aliased into the custom slot can be destroyed while the host slot still retains it. |
 | `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Owed:** `destroy?()` clears the application menu (the platform equivalent of `setApplicationMenu([])`/`null`) and the backend-owned selection closure; transient popup teardown stays with the popup operation. |
@@ -89,8 +90,9 @@ category; its subsequently landed hook is recorded in the row itself.
 | `ScreenBackend` | `createWebScreenBackend.ensureCursorTracking` installs one anonymous process-lifetime `pointermove` handler and retains cursor/cache/detail state outside any `ScreenSignals` entity. | **Owed:** retain the exact handler, remove it in idempotent `destroy?()`, detach any backend-level Screen Details listeners, and clear retained detail/cache state. Per-entity `subscribe` thunks continue to detach their own resize/orientation listeners. |
 | `ShortcutBackend` | Successful registrations install OS-global callbacks and the Electron backend retains their accelerator set. They survive loss of the adapter reference. | **Owed:** `destroy?()` calls the implementation's `unregisterAll()` and clears its owned registry. Async hosts must observe/reject teardown failures without leaving an unhandled promise. |
 
-The landed `MediaSessionBackend` hook raises the structural gate to two owners, but the layered-slot
-caveat above is why “gate enforced” and “all lifecycle cases proven” are recorded separately.
+The landed `AccessibilityBackend` and `MediaSessionBackend` hooks raise the structural gate to three
+owners, but the layered-slot caveat above is why “gate enforced” and “all lifecycle cases proven” are
+recorded separately.
 
 ## Entity, key, rebind, or caller-owned lifetimes
 
@@ -158,12 +160,12 @@ lifetime shape if approved.
 
 Post-audit `WgpuHostBackend` joins the entity/keyed bucket as row 20. It moves the live
 denominator from 43 to 44 and that bucket from 19 to 20 without changing the whole-owner
-population. The structural lifecycle census should therefore report two whole-backend hooks
+population. The structural lifecycle census should therefore report three whole-backend hooks
 among 44 interfaces after the source lands.
 
 ## Review checklist for the remaining slices
 
-For each of the six missing whole-backend hooks, tests must cover replacement with a different
+For each of the five missing whole-backend hooks, tests must cover replacement with a different
 object, removal with `null`, identical-object reinstall, repeated explicit destruction, and aliasing
 between custom and host slots. Assertions must inspect the real external effect—removed listener,
 released handle, cleared singleton state—not only a mock call count.
