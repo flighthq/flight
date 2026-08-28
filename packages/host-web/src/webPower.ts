@@ -13,9 +13,20 @@ import type { PowerBackend } from '@flighthq/types/contract';
 export function enableHostWebPower(): void {
   if (hasPowerHostBackend()) return;
   const backend: PowerBackend = {
+    // Frees everything this backend owns, not merely the wake lock.
+    //
+    // ★ THE TWO OMISSIONS THIS CLOSES were latent until `destroyPowerBackend` landed: before that, no
+    // path could reach this function at all, so an incomplete teardown was invisible. Now it runs, and
+    // both of these would be observable — stale readings served to the next backend as if fresh, and a
+    // listener still attached to a sentinel this backend already released.
+    //
+    // Idempotent: the map is emptied and the cache is already at its unknown values, so a second call
+    // detaches nothing and clears nothing.
     destroy() {
       _wakeLockSentinel?.release?.().catch(() => {});
       _wakeLockSentinel = null;
+      detachWakeLockReleaseListeners();
+      resetCachedBatteryReadings();
     },
     getBatteryHealth() {
       return null;
@@ -75,7 +86,8 @@ export function enableHostWebPower(): void {
           .request('screen')
           .then((sentinel) => {
             _wakeLockSentinel = sentinel;
-            sentinel.addEventListener?.('release', () => {
+            // Named and retained rather than inline: this is the reference `removeEventListener` needs.
+            const onRelease = (): void => {
               if (_wakeLockSentinel === sentinel && !document.hidden) {
                 wakeLock
                   .request('screen')
@@ -84,7 +96,9 @@ export function enableHostWebPower(): void {
                   })
                   .catch(() => {});
               }
-            });
+            };
+            _wakeLockReleaseListeners.set(sentinel, onRelease);
+            sentinel.addEventListener?.('release', onRelease);
           })
           .catch(() => {});
         observePowerHostResult('setKeepAwake', true);
@@ -199,11 +213,37 @@ export function resetHostWebPowerForTest(): void {
   resetPowerBackendForTest();
 }
 
+// Detaches every retained release listener from the exact sentinel it was added to, then forgets the
+// pairs. Detaching by identity is the whole point: `removeEventListener` is a no-op unless handed the
+// same function reference that was added.
+function detachWakeLockReleaseListeners(): void {
+  for (const [sentinel, onRelease] of _wakeLockReleaseListeners) {
+    sentinel.removeEventListener?.('release', onRelease);
+  }
+  _wakeLockReleaseListeners.clear();
+}
+
+// Returns the cached battery readings to their unknown values. These are module-scoped and outlive any
+// one backend, so a destroyed backend's last readings would otherwise be served by its successor as if
+// freshly measured — `-1`/`false` is what "not measured" means everywhere else in this file.
+function resetCachedBatteryReadings(): void {
+  _cachedCharging = false;
+  _cachedChargingTime = -1;
+  _cachedDischargingTime = -1;
+  _cachedLevel = -1;
+}
+
 let _cachedCharging = false;
 let _cachedChargingTime = -1;
 let _cachedDischargingTime = -1;
 let _cachedLevel = -1;
 let _wakeLockSentinel: WebWakeLockSentinel | null = null;
+
+// ★ THE EXACT PAIR, retained so it can be detached by identity. `removeEventListener` matches on the
+// SAME function reference that was added, so an anonymous listener can never be removed — it simply
+// outlives the sentinel. Keying by the sentinel it was attached to keeps each pair distinct across the
+// repeated `setKeepAwake(true)` calls that each acquire their own sentinel.
+const _wakeLockReleaseListeners = new Map<WebWakeLockSentinel, () => void>();
 
 interface WebBatteryManager {
   chargingTime: number;
@@ -226,6 +266,8 @@ interface WebWakeLock {
 
 interface WebWakeLockSentinel {
   addEventListener?: (type: 'release', listener: () => void) => void;
+  // Required to detach by identity. Without it the listener added above outlives the sentinel's release.
+  removeEventListener?: (type: 'release', listener: () => void) => void;
   release?: () => Promise<void>;
 }
 

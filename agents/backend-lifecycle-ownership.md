@@ -59,20 +59,45 @@ an oracle.
 
 | row | owns | destroy releases | mismatch |
 | --- | --- | --- | --- |
-| `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | clears both maps; removes a self-created root, empties a caller-supplied one; pins `rootResolved` so it cannot resurrect | **over-release (minor):** for a caller-supplied container, `root.replaceChildren()` also removes children the caller put there, which this backend never created |
+| `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse and destroy behavior are assertion-backed |
 | `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
 | `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on the `navigator.mediaSession` singleton | clears exactly the actions in `registered`; sets `metadata = null`, `playbackState = 'none'`, `setPositionState(undefined)` | **over-release:** actions are origin-pinned via `registered`, but metadata/playbackState/position are reset unconditionally — including when this backend never set them, discarding another party's state |
 | `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | Electron clears the listener and calls `Menu.setApplicationMenu(null)`; Tauri clears the listener only; web is a no-op | **under-release:** Tauri native-menu cleanup remains owed pending an observable async teardown contract, and the host-installed backend has no reachable teardown — there is no `destroyMenuBackend`, and `setMenuBackend` destroys only the custom slot |
-| `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel | **under-release:** cached battery state is never cleared, the sentinel's `release` listener is never removed, and — the substantive one — **the host-installed backend's `destroy` is unreachable.** There is no `destroyPowerBackend`; `installPowerHostBackend` is install-once; `setPowerBackend` destroys only the custom slot. So a wake lock held by the host backend is never released by any path |
+| `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel; detaches each retained `(sentinel, handler)` pair by identity; resets the four cached readings | **closed.** All three findings were remediated in order — teardown made reachable (`destroyPowerBackend`), then the release completed. This row is behaviorally assertion-backed; see *Behavioral completeness* below |
 
 Battery, resume and freeze listeners are *not* mismatches: each is returned as an unsubscribe thunk and
 is caller-owned, which is the correct bracket.
 
-#### A systemic defect the row-by-row reading does not surface
+#### Behavioral completeness, recorded here because no gate can hold it
 
-`enableHostWeb*()` latches a module-level `_enabled` flag and **no `destroy()` resets it**, while
-`destroyAccessibilityBackend`/`destroyMediaSessionBackend` do clear the host slot. The two together
-make teardown irreversible. Measured, not read — probing the live tree with `explain*Operation().layer`:
+The structural lifecycle gate stays at **5 of 46** and must not move for this. It counts a declared
+teardown named by its setter; it cannot observe whether that teardown releases what the backend owns,
+which is exactly what the scope caveat it prints says. Advancing that number to reward behavioral work
+would make it assert something it does not check — the failure this record exists to prevent.
+
+So behavior is tracked separately, by assertion rather than by count. `PowerBackend` is the first row to
+reach completeness in this remediation, and each claim below is pinned by a test that fails when its
+guard is removed:
+
+| claim | mutation that breaks it |
+| --- | --- |
+| a reading captured by a destroyed backend is never served afterwards | drop the cache reset → the successor serves the dead backend's last measurement |
+| the release listener is detached from the exact sentinel it was added to | detach with a different function reference → fails on `Object.is` identity while a "some removal happened" check would still pass |
+| teardown is idempotent | drop the registry clear → a second destroy detaches again |
+
+The last two are distinct on purpose. `removeEventListener` matches on reference, so a test that only
+counted removals would pass against an implementation that removes the wrong handler and leaks the real
+one. Counting is not identity.
+
+`Accessibility` cleanup is likewise assertion-backed by its borrowed-container identity tests. The
+remaining rows are unchanged: `Menu` and `MediaSession` still carry the mismatches named above, while
+`LogTransport` has no implementation to audit.
+
+#### A systemic defect the row-by-row reading did not surface — FIXED
+
+`enableHostWeb*()` latched a module-level `_enabled` flag that **no `destroy()` reset**, while
+`destroyAccessibilityBackend`/`destroyMediaSessionBackend` did clear the host slot. Together they made
+teardown irreversible. Measured, not read — probing the tree with `explain*Operation().layer`:
 
 ```text
 enableHostWebAccessibility()  → host
@@ -80,9 +105,15 @@ destroyAccessibilityBackend() → sentinel
 enableHostWebAccessibility()  → sentinel     ← expected host
 ```
 
-`MediaSession` probes identically. After teardown the capability is stuck on the sentinel for the life
-of the process, and only the test-only `resetHostWeb*ForTest()` can recover it. `Menu` and `Power` are
-not reachable this way today only because their host teardown cannot be invoked at all.
+`MediaSession` probed identically: after teardown the capability was stuck on the sentinel for the life
+of the process, recoverable only through the test-only `resetHostWeb*ForTest()`.
+
+**Closed for Power, MediaSession and Accessibility.** Each capability now exports a host-slot query
+(`hasPowerHostBackend`, `hasMediaSessionHostBackend`, `hasAccessibilityHostBackend`) and the host enables
+ask instead of remembering; their `_enabled` variables are gone. Restoring the latch fails the re-enable
+test in all three. `Menu` still carries the original defect — it was never reachable there because its
+host teardown still cannot be invoked, so fixing that without also deriving its latch would newly expose
+this.
 
 ### Remediation design for the Power host slot and the irreversible enable
 
