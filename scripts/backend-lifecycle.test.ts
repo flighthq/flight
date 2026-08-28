@@ -101,13 +101,11 @@ describe('backend replacement lifetime census', () => {
     expect(formattedOutput).toContain(`(${deltaText})`);
   });
 
-  // ★ A baseline that moves with the thing it measures measures nothing. This test fails if someone bumps
-  // ENFORCED_FLOOR.total to absorb denominator growth: the "+N new seams" text disappears from the output
-  // and the assertion breaks. New seam additions must remain visible history, not normalized away.
-  it('fails if denominator growth is absorbed by advancing the floor total to match current', () => {
-    const growth = report.total - ENFORCED_FLOOR.total;
-    expect(growth).toBeGreaterThan(0);
-    expect(formattedOutput).toContain(`+${growth} new seam`);
+  // ★ A baseline that moves with the thing it measures measures nothing. The floor total is pinned at 43
+  // (the population when the enforced set was established). It must not change for routine growth or
+  // shrinkage — growth shows as "+N new seams", shrinkage as "-N removed", and both stay visible history.
+  it('pins the historical floor total at 43', () => {
+    expect(ENFORCED_FLOOR.total).toBe(43);
   });
 });
 
@@ -247,6 +245,68 @@ describe('formatBackendLifecycleDelta', () => {
   });
 });
 
+describe('compareFloorToReport', () => {
+  it('reports denominator shrinkage as removed seams, not a regression', () => {
+    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 5 };
+    const report: BackendLifecycleReport = {
+      enforced: 1,
+      enforcedNames: ['ABackend'],
+      entries: [
+        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+      ],
+      noTeardownHook: 2,
+      total: 3,
+      violations: [],
+    };
+    const delta = compareFloorToReport(floor, report);
+    expect(delta.seamsRemoved).toHaveLength(2);
+    expect(delta.enforcedLost).toEqual([]);
+    expect(delta.enforcedGained).toEqual([]);
+    expect(delta.seamsAdded).toEqual([]);
+  });
+
+  it('reports numerator loss at unchanged denominator as a regression', () => {
+    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend', 'BBackend'], total: 3 };
+    const report: BackendLifecycleReport = {
+      enforced: 1,
+      enforcedNames: ['ABackend'],
+      entries: [
+        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+      ],
+      noTeardownHook: 2,
+      total: 3,
+      violations: [],
+    };
+    const delta = compareFloorToReport(floor, report);
+    expect(delta.enforcedLost).toEqual(['BBackend']);
+    expect(delta.seamsAdded).toEqual([]);
+    expect(delta.seamsRemoved).toEqual([]);
+  });
+
+  it('keeps removed seams distinct from lost enforced owners', () => {
+    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend', 'BBackend'], total: 5 };
+    const report: BackendLifecycleReport = {
+      enforced: 1,
+      enforcedNames: ['ABackend'],
+      entries: [
+        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'DBackend', setter: null, teardown: null, tearsDown: false },
+      ],
+      noTeardownHook: 2,
+      total: 3,
+      violations: [],
+    };
+    const delta = compareFloorToReport(floor, report);
+    expect(delta.seamsRemoved).toHaveLength(2);
+    expect(delta.enforcedLost).toEqual(['BBackend']);
+  });
+});
+
 describe('formatBackendLifecycleReport with floor', () => {
   it('emits the delta inline when a floor is provided', () => {
     const report: BackendLifecycleReport = {
@@ -283,6 +343,41 @@ describe('formatBackendLifecycleReport with floor', () => {
     const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 2 };
     const output = formatBackendLifecycleReport(report, floor);
     expect(output).toContain('(1 regression)');
+  });
+
+  it('emits removed seams when current population is below the baseline', () => {
+    const report: BackendLifecycleReport = {
+      enforced: 1,
+      enforcedNames: ['ABackend'],
+      entries: [
+        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+      ],
+      noTeardownHook: 2,
+      total: 3,
+      violations: [],
+    };
+    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 5 };
+    const output = formatBackendLifecycleReport(report, floor);
+    expect(output).toContain('(-2 removed, 0 regressions)');
+  });
+
+  it('emits both removed seams and regressions when population shrinks and an enforced backend is lost', () => {
+    const report: BackendLifecycleReport = {
+      enforced: 0,
+      enforcedNames: [],
+      entries: [
+        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+      ],
+      noTeardownHook: 2,
+      total: 2,
+      violations: [],
+    };
+    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 4 };
+    const output = formatBackendLifecycleReport(report, floor);
+    expect(output).toContain('(-2 removed, 1 regression)');
   });
 
   it('omits the delta when no floor is provided', () => {
