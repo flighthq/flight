@@ -45,6 +45,7 @@ touching X" — are also listed in `AGENTS.md`; the rest are background you reac
 
 - [3D materials & lighting](3d-materials-architecture.md) — the canonical 3D material and light model.
 - [3D pipeline](3d-pipeline-architecture.md) — the 3D draw pipeline end to end.
+- [AudioDeviceBackend design](audio-device-backend-design.md) — **proposal.** an installable native audio-device seam using opaque handles and process-global installation.
 - [blend / composite](blend-composite-architecture.md) — blend modes and compositing across backends.
 - [Canvas CSS-filter / luminance sweep](canvas-css-filter-luminance-sweep.md) — the exhaustive nine-effect
   filter population, its one luminance intersection, and the mixed-channel reproduction that distinguishes it.
