@@ -438,12 +438,17 @@ export function minimizeWindow(win: ApplicationWindow): void {
 
 // The single terminal-close choke point for both app-driven and host-driven closes. Native callbacks may
 // fire synchronously inside backend.close; whichever path arrives first emits and every later path no-ops.
-// This state belongs to the ApplicationWindow entity, never to an Application or per-app backend registry.
+// After the terminal signal is delivered, application-side observers are drained even when a listener
+// throws. This state belongs to the ApplicationWindow entity, never to an Application or per-app registry.
 export function notifyWindowClosed(win: ApplicationWindow): void {
   if (_terminalWindows.has(win)) return;
   _terminalWindows.add(win);
   _windowBackends.delete(win);
-  emitSignal(win.onClose);
+  try {
+    emitSignal(win.onClose);
+  } finally {
+    disposeApplicationWindow(win);
+  }
 }
 
 export function observeWindowHostResult(operation: string, succeeded: boolean): void {
