@@ -7,11 +7,13 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   collectMethodSyntaxTeardowns,
   collectWholeBackendTeardowns,
+  compareBackendLifecycleReports,
   createBackendLifecycleReport,
+  formatBackendLifecycleDelta,
   formatBackendLifecycleReport,
   hasBackendLifecycleFailure,
 } from './backend-lifecycle-core';
-import type { BackendLifecycleReport } from './backend-lifecycle-core';
+import type { BackendLifecycleDelta, BackendLifecycleReport } from './backend-lifecycle-core';
 import { collectBackendInterfaceNames } from './backend-operation-seam-core';
 
 // P4's replacement-lifetime census. Population and exclusions are both derived: a backend can only leak a
@@ -67,12 +69,16 @@ describe('backend replacement lifetime census', () => {
     expect(report.enforced).toBe(methodOnly.size);
   });
 
-  // ★ THE FLOOR, and it must be raised by every slice that adds a teardown hook. Without it this gate has
-  // the same slip the operation ratchet had: DELETING a hook removes its backend from the enforced set
-  // entirely, so `violations` stays empty and the gate goes green on a regression. A leak check that
-  // passes because the thing it checked disappeared is worse than no check.
+  // ★ THE FLOOR, named rather than counted. A number-only floor lets a deletion go unnoticed as long as
+  // an addition lands in the same slice. A named set makes every disappearance individually visible.
+  // Raise this set by adding the name whenever a slice lands a teardown hook.
+  const ENFORCED_FLOOR = ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'];
+
   it('never enforces fewer backends than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(3);
+    expect(report.enforced).toBeGreaterThanOrEqual(ENFORCED_FLOOR.length);
+    for (const name of ENFORCED_FLOOR) {
+      expect(report.enforcedNames).toContain(name);
+    }
   });
 
   // The ratchet: replacement must free what the outgoing backend held, for every backend that owns
@@ -115,6 +121,107 @@ describe('collectWholeBackendTeardowns member syntax', () => {
     expect(found.has('PerObjectMethodBackend')).toBe(false);
     expect(found.has('PerObjectPropertyBackend')).toBe(false);
     expect(found.has('NoTeardownBackend')).toBe(false);
+  });
+});
+
+describe('compareBackendLifecycleReports', () => {
+  function syntheticReport(names: readonly string[], teardownNames: readonly string[]): BackendLifecycleReport {
+    const entries = names.map((interfaceName) => ({
+      interfaceName,
+      setter: null,
+      teardown: teardownNames.includes(interfaceName) ? 'destroy' : null,
+      tearsDown: false,
+    }));
+    const enforcedNames = teardownNames.slice().sort();
+    return {
+      enforced: enforcedNames.length,
+      enforcedNames,
+      entries,
+      noTeardownHook: names.length - enforcedNames.length,
+      total: names.length,
+      violations: [],
+    };
+  }
+
+  it('reports denominator growth as new seams, not as a regression', () => {
+    const prior = syntheticReport(['A', 'B', 'C'], ['A']);
+    const current = syntheticReport(['A', 'B', 'C', 'D', 'E'], ['A']);
+    const delta = compareBackendLifecycleReports(prior, current);
+    expect(delta.seamsAdded).toEqual(['D', 'E']);
+    expect(delta.enforcedLost).toEqual([]);
+    expect(delta.enforcedGained).toEqual([]);
+    expect(delta.seamsRemoved).toEqual([]);
+  });
+
+  it('reports a lost enforced backend as a regression', () => {
+    const prior = syntheticReport(['A', 'B', 'C'], ['A', 'B']);
+    const current = syntheticReport(['A', 'B', 'C'], ['A']);
+    const delta = compareBackendLifecycleReports(prior, current);
+    expect(delta.enforcedLost).toEqual(['B']);
+    expect(delta.seamsAdded).toEqual([]);
+    expect(delta.seamsRemoved).toEqual([]);
+  });
+
+  it('distinguishes a removed interface from a regression', () => {
+    const prior = syntheticReport(['A', 'B', 'C'], ['A']);
+    const current = syntheticReport(['A', 'C'], ['A']);
+    const delta = compareBackendLifecycleReports(prior, current);
+    expect(delta.seamsRemoved).toEqual(['B']);
+    expect(delta.enforcedLost).toEqual([]);
+  });
+
+  it('reports newly enforced backends as progressions', () => {
+    const prior = syntheticReport(['A', 'B'], ['A']);
+    const current = syntheticReport(['A', 'B'], ['A', 'B']);
+    const delta = compareBackendLifecycleReports(prior, current);
+    expect(delta.enforcedGained).toEqual(['B']);
+    expect(delta.enforcedLost).toEqual([]);
+  });
+
+  it('handles simultaneous growth and regression', () => {
+    const prior = syntheticReport(['A', 'B', 'C'], ['A', 'B']);
+    const current = syntheticReport(['A', 'B', 'C', 'D'], ['A']);
+    const delta = compareBackendLifecycleReports(prior, current);
+    expect(delta.seamsAdded).toEqual(['D']);
+    expect(delta.enforcedLost).toEqual(['B']);
+    expect(delta.enforcedGained).toEqual([]);
+  });
+});
+
+describe('formatBackendLifecycleDelta', () => {
+  it('reports zero regressions when nothing changed', () => {
+    const delta: BackendLifecycleDelta = { enforcedGained: [], enforcedLost: [], seamsAdded: [], seamsRemoved: [] };
+    expect(formatBackendLifecycleDelta(delta)).toBe('0 regressions');
+  });
+
+  it('separates denominator growth from regression count', () => {
+    const delta: BackendLifecycleDelta = {
+      enforcedGained: [],
+      enforcedLost: [],
+      seamsAdded: ['D', 'E'],
+      seamsRemoved: [],
+    };
+    expect(formatBackendLifecycleDelta(delta)).toBe('+2 new seams, 0 regressions');
+  });
+
+  it('reports regressions distinctly from growth', () => {
+    const delta: BackendLifecycleDelta = {
+      enforcedGained: [],
+      enforcedLost: ['B'],
+      seamsAdded: ['D', 'E'],
+      seamsRemoved: [],
+    };
+    expect(formatBackendLifecycleDelta(delta)).toBe('+2 new seams, 1 regression');
+  });
+
+  it('includes progressions and removals', () => {
+    const delta: BackendLifecycleDelta = {
+      enforcedGained: ['C'],
+      enforcedLost: [],
+      seamsAdded: [],
+      seamsRemoved: ['X'],
+    };
+    expect(formatBackendLifecycleDelta(delta)).toBe('-1 removed, +1 newly enforced, 0 regressions');
   });
 });
 
