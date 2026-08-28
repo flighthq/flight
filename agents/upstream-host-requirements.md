@@ -459,6 +459,8 @@ sources but not stop them or set gain is arguably not a device. This is a design
 implementing any of them will implement all of them — these are not the 28 window stubs where half
 are platform-specific GUI chrome. Revisit if a real host surfaces a case where a subset is honest.
 
+**Confirmed:** flight-hx OpenAL implements all 13 and reports immediate usability. No optionalization needed.
+
 ### F5. Operation ratchet floor stale
 
 The P1 operation ratchet's derived count is 13 (including AudioDeviceBackend), but the committed

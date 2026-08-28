@@ -4,6 +4,8 @@ _2026-08-28. Design record for the installable native audio-device seam that sat
 
 **Status: P2 satisfied — native hosts have playback without mixing.** 13 core operations implemented (device lifecycle, buffer management, source playback). Bus routing, spatial positioning, and panning are user-decided deferrals to Option B, not open gaps: the mixer continues to operate directly on Web Audio nodes, and a native host that needs mixing would extend through a dedicated bus backend or Option B operations.
 
+**Consumer confirmation:** flight-hx OpenAL implements all 13 operations and reports immediate usability. Native playback works without mixing; Option B (bus/spatial/pan abstraction) remains a decided deferral. F4 keeps all 13 required — no optionalization.
+
 ### Principle: abstraction adds host participation, never levels capable hosts down
 
 When a capability moves behind a backend seam, the web implementation must preserve every feature the web platform provides. Opaque handles replace web types in the portable API, but web-only features (gain automation, graph routing, native node access) remain available through web-specific backend extensions. A native backend declares those web-only capabilities absent through the explain/has machinery — it never pretends they exist by returning no-ops or null.
