@@ -44,7 +44,6 @@ import {
   isInputKeyDown,
   isInputPointerButtonDown,
   installInputIngressHostBackend,
-  pollGamepadInput,
   releaseInputPointerCapture,
   requestInputPointerLock,
   resetInputIngressBackendForTest,
@@ -56,7 +55,10 @@ import {
   wasInputKeyReleased,
 } from './inputManager';
 
-afterEach(resetInputIngressBackendForTest);
+afterEach(() => {
+  resetInputIngressBackendForTest();
+  vi.unstubAllGlobals();
+});
 
 type InputIngressAttachmentKind = 'gamepad' | 'keyboard' | 'pointer' | 'relativePointer' | 'text' | 'wheel';
 
@@ -169,6 +171,42 @@ describe('attachGamepadInput', () => {
     manager.enabled = false;
     window.dispatchEvent(createGamepadEvent('gamepadconnected', 0, 'Pad'));
     expect(fired).toBe(0);
+  });
+
+  it('accepts native axis and button pushes without browser polling globals', () => {
+    let sink: InputIngressSink | null = null;
+    setInputIngressBackend(
+      createTestInputIngressBackend((kind, _source, attachedSink) => {
+        if (kind === 'gamepad') sink = attachedSink;
+        return () => {};
+      }),
+    );
+    vi.stubGlobal('navigator', undefined);
+    vi.stubGlobal('requestAnimationFrame', undefined);
+    vi.stubGlobal('cancelAnimationFrame', undefined);
+    vi.stubGlobal('performance', undefined);
+    const manager = createInputManager();
+    const state = createInputState();
+    connectInputStateToInputManager(state, manager);
+    const events: string[] = [];
+    connectSignal(manager.onGamepadConnect, () => events.push('connect'));
+    connectSignal(manager.onGamepadAxisMove, () => events.push('axis'));
+    connectSignal(manager.onGamepadButtonDown, () => events.push('down'));
+    connectSignal(manager.onGamepadButtonUp, () => events.push('up'));
+    connectSignal(manager.onGamepadDisconnect, () => events.push('disconnect'));
+
+    attachGamepadInput(manager, {});
+    sink!.gamepadConnect({ gamepad: 2, id: 'Native Pad', mapping: 'raw' });
+    sink!.gamepadAxisMove({ axis: 1, gamepad: 2, timeStamp: 10, value: 0.75 });
+    sink!.gamepadButtonDown({ button: 3, gamepad: 2, timeStamp: 11, value: 1 });
+    expect(getInputGamepadAxis(state, 2, 1)).toBe(0.75);
+    expect(isInputGamepadButtonDown(state, 2, 3)).toBe(true);
+    sink!.gamepadButtonUp({ button: 3, gamepad: 2, timeStamp: 12, value: 0 });
+    sink!.gamepadDisconnect({ gamepad: 2, id: 'Native Pad', mapping: 'raw' });
+
+    expect(events).toEqual(['connect', 'axis', 'down', 'up', 'disconnect']);
+    expect(getInputGamepadAxis(state, 2, 1)).toBe(0);
+    expect(isInputGamepadButtonDown(state, 2, 3)).toBe(false);
   });
 });
 
@@ -443,24 +481,9 @@ describe('connectInputStateToInputManager', () => {
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    const mockPad = {
-      axes: [],
-      buttons: [{ pressed: true, value: 1, touched: true }],
-      index: 0,
-    } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    pollGamepadInput(manager);
+    emitSignal(manager.onGamepadButtonDown, { button: 0, gamepad: 0, timeStamp: 1, value: 1 });
     expect(isInputGamepadButtonDown(state, 0, 0)).toBe(true);
-
-    const mockPadReleased = {
-      axes: [],
-      buttons: [{ pressed: false, value: 0, touched: false }],
-      index: 0,
-    } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPadReleased, null, null, null]);
-
-    pollGamepadInput(manager);
+    emitSignal(manager.onGamepadButtonUp, { button: 0, gamepad: 0, timeStamp: 2, value: 0 });
     expect(isInputGamepadButtonDown(state, 0, 0)).toBe(false);
   });
 
@@ -469,14 +492,7 @@ describe('connectInputStateToInputManager', () => {
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    const mockPad = {
-      axes: [0.75],
-      buttons: [],
-      index: 0,
-    } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    pollGamepadInput(manager);
+    emitSignal(manager.onGamepadAxisMove, { axis: 0, gamepad: 0, timeStamp: 1, value: 0.75 });
     expect(getInputGamepadAxis(state, 0, 0)).toBe(0.75);
   });
 
@@ -604,6 +620,59 @@ describe('createInputState', () => {
 });
 
 describe('createWebInputIngressBackend', () => {
+  it('owns gamepad polling and emits only changed Web state', () => {
+    const frames = installManualAnimationFrames();
+    const getGamepads = vi.fn<() => Gamepad[]>();
+    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
+    const manager = createInputManager();
+    const axes: number[] = [];
+    const buttons: number[] = [];
+    connectSignal(manager.onGamepadAxisMove, (data) => axes.push(data.value));
+    connectSignal(manager.onGamepadButtonUp, (data) => buttons.push(data.value));
+    attachGamepadInput(manager, window);
+
+    const initial = createGamepad(0, 'Pad', [0.25], [{ pressed: true, touched: true, value: 1 }]);
+    getGamepads.mockReturnValue([initial]);
+    window.dispatchEvent(createGamepadEvent('gamepadconnected', initial));
+    frames.runAllCurrent();
+    expect(axes).toEqual([]);
+    expect(buttons).toEqual([]);
+
+    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [{ pressed: false, touched: false, value: 0 }])]);
+    frames.runAllCurrent();
+    expect(axes).toEqual([0.75]);
+    expect(buttons).toEqual([0]);
+    frames.runAllCurrent();
+    expect(axes).toEqual([0.75]);
+    expect(buttons).toEqual([0]);
+    detachGamepadInput(manager, window);
+  });
+
+  it('keeps Web polling state and releases independent per source', () => {
+    const frames = installManualAnimationFrames();
+    const getGamepads = vi.fn<() => Gamepad[]>().mockReturnValue([createGamepad(0, 'Pad', [0.5], [])]);
+    Object.defineProperty(navigator, 'getGamepads', { configurable: true, value: getGamepads });
+    const firstSource = new EventTarget();
+    const secondSource = new EventTarget();
+    const firstManager = createInputManager();
+    const secondManager = createInputManager();
+    let firstMoves = 0;
+    let secondMoves = 0;
+    connectSignal(firstManager.onGamepadAxisMove, () => firstMoves++);
+    connectSignal(secondManager.onGamepadAxisMove, () => secondMoves++);
+    attachGamepadInput(firstManager, firstSource);
+    attachGamepadInput(secondManager, secondSource);
+
+    frames.runAllCurrent();
+    expect([firstMoves, secondMoves]).toEqual([1, 1]);
+    detachGamepadInput(firstManager, firstSource);
+    getGamepads.mockReturnValue([createGamepad(0, 'Pad', [0.75], [])]);
+    frames.runAllCurrent();
+    expect([firstMoves, secondMoves]).toEqual([1, 2]);
+    detachGamepadInput(secondManager, secondSource);
+    expect(frames.pending.size).toBe(0);
+  });
+
   it('routes two window identities only to their corresponding managers', () => {
     const firstFrame = document.createElement('iframe');
     const secondFrame = document.createElement('iframe');
@@ -634,10 +703,72 @@ describe('createWebInputIngressBackend', () => {
   });
 
   it('returns inert releases for native source identities the Web adapter cannot interpret', () => {
+    const frames = installManualAnimationFrames();
     const backend = createWebInputIngressBackend();
     const source = {};
     const sink = {} as InputIngressSink;
     expect(() => backend.attachKeyboard(source, sink)()).not.toThrow();
+    expect(() => backend.attachGamepad(source, sink)()).not.toThrow();
+    expect(frames.request).not.toHaveBeenCalled();
+  });
+});
+
+describe('createWebInputIngressBackend gamepad polling', () => {
+  beforeEach(() => {
+    Object.defineProperty(navigator, 'getGamepads', {
+      configurable: true,
+      value: () => [],
+    });
+  });
+
+  it('emits onGamepadButtonDown when a button transitions to pressed', () => {
+    const frames = installManualAnimationFrames();
+    const manager = createInputManager();
+    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
+    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
+
+    let received: { button: number; gamepad: number } | null = null;
+    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
+      received = { button: data.button, gamepad: data.gamepad };
+    });
+
+    attachGamepadInput(manager, window);
+    frames.runAllCurrent();
+    expect(received).toEqual({ button: 0, gamepad: 0 });
+    detachGamepadInput(manager, window);
+  });
+
+  it('populates timeStamp on gamepad button data', () => {
+    const frames = installManualAnimationFrames();
+    const manager = createInputManager();
+    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
+    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
+
+    let receivedTimeStamp = -1;
+    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
+      receivedTimeStamp = data.timeStamp;
+    });
+
+    attachGamepadInput(manager, window);
+    frames.runAllCurrent();
+    expect(receivedTimeStamp).toBeGreaterThanOrEqual(0);
+    detachGamepadInput(manager, window);
+  });
+
+  it('does not emit when state is unchanged', () => {
+    const frames = installManualAnimationFrames();
+    const manager = createInputManager();
+    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
+    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
+
+    attachGamepadInput(manager, window);
+    frames.runAllCurrent();
+
+    let fired = 0;
+    connectSignal(manager.onGamepadButtonDown, () => fired++);
+    frames.runAllCurrent();
+    expect(fired).toBe(0);
+    detachGamepadInput(manager, window);
   });
 });
 
@@ -657,6 +788,21 @@ describe('detachGamepadInput', () => {
   it('is a no-op when nothing is attached', () => {
     const manager = createInputManager();
     expect(() => detachGamepadInput(manager, window)).not.toThrow();
+  });
+
+  it('cannot resurrect Web polling when detached from a sink callback', () => {
+    const frames = installManualAnimationFrames();
+    Object.defineProperty(navigator, 'getGamepads', {
+      configurable: true,
+      value: () => [createGamepad(0, 'Pad', [0.5], [])],
+    });
+    const manager = createInputManager();
+    connectSignal(manager.onGamepadAxisMove, () => detachGamepadInput(manager, window));
+    attachGamepadInput(manager, window);
+
+    frames.runAllCurrent();
+    expect(frames.pending.size).toBe(0);
+    expect(frames.cancel).toHaveBeenCalledOnce();
   });
 });
 
@@ -1003,56 +1149,6 @@ describe('isInputPointerButtonDown', () => {
   });
 });
 
-describe('pollGamepadInput', () => {
-  beforeEach(() => {
-    Object.defineProperty(navigator, 'getGamepads', {
-      configurable: true,
-      value: () => [],
-    });
-  });
-
-  it('emits onGamepadButtonDown when a button transitions to pressed', () => {
-    const manager = createInputManager();
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    let received: { button: number; gamepad: number } | null = null;
-    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
-      received = { button: data.button, gamepad: data.gamepad };
-    });
-
-    pollGamepadInput(manager);
-    expect(received).toEqual({ button: 0, gamepad: 0 });
-  });
-
-  it('populates timeStamp on gamepad button data', () => {
-    const manager = createInputManager();
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    let receivedTimeStamp = -1;
-    connectSignal(manager.onGamepadButtonDown, (data: Readonly<InputGamepadButtonData>) => {
-      receivedTimeStamp = data.timeStamp;
-    });
-
-    pollGamepadInput(manager);
-    expect(receivedTimeStamp).toBeGreaterThanOrEqual(0);
-  });
-
-  it('does not emit when state is unchanged', () => {
-    const manager = createInputManager();
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-
-    pollGamepadInput(manager);
-
-    let fired = 0;
-    connectSignal(manager.onGamepadButtonDown, () => fired++);
-    pollGamepadInput(manager);
-    expect(fired).toBe(0);
-  });
-});
-
 describe('releaseInputPointerCapture', () => {
   it('calls releasePointerCapture on the element', () => {
     const element = document.createElement('div');
@@ -1238,9 +1334,7 @@ describe('wasInputGamepadButtonPressed', () => {
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-    pollGamepadInput(manager);
+    emitSignal(manager.onGamepadButtonDown, { button: 0, gamepad: 0, timeStamp: 1, value: 1 });
 
     expect(wasInputGamepadButtonPressed(state, 0, 0)).toBe(true);
   });
@@ -1250,17 +1344,15 @@ describe('wasInputGamepadButtonPressed', () => {
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    const mockPad = { axes: [], buttons: [{ pressed: true, touched: true, value: 1 }], index: 0 } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPad, null, null, null]);
-    pollGamepadInput(manager);
+    emitSignal(manager.onGamepadButtonDown, { button: 0, gamepad: 0, timeStamp: 1, value: 1 });
     endInputStateFrame(state);
 
     expect(wasInputGamepadButtonPressed(state, 0, 0)).toBe(false);
   });
 
-  // Driven by emitting the signal rather than by pollGamepadInput, because the built-in poller already
-  // edge-detects and so cannot produce a repeat. A native backend reporting held buttons every poll
-  // can, and these signals are public — which is why the guard belongs on the state machine.
+  // Driven by emitting the signal because the Web adapter already edge-detects and cannot produce a
+  // repeat. A native backend reporting held buttons every poll can, and these signals are public —
+  // which is why the guard belongs on the state machine.
   it('returns false when a held button is reported down again', () => {
     const manager = createInputManager();
     const state = createInputState();
@@ -1304,24 +1396,12 @@ describe('wasInputGamepadButtonReleased', () => {
     const state = createInputState();
     connectInputStateToInputManager(state, manager);
 
-    // Press the button first
-    const mockPadDown = {
-      axes: [],
-      buttons: [{ pressed: true, touched: true, value: 1 }],
-      index: 0,
-    } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPadDown, null, null, null]);
-    pollGamepadInput(manager);
+    // Press the button first.
+    emitSignal(manager.onGamepadButtonDown, { button: 0, gamepad: 0, timeStamp: 1, value: 1 });
     endInputStateFrame(state);
 
-    // Release it
-    const mockPadUp = {
-      axes: [],
-      buttons: [{ pressed: false, touched: false, value: 0 }],
-      index: 0,
-    } as unknown as Gamepad;
-    vi.spyOn(navigator, 'getGamepads').mockReturnValue([mockPadUp, null, null, null]);
-    pollGamepadInput(manager);
+    // Release it.
+    emitSignal(manager.onGamepadButtonUp, { button: 0, gamepad: 0, timeStamp: 2, value: 0 });
 
     expect(wasInputGamepadButtonReleased(state, 0, 0)).toBe(true);
   });
@@ -1495,17 +1575,58 @@ function createWheelEvent(options: WheelEventInit = {}): WheelEvent {
   });
 }
 
-function createGamepadEvent(type: string, index: number, id: string): Event {
-  const event = new Event(type, { bubbles: false }) as GamepadEvent;
-  const gamepad = {
-    axes: [],
-    buttons: [],
+function createGamepad(
+  index: number,
+  id: string,
+  axes: readonly number[] = [],
+  buttons: readonly GamepadButton[] = [],
+): Gamepad {
+  return {
+    axes,
+    buttons,
     connected: true,
     id,
     index,
     mapping: 'standard',
     timestamp: 0,
   } as unknown as Gamepad;
+}
+
+function createGamepadEvent(type: string, gamepadOrIndex: Gamepad | number, id?: string): Event {
+  const event = new Event(type, { bubbles: false }) as GamepadEvent;
+  const gamepad = typeof gamepadOrIndex === 'number' ? createGamepad(gamepadOrIndex, id ?? '') : gamepadOrIndex;
   Object.defineProperty(event, 'gamepad', { value: gamepad });
   return event;
+}
+
+function installManualAnimationFrames(): Readonly<{
+  cancel: ReturnType<typeof vi.fn>;
+  pending: Map<number, FrameRequestCallback>;
+  request: ReturnType<typeof vi.fn>;
+  runAllCurrent(): void;
+}> {
+  let nextHandle = 1;
+  const pending = new Map<number, FrameRequestCallback>();
+  const request = vi.fn((callback: FrameRequestCallback): number => {
+    const handle = nextHandle++;
+    pending.set(handle, callback);
+    return handle;
+  });
+  const cancel = vi.fn((handle: number): void => {
+    pending.delete(handle);
+  });
+  vi.stubGlobal('requestAnimationFrame', request);
+  vi.stubGlobal('cancelAnimationFrame', cancel);
+  return {
+    cancel,
+    pending,
+    request,
+    runAllCurrent(): void {
+      const current = [...pending.entries()];
+      for (const [handle, callback] of current) {
+        if (!pending.delete(handle)) continue;
+        callback(performance.now());
+      }
+    },
+  };
 }

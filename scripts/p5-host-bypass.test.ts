@@ -10,11 +10,17 @@ import {
   formatP5HostBypassReport,
   P5_HOST_BYPASS_BUDGET,
   P5_HOST_BYPASS_BUDGET_HISTORY,
+  P5_HOST_BYPASS_CLASSIFICATION_HISTORY,
+  P5_HOST_BYPASS_DETECTOR_PROVENANCE,
   P5_HOST_BYPASS_SLICE_GUIDANCE,
+  P5_HOST_BYPASS_V3_PROGRESS_HISTORY,
   p5HostBypassBudgetFailures,
   p5HostBypassBudgetHistoryFailures,
+  p5HostBypassClassificationHistoryFailures,
+  p5HostBypassDetectorProvenanceFailures,
   p5HostBypassSliceGuidanceFailures,
   p5InputIngressPairingFailures,
+  p5HostBypassV3ProgressHistoryFailures,
   scanP5HostBypasses,
   scanP5HostBypassSource,
 } from './p5-host-bypass';
@@ -28,8 +34,17 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=30 direct-dom=14 input-ingress=0 scratch-surface=16 webgpu-acquisition=0',
+      'P5 outstanding=28 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=16 webgpu-acquisition=0',
     );
+    expect(formatted).toContain(
+      'v1 -> v2 total 30 -> 30 (0 census delta) recategorised=2 from-to=direct-dom->input-ingress=2 new=0 detected=none',
+    );
+    expect(formatted).toContain(
+      'v2 -> v3 total 30 -> 33 (+3 classified) recategorised=0 from-to=none new=3 detected=frame-scheduling=3',
+    );
+    expect(formatted).toContain('28 (-5 fixed)');
+    expect(formatted).toContain('DETECTS hand-written floor (not an exhaustive ceiling):');
+    expect(formatted).toContain('ZERO category zero means none found by current detectors, not that no bypasses exist');
     expect(formatted).toContain('33 (-3 fixed)');
     expect(formatted).toContain('31 (-2 fixed)');
     expect(formatted).toContain('30 (-1 fixed)');
@@ -43,6 +58,24 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassSliceGuidanceFailures('a lowered census is sufficient')).toContain(
       'P5 seam-slice guidance no longer requires same-slice production consumer migration',
     );
+  });
+
+  it('pins detector provenance against removal and false exhaustive wording', () => {
+    expect(P5_HOST_BYPASS_DETECTOR_PROVENANCE).toEqual({
+      detects:
+        'hand-written floor (not an exhaustive ceiling): direct document/window/navigator access, input listener and gamepad sampling, frame scheduling, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
+      zeroMeaning: 'category zero means none found by current detectors, not that no bypasses exist',
+    });
+    expect(p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE)).toEqual([]);
+    expect(p5HostBypassDetectorProvenanceFailures({ ...P5_HOST_BYPASS_DETECTOR_PROVENANCE, detects: '' })).toContain(
+      'P5 detector provenance rewrites the accepted hand-written detection floor',
+    );
+    expect(
+      p5HostBypassDetectorProvenanceFailures({
+        ...P5_HOST_BYPASS_DETECTOR_PROVENANCE,
+        zeroMeaning: 'category zero proves no bypasses exist',
+      }),
+    ).toContain('P5 detector provenance rewrites the accepted non-exhaustive zero meaning');
   });
 
   it('preserves the append-only evidenced budget history and its category breakdowns', () => {
@@ -79,6 +112,137 @@ describe('P5 host-bypass derived gate', () => {
       },
     ]);
     expect(p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY)).toEqual([]);
+  });
+
+  it('records immutable relabel and discovery events separately from repair progress', () => {
+    expect(P5_HOST_BYPASS_CLASSIFICATION_HISTORY).toEqual([
+      {
+        fromBudget: { 'direct-dom': 14, 'input-ingress': 0, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+        fromTotal: 30,
+        fromVersion: 1,
+        newlyDetected: [],
+        reason: 'navigator.getGamepads sampling recategorised as input ingress',
+        recategorised: [
+          {
+            count: 2,
+            from: 'direct-dom',
+            reason: 'navigator.getGamepads capability read and poll call',
+            to: 'input-ingress',
+          },
+        ],
+        toBudget: { 'direct-dom': 12, 'input-ingress': 2, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+        toTotal: 30,
+        toVersion: 2,
+      },
+      {
+        fromBudget: { 'direct-dom': 12, 'input-ingress': 2, 'scratch-surface': 16, 'webgpu-acquisition': 0 },
+        fromTotal: 30,
+        fromVersion: 2,
+        newlyDetected: [
+          {
+            count: 3,
+            kind: 'frame-scheduling',
+            reason: 'two requestAnimationFrame calls and one cancelAnimationFrame call',
+          },
+        ],
+        reason: 'gamepad frame scheduling added to P5 classification coverage',
+        recategorised: [],
+        toBudget: {
+          'direct-dom': 12,
+          'input-ingress': 2,
+          'frame-scheduling': 3,
+          'scratch-surface': 16,
+          'webgpu-acquisition': 0,
+        },
+        toTotal: 33,
+        toVersion: 3,
+      },
+    ]);
+    expect(p5HostBypassClassificationHistoryFailures(P5_HOST_BYPASS_CLASSIFICATION_HISTORY)).toEqual([]);
+    expect(P5_HOST_BYPASS_V3_PROGRESS_HISTORY).toEqual([
+      {
+        budget: {
+          'direct-dom': 12,
+          'input-ingress': 2,
+          'frame-scheduling': 3,
+          'scratch-surface': 16,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'P5 taxonomy v3 classification baseline',
+        total: 33,
+      },
+      {
+        budget: {
+          'direct-dom': 12,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 16,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'gamepad sampling and scheduling moved into the explicit Web ingress adapter',
+        total: 28,
+      },
+    ]);
+    expect(p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY)).toEqual([]);
+  });
+
+  it('mutation-proves that a pure relabel cannot change the total', () => {
+    const relabel = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[0];
+    const mutated = [{ ...relabel, toTotal: relabel.toTotal + 1 }, P5_HOST_BYPASS_CLASSIFICATION_HISTORY[1]];
+    expect(p5HostBypassClassificationHistoryFailures(mutated)).toContain(
+      'P5 taxonomy history[0] pure relabel changes total 30 -> 31',
+    );
+  });
+
+  it('mutation-proves that the zero-new relabel cannot be mislabeled as new findings', () => {
+    const relabel = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[0];
+    const mutated = [
+      {
+        ...relabel,
+        newlyDetected: [{ count: 2, kind: 'input-ingress' as const, reason: 'mutation: mislabeled existing findings' }],
+        recategorised: [],
+      },
+      P5_HOST_BYPASS_CLASSIFICATION_HISTORY[1],
+    ];
+    const failures = p5HostBypassClassificationHistoryFailures(mutated);
+    expect(failures).toContain('P5 taxonomy history[0] rewrites immutable accepted classification evidence');
+    expect(failures).toContain('P5 taxonomy history[0] derived categories do not match its evidenced after-budget');
+  });
+
+  it('mutation-proves that the relabel cannot lose its direct-dom provenance', () => {
+    const relabel = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[0];
+    const mutated = [
+      {
+        ...relabel,
+        recategorised: [{ ...relabel.recategorised[0], from: 'input-ingress' as const }],
+      },
+      P5_HOST_BYPASS_CLASSIFICATION_HISTORY[1],
+    ];
+    expect(p5HostBypassClassificationHistoryFailures(mutated)).toContain(
+      'P5 taxonomy history[0] rewrites immutable accepted classification evidence',
+    );
+  });
+
+  it('mutation-proves that scheduling discovery cannot be recorded as a relabel', () => {
+    const discovery = P5_HOST_BYPASS_CLASSIFICATION_HISTORY[1];
+    const mutated = [
+      P5_HOST_BYPASS_CLASSIFICATION_HISTORY[0],
+      {
+        ...discovery,
+        newlyDetected: [],
+        recategorised: [
+          {
+            count: 3,
+            from: 'input-ingress' as const,
+            reason: 'mutation: hides newly classified scheduling',
+            to: 'frame-scheduling' as const,
+          },
+        ],
+      },
+    ];
+    expect(p5HostBypassClassificationHistoryFailures(mutated)).toContain(
+      'P5 taxonomy history[1] derived categories do not match its evidenced after-budget',
+    );
   });
 
   it('mutation-proves that coherently raising the accepted Bitmap checkpoint cannot rewrite history', () => {
@@ -181,6 +345,7 @@ describe('P5 host-bypass derived gate', () => {
       'input-ingress',
     ],
     ['scratch surface', `export function pixels() { return new OffscreenCanvas(1, 1); }`, 'scratch-surface'],
+    ['frame scheduling', `export function tick() { requestAnimationFrame(tick); }`, 'frame-scheduling'],
     [
       'WebGPU acquisition',
       `export async function gpu(canvas: HTMLCanvasElement) {
@@ -202,6 +367,35 @@ describe('P5 host-bypass derived gate', () => {
     );
   });
 
+  it('classifies gamepad sampling and frame scheduling without widening locally shadowed calls', () => {
+    const sites = scanP5HostBypassSource(
+      'packages/input/src/inputManager.ts',
+      `export function poll() {
+         const supported = typeof navigator.getGamepads === 'function';
+         const pads = navigator.getGamepads();
+         const frame = requestAnimationFrame(poll);
+         cancelAnimationFrame(frame);
+         return { pads, supported };
+       }`,
+    );
+    expect(sites.map((site) => site.kind)).toEqual([
+      'input-ingress',
+      'input-ingress',
+      'frame-scheduling',
+      'frame-scheduling',
+    ]);
+
+    const shadowed = scanP5HostBypassSource(
+      'packages/input/src/shadowed.ts',
+      `export function local(requestAnimationFrame: (callback: () => void) => number) {
+         requestAnimationFrame(() => undefined);
+       }
+       function cancelAnimationFrame(_frame: number) {}
+       cancelAnimationFrame(1);`,
+    );
+    expect(shadowed).toEqual([]);
+  });
+
   it('mutation-proves that restoring the portable geolocation probe exceeds the lowered direct-DOM ratchet', () => {
     const clean = scanP5HostBypasses(ROOT);
     const restoredProbe = scanP5HostBypassSource(
@@ -218,8 +412,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(3);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(17);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 17, budget 14');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(15);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 15, budget 12');
   }, 30_000);
 
   it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
@@ -258,8 +452,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(1);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(15);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 15, budget 14');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(13);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 13, budget 12');
   }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {

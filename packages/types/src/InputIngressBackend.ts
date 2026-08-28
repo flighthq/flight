@@ -1,4 +1,4 @@
-import type { InputGamepadConnectData } from './InputGamepadData';
+import type { InputGamepadAxisData, InputGamepadButtonData, InputGamepadConnectData } from './InputGamepadData';
 import type { InputKeyboardData } from './InputKeyboardData';
 import type { AttachInputOptions } from './InputManager';
 import type { InputPointerData } from './InputPointerData';
@@ -12,7 +12,10 @@ export type InputIngressSource = object;
 
 /** Synchronous, borrowed normalized-event delivery owned by one InputManager attachment. */
 export interface InputIngressSink {
-  gamepadConnect(data: Readonly<InputGamepadConnectData>, axes: readonly number[], buttons: readonly boolean[]): void;
+  gamepadAxisMove(data: Readonly<InputGamepadAxisData>): void;
+  gamepadButtonDown(data: Readonly<InputGamepadButtonData>): void;
+  gamepadButtonUp(data: Readonly<InputGamepadButtonData>): void;
+  gamepadConnect(data: Readonly<InputGamepadConnectData>): void;
   gamepadDisconnect(data: Readonly<InputGamepadConnectData>): void;
   isEnabled(): boolean;
   keyDown(data: Readonly<InputKeyboardData>): void;

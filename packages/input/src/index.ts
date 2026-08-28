@@ -30,7 +30,6 @@ export {
   isInputGamepadButtonDown,
   isInputKeyDown,
   isInputPointerButtonDown,
-  pollGamepadInput,
   releaseInputPointerCapture,
   requestInputPointerLock,
   setInputPointerCapture,
