@@ -25,26 +25,31 @@ state is therefore five declared and exercised hooks (`AccessibilityBackend`, `L
 The live tree has since added four interfaces. `AudioBackend` is a pure `canPlayType` query and
 joins the GC/bounded bucket. `WgpuHostBackend` and `InputIngressBackend` own acquisition- or
 registration-scoped brackets, so they join the entity/keyed/caller-owned bucket. `AudioDeviceBackend`
-has only handle-keyed resources with matching teardown (`createDevice`/`destroyDevice`,
-`createBuffer`/`destroyBuffer`, and `createSource`/`destroySource`), so it joins the same bucket by the
-rule that places `TrayBackend.destroy(id)` there. Therefore the live total is 46 and the live partition
-is `1 + 7 + 22 + 16 = 46`. None of the post-audit rows changes the whole-owner population or its live
-implementation state of five declared hooks with three still owed.
+landed after this record first anticipated it, and its shape settles it: every resource it makes is
+handle-keyed with its own teardown (`createDevice`/`destroyDevice`, `createBuffer`/`destroyBuffer`,
+`createSource`/`destroySource`) and it declares no zero-argument teardown, so it joins the
+entity/keyed/caller-owned bucket by the same rule that places `TrayBackend.destroy(id)` there.
+
+Therefore the live total is 46 and the live partition is `1 + 7 + 22 + 16 = 46`. None of the
+post-audit rows changes the whole-owner population, which remains eight — so 8 − 5 = three still owed.
 
 ### Provenance of the live figures
 
 These numbers are re-derived, not carried forward. The `42` above is the frozen audit population and
-is deliberately never updated; the figures in this section describe the live tree and move with it.
+is deliberately never updated; the figures in this section track the live tree and move with it.
 
 - **command** — `npx vitest run scripts/backend-lifecycle.test.ts` (`scripts/backend-lifecycle-core.ts`)
+- **tree** — `bd6f4a8768d290641bd8eb33c9ce8b44094f2d83`, clean
 - **scope** — every exported `*Backend` interface in `packages/types/src/*.ts`, plus every exported
   `set*Backend` body and top-level function body in `packages/*/src/*.ts`; `*.test.ts` excluded
 - **counting predicate** — one unit = one interface; *owning* = declares a **zero-parameter**
-  `destroy`/`dispose` in method or property syntax, so per-object teardown taking an id is excluded
+  `destroy`/`dispose` in method or property syntax, so a per-object teardown taking an id is excluded
 - **live output** — `5 of 46 backends own a freeable resource, 41 declare no whole-backend teardown`
 
-The live `41` is the count with no whole-backend teardown and is unrelated to the frozen audit
-population of 42. The live partition is `5 + 41 = 46`.
+The census partition (`5 + 41 = 46`) counts a different thing from the bucket partition
+(`1 + 7 + 22 + 16 = 46`) above it: the census asks only whether a zero-argument hook is *declared*,
+while the buckets record which lifetime *should* own cleanup. They agree on the denominator and on
+nothing else, which is the point — the gate cannot supply the semantic column.
 
 ## Derivation rules
 
@@ -84,9 +89,11 @@ rule.
 The structural ratchet in `scripts/backend-lifecycle-core.ts` derives exported backend names, finds
 zero-argument `destroy`/`dispose` members in both method and callable-property syntax, excludes
 parameterised teardown, and checks that the corresponding `set*Backend` body references the hook.
-`scripts/backend-lifecycle.test.ts` asserts `enforced + noTeardownHook === total`, preserves the
-immutable historical baseline of three names among 43 interfaces, and separately requires the five
-currently enforced names. Denominator growth and newly enforced hooks therefore remain distinct.
+`scripts/backend-lifecycle.test.ts` asserts `enforced + noTeardownHook === total` and holds two
+separate lists: an immutable `HISTORICAL_BASELINE` (the three names and total of 43 recorded when the
+gate was established, never updated, so growth shows as signed deltas such as `+3 new seams,
++2 newly enforced`) and the current ratchet of every backend that has landed a hook, which gates the
+full present set and must never shrink.
 
 That gate is intentionally a ratchet, not an ownership oracle. It can prevent a declared hook from
 silently disappearing, but it cannot infer that a hook is missing: absence of the declaration places
@@ -114,7 +121,7 @@ category; its subsequently landed hook is recorded in the row itself.
 | `AccessibilityBackend` | `createWebAccessibilityBackend` retains mirrored DOM nodes, live regions, and sometimes an owned root appended to `document.body`. | **Landed hook:** web `destroy()` clears mirrored nodes and live regions, removes only a backend-created root, empties but preserves a caller-supplied container, and cannot lazily recreate a root afterward. Custom/host slots release only objects no longer referenced by either slot and deduplicate aliased final removal. |
 | `AppBackend` | A backend can hold the process single-instance lock and start dock/attention requests; its event thunks alone do not release those host resources. | **Owed:** each implementation tracks locks and request ids it acquired; `destroy?()` releases its lock, cancels outstanding attention/bounce ids, and detaches any instance-owned host state. Durable user configuration such as login-at-startup is not rolled back merely because an adapter is replaced. |
 | `MediaSessionBackend` | Metadata, playback state, scrubber state, and action handlers remain installed on the OS `mediaSession` singleton after the adapter reference is dropped. | **Landed hook:** web `destroy()` clears its registered action set, metadata, playback state, and position state. `setMediaSessionBackend` covers custom-slot replacement/removal. The two-slot final-loss/alias cases remain evidence still to add: `destroyMediaSessionBackend` currently clears both slots after invoking only the active object, and a host object aliased into the custom slot can be destroyed while the host slot still retains it. |
-| `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Landed hook, native effect half-owed:** `destroy?()` is declared and `setMenuBackend` invokes it before replacement (invariants 1–5). Electron and Tauri clear the backend-owned selection closure, but Electron does not yet call `Menu.setApplicationMenu(null)`, so replacement can leave the native application menu installed. Web is intentionally a no-op because it has no application menu. |
+| `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Landed hook, one behavior still owed:** `destroy?()` on the interface; `setMenuBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron and Tauri null the select listener; web is a no-op (holds no state, and its `setApplicationMenu` returns `false`). Still owed: no backend clears the installed application menu on teardown — `Menu.setApplicationMenu(null)` appears nowhere in `packages/host-*/src`, so a replaced Electron backend leaves its native menu in place. The structural census cannot see this, since the hook is declared and invoked. |
 | `PowerBackend` | Electron retains a `powerSaveBlocker` id; web retains and may reacquire a `WakeLockSentinel`. Both outlive the initiating call. | **Landed hook:** `destroy?()` on the interface; `setPowerBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron stops any held power-save blocker; web releases the wake-lock sentinel. Entity subscriptions remain owned by `detachPower`/`disposePower`. |
 | `ScreenBackend` | `createWebScreenBackend.ensureCursorTracking` installs one anonymous process-lifetime `pointermove` handler and retains cursor/cache/detail state outside any `ScreenSignals` entity. | **Owed:** retain the exact handler, remove it in idempotent `destroy?()`, detach any backend-level Screen Details listeners, and clear retained detail/cache state. Per-entity `subscribe` thunks continue to detach their own resize/orientation listeners. |
 | `ShortcutBackend` | Successful registrations install OS-global callbacks and the Electron backend retains their accelerator set. They survive loss of the adapter reference. | **Owed:** `destroy?()` calls the implementation's `unregisterAll()` and clears its owned registry. Async hosts must observe/reject teardown failures without leaving an unhandled promise. |
@@ -186,13 +193,14 @@ not retain a freeable external object or unbracketed host mutation beyond the li
 
 Post-audit row: `AudioBackend` exposes only `canPlayType(mimeType): boolean`; it joins this bucket as
 row 16. It has no audio device, decoded buffer, source, stream, or playback ownership.
-`AudioDeviceBackend` has since landed and is classified from its actual resource-owning shape in the
-entity/keyed bucket rather than this one.
+`AudioDeviceBackend` — anticipated here as a separate contract — has since landed, and is classified
+from its actual lifetime shape in the entity/keyed bucket rather than this one, because it does own
+resources; they are simply handle-keyed rather than whole-backend.
 
-Post-audit `WgpuHostBackend`, `InputIngressBackend`, and `AudioDeviceBackend` join the entity/keyed
-bucket as rows 20–22. They move the live denominator from 43 to 46 and that bucket from 19 to 22
-without changing the whole-owner population. The structural lifecycle census reports five
-whole-backend hooks among 46 interfaces after the separate Menu and Power enforcement work.
+Post-audit `WgpuHostBackend` and `InputIngressBackend` join the entity/keyed bucket as rows 20–21,
+and `AudioDeviceBackend` as row 22. They move the live denominator from 43 to 46 and that bucket from
+19 to 22 without changing the whole-owner population. The structural lifecycle census should
+therefore report five whole-backend hooks among 46 interfaces.
 
 ## Review checklist for the remaining slices
 
