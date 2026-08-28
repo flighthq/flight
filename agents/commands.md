@@ -2,6 +2,34 @@
 
 The full npm-script reference: what each command does, and the long-form version of the checkpoint triggers summarized in [`AGENTS.md`](../AGENTS.md#checkpoints). Script naming follows the `action:subject:modifier` grammar in [npm script naming](conventions/npm-scripts.md).
 
+## Reporting a count
+
+Every number taken from a gate must carry four things, or it cannot be compared with any other number:
+
+1. **The exact command**, including the project flag — `npx tsc --noEmit -p tsconfig.json` and
+   `npm run build` are different instruments, not two spellings of one.
+2. **The commit and tree state** it was measured at, and whether the working tree was clean.
+3. **The project scope included** — which configs, and whether project references are in play. The root
+   `tsconfig.json` is non-composite with `references: []`; `tsconfig.build.json` uses references and
+   therefore raises whole classes of `rootDir` diagnostics the root check never emits.
+4. **The counting method** — diagnostics or output lines, and what was matched to get there.
+
+★ **Two counts are not comparable until all four match.** A disagreement is evidence about the
+instruments until it is evidence about the code, and the cheapest way to find out is to re-run the other
+party's exact command at the same commit rather than reason about the gap.
+
+Three measurements that make the size of the effect concrete, all on one repository:
+
+- Same tree, different instrument: the root `tsc --noEmit` reported **80** where `npm run build` reported
+  **2122**, almost entirely `TS6059`/`TS6307` `rootDir` violations that only project references surface.
+- Same output, different counting: **80** diagnostics against **111** output lines, because continuation
+  and related-information lines carry no `error TS` token.
+- Two reported figures for one package (**177** and **80**) could not be reconciled at all until command,
+  commit and scope were stated — the difference was never located in the code.
+
+The same discipline applies to a derived gate's own summary line: state the population it swept and the
+exclusions it applied, so a smaller number reads as a narrower sweep rather than as progress.
+
 ### `npm run check:transport-bypasses`
 
 Prevents production SDK code from calling browser transport primitives outside the web backend that
