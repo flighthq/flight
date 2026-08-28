@@ -296,13 +296,33 @@ corrected in every consumer afterwards, and both verbs already exist with settle
 The rest of P4's lifetime contract is sound: replacement and removal must be explicit and must not leak,
 and window ownership must be decided **at attachment time** rather than inferred at close.
 
-## H5. Owed to the user — one genuine scope question
+## H5. RULED BY THE USER 2026-08-28 — the backend seam is PROCESS-GLOBAL and independent of `Application`
 
-**Can two `Application` instances coexist with different backends?** The doc notes the module-scoped
-`_backend` singleton and raises multi-window hosts. That is not a naming or compliance question; it
-decides whether the whole host seam is process-global or per-application, and it changes every
-`set*Backend` signature if the answer is per-application. It is too large to settle as an implementation
-detail inside P4, and I am not ruling it.
+**User ruling:** *"the backend system is separate from the application system. I don't think you need to
+create an application in order to have a backend. I suspect backend is within the current process. If
+you wanted two things with two backends, they would run separately."*
 
-Everything else in P1-P5 can proceed without it, provided nobody quietly assumes an answer. If a builder
-finds themselves needing per-instance state to finish P4, that is the escalation.
+Three consequences, and they make P4 **smaller**, not larger:
+
+**H5a. The module-scoped `_backend` singleton is the design, not a limitation to engineer around.**
+P4 lists "multiple instances" as a gap; it is not one. Two backends means two processes. Nothing in the
+host seam needs per-application state, and **`set*Backend` signatures stay exactly as they are** — the
+per-application parameter I warned would touch every signature is not happening. Do not build a registry
+of backends keyed by application.
+
+**H5b. A backend does not require an `Application`, and this is a capability, not a technicality.**
+Host capabilities — `net`, `storage`, `clipboard`, `filesystem`, and the rest — are installable and
+usable with no window, no render loop and no `Application` at all. That is what makes them usable from a
+server, a CLI, a test harness or a build tool. Anything that makes a backend reachable only through an
+`Application` is a defect against this ruling.
+
+**H5c. Multi-window hosts are unaffected.** Electron and desktop hosts running several windows in one
+process share **one** backend; it is the backend that is singular, not the windows. A window backend
+managing many windows is the normal case, so P4's attachment work proceeds unchanged — attaching an
+existing window is a backend operation, never an application-scoped one.
+
+**What survives from P4.** Backend lifetime still matters, now scoped to a single process: replacement
+and removal must be explicit and must not leak the GPU textures, audio contexts, native handles and open
+sockets the outgoing backend held. Per H4 that teardown verb is **`destroy*`, not `dispose*`**. Window
+ownership is still decided at attachment time.
+
