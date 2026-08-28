@@ -1,6 +1,14 @@
+import type { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+import { expectTypeOf } from 'vitest';
+
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
 
 describe('parseSceneDocumentYamlSubset', () => {
+  it('types every emitted refusal as a subset of the public taxonomy', () => {
+    type Refusal = Extract<ReturnType<typeof parseSceneDocumentYamlSubset>, { readonly ok: false }>;
+    expectTypeOf<Refusal['kind']>().toMatchTypeOf<FlightDocumentRefusalReason>();
+  });
+
   it('parses block sequences together with block and flow mappings', () => {
     expect(
       parseSceneDocumentYamlSubset(`scene:

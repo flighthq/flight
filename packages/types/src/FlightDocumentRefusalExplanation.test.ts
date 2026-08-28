@@ -8,6 +8,7 @@ describe('FlightDocumentRefusalReason', () => {
       FlightDocumentRefusalReason.ExpectedMappingKey,
       FlightDocumentRefusalReason.ExpectedScalar,
       FlightDocumentRefusalReason.ExpectedValue,
+      FlightDocumentRefusalReason.DuplicateKey,
       FlightDocumentRefusalReason.InvalidDocument,
       FlightDocumentRefusalReason.InvalidEscape,
       FlightDocumentRefusalReason.MixedCollection,
@@ -27,6 +28,7 @@ describe('FlightDocumentRefusalReason', () => {
       'flight-document.syntax.expected-mapping-key',
       'flight-document.syntax.expected-scalar',
       'flight-document.syntax.expected-value',
+      'flight-document.syntax.duplicate-key',
       'flight-document.syntax.invalid-document',
       'flight-document.syntax.invalid-escape',
       'flight-document.syntax.mixed-collection',
@@ -47,6 +49,24 @@ describe('FlightDocumentRefusalReason', () => {
     expect(FlightDocumentRefusalReason.AliasUnsupported).toBe('flight-document.unsupported.alias');
     expect(FlightDocumentRefusalReason.AnchorUnsupported).toBe('flight-document.unsupported.anchor');
     expect(FlightDocumentRefusalReason.AliasUnsupported).not.toBe(FlightDocumentRefusalReason.AnchorUnsupported);
+  });
+
+  it('publishes every YAML-subset exclusion identity', () => {
+    expect([
+      FlightDocumentRefusalReason.AliasUnsupported,
+      FlightDocumentRefusalReason.AnchorUnsupported,
+      FlightDocumentRefusalReason.BlockScalarUnsupported,
+      FlightDocumentRefusalReason.DocumentSeparatorUnsupported,
+      FlightDocumentRefusalReason.FlowSequenceUnsupported,
+      FlightDocumentRefusalReason.TagUnsupported,
+    ]).toEqual([
+      'flight-document.unsupported.alias',
+      'flight-document.unsupported.anchor',
+      'flight-document.unsupported.block-scalar',
+      'flight-document.unsupported.document-separator',
+      'flight-document.unsupported.flow-sequence',
+      'flight-document.unsupported.tag',
+    ]);
   });
 
   it('names empty scenes and an out-of-range default scene independently', () => {
