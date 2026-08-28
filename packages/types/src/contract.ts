@@ -786,6 +786,7 @@ export * from './Vector4';
 export * from './Velocity';
 export * from './VertexColorMaterial';
 export * from './VertexDisplaceModifier';
+export * from './VideoCapabilityBackend';
 export * from './VideoResource';
 export * from './Viewport';
 export * from './ViewportAlign';

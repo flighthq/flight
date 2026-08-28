@@ -70,6 +70,7 @@
     "@flighthq/statusbar": "*",
     "@flighthq/storage": "*",
     "@flighthq/types": "*",
+    "@flighthq/video": "*",
     "@flighthq/webcam": "*"
   },
   "devDependencies": {

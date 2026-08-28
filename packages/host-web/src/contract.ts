@@ -30,6 +30,7 @@ export * from './webShare';
 export * from './webShell';
 export * from './webStatusbar';
 export * from './webStorage';
+export * from './webVideoCapability';
 export * from './webWebcam';
 export * from './webWindow';
 export * from './webWgpuRenderSurface';

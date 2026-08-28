@@ -38,6 +38,8 @@ import {
   p5InputIngressPairingFailures,
   p5HostBypassV3ProgressHistoryFailures,
   p5HostBypassV4ProgressHistoryFailures,
+  p5VideoCapabilityRepairFailures,
+  p5VideoCapabilityProgressFailures,
   scanP5HostBypasses,
   scanP5HostBypassSource,
 } from './p5-host-bypass';
@@ -60,7 +62,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=22 direct-dom=9 input-ingress=0 frame-scheduling=0 scratch-surface=13 render-surface=0 webgpu-acquisition=0',
+      'P5 outstanding=21 direct-dom=8 input-ingress=0 frame-scheduling=0 scratch-surface=13 render-surface=0 webgpu-acquisition=0',
     );
     expect(p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
@@ -246,7 +248,7 @@ describe('P5 host-bypass derived gate', () => {
     );
   }, 30_000);
 
-  it('mutation-proves an extra removal fails the exact live-current assertion at total 21', () => {
+  it('mutation-proves an extra removal fails the exact live-current assertion at total 20', () => {
     const clean = scanP5HostBypasses(ROOT);
     const otherScratch = clean.p5.find((site) => site.kind === 'scratch-surface')!;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
@@ -257,8 +259,45 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(p5HostBypassCurrentBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([
       'P5 current scratch-surface: found 12, expected 13',
-      'P5 current outstanding: found 21, expected 22',
+      'P5 current outstanding: found 20, expected 21',
     ]);
+  }, 30_000);
+
+  it('pins the video capability target absent and both exact resource survivors present', () => {
+    const report = scanP5HostBypasses(ROOT);
+    expect(p5VideoCapabilityRepairFailures(report)).toEqual([]);
+  }, 30_000);
+
+  it('mutation-proves restoring the video capability DOM target fails its named predicate', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    const restored = scanP5HostBypassSource(
+      'packages/video/src/videoFormat.ts',
+      `export function canPlayVideoType() { return document.createElement('video'); }`,
+    );
+    const mutated = createP5HostBypassReport(clean.scannedFiles, [...clean.p5, ...clean.excluded, ...restored]);
+    expect(p5VideoCapabilityRepairFailures(mutated)).toContain(
+      'S10 must remove the videoFormat canPlayVideoType DOM probe; found [packages/video/src/videoFormat.ts:canPlayVideoType]',
+    );
+  }, 30_000);
+
+  it('mutation-proves both exact video capability resource survivors independently', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    for (const functionName of ['createVideoResourceFromMediaStream', 'loadVideoResourceFromUrl']) {
+      const mutated = createP5HostBypassReport(
+        clean.scannedFiles,
+        [...clean.p5, ...clean.excluded].filter(
+          (site) =>
+            !(
+              site.file === 'packages/video/src/videoResourceFrom.ts' &&
+              site.functionName === functionName &&
+              site.expression === "document.createElement('video')"
+            ),
+        ),
+      );
+      expect(p5VideoCapabilityRepairFailures(mutated)).toContain(
+        `S10 must preserve both videoResourceFrom DOM resource sites; missing [packages/video/src/videoResourceFrom.ts:${functionName}]`,
+      );
+    }
   }, 30_000);
 
   it('pins detector provenance against removal and false exhaustive wording', () => {
@@ -488,9 +527,22 @@ describe('P5 host-bypass derived gate', () => {
         reason: 'Input pointer-lock exit and state queries routed through the selected input ingress backend',
         total: 22,
       },
+      {
+        budget: {
+          'direct-dom': 8,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 13,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Video MIME capability probing routed through the selected video capability backend',
+        total: 21,
+      },
     ]);
     expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
     expect(p5BitmapDrawTransferProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
+    expect(p5VideoCapabilityProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
   });
 
   it('mutation-proves S09 cannot collapse the immutable 26 -> 25 repair into 26 -> 24', () => {
@@ -837,8 +889,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(3);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(12);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 12, budget 9');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(11);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 11, budget 8');
   }, 30_000);
 
   it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
@@ -877,8 +929,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(1);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(10);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 10, budget 9');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(9);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 9, budget 8');
   }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {

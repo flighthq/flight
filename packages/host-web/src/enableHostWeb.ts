@@ -21,6 +21,7 @@ import { enableHostWebScreen } from './webScreen';
 import { enableHostWebSensors } from './webSensors';
 import { enableHostWebShare } from './webShare';
 import { enableHostWebStorage } from './webStorage';
+import { enableHostWebVideoCapability } from './webVideoCapability';
 import { enableHostWebWebcam } from './webWebcam';
 
 export function enableHostWeb(): void {
@@ -47,5 +48,6 @@ export function enableHostWeb(): void {
   enableHostWebSensors();
   enableHostWebShare();
   enableHostWebStorage();
+  enableHostWebVideoCapability();
   enableHostWebWebcam();
 }

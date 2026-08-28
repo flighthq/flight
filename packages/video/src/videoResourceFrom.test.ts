@@ -1,3 +1,4 @@
+import { resetVideoCapabilityBackendForTest, setVideoCapabilityBackend } from './videoFormat';
 import {
   createVideoResourceFromMediaStream,
   loadVideoResourceFromBlob,
@@ -19,6 +20,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  resetVideoCapabilityBackendForTest();
   vi.restoreAllMocks();
 });
 
@@ -185,7 +187,7 @@ describe('loadVideoResourceFromUrls', () => {
   });
 
   it('loads the first playable source', async () => {
-    vi.spyOn(HTMLVideoElement.prototype, 'canPlayType').mockReturnValue('probably');
+    setVideoCapabilityBackend({ canPlayType: () => true });
     const promise = loadVideoResourceFromUrls([{ url: 'clip.mp4' }]);
     const element = lastVideo();
     element.dispatchEvent(new Event('canplay'));
