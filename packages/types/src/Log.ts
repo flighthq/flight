@@ -68,3 +68,8 @@ export interface LogEntry {
 // class) so it stays trivially swappable and portable. Installed via setLogSink in
 // @flighthq/log.
 export type LogSink = (entry: Readonly<LogEntry>) => void;
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type LogTransportOperation = keyof LogTransportBackend;

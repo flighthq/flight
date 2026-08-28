@@ -1,4 +1,4 @@
-import type { GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type { GlyphRasterizedBitmap, GlyphRasterizerBackend, GlyphRasterizerOperation } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createGlyphAtlas, deriveGlyphMetricsFromFontSize } from './glyphAtlas';
@@ -7,7 +7,9 @@ import { getGlyphAtlasMetrics } from './glyphAtlasMetrics';
 import {
   createStubGlyphRasterizerBackend,
   explainGlyphRasterizerBackend,
+  explainGlyphRasterizerOperation,
   getGlyphRasterizerBackend,
+  hasGlyphRasterizerOperation,
   installGlyphRasterizerHostBackend,
   observeGlyphRasterizerHostResult,
   resetGlyphRasterizerBackendForTest,
@@ -156,6 +158,55 @@ describe('explainGlyphRasterizerBackend', () => {
   });
 });
 
+describe('explainGlyphRasterizerOperation', () => {
+  afterEach(() => {
+    resetGlyphRasterizerBackendForTest();
+  });
+
+  // ★ With nothing installed, the sentinel still answers every call,
+  // so a query resolving through the getter would report every operation implemented. It must not.
+  it('reports sentinel and no implementation when nothing is installed', () => {
+    resetGlyphRasterizerBackendForTest();
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(explainGlyphRasterizerOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+    }
+  });
+
+  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
+  // the sentinel does not implement those either, so a query resolving through getGlyphRasterizerBackend() would
+  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
+  // getter-based implementation reports a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetGlyphRasterizerBackendForTest();
+    expect(explainGlyphRasterizerOperation('rasterize')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'rasterize',
+    });
+  });
+
+  it('reports a custom backend as implementing only what it provides', () => {
+    setGlyphRasterizerBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasGlyphRasterizerOperation(operation)).toBe(false);
+    }
+    expect(explainGlyphRasterizerOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+  });
+
+  it('reports an operation the backend does provide', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    setGlyphRasterizerBackend({ ...partialBackend(), [operation]: () => undefined } as GlyphRasterizerBackend);
+    expect(explainGlyphRasterizerOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    installGlyphRasterizerHostBackend({ ...partialBackend(), [operation]: () => undefined } as GlyphRasterizerBackend);
+    setGlyphRasterizerBackend(partialBackend());
+    expect(explainGlyphRasterizerOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+  });
+});
+
 describe('getGlyphRasterizerBackend', () => {
   afterEach(resetGlyphRasterizerBackendForTest);
 
@@ -182,6 +233,19 @@ describe('getGlyphRasterizerBackend', () => {
     installGlyphRasterizerHostBackend(host);
     setGlyphRasterizerBackend(custom);
     expect(getGlyphRasterizerBackend()).toBe(custom);
+  });
+});
+
+describe('hasGlyphRasterizerOperation', () => {
+  afterEach(() => {
+    resetGlyphRasterizerBackendForTest();
+  });
+
+  it('agrees with explainGlyphRasterizerOperation for every optional operation', () => {
+    setGlyphRasterizerBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasGlyphRasterizerOperation(operation)).toBe(explainGlyphRasterizerOperation(operation).implemented);
+    }
   });
 });
 
@@ -430,6 +494,11 @@ describe('resetGlyphRasterizerBackendForTest', () => {
   });
 });
 
+// Per-operation availability for GlyphRasterizerBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly GlyphRasterizerOperation[] = ['measureMetrics'];
+
 describe('sentinel consumer fallback via GlyphAtlas', () => {
   afterEach(resetGlyphRasterizerBackendForTest);
 
@@ -476,3 +545,10 @@ describe('setGlyphRasterizerBackend', () => {
     });
   });
 });
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): GlyphRasterizerBackend {
+  return {
+    rasterize: (() => undefined) as never,
+  } as GlyphRasterizerBackend;
+}

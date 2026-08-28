@@ -1,5 +1,6 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
+  BackendOperationExplanation,
   BufferedLogSink,
   FileLogSink,
   LogContext,
@@ -12,6 +13,7 @@ import type {
   LogSpan,
   LogTimer,
   LogTransportBackend,
+  LogTransportOperation,
   MemoryLogSink,
   RateLimitedLogSink,
 } from '@flighthq/types/contract';
@@ -353,6 +355,18 @@ export function exitLogSpan(span: Readonly<LogSpan>): void {
   if (idx >= 0) _spanStack.splice(idx, 1);
 }
 
+// Returns the installed LogTransportBackend, or null if none has been set.
+// Which layer implements `operation`. This capability is a SINGLE NULLABLE SLOT — there is no host layer
+// and no sentinel — so the two honest answers are `'custom'` (a backend is installed and provides it) and
+// `'none'` (no backend is installed at all). Reporting `'sentinel'` here would name a fall-through object
+// that does not exist, and inventing a host layer would describe a precedence this package does not have.
+export function explainLogTransportOperation(operation: LogTransportOperation): BackendOperationExplanation {
+  if (_transportBackend !== null && typeof _transportBackend[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  return { implemented: false, layer: 'none', operation };
+}
+
 // Flushes a buffered sink immediately, forwarding all queued entries to its target.
 export function flushLogSink(handle: BufferedLogSink): void {
   const state = _bufferedSinkStates.get(handle);
@@ -382,7 +396,6 @@ export function getLogLevelName(level: LogLevel): string {
   return _levelNames[level] ?? 'unknown';
 }
 
-// Returns the installed LogTransportBackend, or null if none has been set.
 export function getLogTransportBackend(): LogTransportBackend | null {
   return _transportBackend;
 }
@@ -396,6 +409,12 @@ export function getMemoryLogSinkEntries(handle: MemoryLogSink): readonly LogEntr
   if (head === 0) return buf.slice();
   // Ring buffer wrapped: entries from head..end are oldest, then start..head are newest.
   return [...buf.slice(head), ...buf.slice(0, head)];
+}
+
+// Whether an installed backend implements `operation`. False when nothing is installed, which for this
+// capability is also what the getter reports by returning null.
+export function hasLogTransportOperation(operation: LogTransportOperation): boolean {
+  return explainLogTransportOperation(operation).implemented;
 }
 
 // Emit side. Emits a log entry at an explicit level. `channel` is a free categorization tag

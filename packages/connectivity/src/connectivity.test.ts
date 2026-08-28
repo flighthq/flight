@@ -1,5 +1,10 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type { ConnectivityBackend, ConnectivityReachability, ConnectivityStatus } from '@flighthq/types/contract';
+import type {
+  ConnectivityBackend,
+  ConnectivityOperation,
+  ConnectivityReachability,
+  ConnectivityStatus,
+} from '@flighthq/types/contract';
 
 import {
   attachConnectivity,
@@ -9,17 +14,19 @@ import {
   detachConnectivity,
   detectConnectivityReachability,
   disposeConnectivity,
+  explainConnectivityBackend,
+  explainConnectivityOperation,
   getConnectivityBackend,
   getConnectivityStatus,
+  hasConnectivityOperation,
   hasConnectivityStatusChanged,
+  installConnectivityHostBackend,
   isConnectivityMetered,
   isConnectivityOnline,
   isConnectivitySaveDataEnabled,
-  setConnectivityBackend,
-  explainConnectivityBackend,
-  installConnectivityHostBackend,
   observeConnectivityHostResult,
   resetConnectivityBackendForTest,
+  setConnectivityBackend,
 } from './connectivity';
 
 function fakeBackend(
@@ -298,6 +305,55 @@ describe('explainConnectivityBackend', () => {
   });
 });
 
+describe('explainConnectivityOperation', () => {
+  afterEach(() => {
+    resetConnectivityBackendForTest();
+  });
+
+  // ★ With nothing installed, the sentinel still answers every call,
+  // so a query resolving through the getter would report every operation implemented. It must not.
+  it('reports sentinel and no implementation when nothing is installed', () => {
+    resetConnectivityBackendForTest();
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(explainConnectivityOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+    }
+  });
+
+  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
+  // the sentinel does not implement those either, so a query resolving through getConnectivityBackend() would
+  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
+  // getter-based implementation reports a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetConnectivityBackendForTest();
+    expect(explainConnectivityOperation('getStatus')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'getStatus',
+    });
+  });
+
+  it('reports a custom backend as implementing only what it provides', () => {
+    setConnectivityBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasConnectivityOperation(operation)).toBe(false);
+    }
+    expect(explainConnectivityOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+  });
+
+  it('reports an operation the backend does provide', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    setConnectivityBackend({ ...partialBackend(), [operation]: () => undefined } as ConnectivityBackend);
+    expect(explainConnectivityOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    installConnectivityHostBackend({ ...partialBackend(), [operation]: () => undefined } as ConnectivityBackend);
+    setConnectivityBackend(partialBackend());
+    expect(explainConnectivityOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+  });
+});
+
 describe('getConnectivityBackend', () => {
   it('falls back to a web backend', () => {
     expect(getConnectivityBackend()).not.toBeNull();
@@ -312,6 +368,19 @@ describe('getConnectivityStatus', () => {
     expect(out.type).toBe('wifi');
     expect(out.rtt).toBe(50);
     expect(out.downlinkMax).toBe(100);
+  });
+});
+
+describe('hasConnectivityOperation', () => {
+  afterEach(() => {
+    resetConnectivityBackendForTest();
+  });
+
+  it('agrees with explainConnectivityOperation for every optional operation', () => {
+    setConnectivityBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasConnectivityOperation(operation)).toBe(explainConnectivityOperation(operation).implemented);
+    }
   });
 });
 
@@ -432,6 +501,11 @@ describe('observeConnectivityHostResult', () => {
   });
 });
 
+// Per-operation availability for ConnectivityBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly ConnectivityOperation[] = ['detectReachability'];
+
 describe('resetConnectivityBackendForTest', () => {
   it('clears all backend slots', () => {
     setConnectivityBackend(fakeBackend());
@@ -451,3 +525,11 @@ describe('setConnectivityBackend', () => {
     expect(getConnectivityBackend()).not.toBeNull();
   });
 });
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): ConnectivityBackend {
+  return {
+    getStatus: (() => undefined) as never,
+    subscribe: (() => undefined) as never,
+  } as ConnectivityBackend;
+}

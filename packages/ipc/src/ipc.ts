@@ -1,5 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendExplanation } from '@flighthq/types/contract';
+import type { BackendExplanation, BackendOperationExplanation, IpcOperation } from '@flighthq/types/contract';
 import type {
   IpcBackend,
   IpcBackendCapabilities,
@@ -75,6 +75,22 @@ export function explainIpcBackend(): BackendExplanation {
 }
 
 // Returns the active IpcBackend. Precedence: custom > host > sentinel.
+// Which layer implements `operation`, and whether anything real does — the per-operation answer
+// `explainIpcBackend` cannot give: that one reports a backend is installed, this one reports whether
+// THIS operation on it is a genuine implementation or the sentinel standing in.
+//
+// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
+// this report `true` for everything and say nothing at all.
+export function explainIpcOperation(operation: IpcOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 export function getIpcBackend(): IpcBackend {
   return _custom ?? _host ?? _sentinel;
 }
@@ -93,6 +109,11 @@ export function getIpcSignals(): Readonly<IpcSignals> | null {
 // Returns true when a custom or host backend is installed, false when only the sentinel is active.
 export function hasIpcBackend(): boolean {
   return _custom !== null || _host !== null;
+}
+
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+export function hasIpcOperation(operation: IpcOperation): boolean {
+  return explainIpcOperation(operation).implemented;
 }
 
 // Installs the host-layer IPC backend. Idempotent: a second call with the same backend is a no-op;

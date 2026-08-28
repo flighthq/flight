@@ -39,3 +39,8 @@ export interface AppLifecycle {
   // Emitted on warm resume with the previously saved state bag.
   onRestoreState: Signal<(state: Readonly<Record<string, unknown>>) => void>;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type LifecycleOperation = keyof LifecycleBackend;

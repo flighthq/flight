@@ -1,4 +1,4 @@
-import type { StorageBackend, StorageNamespace } from '@flighthq/types/contract';
+import type { StorageBackend, StorageNamespace, StorageOperation } from '@flighthq/types/contract';
 
 import {
   clearStorage,
@@ -7,6 +7,8 @@ import {
   createWebStorageBackend,
   disableStorageSignals,
   enableStorageSignals,
+  explainStorageBackend,
+  explainStorageOperation,
   getNamespacedStorageByteSize,
   getNamespacedStorageEntries,
   getNamespacedStorageItem,
@@ -29,10 +31,14 @@ import {
   getStorageSignals,
   hasNamespacedStorageItem,
   hasStorageItem,
+  hasStorageOperation,
+  installStorageHostBackend,
   migrateStorage,
+  observeStorageHostResult,
   removeNamespacedStorageItem,
   removeStorageItem,
   removeStorageItems,
+  resetStorageBackendForTest,
   setNamespacedStorageItem,
   setStorageBackend,
   setStorageBoolean,
@@ -40,10 +46,6 @@ import {
   setStorageItems,
   setStorageJSON,
   setStorageNumber,
-  explainStorageBackend,
-  installStorageHostBackend,
-  observeStorageHostResult,
-  resetStorageBackendForTest,
 } from './storage';
 
 function fakeBackend(): StorageBackend {
@@ -236,6 +238,55 @@ describe('explainStorageBackend', () => {
     installStorageHostBackend(fakeBackend());
     installStorageHostBackend(fakeBackend());
     expect(explainStorageBackend().conflict).toBe(true);
+  });
+});
+
+describe('explainStorageOperation', () => {
+  afterEach(() => {
+    resetStorageBackendForTest();
+  });
+
+  // ★ With nothing installed, the sentinel still answers every call,
+  // so a query resolving through the getter would report every operation implemented. It must not.
+  it('reports sentinel and no implementation when nothing is installed', () => {
+    resetStorageBackendForTest();
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(explainStorageOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+    }
+  });
+
+  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
+  // the sentinel does not implement those either, so a query resolving through getStorageBackend() would
+  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
+  // getter-based implementation reports a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetStorageBackendForTest();
+    expect(explainStorageOperation('getItem')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'getItem',
+    });
+  });
+
+  it('reports a custom backend as implementing only what it provides', () => {
+    setStorageBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasStorageOperation(operation)).toBe(false);
+    }
+    expect(explainStorageOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+  });
+
+  it('reports an operation the backend does provide', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    setStorageBackend({ ...partialBackend(), [operation]: () => undefined } as StorageBackend);
+    expect(explainStorageOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    installStorageHostBackend({ ...partialBackend(), [operation]: () => undefined } as StorageBackend);
+    setStorageBackend(partialBackend());
+    expect(explainStorageOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
   });
 });
 
@@ -597,6 +648,19 @@ describe('hasStorageItem', () => {
   });
 });
 
+describe('hasStorageOperation', () => {
+  afterEach(() => {
+    resetStorageBackendForTest();
+  });
+
+  it('agrees with explainStorageOperation for every optional operation', () => {
+    setStorageBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasStorageOperation(operation)).toBe(explainStorageOperation(operation).implemented);
+    }
+  });
+});
+
 describe('installStorageHostBackend', () => {
   afterEach(() => resetStorageBackendForTest());
 
@@ -818,6 +882,11 @@ describe('setStorageItems', () => {
   });
 });
 
+// Per-operation availability for StorageBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly StorageOperation[] = ['byteSize', 'subscribeChanges'];
+
 describe('setStorageJSON', () => {
   it('stores a stringified value', () => {
     setStorageBackend(fakeBackend());
@@ -840,3 +909,14 @@ describe('setStorageNumber', () => {
     expect(getStorageItem('n')).toBe('3.14');
   });
 });
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): StorageBackend {
+  return {
+    getItem: (() => undefined) as never,
+    setItem: (() => undefined) as never,
+    removeItem: (() => undefined) as never,
+    clear: (() => undefined) as never,
+    keys: (() => undefined) as never,
+  } as StorageBackend;
+}

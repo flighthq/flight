@@ -1,27 +1,35 @@
-import type { IpcBackend, IpcBackendCapabilities, IpcChannel, IpcSignals } from '@flighthq/types/contract';
+import type {
+  IpcBackend,
+  IpcBackendCapabilities,
+  IpcChannel,
+  IpcOperation,
+  IpcSignals,
+} from '@flighthq/types/contract';
 import { IpcTimeoutError } from '@flighthq/types/contract';
 
 import {
   createIpcChannel,
   enableIpcSignals,
+  explainIpcBackend,
+  explainIpcOperation,
   getIpcBackend,
   getIpcListenerCount,
   getIpcSignals,
   hasIpcBackend,
+  hasIpcOperation,
+  installIpcHostBackend,
   invokeIpc,
   invokeIpcWithTimeout,
-  onceIpcMessage,
+  observeIpcHostResult,
   onIpcInvoke,
   onIpcMessage,
   onIpcMessageEvent,
+  onceIpcMessage,
   removeAllIpcListeners,
+  resetIpcBackendForTest,
   sendIpcMessage,
   sendIpcMessageTo,
   setIpcBackend,
-  explainIpcBackend,
-  installIpcHostBackend,
-  observeIpcHostResult,
-  resetIpcBackendForTest,
 } from './ipc';
 
 interface FakeIpcBackend extends IpcBackend {
@@ -188,6 +196,55 @@ describe('explainIpcBackend', () => {
   });
 });
 
+describe('explainIpcOperation', () => {
+  afterEach(() => {
+    resetIpcBackendForTest();
+  });
+
+  // ★ With nothing installed, the sentinel still answers every call,
+  // so a query resolving through the getter would report every operation implemented. It must not.
+  it('reports sentinel and no implementation when nothing is installed', () => {
+    resetIpcBackendForTest();
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(explainIpcOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+    }
+  });
+
+  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
+  // the sentinel does not implement those either, so a query resolving through getIpcBackend() would
+  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
+  // getter-based implementation reports a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetIpcBackendForTest();
+    expect(explainIpcOperation('send')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'send',
+    });
+  });
+
+  it('reports a custom backend as implementing only what it provides', () => {
+    setIpcBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasIpcOperation(operation)).toBe(false);
+    }
+    expect(explainIpcOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+  });
+
+  it('reports an operation the backend does provide', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    setIpcBackend({ ...partialBackend(), [operation]: () => undefined } as IpcBackend);
+    expect(explainIpcOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    installIpcHostBackend({ ...partialBackend(), [operation]: () => undefined } as IpcBackend);
+    setIpcBackend(partialBackend());
+    expect(explainIpcOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+  });
+});
+
 describe('getIpcBackend', () => {
   it('falls back to a web backend', () => {
     expect(getIpcBackend()).not.toBeNull();
@@ -288,6 +345,19 @@ describe('hasIpcBackend', () => {
     setIpcBackend(fakeBackend());
     setIpcBackend(null);
     expect(hasIpcBackend()).toBe(false);
+  });
+});
+
+describe('hasIpcOperation', () => {
+  afterEach(() => {
+    resetIpcBackendForTest();
+  });
+
+  it('agrees with explainIpcOperation for every optional operation', () => {
+    setIpcBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasIpcOperation(operation)).toBe(explainIpcOperation(operation).implemented);
+    }
   });
 });
 
@@ -550,6 +620,11 @@ describe('sendIpcMessage', () => {
   });
 });
 
+// Per-operation availability for IpcBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly IpcOperation[] = ['handle', 'sendTo', 'getCapabilities'];
+
 describe('sendIpcMessageTo', () => {
   it('forwards target, channel, and args to backend.sendTo', () => {
     const backend = fakeBackend();
@@ -573,3 +648,12 @@ describe('setIpcBackend', () => {
     expect(getIpcBackend()).not.toBeNull();
   });
 });
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): IpcBackend {
+  return {
+    send: (() => undefined) as never,
+    invoke: (() => undefined) as never,
+    subscribe: (() => undefined) as never,
+  } as IpcBackend;
+}

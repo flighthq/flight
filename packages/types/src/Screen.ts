@@ -63,3 +63,8 @@ export interface ScreenBackend {
   // modes omit it, and callers fall back to a synthetic single mode.
   getModes?(screen: Readonly<ScreenInfo>, out: ScreenMode[]): ScreenMode[];
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type ScreenOperation = keyof ScreenBackend;

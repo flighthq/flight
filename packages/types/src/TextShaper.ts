@@ -46,3 +46,8 @@ export interface TextShaperBackend {
   // the advances-only canvas backend does not.
   shapeRun?: (text: string, format: Readonly<TextFormat>, options?: Readonly<ShapeRunOptions>) => ShapedRun;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type TextShaperOperation = keyof TextShaperBackend;

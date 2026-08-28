@@ -3,15 +3,22 @@ import type {
   HapticNotificationType,
   HapticsBackend,
   HapticsCapabilities,
+  HapticsOperation,
 } from '@flighthq/types/contract';
 
 import {
   cancelDeviceVibration,
   createWebHapticsBackend,
+  explainHapticsBackend,
+  explainHapticsOperation,
   getHapticsBackend,
   getHapticsCapabilities,
+  hasHapticsOperation,
+  installHapticsHostBackend,
   isHapticsSupported,
+  observeHapticsHostResult,
   prepareHaptics,
+  resetHapticsBackendForTest,
   setHapticsBackend,
   triggerHapticImpact,
   triggerHapticNotification,
@@ -19,10 +26,6 @@ import {
   vibrateDevice,
   vibrateDevicePattern,
   vibrateDeviceWaveform,
-  explainHapticsBackend,
-  installHapticsHostBackend,
-  observeHapticsHostResult,
-  resetHapticsBackendForTest,
 } from './haptics';
 
 function makeCapabilities(overrides: Partial<HapticsCapabilities> = {}): HapticsCapabilities {
@@ -187,6 +190,55 @@ describe('explainHapticsBackend', () => {
   });
 });
 
+describe('explainHapticsOperation', () => {
+  afterEach(() => {
+    resetHapticsBackendForTest();
+  });
+
+  // ★ With nothing installed, the sentinel still answers every call,
+  // so a query resolving through the getter would report every operation implemented. It must not.
+  it('reports sentinel and no implementation when nothing is installed', () => {
+    resetHapticsBackendForTest();
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(explainHapticsOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+    }
+  });
+
+  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
+  // the sentinel does not implement those either, so a query resolving through getHapticsBackend() would
+  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
+  // getter-based implementation reports a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetHapticsBackendForTest();
+    expect(explainHapticsOperation('cancel')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'cancel',
+    });
+  });
+
+  it('reports a custom backend as implementing only what it provides', () => {
+    setHapticsBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasHapticsOperation(operation)).toBe(false);
+    }
+    expect(explainHapticsOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+  });
+
+  it('reports an operation the backend does provide', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    setHapticsBackend({ ...partialBackend(), [operation]: () => undefined } as HapticsBackend);
+    expect(explainHapticsOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    installHapticsHostBackend({ ...partialBackend(), [operation]: () => undefined } as HapticsBackend);
+    setHapticsBackend(partialBackend());
+    expect(explainHapticsOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+  });
+});
+
 describe('getHapticsBackend', () => {
   it('falls back to a web backend', () => {
     expect(getHapticsBackend()).not.toBeNull();
@@ -217,6 +269,19 @@ describe('getHapticsCapabilities', () => {
     const out = makeCapabilities();
     getHapticsCapabilities(out);
     expect(out.supported).toBe(false);
+  });
+});
+
+describe('hasHapticsOperation', () => {
+  afterEach(() => {
+    resetHapticsBackendForTest();
+  });
+
+  it('agrees with explainHapticsOperation for every optional operation', () => {
+    setHapticsBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasHapticsOperation(operation)).toBe(explainHapticsOperation(operation).implemented);
+    }
   });
 });
 
@@ -366,6 +431,11 @@ describe('vibrateDevice', () => {
   });
 });
 
+// Per-operation availability for HapticsBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly HapticsOperation[] = ['prepare', 'vibrateWaveform'];
+
 describe('vibrateDevicePattern', () => {
   it('forwards pattern to the active backend', () => {
     const backend = fakeBackend();
@@ -424,3 +494,17 @@ describe('vibrateDeviceWaveform', () => {
     expect(vibrateDeviceWaveform([100], [255])).toBe(false);
   });
 });
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): HapticsBackend {
+  return {
+    cancel: (() => undefined) as never,
+    capabilities: (() => undefined) as never,
+    impact: (() => undefined) as never,
+    isSupported: (() => undefined) as never,
+    notification: (() => undefined) as never,
+    selection: (() => undefined) as never,
+    vibrate: (() => undefined) as never,
+    vibratePattern: (() => undefined) as never,
+  } as HapticsBackend;
+}

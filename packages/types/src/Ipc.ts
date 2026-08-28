@@ -58,3 +58,8 @@ export class IpcTimeoutError extends Error {
     this.timeoutMs = timeoutMs;
   }
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type IpcOperation = keyof IpcBackend;

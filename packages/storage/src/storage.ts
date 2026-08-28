@@ -1,10 +1,12 @@
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   BackendExplanation,
+  BackendOperationExplanation,
   StorageBackend,
   StorageChange,
   StorageMigration,
   StorageNamespace,
+  StorageOperation,
   StorageQuota,
   StorageSignals,
 } from '@flighthq/types/contract';
@@ -160,6 +162,23 @@ export function explainStorageBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// The active storage backend. Precedence: custom > host > sentinel.
+// Which layer implements `operation`, and whether anything real does — the per-operation answer
+// `explainStorageBackend` cannot give: that one reports a backend is installed, this one reports whether
+// THIS operation on it is a genuine implementation or the sentinel standing in.
+//
+// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
+// this report `true` for everything and say nothing at all.
+export function explainStorageOperation(operation: StorageOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 // Returns the estimated UTF-16 byte cost of all keys under the namespace. Returns -1 on denial.
 export function getNamespacedStorageByteSize(namespace: Readonly<StorageNamespace>): number {
   const prefix = namespace.prefix + '.';
@@ -209,7 +228,6 @@ export function getNamespacedStorageKeys(namespace: Readonly<StorageNamespace>):
   return out;
 }
 
-// The active storage backend. Precedence: custom > host > sentinel.
 export function getStorageBackend(): StorageBackend {
   return _custom ?? _host ?? _sentinel;
 }
@@ -360,6 +378,11 @@ export function hasNamespacedStorageItem(namespace: Readonly<StorageNamespace>, 
 // Returns true when the key exists in the store.
 export function hasStorageItem(key: string): boolean {
   return getStorageBackend().getItem(key) !== null;
+}
+
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+export function hasStorageOperation(operation: StorageOperation): boolean {
+  return explainStorageOperation(operation).implemented;
 }
 
 export function installStorageHostBackend(backend: StorageBackend): void {

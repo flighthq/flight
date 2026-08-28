@@ -34,3 +34,8 @@ export interface HapticsBackend {
   // vibratePattern(timings) when absent. repeat is the loop index into timings, or -1 for no repeat.
   vibrateWaveform?(timings: Readonly<number[]>, amplitudes: Readonly<number[]>, repeat?: number): boolean;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type HapticsOperation = keyof HapticsBackend;

@@ -1,4 +1,10 @@
-import type { BackendExplanation, GlyphRasterizedBitmap, GlyphRasterizerBackend } from '@flighthq/types/contract';
+import type {
+  BackendExplanation,
+  BackendOperationExplanation,
+  GlyphRasterizedBitmap,
+  GlyphRasterizerBackend,
+  GlyphRasterizerOperation,
+} from '@flighthq/types/contract';
 
 export function createStubGlyphRasterizerBackend(): GlyphRasterizerBackend {
   return {
@@ -45,8 +51,29 @@ export function explainGlyphRasterizerBackend(): BackendExplanation {
   };
 }
 
+// Which layer implements `operation`, and whether anything real does — the per-operation answer
+// `explainGlyphRasterizerBackend` cannot give: that one reports a backend is installed, this one reports whether
+// THIS operation on it is a genuine implementation or the sentinel standing in.
+//
+// ★ The sentinel is deliberately not consulted. It answers every operation, so counting it would make
+// this report `true` for everything and say nothing at all.
+export function explainGlyphRasterizerOperation(operation: GlyphRasterizerOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 export function getGlyphRasterizerBackend(): GlyphRasterizerBackend {
   return _custom ?? _host ?? _sentinel;
+}
+
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+export function hasGlyphRasterizerOperation(operation: GlyphRasterizerOperation): boolean {
+  return explainGlyphRasterizerOperation(operation).implemented;
 }
 
 // Installs a host-layer backend. The first install wins: a second call with the same backend

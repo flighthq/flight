@@ -1,5 +1,10 @@
 import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
-import type { AppLifecycleState, AppMemoryPressure, LifecycleBackend } from '@flighthq/types/contract';
+import type {
+  AppLifecycleState,
+  AppMemoryPressure,
+  LifecycleBackend,
+  LifecycleOperation,
+} from '@flighthq/types/contract';
 
 import {
   attachAppLifecycle,
@@ -7,18 +12,20 @@ import {
   createWebLifecycleBackend,
   detachAppLifecycle,
   disposeAppLifecycle,
+  explainLifecycleBackend,
+  explainLifecycleOperation,
   getAppLaunchKind,
   getAppLifecycleState,
   getLifecycleBackend,
+  hasLifecycleOperation,
+  installLifecycleHostBackend,
   isAppActive,
   isAppBackground,
   isAppInactive,
-  requestAppBack,
-  setLifecycleBackend,
-  explainLifecycleBackend,
-  installLifecycleHostBackend,
   observeLifecycleHostResult,
+  requestAppBack,
   resetLifecycleBackendForTest,
+  setLifecycleBackend,
 } from './lifecycle';
 
 type FakeBackend = LifecycleBackend & {
@@ -464,6 +471,55 @@ describe('explainLifecycleBackend', () => {
   });
 });
 
+describe('explainLifecycleOperation', () => {
+  afterEach(() => {
+    resetLifecycleBackendForTest();
+  });
+
+  // ★ With nothing installed, the sentinel still answers every call,
+  // so a query resolving through the getter would report every operation implemented. It must not.
+  it('reports sentinel and no implementation when nothing is installed', () => {
+    resetLifecycleBackendForTest();
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(explainLifecycleOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+    }
+  });
+
+  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
+  // the sentinel does not implement those either, so a query resolving through getLifecycleBackend() would
+  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
+  // getter-based implementation reports a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetLifecycleBackendForTest();
+    expect(explainLifecycleOperation('getState')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'getState',
+    });
+  });
+
+  it('reports a custom backend as implementing only what it provides', () => {
+    setLifecycleBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasLifecycleOperation(operation)).toBe(false);
+    }
+    expect(explainLifecycleOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+  });
+
+  it('reports an operation the backend does provide', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    setLifecycleBackend({ ...partialBackend(), [operation]: () => undefined } as LifecycleBackend);
+    expect(explainLifecycleOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    installLifecycleHostBackend({ ...partialBackend(), [operation]: () => undefined } as LifecycleBackend);
+    setLifecycleBackend(partialBackend());
+    expect(explainLifecycleOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+  });
+});
+
 describe('getAppLaunchKind', () => {
   it("returns 'warm' when backend does not implement getLaunchKind", () => {
     const backend = fakeBackend();
@@ -494,6 +550,19 @@ describe('getAppLifecycleState', () => {
 describe('getLifecycleBackend', () => {
   it('falls back to a web backend', () => {
     expect(getLifecycleBackend()).not.toBeNull();
+  });
+});
+
+describe('hasLifecycleOperation', () => {
+  afterEach(() => {
+    resetLifecycleBackendForTest();
+  });
+
+  it('agrees with explainLifecycleOperation for every optional operation', () => {
+    setLifecycleBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasLifecycleOperation(operation)).toBe(explainLifecycleOperation(operation).implemented);
+    }
   });
 });
 
@@ -610,6 +679,11 @@ describe('requestAppBack', () => {
   });
 });
 
+// Per-operation availability for LifecycleBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly LifecycleOperation[] = ['getLaunchKind', 'subscribeMemoryWarning'];
+
 describe('resetLifecycleBackendForTest', () => {
   it('clears all backend slots', () => {
     setLifecycleBackend(fakeBackend());
@@ -629,3 +703,11 @@ describe('setLifecycleBackend', () => {
     expect(getLifecycleBackend()).not.toBeNull();
   });
 });
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): LifecycleBackend {
+  return {
+    getState: (() => undefined) as never,
+    subscribe: (() => undefined) as never,
+  } as LifecycleBackend;
+}

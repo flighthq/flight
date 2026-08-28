@@ -1,4 +1,11 @@
-import type { ScreenBackend, ScreenChangeEvent, ScreenInfo, ScreenMode, ScreenSignals } from '@flighthq/types/contract';
+import type {
+  ScreenBackend,
+  ScreenChangeEvent,
+  ScreenInfo,
+  ScreenMode,
+  ScreenOperation,
+  ScreenSignals,
+} from '@flighthq/types/contract';
 
 import {
   attachScreenSignals,
@@ -11,6 +18,8 @@ import {
   dipToScreenRect,
   disposeScreenSignals,
   enableScreenSignals,
+  explainScreenBackend,
+  explainScreenOperation,
   getPrimaryScreen,
   getScreenBackend,
   getScreenBounds,
@@ -23,19 +32,19 @@ import {
   getScreenModes,
   getScreenNearestPoint,
   getScreenNearestRect,
-  getScreens,
   getScreenWorkArea,
+  getScreens,
+  hasScreenOperation,
+  installScreenHostBackend,
+  observeScreenHostResult,
   onScreenChange,
   onScreenDetailPermissionChange,
   refreshScreens,
   requestScreenDetails,
+  resetScreenBackendForTest,
   screenToDipPoint,
   screenToDipRect,
   setScreenBackend,
-  explainScreenBackend,
-  installScreenHostBackend,
-  observeScreenHostResult,
-  resetScreenBackendForTest,
 } from './screen';
 function makeScreenInfo(overrides: Partial<ScreenInfo> = {}): ScreenInfo {
   return { ...createScreenInfo(), ...overrides };
@@ -478,6 +487,54 @@ describe('explainScreenBackend', () => {
     expect(explainScreenBackend().conflict).toBe(true);
   });
 });
+describe('explainScreenOperation', () => {
+  afterEach(() => {
+    resetScreenBackendForTest();
+  });
+
+  // ★ With nothing installed, the sentinel still answers every call,
+  // so a query resolving through the getter would report every operation implemented. It must not.
+  it('reports sentinel and no implementation when nothing is installed', () => {
+    resetScreenBackendForTest();
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(explainScreenOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+    }
+  });
+
+  // ★ THE ARM THAT ACTUALLY CATCHES A SENTINEL COUNTED AS SUPPORT. Optional operations are not enough:
+  // the sentinel does not implement those either, so a query resolving through getScreenBackend() would
+  // agree by accident. A REQUIRED operation is the one the sentinel does answer, so this is where a
+  // getter-based implementation reports a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetScreenBackendForTest();
+    expect(explainScreenOperation('getScreens')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'getScreens',
+    });
+  });
+
+  it('reports a custom backend as implementing only what it provides', () => {
+    setScreenBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasScreenOperation(operation)).toBe(false);
+    }
+    expect(explainScreenOperation(OPTIONAL_OPERATIONS[0]).layer).toBe('sentinel');
+  });
+
+  it('reports an operation the backend does provide', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    setScreenBackend({ ...partialBackend(), [operation]: () => undefined } as ScreenBackend);
+    expect(explainScreenOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    const operation = OPTIONAL_OPERATIONS[0];
+    installScreenHostBackend({ ...partialBackend(), [operation]: () => undefined } as ScreenBackend);
+    setScreenBackend(partialBackend());
+    expect(explainScreenOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+  });
+});
 describe('getPrimaryScreen', () => {
   it('fills and returns the passed out object', () => {
     setScreenBackend(fakeBackend([{ width: 1920, isPrimary: true }]));
@@ -760,6 +817,18 @@ describe('getScreenWorkArea', () => {
     expect(out.height).toBe(1040);
   });
 });
+describe('hasScreenOperation', () => {
+  afterEach(() => {
+    resetScreenBackendForTest();
+  });
+
+  it('agrees with explainScreenOperation for every optional operation', () => {
+    setScreenBackend(partialBackend());
+    for (const operation of OPTIONAL_OPERATIONS) {
+      expect(hasScreenOperation(operation)).toBe(explainScreenOperation(operation).implemented);
+    }
+  });
+});
 describe('installScreenHostBackend', () => {
   afterEach(() => resetScreenBackendForTest());
 
@@ -854,11 +923,13 @@ describe('onScreenDetailPermissionChange', () => {
     }
   });
 });
+
 describe('refreshScreens', () => {
   it('is callable without throwing', () => {
     expect(() => refreshScreens()).not.toThrow();
   });
 });
+
 describe('requestScreenDetails', () => {
   it('returns false in jsdom where getScreenDetails is unavailable', async () => {
     const result = await requestScreenDetails();
@@ -1007,6 +1078,11 @@ describe('screenToDipPoint', () => {
   });
 });
 
+// Per-operation availability for ScreenBackend. The operations below are the ones the interface declares
+// OPTIONAL, so a host that omits them is compliant rather than broken — that is the absence-of-an-export
+// ruling, and this is the query that makes it observable.
+const OPTIONAL_OPERATIONS: readonly ScreenOperation[] = ['getModes'];
+
 describe('screenToDipRect', () => {
   it('scales the rect back to DIP', () => {
     const screen = makeScreenInfo({ x: 0, y: 0, scaleFactor: 2 });
@@ -1049,3 +1125,13 @@ describe('setScreenBackend', () => {
     expect(getScreenBackend()).not.toBeNull();
   });
 });
+
+// A host implementing only the REQUIRED members — partial support declared by absence.
+function partialBackend(): ScreenBackend {
+  return {
+    getScreens: (() => undefined) as never,
+    getPrimaryScreen: (() => undefined) as never,
+    subscribe: (() => undefined) as never,
+    getCursorPosition: (() => undefined) as never,
+  } as ScreenBackend;
+}
