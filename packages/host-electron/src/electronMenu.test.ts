@@ -75,6 +75,27 @@ describe('createElectronMenuBackend', () => {
     expect(seen).toEqual([]);
   });
 
+  it('clears the native application menu on destroy', () => {
+    const { electron, applied } = fakeElectron();
+    const backend = createElectronMenuBackend(electron);
+    backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
+    expect(applied.length).toBe(1);
+    backend.destroy?.();
+    expect(applied.length).toBe(2);
+    expect(applied[1]).toBeNull();
+  });
+
+  it('clears the select listener on destroy', () => {
+    const { electron, built } = fakeElectron();
+    const backend = createElectronMenuBackend(electron);
+    const seen: string[] = [];
+    backend.subscribeSelect((id) => seen.push(id));
+    backend.setApplicationMenu([{ id: 'a', label: 'A' }]);
+    backend.destroy?.();
+    clickItem(built, 'a');
+    expect(seen).toEqual([]);
+  });
+
   it('resolves the context menu promise with the clicked id', async () => {
     const { electron, built, popups } = fakeElectron();
     const backend = createElectronMenuBackend(electron);

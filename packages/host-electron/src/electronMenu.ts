@@ -13,6 +13,7 @@ export function createElectronMenuBackend(electron: ElectronApi): MenuBackend {
   return {
     destroy() {
       selectListener = null;
+      electron.Menu.setApplicationMenu(null);
     },
     setApplicationMenu(items) {
       electron.Menu.setApplicationMenu(
