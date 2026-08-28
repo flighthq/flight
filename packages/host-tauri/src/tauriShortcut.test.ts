@@ -76,3 +76,30 @@ describe('createTauriShortcutBackend', () => {
     expect(() => backend.setAllEnabled(true)).not.toThrow();
   });
 });
+
+// ★ THE REJECTION AXIS. `unregisterAll()` releases OS-global registrations through a promise the
+// synchronous release path cannot await, so the `.catch` at the call site is all that stands between a
+// rejected unregister and an unhandled rejection. Nothing exercised it before.
+describe('createTauriShortcutBackend release when unregisterAll rejects', () => {
+  it('still clears its own registry and raises no unhandled rejection', async () => {
+    const { tauri } = fakeTauri();
+    (tauri as unknown as { globalShortcut: { unregisterAll: () => Promise<void> } }).globalShortcut.unregisterAll =
+      () => Promise.reject(new Error('unregister refused by the platform'));
+
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown): void => void unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const backend = createTauriShortcutBackend(tauri);
+      backend.register('CmdOrCtrl+K', () => {});
+      backend.unregisterAll();
+      // The local registry is cleared synchronously regardless of what the platform promise does.
+      expect(backend.isRegistered('CmdOrCtrl+K')).toBe(false);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+  });
+});

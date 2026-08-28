@@ -262,3 +262,35 @@ describe('createTauriWindowBackend', () => {
     expect(methods(state).filter((method) => method === 'center')).toHaveLength(1);
   });
 });
+
+// ★ THE REJECTION AXIS. `close(win)` releases a Flight-owned window through `handle.close()`, a promise
+// the synchronous close path cannot await, so the `.catch` at the call site is the only thing keeping a
+// rejected close from escaping as an unhandled rejection. Nothing exercised it before.
+describe('createTauriWindowBackend close when the platform close rejects', () => {
+  it('still detaches the window and raises no unhandled rejection', async () => {
+    const { tauri, window } = fakeTauri();
+    window.close = () => Promise.reject(new Error('close refused by the platform'));
+
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown): void => void unhandled.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const backend = createTauriWindowBackend(tauri);
+      const win = createApplicationWindow();
+      // ATTACHED AS 'flight', deliberately: `open` adopts the pre-existing window as 'host', and the
+      // close path only calls the platform close for a window Flight itself owns. Driving this through
+      // `open` exercises a branch that never calls `close()` at all, so the test would pass with the
+      // `.catch` deleted — which is exactly what it did before this line was corrected.
+      expect(backend.attach?.(win, window as never, 'flight')).toBe(true);
+
+      expect(() => backend.close(win)).not.toThrow();
+      // Detached synchronously, so a rejected close cannot strand the window as still attached.
+      expect(backend.attach?.(win, window as never, 'flight')).toBe(true);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+  });
+});
