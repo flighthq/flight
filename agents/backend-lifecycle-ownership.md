@@ -44,7 +44,45 @@ is deliberately never updated; the figures in this section track the live tree a
   `set*Backend` body and top-level function body in `packages/*/src/*.ts`; `*.test.ts` excluded
 - **counting predicate** — one unit = one interface; *owning* = declares a **zero-parameter**
   `destroy`/`dispose` in method or property syntax, so a per-object teardown taking an id is excluded
-- **live output** — `5 of 46 backends own a freeable resource, 41 declare no whole-backend teardown`
+- **live output** — `5 of 46 backends declare a whole-backend teardown hook, 41 declare none`, followed
+  by the scope caveat the gate now prints on every run:
+  `STRUCTURAL: hook presence and setter wiring only; this gate does NOT verify that destroy releases
+  what a backend owns — behavior unverified`
+
+### Release audit of the five counted rows
+
+Each counted row was read against its implementations: what the backend *owns* versus what its
+`destroy()` *releases*. Every mismatch is listed. **Two of the five have no reachable teardown for the
+host-installed backend at all**, which the gate cannot see because it only reads declarations and setter
+wiring. This section is the semantic column the gate is missing; it is hand-derived and is a floor, not
+an oracle.
+
+| row | owns | destroy releases | mismatch |
+| --- | --- | --- | --- |
+| `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | clears both maps; removes a self-created root, empties a caller-supplied one; pins `rootResolved` so it cannot resurrect | **over-release (minor):** for a caller-supplied container, `root.replaceChildren()` also removes children the caller put there, which this backend never created |
+| `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
+| `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on the `navigator.mediaSession` singleton | clears exactly the actions in `registered`; sets `metadata = null`, `playbackState = 'none'`, `setPositionState(undefined)` | **over-release:** actions are origin-pinned via `registered`, but metadata/playbackState/position are reset unconditionally — including when this backend never set them, discarding another party's state |
+| `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | nulls the select listener only | **under-release**, twice: the application menu is never cleared (`Menu.setApplicationMenu(null)` appears nowhere in `packages/host-*/src`), **and** the host-installed backend has no reachable teardown — there is no `destroyMenuBackend`, and `setMenuBackend` destroys only the custom slot |
+| `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel | **under-release:** cached battery state is never cleared, the sentinel's `release` listener is never removed, and — the substantive one — **the host-installed backend's `destroy` is unreachable.** There is no `destroyPowerBackend`; `installPowerHostBackend` is install-once; `setPowerBackend` destroys only the custom slot. So a wake lock held by the host backend is never released by any path |
+
+Battery, resume and freeze listeners are *not* mismatches: each is returned as an unsubscribe thunk and
+is caller-owned, which is the correct bracket.
+
+#### A systemic defect the row-by-row reading does not surface
+
+`enableHostWeb*()` latches a module-level `_enabled` flag and **no `destroy()` resets it**, while
+`destroyAccessibilityBackend`/`destroyMediaSessionBackend` do clear the host slot. The two together
+make teardown irreversible. Measured, not read — probing the live tree with `explain*Operation().layer`:
+
+```text
+enableHostWebAccessibility()  → host
+destroyAccessibilityBackend() → sentinel
+enableHostWebAccessibility()  → sentinel     ← expected host
+```
+
+`MediaSession` probes identically. After teardown the capability is stuck on the sentinel for the life
+of the process, and only the test-only `resetHostWeb*ForTest()` can recover it. `Menu` and `Power` are
+not reachable this way today only because their host teardown cannot be invoked at all.
 
 The census partition (`5 + 41 = 46`) counts a different thing from the bucket partition
 (`1 + 7 + 22 + 16 = 46`) above it: the census asks only whether a zero-argument hook is *declared*,

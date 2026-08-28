@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  BACKEND_LIFECYCLE_SCOPE_CAVEAT,
   collectMethodSyntaxTeardowns,
   collectWholeBackendTeardowns,
   compareBackendLifecycleReports,
@@ -101,11 +102,24 @@ describe('backend replacement lifetime census', () => {
     }
   });
 
-  // The ratchet: replacement must free what the outgoing backend held, for every backend that owns
-  // anything. Green today because one backend does; it tightens by itself as teardown hooks are added.
-  it('reports no leak among the backends that own a freeable resource', () => {
+  // The ratchet: every backend that DECLARES a whole-backend teardown must have its setter name it.
+  // That is a wiring check, not a proof that teardown is complete — see the scope caveat below.
+  it('reports no unwired teardown among the backends that declare one', () => {
     expect(report.violations).toEqual([]);
     expect(hasBackendLifecycleFailure(report)).toBe(false);
+  });
+
+  // ★ THE SCOPE CAVEAT MUST SURVIVE. The printed number is read as a completeness measure by everyone
+  // who has not read this file, and the live audit found rows where it is not one: `PowerBackend`'s
+  // host-installed instance has no reachable teardown at all (there is no `destroyPowerBackend`, and
+  // `setPowerBackend` destroys only the custom slot), while `MediaSessionBackend`'s destroy resets
+  // metadata and playbackState it may never have set. Deleting the caveat to tidy the output fails here.
+  it('prints the caveat that the count is structural and behavior is unverified', () => {
+    expect(formattedOutput).toContain(BACKEND_LIFECYCLE_SCOPE_CAVEAT);
+    expect(formattedOutput).toContain('STRUCTURAL');
+    expect(formattedOutput).toContain('behavior unverified');
+    // The summary must not reassert ownership semantics the gate cannot observe.
+    expect(formattedOutput).not.toContain('own a freeable resource');
   });
 
   it('emits the delta inline so denominator growth is reported separately from regressions', () => {
