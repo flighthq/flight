@@ -161,12 +161,12 @@ describe('compareBackendLifecycleReports', () => {
     }));
     const enforcedNames = teardownNames.slice().sort();
     return {
+      ...createEmptyBackendLifecycleReport(),
       enforced: enforcedNames.length,
       enforcedNames,
       entries,
       noTeardownHook: names.length - enforcedNames.length,
       total: names.length,
-      violations: [],
     };
   }
 
