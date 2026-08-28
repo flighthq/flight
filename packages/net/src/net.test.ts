@@ -253,6 +253,7 @@ describe('installNetHostBackend', () => {
 
 describe('resetNetBackendForTest', () => {
   it('clears custom and host slots and restores the lazy web fallback', () => {
+    const originalWeb = getNetBackend();
     const host: NetBackend = { sendNetRequest: async () => stubResponse() };
     const custom: NetBackend = { sendNetRequest: async () => stubResponse() };
     installNetHostBackend(host);
@@ -261,6 +262,7 @@ describe('resetNetBackendForTest', () => {
     const web = getNetBackend();
     expect(web).not.toBe(host);
     expect(web).not.toBe(custom);
+    expect(web).not.toBe(originalWeb);
     expect(typeof web.sendNetRequest).toBe('function');
   });
 });
