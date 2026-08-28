@@ -973,3 +973,60 @@ made it wrong ("and no sentinel is offered") was present. It was not.
 Neither name signals which door is which. `createGlRenderSurface` and `createGlCanvasElement` read as
 peers, so a caller cannot tell from the call which one asserts. Revisit when H7 touches this file
 anyway; do not spend a slice on it.
+
+---
+
+# H12 — bitmap capture: compose the primitive instead of duplicating it — 2026-08-28
+
+Surfaced by applying [H10](#h10) before implementation: P5 could have gone green on the wrong failure
+model. This is the test paying for itself, and the answer is **smaller** than the proposal.
+
+## What the code actually shows
+
+`captureBitmapFromImageResource(resource): Bitmap` does not wrap anything. It re-implements the whole
+readback inline — `document.createElement`, `getContext('2d')!`, `drawImage`, `getImageData` — and
+throws on each failure. Its sole production consumer (`registerSpriteHitTest.ts:50`) wraps it in a
+blanket `catch` and maps everything to `null`.
+
+Meanwhile `createBitmapFromImageSource(source, width, height): Bitmap | null` performs the same
+operation, returns a sentinel, and already has its diagnostics half:
+`explainBitmapReadback(source, width, height)` returning a `BitmapReadbackBlockReason`
+(`empty-size`, `no-canvas`, `tainted-source`, `ok`), documented as pure, never-throwing, and
+shedding when unimported.
+
+So there are **two implementations of one operation** — one nullable with a complete explain pair,
+one throwing with a duplicated body. That is worse than either design choice on its own.
+
+## Ruling
+
+`captureBitmapFromImageResource` **composes** `createBitmapFromImageSource`; it does not duplicate
+it. It then returns `Bitmap | null` by propagating the primitive's sentinel.
+
+Three things fall out at no cost:
+
+- **No new explain query, and no new reason vocabulary.** `explainBitmapReadback(resource.source,
+  resource.width, resource.height)` already answers "why did that capture come back null." Adding a
+  parallel explainer would create a second thing to keep in sync with the same failure conditions —
+  the exact staleness the existing one's header warns about.
+- **The `getContext('2d')!` assertion disappears**, along with the `TypeError` it would have raised
+  in place of a meaningful reason.
+- **The consumer's blanket `catch` goes.** It currently swallows *everything*, including genuine
+  faults it has no business hiding. With a sentinel it handles `null` explicitly and lets real faults
+  through.
+
+## Consequence for the P5 queue: two shapes collapse into one
+
+Items 2 and 3 were listed separately — "image-resource capture (1 site)" and "generic image-source
+nullable readback (1 site)" — sharing `bitmapFrom.ts` and therefore serialising. Under composition
+there is only **one** DOM site left, inside the primitive. Repair that and both entries close. Do
+**not** add a second backend operation for capture; there is nothing left in it to seam.
+
+## Contrast with [H11](#h11), which is why the test is worth keeping
+
+H11 asked the same question of `createGlCanvasElement` and reached the **opposite** answer, because
+there a nullable sibling genuinely existed and the throwing function was a deliberate asserting
+convenience over it. Here the throwing function is a duplicate, not a wrapper.
+
+Superficially identical cases, opposite rulings, decided by one checkable fact: **does a non-throwing
+way to ask the same question already exist, and does this function delegate to it?** Check that
+before applying either precedent.
