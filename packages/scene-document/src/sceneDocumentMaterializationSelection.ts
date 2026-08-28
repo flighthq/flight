@@ -3,7 +3,7 @@ import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
 import { createDocumentRefusal, createSceneRefusal } from './sceneDocumentRefusal';
 
-export type FlightDocumentSceneSelection =
+type FlightDocumentSceneSelection =
   | {
       readonly refusal: FlightDocumentRefusalExplanation;
       readonly scene: null;
