@@ -374,3 +374,127 @@ existing window is a backend operation, never an application-scoped one.
 and removal must be explicit and must not leak the GPU textures, audio contexts, native handles and open
 sockets the outgoing backend held. Per H4 that teardown verb is **`destroy*`, not `dispose*`**. Window
 ownership is still decided at attachment time.
+
+
+---
+
+# Consumer feedback — flight-hx integration review, 2026-08-28
+
+flight-hx reviewed the current develop tree against its existing Haxe/Lime binding layer (HostLime)
+and reported what is immediately usable, what requires workarounds, and what is still missing.
+
+## What works now
+
+**AudioDeviceBackend (P2)** — the 13 operations match HostLime's existing buffered OpenAL
+implementation. Usable immediately. However, mixers, buses/pan, decoding, spatial audio, and streaming
+are not covered by the 13-op Option A scope; `LimeAudio.hx` must remain for those capabilities until
+Option B lands. This confirms the partial-satisfaction framing: a native host CAN install its device
+(the core P2 requirement), but playback-without-mixing is real and declared.
+
+**Window attachment (P4)** — the `attach(win, handle, ownership)` seam fits Lime's ownership model.
+Ready to use.
+
+**Input ingress (P5)** — keyboard, pointer, relative pointer, text, touch, and wheel are all ready.
+HostLime can refactor `LimeInput.hx` around `InputIngressBackend`.
+
+**GL bridge (P5)** — not blocking. HostLime already passes Lime's existing context to
+`createGlRenderState`, and that path has working native coverage. A `GlHostBackend` would be
+architectural cleanup, not an unblock.
+
+**WGPU acquisition (P5)** — properly abstracted but Lime provides no native WGPU device, so there is
+nothing honest for HostLime to install. Correctly a non-issue.
+
+## Gaps confirmed by consumer exercise
+
+### F1. Net and Socket lack `install*HostBackend` slots
+
+`net` and `socket` have `set*Backend` / `get*Backend` (custom slot) but no `install*HostBackend`
+function. This means `enableHostLime()` cannot install them at the host precedence layer — it can
+only use the custom slot, which overrides rather than layers. Every other capability package has the
+host-layer slot. HostLime currently has `LimeNet` but no `LimeSocket` implementation.
+
+**Why it matters:** the precedence model is custom > host > sentinel. Without a host slot, a Lime
+backend installed via `setNetBackend` cannot be overridden by a caller's custom backend later —
+`setNetBackend` IS the custom slot. The host layer exists precisely for this.
+
+**Fix:** add `installNetHostBackend` and `installSocketHostBackend` in each package, matching the
+pattern every other capability uses. Small, mechanical, no design decision needed.
+
+### F2. Native gamepad ingress is incomplete
+
+The ingress sink has no axis/button callbacks. Flight still polls through
+`requestAnimationFrame` / `navigator.getGamepads()`. HostLime's explicit Lime gamepad path must
+remain.
+
+This was flagged as "adjacent work" in the input-ingress-seam plan and never built. For any native
+host with its own gamepad event API (Lime, SDL, GLFW), the polling path is unusable — they push
+events, they do not poll a browser API.
+
+**Fix:** extend `InputIngressSink` with gamepad axis/button/connect/disconnect callbacks, and move
+the web polling loop into `createWebInputIngressBackend()` so a native host can push events instead.
+
+### F3. WindowBackend's 28 required methods
+
+Only `attach` is optional on `WindowBackend`. The other 28 methods remain required, so HostLime
+still needs stubs for every unsupported window operation (`setProgress`, `setContentProtection`,
+`setMinimumSize`, etc.).
+
+This is the P1 problem at its most visible: Lime can open, close, resize, and attach windows, but
+must implement 28 stubs to install a `WindowBackend` at all.
+
+**Fix:** WindowBackend is the highest-priority P1 migration target. Migrate it to optional methods
+with conditional composition (the MediaSession pattern), so HostLime implements only the operations
+it genuinely supports.
+
+### F4. AudioDeviceBackend atomicity
+
+All 13 AudioDeviceBackend operations are required at the type level. Should a host be able to
+implement, say, playback without `onSourceEnded` or without `setSourcePlaybackRate`?
+
+Given P1's direction (absence-as-declaration), making operations individually optional would be
+consistent. However, the 13-op set is small and cohesive — a device that can create and start
+sources but not stop them or set gain is arguably not a device. This is a design question.
+
+**Recommendation:** keep all 13 required for now. The set is small enough that a native host
+implementing any of them will implement all of them — these are not the 28 window stubs where half
+are platform-specific GUI chrome. Revisit if a real host surfaces a case where a subset is honest.
+
+### F5. Operation ratchet floor stale
+
+The P1 operation ratchet's derived count is 13 (including AudioDeviceBackend), but the committed
+minimum floor is still 12. The floor should advance to match.
+
+**Fix:** mechanical — update the ratchet floor. One line.
+
+### F6. Interface count discrepancy
+
+flight-hx counts 46 backend interface shapes on current develop; 13 expose per-operation explain/has
+APIs and 33 do not. The doc quotes 42 interfaces. The discrepancy may be new interfaces added since
+the original audit (AudioDeviceBackend, InputIngressBackend, WgpuHostBackend, possibly others).
+
+**Fix:** re-derive the count from current develop. The ratchet gate already does this — check whether
+its denominator matches 46.
+
+## flight-hx integration order
+
+flight-hx will proceed:
+
+1. Regenerate against the exact develop SHA and handle generator/type-contract changes.
+2. Add AudioDeviceBackend while retaining LimeAudio for decoding/mixers.
+3. Move non-gamepad input through InputIngressBackend.
+4. Add host-owned window attachment.
+5. Preserve the current GL bridge.
+6. Treat Net/Socket registration as provisional until host installation slots land.
+
+## Actionable items for Flight (prioritized)
+
+1. **F1** — add `installNetHostBackend` / `installSocketHostBackend` (small, mechanical, unblocks
+   proper host-layer precedence for HostLime)
+2. **F3** — migrate WindowBackend to optional methods with conditional composition (P1 highest-value
+   target — 28 stubs is the largest consumer pain point)
+3. **F2** — extend gamepad ingress with axis/button callbacks and move web polling into the web
+   backend
+4. **F5** — advance ratchet floor from 12 to 13 (mechanical)
+5. **F6** — reconcile interface denominator (42 vs 46, re-derive)
+6. **F4** — AudioDevice atomicity: decide and document (recommendation: keep 13 required)
+7. **GL host seam** — add `GlHostBackend` for caller-owned GL context (cleanup, not blocking)
