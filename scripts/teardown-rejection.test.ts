@@ -301,6 +301,18 @@ describe('teardown rejection census of the live tree', () => {
   // in media and MediaSession.setActionHandler in mediasession) are wrapped in a validated assertSyncVoid,
   // proving their return type is void at compile time. The four async releases in host code attach their
   // own .catch. Everything else is either awaited or not in a try.
+  //
+  // ★ EVIDENTIAL NOTE. The initial v2 validator (source c015a7829, integrated as 13d4970a7) returned zero
+  // candidates but accepted
+  // imposter declarations — a multi-statement body with a variable named IsAny passed the shape check.
+  // The zero was accidentally correct (both production files carry the exact canonical declaration) but
+  // evidentially worthless: a Promise-returning imposter could have excluded a real candidate while the
+  // validator said "valid." The corrected integration (676f57ff6 and bc51dd13e) structurally checks the
+  // canonical alias, conditional/intersection parameter, void return, exact body, uniqueness, lexical binding,
+  // shadowing, and writes; durable negatives include the exact imposter. The numeric zero is unchanged; the
+  // epistemic status is upgraded from "happened to be right" to "structurally enforced." Blast radius: one
+  // same-day unreleased verdict (source c015a7829, integrated 13d4970a7 alongside d388d9ec5); no prior verdicts,
+  // docs, or released outputs relied on the flawed validator.
   it('finds no uncatchable-rejection candidate in any package', () => {
     expect(report.candidates).toEqual([]);
   });
