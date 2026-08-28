@@ -14,6 +14,8 @@ by: builder5
 
 ## Log
 
+- 2026-08-27 — Kept fixed semantic overlay handles code-authored and non-skinnable; the generic
+  `GizmoNode2DFeatures<Node2D>` adapter is the intended extension seam for a future 3D gizmo.
 - 2026-08-27 — Completed the exact setter-driven generic 2D API, fixed semantic overlay handles,
   bounds/origin/rotation feature seam, transform brackets and degree-only deltas, snapping, pivots,
   multi-selection outline, local/world behavior, Shift-uniform scaling, and lifecycle cleanup.
