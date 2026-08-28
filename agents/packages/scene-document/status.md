@@ -19,5 +19,8 @@ private, resource-bounded YAML subset parser; it does not materialize a scene sc
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- 2026-08-27 — Resources are declared once across the document, but the caller-provided resolver
+  controls runtime identity: materializing two scenes may share or duplicate a texture by caller
+  policy; the document groups scenes, and the application composes their rendering.
 - 2026-08-27 — Package scaffold and private bounded YAML-subset core added with exact-limit and
   limit-plus-one coverage; public and contract lanes intentionally remain empty.
