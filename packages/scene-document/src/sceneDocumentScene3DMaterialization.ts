@@ -1,13 +1,18 @@
-import { createCamera3D } from '@flighthq/camera/contract';
+import { createCamera3D, setCamera3DViewMatrix4FromMatrix4 } from '@flighthq/camera/contract';
 import { getEntityRuntime } from '@flighthq/entity/contract';
-import { createScene3DLights } from '@flighthq/lighting/contract';
-import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
+import {
+  acquireMatrix4,
+  composeMatrix4FromTransform3D,
+  createTransform3D,
+  decomposeMatrix4ToTransform3D,
+  inverseMatrix4,
+  releaseMatrix4,
+} from '@flighthq/geometry/contract';
+import { addNodeChild, getNodeChildren, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { createScene3D } from '@flighthq/scene3d/contract';
+import { createScene3D, createScene3DLightsFromDocument } from '@flighthq/scene3d/contract';
 import type {
-  AmbientLight,
   Camera3D,
-  DirectionalLight,
   FlightDocument,
   FlightDocumentFields,
   FlightDocumentNode,
@@ -19,9 +24,10 @@ import type {
   FlightDocumentScene3D,
   FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
-  Node3D,
   NodeAny,
+  Node3D,
   Scene3D,
+  Scene3DDocument,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
   Scene3DLights,
@@ -70,8 +76,9 @@ export function createFlightDocumentScene3DMaterialization(
   // materialized, while the writer captured them.
   if (!adoptDocumentRoot3D(scene, documentScene.scene, schemas, resources)) return null;
   materializeChildren(scene.root, documentScene.scene.children, schemas, resources);
-  const cameras = materializeCameras(documentScene.cameras);
-  const lights = materializeLights(documentScene.lights);
+  const materializedNodes = getMaterializedNodes(scene.root);
+  const cameras = materializeCameras(documentScene.cameras, materializedNodes);
+  const lights = materializeLights(documentScene.lights, materializedNodes);
   return { cameras, lights, scene };
 }
 
@@ -134,14 +141,80 @@ function checkDuplicateLights(
   return null;
 }
 
-function materializeCameras(cameras: readonly Readonly<Scene3DDocumentCamera>[]): Camera3D[] {
-  return cameras.map((cam) =>
-    createCamera3D({
-      far: cam.far,
-      near: cam.near,
-      projection: cam.projection,
-    }),
-  );
+function materializeCameras(
+  cameras: readonly Readonly<Scene3DDocumentCamera>[],
+  materializedNodes: readonly Readonly<Node3D>[],
+): Camera3D[] {
+  const placement = acquireMatrix4();
+  const view = acquireMatrix4();
+  const out: Camera3D[] = [];
+  for (const source of cameras) {
+    const camera = createCamera3D({
+      far: source.far,
+      near: source.near,
+      projection: source.projection,
+    });
+    const boundNode = getBoundMaterializedNode(source.node, materializedNodes);
+    if (boundNode === null) {
+      composeMatrix4FromTransform3D(placement, source.transform);
+      if (inverseMatrix4(view, placement)) setCamera3DViewMatrix4FromMatrix4(camera, view);
+    } else if (inverseMatrix4(view, getNodeWorldMatrix4(boundNode))) {
+      setCamera3DViewMatrix4FromMatrix4(camera, view);
+    }
+    out.push(camera);
+  }
+  releaseMatrix4(view);
+  releaseMatrix4(placement);
+  return out;
+}
+
+function getBoundMaterializedNode(
+  index: number | undefined,
+  materializedNodes: readonly Readonly<Node3D>[],
+): Readonly<Node3D> | null {
+  if (index === undefined || !Number.isInteger(index) || index < 0) return null;
+  return materializedNodes[index] ?? null;
+}
+
+// Scene3DDocument binding indices address a flat node table. A Flight document stores the same logical
+// population as a nested tree, so flatten it in the binary format's depth-first order, including the scene
+// root at index zero. Keeping this derivation separate from node creation lets the root materializer own how
+// that root is instantiated without creating a second placement model here.
+function getMaterializedNodes(root: Node3D): Node3D[] {
+  const out: Node3D[] = [];
+  appendMaterializedNodes(out, root);
+  return out;
+}
+
+function appendMaterializedNodes(out: Node3D[], node: Node3D): void {
+  out.push(node);
+  for (const child of getNodeChildren(node)) appendMaterializedNodes(out, child as Node3D);
+}
+
+function materializeLights(
+  lights: readonly Readonly<Scene3DDocumentLight>[],
+  materializedNodes: readonly Readonly<Node3D>[],
+): Scene3DLights {
+  const resolvedLights: Scene3DDocumentLight[] = lights.map((source) => {
+    const boundNode = getBoundMaterializedNode(source.node, materializedNodes);
+    if (boundNode === null) return { ...source };
+    const transform = createTransform3D();
+    decomposeMatrix4ToTransform3D(transform, getNodeWorldMatrix4(boundNode));
+    return { ...source, transform };
+  });
+  const document: Scene3DDocument = {
+    animations: [],
+    cameras: [],
+    lights: resolvedLights,
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [],
+    skins: [],
+  };
+  return createScene3DLightsFromDocument(document);
 }
 
 function materializeChildren(
@@ -158,15 +231,6 @@ function materializeChildren(
     addNodeChild(parent, node);
     materializeChildren(node, child.children, schemas, resources);
   }
-}
-
-function materializeLights(lights: readonly Readonly<Scene3DDocumentLight>[]): Scene3DLights {
-  const ambientEntry = lights.find((l) => l.descriptor.kind === AmbientLightKind);
-  const directionalEntry = lights.find((l) => l.descriptor.kind === DirectionalLightKind);
-  return createScene3DLights({
-    ambient: ambientEntry !== undefined ? (ambientEntry.descriptor as AmbientLight) : null,
-    directional: directionalEntry !== undefined ? (directionalEntry.descriptor as DirectionalLight) : null,
-  });
 }
 
 function resolveResources(
