@@ -247,9 +247,9 @@ describe('duplicate-light explain parity', () => {
       expectedReason: FlightDocumentRefusalReason.DuplicateDirectionalLight,
     },
   ])('model and text explain agree on $label', ({ document, expectedReason }) => {
-    const modelResult = explainFlightDocumentScene3DRefusal(document);
+    const modelResult = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     const text = serializeFlightDocument(document);
-    const textResult = explainFlightDocumentScene3DRefusalFromText(text);
+    const textResult = explainFlightDocumentScene3DRefusalFromText(text, createTestSchemas());
     expect(modelResult).not.toBeNull();
     expect(textResult).not.toBeNull();
     expect(textResult!.reason).toBe(modelResult!.reason);
@@ -268,7 +268,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       scene: { children: [], fields: {}, kind: 'DisplayObject' },
       version: 1,
     } as FlightDocument;
-    const explanation = explainFlightDocumentScene3DRefusal(document);
+    const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
     expect(explanation!.path).toBe('scenes[0].kind');
@@ -283,7 +283,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       scene: { children: [], fields: {}, kind: Node3DKind },
       version: 99,
     } as unknown as FlightDocumentScene3D;
-    const explanation = explainFlightDocumentScene3DRefusal(document);
+    const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
     expect(explanation!.path).toBe('version');
@@ -302,7 +302,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       scene: { children: [], fields: {}, kind: Node3DKind },
       version: 1,
     };
-    const explanation = explainFlightDocumentScene3DRefusal(document);
+    const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateAmbientLight);
     expect(explanation!.path).toBe('scenes[0].lights');
@@ -320,7 +320,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       scene: { children: [], fields: {}, kind: Node3DKind },
       version: 1,
     };
-    const explanation = explainFlightDocumentScene3DRefusal(document);
+    const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateDirectionalLight);
     expect(explanation!.path).toBe('scenes[0].lights');
@@ -335,7 +335,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
       scene: { children: [], fields: {}, kind: Node3DKind },
       version: 1,
     };
-    const explanation = explainFlightDocumentScene3DRefusal(document);
+    const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
     expect(explanation).toBeNull();
   });
 });
@@ -343,7 +343,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
 describe('explainFlightDocumentScene3DRefusalFromText', () => {
   it('explains an anchor refusal with parser position', () => {
     const yaml = 'flight: 1\nkind: Scene3D\nanchor: &ref value\n';
-    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.AnchorUnsupported);
     expect(explanation!.line).toBeGreaterThan(0);
@@ -351,7 +351,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
 
   it('explains a version mismatch in valid YAML', () => {
     const yaml = 'flight: 99\nkind: Scene3D\nscene:\n  kind: Node3D\n';
-    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
     expect(explanation!.path).toBe('version');
@@ -360,7 +360,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
 
   it('explains a dimension mismatch in valid YAML', () => {
     const yaml = 'flight: 1\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
-    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
     expect(explanation!.path).toBe('scenes[0].kind');
@@ -378,7 +378,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
       '  - descriptor:',
       '      kind: AmbientLight',
     ].join('\n');
-    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateAmbientLight);
     expect(explanation!.path).toBe('scenes[0].lights');
@@ -396,7 +396,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
       '  - descriptor:',
       '      kind: DirectionalLight',
     ].join('\n');
-    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateDirectionalLight);
     expect(explanation!.path).toBe('scenes[0].lights');
@@ -404,8 +404,100 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
 
   it('returns null for valid Scene3D text', () => {
     const yaml = 'flight: 1\nkind: Scene3D\nscene:\n  kind: Node3D\n';
-    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
     expect(explanation).toBeNull();
+  });
+});
+
+describe('NodeKindUnregistered', () => {
+  it('materializer returns null for nested unregistered kind two levels deep', () => {
+    const document: FlightDocumentScene3D = {
+      cameras: [],
+      kind: 'Scene3D',
+      lights: [],
+      resources: [],
+      scene: {
+        children: [
+          {
+            children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
+            fields: {},
+            kind: Node3DKind,
+          },
+        ],
+        fields: {},
+        kind: Node3DKind,
+      },
+      version: 1,
+    };
+    const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
+    expect(result).toBeNull();
+  });
+
+  it('explain names the unregistered kind with qualified scene path', () => {
+    const document: FlightDocumentScene3D = {
+      cameras: [],
+      kind: 'Scene3D',
+      lights: [],
+      resources: [],
+      scene: {
+        children: [
+          {
+            children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
+            fields: {},
+            kind: Node3DKind,
+          },
+        ],
+        fields: {},
+        kind: Node3DKind,
+      },
+      version: 1,
+    };
+    const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.NodeKindUnregistered);
+    expect(explanation!.kind).toBe('acme.Unknown');
+    expect(explanation!.path).toBe('scenes[0].scene.children[0].children[0]');
+  });
+
+  it('registration mutation control: same tree passes when kind is registered', () => {
+    const document: FlightDocumentScene3D = {
+      cameras: [],
+      kind: 'Scene3D',
+      lights: [],
+      resources: [],
+      scene: {
+        children: [
+          {
+            children: [{ children: [], fields: {}, kind: Node3DKind }],
+            fields: {},
+            kind: Node3DKind,
+          },
+        ],
+        fields: {},
+        kind: Node3DKind,
+      },
+      version: 1,
+    };
+    const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
+    expect(result).not.toBeNull();
+    const explanation = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
+    expect(explanation).toBeNull();
+  });
+
+  it('text explain reports unregistered kind from YAML', () => {
+    const yaml = [
+      'flight: 1',
+      'kind: Scene3D',
+      'scene:',
+      '  kind: Node3D',
+      '  children:',
+      '    - kind: acme.Unknown',
+    ].join('\n');
+    const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
+    expect(explanation).not.toBeNull();
+    expect(explanation!.reason).toBe(FlightDocumentRefusalReason.NodeKindUnregistered);
+    expect(explanation!.kind).toBe('acme.Unknown');
+    expect(explanation!.path).toBe('scenes[0].scene.children[0]');
   });
 });
 

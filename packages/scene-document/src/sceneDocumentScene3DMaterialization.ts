@@ -30,7 +30,12 @@ import type {
 } from '@flighthq/types/contract';
 import { AmbientLightKind, DirectionalLightKind, FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
-import { createDocumentRefusal, createSceneRefusal } from './sceneDocumentRefusal';
+import {
+  checkUnregisteredNodeKinds,
+  checkUnregisteredNodeKindsFromRaw,
+  createDocumentRefusal,
+  createSceneRefusal,
+} from './sceneDocumentRefusal';
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
 
 export function createFlightDocumentFromScene3D(
@@ -58,6 +63,8 @@ export function createFlightDocumentScene3DMaterialization(
   if (document.version !== 1) return null;
   const duplicateRefusal = checkDuplicateLights(document.lights, 0);
   if (duplicateRefusal !== null) return null;
+  const unregisteredRefusal = checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
+  if (unregisteredRefusal !== null) return null;
   const scene = createScene3D();
   const resources = resolveResources(document.resources, resolvers);
   materializeChildren(scene.root, document.scene.children, schemas, resources);
@@ -78,6 +85,7 @@ export function createFlightDocumentScene3DMaterializationFromText(
 
 export function explainFlightDocumentScene3DRefusal(
   document: Readonly<FlightDocument>,
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
 ): FlightDocumentRefusalExplanation | null {
   if (document.kind !== 'Scene3D') {
     return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
@@ -88,10 +96,15 @@ export function explainFlightDocumentScene3DRefusal(
       version: document.version,
     };
   }
-  return checkDuplicateLights(document.lights, 0);
+  const lightRefusal = checkDuplicateLights(document.lights, 0);
+  if (lightRefusal !== null) return lightRefusal;
+  return checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
 }
 
-export function explainFlightDocumentScene3DRefusalFromText(text: string): FlightDocumentRefusalExplanation | null {
+export function explainFlightDocumentScene3DRefusalFromText(
+  text: string,
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
+): FlightDocumentRefusalExplanation | null {
   const result = parseSceneDocumentYamlSubset(text);
   if (!result.ok) {
     return {
@@ -126,7 +139,9 @@ export function explainFlightDocumentScene3DRefusalFromText(text: string): Fligh
   if (kind !== 'Scene3D') {
     return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
   }
-  return checkDuplicateLightsFromRaw(mapping['lights'], 0);
+  const lightRefusal = checkDuplicateLightsFromRaw(mapping['lights'], 0);
+  if (lightRefusal !== null) return lightRefusal;
+  return checkUnregisteredNodeKindsFromRaw(mapping['scene'], schemas, 0, 'scene');
 }
 
 function checkDuplicateLights(
