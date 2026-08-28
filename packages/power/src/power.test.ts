@@ -6,6 +6,7 @@ import {
   createPower,
   createPowerBatteryHealth,
   createPowerStatus,
+  destroyPowerBackend,
   detachPower,
   disposePower,
   enablePowerSignals,
@@ -337,6 +338,73 @@ describe('createPowerStatus', () => {
     expect(status.isLowPower).toBe(false);
     expect(status.isOnBattery).toBe(false);
     expect(status.thermalState).toBe('Unknown');
+  });
+});
+
+describe('destroyPowerBackend', () => {
+  afterEach(() => resetPowerBackendForTest());
+
+  it('destroys a backend in either slot and empties both', () => {
+    const destroyed: string[] = [];
+    installPowerHostBackend({ ...fakeBackend(), destroy: () => destroyed.push('host') });
+    setPowerBackend({ ...fakeBackend(), destroy: () => destroyed.push('custom') });
+    resetPowerBackendForTest();
+
+    installPowerHostBackend({ ...fakeBackend(), destroy: () => destroyed.push('host') });
+    setPowerBackend({ ...fakeBackend(), destroy: () => destroyed.push('custom') });
+    destroyPowerBackend();
+
+    expect(destroyed).toEqual(['custom', 'host']);
+    expect(hasPowerHostBackend()).toBe(false);
+  });
+
+  it('is safe with nothing installed and destroys at most once', () => {
+    const destroyed: string[] = [];
+    setPowerBackend({ ...fakeBackend(), destroy: () => destroyed.push('only') });
+    destroyPowerBackend();
+    destroyPowerBackend();
+    expect(destroyed).toEqual(['only']);
+    expect(() => destroyPowerBackend()).not.toThrow();
+  });
+
+  // ★ MUTATION ARM 2 of 3 — ALIAS DEDUP. One object may occupy both slots. Dropping the `released` set
+  // in `releasePowerBackends` frees it once per slot it appeared in, which is a double free of a
+  // non-GC resource and the exact thing invariant 1 (`exactly once for each ownership loss`) forbids.
+  it('destroys a backend aliased into both slots exactly once', () => {
+    let destroyCalls = 0;
+    const shared = { ...fakeBackend(), destroy: () => destroyCalls++ };
+    installPowerHostBackend(shared);
+    setPowerBackend(shared);
+    destroyPowerBackend();
+    expect(destroyCalls).toBe(1);
+  });
+
+  // ★ MUTATION ARM 3 of 3 — SLOTS CLEARED BEFORE RELEASE. Full teardown empties both slots first, so a
+  // `destroy()` that reads the active backend finds the SENTINEL rather than an object already being
+  // freed, and a re-entrant `destroyPowerBackend()` finds nothing left to free. Clearing after the
+  // release instead would let teardown observe — and a re-entrant call free — a half-destroyed backend.
+  //
+  // Note this is deliberately the OPPOSITE of what replacement guarantees: `setPowerBackend` keeps the
+  // outgoing backend selected during its destroy. Different operations, different correct answers.
+  it('clears both slots before running teardown, so destroy sees the sentinel and cannot re-enter', () => {
+    resetPowerBackendForTest();
+    const sentinel = getPowerBackend();
+    const observed: unknown[] = [];
+    let destroyCalls = 0;
+    const backend = {
+      ...fakeBackend(),
+      destroy: () => {
+        destroyCalls++;
+        observed.push(getPowerBackend() === sentinel);
+        destroyPowerBackend();
+      },
+    };
+    installPowerHostBackend(backend);
+
+    destroyPowerBackend();
+
+    expect(observed).toEqual([true]);
+    expect(destroyCalls).toBe(1);
   });
 });
 
@@ -704,6 +772,22 @@ describe('setPowerBackend', () => {
     setPowerBackend(first);
     expect(() => setPowerBackend(second)).toThrow('teardown failed');
     expect(getPowerBackend()).toBe(first);
+  });
+
+  // ★ MUTATION ARM 1 of 3 — RETAINED PROTECTION. One object may occupy both slots. Replacing it in the
+  // custom slot must NOT free it, because the host slot still owns it; dropping the `retained` set in
+  // `releasePowerBackends` frees a backend that is still installed and still reachable through
+  // `getPowerBackend()`, which is invariant 3.
+  it('does not destroy an outgoing custom backend that the host slot still owns', () => {
+    let destroyCalls = 0;
+    const shared = { ...fakeBackend(), destroy: () => destroyCalls++ };
+    installPowerHostBackend(shared);
+    setPowerBackend(shared);
+
+    setPowerBackend(fakeBackend());
+
+    expect(destroyCalls).toBe(0);
+    expect(hasPowerHostBackend()).toBe(true);
   });
 
   it('does not destroy a backend that is being re-assigned to the same slot', () => {
