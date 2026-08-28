@@ -896,3 +896,31 @@ that is about to be deleted is waste, and it is waste that would be redone.
 
 I had ruled the opposite — that this stay out of H7 as its own small fix. That was wrong: I scoped
 it by apparent size rather than by whose surface it touches, and its surface is H7's.
+
+---
+
+# H10 — the site-count gate measures removal, not correctness — 2026-08-28
+
+Generalised after the same failure was caught twice in one day, in unrelated shapes. Apply it before
+starting any remaining P5 slice.
+
+The P5 gate counts `document`/host bypasses. It is blind to whether the seam that replaced one is
+*right*. Two live examples, both of which would have turned the gate green:
+
+- **Scratch surfaces ([H8](#h8)).** Routing the four GL/WGPU shapes through the existing
+  `HTMLCanvasElement`-returning provider drops the count while leaving a native host no honest
+  implementation — it must return a canvas-shaped shim.
+- **Video resources ([H8-C](#h8-c)).** Repairing the two `videoResourceFrom` sites before the
+  ownership model is fixed drops the count while baking unmodelled element ownership, an uncleared
+  `srcObject`, and non-releasing retainers into a brand-new seam.
+
+In both, the count falls, every gate passes, and the seam is wrong. Neither is a gate defect — the
+gate answers the question it was built for. The error is reading its answer as a broader claim.
+
+**The test, before a slice starts:** *would this gate report success if the seam were built on a
+wrong model?* If yes, the model question is a prerequisite, not a follow-up — name it and rule it
+first. A slice whose only evidence of correctness is a falling site count has not been verified, it
+has been counted.
+
+This is why several shapes were marked "needs a ruling before it can start" rather than "small". The
+size of a slice and the settledness of its model are independent, and the gate can only see size.
