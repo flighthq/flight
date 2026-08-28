@@ -19,7 +19,7 @@ ingested:
 non-mergeable intermediate delta described by the old review. Forty public functions normalize
 keyboard, pointer, relative-pointer, wheel, gamepad, and text/IME events; maintain held and per-frame
 edge state; and provide gamepad dead zones/names, reusable key-repeat timing, pointer lock/capture, and
-coalesced pointer iteration. Its types-first contract, package exports, and 115-test suite are complete
+coalesced pointer iteration. Its types-first contract, package exports, and 118-test suite are complete
 and green. Listener attachment is host-neutral through `InputIngressBackend`; the principal remaining
 depth is the adjacent browser-bound gamepad, scheduling, pointer-lock/capture, and coalescing surface.
 

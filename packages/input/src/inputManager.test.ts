@@ -603,6 +603,44 @@ describe('createInputState', () => {
   });
 });
 
+describe('createWebInputIngressBackend', () => {
+  it('routes two window identities only to their corresponding managers', () => {
+    const firstFrame = document.createElement('iframe');
+    const secondFrame = document.createElement('iframe');
+    document.body.append(firstFrame, secondFrame);
+    const firstWindow = firstFrame.contentWindow!;
+    const secondWindow = secondFrame.contentWindow!;
+    const firstManager = createInputManager();
+    const secondManager = createInputManager();
+    const firstEvents: number[] = [];
+    const secondEvents: number[] = [];
+    connectSignal(firstManager.onKeyDown, (data) => firstEvents.push(data.keyCode));
+    connectSignal(secondManager.onKeyDown, (data) => secondEvents.push(data.keyCode));
+    attachKeyboardInput(firstManager, firstWindow);
+    attachKeyboardInput(secondManager, secondWindow);
+
+    firstWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
+    expect(firstEvents).toEqual([KeyCode.A]);
+    expect(secondEvents).toEqual([]);
+
+    secondWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyB', key: 'b' }));
+    expect(firstEvents).toEqual([KeyCode.A]);
+    expect(secondEvents).toEqual([KeyCode.B]);
+
+    detachKeyboardInput(firstManager, firstWindow);
+    detachKeyboardInput(secondManager, secondWindow);
+    firstFrame.remove();
+    secondFrame.remove();
+  });
+
+  it('returns inert releases for native source identities the Web adapter cannot interpret', () => {
+    const backend = createWebInputIngressBackend();
+    const source = {};
+    const sink = {} as InputIngressSink;
+    expect(() => backend.attachKeyboard(source, sink)()).not.toThrow();
+  });
+});
+
 describe('detachGamepadInput', () => {
   it('removes listeners so signals stop firing', () => {
     const manager = createInputManager();
@@ -829,6 +867,13 @@ describe('getInputGamepadAxis', () => {
   });
 });
 
+describe('getInputIngressBackend', () => {
+  it('uses one stable Web fallback', () => {
+    const fallback = getInputIngressBackend();
+    expect(getInputIngressBackend()).toBe(fallback);
+  });
+});
+
 describe('getKeyCodeFromDomKeyboardEvent', () => {
   it('maps printable keys to SDL-compatible lower-case codes', () => {
     expect(getKeyCodeFromDomKeyboardEvent(createKeyboardEvent('keydown', { key: 'A' }))).toBe(KeyCode.A);
@@ -928,147 +973,12 @@ describe('hasInputPointerLock', () => {
   });
 });
 
-describe('InputIngressBackend', () => {
-  it('uses one stable Web fallback with first-host-wins and custom precedence', () => {
-    const fallback = getInputIngressBackend();
-    expect(getInputIngressBackend()).toBe(fallback);
-
+describe('installInputIngressHostBackend', () => {
+  it('preserves the first installed host identity', () => {
     const firstHost = createTestInputIngressBackend();
     installInputIngressHostBackend(firstHost);
     installInputIngressHostBackend(createTestInputIngressBackend());
     expect(getInputIngressBackend()).toBe(firstHost);
-
-    const custom = createTestInputIngressBackend();
-    setInputIngressBackend(custom);
-    expect(getInputIngressBackend()).toBe(custom);
-    setInputIngressBackend(null);
-    expect(getInputIngressBackend()).toBe(firstHost);
-  });
-
-  it('passes each exact source identity through all six attachment families and releases each once', () => {
-    const attachments: Array<Readonly<{ kind: InputIngressAttachmentKind; source: InputIngressSource }>> = [];
-    const releases = new Map<InputIngressAttachmentKind, ReturnType<typeof vi.fn>>();
-    setInputIngressBackend(
-      createTestInputIngressBackend((kind, source) => {
-        attachments.push({ kind, source });
-        const release = vi.fn();
-        releases.set(kind, release);
-        return release;
-      }),
-    );
-    const manager = createInputManager();
-    const sources = {
-      gamepad: {},
-      keyboard: {},
-      pointer: {},
-      relativePointer: {},
-      text: {},
-      wheel: {},
-    } satisfies Record<InputIngressAttachmentKind, InputIngressSource>;
-
-    attachGamepadInput(manager, sources.gamepad);
-    attachKeyboardInput(manager, sources.keyboard);
-    attachPointerInput(manager, sources.pointer);
-    attachRelativePointerInput(manager, sources.relativePointer);
-    attachTextInput(manager, sources.text);
-    attachWheelInput(manager, sources.wheel);
-
-    expect(attachments).toEqual([
-      { kind: 'gamepad', source: sources.gamepad },
-      { kind: 'keyboard', source: sources.keyboard },
-      { kind: 'pointer', source: sources.pointer },
-      { kind: 'relativePointer', source: sources.relativePointer },
-      { kind: 'text', source: sources.text },
-      { kind: 'wheel', source: sources.wheel },
-    ]);
-
-    detachGamepadInput(manager, sources.gamepad);
-    detachKeyboardInput(manager, sources.keyboard);
-    detachPointerInput(manager, sources.pointer);
-    detachRelativePointerInput(manager, sources.relativePointer);
-    detachTextInput(manager, sources.text);
-    detachWheelInput(manager, sources.wheel);
-    detachGamepadInput(manager, sources.gamepad);
-    detachKeyboardInput(manager, sources.keyboard);
-    detachPointerInput(manager, sources.pointer);
-    detachRelativePointerInput(manager, sources.relativePointer);
-    detachTextInput(manager, sources.text);
-    detachWheelInput(manager, sources.wheel);
-
-    expect([...releases.values()].every((release) => release.mock.calls.length === 1)).toBe(true);
-  });
-
-  it('pins cleanup to the originating backend and never destroys the borrowed source', () => {
-    const releaseA = vi.fn();
-    const releaseB = vi.fn();
-    const backendA = createTestInputIngressBackend((kind) => (kind === 'keyboard' ? releaseA : vi.fn()));
-    const backendB = createTestInputIngressBackend((kind) => (kind === 'keyboard' ? releaseB : vi.fn()));
-    const source = { destroy: vi.fn() };
-    const manager = createInputManager();
-
-    setInputIngressBackend(backendA);
-    attachKeyboardInput(manager, source);
-    setInputIngressBackend(backendB);
-    detachKeyboardInput(manager, source);
-    detachKeyboardInput(manager, source);
-
-    expect(releaseA).toHaveBeenCalledOnce();
-    expect(releaseB).not.toHaveBeenCalled();
-    expect(source.destroy).not.toHaveBeenCalled();
-  });
-
-  it('releases the old origin once when the same source is reattached after backend replacement', () => {
-    const releaseA = vi.fn();
-    const releaseB = vi.fn();
-    const source = {};
-    const manager = createInputManager();
-
-    setInputIngressBackend(createTestInputIngressBackend(() => releaseA));
-    attachPointerInput(manager, source);
-    setInputIngressBackend(createTestInputIngressBackend(() => releaseB));
-    attachPointerInput(manager, source);
-    expect(releaseA).toHaveBeenCalledOnce();
-
-    detachPointerInput(manager, source);
-    detachPointerInput(manager, source);
-    expect(releaseA).toHaveBeenCalledOnce();
-    expect(releaseB).toHaveBeenCalledOnce();
-  });
-
-  it('routes two window identities only to their corresponding managers', () => {
-    const firstFrame = document.createElement('iframe');
-    const secondFrame = document.createElement('iframe');
-    document.body.append(firstFrame, secondFrame);
-    const firstWindow = firstFrame.contentWindow!;
-    const secondWindow = secondFrame.contentWindow!;
-    const firstManager = createInputManager();
-    const secondManager = createInputManager();
-    const firstEvents: number[] = [];
-    const secondEvents: number[] = [];
-    connectSignal(firstManager.onKeyDown, (data) => firstEvents.push(data.keyCode));
-    connectSignal(secondManager.onKeyDown, (data) => secondEvents.push(data.keyCode));
-    attachKeyboardInput(firstManager, firstWindow);
-    attachKeyboardInput(secondManager, secondWindow);
-
-    firstWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyA', key: 'a' }));
-    expect(firstEvents).toEqual([KeyCode.A]);
-    expect(secondEvents).toEqual([]);
-
-    secondWindow.dispatchEvent(createKeyboardEvent('keydown', { code: 'KeyB', key: 'b' }));
-    expect(firstEvents).toEqual([KeyCode.A]);
-    expect(secondEvents).toEqual([KeyCode.B]);
-
-    detachKeyboardInput(firstManager, firstWindow);
-    detachKeyboardInput(secondManager, secondWindow);
-    firstFrame.remove();
-    secondFrame.remove();
-  });
-
-  it('returns inert releases for native source identities the Web adapter cannot interpret', () => {
-    const backend = createWebInputIngressBackend();
-    const source = {};
-    const sink = {} as InputIngressSink;
-    expect(() => backend.attachKeyboard(source, sink)()).not.toThrow();
   });
 });
 
@@ -1187,6 +1097,119 @@ describe('requestInputPointerLock', () => {
     };
     const result = await requestInputPointerLock(element);
     expect(result).toBe(false);
+  });
+});
+
+describe('resetInputIngressBackendForTest', () => {
+  it('clears custom and host slots back to the Web fallback', () => {
+    const fallback = getInputIngressBackend();
+    installInputIngressHostBackend(createTestInputIngressBackend());
+    setInputIngressBackend(createTestInputIngressBackend());
+
+    resetInputIngressBackendForTest();
+    expect(getInputIngressBackend()).toBe(fallback);
+  });
+});
+
+describe('setInputIngressBackend', () => {
+  it('gives a custom backend precedence and reveals the installed host when cleared', () => {
+    const firstHost = createTestInputIngressBackend();
+    installInputIngressHostBackend(firstHost);
+    const custom = createTestInputIngressBackend();
+    setInputIngressBackend(custom);
+    expect(getInputIngressBackend()).toBe(custom);
+    setInputIngressBackend(null);
+    expect(getInputIngressBackend()).toBe(firstHost);
+  });
+
+  it('passes each exact source identity through all six attachment families and releases each once', () => {
+    const attachments: Array<Readonly<{ kind: InputIngressAttachmentKind; source: InputIngressSource }>> = [];
+    const releases = new Map<InputIngressAttachmentKind, ReturnType<typeof vi.fn>>();
+    setInputIngressBackend(
+      createTestInputIngressBackend((kind, source) => {
+        attachments.push({ kind, source });
+        const release = vi.fn();
+        releases.set(kind, release);
+        return release;
+      }),
+    );
+    const manager = createInputManager();
+    const sources = {
+      gamepad: {},
+      keyboard: {},
+      pointer: {},
+      relativePointer: {},
+      text: {},
+      wheel: {},
+    } satisfies Record<InputIngressAttachmentKind, InputIngressSource>;
+
+    attachGamepadInput(manager, sources.gamepad);
+    attachKeyboardInput(manager, sources.keyboard);
+    attachPointerInput(manager, sources.pointer);
+    attachRelativePointerInput(manager, sources.relativePointer);
+    attachTextInput(manager, sources.text);
+    attachWheelInput(manager, sources.wheel);
+
+    expect(attachments).toEqual([
+      { kind: 'gamepad', source: sources.gamepad },
+      { kind: 'keyboard', source: sources.keyboard },
+      { kind: 'pointer', source: sources.pointer },
+      { kind: 'relativePointer', source: sources.relativePointer },
+      { kind: 'text', source: sources.text },
+      { kind: 'wheel', source: sources.wheel },
+    ]);
+
+    detachGamepadInput(manager, sources.gamepad);
+    detachKeyboardInput(manager, sources.keyboard);
+    detachPointerInput(manager, sources.pointer);
+    detachRelativePointerInput(manager, sources.relativePointer);
+    detachTextInput(manager, sources.text);
+    detachWheelInput(manager, sources.wheel);
+    detachGamepadInput(manager, sources.gamepad);
+    detachKeyboardInput(manager, sources.keyboard);
+    detachPointerInput(manager, sources.pointer);
+    detachRelativePointerInput(manager, sources.relativePointer);
+    detachTextInput(manager, sources.text);
+    detachWheelInput(manager, sources.wheel);
+
+    expect([...releases.values()].every((release) => release.mock.calls.length === 1)).toBe(true);
+  });
+
+  it('pins cleanup to the originating backend and never destroys the borrowed source', () => {
+    const releaseA = vi.fn();
+    const releaseB = vi.fn();
+    const backendA = createTestInputIngressBackend((kind) => (kind === 'keyboard' ? releaseA : vi.fn()));
+    const backendB = createTestInputIngressBackend((kind) => (kind === 'keyboard' ? releaseB : vi.fn()));
+    const source = { destroy: vi.fn() };
+    const manager = createInputManager();
+
+    setInputIngressBackend(backendA);
+    attachKeyboardInput(manager, source);
+    setInputIngressBackend(backendB);
+    detachKeyboardInput(manager, source);
+    detachKeyboardInput(manager, source);
+
+    expect(releaseA).toHaveBeenCalledOnce();
+    expect(releaseB).not.toHaveBeenCalled();
+    expect(source.destroy).not.toHaveBeenCalled();
+  });
+
+  it('releases the old origin once when the same source is reattached after backend replacement', () => {
+    const releaseA = vi.fn();
+    const releaseB = vi.fn();
+    const source = {};
+    const manager = createInputManager();
+
+    setInputIngressBackend(createTestInputIngressBackend(() => releaseA));
+    attachPointerInput(manager, source);
+    setInputIngressBackend(createTestInputIngressBackend(() => releaseB));
+    attachPointerInput(manager, source);
+    expect(releaseA).toHaveBeenCalledOnce();
+
+    detachPointerInput(manager, source);
+    detachPointerInput(manager, source);
+    expect(releaseA).toHaveBeenCalledOnce();
+    expect(releaseB).toHaveBeenCalledOnce();
   });
 });
 
