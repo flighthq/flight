@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   createWebImageBackend,
+  explainImageOperation,
   getImageBackend,
+  hasImageOperation,
   setImageBackend,
   explainImageBackend,
   installImageHostBackend,
@@ -69,6 +71,56 @@ describe('explainImageBackend', () => {
   });
 });
 
+describe('explainImageOperation', () => {
+  afterEach(() => resetImageBackendForTest());
+
+  it('reports host support and respects a partial custom backend masking it', () => {
+    installImageHostBackend(createWebImageBackend());
+    expect(explainImageOperation('createImageFromBitmap')).toEqual({
+      implemented: true,
+      layer: 'host',
+      operation: 'createImageFromBitmap',
+    });
+
+    setImageBackend({ loadImageFromUrl: vi.fn() });
+    expect(explainImageOperation('createImageFromBitmap')).toEqual({
+      implemented: false,
+      layer: 'none',
+      operation: 'createImageFromBitmap',
+    });
+  });
+
+  it('reports the unsupported Bitmap operation without claiming URL loading is absent', () => {
+    const backend: ImageBackend = { loadImageFromUrl: vi.fn() };
+    setImageBackend(backend);
+
+    expect(explainImageOperation('createImageFromBitmap')).toEqual({
+      implemented: false,
+      layer: 'none',
+      operation: 'createImageFromBitmap',
+    });
+    expect(explainImageOperation('loadImageFromUrl')).toEqual({
+      implemented: true,
+      layer: 'custom',
+      operation: 'loadImageFromUrl',
+    });
+  });
+
+  it('reports no installed implementation without counting sentinel behavior as support', () => {
+    resetImageBackendForTest();
+    expect(explainImageOperation('createImageFromBitmap')).toEqual({
+      implemented: false,
+      layer: 'none',
+      operation: 'createImageFromBitmap',
+    });
+    expect(explainImageOperation('loadImageFromUrl')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'loadImageFromUrl',
+    });
+  });
+});
+
 describe('getImageBackend', () => {
   it('defaults lazily to a web backend rather than being registered at import', () => {
     expect(typeof getImageBackend().loadImageFromUrl).toBe('function');
@@ -82,6 +134,27 @@ describe('getImageBackend', () => {
     const { backend } = recordingBackend();
     setImageBackend(backend);
     expect(getImageBackend()).toBe(backend);
+  });
+});
+
+describe('hasImageOperation', () => {
+  afterEach(() => resetImageBackendForTest());
+
+  it('cannot diverge from the operation explanation across absent and partial backends', () => {
+    for (const operation of ['createImageFromBitmap', 'loadImageFromUrl'] as const) {
+      expect(hasImageOperation(operation)).toBe(explainImageOperation(operation).implemented);
+    }
+
+    setImageBackend({ loadImageFromUrl: vi.fn() });
+    for (const operation of ['createImageFromBitmap', 'loadImageFromUrl'] as const) {
+      expect(hasImageOperation(operation)).toBe(explainImageOperation(operation).implemented);
+    }
+
+    setImageBackend(createWebImageBackend());
+    for (const operation of ['createImageFromBitmap', 'loadImageFromUrl'] as const) {
+      expect(hasImageOperation(operation)).toBe(explainImageOperation(operation).implemented);
+      expect(hasImageOperation(operation)).toBe(true);
+    }
   });
 });
 

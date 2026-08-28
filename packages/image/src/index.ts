@@ -1,5 +1,6 @@
 export {
   explainImageBackend,
+  explainImageOperation,
   cloneImageResource,
   createCompressedImage,
   createEmbeddedImageResourceReference,
@@ -13,6 +14,7 @@ export {
   disableImageBitmapComposition,
   enableImageBitmapComposition,
   explainImageResourceReferenceResolution,
+  hasImageOperation,
   isImageResourceEmpty,
   isImageUrlSameOrigin,
   loadImageResourceFromBase64,

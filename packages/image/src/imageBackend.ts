@@ -1,4 +1,10 @@
-import type { BackendExplanation, Image, ImageBackend } from '@flighthq/types/contract';
+import type {
+  BackendExplanation,
+  BackendOperationExplanation,
+  Image,
+  ImageBackend,
+  ImageBackendOperation,
+} from '@flighthq/types/contract';
 
 import { createImageResourceFromCanvas, createImageResourceFromImageElement } from './imageResourceFrom';
 
@@ -76,8 +82,32 @@ export function explainImageBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// Reports support for exactly one Image operation on the selected backend. A custom backend masks the
+// host as a whole, so an omitted optional method does not fall through to a host implementation.
+export function explainImageOperation(operation: ImageBackendOperation): BackendOperationExplanation {
+  if (_custom !== null) {
+    return typeof _custom[operation] === 'function'
+      ? { implemented: true, layer: 'custom', operation }
+      : { implemented: false, layer: 'none', operation };
+  }
+  if (_host !== null) {
+    return typeof _host[operation] === 'function'
+      ? { implemented: true, layer: 'host', operation }
+      : { implemented: false, layer: 'none', operation };
+  }
+  return {
+    implemented: false,
+    layer: typeof _sentinel[operation] === 'function' ? 'sentinel' : 'none',
+    operation,
+  };
+}
+
 export function getImageBackend(): ImageBackend {
   return _custom ?? _host ?? _sentinel;
+}
+
+export function hasImageOperation(operation: ImageBackendOperation): boolean {
+  return explainImageOperation(operation).implemented;
 }
 
 export function installImageHostBackend(backend: ImageBackend): void {

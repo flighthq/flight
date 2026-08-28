@@ -10,8 +10,10 @@ import {
   formatP5HostBypassReport,
   P5_HOST_BYPASS_BUDGET,
   P5_HOST_BYPASS_BUDGET_HISTORY,
+  P5_HOST_BYPASS_SLICE_GUIDANCE,
   p5HostBypassBudgetFailures,
   p5HostBypassBudgetHistoryFailures,
+  p5HostBypassSliceGuidanceFailures,
   p5InputIngressPairingFailures,
   scanP5HostBypasses,
   scanP5HostBypassSource,
@@ -31,7 +33,17 @@ describe('P5 host-bypass derived gate', () => {
     expect(formatted).toContain('33 (-3 fixed)');
     expect(formatted).toContain('31 (-2 fixed)');
     expect(formatted).toContain('30 (-1 fixed)');
+    expect(formatted).toContain(
+      'SLICE a P5 seam repair is complete only when every existing production consumer migrates in the same slice; a lowered census alone is incomplete',
+    );
   }, 30_000);
+
+  it('pins same-slice production consumer migration as part of a P5 repair', () => {
+    expect(p5HostBypassSliceGuidanceFailures(P5_HOST_BYPASS_SLICE_GUIDANCE)).toEqual([]);
+    expect(p5HostBypassSliceGuidanceFailures('a lowered census is sufficient')).toContain(
+      'P5 seam-slice guidance no longer requires same-slice production consumer migration',
+    );
+  });
 
   it('preserves the append-only evidenced budget history and its category breakdowns', () => {
     expect(P5_HOST_BYPASS_BUDGET_HISTORY).toEqual([

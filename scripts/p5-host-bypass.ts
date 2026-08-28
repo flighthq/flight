@@ -56,6 +56,11 @@ export interface P5HostBypassBudgetEvidence {
   readonly total: number;
 }
 
+const P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE =
+  'a P5 seam repair is complete only when every existing production consumer migrates in the same slice; a lowered census alone is incomplete';
+
+export const P5_HOST_BYPASS_SLICE_GUIDANCE = P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE;
+
 // IMMUTABLE PREFIX. These accepted checkpoints pin every category, total and reason. History
 // validation compares against this full prefix, so even a coherent category-and-total rewrite fails.
 const P5_HOST_BYPASS_ACCEPTED_BUDGET_HISTORY_PREFIX = [
@@ -265,6 +270,12 @@ export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypass
   return failures;
 }
 
+export function p5HostBypassSliceGuidanceFailures(guidance: string): string[] {
+  return guidance === P5_HOST_BYPASS_ACCEPTED_SLICE_GUIDANCE
+    ? []
+    : ['P5 seam-slice guidance no longer requires same-slice production consumer migration'];
+}
+
 function p5HostBypassBudgetEvidenceMatches(
   entry: Readonly<P5HostBypassBudgetEvidence>,
   accepted: Readonly<P5HostBypassBudgetEvidence>,
@@ -298,6 +309,7 @@ export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): 
     ),
     'P5 host-bypass census',
     `SCANNED ${report.scannedFiles} packages/*/src/**/*.ts files (runtime directory walk; no file roster)`,
+    `SLICE ${P5_HOST_BYPASS_SLICE_GUIDANCE}`,
     'DETECTS direct document/window/navigator access, DOM input listener attachment, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',
     'EXCLUDES tests/helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom/*-canvas technology adapters, application P4 window attachment, and P3 fetch/socket/EventSource/WebSocket/XHR/Request/Image transport syntax',
     `P5 outstanding=${report.p5.length} ${Object.entries(counts)
@@ -343,6 +355,7 @@ if (isMainModule(import.meta.url, process.argv[1])) {
   process.stdout.write(`${formatP5HostBypassReport(report)}\n`);
   const failures = [
     ...p5HostBypassBudgetHistoryFailures(P5_HOST_BYPASS_BUDGET_HISTORY),
+    ...p5HostBypassSliceGuidanceFailures(P5_HOST_BYPASS_SLICE_GUIDANCE),
     ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
   ];
   if (failures.length > 0) {

@@ -1,4 +1,4 @@
-import { createWebGlyphRasterizerBackend } from '@flighthq/host-web/contract';
+import { createWebGlyphRasterizerBackend, enableHostWebImage } from '@flighthq/host-web/contract';
 import type { BitmapText } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -6,6 +6,7 @@ import {
   createDisplayObject,
   createImageResourceFromBitmap,
   createTexture,
+  explainImageOperation,
   invalidateNodeLocalTransform,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/sdk';
@@ -77,27 +78,34 @@ addText('0123456789  Lazy • Packed • Reused', 36, 318, 0x06d6a0ff, {
 
 // Materialize the completed CPU atlas once so every backend consumes the same uploadable image.
 // The atlas remains the source of glyph metrics and regions; only its finalized pixels are adapted.
+enableHostWebImage();
 const atlasImage = createImageResourceFromBitmap(getGlyphAtlasBitmap(atlas));
-for (const bitmapText of bitmapTexts) {
-  for (const page of getBitmapTextPages(bitmapText)) {
-    page.atlas.texture = createTexture({ dimension: '2d', source: atlasImage });
+if (atlasImage === null) {
+  const explanation = explainImageOperation('createImageFromBitmap');
+  const refusal = document.createElement('p');
+  refusal.textContent = `Bitmap atlas materialization unavailable (${explanation.layer}).`;
+  document.body.appendChild(refusal);
+} else {
+  for (const bitmapText of bitmapTexts) {
+    for (const page of getBitmapTextPages(bitmapText)) {
+      page.atlas.texture = createTexture({ dimension: '2d', source: atlasImage });
+    }
   }
-}
 
-// Preview the exact finalized atlas image sampled by every BitmapText quad batch.
-const atlasPreview = createSprite({
-  data: { texture: createTexture({ dimension: '2d', source: atlasImage }) },
-});
-atlasPreview.x = 536;
-atlasPreview.y = 438;
-atlasPreview.scaleX = 0.42;
-atlasPreview.scaleY = 0.42;
-invalidateNodeLocalTransform(atlasPreview);
-addNodeChild(root, atlasPreview);
+  // Preview the exact finalized atlas image sampled by every BitmapText quad batch.
+  const atlasPreview = createSprite({
+    data: { texture: createTexture({ dimension: '2d', source: atlasImage }) },
+  });
+  atlasPreview.x = 536;
+  atlasPreview.y = 438;
+  atlasPreview.scaleX = 0.42;
+  atlasPreview.scaleY = 0.42;
+  invalidateNodeLocalTransform(atlasPreview);
+  addNodeChild(root, atlasPreview);
+  enterFrame();
+}
 
 function enterFrame(): void {
   render(root);
   requestAnimationFrame(enterFrame);
 }
-
-enterFrame();
