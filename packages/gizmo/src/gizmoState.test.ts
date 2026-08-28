@@ -1,9 +1,10 @@
-import { createCamera2D } from '@flighthq/camera/contract';
+import { createCamera2D, projectCamera2DPoint } from '@flighthq/camera/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import { enableInteractionSignals } from '@flighthq/interaction/contract';
 import { createNode, getNodeChildByName, getNodeParent, removeNodeChild } from '@flighthq/node/contract';
 import { createScene2D } from '@flighthq/scene2d/contract';
 import { createSelectionState, selectAllNodes } from '@flighthq/selection/contract';
+import { createShape } from '@flighthq/shape/contract';
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   GizmoCreateOptions,
@@ -186,6 +187,51 @@ describe('getGizmoSpace', () => {
   it('returns the configured coordinate space', () => {
     expect(getGizmoSpace(createTestContext({ space: 'local' }).state)).toBe('local');
   });
+});
+
+describe('overlay and document transform parity', () => {
+  const gestures = [
+    {
+      expected: [4, 3],
+      handleName: 'GizmoTranslateXYHandle',
+      mode: 'translate',
+      worldEnd: { x: 6, y: 0 },
+      worldStart: { x: 2, y: -3 },
+    },
+    {
+      expected: [90],
+      handleName: 'GizmoRotateHandle',
+      mode: 'rotate',
+      worldEnd: { x: 0, y: 10 },
+      worldStart: { x: 10, y: 0 },
+    },
+    {
+      expected: [1.5, 1.5],
+      handleName: 'GizmoScaleNortheastHandle',
+      mode: 'scale',
+      worldEnd: { x: 15, y: 0 },
+      worldStart: { x: 10, y: 0 },
+    },
+  ] as const;
+
+  it.each(gestures)(
+    'pins $mode output from one world gesture projected through identity and transformed cameras',
+    (gesture) => {
+      const identity = runProjectedWorldGesture(gesture, false);
+      const transformed = runProjectedWorldGesture(gesture, true);
+
+      expect(identity.delta).toEqual(gesture.expected);
+      expect(transformed.delta).toEqual(gesture.expected);
+      expect(transformed.delta).toEqual(identity.delta);
+      for (const result of [identity, transformed]) {
+        expect(result.began).toHaveBeenCalledOnce();
+        expect(result.began).toHaveBeenCalledWith();
+        expect(result.ended).toHaveBeenCalledOnce();
+        expect(result.ended).toHaveBeenCalledWith();
+        expect(result.nodeAfter).toEqual(result.nodeBefore);
+      }
+    },
+  );
 });
 
 describe('setGizmoCustomPivot', () => {
@@ -607,6 +653,101 @@ function expectRotationDelta(context: Readonly<TestContext>, degrees: number, ex
   );
   emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(100, 50));
   expect(rotated.mock.calls.at(-1)?.[0]).toBeCloseTo(expected, 8);
+}
+
+interface ProjectedWorldGesture {
+  readonly expected: readonly number[];
+  readonly handleName: string;
+  readonly mode: Exclude<GizmoMode, 'none'>;
+  readonly worldEnd: Readonly<Vector2Like>;
+  readonly worldStart: Readonly<Vector2Like>;
+}
+
+function runProjectedWorldGesture(gesture: ProjectedWorldGesture, transformedCamera: boolean) {
+  const node = createShape({
+    pivotX: 2,
+    pivotY: -3,
+    rotation: 17,
+    scaleX: 1.25,
+    scaleY: 0.75,
+    skewX: 4,
+    skewY: -6,
+    x: 12,
+    y: -8,
+  });
+  const context = createTestContext({ mode: gesture.mode }, [node]);
+  if (transformedCamera) {
+    context.camera.x = 12;
+    context.camera.y = -7;
+    context.camera.zoom = 2.25;
+    context.camera.rotation = 35 * (Math.PI / 180);
+    updateGizmo(context.state);
+  }
+  const signals = getGizmoSignals(context.state);
+  const began = vi.fn();
+  const ended = vi.fn();
+  const deltas: number[][] = [];
+  connectSignal(signals.onTransformBegin, began);
+  connectSignal(signals.onTransformEnd, ended);
+  if (gesture.mode === 'translate') {
+    connectSignal(signals.onTranslate, (x, y) => deltas.push([roundTransformValue(x), roundTransformValue(y)]));
+  } else if (gesture.mode === 'rotate') {
+    connectSignal(signals.onRotate, (degrees) => deltas.push([roundTransformValue(degrees)]));
+  } else {
+    connectSignal(signals.onScale, (x, y) => deltas.push([roundTransformValue(x), roundTransformValue(y)]));
+  }
+  const nodeBefore = snapshotNodeTransform(node);
+  const handle = getGizmoHandle(context.overlay, gesture.handleName);
+
+  emitSignal(
+    enableInteractionSignals(handle).onPointerDown,
+    createProjectedPointerData(context.camera, gesture.worldStart),
+  );
+  emitSignal(
+    enableInteractionSignals(handle).onPointerMove,
+    createProjectedPointerData(context.camera, gesture.worldEnd),
+  );
+  emitSignal(
+    enableInteractionSignals(handle).onPointerUp,
+    createProjectedPointerData(context.camera, gesture.worldEnd),
+  );
+
+  const result = {
+    began,
+    delta: deltas.at(-1),
+    ended,
+    nodeAfter: snapshotNodeTransform(node),
+    nodeBefore,
+  };
+  disposeGizmoState(context.state);
+  return result;
+}
+
+function createProjectedPointerData(
+  camera: Readonly<ReturnType<typeof createCamera2D>>,
+  world: Readonly<Vector2Like>,
+): PointerEventData {
+  const overlay = { x: 0, y: 0 };
+  projectCamera2DPoint(camera, world.x, world.y, overlay);
+  return { ...createPointerData(overlay.x, overlay.y), worldX: world.x, worldY: world.y };
+}
+
+function snapshotNodeTransform(node: Readonly<Node2D>) {
+  return {
+    pivotX: node.pivotX,
+    pivotY: node.pivotY,
+    rotation: node.rotation,
+    scaleX: node.scaleX,
+    scaleY: node.scaleY,
+    skewX: node.skewX,
+    skewY: node.skewY,
+    x: node.x,
+    y: node.y,
+  };
+}
+
+function roundTransformValue(value: number): number {
+  return Math.round(value * 1e8) / 1e8;
 }
 
 function expectScaleDelta(context: Readonly<TestContext>, scale: number, expected: number): void {
