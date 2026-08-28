@@ -41,6 +41,11 @@ export interface BackendLifecycleDelta {
   seamsRemoved: readonly string[];
 }
 
+export interface BackendLifecycleFloor {
+  enforcedNames: readonly string[];
+  total: number;
+}
+
 export interface BackendLifecycleReport {
   entries: readonly BackendLifecycleEntry[];
   enforced: number;
@@ -152,7 +157,10 @@ export function formatBackendLifecycleDelta(delta: Readonly<BackendLifecycleDelt
 // The line the gate prints every run. Both counts together, and their sum asserted against the total by
 // `hasBackendLifecycleFailure`, so a derivation that drops an interface shows as a partition that does not
 // add up rather than as a quietly smaller enforced count.
-export function formatBackendLifecycleReport(report: Readonly<BackendLifecycleReport>): string {
+export function formatBackendLifecycleReport(
+  report: Readonly<BackendLifecycleReport>,
+  floor?: Readonly<BackendLifecycleFloor>,
+): string {
   const lines: string[] = [];
   lines.push(
     formatGateProvenance(
@@ -166,9 +174,13 @@ export function formatBackendLifecycleReport(report: Readonly<BackendLifecycleRe
       readGateTreeState(process.cwd()),
     ),
   );
-  lines.push(
-    `${report.enforced} of ${report.total} backends own a freeable resource, ${report.noTeardownHook} declare no whole-backend teardown`,
-  );
+  const summary = `${report.enforced} of ${report.total} backends own a freeable resource, ${report.noTeardownHook} declare no whole-backend teardown`;
+  if (floor !== undefined) {
+    const delta = compareFloorToReport(floor, report);
+    lines.push(`${summary} (${formatBackendLifecycleDelta(delta)})`);
+  } else {
+    lines.push(summary);
+  }
   for (const entry of report.entries.filter((candidate) => candidate.teardown !== null)) {
     lines.push(
       `  ${entry.tearsDown ? 'frees  ' : 'LEAKS  '} ${entry.interfaceName.padEnd(24)} ${entry.setter ?? '(no setter)'} → ${entry.teardown}()`,
@@ -233,6 +245,25 @@ export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[])
     }
   }
   return teardowns;
+}
+
+export function compareFloorToReport(
+  floor: Readonly<BackendLifecycleFloor>,
+  current: Readonly<BackendLifecycleReport>,
+): BackendLifecycleDelta {
+  const floorEnforced = new Set(floor.enforcedNames);
+  const currentEnforced = new Set(current.enforcedNames);
+  const totalGrowth = current.total - floor.total;
+  const seamsAdded: string[] = [];
+  for (let i = 0; i < totalGrowth; i++) seamsAdded.push(`(+${i + 1})`);
+  const seamsRemoved: string[] = [];
+  for (let i = 0; i < -totalGrowth; i++) seamsRemoved.push(`(-${i + 1})`);
+  return {
+    enforcedGained: current.enforcedNames.filter((name) => !floorEnforced.has(name)),
+    enforcedLost: [...floorEnforced].filter((name) => !currentEnforced.has(name)).sort(),
+    seamsAdded,
+    seamsRemoved,
+  };
 }
 
 // Whether the setter frees the outgoing backend, directly or through a helper it calls.

@@ -8,12 +8,13 @@ import {
   collectMethodSyntaxTeardowns,
   collectWholeBackendTeardowns,
   compareBackendLifecycleReports,
+  compareFloorToReport,
   createBackendLifecycleReport,
   formatBackendLifecycleDelta,
   formatBackendLifecycleReport,
   hasBackendLifecycleFailure,
 } from './backend-lifecycle-core';
-import type { BackendLifecycleDelta, BackendLifecycleReport } from './backend-lifecycle-core';
+import type { BackendLifecycleDelta, BackendLifecycleFloor, BackendLifecycleReport } from './backend-lifecycle-core';
 import { collectBackendInterfaceNames } from './backend-operation-seam-core';
 
 // P4's replacement-lifetime census. Population and exclusions are both derived: a backend can only leak a
@@ -21,6 +22,16 @@ import { collectBackendInterfaceNames } from './backend-operation-seam-core';
 describe('backend replacement lifetime census', () => {
   let report: BackendLifecycleReport;
   let teardowns: ReadonlyMap<string, string>;
+  let formattedOutput: string;
+
+  // ★ THE FLOOR, named rather than counted. A number-only floor lets a deletion go unnoticed as long as
+  // an addition lands in the same slice. A named set makes every disappearance individually visible.
+  // Raise this set by adding the name whenever a slice lands a teardown hook. Update total when new
+  // backend interfaces are added to @flighthq/types.
+  const ENFORCED_FLOOR: BackendLifecycleFloor = {
+    enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'],
+    total: 46,
+  };
 
   beforeAll(() => {
     const typeFiles = packageSourceFiles('types');
@@ -28,8 +39,9 @@ describe('backend replacement lifetime census', () => {
     const names = collectBackendInterfaceNames(typeFiles).map((name) => `${name}Backend`);
     teardowns = collectWholeBackendTeardowns(typeFiles);
     report = createBackendLifecycleReport(names, teardowns, collectSetterBodies(), collectFunctionBodies());
+    formattedOutput = formatBackendLifecycleReport(report, ENFORCED_FLOOR);
     // eslint-disable-next-line no-console
-    console.log(formatBackendLifecycleReport(report));
+    console.log(formattedOutput);
   });
 
   it('prints both counts and holds the partition', () => {
@@ -69,14 +81,9 @@ describe('backend replacement lifetime census', () => {
     expect(report.enforced).toBe(methodOnly.size);
   });
 
-  // ★ THE FLOOR, named rather than counted. A number-only floor lets a deletion go unnoticed as long as
-  // an addition lands in the same slice. A named set makes every disappearance individually visible.
-  // Raise this set by adding the name whenever a slice lands a teardown hook.
-  const ENFORCED_FLOOR = ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'];
-
   it('never enforces fewer backends than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(ENFORCED_FLOOR.length);
-    for (const name of ENFORCED_FLOOR) {
+    expect(report.enforced).toBeGreaterThanOrEqual(ENFORCED_FLOOR.enforcedNames.length);
+    for (const name of ENFORCED_FLOOR.enforcedNames) {
       expect(report.enforcedNames).toContain(name);
     }
   });
@@ -86,6 +93,12 @@ describe('backend replacement lifetime census', () => {
   it('reports no leak among the backends that own a freeable resource', () => {
     expect(report.violations).toEqual([]);
     expect(hasBackendLifecycleFailure(report)).toBe(false);
+  });
+
+  it('emits the delta inline so denominator growth is reported separately from regressions', () => {
+    const delta = compareFloorToReport(ENFORCED_FLOOR, report);
+    const deltaText = formatBackendLifecycleDelta(delta);
+    expect(formattedOutput).toContain(`(${deltaText})`);
   });
 });
 
@@ -222,6 +235,58 @@ describe('formatBackendLifecycleDelta', () => {
       seamsRemoved: ['X'],
     };
     expect(formatBackendLifecycleDelta(delta)).toBe('-1 removed, +1 newly enforced, 0 regressions');
+  });
+});
+
+describe('formatBackendLifecycleReport with floor', () => {
+  it('emits the delta inline when a floor is provided', () => {
+    const report: BackendLifecycleReport = {
+      enforced: 1,
+      enforcedNames: ['ABackend'],
+      entries: [
+        { interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false },
+        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'CBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'DBackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'EBackend', setter: null, teardown: null, tearsDown: false },
+      ],
+      noTeardownHook: 4,
+      total: 5,
+      violations: [],
+    };
+    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 3 };
+    const output = formatBackendLifecycleReport(report, floor);
+    expect(output).toContain('(+2 new seams, 0 regressions)');
+  });
+
+  it('emits regression count when an enforced backend disappears', () => {
+    const report: BackendLifecycleReport = {
+      enforced: 0,
+      enforcedNames: [],
+      entries: [
+        { interfaceName: 'ABackend', setter: null, teardown: null, tearsDown: false },
+        { interfaceName: 'BBackend', setter: null, teardown: null, tearsDown: false },
+      ],
+      noTeardownHook: 2,
+      total: 2,
+      violations: [],
+    };
+    const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 2 };
+    const output = formatBackendLifecycleReport(report, floor);
+    expect(output).toContain('(1 regression)');
+  });
+
+  it('omits the delta when no floor is provided', () => {
+    const report: BackendLifecycleReport = {
+      enforced: 1,
+      enforcedNames: ['ABackend'],
+      entries: [{ interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false }],
+      noTeardownHook: 0,
+      total: 1,
+      violations: [],
+    };
+    const output = formatBackendLifecycleReport(report);
+    expect(output).not.toContain('regression');
   });
 });
 
