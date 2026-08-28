@@ -1,11 +1,15 @@
 import type { AudioDeviceBackend } from '@flighthq/types/contract';
+import type { AudioSourceHandle } from '@flighthq/types/contract';
 
 import {
   createWebAudioDeviceBackend,
   explainAudioDeviceBackend,
   explainAudioDeviceOperation,
   getAudioDeviceBackend,
+  getAudioSourceBufferSourceNode,
+  getAudioSourceGainNode,
   hasAudioDeviceOperation,
+  hasAudioDeviceWebNodeAccess,
   installAudioDeviceHostBackend,
   resetAudioDeviceBackendForTest,
   setAudioDeviceBackend,
@@ -78,6 +82,48 @@ describe('getAudioDeviceBackend', () => {
   });
 });
 
+describe('getAudioSourceBufferSourceNode', () => {
+  it('returns null when no web-extended backend is installed', () => {
+    expect(getAudioSourceBufferSourceNode(1 as unknown as AudioSourceHandle)).toBeNull();
+  });
+
+  it('returns null when a plain backend is installed', () => {
+    setAudioDeviceBackend(stubBackend());
+    expect(getAudioSourceBufferSourceNode(1 as unknown as AudioSourceHandle)).toBeNull();
+  });
+
+  it('delegates to the web extension when present', () => {
+    const mockNode = {} as AudioBufferSourceNode;
+    setAudioDeviceBackend({
+      ...stubBackend(),
+      getSourceBufferSourceNode: () => mockNode,
+      getSourceGainNode: () => null,
+    });
+    expect(getAudioSourceBufferSourceNode(1 as unknown as AudioSourceHandle)).toBe(mockNode);
+  });
+});
+
+describe('getAudioSourceGainNode', () => {
+  it('returns null when no web-extended backend is installed', () => {
+    expect(getAudioSourceGainNode(1 as unknown as AudioSourceHandle)).toBeNull();
+  });
+
+  it('returns null when a plain backend is installed', () => {
+    setAudioDeviceBackend(stubBackend());
+    expect(getAudioSourceGainNode(1 as unknown as AudioSourceHandle)).toBeNull();
+  });
+
+  it('delegates to the web extension when present', () => {
+    const mockNode = {} as GainNode;
+    setAudioDeviceBackend({
+      ...stubBackend(),
+      getSourceBufferSourceNode: () => null,
+      getSourceGainNode: () => mockNode,
+    });
+    expect(getAudioSourceGainNode(1 as unknown as AudioSourceHandle)).toBe(mockNode);
+  });
+});
+
 describe('hasAudioDeviceOperation', () => {
   it('returns false for the sentinel', () => {
     expect(hasAudioDeviceOperation('createDevice')).toBe(false);
@@ -86,6 +132,26 @@ describe('hasAudioDeviceOperation', () => {
   it('returns true for an installed backend', () => {
     installAudioDeviceHostBackend(stubBackend());
     expect(hasAudioDeviceOperation('createDevice')).toBe(true);
+  });
+});
+
+describe('hasAudioDeviceWebNodeAccess', () => {
+  it('returns false when no backend is installed', () => {
+    expect(hasAudioDeviceWebNodeAccess()).toBe(false);
+  });
+
+  it('returns false for a plain backend', () => {
+    setAudioDeviceBackend(stubBackend());
+    expect(hasAudioDeviceWebNodeAccess()).toBe(false);
+  });
+
+  it('returns true when the backend has web extension methods', () => {
+    setAudioDeviceBackend({
+      ...stubBackend(),
+      getSourceBufferSourceNode: () => null,
+      getSourceGainNode: () => null,
+    });
+    expect(hasAudioDeviceWebNodeAccess()).toBe(true);
   });
 });
 
