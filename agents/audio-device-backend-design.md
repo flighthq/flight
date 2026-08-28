@@ -94,9 +94,21 @@ These are queried through `getAudioSourceGainNode` and `getAudioSourceBufferSour
 
 Channel-level web-only capabilities (`connectAudioChannelToNode`, `getAudioChannelInputNode`, `getAudioChannelOutputNode`, `fadeAudioChannelGain` with gain automation) work when the web backend is active and return sentinels otherwise. `hasAudioChannelNodeAccess()` and `hasAudioChannelFade()` report availability.
 
-### Deferred operations (not implemented)
+### Intentionally absent operations (Option A scope boundary)
 
-Bus routing (`createBus`, `destroyBus`, `connectSourceToBus`, `connectBusToDevice`, `fadeGain`, `setBusGain`, `setBusPan`), spatial positioning (`setListenerOrientation`, `setListenerPosition`, `setSourcePosition`), and additional buffer/source queries (`getBufferDuration`, `setBufferChannelData`, `getSourceState`, `setSourceLoop`, `suspendDevice`) remain in the original design proposal but are not implemented. The mixer continues to use `AudioContext` and Web Audio nodes directly.
+The following operations appear in the original design proposal but are absent from `AudioDeviceBackend` because Option A scopes them out, not by omission.
+
+**Bus operations** (`createBus`, `destroyBus`, `connectSourceToBus`, `connectBusToDevice`, `setBusGain`, `setBusPan`): The mixer (`audioMixer.ts`) uses `AudioContext` and Web Audio nodes directly. Bus routing is inherently web-only via the mixer's `GainNode`/`StereoPannerNode` graph. Option A does not abstract bus topology into the backend; a native host that needs bus routing would extend through Option B or a dedicated bus backend.
+
+**Spatial operations** (`setListenerOrientation`, `setListenerPosition`, `setSourcePosition`): Spatial audio (3D positioning, HRTF) is outside the channel/mixer playback scope. It would require a `PannerNode` or spatial listener, which are web-specific. Option A covers decoded-PCM-to-speaker; spatial positioning is deferred to Option B.
+
+**Pan** (`setBusPan`): Panning is implemented at the mixer level via `StereoPannerNode`, which is web-only. The backend does not abstract pan because the mixer owns panning as a bus feature, not a source feature.
+
+**Node routing on native** (`getSourceGainNode`, `getSourceBufferSourceNode`): Not `AudioDeviceBackend` operations by design. They are web-specific extension methods on the object returned by `createWebAudioDeviceBackend()`. A native backend never exposes them. `hasAudioDeviceWebNodeAccess()` / `hasAudioChannelNodeAccess()` return false, declaring the capability absent through P1 machinery — not a no-op.
+
+**Additional source/buffer queries** (`getSourceState`, `setSourceLoop`, `getBufferDuration`, `setBufferChannelData`, `suspendDevice`): The channel layer tracks its own state, loop count, and duration from `AudioResource`. The backend does not need to report these back. `suspendDevice` is omitted because the current pattern only uses `resumeDevice` (autoplay unlock); suspension is caller-managed.
+
+**`AudioBusHandle`**: Does not exist in `@flighthq/types`. Only referenced here as a deferred concept.
 
 ### Sentinel and invalid-handle behavior
 
