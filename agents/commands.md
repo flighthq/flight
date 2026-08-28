@@ -50,6 +50,10 @@ A gate number moves for exactly one of three reasons, and each must be recorded 
 
 Never mix these in a single mutation. A commit that simultaneously discovers a new interface and relabels an existing one produces a delta that cannot be decomposed after the fact — was the count change from one event or two? Record each as its own step so the reason for every number change is traceable.
 
+### A ratchet advances one name at a time
+
+A floor grows by one named entry per earned reason: "MenuBackend landed its teardown hook" is one increment. Never collapse multiple completed items into a single multi-step floor jump — a commit that adds three names at once produces an unattributable sum. Each name carries its own justification (the slice that earned it), and that justification is lost when names arrive in a batch whose commit message can only say "added several." One name, one reason, one commit to the floor.
+
 ### Hand-written detector rosters are floors, not ceilings
 
 A gate that enumerates conditions by name — a list of backends, a roster of known defects, a set of expected warnings — records a floor on what has been observed, not an exhaustive ceiling on what exists. When a consumer contradicts a closed gate (reports a condition the gate says is absent), the first question is whether the detector looks for the reported condition at all. A roster that does not contain a term cannot find it, and its silence is not evidence of absence — it is evidence of the roster's vocabulary. Expand the detector before trusting the gate's answer.
