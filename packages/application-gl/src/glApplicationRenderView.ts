@@ -1,6 +1,7 @@
 import { createApplicationRenderView, detachApplicationRenderView } from '@flighthq/application/contract';
 import { createViewport } from '@flighthq/node/contract';
 import {
+  createGlContextFromCanvasElement,
   createGlRenderState,
   createGlRenderTarget,
   destroyGlRenderState,
@@ -29,7 +30,8 @@ export function createGlApplicationRenderView(
   const height = Math.max(0, Math.round(window.height * window.devicePixelRatio));
   synchronizeGlCanvasBackingStore(canvas, width, height);
 
-  const renderState = createGlRenderState(canvas, {
+  const context = createGlContextFromCanvasElement(canvas, options.context);
+  const renderState = createGlRenderState(context, {
     ...options.render,
     pixelRatio: window.devicePixelRatio,
   });
@@ -43,7 +45,14 @@ export function createGlApplicationRenderView(
     height,
     width,
   });
-  return createApplicationRenderView(window, renderState, renderTarget, viewport, resizeGlApplicationRenderView);
+  return createApplicationRenderView(
+    window,
+    renderState,
+    renderTarget,
+    viewport,
+    (state, target, nextWidth, nextHeight) =>
+      resizeGlApplicationRenderView(canvas, state, target, nextWidth, nextHeight),
+  );
 }
 
 // Detaches window observation and deterministically frees the target and state owned by
@@ -55,12 +64,13 @@ export function destroyGlApplicationRenderView(view: GlApplicationRenderView): v
 }
 
 function resizeGlApplicationRenderView(
+  canvas: HTMLCanvasElement,
   renderState: GlRenderState,
   renderTarget: GlRenderTarget,
   width: number,
   height: number,
 ): void {
-  if (synchronizeGlCanvasBackingStore(renderState.canvas, width, height)) {
+  if (synchronizeGlCanvasBackingStore(canvas, width, height)) {
     invalidateGlRenderStateCache(renderState);
   }
   const storageWidth = Math.max(1, Math.ceil(width));

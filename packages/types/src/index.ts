@@ -244,6 +244,7 @@ export * from './GlClassicProgram';
 export * from './GlCompressedTextureDecoder';
 export * from './GlCompressedTextureSupport';
 export * from './GlCompressedTextureUploader';
+export * from './GlContext';
 export * from './GlContextLoss';
 export * from './GlCullFaceKind';
 export * from './GlCustomMaterialShaderSource';

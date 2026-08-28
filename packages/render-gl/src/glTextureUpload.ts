@@ -1,4 +1,4 @@
-import type { Image } from '@flighthq/types/contract';
+import type { GlContext, Image } from '@flighthq/types/contract';
 
 // Raw texel-upload primitives. Each writes level 0 of the texture currently bound at `target` — the GL
 // enum for a 2D texture (gl.TEXTURE_2D) or a cube face (gl.TEXTURE_CUBE_MAP_POSITIVE_X + face). They set
@@ -10,7 +10,7 @@ import type { Image } from '@flighthq/types/contract';
 // The portable bedrock upload — no web types in the signature — so a native GL/Vulkan backend reimplements
 // it 1:1. `width`/`height` are the pixel dimensions the data fills.
 export function uploadGlTextureData(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   target: number,
   width: number,
   height: number,
@@ -33,7 +33,7 @@ export function uploadGlTextureData(
 // Uploads a decoded DOM element (image, canvas, ImageBitmap, VideoFrame) through the TexImageSource
 // overload — the web fast-path, a zero-CPU-copy GPU DMA. Absent on non-web hosts, which carry only `data`.
 export function uploadGlTextureElement(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   target: number,
   source: TexImageSource,
   internalFormat: number = gl.RGBA,
@@ -43,7 +43,7 @@ export function uploadGlTextureElement(
 
 // Uploads a host-backed Image through the decoded-element fast path.
 export function uploadGlTextureImageResource(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   target: number,
   image: Readonly<Image>,
   internalFormat: number = gl.RGBA,

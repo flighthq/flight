@@ -4,6 +4,7 @@ import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createGlRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   Camera3D,
   DirectionalLight,
   GlRenderState,
@@ -150,7 +151,7 @@ function normalizeDirectionalShadowPcfRadius(radius: number): number {
   return Math.min(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS, Math.max(0, Math.floor(radius)));
 }
 
-function compileShadowDepthProgram(gl: WebGL2RenderingContext): GlMeshProgram {
+function compileShadowDepthProgram(gl: GlContext): GlMeshProgram {
   const program = compileGlProgram(gl, SHADOW_DEPTH_VERTEX, SHADOW_DEPTH_FRAGMENT);
   return {
     locModel: gl.getUniformLocation(program, 'u_model'),
@@ -163,7 +164,7 @@ function compileShadowDepthProgram(gl: WebGL2RenderingContext): GlMeshProgram {
 // The HAS_SKIN depth variant: the same depth pass, but the vertex is deformed by the bone palette via
 // skinMatrix() before the model/view-projection transform — the exact deformation the forward HAS_SKIN
 // vertex shader applies, so a skinned caster's recorded depth matches its shaded silhouette.
-function compileShadowDepthSkinnedProgram(gl: WebGL2RenderingContext): GlMeshProgram {
+function compileShadowDepthSkinnedProgram(gl: GlContext): GlMeshProgram {
   const program = compileGlProgram(gl, SHADOW_DEPTH_SKINNED_VERTEX, SHADOW_DEPTH_FRAGMENT);
   return {
     locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),

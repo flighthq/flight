@@ -1,5 +1,12 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import type { GlMatcapDefineKey, GlMatcapProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlMatcapDefineKey,
+  GlMatcapProgram,
+  LinearColor,
+  GlRenderState,
+  Texture,
+} from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
@@ -32,7 +39,7 @@ export function buildGlMatcapDefineKey(key: Readonly<GlMatcapDefineKey>): string
 
 // Compiles the matcap shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlMatcapProgram.
-export function compileGlMatcapProgram(gl: WebGL2RenderingContext, key: Readonly<GlMatcapDefineKey>): GlMatcapProgram {
+export function compileGlMatcapProgram(gl: GlContext, key: Readonly<GlMatcapDefineKey>): GlMatcapProgram {
   const program = compileGlProgram(gl, getGlMatcapVertexSourceForKey(key), getGlMatcapFragmentSourceForKey(key));
   return {
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),

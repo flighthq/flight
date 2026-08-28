@@ -138,8 +138,9 @@ function createFunctionalTarget(options: Readonly<CapturePageTargetOptions>, sca
   const state = options.state;
   const canvas = 'canvas' in state ? state.canvas : null;
   const element = 'element' in state ? state.element : null;
-  const width = options.width ?? canvas?.width ?? element?.clientWidth ?? 0;
-  const height = options.height ?? canvas?.height ?? element?.clientHeight ?? 0;
+  const gl = options.renderer === 'webgl' ? (state as GlRenderState).gl : null;
+  const width = options.width ?? gl?.drawingBufferWidth ?? canvas?.width ?? element?.clientWidth ?? 0;
+  const height = options.height ?? gl?.drawingBufferHeight ?? canvas?.height ?? element?.clientHeight ?? 0;
   const render = (): void => {};
   if (options.renderer === 'dom') return { kind: 'dom', state: state as DomRenderState, width, height, scale, render };
   if (options.renderer === 'webgl')

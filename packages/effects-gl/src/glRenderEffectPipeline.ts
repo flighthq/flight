@@ -45,8 +45,8 @@ export function beginGlRenderEffectPipeline(
   pipeline: GlRenderEffectPipeline,
   colorSpace: RenderTargetColorSpace = 'srgb',
 ): void {
-  const w = state.canvas.width;
-  const h = state.canvas.height;
+  const w = state.gl.drawingBufferWidth;
+  const h = state.gl.drawingBufferHeight;
   const { sampleCount, format, depth } = pipeline.options;
 
   if (pipeline.sceneTarget === null) {

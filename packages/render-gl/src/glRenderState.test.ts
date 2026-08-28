@@ -41,13 +41,8 @@ import {
 import { makeGL } from './glTestHelper';
 import { registerGlTextureResolver } from './glTextureResolver';
 
-function makeCanvas() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 200;
-  canvas.height = 100;
-  const gl = makeGL();
-  canvas.getContext = vi.fn().mockReturnValue(gl) as typeof canvas.getContext;
-  return { canvas, gl };
+function makeContext() {
+  return { gl: makeGL() };
 }
 
 function getPaddingResolver(state: RenderState, kind: string): RenderEffectPaddingResolver | null {
@@ -67,8 +62,8 @@ function registerPaddingResolver(state: RenderState, kind: string, resolver: Ren
 
 describe('copyGlRenderStateRegistrations', () => {
   it('copies late GL registrations only when explicitly requested', () => {
-    const { canvas } = makeCanvas();
-    const screen = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const screen = createGlRenderState(gl);
     const offscreen = createGlOffscreenRenderState(screen);
     const materialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
@@ -140,8 +135,8 @@ describe('copyGlRenderStateRegistrations', () => {
 
 describe('createGlOffscreenRenderState', () => {
   it('shares context resources and persistent registration snapshots through independent aggregates', () => {
-    const { canvas } = makeCanvas();
-    const screen = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const screen = createGlRenderState(gl);
     const renderer = { createData: () => null, submit: vi.fn() };
     const materialRenderer = { getBatchData: vi.fn(), getBatchFloats: vi.fn() } as never;
     const paddingResolver = vi.fn(() => ({ bottom: 1, left: 1, right: 1, top: 1 }));
@@ -186,7 +181,6 @@ describe('createGlOffscreenRenderState', () => {
     const offscreenRuntime = getGlRenderStateRuntime(offscreen);
 
     expect(offscreen.gl).toBe(screen.gl);
-    expect(offscreen.canvas).toBe(screen.canvas);
     expect(offscreenRuntime.textureCache).toBe(screenRuntime.textureCache);
     expect(offscreenRuntime.textureSourcePremultipliedTextureCache).toBe(
       screenRuntime.textureSourcePremultipliedTextureCache,
@@ -260,8 +254,8 @@ describe('createGlOffscreenRenderState', () => {
   });
 
   it('requires explicit re-copy for registrations added after derivation', () => {
-    const { canvas } = makeCanvas();
-    const screen = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const screen = createGlRenderState(gl);
     const offscreen = createGlOffscreenRenderState(screen);
     const renderer = { createData: () => null, submit: vi.fn() };
     const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
@@ -288,8 +282,8 @@ describe('createGlOffscreenRenderState', () => {
   });
 
   it('keeps proxy trees independent and destroys derived renderer data without freeing shared context resources', () => {
-    const { canvas, gl } = makeCanvas();
-    const screen = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const screen = createGlRenderState(gl);
     const destroyData = vi.fn();
     const root = createDisplayObject();
     registerRenderer(screen, root.kind, {
@@ -311,96 +305,76 @@ describe('createGlOffscreenRenderState', () => {
 });
 
 describe('createGlRenderState', () => {
-  it('throws when Gl2 context is unavailable', () => {
-    const canvas = document.createElement('canvas');
-    canvas.getContext = vi.fn().mockReturnValue(null) as typeof canvas.getContext;
-    expect(() => createGlRenderState(canvas)).toThrow('Failed to get WebGL2 context.');
-  });
-
-  it('stores the canvas on the returned state', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
-    expect(state.canvas).toBe(canvas);
-  });
-
   it('stores the GL context on the returned state', () => {
-    const { canvas, gl } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     expect(state.gl).toBe(gl);
   });
 
   it('initializes runtime currentBlendMode to null', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     expect(getGlRenderStateRuntime(state).currentBlendMode).toBeNull();
   });
 
   it('initializes runtime currentProgram to null', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     expect(getGlRenderStateRuntime(state).currentProgram).toBeNull();
   });
 
   it('initializes runtime currentTexture to null', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     expect(getGlRenderStateRuntime(state).currentTexture).toBeNull();
   });
 
   it('enables blending during initialization', () => {
-    const { canvas, gl } = makeCanvas();
-    createGlRenderState(canvas);
+    const { gl } = makeContext();
+    createGlRenderState(gl);
     expect(gl.enable).toHaveBeenCalledWith((gl as unknown as { BLEND: number }).BLEND);
   });
 
   it('disables depth testing during initialization', () => {
-    const { canvas, gl } = makeCanvas();
-    createGlRenderState(canvas);
+    const { gl } = makeContext();
+    createGlRenderState(gl);
     expect(gl.disable).toHaveBeenCalledWith((gl as unknown as { DEPTH_TEST: number }).DEPTH_TEST);
   });
 
   it('sets the default premultiplied-alpha blend function', () => {
-    const { canvas, gl } = makeCanvas();
-    createGlRenderState(canvas);
+    const { gl } = makeContext();
+    createGlRenderState(gl);
     const g = gl as unknown as { ONE: number; ONE_MINUS_SRC_ALPHA: number };
     expect(gl.blendFunc).toHaveBeenCalledWith(g.ONE, g.ONE_MINUS_SRC_ALPHA);
   });
 
-  it('requests an anti-aliased context by default', () => {
-    const { canvas } = makeCanvas();
-    createGlRenderState(canvas);
-    const attribs = (canvas.getContext as ReturnType<typeof vi.fn>).mock.calls[0][1] as WebGLContextAttributes;
-    expect(attribs.antialias).toBe(true);
-  });
-
-  it('disables the anti-aliased context when antialias is false', () => {
-    const { canvas } = makeCanvas();
-    createGlRenderState(canvas, { antialias: false });
-    const attribs = (canvas.getContext as ReturnType<typeof vi.fn>).mock.calls[0][1] as WebGLContextAttributes;
-    expect(attribs.antialias).toBe(false);
-  });
-
   it('applies the backgroundColor option', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas, { backgroundColor: 0xff0000ff });
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl, { backgroundColor: 0xff0000ff });
     expect(state.backgroundColor).toBe(0xff0000ff);
   });
 
   it('uses the provided pixelRatio option', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas, { pixelRatio: 2 });
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl, { pixelRatio: 2 });
     expect(state.pixelRatio).toBe(2);
   });
 
+  it('uses imageSmoothingEnabled before the legacy allowSmoothing alias', () => {
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl, { allowSmoothing: false, imageSmoothingEnabled: true });
+    expect(state.allowSmoothing).toBe(true);
+  });
+
   it('defaults roundPixels to false', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     expect(state.roundPixels).toBe(false);
   });
 
   it('applies the roundPixels option', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas, { roundPixels: true });
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl, { roundPixels: true });
     expect(state.roundPixels).toBe(true);
   });
 });
@@ -494,8 +468,8 @@ describe('createGlRenderStateRuntime', () => {
 
 describe('destroyGlRenderState', () => {
   it('deletes buffers on destroy even when no shader was compiled', () => {
-    const { canvas, gl } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     const deleteProgram = vi.spyOn(gl, 'deleteProgram');
     const deleteBuffer = vi.spyOn(gl, 'deleteBuffer');
 
@@ -506,8 +480,8 @@ describe('destroyGlRenderState', () => {
   });
 
   it('is safe to call twice (Gl deletes are no-ops on already-deleted resources)', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     destroyGlRenderState(state);
     expect(() => destroyGlRenderState(state)).not.toThrow();
   });
@@ -515,8 +489,8 @@ describe('destroyGlRenderState', () => {
 
 describe('enableGlRenderStateGuards', () => {
   it('warns when one GL pipeline prepares two different roots', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     const sink = createMemoryLogSink(4);
     addLogSink(sink.sink);
     enableGlRenderStateGuards(state);
@@ -534,8 +508,8 @@ describe('enableGlRenderStateGuards', () => {
 
 describe('getGlColorAdjustmentMaterialFeature', () => {
   it('resolves only a bound feature entry', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     const feature: GlColorAdjustmentMaterialFeature = {
       drawShapeMeshes: vi.fn(),
       flush: vi.fn(() => false),
@@ -563,8 +537,8 @@ describe('getGlColorAdjustmentMaterialFeature', () => {
 
 describe('getGlColorAdjustmentMaterialFeatureGuard', () => {
   it('resolves only a bound guard entry', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     const guard: GlColorAdjustmentMaterialFeatureGuard = vi.fn();
     const runtime = getGlRenderStateRuntime(state);
 
@@ -586,24 +560,24 @@ describe('getGlColorAdjustmentMaterialFeatureGuard', () => {
 
 describe('getGlRenderStateRuntime', () => {
   it('returns the runtime attached by createGlRenderState', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     const runtime = getGlRenderStateRuntime(state);
     expect(runtime).toBeDefined();
     expect(runtime.defaultBitmapShader).toBeNull();
   });
 
   it('resolves the same runtime object on repeated calls', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     expect(getGlRenderStateRuntime(state)).toBe(getGlRenderStateRuntime(state));
   });
 });
 
 describe('invalidateGlRenderStateCache', () => {
   it('nulls the cached GL binding slots so the next draw re-binds from scratch', () => {
-    const { canvas } = makeCanvas();
-    const state = createGlRenderState(canvas);
+    const { gl } = makeContext();
+    const state = createGlRenderState(gl);
     const runtime = getGlRenderStateRuntime(state);
 
     // Simulate a full frame of render-gl activity plus a sibling renderer (scene-gl) binding raw GL

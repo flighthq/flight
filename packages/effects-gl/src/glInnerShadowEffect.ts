@@ -7,6 +7,7 @@ import {
   releaseGlRenderTarget,
 } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   InnerShadowEffect,
   GlFullscreenProgram,
   GlRenderEffectRunner,
@@ -40,7 +41,7 @@ void main() {
 
 type InnerClipLocations = GlFullscreenProgram;
 
-const clipShaders = new WeakMap<WebGL2RenderingContext, InnerClipLocations>();
+const clipShaders = new WeakMap<GlContext, InnerClipLocations>();
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then composite over the source.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

@@ -4,6 +4,7 @@ import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contrac
 import { getGlColorAdjustmentMaterialFeatureGuard } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   BlendMode,
   ColorScaleBias,
   TintMaterialData,
@@ -76,7 +77,7 @@ void main() {
   fragColor = color;
 }`;
 
-function compileQuadBatchWriterShader(gl: WebGL2RenderingContext): GlQuadBatchShader {
+function compileQuadBatchWriterShader(gl: GlContext): GlQuadBatchShader {
   const program = createGlProgram(gl, QUAD_BATCH_VS, QUAD_BATCH_FS, 'Sprite-batch');
   return {
     program,
@@ -323,9 +324,10 @@ export function setGlQuadBatchWorldAndTexture(
 ): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
-  const clipW = 2 / viewport.width;
-  const clipH = 2 / viewport.height;
+  const viewportWidth = runtime.renderTargetViewport?.width ?? gl.drawingBufferWidth;
+  const viewportHeight = runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight;
+  const clipW = 2 / viewportWidth;
+  const clipH = 2 / viewportHeight;
   const m = runtime.matrixArray;
   m[0] = clipW;
   m[1] = 0;

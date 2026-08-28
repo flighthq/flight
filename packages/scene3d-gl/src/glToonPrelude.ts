@@ -1,4 +1,4 @@
-import type { GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/types/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
@@ -23,7 +23,7 @@ export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {
 // plus the shared model/normal/view-projection vertex transforms. Pure GL work — no caching — used
 // by ensureGlToonProgram. Throws on a compile/link failure, which is a programmer error (a malformed
 // prelude), not an expected runtime condition.
-export function compileGlToonProgram(gl: WebGL2RenderingContext, key: Readonly<GlToonDefineKey>): GlToonProgram {
+export function compileGlToonProgram(gl: GlContext, key: Readonly<GlToonDefineKey>): GlToonProgram {
   const program = compileGlProgram(gl, getGlToonVertexSourceForKey(key), getGlToonFragmentSourceForKey(key));
   return {
     ...resolveGlLitLocations(gl, program),

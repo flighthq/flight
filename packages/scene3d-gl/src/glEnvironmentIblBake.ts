@@ -1,5 +1,5 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
-import type { Environment, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, Environment, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
@@ -153,7 +153,7 @@ function renderGlBakeCubeFaces(
   void fbo;
 }
 
-function createGlBakeCube(gl: WebGL2RenderingContext, size: number, mipped: boolean): WebGLTexture {
+function createGlBakeCube(gl: GlContext, size: number, mipped: boolean): WebGLTexture {
   const texture = gl.createTexture()!;
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
   // Allocate the full mip chain up front: a cube with a mip-aware min filter is "incomplete" (samples
@@ -176,7 +176,7 @@ function createGlBakeCube(gl: WebGL2RenderingContext, size: number, mipped: bool
   return texture;
 }
 
-function bindGlBakeSourceCube(gl: WebGL2RenderingContext, program: GlBakeProgram, sourceCube: WebGLTexture): void {
+function bindGlBakeSourceCube(gl: GlContext, program: GlBakeProgram, sourceCube: WebGLTexture): void {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, sourceCube);
   gl.uniform1i(program.locEnvCube, 0);
@@ -233,7 +233,7 @@ function drawGlBakeQuad(state: GlRenderState, program: GlBakeProgram): void {
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-function linkGlBakeProgram(gl: WebGL2RenderingContext, fragment: string): WebGLProgram {
+function linkGlBakeProgram(gl: GlContext, fragment: string): WebGLProgram {
   return createGlProgram(gl, BAKE_VERTEX, fragment, 'IBL bake');
 }
 

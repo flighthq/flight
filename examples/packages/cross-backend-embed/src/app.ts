@@ -1,4 +1,5 @@
 import {
+  createGlContextFromCanvasElement,
   addNodeChild,
   addTextureAtlasRegion,
   appendQuadBatchInstance,
@@ -36,13 +37,15 @@ const INSTANCE_COUNT = 24;
 // The producer is a complete WebGL renderer with its own scene, pixels, and cadence. Its canvas is
 // deliberately not appended here: the DOM consumer owns placement and HtmlView will mount it.
 const producerCanvas = createGlCanvasElement(PRODUCER_WIDTH, PRODUCER_HEIGHT);
-const producerState = createGlRenderState(producerCanvas, {
-  backgroundColor: 0x18253dff,
-  // The portable Sprite tier uses drawImage to copy this WebGL canvas later in the frame. Keeping the
-  // drawing buffer is one sanctioned way to make that readback reliable; a same-task copy is the other.
-  contextAttributes: { alpha: false, preserveDrawingBuffer: true },
-  sceneGraphSyncPolicy: 'requiresInvalidation',
-});
+const producerState = createGlRenderState(
+  createGlContextFromCanvasElement(producerCanvas, {
+    contextAttributes: { alpha: false, preserveDrawingBuffer: true },
+  }),
+  {
+    backgroundColor: 0x18253dff,
+    sceneGraphSyncPolicy: 'requiresInvalidation',
+  },
+);
 registerGlImageTextureResolver(producerState);
 registerGlStandardMaterial(producerState);
 registerRenderer(producerState, QuadBatchKind, defaultGlQuadBatchRenderer);

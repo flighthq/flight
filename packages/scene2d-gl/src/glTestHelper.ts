@@ -1,20 +1,25 @@
-import { createGlRenderState } from '@flighthq/render-gl/contract';
-import type { GlRenderState } from '@flighthq/types/contract';
+import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
+import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 
 // Local test helper for scene2d-gl unit tests. Mirrors render-gl's own private
 // glTestHelper pattern but builds the state through render-gl's PUBLIC createGlRenderState
 // rather than reaching into render-gl internals. The jsdom webgl2Mock setup file patches
-// HTMLCanvasElement.getContext('webgl2') to return a mock WebGL2RenderingContext, so
+// HTMLCanvasElement.getContext('webgl2') to return a mock GlContext, so
 // createGlRenderState produces a fully-populated state with a working mock GL.
 export function createGlState(options?: { allowSmoothing?: boolean; pixelRatio?: number }): {
   state: GlRenderState;
-  gl: WebGL2RenderingContext;
+  gl: GlContext;
   canvas: HTMLCanvasElement;
 } {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  const state = createGlRenderState(canvas, {
+  const gl = createGlContextFromCanvasElement(canvas);
+  Object.defineProperties(gl, {
+    drawingBufferHeight: { configurable: true, value: canvas.height },
+    drawingBufferWidth: { configurable: true, value: canvas.width },
+  });
+  const state = createGlRenderState(gl, {
     backgroundColor: 0x00000000,
     imageSmoothingEnabled: options?.allowSmoothing ?? true,
     pixelRatio: options?.pixelRatio,

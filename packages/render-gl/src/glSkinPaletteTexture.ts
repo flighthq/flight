@@ -1,4 +1,4 @@
-import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
+import type { GlContext, GlSkinPaletteTexture } from '@flighthq/types/contract';
 
 // The GPU skinning bone-palette data texture: the per-mesh joint-matrix palette in an RGBA32F texture
 // the vertex shader reads with texelFetch (GLSL ES 3.0 core), one mat4 packed as four consecutive
@@ -10,13 +10,13 @@ import type { GlSkinPaletteTexture } from '@flighthq/types/contract';
 // Creates the palette texture struct with no storage allocated yet (jointCapacity 0). The first
 // uploadGlSkinPaletteTexture allocates storage sized to the palette. The caller owns the returned
 // struct and frees it with destroyGlSkinPaletteTexture.
-export function createGlSkinPaletteTexture(gl: WebGL2RenderingContext): GlSkinPaletteTexture {
+export function createGlSkinPaletteTexture(gl: GlContext): GlSkinPaletteTexture {
   return { jointCapacity: 0, texture: gl.createTexture()! };
 }
 
 // Frees the palette texture's GL object. The struct must not be used after this call. Deleting an
 // already-deleted GL texture is a silent no-op, so this is safe to call more than once.
-export function destroyGlSkinPaletteTexture(gl: WebGL2RenderingContext, palette: Readonly<GlSkinPaletteTexture>): void {
+export function destroyGlSkinPaletteTexture(gl: GlContext, palette: Readonly<GlSkinPaletteTexture>): void {
   gl.deleteTexture(palette.texture);
 }
 
@@ -27,7 +27,7 @@ export function destroyGlSkinPaletteTexture(gl: WebGL2RenderingContext, palette:
 // on TEXTURE_2D of the active texture unit (the caller selects the unit and sets the sampler uniform).
 // Reads `jointMatrices`/`jointCount` before any allocation, so it is safe against an aliased struct.
 export function uploadGlSkinPaletteTexture(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   palette: GlSkinPaletteTexture,
   jointMatrices: Readonly<Float32Array>,
   jointCount: number,

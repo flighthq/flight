@@ -1,5 +1,6 @@
 import type { CompressedImage } from './CompressedImage';
 import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
+import type { GlContext } from './GlContext';
 import type { TextureColorSpace } from './Texture';
 
 // The opt-in seam that uploads a CompressedImage's payload to the currently-bound GL
@@ -12,7 +13,7 @@ import type { TextureColorSpace } from './Texture';
 // layer. Returns false when the format is neither natively supported nor decodable, or the container
 // is still supercompressed — a sentinel, not a throw.
 export type GlCompressedTextureUploader = (
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   image: Readonly<CompressedImage>,
   decode: GlCompressedTextureDecoder | null,
   colorSpace?: TextureColorSpace,

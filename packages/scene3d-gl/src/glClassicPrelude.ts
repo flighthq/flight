@@ -1,5 +1,6 @@
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   GlClassicDefineKey,
   GlClassicProgram,
   GlColorAdjustmentMaterialFeature,
@@ -33,7 +34,7 @@ export function buildGlClassicDefineKey(key: Readonly<GlClassicDefineKey>): stri
 // Pure GL work — no caching — used by ensureGlClassicProgram. Throws on a compile/link failure, which
 // is a programmer error (a malformed prelude), not an expected runtime condition.
 export function compileGlClassicProgram(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   key: Readonly<GlClassicDefineKey>,
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
 ): GlClassicProgram {

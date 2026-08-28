@@ -1,5 +1,5 @@
 ﻿import { addNodeChild } from '@flighthq/node/contract';
-import { createGlRenderState } from '@flighthq/render-gl/contract';
+import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderState } from '@flighthq/types/contract';
@@ -11,7 +11,7 @@ function makeState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 200;
   canvas.height = 100;
-  return createGlRenderState(canvas);
+  return createGlRenderState(createGlContextFromCanvasElement(canvas));
 }
 
 function makeRenderer() {

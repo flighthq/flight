@@ -1,4 +1,4 @@
-import type { Image } from '@flighthq/types/contract';
+import type { GlContext, Image } from '@flighthq/types/contract';
 
 import { uploadGlTextureElement } from './glTextureUpload';
 
@@ -13,7 +13,7 @@ import { uploadGlTextureElement } from './glTextureUpload';
 // level 0 at gl.TEXTURE_2D. Returns `uploadedVersion` unchanged (no GL call) when the frame has not
 // advanced or the element has no decoded frame yet, so it is safe to call every frame unconditionally.
 export function uploadGlTextureVideoFrame(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   image: Readonly<Image>,
   uploadedVersion: number,
   internalFormat: number = gl.RGBA,

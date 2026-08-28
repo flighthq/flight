@@ -1,4 +1,5 @@
 import type {
+  GlContext,
   CompressedImage,
   GlCompressedTextureDecoder,
   GlCompressedTextureSupport,
@@ -26,7 +27,7 @@ import { getGlRenderStateRuntime } from './glRenderState';
 // Probes which block-compressed families the WebGL2 context can upload natively, from its
 // `WEBGL_compressed_texture_*` extensions. Call once per context and cache the result; each `getExtension`
 // activates the extension so the enum constants become readable by `getGlCompressedTextureFormat`.
-export function detectGlCompressedTextureSupport(gl: WebGL2RenderingContext): GlCompressedTextureSupport {
+export function detectGlCompressedTextureSupport(gl: GlContext): GlCompressedTextureSupport {
   return {
     astc: gl.getExtension('WEBGL_compressed_texture_astc') !== null,
     bptc: gl.getExtension('EXT_texture_compression_bptc') !== null,
@@ -45,7 +46,7 @@ export function detectGlCompressedTextureSupport(gl: WebGL2RenderingContext): Gl
 // number is the exact enum `compressedTexImage2D` expects, read off the extension object so it matches
 // the running browser. Requires the relevant extension to already be enabled (call
 // `detectGlCompressedTextureSupport` first).
-export function getGlCompressedTextureFormat(gl: WebGL2RenderingContext, format: TextureContainerFormat): number {
+export function getGlCompressedTextureFormat(gl: GlContext, format: TextureContainerFormat): number {
   const s3tc = gl.getExtension('WEBGL_compressed_texture_s3tc') as Record<string, number> | null;
   const s3tcSrgb = gl.getExtension('WEBGL_compressed_texture_s3tc_srgb') as Record<string, number> | null;
   const rgtc = gl.getExtension('EXT_texture_compression_rgtc') as Record<string, number> | null;
@@ -244,7 +245,7 @@ export function registerGlCompressedTextureUpload(state: GlRenderState, uploader
 // RGBA decode fallback covers only the plain 2D case (faces === 1, layers === 1); a compressed cubemap
 // or array with no native support reports failure rather than a partial 2D upload.
 export function uploadGlCompressedTextureContainer(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   container: Readonly<TextureContainer>,
   payload: Readonly<Uint8Array>,
   decode?: GlCompressedTextureDecoder,
@@ -332,7 +333,7 @@ function isAstcFormat(format: TextureContainerFormat): boolean {
   return format.startsWith('astc');
 }
 
-function getGlAstcSrgbFormat(gl: WebGL2RenderingContext, format: TextureContainerFormat): number {
+function getGlAstcSrgbFormat(gl: GlContext, format: TextureContainerFormat): number {
   const ext = gl.getExtension('WEBGL_compressed_texture_astc') as Record<string, number> | null;
   const match = /^astc(\d+)x(\d+)$/.exec(format);
   if (ext === null || match === null) return -1;
@@ -358,7 +359,7 @@ function isSupportedGlCompressedTextureContainerShape(container: Readonly<Textur
 // The installed GlCompressedTextureUploader bridges a CompressedImage to the container upload while
 // threading through any registered RGBA decode fallback.
 function uploadGlCompressedImage(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   image: Readonly<CompressedImage>,
   decode: GlCompressedTextureDecoder | null,
   colorSpace: TextureColorSpace = 'linear',

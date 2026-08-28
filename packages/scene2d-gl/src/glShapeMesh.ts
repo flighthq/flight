@@ -1,7 +1,13 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlColorAdjustmentMaterialFeature } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlRenderState, GlShapeMesh, GlShapeMeshBinding, RenderProxy2D } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlRenderState,
+  GlShapeMesh,
+  GlShapeMeshBinding,
+  RenderProxy2D,
+} from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 
@@ -116,16 +122,16 @@ void main() { gl_FragColor = u_color; }
 
 const shapeMeshPrograms = new WeakMap<WebGLRenderingContext, GlShapeMeshBinding>();
 
-function compileShapeMeshProgram(gl: WebGL2RenderingContext): WebGLProgram {
+function compileShapeMeshProgram(gl: GlContext): WebGLProgram {
   return createGlProgram(gl, VERTEX_SOURCE, FRAGMENT_SOURCE, 'Shape-mesh');
 }
 
 // Column-major mat3 = projection · world transform, mapping shape-local points to clip space — identical
 // to the quad-batch writer's projection so the mesh aligns with everything else.
 function shapeMeshMatrix(state: GlRenderState, renderProxy: RenderProxy2D): Float32Array {
-  const viewport = getGlRenderStateRuntime(state).renderTargetViewport ?? state.canvas;
-  const iw = 2 / (viewport.width || 1);
-  const ih = 2 / (viewport.height || 1);
+  const viewport = getGlRenderStateRuntime(state).renderTargetViewport;
+  const iw = 2 / ((viewport?.width ?? state.gl.drawingBufferWidth) || 1);
+  const ih = 2 / ((viewport?.height ?? state.gl.drawingBufferHeight) || 1);
   const t = renderProxy.transform2D;
   // prettier-ignore
   return new Float32Array([

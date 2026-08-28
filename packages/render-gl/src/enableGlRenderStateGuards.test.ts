@@ -4,6 +4,7 @@ import type { LogEntry } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
+import { createGlContextFromCanvasElement } from './glContext';
 import { useGlProgram } from './glDraw';
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
 import { makeGL } from './glTestHelper';
@@ -11,7 +12,7 @@ import { makeGL } from './glTestHelper';
 function createState() {
   const canvas = document.createElement('canvas');
   canvas.getContext = vi.fn().mockReturnValue(makeGL()) as typeof canvas.getContext;
-  return createGlRenderState(canvas);
+  return createGlRenderState(createGlContextFromCanvasElement(canvas));
 }
 
 describe('areGlRenderStateGuardsEnabled', () => {

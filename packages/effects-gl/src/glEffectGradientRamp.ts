@@ -1,3 +1,4 @@
+import type { GlContext } from '@flighthq/types/contract';
 /**
  * Builds a 256-entry RGBA gradient ramp on the GPU. The caller owns the
  * returned texture and must delete it with `gl.deleteTexture` when done.
@@ -6,7 +7,7 @@
  * `alphas` are in [0,1].
  */
 export function createGlEffectGradientRampTexture(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   colors: ReadonlyArray<number>,
   alphas: ReadonlyArray<number>,
   ratios: ReadonlyArray<number>,

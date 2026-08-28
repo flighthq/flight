@@ -1,5 +1,5 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import type { GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
+import type { GlContext, GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
@@ -44,7 +44,7 @@ export function buildGlDebugDefineKey(key: Readonly<GlDebugDefineKey>): string {
 
 // Compiles the debug shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlDebugProgram.
-export function compileGlDebugProgram(gl: WebGL2RenderingContext, key: Readonly<GlDebugDefineKey>): GlDebugProgram {
+export function compileGlDebugProgram(gl: GlContext, key: Readonly<GlDebugDefineKey>): GlDebugProgram {
   const program = compileGlProgram(gl, getGlDebugVertexSourceForKey(key), getGlDebugFragmentSourceForKey(key));
   return {
     locFar: gl.getUniformLocation(program, 'u_far'),

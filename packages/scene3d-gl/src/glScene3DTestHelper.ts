@@ -1,6 +1,6 @@
 import { createGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRenderState } from '@flighthq/render/contract';
-import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // A minimal fake WebGL2 context for scene-gl unit tests. vitest-webgl-canvas-mock only mocks the
@@ -9,7 +9,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 // assert the GL it drove, and returns plausible objects for the create*/getUniformLocation/get*
 // queries the renderer makes. It is not a renderer — it does not produce pixels — but it lets the
 // CPU-side bind/draw/cache logic run to completion under jsdom.
-export interface FakeGl2 extends WebGL2RenderingContext {
+export interface FakeGl2 extends GlContext {
   calls: { name: string; args: unknown[] }[];
 }
 

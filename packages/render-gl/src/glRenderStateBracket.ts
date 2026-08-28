@@ -1,4 +1,4 @@
-import type { GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
+import type { GlContext, GlRenderState, GlRenderStateRuntime } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -212,7 +212,7 @@ export function withGlRenderState<T>(state: GlRenderState, callback: () => T): T
   }
 }
 
-function readGlBooleanQuad(gl: WebGL2RenderingContext, parameter: GLenum): GlBooleanQuad {
+function readGlBooleanQuad(gl: GlContext, parameter: GLenum): GlBooleanQuad {
   const value = gl.getParameter(parameter) as ArrayLike<boolean> | null | undefined;
   // As readGlBox: browsers always return four values for COLOR_WRITEMASK. All-enabled is the GL
   // default and the conservative sentinel for a partial mock — it can never mask a host's writes off.
@@ -220,7 +220,7 @@ function readGlBooleanQuad(gl: WebGL2RenderingContext, parameter: GLenum): GlBoo
   return [value[0], value[1], value[2], value[3]];
 }
 
-function readGlBox(gl: WebGL2RenderingContext, parameter: GLenum): GlBox {
+function readGlBox(gl: GlContext, parameter: GLenum): GlBox {
   const value = gl.getParameter(parameter) as ArrayLike<number> | null | undefined;
   // Lightweight test contexts may omit inert query state. Browsers always return four values for
   // VIEWPORT/SCISSOR_BOX; a zero box is the conservative restoration sentinel for a partial mock.
@@ -228,7 +228,7 @@ function readGlBox(gl: WebGL2RenderingContext, parameter: GLenum): GlBox {
   return [value[0], value[1], value[2], value[3]];
 }
 
-function restoreGlCapability(gl: WebGL2RenderingContext, capability: GLenum, enabled: boolean): void {
+function restoreGlCapability(gl: GlContext, capability: GLenum, enabled: boolean): void {
   if (enabled) {
     gl.enable(capability);
   } else {

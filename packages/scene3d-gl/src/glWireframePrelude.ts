@@ -1,4 +1,4 @@
-import type { GlWireframeProgram, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, GlWireframeProgram, GlRenderState } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
@@ -12,7 +12,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // shader, links it, and resolves its uniform locations. Pure GL work — no caching — used by
 // ensureGlWireframeProgram.
 export function compileGlWireframeProgram(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   alphaMaskEnabled = false,
   skinned = false,
 ): GlWireframeProgram {

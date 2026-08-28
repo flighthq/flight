@@ -1,5 +1,12 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import type { GlUnlitDefineKey, GlUnlitProgram, LinearColor, GlRenderState, Texture } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlUnlitDefineKey,
+  GlUnlitProgram,
+  LinearColor,
+  GlRenderState,
+  Texture,
+} from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
@@ -43,7 +50,7 @@ export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
 
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlUnlitProgram.
-export function compileGlUnlitProgram(gl: WebGL2RenderingContext, key: Readonly<GlUnlitDefineKey>): GlUnlitProgram {
+export function compileGlUnlitProgram(gl: GlContext, key: Readonly<GlUnlitDefineKey>): GlUnlitProgram {
   const program = compileGlProgram(gl, getGlUnlitVertexSourceForKey(key), getGlUnlitFragmentSourceForKey(key));
   return {
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),

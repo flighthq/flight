@@ -1,6 +1,6 @@
 import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
-import type { Camera3D, Environment, GlRenderState } from '@flighthq/types/contract';
+import type { GlContext, Camera3D, Environment, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
 
@@ -84,7 +84,7 @@ function ensureGlSkybox(state: GlRenderState): GlSkybox {
   return sky;
 }
 
-function linkGlSkyboxProgram(gl: WebGL2RenderingContext): WebGLProgram {
+function linkGlSkyboxProgram(gl: GlContext): WebGLProgram {
   return createGlProgram(gl, SKYBOX_VERTEX, SKYBOX_FRAGMENT, 'Skybox');
 }
 

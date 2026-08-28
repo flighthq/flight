@@ -8,6 +8,7 @@ import {
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
 import type {
+  GlContext,
   Camera3D,
   GlRenderState,
   Matrix4,
@@ -121,7 +122,7 @@ interface GlParticle3DShader {
   vao: WebGLVertexArrayObject;
 }
 
-function compileParticle3DShader(gl: WebGL2RenderingContext): GlParticle3DShader {
+function compileParticle3DShader(gl: GlContext): GlParticle3DShader {
   const program = createGlProgram(gl, PARTICLE_3D_VS, PARTICLE_3D_FS, 'ParticleEmitter3D');
 
   // Bind the emitter's dedicated VAO before creating buffers. This compile runs lazily inside the first
@@ -175,7 +176,7 @@ function ensureParticle3DShader(state: GlRenderState): GlParticle3DShader {
   return shader;
 }
 
-function ensureInstanceCapacity(shader: GlParticle3DShader, gl: WebGL2RenderingContext, count: number): void {
+function ensureInstanceCapacity(shader: GlParticle3DShader, gl: GlContext, count: number): void {
   const needed = count * INSTANCE_FLOATS;
   if (shader.instanceData.length >= needed) return;
   const newSize = Math.max(needed, shader.instanceData.length * 2);

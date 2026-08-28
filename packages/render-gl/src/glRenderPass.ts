@@ -1,5 +1,6 @@
 import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
+  GlContext,
   GlRenderState,
   GlRenderTarget,
   GlScissorRect,
@@ -167,8 +168,8 @@ export function endGlRenderPass(state: GlRenderState): void {
   gl.viewport(
     viewport?.x ?? 0,
     viewport?.y ?? 0,
-    viewport?.width ?? saved.previousOwner.canvas.width,
-    viewport?.height ?? saved.previousOwner.canvas.height,
+    viewport?.width ?? saved.previousOwner.gl.drawingBufferWidth,
+    viewport?.height ?? saved.previousOwner.gl.drawingBufferHeight,
   );
   applyGlScissor(gl, saved.previousState.scissorRect);
   restoreGlStencil(gl, saved.stencil);
@@ -290,7 +291,7 @@ function restoreGlPassState(state: GlRenderState, saved: Readonly<SavedGlPassSta
   state.renderTransform2D = saved.renderTransform2D;
 }
 
-function applyGlScissor(gl: WebGL2RenderingContext, rect: Readonly<GlScissorRect> | null): void {
+function applyGlScissor(gl: GlContext, rect: Readonly<GlScissorRect> | null): void {
   if (rect === null) {
     gl.disable(gl.SCISSOR_TEST);
     return;
@@ -299,7 +300,7 @@ function applyGlScissor(gl: WebGL2RenderingContext, rect: Readonly<GlScissorRect
   gl.scissor(rect.x, rect.y, rect.width, rect.height);
 }
 
-function captureGlStencil(gl: WebGL2RenderingContext): SavedGlStencil {
+function captureGlStencil(gl: GlContext): SavedGlStencil {
   return {
     fail: gl.getParameter(gl.STENCIL_FAIL) as number,
     func: gl.getParameter(gl.STENCIL_FUNC) as number,
@@ -311,7 +312,7 @@ function captureGlStencil(gl: WebGL2RenderingContext): SavedGlStencil {
   };
 }
 
-function restoreGlStencil(gl: WebGL2RenderingContext, saved: Readonly<SavedGlStencil> | null): void {
+function restoreGlStencil(gl: GlContext, saved: Readonly<SavedGlStencil> | null): void {
   if (saved === null) {
     gl.disable(gl.STENCIL_TEST);
     return;
@@ -369,5 +370,5 @@ function clampGlPassEdge(value: number, extent: number): number {
 
 // A WebGL context has exactly one framebuffer binding and one live stencil gate. Keying the pass
 // bracket by that physical owner keeps cache GlRenderStates sharing a context in the same LIFO scope.
-const _passStack = new WeakMap<WebGL2RenderingContext, GlPassStackEntry[]>();
+const _passStack = new WeakMap<GlContext, GlPassStackEntry[]>();
 const _clearRgba = new Float32Array(4);

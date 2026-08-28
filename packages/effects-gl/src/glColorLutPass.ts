@@ -1,5 +1,11 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { ColorLut, GlColorLutTextureCache, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  ColorLut,
+  GlColorLutTextureCache,
+  GlRenderState,
+  GlRenderTarget,
+} from '@flighthq/types/contract';
 
 import { getGlEffectProgram } from './glEffectProgramCache';
 
@@ -35,11 +41,7 @@ export function applyColorLutPassToGl(
 // Uploads `lut` into the cache's reusable 3D texture (RGBA8, LINEAR, clamp-to-edge) and returns it. The
 // upload is skipped entirely when `lut` is the same reference already baked into the texture — the common
 // static-grade case — so an unchanged grade costs one texImage3D total, not one per frame.
-function uploadLutTexture(
-  gl: WebGL2RenderingContext,
-  lut: Readonly<ColorLut>,
-  cache: GlColorLutTextureCache,
-): WebGLTexture {
+function uploadLutTexture(gl: GlContext, lut: Readonly<ColorLut>, cache: GlColorLutTextureCache): WebGLTexture {
   if (cache.texture !== null && cache.lut === lut) return cache.texture;
   const n = lut.size;
   const samples = lut.samples;

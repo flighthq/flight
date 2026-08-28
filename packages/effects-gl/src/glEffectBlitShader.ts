@@ -1,5 +1,5 @@
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlRenderTarget } from '@flighthq/types/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 // Blits a tinted texture at a UV offset. Out-of-bounds samples produce transparent output.
@@ -43,9 +43,9 @@ type BlitOffsetShaderLocations = GlFullscreenProgram & {
   locOffset: WebGLUniformLocation;
 };
 
-const blitOffsetShaders = new WeakMap<WebGL2RenderingContext, BlitOffsetShaderLocations>();
-const blitShaders = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
-const eraseShaders = new WeakMap<WebGL2RenderingContext, GlFullscreenProgram>();
+const blitOffsetShaders = new WeakMap<GlContext, BlitOffsetShaderLocations>();
+const blitShaders = new WeakMap<GlContext, GlFullscreenProgram>();
+const eraseShaders = new WeakMap<GlContext, GlFullscreenProgram>();
 
 /**
  * Blits source into dest at a pixel offset (dx, dy in screen-space Y-down).

@@ -1,5 +1,6 @@
 import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
+  GlContext,
   GlColorAdjustmentMaterialFeature,
   GlPbrExtensionShaderContribution,
   GlPbrProgram,
@@ -15,7 +16,7 @@ import { getGlScene3DRuntime } from './glScene3DRuntime';
 // locations. Pure GL work — no caching — used by ensureGlPbrProgram. Throws on a compile/link
 // failure, which is a programmer error (a malformed prelude), not an expected runtime condition.
 export function compileGlPbrProgram(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   key: Readonly<GlPbrDefineKey>,
   contributions: readonly GlPbrExtensionShaderContribution[] = [],
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,

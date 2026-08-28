@@ -1,6 +1,6 @@
 import { unpackColorRgba } from '@flighthq/color/contract';
 import { compileGlFullscreenProgram, drawGlFullscreenPass } from '@flighthq/render-gl/contract';
-import type { GlRenderTarget } from '@flighthq/types/contract';
+import type { GlContext, GlRenderTarget } from '@flighthq/types/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
 // Extracts the source alpha, tints it with a solid color, and outputs a
@@ -39,8 +39,8 @@ type TintShaderLocations = GlFullscreenProgram & {
   locStrength: WebGLUniformLocation;
 };
 
-const tintShaders = new WeakMap<WebGL2RenderingContext, TintShaderLocations>();
-const invertTintShaders = new WeakMap<WebGL2RenderingContext, TintShaderLocations>();
+const tintShaders = new WeakMap<GlContext, TintShaderLocations>();
+const invertTintShaders = new WeakMap<GlContext, TintShaderLocations>();
 
 /** Tints the INVERTED source alpha with color, outputs a premultiplied mask. Used for inner effects. */
 export function applyGlEffectInvertTintPass(

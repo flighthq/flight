@@ -1,4 +1,4 @@
-import { createGlRenderState } from '@flighthq/render-gl/contract';
+import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
 const programMock = vi.hoisted(() => ({
@@ -129,7 +129,7 @@ describe('defaultGlGodRaysEffectRunner', () => {
 
 describe('registerGlGodRaysEffect', () => {
   it('makes the runner resolvable for the GodRaysEffect kind', () => {
-    const state = createGlRenderState(document.createElement('canvas'));
+    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
 
     expect(getGlRenderEffectRunner(state, 'GodRaysEffect')).toBeNull();
     registerGlGodRaysEffect(state);

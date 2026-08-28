@@ -1,4 +1,4 @@
-import { createGlRenderState, endGlRenderPass } from '@flighthq/render-gl/contract';
+import { createGlContextFromCanvasElement, createGlRenderState, endGlRenderPass } from '@flighthq/render-gl/contract';
 import type { RenderEffect } from '@flighthq/types/contract';
 
 import {
@@ -16,7 +16,7 @@ describe('beginGlRenderEffectPipeline', () => {
   });
 
   it('redeclares the explicit color space on a reused scene target', () => {
-    const state = createGlRenderState(document.createElement('canvas'));
+    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
     const pipeline = createGlRenderEffectPipeline(state);
 
     beginGlRenderEffectPipeline(state, pipeline);
@@ -49,7 +49,7 @@ describe('endGlRenderEffectPipeline', () => {
 
 describe('setGlRenderEffectPipelineSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', () => {
-    const state = createGlRenderState(document.createElement('canvas'));
+    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
     const pipeline = createGlRenderEffectPipeline(state);
     const dropped: string[] = [];
     const chain = [{ kind: 'test.pipeline-skip-seam' } as RenderEffect];

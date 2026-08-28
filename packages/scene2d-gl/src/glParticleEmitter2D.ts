@@ -3,7 +3,13 @@ import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/c
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getTextureHeight, getTextureWidth, hasTextureSource } from '@flighthq/texture/contract';
-import type { GlRenderState, ParticleEmitter2D, RenderProxy2D, SpriteRenderer } from '@flighthq/types/contract';
+import type {
+  GlContext,
+  GlRenderState,
+  ParticleEmitter2D,
+  RenderProxy2D,
+  SpriteRenderer,
+} from '@flighthq/types/contract';
 import type { GlParticleShader } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
@@ -74,7 +80,7 @@ void main() {
   if (fragColor.a <= 0.0) discard;
 }`;
 
-function compileParticleShader(gl: WebGL2RenderingContext): GlParticleShader {
+function compileParticleShader(gl: GlContext): GlParticleShader {
   const program = createGlProgram(gl, PARTICLE_VS, PARTICLE_FS, 'Particle emitter');
   return {
     program,
@@ -142,7 +148,8 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   const numRegions = regions.length;
   const nodeAlpha = renderProxy.alpha;
   const t = renderProxy.transform2D;
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
+  const viewportWidth = runtime.renderTargetViewport?.width ?? gl.drawingBufferWidth;
+  const viewportHeight = runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight;
   const iw = 1 / Math.max(1, getTextureWidth(atlas.texture));
   const ih = 1 / Math.max(1, getTextureHeight(atlas.texture));
   const instanceData = runtime.particleInstanceData!;
@@ -208,8 +215,8 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   // Compute and upload the emitter node → clip-space world matrix.
   // In world-space mode particle positions ARE already in world (pixel) space,
   // so we skip the node transform and map directly through the viewport.
-  const clipW = 2 / viewport.width;
-  const clipH = 2 / viewport.height;
+  const clipW = 2 / viewportWidth;
+  const clipH = 2 / viewportHeight;
   const m = runtime.matrixArray;
   if (source.data.worldSpace) {
     m[0] = clipW;

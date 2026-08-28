@@ -3,6 +3,7 @@ import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createGlProgram, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
 import { getTextureUvMatrix, hasTextureSource, hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
+  GlContext,
   GlMeshProgram,
   Camera3D,
   GlRenderState,
@@ -82,7 +83,7 @@ export function bindGlMeshSkinPalette(
 // it uploads with transpose=false and `u_uvTransform * vec3(uv, 1.0)` matches the CPU
 // transformTextureUv reference.
 export function bindGlUvTransform(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   program: Readonly<GlMeshProgram>,
   texture: Readonly<TextureLike> | null,
 ): void {
@@ -99,11 +100,7 @@ export function bindGlUvTransform(
 // Compiles a vertex + fragment source pair into a linked GL program. Shared by every family's
 // program compile. Throws on a compile or link failure, which is a programmer error (a malformed
 // prelude), not an expected runtime condition — correct preludes always compile.
-export function compileGlProgram(
-  gl: WebGL2RenderingContext,
-  vertexSource: string,
-  fragmentSource: string,
-): WebGLProgram {
+export function compileGlProgram(gl: GlContext, vertexSource: string, fragmentSource: string): WebGLProgram {
   return createGlProgram(gl, vertexSource, fragmentSource, 'Mesh');
 }
 
@@ -215,7 +212,7 @@ export function drawGlMeshSubset(
 export function ensureGlScene3DProgram<T extends GlMeshProgram>(
   state: GlRenderState,
   key: string,
-  compile: (gl: WebGL2RenderingContext) => T,
+  compile: (gl: GlContext) => T,
 ): T {
   const runtime = getGlScene3DRuntime(state);
   let program = runtime.programCache.get(key);
@@ -238,7 +235,7 @@ export function hasGlUvTransform(texture: Readonly<TextureLike> | null): boolean
 // u_cameraPosition. Lighting-independent families (unlit/debug) skip this — only families whose
 // fragment scene2d needs a view vector resolve and bind a camera-position location.
 export function setGlMeshCameraPosition(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   locCameraPosition: WebGLUniformLocation | null,
   camera: Readonly<Camera3D>,
 ): void {
@@ -275,7 +272,7 @@ export function setGlMeshViewProjection(
 // lived inside drawGlMeshSubset that family silently shipped u_objectAlpha = 0 — invisible while nothing
 // read alpha, and a black frame the moment the fragment tail began premultiplying by it.
 export function uploadGlMeshDrawAlpha(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   program: Readonly<GlMeshProgram>,
   alpha: number,
   material: Readonly<Material> | null,

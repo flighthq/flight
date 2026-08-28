@@ -1,5 +1,6 @@
 import type { ApplicationWindow } from './ApplicationWindow';
 import type { Entity } from './Entity';
+import type { GlContextOptions } from './GlContext';
 import type { GlRenderOptions } from './GlRenderOptions';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget } from './GlRenderTarget';
@@ -30,6 +31,7 @@ export type ApplicationRenderViewResize<
 export type ApplicationRenderViewTargetOptions = Omit<RenderTargetDescriptor, 'height' | 'width'>;
 
 export interface GlApplicationRenderViewOptions {
+  readonly context?: Readonly<GlContextOptions>;
   readonly render?: Readonly<GlRenderOptions>;
   readonly target?: Readonly<ApplicationRenderViewTargetOptions>;
 }

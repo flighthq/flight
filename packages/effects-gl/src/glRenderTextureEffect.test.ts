@@ -1,4 +1,5 @@
 import {
+  createGlContextFromCanvasElement,
   acquireGlRenderTexture,
   clearGlRenderTexture,
   copyGlRenderStateRegistrations,
@@ -231,7 +232,7 @@ function createState(): GlRenderState {
   const canvas = document.createElement('canvas');
   canvas.width = 32;
   canvas.height = 24;
-  return createGlRenderState(canvas);
+  return createGlRenderState(createGlContextFromCanvasElement(canvas));
 }
 
 describe('offscreen effect registration snapshots', () => {

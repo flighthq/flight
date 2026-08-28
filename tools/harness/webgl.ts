@@ -1,6 +1,7 @@
 import { enableHostWebGlRenderSurface } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
+  createGlContextFromCanvasElement,
   createCanvasRenderState,
   createCanvasShapeRasterizer,
   createGlCanvasElement,
@@ -56,14 +57,16 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const canvas = createGlCanvasElement(width, height, pixelRatio);
   document.body.appendChild(canvas);
 
-  const state = createGlRenderState(canvas, {
-    pixelRatio,
-    backgroundColor: options.background,
-    // preserveDrawingBuffer so the verifier (and the differential/fingerprint runner) can read the
-    // frame back after rendering — harmless for tests, where throughput does not matter.
-    contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
-    sceneGraphSyncPolicy: options.syncPolicy,
-  });
+  const state = createGlRenderState(
+    createGlContextFromCanvasElement(canvas, {
+      contextAttributes: { alpha: false, preserveDrawingBuffer: true, ...options.contextAttributes },
+    }),
+    {
+      pixelRatio,
+      backgroundColor: options.background,
+      sceneGraphSyncPolicy: options.syncPolicy,
+    },
+  );
 
   // Device transform carries DPI: the scene is authored in logical units, scaled to the backing
   // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.

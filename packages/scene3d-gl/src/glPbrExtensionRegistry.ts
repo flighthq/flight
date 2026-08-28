@@ -4,6 +4,7 @@ import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getTextureUvMatrix } from '@flighthq/texture/contract';
 import type {
+  GlContext,
   GlPbrExtensionBindContext,
   GlPbrExtensionIssue,
   GlPbrExtensionRegistration,
@@ -161,7 +162,7 @@ function createGlPbrExtensionBindContext(state: GlRenderState, program: WebGLPro
   };
 }
 
-function getGlPbrExtensionTextureUnits(gl: WebGL2RenderingContext): readonly number[] {
+function getGlPbrExtensionTextureUnits(gl: GlContext): readonly number[] {
   const count = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS) as number;
   const units: number[] = [];
   for (let unit = 6; unit < count; unit++) {

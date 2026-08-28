@@ -1,4 +1,4 @@
-import { createGlRenderState } from '@flighthq/render-gl/contract';
+import { createGlContextFromCanvasElement, createGlRenderState } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
 
 const programMock = vi.hoisted(() => ({
@@ -135,7 +135,7 @@ describe('defaultGlTiltShiftEffectRunner', () => {
 
 describe('registerGlTiltShiftEffect', () => {
   it('makes the runner resolvable for the TiltShiftEffect kind', () => {
-    const state = createGlRenderState(document.createElement('canvas'));
+    const state = createGlRenderState(createGlContextFromCanvasElement(document.createElement('canvas')));
 
     expect(getGlRenderEffectRunner(state, 'TiltShiftEffect')).toBeNull();
     registerGlTiltShiftEffect(state);

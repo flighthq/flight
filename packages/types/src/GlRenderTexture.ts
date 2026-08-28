@@ -1,3 +1,4 @@
+import type { GlContext } from './GlContext';
 import type { GlRenderState } from './GlRenderState';
 import type { GlRenderTarget, GlRenderTargetPool } from './GlRenderTarget';
 import type { RenderTexture } from './RenderTexture';
@@ -18,7 +19,7 @@ export interface GlRenderTextureEntry {
 // App-level lease pool. Its currency is RenderTexture; the raw target pool is an implementation
 // detail used by multi-pass effect runners.
 export interface GlRenderTexturePool {
-  context: WebGL2RenderingContext | null;
+  context: GlContext | null;
   destroyed: boolean;
   readonly effectTargets: GlRenderTargetPool;
   readonly free: RenderTexture[];

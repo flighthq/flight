@@ -1,6 +1,7 @@
 import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { explainRenderTargetAxes, resolveRenderTargetDescriptor } from '@flighthq/render/contract';
 import type {
+  GlContext,
   GlRenderState,
   GlRenderTarget,
   Matrix,
@@ -134,7 +135,14 @@ export function drawGlRenderTargetResult(
   const quadTransform = acquireMatrix();
   multiplyMatrix(quadTransform, renderProxy.transform2D, transform);
   setGlAttributes(gl, shaderLoc!);
-  setGlMatrixFromTransform(gl, shaderLoc!, matrixArray, quadTransform, runtime.renderTargetViewport ?? state.canvas);
+  setGlMatrixFromTransform(
+    gl,
+    shaderLoc!,
+    matrixArray,
+    quadTransform,
+    runtime.renderTargetViewport?.width ?? gl.drawingBufferWidth,
+    runtime.renderTargetViewport?.height ?? gl.drawingBufferHeight,
+  );
   setGlBaseUniforms(gl, shaderLoc!, renderProxy);
   releaseMatrix(quadTransform);
 
@@ -351,13 +359,13 @@ function allocateGlRenderTargetStorage(state: GlRenderState, target: GlRenderTar
   gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
-function buildDrawBuffers(gl: WebGL2RenderingContext, count: number): number[] {
+function buildDrawBuffers(gl: GlContext, count: number): number[] {
   const buffers: number[] = [];
   for (let i = 0; i < count; i++) buffers.push(gl.COLOR_ATTACHMENT0 + i);
   return buffers;
 }
 
-function buildSingleDrawBuffer(gl: WebGL2RenderingContext, index: number, count: number): number[] {
+function buildSingleDrawBuffer(gl: GlContext, index: number, count: number): number[] {
   const buffers: number[] = [];
   for (let i = 0; i < count; i++) buffers.push(i === index ? gl.COLOR_ATTACHMENT0 + i : gl.NONE);
   return buffers;
@@ -367,7 +375,7 @@ function isFloatRenderTargetFormat(format: RenderTargetFormat): boolean {
   return format === 'rgba16f' || format === 'rgba32f';
 }
 
-function isGlRenderTargetFormatSupportedByContext(gl: WebGL2RenderingContext, format: RenderTargetFormat): boolean {
+function isGlRenderTargetFormatSupportedByContext(gl: GlContext, format: RenderTargetFormat): boolean {
   return !isFloatRenderTargetFormat(format) || gl.getExtension('EXT_color_buffer_float') !== null;
 }
 
@@ -398,7 +406,7 @@ function getGlRenderTargetAxes(target: Readonly<GlRenderTarget>): RenderTargetAx
 }
 
 function resolveEffectiveGlRenderTargetAxes(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   requested: Readonly<ResolvedRenderTargetDescriptor>,
   formatPolicy: RenderTargetFormatPolicy,
 ): RenderTargetAxes | null {
@@ -442,7 +450,7 @@ function setGlRenderTargetAxes(target: GlRenderTarget, axes: Readonly<RenderTarg
 // honest rgba32f -> rgba16f capability rung. Preferred allocation falls directly to universally
 // renderable rgba8; required allocation returns null before creating any framebuffer storage.
 function resolveRenderableFormat(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   format: RenderTargetFormat,
   formatPolicy: RenderTargetFormatPolicy,
 ): RenderTargetFormat | null {
@@ -451,7 +459,7 @@ function resolveRenderableFormat(
 }
 
 function mapGlFormat(
-  gl: WebGL2RenderingContext,
+  gl: GlContext,
   format: RenderTargetFormat,
 ): { internalFormat: number; format: number; type: number } {
   switch (format) {
