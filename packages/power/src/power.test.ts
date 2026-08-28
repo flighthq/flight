@@ -47,6 +47,7 @@ function fakeBackend(): PowerBackend & {
   return {
     charging: false,
     keepAwake: false,
+    destroy() {},
     getBatteryHealth(_out) {
       return null;
     },
@@ -656,6 +657,71 @@ describe('setPowerBackend', () => {
     setPowerBackend(fakeBackend());
     setPowerBackend(null);
     expect(getPowerBackend()).not.toBeNull();
+  });
+
+  it('destroys the outgoing backend while it is still the active backend', () => {
+    const order: string[] = [];
+    const first = fakeBackend();
+    first.destroy = () => {
+      order.push('destroy');
+      order.push(`sees-self:${getPowerBackend() === first}`);
+    };
+    const second = fakeBackend();
+    setPowerBackend(first);
+    setPowerBackend(second);
+    expect(order).toEqual(['destroy', 'sees-self:true']);
+    expect(getPowerBackend()).toBe(second);
+  });
+
+  it('does not install replacement when outgoing destroy throws', () => {
+    const first = fakeBackend();
+    first.destroy = () => {
+      throw new Error('teardown failed');
+    };
+    const second = fakeBackend();
+    setPowerBackend(first);
+    expect(() => setPowerBackend(second)).toThrow('teardown failed');
+    expect(getPowerBackend()).toBe(first);
+  });
+
+  it('does not destroy a backend that is being re-assigned to the same slot', () => {
+    let destroyCalls = 0;
+    const backend = fakeBackend();
+    backend.destroy = () => destroyCalls++;
+    setPowerBackend(backend);
+    setPowerBackend(backend);
+    expect(destroyCalls).toBe(0);
+  });
+
+  it('is safe to call destroy twice (idempotent)', () => {
+    let destroyCalls = 0;
+    const backend = fakeBackend();
+    backend.destroy = () => destroyCalls++;
+    setPowerBackend(backend);
+    setPowerBackend(null);
+    expect(destroyCalls).toBe(1);
+    setPowerBackend(null);
+    expect(destroyCalls).toBe(1);
+  });
+
+  it('destroys when clearing to null', () => {
+    let destroyed = false;
+    const backend = fakeBackend();
+    backend.destroy = () => (destroyed = true);
+    setPowerBackend(backend);
+    expect(destroyed).toBe(false);
+    setPowerBackend(null);
+    expect(destroyed).toBe(true);
+  });
+
+  it('does not destroy a backend that is still retained in the host slot', () => {
+    let destroyCalls = 0;
+    const shared = fakeBackend();
+    shared.destroy = () => destroyCalls++;
+    installPowerHostBackend(shared);
+    setPowerBackend(shared);
+    setPowerBackend(null);
+    expect(destroyCalls).toBe(0);
   });
 });
 

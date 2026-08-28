@@ -19,14 +19,14 @@ The 42-interface audit partitions exactly as:
 The seven still-needing rows are not the total owner population. At the frozen audit, the total was
 eight: already-implemented `LogTransportBackend` plus the seven named below. Since that audit,
 `AccessibilityBackend` and `MediaSessionBackend` have landed their hooks. The live implementation
-state is therefore three declared and exercised hooks (`AccessibilityBackend`, `LogTransportBackend`,
-and `MediaSessionBackend`) with five still owed.
+state is therefore five declared and exercised hooks (`AccessibilityBackend`, `LogTransportBackend`,
+`MediaSessionBackend`, `MenuBackend`, and `PowerBackend`) with three still owed.
 
 The live tree has since added three interfaces. `AudioBackend` is a pure `canPlayType` query and
 joins the GC/bounded bucket. `WgpuHostBackend` and `InputIngressBackend` own acquisition- or
 registration-scoped brackets, so they join the entity/keyed/caller-owned bucket. Therefore the live
 total is 45 and the live partition is `1 + 7 + 21 + 16 = 45`. None of the post-audit rows changes the
-whole-owner population or its live implementation state of three declared hooks with five still owed.
+whole-owner population or its live implementation state of five declared hooks with three still owed.
 
 ## Derivation rules
 
@@ -45,12 +45,17 @@ Entity/keyed classification is not a declaration that cleanup is finished. It an
 lifetime should own cleanup. Each row below separately says whether the current implementation pins
 cleanup to the originating provider or still owes that provenance.
 
-Provider replacement follows three invariants:
+Provider replacement follows five invariants:
 
 1. Teardown is idempotent and exactly once for each ownership loss.
 2. Installing the identical backend again does not destroy it.
 3. If the same object occupies more than one precedence slot, losing one slot does not destroy the
    object while another slot still owns it.
+4. Teardown happens before install: the outgoing backend is destroyed while it is still the selected
+   backend (`get*Backend()` returns it during its `destroy()` call), so teardown code that queries the
+   active backend sees itself.
+5. If teardown throws, the replacement is not installed and the outgoing backend remains the selected
+   last-known-good backend, preserving ownership for retry or explicit documented recovery.
 
 **Shared origin-pinned lifecycle doctrine (normative):** cleanup releases only the resources or
 registrations acquired by the originating backend for that exact acquisition/source. Later backend
@@ -90,8 +95,8 @@ category; its subsequently landed hook is recorded in the row itself.
 | `AccessibilityBackend` | `createWebAccessibilityBackend` retains mirrored DOM nodes, live regions, and sometimes an owned root appended to `document.body`. | **Landed hook:** web `destroy()` clears mirrored nodes and live regions, removes only a backend-created root, empties but preserves a caller-supplied container, and cannot lazily recreate a root afterward. Custom/host slots release only objects no longer referenced by either slot and deduplicate aliased final removal. |
 | `AppBackend` | A backend can hold the process single-instance lock and start dock/attention requests; its event thunks alone do not release those host resources. | **Owed:** each implementation tracks locks and request ids it acquired; `destroy?()` releases its lock, cancels outstanding attention/bounce ids, and detaches any instance-owned host state. Durable user configuration such as login-at-startup is not rolled back merely because an adapter is replaced. |
 | `MediaSessionBackend` | Metadata, playback state, scrubber state, and action handlers remain installed on the OS `mediaSession` singleton after the adapter reference is dropped. | **Landed hook:** web `destroy()` clears its registered action set, metadata, playback state, and position state. `setMediaSessionBackend` covers custom-slot replacement/removal. The two-slot final-loss/alias cases remain evidence still to add: `destroyMediaSessionBackend` currently clears both slots after invoking only the active object, and a host object aliased into the custom slot can be destroyed while the host slot still retains it. |
-| `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Owed:** `destroy?()` clears the application menu (the platform equivalent of `setApplicationMenu([])`/`null`) and the backend-owned selection closure; transient popup teardown stays with the popup operation. |
-| `PowerBackend` | Electron retains a `powerSaveBlocker` id; web retains and may reacquire a `WakeLockSentinel`. Both outlive the initiating call. | **Owed:** `destroy?()` stops the owned blocker or releases the owned wake-lock sentinel, prevents reacquisition, and removes instance-owned release listeners. Entity subscriptions remain owned by `detachPower`/`disposePower`. |
+| `MenuBackend` | `setApplicationMenu` installs a process-global native menu whose callbacks can retain the backend selection listener. Popup menus are bounded caller promises and are not the reason for the hook. | **Landed hook:** `destroy?()` on the interface; `setMenuBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron and Tauri null the select listener; web is a no-op (holds no state). |
+| `PowerBackend` | Electron retains a `powerSaveBlocker` id; web retains and may reacquire a `WakeLockSentinel`. Both outlive the initiating call. | **Landed hook:** `destroy?()` on the interface; `setPowerBackend` destroys the outgoing backend before installing the replacement (invariants 1–5). Electron stops any held power-save blocker; web releases the wake-lock sentinel. Entity subscriptions remain owned by `detachPower`/`disposePower`. |
 | `ScreenBackend` | `createWebScreenBackend.ensureCursorTracking` installs one anonymous process-lifetime `pointermove` handler and retains cursor/cache/detail state outside any `ScreenSignals` entity. | **Owed:** retain the exact handler, remove it in idempotent `destroy?()`, detach any backend-level Screen Details listeners, and clear retained detail/cache state. Per-entity `subscribe` thunks continue to detach their own resize/orientation listeners. |
 | `ShortcutBackend` | Successful registrations install OS-global callbacks and the Electron backend retains their accelerator set. They survive loss of the adapter reference. | **Owed:** `destroy?()` calls the implementation's `unregisterAll()` and clears its owned registry. Async hosts must observe/reject teardown failures without leaving an unhandled promise. |
 
