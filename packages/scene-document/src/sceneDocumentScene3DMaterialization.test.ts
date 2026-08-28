@@ -209,56 +209,6 @@ describe('createFlightDocumentScene3DMaterializationFromText', () => {
   });
 });
 
-describe('duplicate-light explain parity', () => {
-  // The table is annotated so each fixture is checked AGAINST THE SCHEMA rather than inferred from its own
-  // literal. Without this, `version: 1` widens to `number` and the row stops being a `FlightDocument` — and
-  // the two obvious local repairs both make the fixture worse: `1 as const` and a cast silence the widening
-  // while also silencing every other way a row could stop matching the document type, which is the only
-  // thing this parity test has to hold the fixtures to.
-  it.each<{ document: Readonly<FlightDocument>; expectedReason: FlightDocumentRefusalReason; label: string }>([
-    {
-      label: 'duplicate ambient',
-      document: {
-        cameras: [],
-        kind: 'Scene3D',
-        lights: [
-          { descriptor: createAmbientLight(), transform: createTransform3D() },
-          { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
-        ],
-        resources: [],
-        scene: { children: [], fields: {}, kind: Node3DKind },
-        version: 1,
-      },
-      expectedReason: FlightDocumentRefusalReason.DuplicateAmbientLight,
-    },
-    {
-      label: 'duplicate directional',
-      document: {
-        cameras: [],
-        kind: 'Scene3D',
-        lights: [
-          { descriptor: createDirectionalLight(), transform: createTransform3D() },
-          { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
-        ],
-        resources: [],
-        scene: { children: [], fields: {}, kind: Node3DKind },
-        version: 1,
-      },
-      expectedReason: FlightDocumentRefusalReason.DuplicateDirectionalLight,
-    },
-  ])('model and text explain agree on $label', ({ document, expectedReason }) => {
-    const modelResult = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
-    const text = serializeFlightDocument(document);
-    const textResult = explainFlightDocumentScene3DRefusalFromText(text, createTestSchemas());
-    expect(modelResult).not.toBeNull();
-    expect(textResult).not.toBeNull();
-    expect(textResult!.reason).toBe(modelResult!.reason);
-    expect(textResult!.path).toBe(modelResult!.path);
-    expect(modelResult!.reason).toBe(expectedReason);
-    expect(modelResult!.path).toBe('scenes[0].lights');
-  });
-});
-
 describe('explainFlightDocumentScene3DRefusal', () => {
   it('explains a dimension mismatch', () => {
     const document = {
@@ -406,6 +356,101 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
     const yaml = 'flight: 1\nkind: Scene3D\nscene:\n  kind: Node3D\n';
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml, createTestSchemas());
     expect(explanation).toBeNull();
+  });
+});
+
+describe('model-to-text explain parity', () => {
+  // The table is annotated so each fixture is checked AGAINST THE SCHEMA rather than inferred from its own
+  // literal. Without this, `version: 1` widens to `number` and the row stops being a `FlightDocument` — and
+  // the two obvious local repairs both make the fixture worse: `1 as const` and a cast silence the widening
+  // while also silencing every other way a row could stop matching the document type, which is the only
+  // thing this parity test has to hold the fixtures to.
+  it.each<{
+    document: Readonly<FlightDocument>;
+    expectedPath: string;
+    expectedReason: FlightDocumentRefusalReason;
+    label: string;
+  }>([
+    {
+      label: 'duplicate ambient (scene 0)',
+      document: {
+        cameras: [],
+        kind: 'Scene3D',
+        lights: [
+          { descriptor: createAmbientLight(), transform: createTransform3D() },
+          { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
+        ],
+        resources: [],
+        scene: { children: [], fields: {}, kind: Node3DKind },
+        version: 1,
+      },
+      expectedReason: FlightDocumentRefusalReason.DuplicateAmbientLight,
+      expectedPath: 'scenes[0].lights',
+    },
+    {
+      label: 'duplicate directional (scene 0)',
+      document: {
+        cameras: [],
+        kind: 'Scene3D',
+        lights: [
+          { descriptor: createDirectionalLight(), transform: createTransform3D() },
+          { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
+        ],
+        resources: [],
+        scene: { children: [], fields: {}, kind: Node3DKind },
+        version: 1,
+      },
+      expectedReason: FlightDocumentRefusalReason.DuplicateDirectionalLight,
+      expectedPath: 'scenes[0].lights',
+    },
+    {
+      label: 'wrong dimension (scene 0)',
+      document: {
+        backgroundColor: null,
+        kind: 'Scene2D',
+        resources: [],
+        scene: { children: [], fields: {}, kind: 'DisplayObject' },
+        version: 1,
+      } as FlightDocument,
+      expectedReason: FlightDocumentRefusalReason.StructureInvalid,
+      expectedPath: 'scenes[0].kind',
+    },
+    {
+      label: 'unsupported version (document-level)',
+      document: {
+        cameras: [],
+        kind: 'Scene3D',
+        lights: [],
+        resources: [],
+        scene: { children: [], fields: {}, kind: Node3DKind },
+        version: 99,
+      } as unknown as FlightDocumentScene3D,
+      expectedReason: FlightDocumentRefusalReason.VersionUnsupported,
+      expectedPath: 'version',
+    },
+    {
+      label: 'unregistered node kind (scene 0)',
+      document: {
+        cameras: [],
+        kind: 'Scene3D',
+        lights: [],
+        resources: [],
+        scene: { children: [{ children: [], fields: {}, kind: 'acme.Unknown' }], fields: {}, kind: Node3DKind },
+        version: 1,
+      },
+      expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
+      expectedPath: 'scenes[0].scene.children[0]',
+    },
+  ])('model and text explain agree on $label', ({ document, expectedPath, expectedReason }) => {
+    const modelResult = explainFlightDocumentScene3DRefusal(document, createTestSchemas());
+    const text = serializeFlightDocument(document);
+    const textResult = explainFlightDocumentScene3DRefusalFromText(text, createTestSchemas());
+    expect(modelResult).not.toBeNull();
+    expect(textResult).not.toBeNull();
+    expect(textResult!.reason).toBe(modelResult!.reason);
+    expect(textResult!.path).toBe(modelResult!.path);
+    expect(modelResult!.reason).toBe(expectedReason);
+    expect(modelResult!.path).toBe(expectedPath);
   });
 });
 
