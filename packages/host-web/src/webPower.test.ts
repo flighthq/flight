@@ -1,4 +1,4 @@
-import { getPowerBackend, resetPowerBackendForTest } from '@flighthq/power/contract';
+import { createPowerStatus, getPowerBackend, resetPowerBackendForTest } from '@flighthq/power/contract';
 
 import { enableHostWebPower, resetHostWebPowerForTest } from './webPower';
 
@@ -58,6 +58,111 @@ describe('resetHostWebPowerForTest', () => {
     enableHostWebPower();
     resetHostWebPowerForTest();
     expect(() => enableHostWebPower()).not.toThrow();
+  });
+});
+
+// ★ BEHAVIORAL COMPLETENESS OF TEARDOWN. The structural lifecycle gate counts `PowerBackend` as wired
+// because a hook is declared and its setter names it; it cannot see whether that hook releases what the
+// backend owns. These are the assertions that carry that claim instead, and each one fails against the
+// implementation as it stood before this slice.
+describe('webPower destroy releases everything the backend owns', () => {
+  afterEach(() => {
+    resetPowerBackendForTest();
+    Reflect.deleteProperty(navigator, 'wakeLock');
+    Reflect.deleteProperty(navigator, 'getBattery');
+  });
+
+  function installBattery(readings: {
+    charging: boolean;
+    chargingTime: number;
+    dischargingTime: number;
+    level: number;
+  }) {
+    Object.defineProperty(navigator, 'getBattery', {
+      configurable: true,
+      value: () => Promise.resolve({ ...readings, addEventListener: () => {}, removeEventListener: () => {} }),
+    });
+  }
+
+  // ★ STALE READINGS. The four cached values are module-scoped and outlive any single backend, so a
+  // destroyed backend's last measurements were served by its successor as if freshly taken. `-1`/`false`
+  // is what "not measured" means everywhere else in this file.
+  it('does not serve battery readings captured by a destroyed backend', async () => {
+    installBattery({ charging: true, chargingTime: 1200, dischargingTime: -1, level: 0.77 });
+    resetPowerBackendForTest();
+    enableHostWebPower();
+    const backend = getPowerBackend();
+
+    backend.subscribe(() => {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const measured = backend.getStatus(createPowerStatus());
+    expect(measured.batteryLevel).toBeCloseTo(0.77);
+    expect(measured.isCharging).toBe(true);
+
+    backend.destroy?.();
+
+    const after = backend.getStatus(createPowerStatus());
+    expect(after.batteryLevel).toBe(-1);
+    expect(after.chargingTime).toBe(-1);
+    expect(after.dischargingTime).toBe(-1);
+    expect(after.isCharging).toBe(false);
+  });
+
+  // ★ LISTENER IDENTITY. `removeEventListener` matches on the same function reference that was added, so
+  // an anonymous listener cannot be removed at all. This asserts the exact pair — same sentinel, same
+  // handler object — not merely that some removal happened.
+  it('detaches the release listener from the exact sentinel it was added to', async () => {
+    const added: { sentinel: unknown; handler: () => void }[] = [];
+    const removed: { sentinel: unknown; handler: () => void }[] = [];
+    const sentinel = {
+      addEventListener: (_type: 'release', handler: () => void) => added.push({ handler, sentinel }),
+      release: () => Promise.resolve(),
+      removeEventListener: (_type: 'release', handler: () => void) => removed.push({ handler, sentinel }),
+    };
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request: () => Promise.resolve(sentinel) },
+    });
+
+    resetPowerBackendForTest();
+    enableHostWebPower();
+    const backend = getPowerBackend();
+    backend.setKeepAwake?.(true, 'PreventDisplaySleep');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(added).toHaveLength(1);
+
+    backend.destroy?.();
+
+    expect(removed).toHaveLength(1);
+    expect(removed[0]!.sentinel).toBe(added[0]!.sentinel);
+    expect(removed[0]!.handler).toBe(added[0]!.handler);
+  });
+
+  // ★ RETRY / IDEMPOTENCE. Teardown may be attempted again — invariant 1 is exactly once per ownership
+  // loss. A second destroy must detach nothing further and must not throw.
+  it('is idempotent: a second destroy detaches nothing more and does not throw', async () => {
+    const removed: (() => void)[] = [];
+    const sentinel = {
+      addEventListener: () => {},
+      release: () => Promise.resolve(),
+      removeEventListener: (_type: 'release', handler: () => void) => removed.push(handler),
+    };
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request: () => Promise.resolve(sentinel) },
+    });
+
+    resetPowerBackendForTest();
+    enableHostWebPower();
+    const backend = getPowerBackend();
+    backend.setKeepAwake?.(true, 'PreventDisplaySleep');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    backend.destroy?.();
+    expect(removed).toHaveLength(1);
+
+    expect(() => backend.destroy?.()).not.toThrow();
+    expect(removed).toHaveLength(1);
   });
 });
 
