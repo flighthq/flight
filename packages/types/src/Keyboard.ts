@@ -41,3 +41,8 @@ export interface SoftKeyboard {
   onDidHide: Signal<() => void>;
   onDidResize: Signal<(height: number) => void>;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type SoftKeyboardOperation = keyof SoftKeyboardBackend;
