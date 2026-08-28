@@ -2,17 +2,23 @@
 
 _2026-08-27. Architecture record — the human-and-machine-readable scene description format for Flight. Covers the text (YAML) encoding, the binary sidecar and packed encodings, the document schema, and the relationship to the planned `serialize` package._
 
-**Status: unratified.** Read before working on `scene-document`, `serialize`, or any scene persistence feature.
+**Status: ratified for the v1 logical model, constrained YAML text codec, and per-scene 2D/3D
+materialization surfaces.** The binary sidecar and packed encodings remain future work gated on the
+planned `serialize` package.
 
 ## What it is
 
-`scene-document` is a new package (`@flighthq/scene-document`) that owns Flight's native scene description format. It defines a document model — the logical schema for describing a scene tree, its resources, and its metadata — and provides three physical encodings over that model:
+`scene-document` owns Flight's native scene description format. It defines the logical schema for a
+multi-scene container, its resources, and its metadata. The constrained YAML text encoding is shipped;
+two physical binary encodings are planned over the same model:
 
-1. **Text** (`.flight`) — YAML. Human-readable, diffable, mergeable. The authoring and interchange encoding.
-2. **Text + binary sidecar** (`.flight` + `.flight.bin`) — YAML structure with dense data (path geometry, mesh vertices, tilemap grids, keyframe arrays) in a companion binary buffer file. The hybrid encoding for scenes with significant geometry.
-3. **Packed binary** (`.flightb`) — a single binary container encoding both structure and data. The distribution and runtime encoding.
+1. **Text** (`.flight`) — shipped constrained YAML. Human-readable, diffable, and mergeable.
+2. **Text + binary sidecar** (`.flight` + `.flight.bin`) — planned YAML structure with dense data in a
+   companion binary buffer file.
+3. **Packed binary** (`.flightb`) — planned single-container structure and data encoding.
 
-All three encodings express the same document model. A scene round-trips losslessly across them: `.flight` ↔ `.flightb` is a codec change, not a schema change.
+The planned binary encodings must express the same ratified document model; they are codec additions,
+not schema forks.
 
 ## Why a new package
 
@@ -22,7 +28,9 @@ The format is Flight-native, round-trips (read and write), and spans both Scene2
 - `scene3d-formats` houses one-directional importers for external 3D formats (glTF, OBJ, USD, AWD2). It is 3D-only and import-only.
 - The planned `serialize` package is a general-purpose binary codec (varint/float32, schema-driven). `scene-document` uses `serialize` for its binary encodings but owns the scene-specific schema and the YAML text codec.
 
-`scene-document` depends on `serialize` (for binary), the scene graph packages (for type awareness), and a YAML parser (for text). It does not depend on any renderer or host package.
+The shipped package uses Flight's scene graph/types packages and its own constrained YAML subset reader.
+It does not depend on a renderer, host, Application, third-party YAML package, or the not-yet-built
+`serialize` package.
 
 ## Relationship to `serialize`
 
@@ -39,6 +47,22 @@ A Flight document is a **multi-scene container**, following the glTF precedent: 
 
 This means a single `.flight` file can describe a 3D world and its 2D HUD overlay, a 2D game with an embedded 3D viewport, or a set of related scenes an editor works with as a project. Each scene materializes independently through its own pipeline (`prepareScene2DRender` / `prepareScene3DRender`); the document groups them, the application composes them.
 
+The ratified logical shape is:
+
+```typescript
+interface FlightDocument {
+  defaultScene: number;
+  resources: FlightDocumentResourceDescriptor[];
+  scenes: [FlightDocumentScene, ...FlightDocumentScene[]];
+  version: 1;
+}
+
+type FlightDocumentScene = FlightDocumentScene2D | FlightDocumentScene3D;
+```
+
+The non-empty tuple states the logical invariant. Text parsing still validates an empty input before it
+can become this type. `defaultScene` must be an in-range integer and is never clamped.
+
 ### Metadata
 
 ```yaml
@@ -48,71 +72,53 @@ defaultScene: 0                 # index into scenes array
 
 ### Resources
 
-Resources are declared once and referenced by key throughout the tree. A resource key is a plain string — the document's local name for that asset.
+Resources are declared once on the container and referenced by key throughout every scene tree. A
+resource key is a plain string — the document's local name for that asset.
 
 ```yaml
 resources:
-  textures:
-    hero: hero.png
-    bg: backgrounds/sky.png
-    atlas: { source: sprites.png, atlas: sprites.json }
-
-  fonts:
-    main: { family: Arial, size: 16 }
-    heading: { source: fonts/heading.fnt }
-
-  materials:
-    ground:
-      kind: PbrMaterial
-      baseColor: 0x8b4513ff
-      roughness: 0.8
-      metallic: 0.0
-
-  meshes:
-    terrain:
-      source: models/terrain.glb
-      mesh: TerrainMesh
+  - kind: Texture
+    key: hero
+    source: hero.png
+  - kind: Mesh
+    key: terrain
+    source: models/terrain.glb
+    mesh: TerrainMesh
 ```
 
-Texture entries are either a bare path string (shorthand for a single image source) or an object with `source` (the image path) and optional `atlas` (a texture atlas descriptor). Font entries follow the same pattern. Material entries are inline descriptors with a `kind` field matching Flight's material kind system. Mesh entries reference external geometry files.
+Each descriptor is `{ kind, key, fields }` in the logical model; YAML flattens `fields` beside `kind`
+and `key`. Resource kinds remain open through the schema and resolver registries.
 
 Resource references in the tree use the key directly:
 
 ```yaml
 - kind: Sprite
-  texture: hero           # resolves to resources.textures.hero
+  texture: hero           # resolves to the resource keyed "hero"
 ```
 
 ### Scenes
 
-The `scenes` array holds one or more scene trees. Each entry has a `kind` (Scene2D or Scene3D), an optional `name`, and its own node tree. 2D and 3D scenes can coexist in the same document.
+The `scenes` array holds one or more scene entries. Each entry has a dimension `kind` (`Scene2D` or
+`Scene3D`) and a nested `scene` node tree. A 2D entry also carries `backgroundColor`; a 3D entry carries
+its `cameras` and `lights`. 2D and 3D entries can coexist in the same document.
 
 ```yaml
 scenes:
   - kind: Scene2D
-    name: hud
-    children:
-      - kind: Sprite
-        name: health-bar
-        texture: hero
+    scene:
+      kind: DisplayObject
+      children:
+        - kind: Sprite
+          name: health-bar
+          texture: hero
 
   - kind: Scene3D
-    name: world
-    cameras:
-      - name: main-camera
-        projection: perspective
-        near: 0.1
-        far: 1000
-    lights:
-      - kind: DirectionalLight
-        name: sun
-        color: 0xfff5e6ff
-        intensity: 1.2
-    children:
-      - kind: Mesh
-        name: terrain
-        mesh: terrain
-        material: ground
+    scene:
+      kind: Node3D
+      children:
+        - kind: Mesh
+          name: terrain
+          mesh: terrain
 ```
 
 ### Scene tree — 2D
@@ -120,40 +126,19 @@ scenes:
 Every node has a `kind` field matching Flight's `*Kind` string. Transform and appearance properties are flat on the node, matching the trait interfaces directly. Kind-specific data fields are also flat (the document flattens `node.data.*` onto the node for readability — no nested `data:` wrapper).
 
 ```yaml
+scenes:
   - kind: Scene2D
-    name: main
-    children:
-      - kind: Sprite
-        name: background
-        texture: bg
-
-      - kind: DisplayObject
-        name: player-group
-        x: 200
-        y: 150
-        rotation: 15
-        children:
-          - kind: Sprite
-            name: hero
-            texture: hero
-            pivotX: 32
-            pivotY: 32
-            scaleX: 2
-            scaleY: 2
-            alpha: 0.9
-            blendMode: Normal
-
-          - kind: NativeText
-            name: label
-            y: -40
-            text: "Player 1"
-            autoSize: left
-            width: 200
-            height: 30
-            style:
-              font: Arial
-              size: 14
-              color: 0xffffffff
+    backgroundColor: 287454207
+    scene:
+      kind: DisplayObject
+      children:
+        - kind: Sprite
+          name: hero
+          texture: hero
+          x: 200
+          y: 150
+          scaleX: 2
+          scaleY: 2
 ```
 
 #### Default elision
@@ -249,43 +234,14 @@ A buffer key is a `/`-separated path within the binary file's table of contents.
 3D scenes use `Transform3D` properties on nodes. Position and scale are `Vector3` (inline objects); rotation is a `Quaternion` (also inline). Cameras and lights are **top-level sections on the scene entry**, not children in the node tree — cameras are entities owned by the `camera` package (not graph nodes), and lights extend `Light` (not `Node3D`).
 
 ```yaml
+scenes:
   - kind: Scene3D
-    name: world
-    cameras:
-      - name: main-camera
-        projection: perspective
-        near: 0.1
-        far: 1000
-        position: { x: 0, y: 5, z: 10 }
-        rotation: { x: -0.174, y: 0, z: 0, w: 0.985 }
-    lights:
-      - kind: DirectionalLight
-        name: sun
-        color: 0xfff5e6ff
-        intensity: 1.2
-        direction: { x: -0.5, y: -1, z: -0.3 }
-        castsShadow: true
-      - kind: PointLight
-        name: lamp
-        color: 0xffe0b0ff
-        intensity: 0.8
-        position: { x: 2, y: 3, z: 1 }
-        range: 10
-    children:
-      - kind: Node3D
-        name: environment
-        children:
-          - kind: Mesh
-            name: ground
-            mesh: terrain
-            material: ground
-
-          - kind: Mesh
-            name: crate
-            mesh: crate
-            material: crate-wood
-            position: { x: 5, y: 0.5, z: -3 }
-            rotation: { x: 0, y: 0.383, z: 0, w: 0.924 }
+    scene:
+      kind: Node3D
+      children:
+        - kind: Mesh
+          name: ground
+          mesh: terrain
 ```
 
 #### 3D defaults
@@ -413,44 +369,65 @@ The package exports functions following Flight's naming conventions. The functio
 
 ### Reading
 
-A document materializes per-scene. The caller parses the document, then materializes individual scenes by index or iterates all of them.
+A document materializes per scene. Omitting `sceneIndex` selects `document.defaultScene`; passing an
+index selects that entry explicitly. Both paths validate the container before checking the requested
+dimension and registered node kinds.
 
 ```typescript
-// Parse (text or binary) into the logical model
-parseFlightDocument(yaml: string): FlightDocument
-parseFlightDocumentBinary(data: ArrayBuffer): FlightDocument
+// Parse, explain, and format the constrained YAML text representation
+parseFlightDocumentText(text: FlightDocumentText): FlightDocument | null
+explainFlightDocumentText(text: FlightDocumentText): FlightDocumentRefusalExplanation | null
+formatFlightDocumentText(document: Readonly<FlightDocument>): FlightDocumentText
 
-// Materialize a single scene from the parsed model
-createFlightDocumentScene2DMaterialization(document, schemas, resolvers?): FlightDocumentScene2DMaterialization | null
-createFlightDocumentScene3DMaterialization(document, schemas, resolvers?): FlightDocumentScene3DMaterialization | null
+// Materialize the default or an explicitly indexed scene from the parsed container
+createFlightDocumentScene2DMaterialization(document, schemas, resolvers?, sceneIndex?):
+  FlightDocumentScene2DMaterialization | null
+createFlightDocumentScene3DMaterialization(document, schemas, resolvers?, sceneIndex?):
+  FlightDocumentScene3DMaterialization | null
 
-// Convenience: parse + materialize in one step (for single-scene documents)
-createFlightDocumentScene2DMaterializationFromText(yaml, schemas, resolvers?): FlightDocumentScene2DMaterialization | null
-createFlightDocumentScene3DMaterializationFromText(yaml, schemas, resolvers?): FlightDocumentScene3DMaterialization | null
+// Parse + materialize conveniences use the same selection rule
+createFlightDocumentScene2DMaterializationFromText(text, schemas, resolvers?, sceneIndex?):
+  FlightDocumentScene2DMaterialization | null
+createFlightDocumentScene3DMaterializationFromText(text, schemas, resolvers?, sceneIndex?):
+  FlightDocumentScene3DMaterialization | null
 
-// Refusal explanation (why a document failed to materialize)
-explainFlightDocumentRefusal(document): FlightDocumentRefusalExplanation | null
-explainFlightDocumentRefusalFromText(yaml): FlightDocumentRefusalExplanation | null
+// Materialization explanations retain document and scene context
+explainFlightDocumentRefusal(document, dimension, schemas, sceneIndex?):
+  FlightDocumentRefusalExplanation | null
+explainFlightDocumentScene3DRefusal(document, schemas, sceneIndex?):
+  FlightDocumentRefusalExplanation | null
 ```
+
+An empty `scenes` collection produces `ScenesEmpty`; an invalid `defaultScene` produces
+`DefaultSceneOutOfRange`. Refusals inside an entry use `scenes[index]`-qualified paths, including
+dimension mismatch, unregistered node kinds, and duplicate 3D lights.
 
 ### Writing
 
 ```typescript
-// Serialize a scene into a FlightDocument model
+// Write one logical scene entry; callers assemble entries into a FlightDocument container
 createFlightDocumentFromScene2D(source, schemas): FlightDocumentScene2D
 createFlightDocumentFromScene3D(source, schemas): FlightDocumentScene3D
-
-// Emit YAML text from a FlightDocument model
-serializeFlightDocument(document): string
 ```
+
+The materialization outputs are `FlightDocumentScene2DMaterialization { scene }` and
+`FlightDocumentScene3DMaterialization { cameras, lights, scene }`. Application composition remains
+external: a document groups entries but does not imply that they render together.
 
 ### Multi-scene documents
 
-A `FlightDocument` is a union of `FlightDocumentScene2D | FlightDocumentScene3D`. A multi-scene document is composed by the caller: parse multiple scene entries from the `scenes` array, materialize each one through its dimension-appropriate function. The document model's `scenes` array and `defaultScene` index handle the grouping; materialization is per-scene.
+`FlightDocument` is the container. `FlightDocumentScene` is the union of
+`FlightDocumentScene2D | FlightDocumentScene3D`, so mixed dimensions can coexist in one `scenes`
+tuple. The caller materializes the default entry, an explicitly indexed entry, or iterates the tuple;
+the application decides how independently materialized scenes are composed.
 
 ### Resource resolution
 
-Resource resolution uses a `FlightDocumentResourceResolverRegistry` — an open registry of resolvers keyed by resource kind. The caller registers resolvers for the resource types they support. This keeps `scene-document` decoupled from `loader`/`assets` and follows the open-registry pattern.
+Resource resolution uses a `FlightDocumentResourceResolverRegistry` — an open registry of resolvers
+keyed by resource kind. Resources are declared once on the container, but runtime identity across
+separate materializations is controlled by the caller's resolver: it may return one shared object or
+distinct objects. The package does not cache across calls. This keeps `scene-document` decoupled from
+`loader`/`assets` and follows the open-registry pattern.
 
 ## Scope boundaries
 
@@ -497,6 +474,11 @@ The following questions were raised in the original record and ruled by the mana
 dropped every ruling section below. The code still implements them and tests pin several, but the
 *reasoning* was lost while the conclusions survived — and the reasoning is the part that stops a future
 agent re-deriving a decision that was already withdrawn.
+
+**Current-state note:** the record is now ratified. References below to the whole record being
+“unratified,” decisions being “owed,” or defects that “must be fixed before code” describe historical
+review state and are superseded by the ratified model and API sections above plus the later rulings in
+this preserved chronology.
 
 Reproduced **verbatim** rather than re-summarised, because summarising a ruling is exactly how this was
 lost the first time. Where a ruling is already pinned by a test, the test is the enforcement and this is
@@ -955,4 +937,3 @@ transcribing them from this record, and let a test compare the two so the record
 **D10. The 3D example places lights as children of a node.** Given R5 they are a top-level section, so
 the example contradicts the model. It is the same defect as D1's camera placement and was hidden by the
 same assumption — that anything with a kind constant belongs in the tree.
-
