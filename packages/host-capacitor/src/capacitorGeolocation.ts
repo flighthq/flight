@@ -43,6 +43,9 @@ export function createCapacitorGeolocationBackend(capacitor: CapacitorApi): Geol
         return 'prompt';
       }
     },
+    isAvailable() {
+      return true;
+    },
     watchPosition(listener, options, onError) {
       const numericId = nextWatchId++;
       watchIds.set(numericId, null);

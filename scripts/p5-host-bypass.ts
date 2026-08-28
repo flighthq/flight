@@ -46,7 +46,7 @@ export type P5HostBypassBudget = Readonly<Record<P5HostBypassKind, number>>;
 // Category upper bounds, not source membership. The runtime scan below prints the derived population;
 // a repaired site may lower a number without editing this file, while a new site makes the gate red.
 export const P5_HOST_BYPASS_BUDGET: P5HostBypassBudget = {
-  'direct-dom': 18,
+  'direct-dom': 15,
   'input-ingress': 0,
   'scratch-surface': 18,
   'webgpu-acquisition': 0,
