@@ -33,6 +33,18 @@ export function createMenuItemTemplate(template?: Readonly<Partial<MenuItemTempl
   return item;
 }
 
+// Clears every owned backend slot before releasing the captured objects. Clearing first makes whole
+// teardown re-entrant-safe: a destroy hook that calls back here sees empty slots rather than recursing.
+// Tauri's hook remains JS-only, so this clears Flight ownership but does not claim to clear its native menu.
+export function destroyMenuBackend(): void {
+  const previous = [_custom, _host] as const;
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+  releaseMenuBackends(previous, []);
+}
+
 // Activates the optional MenuSignals group and returns it. Calling this is when the cost is assumed.
 // The returned object is shared for the lifetime of the package; calling enableMenuSignals multiple
 // times returns the same instance. Connect slots via connectSignal from @flighthq/signals.
@@ -133,10 +145,7 @@ export function onMenuSelect(listener: (id: string) => void): () => void {
 }
 
 export function resetMenuBackendForTest(): void {
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
+  destroyMenuBackend();
 }
 
 // Installs the application menu bar. Returns true on success, or false when the host lacks a native
@@ -152,10 +161,8 @@ export function setApplicationMenu(items: readonly MenuItemTemplate[]): boolean 
 // is retained in the host slot (shared identity).
 export function setMenuBackend(backend: MenuBackend | null): void {
   if (_custom === backend) return;
-  const previous = _custom;
-  if (previous !== null && previous !== _host) {
-    previous.destroy?.();
-  }
+  const previous = [_custom] as const;
+  releaseMenuBackends(previous, [_host]);
   _custom = backend;
 }
 
@@ -279,6 +286,22 @@ const _sentinel: MenuBackend = {
     return () => {};
   },
 };
+
+// Releases each captured backend that no slot in the caller's future state retains, exactly once by
+// identity. Callers pass retained slots explicitly so replacement can release before assignment while
+// whole teardown can clear before release; reading the live slots here would make one ordering impossible.
+function releaseMenuBackends(
+  previous: readonly (Readonly<MenuBackend> | null)[],
+  retainedSlots: readonly (Readonly<MenuBackend> | null)[],
+): void {
+  const retained = new Set<unknown>(retainedSlots.filter((slot) => slot !== null));
+  const released = new Set<unknown>();
+  for (const backend of previous) {
+    if (backend === null || retained.has(backend) || released.has(backend)) continue;
+    released.add(backend);
+    backend.destroy?.();
+  }
+}
 
 function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<MenuItemTemplate>>): string | null {
   if (seen.has(item)) {
