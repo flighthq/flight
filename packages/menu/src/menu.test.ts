@@ -8,6 +8,7 @@ import {
   explainMenuReplacementGuarantee,
   getMenuBackend,
   getMenuSignals,
+  hasMenuHostBackend,
   hasMenuReplacementGuarantee,
   installMenuHostBackend,
   observeMenuHostResult,
@@ -193,6 +194,24 @@ describe('getMenuSignals', () => {
   it('returns the active signal group once enabled', () => {
     const signals = enableMenuSignals();
     expect(getMenuSignals()).toBe(signals);
+  });
+});
+
+describe('hasMenuHostBackend', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('reports false when the host slot is empty', () => {
+    expect(hasMenuHostBackend()).toBe(false);
+  });
+
+  it('does not mistake a higher-precedence custom backend for a host backend', () => {
+    setMenuBackend(fakeBackend());
+    expect(hasMenuHostBackend()).toBe(false);
+  });
+
+  it('reports true when the host slot is occupied', () => {
+    installMenuHostBackend(fakeBackend());
+    expect(hasMenuHostBackend()).toBe(true);
   });
 });
 
