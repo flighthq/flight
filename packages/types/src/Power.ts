@@ -31,6 +31,7 @@ export interface PowerStatus {
 // backend wraps the Battery Status API and the Screen Wake Lock API; a native host reports its own
 // battery changes through the same subscribe callback.
 export interface PowerBackend {
+  destroy?(): void;
   // Writes the battery health detail into out and returns it, or returns null when the host does not
   // report battery health (the web backend always returns null).
   getBatteryHealth(out: PowerBatteryHealth): PowerBatteryHealth | null;

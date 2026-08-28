@@ -5,6 +5,10 @@ export function enableHostWebPower(): void {
   if (_enabled) return;
   _enabled = true;
   const backend: PowerBackend = {
+    destroy() {
+      _wakeLockSentinel?.release?.().catch(() => {});
+      _wakeLockSentinel = null;
+    },
     getBatteryHealth() {
       return null;
     },

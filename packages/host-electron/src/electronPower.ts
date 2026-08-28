@@ -8,6 +8,12 @@ export function createElectronPowerBackend(electron: ElectronApi): PowerBackend 
   const powerSaveBlocker = electron.powerSaveBlocker;
   let blockerId = -1;
   return {
+    destroy() {
+      if (blockerId >= 0) {
+        powerSaveBlocker.stop(blockerId);
+        blockerId = -1;
+      }
+    },
     getStatus(out) {
       const onBattery = powerMonitor.onBatteryPower === true;
       out.batteryLevel = -1;

@@ -225,7 +225,17 @@ export function resetPowerBackendForTest(): void {
   _hostObservation = null;
 }
 
+// Sets a custom power backend; pass null to clear and fall back to the host or sentinel.
+// Destroys the outgoing backend before installing the replacement, so getPowerBackend still returns
+// the outgoing backend during its destroy call. If destroy throws, the replacement is not installed
+// and the outgoing backend remains selected/owned for retry. Skips destroy when the outgoing backend
+// is retained in the host slot (shared identity).
 export function setPowerBackend(backend: PowerBackend | null): void {
+  if (_custom === backend) return;
+  const previous = _custom;
+  if (previous !== null && previous !== _host) {
+    previous.destroy?.();
+  }
   _custom = backend;
 }
 
