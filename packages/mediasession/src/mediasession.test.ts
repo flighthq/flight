@@ -1,4 +1,4 @@
-import type { MediaSessionActionDetails, MediaSessionBackend } from '@flighthq/types/contract';
+import type { MediaSessionActionDetails, MediaSessionBackend, MediaSessionOperation } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -6,16 +6,18 @@ import {
   clearMediaSessionMetadata,
   clearMediaSessionPositionState,
   createWebMediaSessionBackend,
+  explainMediaSessionBackend,
+  explainMediaSessionOperation,
   getMediaSessionBackend,
+  hasMediaSessionOperation,
+  installMediaSessionHostBackend,
+  observeMediaSessionHostResult,
+  resetMediaSessionBackendForTest,
   setMediaSessionActionHandler,
   setMediaSessionBackend,
   setMediaSessionMetadata,
   setMediaSessionPlaybackState,
   setMediaSessionPositionState,
-  explainMediaSessionBackend,
-  installMediaSessionHostBackend,
-  observeMediaSessionHostResult,
-  resetMediaSessionBackendForTest,
 } from './mediasession';
 
 interface FakeMediaSession {
@@ -159,7 +161,7 @@ describe('createWebMediaSessionBackend', () => {
   it('sets metadata via a MediaMetadata instance', () => {
     const session = installFakeMediaSession();
     const backend = createWebMediaSessionBackend();
-    backend.setMetadata({ title: 'Song', artist: 'Artist', album: 'Album', artwork: [{ src: 'a.png' }] });
+    backend.setMetadata!({ title: 'Song', artist: 'Artist', album: 'Album', artwork: [{ src: 'a.png' }] });
     expect(session.metadata).toBeInstanceOf(FakeMediaMetadata);
     expect((session.metadata as FakeMediaMetadata).title).toBe('Song');
     expect((session.metadata as FakeMediaMetadata).artwork).toEqual([{ src: 'a.png' }]);
@@ -170,21 +172,21 @@ describe('createWebMediaSessionBackend', () => {
     delete (globalThis as { MediaMetadata?: unknown }).MediaMetadata;
     const backend = createWebMediaSessionBackend();
     session.metadata = 'unchanged';
-    backend.setMetadata({ title: 'Song', artist: 'Artist', album: 'Album', artwork: [] });
+    backend.setMetadata!({ title: 'Song', artist: 'Artist', album: 'Album', artwork: [] });
     expect(session.metadata).toBe('unchanged');
   });
 
   it('assigns the playback state', () => {
     const session = installFakeMediaSession();
     const backend = createWebMediaSessionBackend();
-    backend.setPlaybackState('playing');
+    backend.setPlaybackState!('playing');
     expect(session.playbackState).toBe('playing');
   });
 
   it('forwards the position state to setPositionState', () => {
     const session = installFakeMediaSession();
     const backend = createWebMediaSessionBackend();
-    backend.setPositionState({ duration: 100, playbackRate: 1, position: 10 });
+    backend.setPositionState!({ duration: 100, playbackRate: 1, position: 10 });
     expect(session.positionCalls).toEqual([{ duration: 100, playbackRate: 1, position: 10 }]);
   });
 
@@ -192,14 +194,14 @@ describe('createWebMediaSessionBackend', () => {
     const session = installFakeMediaSession();
     delete session.setPositionState;
     const backend = createWebMediaSessionBackend();
-    expect(() => backend.setPositionState({ duration: 1, playbackRate: 1, position: 0 })).not.toThrow();
+    expect(() => backend.setPositionState!({ duration: 1, playbackRate: 1, position: 0 })).not.toThrow();
   });
 
   it('registers an action handler and maps fired details to the caller', () => {
     const session = installFakeMediaSession();
     const backend = createWebMediaSessionBackend();
     const handler = vi.fn();
-    backend.setActionHandler('seekto', handler);
+    backend.setActionHandler!('seekto', handler);
     const registered = session.handlers.get('seekto');
     expect(registered).toBeTypeOf('function');
     registered?.({ action: 'seekto', seekTime: 42, fastSeek: true });
@@ -209,7 +211,7 @@ describe('createWebMediaSessionBackend', () => {
   it('swallows an unsupported-action throw from setActionHandler', () => {
     const session = installFakeMediaSession('skipad');
     const backend = createWebMediaSessionBackend();
-    expect(() => backend.setActionHandler('skipad', () => {})).not.toThrow();
+    expect(() => backend.setActionHandler!('skipad', () => {})).not.toThrow();
     expect(session.handlers.has('skipad')).toBe(false);
   });
 
@@ -217,13 +219,13 @@ describe('createWebMediaSessionBackend', () => {
     removeMediaSession();
     const backend = createWebMediaSessionBackend();
     expect(() => {
-      backend.setMetadata({ title: 'A', artist: 'B', album: 'C', artwork: [] });
-      backend.setMetadata(null);
-      backend.setPlaybackState('paused');
-      backend.setPositionState({ duration: 1, playbackRate: 1, position: 0 });
-      backend.setPositionState(null);
-      backend.setActionHandler('play', () => {});
-      backend.setActionHandler('play', null);
+      backend.setMetadata!({ title: 'A', artist: 'B', album: 'C', artwork: [] });
+      backend.setMetadata!(null);
+      backend.setPlaybackState!('paused');
+      backend.setPositionState!({ duration: 1, playbackRate: 1, position: 0 });
+      backend.setPositionState!(null);
+      backend.setActionHandler!('play', () => {});
+      backend.setActionHandler!('play', null);
     }).not.toThrow();
   });
 });
@@ -256,11 +258,68 @@ describe('explainMediaSessionBackend', () => {
   });
 });
 
+// Per-operation availability. Every operation on this backend is optional and the fall-through implements
+// none of them, so `has*` is the only way a caller can tell an unsupported transport control from a
+// supported one that happens to be idle.
+describe('explainMediaSessionOperation', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  const OPERATIONS: readonly MediaSessionOperation[] = [
+    'setActionHandler',
+    'setMetadata',
+    'setPlaybackState',
+    'setPositionState',
+  ];
+
+  // ★ Every operation, not a sample: this interface is fully B-class, so if the fall-through could
+  // masquerade for any one of the four it would masquerade for all of them.
+  it('reports every operation unimplemented when nothing is installed', () => {
+    resetMediaSessionBackendForTest();
+    for (const operation of OPERATIONS) {
+      expect(explainMediaSessionOperation(operation)).toEqual({
+        implemented: false,
+        layer: 'sentinel',
+        operation,
+      });
+    }
+  });
+
+  it('reports only the operations a partial host actually provides', () => {
+    setMediaSessionBackend({ setMetadata: () => undefined });
+    expect(hasMediaSessionOperation('setMetadata')).toBe(true);
+    expect(hasMediaSessionOperation('setPlaybackState')).toBe(false);
+    expect(hasMediaSessionOperation('setActionHandler')).toBe(false);
+    expect(hasMediaSessionOperation('setPositionState')).toBe(false);
+  });
+
+  it('falls through to the host for an operation the custom backend omits', () => {
+    installMediaSessionHostBackend({ setPositionState: () => undefined });
+    setMediaSessionBackend({ setMetadata: () => undefined });
+    expect(explainMediaSessionOperation('setPositionState')).toEqual({
+      implemented: true,
+      layer: 'host',
+      operation: 'setPositionState',
+    });
+    expect(explainMediaSessionOperation('setMetadata').layer).toBe('custom');
+  });
+
+  // The public API must stay callable with nothing installed — absence no-ops through `?.` rather than
+  // throwing, which is what lets a caller ignore the query when it does not care.
+  it('leaves the public operations safe to call with nothing installed', () => {
+    resetMediaSessionBackendForTest();
+    expect(() => setMediaSessionPlaybackState('playing')).not.toThrow();
+    expect(() => clearMediaSessionMetadata()).not.toThrow();
+  });
+});
+
 describe('getMediaSessionBackend', () => {
-  it('lazily creates a web default backend when none is set', () => {
+  // ★ The fall-through implements NOTHING, and that is the correction. It used to answer all four
+  // operations with no-ops a caller could not tell from a real implementation; now absence is absence.
+  it('falls through to a backend that implements no operation when none is set', () => {
     const backend = getMediaSessionBackend();
     expect(backend).toBeTypeOf('object');
-    expect(backend.setMetadata).toBeTypeOf('function');
+    expect(backend.setMetadata).toBeUndefined();
+    expect(hasMediaSessionOperation('setMetadata')).toBe(false);
   });
 
   it('returns the same lazily-created backend on repeat calls', () => {
@@ -271,6 +330,17 @@ describe('getMediaSessionBackend', () => {
     const fake = createFakeBackend();
     setMediaSessionBackend(fake);
     expect(getMediaSessionBackend()).toBe(fake);
+  });
+});
+
+describe('hasMediaSessionOperation', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  it('agrees with explainMediaSessionOperation', () => {
+    setMediaSessionBackend({ setMetadata: () => undefined });
+    for (const operation of ['setMetadata', 'setPlaybackState'] as const) {
+      expect(hasMediaSessionOperation(operation)).toBe(explainMediaSessionOperation(operation).implemented);
+    }
   });
 });
 
@@ -335,14 +405,14 @@ describe('setMediaSessionActionHandler', () => {
 });
 
 describe('setMediaSessionBackend', () => {
-  it('installs a backend and null restores the lazy web default', () => {
+  it('installs a backend, and null restores the implements-nothing fall-through', () => {
     const fake = createFakeBackend();
     setMediaSessionBackend(fake);
     expect(getMediaSessionBackend()).toBe(fake);
     setMediaSessionBackend(null);
     const restored = getMediaSessionBackend();
     expect(restored).not.toBe(fake);
-    expect(restored.setMetadata).toBeTypeOf('function');
+    expect(restored.setMetadata).toBeUndefined();
   });
 });
 

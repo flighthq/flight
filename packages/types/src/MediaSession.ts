@@ -55,16 +55,25 @@ export interface MediaSessionPositionState {
 // MediaSessionBackend (web default over navigator.mediaSession, or a native host's). Every method is
 // a no-op sentinel when the host lacks the capability rather than throwing — publishing now-playing
 // state is an expected-to-be-absent surface, not a programmer error.
+// ★ EVERY OPERATION IS OPTIONAL, and that is the declaration rather than a convenience. A host declares
+// what it cannot do by OMITTING the method — there is no sentinel implementation to fall back on, so an
+// absent operation is absent rather than silently answered by a no-op that a caller cannot distinguish
+// from a real one. Ask `hasMediaSessionOperation` before assuming an operation exists.
 export interface MediaSessionBackend {
   // Publishes the now-playing card, or clears it when metadata is null.
-  setMetadata(metadata: Readonly<MediaSessionMetadata> | null): void;
+  setMetadata?(metadata: Readonly<MediaSessionMetadata> | null): void;
   // Reports whether media is playing/paused/absent to the OS media UI.
-  setPlaybackState(state: MediaSessionPlaybackState): void;
+  setPlaybackState?(state: MediaSessionPlaybackState): void;
   // Publishes the scrubber position/duration, or clears it when state is null.
-  setPositionState(state: Readonly<MediaSessionPositionState> | null): void;
+  setPositionState?(state: Readonly<MediaSessionPositionState> | null): void;
   // Registers a handler for an OS transport button, or clears it when handler is null.
-  setActionHandler(
+  setActionHandler?(
     action: MediaSessionAction,
     handler: ((details: Readonly<MediaSessionActionDetails>) => void) | null,
   ): void;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written
+// roster would be a second source of truth that drifts the moment an operation is added or renamed;
+// `keyof` cannot.
+export type MediaSessionOperation = keyof MediaSessionBackend;
