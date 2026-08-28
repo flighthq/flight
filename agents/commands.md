@@ -74,6 +74,10 @@ A gate that enumerates conditions by name — a list of backends, a roster of kn
 
 A `try/catch` around an un-awaited call that returns a Promise handles only synchronous throws — if the call itself succeeds but the returned Promise rejects, the rejection escapes the catch block entirely. When calling a Promise-returning function from a synchronous context (like `destroy`), either `await` the result (if the caller can be async) or attach an explicit `.catch(() => {})` on the returned Promise chain. Every such site requires a rejection-axis test: a fake that makes the call reject, verifying no unhandled rejection leaks. The test is the proof the handler exists; without it, a future edit can remove the `.catch()` silently.
 
+### Format-patch attachment for a narrow change on a stale base
+
+When a narrow change must ship before the cumulative base can advance, a verified single-commit `git format-patch` attachment makes summary and effect match structurally: integration applies only the attachment (`git am`) and ignores the parcel's cumulative diff. Include the patch's SHA-256 hash and diffstat in the note so the recipient can verify before applying. This is an exceptional workaround for base-advance lag, not normal practice — advancing the base and rebasing is the real fix, and a rebased parcel needs no attachment.
+
 ## Parcel acceptance
 
 Compare the parcel summary's stated intent against the actual diff effect before accepting. Inspect every deleted line and file, and every path not named by the summary. A parcel doing more than it says — or less — is rejected for a clean rebased replacement rather than partially accepted. Deleted tests can make suites greener and evade typecheck; deleted comments can remove caveats that constrain a measurement's interpretation. The summary is a claim about the diff, not a substitute for reading it.
