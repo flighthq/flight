@@ -31,11 +31,7 @@ describe('backend replacement lifetime census', () => {
   // baseline 43 / current 46 → "+3 new seams", baseline 3 enforced / current 5 → "+2 newly enforced".
   // NEVER update this to absorb subsequent slices — that erases history.
   const HISTORICAL_BASELINE: BackendLifecycleFloor = {
-    enforcedNames: [
-      'AccessibilityBackend',
-      'LogTransportBackend',
-      'MediaSessionBackend',
-    ],
+    enforcedNames: ['AccessibilityBackend', 'LogTransportBackend', 'MediaSessionBackend'],
     total: 43,
   };
 
