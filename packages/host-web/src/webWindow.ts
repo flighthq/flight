@@ -1,41 +1,82 @@
-import { installWindowHostBackend, observeWindowHostResult } from '@flighthq/application/contract';
-import type { WindowBackend } from '@flighthq/types/contract';
+import { installWindowHostBackend, notifyWindowClosed, observeWindowHostResult } from '@flighthq/application/contract';
+import type {
+  ApplicationWindow,
+  NativeWindowHandle,
+  WindowAttachmentOwnership,
+  WindowBackend,
+} from '@flighthq/types/contract';
 
 export function enableHostWebWindow(): void {
   if (_enabled) return;
   _enabled = true;
-  const backend: WindowBackend = {
-    center(win) {
-      if (typeof window === 'undefined' || typeof window.moveTo !== 'function' || typeof screen === 'undefined') return;
+  const handles = new WeakMap<Window, ApplicationWindow>();
+  const records = new WeakMap<ApplicationWindow, WebWindowRecord>();
+  const detach = (win: ApplicationWindow, closeOwned: boolean): void => {
+    const record = records.get(win);
+    if (record === undefined) return;
+    records.delete(win);
+    handles.delete(record.handle);
+    record.cleanup();
+    if (closeOwned && record.ownership === 'flight') {
       try {
-        window.moveTo(
-          Math.round((screen.availWidth - win.width) / 2),
-          Math.round((screen.availHeight - win.height) / 2),
+        record.handle.close();
+      } catch {
+        /* window already closed or the browser rejected script-driven close */
+      }
+    }
+  };
+  const attach = (win: ApplicationWindow, handle: Window, ownership: WindowAttachmentOwnership): boolean => {
+    const existing = records.get(win);
+    if (existing !== undefined) return existing.handle === handle && existing.ownership === ownership;
+    const mapped = handles.get(handle);
+    if (mapped !== undefined && mapped !== win) return false;
+    const onPageHide = () => {
+      detach(win, false);
+      notifyWindowClosed(win);
+    };
+    handle.addEventListener('pagehide', onPageHide);
+    records.set(win, {
+      cleanup: () => handle.removeEventListener('pagehide', onPageHide),
+      handle,
+      ownership,
+    });
+    handles.set(handle, win);
+    return true;
+  };
+  const getHandle = (win: ApplicationWindow): Window | null => records.get(win)?.handle ?? null;
+  const backend: WindowBackend = {
+    attach(win, handle, ownership) {
+      if (!isWebWindow(handle)) return false;
+      return attach(win, handle, ownership);
+    },
+    center(win) {
+      const handle = getHandle(win);
+      if (handle === null || typeof handle.moveTo !== 'function') return;
+      try {
+        handle.moveTo(
+          Math.round((handle.screen.availWidth - win.width) / 2),
+          Math.round((handle.screen.availHeight - win.height) / 2),
         );
         observeWindowHostResult('center', true);
       } catch {
         observeWindowHostResult('center', false);
       }
     },
-    close() {
-      if (typeof window !== 'undefined' && typeof window.close === 'function') {
-        try {
-          window.close();
-          observeWindowHostResult('close', true);
-        } catch {
-          observeWindowHostResult('close', false);
-        }
-      }
+    close(win) {
+      detach(win, true);
+      observeWindowHostResult('close', true);
     },
     flashWindowFrame() {},
-    focus() {
-      if (typeof window !== 'undefined' && typeof window.focus === 'function') {
-        window.focus();
+    focus(win) {
+      const handle = getHandle(win);
+      if (handle !== null && typeof handle.focus === 'function') {
+        handle.focus();
         observeWindowHostResult('focus', true);
       }
     },
     getBounds(win, out) {
-      if (typeof window === 'undefined') {
+      const handle = getHandle(win);
+      if (handle === null) {
         out.x = win.x;
         out.y = win.y;
         out.width = win.width;
@@ -43,18 +84,18 @@ export function enableHostWebWindow(): void {
         observeWindowHostResult('getBounds', true);
         return out;
       }
-      out.x = window.screenX ?? win.x;
-      out.y = window.screenY ?? win.y;
-      out.width = window.innerWidth ?? win.width;
-      out.height = window.innerHeight ?? win.height;
+      out.x = handle.screenX ?? win.x;
+      out.y = handle.screenY ?? win.y;
+      out.width = handle.innerWidth ?? win.width;
+      out.height = handle.innerHeight ?? win.height;
       observeWindowHostResult('getBounds', true);
       return out;
     },
     hide() {},
     maximize() {},
     minimize() {},
-    open() {
-      const result = typeof window !== 'undefined';
+    open(win) {
+      const result = typeof window !== 'undefined' && attach(win, window, 'host');
       observeWindowHostResult('open', result);
       return result;
     },
@@ -62,8 +103,9 @@ export function enableHostWebWindow(): void {
     restore() {},
     setAlwaysOnTop() {},
     setContentProtection() {},
-    setFullscreen(_win, fullscreen) {
-      if (typeof document === 'undefined') return;
+    setFullscreen(win, fullscreen) {
+      const document = getHandle(win)?.document;
+      if (document === undefined) return;
       try {
         if (fullscreen) void document.documentElement.requestFullscreen?.();
         else void document.exitFullscreen?.();
@@ -73,8 +115,9 @@ export function enableHostWebWindow(): void {
       }
     },
     setHasShadow() {},
-    setIcon(_win, icon) {
-      if (typeof document === 'undefined') return;
+    setIcon(win, icon) {
+      const document = getHandle(win)?.document;
+      if (document === undefined) return;
       let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
       if (link === null) {
         link = document.createElement('link');
@@ -89,10 +132,11 @@ export function enableHostWebWindow(): void {
     setMinimumSize() {},
     setOpacity() {},
     setParent() {},
-    setPosition(_win, x, y) {
-      if (typeof window !== 'undefined' && typeof window.moveTo === 'function') {
+    setPosition(win, x, y) {
+      const handle = getHandle(win);
+      if (handle !== null && typeof handle.moveTo === 'function') {
         try {
-          window.moveTo(x, y);
+          handle.moveTo(x, y);
           observeWindowHostResult('setPosition', true);
         } catch {
           observeWindowHostResult('setPosition', false);
@@ -101,10 +145,11 @@ export function enableHostWebWindow(): void {
     },
     setProgress() {},
     setResizable() {},
-    setSize(_win, width, height) {
-      if (typeof window !== 'undefined' && typeof window.resizeTo === 'function') {
+    setSize(win, width, height) {
+      const handle = getHandle(win);
+      if (handle !== null && typeof handle.resizeTo === 'function') {
         try {
-          window.resizeTo(width, height);
+          handle.resizeTo(width, height);
           observeWindowHostResult('setSize', true);
         } catch {
           observeWindowHostResult('setSize', false);
@@ -112,8 +157,9 @@ export function enableHostWebWindow(): void {
       }
     },
     setSkipTaskbar() {},
-    setTitle(_win, title) {
-      if (typeof document !== 'undefined') {
+    setTitle(win, title) {
+      const document = getHandle(win)?.document;
+      if (document !== undefined) {
         document.title = title;
         observeWindowHostResult('setTitle', true);
       }
@@ -128,3 +174,19 @@ export function resetHostWebWindowForTest(): void {
 }
 
 let _enabled = false;
+
+interface WebWindowRecord {
+  readonly cleanup: () => void;
+  readonly handle: Window;
+  readonly ownership: WindowAttachmentOwnership;
+}
+
+function isWebWindow(handle: NativeWindowHandle): handle is Window {
+  if (typeof handle !== 'object' || handle === null) return false;
+  const candidate = handle as Partial<Window>;
+  return (
+    typeof candidate.addEventListener === 'function' &&
+    typeof candidate.close === 'function' &&
+    typeof candidate.removeEventListener === 'function'
+  );
+}

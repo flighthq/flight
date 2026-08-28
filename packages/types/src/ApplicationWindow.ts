@@ -80,11 +80,23 @@ export interface WindowBounds {
   height: number;
 }
 
+// A host-defined native window identity. Electron supplies a BrowserWindow, Tauri supplies its Window,
+// and lower-level hosts may use an integer or opaque object handle, so the common contract deliberately
+// does not narrow the representation.
+export type NativeWindowHandle = unknown;
+
+// Existing-window ownership is fixed when the handle is attached. Host-owned windows are detached from
+// Flight on close but left alive; Flight-owned windows are closed by the backend after detachment.
+export type WindowAttachmentOwnership = 'host' | 'flight';
+
 // Control seam for windowing: a host backend the window command functions delegate to. The web
 // backend covers what a browser page-window can do (title, fullscreen, focus, popup move/resize);
 // a native host (Electron/Tauri/C++) maps each ApplicationWindow to a real OS window. Every method
 // takes the target window so the seam supports multiple windows.
 export interface WindowBackend {
+  // Attaches an existing native window. Optional because absence is the structural declaration that a
+  // backend cannot adopt host-created windows; attachWindow resolves custom → host by that presence.
+  attach?(win: ApplicationWindow, handle: NativeWindowHandle, ownership: WindowAttachmentOwnership): boolean;
   open(win: ApplicationWindow, options: Readonly<WindowOptions>): boolean;
   close(win: ApplicationWindow): void;
   setTitle(win: ApplicationWindow, title: string): void;

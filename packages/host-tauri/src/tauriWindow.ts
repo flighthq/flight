@@ -1,5 +1,14 @@
+import { notifyWindowClosed } from '@flighthq/application/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { ApplicationWindow, WindowBackend, TauriApi, TauriWindow } from '@flighthq/types/contract';
+import type {
+  ApplicationWindow,
+  NativeWindowHandle,
+  TauriApi,
+  TauriUnlisten,
+  TauriWindow,
+  WindowAttachmentOwnership,
+  WindowBackend,
+} from '@flighthq/types/contract';
 
 // Maps Flight's WindowBackend onto Tauri's `@tauri-apps/api/window`. Every Tauri window call is async
 // while WindowBackend's commands are synchronous (void), so the adapter fires each call and forgets,
@@ -11,18 +20,81 @@ import type { ApplicationWindow, WindowBackend, TauriApi, TauriWindow } from '@f
 // additional OS windows is a `WebviewWindow`-label concern left to the host and not modeled here.
 export function createTauriWindowBackend(tauri: TauriApi): WindowBackend {
   const windowModule = tauri.window;
-  const windows = new WeakMap<ApplicationWindow, TauriWindow>();
+  const handles = new WeakMap<TauriWindow, ApplicationWindow>();
+  const windows = new WeakMap<ApplicationWindow, TauriWindowRecord>();
   const run = (win: ApplicationWindow, fn: (w: TauriWindow) => Promise<unknown>): void => {
-    const w = windows.get(win);
-    if (w === undefined) return;
-    fn(w).catch(() => {
+    const record = windows.get(win);
+    if (record === undefined) return;
+    fn(record.handle).catch(() => {
       /* window closed or the call is unsupported on this platform */
     });
   };
+  const detach = (win: ApplicationWindow): TauriWindowRecord | null => {
+    const record = windows.get(win);
+    if (record === undefined) return null;
+    windows.delete(win);
+    handles.delete(record.handle);
+    record.detached = true;
+    for (const cleanup of record.cleanup) cleanup();
+    record.cleanup.length = 0;
+    return record;
+  };
+  const addCleanup = (record: TauriWindowRecord, pending: Promise<TauriUnlisten>): void => {
+    pending
+      .then((cleanup) => {
+        if (record.detached) cleanup();
+        else record.cleanup.push(cleanup);
+      })
+      .catch(() => {});
+  };
+  const attach = (win: ApplicationWindow, handle: TauriWindow, ownership: WindowAttachmentOwnership): boolean => {
+    const existing = windows.get(win);
+    if (existing !== undefined) return existing.handle === handle && existing.ownership === ownership;
+    const mapped = handles.get(handle);
+    if (mapped !== undefined && mapped !== win) return false;
+    const record: TauriWindowRecord = { cleanup: [], detached: false, handle, ownership };
+    windows.set(win, record);
+    handles.set(handle, win);
+    addCleanup(
+      record,
+      handle.onMoved((event) => {
+        win.x = event.payload.x;
+        win.y = event.payload.y;
+        emitSignal(win.onMove);
+      }),
+    );
+    addCleanup(
+      record,
+      handle.onResized((event) => {
+        win.width = event.payload.width;
+        win.height = event.payload.height;
+        emitSignal(win.onResize);
+      }),
+    );
+    addCleanup(
+      record,
+      handle.onFocusChanged((event) => {
+        win.focused = event.payload;
+        emitSignal(event.payload ? win.onFocusIn : win.onFocusOut);
+      }),
+    );
+    addCleanup(
+      record,
+      handle.onCloseRequested(() => {
+        detach(win);
+        notifyWindowClosed(win);
+      }),
+    );
+    return true;
+  };
   return {
+    attach(win, handle, ownership) {
+      if (!isTauriWindow(handle)) return false;
+      return attach(win, handle, ownership);
+    },
     open(win, options) {
       const w = windowModule.getCurrentWindow();
-      windows.set(win, w);
+      if (!attach(win, w, 'host')) return false;
       if (options.title !== undefined) w.setTitle(options.title).catch(() => {});
       if (options.width !== undefined && options.height !== undefined) {
         w.setSize(new windowModule.LogicalSize(options.width, options.height)).catch(() => {});
@@ -44,28 +116,11 @@ export function createTauriWindowBackend(tauri: TauriApi): WindowBackend {
       if (options.minimized) w.minimize().catch(() => {});
       if (options.visible === false) w.hide().catch(() => {});
       else w.show().catch(() => {});
-      w.onMoved((event) => {
-        win.x = event.payload.x;
-        win.y = event.payload.y;
-        emitSignal(win.onMove);
-      }).catch(() => {});
-      w.onResized((event) => {
-        win.width = event.payload.width;
-        win.height = event.payload.height;
-        emitSignal(win.onResize);
-      }).catch(() => {});
-      w.onFocusChanged((event) => {
-        win.focused = event.payload;
-        emitSignal(event.payload ? win.onFocusIn : win.onFocusOut);
-      }).catch(() => {});
-      w.onCloseRequested(() => emitSignal(win.onClose)).catch(() => {});
       return true;
     },
     close(win) {
-      const w = windows.get(win);
-      if (w === undefined) return;
-      w.close().catch(() => {});
-      windows.delete(win);
+      const record = detach(win);
+      if (record?.ownership === 'flight') record.handle.close().catch(() => {});
     },
     setTitle(win, title) {
       run(win, (w) => w.setTitle(title));
@@ -153,4 +208,23 @@ export function createTauriWindowBackend(tauri: TauriApi): WindowBackend {
       run(win, (w) => w.setShadow(hasShadow));
     },
   };
+}
+
+interface TauriWindowRecord {
+  readonly cleanup: TauriUnlisten[];
+  detached: boolean;
+  readonly handle: TauriWindow;
+  readonly ownership: WindowAttachmentOwnership;
+}
+
+function isTauriWindow(handle: NativeWindowHandle): handle is TauriWindow {
+  if (typeof handle !== 'object' || handle === null) return false;
+  const candidate = handle as Partial<TauriWindow>;
+  return (
+    typeof candidate.close === 'function' &&
+    typeof candidate.onCloseRequested === 'function' &&
+    typeof candidate.onFocusChanged === 'function' &&
+    typeof candidate.onMoved === 'function' &&
+    typeof candidate.onResized === 'function'
+  );
 }

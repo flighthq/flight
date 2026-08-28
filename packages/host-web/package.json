@@ -70,6 +70,7 @@
     "@flighthq/webcam": "*"
   },
   "devDependencies": {
+    "@flighthq/signals": "*",
     "typescript": "^5.3.0"
   },
   "description": "Web host backend: installs browser-specific implementations of Flight capability seams (Canvas glyph rasterizer, DOM cursor)",

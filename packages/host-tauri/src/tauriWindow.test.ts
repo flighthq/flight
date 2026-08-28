@@ -10,10 +10,20 @@ interface FakeWindowState {
   resized: ((event: { payload: TauriLogicalSizeLike }) => void) | null;
   focusChanged: ((event: { payload: boolean }) => void) | null;
   closeRequested: (() => void) | null;
+  subscriptions: string[];
+  unlistened: string[];
 }
 
 function fakeTauri() {
-  const state: FakeWindowState = { calls: [], moved: null, resized: null, focusChanged: null, closeRequested: null };
+  const state: FakeWindowState = {
+    calls: [],
+    moved: null,
+    resized: null,
+    focusChanged: null,
+    closeRequested: null,
+    subscriptions: [],
+    unlistened: [],
+  };
   const record =
     (method: string) =>
     async (...args: unknown[]) => {
@@ -43,19 +53,23 @@ function fakeTauri() {
     close: record('close'),
     async onMoved(handler: (event: { payload: TauriPhysicalPositionLike }) => void) {
       state.moved = handler;
-      return () => {};
+      state.subscriptions.push('moved');
+      return () => state.unlistened.push('moved');
     },
     async onResized(handler: (event: { payload: TauriLogicalSizeLike }) => void) {
       state.resized = handler;
-      return () => {};
+      state.subscriptions.push('resized');
+      return () => state.unlistened.push('resized');
     },
     async onFocusChanged(handler: (event: { payload: boolean }) => void) {
       state.focusChanged = handler;
-      return () => {};
+      state.subscriptions.push('focusChanged');
+      return () => state.unlistened.push('focusChanged');
     },
     async onCloseRequested(handler: () => void) {
       state.closeRequested = handler;
-      return () => {};
+      state.subscriptions.push('closeRequested');
+      return () => state.unlistened.push('closeRequested');
     },
   };
   const tauri = {
@@ -75,7 +89,7 @@ function fakeTauri() {
       },
     },
   } as unknown as TauriApi;
-  return { tauri, state };
+  return { tauri, state, window };
 }
 
 function methods(state: FakeWindowState): string[] {
@@ -140,5 +154,58 @@ describe('createTauriWindowBackend', () => {
     const out = { x: 0, y: 0, width: 0, height: 0 };
     expect(backend.getBounds(win, out)).toBe(out);
     expect(out).toEqual({ x: 5, y: 6, width: 100, height: 200 });
+  });
+
+  it('attaches the same existing window idempotently without duplicating event ingress', () => {
+    const { tauri, state, window } = fakeTauri();
+    const backend = createTauriWindowBackend(tauri);
+    const win = createApplicationWindow();
+
+    expect(backend.attach?.(win, window, 'host')).toBe(true);
+    expect(backend.attach?.(win, window, 'host')).toBe(true);
+    expect(backend.attach?.(createApplicationWindow(), window, 'host')).toBe(false);
+    expect(state.subscriptions).toEqual(['moved', 'resized', 'focusChanged', 'closeRequested']);
+  });
+
+  it('detaches host-owned windows without closing them and releases all event ingress', async () => {
+    const { tauri, state, window } = fakeTauri();
+    const backend = createTauriWindowBackend(tauri);
+    const win = createApplicationWindow();
+    expect(backend.attach?.(win, window, 'host')).toBe(true);
+
+    backend.close(win);
+    backend.close(win);
+    await Promise.resolve();
+
+    expect(methods(state)).not.toContain('close');
+    expect(state.unlistened.sort()).toEqual(['closeRequested', 'focusChanged', 'moved', 'resized']);
+  });
+
+  it('closes a Flight-owned attached window once', () => {
+    const { tauri, state, window } = fakeTauri();
+    const backend = createTauriWindowBackend(tauri);
+    const win = createApplicationWindow();
+    expect(backend.attach?.(win, window, 'flight')).toBe(true);
+
+    backend.close(win);
+    backend.close(win);
+
+    expect(methods(state).filter((method) => method === 'close')).toHaveLength(1);
+  });
+
+  it('routes native close requests through the terminal-close choke point exactly once', async () => {
+    const { tauri, state, window } = fakeTauri();
+    const backend = createTauriWindowBackend(tauri);
+    const win = createApplicationWindow();
+    let closes = 0;
+    connectSignal(win.onClose, () => closes++);
+    expect(backend.attach?.(win, window, 'host')).toBe(true);
+
+    state.closeRequested!();
+    state.closeRequested!();
+    await Promise.resolve();
+
+    expect(closes).toBe(1);
+    expect(state.unlistened).toHaveLength(4);
   });
 });

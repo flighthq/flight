@@ -3,7 +3,9 @@ import type { BackendExplanation } from '@flighthq/types/contract';
 import type {
   ApplicationWindow,
   Matrix,
+  NativeWindowHandle,
   RenderState,
+  WindowAttachmentOwnership,
   WindowBackend,
   WindowBounds,
   WindowOptions,
@@ -20,6 +22,24 @@ const kRenderState = Symbol();
 const kResize = Symbol();
 const kVisibility = Symbol();
 
+// Attaches an existing native window without requiring an Application. The custom layer gets first
+// refusal only when it actually provides attach; otherwise the host layer may adopt the handle. A false
+// result is the expected unsupported/failed sentinel and never changes the window's current lifecycle.
+export function attachWindow(
+  win: ApplicationWindow,
+  handle: NativeWindowHandle,
+  ownership: WindowAttachmentOwnership,
+): boolean {
+  const backend = getWindowAttachmentBackend();
+  if (backend === null || backend.attach === undefined) return false;
+  const attached = backend.attach(win, handle, ownership);
+  if (attached) {
+    _windowBackends.set(win, backend);
+    _terminalWindows.delete(win);
+  }
+  return attached;
+}
+
 // Wires the browser's beforeunload/pagehide to the window's close signals: beforeunload emits
 // onCloseRequest and, if a listener vetoes (cancelSignal), prompts the user via the native unload
 // dialog; pagehide emits onClose once the page is actually going away. Idempotent.
@@ -34,7 +54,7 @@ export function attachWindowClose(win: ApplicationWindow): void {
       e.returnValue = '';
     }
   };
-  const onPageHide = () => emitSignal(win.onClose);
+  const onPageHide = () => notifyWindowClosed(win);
   window.addEventListener('beforeunload', onBeforeUnload);
   window.addEventListener('pagehide', onPageHide);
   observers.set(kClose, () => {
@@ -189,9 +209,10 @@ export function centerWindow(win: ApplicationWindow): void {
 // aborted and this returns false. Otherwise the backend closes the window, onClose fires, and it
 // returns true.
 export function closeWindow(win: ApplicationWindow): boolean {
+  if (_terminalWindows.has(win)) return true;
   if (!requestWindowClose(win)) return false;
-  getWindowBackend().close(win);
-  emitSignal(win.onClose);
+  (_windowBackends.get(win) ?? getWindowBackend()).close(win);
+  notifyWindowClosed(win);
   return true;
 }
 
@@ -415,6 +436,16 @@ export function minimizeWindow(win: ApplicationWindow): void {
   emitSignal(win.onMinimize);
 }
 
+// The single terminal-close choke point for both app-driven and host-driven closes. Native callbacks may
+// fire synchronously inside backend.close; whichever path arrives first emits and every later path no-ops.
+// This state belongs to the ApplicationWindow entity, never to an Application or per-app backend registry.
+export function notifyWindowClosed(win: ApplicationWindow): void {
+  if (_terminalWindows.has(win)) return;
+  _terminalWindows.add(win);
+  _windowBackends.delete(win);
+  emitSignal(win.onClose);
+}
+
 export function observeWindowHostResult(operation: string, succeeded: boolean): void {
   _hostObservation = {
     operation,
@@ -441,9 +472,14 @@ export function openWindow(win: ApplicationWindow, options: Readonly<WindowOptio
   if (options.minHeight !== undefined) win.minHeight = options.minHeight;
   if (options.maxWidth !== undefined) win.maxWidth = options.maxWidth;
   if (options.maxHeight !== undefined) win.maxHeight = options.maxHeight;
-  const result = getWindowBackend().open(win, options);
+  const backend = getWindowBackend();
+  const result = backend.open(win, options);
+  if (result) {
+    _windowBackends.set(win, backend);
+    _terminalWindows.delete(win);
+  }
   // Apply center after open so the backend has registered the OS window before moving it.
-  if (options.center === true) centerWindow(win);
+  if (result && options.center === true) backend.center(win);
   return result;
 }
 
@@ -482,6 +518,8 @@ export function resetWindowBackendForTest(): void {
   _host = null;
   _hostConflict = false;
   _hostObservation = null;
+  _terminalWindows = new WeakSet();
+  _windowBackends = new WeakMap();
 }
 
 // Restores the window from a minimized/maximized state. Emits onRestore when state changed.
@@ -653,6 +691,14 @@ let _custom: WindowBackend | null = null;
 let _host: WindowBackend | null = null;
 let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
+let _terminalWindows = new WeakSet<ApplicationWindow>();
+let _windowBackends = new WeakMap<ApplicationWindow, WindowBackend>();
+
+function getWindowAttachmentBackend(): WindowBackend | null {
+  if (_custom?.attach !== undefined) return _custom;
+  if (_host?.attach !== undefined) return _host;
+  return null;
+}
 
 function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () => void> {
   let observers = _applicationWindowObservers.get(win);

@@ -1,5 +1,13 @@
+import { notifyWindowClosed } from '@flighthq/application/contract';
 import { emitSignal } from '@flighthq/signals/contract';
-import type { ApplicationWindow, WindowBackend, ElectronApi, ElectronBrowserWindow } from '@flighthq/types/contract';
+import type {
+  ApplicationWindow,
+  ElectronApi,
+  ElectronBrowserWindow,
+  NativeWindowHandle,
+  WindowAttachmentOwnership,
+  WindowBackend,
+} from '@flighthq/types/contract';
 
 // Maps Flight's WindowBackend onto Electron's BrowserWindow, one BrowserWindow per ApplicationWindow.
 // open() constructs the real OS window from WindowOptions and wires BrowserWindow OS events back to
@@ -9,7 +17,12 @@ import type { ApplicationWindow, WindowBackend, ElectronApi, ElectronBrowserWind
 // or never opened). Risky native calls are wrapped so a destroyed window cannot throw across the seam.
 export function createElectronWindowBackend(electron: ElectronApi): WindowBackend {
   return {
+    attach(win, handle, ownership) {
+      if (!isElectronBrowserWindow(handle)) return false;
+      return attachElectronWindow(win, handle, ownership);
+    },
     open(win, options) {
+      if (_windowRecords.has(win)) return true;
       const bw = new electron.BrowserWindow({
         title: options.title,
         x: options.x,
@@ -27,64 +40,16 @@ export function createElectronWindowBackend(electron: ElectronApi): WindowBacken
         frame: options.frame,
         transparent: options.transparent,
       });
-      _windows.set(win, bw);
-      _windowsById.set(bw.id, win);
-      bw.on('move', () => {
-        const bounds = bw.getBounds();
-        win.x = bounds.x;
-        win.y = bounds.y;
-        emitSignal(win.onMove);
-      });
-      bw.on('resize', () => {
-        const bounds = bw.getBounds();
-        win.width = bounds.width;
-        win.height = bounds.height;
-        emitSignal(win.onResize);
-      });
-      bw.on('minimize', () => {
-        win.minimized = true;
-        emitSignal(win.onMinimize);
-      });
-      bw.on('maximize', () => {
-        win.maximized = true;
-        emitSignal(win.onMaximize);
-      });
-      const onUnmaximize = () => {
-        win.minimized = false;
-        win.maximized = false;
-        emitSignal(win.onRestore);
-      };
-      bw.on('unmaximize', onUnmaximize);
-      bw.on('restore', onUnmaximize);
-      bw.on('enter-full-screen', () => {
-        win.fullscreen = true;
-        emitSignal(win.onFullscreenChanged);
-      });
-      bw.on('leave-full-screen', () => {
-        win.fullscreen = false;
-        emitSignal(win.onFullscreenChanged);
-      });
-      bw.on('focus', () => {
-        win.focused = true;
-        emitSignal(win.onFocusIn);
-      });
-      bw.on('blur', () => {
-        win.focused = false;
-        emitSignal(win.onFocusOut);
-      });
-      bw.on('close', () => emitSignal(win.onClose));
-      return true;
-    },
-    close(win) {
-      const bw = _windows.get(win);
-      if (bw === undefined) return;
+      if (attachElectronWindow(win, bw, 'flight')) return true;
       try {
         bw.close();
       } catch {
-        /* window already destroyed */
+        /* construction succeeded but attachment failed */
       }
-      _windows.delete(win);
-      _windowsById.delete(bw.id);
+      return false;
+    },
+    close(win) {
+      detachElectronWindow(win, true);
     },
     setTitle(win, title) {
       const bw = _windows.get(win);
@@ -359,10 +324,125 @@ export function getElectronWindowId(win: Readonly<ApplicationWindow>): number {
   return _windows.get(win as ApplicationWindow)?.id ?? -1;
 }
 
+export function resetElectronWindowBackendForTest(): void {
+  _windows = new WeakMap();
+  _windowRecords = new WeakMap();
+  _windowsById.clear();
+}
+
 // Side table mapping each Flight ApplicationWindow to its Electron BrowserWindow, kept off the public
 // entity. Entries are removed on close so a stale BrowserWindow is never reused.
-const _windows = new WeakMap<ApplicationWindow, ElectronBrowserWindow>();
+let _windows = new WeakMap<ApplicationWindow, ElectronBrowserWindow>();
+
+interface ElectronWindowRecord {
+  readonly cleanup: (() => void)[];
+  readonly handle: ElectronBrowserWindow;
+  readonly ownership: WindowAttachmentOwnership;
+}
+
+let _windowRecords = new WeakMap<ApplicationWindow, ElectronWindowRecord>();
 
 // Reverse lookup by Electron BrowserWindow id for getApplicationWindowForElectronId. Maintained in
 // lockstep with _windows; entries are removed on close as well.
 const _windowsById = new Map<number, ApplicationWindow>();
+
+function attachElectronWindow(
+  win: ApplicationWindow,
+  handle: ElectronBrowserWindow,
+  ownership: WindowAttachmentOwnership,
+): boolean {
+  const existing = _windowRecords.get(win);
+  if (existing !== undefined) return existing.handle === handle && existing.ownership === ownership;
+  const mapped = _windowsById.get(handle.id);
+  if (mapped !== undefined && mapped !== win) return false;
+
+  const record: ElectronWindowRecord = { cleanup: [], handle, ownership };
+  _windowRecords.set(win, record);
+  _windows.set(win, handle);
+  _windowsById.set(handle.id, win);
+
+  addElectronWindowListener(record, 'move', () => {
+    const bounds = handle.getBounds();
+    win.x = bounds.x;
+    win.y = bounds.y;
+    emitSignal(win.onMove);
+  });
+  addElectronWindowListener(record, 'resize', () => {
+    const bounds = handle.getBounds();
+    win.width = bounds.width;
+    win.height = bounds.height;
+    emitSignal(win.onResize);
+  });
+  addElectronWindowListener(record, 'minimize', () => {
+    win.minimized = true;
+    emitSignal(win.onMinimize);
+  });
+  addElectronWindowListener(record, 'maximize', () => {
+    win.maximized = true;
+    emitSignal(win.onMaximize);
+  });
+  const onUnmaximize = () => {
+    win.minimized = false;
+    win.maximized = false;
+    emitSignal(win.onRestore);
+  };
+  addElectronWindowListener(record, 'unmaximize', onUnmaximize);
+  addElectronWindowListener(record, 'restore', onUnmaximize);
+  addElectronWindowListener(record, 'enter-full-screen', () => {
+    win.fullscreen = true;
+    emitSignal(win.onFullscreenChanged);
+  });
+  addElectronWindowListener(record, 'leave-full-screen', () => {
+    win.fullscreen = false;
+    emitSignal(win.onFullscreenChanged);
+  });
+  addElectronWindowListener(record, 'focus', () => {
+    win.focused = true;
+    emitSignal(win.onFocusIn);
+  });
+  addElectronWindowListener(record, 'blur', () => {
+    win.focused = false;
+    emitSignal(win.onFocusOut);
+  });
+  addElectronWindowListener(record, 'closed', () => {
+    detachElectronWindow(win, false);
+    notifyWindowClosed(win);
+  });
+  return true;
+}
+
+function addElectronWindowListener(
+  record: ElectronWindowRecord,
+  event: string,
+  listener: (...args: unknown[]) => void,
+): void {
+  record.handle.on(event, listener);
+  record.cleanup.push(() => record.handle.off(event, listener));
+}
+
+function detachElectronWindow(win: ApplicationWindow, closeOwned: boolean): void {
+  const record = _windowRecords.get(win);
+  if (record === undefined) return;
+  _windowRecords.delete(win);
+  _windows.delete(win);
+  _windowsById.delete(record.handle.id);
+  for (const cleanup of record.cleanup) cleanup();
+  record.cleanup.length = 0;
+  if (!closeOwned || record.ownership !== 'flight') return;
+  try {
+    record.handle.close();
+  } catch {
+    /* window already destroyed */
+  }
+}
+
+function isElectronBrowserWindow(handle: NativeWindowHandle): handle is ElectronBrowserWindow {
+  if (typeof handle !== 'object' || handle === null) return false;
+  const candidate = handle as Partial<ElectronBrowserWindow>;
+  return (
+    typeof candidate.id === 'number' &&
+    typeof candidate.on === 'function' &&
+    typeof candidate.off === 'function' &&
+    typeof candidate.close === 'function'
+  );
+}
