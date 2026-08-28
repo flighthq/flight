@@ -10,8 +10,8 @@ interface FontFaceConstruction {
 }
 
 let constructions: FontFaceConstruction[];
-let addMock: ReturnType<typeof vi.fn>;
-let loadMock: ReturnType<typeof vi.fn>;
+let addMock = vi.fn<(face: FontFace) => void>();
+let loadMock = vi.fn<(shorthand: string) => Promise<FontFace[]>>();
 
 class MockFontFace {
   load = vi.fn().mockResolvedValue(undefined);
@@ -22,14 +22,14 @@ class MockFontFace {
 
 beforeEach(() => {
   constructions = [];
-  addMock = vi.fn();
-  loadMock = vi.fn().mockResolvedValue([]);
+  addMock = vi.fn<(face: FontFace) => void>();
+  loadMock = vi.fn<(shorthand: string) => Promise<FontFace[]>>().mockResolvedValue([]);
   vi.stubGlobal('FontFace', MockFontFace);
   const backend: FontLoadingBackend = {
     addFontFace: addMock,
-    checkFontFace: vi.fn().mockReturnValue(false),
+    checkFontFace: vi.fn<(shorthand: string) => boolean>().mockReturnValue(false),
     loadFontFaces: loadMock,
-    whenReady: vi.fn().mockResolvedValue(undefined),
+    whenReady: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
   };
   setFontLoadingBackend(backend);
 });
