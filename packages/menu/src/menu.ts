@@ -107,7 +107,10 @@ export function setApplicationMenu(items: readonly MenuItemTemplate[]): boolean 
 
 // Sets a custom menu backend; pass null to clear and fall back to the host or sentinel.
 export function setMenuBackend(backend: MenuBackend | null): void {
+  if (_custom === backend) return;
+  const previous = [_custom] as const;
   _custom = backend;
+  releaseMenuBackends(previous);
 }
 
 // Pops up a context menu at (x, y) and resolves the clicked item id, or null when dismissed. On web,
@@ -230,6 +233,16 @@ const _sentinel: MenuBackend = {
     return () => {};
   },
 };
+
+function releaseMenuBackends(previous: readonly (Readonly<MenuBackend> | null)[]): void {
+  const retained = new Set<unknown>([_custom, _host].filter((slot) => slot !== null));
+  const released = new Set<unknown>();
+  for (const backend of previous) {
+    if (backend === null || retained.has(backend) || released.has(backend)) continue;
+    released.add(backend);
+    backend.destroy?.();
+  }
+}
 
 function _validateItem(item: Readonly<MenuItemTemplate>, seen: Set<Readonly<MenuItemTemplate>>): string | null {
   if (seen.has(item)) {

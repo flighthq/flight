@@ -20,6 +20,7 @@ import {
 
 function fakeBackend(overrides?: Partial<MenuBackend>): MenuBackend {
   return {
+    destroy: () => {},
     setApplicationMenu: () => true,
     popupContextMenu: () => Promise.resolve(null),
     subscribeSelect: () => () => {},
@@ -241,6 +242,60 @@ describe('setMenuBackend', () => {
     expect(getMenuBackend()).toBe(backend);
     setMenuBackend(null);
     expect(getMenuBackend()).not.toBe(backend);
+  });
+
+  it('destroys the outgoing backend before the new one is active', () => {
+    const order: string[] = [];
+    const first = fakeBackend({
+      destroy() {
+        order.push('destroy-first');
+        order.push(`active-is-first:${getMenuBackend() !== first}`);
+      },
+    });
+    const second = fakeBackend({
+      destroy() {
+        order.push('destroy-second');
+      },
+    });
+    setMenuBackend(first);
+    setMenuBackend(second);
+    expect(order).toEqual(['destroy-first', 'active-is-first:true']);
+  });
+
+  it('does not destroy a backend that is being re-assigned to the same slot', () => {
+    let destroyCalls = 0;
+    const backend = fakeBackend({ destroy: () => destroyCalls++ });
+    setMenuBackend(backend);
+    setMenuBackend(backend);
+    expect(destroyCalls).toBe(0);
+  });
+
+  it('is safe to call destroy twice (idempotent)', () => {
+    let destroyCalls = 0;
+    const backend = fakeBackend({ destroy: () => destroyCalls++ });
+    setMenuBackend(backend);
+    setMenuBackend(null);
+    expect(destroyCalls).toBe(1);
+    setMenuBackend(null);
+    expect(destroyCalls).toBe(1);
+  });
+
+  it('destroys when clearing to null', () => {
+    let destroyed = false;
+    const backend = fakeBackend({ destroy: () => (destroyed = true) });
+    setMenuBackend(backend);
+    expect(destroyed).toBe(false);
+    setMenuBackend(null);
+    expect(destroyed).toBe(true);
+  });
+
+  it('does not destroy a backend that is still retained in the host slot', () => {
+    let destroyCalls = 0;
+    const shared = fakeBackend({ destroy: () => destroyCalls++ });
+    installMenuHostBackend(shared);
+    setMenuBackend(shared);
+    setMenuBackend(null);
+    expect(destroyCalls).toBe(0);
   });
 });
 

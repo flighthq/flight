@@ -11,6 +11,9 @@ export function createElectronMenuBackend(electron: ElectronApi): MenuBackend {
   // as onSelect; subscribeSelect sets it and returns an unsubscribe that clears it.
   let selectListener: ((id: string) => void) | null = null;
   return {
+    destroy() {
+      selectListener = null;
+    },
     setApplicationMenu(items) {
       electron.Menu.setApplicationMenu(
         electron.Menu.buildFromTemplate(toElectronTemplate(items, (id) => selectListener?.(id))),
