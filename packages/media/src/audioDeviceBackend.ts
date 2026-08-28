@@ -8,7 +8,7 @@ import type {
   BackendOperationExplanation,
 } from '@flighthq/types/contract';
 
-export function createWebAudioDeviceBackend(): AudioDeviceBackend {
+export function createWebAudioDeviceBackend(): AudioDeviceBackend & AudioDeviceBackendWebExtension {
   let nextHandle = 1;
   const devices = new Map<number, AudioContext>();
   const buffers = new Map<number, AudioBuffer>();
@@ -168,6 +168,16 @@ export function createWebAudioDeviceBackend(): AudioDeviceBackend {
       s.sourceNode = null;
       s.state = 'stopped';
     },
+
+    getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null {
+      const s = sources.get(source as number);
+      return s?.sourceNode ?? null;
+    },
+
+    getSourceGainNode(source: AudioSourceHandle): GainNode | null {
+      const s = sources.get(source as number);
+      return s?.gainNode ?? null;
+    },
   };
 }
 
@@ -200,8 +210,24 @@ export function getAudioDeviceBackend(): AudioDeviceBackend {
   return _custom ?? _host ?? _sentinel;
 }
 
+export function getAudioSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null {
+  const backend = _custom ?? _host ?? _sentinel;
+  if (isWebExtendedBackend(backend)) return backend.getSourceBufferSourceNode(source);
+  return null;
+}
+
+export function getAudioSourceGainNode(source: AudioSourceHandle): GainNode | null {
+  const backend = _custom ?? _host ?? _sentinel;
+  if (isWebExtendedBackend(backend)) return backend.getSourceGainNode(source);
+  return null;
+}
+
 export function hasAudioDeviceOperation(operation: AudioDeviceOperation): boolean {
   return explainAudioDeviceOperation(operation).implemented;
+}
+
+export function hasAudioDeviceWebNodeAccess(): boolean {
+  return isWebExtendedBackend(_custom ?? _host ?? _sentinel);
 }
 
 export function installAudioDeviceHostBackend(backend: AudioDeviceBackend): void {
@@ -228,6 +254,15 @@ export function resetAudioDeviceBackendForTest(): void {
 
 export function setAudioDeviceBackend(backend: AudioDeviceBackend | null): void {
   _custom = backend;
+}
+
+interface AudioDeviceBackendWebExtension extends AudioDeviceBackend {
+  getSourceBufferSourceNode(source: AudioSourceHandle): AudioBufferSourceNode | null;
+  getSourceGainNode(source: AudioSourceHandle): GainNode | null;
+}
+
+function isWebExtendedBackend(backend: AudioDeviceBackend): backend is AudioDeviceBackendWebExtension {
+  return 'getSourceGainNode' in backend && 'getSourceBufferSourceNode' in backend;
 }
 
 let _custom: AudioDeviceBackend | null = null;
