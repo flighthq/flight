@@ -294,6 +294,67 @@ describe('explainFlightDocumentRefusalFromText', () => {
   });
 });
 
+describe('model-to-text explain parity', () => {
+  it.each<{
+    document: Readonly<FlightDocument>;
+    expectedPath: string;
+    expectedReason: FlightDocumentRefusalReason;
+    label: string;
+  }>([
+    {
+      label: 'wrong dimension (scene 0)',
+      document: {
+        cameras: [],
+        kind: 'Scene3D',
+        lights: [],
+        resources: [],
+        scene: { children: [], fields: {}, kind: 'Node3D' },
+        version: 1,
+      } as FlightDocument,
+      expectedReason: FlightDocumentRefusalReason.StructureInvalid,
+      expectedPath: 'scenes[0].kind',
+    },
+    {
+      label: 'unsupported version (document-level)',
+      document: {
+        backgroundColor: null,
+        kind: 'Scene2D',
+        resources: [],
+        scene: { children: [], fields: {}, kind: DisplayObjectKind },
+        version: 99,
+      } as unknown as FlightDocumentScene2D,
+      expectedReason: FlightDocumentRefusalReason.VersionUnsupported,
+      expectedPath: 'version',
+    },
+    {
+      label: 'unregistered node kind (scene 0)',
+      document: {
+        backgroundColor: null,
+        kind: 'Scene2D',
+        resources: [],
+        scene: {
+          children: [{ children: [], fields: {}, kind: 'acme.Unknown' }],
+          fields: {},
+          kind: DisplayObjectKind,
+        },
+        version: 1,
+      },
+      expectedReason: FlightDocumentRefusalReason.NodeKindUnregistered,
+      expectedPath: 'scenes[0].scene.children[0]',
+    },
+  ])('model and text explain agree on $label', ({ document, expectedPath, expectedReason }) => {
+    const modelResult = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
+    const text = serializeFlightDocument(document);
+    const textResult = explainFlightDocumentRefusalFromText(text, 'Scene2D', createTestSchemas());
+    expect(modelResult).not.toBeNull();
+    expect(textResult).not.toBeNull();
+    expect(textResult!.reason).toBe(modelResult!.reason);
+    expect(textResult!.path).toBe(modelResult!.path);
+    expect(modelResult!.reason).toBe(expectedReason);
+    expect(modelResult!.path).toBe(expectedPath);
+  });
+});
+
 describe('serializeFlightDocument', () => {
   it('round-trips a minimal Scene2D through model and text', () => {
     const scene = createScene2D();
