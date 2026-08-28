@@ -70,6 +70,7 @@ export function createBackendLifecycleReport(
   interfaceNames: readonly string[],
   teardowns: ReadonlyMap<string, string>,
   setterBodies: ReadonlyMap<string, string>,
+  helperBodies: ReadonlyMap<string, string> = new Map(),
 ): BackendLifecycleReport {
   const entries: BackendLifecycleEntry[] = [];
   const violations: BackendLifecycleViolation[] = [];
@@ -77,7 +78,7 @@ export function createBackendLifecycleReport(
     const teardown = teardowns.get(interfaceName) ?? null;
     const setter = findSetterName(interfaceName, setterBodies);
     const body = setter === null ? null : (setterBodies.get(setter) ?? null);
-    const tearsDown = body !== null && teardown !== null && body.includes(teardown);
+    const tearsDown = body !== null && teardown !== null && reachesTeardown(body, teardown, helperBodies);
     entries.push({ interfaceName, setter, teardown, tearsDown });
     if (teardown === null) continue;
     if (setter === null) {
@@ -172,4 +173,21 @@ export function collectMethodSyntaxTeardowns(typeSourceFiles: readonly string[])
     }
   }
   return teardowns;
+}
+
+// Whether the setter frees the outgoing backend, directly or through a helper it calls.
+//
+// ★ One hop matters, and a text match on the setter alone is not enough. A setter that delegates to a
+// `release*Backends(previous)` helper — which is what correct layered ownership looks like, because
+// "destroy whatever is no longer referenced by any slot" does not fit inline — contains no `destroy`
+// token at all. Matching only the setter body reported those setters as LEAKING while they were the two
+// most careful ones in the repo. A false leak is as corrosive as a false green: it teaches the reader to
+// discount the gate.
+function reachesTeardown(body: string, teardown: string, helperBodies: ReadonlyMap<string, string>): boolean {
+  if (body.includes(teardown)) return true;
+  for (const [name, helperBody] of helperBodies) {
+    if (!body.includes(`${name}(`)) continue;
+    if (helperBody.includes(teardown)) return true;
+  }
+  return false;
 }

@@ -36,7 +36,7 @@ describe('backend operation seam ratchet', () => {
     expect(report.total).toBeGreaterThan(0);
     expect(report.enforced + report.notMigrated).toBe(report.total);
     expect(formatBackendOperationSeamReport(report)).toContain(
-      `${report.enforced} of ${report.total} interfaces enforced, ${report.notMigrated} not yet migrated`,
+      `${report.enforced} of ${report.total} interface shapes enforced (declaration only; consumer builds not validated here), ${report.notMigrated} not yet migrated`,
     );
   });
 
@@ -48,7 +48,7 @@ describe('backend operation seam ratchet', () => {
   // printed count from 11 to 10, and NOTHING FAILED, because the floor still read 10 from the previous
   // slice. A ratchet whose floor lags is a ratchet that lets one regression through per slice.
   it('never enforces fewer interfaces than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(11);
+    expect(report.enforced).toBeGreaterThanOrEqual(12);
   });
 
   it('reports no violation among the migrated interfaces', () => {

@@ -422,6 +422,61 @@ describe('installMediaSessionHostBackend', () => {
   });
 });
 
+// ★ LAYERED OWNERSHIP. The same object can occupy the custom and host slots at once, and a slot losing a
+// reference is not the same as the object losing its last one. Each case here is a way a naive
+// `_custom ?? _host` teardown gets it wrong.
+describe('layered custom and host ownership', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  // SHADOWED: installing a custom over a live host hides the host; it does not free it. The host slot
+  // still owns it and revealing it later must give back a working backend.
+  it('does not destroy a host that a custom merely shadows, nor when it is revealed again', () => {
+    const destroyed: string[] = [];
+    const host = { destroy: () => destroyed.push('host'), setMetadata: () => undefined };
+    installMediaSessionHostBackend(host);
+    setMediaSessionBackend({ destroy: () => destroyed.push('custom') });
+    expect(destroyed).toEqual([]);
+
+    setMediaSessionBackend(null);
+    expect(destroyed).toEqual(['custom']);
+    expect(getMediaSessionBackend()).toBe(host);
+  });
+
+  // ALIASED: one object in both slots. Clearing custom must NOT destroy it — the host slot still owns it,
+  // and destroying here would tear down state the host is still serving.
+  it('does not destroy an aliased backend while the other slot still references it', () => {
+    const destroyed: string[] = [];
+    const shared = { destroy: () => destroyed.push('shared'), setMetadata: () => undefined };
+    installMediaSessionHostBackend(shared);
+    setMediaSessionBackend(shared);
+
+    setMediaSessionBackend(null);
+    expect(destroyed).toEqual([]);
+    expect(getMediaSessionBackend()).toBe(shared);
+  });
+
+  // ALIASED, FINAL REMOVAL: when the last slot lets go, it is destroyed once — not twice for two slots.
+  it('destroys an aliased backend exactly once when the final slot releases it', () => {
+    const destroyed: string[] = [];
+    const shared = { destroy: () => destroyed.push('shared') };
+    installMediaSessionHostBackend(shared);
+    setMediaSessionBackend(shared);
+
+    destroyMediaSessionBackend();
+    expect(destroyed).toEqual(['shared']);
+  });
+
+  // DISTINCT: two different objects, two slots, both must be destroyed — a `??` chain frees only one.
+  it('destroys distinct custom and host backends once each', () => {
+    const destroyed: string[] = [];
+    installMediaSessionHostBackend({ destroy: () => destroyed.push('host') });
+    setMediaSessionBackend({ destroy: () => destroyed.push('custom') });
+
+    destroyMediaSessionBackend();
+    expect(destroyed.sort()).toEqual(['custom', 'host']);
+  });
+});
+
 describe('observeMediaSessionHostResult', () => {
   afterEach(() => resetMediaSessionBackendForTest());
 

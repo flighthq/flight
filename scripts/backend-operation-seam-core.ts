@@ -89,7 +89,13 @@ export function createBackendOperationSeamReport(
 // partition that does not add up rather than as a quietly smaller enforced count.
 export function formatBackendOperationSeamReport(report: Readonly<BackendOperationSeamReport>): string {
   const lines: string[] = [];
-  lines.push(`${report.enforced} of ${report.total} interfaces enforced, ${report.notMigrated} not yet migrated`);
+  // ★ "interface shapes", deliberately. This gate checks a DECLARATION-level property — that a package
+  // exports the per-operation seam for its interface — and nothing more. It does not compile consumers,
+  // and a migrated interface can still break a downstream package that calls a newly optional operation
+  // unguarded. Saying "interfaces enforced" invited exactly that reading once already.
+  lines.push(
+    `${report.enforced} of ${report.total} interface shapes enforced (declaration only; consumer builds not validated here), ${report.notMigrated} not yet migrated`,
+  );
   for (const entry of report.entries.filter((candidate) => candidate.migrated)) {
     lines.push(`  enforced  ${entry.name.padEnd(24)} ${entry.packageName ?? ''}`);
   }
