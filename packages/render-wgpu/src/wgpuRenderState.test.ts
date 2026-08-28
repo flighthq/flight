@@ -335,7 +335,7 @@ describe('createWgpuOffscreenRenderState', () => {
 });
 
 describe('createWgpuRenderState', () => {
-  it('uses exact caller-owned handles without touching a throwing navigator.gpu getter', async () => {
+  it('keeps exact caller-owned handles usable through every shared-state teardown', async () => {
     const owner = await createWgpuRenderStateForTest();
     const canvas = document.createElement('canvas');
     const acquisition = {
@@ -344,8 +344,24 @@ describe('createWgpuRenderState', () => {
       format: owner.format,
       ownership: 'caller',
     } as const;
-    const unconfigure = vi.spyOn(acquisition.context, 'unconfigure');
-    const destroy = vi.spyOn(acquisition.device, 'destroy');
+    let contextUsable = true;
+    let deviceUsable = true;
+    const originalCreateBuffer = acquisition.device.createBuffer.bind(acquisition.device);
+    const originalGetCurrentTexture = acquisition.context.getCurrentTexture.bind(acquisition.context);
+    const createBuffer = vi.spyOn(acquisition.device, 'createBuffer').mockImplementation((descriptor) => {
+      if (!deviceUsable) throw new Error('caller device was destroyed');
+      return originalCreateBuffer(descriptor);
+    });
+    const getCurrentTexture = vi.spyOn(acquisition.context, 'getCurrentTexture').mockImplementation(() => {
+      if (!contextUsable) throw new Error('caller context was unconfigured');
+      return originalGetCurrentTexture();
+    });
+    const unconfigure = vi.spyOn(acquisition.context, 'unconfigure').mockImplementation(() => {
+      contextUsable = false;
+    });
+    const destroy = vi.spyOn(acquisition.device, 'destroy').mockImplementation(() => {
+      deviceUsable = false;
+    });
     Object.defineProperty(globalThis.navigator, 'gpu', {
       configurable: true,
       get(): never {
@@ -355,12 +371,26 @@ describe('createWgpuRenderState', () => {
 
     try {
       const state = await createWgpuRenderState(canvas, { acquisition });
+      const offscreen = createWgpuOffscreenRenderState(state);
       expect(state.context).toBe(acquisition.context);
       expect(state.device).toBe(acquisition.device);
       expect(state.format).toBe(acquisition.format);
+      expect(offscreen.context).toBe(acquisition.context);
+      expect(offscreen.device).toBe(acquisition.device);
+      expect(offscreen.format).toBe(acquisition.format);
+      const createBufferCallsBeforeTeardown = createBuffer.mock.calls.length;
+      const getCurrentTextureCallsBeforeTeardown = getCurrentTexture.mock.calls.length;
       destroyWgpuRenderState(state);
+      destroyWgpuRenderState(offscreen);
       expect(unconfigure).not.toHaveBeenCalled();
       expect(destroy).not.toHaveBeenCalled();
+
+      const buffer = acquisition.device.createBuffer({ size: 4, usage: GPUBufferUsage.COPY_DST });
+      expect(buffer.size).toBe(4);
+      expect(acquisition.context.getCurrentTexture().createView()).toBeDefined();
+      expect(createBuffer).toHaveBeenCalledTimes(createBufferCallsBeforeTeardown + 1);
+      expect(getCurrentTexture).toHaveBeenCalledTimes(getCurrentTextureCallsBeforeTeardown + 1);
+      buffer.destroy();
     } finally {
       installWgpuMock();
       destroyWgpuRenderState(owner);

@@ -17,8 +17,12 @@ const ROOT = resolve(import.meta.dirname, '..');
 describe('P5 host-bypass derived gate', () => {
   it('derives the live population without a source-file roster and enforces the ratchet', () => {
     const report = scanP5HostBypasses(ROOT);
-    console.log(formatP5HostBypassReport(report));
+    const formatted = formatP5HostBypassReport(report);
+    console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
+    expect(formatted).toContain(
+      'P5 outstanding=62 direct-dom=18 input-ingress=26 scratch-surface=18 webgpu-acquisition=0',
+    );
   }, 30_000);
 
   it.each([
