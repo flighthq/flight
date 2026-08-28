@@ -192,7 +192,7 @@ describe('explainFlightDocumentRefusal', () => {
       scene: { children: [], fields: {}, kind: 'Node3D' },
       version: 1,
     } as FlightDocument;
-    const explanation = explainFlightDocumentRefusal(document, 'Scene2D');
+    const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
     expect(explanation!.path).toBe('scenes[0].kind');
@@ -206,7 +206,7 @@ describe('explainFlightDocumentRefusal', () => {
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
       version: 99,
     } as unknown as FlightDocumentScene2D;
-    const explanation = explainFlightDocumentRefusal(document, 'Scene2D');
+    const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
     expect(explanation!.version).toBe(99);
@@ -220,7 +220,7 @@ describe('explainFlightDocumentRefusal', () => {
       scene: { children: [], fields: {}, kind: DisplayObjectKind },
       version: 1,
     };
-    const explanation = explainFlightDocumentRefusal(document, 'Scene2D');
+    const explanation = explainFlightDocumentRefusal(document, 'Scene2D', createTestSchemas());
     expect(explanation).toBeNull();
   });
 });
@@ -228,7 +228,7 @@ describe('explainFlightDocumentRefusal', () => {
 describe('explainFlightDocumentRefusalFromText', () => {
   it('explains an anchor refusal with parser position', () => {
     const yaml = 'flight: 1\nkind: Scene2D\nanchor: &ref value\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.AnchorUnsupported);
     expect(explanation!.line).toBeGreaterThan(0);
@@ -238,21 +238,21 @@ describe('explainFlightDocumentRefusalFromText', () => {
 
   it('explains an alias refusal', () => {
     const yaml = 'flight: 1\nkind: Scene2D\nref: *alias\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.AliasUnsupported);
   });
 
   it('explains a tag refusal', () => {
     const yaml = 'flight: 1\nkind: Scene2D\ntyped: !custom value\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.TagUnsupported);
   });
 
   it('explains a document separator refusal', () => {
     const yaml = 'flight: 1\n---\nkind: Scene2D\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DocumentSeparatorUnsupported);
   });
@@ -260,7 +260,7 @@ describe('explainFlightDocumentRefusalFromText', () => {
   it('explains a key limit refusal with limit and actual', () => {
     const longKey = 'k'.repeat(300);
     const yaml = 'flight: 1\nkind: Scene2D\n' + longKey + ': value\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.KeyCodeUnitsLimitExceeded);
     expect(explanation!.limit).toBe(256);
@@ -272,13 +272,13 @@ describe('explainFlightDocumentRefusalFromText', () => {
 
   it('returns null for valid Scene2D text', () => {
     const yaml = 'flight: 1\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).toBeNull();
   });
 
   it('explains an unsupported version in valid YAML', () => {
     const yaml = 'flight: 99\nkind: Scene2D\nscene:\n  kind: DisplayObject\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.VersionUnsupported);
     expect(explanation!.path).toBe('version');
@@ -287,7 +287,7 @@ describe('explainFlightDocumentRefusalFromText', () => {
 
   it('explains a dimension mismatch in valid YAML', () => {
     const yaml = 'flight: 1\nkind: Scene3D\nscene:\n  kind: Node3D\n';
-    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D');
+    const explanation = explainFlightDocumentRefusalFromText(yaml, 'Scene2D', createTestSchemas());
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
     expect(explanation!.path).toBe('scenes[0].kind');

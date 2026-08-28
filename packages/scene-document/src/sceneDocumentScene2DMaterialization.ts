@@ -22,7 +22,12 @@ import type {
 } from '@flighthq/types/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
-import { createDocumentRefusal, createSceneRefusal } from './sceneDocumentRefusal';
+import {
+  checkUnregisteredNodeKinds,
+  checkUnregisteredNodeKindsFromRaw,
+  createDocumentRefusal,
+  createSceneRefusal,
+} from './sceneDocumentRefusal';
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
 
 export function createFlightDocumentFromScene2D(
@@ -45,6 +50,8 @@ export function createFlightDocumentScene2DMaterialization(
 ): FlightDocumentScene2DMaterialization | null {
   if (document.kind !== 'Scene2D') return null;
   if (document.version !== 1) return null;
+  const unregisteredRefusal = checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
+  if (unregisteredRefusal !== null) return null;
   const scene = createScene2D({ color: document.backgroundColor });
   const resources = resolveResources(document.resources, resolvers);
   materializeChildren(scene.root, document.scene.children, schemas, resources);
@@ -64,6 +71,7 @@ export function createFlightDocumentScene2DMaterializationFromText(
 export function explainFlightDocumentRefusal(
   document: Readonly<FlightDocument>,
   dimension: 'Scene2D' | 'Scene3D',
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
 ): FlightDocumentRefusalExplanation | null {
   if (document.kind !== dimension) {
     return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
@@ -74,12 +82,13 @@ export function explainFlightDocumentRefusal(
       version: document.version,
     };
   }
-  return null;
+  return checkUnregisteredNodeKinds(document.scene, schemas, 0, 'scene');
 }
 
 export function explainFlightDocumentRefusalFromText(
   text: string,
   dimension: 'Scene2D' | 'Scene3D',
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
 ): FlightDocumentRefusalExplanation | null {
   const result = parseSceneDocumentYamlSubset(text);
   if (!result.ok) {
@@ -115,7 +124,7 @@ export function explainFlightDocumentRefusalFromText(
   if (kind !== dimension) {
     return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
   }
-  return null;
+  return checkUnregisteredNodeKindsFromRaw(mapping['scene'], schemas, 0, 'scene');
 }
 
 export function serializeFlightDocument(document: Readonly<FlightDocument>): string {
