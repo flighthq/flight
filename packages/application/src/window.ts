@@ -30,8 +30,8 @@ export function attachWindow(
   handle: NativeWindowHandle,
   ownership: WindowAttachmentOwnership,
 ): boolean {
-  const backend = getWindowAttachmentBackend();
-  if (backend === null || backend.attach === undefined) return false;
+  const backend = getWindowLifecycleBackend('attach');
+  if (backend === null) return false;
   const attached = backend.attach(win, handle, ownership);
   if (attached) {
     _windowBackends.set(win, backend);
@@ -211,7 +211,7 @@ export function centerWindow(win: ApplicationWindow): void {
 export function closeWindow(win: ApplicationWindow): boolean {
   if (_terminalWindows.has(win)) return true;
   if (!requestWindowClose(win)) return false;
-  (_windowBackends.get(win) ?? getWindowBackend()).close(win);
+  (_windowBackends.get(win) ?? getWindowOperationBackend('close'))?.close(win);
   notifyWindowClosed(win);
   return true;
 }
@@ -487,7 +487,8 @@ export function openWindow(win: ApplicationWindow, options: Readonly<WindowOptio
   if (options.minHeight !== undefined) win.minHeight = options.minHeight;
   if (options.maxWidth !== undefined) win.maxWidth = options.maxWidth;
   if (options.maxHeight !== undefined) win.maxHeight = options.maxHeight;
-  const backend = getWindowBackend();
+  const backend = getWindowLifecycleBackend('open');
+  if (backend === null) return false;
   const result = backend.open(win, options);
   if (result) {
     _windowBackends.set(win, backend);
@@ -658,12 +659,7 @@ export function showWindow(win: ApplicationWindow): void {
   getWindowOperationBackend('show')?.show(win);
 }
 
-const _sentinel: WindowBackend = {
-  close() {},
-  open() {
-    return false;
-  },
-};
+const _sentinel: WindowBackend = {};
 
 // Internal teardown registry, kept off the public ApplicationWindow entity (a side table like
 // input's binding map). attach/detach/dispose track cleanup closures internally so callers hold
@@ -675,11 +671,13 @@ let _host: WindowBackend | null = null;
 let _hostConflict = false;
 let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
 let _terminalWindows = new WeakSet<ApplicationWindow>();
-let _windowBackends = new WeakMap<ApplicationWindow, WindowBackend>();
+let _windowBackends = new WeakMap<ApplicationWindow, WindowBackendWithOperation<'close'>>();
 
-function getWindowAttachmentBackend(): WindowBackend | null {
-  if (_custom?.attach !== undefined) return _custom;
-  if (_host?.attach !== undefined) return _host;
+function getWindowLifecycleBackend<Operation extends WindowLifecycleEntryOperation>(
+  operation: Operation,
+): WindowLifecycleBackend<Operation> | null {
+  if (hasWindowBackendOperation(_custom, operation) && hasWindowBackendOperation(_custom, 'close')) return _custom;
+  if (hasWindowBackendOperation(_host, operation) && hasWindowBackendOperation(_host, 'close')) return _host;
   return null;
 }
 
@@ -695,7 +693,7 @@ function getWindowOperationBackend<Operation extends WindowComposedOperation>(
   return null;
 }
 
-function hasWindowBackendOperation<Operation extends WindowComposedOperation>(
+function hasWindowBackendOperation<Operation extends keyof WindowBackend>(
   backend: WindowBackend | null,
   operation: Operation,
 ): backend is WindowBackendWithOperation<Operation> {
@@ -711,7 +709,12 @@ function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () =
   return observers;
 }
 
-type WindowComposedOperation = Exclude<keyof WindowBackend, 'attach' | 'close' | 'open'>;
+type WindowComposedOperation = Exclude<keyof WindowBackend, 'attach'>;
 
-type WindowBackendWithOperation<Operation extends WindowComposedOperation> = WindowBackend &
+type WindowBackendWithOperation<Operation extends keyof WindowBackend> = WindowBackend &
   Required<Pick<WindowBackend, Operation>>;
+
+type WindowLifecycleBackend<Operation extends WindowLifecycleEntryOperation> = WindowBackendWithOperation<Operation> &
+  WindowBackendWithOperation<'close'>;
+
+type WindowLifecycleEntryOperation = 'attach' | 'open';

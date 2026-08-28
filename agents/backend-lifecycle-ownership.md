@@ -83,8 +83,9 @@ Provider replacement follows five invariants:
 **Shared origin-pinned lifecycle doctrine (normative):** cleanup releases only the resources or
 registrations acquired by the originating backend for that exact acquisition/source. Later backend
 selection cannot reroute that cleanup, and a caller-supplied source or handle is borrowed and never
-destroyed. WebGPU host acquisition and input ingress attachment are concrete instances of this same
-rule.
+destroyed. This governs whole-backend teardown and every entity-, registration-, or acquisition-scoped
+release: whole-backend teardown, WebGPU host acquisition, input ingress attachment, and Window
+open/attach are concrete instances of the same rule.
 
 The structural ratchet in `scripts/backend-lifecycle-core.ts` derives exported backend names, finds
 zero-argument `destroy`/`dispose` members in both method and callable-property syntax, excludes
