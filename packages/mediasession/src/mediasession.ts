@@ -26,13 +26,35 @@ export function clearMediaSessionPositionState(): void {
 // (or a specific capability such as setPositionState / MediaMetadata) is absent — jsdom, older
 // browsers, non-secure contexts — rather than throwing.
 export function createWebMediaSessionBackend(): MediaSessionBackend {
+  // Which actions this instance registered, so destroy clears exactly those and not a handler some other
+  // code installed. Per-instance rather than module state: two backends must not clear each other's work.
+  const registered = new Set<MediaSessionAction>();
   return {
+    // Clears everything this instance published to navigator.mediaSession. Idempotent — the action set is
+    // emptied as it is walked, so a second destroy finds nothing to clear.
+    destroy() {
+      const session = getWebMediaSession();
+      if (session === null) return;
+      for (const action of registered) {
+        try {
+          session.setActionHandler(action, null);
+        } catch {
+          // Unsupported action — it was never registered, so there is nothing to clear.
+        }
+      }
+      registered.clear();
+      session.metadata = null;
+      session.playbackState = 'none';
+      if (typeof session.setPositionState === 'function') session.setPositionState(undefined);
+    },
     setActionHandler(action, handler) {
       const session = getWebMediaSession();
       if (session === null) return;
       try {
         // Some browsers throw for an action they do not support; treat that as a no-op.
         session.setActionHandler(action, handler ? (details) => handler(details as MediaSessionActionDetails) : null);
+        if (handler === null) registered.delete(action);
+        else registered.add(action);
       } catch {
         // Unsupported action — leave it unregistered.
       }
@@ -64,6 +86,16 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
       session.setPositionState(state ?? undefined);
     },
   };
+}
+
+// Frees what the installed backend published to the OS and clears the slot. Safe with nothing installed
+// and safe to call twice — the second call finds an empty slot, which is what makes teardown exactly-once
+// without a destroyed flag that could drift from the thing it describes.
+export function destroyMediaSessionBackend(): void {
+  const backend = _custom ?? _host;
+  _custom = null;
+  _host = null;
+  backend?.destroy?.();
 }
 
 export function explainMediaSessionBackend(): BackendExplanation {
@@ -132,7 +164,12 @@ export function setMediaSessionActionHandler(
   getMediaSessionBackend().setActionHandler?.(action, handler);
 }
 
+// Installs the backend, DESTROYING the outgoing one first so replacement and removal cannot leave the OS
+// showing a card the replaced implementation published, with transport buttons still calling into it.
+// Installing the backend already present is a no-op rather than a destroy-then-reinstall of live state.
 export function setMediaSessionBackend(backend: MediaSessionBackend | null): void {
+  if (_custom === backend) return;
+  _custom?.destroy?.();
   _custom = backend;
 }
 

@@ -6,6 +6,7 @@ import {
   clearMediaSessionMetadata,
   clearMediaSessionPositionState,
   createWebMediaSessionBackend,
+  destroyMediaSessionBackend,
   explainMediaSessionBackend,
   explainMediaSessionOperation,
   getMediaSessionBackend,
@@ -230,6 +231,64 @@ describe('createWebMediaSessionBackend', () => {
   });
 });
 
+describe('createWebMediaSessionBackend destroy', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  // ★ The action handlers are the dangerous part: a callback left registered keeps the OS transport
+  // buttons calling into a backend that has been replaced. Destroy must clear exactly the actions THIS
+  // instance registered.
+  it('clears the action handlers it registered, and the published card', () => {
+    const cleared: (string | null)[] = [];
+    const session = {
+      metadata: {} as unknown,
+      playbackState: 'playing',
+      setActionHandler: (action: string, handler: unknown) => {
+        if (handler === null) cleared.push(action);
+      },
+      setPositionState: () => undefined,
+    };
+    vi.stubGlobal('navigator', { mediaSession: session });
+
+    const backend = createWebMediaSessionBackend();
+    backend.setActionHandler!('play', () => undefined);
+    backend.setActionHandler!('pause', () => undefined);
+    backend.destroy!();
+
+    expect(cleared.sort()).toEqual(['pause', 'play']);
+    expect(session.metadata).toBeNull();
+    expect(session.playbackState).toBe('none');
+    vi.unstubAllGlobals();
+  });
+});
+
+// Whole-backend teardown. What this frees is state INSTALLED into navigator.mediaSession — metadata, the
+// playback state, the scrubber and the action callbacks — none of which the backend holds a reference to.
+describe('destroyMediaSessionBackend', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  it('destroys the installed backend and clears the slot', () => {
+    const destroyed: string[] = [];
+    setMediaSessionBackend({ destroy: () => destroyed.push('only'), setMetadata: () => undefined });
+    destroyMediaSessionBackend();
+    expect(destroyed).toEqual(['only']);
+    expect(hasMediaSessionOperation('setMetadata')).toBe(false);
+  });
+
+  // Exactly-once falls out of clearing the slot, not a flag that could drift from it.
+  it('destroys exactly once across repeated teardown', () => {
+    const destroyed: string[] = [];
+    setMediaSessionBackend({ destroy: () => destroyed.push('only') });
+    destroyMediaSessionBackend();
+    destroyMediaSessionBackend();
+    expect(destroyed).toEqual(['only']);
+  });
+
+  it('is safe with nothing installed', () => {
+    resetMediaSessionBackendForTest();
+    expect(() => destroyMediaSessionBackend()).not.toThrow();
+  });
+});
+
 describe('explainMediaSessionBackend', () => {
   afterEach(() => resetMediaSessionBackendForTest());
 
@@ -413,6 +472,36 @@ describe('setMediaSessionBackend', () => {
     const restored = getMediaSessionBackend();
     expect(restored).not.toBe(fake);
     expect(restored.setMetadata).toBeUndefined();
+  });
+});
+
+describe('setMediaSessionBackend replacement lifetime', () => {
+  afterEach(() => resetMediaSessionBackendForTest());
+
+  it('destroys the outgoing backend when a new one replaces it', () => {
+    const destroyed: string[] = [];
+    const first = { destroy: () => destroyed.push('first') };
+    const second = { destroy: () => destroyed.push('second') };
+    setMediaSessionBackend(first);
+    setMediaSessionBackend(second);
+    expect(destroyed).toEqual(['first']);
+    expect(getMediaSessionBackend()).toBe(second);
+  });
+
+  it('destroys the outgoing backend when removed with null', () => {
+    const destroyed: string[] = [];
+    setMediaSessionBackend({ destroy: () => destroyed.push('only') });
+    setMediaSessionBackend(null);
+    expect(destroyed).toEqual(['only']);
+  });
+
+  // Re-installing the SAME object must not tear down live OS state the caller never removed.
+  it('does not destroy when the same backend is installed again', () => {
+    const destroyed: string[] = [];
+    const only = { destroy: () => destroyed.push('only') };
+    setMediaSessionBackend(only);
+    setMediaSessionBackend(only);
+    expect(destroyed).toEqual([]);
   });
 });
 

@@ -71,6 +71,15 @@ export interface MediaSessionBackend {
     action: MediaSessionAction,
     handler: ((details: Readonly<MediaSessionActionDetails>) => void) | null,
   ): void;
+  // Clears everything this backend published to the OS: the now-playing card, the playback state, the
+  // scrubber, and every action handler it registered.
+  //
+  // ★ `destroy`, not `dispose`, and it is a WHOLE-BACKEND teardown even though the backend holds no
+  // object. What it frees is state installed into a host singleton (`navigator.mediaSession`): metadata,
+  // playback state and action callbacks that outlive the backend and keep pointing at it. Replacing the
+  // backend without this leaves the OS showing a card the replaced implementation published, with
+  // transport buttons still calling into it.
+  destroy?(): void;
 }
 
 // Every operation name on the backend, DERIVED from the interface rather than listed. A hand-written

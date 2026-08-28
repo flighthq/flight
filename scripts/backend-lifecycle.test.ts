@@ -43,8 +43,17 @@ describe('backend replacement lifetime census', () => {
     expect(teardowns.has('NotificationBackend')).toBe(false);
   });
 
-  it('includes the whole-backend teardown that does exist', () => {
+  it('includes the whole-backend teardowns that exist', () => {
     expect(teardowns.get('LogTransportBackend')).toBe('destroy');
+    expect(teardowns.get('MediaSessionBackend')).toBe('destroy');
+  });
+
+  // ★ THE FLOOR, and it must be raised by every slice that adds a teardown hook. Without it this gate has
+  // the same slip the operation ratchet had: DELETING a hook removes its backend from the enforced set
+  // entirely, so `violations` stays empty and the gate goes green on a regression. A leak check that
+  // passes because the thing it checked disappeared is worse than no check.
+  it('never enforces fewer backends than the slices already landed', () => {
+    expect(report.enforced).toBeGreaterThanOrEqual(2);
   });
 
   // The ratchet: replacement must free what the outgoing backend held, for every backend that owns
