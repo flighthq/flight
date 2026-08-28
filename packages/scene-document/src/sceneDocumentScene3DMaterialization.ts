@@ -1,4 +1,5 @@
 import { createCamera3D } from '@flighthq/camera/contract';
+import { getEntityRuntime } from '@flighthq/entity/contract';
 import { createScene3DLights } from '@flighthq/lighting/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
@@ -18,13 +19,19 @@ import type {
   FlightDocumentScene3D,
   FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
+  Node3D,
   NodeAny,
   Scene3D,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
   Scene3DLights,
 } from '@flighthq/types/contract';
-import { AmbientLightKind, DirectionalLightKind, FlightDocumentRefusalReason } from '@flighthq/types/contract';
+import {
+  AmbientLightKind,
+  DirectionalLightKind,
+  FlightDocumentRefusalReason,
+  Node3DTraitsKey,
+} from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
 import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
@@ -59,6 +66,9 @@ export function createFlightDocumentScene3DMaterialization(
   if (unregisteredRefusal !== null) return null;
   const scene = createScene3D();
   const resources = resolveResources(document.resources, resolvers);
+  // Same defect as 2D: the authored root's kind and fields were dropped because only its children were
+  // materialized, while the writer captured them.
+  if (!adoptDocumentRoot3D(scene, documentScene.scene, schemas, resources)) return null;
   materializeChildren(scene.root, documentScene.scene.children, schemas, resources);
   const cameras = materializeCameras(documentScene.cameras);
   const lights = materializeLights(documentScene.lights);
@@ -86,7 +96,9 @@ export function explainFlightDocumentScene3DRefusal(
   if (selection.scene.kind !== 'Scene3D') return null;
   const lightRefusal = checkDuplicateLights(selection.scene.lights, selection.sceneIndex);
   if (lightRefusal !== null) return lightRefusal;
-  return checkUnregisteredNodeKinds(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
+  const unregistered = checkUnregisteredNodeKinds(selection.scene.scene, schemas, selection.sceneIndex, 'scene');
+  if (unregistered !== null) return unregistered;
+  return checkRootKindDimension3D(selection.scene.scene, schemas, selection.sceneIndex);
 }
 
 export function explainFlightDocumentScene3DRefusalFromText(
@@ -197,4 +209,43 @@ function writeFieldsWithDefaults(
       delete out[field.name];
     }
   }
+}
+
+// Replaces the scene's default root with the authored one, carrying its kind and fields. Returns false
+// when the root cannot serve as a 3D root — checked structurally by reading the built node's traits key,
+// so a registered kind of the wrong dimension is caught rather than installed.
+function adoptDocumentRoot3D(
+  scene: Scene3D,
+  documentRoot: Readonly<FlightDocumentNode>,
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
+  resources: FlightDocumentResourceLookup,
+): boolean {
+  const schema = getRegistryTableEntry(schemas.nodeSchemas, documentRoot.kind);
+  if (schema === null) return true;
+  const root = schema.createNode(documentRoot.fields, resources);
+  if (root === null) return false;
+  const runtime = getEntityRuntime(root) as Readonly<{ traits?: unknown }> | undefined;
+  if (runtime?.traits !== Node3DTraitsKey) return false;
+  scene.root = root as Node3D;
+  return true;
+}
+
+// The 3D half of the wrong-dimension root refusal.
+function checkRootKindDimension3D(
+  documentRoot: Readonly<FlightDocumentNode>,
+  schemas: Readonly<FlightDocumentSchemaRegistry>,
+  sceneIndex: number,
+): FlightDocumentRefusalExplanation | null {
+  const schema = getRegistryTableEntry(schemas.nodeSchemas, documentRoot.kind);
+  if (schema === null) return null;
+  const probe = schema.createNode(documentRoot.fields, {
+    resolve: () => null,
+  } as unknown as FlightDocumentResourceLookup);
+  if (probe === null) return null;
+  const runtime = getEntityRuntime(probe) as Readonly<{ traits?: unknown }> | undefined;
+  if (runtime?.traits === Node3DTraitsKey) return null;
+  return {
+    ...createSceneRefusal(FlightDocumentRefusalReason.RootKindMismatch, sceneIndex, 'scene'),
+    kind: documentRoot.kind,
+  };
 }

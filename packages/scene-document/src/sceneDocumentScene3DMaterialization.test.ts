@@ -2,6 +2,7 @@ import { createTransform3D } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D, createScene3D } from '@flighthq/scene3d/contract';
 import type {
   FlightDocument,
@@ -19,6 +20,7 @@ import type {
 import {
   AmbientLightKind,
   DirectionalLightKind,
+  DisplayObjectKind,
   FlightDocumentRefusalReason,
   Node3DKind,
 } from '@flighthq/types/contract';
@@ -516,17 +518,47 @@ describe('NodeKindUnregistered', () => {
   });
 });
 
+// ★ ROOT-NODE FIDELITY, 3D half. Same defect as 2D: the reader built a fresh container and materialized
+// only the authored root's children, so the root's own kind and fields were dropped while the writer
+// captured them.
+describe('Scene3D root fidelity', () => {
+  it('preserves the authored root kind', () => {
+    const schemas = createTestSchemas();
+    const document = rootDocument3D(Node3DKind, {}, schemas);
+    const materialization = createFlightDocumentScene3DMaterialization(document, schemas);
+    expect(materialization).not.toBeNull();
+    expect(materialization!.scene.root.kind).toBe(Node3DKind);
+  });
+
+  it('preserves fields authored on the root', () => {
+    const schemas = createTestSchemas();
+    const document = rootDocument3D(Node3DKind, { name: 'authored-root' }, schemas);
+    const materialization = createFlightDocumentScene3DMaterialization(document, schemas);
+    expect(materialization).not.toBeNull();
+    expect(materialization!.scene.root.name).toBe('authored-root');
+  });
+
+  it('refuses a registered root whose kind belongs to the other dimension', () => {
+    const schemas = createTestSchemas();
+    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, DisplayObjectKind, {
+      createNode: () => createDisplayObject() as unknown as NodeAny,
+      fields: [],
+      kind: DisplayObjectKind,
+      writeNodeFields: () => true,
+    });
+    const document = rootDocument3D(DisplayObjectKind, {}, schemas);
+    expect(createFlightDocumentScene3DMaterialization(document, schemas)).toBeNull();
+    expect(explainFlightDocumentScene3DRefusal(document, schemas)).toMatchObject({
+      reason: FlightDocumentRefusalReason.RootKindMismatch,
+    });
+  });
+});
+
 describe('Scene3DDocumentCamera', () => {
   it('has no direction field', () => {
     expectTypeOf<keyof Scene3DDocumentCamera>().toEqualTypeOf<
       'far' | 'name' | 'near' | 'node' | 'projection' | 'transform'
     >();
-  });
-});
-
-describe('Scene3DDocumentLight', () => {
-  it('has no direction field', () => {
-    expectTypeOf<keyof Scene3DDocumentLight>().toEqualTypeOf<'descriptor' | 'name' | 'node' | 'transform'>();
   });
 });
 
@@ -557,4 +589,33 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
     resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
     shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
   };
+}
+
+describe('Scene3DDocumentLight', () => {
+  it('has no direction field', () => {
+    expectTypeOf<keyof Scene3DDocumentLight>().toEqualTypeOf<'descriptor' | 'name' | 'node' | 'transform'>();
+  });
+});
+
+function rootDocument3D(
+  kind: string,
+  fields: Record<string, unknown>,
+  schemas: FlightDocumentSchemaRegistry,
+): FlightDocument {
+  schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, Node3DKind, {
+    createNode: (nodeFields) => {
+      const node = createNode3D();
+      if (typeof nodeFields['name'] === 'string') node.name = nodeFields['name'];
+      return node as unknown as NodeAny;
+    },
+    fields: [],
+    kind: Node3DKind,
+    writeNodeFields: () => true,
+  });
+  return {
+    defaultScene: 0,
+    resources: [],
+    scenes: [{ cameras: [], kind: 'Scene3D', lights: [], scene: { children: [], fields, kind } }],
+    version: 1,
+  } as unknown as FlightDocument;
 }
