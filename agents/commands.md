@@ -205,6 +205,12 @@ drop, and identity replacement remain untested.” A survivor stays a finding wi
 Never average it away or round the series into a pass: four kills plus one survivor means one unresolved
 finding, not an 80% pass.
 
+That list of axes is not exhaustively derivable. “Axes we know we did not test” is not the same set as
+“axes we did not test”: an unimagined axis appears in neither the tested list nor the known-untested
+list. The report records a floor on what is known, never a ceiling on what remains at risk. Discovering
+a new axis adds a new finding or experiment; it does not retroactively fit beneath an earlier apparently
+complete list.
+
 **When it refuses.** A red suite fails on every mutant too, which reads as a perfect kill rate — so an
 unmutated control run must pass before anything is measured. Every mutant run must also print a marker
 proving the edit was actually applied; without it a passing suite tested unmutated source, which by exit
