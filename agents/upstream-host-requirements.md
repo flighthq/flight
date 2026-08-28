@@ -866,3 +866,33 @@ have caught every finding above.
 This is now larger than one P5 site pair and is no longer just "item 9". Treat it as its own slice,
 sequenced after the shapes already queued, and let the two `videoResourceFrom` bypass sites ride
 with it rather than being repaired separately.
+
+---
+
+# H9 — a runtime sentinel and its declared type change together, or not at all — 2026-08-28
+
+Recorded because splitting them produced a worse artifact than the defect being fixed.
+
+The `createGlCanvasElement` expected-absence repair returned `null` at runtime while keeping the
+declared return type `HTMLCanvasElement`. Making the type truthful requires ~140 consumer
+migrations, so the type change was deliberately deferred.
+
+**That trade is not available.** An incorrect `throw` is loud, honest, and fails at the callsite that
+caused it. A signature that promises non-null while returning `null` is silent, and every downstream
+inference — every `.width`, every pass-through, every `satisfies` — is now derived from a false
+premise. The compiler stops being evidence. That is strictly worse than the defect it replaced, so
+**the throw stays until the sentinel and the signature can land together.**
+
+The general rule: a sentinel return and its declared type are one change. If the migration cost of
+the type makes that infeasible in one slice, the slice is not ready — do not land the runtime half
+alone.
+
+## Sequencing consequence
+
+The repair belongs **inside** [H7](#h7), not behind it. H7 makes `createGlRenderState` take a
+context, and [H8](#h8) moves scratch surfaces to `Raster2DSurface`; between them
+`createGlCanvasElement` may have no surviving callers at all. Migrating ~140 consumers of a function
+that is about to be deleted is waste, and it is waste that would be redone.
+
+I had ruled the opposite — that this stay out of H7 as its own small fix. That was wrong: I scoped
+it by apparent size rather than by whose surface it touches, and its surface is H7's.
