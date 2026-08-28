@@ -1,3 +1,4 @@
+import { formatGateProvenance, readGateTreeState } from './gate-provenance';
 import { getParsedOxcSource } from './oxc-source';
 
 // The per-operation availability ratchet.
@@ -89,6 +90,18 @@ export function createBackendOperationSeamReport(
 // partition that does not add up rather than as a quietly smaller enforced count.
 export function formatBackendOperationSeamReport(report: Readonly<BackendOperationSeamReport>): string {
   const lines: string[] = [];
+  lines.push(
+    formatGateProvenance(
+      {
+        command: 'npx vitest run scripts/backend-operation-seam.test.ts (scripts/backend-operation-seam-core.ts)',
+        counting:
+          'one unit = one interface; enforced = its owning package exports explain<Name>Operation; enforced + notMigrated is asserted equal to total',
+        scope:
+          'every exported *Backend interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; no roster, no allowlist',
+      },
+      readGateTreeState(process.cwd()),
+    ),
+  );
   // ★ "interface shapes", deliberately. This gate checks a DECLARATION-level property — that a package
   // exports the per-operation seam for its interface — and nothing more. It does not compile consumers,
   // and a migrated interface can still break a downstream package that calls a newly optional operation

@@ -1,5 +1,6 @@
 import type { Node } from 'oxc-parser';
 
+import { formatGateProvenance, readGateTreeState } from './gate-provenance';
 import { getParsedOxcSource } from './oxc-source';
 
 // The backend-replacement lifetime census.
@@ -106,6 +107,18 @@ export function createBackendLifecycleReport(
 // add up rather than as a quietly smaller enforced count.
 export function formatBackendLifecycleReport(report: Readonly<BackendLifecycleReport>): string {
   const lines: string[] = [];
+  lines.push(
+    formatGateProvenance(
+      {
+        command: 'npx vitest run scripts/backend-lifecycle.test.ts (scripts/backend-lifecycle-core.ts)',
+        counting:
+          'one unit = one interface; owning = declares a ZERO-PARAMETER destroy/dispose in method or property syntax, so a per-object teardown taking an id is excluded; enforced + noTeardownHook is asserted equal to total',
+        scope:
+          'every exported *Backend interface in packages/types/src/*.ts, plus every exported set*Backend body and top-level function body in packages/*/src/*.ts; *.test.ts excluded',
+      },
+      readGateTreeState(process.cwd()),
+    ),
+  );
   lines.push(
     `${report.enforced} of ${report.total} backends own a freeable resource, ${report.noTeardownHook} declare no whole-backend teardown`,
   );
