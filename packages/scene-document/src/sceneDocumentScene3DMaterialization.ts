@@ -30,6 +30,7 @@ import type {
 } from '@flighthq/types/contract';
 import { AmbientLightKind, DirectionalLightKind, FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
+import { createDocumentRefusal, createSceneRefusal } from './sceneDocumentRefusal';
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
 
 export function createFlightDocumentFromScene3D(
@@ -55,7 +56,7 @@ export function createFlightDocumentScene3DMaterialization(
 ): FlightDocumentScene3DMaterialization | null {
   if (document.kind !== 'Scene3D') return null;
   if (document.version !== 1) return null;
-  const duplicateRefusal = checkDuplicateLights(document.lights);
+  const duplicateRefusal = checkDuplicateLights(document.lights, 0);
   if (duplicateRefusal !== null) return null;
   const scene = createScene3D();
   const resources = resolveResources(document.resources, resolvers);
@@ -79,15 +80,15 @@ export function explainFlightDocumentScene3DRefusal(
   document: Readonly<FlightDocument>,
 ): FlightDocumentRefusalExplanation | null {
   if (document.kind !== 'Scene3D') {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
+    return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
   }
   if (document.version !== 1) {
     return {
-      ...createRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
+      ...createDocumentRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
       version: document.version,
     };
   }
-  return checkDuplicateLights(document.lights);
+  return checkDuplicateLights(document.lights, 0);
 }
 
 export function explainFlightDocumentScene3DRefusalFromText(text: string): FlightDocumentRefusalExplanation | null {
@@ -108,28 +109,29 @@ export function explainFlightDocumentScene3DRefusalFromText(text: string): Fligh
   }
   const value = result.value;
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, '');
+    return createDocumentRefusal(FlightDocumentRefusalReason.StructureInvalid, '');
   }
   const mapping = value as Record<string, unknown>;
   const version = mapping['flight'];
   if (typeof version !== 'number') {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'flight');
+    return createDocumentRefusal(FlightDocumentRefusalReason.StructureInvalid, 'flight');
   }
   if (version !== 1) {
     return {
-      ...createRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
+      ...createDocumentRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
       version,
     };
   }
   const kind = mapping['kind'];
   if (kind !== 'Scene3D') {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
+    return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
   }
-  return checkDuplicateLightsFromRaw(mapping['lights']);
+  return checkDuplicateLightsFromRaw(mapping['lights'], 0);
 }
 
 function checkDuplicateLights(
   lights: readonly Readonly<Scene3DDocumentLight>[],
+  sceneIndex: number,
 ): FlightDocumentRefusalExplanation | null {
   let ambientCount = 0;
   let directionalCount = 0;
@@ -137,20 +139,20 @@ function checkDuplicateLights(
     if (light.descriptor.kind === AmbientLightKind) {
       ambientCount++;
       if (ambientCount > 1) {
-        return createRefusal(FlightDocumentRefusalReason.DuplicateAmbientLight, 'lights');
+        return createSceneRefusal(FlightDocumentRefusalReason.DuplicateAmbientLight, sceneIndex, 'lights');
       }
     }
     if (light.descriptor.kind === DirectionalLightKind) {
       directionalCount++;
       if (directionalCount > 1) {
-        return createRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, 'lights');
+        return createSceneRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, sceneIndex, 'lights');
       }
     }
   }
   return null;
 }
 
-function checkDuplicateLightsFromRaw(value: unknown): FlightDocumentRefusalExplanation | null {
+function checkDuplicateLightsFromRaw(value: unknown, sceneIndex: number): FlightDocumentRefusalExplanation | null {
   if (!Array.isArray(value)) return null;
   let ambientCount = 0;
   let directionalCount = 0;
@@ -163,32 +165,17 @@ function checkDuplicateLightsFromRaw(value: unknown): FlightDocumentRefusalExpla
     if (kind === AmbientLightKind) {
       ambientCount++;
       if (ambientCount > 1) {
-        return createRefusal(FlightDocumentRefusalReason.DuplicateAmbientLight, 'lights');
+        return createSceneRefusal(FlightDocumentRefusalReason.DuplicateAmbientLight, sceneIndex, 'lights');
       }
     }
     if (kind === DirectionalLightKind) {
       directionalCount++;
       if (directionalCount > 1) {
-        return createRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, 'lights');
+        return createSceneRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, sceneIndex, 'lights');
       }
     }
   }
   return null;
-}
-
-function createRefusal(reason: FlightDocumentRefusalReasonType, path: string): FlightDocumentRefusalExplanation {
-  return {
-    actual: null,
-    column: null,
-    kind: null,
-    limit: null,
-    line: null,
-    offset: null,
-    path,
-    reason,
-    resourceKey: null,
-    version: null,
-  };
 }
 
 function materializeCameras(cameras: readonly Readonly<Scene3DDocumentCamera>[]): Camera3D[] {

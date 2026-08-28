@@ -255,7 +255,7 @@ describe('duplicate-light explain parity', () => {
     expect(textResult!.reason).toBe(modelResult!.reason);
     expect(textResult!.path).toBe(modelResult!.path);
     expect(modelResult!.reason).toBe(expectedReason);
-    expect(modelResult!.path).toBe('lights');
+    expect(modelResult!.path).toBe('scenes[0].lights');
   });
 });
 
@@ -271,7 +271,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
     const explanation = explainFlightDocumentScene3DRefusal(document);
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
-    expect(explanation!.path).toBe('kind');
+    expect(explanation!.path).toBe('scenes[0].kind');
   });
 
   it('explains an unsupported version', () => {
@@ -305,7 +305,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
     const explanation = explainFlightDocumentScene3DRefusal(document);
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateAmbientLight);
-    expect(explanation!.path).toBe('lights');
+    expect(explanation!.path).toBe('scenes[0].lights');
   });
 
   it('explains a duplicate directional light', () => {
@@ -323,7 +323,7 @@ describe('explainFlightDocumentScene3DRefusal', () => {
     const explanation = explainFlightDocumentScene3DRefusal(document);
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateDirectionalLight);
-    expect(explanation!.path).toBe('lights');
+    expect(explanation!.path).toBe('scenes[0].lights');
   });
 
   it('returns null when the document is valid', () => {
@@ -363,7 +363,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.StructureInvalid);
-    expect(explanation!.path).toBe('kind');
+    expect(explanation!.path).toBe('scenes[0].kind');
   });
 
   it('explains a duplicate ambient light from text', () => {
@@ -381,7 +381,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateAmbientLight);
-    expect(explanation!.path).toBe('lights');
+    expect(explanation!.path).toBe('scenes[0].lights');
   });
 
   it('explains a duplicate directional light from text', () => {
@@ -399,7 +399,7 @@ describe('explainFlightDocumentScene3DRefusalFromText', () => {
     const explanation = explainFlightDocumentScene3DRefusalFromText(yaml);
     expect(explanation).not.toBeNull();
     expect(explanation!.reason).toBe(FlightDocumentRefusalReason.DuplicateDirectionalLight);
-    expect(explanation!.path).toBe('lights');
+    expect(explanation!.path).toBe('scenes[0].lights');
   });
 
   it('returns null for valid Scene3D text', () => {

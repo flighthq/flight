@@ -22,6 +22,7 @@ import type {
 } from '@flighthq/types/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
+import { createDocumentRefusal, createSceneRefusal } from './sceneDocumentRefusal';
 import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
 
 export function createFlightDocumentFromScene2D(
@@ -65,11 +66,11 @@ export function explainFlightDocumentRefusal(
   dimension: 'Scene2D' | 'Scene3D',
 ): FlightDocumentRefusalExplanation | null {
   if (document.kind !== dimension) {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
+    return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
   }
   if (document.version !== 1) {
     return {
-      ...createRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
+      ...createDocumentRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
       version: document.version,
     };
   }
@@ -97,22 +98,22 @@ export function explainFlightDocumentRefusalFromText(
   }
   const value = result.value;
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, '');
+    return createDocumentRefusal(FlightDocumentRefusalReason.StructureInvalid, '');
   }
   const mapping = value as Record<string, unknown>;
   const version = mapping['flight'];
   if (typeof version !== 'number') {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'flight');
+    return createDocumentRefusal(FlightDocumentRefusalReason.StructureInvalid, 'flight');
   }
   if (version !== 1) {
     return {
-      ...createRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
+      ...createDocumentRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
       version,
     };
   }
   const kind = mapping['kind'];
   if (kind !== dimension) {
-    return createRefusal(FlightDocumentRefusalReason.StructureInvalid, 'kind');
+    return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
   }
   return null;
 }
@@ -159,21 +160,6 @@ export function serializeFlightDocument(document: Readonly<FlightDocument>): str
   lines.push('scene:');
   serializeNode(lines, document.scene, 2);
   return lines.join('\n') + '\n';
-}
-
-function createRefusal(reason: FlightDocumentRefusalReasonType, path: string): FlightDocumentRefusalExplanation {
-  return {
-    actual: null,
-    column: null,
-    kind: null,
-    limit: null,
-    line: null,
-    offset: null,
-    path,
-    reason,
-    resourceKey: null,
-    version: null,
-  };
 }
 
 function materializeChildren(
