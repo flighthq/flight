@@ -6,6 +6,7 @@ import { enableHostWebConnectivity } from './webConnectivity';
 import { enableHostWebDevice } from './webDevice';
 import { enableHostWebDialog } from './webDialog';
 import { enableHostWebFileSystem } from './webFilesystem';
+import { enableHostWebFontLoading } from './webFontLoading';
 import { enableHostWebGeolocation } from './webGeolocation';
 import { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';
 import { enableHostWebHaptics } from './webHaptics';
@@ -33,6 +34,7 @@ export function enableHostWeb(): void {
   enableHostWebDevice();
   enableHostWebDialog();
   enableHostWebFileSystem();
+  enableHostWebFontLoading();
   enableHostWebGeolocation();
   enableHostWebGlyphRasterizer();
   enableHostWebHaptics();

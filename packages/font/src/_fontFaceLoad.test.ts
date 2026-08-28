@@ -1,9 +1,12 @@
+import type { FontLoadingBackend } from '@flighthq/types/contract';
+
 import {
   _loadFontFaceFromBytes,
   _loadFontFaceFromUrl,
   _loadFontFaceFromUrls,
   _loadFontFacesFromName,
 } from './_fontFaceLoad';
+import { resetFontLoadingBackendForTest, setFontLoadingBackend } from './fontLoading';
 
 interface FontFaceConstruction {
   family: string;
@@ -22,25 +25,22 @@ class MockFontFace {
   }
 }
 
-let originalFonts: PropertyDescriptor | undefined;
 beforeEach(() => {
   constructions = [];
   addMock = vi.fn();
   loadMock = vi.fn().mockResolvedValue([]);
   vi.stubGlobal('FontFace', MockFontFace);
-  originalFonts = Object.getOwnPropertyDescriptor(document, 'fonts');
-  Object.defineProperty(document, 'fonts', {
-    value: { add: addMock, load: loadMock },
-    configurable: true,
-  });
+  const backend: FontLoadingBackend = {
+    addFontFace: addMock,
+    checkFontFace: vi.fn().mockReturnValue(false),
+    loadFontFaces: loadMock,
+    whenReady: vi.fn().mockResolvedValue(undefined),
+  };
+  setFontLoadingBackend(backend);
 });
 
 afterEach(() => {
-  if (originalFonts) {
-    Object.defineProperty(document, 'fonts', originalFonts);
-  } else {
-    delete (document as unknown as { fonts?: unknown }).fonts;
-  }
+  resetFontLoadingBackendForTest();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });

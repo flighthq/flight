@@ -9,6 +9,7 @@ export { createWebCursorBackend } from './webCursor';
 export { enableHostWebDevice } from './webDevice';
 export { enableHostWebDialog } from './webDialog';
 export { enableHostWebFileSystem } from './webFilesystem';
+export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
 export { enableHostWebGeolocation } from './webGeolocation';
 export { createWebGlRenderSurfaceProvider, enableHostWebGlRenderSurface } from './webGlRenderSurface';
 export { enableHostWebGlyphRasterizer } from './webGlyphRasterizer';

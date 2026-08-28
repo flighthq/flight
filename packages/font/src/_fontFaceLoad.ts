@@ -1,6 +1,7 @@
 import type { FontUrl } from '@flighthq/types/contract';
 
 import { inferFontFormatFromUrl } from './fontFormat';
+import { getFontLoadingBackend } from './fontLoading';
 import { getFontShorthand } from './fontShorthand';
 
 export async function _loadFontFaceFromBytes(family: string, bytes: Uint8Array): Promise<FontFace> {
@@ -23,12 +24,12 @@ export function _loadFontFaceFromUrls(family: string, sources: readonly FontUrl[
 }
 
 export function _loadFontFacesFromName(family: string): Promise<FontFace[]> {
-  return document.fonts.load(getFontShorthand(family));
+  return getFontLoadingBackend().loadFontFaces(getFontShorthand(family));
 }
 
 async function loadAndRegisterFontFace(family: string, source: string | ArrayBuffer): Promise<FontFace> {
   const face = new FontFace(family, source);
   await face.load();
-  document.fonts.add(face);
+  getFontLoadingBackend().addFontFace(face);
   return face;
 }

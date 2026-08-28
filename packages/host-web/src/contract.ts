@@ -9,6 +9,7 @@ export * from './webCursor';
 export * from './webDevice';
 export * from './webDialog';
 export * from './webFilesystem';
+export * from './webFontLoading';
 export * from './webGeolocation';
 export * from './webGlRenderSurface';
 export * from './webGlyphRasterizer';
