@@ -154,9 +154,8 @@ function appendObjectEntries(
   indent: number,
   reserved: readonly string[],
 ): void {
-  for (const key of Object.keys(value).sort()) {
+  for (const [key, entry] of Object.entries(value).sort(([left], [right]) => left.localeCompare(right))) {
     if (reserved.includes(key)) continue;
-    const entry = Reflect.get(value, key);
     if (entry !== undefined) appendMappingEntry(lines, key, entry, indent);
   }
 }
