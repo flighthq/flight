@@ -1,3 +1,4 @@
+import { sendNetRequest } from '@flighthq/net/contract';
 import type { AudioResource, AudioResourceUrl } from '@flighthq/types/contract';
 
 import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
@@ -68,21 +69,16 @@ export async function loadAudioResourceFromUrl(
   url: string,
   signal?: AbortSignal,
 ): Promise<AudioResource> {
-  const response = await fetch(url, { signal });
-  // fetch only rejects on a network-level failure, so a 404/500 arrives here as a perfectly good
-  // response whose body is an error page. Decoding that reports "unable to decode audio data" — the
-  // wrong failure, blaming the codec for a transport problem, after paying for a decode that never had
-  // a chance. Reporting the status keeps this function's existing reject-on-failure contract; whether
-  // this family should reject at all or return the empty-resource sentinel is the separate parked
-  // question in the assessment Backlog.
-  if (!response.ok) throw new Error(`Failed to load audio: ${url} (${response.status} ${response.statusText})`);
-  const arrayBuffer = await response.arrayBuffer();
-  return loadAudioResourceFromBytes(
-    context,
-    new Uint8Array(arrayBuffer),
-    response.headers.get('content-type') ?? undefined,
-    signal,
+  const response = await sendNetRequest(
+    { method: 'GET', responseType: 'arraybuffer', url },
+    signal === undefined ? undefined : { signal },
   );
+  // The NetBackend reports network failures and non-2xx responses alike through the response, before
+  // the audio decoder can misdiagnose an HTTP error body as invalid audio. This function retains its
+  // existing reject-on-failure contract; the transport itself remains caller-replaceable.
+  if (!response.ok) throw new Error(`Failed to load audio: ${url} (${response.status} ${response.statusText})`);
+  if (!(response.body instanceof ArrayBuffer)) throw new Error(`Failed to load audio: ${url} (invalid body)`);
+  return loadAudioResourceFromBytes(context, new Uint8Array(response.body), response.headers['content-type'], signal);
 }
 
 export async function loadAudioResourceFromUrls(

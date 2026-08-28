@@ -2,6 +2,19 @@
 
 The full npm-script reference: what each command does, and the long-form version of the checkpoint triggers summarized in [`AGENTS.md`](../AGENTS.md#checkpoints). Script naming follows the `action:subject:modifier` grammar in [npm script naming](conventions/npm-scripts.md).
 
+### `npm run check:transport-bypasses`
+
+Prevents production SDK code from calling browser transport primitives outside the web backend that
+owns them. It derives all package source plus every `fetch`, `XMLHttpRequest`, `Request`, `WebSocket`,
+`Image`, and `EventSource` site on each run; only sites lexically enclosed by a `createWeb*Backend`
+function pass. There is no file or call-site allowlist.
+
+The report prints the number of production files scanned, every allowed web-backend site, and the three
+structural exclusions: test source, declaration source, and the `tool-*` family that sits outside the SDK
+host seam. A new primitive or a primitive moved into an ordinary helper therefore fails with its exact
+file and location rather than disappearing into a maintained census. The gate runs in the bare
+`npm run check` sweep because its population spans packages; scoped package checks omit it.
+
 ### `npm run mocks` / `mocks:check` / `mocks:json`
 
 Enforces the per-file mock scoping the root `vitest.config.ts` declares. The unit suite runs

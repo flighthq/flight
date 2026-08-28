@@ -42,6 +42,16 @@ export function createClipboardWatch(): ClipboardWatch {
 // Builds the default web backend over navigator.clipboard. Reads return '' / false / [] when the API
 // is absent (non-secure context, jsdom) or the user denies permission.
 export function createWebClipboardBackend(): ClipboardBackend {
+  // Converts image data URLs through the browser fetch implementation as part of this web backend;
+  // ordinary formats need no transport and become a Blob directly.
+  async function blobFromFormatData(format: string, data: string): Promise<Blob> {
+    if (format.startsWith('image/') && data.startsWith('data:')) {
+      const response = await fetch(data);
+      return response.blob();
+    }
+    return new Blob([data], { type: format });
+  }
+
   return {
     async readFormat(format) {
       const cb = getWebClipboard();
@@ -501,16 +511,6 @@ const _watchSubscriptions = new Map<ClipboardWatch, ClipboardWatchSubscription>(
 function rebindClipboardWatches(previous: ClipboardBackend, next: ClipboardBackend): void {
   if (previous === next) return;
   for (const subscription of _watchSubscriptions.values()) subscription.rebind(next);
-}
-
-// Converts a format/data pair into a Blob. Image data URLs are fetched into their decoded bytes;
-// every other flavor wraps the string payload directly under its MIME type.
-async function blobFromFormatData(format: string, data: string): Promise<Blob> {
-  if (format.startsWith('image/') && data.startsWith('data:')) {
-    const response = await fetch(data);
-    return response.blob();
-  }
-  return new Blob([data], { type: format });
 }
 
 function getWebClipboard(): Clipboard | null {
