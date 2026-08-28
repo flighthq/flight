@@ -3,16 +3,16 @@ import type { FontLoadingBackend } from '@flighthq/types/contract';
 import { resetFontLoadingBackendForTest, setFontLoadingBackend } from './fontLoading';
 import { isFontLoaded, whenFontsReady } from './fontStatus';
 
-let checkMock: ReturnType<typeof vi.fn>;
-let whenReadyMock: ReturnType<typeof vi.fn>;
+let checkMock = vi.fn<(shorthand: string) => boolean>();
+let whenReadyMock = vi.fn<() => Promise<void>>();
 
 beforeEach(() => {
-  checkMock = vi.fn().mockReturnValue(true);
-  whenReadyMock = vi.fn().mockResolvedValue(undefined);
+  checkMock = vi.fn<(shorthand: string) => boolean>().mockReturnValue(true);
+  whenReadyMock = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
   const backend: FontLoadingBackend = {
-    addFontFace: vi.fn(),
+    addFontFace: vi.fn<(face: FontFace) => void>(),
     checkFontFace: checkMock,
-    loadFontFaces: vi.fn().mockResolvedValue([]),
+    loadFontFaces: vi.fn<(shorthand: string) => Promise<FontFace[]>>().mockResolvedValue([]),
     whenReady: whenReadyMock,
   };
   setFontLoadingBackend(backend);
