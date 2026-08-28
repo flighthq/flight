@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/input'
-updated: 2026-08-08
-by: principal
+updated: 2026-08-27
+by: builder5
 ---
 
 # input — Status
@@ -11,15 +11,14 @@ by: principal
 
 ## Open
 
-Every item was re-checked against `packages/input/src/` on 2026-08-08. A file:line here is a claim
-about this tree, not about a session. The whole package is one file, `inputManager.ts` (1143 lines).
+Every item was re-checked against `packages/input/src/` on 2026-08-27. A file:line here is a claim
+about this tree, not about a session.
 
-- **No `InputBackend` seam exists.** The identifier appears nowhere in `packages/`, so every
-  `attach*` takes a DOM target directly and a native host has no way to replace the source. Gamepad
-  rumble is blocked behind it — no `setGamepadVibration`/`stopGamepadVibration` either.
-- **Two `attach*` functions accept `options` and discard it**: `attachGamepadInput`
-  (`inputManager.ts:124`) and `attachTextInput` (`:255`) both `void options`. The other four honour
-  `preventDefault` (`:132`, `:162`, `:212`, `:263`).
+- **Listener ingress is portable; adjacent browser capabilities are not.** One process-global
+  `InputIngressBackend` now serves many exact `InputIngressSource` identities, and all six listener
+  families route through it. `navigator.getGamepads`, animation-frame scheduling, pointer lock,
+  pointer capture, and coalesced Web events still need separately measured host capabilities.
+  Gamepad rumble also remains absent.
 - **`onKeyUp` records a release for a key the state never saw pressed** (`inputManager.ts:298-301`),
   asymmetric with the up→down press guard immediately above it (`:294-297`). Making it symmetric
   would drop a real release when the state is connected while a key is already held, so this is a
@@ -35,6 +34,9 @@ about this tree, not about a session. The whole package is one file, `inputManag
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-08-27** — All 13 listener registrations and 13 removals moved behind the explicit Web
+  `InputIngressBackend`; existing callers use the broadened host-neutral attach/detach surface, the P5
+  input-ingress budget is zero, and lifecycle ownership points to the shared backend ledger.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped the standing claim that the
   `void options` pattern survives in `attachGamepadInput` and `attachRelativePointerInput` — the
   relative pointer attach honours `preventDefault` at `inputManager.ts:212`; the second offender is

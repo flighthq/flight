@@ -1,6 +1,6 @@
 ---
 package: '@flighthq/input'
-updated: 2026-07-30
+updated: 2026-08-27
 basedOn: ./review.md
 ---
 
@@ -8,10 +8,10 @@ basedOn: ./review.md
 
 ## Depth gaps
 
-1. **Introduce the portable `InputBackend` seam.** Generalize browser-bound attachment, gamepad
-   polling, animation-frame scheduling, and pointer-lock/capture capabilities so native hosts can feed
-   the same normalized `InputManager` without emulating DOM objects. The backend's push-vs-attach shape
-   remains charter Open direction 1.
+1. **Complete the adjacent input host capabilities.** Listener ingress now routes all six families
+   through one process-global `InputIngressBackend` with host-neutral source identities. Generalize
+   gamepad polling, animation-frame scheduling, pointer lock/capture, and coalesced-event access so a
+   native host can use the full library without browser globals.
 2. **Open gamepad mapping registration.** Replace the closed `GamepadMappingKind` union and hardcoded
    standard-only lookup with the chartered registry plus separately importable W3C/raw presets. Keep the
    fixed index tables as one registered mapping rather than taxing raw input users.
@@ -29,7 +29,7 @@ package maps describe gamepad/state/edge capabilities._
 ## Backlog
 
 - `@flighthq/input-bindings`, `@flighthq/gestures`, and `@flighthq/gamepad-mappings` package designs.
-- Gamepad vibration and native capability routing after the backend seam exists.
+- Gamepad vibration and native capability routing beyond the landed listener-ingress seam.
 - TS/Rust conformance after the TypeScript contract stabilizes.
 
 ## Approved

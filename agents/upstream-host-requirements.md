@@ -230,7 +230,12 @@ This is the `socket` package's equivalent of the `NetBackend` seam.
 
 Flight's `input` and `interaction` packages receive pointer, keyboard, and wheel events. On web, these come from DOM `addEventListener`. A native host routes events differently (Lime's event callbacks, SDL events, GLFW callbacks).
 
-The input-ingress contract should define:
+The landed listener-ingress contract defines:
+
+- **Source identity** — one process-global, Application-independent `InputIngressBackend` receives
+  exact host-neutral `InputIngressSource` identities for many simultaneous windows/sources.
+- **Attachment ownership** — the existing six attach/detach families retain their originating release;
+  the canonical lifecycle rule is in `backend-lifecycle-ownership.md`.
 - **Pointer identity** — how pointer IDs map between the host's event system and Flight's `pointerId`.
 - **Coordinate scaling** — device pixels vs. CSS pixels vs. the host's coordinate space. Who scales?
 - **IME composition** — text input composition events for CJK and other input methods.
@@ -238,21 +243,10 @@ The input-ingress contract should define:
 - **Gamepads** — how gamepad state is polled or event-driven.
 - **Multiple windows** — which window an event targets.
 
-This need not be another global backend — a per-window event adapter may be more appropriate:
-
-```typescript
-interface InputIngress {
-  dispatchPointerDown(windowId: number, data: PointerEventData): void;
-  dispatchPointerMove(windowId: number, data: PointerEventData): void;
-  dispatchPointerUp(windowId: number, data: PointerEventData): void;
-  dispatchKeyDown(windowId: number, data: KeyboardEventData): void;
-  dispatchKeyUp(windowId: number, data: KeyboardEventData): void;
-  dispatchWheel(windowId: number, data: WheelEventData): void;
-  dispatchTextInput(windowId: number, text: string): void;
-}
-```
-
-Flight's `dispatchInteraction*` functions in the `interaction` package already have this shape. The gap is formalizing it as a stable contract that a host implements, rather than an internal implementation detail.
+All legacy DOM callers use the broadened host-neutral API; there is no parallel DOM path. The explicit
+Web adapter interprets browser identities internally. The remaining gap is the adjacent gamepad
+polling/scheduling and pointer lock/capture/coalescing capability set, not listener ingress or
+multi-window routing.
 
 ---
 
