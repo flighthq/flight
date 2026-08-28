@@ -323,6 +323,7 @@ export interface ElectronBrowserWindow {
   destroy(): void;
   isDestroyed(): boolean;
   on(event: string, listener: (...args: unknown[]) => void): void;
+  off(event: string, listener: (...args: unknown[]) => void): void;
   removeAllListeners(event?: string): void;
 }
 

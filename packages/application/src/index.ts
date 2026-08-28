@@ -2,6 +2,7 @@ export {
   attachApplicationExit,
   attachApplicationLifecycle,
   attachApplicationRenderView,
+  attachWindow,
   attachWindowClose,
   attachWindowDropFile,
   attachWindowFocus,

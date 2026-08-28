@@ -2,6 +2,7 @@ import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contr
 import type { Matrix, RenderState, WindowBackend } from '@flighthq/types/contract';
 
 import {
+  attachWindow,
   attachWindowClose,
   attachWindowDropFile,
   attachWindowFocus,
@@ -40,6 +41,7 @@ import {
   lockApplicationPointer,
   maximizeWindow,
   minimizeWindow,
+  notifyWindowClosed,
   observeWindowHostResult,
   openWindow,
   prepareElementForInput,
@@ -76,6 +78,10 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
   const calls: string[] = [];
   return {
     calls,
+    attach(_win, _handle, ownership) {
+      calls.push(`attach:${ownership}`);
+      return true;
+    },
     open(_win, options) {
       calls.push(`open:${options.title ?? ''}`);
       return true;
@@ -169,6 +175,95 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
 }
 
 afterEach(() => resetWindowBackendForTest());
+
+describe('attachWindow', () => {
+  it('attaches an existing handle without creating an Application and preserves identity', () => {
+    const backend = recordingWindowBackend();
+    const seen: { handle: unknown; win: unknown }[] = [];
+    backend.attach = (win, handle) => {
+      seen.push({ handle, win });
+      return true;
+    };
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    const handle = { id: 41 };
+
+    expect(attachWindow(win, handle, 'host')).toBe(true);
+    expect(seen).toEqual([{ handle, win }]);
+  });
+
+  it('uses one process-global backend for two independently attached windows', () => {
+    const backend = recordingWindowBackend();
+    const attached: unknown[] = [];
+    const closed: unknown[] = [];
+    backend.attach = (win) => {
+      attached.push(win);
+      return true;
+    };
+    backend.close = (win) => closed.push(win);
+    setWindowBackend(backend);
+    const first = createApplicationWindow();
+    const second = createApplicationWindow();
+
+    expect(attachWindow(first, { id: 1 }, 'host')).toBe(true);
+    expect(attachWindow(second, { id: 2 }, 'flight')).toBe(true);
+    expect(attached).toEqual([first, second]);
+    expect(closeWindow(first)).toBe(true);
+    expect(closeWindow(first)).toBe(true);
+    expect(closed).toEqual([first]);
+  });
+
+  it('emits one terminal close when a synchronous native callback and closeWindow converge', () => {
+    const backend = recordingWindowBackend();
+    backend.close = (win) => notifyWindowClosed(win);
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    let closed = 0;
+    connectSignal(win.onClose, () => closed++);
+    expect(attachWindow(win, { id: 1 }, 'flight')).toBe(true);
+
+    expect(closeWindow(win)).toBe(true);
+    notifyWindowClosed(win);
+    expect(closed).toBe(1);
+  });
+
+  it('clears terminal state after the same window successfully reattaches', () => {
+    const backend = recordingWindowBackend();
+    setWindowBackend(backend);
+    const win = createApplicationWindow();
+    let closed = 0;
+    connectSignal(win.onClose, () => closed++);
+
+    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(win)).toBe(true);
+    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
+    expect(closeWindow(win)).toBe(true);
+    expect(closed).toBe(2);
+  });
+
+  it('falls through structurally to host attach and routes close back to the attaching layer', () => {
+    const custom = recordingWindowBackend();
+    const host = recordingWindowBackend();
+    delete custom.attach;
+    installWindowHostBackend(host);
+    setWindowBackend(custom);
+    const win = createApplicationWindow();
+
+    expect(attachWindow(win, { id: 1 }, 'host')).toBe(true);
+    expect(host.calls).toContain('attach:host');
+    expect(closeWindow(win)).toBe(true);
+    expect(host.calls).toContain('close');
+    expect(custom.calls).not.toContain('close');
+  });
+
+  it('returns false when neither custom nor host structurally provides attach', () => {
+    const backend = recordingWindowBackend();
+    delete backend.attach;
+    setWindowBackend(backend);
+
+    expect(attachWindow(createApplicationWindow(), { id: 1 }, 'host')).toBe(false);
+  });
+});
 
 describe('attachWindowClose', () => {
   it('emits onClose on pagehide', () => {
@@ -903,6 +998,19 @@ describe('minimizeWindow', () => {
     minimizeWindow(win);
     expect(win.minimized).toBe(true);
     expect(called).toBe(true);
+  });
+});
+
+describe('notifyWindowClosed', () => {
+  it('emits at most one terminal close for a window', () => {
+    const win = createApplicationWindow();
+    let closed = 0;
+    connectSignal(win.onClose, () => closed++);
+
+    notifyWindowClosed(win);
+    notifyWindowClosed(win);
+
+    expect(closed).toBe(1);
   });
 });
 
