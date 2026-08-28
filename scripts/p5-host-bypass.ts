@@ -5,6 +5,8 @@ import { pathToFileURL } from 'node:url';
 
 import ts from 'typescript';
 
+import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+
 export type P5HostBypassKind = 'direct-dom' | 'input-ingress' | 'scratch-surface' | 'webgpu-acquisition';
 
 export type P5HostBypassExclusion =
@@ -148,6 +150,16 @@ export function p5HostBypassBudgetFailures(report: Readonly<P5HostBypassReport>,
 export function formatP5HostBypassReport(report: Readonly<P5HostBypassReport>): string {
   const counts = countP5HostBypasses(report);
   const lines = [
+    formatGateProvenance(
+      {
+        command: 'npm run check:p5-host-bypass (scripts/p5-host-bypass.ts)',
+        counting:
+          'one unit = one packages/*/src/**/*.ts file scanned; a site is one direct host-API expression, tallied per detected kind',
+        scope:
+          'runtime directory walk of packages/*/src/**/*.ts with no file roster; tests and helpers, host-* implementations, tool-* sources, explicit *Web* adapters, *-dom and *-canvas technology adapters, P4 window attachment and P3 transport syntax all excluded',
+      },
+      readGateTreeState(process.cwd()),
+    ),
     'P5 host-bypass census',
     `SCANNED ${report.scannedFiles} packages/*/src/**/*.ts files (runtime directory walk; no file roster)`,
     'DETECTS direct document/window/navigator access, DOM input listener attachment, Canvas/ImageData/ImageBitmap scratch construction, and WebGPU adapter/device/context acquisition',

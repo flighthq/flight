@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import ts from 'typescript';
 
+import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+
 export type TransportPrimitive = 'EventSource' | 'fetch' | 'Image' | 'Request' | 'WebSocket' | 'XMLHttpRequest';
 
 export type TransportSourceExclusionReason = 'declaration-source' | 'test-source' | 'tooling-package';
@@ -100,6 +102,16 @@ export function formatTransportBypassReport(report: Readonly<TransportBypassRepo
   const passed = report.violations.length === 0;
   const exclusionCounts = countExclusions(report.excluded);
   const lines = [
+    formatGateProvenance(
+      {
+        command: 'npm run check:transport-bypasses (scripts/check-transport-bypasses.ts)',
+        counting:
+          'one unit = one production source file scanned; a violation is one call site of a listed primitive not lexically enclosed by a createWeb*Backend function',
+        scope:
+          'tracked and untracked packages/*/src source, derived on every run; declaration source, test source and the tool-* family excluded by role, never by path roster',
+      },
+      readGateTreeState(process.cwd()),
+    ),
     `${passed ? pc.green('OK') : pc.yellow('!')} ${pc.bold('Direct web transports stay inside createWeb*Backend implementations')} ${pc.dim(`(${report.scannedFiles} production files scanned, ${report.allowed.length} backend site${report.allowed.length === 1 ? '' : 's'} allowed, ${report.excluded.length} source file${report.excluded.length === 1 ? '' : 's'} excluded)`)}`,
     `  Predicate: ${pc.dim('fetch(), new XMLHttpRequest(), new Request(), new WebSocket(), new Image(), new EventSource()')}`,
     '  Derived exclusions:',
