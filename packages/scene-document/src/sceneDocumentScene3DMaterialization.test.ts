@@ -210,19 +210,24 @@ describe('createFlightDocumentScene3DMaterializationFromText', () => {
 });
 
 describe('duplicate-light explain parity', () => {
-  it.each([
+  // The table is annotated so each fixture is checked AGAINST THE SCHEMA rather than inferred from its own
+  // literal. Without this, `version: 1` widens to `number` and the row stops being a `FlightDocument` — and
+  // the two obvious local repairs both make the fixture worse: `1 as const` and a cast silence the widening
+  // while also silencing every other way a row could stop matching the document type, which is the only
+  // thing this parity test has to hold the fixtures to.
+  it.each<{ document: Readonly<FlightDocument>; expectedReason: FlightDocumentRefusalReason; label: string }>([
     {
       label: 'duplicate ambient',
       document: {
         cameras: [],
-        kind: 'Scene3D' as const,
+        kind: 'Scene3D',
         lights: [
           { descriptor: createAmbientLight(), transform: createTransform3D() },
           { descriptor: createAmbientLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
         ],
         resources: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
-        version: 1 as const,
+        version: 1,
       },
       expectedReason: FlightDocumentRefusalReason.DuplicateAmbientLight,
     },
@@ -230,14 +235,14 @@ describe('duplicate-light explain parity', () => {
       label: 'duplicate directional',
       document: {
         cameras: [],
-        kind: 'Scene3D' as const,
+        kind: 'Scene3D',
         lights: [
           { descriptor: createDirectionalLight(), transform: createTransform3D() },
           { descriptor: createDirectionalLight({ color: 0xccccccff, intensity: 0.5 }), transform: createTransform3D() },
         ],
         resources: [],
         scene: { children: [], fields: {}, kind: Node3DKind },
-        version: 1 as const,
+        version: 1,
       },
       expectedReason: FlightDocumentRefusalReason.DuplicateDirectionalLight,
     },
