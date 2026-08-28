@@ -84,6 +84,129 @@ enableHostWebAccessibility()  → sentinel     ← expected host
 of the process, and only the test-only `resetHostWeb*ForTest()` can recover it. `Menu` and `Power` are
 not reachable this way today only because their host teardown cannot be invoked at all.
 
+### Remediation design for the Power host slot and the irreversible enable
+
+Design only — nothing here is implemented, and the lifecycle floor does not move until it is. `Menu` has
+the same two defects and is owned elsewhere; this design is written so the same three steps apply to it
+unchanged.
+
+#### The ordering constraint, which is the whole point
+
+The obvious first move — give `Power` a `destroyPowerBackend` so its host backend can be torn down — is
+the **wrong** first move. Today `Power` cannot exhibit the irreversible-enable defect *only because its
+teardown is unreachable*. Making teardown reachable without first making enable re-entrant would move
+`Power` out of one defect and into the other, and the second is worse: it is silent, and it leaves the
+capability permanently on the sentinel rather than merely leaking one wake lock.
+
+So the latch is fixed first, for every capability, and teardown is made reachable second.
+
+#### Ownership, stated exactly
+
+| owner | owns | must not |
+| --- | --- | --- |
+| the capability package (`packages/power/src/power.ts`) | the `_custom` and `_host` slots, their release ordering, and invariants 1–5 above | know that a host package exists, or that anything latches |
+| the host package (`packages/host-web/src/webPower.ts`) | the backend instance and everything it holds — the wake-lock sentinel, that sentinel's `release` listener, and the cached battery values | reach into capability slots, or keep its own copy of "is a host backend installed" |
+
+The present bug is exactly a violation of the second row: `_enabled` is a host-local cache of a fact the
+capability owns, and the two go out of sync the moment the capability clears its slot.
+
+#### Step 1 — make enable re-entrant by deriving the latch (fixes a live defect)
+
+Add one export per capability, matching the existing `install*HostBackend` it pairs with, and named by
+the `has*` convention for boolean queries:
+
+```ts
+export function hasPowerHostBackend(): boolean {
+  return _host !== null;
+}
+```
+
+The host then asks rather than remembers, and the `_enabled` module variable is deleted:
+
+```ts
+export function enableHostWebPower(): void {
+  if (hasPowerHostBackend()) return;
+  installPowerHostBackend(createWebPowerBackend());
+}
+```
+
+Re-enabling after teardown now works because there is no second source of truth to go stale. No conflict
+is raised on re-install: `installPowerHostBackend` only sets `_hostConflict` when `_host` is already
+occupied by a *different* object, and after teardown it is null.
+
+This step alone fixes the **already-reachable** form of the defect in `Accessibility` and `MediaSession`,
+which today are stuck on the sentinel after any `destroy*Backend()`.
+
+**Mutation test.** Restore the latch — reintroduce `if (_enabled) return; _enabled = true;` — and this
+must fail:
+
+```ts
+it('reinstalls the host backend after teardown', () => {
+  enableHostWebPower();
+  expect(explainPowerOperation('setKeepAwake').layer).toBe('host');
+  destroyPowerBackend();
+  enableHostWebPower();
+  expect(explainPowerOperation('setKeepAwake').layer).toBe('host');   // ← sentinel today
+});
+```
+
+`Power` has no `explain*Operation` seam yet, so until it does this asserts on
+`getPowerBackend() !== <the sentinel>`; for `Accessibility` and `MediaSession` the `layer` form works as
+written and is the probe that produced the finding.
+
+#### Step 2 — make the Power host slot tearable
+
+Mirror `destroyAccessibilityBackend` exactly, including the layered-ownership release that must not
+destroy an object still retained by the other slot:
+
+```ts
+export function destroyPowerBackend(): void {
+  const previous = [_custom, _host] as const;
+  _custom = null;
+  _host = null;
+  releasePowerBackends(previous);
+}
+```
+
+with `releasePowerBackends` copied in shape from `releaseAccessibilityBackends`: a `retained` set of the
+surviving slots, a `released` set for dedup, and `backend.destroy?.()` for anything in neither.
+
+**Mutation tests**, three, because three separate invariants ride on this one function:
+
+1. delete the `retained` check → an object occupying both slots is destroyed while one slot still owns it
+   (invariant 3) → must fail;
+2. delete the `released` dedup → a backend aliased into both slots is destroyed twice (invariant 1) →
+   must fail;
+3. clear the slots *after* the release rather than before → `getPowerBackend()` no longer returns the
+   outgoing backend during its own `destroy()` (invariant 4) → must fail.
+
+#### Step 3 — release the rest of what the web backend owns
+
+`webPower.destroy` currently releases the sentinel and nothing else. It also owns, per the table above:
+
+- `_cachedLevel` / `_cachedCharging` / `_cachedChargingTime` / `_cachedDischargingTime`, which survive
+  teardown and are then served to the next backend as if fresh;
+- the `'release'` listener attached to each sentinel, which is never removed.
+
+Both are cleared in `destroy`. The listener needs the sentinel retained alongside its handler so the
+exact pair can be detached — the same shape `ScreenBackend` owes for its `pointermove` handler.
+
+**Mutation test.** Stop clearing the cached values and this must fail:
+
+```ts
+it('does not serve battery readings captured by a destroyed backend', () => {
+  // …acquire readings through the host backend, then:
+  destroyPowerBackend();
+  expect(getPowerStatus(out).level).toBe(-1);   // the unknown sentinel value, not the stale reading
+});
+```
+
+#### What this deliberately does not do
+
+It does not advance the lifecycle floor. All three steps are invisible to that gate — it already counts
+`Power` as wired, which is the point of the scope caveat the gate now prints. The floor should move only
+when a row's *behavior* is verified, and verifying behavior is what these mutation tests are for.
+
 The census partition (`5 + 41 = 46`) counts a different thing from the bucket partition
 (`1 + 7 + 22 + 16 = 46`) above it: the census asks only whether a zero-argument hook is *declared*,
 while the buckets record which lifetime *should* own cleanup. They agree on the denominator and on
