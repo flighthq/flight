@@ -221,6 +221,15 @@ Read-only discovery may proceed in parallel, and disjoint leaf implementation ma
 frozen accepted foundation. Acceptance does not parallelize: after each landing, later manifests and
 checkpoint edits must be rederived or revalidated against the new accepted tail.
 
+The executable taxonomy-v4 gate remains the live authority. At this planning snapshot, four of six
+categories are closed: input-ingress, frame-scheduling, render-surface, and webgpu-acquisition are zero.
+All 25 remaining sites are confined to direct-DOM 12 and scratch-surface 13, unlike the heterogeneous
+original 68-site population.
+
+Routine clean P5 slices follow `derive -> independent adversarial audit -> authorize -> implement -> close`
+without manager confirmation. Any change to scope, a public or backend contract, or an accepted guarantee
+still escalates before authorization.
+
 One shared scratch-surface provider foundation is the high-leverage prerequisite for four GL/WGPU pairs
 covering eight sites: rich text, scale9, lazy shape, and text label. Accept that foundation before treating
 those renderer leaves as parallel candidates; its shared provider and taxonomy surfaces remain serialized.
