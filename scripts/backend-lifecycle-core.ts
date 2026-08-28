@@ -1,3 +1,5 @@
+import type { Node } from 'oxc-parser';
+
 import { getParsedOxcSource } from './oxc-source';
 
 // The backend-replacement lifetime census.
@@ -53,10 +55,9 @@ export function collectWholeBackendTeardowns(typeSourceFiles: readonly string[])
       if (declaration === null || declaration.type !== 'TSInterfaceDeclaration') continue;
       if (!declaration.id.name.endsWith('Backend')) continue;
       for (const member of declaration.body.body) {
-        if (member.type !== 'TSMethodSignature' || member.key.type !== 'Identifier') continue;
-        if (member.key.name !== 'destroy' && member.key.name !== 'dispose') continue;
-        if (member.params.length > 0) continue;
-        teardowns.set(declaration.id.name, member.key.name);
+        const name = teardownMemberName(member);
+        if (name === null) continue;
+        teardowns.set(declaration.id.name, name);
       }
     }
   }
@@ -125,4 +126,24 @@ export function hasBackendLifecycleFailure(report: Readonly<BackendLifecycleRepo
 function findSetterName(interfaceName: string, setterBodies: ReadonlyMap<string, string>): string | null {
   const candidate = `set${interfaceName.slice(0, -'Backend'.length)}Backend`;
   return setterBodies.has(candidate) ? candidate : null;
+}
+
+// A zero-parameter `destroy`/`dispose` member, in EITHER declaration syntax.
+//
+// ★ Reading only `TSMethodSignature` is a real blind spot, not a hypothetical one: `TextShaperBackend`
+// already declares all six of its optional operations in property form (`shapeRun?: (…) => …`), so a
+// method-syntax-only reader misses them silently. No backend declares a property-form teardown TODAY,
+// which is why closing this changes no count — but the first one written that way would have made this
+// gate under-report while still printing a confident green.
+function teardownMemberName(member: Node): string | null {
+  if (member.type === 'TSMethodSignature') {
+    if (member.key.type !== 'Identifier') return null;
+    if (member.key.name !== 'destroy' && member.key.name !== 'dispose') return null;
+    return member.params.length > 0 ? null : member.key.name;
+  }
+  if (member.type !== 'TSPropertySignature' || member.key.type !== 'Identifier') return null;
+  if (member.key.name !== 'destroy' && member.key.name !== 'dispose') return null;
+  const annotation = member.typeAnnotation?.typeAnnotation;
+  if (annotation === undefined || annotation.type !== 'TSFunctionType') return null;
+  return annotation.params.length > 0 ? null : member.key.name;
 }
