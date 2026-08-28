@@ -85,6 +85,8 @@ export * from './Assets';
 export * from './AttractorForce';
 export * from './Abc';
 export * from './AudioBackend';
+export * from './AudioDeviceBackend';
+export * from './AudioDeviceHandle';
 export * from './AudioBus';
 export * from './AudioResource';
 export * from './AudioResourceReference';
