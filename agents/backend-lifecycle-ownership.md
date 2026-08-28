@@ -223,6 +223,88 @@ That makes Power the smallest possible first implementation: no new proofs to in
 existing ones to transcribe. If encoding them turns out to be more than a small slice, that is itself the
 signal that this instrument is not worth its weight yet.
 
+#### Design: a separate instrument for behavioral completeness — UNRATIFIED
+
+Design only, pending a manager ruling. Nothing here is implemented, and it deliberately produces **no
+number that can be ratcheted**.
+
+**The problem.** The structural gate answers "is a teardown declared and named by its setter". Whether
+that teardown releases what the backend owns is a different question, and the section above currently
+answers it in prose. Prose rots silently: every claim in that table would still read as true after
+someone deleted the guard it describes.
+
+**The trap to avoid, which the repo has already ruled on.** The obvious instrument — count the rows whose
+behavior is verified and gate the count — recreates the exact failure the structural floor has, one level
+up: a hand-written claim wearing a derived number's clothes. `npm run unchecked` already settled this for
+mutation evidence and its reasoning transfers verbatim: *"a gated ratio is satisfied by deleting the
+mutants you cannot kill, and the equivalent-mutant problem guarantees the achievable maximum is unknown
+and unknowable."* So this instrument is a **list and a verdict per row, never a score**.
+
+##### The evidence unit: an executable mutation pair
+
+A row does not earn "behaviorally verified" by being described. It earns it by carrying, per claim, a
+pair the machine can run:
+
+```
+claim     "a reading captured by a destroyed backend is never served afterwards"
+mutation  packages/host-web/src/webPower.ts :: delete `resetCachedBatteryReadings();`
+expects   packages/host-web/src/webPower.test.ts ::
+          "does not serve battery readings captured by a destroyed backend"  MUST FAIL
+```
+
+The instrument applies each mutation and asserts the named test **fails**. That inverts the usual rot:
+the claim *is* the check, so a guard that stops being load-bearing turns the row red instead of leaving a
+sentence that is quietly no longer true.
+
+Reuse `unchecked`'s machinery rather than building a runner — in particular its load-hook splicing, which
+never writes mutated text to disk, so an interrupt cannot leave corrupted source in a repo where agents
+commit concurrently. The genuinely new part is small: a spec format and a runner that asserts failure
+rather than success.
+
+##### The derived roster
+
+Both halves are derived, so neither is a list of claims:
+
+- **denominator** — the structural gate's own enforced set (the rows that declare a teardown at all).
+  A row cannot be behaviorally verified before it is structurally wired, so this is the correct universe
+  and it already derives itself.
+- **numerator** — rows whose every recorded mutation still kills, decided *by execution*, not by
+  declaration.
+
+The only hand-written artifacts are the mutation specs, and those are executable: a wrong one fails on
+the next run rather than lying indefinitely.
+
+##### Three states, not two
+
+`verified` / `failing` / **`unverified`**. The third is what stops the instrument from misleading. With
+two states, a row nobody has written evidence for must be lumped with either the passes or the failures,
+and both readings are wrong — it is simply unmeasured. `LogTransport`, which has no implementation in the
+repo at all, is permanently `unverified` and that is the correct answer rather than a gap to close.
+
+##### Four rules that keep it from becoming a misleading count
+
+1. **No ratio and no percentage.** Per-row verdicts only. "3 of 5" invites exactly the ratcheting this
+   instrument exists to avoid.
+2. **A missing anchor is an error, not a skip.** Mutation specs are text edits and rot when code moves. A
+   spec whose anchor no longer matches must fail loudly — a silent skip turns a hole in the swept
+   population into a smaller number that looks like an answer.
+3. **A verdict is scoped to the claims named, never to the row.** "Power verified" must be unreadable as
+   "Power is correct"; it means the listed claims hold and nothing more — the same discipline as the
+   structural gate's printed scope caveat.
+4. **It must not be wired to any floor.** If a future reader wants a ratchet, the thing to ratchet is the
+   set of *claims*, never a count of rows.
+
+##### Is `PowerBackend` the first earned row?
+
+**Not yet, strictly — and the distinction is the point.** Power is the first *candidate*: it is the only
+row whose release behavior has been proven by mutation at all, and its four mutations are recorded in the
+table above. But they were run by hand in a session; nothing re-runs them. Under this design a row earns
+its verdict only when its mutations are encoded and executable.
+
+That makes Power the smallest possible first implementation: no new proofs to invent, only the four
+existing ones to transcribe. If encoding them turns out to be more than a small slice, that is itself the
+signal that this instrument is not worth its weight yet.
+
 #### A systemic defect the row-by-row reading did not surface — FIXED
 
 `enableHostWeb*()` latched a module-level `_enabled` flag that **no `destroy()` reset**, while
