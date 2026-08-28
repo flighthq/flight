@@ -2,6 +2,7 @@ import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
 import type {
   SoftKeyboardBackend,
   SoftKeyboardInfo,
+  SoftKeyboardOperation,
   SoftKeyboardPhase,
   SoftKeyboardResizeMode,
   SoftKeyboardTransition,
@@ -21,23 +22,25 @@ import {
   createWebSoftKeyboardBackend,
   detachSoftKeyboard,
   disposeSoftKeyboard,
+  explainSoftKeyboardBackend,
+  explainSoftKeyboardOperation,
   getSoftKeyboardBackend,
   getSoftKeyboardHeight,
   getSoftKeyboardInfo,
   getSoftKeyboardResizeMode,
+  hasSoftKeyboardOperation,
   hideSoftKeyboard,
+  installSoftKeyboardHostBackend,
   isSoftKeyboardAccessoryBarVisible,
   isSoftKeyboardScrollAssistEnabled,
+  observeSoftKeyboardHostResult,
+  resetSoftKeyboardBackendForTest,
   setSoftKeyboardAccessoryBarVisible,
   setSoftKeyboardBackend,
   setSoftKeyboardResizeMode,
   setSoftKeyboardScrollAssistEnabled,
   setSoftKeyboardStyle,
   showSoftKeyboard,
-  explainSoftKeyboardBackend,
-  installSoftKeyboardHostBackend,
-  observeSoftKeyboardHostResult,
-  resetSoftKeyboardBackendForTest,
 } from './keyboard';
 
 type BackendListener = (phase: SoftKeyboardPhase, transition: Readonly<SoftKeyboardTransition>) => void;
@@ -702,6 +705,65 @@ describe('explainSoftKeyboardBackend', () => {
   });
 });
 
+// THE PER-OPERATION AVAILABILITY SEAM. Each case names the mutation it defeats, because the failure this
+// seam exists to prevent is a query that answers `true` for everything and therefore says nothing.
+describe('explainSoftKeyboardOperation', () => {
+  afterEach(() => resetSoftKeyboardBackendForTest());
+
+  // ★ The load-bearing one. With no backend installed the sentinel still answers every call, so a query
+  // that consulted `getSoftKeyboardBackend()` would report every operation implemented. Defeated by
+  // making explainSoftKeyboardOperation resolve through getSoftKeyboardBackend(): this goes red.
+  it('reports the sentinel layer and no implementation when nothing is installed', () => {
+    resetSoftKeyboardBackendForTest();
+    expect(explainSoftKeyboardOperation('show')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'show',
+    });
+  });
+
+  // Partial support declared by ABSENCE: a backend carrying only the required members implements none of
+  // the optional ones, and the seam reports exactly that split rather than a uniform answer.
+  it('separates the operations a partial backend provides from the ones it omits', () => {
+    setSoftKeyboardBackend(partialBackend());
+    expect(hasSoftKeyboardOperation('show')).toBe(true);
+    expect(hasSoftKeyboardOperation('getInfo')).toBe(true);
+    expect(hasSoftKeyboardOperation('getAccessoryBarVisible')).toBe(false);
+    expect(hasSoftKeyboardOperation('setStyle')).toBe(false);
+  });
+
+  it('names the custom layer over an installed host layer', () => {
+    installSoftKeyboardHostBackend(partialBackend());
+    expect(explainSoftKeyboardOperation('show').layer).toBe('host');
+    setSoftKeyboardBackend(partialBackend());
+    expect(explainSoftKeyboardOperation('show').layer).toBe('custom');
+  });
+
+  // A custom backend that omits an operation the host provides must not report the host's implementation
+  // as its own — precedence resolves per operation, not per backend.
+  it('falls through to the host for an operation the custom backend omits', () => {
+    installSoftKeyboardHostBackend({ ...partialBackend(), setStyle: () => undefined });
+    setSoftKeyboardBackend(partialBackend());
+    expect(explainSoftKeyboardOperation('setStyle')).toEqual({
+      implemented: true,
+      layer: 'host',
+      operation: 'setStyle',
+    });
+  });
+
+  // The ambiguity P1 names, made observable: the value and the availability are now separate questions.
+  it('distinguishes a false result from an unavailable operation', () => {
+    setSoftKeyboardBackend({ ...partialBackend(), getAccessoryBarVisible: () => false });
+    expect(isSoftKeyboardAccessoryBarVisible()).toBe(false);
+    expect(hasSoftKeyboardOperation('getAccessoryBarVisible')).toBe(true);
+
+    resetSoftKeyboardBackendForTest();
+    setSoftKeyboardBackend(partialBackend());
+    expect(isSoftKeyboardAccessoryBarVisible()).toBe(false);
+    expect(hasSoftKeyboardOperation('getAccessoryBarVisible')).toBe(false);
+  });
+});
+
 describe('getSoftKeyboardBackend', () => {
   it('falls back to a web backend', () => {
     expect(getSoftKeyboardBackend()).not.toBeNull();
@@ -772,6 +834,17 @@ describe('getSoftKeyboardResizeMode', () => {
     };
     setSoftKeyboardBackend(backend);
     expect(getSoftKeyboardResizeMode()).toBe(SoftKeyboardResizeNoneKind);
+  });
+});
+
+describe('hasSoftKeyboardOperation', () => {
+  afterEach(() => resetSoftKeyboardBackendForTest());
+
+  it('agrees with explainSoftKeyboardOperation for every operation the interface declares', () => {
+    setSoftKeyboardBackend(partialBackend());
+    for (const operation of SOFT_KEYBOARD_OPERATIONS) {
+      expect(hasSoftKeyboardOperation(operation)).toBe(explainSoftKeyboardOperation(operation).implemented);
+    }
   });
 });
 
@@ -997,3 +1070,31 @@ describe('showSoftKeyboard', () => {
     expect(backend.shown).toBe(true);
   });
 });
+
+// The four REQUIRED members plus the seven OPTIONAL ones this interface already declares. Listed here as
+// test data only — the production union is `keyof SoftKeyboardBackend`, so a renamed operation fails to
+// compile here rather than silently dropping out of the sweep.
+const SOFT_KEYBOARD_OPERATIONS: readonly SoftKeyboardOperation[] = [
+  'getAccessoryBarVisible',
+  'getInfo',
+  'getResizeMode',
+  'getScrollAssistEnabled',
+  'hide',
+  'setAccessoryBarVisible',
+  'setResizeMode',
+  'setScrollAssistEnabled',
+  'setStyle',
+  'show',
+  'subscribe',
+];
+
+// A host that implements only what it genuinely can: the required members, none of the optional ones.
+// This is the absence-of-an-export ruling expressed as a fixture.
+function partialBackend(): SoftKeyboardBackend {
+  return {
+    getInfo: (out) => out,
+    hide: () => undefined,
+    show: () => undefined,
+    subscribe: () => () => undefined,
+  };
+}

@@ -1,9 +1,11 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   BackendExplanation,
+  BackendOperationExplanation,
   SoftKeyboard,
   SoftKeyboardBackend,
   SoftKeyboardInfo,
+  SoftKeyboardOperation,
   SoftKeyboardPhase,
   SoftKeyboardResizeMode,
   SoftKeyboardStyleKind,
@@ -166,6 +168,23 @@ export function explainSoftKeyboardBackend(): BackendExplanation {
 }
 
 // The active soft keyboard backend. Precedence: custom > host > sentinel.
+// Which layer implements `operation`, and whether anything real does. The structural per-operation answer
+// `explainSoftKeyboardBackend` cannot give: that one reports a backend is installed, this one reports
+// whether THIS operation on it is a genuine implementation or the sentinel standing in.
+//
+// Resolution is presence on the installed backend, walked in the same precedence order every lookup uses
+// (custom, then host). ★ The sentinel is deliberately not consulted: it answers every operation, so
+// counting it would make this function report `true` for everything and say nothing at all.
+export function explainSoftKeyboardOperation(operation: SoftKeyboardOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 export function getSoftKeyboardBackend(): SoftKeyboardBackend {
   return _custom ?? _host ?? _sentinel;
 }
@@ -189,6 +208,13 @@ export function getSoftKeyboardResizeMode(): SoftKeyboardResizeMode {
 
 // Requests that the host dismiss the on-screen keyboard. A no-op on web unless the
 // navigator.virtualKeyboard API is available (Chromium with virtualKeyboard policy).
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it. This is
+// what separates "the accessory bar is hidden" from "nothing here can tell you", which the boolean
+// queries below cannot express on their own.
+export function hasSoftKeyboardOperation(operation: SoftKeyboardOperation): boolean {
+  return explainSoftKeyboardOperation(operation).implemented;
+}
+
 export function hideSoftKeyboard(): void {
   getSoftKeyboardBackend().hide();
 }
