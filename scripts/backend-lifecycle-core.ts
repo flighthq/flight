@@ -34,9 +34,17 @@ export interface BackendLifecycleViolation {
   rule: 'setter-missing' | 'replacement-leaks';
 }
 
+export interface BackendLifecycleDelta {
+  enforcedGained: readonly string[];
+  enforcedLost: readonly string[];
+  seamsAdded: readonly string[];
+  seamsRemoved: readonly string[];
+}
+
 export interface BackendLifecycleReport {
   entries: readonly BackendLifecycleEntry[];
   enforced: number;
+  enforcedNames: readonly string[];
   noTeardownHook: number;
   total: number;
   violations: readonly BackendLifecycleViolation[];
@@ -98,8 +106,47 @@ export function createBackendLifecycleReport(
       });
     }
   }
-  const enforced = entries.filter((entry) => entry.teardown !== null).length;
-  return { entries, enforced, noTeardownHook: entries.length - enforced, total: entries.length, violations };
+  const enforcedEntries = entries.filter((entry) => entry.teardown !== null);
+  const enforced = enforcedEntries.length;
+  const enforcedNames = enforcedEntries.map((entry) => entry.interfaceName).sort();
+  return {
+    entries,
+    enforced,
+    enforcedNames,
+    noTeardownHook: entries.length - enforced,
+    total: entries.length,
+    violations,
+  };
+}
+
+// Compares two reports and categorizes every change: denominator growth (new interfaces) is separated
+// from numerator regression (previously-enforced interfaces that lost their teardown hook).
+export function compareBackendLifecycleReports(
+  prior: Readonly<Pick<BackendLifecycleReport, 'enforcedNames' | 'entries'>>,
+  current: Readonly<BackendLifecycleReport>,
+): BackendLifecycleDelta {
+  const priorNames = new Set(prior.entries.map((entry) => entry.interfaceName));
+  const currentNames = new Set(current.entries.map((entry) => entry.interfaceName));
+  const priorEnforced = new Set(prior.enforcedNames);
+  const currentEnforced = new Set(current.enforcedNames);
+  return {
+    enforcedGained: current.enforcedNames.filter((name) => !priorEnforced.has(name)),
+    enforcedLost: [...priorEnforced].filter((name) => !currentEnforced.has(name)).sort(),
+    seamsAdded: [...currentNames].filter((name) => !priorNames.has(name)).sort(),
+    seamsRemoved: [...priorNames].filter((name) => !currentNames.has(name)).sort(),
+  };
+}
+
+export function formatBackendLifecycleDelta(delta: Readonly<BackendLifecycleDelta>): string {
+  const parts: string[] = [];
+  if (delta.seamsAdded.length > 0)
+    parts.push(`+${delta.seamsAdded.length} new seam${delta.seamsAdded.length === 1 ? '' : 's'}`);
+  if (delta.seamsRemoved.length > 0) parts.push(`-${delta.seamsRemoved.length} removed`);
+  if (delta.enforcedGained.length > 0) parts.push(`+${delta.enforcedGained.length} newly enforced`);
+  if (delta.enforcedLost.length > 0)
+    parts.push(`${delta.enforcedLost.length} regression${delta.enforcedLost.length === 1 ? '' : 's'}`);
+  else parts.push('0 regressions');
+  return parts.join(', ');
 }
 
 // The line the gate prints every run. Both counts together, and their sum asserted against the total by
