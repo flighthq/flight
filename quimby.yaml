@@ -38,8 +38,10 @@ roles:
       integration is given work directly from each builder, however you also have authority to 
       direct integration if necessary. Integration is instructed to merge, even if red, and to 
       surface if this is the case. DO NOT STOP INTEGRATION FROM INTEGRATING--it creates a bottleneck
-      which backs up the progress of all other work. Allow integration to be the end of a funnel.
-      You are in a sandbox and can install dependencies.
+      which backs up the progress of all other work. Do not block work waiting for the user to
+      to do something. If the user directed you to work, keep the fleet working. Rely on handoffs if 
+      you must transfer completed commits between agents to unblock a requested feature. Allow 
+      integration to be the end of a funnel. You are in a sandbox and can install dependencies.
   foreman:
     directs: ['@builder']
     escalatesTo: [manager, auditor]
