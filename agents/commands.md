@@ -110,6 +110,18 @@ Lead with patch-id when reporting cross-clone change identity. Include SHA-256 a
 
 Two format-patch envelopes produced from different bases — or the same change cherry-picked onto different branches — yield different SHA-256 hashes for the envelope file but share the same patch-id. They are the same change in different packaging and must not be mistaken for different changes or flagged as a mismatch. Conversely, two patches with different patch-ids are genuinely different changes even if their commit messages or file lists look similar.
 
+### Authority does not convert a hypothesis into fact
+
+A hypothesis supplied or endorsed by a manager, principal, or senior peer carries authority but not evidence. The hypothesis must still be derived — checked against source, tree, or commit — before acting on it. Plausible reasoning about what "must" be true is not a substitute for reading the file, running the command, or inspecting the diff. An unverified hypothesis acted on as fact can produce a correct-sounding fix for the wrong defect, or discard a valid finding because the explanation sounds right. Derive first, then act.
+
+### A mandated formatter on stale base produces undeclared changes
+
+When `npm run fix` or lint-staged runs on a tree whose base is behind the integrated tip, the formatter may reformat lines a peer already reformatted — producing an identical diff that rides silently in the cumulative parcel. The cause is mechanical (stale base, not carelessness), but the effect is the same: the parcel carries a path the summary does not name, and accepting it without inspection risks overlooking a content change hiding behind a formatting change. Regardless of cause, declare the reflow in the parcel summary and do not let it ride silently. Rebase before sending when possible — a rebased parcel eliminates the reflow entirely.
+
+### A prediction is falsified only under the same scope
+
+When a measured count exceeds a prediction, first check whether requirements or work were added between the prediction and the measurement. A prediction made under scope S is falsified only by a measurement under scope S; work that arrived after the prediction was issued expands the scope and explains the surplus without falsifying the original estimate. When the surplus is explained by new work, insert a newly earned step rather than relabeling a later increment — but only after deriving the step by names or content, not by assuming the explanation.
+
 ## Parcel acceptance
 
 Compare the parcel summary's stated intent against the actual diff effect before accepting. Inspect every deleted line and file, and every path not named by the summary. A parcel doing more than it says — or less — is rejected for a clean rebased replacement rather than partially accepted. Deleted tests can make suites greener and evade typecheck; deleted comments can remove caveats that constrain a measurement's interpretation. The summary is a claim about the diff, not a substitute for reading it.
