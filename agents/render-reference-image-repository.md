@@ -194,8 +194,12 @@ for a replacement image.
 ```
 
 Each target names one exact selected image, not merely a cell that a later capture may replace. The
-commission workflow decodes the later PNG using the same `pixelSha256` definition and refuses to stage
-it when the hash differs or cannot be established. The capture identity records where the selection was
+commission workflow decodes the later PNG using the same `pixelSha256` definition, and then treats two
+outcomes differently. A PNG it cannot **read or decode** is a `request-image-unreadable` problem and is
+not staged. A PNG whose hash merely **differs** from the requested one is *review evidence, not a
+refusal*: the difference is recorded in `request-image-differences.json`, the candidate still stages,
+and a reviewer decides. `scripts/reference-image-candidate.ts` states the rule at its source —
+*decodable differences are review evidence, not a capture failure once the build commit is bound*. The capture identity records where the selection was
 made; it is provenance, not another dimension in the one-column-per-backend key.
 
 The request also names why the image should move. It deliberately does **not** contain the
