@@ -44,6 +44,7 @@
     { "path": "./packages/geolocation" },
     { "path": "./packages/geometry" },
     { "path": "./packages/gui" },
+    { "path": "./packages/gizmo" },
     { "path": "./packages/haptics" },
     { "path": "./packages/host-capacitor" },
     { "path": "./packages/host-electron" },

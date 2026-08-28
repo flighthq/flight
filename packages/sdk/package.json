@@ -132,6 +132,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/glyphatlas": "*",
     "@flighthq/gui": "*",
+    "@flighthq/gizmo": "*",
     "@flighthq/haptics": "*",
     "@flighthq/image": "*",
     "@flighthq/image-codec": "*",
