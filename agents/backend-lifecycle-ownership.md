@@ -52,17 +52,17 @@ is deliberately never updated; the figures in this section track the live tree a
 ### Release audit of the five counted rows
 
 Each counted row was read against its implementations: what the backend *owns* versus what its
-`destroy()` *releases*. Every mismatch is listed. **Two of the five have no reachable teardown for the
-host-installed backend at all**, which the gate cannot see because it only reads declarations and setter
-wiring. This section is the semantic column the gate is missing; it is hand-derived and is a floor, not
-an oracle.
+`destroy()` *releases*. Every mismatch is listed. Every concrete whole-owner now has reachable teardown
+for its host-installed backend, but the gate cannot see that reachability or the release behavior because
+it reads only declarations and setter wiring. This section is the semantic column the gate is missing;
+it is hand-derived and is a floor, not an oracle.
 
 | row | owns | destroy releases | mismatch |
 | --- | --- | --- | --- |
 | `AccessibilityBackend` | mirrored element map, live-region map, overlay root (only when self-created) | identity-removes the tracked mirrored nodes and live regions; removes a self-created root; preserves a caller-supplied root and every untracked child; pins `rootResolved` so it cannot resurrect | **closed.** Owned identities are removed without selector/root-wide cleanup, including borrowed lookalikes; clear/reuse and destroy behavior are assertion-backed |
 | `LogTransportBackend` | — | — | **nothing to audit:** no concrete implementation exists anywhere in `packages/`; only the interface and the single-slot management. Its count is purely structural |
 | `MediaSessionBackend` | the action set it registered, plus `metadata`, `playbackState` and position state on each exact `navigator.mediaSession` identity it published to | releases only lanes still carrying that backend's provenance token; metadata and playback state additionally require the exact published value; explicit clears relinquish ownership; failed releases remain retryable | **closed.** A superseding backend or external publisher remains intact, shared-session lanes are released independently, and a session-identity change cannot redirect cleanup |
-| `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | Electron clears the listener and calls `Menu.setApplicationMenu(null)`; Tauri clears the listener only; web is a no-op | **under-release:** Tauri native-menu cleanup remains owed pending an observable async teardown contract, and the host-installed backend has no reachable teardown — there is no `destroyMenuBackend`, and `setMenuBackend` destroys only the custom slot |
+| `MenuBackend` | Electron/Tauri: the select listener; the installed application menu. Web: nothing | `destroyMenuBackend` clears both slots first, then releases every distinct unretained backend once; Electron clears the select listener and calls `Menu.setApplicationMenu(null)`; Tauri clears the listener only; web is a no-op | **partial closure / under-release:** capability teardown is now reachable, re-entrant-safe, alias-safe and assertion-backed. Tauri native-menu cleanup remains owed pending an observable async teardown contract |
 | `PowerBackend` | web: `_wakeLockSentinel` (an OS wake lock), a `'release'` listener on each sentinel, and module-level `_cachedLevel`/`_cachedCharging`/`_cachedChargingTime`/`_cachedDischargingTime` | releases and nulls the sentinel; detaches each retained `(sentinel, handler)` pair by identity; resets the four cached readings | **closed.** All three findings were remediated in order — teardown made reachable (`destroyPowerBackend`), then the release completed. This row is behaviorally assertion-backed; see *Behavioral completeness* below |
 
 Battery, resume and freeze listeners are *not* mismatches: each is returned as an unsubscribe thunk and
@@ -112,14 +112,14 @@ of the process, recoverable only through the test-only `resetHostWeb*ForTest()`.
 **Closed for Power, MediaSession, Accessibility and Menu.** Each capability now exports a host-slot
 query (`hasPowerHostBackend`, `hasMediaSessionHostBackend`, `hasAccessibilityHostBackend`,
 `hasMenuHostBackend`) and the host enables ask instead of remembering; their `_enabled` variables are
-gone. Restoring the latch fails the re-enable test in all four. Menu's separate lifecycle mismatch
-remains: its host teardown still cannot be invoked because there is no `destroyMenuBackend`.
+gone. Restoring the latch fails the re-enable test in all four. Menu's host teardown is now reachable;
+its separate native Tauri release mismatch remains.
 
 ### Remediation design for the Power host slot and the irreversible enable
 
-Design only — nothing here is implemented, and the lifecycle floor does not move until it is. `Menu` has
-the same two defects and is owned elsewhere; this design is written so the same three steps apply to it
-unchanged.
+Historical design record — Power has completed all three steps without moving the structural lifecycle
+floor. Menu has completed the slot-derived latch and reachable-teardown steps; its Tauri backend remains
+JS-only until an observable async native teardown contract exists.
 
 #### The ordering constraint, which is the whole point
 
