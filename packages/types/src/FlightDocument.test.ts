@@ -1,11 +1,13 @@
 import type { Camera3D, Projection } from './Camera3D';
 import type {
   FlightDocument,
+  FlightDocumentScene,
   FlightDocumentScene2D,
   FlightDocumentScene2DMaterialization,
   FlightDocumentScene3D,
   FlightDocumentScene3DMaterialization,
 } from './FlightDocument';
+import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource';
 import type { Light } from './Light';
 import type { Scene2D } from './Scene2D';
 import type { Scene3D } from './Scene3D';
@@ -14,29 +16,59 @@ import type { Scene3DLights } from './Scene3DLights';
 import type { Transform3D } from './Transform3D';
 
 describe('FlightDocument', () => {
-  it('keeps the dimension in metadata and node children nested', () => {
+  it('groups mixed-dimension scenes over one shared resource table', () => {
     const document: FlightDocument = {
-      backgroundColor: 0x112233ff,
-      kind: 'Scene2D',
-      resources: [],
-      scene: {
-        children: [{ children: [], fields: { texture: 'hero' }, kind: 'Sprite' }],
-        fields: {},
-        kind: 'DisplayObject',
-      },
+      defaultScene: 1,
+      resources: [{ fields: { source: 'shared.png' }, key: 'shared', kind: 'Texture' }],
+      scenes: [
+        {
+          backgroundColor: 0x112233ff,
+          kind: 'Scene2D',
+          scene: {
+            children: [{ children: [], fields: { texture: 'shared' }, kind: 'Sprite' }],
+            fields: {},
+            kind: 'DisplayObject',
+          },
+        },
+        {
+          cameras: [],
+          kind: 'Scene3D',
+          lights: [],
+          scene: {
+            children: [{ children: [], fields: { texture: 'shared' }, kind: 'Mesh' }],
+            fields: {},
+            kind: 'Node3D',
+          },
+        },
+      ],
       version: 1,
     };
 
-    expect(document.scene.children[0]?.kind).toBe('Sprite');
-    expect(document.backgroundColor).toBe(0x112233ff);
+    expect(document.resources).toHaveLength(1);
+    expect(document.scenes.map((scene) => scene.kind)).toEqual(['Scene2D', 'Scene3D']);
+    expect(document.scenes[document.defaultScene]?.kind).toBe('Scene3D');
+    expect(document.scenes[0].scene.children[0]?.fields.texture).toBe('shared');
+    expect(document.scenes[1].scene.children[0]?.fields.texture).toBe('shared');
+  });
+
+  it('owns the version, shared resources, non-empty scenes, and default index', () => {
+    expectTypeOf<keyof FlightDocument>().toEqualTypeOf<'defaultScene' | 'resources' | 'scenes' | 'version'>();
+    expectTypeOf<FlightDocument['defaultScene']>().toEqualTypeOf<number>();
+    expectTypeOf<FlightDocument['resources']>().toEqualTypeOf<FlightDocumentResourceDescriptor[]>();
+    expectTypeOf<FlightDocument['scenes']>().toEqualTypeOf<[FlightDocumentScene, ...FlightDocumentScene[]]>();
+    expectTypeOf<FlightDocument['version']>().toEqualTypeOf<1>();
+  });
+});
+
+describe('FlightDocumentScene', () => {
+  it('is the self-identifying union of the two scene-entry shapes', () => {
+    expectTypeOf<FlightDocumentScene>().toEqualTypeOf<FlightDocumentScene2D | FlightDocumentScene3D>();
   });
 });
 
 describe('FlightDocumentScene2D', () => {
   it('follows Scene2DDocument metadata and has no camera field', () => {
-    expectTypeOf<keyof FlightDocumentScene2D>().toEqualTypeOf<
-      'backgroundColor' | 'kind' | 'resources' | 'scene' | 'version'
-    >();
+    expectTypeOf<keyof FlightDocumentScene2D>().toEqualTypeOf<'backgroundColor' | 'kind' | 'scene'>();
     expectTypeOf<FlightDocumentScene2D['backgroundColor']>().toEqualTypeOf<number | null>();
   });
 });
@@ -49,6 +81,10 @@ describe('FlightDocumentScene2DMaterialization', () => {
 });
 
 describe('FlightDocumentScene3D', () => {
+  it('keeps cameras and lights on the 3D scene entry rather than the shared container', () => {
+    expectTypeOf<keyof FlightDocumentScene3D>().toEqualTypeOf<'cameras' | 'kind' | 'lights' | 'scene'>();
+  });
+
   it('uses the existing Scene3DDocument camera array without renamed projection fields', () => {
     expectTypeOf<FlightDocumentScene3D['cameras']>().toEqualTypeOf<Scene3DDocumentCamera[]>();
     expectTypeOf<keyof Scene3DDocumentCamera>().toEqualTypeOf<
