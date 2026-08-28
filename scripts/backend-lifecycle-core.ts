@@ -55,6 +55,17 @@ export interface BackendLifecycleReport {
   violations: readonly BackendLifecycleViolation[];
 }
 
+// The empty report, owned beside the type it builds. A fixture that needs a VALID report rather than a
+// particular one starts here and overrides only the fields under test, so a field added to
+// `BackendLifecycleReport` is supplied in this one place instead of at every construction site.
+//
+// This exists because the opposite happened: `enforcedNames` was added to the interface and had to be
+// hand-applied to six literals. Five were found and the sixth — a provenance fixture that never reads
+// the report's contents at all — was missed, and broke the root typecheck.
+export function createEmptyBackendLifecycleReport(): BackendLifecycleReport {
+  return { enforced: 0, enforcedNames: [], entries: [], noTeardownHook: 0, total: 0, violations: [] };
+}
+
 // Interfaces that own something to free, keyed by name, with the teardown member's name.
 //
 // A member counts only when it takes NO parameters. That single condition is what separates "free what

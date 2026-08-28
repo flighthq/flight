@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
   collectBackendInterfaceNames,
   createBackendOperationSeamReport,
+  createEmptyBackendOperationSeamReport,
   formatBackendOperationSeamReport,
   hasBackendOperationSeamFailure,
 } from './backend-operation-seam-core';
@@ -62,6 +63,24 @@ describe('backend operation seam ratchet', () => {
     for (const entry of report.entries.filter((candidate) => candidate.migrated)) {
       expect(entry.packageName).not.toBeNull();
     }
+  });
+});
+
+describe('createEmptyBackendOperationSeamReport', () => {
+  // ★ Compared against the production path, never against a field list written here — a list would be a
+  // second copy of the shape, which is the defect the factory exists to remove.
+  it('supplies every field the real report producer does', () => {
+    const produced = createBackendOperationSeamReport([], new Map());
+    expect(Object.keys(createEmptyBackendOperationSeamReport()).sort()).toEqual(Object.keys(produced).sort());
+  });
+
+  it('is empty rather than merely well-typed', () => {
+    const empty = createEmptyBackendOperationSeamReport();
+    expect(empty.enforced).toBe(0);
+    expect(empty.notMigrated).toBe(0);
+    expect(empty.total).toBe(0);
+    expect(empty.entries).toEqual([]);
+    expect(empty.violations).toEqual([]);
   });
 });
 

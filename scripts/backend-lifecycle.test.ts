@@ -10,6 +10,7 @@ import {
   compareBackendLifecycleReports,
   compareFloorToReport,
   createBackendLifecycleReport,
+  createEmptyBackendLifecycleReport,
   formatBackendLifecycleDelta,
   formatBackendLifecycleReport,
   hasBackendLifecycleFailure,
@@ -255,6 +256,7 @@ describe('compareFloorToReport', () => {
   it('reports denominator shrinkage as removed seams, not a regression', () => {
     const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend'], total: 5 };
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
@@ -276,6 +278,7 @@ describe('compareFloorToReport', () => {
   it('reports numerator loss at unchanged denominator as a regression', () => {
     const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend', 'BBackend'], total: 3 };
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
@@ -296,6 +299,7 @@ describe('compareFloorToReport', () => {
   it('keeps removed seams distinct from lost enforced owners', () => {
     const floor: BackendLifecycleFloor = { enforcedNames: ['ABackend', 'BBackend'], total: 5 };
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
@@ -313,9 +317,32 @@ describe('compareFloorToReport', () => {
   });
 });
 
+describe('createEmptyBackendLifecycleReport', () => {
+  // ★ The factory is a single owning location only if it supplies EVERY field the production path does.
+  // The comparison is against a report built by `createBackendLifecycleReport`, never against a field
+  // list written here — such a list would be a second copy of the shape, which is the exact defect this
+  // factory exists to remove. Add a field to the interface and wire it into the producer, and this goes
+  // red until the factory learns it too.
+  it('supplies every field the real report producer does', () => {
+    const produced = createBackendLifecycleReport([], new Map(), new Map());
+    expect(Object.keys(createEmptyBackendLifecycleReport()).sort()).toEqual(Object.keys(produced).sort());
+  });
+
+  it('is empty rather than merely well-typed', () => {
+    const empty = createEmptyBackendLifecycleReport();
+    expect(empty.enforced).toBe(0);
+    expect(empty.noTeardownHook).toBe(0);
+    expect(empty.total).toBe(0);
+    expect(empty.enforcedNames).toEqual([]);
+    expect(empty.entries).toEqual([]);
+    expect(empty.violations).toEqual([]);
+  });
+});
+
 describe('formatBackendLifecycleReport with floor', () => {
   it('emits the delta inline when a floor is provided', () => {
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
@@ -336,6 +363,7 @@ describe('formatBackendLifecycleReport with floor', () => {
 
   it('emits regression count when an enforced backend disappears', () => {
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 0,
       enforcedNames: [],
       entries: [
@@ -353,6 +381,7 @@ describe('formatBackendLifecycleReport with floor', () => {
 
   it('emits removed seams when current population is below the baseline', () => {
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [
@@ -371,6 +400,7 @@ describe('formatBackendLifecycleReport with floor', () => {
 
   it('emits both removed seams and regressions when population shrinks and an enforced backend is lost', () => {
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 0,
       enforcedNames: [],
       entries: [
@@ -388,6 +418,7 @@ describe('formatBackendLifecycleReport with floor', () => {
 
   it('omits the delta when no floor is provided', () => {
     const report: BackendLifecycleReport = {
+      ...createEmptyBackendLifecycleReport(),
       enforced: 1,
       enforcedNames: ['ABackend'],
       entries: [{ interfaceName: 'ABackend', setter: null, teardown: 'destroy', tearsDown: false }],

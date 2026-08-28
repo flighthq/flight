@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   countP5HostBypasses,
+  createEmptyP5HostBypassReport,
   createP5HostBypassReport,
   deriveP5InputIngressListenerOperations,
   formatP5HostBypassReport,
@@ -326,5 +327,21 @@ describe('P5 host-bypass derived gate', () => {
     );
     expect(portableConsumer.p5).toEqual([]);
     expect(portableConsumer.excluded).toEqual([]);
+  });
+});
+
+describe('createEmptyP5HostBypassReport', () => {
+  // ★ Compared against the production path, never against a field list written here — a list would be a
+  // second copy of the shape, which is the defect the factory exists to remove.
+  it('supplies every field the real report producer does', () => {
+    const produced = createP5HostBypassReport(0, []);
+    expect(Object.keys(createEmptyP5HostBypassReport()).sort()).toEqual(Object.keys(produced).sort());
+  });
+
+  it('is empty rather than merely well-typed', () => {
+    const empty = createEmptyP5HostBypassReport();
+    expect(empty.scannedFiles).toBe(0);
+    expect(empty.excluded).toEqual([]);
+    expect(empty.p5).toEqual([]);
   });
 });

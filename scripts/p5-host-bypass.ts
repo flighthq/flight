@@ -41,6 +41,13 @@ export interface P5HostBypassReport {
   readonly scannedFiles: number;
 }
 
+// The empty report, owned beside the type it builds. See `createEmptyBackendLifecycleReport` for why
+// every report type carries one: a fixture that needs a valid report rather than a particular one
+// starts here, so a new field is supplied once instead of at each construction site.
+export function createEmptyP5HostBypassReport(): P5HostBypassReport {
+  return { excluded: [], p5: [], scannedFiles: 0 };
+}
+
 export type P5HostBypassBudget = Readonly<Record<P5HostBypassKind, number>>;
 
 export interface P5HostBypassBudgetEvidence {

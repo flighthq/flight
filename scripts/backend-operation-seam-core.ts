@@ -37,6 +37,13 @@ export interface BackendOperationSeamReport {
   violations: readonly BackendOperationSeamViolation[];
 }
 
+// The empty report, owned beside the type it builds. See `createEmptyBackendLifecycleReport` for why
+// every report type carries one: a fixture that needs a valid report rather than a particular one
+// starts here, so a new field is supplied once instead of at each construction site.
+export function createEmptyBackendOperationSeamReport(): BackendOperationSeamReport {
+  return { enforced: 0, entries: [], notMigrated: 0, total: 0, violations: [] };
+}
+
 // Every `*Backend` interface declared in `@flighthq/types`. This is the denominator, and it is derived
 // rather than counted once and written down.
 export function collectBackendInterfaceNames(typeSourceFiles: readonly string[]): string[] {
