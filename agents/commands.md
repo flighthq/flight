@@ -84,6 +84,14 @@ Check closure claims by reading the source paths the claim covers, not only by c
 
 When a narrow change must ship before the cumulative base can advance, a verified single-commit `git format-patch` attachment makes summary and effect match structurally: integration applies only the attachment (`git am`) and ignores the parcel's cumulative diff. Include the patch's SHA-256 hash and diffstat in the note so the recipient can verify before applying. This is an exceptional workaround for base-advance lag, not normal practice — advancing the base and rebasing is the real fix, and a rebased parcel needs no attachment.
 
+### Cross-clone change identity uses stable patch-id
+
+A change crosses clones when it leaves one agent's repo and lands in another's — via parcel, format-patch, or integration cherry-pick. Commit SHAs are rewritten by every rebase, cherry-pick, and reapplication, so they identify a commit object, not the change it carries. The stable identifier is `git patch-id --stable`: it hashes the diff content (hunks and paths, ignoring whitespace and line numbers) and survives every transformation that preserves the change's substance.
+
+Lead with patch-id when reporting cross-clone change identity. Include SHA-256 and byte count for the exact attached-file envelope (so the recipient can verify the artifact they received), exact numstat and file scope (so the recipient can see the change's shape without applying it), and source commit SHA only as secondary provenance (it names where the change was when the report was written, not where it will be after integration applies it).
+
+Two format-patch envelopes produced from different bases — or the same change cherry-picked onto different branches — yield different SHA-256 hashes for the envelope file but share the same patch-id. They are the same change in different packaging and must not be mistaken for different changes or flagged as a mismatch. Conversely, two patches with different patch-ids are genuinely different changes even if their commit messages or file lists look similar.
+
 ## Parcel acceptance
 
 Compare the parcel summary's stated intent against the actual diff effect before accepting. Inspect every deleted line and file, and every path not named by the summary. A parcel doing more than it says — or less — is rejected for a clean rebased replacement rather than partially accepted. Deleted tests can make suites greener and evade typecheck; deleted comments can remove caveats that constrain a measurement's interpretation. The summary is a claim about the diff, not a substitute for reading it.
