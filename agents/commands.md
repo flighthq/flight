@@ -70,9 +70,17 @@ A mutation report must distinguish survivors introduced or reachable by the work
 
 A gate that enumerates conditions by name — a list of backends, a roster of known defects, a set of expected warnings — records a floor on what has been observed, not an exhaustive ceiling on what exists. When a consumer contradicts a closed gate (reports a condition the gate says is absent), the first question is whether the detector looks for the reported condition at all. A roster that does not contain a term cannot find it, and its silence is not evidence of absence — it is evidence of the roster's vocabulary. Expand the detector before trusting the gate's answer.
 
+### A synchronous try/catch cannot catch a Promise rejection
+
+A `try/catch` around an un-awaited call that returns a Promise handles only synchronous throws — if the call itself succeeds but the returned Promise rejects, the rejection escapes the catch block entirely. When calling a Promise-returning function from a synchronous context (like `destroy`), either `await` the result (if the caller can be async) or attach an explicit `.catch(() => {})` on the returned Promise chain. Every such site requires a rejection-axis test: a fake that makes the call reject, verifying no unhandled rejection leaks. The test is the proof the handler exists; without it, a future edit can remove the `.catch()` silently.
+
 ## Parcel acceptance
 
 Compare the parcel summary's stated intent against the actual diff effect before accepting. Inspect every deleted line and file, and every path not named by the summary. A parcel doing more than it says — or less — is rejected for a clean rebased replacement rather than partially accepted. Deleted tests can make suites greener and evade typecheck; deleted comments can remove caveats that constrain a measurement's interpretation. The summary is a claim about the diff, not a substitute for reading it.
+
+## Paused work must leave the working tree
+
+Paused work — a decision deferred, a half-finished refactor, uncommitted exploratory edits — must be preserved in an explicitly named, date-stamped recoverable stash or isolated state before switching to unrelated work. It must not remain in the working tree. A cumulative parcel carries everything since `quimby/seed`, so paused content sitting in the tree rides with the next handoff as though it were part of the delivered work. If the pause was a deliberate hold (e.g., awaiting a design ruling), the parcel silently reverses the hold by shipping the held content alongside unrelated changes — and the summary, written for the new work, will not mention it. Verify a clean tree before starting unrelated work so that the parcel's cumulative state matches the summary's stated intent. See also [Unowned working-tree content](#unowned-working-tree-content-before-rebase-or-handoff) for the matching guard on content you did not author.
 
 ## Unowned working-tree content before rebase or handoff
 
