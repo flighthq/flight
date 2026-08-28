@@ -25,7 +25,7 @@ describe('backend replacement lifetime census', () => {
     expect(typeFiles.length).toBeGreaterThan(0);
     const names = collectBackendInterfaceNames(typeFiles).map((name) => `${name}Backend`);
     teardowns = collectWholeBackendTeardowns(typeFiles);
-    report = createBackendLifecycleReport(names, teardowns, collectSetterBodies());
+    report = createBackendLifecycleReport(names, teardowns, collectSetterBodies(), collectFunctionBodies());
     // eslint-disable-next-line no-console
     console.log(formatBackendLifecycleReport(report));
   });
@@ -72,7 +72,7 @@ describe('backend replacement lifetime census', () => {
   // entirely, so `violations` stays empty and the gate goes green on a regression. A leak check that
   // passes because the thing it checked disappeared is worse than no check.
   it('never enforces fewer backends than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(2);
+    expect(report.enforced).toBeGreaterThanOrEqual(3);
   });
 
   // The ratchet: replacement must free what the outgoing backend held, for every backend that owns
@@ -127,6 +127,30 @@ function collectSetterBodies(): ReadonlyMap<string, string> {
     for (const file of packageSourceFiles(packageName)) {
       const text = readFileSync(file, 'utf-8');
       const pattern = /^export function (set\w*Backend)\([^)]*\)[^{]*\{/gm;
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(text)) !== null) {
+        const open = text.indexOf('{', match.index);
+        let depth = 0;
+        let end = open;
+        for (; end < text.length; end++) {
+          if (text[end] === '{') depth++;
+          else if (text[end] === '}' && --depth === 0) break;
+        }
+        bodies.set(match[1], text.slice(open + 1, end));
+      }
+    }
+  }
+  return bodies;
+}
+
+// Every top-level function body in the repo's package sources, so the census can follow a setter into the
+// helper it delegates teardown to.
+function collectFunctionBodies(): ReadonlyMap<string, string> {
+  const bodies = new Map<string, string>();
+  for (const packageName of packageNames()) {
+    for (const file of packageSourceFiles(packageName)) {
+      const text = readFileSync(file, 'utf-8');
+      const pattern = /^(?:export )?function (\w+)\([^)]*\)[^{]*\{/gm;
       let match: RegExpExecArray | null;
       while ((match = pattern.exec(text)) !== null) {
         const open = text.indexOf('{', match.index);

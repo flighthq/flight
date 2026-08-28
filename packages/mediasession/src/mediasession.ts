@@ -92,10 +92,10 @@ export function createWebMediaSessionBackend(): MediaSessionBackend {
 // and safe to call twice — the second call finds an empty slot, which is what makes teardown exactly-once
 // without a destroyed flag that could drift from the thing it describes.
 export function destroyMediaSessionBackend(): void {
-  const backend = _custom ?? _host;
+  const previous = [_custom, _host] as const;
   _custom = null;
   _host = null;
-  backend?.destroy?.();
+  releaseMediaSessionBackends(previous);
 }
 
 export function explainMediaSessionBackend(): BackendExplanation {
@@ -151,6 +151,7 @@ export function observeMediaSessionHostResult(operation: string, succeeded: bool
 }
 
 export function resetMediaSessionBackendForTest(): void {
+  destroyMediaSessionBackend();
   _custom = null;
   _host = null;
   _hostConflict = false;
@@ -169,8 +170,9 @@ export function setMediaSessionActionHandler(
 // Installing the backend already present is a no-op rather than a destroy-then-reinstall of live state.
 export function setMediaSessionBackend(backend: MediaSessionBackend | null): void {
   if (_custom === backend) return;
-  _custom?.destroy?.();
+  const previous = [_custom] as const;
   _custom = backend;
+  releaseMediaSessionBackends(previous);
 }
 
 export function setMediaSessionMetadata(metadata: Readonly<MediaSessionMetadata>): void {
@@ -199,4 +201,23 @@ let _hostObservation: { operation: string; viability: 'available' | 'runtime-api
 function getWebMediaSession(): MediaSession | null {
   if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return null;
   return navigator.mediaSession;
+}
+
+// Destroys every backend that WAS referenced and is not referenced any more — exactly once each.
+//
+// ★ Ownership is per SLOT, and the same object may sit in two slots. Three cases this gets right that a
+// `_custom ?? _host` teardown gets wrong:
+//   - SHADOWED: installing a custom over a live host does not destroy the host; it is still owned.
+//   - ALIASED: when custom and host are the same object, clearing custom must NOT destroy it, because the
+//     host slot still references it.
+//   - DISTINCT: clearing both must destroy BOTH, not just whichever the `??` chain reached first.
+// Deduplicated by identity, so an aliased backend is destroyed once and never twice.
+function releaseMediaSessionBackends(previous: readonly (Readonly<MediaSessionBackend> | null)[]): void {
+  const retained = new Set<unknown>([_custom, _host].filter((slot) => slot !== null));
+  const released = new Set<unknown>();
+  for (const backend of previous) {
+    if (backend === null || retained.has(backend) || released.has(backend)) continue;
+    released.add(backend);
+    backend.destroy?.();
+  }
 }
