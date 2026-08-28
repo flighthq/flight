@@ -1,5 +1,4 @@
 import { createCamera3D } from '@flighthq/camera/contract';
-import { createTransform3D } from '@flighthq/geometry/contract';
 import { createScene3DLights } from '@flighthq/lighting/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
@@ -13,31 +12,23 @@ import type {
   FlightDocumentNode,
   FlightDocumentNodeSchema,
   FlightDocumentRefusalExplanation,
-  FlightDocumentRefusalReason as FlightDocumentRefusalReasonType,
   FlightDocumentResourceDescriptor,
   FlightDocumentResourceLookup,
   FlightDocumentResourceResolverRegistry,
   FlightDocumentScene3D,
   FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
-  FlightDocumentValue,
   NodeAny,
   Scene3D,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
   Scene3DLights,
-  Transform3D,
 } from '@flighthq/types/contract';
 import { AmbientLightKind, DirectionalLightKind, FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
+import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
 import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
-import {
-  checkUnregisteredNodeKinds,
-  checkUnregisteredNodeKindsFromRaw,
-  createDocumentRefusal,
-  createSceneRefusal,
-} from './sceneDocumentRefusal';
-import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
+import { checkUnregisteredNodeKinds, createSceneRefusal } from './sceneDocumentRefusal';
 
 export function createFlightDocumentFromScene3D(
   source: Readonly<Scene3D>,
@@ -80,7 +71,7 @@ export function createFlightDocumentScene3DMaterializationFromText(
   resolvers?: Readonly<FlightDocumentResourceResolverRegistry>,
   sceneIndex?: number,
 ): FlightDocumentScene3DMaterialization | null {
-  const document = parseFlightDocumentFromText(text);
+  const document = parseFlightDocumentText(text);
   if (document === null) return null;
   return createFlightDocumentScene3DMaterialization(document, schemas, resolvers, sceneIndex);
 }
@@ -101,45 +92,11 @@ export function explainFlightDocumentScene3DRefusal(
 export function explainFlightDocumentScene3DRefusalFromText(
   text: string,
   schemas: Readonly<FlightDocumentSchemaRegistry>,
-  _sceneIndex?: number,
+  sceneIndex?: number,
 ): FlightDocumentRefusalExplanation | null {
-  const result = parseSceneDocumentYamlSubset(text);
-  if (!result.ok) {
-    return {
-      actual: result.actual,
-      column: result.column,
-      kind: null,
-      limit: result.limit,
-      line: result.line,
-      offset: result.offset,
-      path: '',
-      reason: result.kind as FlightDocumentRefusalReasonType,
-      resourceKey: null,
-      version: null,
-    };
-  }
-  const value = result.value;
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    return createDocumentRefusal(FlightDocumentRefusalReason.StructureInvalid, '');
-  }
-  const mapping = value as Record<string, unknown>;
-  const version = mapping['flight'];
-  if (typeof version !== 'number') {
-    return createDocumentRefusal(FlightDocumentRefusalReason.StructureInvalid, 'flight');
-  }
-  if (version !== 1) {
-    return {
-      ...createDocumentRefusal(FlightDocumentRefusalReason.VersionUnsupported, 'version'),
-      version,
-    };
-  }
-  const kind = mapping['kind'];
-  if (kind !== 'Scene3D') {
-    return createSceneRefusal(FlightDocumentRefusalReason.StructureInvalid, 0, 'kind');
-  }
-  const lightRefusal = checkDuplicateLightsFromRaw(mapping['lights'], 0);
-  if (lightRefusal !== null) return lightRefusal;
-  return checkUnregisteredNodeKindsFromRaw(mapping['scene'], schemas, 0, 'scene');
+  const document = parseFlightDocumentText(text);
+  if (document === null) return explainFlightDocumentText(text);
+  return explainFlightDocumentScene3DRefusal(document, schemas, sceneIndex);
 }
 
 function checkDuplicateLights(
@@ -156,32 +113,6 @@ function checkDuplicateLights(
       }
     }
     if (light.descriptor.kind === DirectionalLightKind) {
-      directionalCount++;
-      if (directionalCount > 1) {
-        return createSceneRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, sceneIndex, 'lights');
-      }
-    }
-  }
-  return null;
-}
-
-function checkDuplicateLightsFromRaw(value: unknown, sceneIndex: number): FlightDocumentRefusalExplanation | null {
-  if (!Array.isArray(value)) return null;
-  let ambientCount = 0;
-  let directionalCount = 0;
-  for (const item of value) {
-    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
-    const mapping = item as Record<string, unknown>;
-    const descriptor = mapping['descriptor'];
-    if (descriptor === null || descriptor === undefined || typeof descriptor !== 'object') continue;
-    const kind = (descriptor as Record<string, unknown>)['kind'];
-    if (kind === AmbientLightKind) {
-      ambientCount++;
-      if (ambientCount > 1) {
-        return createSceneRefusal(FlightDocumentRefusalReason.DuplicateAmbientLight, sceneIndex, 'lights');
-      }
-    }
-    if (kind === DirectionalLightKind) {
       directionalCount++;
       if (directionalCount > 1) {
         return createSceneRefusal(FlightDocumentRefusalReason.DuplicateDirectionalLight, sceneIndex, 'lights');
@@ -224,158 +155,6 @@ function materializeLights(lights: readonly Readonly<Scene3DDocumentLight>[]): S
     ambient: ambientEntry !== undefined ? (ambientEntry.descriptor as AmbientLight) : null,
     directional: directionalEntry !== undefined ? (directionalEntry.descriptor as DirectionalLight) : null,
   });
-}
-
-function parseFlightDocumentFromText(text: string): FlightDocument | null {
-  const result = parseSceneDocumentYamlSubset(text);
-  if (!result.ok) return null;
-  const value = result.value;
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null;
-  const mapping = value as Record<string, unknown>;
-  const version = mapping['flight'];
-  if (version !== 1) return null;
-  const kind = mapping['kind'];
-  if (kind !== 'Scene3D') return null;
-  const sceneRaw = mapping['scene'];
-  const scene = parseDocumentNode(sceneRaw) ?? { children: [], fields: {}, kind: 'Node3D' };
-  const resources = parseResources(mapping['resources']);
-  const cameras = parseCameras(mapping['cameras']);
-  const documentLights = parseLights(mapping['lights']);
-  return {
-    cameras,
-    kind: 'Scene3D',
-    lights: documentLights,
-    resources,
-    scene,
-    version: 1,
-  };
-}
-
-function parseCameras(value: unknown): Scene3DDocumentCamera[] {
-  if (!Array.isArray(value)) return [];
-  const out: Scene3DDocumentCamera[] = [];
-  for (const item of value) {
-    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
-    const mapping = item as Record<string, unknown>;
-    const far = mapping['far'];
-    const near = mapping['near'];
-    const projection = mapping['projection'];
-    if (typeof far !== 'number' || typeof near !== 'number') continue;
-    if (projection === null || projection === undefined || typeof projection !== 'object') continue;
-    const transform = parseTransform3D(mapping['transform']);
-    const cam: Scene3DDocumentCamera = {
-      far,
-      near,
-      projection: projection as Scene3DDocumentCamera['projection'],
-      transform,
-    };
-    const name = mapping['name'];
-    if (typeof name === 'string') cam.name = name;
-    out.push(cam);
-  }
-  return out;
-}
-
-function parseLights(value: unknown): Scene3DDocumentLight[] {
-  if (!Array.isArray(value)) return [];
-  const out: Scene3DDocumentLight[] = [];
-  for (const item of value) {
-    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
-    const mapping = item as Record<string, unknown>;
-    const descriptorRaw = mapping['descriptor'];
-    if (descriptorRaw === null || descriptorRaw === undefined || typeof descriptorRaw !== 'object') continue;
-    const descriptor = descriptorRaw as Scene3DDocumentLight['descriptor'];
-    if (typeof descriptor.kind !== 'string') continue;
-    const transform = parseTransform3D(mapping['transform']);
-    const light: Scene3DDocumentLight = { descriptor, transform };
-    const name = mapping['name'];
-    if (typeof name === 'string') light.name = name;
-    out.push(light);
-  }
-  return out;
-}
-
-function parseDocumentNode(value: unknown): FlightDocumentNode | null {
-  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-  const mapping = value as Record<string, unknown>;
-  const kind = mapping['kind'];
-  if (typeof kind !== 'string') return null;
-  const childrenRaw = mapping['children'];
-  const children: FlightDocumentNode[] = [];
-  if (Array.isArray(childrenRaw)) {
-    for (const item of childrenRaw) {
-      const child = parseDocumentNode(item);
-      if (child !== null) children.push(child);
-    }
-  }
-  const fields: FlightDocumentFields = {};
-  for (const key of Object.keys(mapping)) {
-    if (key === 'kind' || key === 'children') continue;
-    fields[key] = mapping[key] as FlightDocumentValue;
-  }
-  return { children, fields, kind };
-}
-
-function parseResources(value: unknown): FlightDocumentResourceDescriptor[] {
-  if (!Array.isArray(value)) return [];
-  const out: FlightDocumentResourceDescriptor[] = [];
-  for (const item of value) {
-    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue;
-    const mapping = item as Record<string, unknown>;
-    const kind = mapping['kind'];
-    const key = mapping['key'];
-    if (typeof kind !== 'string' || typeof key !== 'string') continue;
-    const fields: FlightDocumentFields = {};
-    for (const k of Object.keys(mapping)) {
-      if (k === 'kind' || k === 'key') continue;
-      fields[k] = mapping[k] as FlightDocumentValue;
-    }
-    out.push({ fields, key, kind });
-  }
-  return out;
-}
-
-function parseTransform3D(value: unknown): Transform3D {
-  const identity = createTransform3D();
-  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) {
-    return identity;
-  }
-  const mapping = value as Record<string, unknown>;
-  const out = createTransform3D();
-  parseVector3Into(out.position, mapping['position']);
-  parseQuaternionInto(out.rotation, mapping['rotation']);
-  parseVector3Into(out.scale, mapping['scale'], identity.scale);
-  return out;
-}
-
-function parseVector3Into(
-  out: { x: number; y: number; z: number },
-  value: unknown,
-  fallback?: Readonly<{ x: number; y: number; z: number }>,
-): void {
-  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) {
-    if (fallback !== undefined) {
-      out.x = fallback.x;
-      out.y = fallback.y;
-      out.z = fallback.z;
-    }
-    return;
-  }
-  const mapping = value as Record<string, unknown>;
-  if (typeof mapping['x'] === 'number') out.x = mapping['x'];
-  if (typeof mapping['y'] === 'number') out.y = mapping['y'];
-  if (typeof mapping['z'] === 'number') out.z = mapping['z'];
-}
-
-function parseQuaternionInto(out: { w: number; x: number; y: number; z: number }, value: unknown): void {
-  if (value === null || value === undefined || typeof value !== 'object' || Array.isArray(value)) return;
-  const mapping = value as Record<string, unknown>;
-  if (typeof mapping['w'] === 'number') out.w = mapping['w'];
-  if (typeof mapping['x'] === 'number') out.x = mapping['x'];
-  if (typeof mapping['y'] === 'number') out.y = mapping['y'];
-  if (typeof mapping['z'] === 'number') out.z = mapping['z'];
 }
 
 function resolveResources(

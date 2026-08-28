@@ -16,12 +16,16 @@ import type {
 import { DisplayObjectKind, FlightDocumentRefusalReason, Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { formatFlightDocumentText } from './flightDocumentText';
 import {
   createFlightDocumentScene2DMaterialization,
+  createFlightDocumentScene2DMaterializationFromText,
   explainFlightDocumentRefusal,
+  explainFlightDocumentRefusalFromText,
 } from './sceneDocumentScene2DMaterialization';
 import {
   createFlightDocumentScene3DMaterialization,
+  createFlightDocumentScene3DMaterializationFromText,
   explainFlightDocumentScene3DRefusal,
 } from './sceneDocumentScene3DMaterialization';
 
@@ -47,6 +51,23 @@ describe('multi-scene materialization selection', () => {
     expect(wrongPerScene3D).toBeNull();
     expect(seenResources).toEqual([sharedResource, sharedResource]);
     expect(seenResources[0]).toBe(seenResources[1]);
+  });
+
+  it('preserves selected and explicit-index semantics through the text conveniences', () => {
+    const seenResources: unknown[] = [];
+    const schemas = createTestSchemas(seenResources);
+    const sharedResource = {};
+    const resolvers = createTestResolvers(sharedResource);
+    const text = formatFlightDocumentText(createMixedDocument());
+
+    expect(createFlightDocumentScene3DMaterializationFromText(text, schemas, resolvers)).not.toBeNull();
+    expect(createFlightDocumentScene2DMaterializationFromText(text, schemas, resolvers)).toBeNull();
+    expect(createFlightDocumentScene2DMaterializationFromText(text, schemas, resolvers, 0)).not.toBeNull();
+    expect(explainFlightDocumentRefusalFromText(text, 'Scene2D', schemas, 1)).toMatchObject({
+      path: 'scenes[1].kind',
+      reason: FlightDocumentRefusalReason.StructureInvalid,
+    });
+    expect(seenResources).toEqual([sharedResource, sharedResource]);
   });
 
   it('rejects an empty scene container through both dimension entrypoints', () => {
