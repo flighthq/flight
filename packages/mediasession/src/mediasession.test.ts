@@ -26,6 +26,7 @@ interface FakeMediaSession {
   metadata: unknown;
   playbackState: string;
   positionCalls: unknown[];
+  positionState: unknown;
   handlers: Map<string, ((details: MediaSessionActionDetails) => void) | null>;
   setPositionState?: (state?: unknown) => void;
   setActionHandler(action: string, handler: ((details: MediaSessionActionDetails) => void) | null): void;
@@ -61,9 +62,11 @@ function installFakeMediaSession(unsupportedAction?: string): FakeMediaSession {
     metadata: undefined,
     playbackState: 'none',
     positionCalls: [],
+    positionState: undefined,
     handlers: new Map(),
     setPositionState(state?: unknown) {
       this.positionCalls.push(state);
+      this.positionState = state;
     },
     setActionHandler(action, handler) {
       if (action === unsupportedAction) throw new Error('unsupported action');
@@ -72,6 +75,17 @@ function installFakeMediaSession(unsupportedAction?: string): FakeMediaSession {
   };
   Object.defineProperty(navigator, 'mediaSession', { value: session, configurable: true });
   return session;
+}
+
+function publishAllMediaSessionLanes(
+  backend: Readonly<MediaSessionBackend>,
+  title: string,
+  handler: (details: Readonly<MediaSessionActionDetails>) => void,
+): void {
+  backend.setMetadata!({ title, artist: `${title} Artist`, album: `${title} Album`, artwork: [] });
+  backend.setPlaybackState!('playing');
+  backend.setPositionState!({ duration: 100, playbackRate: 1, position: 10 });
+  backend.setActionHandler!('play', handler);
 }
 
 function removeMediaSession(): void {
@@ -235,30 +249,306 @@ describe('createWebMediaSessionBackend', () => {
 describe('createWebMediaSessionBackend destroy', () => {
   afterEach(() => resetMediaSessionBackendForTest());
 
-  // ★ The action handlers are the dangerous part: a callback left registered keeps the OS transport
-  // buttons calling into a backend that has been replaced. Destroy must clear exactly the actions THIS
-  // instance registered.
-  it('clears the action handlers it registered, and the published card', () => {
-    const cleared: (string | null)[] = [];
-    const session = {
-      metadata: {} as unknown,
-      playbackState: 'playing',
-      setActionHandler: (action: string, handler: unknown) => {
-        if (handler === null) cleared.push(action);
-      },
-      setPositionState: () => undefined,
-    };
-    vi.stubGlobal('navigator', { mediaSession: session });
-
+  it('preserves untouched lanes while clearing the one action it published', () => {
+    const session = installFakeMediaSession();
+    const foreignMetadata = { title: 'Foreign' };
+    const foreignPosition = { duration: 20, playbackRate: 1, position: 5 };
+    const foreignPauseHandler = vi.fn();
+    session.metadata = foreignMetadata;
+    session.playbackState = 'paused';
+    session.positionState = foreignPosition;
+    session.handlers.set('pause', foreignPauseHandler);
     const backend = createWebMediaSessionBackend();
     backend.setActionHandler!('play', () => undefined);
-    backend.setActionHandler!('pause', () => undefined);
     backend.destroy!();
 
-    expect(cleared.sort()).toEqual(['pause', 'play']);
+    expect(session.metadata).toBe(foreignMetadata);
+    expect(session.playbackState).toBe('paused');
+    expect(session.positionState).toBe(foreignPosition);
+    expect(session.positionCalls).toEqual([]);
+    expect(session.handlers.get('pause')).toBe(foreignPauseHandler);
+    expect(session.handlers.get('play')).toBeNull();
+  });
+
+  it.each(['metadata', 'playbackState', 'positionState', 'action'] as const)(
+    'acquires and releases only the %s lane',
+    (lane) => {
+      const session = installFakeMediaSession();
+      const foreignMetadata = { title: 'Foreign' };
+      const foreignPosition = { duration: 20, playbackRate: 1, position: 5 };
+      const foreignPauseHandler = vi.fn();
+      session.metadata = foreignMetadata;
+      session.playbackState = 'paused';
+      session.positionState = foreignPosition;
+      session.handlers.set('pause', foreignPauseHandler);
+      const backend = createWebMediaSessionBackend();
+
+      if (lane === 'metadata') {
+        backend.setMetadata!({ title: 'Owned', artist: 'Artist', album: 'Album', artwork: [] });
+      } else if (lane === 'playbackState') {
+        backend.setPlaybackState!('playing');
+      } else if (lane === 'positionState') {
+        backend.setPositionState!({ duration: 100, playbackRate: 1, position: 10 });
+      } else {
+        backend.setActionHandler!('play', () => undefined);
+      }
+
+      backend.destroy!();
+
+      expect(session.metadata).toBe(lane === 'metadata' ? null : foreignMetadata);
+      expect(session.playbackState).toBe(lane === 'playbackState' ? 'none' : 'paused');
+      expect(session.positionState).toBe(lane === 'positionState' ? undefined : foreignPosition);
+      expect(session.handlers.get('play')).toBe(lane === 'action' ? null : undefined);
+      expect(session.handlers.get('pause')).toBe(foreignPauseHandler);
+    },
+  );
+
+  it('relinquishes every lane after an explicit clear', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    publishAllMediaSessionLanes(backend, 'Owned', () => undefined);
+
+    backend.setMetadata!(null);
+    backend.setPlaybackState!('none');
+    backend.setPositionState!(null);
+    backend.setActionHandler!('play', null);
+
+    const foreignMetadata = { title: 'Foreign' };
+    const foreignPosition = { duration: 40, playbackRate: 1, position: 8 };
+    const foreignPlayHandler = vi.fn();
+    session.metadata = foreignMetadata;
+    session.playbackState = 'paused';
+    session.positionState = foreignPosition;
+    session.handlers.set('play', foreignPlayHandler);
+    const positionCallCount = session.positionCalls.length;
+
+    backend.destroy!();
+
+    expect(session.metadata).toBe(foreignMetadata);
+    expect(session.playbackState).toBe('paused');
+    expect(session.positionState).toBe(foreignPosition);
+    expect(session.positionCalls).toHaveLength(positionCallCount);
+    expect(session.handlers.get('play')).toBe(foreignPlayHandler);
+  });
+
+  it('makes explicit clears on a pristine backend final', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    backend.setMetadata!(null);
+    backend.setPlaybackState!('none');
+    backend.setPositionState!(null);
+    backend.setActionHandler!('play', null);
+
+    const foreignMetadata = { title: 'Foreign' };
+    const foreignPosition = { duration: 40, playbackRate: 1, position: 8 };
+    const foreignPlayHandler = vi.fn();
+    session.metadata = foreignMetadata;
+    session.playbackState = 'paused';
+    session.positionState = foreignPosition;
+    session.handlers.set('play', foreignPlayHandler);
+    const positionCallCount = session.positionCalls.length;
+
+    backend.destroy!();
+
+    expect(session.metadata).toBe(foreignMetadata);
+    expect(session.playbackState).toBe('paused');
+    expect(session.positionState).toBe(foreignPosition);
+    expect(session.positionCalls).toHaveLength(positionCallCount);
+    expect(session.handlers.get('play')).toBe(foreignPlayHandler);
+  });
+
+  it('drops stale publications after another backend explicitly clears their ownership', () => {
+    const session = installFakeMediaSession();
+    const publisher = createWebMediaSessionBackend();
+    const clearer = createWebMediaSessionBackend();
+    publishAllMediaSessionLanes(publisher, 'Owned', () => undefined);
+    clearer.setMetadata!(null);
+    clearer.setPlaybackState!('none');
+    clearer.setPositionState!(null);
+    clearer.setActionHandler!('play', null);
+
+    const foreignMetadata = { title: 'Foreign' };
+    const foreignPosition = { duration: 40, playbackRate: 1, position: 8 };
+    const foreignPlayHandler = vi.fn();
+    session.metadata = foreignMetadata;
+    session.playbackState = 'paused';
+    session.positionState = foreignPosition;
+    session.handlers.set('play', foreignPlayHandler);
+    const positionCallCount = session.positionCalls.length;
+
+    publisher.destroy!();
+
+    expect(session.metadata).toBe(foreignMetadata);
+    expect(session.playbackState).toBe('paused');
+    expect(session.positionState).toBe(foreignPosition);
+    expect(session.positionCalls).toHaveLength(positionCallCount);
+    expect(session.handlers.get('play')).toBe(foreignPlayHandler);
+  });
+
+  it('preserves every lane superseded by a newer backend on the same session', () => {
+    const session = installFakeMediaSession();
+    const first = createWebMediaSessionBackend();
+    const second = createWebMediaSessionBackend();
+    publishAllMediaSessionLanes(first, 'First', () => undefined);
+    const secondHandler = vi.fn();
+    publishAllMediaSessionLanes(second, 'Second', secondHandler);
+    const secondMetadata = session.metadata;
+    const secondPosition = session.positionState;
+    const registeredSecondHandler = session.handlers.get('play');
+    const positionCallCount = session.positionCalls.length;
+
+    first.destroy!();
+
+    expect(session.metadata).toBe(secondMetadata);
+    expect(session.playbackState).toBe('playing');
+    expect(session.positionState).toBe(secondPosition);
+    expect(session.positionCalls).toHaveLength(positionCallCount);
+    expect(session.handlers.get('play')).toBe(registeredSecondHandler);
+
+    second.destroy!();
     expect(session.metadata).toBeNull();
     expect(session.playbackState).toBe('none');
-    vi.unstubAllGlobals();
+    expect(session.positionState).toBeUndefined();
+    expect(session.handlers.get('play')).toBeNull();
+  });
+
+  it('releases the exact session identity it touched without clearing the current navigator session', () => {
+    const firstSession = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    publishAllMediaSessionLanes(backend, 'Owned', () => undefined);
+
+    const currentSession = installFakeMediaSession();
+    const currentMetadata = { title: 'Current' };
+    const currentPosition = { duration: 60, playbackRate: 1, position: 12 };
+    const currentHandler = vi.fn();
+    currentSession.metadata = currentMetadata;
+    currentSession.playbackState = 'paused';
+    currentSession.positionState = currentPosition;
+    currentSession.handlers.set('play', currentHandler);
+
+    backend.destroy!();
+
+    expect(firstSession.metadata).toBeNull();
+    expect(firstSession.playbackState).toBe('none');
+    expect(firstSession.positionState).toBeUndefined();
+    expect(firstSession.handlers.get('play')).toBeNull();
+    expect(currentSession.metadata).toBe(currentMetadata);
+    expect(currentSession.playbackState).toBe('paused');
+    expect(currentSession.positionState).toBe(currentPosition);
+    expect(currentSession.positionCalls).toEqual([]);
+    expect(currentSession.handlers.get('play')).toBe(currentHandler);
+  });
+
+  it('preserves readable lanes replaced directly outside Flight', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    backend.setMetadata!({ title: 'Owned', artist: 'Artist', album: 'Album', artwork: [] });
+    backend.setPlaybackState!('playing');
+    const foreignMetadata = { title: 'Foreign' };
+    session.metadata = foreignMetadata;
+    session.playbackState = 'paused';
+
+    backend.destroy!();
+
+    expect(session.metadata).toBe(foreignMetadata);
+    expect(session.playbackState).toBe('paused');
+  });
+
+  it('keeps foreign and superseding action handlers out of an older backend roster', () => {
+    const session = installFakeMediaSession();
+    const first = createWebMediaSessionBackend();
+    const second = createWebMediaSessionBackend();
+    const foreignPauseHandler = vi.fn();
+    const secondPlayHandler = vi.fn();
+    session.handlers.set('pause', foreignPauseHandler);
+    first.setActionHandler!('play', () => undefined);
+    second.setActionHandler!('play', secondPlayHandler);
+    const registeredSecondHandler = session.handlers.get('play');
+
+    first.destroy!();
+
+    expect(session.handlers.get('pause')).toBe(foreignPauseHandler);
+    expect(session.handlers.get('play')).toBe(registeredSecondHandler);
+  });
+
+  it('retries failed lane releases and does no work after every release succeeds', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    publishAllMediaSessionLanes(backend, 'Owned', () => undefined);
+
+    let metadataValue = session.metadata;
+    let playbackStateValue = session.playbackState;
+    let metadataClearAttempts = 0;
+    let playbackStateClearAttempts = 0;
+    let positionClearAttempts = 0;
+    let actionClearAttempts = 0;
+    Object.defineProperty(session, 'metadata', {
+      configurable: true,
+      get: () => metadataValue,
+      set: (value: unknown) => {
+        if (value === null && metadataClearAttempts++ === 0) throw new Error('metadata clear failed');
+        metadataValue = value;
+      },
+    });
+    Object.defineProperty(session, 'playbackState', {
+      configurable: true,
+      get: () => playbackStateValue,
+      set: (value: string) => {
+        if (value === 'none' && playbackStateClearAttempts++ === 0) throw new Error('playback clear failed');
+        playbackStateValue = value;
+      },
+    });
+    const setPositionState = session.setPositionState!.bind(session);
+    session.setPositionState = (state?: unknown) => {
+      if (state === undefined && positionClearAttempts++ === 0) throw new Error('position clear failed');
+      setPositionState(state);
+    };
+    const setActionHandler = session.setActionHandler.bind(session);
+    session.setActionHandler = (action, handler) => {
+      if (action === 'play' && handler === null && actionClearAttempts++ === 0) {
+        throw new Error('action clear failed');
+      }
+      setActionHandler(action, handler);
+    };
+
+    expect(() => backend.destroy!()).not.toThrow();
+    expect(metadataValue).not.toBeNull();
+    expect(playbackStateValue).toBe('playing');
+    expect(session.positionState).not.toBeUndefined();
+    expect(session.handlers.get('play')).toBeTypeOf('function');
+    expect([metadataClearAttempts, playbackStateClearAttempts, positionClearAttempts, actionClearAttempts]).toEqual([
+      1, 1, 1, 1,
+    ]);
+
+    backend.destroy!();
+    expect(metadataValue).toBeNull();
+    expect(playbackStateValue).toBe('none');
+    expect(session.positionState).toBeUndefined();
+    expect(session.handlers.get('play')).toBeNull();
+    expect([metadataClearAttempts, playbackStateClearAttempts, positionClearAttempts, actionClearAttempts]).toEqual([
+      2, 2, 2, 2,
+    ]);
+
+    backend.destroy!();
+    expect([metadataClearAttempts, playbackStateClearAttempts, positionClearAttempts, actionClearAttempts]).toEqual([
+      2, 2, 2, 2,
+    ]);
+  });
+
+  it('retains position ownership until a temporarily missing release method returns', () => {
+    const session = installFakeMediaSession();
+    const backend = createWebMediaSessionBackend();
+    const position = { duration: 100, playbackRate: 1, position: 10 };
+    backend.setPositionState!(position);
+    const setPositionState = session.setPositionState;
+    delete session.setPositionState;
+
+    backend.destroy!();
+    expect(session.positionState).toBe(position);
+
+    session.setPositionState = setPositionState;
+    backend.destroy!();
+    expect(session.positionState).toBeUndefined();
   });
 });
 
