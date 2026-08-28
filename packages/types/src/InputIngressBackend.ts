@@ -49,4 +49,6 @@ export interface InputIngressBackend {
   ): () => void;
   attachText(source: InputIngressSource, sink: InputIngressSink, options?: Readonly<AttachInputOptions>): () => void;
   attachWheel(source: InputIngressSource, sink: InputIngressSink, options?: Readonly<AttachInputOptions>): () => void;
+  exitPointerLock?(): void;
+  hasPointerLock?(): boolean;
 }

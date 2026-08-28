@@ -541,6 +541,14 @@ export function createWebInputIngressBackend(): InputIngressBackend {
       target.addEventListener('wheel', onWheel, { passive: !preventDefault });
       return () => target.removeEventListener('wheel', onWheel);
     },
+
+    exitPointerLock(): void {
+      if (document.exitPointerLock) document.exitPointerLock();
+    },
+
+    hasPointerLock(): boolean {
+      return document.pointerLockElement !== null;
+    },
   };
 }
 
@@ -586,9 +594,7 @@ export function endInputStateFrame(state: InputState): void {
  * No-op if pointer lock is not currently active.
  */
 export function exitInputPointerLock(): void {
-  if (document.exitPointerLock) {
-    document.exitPointerLock();
-  }
+  getInputIngressBackend().exitPointerLock?.();
 }
 
 /**
@@ -684,7 +690,7 @@ export function getMouseWheelModeFromDomWheelEvent(event: Readonly<WheelEvent>):
  * Returns `true` if pointer lock is currently active on any element.
  */
 export function hasInputPointerLock(): boolean {
-  return document.pointerLockElement !== null;
+  return getInputIngressBackend().hasPointerLock?.() ?? false;
 }
 
 // First host wins; a custom backend installed through setInputIngressBackend always takes precedence.

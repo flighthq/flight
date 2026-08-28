@@ -931,7 +931,7 @@ describe('endInputStateFrame', () => {
 });
 
 describe('exitInputPointerLock', () => {
-  it('calls document.exitPointerLock when available', () => {
+  it('calls document.exitPointerLock through the Web backend when available', () => {
     let called = false;
     Object.defineProperty(document, 'exitPointerLock', {
       configurable: true,
@@ -941,6 +941,34 @@ describe('exitInputPointerLock', () => {
     });
     exitInputPointerLock();
     expect(called).toBe(true);
+  });
+
+  it('delegates to the selected backend without falling through to Web', () => {
+    const exitPointerLock = vi.fn();
+    const webExitPointerLock = vi.fn();
+    Object.defineProperty(document, 'exitPointerLock', {
+      configurable: true,
+      value: webExitPointerLock,
+    });
+    setInputIngressBackend({ ...createTestInputIngressBackend(), exitPointerLock });
+
+    exitInputPointerLock();
+
+    expect(exitPointerLock).toHaveBeenCalledOnce();
+    expect(webExitPointerLock).not.toHaveBeenCalled();
+  });
+
+  it('is inert when the selected backend omits pointer-lock exit', () => {
+    const webExitPointerLock = vi.fn();
+    Object.defineProperty(document, 'exitPointerLock', {
+      configurable: true,
+      value: webExitPointerLock,
+    });
+    setInputIngressBackend(createTestInputIngressBackend());
+
+    exitInputPointerLock();
+
+    expect(webExitPointerLock).not.toHaveBeenCalled();
   });
 });
 
@@ -1116,6 +1144,32 @@ describe('hasInputPointerLock', () => {
       configurable: true,
       get: () => null,
     });
+  });
+
+  it('delegates to the selected backend without reading Web state', () => {
+    const pointerLockElement = vi.fn(() => null);
+    Object.defineProperty(document, 'pointerLockElement', {
+      configurable: true,
+      get: pointerLockElement,
+    });
+    const hasPointerLock = vi.fn(() => true);
+    setInputIngressBackend({ ...createTestInputIngressBackend(), hasPointerLock });
+
+    expect(hasInputPointerLock()).toBe(true);
+    expect(hasPointerLock).toHaveBeenCalledOnce();
+    expect(pointerLockElement).not.toHaveBeenCalled();
+  });
+
+  it('returns false when the selected backend omits pointer-lock state', () => {
+    const pointerLockElement = vi.fn(() => document.body);
+    Object.defineProperty(document, 'pointerLockElement', {
+      configurable: true,
+      get: pointerLockElement,
+    });
+    setInputIngressBackend(createTestInputIngressBackend());
+
+    expect(hasInputPointerLock()).toBe(false);
+    expect(pointerLockElement).not.toHaveBeenCalled();
   });
 });
 
