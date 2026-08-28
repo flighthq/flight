@@ -1,5 +1,5 @@
 import { connectSignal, createSignal, disconnectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { BackendExplanation } from '@flighthq/types/contract';
+import type { BackendExplanation, BackendOperationExplanation } from '@flighthq/types/contract';
 import type {
   ApplicationWindow,
   Matrix,
@@ -9,6 +9,7 @@ import type {
   WindowBackend,
   WindowBounds,
   WindowOptions,
+  WindowOperation,
 } from '@flighthq/types/contract';
 
 const kClose = Symbol();
@@ -365,6 +366,15 @@ export function explainWindowBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// Reports the first layer that can genuinely serve this operation. The empty sentinel never counts as
+// support, and open additionally requires close because a successful opener creates a release obligation.
+export function explainWindowOperation(operation: WindowOperation): BackendOperationExplanation {
+  const backend = operation === 'open' ? getWindowLifecycleBackend('open') : getWindowOperationBackend(operation);
+  if (backend !== null && backend === _custom) return { implemented: true, layer: 'custom', operation };
+  if (backend !== null && backend === _host) return { implemented: true, layer: 'host', operation };
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 // Briefly flashes the window frame to attract attention. Native hosts may implement it via the
 // WindowBackend (for example Electron window.flashFrame(true)).
 export function flashWindowFrame(win: ApplicationWindow): void {
@@ -403,6 +413,10 @@ export function getWindowBounds(win: Readonly<ApplicationWindow>, out: WindowBou
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getWindowDisplay(win: Readonly<ApplicationWindow>): number {
   return -1;
+}
+
+export function hasWindowOperation(operation: WindowOperation): boolean {
+  return explainWindowOperation(operation).implemented;
 }
 
 // Hides the window without closing it.
@@ -685,7 +699,7 @@ function getWindowLifecycleBackend<Operation extends WindowLifecycleEntryOperati
 // actually provides, then the host receives the first chance to serve every uncovered operation.
 // The sentinel is deliberately absent from this resolver because publishing a no-op member would turn
 // structural absence back into false support.
-function getWindowOperationBackend<Operation extends WindowComposedOperation>(
+function getWindowOperationBackend<Operation extends WindowOperation>(
   operation: Operation,
 ): WindowBackendWithOperation<Operation> | null {
   if (hasWindowBackendOperation(_custom, operation)) return _custom;
@@ -708,8 +722,6 @@ function getApplicationWindowObservers(win: ApplicationWindow): Map<symbol, () =
   }
   return observers;
 }
-
-type WindowComposedOperation = Exclude<keyof WindowBackend, 'attach'>;
 
 type WindowBackendWithOperation<Operation extends keyof WindowBackend> = WindowBackend &
   Required<Pick<WindowBackend, Operation>>;

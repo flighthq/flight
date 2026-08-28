@@ -142,3 +142,7 @@ export interface WindowBackend {
   // Shows or hides the native drop shadow around the window. macOS / native only; web omits it.
   setHasShadow?(win: ApplicationWindow, hasShadow: boolean): void;
 }
+
+// The P1 per-operation availability population. Existing-window attachment is the separately ruled P4
+// path and has its own ownership-bearing public function rather than participating in the generic query.
+export type WindowOperation = Exclude<keyof WindowBackend, 'attach'>;
