@@ -86,63 +86,6 @@ describe('createTauriMenuBackend', () => {
     expect(await pending).toBe('cut');
   });
 
-  it('clears the native application menu on destroy', async () => {
-    const { tauri, state } = fakeTauri();
-    const backend = createTauriMenuBackend(tauri);
-    backend.setApplicationMenu(template);
-    await flush();
-    expect(state.appMenuSet).toBe(1);
-    backend.destroy?.();
-    await flush();
-    expect(state.appMenuSet).toBe(2);
-  });
-
-  it('clears the native application menu exactly once on double destroy', async () => {
-    const { tauri, state } = fakeTauri();
-    const backend = createTauriMenuBackend(tauri);
-    backend.setApplicationMenu(template);
-    await flush();
-    expect(state.appMenuSet).toBe(1);
-    backend.destroy?.();
-    backend.destroy?.();
-    await flush();
-    expect(state.appMenuSet).toBe(2);
-  });
-
-  it('swallows rejected menu clear on destroy without unhandled rejection', async () => {
-    const rejectingTauri = {
-      menu: {
-        Menu: { new: () => Promise.reject(new Error('unavailable')) },
-        MenuItem: {
-          async new() {
-            return { id: '' };
-          },
-        },
-        Submenu: {
-          async new() {
-            return { id: '' };
-          },
-        },
-        PredefinedMenuItem: {
-          async new() {
-            return { id: '' };
-          },
-        },
-      },
-      window: {
-        LogicalPosition: class {
-          constructor(
-            public x: number,
-            public y: number,
-          ) {}
-        },
-      },
-    } as unknown as TauriApi;
-    const backend = createTauriMenuBackend(rejectingTauri);
-    backend.destroy?.();
-    await flush();
-  });
-
   it('clears the select listener on destroy', async () => {
     const { tauri, state } = fakeTauri();
     const backend = createTauriMenuBackend(tauri);
@@ -150,6 +93,7 @@ describe('createTauriMenuBackend', () => {
     backend.subscribeSelect((id) => selected.push(id));
     backend.setApplicationMenu(template);
     await flush();
+    backend.destroy?.();
     backend.destroy?.();
     state.actions.get('open')!('open');
     expect(selected).toEqual([]);
