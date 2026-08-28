@@ -1,9 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
-import { createEmptyBackendLifecycleReport, formatBackendLifecycleReport } from './backend-lifecycle-core';
-import { createEmptyBackendOperationSeamReport, formatBackendOperationSeamReport } from './backend-operation-seam-core';
+import {
+  BACKEND_LIFECYCLE_SCOPE_CAVEAT,
+  createEmptyBackendLifecycleReport,
+  formatBackendLifecycleReport,
+} from './backend-lifecycle-core';
+import {
+  BACKEND_OPERATION_SEAM_SCOPE_CAVEAT,
+  createEmptyBackendOperationSeamReport,
+  formatBackendOperationSeamReport,
+} from './backend-operation-seam-core';
 import { createEmptyTransportBypassReport, formatTransportBypassReport } from './check-transport-bypasses';
-import { GATE_PROVENANCE_FIELDS, formatGateProvenance, readGateTreeState } from './gate-provenance';
+import {
+  GATE_PROVENANCE_FIELDS,
+  GATE_STRUCTURAL_LIMIT,
+  formatGateProvenance,
+  readGateTreeState,
+} from './gate-provenance';
 import { createEmptyP5HostBypassReport, formatP5HostBypassReport } from './p5-host-bypass';
 
 const PROVENANCE = {
@@ -119,6 +132,23 @@ describe('every derived gate prints its provenance', () => {
       expect(bodyOf(populated)).not.toBe(bodyOf(empty));
     });
   }
+});
+
+// ★ THE TWO STRUCTURAL GATES MUST STATE THE SAME LIMIT, not merely similar ones. Both read a declaration
+// and neither runs the code it describes, so both are read as stronger than they are. Owning the sentence
+// in one place is what keeps them from drifting into two nearly-identical caveats that disagree in the
+// detail a reader relies on.
+describe('GATE_STRUCTURAL_LIMIT', () => {
+  it('appears verbatim in both structural gate caveats', () => {
+    expect(BACKEND_LIFECYCLE_SCOPE_CAVEAT).toContain(GATE_STRUCTURAL_LIMIT);
+    expect(BACKEND_OPERATION_SEAM_SCOPE_CAVEAT).toContain(GATE_STRUCTURAL_LIMIT);
+  });
+
+  // Each names what it DOES count, so the shared limit cannot be read as "these gates measure nothing".
+  it('is paired with what each gate actually counts', () => {
+    expect(BACKEND_LIFECYCLE_SCOPE_CAVEAT).toContain('counts hook presence');
+    expect(BACKEND_OPERATION_SEAM_SCOPE_CAVEAT).toContain('counts migration');
+  });
 });
 
 function bodyOf(text: string): string {

@@ -46,8 +46,9 @@ is deliberately never updated; the figures in this section track the live tree a
   `destroy`/`dispose` in method or property syntax, so a per-object teardown taking an id is excluded
 - **live output** — `5 of 46 backends declare a whole-backend teardown hook, 41 declare none`, followed
   by the scope caveat the gate now prints on every run:
-  `STRUCTURAL: hook presence and setter wiring only; this gate does NOT verify that destroy releases
-  what a backend owns — behavior unverified`
+  `STRUCTURAL: counts hook presence — a zero-parameter destroy/dispose named by its set*Backend;
+  measures neither test depth nor audited behavior, so it cannot say whether destroy releases what a
+  backend owns`
 
 ### Release audit of the five counted rows
 

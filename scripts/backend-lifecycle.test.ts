@@ -18,6 +18,7 @@ import {
 } from './backend-lifecycle-core';
 import type { BackendLifecycleDelta, BackendLifecycleFloor, BackendLifecycleReport } from './backend-lifecycle-core';
 import { collectBackendInterfaceNames } from './backend-operation-seam-core';
+import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
 
 // P4's replacement-lifetime census. Population and exclusions are both derived: a backend can only leak a
 // resource it owns, and ownership is the interface declaring a NO-ARGUMENT `destroy()`/`dispose()`.
@@ -117,7 +118,9 @@ describe('backend replacement lifetime census', () => {
   it('prints the caveat that the count is structural and behavior is unverified', () => {
     expect(formattedOutput).toContain(BACKEND_LIFECYCLE_SCOPE_CAVEAT);
     expect(formattedOutput).toContain('STRUCTURAL');
-    expect(formattedOutput).toContain('behavior unverified');
+    // Names what it counts, and the two things it cannot speak to.
+    expect(formattedOutput).toContain('counts hook presence');
+    expect(formattedOutput).toContain(GATE_STRUCTURAL_LIMIT);
     // The summary must not reassert ownership semantics the gate cannot observe.
     expect(formattedOutput).not.toContain('own a freeable resource');
   });

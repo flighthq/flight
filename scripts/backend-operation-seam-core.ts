@@ -1,4 +1,4 @@
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+import { formatGateProvenance, GATE_STRUCTURAL_LIMIT, readGateTreeState } from './gate-provenance';
 import { getParsedOxcSource } from './oxc-source';
 
 // The per-operation availability ratchet.
@@ -116,6 +116,7 @@ export function formatBackendOperationSeamReport(report: Readonly<BackendOperati
   lines.push(
     `${report.enforced} of ${report.total} interface shapes enforced (declaration only; consumer builds not validated here), ${report.notMigrated} not yet migrated`,
   );
+  lines.push(BACKEND_OPERATION_SEAM_SCOPE_CAVEAT);
   for (const entry of report.entries.filter((candidate) => candidate.migrated)) {
     lines.push(`  enforced  ${entry.name.padEnd(24)} ${entry.packageName ?? ''}`);
   }
@@ -127,6 +128,12 @@ export function formatBackendOperationSeamReport(report: Readonly<BackendOperati
 
 // Fails on a violation, and equally on a partition that does not sum. The second is the one worth having:
 // a derivation that drops an interface would otherwise report a smaller, entirely plausible `enforced`.
+// ★ THE SCOPE CAVEAT, printed on every run beside the count and asserted by the tests so it cannot be
+// dropped. This gate counts MIGRATION — an interface whose owning package exports the per-operation
+// seam. That is a declaration, and the number is routinely read as "N operations work", which it has
+// never meant: nothing here runs the operation, compiles a consumer, or looks at a test.
+export const BACKEND_OPERATION_SEAM_SCOPE_CAVEAT = `STRUCTURAL: counts migration — the owning package exports explain<Name>Operation; ${GATE_STRUCTURAL_LIMIT}, so it cannot say whether the operation behaves as declared`;
+
 export function hasBackendOperationSeamFailure(report: Readonly<BackendOperationSeamReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.notMigrated !== report.total;
 }
