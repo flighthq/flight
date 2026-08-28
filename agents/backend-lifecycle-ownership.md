@@ -262,15 +262,15 @@ silently disappearing, but it cannot infer that a hook is missing: absence of th
 an interface in `noTeardownHook`. The manually audited partition in this record supplies that missing
 semantic evidence.
 
-The backend-replacement lifetime census (`scripts/backend-lifecycle-core.ts`, `replacement-leaks`
-rule, tested in `scripts/backend-lifecycle.test.ts` as "reports no leak among the backends that own a
-freeable resource") produced its first production true positive on Tauri `MenuBackend`. The census
-enforced `MenuBackend` as a whole-backend owner; the `replacement-leaks` gate confirmed that
-`setMenuBackend` reaches `destroy()`. The enforcement-driven implementation audit of what `destroy()`
-executed found the unsafe pattern: a fire-and-forget async
+The teardown-rejection scanner (`scripts/teardown-rejection-core.ts`, tested in
+`scripts/teardown-rejection.test.ts` as "finds no uncatchable-rejection candidate in any host
+package") produced its first production red on Tauri `MenuBackend`. On its first run against the
+live tree, the scanner reported `packages/host-tauri/src/tauriMenu.ts destroy() →
+emptyMenu.setAsAppMenu` — an async call inside a synchronous `destroy()` whose rejection could not
+be caught by the caller. The flagged pattern was a fire-and-forget
 `Menu.new({items:[]}).then(m => m.setAsAppMenu()).catch(()=>{})` that raced with the replacement
 backend's `setApplicationMenu` and could overwrite the newly installed menu. Fixed at source by
-removing the async clear; the census and `replacement-leaks` detector are unchanged.
+removing the async clear; the scanner and its detection threshold are unchanged.
 
 ## Whole-backend owners
 
