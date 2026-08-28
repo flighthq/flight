@@ -118,6 +118,30 @@ export function createPowerStatus(): PowerStatus {
   };
 }
 
+// Tears down every installed Power backend and empties both slots.
+//
+// ★ THE HOST SLOT WAS PREVIOUSLY UNREACHABLE. `setPowerBackend` releases only the custom slot, and
+// `installPowerHostBackend` installs once, so a backend installed by `enableHostWebPower` — the one an
+// application actually gets — had no path that could ever call its `destroy()`. The structural lifecycle
+// gate counted `Power` as wired throughout, because it reads declarations and setter wiring rather than
+// reachability. This is the missing path.
+//
+// ★ SLOTS ARE CLEARED BEFORE RELEASE, and that is the opposite of what replacement does. The two
+// orderings are both deliberate:
+//   - REPLACEMENT (`setPowerBackend`) destroys while the outgoing backend is STILL selected, so teardown
+//     code that queries the active backend sees itself, and a teardown that throws aborts the install and
+//     leaves the outgoing backend owned for retry.
+//   - FULL TEARDOWN (here) empties the slots FIRST, so teardown is re-entrant: a `destroy()` that calls
+//     back into this function, or reads `getPowerBackend()`, finds the sentinel rather than a backend
+//     that is already being freed. Clearing afterwards would let a re-entrant call free the same object
+//     a second time.
+export function destroyPowerBackend(): void {
+  const previous = [_custom, _host] as const;
+  _custom = null;
+  _host = null;
+  releasePowerBackends(previous, []);
+}
+
 // Stops delivery to `power` and forgets its subscription. Safe to call when not attached.
 export function detachPower(power: Power): void {
   const unsubscribe = _subscriptions.get(power);
@@ -245,10 +269,10 @@ export function resetPowerBackendForTest(): void {
 // is retained in the host slot (shared identity).
 export function setPowerBackend(backend: PowerBackend | null): void {
   if (_custom === backend) return;
-  const previous = _custom;
-  if (previous !== null && previous !== _host) {
-    previous.destroy?.();
-  }
+  // Released BEFORE the assignment, deliberately: the outgoing backend must still be the selected one
+  // during its own `destroy()`, and a teardown that throws must abort the install. `_host` is passed as
+  // retained so a backend occupying both slots is not freed while the host slot still owns it.
+  releasePowerBackends([_custom], [_host]);
   _custom = backend;
 }
 
@@ -263,6 +287,29 @@ export function setPowerIdlePollingIntervalMs(intervalMs: number): void {
 // mode defaults to 'PreventDisplaySleep'.
 export function setPowerKeepAwake(enabled: boolean, mode?: PowerKeepAwakeMode): boolean {
   return getPowerBackend().setKeepAwake(enabled, mode);
+}
+
+// Frees each distinct backend in `previous` that is not still owned by a surviving slot.
+//
+// `retainedSlots` is passed in rather than read from the live slots, because the two callers update the
+// slots at opposite points relative to this call: replacement releases before assigning, full teardown
+// clears before releasing. Reading `_custom`/`_host` here would therefore mean different things to each
+// caller, and would silently retain the very backend replacement is trying to free.
+//
+// Two guards, one per failure mode:
+//   - RETAINED: an object occupying more than one slot is not freed while another slot still owns it.
+//   - RELEASED: a backend aliased into both slots is freed exactly once, not once per slot it appeared in.
+function releasePowerBackends(
+  previous: readonly (Readonly<PowerBackend> | null)[],
+  retainedSlots: readonly (Readonly<PowerBackend> | null)[],
+): void {
+  const retained = new Set<unknown>(retainedSlots.filter((slot) => slot !== null));
+  const released = new Set<unknown>();
+  for (const backend of previous) {
+    if (backend === null || retained.has(backend) || released.has(backend)) continue;
+    released.add(backend);
+    backend.destroy?.();
+  }
 }
 
 let _custom: PowerBackend | null = null;
