@@ -1,3 +1,5 @@
+import type { FlightDocumentRefusalReason } from '@flighthq/types/contract';
+
 type SceneDocumentYamlSubsetValue =
   | null
   | boolean
@@ -17,7 +19,7 @@ interface SceneDocumentYamlSubsetSuccess {
 
 interface SceneDocumentYamlSubsetRefusal {
   readonly ok: false;
-  readonly kind: string;
+  readonly kind: SceneDocumentYamlSubsetRefusalReason;
   readonly limit: number | null;
   readonly actual: number | null;
   readonly offset: number;
@@ -26,6 +28,44 @@ interface SceneDocumentYamlSubsetRefusal {
 }
 
 type SceneDocumentYamlSubsetResult = SceneDocumentYamlSubsetSuccess | SceneDocumentYamlSubsetRefusal;
+
+// This exact private union makes every refusal the parser can emit a compile-time subset of the public
+// diagnostic taxonomy. Adding a lexer/parser refusal therefore requires publishing its stable identity
+// first; callers never need to cast an untyped parser string into FlightDocumentRefusalReason.
+type SceneDocumentYamlSubsetRefusalReason = Extract<
+  FlightDocumentRefusalReason,
+  | 'flight-document.limit.collection-entries'
+  | 'flight-document.limit.document-code-units'
+  | 'flight-document.limit.key-code-units'
+  | 'flight-document.limit.nesting-depth'
+  | 'flight-document.limit.scalar-code-units'
+  | 'flight-document.limit.total-nodes'
+  | 'flight-document.scalar.number-out-of-range'
+  | 'flight-document.syntax.duplicate-key'
+  | 'flight-document.syntax.expected-flow-delimiter'
+  | 'flight-document.syntax.expected-mapping-entry'
+  | 'flight-document.syntax.expected-mapping-key'
+  | 'flight-document.syntax.expected-scalar'
+  | 'flight-document.syntax.expected-value'
+  | 'flight-document.syntax.invalid-document'
+  | 'flight-document.syntax.invalid-escape'
+  | 'flight-document.syntax.mixed-collection'
+  | 'flight-document.syntax.multiple-root-values'
+  | 'flight-document.syntax.root-indentation'
+  | 'flight-document.syntax.tab-character'
+  | 'flight-document.syntax.trailing-flow-comma'
+  | 'flight-document.syntax.trailing-flow-content'
+  | 'flight-document.syntax.unexpected-indentation'
+  | 'flight-document.syntax.unexpected-token'
+  | 'flight-document.syntax.unterminated-flow-mapping'
+  | 'flight-document.syntax.unterminated-quoted-scalar'
+  | 'flight-document.unsupported.alias'
+  | 'flight-document.unsupported.anchor'
+  | 'flight-document.unsupported.block-scalar'
+  | 'flight-document.unsupported.document-separator'
+  | 'flight-document.unsupported.flow-sequence'
+  | 'flight-document.unsupported.tag'
+>;
 
 type SceneDocumentYamlSubsetTokenKind =
   | 'colon'
@@ -371,7 +411,7 @@ class SceneDocumentYamlSubsetLexer {
   }
 
   private refuse(
-    kind: string,
+    kind: SceneDocumentYamlSubsetRefusalReason,
     offset: number,
     line: number,
     column: number,
@@ -466,7 +506,7 @@ class SceneDocumentYamlSubsetParser {
   }
 
   private createRefusal(
-    kind: string,
+    kind: SceneDocumentYamlSubsetRefusalReason,
     token: SceneDocumentYamlSubsetToken,
     limit: number | null = null,
     actual: number | null = null,
@@ -727,7 +767,7 @@ class SceneDocumentYamlSubsetParser {
   }
 
   private refuse(
-    kind: string,
+    kind: SceneDocumentYamlSubsetRefusalReason,
     token: SceneDocumentYamlSubsetToken,
     limit: number | null = null,
     actual: number | null = null,
@@ -738,7 +778,7 @@ class SceneDocumentYamlSubsetParser {
 }
 
 function createSceneDocumentYamlSubsetRefusal(
-  kind: string,
+  kind: SceneDocumentYamlSubsetRefusalReason,
   position: SceneDocumentYamlSubsetPosition,
   limit: number | null = null,
   actual: number | null = null,
