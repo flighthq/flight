@@ -417,6 +417,7 @@ describe('installSocketHostBackend', () => {
 
 describe('resetSocketBackendForTest', () => {
   it('clears custom and host slots and restores the lazy web fallback', () => {
+    const originalWeb = getSocketBackend();
     const host = fakeBackend();
     const custom = fakeBackend();
     installSocketHostBackend(host.backend);
@@ -425,6 +426,7 @@ describe('resetSocketBackendForTest', () => {
     const web = getSocketBackend();
     expect(web).not.toBe(host.backend);
     expect(web).not.toBe(custom.backend);
+    expect(web).not.toBe(originalWeb);
     expect(typeof web.openSocket).toBe('function');
   });
 });
