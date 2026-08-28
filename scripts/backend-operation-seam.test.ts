@@ -67,9 +67,11 @@ describe('backend operation seam ratchet', () => {
   // Window is the next independently evidenced migration: all 28 operations are now structurally queried,
   // with sentinel, host, custom-precedence, and host-fallback coverage. This raises the floor 13 → 14;
   // it does not rewrite the preceding 12 → 13 AudioDevice history.
-  // 14 of 46 enforced / 32 not migrated after the Window closure.
+  // Image then independently adds operation-specific explanation for Bitmap materialization, with sentinel,
+  // host, custom-precedence, and consumer-absence coverage. That raises the floor 14 → 15.
+  // 15 of 46 enforced / 31 not migrated after the Window and Image closures.
   it('never enforces fewer interfaces than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(14);
+    expect(report.enforced).toBeGreaterThanOrEqual(15);
   });
 
   it('reports no violation among the migrated interfaces', () => {
