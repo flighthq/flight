@@ -24,7 +24,7 @@ Families meant to be extended — materials, effects, adjustments, lights — ar
 
 **Closed families are correct when there is no extensibility goal.** A family with fixed, well-known membership — especially one dispatched in a hot inner loop — may stay a closed discriminated union with `switch` dispatch, which is faster and simpler than a registry. `ParticleForce` / `ParticleCollider` (per-particle, per-frame) and quad-batch internals are deliberate closed families: they still use the per-concept-file layout and the string `kind` field, but membership is closed and dispatch is a `switch`. Go open only when users or other packages genuinely need to add variants — extensibility is a decision, not a default.
 
-## Kind identity is a string
+## Kind Identifiers
 
 A `*Kind` identifies a scene graph primitive or descriptor type. It is the key used for registration
 (`registerRenderer(state, FooKind, renderer)`); on hierarchy nodes it also enforces graph-family
