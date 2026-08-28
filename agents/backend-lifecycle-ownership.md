@@ -108,12 +108,11 @@ enableHostWebAccessibility()  → sentinel     ← expected host
 `MediaSession` probed identically: after teardown the capability was stuck on the sentinel for the life
 of the process, recoverable only through the test-only `resetHostWeb*ForTest()`.
 
-**Closed for Power, MediaSession and Accessibility.** Each capability now exports a host-slot query
-(`hasPowerHostBackend`, `hasMediaSessionHostBackend`, `hasAccessibilityHostBackend`) and the host enables
-ask instead of remembering; their `_enabled` variables are gone. Restoring the latch fails the re-enable
-test in all three. `Menu` still carries the original defect — it was never reachable there because its
-host teardown still cannot be invoked, so fixing that without also deriving its latch would newly expose
-this.
+**Closed for Power, MediaSession, Accessibility and Menu.** Each capability now exports a host-slot
+query (`hasPowerHostBackend`, `hasMediaSessionHostBackend`, `hasAccessibilityHostBackend`,
+`hasMenuHostBackend`) and the host enables ask instead of remembering; their `_enabled` variables are
+gone. Restoring the latch fails the re-enable test in all four. Menu's separate lifecycle mismatch
+remains: its host teardown still cannot be invoked because there is no `destroyMenuBackend`.
 
 ### Remediation design for the Power host slot and the irreversible enable
 
