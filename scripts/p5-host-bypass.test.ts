@@ -60,7 +60,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=25 direct-dom=12 input-ingress=0 frame-scheduling=0 scratch-surface=13 render-surface=0 webgpu-acquisition=0',
+      'P5 outstanding=22 direct-dom=9 input-ingress=0 frame-scheduling=0 scratch-surface=13 render-surface=0 webgpu-acquisition=0',
     );
     expect(p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
@@ -246,7 +246,7 @@ describe('P5 host-bypass derived gate', () => {
     );
   }, 30_000);
 
-  it('mutation-proves an extra removal fails the exact live-current assertion at total 24', () => {
+  it('mutation-proves an extra removal fails the exact live-current assertion at total 21', () => {
     const clean = scanP5HostBypasses(ROOT);
     const otherScratch = clean.p5.find((site) => site.kind === 'scratch-surface')!;
     const mutated = createP5HostBypassReport(clean.scannedFiles, [
@@ -257,7 +257,7 @@ describe('P5 host-bypass derived gate', () => {
     expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(p5HostBypassCurrentBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toEqual([
       'P5 current scratch-surface: found 12, expected 13',
-      'P5 current outstanding: found 24, expected 25',
+      'P5 current outstanding: found 21, expected 22',
     ]);
   }, 30_000);
 
@@ -476,32 +476,45 @@ describe('P5 host-bypass derived gate', () => {
         reason: 'Bitmap drawing allocates its pixel-transfer buffer through the caller-owned 2D context',
         total: 25,
       },
+      {
+        budget: {
+          'direct-dom': 9,
+          'input-ingress': 0,
+          'frame-scheduling': 0,
+          'scratch-surface': 13,
+          'render-surface': 0,
+          'webgpu-acquisition': 0,
+        },
+        reason: 'Input pointer-lock exit and state queries routed through the selected input ingress backend',
+        total: 22,
+      },
     ]);
     expect(p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
     expect(p5BitmapDrawTransferProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY)).toEqual([]);
   });
 
   it('mutation-proves S09 cannot collapse the immutable 26 -> 25 repair into 26 -> 24', () => {
-    const latest = P5_HOST_BYPASS_V4_PROGRESS_HISTORY.at(-1)!;
+    const s09 = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[3];
     const mutated = [
-      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, -1),
-      { ...latest, budget: { ...latest.budget, 'direct-dom': 11 }, total: 24 },
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, 3),
+      { ...s09, budget: { ...s09.budget, 'direct-dom': 11 }, total: 24 },
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(4),
     ];
     expect(p5HostBypassV4ProgressHistoryFailures(mutated)).toContain(
       'P5 taxonomy v4 progress history[3] must repair exactly one site; found 26 -> 24',
     );
   });
 
-  it('mutation-proves omitting the S09 ledger event fails history and live-current assertions', () => {
-    const omitted = P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, -1);
+  it('mutation-proves omitting the S09 ledger event fails history even when live-current still matches', () => {
+    const omitted = [...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, 3), ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(4)];
     expect(p5BitmapDrawTransferProgressFailures(omitted)).toContain(
       'S09 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason',
     );
+    expect(p5HostBypassV4ProgressHistoryFailures(omitted)).toContain(
+      'P5 taxonomy v4 progress history[3] must repair exactly one site; found 26 -> 22',
+    );
     const report = scanP5HostBypasses(ROOT);
-    expect(p5HostBypassCurrentBudgetFailures(report, omitted.at(-1)!.budget)).toEqual([
-      'P5 current scratch-surface: found 13, expected 14',
-      'P5 current outstanding: found 25, expected 26',
-    ]);
+    expect(p5HostBypassCurrentBudgetFailures(report, omitted.at(-1)!.budget)).toEqual([]);
   }, 30_000);
 
   it('mutation-proves S09 cannot rewrite the accepted S08 checkpoint', () => {
@@ -517,17 +530,19 @@ describe('P5 host-bypass derived gate', () => {
   });
 
   it('mutation-proves S09 checkpoint categories and reason independently', () => {
-    const latest = P5_HOST_BYPASS_V4_PROGRESS_HISTORY.at(-1)!;
+    const s09 = P5_HOST_BYPASS_V4_PROGRESS_HISTORY[3];
     const wrongCategories = [
-      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, -1),
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, 3),
       {
-        ...latest,
-        budget: { ...latest.budget, 'direct-dom': 11, 'scratch-surface': 14 },
+        ...s09,
+        budget: { ...s09.budget, 'direct-dom': 11, 'scratch-surface': 14 },
       },
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(4),
     ];
     const wrongReason = [
-      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, -1),
-      { ...latest, reason: 'mutation: wrong S09 reason' },
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(0, 3),
+      { ...s09, reason: 'mutation: wrong S09 reason' },
+      ...P5_HOST_BYPASS_V4_PROGRESS_HISTORY.slice(4),
     ];
     expect(p5BitmapDrawTransferProgressFailures(wrongCategories)).toContain(
       'S09 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason',
@@ -822,8 +837,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(3);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(15);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 15, budget 12');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(12);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 12, budget 9');
   }, 30_000);
 
   it('mutation-proves that restoring portable Bitmap materialization exceeds the lowered scratch ratchet', () => {
@@ -862,8 +877,8 @@ describe('P5 host-bypass derived gate', () => {
       ...restoredProbe,
     ]);
     expect(restoredProbe).toHaveLength(1);
-    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(13);
-    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 13, budget 12');
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(10);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 10, budget 9');
   }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {
