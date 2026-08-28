@@ -105,6 +105,8 @@ which is why they are not in the map.
 
 - [examples plan](examples-plan.md) — the planned example set and implementation order.
 - [quality plan](quality-plan.md) — API maturity verification, unit vs functional test guidance.
+- [input ingress seam plan](input-ingress-seam-plan.md) — **unratified.** the exhaustive 26-site DOM
+  listener population and a host-neutral attach/push migration plan with provider-pinned cleanup.
 - [structurally unable expected-image worklist](functional-structurally-unable-worklist.md) — the
   measured 243-cell CC-2 assignment sheet, including constructor seams and direct-registration tails.
 - [maturity gaps](maturity-gaps.md) — production-readiness gaps across the SDK.
