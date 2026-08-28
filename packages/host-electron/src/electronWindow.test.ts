@@ -202,7 +202,7 @@ describe('createElectronWindowBackend', () => {
     backend.open(win, {});
     created[0].bounds = { x: 10, y: 20, width: 300, height: 400 };
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    const result = backend.getBounds(win, out);
+    const result = backend.getBounds!(win, out);
     expect(result).toBe(out);
     expect(out).toEqual({ x: 10, y: 20, width: 300, height: 400 });
   });
@@ -216,7 +216,7 @@ describe('createElectronWindowBackend', () => {
     win.width = 70;
     win.height = 80;
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    backend.getBounds(win, out);
+    backend.getBounds!(win, out);
     expect(out).toEqual({ x: 5, y: 6, width: 70, height: 80 });
   });
 

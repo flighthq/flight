@@ -108,7 +108,8 @@ export interface WindowBackend {
   setTitle?(win: ApplicationWindow, title: string): void;
   setPosition?(win: ApplicationWindow, x: number, y: number): void;
   setSize?(win: ApplicationWindow, width: number, height: number): void;
-  getBounds(win: ApplicationWindow, out: WindowBounds): WindowBounds;
+  // Optional because getWindowBounds owns the honest entity-mirror fallback when no provider exists.
+  getBounds?(win: ApplicationWindow, out: WindowBounds): WindowBounds;
   minimize?(win: ApplicationWindow): void;
   maximize?(win: ApplicationWindow): void;
   restore?(win: ApplicationWindow): void;

@@ -249,13 +249,6 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
 function partialWindowBackend(operations: Partial<WindowBackend> = {}): WindowBackend {
   return {
     close() {},
-    getBounds(win, out) {
-      out.x = win.x;
-      out.y = win.y;
-      out.width = win.width;
-      out.height = win.height;
-      return out;
-    },
     open() {
       return false;
     },
@@ -1011,6 +1004,40 @@ describe('getWindowBounds', () => {
     expect(getWindowBounds(createApplicationWindow(), out)).toBe(out);
     expect(out.width).toBe(3);
   });
+
+  it('C-fallback axis: overwrites every stale out field from the entity mirror and returns the same object', () => {
+    const win = createApplicationWindow();
+    win.x = 10;
+    win.y = 20;
+    win.width = 640;
+    win.height = 480;
+    const out = { x: -1, y: -2, width: -3, height: -4 };
+
+    expect(getWindowBounds(win, out)).toBe(out);
+    expect(out).toEqual({ x: 10, y: 20, width: 640, height: 480 });
+  });
+
+  it('C-dispatch axis: falls through an uncovered custom backend to the host implementation', () => {
+    const calls: string[] = [];
+    installWindowHostBackend(
+      partialWindowBackend({
+        getBounds(_win, out) {
+          calls.push('host');
+          out.x = 1;
+          out.y = 2;
+          out.width = 3;
+          out.height = 4;
+          return out;
+        },
+      }),
+    );
+    setWindowBackend(partialWindowBackend());
+    const out = { x: 0, y: 0, width: 0, height: 0 };
+
+    expect(getWindowBounds(createApplicationWindow(), out)).toBe(out);
+    expect(calls).toEqual(['host']);
+    expect(out).toEqual({ x: 1, y: 2, width: 3, height: 4 });
+  });
 });
 
 describe('getWindowDisplay', () => {
@@ -1496,7 +1523,7 @@ describe('WindowBackend B-class migration axes', () => {
   });
 
   it('sentinel-exclusion axis: publishes no B member and every absent B command remains safe', () => {
-    expect(Object.keys(getWindowBackend()).sort()).toEqual(['close', 'getBounds', 'open']);
+    expect(Object.keys(getWindowBackend()).sort()).toEqual(['close', 'open']);
 
     for (const invoke of Object.values(WINDOW_B_OPERATION_CALLS)) {
       expect(() => invoke(createApplicationWindow())).not.toThrow();
