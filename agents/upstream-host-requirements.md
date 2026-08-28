@@ -650,3 +650,81 @@ actually passes.
 A consumer claim entered this document as a fact and was used to rate work. State consumer claims
 with their evidence — call site, test, or attached diff — or mark them as reported-but-unverified.
 An unverified claim that sets a priority is more expensive than one that sets nothing.
+
+---
+
+# H7 — RULED BY THE USER 2026-08-28 — `GlContext` is the missing primitive; H6's mechanism is superseded
+
+The user's design: introduce a `GlContext` type; `createGlContextFromCanvasElement(canvas, …)` takes
+a canvas element plus the properties that belong to context creation; `createGlRenderState` takes a
+**context**, not an element.
+
+This supersedes H6's mechanism (a `WgpuHostAcquisition`-shaped option). H6's *finding* stands — GL
+and WGPU disagree about caller-owned contexts, and that is a defect in the pair. Its proposed remedy
+was the weaker one.
+
+## Why this is the right cut
+
+`createGlRenderState(canvas, options)` was bundling two operations: obtain a context from a canvas,
+and build render state on a context. That is the decomposition smell from [Composition and
+Complexity](../AGENTS.md#composition-and-complexity) — the unit felt like it needed a seam because a
+primitive underneath it had never been extracted. `GlContext` is that primitive.
+
+Four things verified in this checkout support it:
+
+1. **One way in, not two.** An acquisition option means two entry paths, and every consumer, test,
+   and native port must handle both. A context parameter is one path; the canvas step becomes a
+   separate constructor the web caller composes.
+
+2. **`GlRenderOptions` currently promises control it cannot deliver.** `antialias`,
+   `powerPreference`, and `contextAttributes` take effect only inside `getContext('webgl2', …)`.
+   For any caller who brings an existing context they are silently inert — the field is accepted and
+   ignored. Splitting the two option sets makes that state unrepresentable rather than merely
+   documented.
+
+3. **Tree-shaking, which is a repository invariant and not a nicety.** A native application never
+   imports `createGlContextFromCanvasElement`, so `document` and `getContext` never enter its
+   bundle. An option field or a construction provider keeps the web path linked in for everyone.
+
+4. **`state.canvas` is already only a size source.** Every read in render-gl, scene2d-gl, and
+   effects-gl is the same idiom — `renderTargetViewport ?? state.canvas` — taking `.width`/`.height`.
+   Nothing reads it *as a canvas*. It is the default drawing-buffer size, which a context reports
+   natively as `drawingBufferWidth`/`drawingBufferHeight`. The element was never load-bearing.
+
+## Correction to H6's reasoning
+
+H6 justified the GL seam by symmetry with WGPU's shipped `options.acquisition`. That argument now
+runs the other way: this design is better than WGPU's, so **WGPU is the one that should eventually
+follow GL**, not the model GL copies. Do not treat WGPU's current shape as the target. Whether WGPU
+converts, and when, is a separate decision — it is shipped and it works — but it should not be cited
+as precedent for keeping GL's context inside an option bag.
+
+## Questions for whoever builds it — derive, do not assume
+
+- **What is `GlContext`?** Recommended: an interface declared in `@flighthq/types`, satisfied
+  structurally by `WebGL2RenderingContext`, so the C/C++ port has a name that is not a DOM type.
+  Derive its member set from what render-gl actually calls, not by transcribing the WebGL2 IDL —
+  that is also what [license provenance](../AGENTS.md#license-provenance) requires.
+- **Default viewport.** `drawingBufferWidth`/`drawingBufferHeight` are numbers, but the ~10 call
+  sites use the `?? state.canvas` idiom against a `{ width, height }` shape. Either `GlContext`
+  exposes a size-shaped view or those sites read explicit numbers. Pick one and apply it uniformly.
+- **Resize.** `application-gl` writes `canvas.width`/`.height` on window resize. Context-first means
+  the caller owns the surface and resizes it, and the context reports the new drawing-buffer size.
+  Confirm nothing else needs a resize operation on the seam.
+- **Does `GlRenderSurfaceProvider` still earn its place?** It abstracts surface *creation*. Under
+  context-first the only canvas consumer is `createGlContextFromCanvasElement`, which the caller
+  composes. Offscreen and cache states derive from an existing state and should inherit its context.
+  Derive whether any path still needs surface creation. Do not remove it on assumption.
+- **Split `GlRenderOptions`.** Context creation takes `antialias`, `powerPreference`,
+  `contextAttributes`. Render state keeps `allowSmoothing`, `backgroundColor`,
+  `imageSmoothingEnabled`, `roundPixels`, `sceneGraphSyncPolicy`. `pixelRatio` is genuinely
+  ambiguous — it describes the surface but is consumed by render config. Decide it explicitly.
+
+## Separate defect, found while verifying this
+
+`createGlCanvasElement` throws when no surface provider is installed. That is a throw for an
+*expected absence*, which contradicts both the sentinel rule in AGENTS.md and the three-tier seam
+model, where the sentinel tier serves when nothing is installed and never throws. It is the same
+defect already ruled on for `createImageResourceFromBitmap`. Its sentinel twin,
+`createGlRenderSurface`, returns `| null` from the same file. Fix the throwing wrapper to return a
+sentinel with an `explain*` query; do not fold this into the H7 slice.
