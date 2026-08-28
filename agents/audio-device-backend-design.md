@@ -8,6 +8,8 @@ _2026-08-28. Read-only design proposal for the installable native audio-device s
 
 `@flighthq/media` owns playback (channels, mixer, buses) but is hard-wired to the Web Audio API: `AudioContext`, `AudioBufferSourceNode`, `GainNode`, `StereoPannerNode`, `AudioBuffer`. A native host (Lime/OpenAL, Node.js, a C/C++ port) cannot replace any of these. The `AudioBackend` seam in `@flighthq/audio` covers only codec probing (`canPlayType`); everything from decoded PCM through the speaker is still web-only.
 
+Decoding stays in `@flighthq/audio`. The device backend covers only what happens after PCM data is available: buffer upload, source playback, bus routing, and spatial positioning.
+
 ### Current web API surface in `@flighthq/media`
 
 | Web API type | Where used | What it does |
@@ -19,7 +21,7 @@ _2026-08-28. Read-only design proposal for the installable native audio-device s
 | `StereoPannerNode` | `addAudioBusToMixer` | Stereo panning |
 | `AudioNode` | `connectAudioChannelToNode` | Generic graph connection |
 
-### Current web API surface in `@flighthq/audio`
+### Current web API surface in `@flighthq/audio` (unchanged by this design)
 
 | Web API type | Where used | What it does |
 |---|---|---|
@@ -29,64 +31,119 @@ _2026-08-28. Read-only design proposal for the installable native audio-device s
 
 ## Design
 
-### Principle: opaque handles, not web types
+### Principle: branded handles, not web types
 
-The backend exposes opaque numeric handles for device, source, and bus. The implementation maps these to whatever the platform provides (Web Audio nodes, OpenAL sources/buffers, native handles). Flight's `media` functions operate on handles through the backend; no web type appears in the public API.
+The backend exposes branded handle types for device, buffer, source, and bus. Each is a zero-runtime branded `number` that compiles away but provides type safety at the TypeScript level. The implementation maps handles to whatever the platform provides (Web Audio nodes, OpenAL sources/buffers, native handles). Flight's `media` functions operate on handles through the backend; no web type appears in the public API.
 
-### AudioDeviceBackend interface
+### Handle types
+
+```typescript
+// @flighthq/types
+
+export type AudioDeviceHandle = number & { readonly __brand: 'AudioDeviceHandle' };
+export type AudioBufferHandle = number & { readonly __brand: 'AudioBufferHandle' };
+export type AudioSourceHandle = number & { readonly __brand: 'AudioSourceHandle' };
+export type AudioBusHandle = number & { readonly __brand: 'AudioBusHandle' };
+```
+
+### AudioDeviceBackend interface (28 operations)
 
 ```typescript
 // @flighthq/types
 
 interface AudioDeviceBackend {
-  // -- Device lifecycle --
-  createDevice(sampleRate: number): number;
-  destroyDevice(device: number): void;
-  resumeDevice(device: number): void;
-  suspendDevice(device: number): void;
-  getDeviceTime(device: number): number;
+  // -- Device lifecycle (5) --
+  createDevice(sampleRate: number): AudioDeviceHandle;
+  destroyDevice(device: AudioDeviceHandle): void;
+  getDeviceTime(device: AudioDeviceHandle): number;
+  resumeDevice(device: AudioDeviceHandle): void;
+  suspendDevice(device: AudioDeviceHandle): void;
 
-  // -- Decoded buffer management --
-  createBuffer(device: number, channels: number, length: number, sampleRate: number): number;
-  setBufferChannelData(buffer: number, channel: number, data: Float32Array): void;
-  getBufferDuration(buffer: number): number;
-  destroyBuffer(buffer: number): void;
+  // -- Buffer management (4) --
+  createBuffer(
+    device: AudioDeviceHandle,
+    channels: number,
+    length: number,
+    sampleRate: number,
+    data: readonly Float32Array[],
+  ): AudioBufferHandle;
+  destroyBuffer(buffer: AudioBufferHandle): void;
+  getBufferDuration(buffer: AudioBufferHandle): number;
+  setBufferChannelData(buffer: AudioBufferHandle, channel: number, data: Float32Array): void;
 
-  // -- Source playback --
-  createSource(device: number, buffer: number): number;
-  destroySource(source: number): void;
-  startSource(source: number, offset: number): void;
-  stopSource(source: number): void;
-  getSourceState(source: number): 'playing' | 'stopped';
-  setSourceGain(source: number, gain: number): void;
-  setSourcePlaybackRate(source: number, rate: number): void;
-  setSourceLoop(source: number, loop: boolean): void;
-  onSourceEnded(source: number, callback: (() => void) | null): void;
+  // -- Source playback (9) --
+  createSource(device: AudioDeviceHandle, buffer: AudioBufferHandle): AudioSourceHandle;
+  destroySource(source: AudioSourceHandle): void;
+  getSourceState(source: AudioSourceHandle): 'playing' | 'stopped';
+  onSourceEnded(source: AudioSourceHandle, callback: (() => void) | null): void;
+  setSourceGain(source: AudioSourceHandle, gain: number): void;
+  setSourceLoop(source: AudioSourceHandle, loop: boolean): void;
+  setSourcePlaybackRate(source: AudioSourceHandle, rate: number): void;
+  startSource(source: AudioSourceHandle, offset: number): void;
+  stopSource(source: AudioSourceHandle): void;
 
-  // -- Bus/routing --
-  createBus(device: number): number;
-  destroyBus(device: number, bus: number): void;
-  setBusGain(bus: number, gain: number): void;
-  setBusPan(bus: number, pan: number): void;
-  connectSourceToBus(source: number, bus: number): void;
-  connectBusToDevice(bus: number, device: number): void;
+  // -- Bus routing (7) --
+  connectBusToDevice(bus: AudioBusHandle, device: AudioDeviceHandle): void;
+  connectSourceToBus(source: AudioSourceHandle, bus: AudioBusHandle): void;
+  createBus(device: AudioDeviceHandle): AudioBusHandle;
+  destroyBus(device: AudioDeviceHandle, bus: AudioBusHandle): void;
+  fadeGain(bus: AudioBusHandle, targetGain: number, durationMs: number): void;
+  setBusGain(bus: AudioBusHandle, gain: number): void;
+  setBusPan(bus: AudioBusHandle, pan: number): void;
 
-  // -- Volume fade --
-  fadeGain(bus: number, targetGain: number, durationMs: number): void;
-
-  // -- Spatial (3D) positioning --
-  setSourcePosition(source: number, x: number, y: number, z: number): void;
-  setListenerPosition(device: number, x: number, y: number, z: number): void;
+  // -- Spatial positioning (3) --
   setListenerOrientation(
-    device: number,
+    device: AudioDeviceHandle,
     forwardX: number, forwardY: number, forwardZ: number,
     upX: number, upY: number, upZ: number,
   ): void;
-
-  // -- Decode --
-  decodeAudioData(device: number, data: ArrayBuffer): Promise<number>;
+  setListenerPosition(device: AudioDeviceHandle, x: number, y: number, z: number): void;
+  setSourcePosition(source: AudioSourceHandle, x: number, y: number, z: number): void;
 }
 ```
+
+### Sentinel and invalid-handle behavior
+
+The sentinel backend and every operation on an invalid (destroyed or never-created) handle follow the same contract: **no-op for void operations, sentinel return for value operations.** No operation throws on an invalid handle.
+
+| Operation | Invalid-handle return |
+|---|---|
+| `createDevice` | Sentinel `AudioDeviceHandle` (backend-defined) |
+| `destroyDevice` | No-op |
+| `getDeviceTime` | `0` |
+| `resumeDevice` | No-op |
+| `suspendDevice` | No-op |
+| `createBuffer` | Sentinel `AudioBufferHandle` |
+| `destroyBuffer` | No-op |
+| `getBufferDuration` | `0` |
+| `setBufferChannelData` | No-op |
+| `createSource` | Sentinel `AudioSourceHandle` |
+| `destroySource` | No-op (clears `onSourceEnded` exactly once; see below) |
+| `getSourceState` | `'stopped'` |
+| `onSourceEnded` | No-op |
+| `setSourceGain` | No-op |
+| `setSourceLoop` | No-op |
+| `setSourcePlaybackRate` | No-op |
+| `startSource` | No-op |
+| `stopSource` | No-op |
+| `createBus` | Sentinel `AudioBusHandle` |
+| `destroyBus` | No-op |
+| `connectBusToDevice` | No-op |
+| `connectSourceToBus` | No-op |
+| `fadeGain` | No-op |
+| `setBusGain` | No-op |
+| `setBusPan` | No-op |
+| `setListenerOrientation` | No-op |
+| `setListenerPosition` | No-op |
+| `setSourcePosition` | No-op |
+
+### `destroySource` callback contract
+
+`destroySource(source)` clears the `onSourceEnded` callback exactly once: it nulls the registered callback without firing it, stops the source if playing, and releases the handle. After `destroySource`:
+
+- The `onSourceEnded` callback does **not** fire (destroy is an explicit teardown, not a playback completion).
+- Any subsequent operation on the destroyed handle is a no-op per the invalid-handle table.
+- The handle value may be reused by a future `createSource` call.
 
 ### Process-global plumbing
 
@@ -109,7 +166,7 @@ Follows the existing platform integration suite pattern exactly:
 
 Three-tier precedence: custom (`setAudioDeviceBackend`) > host (`enableHostWebAudioDevice`) > sentinel.
 
-Sentinel: every method is a no-op or returns a sentinel value (`-1` for handles, `0` for durations, `'stopped'` for state).
+Sentinel: every method follows the invalid-handle table above — no-ops and sentinel returns.
 
 ### Zero Application dependency
 
@@ -128,10 +185,10 @@ const channel = playAudioResource(device, resource);
 ## Dependency direction
 
 ```
-@flighthq/types          ← AudioDeviceBackend interface
+@flighthq/types          ← AudioDeviceBackend interface + branded handle types
     ↑
 @flighthq/audio          ← codec probing (AudioBackend), resource loading
-    ↑                       decodeAudioData moves behind AudioDeviceBackend
+    ↑                       decode stays here (AudioContext parameter unchanged)
 @flighthq/media          ← playback, mixer, bus (AudioDeviceBackend consumer)
                             process-global get/set/install/explain
 @flighthq/host-web       ← enableHostWebAudioDevice() (web impl)
@@ -139,7 +196,9 @@ const channel = playAudioResource(device, resource);
 @flighthq/application    ← (no dependency — zero coupling preserved)
 ```
 
-`media` depends on `audio` (for `AudioResource`) and `types` (for the interface). `audio` depends on `types`. `host-web` depends on `media` (for `createWebAudioDeviceBackend` and `installAudioDeviceHostBackend`). Nothing depends on `application`.
+`media` depends on `audio` (for `AudioResource`) and `types` (for the interface and handle types). `audio` depends on `types`. `host-web` depends on `media` (for `createWebAudioDeviceBackend` and `installAudioDeviceHostBackend`). Nothing depends on `application`.
+
+Decoding (`loadAudioResource*`, `createAudioResourceFromSamples`) stays in `@flighthq/audio` with its existing `AudioContext` parameter. The device backend does not own or replace the decode path — it receives already-decoded PCM via `createBuffer`.
 
 ## Migration surface
 
@@ -147,18 +206,18 @@ const channel = playAudioResource(device, resource);
 
 | Type | Current | After |
 |---|---|---|
-| `AudioResource.buffer` | `AudioBuffer \| null` | `number \| null` (opaque buffer handle) |
+| `AudioResource.buffer` | `AudioBuffer \| null` | `AudioBufferHandle \| null` |
 | `AudioChannel` (runtime) | `WeakMap<AudioChannel, {context, gainNode, sourceNode, ...}>` | `WeakMap<AudioChannel, {device, sourceHandle, busHandle}>` |
 | `AudioMixer` (runtime) | `WeakMap<AudioMixer, {context, masterGainNode, busGainNodes, ...}>` | `WeakMap<AudioMixer, {device, masterBusHandle, busHandles}>` |
-| `playAudioResource` param | `context: AudioContext` | `device: number` |
-| `createAudioMixer` param | `context: AudioContext` | `device: number` |
+| `playAudioResource` param | `context: AudioContext` | `device: AudioDeviceHandle` |
+| `createAudioMixer` param | `context: AudioContext` | `device: AudioDeviceHandle` |
 
 ### Function changes in `@flighthq/media`
 
 | Function | Change |
 |---|---|
-| `playAudioResource(context, source, options?)` | `context: AudioContext` → `device: number` |
-| `createAudioMixer(context, options?)` | `context: AudioContext` → `device: number` |
+| `playAudioResource(context, source, options?)` | `context: AudioContext` → `device: AudioDeviceHandle` |
+| `createAudioMixer(context, options?)` | `context: AudioContext` → `device: AudioDeviceHandle` |
 | `startAudioChannel` (internal) | Replace `context.createBufferSource()` → `backend.createSource(device, buffer)` |
 | `addAudioBusToMixer` | Replace `context.createGain()`, `context.createStereoPanner()` → `backend.createBus(device)` |
 | `fadeAudioChannelGain` | Replace `gainNode.gain.linearRampToValueAtTime` → `backend.fadeGain(bus, target, duration)` |
@@ -169,50 +228,47 @@ const channel = playAudioResource(device, resource);
 
 | Function | Change |
 |---|---|
-| `loadAudioResourceFromBytes` | Replace `context.decodeAudioData(arrayBuffer)` → `backend.decodeAudioData(device, arrayBuffer)` |
-| `loadAudioResourceFromUrl` | Same decode path |
-| `createAudioResourceFromSamples` | Replace `new AudioBuffer({...})` → `backend.createBuffer(device, channels, length, sampleRate)` + `backend.setBufferChannelData(buffer, ch, data)` |
+| `createAudioResourceFromSamples` | Replace `new AudioBuffer({...})` → `backend.createBuffer(device, channels, length, sampleRate, data)` |
 
-All `loadAudioResource*` functions currently take `context: AudioContext` as their first parameter. These become `device: number`.
+`loadAudioResource*` functions keep their `AudioContext` parameter for decoding. The resulting `AudioBuffer` is uploaded to the device backend via `createBuffer` at the media layer (in `playAudioResource`), not in the audio layer.
 
 ### Web backend implementation sketch
 
 `createWebAudioDeviceBackend()` maps handles to Web Audio objects:
 
 - `createDevice(sampleRate)` → `new AudioContext({sampleRate})`, returns handle
-- `createBuffer(device, channels, length, sampleRate)` → `new AudioBuffer({...})`, returns handle
+- `createBuffer(device, channels, length, sampleRate, data)` → `new AudioBuffer({...})` + `copyToChannel`, returns handle
 - `createSource(device, buffer)` → `context.createBufferSource()`, sets `.buffer`, returns handle
 - `startSource(source, offset)` → `sourceNode.start(0, offset)`
 - `createBus(device)` → `context.createGain()` + optional `context.createStereoPanner()`
-- `decodeAudioData(device, data)` → `context.decodeAudioData(data)`, stores result, returns handle
+- `destroySource(source)` → nulls `sourceNode.onended`, calls `sourceNode.stop()` if playing, deletes from map
 
 Handle allocation: monotonic counter, `Map<number, NativeObject>` per type. `destroy*` deletes from map and calls `.disconnect()` / `.close()` as needed.
 
 ### Native backend implementation (Lime/OpenAL sketch)
 
 - `createDevice` → `alcOpenDevice` + `alcCreateContext`
-- `createBuffer` → `alGenBuffers` + `alBufferData`
+- `createBuffer` → `alGenBuffers` + `alBufferData` (interleaves Float32Array channels)
 - `createSource` → `alGenSources` + `alSourcei(source, AL_BUFFER, buffer)`
 - `startSource` → `alSourcePlay`
 - `setSourceGain` → `alSourcef(source, AL_GAIN, gain)`
 - `setSourcePosition` → `alSource3f(source, AL_POSITION, x, y, z)`
-- `decodeAudioData` → host-side codec (Lime's `AudioBuffer.fromBytes`)
 
 ## Scope boundaries
 
 ### In scope
 
-- `AudioDeviceBackend` interface in `@flighthq/types`
+- `AudioDeviceBackend` interface and branded handle types in `@flighthq/types`
 - Process-global plumbing in `@flighthq/media`
 - Web backend in `@flighthq/host-web` (`createWebAudioDeviceBackend`, `enableHostWebAudioDevice`)
 - Migration of `@flighthq/media` audioChannel.ts and audioMixer.ts to use the backend
-- Migration of `@flighthq/audio` decode/load functions to use the backend
-- `AudioResource.buffer` type change from `AudioBuffer` to `number` (opaque handle)
+- `AudioResource.buffer` type change from `AudioBuffer` to `AudioBufferHandle`
 
-### Out of scope (future work)
+### Out of scope
 
-- Streaming audio (progressive decode, media-source extensions) — separate `AudioStreamBackend` or extension
-- Audio worklets / custom DSP nodes — not portable, not part of this seam
+- **Decoding** — stays in `@flighthq/audio` with `AudioContext` parameter; not part of the device backend
+- Streaming audio (progressive decode, media-source extensions)
+- Audio worklets / custom DSP nodes — not portable
 - MIDI — different protocol, different backend
 - Video audio track routing — `@flighthq/video` concern
 - `MediaSession` integration — already in `@flighthq/mediasession`, orthogonal
