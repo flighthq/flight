@@ -3,6 +3,7 @@ import type { MenuBackend, MenuItemTemplate, MenuReplacementGuaranteeDeclaration
 import {
   cloneMenuTemplate,
   createMenuItemTemplate,
+  destroyMenuBackend,
   enableMenuSignals,
   explainMenuBackend,
   explainMenuReplacementGuarantee,
@@ -33,6 +34,13 @@ function fakeBackend(overrides?: Partial<MenuBackend>): MenuBackend {
 
 const unsupportedDestroyBeforeInstall: MenuReplacementGuaranteeDeclaration = {
   guarantee: 'native-destroy-before-install',
+  liftableBy: ['atomic-replace-retains-old-on-rejection', 'rollback-or-undo', 'current-app-menu-getter'],
+  reason: 'no-atomic-replace-rollback-or-current-menu',
+  support: 'unsupported',
+};
+
+const unsupportedClearToSentinel: MenuReplacementGuaranteeDeclaration = {
+  guarantee: 'native-clear-to-sentinel',
   liftableBy: ['atomic-replace-retains-old-on-rejection', 'rollback-or-undo', 'current-app-menu-getter'],
   reason: 'no-atomic-replace-rollback-or-current-menu',
   support: 'unsupported',
@@ -71,6 +79,112 @@ describe('createMenuItemTemplate', () => {
     const item = createMenuItemTemplate({ type: 'submenu', submenu: [{ id: 'child' }] });
     expect(item.submenu![0].type).toBe('normal');
     expect(item.submenu![0].enabled).toBe(true);
+  });
+});
+
+describe('destroyMenuBackend', () => {
+  afterEach(() => resetMenuBackendForTest());
+
+  it('destroys a host-only backend once after clearing selection', () => {
+    const sentinel = getMenuBackend();
+    let destroyCalls = 0;
+    installMenuHostBackend(
+      fakeBackend({
+        destroy() {
+          destroyCalls++;
+          expect(getMenuBackend()).toBe(sentinel);
+        },
+      }),
+    );
+
+    destroyMenuBackend();
+    destroyMenuBackend();
+    expect(destroyCalls).toBe(1);
+    expect(getMenuBackend()).toBe(sentinel);
+    expect(hasMenuHostBackend()).toBe(false);
+  });
+
+  it('destroys distinct custom and host origins once each in captured order', () => {
+    const destroyed: string[] = [];
+    installMenuHostBackend(fakeBackend({ destroy: () => destroyed.push('host') }));
+    setMenuBackend(fakeBackend({ destroy: () => destroyed.push('custom') }));
+
+    destroyMenuBackend();
+    expect(destroyed).toEqual(['custom', 'host']);
+  });
+
+  it('destroys a backend aliased into both slots exactly once', () => {
+    let destroyCalls = 0;
+    const shared = fakeBackend({ destroy: () => destroyCalls++ });
+    installMenuHostBackend(shared);
+    setMenuBackend(shared);
+
+    destroyMenuBackend();
+    expect(destroyCalls).toBe(1);
+  });
+
+  it('is re-entrant-safe because the slots are empty before release', () => {
+    const sentinel = getMenuBackend();
+    let destroyCalls = 0;
+    setMenuBackend(
+      fakeBackend({
+        destroy() {
+          destroyCalls++;
+          destroyMenuBackend();
+          expect(getMenuBackend()).toBe(sentinel);
+        },
+      }),
+    );
+
+    destroyMenuBackend();
+    expect(destroyCalls).toBe(1);
+  });
+
+  it('keeps Route2 limitations unsupported before teardown and unobserved after slots clear', () => {
+    const sentinel = getMenuBackend();
+    const guarantees = [unsupportedDestroyBeforeInstall, unsupportedClearToSentinel] as const;
+    const supportDuringDestroy: string[] = [];
+    setMenuBackend(
+      fakeBackend({
+        replacementGuarantees: guarantees,
+        destroy() {
+          expect(getMenuBackend()).toBe(sentinel);
+          for (const { guarantee } of guarantees) {
+            const explanation = explainMenuReplacementGuarantee(guarantee);
+            expect(explanation.implemented).toBe(false);
+            expect(explanation.layer).toBe('sentinel');
+            supportDuringDestroy.push(explanation.support);
+            expect(hasMenuReplacementGuarantee(guarantee)).toBe(false);
+          }
+        },
+      }),
+    );
+    for (const { guarantee } of guarantees) {
+      expect(explainMenuReplacementGuarantee(guarantee).support).toBe('unsupported');
+    }
+
+    destroyMenuBackend();
+
+    expect(supportDuringDestroy).toEqual(['unobserved', 'unobserved']);
+    for (const { guarantee } of guarantees) {
+      expect(explainMenuReplacementGuarantee(guarantee).support).toBe('unobserved');
+      expect(hasMenuReplacementGuarantee(guarantee)).toBe(false);
+    }
+  });
+
+  it('does not let a newly installed host inherit prior host diagnostics', () => {
+    installMenuHostBackend(fakeBackend());
+    installMenuHostBackend(fakeBackend());
+    observeMenuHostResult('popupContextMenu', true);
+    destroyMenuBackend();
+
+    installMenuHostBackend(fakeBackend());
+    expect(explainMenuBackend()).toEqual({
+      conflict: false,
+      layer: 'host',
+      operation: null,
+      viability: 'unobserved',
+    });
   });
 });
 
@@ -305,6 +419,15 @@ describe('resetMenuBackendForTest', () => {
     expect(explainMenuBackend().conflict).toBe(false);
     expect(explainMenuBackend().viability).toBe('unobserved');
   });
+
+  it('releases both backend slots through whole teardown', () => {
+    const destroyed: string[] = [];
+    installMenuHostBackend(fakeBackend({ destroy: () => destroyed.push('host') }));
+    setMenuBackend(fakeBackend({ destroy: () => destroyed.push('custom') }));
+
+    resetMenuBackendForTest();
+    expect(destroyed).toEqual(['custom', 'host']);
+  });
 });
 
 describe('setApplicationMenu', () => {
@@ -352,15 +475,17 @@ describe('setMenuBackend', () => {
   });
 
   it('does not install replacement when outgoing destroy throws', () => {
+    let shouldThrow = true;
     const first = fakeBackend({
       destroy() {
-        throw new Error('teardown failed');
+        if (shouldThrow) throw new Error('teardown failed');
       },
     });
     const second = fakeBackend();
     setMenuBackend(first);
     expect(() => setMenuBackend(second)).toThrow('teardown failed');
     expect(getMenuBackend()).toBe(first);
+    shouldThrow = false;
   });
 
   it('does not destroy a backend that is being re-assigned to the same slot', () => {
