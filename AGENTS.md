@@ -162,9 +162,7 @@ The full `agents/` library — plans, reviews, breadth analyses, and every recor
 
 ### Kind Identifiers
 
-A `*Kind` is the identifier for a scene graph primitive or descriptor type. Kinds serve two roles: they are the keys renderers register against (`registerRenderer(state, FooKind, renderer)`), and they enforce scene graph hierarchy — a hierarchy node only accepts children whose kind belongs to the same hierarchy family.
-
-A kind is a plain **string** (`export const BitmapKind = 'Bitmap'`), not a `Symbol()`, so the registry key, the serialized form, and the user-facing vocabulary are one value and a scene round-trips with no symbol↔string seam. Define each kind once, in the package that owns the type, with a canonical PascalCase value; custom kinds carry a vendor prefix (`'acme.Foo'`). Registration is last-write-wins, so a user can override a built-in binding, and collisions are avoided by the vendor-prefix convention rather than a guard. Internal `Symbol()` uses that are never serialized stay symbols. Full rules in [types layout & kind identity](agents/conventions/types-layout.md).
+Kind roles, hierarchy-family enforcement, string identity, casing, vendor namespaces, override behavior, and internal-symbol exceptions are governed by [types layout & kind identity](agents/conventions/types-layout.md). Read it before adding a kind or kind-dispatched family.
 
 ### Entity and Runtime
 

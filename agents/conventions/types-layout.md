@@ -26,6 +26,10 @@ Families meant to be extended — materials, effects, adjustments, lights — ar
 
 ## Kind identity is a string
 
+A `*Kind` identifies a scene graph primitive or descriptor type. It is the key used for registration
+(`registerRenderer(state, FooKind, renderer)`); on hierarchy nodes it also enforces graph-family
+membership, so a node accepts only children whose kind belongs to the same hierarchy family.
+
 A kind is a plain **string** identifier, not a `Symbol()`:
 
 ```ts
