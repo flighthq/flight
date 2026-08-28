@@ -224,3 +224,85 @@ The requirement is truthful reporting (P1's per-operation availability), not uni
 - **host-web architecture record** — defines the precedence model (custom > host > sentinel) and the `explain*Backend` viability model. P1 extends this to per-operation granularity.
 - **host-node** (planned in server-side architecture) — the first non-web host. Will exercise these requirements immediately.
 - **host-electron / host-tauri / host-capacitor** (existing shells) — partial hosts that already face P1's partial-composition problem. An audit would quantify their sentinel methods.
+
+
+---
+
+# Manager review — 2026-08-28
+
+Accepted as a requirements record. It is grounded in a real consumer, the bypass sites are cataloged
+with file and line rather than asserted, and it separates legitimate platform limits from defects. The
+priority order stands. What follows narrows the design space before anyone starts building.
+
+## H1. ★ P1 is mostly a COMPLIANCE problem with a ruling the user already made, not a new design
+
+**Standing user ruling: a host must not implement no-op methods — the ABSENCE OF AN EXPORT IS THE
+DECLARATION.** That already answers "how does a host declare partial support": by not providing the
+operation. So:
+
+- **"Partial composition" is not a mechanism to invent.** It is what the existing ruling mandates, and
+  a `Partial<*Backend>` merged against a sentinel is the shape that follows from it.
+- **Per-operation availability is a structural check on the installed backend** — does it provide this
+  operation — not a parallel capability bitfield to keep in sync. A bitfield is a second source of truth
+  about the same fact, and it will drift from the methods it describes.
+- ★ **Option B is REJECTED.** Richer return types (`{ supported: false }`) touch every signature and
+  introduce exactly the result-wrapping this SDK does not use: expected failures return sentinels, and
+  the diagnostics inversion rule gives every silent sentinel a shakeable `explain*`. Option A, expressed
+  as absence, is the answer.
+
+**The 148 sentinel methods are therefore evidence of an existing ruling being violated, not evidence
+that a new design is needed.** That reframes P1 from "design a capability system" to "make the codebase
+comply, and add the query that makes compliance observable." Much smaller, and it will not be discovered
+halfway through.
+
+**Extending `explain*` from backend to operation granularity needs no new ruling** — the diagnostics
+inversion rule already requires an `explain*` for every silent sentinel. This is that rule applied one
+level down.
+
+## H2. ★ The P3 audit must be a DERIVED GATE, never a documented list
+
+The doc says every site using `fetch`, `XMLHttpRequest`, `new WebSocket()`, `new Image()` or
+`new EventSource()` outside a `createWeb*Backend` "should be identified." A list of sites in a record
+goes stale the moment someone adds the next one, and nothing reports it — this record already carries a
+catalog that will be wrong within a week of the first fix.
+
+Build it as a **check that derives the population at runtime and fails on a new bypass**, naming both
+the population it scanned and the exclusions it allowed. Same standard as the scene-document kind
+census: hand down the predicate, never the roster. The catalog in P5 is then a snapshot for humans, and
+the gate is the thing that stays true.
+
+This is also the highest practical value in the document. A host installs `setNetBackend`, and loaders,
+image fetches and sockets still go through browser APIs — **a permissive acceptor with a narrower
+consumer and the gap silent.** The seam is only as good as its coverage, and only a gate keeps coverage.
+
+## H3. `net`'s ambient-language classification is wrong, and correcting it is consistent with policy
+
+`net` was left ambient because `fetch` is standard JS. That reasoning holds for a JS runtime and fails
+for a native host with its own HTTP stack. Adding an `enableHostWebNet` slot is consistent with the
+standing explicit-enabling ruling and with the existing precedence model (custom > host > sentinel).
+Reclassify it; no user ruling is needed for a correction that restores the model's own rules.
+
+## H4. ★ P4's lifecycle verb is WRONG and would ship the wrong name
+
+The doc proposes `dispose(backend)` to release "GPU, audio, sockets, native handles." **Those are
+`destroy*`, not `dispose*`.** The standing distinction: `dispose*` detaches listeners and clears
+registries so an entity becomes GC-eligible — there is nothing to free; `destroy*` immediately frees a
+non-GC resource the entity owns, leaving it invalid. A backend holding GPU textures, audio contexts and
+open sockets is squarely the second.
+
+Get this right before the contract is written. A teardown verb that ships with the wrong meaning is
+corrected in every consumer afterwards, and both verbs already exist with settled meanings.
+
+The rest of P4's lifetime contract is sound: replacement and removal must be explicit and must not leak,
+and window ownership must be decided **at attachment time** rather than inferred at close.
+
+## H5. Owed to the user — one genuine scope question
+
+**Can two `Application` instances coexist with different backends?** The doc notes the module-scoped
+`_backend` singleton and raises multi-window hosts. That is not a naming or compliance question; it
+decides whether the whole host seam is process-global or per-application, and it changes every
+`set*Backend` signature if the answer is per-application. It is too large to settle as an implementation
+detail inside P4, and I am not ruling it.
+
+Everything else in P1-P5 can proceed without it, provided nobody quietly assumes an answer. If a builder
+finds themselves needing per-instance state to finish P4, that is the escalation.
