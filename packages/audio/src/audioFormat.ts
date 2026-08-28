@@ -1,8 +1,8 @@
-// Reports whether the current environment can play a given MIME type, by probing an <audio> element's
-// canPlayType. Returns false for the empty string and for any type the browser reports it cannot play.
+import { getAudioBackend } from './audioBackend';
+
 export function canPlayAudioType(mimeType: string): boolean {
   if (mimeType === '') return false;
-  return new Audio().canPlayType(mimeType) !== '';
+  return getAudioBackend().canPlayType(mimeType);
 }
 
 // Sniffs the container MIME type from a buffer's leading magic bytes, or null when unrecognized.

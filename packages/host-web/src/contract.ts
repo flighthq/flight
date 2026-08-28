@@ -1,6 +1,7 @@
 export * from './enableHostWeb';
 export * from './webAccessibility';
 export * from './webApp';
+export * from './webAudio';
 export * from './webClipboard';
 export * from './webConnectivity';
 export * from './webCursor';

@@ -1,3 +1,4 @@
+export * from './audioBackend';
 export * from './audioDecoderRegistry';
 export * from './audioFormat';
 export * from './audioResource';

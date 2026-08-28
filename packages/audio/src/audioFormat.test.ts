@@ -1,3 +1,4 @@
+import { resetAudioBackendForTest, setAudioBackend } from './audioBackend';
 import {
   canPlayAudioType,
   detectAudioMimeType,
@@ -8,25 +9,28 @@ import {
 
 describe('canPlayAudioType', () => {
   beforeEach(() => {
-    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockImplementation((type: string) =>
-      type === 'audio/mpeg' ? 'probably' : '',
-    );
+    setAudioBackend({ canPlayType: (type: string) => type === 'audio/mpeg' });
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    resetAudioBackendForTest();
   });
 
   it('returns false for the empty string without probing', () => {
     expect(canPlayAudioType('')).toBe(false);
   });
 
-  it('returns true for a type the element reports it can play', () => {
+  it('returns true for a type the backend reports as playable', () => {
     expect(canPlayAudioType('audio/mpeg')).toBe(true);
   });
 
-  it('returns false for a type the element cannot play', () => {
+  it('returns false for a type the backend cannot play', () => {
     expect(canPlayAudioType('audio/x-unknown')).toBe(false);
+  });
+
+  it('returns false when no backend is installed (sentinel)', () => {
+    resetAudioBackendForTest();
+    expect(canPlayAudioType('audio/mpeg')).toBe(false);
   });
 });
 

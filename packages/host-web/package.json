@@ -41,6 +41,7 @@
     "@flighthq/accessibility": "*",
     "@flighthq/app": "*",
     "@flighthq/application": "*",
+    "@flighthq/audio": "*",
     "@flighthq/clipboard": "*",
     "@flighthq/connectivity": "*",
     "@flighthq/device": "*",
