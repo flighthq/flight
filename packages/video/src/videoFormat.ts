@@ -1,11 +1,14 @@
-import type { VideoResourceUrl } from '@flighthq/types/contract';
+import type {
+  BackendExplanation,
+  BackendOperationExplanation,
+  VideoCapabilityBackend,
+  VideoCapabilityOperation,
+  VideoResourceUrl,
+} from '@flighthq/types/contract';
 
-// True when the current environment claims it can play the given MIME type (a non-empty canPlayType
-// result — 'maybe' or 'probably'). Returns false in headless environments (jsdom) where no codecs
-// are registered. This is the codec-probe primitive that source selection is built on.
 export function canPlayVideoType(mimeType: string): boolean {
-  const probe = document.createElement('video');
-  return probe.canPlayType(mimeType) !== '';
+  if (mimeType === '') return false;
+  return probeSelectedBackend(getVideoCapabilityBackend(), mimeType);
 }
 
 // Sniffs a container MIME type from the leading bytes of encoded video, or null when unrecognised.
@@ -25,6 +28,51 @@ export function detectVideoMimeType(data: ArrayBuffer | Uint8Array): string | nu
   if (b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67 && b[3] === 0x53) return 'video/ogg';
 
   return null;
+}
+
+export function explainVideoCapabilityBackend(): BackendExplanation {
+  if (_custom !== null) {
+    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
+  }
+  if (_host !== null) {
+    return {
+      conflict: _hostConflict,
+      layer: 'host',
+      operation: _hostObservation !== null ? _hostObservation.operation : null,
+      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
+    };
+  }
+  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
+}
+
+export function explainVideoCapabilityOperation(operation: VideoCapabilityOperation): BackendOperationExplanation {
+  if (_custom !== null) {
+    return typeof _custom[operation] === 'function'
+      ? { implemented: true, layer: 'custom', operation }
+      : { implemented: false, layer: 'none', operation };
+  }
+  if (_host !== null) {
+    return typeof _host[operation] === 'function'
+      ? { implemented: true, layer: 'host', operation }
+      : { implemented: false, layer: 'none', operation };
+  }
+  return {
+    implemented: false,
+    layer: typeof _sentinel[operation] === 'function' ? 'sentinel' : 'none',
+    operation,
+  };
+}
+
+export function getVideoCapabilityBackend(): VideoCapabilityBackend {
+  return _custom ?? _host ?? _sentinel;
+}
+
+export function hasVideoCapabilityHostBackend(): boolean {
+  return _host !== null;
+}
+
+export function hasVideoCapabilityOperation(operation: VideoCapabilityOperation): boolean {
+  return explainVideoCapabilityOperation(operation).implemented;
 }
 
 export function inferVideoMimeType(url: string): string | null {
@@ -53,12 +101,65 @@ export function inferVideoMimeType(url: string): string | null {
   }
 }
 
+export function installVideoCapabilityHostBackend(backend: VideoCapabilityBackend): void {
+  if (_host !== null) {
+    if (_host !== backend) _hostConflict = true;
+    return;
+  }
+  _host = backend;
+}
+
+export function observeVideoCapabilityHostResult(operation: VideoCapabilityOperation, succeeded: boolean): void {
+  _hostObservation = {
+    operation,
+    viability: succeeded ? 'available' : 'runtime-api-unavailable',
+  };
+}
+
+export function resetVideoCapabilityBackendForTest(): void {
+  _custom = null;
+  _host = null;
+  _hostConflict = false;
+  _hostObservation = null;
+}
+
 // Picks the first source the environment can play, resolving each source's MIME type from its
 // explicit `type` or, failing that, its URL extension. Returns null when none is playable — the
 // source-negotiation primitive behind loadVideoResourceFromUrls.
 export function selectVideoResourceUrl(sources: Readonly<VideoResourceUrl[]>): VideoResourceUrl | null {
+  let backend: VideoCapabilityBackend | null = null;
   for (const source of sources) {
-    if (canPlayVideoType(source.type ?? inferVideoMimeType(source.url) ?? '')) return source;
+    const mimeType = source.type ?? inferVideoMimeType(source.url) ?? '';
+    if (mimeType === '') continue;
+    backend ??= getVideoCapabilityBackend();
+    if (probeSelectedBackend(backend, mimeType)) return source;
   }
   return null;
 }
+
+export function setVideoCapabilityBackend(backend: VideoCapabilityBackend | null): void {
+  _custom = backend;
+}
+
+function probeSelectedBackend(backend: VideoCapabilityBackend, mimeType: string): boolean {
+  if (mimeType === '') return false;
+  try {
+    return backend.canPlayType(mimeType) === true;
+  } catch {
+    return false;
+  }
+}
+
+const _sentinel: VideoCapabilityBackend = {
+  canPlayType(): boolean {
+    return false;
+  },
+};
+
+let _custom: VideoCapabilityBackend | null = null;
+let _host: VideoCapabilityBackend | null = null;
+let _hostConflict = false;
+let _hostObservation: {
+  operation: VideoCapabilityOperation;
+  viability: 'available' | 'runtime-api-unavailable';
+} | null = null;

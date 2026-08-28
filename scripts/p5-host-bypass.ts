@@ -335,10 +335,24 @@ const P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS = {
   total: 22,
 } as const satisfies P5HostBypassV4BudgetEvidence;
 
+const P5_HOST_BYPASS_S10_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 8,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 13,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Video MIME capability probing routed through the selected video capability backend',
+  total: 21,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
 export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
   ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   P5_HOST_BYPASS_S09_V4_PROGRESS,
   P5_HOST_BYPASS_INPUT_POINTER_LOCK_V4_PROGRESS,
+  P5_HOST_BYPASS_S10_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
@@ -678,6 +692,57 @@ export function p5BitmapDrawTransferRepairFailures(report: Readonly<P5HostBypass
     : [`S09 must remove the bitmapDraw global ImageData transfer; found [${remaining.join(', ')}]`];
 }
 
+export function p5VideoCapabilityRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
+  const failures: string[] = [];
+  const target = report.p5.filter(
+    (site) =>
+      site.kind === 'direct-dom' &&
+      site.file === 'packages/video/src/videoFormat.ts' &&
+      site.functionName === 'canPlayVideoType' &&
+      site.expression === "document.createElement('video')",
+  );
+  if (target.length > 0) {
+    failures.push(
+      `S10 must remove the videoFormat canPlayVideoType DOM probe; found [${target
+        .map((site) => `${site.file}:${site.functionName}`)
+        .join(', ')}]`,
+    );
+  }
+
+  const survivors = [
+    {
+      expression: "document.createElement('video')",
+      file: 'packages/video/src/videoResourceFrom.ts',
+      functionName: 'createVideoResourceFromMediaStream',
+      kind: 'direct-dom',
+    },
+    {
+      expression: "document.createElement('video')",
+      file: 'packages/video/src/videoResourceFrom.ts',
+      functionName: 'loadVideoResourceFromUrl',
+      kind: 'direct-dom',
+    },
+  ] as const;
+  const missing = survivors.filter(
+    (survivor) =>
+      !report.p5.some(
+        (site) =>
+          site.kind === survivor.kind &&
+          site.file === survivor.file &&
+          site.functionName === survivor.functionName &&
+          site.expression === survivor.expression,
+      ),
+  );
+  if (missing.length > 0) {
+    failures.push(
+      `S10 must preserve both videoResourceFrom DOM resource sites; missing [${missing
+        .map((site) => `${site.file}:${site.functionName}`)
+        .join(', ')}]`,
+    );
+  }
+  return failures;
+}
+
 export function createP5HostBypassReport(scannedFiles: number, sites: readonly P5HostBypassSite[]): P5HostBypassReport {
   const sorted = [...sites].sort(
     (a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column || a.kind.localeCompare(b.kind),
@@ -932,6 +997,13 @@ export function p5BitmapDrawTransferProgressFailures(history: readonly P5HostByp
     : ['S09 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason'];
 }
 
+export function p5VideoCapabilityProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
+  const entry = history[5];
+  return entry !== undefined && p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_S10_V4_PROGRESS)
+    ? []
+    : ['S10 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason'];
+}
+
 export function p5HostBypassDetectorProvenanceHistoryFailures(
   history: readonly P5HostBypassVersionedDetectorProvenance[],
 ): string[] {
@@ -1146,6 +1218,7 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ...p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY),
     ...p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
     ...p5BitmapDrawTransferProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...p5VideoCapabilityProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
     ...p5HostBypassDetectorProvenanceHistoryFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY),
     ...p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE),
     ...p5GlRenderSurfaceProviderBoundaryFailures(
@@ -1158,6 +1231,7 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ...p5WgpuRenderSurfaceConsumerFailures(process.cwd()),
     ...p5WgpuRenderSurfaceRepairFailures(report),
     ...p5BitmapDrawTransferRepairFailures(report),
+    ...p5VideoCapabilityRepairFailures(report),
     ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
     ...p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
   ];

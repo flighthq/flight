@@ -43,6 +43,7 @@
     { "path": "../statusbar" },
     { "path": "../storage" },
     { "path": "../types" },
+    { "path": "../video" },
     { "path": "../webcam" }
   ],
   "include": ["src"]
