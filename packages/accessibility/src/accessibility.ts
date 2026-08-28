@@ -2,7 +2,9 @@ import type {
   AccessibilityBackend,
   AccessibilityLiveness,
   AccessibilityNode,
+  AccessibilityOperation,
   AccessibilityState,
+  BackendOperationExplanation,
 } from '@flighthq/types/contract';
 import type { BackendExplanation } from '@flighthq/types/contract';
 
@@ -30,6 +32,9 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
   const liveRegions = new Map<AccessibilityLiveness, HTMLElement>();
   let root: HTMLElement | null = container ?? null;
   let rootResolved = container !== undefined;
+  // ★ Ownership is decided HERE, at construction, not guessed at teardown: a container handed in belongs
+  // to the caller and must survive destroy; one this backend lazily created belongs to it and must not.
+  const ownsRoot = container === undefined;
 
   // Resolves the overlay root, lazily creating and appending a hidden container on first use. Returns
   // null when no DOM is available, which flips every method into a no-op.
@@ -46,6 +51,19 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
   }
 
   return {
+    // Frees everything this instance owns. Idempotent: the maps are emptied and the root reference
+    // dropped, so a second destroy finds nothing to free.
+    destroy() {
+      elements.clear();
+      liveRegions.clear();
+      // Remove the container when this backend created it; when it was handed one, empty the elements this
+      // backend put inside it but leave the container itself — the caller owns that and may reuse it.
+      if (ownsRoot) root?.remove();
+      else root?.replaceChildren();
+      root = null;
+      // Left resolved so a destroyed backend cannot lazily resurrect a fresh container on the next call.
+      rootResolved = true;
+    },
     setNode(node) {
       const overlayRoot = getRoot();
       if (overlayRoot === null) return;
@@ -91,6 +109,16 @@ export function createWebAccessibilityBackend(container?: HTMLElement): Accessib
   };
 }
 
+// Frees what the installed backend owns and clears the slot. Safe with nothing installed and safe to call
+// twice — the second call finds an empty slot, which is what makes teardown exactly-once without a
+// destroyed flag that could drift from the thing it describes.
+export function destroyAccessibilityBackend(): void {
+  const previous = [_custom, _host] as const;
+  _custom = null;
+  _host = null;
+  releaseAccessibilityBackends(previous);
+}
+
 export function explainAccessibilityBackend(): BackendExplanation {
   if (_custom !== null) {
     return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
@@ -106,9 +134,26 @@ export function explainAccessibilityBackend(): BackendExplanation {
   return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
 }
 
+// Which layer implements `operation`, and whether anything real does. The sentinel is never consulted: it
+// answers every operation, so counting it would report `true` for everything and say nothing.
+export function explainAccessibilityOperation(operation: AccessibilityOperation): BackendOperationExplanation {
+  if (_custom !== null && typeof _custom[operation] === 'function') {
+    return { implemented: true, layer: 'custom', operation };
+  }
+  if (_host !== null && typeof _host[operation] === 'function') {
+    return { implemented: true, layer: 'host', operation };
+  }
+  return { implemented: false, layer: 'sentinel', operation };
+}
+
 // The active accessibility backend. Precedence: custom > host > sentinel.
 export function getAccessibilityBackend(): AccessibilityBackend {
   return _custom ?? _host ?? _sentinel;
+}
+
+// Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+export function hasAccessibilityOperation(operation: AccessibilityOperation): boolean {
+  return explainAccessibilityOperation(operation).implemented;
 }
 
 export function installAccessibilityHostBackend(backend: AccessibilityBackend): void {
@@ -132,6 +177,7 @@ export function removeAccessibilityNode(id: string): void {
 }
 
 export function resetAccessibilityBackendForTest(): void {
+  destroyAccessibilityBackend();
   _custom = null;
   _host = null;
   _hostConflict = false;
@@ -139,8 +185,14 @@ export function resetAccessibilityBackendForTest(): void {
 }
 
 // Installs a custom accessibility backend; pass null to revert to precedence fallback.
+// Installs the backend, DESTROYING the outgoing one first so replacement cannot orphan the hidden overlay
+// container it appended to the document, nor the element maps it held. Installing the backend already
+// present is a no-op rather than a destroy-then-reinstall of live DOM.
 export function setAccessibilityBackend(backend: AccessibilityBackend | null): void {
+  if (_custom === backend) return;
+  const previous = [_custom] as const;
   _custom = backend;
+  releaseAccessibilityBackends(previous);
 }
 
 // Moves platform focus to the published node. Returns false when the node is missing or the platform
@@ -304,3 +356,22 @@ function _setAccessibilityElementValueText(element: HTMLElement, value: string |
 }
 
 const _EMPTY_STATE: Readonly<AccessibilityState> = {};
+
+// Destroys every backend that WAS referenced and is not referenced any more — exactly once each.
+//
+// ★ Ownership is per SLOT, and the same object may sit in two slots. Three cases this gets right that a
+// `_custom ?? _host` teardown gets wrong:
+//   - SHADOWED: installing a custom over a live host does not destroy the host; it is still owned.
+//   - ALIASED: when custom and host are the same object, clearing custom must NOT destroy it, because the
+//     host slot still references it.
+//   - DISTINCT: clearing both must destroy BOTH, not just whichever the `??` chain reached first.
+// Deduplicated by identity, so an aliased backend is destroyed once and never twice.
+function releaseAccessibilityBackends(previous: readonly (Readonly<AccessibilityBackend> | null)[]): void {
+  const retained = new Set<unknown>([_custom, _host].filter((slot) => slot !== null));
+  const released = new Set<unknown>();
+  for (const backend of previous) {
+    if (backend === null || retained.has(backend) || released.has(backend)) continue;
+    released.add(backend);
+    backend.destroy?.();
+  }
+}

@@ -5,15 +5,18 @@ import {
   announceAccessibility,
   clearAccessibilityTree,
   createWebAccessibilityBackend,
+  destroyAccessibilityBackend,
+  explainAccessibilityBackend,
+  explainAccessibilityOperation,
   getAccessibilityBackend,
+  hasAccessibilityOperation,
+  installAccessibilityHostBackend,
+  observeAccessibilityHostResult,
   removeAccessibilityNode,
+  resetAccessibilityBackendForTest,
   setAccessibilityBackend,
   setAccessibilityFocus,
   setAccessibilityNode,
-  explainAccessibilityBackend,
-  installAccessibilityHostBackend,
-  observeAccessibilityHostResult,
-  resetAccessibilityBackendForTest,
 } from './accessibility';
 
 afterEach(() => {
@@ -191,6 +194,53 @@ describe('createWebAccessibilityBackend', () => {
   });
 });
 
+// Whole-backend teardown. What this frees is DOM the backend owns — the published element tree, the live
+// regions, and the hidden overlay container it appended to document.body.
+describe('destroyAccessibilityBackend', () => {
+  afterEach(() => resetAccessibilityBackendForTest());
+
+  // ★ The correction `clear()` cannot make: clear empties the tree but LEAVES the container in the
+  // document, so replacing a backend after clearing leaks one orphaned container per replacement.
+  it('removes the overlay container it created, which clear does not', () => {
+    const backend = createWebAccessibilityBackend();
+    backend.setNode({ id: 'a', role: 'button', label: 'A', parentId: undefined });
+    const containers = () => document.querySelectorAll('[data-flight-accessibility]').length;
+    expect(containers()).toBe(1);
+
+    backend.clear();
+    expect(containers()).toBe(1);
+
+    backend.destroy!();
+    expect(containers()).toBe(0);
+  });
+
+  // ★ Ownership is decided at construction. A container handed in belongs to the caller and must survive.
+  it('leaves a caller-supplied container in place', () => {
+    const supplied = document.createElement('div');
+    document.body.appendChild(supplied);
+    const backend = createWebAccessibilityBackend(supplied);
+    backend.setNode({ id: 'a', role: 'button', label: 'A', parentId: undefined });
+
+    backend.destroy!();
+    expect(supplied.isConnected).toBe(true);
+    expect(supplied.children.length).toBe(0);
+    supplied.remove();
+  });
+
+  it('destroys the installed backend exactly once and clears the slot', () => {
+    const destroyed: string[] = [];
+    setAccessibilityBackend({ ...inertBackend(), destroy: () => destroyed.push('only') });
+    destroyAccessibilityBackend();
+    destroyAccessibilityBackend();
+    expect(destroyed).toEqual(['only']);
+  });
+
+  it('is safe with nothing installed', () => {
+    resetAccessibilityBackendForTest();
+    expect(() => destroyAccessibilityBackend()).not.toThrow();
+  });
+});
+
 describe('explainAccessibilityBackend', () => {
   afterEach(() => resetAccessibilityBackendForTest());
 
@@ -219,6 +269,27 @@ describe('explainAccessibilityBackend', () => {
   });
 });
 
+describe('explainAccessibilityOperation', () => {
+  afterEach(() => resetAccessibilityBackendForTest());
+
+  // A required operation is the one the sentinel DOES answer, so this is where a query resolving through
+  // getAccessibilityBackend() would report a lie.
+  it('reports a required operation as unimplemented when only the sentinel serves it', () => {
+    resetAccessibilityBackendForTest();
+    expect(explainAccessibilityOperation('setNode')).toEqual({
+      implemented: false,
+      layer: 'sentinel',
+      operation: 'setNode',
+    });
+  });
+
+  it('reports only what an installed backend provides', () => {
+    setAccessibilityBackend(inertBackend());
+    expect(hasAccessibilityOperation('setNode')).toBe(true);
+    expect(hasAccessibilityOperation('destroy')).toBe(false);
+  });
+});
+
 describe('getAccessibilityBackend', () => {
   it('lazily returns a stable web default', () => {
     const first = getAccessibilityBackend();
@@ -231,6 +302,56 @@ describe('getAccessibilityBackend', () => {
     expect(getAccessibilityBackend()).toBe(mock.backend);
   });
 });
+
+describe('hasAccessibilityOperation', () => {
+  afterEach(() => resetAccessibilityBackendForTest());
+
+  it('agrees with explainAccessibilityOperation', () => {
+    setAccessibilityBackend(inertBackend());
+    for (const operation of ['setNode', 'clear', 'destroy'] as const) {
+      expect(hasAccessibilityOperation(operation)).toBe(explainAccessibilityOperation(operation).implemented);
+    }
+  });
+});
+
+function node(
+  id: string,
+  role: AccessibilityNode['role'],
+  rest: Readonly<Omit<AccessibilityNode, 'id' | 'role'>>,
+): AccessibilityNode {
+  return { id, role, ...rest };
+}
+
+interface MockAccessibilityCalls {
+  setNode: AccessibilityNode[];
+  removeNode: string[];
+  clear: number;
+  setFocus: string[];
+  announce: (readonly [string, AccessibilityLiveness])[];
+}
+
+function createMockAccessibilityBackend(): { backend: AccessibilityBackend; calls: MockAccessibilityCalls } {
+  const calls: MockAccessibilityCalls = { setNode: [], removeNode: [], clear: 0, setFocus: [], announce: [] };
+  const backend: AccessibilityBackend = {
+    setNode(target) {
+      calls.setNode.push(target as AccessibilityNode);
+    },
+    removeNode(id) {
+      calls.removeNode.push(id);
+    },
+    clear() {
+      calls.clear += 1;
+    },
+    setFocus(id) {
+      calls.setFocus.push(id);
+      return id === 'ok';
+    },
+    announce(message, liveness) {
+      calls.announce.push([message, liveness]);
+    },
+  };
+  return { backend, calls };
+}
 
 describe('installAccessibilityHostBackend', () => {
   afterEach(() => resetAccessibilityBackendForTest());
@@ -278,45 +399,6 @@ describe('removeAccessibilityNode', () => {
   });
 });
 
-function node(
-  id: string,
-  role: AccessibilityNode['role'],
-  rest: Readonly<Omit<AccessibilityNode, 'id' | 'role'>>,
-): AccessibilityNode {
-  return { id, role, ...rest };
-}
-
-interface MockAccessibilityCalls {
-  setNode: AccessibilityNode[];
-  removeNode: string[];
-  clear: number;
-  setFocus: string[];
-  announce: (readonly [string, AccessibilityLiveness])[];
-}
-
-function createMockAccessibilityBackend(): { backend: AccessibilityBackend; calls: MockAccessibilityCalls } {
-  const calls: MockAccessibilityCalls = { setNode: [], removeNode: [], clear: 0, setFocus: [], announce: [] };
-  const backend: AccessibilityBackend = {
-    setNode(target) {
-      calls.setNode.push(target as AccessibilityNode);
-    },
-    removeNode(id) {
-      calls.removeNode.push(id);
-    },
-    clear() {
-      calls.clear += 1;
-    },
-    setFocus(id) {
-      calls.setFocus.push(id);
-      return id === 'ok';
-    },
-    announce(message, liveness) {
-      calls.announce.push([message, liveness]);
-    },
-  };
-  return { backend, calls };
-}
-
 describe('resetAccessibilityBackendForTest', () => {
   it('clears all backend slots', () => {
     setAccessibilityBackend(getAccessibilityBackend());
@@ -347,6 +429,32 @@ describe('setAccessibilityBackend', () => {
   });
 });
 
+describe('setAccessibilityBackend replacement lifetime', () => {
+  afterEach(() => resetAccessibilityBackendForTest());
+
+  it('destroys the outgoing backend when a new one replaces it', () => {
+    const destroyed: string[] = [];
+    setAccessibilityBackend({ ...inertBackend(), destroy: () => destroyed.push('first') });
+    setAccessibilityBackend({ ...inertBackend(), destroy: () => destroyed.push('second') });
+    expect(destroyed).toEqual(['first']);
+  });
+
+  it('destroys the outgoing backend when removed with null', () => {
+    const destroyed: string[] = [];
+    setAccessibilityBackend({ ...inertBackend(), destroy: () => destroyed.push('only') });
+    setAccessibilityBackend(null);
+    expect(destroyed).toEqual(['only']);
+  });
+
+  it('does not destroy when the same backend is installed again', () => {
+    const destroyed: string[] = [];
+    const only = { ...inertBackend(), destroy: () => destroyed.push('only') };
+    setAccessibilityBackend(only);
+    setAccessibilityBackend(only);
+    expect(destroyed).toEqual([]);
+  });
+});
+
 describe('setAccessibilityFocus', () => {
   it('dispatches the id and returns the backend result', () => {
     const mock = createMockAccessibilityBackend();
@@ -366,3 +474,14 @@ describe('setAccessibilityNode', () => {
     expect(mock.calls.setNode).toEqual([target]);
   });
 });
+
+// A backend implementing only the required members — partial support declared by absence.
+function inertBackend(): AccessibilityBackend {
+  return {
+    announce: () => undefined,
+    clear: () => undefined,
+    removeNode: () => undefined,
+    setFocus: () => false,
+    setNode: () => undefined,
+  };
+}

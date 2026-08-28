@@ -83,4 +83,14 @@ export interface AccessibilityBackend {
   clear(): void;
   setFocus(id: string): boolean;
   announce(message: string, liveness: AccessibilityLiveness): void;
+  // Frees the DOM the backend owns: the published element tree, the live regions, and — when the backend
+  // created it rather than being handed one — the overlay container itself.
+  //
+  // ★ Distinct from `clear()`, which empties the tree but LEAVES the container in the document. Replacing
+  // a backend after only clearing it leaks an orphaned hidden container per replacement, and the elements
+  // held in its strong maps with it.
+  destroy?(): void;
 }
+
+// Every operation name on the backend, DERIVED from the interface rather than listed.
+export type AccessibilityOperation = keyof AccessibilityBackend;
