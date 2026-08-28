@@ -67,7 +67,10 @@ describe('collectWholeBackendTeardowns member syntax', () => {
       fixture,
       [
         'export interface MethodFormBackend { destroy(): void; }',
+        'export interface OptionalMethodFormBackend { destroy?(): void; }',
         'export interface PropertyFormBackend { destroy?: () => void; }',
+        'export interface RequiredPropertyFormBackend { destroy: () => void; }',
+        'export interface DisposePropertyFormBackend { dispose?: () => void; }',
         'export interface PerObjectMethodBackend { destroy(id: number): void; }',
         'export interface PerObjectPropertyBackend { destroy?: (id: number) => void; }',
         'export interface NoTeardownBackend { write(line: string): void; }',
@@ -77,7 +80,10 @@ describe('collectWholeBackendTeardowns member syntax', () => {
 
     const found = collectWholeBackendTeardowns([fixture]);
     expect(found.get('MethodFormBackend')).toBe('destroy');
+    expect(found.get('OptionalMethodFormBackend')).toBe('destroy');
     expect(found.get('PropertyFormBackend')).toBe('destroy');
+    expect(found.get('RequiredPropertyFormBackend')).toBe('destroy');
+    expect(found.get('DisposePropertyFormBackend')).toBe('dispose');
     expect(found.has('PerObjectMethodBackend')).toBe(false);
     expect(found.has('PerObjectPropertyBackend')).toBe(false);
     expect(found.has('NoTeardownBackend')).toBe(false);
