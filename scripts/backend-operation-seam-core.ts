@@ -104,7 +104,7 @@ export function formatBackendOperationSeamReport(report: Readonly<BackendOperati
         counting:
           'one unit = one interface; enforced = its owning package exports explain<Name>Operation; enforced + notMigrated is asserted equal to total',
         scope:
-          'every exported *Backend interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; no roster, no allowlist',
+          'every exported *Backend interface in packages/types/src/*.ts, against the live contract-lane exports of every packages/*/ with a package.json; aggregator lanes that re-export another @flighthq package by name are excluded, because such a lane serves that package built output and would vouch for a deleted seam; no roster, no allowlist',
       },
       readGateTreeState(process.cwd()),
     ),
@@ -129,4 +129,21 @@ export function formatBackendOperationSeamReport(report: Readonly<BackendOperati
 // a derivation that drops an interface would otherwise report a smaller, entirely plausible `enforced`.
 export function hasBackendOperationSeamFailure(report: Readonly<BackendOperationSeamReport>): boolean {
   return report.violations.length > 0 || report.enforced + report.notMigrated !== report.total;
+}
+
+// ★ THE SHADOW-OWNER EXCLUSION, and it is what makes this gate a ratchet rather than a thermometer.
+//
+// A lane that re-exports another package BY PACKAGE NAME (`export * from '@flighthq/media'`) does not
+// report that package's source — the specifier resolves through the package entry to its BUILT output.
+// So such a lane keeps serving a symbol the real owner has already deleted, and because ownership is
+// "first package found exporting the seam", the barrel silently inherits it.
+//
+// Measured, not feared: renaming `explainAudioDeviceOperation` in `packages/media/src` left the count at
+// 13 of 46 and moved the printed owner from `media` to `sdk`. A removal the gate exists to catch was
+// invisible. Excluding aggregator lanes is what lets that same mutation fail.
+//
+// Derived from the file, not from a roster naming `sdk`: any future barrel matches the same predicate,
+// and `sdk` is today the only lane in the repo that matches it (142 such re-exports).
+export function isAggregatorContractLane(source: string): boolean {
+  return /^export \* from '@flighthq\//m.test(source);
 }

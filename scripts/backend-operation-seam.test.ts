@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -10,6 +10,7 @@ import {
   createEmptyBackendOperationSeamReport,
   formatBackendOperationSeamReport,
   hasBackendOperationSeamFailure,
+  isAggregatorContractLane,
 } from './backend-operation-seam-core';
 import type { BackendOperationSeamReport } from './backend-operation-seam-core';
 
@@ -25,6 +26,9 @@ describe('backend operation seam ratchet', () => {
     for (const packageName of packageNames()) {
       const publicLane = join(ROOT, 'packages', packageName, 'src', 'contract.ts');
       if (!existsSync(publicLane)) continue;
+      // An aggregator lane serves other packages' BUILT output, so it would keep vouching for a seam its
+      // real owner has deleted. See `isAggregatorContractLane`.
+      if (isAggregatorContractLane(readFileSync(publicLane, 'utf-8'))) continue;
       const module = (await import(/* @vite-ignore */ pathToFileURL(publicLane).href)) as Record<string, unknown>;
       exportsByPackage.set(packageName, new Set(Object.keys(module)));
     }
@@ -48,8 +52,21 @@ describe('backend operation seam ratchet', () => {
   // Found by mutation rather than by review: renaming `explainMediaSessionOperation` correctly dropped the
   // printed count from 11 to 10, and NOTHING FAILED, because the floor still read 10 from the previous
   // slice. A ratchet whose floor lags is a ratchet that lets one regression through per slice.
+  // Raised 12 → 13 on evidence, not on the live reading. Copying the current count into the floor is
+  // rebaselining: it would absorb a regression as readily as a migration, since both change the number.
+  // What distinguishes them is WHY it moved, and that was derived before this line was touched:
+  //
+  //   - the membership predicate has ONE commit in its history (107dca458), which PREDATES the commit
+  //     that last set this floor (f74297faf) — so the rule that decides membership has not loosened;
+  //   - of the 13 enforced interfaces, 12 had their `explain<Name>Operation` at or before f74297faf and
+  //     all 12 are still enforced, so nothing silently dropped out and got masked by an addition;
+  //   - exactly one arrived after: AudioDevice, in de0ab6862 "add AudioDeviceBackend seam with 13
+  //     operations" — a new backend, which is why the denominator moved with it rather than a member
+  //     being reclassified into the numerator.
+  //
+  // 13 of 46 enforced / 33 not migrated, measured on clean tree b9f5988592.
   it('never enforces fewer interfaces than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(12);
+    expect(report.enforced).toBeGreaterThanOrEqual(13);
   });
 
   it('reports no violation among the migrated interfaces', () => {
@@ -81,6 +98,24 @@ describe('createEmptyBackendOperationSeamReport', () => {
     expect(empty.total).toBe(0);
     expect(empty.entries).toEqual([]);
     expect(empty.violations).toEqual([]);
+  });
+});
+
+describe('isAggregatorContractLane', () => {
+  it('matches a lane that re-exports another package by name, and not one that re-exports its own files', () => {
+    expect(isAggregatorContractLane("export * from '@flighthq/media';")).toBe(true);
+    expect(isAggregatorContractLane("export * from './audioDeviceBackend';")).toBe(false);
+    expect(isAggregatorContractLane("export { createMediaBackend } from './media';")).toBe(false);
+  });
+
+  // ★ Against the live tree, so the predicate is checked on the thing it actually classifies rather than
+  // on strings written here. `sdk` is the repo's one barrel; every other lane re-exports its own files.
+  it('selects exactly the sdk barrel out of the live contract lanes', () => {
+    const aggregators = packageNames().filter((packageName) => {
+      const lane = join(ROOT, 'packages', packageName, 'src', 'contract.ts');
+      return existsSync(lane) && isAggregatorContractLane(readFileSync(lane, 'utf-8'));
+    });
+    expect(aggregators).toEqual(['sdk']);
   });
 });
 
