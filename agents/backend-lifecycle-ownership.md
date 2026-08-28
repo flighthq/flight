@@ -21,9 +21,12 @@ eight: already-implemented `LogTransportBackend` plus the seven named below. Sin
 `MediaSessionBackend` has landed its hook. The live implementation state is therefore two declared
 and exercised hooks (`LogTransportBackend` and `MediaSessionBackend`) with six still owed.
 
-The live tree has since added `AudioBackend`, a pure `canPlayType` query. Therefore the live total is
-43 and the live partition is `1 + 7 + 19 + 16 = 43`. The new row changes neither the whole-owner nor
-the entity-owned population.
+The live tree has since added two interfaces. `AudioBackend` is a pure `canPlayType` query and
+joins the GC/bounded bucket. `WgpuHostBackend` owns no process-wide resource: each acquisition
+carries its own release bracket and explicit `caller | flight` ownership, so it joins the
+entity/keyed/caller-owned bucket. Therefore the live total is 44 and the live partition is
+`1 + 7 + 20 + 16 = 44`. Neither post-audit row changes the whole-owner population or its live
+implementation state of two declared hooks with six still owed.
 
 ## Derivation rules
 
@@ -95,6 +98,9 @@ The result column uses **owned** only when the current path reaches the originat
 names the exact provenance or cleanup work still required; it does not promote the backend to a
 whole-owner.
 
+Rows 1–19 reproduce the frozen audit population. Row 20 is the post-audit
+`WgpuHostBackend` addition.
+
 | # | Backend | Exact resource bracket and provenance | Result |
 | ---: | --- | --- | --- |
 | 1 | `WindowBackend` | **Per-entity host teardown:** successful open/attach binds each `ApplicationWindow` to its originating backend, whose adapter record retains the native handle, ownership (`flight` or `host`), and exact listener cleanup. Close through that backend removes forward/reverse identity plus native event ingress and destroys only a Flight-owned handle. **Entity-dispose reachability:** after the terminal `onClose` emits once, `disposeApplicationWindow` drains the separate application observer map so its closures cannot retain the entity. | **Owned.** Host teardown precedes the terminal signal; observer disposal follows it. Backend replacement cannot redirect either cleanup, synchronous native/facade close converges at one choke point, duplicate close is a no-op, and successful reopen re-arms both obligations for the next entity lifetime. |
@@ -116,6 +122,7 @@ whole-owner.
 | 17 | `StatusBarBackend` | Event entities retain exact unsubscribe thunks. Style entries have `popStatusBarStyleEntry` and `clearStatusBarStyleStack`, but the global `_baseline`, `_applied`, and stack apply through whichever backend is current. | **Owed:** pin the stack baseline/applied state to its provider. Before that provider is lost, restore its baseline; if entries survive replacement, capture the new provider baseline and reapply them. Keep `detachStatusBar`/`disposeStatusBar` for per-entity subscriptions. |
 | 18 | `TrayBackend` | `destroyTrayIcon` first calls `stopTrayIconAnimation`, then sends provider-local `tray.id` to the current backend. `_animations` is keyed only by that id. `onTrayEvent` does return an origin-capturing unsubscribe. | **Owed:** make a tray handle retain provider provenance (or keep an id-to-provider registry), key animations by that ownership identity, and route every query/mutation plus `destroy` to the creator. Then stop the local timer and call that creator's `destroy(id)` exactly once. |
 | 19 | `UpdaterBackend` | `AppUpdater` subscriptions retain a combined origin-capturing unsubscribe and `disposeAppUpdater` invokes it. An in-flight download, however, is global backend work while `cancelAppUpdateDownload` routes to the backend active at cancellation time. | **Owed:** retain the backend that started a download (or prohibit replacement while one is active) and send cancellation to it before releasing that command lifetime. Entity subscriptions are already safe; feed/config values are durable policy to reapply, not resources to free. |
+| 20 | `WgpuHostBackend` | `acquire` returns a `WgpuHostAcquisition` carrying the presentation context, device, format, and explicit `caller \| flight` ownership. `createWgpuRenderState` retains that acquisition and the selected backend in the reference-counted shared device runtime; initialization failure calls the captured backend's `release` immediately, while the last `destroyWgpuRenderState` sharing it calls `release` exactly once. The web backend leaves caller-owned handles untouched and, for Flight-owned handles, unconfigures the context and destroys the device. | **Owned.** Cleanup is per acquisition and provider-pinned, including failure and final-reference paths. Replacing the process-global backend cannot reroute an existing acquisition's release, and no zero-argument whole-backend teardown is appropriate. |
 
 This table deliberately does not collapse “has a cleanup-named API” into “done.” Geolocation,
 notification, protocol, status-bar, and tray cleanup all exist by name yet lack enough provider
@@ -149,10 +156,10 @@ row 16. It has no audio device, decoded buffer, source, stream, or playback owne
 `AudioDeviceBackend` is a different, not-yet-landed contract and must be classified from its actual
 lifetime shape if approved.
 
-Any future exported backend—including the pending `WgpuHostBackend` work—changes the denominator only
-when its interface lands. At that point the derived population and this semantic partition must both
-gain a row. With the current `AudioBackend` present, one additional backend would move the total from
-43 to 44, not from the frozen 42 directly to 43.
+Post-audit `WgpuHostBackend` joins the entity/keyed bucket as row 20. It moves the live
+denominator from 43 to 44 and that bucket from 19 to 20 without changing the whole-owner
+population. The structural lifecycle census should therefore report two whole-backend hooks
+among 44 interfaces after the source lands.
 
 ## Review checklist for the remaining slices
 
