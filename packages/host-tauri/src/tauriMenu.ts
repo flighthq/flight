@@ -11,8 +11,11 @@ export function createTauriMenuBackend(tauri: TauriApi): MenuBackend {
   const menuModule = tauri.menu;
   // The single application-menu select listener, owned by this backend.
   let selectListener: ((id: string) => void) | null = null;
+  let destroyed = false;
   return {
     destroy() {
+      if (destroyed) return;
+      destroyed = true;
       selectListener = null;
       try {
         void menuModule.Menu.new({ items: [] })
