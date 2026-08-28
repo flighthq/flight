@@ -1,5 +1,5 @@
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Matrix, RenderState, WindowBackend } from '@flighthq/types/contract';
+import type { Matrix, RenderState, WindowBackend, WindowOperation } from '@flighthq/types/contract';
 
 import {
   attachWindow,
@@ -31,11 +31,13 @@ import {
   exitApplicationFullscreen,
   exitApplicationPointerLock,
   explainWindowBackend,
+  explainWindowOperation,
   flashWindowFrame,
   focusWindow,
   getWindowBackend,
   getWindowBounds,
   getWindowDisplay,
+  hasWindowOperation,
   hideWindow,
   installWindowHostBackend,
   lockApplicationPointer,
@@ -70,7 +72,6 @@ import {
   showWindow,
 } from './window';
 
-type WindowOperation = Exclude<keyof WindowBackend, 'attach'>;
 type WindowOperationClass = 'B' | 'C' | 'manual';
 
 const WINDOW_OPERATION_CLASSES = {
@@ -142,6 +143,19 @@ const WINDOW_B_OPERATION_CALLS = {
   },
 } satisfies Record<WindowBOperation, (win: ReturnType<typeof createApplicationWindow>) => void>;
 
+const WINDOW_OPERATION_CALLS = {
+  ...WINDOW_B_OPERATION_CALLS,
+  close: (win) => {
+    closeWindow(win);
+  },
+  getBounds: (win) => {
+    getWindowBounds(win, { x: 0, y: 0, width: 0, height: 0 });
+  },
+  open: (win) => {
+    openWindow(win);
+  },
+} satisfies Record<WindowOperation, (win: ReturnType<typeof createApplicationWindow>) => void>;
+
 function makeRenderState(): RenderState {
   return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
 }
@@ -171,6 +185,7 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
       calls.push(`setSize:${width},${height}`);
     },
     getBounds(_win, out) {
+      calls.push('getBounds');
       out.x = 1;
       out.y = 2;
       out.width = 3;
@@ -244,6 +259,23 @@ function recordingWindowBackend(): WindowBackend & { calls: string[] } {
       calls.push(`setHasShadow:${hasShadow}`);
     },
   };
+}
+
+function recordingWindowOperationBackend(operation: WindowOperation): ReturnType<typeof recordingWindowBackend> {
+  const backend = recordingWindowBackend();
+  delete backend.attach;
+  for (const candidate of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
+    if (candidate === operation || (operation === 'open' && candidate === 'close')) continue;
+    delete backend[candidate];
+  }
+  return backend;
+}
+
+function wasWindowOperationRecorded(
+  backend: ReturnType<typeof recordingWindowBackend>,
+  operation: WindowOperation,
+): boolean {
+  return backend.calls.some((call) => call === operation || call.startsWith(`${operation}:`));
 }
 
 function partialWindowBackend(operations: Partial<WindowBackend> = {}): WindowBackend {
@@ -996,6 +1028,67 @@ describe('explainWindowBackend', () => {
   });
 });
 
+describe('explainWindowOperation', () => {
+  it('full-matrix sentinel axis: reports all 28 operations absent without counting the empty sentinel', () => {
+    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
+      expect(explainWindowOperation(operation)).toEqual({ implemented: false, layer: 'sentinel', operation });
+      expect(hasWindowOperation(operation)).toBe(false);
+    }
+  });
+
+  it('full-matrix host axis: reports and dispatches every host operation through the same resolution', () => {
+    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
+      resetWindowBackendForTest();
+      const host = recordingWindowOperationBackend(operation);
+      installWindowHostBackend(host);
+
+      expect(explainWindowOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+      expect(hasWindowOperation(operation)).toBe(true);
+      WINDOW_OPERATION_CALLS[operation](createApplicationWindow());
+      expect(wasWindowOperationRecorded(host, operation)).toBe(true);
+    }
+  });
+
+  it('full-matrix precedence axis: reports and dispatches custom before the same host operation', () => {
+    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
+      resetWindowBackendForTest();
+      const custom = recordingWindowOperationBackend(operation);
+      const host = recordingWindowOperationBackend(operation);
+      installWindowHostBackend(host);
+      setWindowBackend(custom);
+
+      expect(explainWindowOperation(operation)).toEqual({ implemented: true, layer: 'custom', operation });
+      expect(hasWindowOperation(operation)).toBe(true);
+      WINDOW_OPERATION_CALLS[operation](createApplicationWindow());
+      expect(wasWindowOperationRecorded(custom, operation)).toBe(true);
+      expect(wasWindowOperationRecorded(host, operation)).toBe(false);
+    }
+  });
+
+  it('full-matrix fallback axis: an empty custom layer reports and dispatches every host operation', () => {
+    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
+      resetWindowBackendForTest();
+      const host = recordingWindowOperationBackend(operation);
+      installWindowHostBackend(host);
+      setWindowBackend({});
+
+      expect(explainWindowOperation(operation)).toEqual({ implemented: true, layer: 'host', operation });
+      expect(hasWindowOperation(operation)).toBe(true);
+      WINDOW_OPERATION_CALLS[operation](createApplicationWindow());
+      expect(wasWindowOperationRecorded(host, operation)).toBe(true);
+    }
+  });
+
+  it('open-pair axis: reports the complete host opener when custom open has no close', () => {
+    const host = recordingWindowOperationBackend('open');
+    installWindowHostBackend(host);
+    setWindowBackend({ open: () => true });
+
+    expect(explainWindowOperation('open')).toEqual({ implemented: true, layer: 'host', operation: 'open' });
+    expect(hasWindowOperation('open')).toBe(true);
+  });
+});
+
 describe('flashWindowFrame', () => {
   it('delegates to the backend', () => {
     const backend = recordingWindowBackend();
@@ -1076,6 +1169,16 @@ describe('getWindowDisplay', () => {
   it('returns -1 on web (no multi-monitor API)', () => {
     const win = createApplicationWindow();
     expect(getWindowDisplay(win)).toBe(-1);
+  });
+});
+
+describe('hasWindowOperation', () => {
+  it('derives availability from explainWindowOperation for every operation', () => {
+    installWindowHostBackend(recordingWindowOperationBackend('setTitle'));
+
+    for (const operation of Object.keys(WINDOW_OPERATION_CLASSES) as WindowOperation[]) {
+      expect(hasWindowOperation(operation)).toBe(explainWindowOperation(operation).implemented);
+    }
   });
 });
 

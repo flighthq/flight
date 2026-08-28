@@ -64,9 +64,12 @@ describe('backend operation seam ratchet', () => {
   //     operations" — a new backend, which is why the denominator moved with it rather than a member
   //     being reclassified into the numerator.
   //
-  // 13 of 46 enforced / 33 not migrated, measured on clean tree b9f5988592.
+  // Window is the next independently evidenced migration: all 28 operations are now structurally queried,
+  // with sentinel, host, custom-precedence, and host-fallback coverage. This raises the floor 13 → 14;
+  // it does not rewrite the preceding 12 → 13 AudioDevice history.
+  // 14 of 46 enforced / 32 not migrated after the Window closure.
   it('never enforces fewer interfaces than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(13);
+    expect(report.enforced).toBeGreaterThanOrEqual(14);
   });
 
   it('reports no violation among the migrated interfaces', () => {

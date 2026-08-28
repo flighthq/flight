@@ -100,9 +100,9 @@ The existing host adapters establish the exact structural target:
 
 These rosters are migration evidence, not a parallel production capability table. Runtime support is still
 derived only from method presence, and exact adapter tests make a restored false member or accidental omission
-fail. The interface-wide public `hasWindowOperation` / `explainWindowOperation` seam remains withheld until the
-25 commands, `getBounds`, and `open` / `close` have all migrated, so the derived seam gate cannot overclaim a
-partially completed interface.
+fail. The interface-wide public `hasWindowOperation` / `explainWindowOperation` seam and its derived gate join
+only with full closure of the 25 commands, `getBounds`, and `open` / `close`; no partially completed Window
+interface can be counted as migrated.
 
 ### What this is NOT
 
