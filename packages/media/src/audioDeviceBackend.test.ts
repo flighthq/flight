@@ -11,12 +11,37 @@ import {
   hasAudioDeviceOperation,
   hasAudioDeviceWebNodeAccess,
   installAudioDeviceHostBackend,
+  observeAudioDeviceHostResult,
   resetAudioDeviceBackendForTest,
   setAudioDeviceBackend,
 } from './audioDeviceBackend';
 
 afterEach(() => {
   resetAudioDeviceBackendForTest();
+});
+
+describe('createWebAudioDeviceBackend', () => {
+  it('creates the 13-operation backend with web node access', () => {
+    const backend = createWebAudioDeviceBackend();
+
+    expect(Object.keys(backend).sort()).toEqual([
+      'createBuffer',
+      'createDevice',
+      'createSource',
+      'destroyBuffer',
+      'destroyDevice',
+      'destroySource',
+      'getDeviceTime',
+      'getSourceBufferSourceNode',
+      'getSourceGainNode',
+      'onSourceEnded',
+      'resumeDevice',
+      'setSourceGain',
+      'setSourcePlaybackRate',
+      'startSource',
+      'stopSource',
+    ]);
+  });
 });
 
 describe('explainAudioDeviceBackend', () => {
@@ -155,6 +180,45 @@ describe('hasAudioDeviceWebNodeAccess', () => {
   });
 });
 
+describe('installAudioDeviceHostBackend', () => {
+  it('installs the first host backend and reports a later different backend as a conflict', () => {
+    installAudioDeviceHostBackend(stubBackend());
+    installAudioDeviceHostBackend(stubBackend());
+
+    expect(explainAudioDeviceBackend()).toMatchObject({ conflict: true, layer: 'host' });
+  });
+});
+
+describe('observeAudioDeviceHostResult', () => {
+  it('records host operation viability', () => {
+    installAudioDeviceHostBackend(stubBackend());
+    observeAudioDeviceHostResult('createDevice', false);
+
+    expect(explainAudioDeviceBackend()).toMatchObject({
+      operation: 'createDevice',
+      viability: 'runtime-api-unavailable',
+    });
+  });
+});
+
+describe('resetAudioDeviceBackendForTest', () => {
+  it('clears custom, host, conflict and observation state', () => {
+    installAudioDeviceHostBackend(stubBackend());
+    installAudioDeviceHostBackend(stubBackend());
+    setAudioDeviceBackend(stubBackend());
+    observeAudioDeviceHostResult('createDevice', true);
+
+    resetAudioDeviceBackendForTest();
+
+    expect(explainAudioDeviceBackend()).toEqual({
+      conflict: false,
+      layer: 'host-not-enabled',
+      operation: null,
+      viability: 'unobserved',
+    });
+  });
+});
+
 describe('sentinel', () => {
   it('returns 0 from createDevice', () => {
     expect(getAudioDeviceBackend().createDevice(44100) as number).toBe(0);
@@ -206,6 +270,17 @@ describe('sentinel', () => {
 
   it('is a no-op for resumeDevice', () => {
     expect(() => getAudioDeviceBackend().resumeDevice(0 as never)).not.toThrow();
+  });
+});
+
+describe('setAudioDeviceBackend', () => {
+  it('sets and clears the custom backend', () => {
+    const backend = stubBackend();
+
+    setAudioDeviceBackend(backend);
+    expect(getAudioDeviceBackend()).toBe(backend);
+    setAudioDeviceBackend(null);
+    expect(getAudioDeviceBackend()).not.toBe(backend);
   });
 });
 
