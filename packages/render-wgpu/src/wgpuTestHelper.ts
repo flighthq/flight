@@ -126,6 +126,7 @@ function makeDevice(): GPUDevice {
   };
 
   return {
+    destroy: () => {},
     features: new Set(),
     limits: { maxTextureDimension2D: 8192, minUniformBufferOffsetAlignment: 256 },
     createBindGroup: () => makeBindGroup(),
@@ -314,6 +315,7 @@ export function installWgpuMock(): void {
       return {
         configure: () => {},
         getCurrentTexture: () => makeTexture(),
+        unconfigure: () => {},
       } as unknown as GPUCanvasContext;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

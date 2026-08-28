@@ -30,6 +30,7 @@ import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import {
   copyWgpuRenderStateRegistrations,
   createWgpuOffscreenRenderState,
+  createWgpuRenderState,
   createWgpuRenderStateRuntime,
   destroyWgpuRenderState,
   getWgpuColorAdjustmentMaterialFeature,
@@ -334,6 +335,38 @@ describe('createWgpuOffscreenRenderState', () => {
 });
 
 describe('createWgpuRenderState', () => {
+  it('uses exact caller-owned handles without touching a throwing navigator.gpu getter', async () => {
+    const owner = await createWgpuRenderStateForTest();
+    const canvas = document.createElement('canvas');
+    const acquisition = {
+      context: owner.context,
+      device: owner.device,
+      format: owner.format,
+      ownership: 'caller',
+    } as const;
+    const unconfigure = vi.spyOn(acquisition.context, 'unconfigure');
+    const destroy = vi.spyOn(acquisition.device, 'destroy');
+    Object.defineProperty(globalThis.navigator, 'gpu', {
+      configurable: true,
+      get(): never {
+        throw new Error('host getter failed');
+      },
+    });
+
+    try {
+      const state = await createWgpuRenderState(canvas, { acquisition });
+      expect(state.context).toBe(acquisition.context);
+      expect(state.device).toBe(acquisition.device);
+      expect(state.format).toBe(acquisition.format);
+      destroyWgpuRenderState(state);
+      expect(unconfigure).not.toHaveBeenCalled();
+      expect(destroy).not.toHaveBeenCalled();
+    } finally {
+      installWgpuMock();
+      destroyWgpuRenderState(owner);
+    }
+  });
+
   it('returns a render state with device and context', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(state.device).toBeDefined();
@@ -435,6 +468,23 @@ describe('createWgpuRenderStateRuntime', () => {
 });
 
 describe('destroyWgpuRenderState', () => {
+  it('releases a Flight-owned acquisition once after its last derived state', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const offscreen = createWgpuOffscreenRenderState(state);
+    const unconfigure = vi.spyOn(state.context, 'unconfigure');
+    const destroy = vi.spyOn(state.device, 'destroy');
+
+    destroyWgpuRenderState(state);
+    destroyWgpuRenderState(state);
+    expect(unconfigure).not.toHaveBeenCalled();
+    expect(destroy).not.toHaveBeenCalled();
+
+    destroyWgpuRenderState(offscreen);
+    destroyWgpuRenderState(offscreen);
+    expect(unconfigure).toHaveBeenCalledOnce();
+    expect(destroy).toHaveBeenCalledOnce();
+  });
+
   it('destroys the state-owned uniform buffer', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
@@ -572,6 +622,20 @@ describe('getWgpuSampler', () => {
 describe('isWgpuSupported', () => {
   it('returns true when navigator.gpu is present', () => {
     expect(isWgpuSupported()).toBe(true);
+  });
+
+  it('returns false when navigator.gpu throws', () => {
+    Object.defineProperty(globalThis.navigator, 'gpu', {
+      configurable: true,
+      get(): never {
+        throw new Error('host getter failed');
+      },
+    });
+    try {
+      expect(isWgpuSupported()).toBe(false);
+    } finally {
+      installWgpuMock();
+    }
   });
 });
 
