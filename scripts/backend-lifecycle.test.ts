@@ -25,20 +25,30 @@ describe('backend replacement lifetime census', () => {
   let teardowns: ReadonlyMap<string, string>;
   let formattedOutput: string;
 
-  // ★ THE FLOOR is a HISTORICAL BASELINE, not a mirror of the current population. A baseline that moves
-  // with the thing it measures measures nothing. The total stays at 43 (the population when the enforced
-  // set was established) so that growth is visible: baseline 43 / current 46 → "+3 new seams". Raise
-  // enforcedNames when a slice lands a teardown hook; do NOT update total to match the current count.
-  const ENFORCED_FLOOR: BackendLifecycleFloor = {
+  // ★ THE HISTORICAL BASELINE is IMMUTABLE — it records the population and enforced set at the moment the
+  // gate was established. A baseline that moves with the thing it measures measures nothing. The total stays
+  // at 43, the three original names stay as they were, and growth since then is visible as signed deltas:
+  // baseline 43 / current 46 → "+3 new seams", baseline 3 enforced / current 5 → "+2 newly enforced".
+  // NEVER update this to absorb subsequent slices — that erases history.
+  const HISTORICAL_BASELINE: BackendLifecycleFloor = {
     enforcedNames: [
       'AccessibilityBackend',
       'LogTransportBackend',
       'MediaSessionBackend',
-      'MenuBackend',
-      'PowerBackend',
     ],
     total: 43,
   };
+
+  // The current ratchet: every backend that has landed a teardown hook. This list grows as slices land and
+  // must never shrink — removing a name here is a regression. Separate from the historical baseline so
+  // delta display shows progression (+2 newly enforced) while enforcement gates the full current set.
+  const REQUIRED_ENFORCED_NAMES: readonly string[] = [
+    'AccessibilityBackend',
+    'LogTransportBackend',
+    'MediaSessionBackend',
+    'MenuBackend',
+    'PowerBackend',
+  ];
 
   beforeAll(() => {
     const typeFiles = packageSourceFiles('types');
@@ -46,7 +56,7 @@ describe('backend replacement lifetime census', () => {
     const names = collectBackendInterfaceNames(typeFiles).map((name) => `${name}Backend`);
     teardowns = collectWholeBackendTeardowns(typeFiles);
     report = createBackendLifecycleReport(names, teardowns, collectSetterBodies(), collectFunctionBodies());
-    formattedOutput = formatBackendLifecycleReport(report, ENFORCED_FLOOR);
+    formattedOutput = formatBackendLifecycleReport(report, HISTORICAL_BASELINE);
     // eslint-disable-next-line no-console
     console.log(formattedOutput);
   });
@@ -88,9 +98,9 @@ describe('backend replacement lifetime census', () => {
     expect(report.enforced).toBe(methodOnly.size);
   });
 
-  it('never enforces fewer backends than the slices already landed', () => {
-    expect(report.enforced).toBeGreaterThanOrEqual(ENFORCED_FLOOR.enforcedNames.length);
-    for (const name of ENFORCED_FLOOR.enforcedNames) {
+  it('never enforces fewer backends than the required set', () => {
+    expect(report.enforced).toBeGreaterThanOrEqual(REQUIRED_ENFORCED_NAMES.length);
+    for (const name of REQUIRED_ENFORCED_NAMES) {
       expect(report.enforcedNames).toContain(name);
     }
   });
@@ -103,16 +113,68 @@ describe('backend replacement lifetime census', () => {
   });
 
   it('emits the delta inline so denominator growth is reported separately from regressions', () => {
-    const delta = compareFloorToReport(ENFORCED_FLOOR, report);
+    const delta = compareFloorToReport(HISTORICAL_BASELINE, report);
     const deltaText = formatBackendLifecycleDelta(delta);
     expect(formattedOutput).toContain(`(${deltaText})`);
   });
 
-  // ★ A baseline that moves with the thing it measures measures nothing. The floor total is pinned at 43
+  // ★ A baseline that moves with the thing it measures measures nothing. The baseline total is pinned at 43
   // (the population when the enforced set was established). It must not change for routine growth or
   // shrinkage — growth shows as "+N new seams", shrinkage as "-N removed", and both stay visible history.
-  it('pins the historical floor total at 43', () => {
-    expect(ENFORCED_FLOOR.total).toBe(43);
+  it('pins the historical baseline total at 43', () => {
+    expect(HISTORICAL_BASELINE.total).toBe(43);
+  });
+
+  it('pins the historical baseline names to the three original enforced backends', () => {
+    expect(HISTORICAL_BASELINE.enforcedNames).toEqual([
+      'AccessibilityBackend',
+      'LogTransportBackend',
+      'MediaSessionBackend',
+    ]);
+  });
+
+  it('pins the required enforced names to the five current enforced backends', () => {
+    expect(REQUIRED_ENFORCED_NAMES).toEqual([
+      'AccessibilityBackend',
+      'LogTransportBackend',
+      'MediaSessionBackend',
+      'MenuBackend',
+      'PowerBackend',
+    ]);
+  });
+
+  it('shows progression in the live delta when slices land beyond the historical baseline', () => {
+    const delta = compareFloorToReport(HISTORICAL_BASELINE, report);
+    expect(delta.enforcedGained).toContain('MenuBackend');
+    expect(delta.enforcedGained).toContain('PowerBackend');
+    expect(delta.enforcedLost).toEqual([]);
+  });
+
+  it('fails enforcement when a required name is missing from the live report', () => {
+    const missing = REQUIRED_ENFORCED_NAMES.filter((name) => !report.enforcedNames.includes(name));
+    expect(missing).toEqual([]);
+  });
+
+  it('would fail if MenuBackend were removed from the required set but still enforced', () => {
+    const withoutMenu = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'MenuBackend');
+    expect(withoutMenu).not.toContain('MenuBackend');
+    expect(withoutMenu.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
+  });
+
+  it('would fail if PowerBackend were removed from the required set but still enforced', () => {
+    const withoutPower = REQUIRED_ENFORCED_NAMES.filter((name) => name !== 'PowerBackend');
+    expect(withoutPower).not.toContain('PowerBackend');
+    expect(withoutPower.length).toBe(REQUIRED_ENFORCED_NAMES.length - 1);
+  });
+
+  it('would lose progression visibility if historical baseline absorbed Menu and Power', () => {
+    const absorbedBaseline: BackendLifecycleFloor = {
+      enforcedNames: [...HISTORICAL_BASELINE.enforcedNames, 'MenuBackend', 'PowerBackend'].sort(),
+      total: HISTORICAL_BASELINE.total,
+    };
+    const delta = compareFloorToReport(absorbedBaseline, report);
+    expect(delta.enforcedGained).not.toContain('MenuBackend');
+    expect(delta.enforcedGained).not.toContain('PowerBackend');
   });
 });
 
