@@ -1,6 +1,12 @@
-import { createTransform3D } from '@flighthq/geometry/contract';
-import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
-import { getNodeChildren } from '@flighthq/node/contract';
+import { createTransform3D, createVector3, setQuaternionFromAxisAngle } from '@flighthq/geometry/contract';
+import {
+  createAmbientLight,
+  createDirectionalLight,
+  createHemisphereLight,
+  createPointLight,
+  createSpotLight,
+} from '@flighthq/lighting/contract';
+import { getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D, createScene3D } from '@flighthq/scene3d/contract';
@@ -13,7 +19,9 @@ import type {
   FlightDocumentScene,
   FlightDocumentScene3DMaterialization,
   FlightDocumentSchemaRegistry,
+  Light,
   NodeAny,
+  Scene3DLightsLike,
   Scene3DDocumentCamera,
   Scene3DDocumentLight,
 } from '@flighthq/types/contract';
@@ -108,6 +116,122 @@ describe('createFlightDocumentScene3DMaterialization', () => {
     expect(materialization.cameras[0].far).toBe(500);
     expect(materialization.cameras[0].near).toBe(0.5);
     expect(materialization.cameras[0].projection.kind).toBe('perspective');
+  });
+
+  it('applies authored camera placement to the runtime view matrix', () => {
+    const transform = createTransform3D();
+    transform.position.x = 7;
+    const document = createTestDocument({
+      cameras: [
+        {
+          far: 500,
+          near: 0.5,
+          projection: { aspect: 1.77, fovY: 1.047, kind: 'perspective' },
+          transform,
+        },
+      ],
+      kind: 'Scene3D',
+      lights: [],
+      scene: { children: [], fields: {}, kind: Node3DKind },
+    });
+
+    const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
+
+    expect(result?.cameras[0].view.m[12]).toBe(-7);
+  });
+
+  it('applies a bound depth-first node placement to the runtime camera', () => {
+    const transform = createTransform3D();
+    transform.position.x = 7;
+    const document = createTestDocument({
+      cameras: [
+        {
+          far: 500,
+          near: 0.5,
+          node: 2,
+          projection: { aspect: 1.77, fovY: 1.047, kind: 'perspective' },
+          transform,
+        },
+      ],
+      kind: 'Scene3D',
+      lights: [],
+      scene: {
+        children: [
+          {
+            children: [{ children: [], fields: { positionX: 3 }, kind: Node3DKind }],
+            fields: { positionX: 2 },
+            kind: Node3DKind,
+          },
+        ],
+        fields: {},
+        kind: Node3DKind,
+      },
+    });
+
+    const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
+
+    expect(result?.cameras[0].view.m[12]).toBe(-5);
+  });
+
+  it('preserves the source-derived representable light population and authored placement', () => {
+    const transform = createTransform3D();
+    transform.position.x = 10;
+    transform.position.y = 20;
+    transform.position.z = 30;
+    transform.scale.x = 2;
+    transform.scale.y = 3;
+    transform.scale.z = 4;
+    setQuaternionFromAxisAngle(transform.rotation, createVector3(0, 1, 0), Math.PI / 2);
+    const authoredLights: Required<Scene3DLightsLike> = {
+      ambient: createAmbientLight(),
+      directional: createDirectionalLight({ direction: { x: 0, y: 0, z: -1 } }),
+      hemisphere: [createHemisphereLight()],
+      point: [createPointLight({ position: { x: 1, y: 0, z: 0 } })],
+      spot: [createSpotLight({ direction: { x: 0, y: 0, z: -1 }, position: { x: 1, y: 0, z: 0 } })],
+    };
+    const document = createTestDocument({
+      cameras: [],
+      kind: 'Scene3D',
+      lights: getDocumentLights(authoredLights, transform),
+      scene: { children: [], fields: {}, kind: Node3DKind },
+    });
+
+    const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
+
+    expect(getScene3DLightKinds(result?.lights ?? null).sort()).toEqual(getScene3DLightKinds(authoredLights).sort());
+    expect(result?.lights.directional?.direction.x).toBeCloseTo(-1);
+    expect(result?.lights.directional?.direction.y).toBeCloseTo(0);
+    expect(result?.lights.directional?.direction.z).toBeCloseTo(0);
+    expect(result?.lights.point?.[0].position).toMatchObject({ x: 10, y: 20, z: 28 });
+    expect(result?.lights.spot?.[0].position).toMatchObject({ x: 10, y: 20, z: 28 });
+    expect(result?.lights.spot?.[0].direction.x).toBeCloseTo(-1);
+    expect(result?.lights.spot?.[0].direction.y).toBeCloseTo(0);
+    expect(result?.lights.spot?.[0].direction.z).toBeCloseTo(0);
+  });
+
+  it('applies a bound depth-first node placement to a punctual light', () => {
+    const transform = createTransform3D();
+    transform.position.x = 7;
+    const document = createTestDocument({
+      cameras: [],
+      kind: 'Scene3D',
+      lights: [{ descriptor: createPointLight(), node: 2, transform }],
+      scene: {
+        children: [
+          {
+            children: [{ children: [], fields: { positionX: 3 }, kind: Node3DKind }],
+            fields: { positionX: 2 },
+            kind: Node3DKind,
+          },
+        ],
+        fields: {},
+        kind: Node3DKind,
+      },
+    });
+
+    const result = createFlightDocumentScene3DMaterialization(document, createTestSchemas());
+
+    expect(result?.lights.point?.[0].position).toMatchObject({ x: 5, y: 0, z: 0 });
   });
 
   it('materializes a tree with children', () => {
@@ -571,8 +695,14 @@ function createTestDocument(
 
 function createTestSchemas(): FlightDocumentSchemaRegistry {
   const node3DSchema: FlightDocumentNodeSchema = {
-    createNode: (_fields: Readonly<FlightDocumentFields>, _resources: FlightDocumentResourceLookup) => {
-      return createNode3D();
+    createNode: (fields: Readonly<FlightDocumentFields>, _resources: FlightDocumentResourceLookup) => {
+      const node = createNode3D();
+      const positionX = fields['positionX'];
+      if (typeof positionX === 'number') {
+        node.position.x = positionX;
+        invalidateNodeLocalTransform(node);
+      }
+      return node;
     },
     fields: [],
     kind: Node3DKind,
@@ -618,4 +748,25 @@ function rootDocument3D(
     scenes: [{ cameras: [], kind: 'Scene3D', lights: [], scene: { children: [], fields, kind } }],
     version: 1,
   } as unknown as FlightDocument;
+}
+
+function getDocumentLights(
+  source: Readonly<Required<Scene3DLightsLike>>,
+  transform: Readonly<Scene3DDocumentLight['transform']>,
+): Scene3DDocumentLight[] {
+  return getScene3DLights(source).map((descriptor) => ({ descriptor, transform }));
+}
+
+function getScene3DLightKinds(source: Readonly<Scene3DLightsLike> | null): string[] {
+  return source === null ? [] : getScene3DLights(source).map((light) => light.kind);
+}
+
+function getScene3DLights(source: Readonly<Scene3DLightsLike>): Readonly<Light>[] {
+  const lights: Readonly<Light>[] = [];
+  for (const value of Object.values(source)) {
+    if (value === null) continue;
+    if ('kind' in value) lights.push(value);
+    else lights.push(...value);
+  }
+  return lights;
 }
