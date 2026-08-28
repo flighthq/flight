@@ -245,6 +245,32 @@ describe('hasValidAssertSyncVoidDeclaration', () => {
     const bare = 'export function destroy() { try { foo(); } catch {} }';
     expect(hasValidAssertSyncVoidDeclaration(parseFixture(bare), bare)).toBe(false);
   });
+
+  // ★ Structural negatives — each exercises a distinct counterexample axis that builder3's audit
+  // found the original validator missed. An imposter that passes any of these would let a
+  // Promise-returning wrapper exclude candidates from the all-packages assertion.
+  it('rejects a multi-statement body with variable named IsAny', () => {
+    const imposter =
+      'function assertSyncVoid<T>(value: Promise<void>): Promise<void> { const IsAny = 0; void value; return value; }';
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(imposter), imposter)).toBe(false);
+  });
+
+  it('rejects a Promise<void> return type', () => {
+    const imposter =
+      'type IsAny<T> = 0 extends 1 & T ? true : false;\n' +
+      'function assertSyncVoid<T>(value: T & (IsAny<T> extends true ? never : T extends void ? unknown : never)): Promise<void> { void value; }';
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(imposter), imposter)).toBe(false);
+  });
+
+  it('rejects a parameter type without IsAny in the type annotation', () => {
+    const imposter = 'function assertSyncVoid<T>(value: T): void { void value; }';
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(imposter), imposter)).toBe(false);
+  });
+
+  it('rejects a parameter type without the conditional extends', () => {
+    const imposter = 'function assertSyncVoid<T>(value: T & IsAny<T>): void { void value; }';
+    expect(hasValidAssertSyncVoidDeclaration(parseFixture(imposter), imposter)).toBe(false);
+  });
 });
 
 // ★ COMPILE FIXTURE. The type guard is the assertion surface — this test proves it rejects
