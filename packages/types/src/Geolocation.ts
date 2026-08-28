@@ -41,6 +41,8 @@ export interface GeolocationBackend {
   getCurrentPosition(options: Readonly<GeolocationRequestOptions>): Promise<GeoPosition | null>;
   getCurrentPositionResult(options: Readonly<GeolocationRequestOptions>): Promise<GeoPositionResult>;
   getPermission(): Promise<GeolocationPermissionState>;
+  // Reports whether this provider can acquire positions now; permission denial is a separate state.
+  isAvailable(): boolean;
   watchPosition(
     listener: (position: Readonly<GeoPosition>) => void,
     options: Readonly<GeolocationRequestOptions>,

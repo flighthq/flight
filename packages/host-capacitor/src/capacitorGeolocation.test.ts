@@ -49,6 +49,11 @@ function fakeCapacitor(permission = 'granted') {
 }
 
 describe('createCapacitorGeolocationBackend', () => {
+  it('reports an installed Capacitor geolocation provider as available', () => {
+    const backend = createCapacitorGeolocationBackend(fakeCapacitor().capacitor);
+    expect(backend.isAvailable()).toBe(true);
+  });
+
   it('maps a Capacitor position onto a GeoPosition', async () => {
     const backend = createCapacitorGeolocationBackend(fakeCapacitor().capacitor);
     const position = await backend.getCurrentPosition({});

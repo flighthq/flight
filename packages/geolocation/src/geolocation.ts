@@ -88,6 +88,10 @@ export function createWebGeolocationBackend(): GeolocationBackend {
       }
       return 'prompt';
     },
+    isAvailable() {
+      if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
+      return getWebGeolocation() !== null;
+    },
     async requestPermission() {
       const permissions = typeof navigator !== 'undefined' ? (navigator.permissions ?? null) : null;
       if (permissions !== null && typeof permissions.query === 'function') {
@@ -179,9 +183,7 @@ export function installGeolocationHostBackend(backend: GeolocationBackend): void
 }
 
 export function isGeolocationAvailable(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
-  return typeof navigator.geolocation !== 'undefined' && navigator.geolocation !== null;
+  return getGeolocationBackend().isAvailable();
 }
 
 export function observeGeolocationHostResult(operation: string, succeeded: boolean): void {
@@ -235,6 +237,9 @@ const _sentinel: GeolocationBackend = {
   },
   getPermission() {
     return Promise.resolve('prompt' as GeolocationPermissionState);
+  },
+  isAvailable() {
+    return false;
   },
   requestPermission() {
     return Promise.resolve(false);

@@ -23,7 +23,7 @@ describe('P5 host-bypass derived gate', () => {
     console.log(formatted);
     expect(p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET)).toEqual([]);
     expect(formatted).toContain(
-      'P5 outstanding=36 direct-dom=18 input-ingress=0 scratch-surface=18 webgpu-acquisition=0',
+      'P5 outstanding=33 direct-dom=15 input-ingress=0 scratch-surface=18 webgpu-acquisition=0',
     );
   }, 30_000);
 
@@ -98,6 +98,26 @@ describe('P5 host-bypass derived gate', () => {
       `${kind}: found ${countP5HostBypasses(mutated)[kind]}, budget 0`,
     );
   });
+
+  it('mutation-proves that restoring the portable geolocation probe exceeds the lowered direct-DOM ratchet', () => {
+    const clean = scanP5HostBypasses(ROOT);
+    const restoredProbe = scanP5HostBypassSource(
+      'packages/geolocation/src/restoredGeolocationProbe.ts',
+      `export function isGeolocationAvailable() {
+         if (typeof navigator === 'undefined') return false;
+         if (typeof window !== 'undefined' && window.isSecureContext === false) return false;
+         return typeof navigator.geolocation !== 'undefined' && navigator.geolocation !== null;
+       }`,
+    );
+    const mutated = createP5HostBypassReport(clean.scannedFiles + 1, [
+      ...clean.p5,
+      ...clean.excluded,
+      ...restoredProbe,
+    ]);
+    expect(restoredProbe).toHaveLength(3);
+    expect(countP5HostBypasses(mutated)['direct-dom']).toBe(18);
+    expect(p5HostBypassBudgetFailures(mutated, P5_HOST_BYPASS_BUDGET)).toContain('direct-dom: found 18, budget 15');
+  }, 30_000);
 
   it('partitions transport constructors to P3 instead of admitting them to the P5 population', () => {
     const sites = scanP5HostBypassSource(

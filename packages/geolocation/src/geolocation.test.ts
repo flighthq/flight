@@ -24,7 +24,7 @@ import {
   resetGeolocationBackendForTest,
 } from './geolocation';
 
-function fakeBackend(): GeolocationBackend & { cleared: number[]; lastWatch: number } {
+function fakeBackend(available: boolean = true): GeolocationBackend & { cleared: number[]; lastWatch: number } {
   return {
     cleared: [],
     lastWatch: 0,
@@ -46,6 +46,9 @@ function fakeBackend(): GeolocationBackend & { cleared: number[]; lastWatch: num
     async getPermission(): Promise<GeolocationPermissionState> {
       return 'granted';
     },
+    isAvailable() {
+      return available;
+    },
     async requestPermission() {
       return true;
     },
@@ -62,7 +65,10 @@ function fakeBackend(): GeolocationBackend & { cleared: number[]; lastWatch: num
   };
 }
 
-afterEach(() => setGeolocationBackend(null));
+afterEach(() => {
+  resetGeolocationBackendForTest();
+  vi.unstubAllGlobals();
+});
 
 describe('clearGeolocationWatch', () => {
   it('does not throw on the web backend in jsdom', () => {
@@ -158,6 +164,20 @@ describe('createWebGeolocationBackend', () => {
         delete (navigator as { geolocation?: unknown }).geolocation;
       }
     }
+  });
+
+  it('reports availability only when geolocation exists in a secure context', () => {
+    const backend = createWebGeolocationBackend();
+    vi.stubGlobal('navigator', { geolocation: {} });
+    vi.stubGlobal('window', { isSecureContext: true });
+    expect(backend.isAvailable()).toBe(true);
+
+    vi.stubGlobal('window', { isSecureContext: false });
+    expect(backend.isAvailable()).toBe(false);
+
+    vi.stubGlobal('navigator', {});
+    vi.stubGlobal('window', { isSecureContext: true });
+    expect(backend.isAvailable()).toBe(false);
   });
 });
 
@@ -258,12 +278,23 @@ describe('installGeolocationHostBackend', () => {
 });
 
 describe('isGeolocationAvailable', () => {
-  it('returns a boolean', () => {
-    expect(typeof isGeolocationAvailable()).toBe('boolean');
+  it('returns the false sentinel even when browser geolocation exists', () => {
+    vi.stubGlobal('navigator', { geolocation: {} });
+    vi.stubGlobal('window', { isSecureContext: true });
+    expect(isGeolocationAvailable()).toBe(false);
   });
 
-  it('returns false in jsdom (no secure context / no navigator.geolocation)', () => {
-    // jsdom does not provide navigator.geolocation, so this is expected to be false.
+  it('routes a custom available provider when DOM globals are absent', () => {
+    vi.stubGlobal('navigator', undefined);
+    vi.stubGlobal('window', undefined);
+    setGeolocationBackend(fakeBackend(true));
+    expect(isGeolocationAvailable()).toBe(true);
+  });
+
+  it('routes an unavailable host provider when browser geolocation exists', () => {
+    vi.stubGlobal('navigator', { geolocation: {} });
+    vi.stubGlobal('window', { isSecureContext: true });
+    installGeolocationHostBackend(fakeBackend(false));
     expect(isGeolocationAvailable()).toBe(false);
   });
 });

@@ -35,6 +35,11 @@ export function enableHostWebGeolocation(): void {
         return 'prompt';
       }
     },
+    isAvailable() {
+      const available = inner.isAvailable();
+      observeGeolocationHostResult('isAvailable', available);
+      return available;
+    },
     async requestPermission() {
       try {
         const result = await inner.requestPermission();
