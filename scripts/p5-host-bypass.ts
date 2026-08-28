@@ -295,10 +295,6 @@ const P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX = [
     reason: 'GL root-surface creation routed through the selected GL render-surface provider',
     total: 27,
   },
-] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
-
-export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
-  ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
   {
     budget: {
       'direct-dom': 12,
@@ -311,6 +307,24 @@ export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
     reason: 'WGPU root-surface creation routed through the selected WGPU render-surface provider',
     total: 26,
   },
+] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
+
+const P5_HOST_BYPASS_S09_V4_PROGRESS = {
+  budget: {
+    'direct-dom': 12,
+    'input-ingress': 0,
+    'frame-scheduling': 0,
+    'scratch-surface': 13,
+    'render-surface': 0,
+    'webgpu-acquisition': 0,
+  },
+  reason: 'Bitmap drawing allocates its pixel-transfer buffer through the caller-owned 2D context',
+  total: 25,
+} as const satisfies P5HostBypassV4BudgetEvidence;
+
+export const P5_HOST_BYPASS_V4_PROGRESS_HISTORY = [
+  ...P5_HOST_BYPASS_ACCEPTED_V4_PROGRESS_HISTORY_PREFIX,
+  P5_HOST_BYPASS_S09_V4_PROGRESS,
 ] as const satisfies readonly P5HostBypassV4BudgetEvidence[];
 
 const P5_HOST_BYPASS_ACCEPTED_DETECTOR_PROVENANCE_HISTORY_PREFIX = [
@@ -636,6 +650,20 @@ export function p5WgpuRenderSurfaceRepairFailures(report: Readonly<P5HostBypassR
   return remaining.length === 0 ? [] : [`S08 must leave no render surfaces; found [${remaining.join(', ')}]`];
 }
 
+export function p5BitmapDrawTransferRepairFailures(report: Readonly<P5HostBypassReport>): string[] {
+  const remaining = report.p5
+    .filter(
+      (site) =>
+        site.kind === 'scratch-surface' &&
+        site.file === 'packages/bitmap/src/bitmapDraw.ts' &&
+        site.functionName === 'drawBitmap',
+    )
+    .map((site) => `${site.file}:${site.functionName}`);
+  return remaining.length === 0
+    ? []
+    : [`S09 must remove the bitmapDraw global ImageData transfer; found [${remaining.join(', ')}]`];
+}
+
 export function createP5HostBypassReport(scannedFiles: number, sites: readonly P5HostBypassSite[]): P5HostBypassReport {
   const sorted = [...sites].sort(
     (a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column || a.kind.localeCompare(b.kind),
@@ -695,6 +723,21 @@ export function p5HostBypassBudgetFailures(report: Readonly<P5HostBypassReport>,
   return (Object.keys(counts) as P5HostBypassKind[])
     .filter((kind) => counts[kind] > budget[kind])
     .map((kind) => `${kind}: found ${counts[kind]}, budget ${budget[kind]}`);
+}
+
+export function p5HostBypassCurrentBudgetFailures(
+  report: Readonly<P5HostBypassReport>,
+  budget: P5HostBypassBudget,
+): string[] {
+  const counts = countP5HostBypasses(report);
+  const failures = (Object.keys(counts) as P5HostBypassKind[])
+    .filter((kind) => counts[kind] !== budget[kind])
+    .map((kind) => `P5 current ${kind}: found ${counts[kind]}, expected ${budget[kind]}`);
+  const expectedTotal = totalP5HostBypassBudget(budget);
+  if (report.p5.length !== expectedTotal) {
+    failures.push(`P5 current outstanding: found ${report.p5.length}, expected ${expectedTotal}`);
+  }
+  return failures;
 }
 
 export function p5HostBypassBudgetHistoryFailures(history: readonly P5HostBypassBudgetEvidence[]): string[] {
@@ -855,6 +898,13 @@ export function p5HostBypassV4ProgressHistoryFailures(history: readonly P5HostBy
     }
   }
   return failures;
+}
+
+export function p5BitmapDrawTransferProgressFailures(history: readonly P5HostBypassV4BudgetEvidence[]): string[] {
+  const entry = history[3];
+  return entry !== undefined && p5HostBypassV4BudgetEvidenceMatches(entry, P5_HOST_BYPASS_S09_V4_PROGRESS)
+    ? []
+    : ['S09 taxonomy v4 progress checkpoint no longer pins the exact total, categories, and reason'];
 }
 
 export function p5HostBypassDetectorProvenanceHistoryFailures(
@@ -1070,6 +1120,7 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ...p5HostBypassClassificationHistoryFailures(P5_HOST_BYPASS_CLASSIFICATION_HISTORY),
     ...p5HostBypassV3ProgressHistoryFailures(P5_HOST_BYPASS_V3_PROGRESS_HISTORY),
     ...p5HostBypassV4ProgressHistoryFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
+    ...p5BitmapDrawTransferProgressFailures(P5_HOST_BYPASS_V4_PROGRESS_HISTORY),
     ...p5HostBypassDetectorProvenanceHistoryFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE_HISTORY),
     ...p5HostBypassDetectorProvenanceFailures(P5_HOST_BYPASS_DETECTOR_PROVENANCE),
     ...p5GlRenderSurfaceProviderBoundaryFailures(
@@ -1081,7 +1132,9 @@ if (isMainModule(import.meta.url, process.argv[1])) {
     ),
     ...p5WgpuRenderSurfaceConsumerFailures(process.cwd()),
     ...p5WgpuRenderSurfaceRepairFailures(report),
+    ...p5BitmapDrawTransferRepairFailures(report),
     ...p5HostBypassBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
+    ...p5HostBypassCurrentBudgetFailures(report, P5_HOST_BYPASS_BUDGET),
   ];
   if (failures.length > 0) {
     process.stderr.write(`P5 host-bypass ratchet exceeded:\n${failures.map((failure) => `- ${failure}`).join('\n')}\n`);

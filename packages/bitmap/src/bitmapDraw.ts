@@ -9,7 +9,8 @@ import { extractBitmapPixels } from './bitmapComposite';
  */
 export function drawBitmap(dest: HTMLCanvasElement, source: Readonly<BitmapRegion>, x: number, y: number): void {
   if (source.width <= 0 || source.height <= 0) return;
-  const domImageData = new globalThis.ImageData(source.width, source.height);
+  const context = dest.getContext('2d')!;
+  const domImageData = context.createImageData(source.width, source.height);
   extractBitmapPixels(domImageData.data, source);
-  dest.getContext('2d')!.putImageData(domImageData, x, y);
+  context.putImageData(domImageData, x, y);
 }
