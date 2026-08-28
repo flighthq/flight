@@ -158,6 +158,17 @@ export function getAccessibilityBackend(): AccessibilityBackend {
 }
 
 // Whether a real backend implements `operation`, as opposed to the sentinel answering for it.
+// True when a host backend occupies the host slot. See `hasPowerHostBackend` for why a host package asks
+// instead of remembering: a host-local `_enabled` boolean is a second copy of a fact this package owns,
+// nothing reset it, and once `destroyAccessibilityBackend` emptied the slot the two disagreed
+// permanently — slot empty, the host certain it had installed, capability pinned to its sentinel.
+//
+// Reports the SLOT, not the effective backend: a custom backend takes precedence for callers but does
+// not occupy this slot, so it must not suppress host installation.
+export function hasAccessibilityHostBackend(): boolean {
+  return _host !== null;
+}
+
 export function hasAccessibilityOperation(operation: AccessibilityOperation): boolean {
   return explainAccessibilityOperation(operation).implemented;
 }

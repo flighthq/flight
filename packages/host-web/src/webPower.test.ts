@@ -15,6 +15,44 @@ describe('enableHostWebPower', () => {
   });
 });
 
+// ★ RE-ENABLE AFTER THE HOST SLOT IS CLEARED, asserted by OBJECT IDENTITY because `Power` has no
+// `explain*Operation` seam to report a layer. Before the latch was derived, the second
+// `enableHostWebPower()` returned without installing — the host-local `_enabled` still said "installed"
+// while the slot was empty — and the capability served its sentinel for the life of the process.
+//
+// The slot is cleared here through the capability's own test seam rather than a destroy path, because
+// `destroyPowerBackend` is deliberately not part of this slice.
+describe('enableHostWebPower after the host slot is cleared', () => {
+  afterEach(() => resetPowerBackendForTest());
+
+  it('installs a fresh host backend instead of silently leaving the sentinel', () => {
+    resetPowerBackendForTest();
+    const sentinel = getPowerBackend();
+
+    enableHostWebPower();
+    const firstHost = getPowerBackend();
+    expect(firstHost).not.toBe(sentinel);
+
+    resetPowerBackendForTest();
+    expect(getPowerBackend()).toBe(sentinel);
+
+    enableHostWebPower();
+    const secondHost = getPowerBackend();
+    // Both halves matter: not the sentinel proves it installed at all, and not the first instance proves
+    // it built a new backend rather than resurrecting a stale reference.
+    expect(secondHost).not.toBe(sentinel);
+    expect(secondHost).not.toBe(firstHost);
+  });
+
+  it('stays idempotent while the host slot is occupied', () => {
+    resetPowerBackendForTest();
+    enableHostWebPower();
+    const installed = getPowerBackend();
+    enableHostWebPower();
+    expect(getPowerBackend()).toBe(installed);
+  });
+});
+
 describe('resetHostWebPowerForTest', () => {
   it('allows re-enabling after reset', () => {
     enableHostWebPower();
