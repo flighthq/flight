@@ -244,13 +244,24 @@ function isAssertSyncVoidCall(node: Readonly<Node>): boolean {
 // conditional parameter type rejecting Promise/any/unknown, return void, AND single `void value` body.
 // An arbitrary same-name function with a different signature or body is NOT recognized.
 export function hasValidAssertSyncVoidDeclaration(program: Readonly<Node>, _text: string): boolean {
-  let hasCanonicalIsAny = false;
-  let hasCanonicalHelper = false;
+  const body = asAstNode(program).body as unknown[] | undefined;
+  const canonicalIsAnyCount = body?.filter((node) => isCanonicalIsAnyDeclaration(node as Node)).length ?? 0;
+  const canonicalHelperCount = body?.filter((node) => isCanonicalAssertSyncVoidDeclaration(node as Node)).length ?? 0;
+  let assertSyncVoidBindings = 0;
+  let assertSyncVoidWrites = 0;
+  let isAnyBindings = 0;
   walk(program, (node) => {
-    if (isCanonicalIsAnyDeclaration(node)) hasCanonicalIsAny = true;
-    if (isCanonicalAssertSyncVoidDeclaration(node)) hasCanonicalHelper = true;
+    assertSyncVoidBindings += countValueBindingsNamed(node, 'assertSyncVoid');
+    assertSyncVoidWrites += countValueWritesNamed(node, 'assertSyncVoid');
+    isAnyBindings += countTypeBindingsNamed(node, 'IsAny');
   });
-  return hasCanonicalIsAny && hasCanonicalHelper;
+  return (
+    canonicalIsAnyCount === 1 &&
+    canonicalHelperCount === 1 &&
+    assertSyncVoidBindings === 1 &&
+    assertSyncVoidWrites === 0 &&
+    isAnyBindings === 1
+  );
 }
 
 function isCanonicalAssertSyncVoidDeclaration(node: Readonly<Node>): boolean {
@@ -317,6 +328,78 @@ interface AstNode {
 
 function asAstNode(value: unknown): AstNode {
   return value !== null && typeof value === 'object' ? (value as AstNode) : {};
+}
+
+function bindingPatternContainsName(value: unknown, name: string): boolean {
+  const pattern = asAstNode(value);
+  if (pattern.type === 'Identifier') return pattern.name === name;
+  if (pattern.type === 'AssignmentPattern') return bindingPatternContainsName(pattern.left, name);
+  if (pattern.type === 'RestElement') return bindingPatternContainsName(pattern.argument, name);
+  if (pattern.type === 'ArrayPattern') {
+    return ((pattern.elements as unknown[] | undefined) ?? []).some((element) =>
+      bindingPatternContainsName(element, name),
+    );
+  }
+  if (pattern.type === 'ObjectPattern') {
+    return ((pattern.properties as unknown[] | undefined) ?? []).some((property) => {
+      const item = asAstNode(property);
+      return bindingPatternContainsName(item.value ?? item.argument, name);
+    });
+  }
+  return false;
+}
+
+function countTypeBindingsNamed(node: Readonly<Node>, name: string): number {
+  const candidate = asAstNode(node);
+  if (
+    candidate.type === 'TSTypeAliasDeclaration' ||
+    candidate.type === 'TSInterfaceDeclaration' ||
+    candidate.type === 'TSEnumDeclaration'
+  ) {
+    return identifierName(candidate.id) === name ? 1 : 0;
+  }
+  return 0;
+}
+
+function countValueWritesNamed(node: Readonly<Node>, name: string): number {
+  const candidate = asAstNode(node);
+  if (candidate.type === 'AssignmentExpression' && bindingPatternContainsName(candidate.left, name)) return 1;
+  if (candidate.type === 'UpdateExpression' && bindingPatternContainsName(candidate.argument, name)) return 1;
+  return 0;
+}
+
+function countValueBindingsNamed(node: Readonly<Node>, name: string): number {
+  const candidate = asAstNode(node);
+  let count = 0;
+  if (
+    candidate.type === 'FunctionDeclaration' ||
+    candidate.type === 'FunctionExpression' ||
+    candidate.type === 'ClassDeclaration' ||
+    candidate.type === 'ClassExpression'
+  ) {
+    if (identifierName(candidate.id) === name) count += 1;
+  } else if (candidate.type === 'VariableDeclarator') {
+    if (bindingPatternContainsName(candidate.id, name)) count += 1;
+  } else if (
+    candidate.type === 'ImportSpecifier' ||
+    candidate.type === 'ImportDefaultSpecifier' ||
+    candidate.type === 'ImportNamespaceSpecifier'
+  ) {
+    if (identifierName(candidate.local) === name) count += 1;
+  } else if (candidate.type === 'CatchClause' && bindingPatternContainsName(candidate.param, name)) {
+    count += 1;
+  }
+
+  if (
+    candidate.type === 'FunctionDeclaration' ||
+    candidate.type === 'FunctionExpression' ||
+    candidate.type === 'ArrowFunctionExpression'
+  ) {
+    for (const param of (candidate.params as unknown[] | undefined) ?? []) {
+      if (bindingPatternContainsName(param, name)) count += 1;
+    }
+  }
+  return count;
 }
 
 function hasSingleTypeParameter(value: unknown, name: string): boolean {
