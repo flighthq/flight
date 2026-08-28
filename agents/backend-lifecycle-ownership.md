@@ -95,6 +95,24 @@ remaining rows are unchanged: `Menu` still carries the mismatch named above, whi
 no implementation to audit. `MediaSession` is now assertion-backed by per-backend, per-session,
 per-lane ownership tests, including B-supersedes-A and failed-release retry cases.
 
+### Mutation-audit ordering
+
+MediaSession's test-depth closure used classification before optimization. Its initial focused run
+found 21 survivors among 91 reachable mutants. Before closure tests were added, each survivor was
+classified, and six bookkeeping-only mutants plus one type-equivalent mutant were individually
+recorded and manager-ratified as non-actionable. Tests then closed the remaining 14 actionable gaps.
+After reconciliation added three reachable mutants, the same seven semantic survivors remained among
+94. Because the exemption set predated the tests, a stubborn mutant could not be retrospectively
+relabelled to manufacture “zero actionable.”
+
+Future mutation audits follow the same evidence order: record every current survivor's semantic
+identity and rationale, obtain the required review or ratification, and only then write closure tests
+for the actionable set. After source reconciliation, rerun against the new reachable denominator and
+compare semantic identities rather than line numbers. A new or different survivor reopens
+classification; it is never automatically exempted to restore a score. This is an audit procedure,
+not a kill-rate gate: no percentage floor or zero-survivor target makes bookkeeping-only or
+type-equivalent mutants actionable.
+
 #### The four Power mutations, preserved verbatim so encoding is transcription
 
 These were run by hand against `webPower.ts` and `webPower.test.ts` and are recorded here because nothing
