@@ -1,83 +1,70 @@
 import type {
-  BackendExplanation,
-  DialogBackend,
   FileDialogHandle,
   FileDialogStartIn,
+  FileDialogBackend,
+  HasDialogFile,
+  HasDialogMessage,
+  HasDialogPrompt,
+  MessageDialogBackend,
   MessageDialogOptions,
   MessageDialogResult,
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
+  PromptDialogBackend,
   PromptDialogOptions,
   SaveFileDialogOptions,
 } from '@flighthq/types/contract';
 
-// Builds the default web backend over file inputs, window dialogs, and the File System Access API
-// where available. File pickers fall back to <input type=file> which cannot expose real host paths,
-// so handles carry path: null on web. All API surfaces are guarded for jsdom/non-document hosts
-// and resolve to sentinels rather than throwing.
-export function createWebDialogBackend(): DialogBackend {
-  return {
-    async confirm(options) {
-      if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
-      try {
-        // Coerce to a strict boolean: a real browser returns boolean, but jsdom can return undefined.
-        return window.confirm(options.message) === true;
-      } catch {
-        return false;
-      }
-    },
-    async message(options) {
-      // The web platform has no multi-button/checkbox message box; alert() shows the text only and
-      // always yields button 0. Native hosts honor buttons, checkboxLabel, defaultId, and cancelId.
-      const checkboxChecked = options.checkboxChecked ?? false;
-      if (typeof window === 'undefined' || typeof window.alert !== 'function') {
-        return { buttonIndex: 0, cancelled: false, checkboxChecked };
-      }
-      try {
-        window.alert(options.message);
-      } catch {
-        return { buttonIndex: 0, cancelled: false, checkboxChecked };
-      }
+// Browser implementations are stateless const objects. Host assemblers may import only the slots they
+// advertise. File pickers fall back to <input type=file>, whose handles cannot expose host paths.
+export const webFileDialogBackend: FileDialogBackend = {
+  openDirectory(options) {
+    return openWebDirectoryDialog(options);
+  },
+  openFile(options) {
+    return openWebFileDialog(options);
+  },
+  async saveFile(options) {
+    return saveWebFile(options);
+  },
+};
+
+export const webMessageDialogBackend: MessageDialogBackend = {
+  async confirm(options) {
+    if (typeof window === 'undefined' || typeof window.confirm !== 'function') return false;
+    try {
+      // Coerce to a strict boolean: a real browser returns boolean, but jsdom can return undefined.
+      return window.confirm(options.message) === true;
+    } catch {
+      return false;
+    }
+  },
+  async message(options) {
+    // The web platform has no multi-button/checkbox message box; alert() shows the text only and
+    // always yields button 0. Native hosts honor buttons, checkboxLabel, defaultId, and cancelId.
+    const checkboxChecked = options.checkboxChecked ?? false;
+    if (typeof window === 'undefined' || typeof window.alert !== 'function') {
       return { buttonIndex: 0, cancelled: false, checkboxChecked };
-    },
-    openDirectory(options) {
-      return openWebDirectoryDialog(options);
-    },
-    openFile(options) {
-      return openWebFileDialog(options);
-    },
-    async prompt(options) {
-      if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
-      try {
-        return window.prompt(options.message, options.defaultValue ?? '');
-      } catch {
-        return null;
-      }
-    },
-    async saveFile(options) {
-      return saveWebFile(options);
-    },
-  };
-}
+    }
+    try {
+      window.alert(options.message);
+    } catch {
+      return { buttonIndex: 0, cancelled: false, checkboxChecked };
+    }
+    return { buttonIndex: 0, cancelled: false, checkboxChecked };
+  },
+};
 
-export function explainDialogBackend(): BackendExplanation {
-  if (_custom !== null) {
-    return { conflict: _hostConflict, layer: 'custom', operation: null, viability: 'unobserved' };
-  }
-  if (_host !== null) {
-    return {
-      conflict: _hostConflict,
-      layer: 'host',
-      operation: _hostObservation !== null ? _hostObservation.operation : null,
-      viability: _hostObservation !== null ? _hostObservation.viability : 'unobserved',
-    };
-  }
-  return { conflict: false, layer: 'host-not-enabled', operation: null, viability: 'unobserved' };
-}
-
-export function getDialogBackend(): DialogBackend {
-  return _custom ?? _host ?? _sentinel;
-}
+export const webPromptDialogBackend: PromptDialogBackend = {
+  async prompt(options) {
+    if (typeof window === 'undefined' || typeof window.prompt !== 'function') return null;
+    try {
+      return window.prompt(options.message, options.defaultValue ?? '');
+    } catch {
+      return null;
+    }
+  },
+};
 
 // Retrieves the underlying web FileSystemDirectoryHandle stashed for a dialog directory handle, if any.
 // Used by @flighthq/filesystem or other I/O cells to traverse and read the directory natively.
@@ -93,114 +80,86 @@ export function getWebFileSystemHandle(handle: Readonly<FileDialogHandle>): File
   return _fileSystemHandleRegistry.get(handle as FileDialogHandle) ?? null;
 }
 
-export function installDialogHostBackend(backend: DialogBackend): void {
-  if (_host !== null) {
-    if (_host !== backend) _hostConflict = true;
-    return;
-  }
-  _host = backend;
-}
-
-export function observeDialogHostResult(operation: string, succeeded: boolean): void {
-  _hostObservation = {
-    operation,
-    viability: succeeded ? 'available' : 'runtime-api-unavailable',
-  };
-}
-
-export function resetDialogBackendForTest(): void {
-  _custom = null;
-  _host = null;
-  _hostConflict = false;
-  _hostObservation = null;
-}
-
-export function setDialogBackend(backend: DialogBackend | null): void {
-  _custom = backend;
-}
-
-// Shows a yes/no confirmation. Returns false on cancel or when the host lacks the surface.
-export function showConfirmDialog(options: Readonly<MessageDialogOptions>): Promise<boolean> {
-  return getDialogBackend().confirm(options);
+// Shows a yes/no confirmation. Returns false on cancel.
+export function showConfirmDialog(host: HasDialogMessage, options: Readonly<MessageDialogOptions>): Promise<boolean> {
+  return host.dialog.message.confirm(options);
 }
 
 // Shows an error-severity message box. Returns the pressed button index and final checkbox state
 // (buttonIndex 0 on web alert/dismiss). Convenience over showMessageDialog({ kind: 'error' }).
-export function showErrorBox(title: string, content: string): Promise<MessageDialogResult> {
-  return getDialogBackend().message({ kind: 'error', message: content, title });
+export function showErrorBox(host: HasDialogMessage, title: string, content: string): Promise<MessageDialogResult> {
+  return host.dialog.message.message({ kind: 'error', message: content, title });
 }
 
 // Shows an error-severity message dialog. Returns the full result including cancelled flag.
-export function showErrorDialog(options: Readonly<MessageDialogOptions>): Promise<MessageDialogResult> {
-  return getDialogBackend().message({ ...options, kind: 'error' });
+export function showErrorDialog(
+  host: HasDialogMessage,
+  options: Readonly<MessageDialogOptions>,
+): Promise<MessageDialogResult> {
+  return host.dialog.message.message({ ...options, kind: 'error' });
 }
 
 // Shows an info-severity message dialog. Returns the full result including cancelled flag.
-export function showInfoDialog(options: Readonly<MessageDialogOptions>): Promise<MessageDialogResult> {
-  return getDialogBackend().message({ ...options, kind: 'info' });
+export function showInfoDialog(
+  host: HasDialogMessage,
+  options: Readonly<MessageDialogOptions>,
+): Promise<MessageDialogResult> {
+  return host.dialog.message.message({ ...options, kind: 'info' });
 }
 
 // Shows an informational message. Returns the pressed button index and final checkbox state
 // (buttonIndex 0 and the requested checkbox value on web alert/dismiss).
-export function showMessageDialog(options: Readonly<MessageDialogOptions>): Promise<MessageDialogResult> {
-  return getDialogBackend().message(options);
+export function showMessageDialog(
+  host: HasDialogMessage,
+  options: Readonly<MessageDialogOptions>,
+): Promise<MessageDialogResult> {
+  return host.dialog.message.message(options);
 }
 
 // Shows a directory picker as a first-class call (distinct from showOpenFileDialog({ directory: true })).
 // Returns selected directory handles ([] on cancel). On web, path is null in each handle.
-export function showOpenDirectoryDialog(options: Readonly<OpenDirectoryDialogOptions>): Promise<FileDialogHandle[]> {
-  return getDialogBackend().openDirectory(options);
+export function showOpenDirectoryDialog(
+  host: HasDialogFile,
+  options: Readonly<OpenDirectoryDialogOptions>,
+): Promise<FileDialogHandle[]> {
+  return host.dialog.file.openDirectory(options);
 }
 
 // Shows an open-file picker. Returns selected handles ([] on cancel). On web, path is null in each
 // handle — browsers cannot expose real host paths. Use @flighthq/filesystem to read handle contents.
-export function showOpenFileDialog(options: Readonly<OpenFileDialogOptions>): Promise<FileDialogHandle[]> {
-  return getDialogBackend().openFile(options);
+export function showOpenFileDialog(
+  host: HasDialogFile,
+  options: Readonly<OpenFileDialogOptions>,
+): Promise<FileDialogHandle[]> {
+  return host.dialog.file.openFile(options);
 }
 
-// Shows a text prompt. Returns the entered string, or null on cancel / when the host lacks the surface.
+// Shows a text prompt. Returns the entered string, or null on cancel.
 // Accepts an options object (title, message, defaultValue, placeholder) aligning it with its siblings.
-export function showPromptDialog(options: Readonly<PromptDialogOptions>): Promise<string | null> {
-  return getDialogBackend().prompt(options);
+export function showPromptDialog(
+  host: HasDialogPrompt,
+  options: Readonly<PromptDialogOptions>,
+): Promise<string | null> {
+  return host.dialog.prompt.prompt(options);
 }
 
 // Shows a save-file picker. Returns a handle for the chosen destination, or null on cancel.
 // On web, uses the File System Access API (showSaveFilePicker) when available, yielding a handle
 // whose writable can be opened by @flighthq/filesystem. Falls back to null when the API is absent.
-export function showSaveFileDialog(options: Readonly<SaveFileDialogOptions>): Promise<FileDialogHandle | null> {
-  return getDialogBackend().saveFile(options);
+export function showSaveFileDialog(
+  host: HasDialogFile,
+  options: Readonly<SaveFileDialogOptions>,
+): Promise<FileDialogHandle | null> {
+  return host.dialog.file.saveFile(options);
 }
 
 // Shows a warning-severity message dialog. Returns the full result including cancelled flag.
-export function showWarningDialog(options: Readonly<MessageDialogOptions>): Promise<MessageDialogResult> {
-  return getDialogBackend().message({ ...options, kind: 'warning' });
+export function showWarningDialog(
+  host: HasDialogMessage,
+  options: Readonly<MessageDialogOptions>,
+): Promise<MessageDialogResult> {
+  return host.dialog.message.message({ ...options, kind: 'warning' });
 }
-
-let _custom: DialogBackend | null = null;
-let _host: DialogBackend | null = null;
-let _hostConflict = false;
-let _hostObservation: { operation: string; viability: 'available' | 'runtime-api-unavailable' } | null = null;
-
-const _sentinel: DialogBackend = {
-  async confirm() {
-    return false;
-  },
-  async message(options) {
-    return { buttonIndex: 0, cancelled: false, checkboxChecked: options.checkboxChecked ?? false };
-  },
-  async openDirectory() {
-    return [];
-  },
-  async openFile() {
-    return [];
-  },
-  async prompt() {
-    return null;
-  },
-  async saveFile() {
-    return null;
-  },
-};
 
 // Registry mapping FileDialogHandle → live web FileSystemDirectoryHandle, enabling @flighthq/filesystem
 // to enumerate and read directories without dialog owning the I/O. Populated by showDirectoryPicker path.

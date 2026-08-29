@@ -2,7 +2,6 @@ import { getAppBackend, setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
 import { getConnectivityBackend, setConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend, setDeviceBackend } from '@flighthq/device/contract';
-import { setDialogBackend } from '@flighthq/dialog/contract';
 import { getFileSystemBackend, setFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend, setGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getHapticsBackend, setHapticsBackend } from '@flighthq/haptics/contract';
@@ -72,7 +71,6 @@ afterEach(() => {
   setClipboardBackend(null);
   setConnectivityBackend(null);
   setDeviceBackend(null);
-  setDialogBackend(null);
   setFileSystemBackend(null);
   setGeolocationBackend(null);
   setHapticsBackend(null);

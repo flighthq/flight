@@ -1,11 +1,14 @@
-import type { DialogBackend, FileDialogHandle, MessageDialogResult } from '@flighthq/types/contract';
+import type {
+  FileDialogBackend,
+  FileDialogHandle,
+  MessageDialogBackend,
+  MessageDialogResult,
+  PromptDialogBackend,
+} from '@flighthq/types/contract';
 
 import {
-  createWebDialogBackend,
-  getDialogBackend,
   getWebDirectorySystemHandle,
   getWebFileSystemHandle,
-  setDialogBackend,
   showConfirmDialog,
   showErrorBox,
   showErrorDialog,
@@ -16,138 +19,63 @@ import {
   showPromptDialog,
   showSaveFileDialog,
   showWarningDialog,
-  explainDialogBackend,
-  installDialogHostBackend,
-  observeDialogHostResult,
-  resetDialogBackendForTest,
+  webFileDialogBackend,
+  webMessageDialogBackend,
+  webPromptDialogBackend,
 } from './dialog';
 
 function fakeHandle(name: string): FileDialogHandle {
   return { kind: 'File', name, path: '/tmp/' + name };
 }
 
-function fakeBackend(): DialogBackend & { lastPromptMessage: string | null } {
+interface TestDialogHost {
+  readonly dialog: {
+    readonly file: FileDialogBackend;
+    readonly message: MessageDialogBackend;
+    readonly prompt: PromptDialogBackend & { lastPromptMessage: string | null };
+  };
+}
+
+function fakeHost(): TestDialogHost {
   return {
-    lastPromptMessage: null,
-    async confirm() {
-      return true;
-    },
-    async message() {
-      return { buttonIndex: 2, cancelled: false, checkboxChecked: false };
-    },
-    async openDirectory() {
-      return [{ kind: 'Directory', name: 'mydir', path: '/tmp/mydir' }];
-    },
-    async openFile() {
-      return [fakeHandle('a.txt'), fakeHandle('b.txt')];
-    },
-    async prompt(options) {
-      this.lastPromptMessage = options.message;
-      return 'typed';
-    },
-    async saveFile() {
-      return fakeHandle('out.txt');
+    dialog: {
+      file: {
+        async openDirectory() {
+          return [{ kind: 'Directory', name: 'mydir', path: '/tmp/mydir' }];
+        },
+        async openFile() {
+          return [fakeHandle('a.txt'), fakeHandle('b.txt')];
+        },
+        async saveFile() {
+          return fakeHandle('out.txt');
+        },
+      },
+      message: {
+        async confirm() {
+          return true;
+        },
+        async message() {
+          return { buttonIndex: 2, cancelled: false, checkboxChecked: false };
+        },
+      },
+      prompt: {
+        lastPromptMessage: null,
+        async prompt(options) {
+          this.lastPromptMessage = options.message;
+          return 'typed';
+        },
+      },
     },
   };
 }
 
-afterEach(() => setDialogBackend(null));
-
-describe('createWebDialogBackend', () => {
-  it('confirm returns false in jsdom (no real confirm surface)', async () => {
-    const backend = createWebDialogBackend();
-    expect(typeof (await backend.confirm({ message: 'sure?' }))).toBe('boolean');
-  });
-
-  it('does not send an empty accept map for an all-wildcard filter', async () => {
-    const previous = Object.getOwnPropertyDescriptor(window, 'showOpenFilePicker');
-    let pickerOptions: unknown;
-    Object.defineProperty(window, 'showOpenFilePicker', {
-      configurable: true,
-      value: async (options: unknown) => {
-        pickerOptions = options;
-        return [];
-      },
-    });
-    try {
-      const backend = createWebDialogBackend();
-      await backend.openFile({ filters: [{ extensions: ['*'], name: 'All files' }] });
-      expect(pickerOptions).toEqual({ multiple: false });
-    } finally {
-      if (previous === undefined) delete (window as Window & { showOpenFilePicker?: unknown }).showOpenFilePicker;
-      else Object.defineProperty(window, 'showOpenFilePicker', previous);
-    }
-  });
-
-  it('message returns a result object without throwing', async () => {
-    const backend = createWebDialogBackend();
-    const result = await backend.message({ message: 'hi', checkboxChecked: true });
-    expect(typeof result.buttonIndex).toBe('number');
-    expect(typeof result.checkboxChecked).toBe('boolean');
-    expect(typeof result.cancelled).toBe('boolean');
-  });
-
-  it('openDirectory returns a Promise', () => {
-    const backend = createWebDialogBackend();
-    expect(backend.openDirectory({})).toBeInstanceOf(Promise);
-  });
-
-  it('openFile returns a Promise', () => {
-    const backend = createWebDialogBackend();
-    expect(backend.openFile({})).toBeInstanceOf(Promise);
-  });
-
-  it('prompt returns a Promise', () => {
-    const backend = createWebDialogBackend();
-    // prompt opens an interactive window.prompt that may hang in jsdom; assert it returns a Promise.
-    expect(backend.prompt({ message: 'name?' })).toBeInstanceOf(Promise);
-  });
-
-  it('saveFile returns null when the File System Access API is absent', async () => {
-    const backend = createWebDialogBackend();
-    expect(await backend.saveFile({})).toBeNull();
-  });
-});
-
-describe('explainDialogBackend', () => {
-  afterEach(() => resetDialogBackendForTest());
-
-  it('reports host-not-enabled when no backend is installed', () => {
-    resetDialogBackendForTest();
-    const explanation = explainDialogBackend();
-    expect(explanation.layer).toBe('host-not-enabled');
-    expect(explanation.conflict).toBe(false);
-    expect(explanation.viability).toBe('unobserved');
-  });
-
-  it('reports custom layer when a custom backend is set', () => {
-    setDialogBackend(fakeBackend());
-    expect(explainDialogBackend().layer).toBe('custom');
-  });
-
-  it('reports host layer when a host backend is installed', () => {
-    installDialogHostBackend(fakeBackend());
-    expect(explainDialogBackend().layer).toBe('host');
-  });
-
-  it('reports conflict when two different host backends are installed', () => {
-    installDialogHostBackend(fakeBackend());
-    installDialogHostBackend(fakeBackend());
-    expect(explainDialogBackend().conflict).toBe(true);
-  });
-});
-
-describe('getDialogBackend', () => {
-  it('falls back to a web backend when none is set', () => {
-    expect(getDialogBackend()).not.toBeNull();
-  });
-
-  it('returns the registered backend', () => {
-    const backend = fakeBackend();
-    setDialogBackend(backend);
-    expect(getDialogBackend()).toBe(backend);
-  });
-});
+const webDialogHost = {
+  dialog: {
+    file: webFileDialogBackend,
+    message: webMessageDialogBackend,
+    prompt: webPromptDialogBackend,
+  },
+};
 
 describe('getWebDirectorySystemHandle', () => {
   it('returns null for a handle not produced by the File System Access API directory picker', () => {
@@ -163,85 +91,30 @@ describe('getWebFileSystemHandle', () => {
   });
 });
 
-describe('installDialogHostBackend', () => {
-  afterEach(() => resetDialogBackendForTest());
-
-  it('installs a host backend that getDialogBackend returns', () => {
-    const backend = fakeBackend();
-    installDialogHostBackend(backend);
-    expect(getDialogBackend()).toBe(backend);
-  });
-
-  it('is first-host-wins: a second different backend sets conflict', () => {
-    const first = fakeBackend();
-    const second = fakeBackend();
-    installDialogHostBackend(first);
-    installDialogHostBackend(second);
-    expect(getDialogBackend()).toBe(first);
-    expect(explainDialogBackend().conflict).toBe(true);
-  });
-});
-
-describe('observeDialogHostResult', () => {
-  afterEach(() => resetDialogBackendForTest());
-
-  it('records a successful observation', () => {
-    installDialogHostBackend(fakeBackend());
-    observeDialogHostResult('confirm', true);
-    const explanation = explainDialogBackend();
-    expect(explanation.operation).toBe('confirm');
-    expect(explanation.viability).toBe('available');
-  });
-
-  it('records a failed observation', () => {
-    installDialogHostBackend(fakeBackend());
-    observeDialogHostResult('confirm', false);
-    expect(explainDialogBackend().viability).toBe('runtime-api-unavailable');
-  });
-});
-
-describe('resetDialogBackendForTest', () => {
-  it('clears all backend slots', () => {
-    setDialogBackend(fakeBackend());
-    installDialogHostBackend(fakeBackend());
-    observeDialogHostResult('confirm', true);
-    resetDialogBackendForTest();
-    expect(explainDialogBackend().layer).toBe('host-not-enabled');
-    expect(explainDialogBackend().conflict).toBe(false);
-    expect(explainDialogBackend().viability).toBe('unobserved');
-  });
-});
-
-describe('setDialogBackend', () => {
-  it('clears back to the web fallback when passed null', () => {
-    setDialogBackend(fakeBackend());
-    setDialogBackend(null);
-    expect(getDialogBackend()).not.toBeNull();
-  });
-});
-
 describe('showConfirmDialog', () => {
-  it('delegates to the active backend', async () => {
-    setDialogBackend(fakeBackend());
-    expect(await showConfirmDialog({ message: 'sure?' })).toBe(true);
+  it('delegates through the explicit message capability', async () => {
+    expect(await showConfirmDialog(fakeHost(), { message: 'sure?' })).toBe(true);
   });
 
   it('returns a boolean from the web backend without throwing', async () => {
-    expect(typeof (await showConfirmDialog({ message: 'sure?' }))).toBe('boolean');
+    expect(typeof (await showConfirmDialog(webDialogHost, { message: 'sure?' }))).toBe('boolean');
   });
 });
-
 describe('showErrorBox', () => {
-  it('delegates to the active backend with kind error', async () => {
-    let capturedOptions: Parameters<DialogBackend['message']>[0] | null = null;
-    setDialogBackend({
-      ...fakeBackend(),
-      async message(options) {
-        capturedOptions = options;
-        return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+  it('delegates through the explicit message capability with kind error', async () => {
+    let capturedOptions: Parameters<MessageDialogBackend['message']>[0] | null = null;
+    const host = {
+      dialog: {
+        message: {
+          ...fakeHost().dialog.message,
+          async message(options: Parameters<MessageDialogBackend['message']>[0]) {
+            capturedOptions = options;
+            return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+          },
+        },
       },
-    });
-    await showErrorBox('Fatal', 'Something went wrong');
+    };
+    await showErrorBox(host, 'Fatal', 'Something went wrong');
     expect(capturedOptions).not.toBeNull();
     expect(capturedOptions!.kind).toBe('error');
     expect(capturedOptions!.title).toBe('Fatal');
@@ -249,7 +122,7 @@ describe('showErrorBox', () => {
   });
 
   it('returns a MessageDialogResult from the web backend without throwing', async () => {
-    const result = await showErrorBox('Error', 'oops');
+    const result = await showErrorBox(webDialogHost, 'Error', 'oops');
     expect(typeof result.buttonIndex).toBe('number');
     expect(typeof result.cancelled).toBe('boolean');
     expect(typeof result.checkboxChecked).toBe('boolean');
@@ -259,14 +132,18 @@ describe('showErrorBox', () => {
 describe('showErrorDialog', () => {
   it('forces kind to error', async () => {
     let capturedKind: string | undefined;
-    setDialogBackend({
-      ...fakeBackend(),
-      async message(options) {
-        capturedKind = options.kind;
-        return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+    const host = {
+      dialog: {
+        message: {
+          ...fakeHost().dialog.message,
+          async message(options: Parameters<MessageDialogBackend['message']>[0]) {
+            capturedKind = options.kind;
+            return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+          },
+        },
       },
-    });
-    await showErrorDialog({ message: 'boom' });
+    };
+    await showErrorDialog(host, { message: 'boom' });
     expect(capturedKind).toBe('error');
   });
 });
@@ -274,28 +151,34 @@ describe('showErrorDialog', () => {
 describe('showInfoDialog', () => {
   it('forces kind to info', async () => {
     let capturedKind: string | undefined;
-    setDialogBackend({
-      ...fakeBackend(),
-      async message(options) {
-        capturedKind = options.kind;
-        return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+    const host = {
+      dialog: {
+        message: {
+          ...fakeHost().dialog.message,
+          async message(options: Parameters<MessageDialogBackend['message']>[0]) {
+            capturedKind = options.kind;
+            return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+          },
+        },
       },
-    });
-    await showInfoDialog({ message: 'note' });
+    };
+    await showInfoDialog(host, { message: 'note' });
     expect(capturedKind).toBe('info');
   });
 });
 
 describe('showMessageDialog', () => {
-  it('delegates to the active backend', async () => {
-    setDialogBackend(fakeBackend());
-    const result = await showMessageDialog({ message: 'hello' });
+  it('delegates through the explicit message capability', async () => {
+    const result = await showMessageDialog(fakeHost(), { message: 'hello' });
     expect(result.buttonIndex).toBe(2);
     expect(typeof result.cancelled).toBe('boolean');
   });
 
   it('returns a result object from the web backend without throwing', async () => {
-    const result: MessageDialogResult = await showMessageDialog({ checkboxChecked: true, message: 'hello' });
+    const result: MessageDialogResult = await showMessageDialog(webDialogHost, {
+      checkboxChecked: true,
+      message: 'hello',
+    });
     expect(typeof result.buttonIndex).toBe('number');
     expect(typeof result.checkboxChecked).toBe('boolean');
     expect(typeof result.cancelled).toBe('boolean');
@@ -303,46 +186,47 @@ describe('showMessageDialog', () => {
 });
 
 describe('showOpenDirectoryDialog', () => {
-  it('delegates to the active backend', async () => {
-    setDialogBackend(fakeBackend());
-    const handles = await showOpenDirectoryDialog({});
+  it('delegates through the explicit file capability', async () => {
+    const handles = await showOpenDirectoryDialog(fakeHost(), {});
     expect(handles).toHaveLength(1);
     expect(handles[0].kind).toBe('Directory');
     expect(handles[0].name).toBe('mydir');
   });
 
   it('passes startIn option to the backend', async () => {
-    let capturedOptions: Parameters<typeof showOpenDirectoryDialog>[0] | null = null;
-    setDialogBackend({
-      ...fakeBackend(),
-      async openDirectory(options) {
-        capturedOptions = options;
-        return [{ kind: 'Directory', name: 'docs', path: null }];
+    let capturedOptions: Parameters<typeof showOpenDirectoryDialog>[1] | null = null;
+    const host = {
+      dialog: {
+        file: {
+          ...fakeHost().dialog.file,
+          async openDirectory(options: Parameters<FileDialogBackend['openDirectory']>[0]) {
+            capturedOptions = options;
+            return [{ kind: 'Directory' as const, name: 'docs', path: null }];
+          },
+        },
       },
-    });
-    await showOpenDirectoryDialog({ startIn: 'documents' });
+    };
+    await showOpenDirectoryDialog(host, { startIn: 'documents' });
     expect(capturedOptions).not.toBeNull();
     expect(capturedOptions!.startIn).toBe('documents');
   });
 
   it('returns a Promise from the web backend', () => {
     // Directory picker opens an interactive <input> that hangs in jsdom; assert it returns a Promise.
-    expect(showOpenDirectoryDialog({})).toBeInstanceOf(Promise);
+    expect(showOpenDirectoryDialog(webDialogHost, {})).toBeInstanceOf(Promise);
   });
 });
 
 describe('showOpenFileDialog', () => {
-  it('delegates to the active backend', async () => {
-    setDialogBackend(fakeBackend());
-    const handles = await showOpenFileDialog({ multiple: true });
+  it('delegates through the explicit file capability', async () => {
+    const handles = await showOpenFileDialog(fakeHost(), { multiple: true });
     expect(handles).toHaveLength(2);
     expect(handles[0].kind).toBe('File');
     expect(handles[0].name).toBe('a.txt');
   });
 
   it('returns handles with path from the fake backend', async () => {
-    setDialogBackend(fakeBackend());
-    const handles = await showOpenFileDialog({});
+    const handles = await showOpenFileDialog(fakeHost(), {});
     expect(handles[0].path).toBe('/tmp/a.txt');
   });
 });
@@ -363,7 +247,7 @@ describe('showOpenFileDialog File System Access filters', () => {
       return [];
     };
     try {
-      await createWebDialogBackend().openFile({ filters } as never);
+      await webFileDialogBackend.openFile({ filters } as never);
     } finally {
       delete (window as unknown as Record<string, unknown>).showOpenFilePicker;
     }
@@ -417,40 +301,91 @@ describe('showOpenFileDialog File System Access filters', () => {
 });
 
 describe('showPromptDialog', () => {
-  it('delegates to the active backend with options', async () => {
-    const backend = fakeBackend();
-    setDialogBackend(backend);
-    const result = await showPromptDialog({ message: 'name?', defaultValue: 'default' });
+  it('delegates through the explicit prompt capability with options', async () => {
+    const host = fakeHost();
+    const result = await showPromptDialog(host, { message: 'name?', defaultValue: 'default' });
     expect(result).toBe('typed');
-    expect(backend.lastPromptMessage).toBe('name?');
+    expect(host.dialog.prompt.lastPromptMessage).toBe('name?');
   });
 });
 
 describe('showSaveFileDialog', () => {
-  it('delegates to the active backend', async () => {
-    setDialogBackend(fakeBackend());
-    const handle = await showSaveFileDialog({});
+  it('delegates through the explicit file capability', async () => {
+    const handle = await showSaveFileDialog(fakeHost(), {});
     expect(handle).not.toBeNull();
     expect(handle!.kind).toBe('File');
     expect(handle!.name).toBe('out.txt');
   });
 
   it('returns null from the web backend when File System Access API is absent', async () => {
-    expect(await showSaveFileDialog({})).toBeNull();
+    expect(await showSaveFileDialog(webDialogHost, {})).toBeNull();
   });
 });
 
 describe('showWarningDialog', () => {
   it('forces kind to warning', async () => {
     let capturedKind: string | undefined;
-    setDialogBackend({
-      ...fakeBackend(),
-      async message(options) {
-        capturedKind = options.kind;
-        return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+    const host = {
+      dialog: {
+        message: {
+          ...fakeHost().dialog.message,
+          async message(options: Parameters<MessageDialogBackend['message']>[0]) {
+            capturedKind = options.kind;
+            return { buttonIndex: 0, cancelled: false, checkboxChecked: false };
+          },
+        },
+      },
+    };
+    await showWarningDialog(host, { message: 'careful' });
+    expect(capturedKind).toBe('warning');
+  });
+});
+
+describe('web dialog capability values', () => {
+  it('confirm returns false in jsdom (no real confirm surface)', async () => {
+    expect(typeof (await webMessageDialogBackend.confirm({ message: 'sure?' }))).toBe('boolean');
+  });
+
+  it('does not send an empty accept map for an all-wildcard filter', async () => {
+    const previous = Object.getOwnPropertyDescriptor(window, 'showOpenFilePicker');
+    let pickerOptions: unknown;
+    Object.defineProperty(window, 'showOpenFilePicker', {
+      configurable: true,
+      value: async (options: unknown) => {
+        pickerOptions = options;
+        return [];
       },
     });
-    await showWarningDialog({ message: 'careful' });
-    expect(capturedKind).toBe('warning');
+    try {
+      await webFileDialogBackend.openFile({ filters: [{ extensions: ['*'], name: 'All files' }] });
+      expect(pickerOptions).toEqual({ multiple: false });
+    } finally {
+      if (previous === undefined) delete (window as Window & { showOpenFilePicker?: unknown }).showOpenFilePicker;
+      else Object.defineProperty(window, 'showOpenFilePicker', previous);
+    }
+  });
+
+  it('message returns a result object without throwing', async () => {
+    const result = await webMessageDialogBackend.message({ message: 'hi', checkboxChecked: true });
+    expect(typeof result.buttonIndex).toBe('number');
+    expect(typeof result.checkboxChecked).toBe('boolean');
+    expect(typeof result.cancelled).toBe('boolean');
+  });
+
+  it('openDirectory returns a Promise', () => {
+    expect(webFileDialogBackend.openDirectory({})).toBeInstanceOf(Promise);
+  });
+
+  it('openFile returns a Promise', () => {
+    expect(webFileDialogBackend.openFile({})).toBeInstanceOf(Promise);
+  });
+
+  it('prompt returns a Promise', () => {
+    // prompt opens an interactive window.prompt that may hang in jsdom; assert it returns a Promise.
+    expect(webPromptDialogBackend.prompt({ message: 'name?' })).toBeInstanceOf(Promise);
+  });
+
+  it('saveFile returns null when the File System Access API is absent', async () => {
+    expect(await webFileDialogBackend.saveFile({})).toBeNull();
   });
 });

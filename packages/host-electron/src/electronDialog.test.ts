@@ -5,7 +5,7 @@ import type {
   ElectronSaveDialogOptions,
 } from '@flighthq/types/contract';
 
-import { createElectronDialogBackend } from './electronDialog';
+import { createElectronFileDialogBackend, createElectronMessageDialogBackend } from './electronDialog';
 
 function fakeElectron(overrides: {
   open?: { canceled: boolean; filePaths: string[] };
@@ -43,10 +43,10 @@ function fakeElectron(overrides: {
   return { electron, calls };
 }
 
-describe('createElectronDialogBackend', () => {
+describe('createElectronFileDialogBackend', () => {
   it('builds open-dialog properties from options and returns file handles', async () => {
     const { electron, calls } = fakeElectron({ open: { canceled: false, filePaths: ['/a', '/b'] } });
-    const backend = createElectronDialogBackend(electron);
+    const backend = createElectronFileDialogBackend(electron);
     const handles = await backend.openFile({ multiple: true, directory: true });
     expect(handles).toEqual([
       { kind: 'Directory', name: 'a', path: '/a' },
@@ -57,24 +57,26 @@ describe('createElectronDialogBackend', () => {
 
   it('returns an empty array when the open dialog is canceled', async () => {
     const { electron } = fakeElectron({ open: { canceled: true, filePaths: ['/a'] } });
-    const backend = createElectronDialogBackend(electron);
+    const backend = createElectronFileDialogBackend(electron);
     expect(await backend.openFile({})).toEqual([]);
   });
 
   it('returns the save handle or null when canceled or empty', async () => {
     const ok = fakeElectron({ save: { canceled: false, filePath: '/out.txt' } });
-    expect(await createElectronDialogBackend(ok.electron).saveFile({})).toEqual({
+    expect(await createElectronFileDialogBackend(ok.electron).saveFile({})).toEqual({
       kind: 'File',
       name: 'out.txt',
       path: '/out.txt',
     });
     const canceled = fakeElectron({ save: { canceled: true } });
-    expect(await createElectronDialogBackend(canceled.electron).saveFile({})).toBeNull();
+    expect(await createElectronFileDialogBackend(canceled.electron).saveFile({})).toBeNull();
   });
+});
 
+describe('createElectronMessageDialogBackend', () => {
   it('maps message results to button index, cancelled, and checkbox state', async () => {
     const { electron, calls } = fakeElectron({ message: { response: 2, checkboxChecked: true } });
-    const backend = createElectronDialogBackend(electron);
+    const backend = createElectronMessageDialogBackend(electron);
     const result = await backend.message({ message: 'hi', kind: 'warning' });
     expect(result).toEqual({ buttonIndex: 2, cancelled: false, checkboxChecked: true });
     expect(calls.messageOptions?.type).toBe('warning');
@@ -82,15 +84,9 @@ describe('createElectronDialogBackend', () => {
 
   it('confirm returns true only when the OK button is chosen', async () => {
     const yes = fakeElectron({ message: { response: 0, checkboxChecked: false } });
-    expect(await createElectronDialogBackend(yes.electron).confirm({ message: 'ok?' })).toBe(true);
+    expect(await createElectronMessageDialogBackend(yes.electron).confirm({ message: 'ok?' })).toBe(true);
     const no = fakeElectron({ message: { response: 1, checkboxChecked: false } });
-    expect(await createElectronDialogBackend(no.electron).confirm({ message: 'ok?' })).toBe(false);
+    expect(await createElectronMessageDialogBackend(no.electron).confirm({ message: 'ok?' })).toBe(false);
     expect(no.calls.messageOptions?.buttons).toEqual(['OK', 'Cancel']);
-  });
-
-  it('prompt resolves to null since Electron has no native text dialog', async () => {
-    const { electron } = fakeElectron({});
-    const backend = createElectronDialogBackend(electron);
-    expect(await backend.prompt({ message: 'name?', defaultValue: 'default' })).toBeNull();
   });
 });

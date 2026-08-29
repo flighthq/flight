@@ -1,22 +1,9 @@
-import { enableHostWebDialog, resetHostWebDialogForTest } from './webDialog';
+import { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 
-describe('enableHostWebDialog', () => {
-  afterEach(() => resetHostWebDialogForTest());
-
-  it('does not throw on first call', () => {
-    expect(() => enableHostWebDialog()).not.toThrow();
-  });
-
-  it('is idempotent', () => {
-    enableHostWebDialog();
-    expect(() => enableHostWebDialog()).not.toThrow();
-  });
-});
-
-describe('resetHostWebDialogForTest', () => {
-  it('allows re-enabling after reset', () => {
-    enableHostWebDialog();
-    resetHostWebDialogForTest();
-    expect(() => enableHostWebDialog()).not.toThrow();
+describe('web dialog capability values', () => {
+  it('exports independent file, message, and prompt capabilities', () => {
+    expect(typeof webFileDialogBackend.openFile).toBe('function');
+    expect(typeof webMessageDialogBackend.confirm).toBe('function');
+    expect(typeof webPromptDialogBackend.prompt).toBe('function');
   });
 });

@@ -1,6 +1,6 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { createCapacitorDialogBackend } from './capacitorDialog';
+import { createCapacitorMessageDialogBackend, createCapacitorPromptDialogBackend } from './capacitorDialog';
 
 function fakeCapacitor(promptResult = { value: 'typed', cancelled: false }) {
   const calls: string[] = [];
@@ -22,30 +22,29 @@ function fakeCapacitor(promptResult = { value: 'typed', cancelled: false }) {
   return { capacitor, calls };
 }
 
-describe('createCapacitorDialogBackend', () => {
+describe('createCapacitorMessageDialogBackend', () => {
   it('maps message onto a single-button alert', async () => {
     const { capacitor, calls } = fakeCapacitor();
-    const backend = createCapacitorDialogBackend(capacitor);
+    const backend = createCapacitorMessageDialogBackend(capacitor);
     const result = await backend.message({ message: 'hello' });
     expect(result).toEqual({ buttonIndex: 0, cancelled: false, checkboxChecked: false });
     expect(calls).toContain('alert');
   });
 
-  it('maps confirm and prompt', async () => {
-    const backend = createCapacitorDialogBackend(fakeCapacitor().capacitor);
-    expect(await backend.confirm({ message: 'ok?' })).toBe(true);
-    expect(await backend.prompt({ message: 'name?' })).toBe('typed');
+  it('maps confirm', async () => {
+    const message = createCapacitorMessageDialogBackend(fakeCapacitor().capacitor);
+    expect(await message.confirm({ message: 'ok?' })).toBe(true);
+  });
+});
+
+describe('createCapacitorPromptDialogBackend', () => {
+  it('maps prompt', async () => {
+    const prompt = createCapacitorPromptDialogBackend(fakeCapacitor().capacitor);
+    expect(await prompt.prompt({ message: 'name?' })).toBe('typed');
   });
 
   it('resolves the null sentinel for a cancelled prompt', async () => {
-    const backend = createCapacitorDialogBackend(fakeCapacitor({ value: '', cancelled: true }).capacitor);
+    const backend = createCapacitorPromptDialogBackend(fakeCapacitor({ value: '', cancelled: true }).capacitor);
     expect(await backend.prompt({ message: 'name?' })).toBeNull();
-  });
-
-  it('reports empty results for the absent file picker', async () => {
-    const backend = createCapacitorDialogBackend(fakeCapacitor().capacitor);
-    expect(await backend.openFile({})).toEqual([]);
-    expect(await backend.openDirectory({})).toEqual([]);
-    expect(await backend.saveFile({})).toBeNull();
   });
 });

@@ -1,19 +1,16 @@
 import type {
-  DialogBackend,
+  FileDialogBackend,
   FileDialogFilter,
   FileDialogHandle,
+  MessageDialogBackend,
   MessageDialogKind,
   TauriApi,
   TauriDialogFilter,
 } from '@flighthq/types/contract';
 
-// Maps Flight's DialogBackend onto Tauri's async `@tauri-apps/plugin-dialog`. Both sides are
-// Promise-based. Open/save resolve to sentinels ([] / null) on cancel. Tauri returns real host paths,
-// so FileDialogHandles carry a populated `path`. Two contract gaps are handled honestly: Tauri's
-// `message` is a single-button acknowledgement (it cannot report a multi-button choice), so `message`
-// resolves buttonIndex 0 / not-cancelled; and Tauri has no text-input dialog, so `prompt` resolves the
-// null sentinel. The modal parent window is not threaded through, so dialogs are application-modal.
-export function createTauriDialogBackend(tauri: TauriApi): DialogBackend {
+// Maps Tauri's async file dialogs onto Flight's file-dialog capability. Tauri returns host paths, so
+// FileDialogHandles carry a populated `path`. The modal parent is not threaded through here.
+export function createTauriFileDialogBackend(tauri: TauriApi): FileDialogBackend {
   const dialog = tauri.dialog;
   return {
     async openFile(options) {
@@ -43,6 +40,14 @@ export function createTauriDialogBackend(tauri: TauriApi): DialogBackend {
       });
       return path === null ? null : toFileHandle(path, 'File');
     },
+  };
+}
+
+// Tauri provides message and confirmation surfaces but no native text-input prompt. Consumers can
+// therefore assemble dialog.message while leaving dialog.prompt absent.
+export function createTauriMessageDialogBackend(tauri: TauriApi): MessageDialogBackend {
+  const dialog = tauri.dialog;
+  return {
     async message(options) {
       await dialog.message(options.message, {
         title: options.title,
@@ -56,10 +61,6 @@ export function createTauriDialogBackend(tauri: TauriApi): DialogBackend {
         title: options.title,
         kind: toTauriMessageKind(options.kind),
       });
-    },
-    async prompt() {
-      // Tauri has no native text-input dialog; report unsupported via the null sentinel.
-      return null;
     },
   };
 }

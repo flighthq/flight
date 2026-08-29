@@ -1,10 +1,8 @@
-import type { DialogBackend, FileDialogHandle, ElectronApi } from '@flighthq/types/contract';
+import type { ElectronApi, FileDialogBackend, FileDialogHandle, MessageDialogBackend } from '@flighthq/types/contract';
 
-// Maps Flight's DialogBackend onto Electron's main-process dialog module. Open/save dialogs resolve
-// to sentinels ([] / null) on cancel rather than throwing, matching the backend contract. Native paths
-// are wrapped as FileDialogHandles (path populated, since Electron exposes real host paths). The
-// modal-parent window is not threaded through here, so dialogs are application-modal (window undefined).
-export function createElectronDialogBackend(electron: ElectronApi): DialogBackend {
+// Maps Electron's main-process file dialogs onto Flight's file-dialog capability. Native paths are
+// wrapped as FileDialogHandles. The modal parent is not threaded through, so dialogs are app-modal.
+export function createElectronFileDialogBackend(electron: ElectronApi): FileDialogBackend {
   const dialog = electron.dialog;
   return {
     async openFile(options) {
@@ -37,6 +35,14 @@ export function createElectronDialogBackend(electron: ElectronApi): DialogBacken
       });
       return r.canceled || !r.filePath ? null : toFileHandle(r.filePath, 'File');
     },
+  };
+}
+
+// Electron provides message boxes and confirmation, but no native text-input prompt. Consumers can
+// therefore assemble dialog.message while leaving dialog.prompt absent.
+export function createElectronMessageDialogBackend(electron: ElectronApi): MessageDialogBackend {
+  const dialog = electron.dialog;
+  return {
     async message(options) {
       const r = await dialog.showMessageBox(undefined, {
         type: options.kind,
@@ -66,10 +72,6 @@ export function createElectronDialogBackend(electron: ElectronApi): DialogBacken
         cancelId: 1,
       });
       return r.response === 0;
-    },
-    prompt() {
-      // Electron has no native text-input dialog; report unsupported via the null sentinel.
-      return Promise.resolve(null);
     },
   };
 }

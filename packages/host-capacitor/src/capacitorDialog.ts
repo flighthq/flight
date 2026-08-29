@@ -1,23 +1,10 @@
-import type { DialogBackend, CapacitorApi } from '@flighthq/types/contract';
+import type { CapacitorApi, MessageDialogBackend, PromptDialogBackend } from '@flighthq/types/contract';
 
-// Maps Flight's DialogBackend onto Capacitor's async `@capacitor/dialog`. `message` maps to `alert`, a
-// single-button acknowledgement (so it resolves buttonIndex 0 / not-cancelled / no checkbox); `confirm`
-// maps to `confirm`; `prompt` maps to `prompt`, resolving the entered text or the null sentinel on
-// cancel. Capacitor Dialog has no native file picker, so openFile/openDirectory resolve [] and saveFile
-// resolves null — those belong to a filesystem/document-picker plugin, not Dialog.
-export function createCapacitorDialogBackend(capacitor: CapacitorApi): DialogBackend {
+// Maps Capacitor's alert and confirmation surfaces onto Flight's message-dialog capability. Capacitor
+// has no native file picker; consumers leave dialog.file absent instead of advertising sentinels.
+export function createCapacitorMessageDialogBackend(capacitor: CapacitorApi): MessageDialogBackend {
   const dialog = capacitor.dialog;
   return {
-    async openFile() {
-      // Capacitor Dialog has no file picker; report none.
-      return [];
-    },
-    async openDirectory() {
-      return [];
-    },
-    async saveFile() {
-      return null;
-    },
     async message(options) {
       await dialog.alert({ title: options.title, message: options.message });
       // Capacitor's alert is a single-button acknowledgement; it reports no button choice or checkbox.
@@ -27,6 +14,12 @@ export function createCapacitorDialogBackend(capacitor: CapacitorApi): DialogBac
       const result = await dialog.confirm({ title: options.title, message: options.message });
       return result.value;
     },
+  };
+}
+
+export function createCapacitorPromptDialogBackend(capacitor: CapacitorApi): PromptDialogBackend {
+  const dialog = capacitor.dialog;
+  return {
     async prompt(options) {
       const result = await dialog.prompt({
         title: options.title,

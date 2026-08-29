@@ -1,4 +1,3 @@
-import { setDialogBackend } from '@flighthq/dialog/contract';
 import type {
   FileDialogHandle,
   FileEntry,
@@ -232,7 +231,6 @@ function fakeBackend(): FileSystemBackend {
 
 afterEach(() => {
   setFileSystemBackend(null);
-  setDialogBackend(null);
 });
 
 describe('appendTextFile', () => {
