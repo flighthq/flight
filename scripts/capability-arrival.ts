@@ -70,7 +70,6 @@ const EXPECTED_AGGREGATE = [
   'Clipboard',
   'Connectivity',
   'Device',
-  'Dialog',
   'FileSystem',
   'FontLoading',
   'Geolocation',
@@ -780,7 +779,7 @@ export async function capabilityArrivalFailures(
       capability: 'enableHostWeb aggregate',
       consumer: 'functional generated-entry template',
       kind: 'policy',
-      message: `functional generated-entry template must install the 29-member enableHostWeb aggregate; absent from ${functionalWithoutAggregate.length} cells (first: ${functionalWithoutAggregate[0]})`,
+      message: `functional generated-entry template must install the ${EXPECTED_AGGREGATE.length}-member enableHostWeb aggregate; absent from ${functionalWithoutAggregate.length} cells (first: ${functionalWithoutAggregate[0]})`,
     });
   }
   return failures;

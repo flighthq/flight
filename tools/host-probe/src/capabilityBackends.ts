@@ -3,7 +3,6 @@ import { getLoopBackend } from '@flighthq/application/contract';
 import { getClipboardBackend } from '@flighthq/clipboard/contract';
 import { getConnectivityBackend } from '@flighthq/connectivity/contract';
 import { getDeviceBackend } from '@flighthq/device/contract';
-import { getDialogBackend } from '@flighthq/dialog/contract';
 import { getFileSystemBackend } from '@flighthq/filesystem/contract';
 import { getGeolocationBackend } from '@flighthq/geolocation/contract';
 import { getGlyphRasterizerBackend } from '@flighthq/glyphatlas/contract';
@@ -22,20 +21,23 @@ import { getShortcutBackend } from '@flighthq/shortcut/contract';
 import { getStatusBarBackend } from '@flighthq/statusbar/contract';
 import { getStorageBackend } from '@flighthq/storage/contract';
 import { getTrayBackend } from '@flighthq/tray/contract';
+import type { Host } from '@flighthq/types/contract';
 import { getUpdaterBackend } from '@flighthq/updater/contract';
 
 import type { HostProbeCapability } from './expectations';
 
 export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unknown>>;
 
-export function captureHostProbeBackends(windowBackend: unknown = null): HostProbeBackendSnapshot {
+export function captureHostProbeBackends(
+  host: Partial<Pick<Host, 'dialog' | 'window'>> = {},
+): HostProbeBackendSnapshot {
   return {
     app: getAppBackend(),
     clipboard: getClipboardBackend(),
     connectivity: getConnectivityBackend(),
     cursor: null,
     device: getDeviceBackend(),
-    dialog: getDialogBackend(),
+    dialog: host.dialog ?? null,
     filesystem: getFileSystemBackend(),
     geolocation: getGeolocationBackend(),
     'glyph-rasterizer': getGlyphRasterizerBackend(),
@@ -56,7 +58,7 @@ export function captureHostProbeBackends(windowBackend: unknown = null): HostPro
     storage: getStorageBackend(),
     tray: getTrayBackend(),
     updater: getUpdaterBackend(),
-    window: windowBackend,
+    window: host.window ?? null,
   };
 }
 

@@ -9,7 +9,7 @@ export { enableHostWebClipboard } from './webClipboard';
 export { enableHostWebConnectivity } from './webConnectivity';
 export { createWebCursorBackend } from './webCursor';
 export { enableHostWebDevice } from './webDevice';
-export { enableHostWebDialog } from './webDialog';
+export { webFileDialogBackend, webMessageDialogBackend, webPromptDialogBackend } from './webDialog';
 export { enableHostWebFileSystem } from './webFilesystem';
 export { createWebFontLoadingBackend, enableHostWebFontLoading } from './webFontLoading';
 export { enableHostWebGeolocation } from './webGeolocation';

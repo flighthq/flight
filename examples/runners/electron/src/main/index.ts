@@ -55,8 +55,8 @@ function loadRenderer(win: ApplicationWindow): void {
 // Renderer → main bridge: capability calls that must run in the main process. The renderer invokes
 // these over IPC (see preload); each handler is a plain Flight capability call that, thanks to
 // registerElectronBackends, is now serviced by Electron.
-function installIpcBridge(): void {
-  ipcMain.handle('flight:openFileDialog', () => showOpenFileDialog({ title: 'Pick a file' }));
+function installIpcBridge(host: ReturnType<typeof registerElectronBackends>): void {
+  ipcMain.handle('flight:openFileDialog', () => showOpenFileDialog(host, { title: 'Pick a file' }));
   ipcMain.handle('flight:readClipboard', () => readClipboardText());
   ipcMain.handle('flight:writeClipboard', (_event: unknown, text: unknown) => writeClipboardText(String(text)));
   ipcMain.handle('flight:notify', (_event: unknown, body: unknown) =>
@@ -117,7 +117,7 @@ void app.whenReady().then(() => {
     Tray: electron.Tray as ElectronApi['Tray'],
   };
   const host = registerElectronBackends(electronApi);
-  installIpcBridge();
+  installIpcBridge(host);
 
   mainWindow = createApplicationWindow();
   openWindow(host, mainWindow, {

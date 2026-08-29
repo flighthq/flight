@@ -44,7 +44,7 @@ function installElectronProbe(): HostProbeInstallResult {
     Tray: electron.Tray as ElectronApi['Tray'],
   };
   const host = registerElectronBackends(api, { storageFileName: 'flight-host-probe-storage.json' });
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host.window));
+  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
   const results: HostProbeResult[] = [];
 
   const appName = getAppName();

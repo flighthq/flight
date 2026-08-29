@@ -10,7 +10,7 @@ export async function installWebHostProbe(before: HostProbeBackendSnapshot): Pro
   enableHostWebGlyphRasterizer();
   enableHostWebLoop();
   const results = await Promise.all([probeWebCursor(), probeWebGlyphRasterizer(), probeWebLoop()]);
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(webHost.window));
+  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(webHost));
   if (results[0]?.status === 'pass') changedCapabilities.push('cursor');
   return { changedCapabilities, results };
 }
