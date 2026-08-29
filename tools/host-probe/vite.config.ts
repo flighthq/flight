@@ -13,6 +13,12 @@ export default defineConfig(() => {
     build: {
       outDir: resolve(__dirname, 'dist', host),
       emptyOutDir: true,
+      rollupOptions: {
+        input: {
+          main: resolve(__dirname, 'index.html'),
+          videoCapability: resolve(__dirname, 'video-capability.html'),
+        },
+      },
       target: 'esnext',
     },
     optimizeDeps: {
