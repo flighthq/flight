@@ -82,7 +82,9 @@ afterEach(() => {
 
 describe('registerCapacitorBackends', () => {
   it('installs a backend for each covered capability', () => {
-    registerCapacitorBackends(fakeCapacitor());
+    const host = registerCapacitorBackends(fakeCapacitor());
+    expect(host.dialog.message.confirm).toBeTypeOf('function');
+    expect(host.dialog.prompt.prompt).toBeTypeOf('function');
     expect(getAppBackend()).not.toBeNull();
     expect(getConnectivityBackend()).not.toBeNull();
     expect(getDeviceBackend()).not.toBeNull();

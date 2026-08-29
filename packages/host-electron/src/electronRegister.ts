@@ -1,6 +1,5 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { setClipboardBackend } from '@flighthq/clipboard/contract';
-import { setDialogBackend } from '@flighthq/dialog/contract';
 import { setIpcBackend } from '@flighthq/ipc/contract';
 import { setMenuBackend } from '@flighthq/menu/contract';
 import { setNotificationBackend } from '@flighthq/notification/contract';
@@ -15,6 +14,8 @@ import { setTrayBackend } from '@flighthq/tray/contract';
 import type {
   ElectronApi,
   ElectronBackendOptions,
+  HasDialogFile,
+  HasDialogMessage,
   HasWindowAttach,
   HasWindowOpen,
   Host,
@@ -23,7 +24,7 @@ import { setUpdaterBackend } from '@flighthq/updater/contract';
 
 import { createElectronAppBackend } from './electronApp';
 import { createElectronClipboardBackend } from './electronClipboard';
-import { createElectronDialogBackend } from './electronDialog';
+import { createElectronFileDialogBackend, createElectronMessageDialogBackend } from './electronDialog';
 import { createElectronIpcBackend } from './electronIpc';
 import { createElectronMenuBackend } from './electronMenu';
 import { createElectronNotificationBackend } from './electronNotification';
@@ -47,16 +48,19 @@ import { createElectronWindowBackend } from './electronWindow';
 //   const electronApi: ElectronApi = { ...electron, fs, Tray: electron.Tray as ElectronApi['Tray'] };
 //   registerElectronBackends(electronApi);
 //
-// Pass the returned host to window operations. The remaining set*Backend(null) package seams revert
-// independently; there is no bulk unregister because those backends are independent.
+// Pass the returned host to window and dialog operations. The remaining set*Backend(null) package seams
+// revert independently; there is no bulk unregister because those backends are independent.
 export function registerElectronBackends(
   electron: ElectronApi,
   options: Readonly<ElectronBackendOptions> = {},
-): Host & HasWindowAttach & HasWindowOpen {
+): Host & HasDialogFile & HasDialogMessage & HasWindowAttach & HasWindowOpen {
+  const dialog = {
+    file: createElectronFileDialogBackend(electron),
+    message: createElectronMessageDialogBackend(electron),
+  };
   const window = createElectronWindowBackend(electron);
   setPlatformBackend(createElectronPlatformBackend(electron));
   setAppBackend(createElectronAppBackend(electron));
-  setDialogBackend(createElectronDialogBackend(electron));
   setClipboardBackend(createElectronClipboardBackend(electron));
   setMenuBackend(createElectronMenuBackend(electron));
   setTrayBackend(createElectronTrayBackend(electron));
@@ -72,7 +76,7 @@ export function registerElectronBackends(
   return {
     accessibility: {},
     app: {},
-    dialog: {},
+    dialog,
     graphics: {},
     input: {},
     media: {},

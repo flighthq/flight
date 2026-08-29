@@ -1,17 +1,23 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { setClipboardBackend } from '@flighthq/clipboard/contract';
-import { setDialogBackend } from '@flighthq/dialog/contract';
 import { setMenuBackend } from '@flighthq/menu/contract';
 import { setNotificationBackend } from '@flighthq/notification/contract';
 import { setPlatformBackend } from '@flighthq/platform/contract';
 import { setShellBackend } from '@flighthq/shell/contract';
 import { setShortcutBackend } from '@flighthq/shortcut/contract';
 import { setTrayBackend } from '@flighthq/tray/contract';
-import type { HasWindowAttach, HasWindowOpen, Host, TauriApi } from '@flighthq/types/contract';
+import type {
+  HasDialogFile,
+  HasDialogMessage,
+  HasWindowAttach,
+  HasWindowOpen,
+  Host,
+  TauriApi,
+} from '@flighthq/types/contract';
 
 import { createTauriAppBackend } from './tauriApp';
 import { createTauriClipboardBackend } from './tauriClipboard';
-import { createTauriDialogBackend } from './tauriDialog';
+import { createTauriFileDialogBackend, createTauriMessageDialogBackend } from './tauriDialog';
 import { createTauriMenuBackend } from './tauriMenu';
 import { createTauriNotificationBackend } from './tauriNotification';
 import { createTauriPlatformBackend } from './tauriPlatform';
@@ -28,14 +34,19 @@ import { createTauriWindowBackend } from './tauriWindow';
 //   // …import the other modules/plugins…
 //   registerTauriBackends({ app, window, menu, tray, clipboard, dialog, notification, opener, os, globalShortcut, process });
 //
-// Pass the returned host to window operations. Unmigrated seams Tauri does not cover here (storage,
+// Pass the returned host to window and dialog operations. Unmigrated seams Tauri does not cover here (storage,
 // protocol, updater, ipc, power, screen) retain their web defaults because a Tauri app runs in a
 // webview; each set*Backend(null) still reverts one of those package-local capabilities to web.
-export function registerTauriBackends(tauri: TauriApi): Host & HasWindowAttach & HasWindowOpen {
+export function registerTauriBackends(
+  tauri: TauriApi,
+): Host & HasDialogFile & HasDialogMessage & HasWindowAttach & HasWindowOpen {
+  const dialog = {
+    file: createTauriFileDialogBackend(tauri),
+    message: createTauriMessageDialogBackend(tauri),
+  };
   const window = createTauriWindowBackend(tauri);
   setPlatformBackend(createTauriPlatformBackend(tauri));
   setAppBackend(createTauriAppBackend(tauri));
-  setDialogBackend(createTauriDialogBackend(tauri));
   setClipboardBackend(createTauriClipboardBackend(tauri));
   setMenuBackend(createTauriMenuBackend(tauri));
   setTrayBackend(createTauriTrayBackend(tauri));
@@ -45,7 +56,7 @@ export function registerTauriBackends(tauri: TauriApi): Host & HasWindowAttach &
   return {
     accessibility: {},
     app: {},
-    dialog: {},
+    dialog,
     graphics: {},
     input: {},
     media: {},

@@ -36,8 +36,8 @@ export async function installCapacitorHostProbe(before: HostProbeBackendSnapshot
     share: Share,
     statusBar: StatusBar,
   };
-  registerCapacitorBackends(capacitorApi);
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends());
+  const host = registerCapacitorBackends(capacitorApi);
+  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
   await waitFor(() => getAppName().length > 0);
   const name = getAppName();
   const version = getAppVersion();

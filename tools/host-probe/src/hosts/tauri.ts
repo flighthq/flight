@@ -36,7 +36,7 @@ export async function installTauriHostProbe(before: HostProbeBackendSnapshot): P
     window: window as TauriApi['window'],
   };
   const host = registerTauriBackends(tauriApi);
-  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host.window));
+  const changedCapabilities = diffHostProbeBackends(before, captureHostProbeBackends(host));
   await waitFor(() => getAppName().length > 0);
   const name = getAppName();
   const version = getAppVersion();

@@ -1,6 +1,5 @@
 import { setAppBackend } from '@flighthq/app/contract';
 import { readClipboardText, setClipboardBackend } from '@flighthq/clipboard/contract';
-import { setDialogBackend } from '@flighthq/dialog/contract';
 import { explainMenuReplacementGuarantee, hasMenuReplacementGuarantee, setMenuBackend } from '@flighthq/menu/contract';
 import { setNotificationBackend } from '@flighthq/notification/contract';
 import { getPlatformName, setPlatformBackend } from '@flighthq/platform/contract';
@@ -47,7 +46,6 @@ function fakeTauri(): TauriApi {
 afterEach(() => {
   setPlatformBackend(null);
   setAppBackend(null);
-  setDialogBackend(null);
   setClipboardBackend(null);
   setMenuBackend(null);
   setTrayBackend(null);
@@ -59,6 +57,8 @@ afterEach(() => {
 describe('registerTauriBackends', () => {
   it('routes capability seams to the Tauri backends without throwing', async () => {
     const host = registerTauriBackends(fakeTauri());
+    expect(host.dialog.file.openFile).toBeTypeOf('function');
+    expect(host.dialog.message.confirm).toBeTypeOf('function');
     expect(host.window.open).toBeTypeOf('function');
     expect(getPlatformName()).toBe('linux');
     expect(await readClipboardText()).toBe('TAURI-TEXT');

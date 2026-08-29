@@ -6,7 +6,6 @@ import { enableHostWebBitmapReadback } from './webBitmapReadback';
 import { enableHostWebClipboard } from './webClipboard';
 import { enableHostWebConnectivity } from './webConnectivity';
 import { enableHostWebDevice } from './webDevice';
-import { enableHostWebDialog } from './webDialog';
 import { enableHostWebFileSystem } from './webFilesystem';
 import { enableHostWebFontLoading } from './webFontLoading';
 import { enableHostWebGeolocation } from './webGeolocation';
@@ -37,7 +36,6 @@ export function enableHostWeb(): void {
   enableHostWebClipboard();
   enableHostWebConnectivity();
   enableHostWebDevice();
-  enableHostWebDialog();
   enableHostWebFileSystem();
   enableHostWebFontLoading();
   enableHostWebGeolocation();
