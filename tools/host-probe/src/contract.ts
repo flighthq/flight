@@ -1,3 +1,5 @@
+import type { VideoCapabilityBrowserReport } from './videoCapabilityProbeCore';
+
 export const HostProbeProtocolVersion = 1;
 
 export type HostProbeHost = 'capacitor' | 'electron' | 'tauri' | 'web';
@@ -33,6 +35,7 @@ export interface ElectronHostProbeBridge {
 declare global {
   interface Window {
     __flightHostProbeReport?: HostProbeReport;
+    __flightVideoCapabilityReport?: VideoCapabilityBrowserReport;
     flightHostProbeElectron?: ElectronHostProbeBridge;
   }
 }

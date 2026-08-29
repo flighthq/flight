@@ -22,6 +22,13 @@ try {
   const report = await page.evaluate(() => window.__flightHostProbeReport);
   if (report?.status !== 'pass') throw new Error(`Web host probe failed:\n${JSON.stringify(report, null, 2)}`);
   process.stdout.write(`web host probe passed (${report.results.length} results)\n`);
+
+  await page.goto(new URL('video-capability.html', url).href);
+  await page.waitForFunction(() => window.__flightVideoCapabilityReport !== undefined, undefined, { timeout: 15_000 });
+  const videoReport = await page.evaluate(() => window.__flightVideoCapabilityReport);
+  if (videoReport?.status !== 'pass')
+    throw new Error(`Web video capability probe failed:\n${JSON.stringify(videoReport, null, 2)}`);
+  process.stdout.write(`web video capability probe passed (${videoReport.results.length} results)\n`);
 } finally {
   await browser.close();
   await server.close();
