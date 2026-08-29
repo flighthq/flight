@@ -8,7 +8,7 @@ import {
   getWgpuSurfaceRenderScale,
 } from './wgpuAntialias';
 import { renderWgpuBackground, submitWgpuRenderPass } from './wgpuBackground';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { createWgpuRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { setWgpuRenderPassScissorRect } from './wgpuScissor';
 import { enableWgpuFrameCapture } from './wgpuSurface';
 import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
@@ -159,16 +159,24 @@ describe('WgpuRenderOptions.antialias', () => {
     expect(getWgpuRenderStateRuntime(state).surfacePresentationView).toBeNull();
   });
 
+  // C1b: the size is LIVE. The state's `surface` is readonly to the consumer, so the resize happens on the
+  // PROVIDER — the canvas — and the state must observe the new value. A provider that snapshotted its size
+  // at acquisition would leave this reading 800x600 forever and still pass every test that never resizes.
   it('reallocates the supersample surface when the canvas size changes', async () => {
-    const state = await createWgpuRenderStateForTest({ antialias: true });
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 600;
+    const state = await createWgpuRenderState(canvas, { antialias: true });
     renderWgpuBackground(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const first = runtime.surfaceAntialiasTexture!;
     const destroy = vi.spyOn(first, 'destroy');
     submitWgpuRenderPass(state);
 
-    state.canvas.width = 400;
-    state.canvas.height = 300;
+    canvas.width = 400;
+    canvas.height = 300;
+    expect(state.surface.width).toBe(400);
+    expect(state.surface.height).toBe(300);
     renderWgpuBackground(state);
 
     expect(destroy).toHaveBeenCalledOnce();

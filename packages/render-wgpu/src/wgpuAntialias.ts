@@ -17,8 +17,8 @@ export function acquireWgpuSurfaceAntialiasView(
     return null;
   }
 
-  const width = Math.max(1, state.canvas.width) * SUPERSAMPLE_SCALE;
-  const height = Math.max(1, state.canvas.height) * SUPERSAMPLE_SCALE;
+  const width = Math.max(1, state.surface.width) * SUPERSAMPLE_SCALE;
+  const height = Math.max(1, state.surface.height) * SUPERSAMPLE_SCALE;
   const maxDimension = state.device.limits.maxTextureDimension2D;
   if (width > maxDimension || height > maxDimension) {
     throw new Error(
@@ -95,7 +95,7 @@ export function getWgpuSurfaceRenderExtent(state: Readonly<WgpuRenderState>): { 
   if (runtime.surfacePresentationView !== null) {
     return { width: runtime.surfaceAntialiasWidth, height: runtime.surfaceAntialiasHeight };
   }
-  return { width: state.canvas.width, height: state.canvas.height };
+  return { width: state.surface.width, height: state.surface.height };
 }
 
 // Scissor rectangles are expressed in the logical main-surface coordinate space. Scale only while the

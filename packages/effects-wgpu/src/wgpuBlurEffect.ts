@@ -49,7 +49,7 @@ export function applyGaussianBlurToWgpu(
   // their own sampleCount is 1 — so asking `getWgpuRenderTargetSupersampleScale` gave 1 and the first
   // version of this fix changed nothing at all. Texel density against the canvas is the thing that
   // actually matters here, and it is true of any target however it was obtained.
-  const scale = getWgpuRenderTargetTexelScale(source.width, state.canvas.width);
+  const scale = getWgpuRenderTargetTexelScale(source.width, state.surface.width);
   const sigmaX = (options.blurX ?? 4) * scale;
   const sigmaY = (options.blurY ?? 4) * scale;
   const radiusX = sigmaX > 0 ? Math.ceil(sigmaX * 3) : 0;

@@ -69,8 +69,8 @@ export const height = 600;
 const BACKDROP_KEY = 'scene';
 const backdropTarget: WgpuRenderTarget = createWgpuRenderTarget(
   state,
-  state.canvas.width,
-  state.canvas.height,
+  state.surface.width,
+  state.surface.height,
   state.format,
 );
 backdropTarget.clearColors = [0x000000ff];

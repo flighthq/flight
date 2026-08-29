@@ -179,8 +179,8 @@ export function registerWgpuFunctionalTarget(state: WgpuRenderState, scale = 1):
   registerFunctionalTarget({
     kind: 'webgpu',
     state,
-    width: state.canvas.width,
-    height: state.canvas.height,
+    width: state.surface.width,
+    height: state.surface.height,
     scale,
     render: () => {},
   });

@@ -255,7 +255,7 @@ function ensureShapeMeshVertexBuffer(
 // (floats 12..15) is filled per mesh by the caller.
 function shapeMeshMatrix(state: WgpuRenderState, renderProxy: RenderProxy2D, out: Float32Array): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.surface;
   const iw = 2 / (viewport.width || 1);
   const ih = 2 / (viewport.height || 1);
   const t = renderProxy.transform2D;

@@ -439,7 +439,7 @@ function writeWgpuQuadBatchWriterUniforms(state: WgpuRenderState, straightTextur
   const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;
   const { uniformData, uniformDataU32 } = runtime;
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.surface;
   const iw = 2 / viewport.width;
   const ih = 2 / viewport.height;
 

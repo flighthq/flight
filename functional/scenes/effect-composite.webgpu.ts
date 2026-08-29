@@ -60,8 +60,8 @@ registerWgpuCompositeEffect(state);
 const pipeline = createWgpuRenderEffectPipeline(state, { sampleCount: 1, format: 'rgba8' });
 const backdropTarget: WgpuRenderTarget = createWgpuRenderTarget(
   state,
-  state.canvas.width,
-  state.canvas.height,
+  state.surface.width,
+  state.surface.height,
   state.format,
 );
 backdropTarget.clearColors = [0x00000000];

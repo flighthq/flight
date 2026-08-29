@@ -281,7 +281,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   const uniformOffset = runtime.uniformOffset;
   const floatBase = uniformOffset >> 2;
   const { uniformData, uniformDataU32, matrixArray } = runtime;
-  const viewport = runtime.renderTargetViewport ?? state.canvas;
+  const viewport = runtime.renderTargetViewport ?? state.surface;
   const t = renderProxy.transform2D;
 
   let iw2: number, ih2: number;

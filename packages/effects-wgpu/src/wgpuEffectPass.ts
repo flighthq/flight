@@ -189,8 +189,8 @@ function beginEffectPass(
   if (dest !== null) {
     pass.setViewport(0, 0, dest.width, dest.height, 0, 1);
   } else {
-    const w = runtime.renderTargetViewport?.width ?? state.canvas.width;
-    const h = runtime.renderTargetViewport?.height ?? state.canvas.height;
+    const w = runtime.renderTargetViewport?.width ?? state.surface.width;
+    const h = runtime.renderTargetViewport?.height ?? state.surface.height;
     pass.setViewport(0, 0, w, h, 0, 1);
   }
   return pass;

@@ -79,8 +79,8 @@ describe('beginWgpuRenderEffectPipeline', () => {
     beginWgpuFrame(state);
     beginWgpuRenderEffectPipeline(state, pipeline);
 
-    expect(pipeline.sceneTarget?.width).toBe(state.canvas.width * 2);
-    expect(pipeline.sceneTarget?.height).toBe(state.canvas.height * 2);
+    expect(pipeline.sceneTarget?.width).toBe(state.surface.width * 2);
+    expect(pipeline.sceneTarget?.height).toBe(state.surface.height * 2);
     expect(pipeline.sceneTarget?.sampleCount).toBe(4);
     endWgpuRenderEffectPipeline(state, pipeline, []);
   });

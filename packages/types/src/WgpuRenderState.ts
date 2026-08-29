@@ -15,6 +15,7 @@ import type { TintMaterialData } from './TintMaterialData';
 import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
 import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
+import type { WgpuPresentationSurface } from './WgpuHost';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
@@ -27,10 +28,12 @@ import type { WgpuVelocityWriter } from './WgpuVelocityWriter';
 
 export interface WgpuRenderState extends RenderState {
   applyBlendMode: ((state: WgpuRenderState, blendMode: BlendMode | null) => void) | null;
-  readonly canvas: HTMLCanvasElement;
   readonly context: GPUCanvasContext;
   readonly device: GPUDevice;
   readonly format: GPUTextureFormat;
+  // The presentation surface's live size. Not an HTMLCanvasElement: nothing on this path reads a DOM
+  // member, so a native host supplies its own size provider and the web path passes its canvas directly.
+  readonly surface: WgpuPresentationSurface;
 }
 
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
