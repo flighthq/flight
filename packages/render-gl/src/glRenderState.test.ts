@@ -136,6 +136,13 @@ describe('copyGlRenderStateRegistrations', () => {
   });
 });
 
+describe('createGlContextState', () => {
+  it('allocates a distinct owner for each call with the same raw context', () => {
+    const { gl } = makeContext();
+    expect(createGlContextState(gl)).not.toBe(createGlContextState(gl));
+  });
+});
+
 describe('createGlOffscreenRenderState', () => {
   it('shares context resources and persistent registration snapshots through independent aggregates', () => {
     const { gl } = makeContext();
@@ -404,6 +411,18 @@ describe('createGlRenderState', () => {
 
     runtimeA.currentBlendSignature = { dst: 1, equation: 2, src: 3 };
     expect(runtimeB.currentBlendSignature).toBeNull();
+  });
+});
+
+describe('createGlRenderStateFromContextState', () => {
+  it('shares context-owned binding state between render states using one owner', () => {
+    const { gl } = makeContext();
+    const contextState = createGlContextState(gl);
+    const first = createGlRenderStateFromContextState(contextState);
+    const second = createGlRenderStateFromContextState(contextState);
+
+    getGlRenderStateRuntime(first).currentBlendSignature = { dst: 1, equation: 2, src: 3 };
+    expect(getGlRenderStateRuntime(second).currentBlendSignature).toEqual({ dst: 1, equation: 2, src: 3 });
   });
 });
 

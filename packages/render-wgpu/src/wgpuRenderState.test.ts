@@ -163,6 +163,13 @@ describe('createWgpuAcquisitionFromCanvasElement', () => {
   });
 });
 
+describe('createWgpuDeviceState', () => {
+  it('allocates distinct owners for repeated calls with the same raw device', () => {
+    const device = {} as GPUDevice;
+    expect(createWgpuDeviceState(device)).not.toBe(createWgpuDeviceState(device));
+  });
+});
+
 describe('createWgpuOffscreenRenderState', () => {
   it('resolves late screen blend-mode wiring explicitly until locally overridden', async () => {
     const screen = await createWgpuRenderStateForTest();
