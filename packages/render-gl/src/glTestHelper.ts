@@ -29,7 +29,7 @@ export function createGlState(options?: { allowSmoothing?: boolean; backgroundCo
 
   // Runtime (package-private GPU) fields live on the runtime object stored under EntityRuntimeKey,
   // mirroring what createGlRenderState does in production.
-  const runtime = createGlRenderStateRuntime(gl);
+  const runtime = createGlRenderStateRuntime();
   Object.assign(runtime, {
     currentBlendMode: null,
     currentFramebuffer: null,

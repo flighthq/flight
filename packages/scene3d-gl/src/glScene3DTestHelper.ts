@@ -347,7 +347,7 @@ export function makeGlScene3DState(gl?: FakeGl2): { state: GlRenderState; gl: Fa
 
   Object.assign(state, { canvas, gl: context, applyBlendMode: null });
 
-  const runtime = createGlRenderStateRuntime(context);
+  const runtime = createGlRenderStateRuntime();
   Object.assign(runtime, {
     currentBlendMode: null,
     currentFramebuffer: null,
