@@ -5,8 +5,8 @@ import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into GPU buffers for this
-// WgpuRenderState, caching the result keyed by the geometry entity (the per-state parallel of
-// MeshGeometryRuntime.webgpuData). Re-uploads when geometry.version moves past the cached version,
+// WgpuRenderState's device, caching the result by geometry in the device-owned scene mesh cache.
+// Re-uploads when geometry.version moves past the cached version,
 // destroying and replacing the prior buffers. The cached upload is also mirrored onto
 // MeshGeometryRuntime.webgpuData so destroyMeshGeometryWgpuData can null the slot. The vertex layout
 // the pipeline binds (canonical 48-byte position/normal/tangent/uv0 record) is fixed on the pipeline,

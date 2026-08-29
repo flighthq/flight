@@ -34,8 +34,8 @@ export interface GlMeshMaterialRenderer {
     camera: Readonly<Camera3D>,
   ): void;
 
-  // Draw one Mesh subset. Lazily uploads the geometry's GPU buffers (keyed by geometry.version,
-  // cached in MeshGeometryRuntime.webglData, freed by destroyMeshGeometryGlData), sets the per-draw
+  // Draw one Mesh subset. Lazily uploads the geometry's GPU buffers into the context-owned cache
+  // (keyed by geometry.version, freed through the scene-gl upload teardown), sets the per-draw
   // world and normal matrices from `proxy`, and issues the indexed draw over proxy.subset's range
   // with the material's cull/blend state. Called once per subset within a bind run.
   draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void;

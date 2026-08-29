@@ -105,8 +105,8 @@ const ATTRIBUTE_LOCATION: Readonly<Record<string, number>> = {
 };
 
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into a VAO for this
-// GlRenderState, caching the result keyed by the geometry entity (the per-state parallel of
-// MeshGeometryRuntime.webglData). Re-uploads when geometry.version moves past the cached version,
+// GlRenderState's context, caching the result by geometry in the context-owned scene mesh cache.
+// Re-uploads when geometry.version moves past the cached version,
 // reusing the existing GL objects. The VAO binds only the canonical PBR attributes the shader
 // consumes (position/normal/tangent/uv0), read from geometry.layout so a custom-offset layout still
 // works. Leaves the VAO bound on return (the draw path issues its draws immediately after).

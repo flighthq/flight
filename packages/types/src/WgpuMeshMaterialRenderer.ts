@@ -34,8 +34,8 @@ export interface WgpuMeshMaterialRenderer {
     camera: Readonly<Camera3D>,
   ): void;
 
-  // Draw one Mesh subset. Lazily uploads the geometry's GPU buffers (keyed by geometry.version,
-  // cached in MeshGeometryRuntime.webgpuData, freed by destroyMeshGeometryWgpuData), sets the
+  // Draw one Mesh subset. Lazily uploads the geometry's GPU buffers into the device-owned cache
+  // (keyed by geometry.version, mirrored in MeshGeometryRuntime.webgpuData), sets the
   // per-draw world and normal matrices from `proxy`, and issues the indexed draw over proxy.subset's
   // range with the material's cull/blend state. Called once per subset within a bind run.
   draw(state: WgpuRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void;

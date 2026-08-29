@@ -41,6 +41,9 @@ function installWgpuConstants(): void {
   if (!g['GPUShaderStage']) {
     g['GPUShaderStage'] = { VERTEX: 1, FRAGMENT: 2, COMPUTE: 4 };
   }
+  if (!g['GPUColorWrite']) {
+    g['GPUColorWrite'] = { RED: 1, GREEN: 2, BLUE: 4, ALPHA: 8, ALL: 15 };
+  }
 }
 
 // A WgpuRenderState backed by the recording device, with an open recording render pass set on the
@@ -147,7 +150,14 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
     backgroundColorRgba: [0, 0, 0, 0],
   }) as WgpuRenderState;
 
-  Object.assign(state, { applyBlendMode: null, canvas, device, format: 'bgra8unorm' });
+  Object.assign(state, {
+    applyBlendMode: null,
+    canvas,
+    context: {} as GPUCanvasContext,
+    device,
+    format: 'bgra8unorm',
+    surface: { height: canvas.height, width: canvas.width },
+  });
 
   const runtime = createWgpuRenderStateRuntime();
   Object.assign(runtime, {
@@ -159,6 +169,8 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
     textureSourceStraightTextureCache: new WeakMap(),
     textureSourceStraightSrgbTextureCache: new WeakMap(),
     mipmapPipelineCache: new Map(),
+    pipelineCache: new Map(),
+    textureBindGroupLayout: {} as GPUBindGroupLayout,
     linearSampler: {} as GPUSampler,
     nearestSampler: {} as GPUSampler,
     samplerCache: new Map(),
@@ -166,6 +178,7 @@ export function makeWgpuScene3DState(): { fake: FakeWgpu; state: WgpuRenderState
     renderPass,
     renderTargetViewport: null,
     uniformBuffer: { destroy: () => {} } as unknown as GPUBuffer,
+    uniformBindGroupLayout: {} as GPUBindGroupLayout,
     uniformData: new Float32Array(256 * 64),
     uniformDataU32: new Uint32Array(0),
     uniformOffset: 0,
