@@ -323,6 +323,8 @@ export * from './HtmlView';
 export * from './HostImageSource';
 export * from './TextureSource';
 export * from './ImageChannel';
+export * from './BitmapEncodeBackend';
+export * from './BitmapEncodeFailureExplanation';
 export * from './ImageDecodeOptions';
 export * from './ImageDecoder';
 export * from './ImageDecodeFailureExplanation';

@@ -3,6 +3,7 @@ export * from './webAccessibility';
 export * from './webApp';
 export * from './webAudio';
 export * from './webAudioDevice';
+export * from './webBitmapEncode';
 export * from './webClipboard';
 export * from './webConnectivity';
 export * from './webCursor';
