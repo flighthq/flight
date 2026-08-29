@@ -1216,3 +1216,58 @@ authority of everything filed beside it.
 
 Corollary for anyone acting on a finding: **refusing to invent a missing artifact is correct
 behaviour, not an obstruction.** Say it is absent and escalate.
+
+---
+
+# H17 — WGPU takes an acquisition; the surface is `{ width, height }` and it must be LIVE — 2026-08-29
+
+The GL lesson repeated exactly. `WgpuRenderState.canvas` looked load-bearing for antialias, sizing,
+background and viewport; enumerating the actual member accesses collapsed all of it to size:
+
+- **16** runtime size-read sites across `render-wgpu` / `effects-wgpu`, plus 4 functional reads
+- **one** `getContext('webgpu')`, already backend-side
+- two internal identity assignments, one identity test
+- the only `instanceof HTMLCanvasElement` is in a test
+
+**The runtime needs no `HTMLCanvasElement`.** Same collapse as `state.canvas` in GL, and the same
+reason it was worth enumerating rather than accepting: "load-bearing" is a claim about a name until
+someone lists the accesses.
+
+## Ruling — adopted as derived
+
+- `WgpuPresentationSurface { readonly width, height }` in `@flighthq/types`. Web passes the canvas
+  **structurally**, no wrapper. Native supplies live accessors.
+- `WgpuHostAcquisition` gains `surface`.
+- **`WgpuRenderState.canvas` is renamed to `surface`.** A field named `canvas` holding a native
+  surface is a lying name, and native state must not lie — the same defect class as [H9](#h9)'s
+  signature. The rename also forces all 16+ consumers to migrate explicitly instead of silently
+  continuing to believe they hold a canvas.
+- `createWgpuAcquisitionFromCanvasElement` — async, returns **caller-owned** `acquisition | null`.
+- `createWgpuRenderState(acquisition, options)` — **synchronous**, since `initializeWgpuRenderState`
+  already is. Async is isolated to the canvas path, mirroring GL.
+- `format` / `powerPreference` leave the render options; they were inert under a supplied
+  acquisition.
+
+## The live-size finding is the load-bearing half
+
+Size must be **live, not snapshotted**. Post-construction resize is load-bearing, and today exactly
+**one** antialias test would catch a frozen size while **eleven** other consumers could go silently
+stale.
+
+That is the [H10](#h10) case for this slice: snapshot the dimensions into the acquisition and every
+gate stays green while resize quietly stops working for eleven consumers. `readonly` here constrains
+the *consumer*, not the provider — a canvas reflects its own mutations, a native provider supplies
+accessors. **Never copy the numbers.**
+
+**Resize ownership**, pinned so it cannot drift: the caller owns the surface and resizes it; the
+render state only reads. Consistent with the caller-owned acquisition, [H13](#h13)'s per-node
+ownership, and [H14](#h14)'s creator-frees-it.
+
+## Falsifiers C1–C5, required
+
+Live resize across all consumer families; non-DOM size-only surface construction and render;
+offscreen surface identity; `HTMLCanvasElement` structural assignability; and **zero runtime surface
+members beyond width/height** — that last one pins the minimal contract against future creep, which
+is how a two-member interface becomes a canvas again one field at a time.
+
+Canvas2D `canvas` fields are unrelated and unchanged.
